@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+
+{% block body_class %}template-homepage{% endblock %}
+
+{% block header %}Job{% endblock %}
+
+{% block content %}
+    <h3>{{ title }}</h3>
+    {{ content|linebreaks }}
+{% endblock %}
