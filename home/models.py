@@ -1,3 +1,7 @@
+"""
+Models for CoMSES.net
+"""
+
 from __future__ import absolute_import, unicode_literals
 
 from django.db import models
@@ -30,6 +34,12 @@ class BlogPage(MenuPage):
         FieldPanel('date'),
         StreamFieldPanel('body'),
     ]
+
+
+class Author(models.Model):
+    first_name = models.TextField(max_length=100, default='')
+    middle_name = models.TextField(max_length=100, default='')
+    last_name = models.TextField(max_length=100, default='')
 
 
 class Event(index.Indexed, models.Model):
@@ -70,6 +80,10 @@ class Job(index.Indexed, models.Model):
 
 
 class Profile(models.Model):
+    """
+    Additional academic information about a User
+    """
+
     user = models.OneToOneField(User)
 
     degrees = models.TextField(max_length=500)
@@ -105,6 +119,7 @@ class Model(index.Indexed, models.Model):
 
     keywords = models.ManyToManyField(Keyword, related_name='models', through=ModelKeywords)
     creator = models.ForeignKey(User)
+    authors = models.ManyToManyField(Author)
 
     search_fields = [
         index.SearchField('title', partial_match=True, boost=10),

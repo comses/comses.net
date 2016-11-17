@@ -1,7 +1,14 @@
 from rest_framework import serializers
-from .models import Event, Job, Model, ModelVersion, Keyword
+from .models import Author, Event, Job, Model, ModelVersion, Keyword
 from django.contrib.auth.models import User
 from django.core.urlresolvers import reverse_lazy
+
+
+class AuthorSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Author
+        fields = '__all__'
+
 
 class EventSerializer(serializers.ModelSerializer):
     class Meta:
@@ -34,6 +41,7 @@ class ModelVersionSerializer(serializers.ModelSerializer):
 
 
 class ModelSerializer(serializers.ModelSerializer):
+    authors = AuthorSerializer(many=True, read_only=True)
     creator = CreatorSerializer(read_only=True)
     modelversion_set = ModelVersionSerializer(many=True)
     keywords = serializers.StringRelatedField(many=True)
