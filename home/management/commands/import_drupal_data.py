@@ -139,6 +139,13 @@ class AuthorExtractor(Extractor):
 
 
 class ModelExtractor(Extractor):
+    @staticmethod
+    def convert_bool_str(str):
+        if str in ['0', '1']:
+            return str == '1'
+        else:
+            raise ValueError('replication value "{}" is not valid'.format(str))
+
     def _extract(self, raw_model, user_id_map, author_id_map):
         content = raw_model['body']['und'][0]['value'] or ''
 
@@ -148,6 +155,10 @@ class ModelExtractor(Extractor):
                       content=content,
                       date_created=self.to_datetime(raw_model['created']),
                       date_modified=self.to_datetime(raw_model['changed']),
+                      is_replicated=self.convert_bool_str(
+                          get_field_first(raw_model, 'field_model_replicated', 'value', '0')),
+                      reference=get_field_first(raw_model, 'field_model_reference', 'value', ''),
+                      replication_reference=get_field_first(raw_model, 'field_model_publication_text', 'value', ''),
                       creator_id=user_id_map[raw_model['uid']]), author_ids)
 
     def extract_all(self, user_id_map, tag_id_map, author_id_map):

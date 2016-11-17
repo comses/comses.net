@@ -116,6 +116,14 @@ class Model(index.Indexed, models.Model):
     content = models.TextField(max_length=4000)
     date_created = models.DateTimeField()
     date_modified = models.DateTimeField()
+    is_replicated = models.BooleanField()
+
+    # The original data was stored inline like this
+    # If this gets integrated with catalog these should be foreign keys
+
+    # We should also allow one model to have multiple references
+    reference = models.TextField(max_length=1000)
+    replication_reference = models.TextField(max_length=1000)
 
     keywords = models.ManyToManyField(Keyword, related_name='models', through=ModelKeywords)
     creator = models.ForeignKey(User)
@@ -126,6 +134,7 @@ class Model(index.Indexed, models.Model):
         index.SearchField('content', partial_match=True),
         index.SearchField('creator'),
     ]
+
 
 
 class ModelVersion(models.Model):
