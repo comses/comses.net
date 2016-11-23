@@ -12,6 +12,10 @@ from home import urls as home_urls
 
 from wagtail.contrib.wagtailapi import urls as wagtailapi_urls
 
+from rest_framework_swagger.views import get_swagger_view
+
+schema_view = get_swagger_view(title='CoMSES.net API')
+
 urlpatterns = [
     url(r'^django-admin/', include(admin.site.urls)),
 
@@ -22,6 +26,8 @@ urlpatterns = [
     url(r'^home/', include(home_urls)),
 
     url(r'^api/', include(wagtailapi_urls)),
+    url(r'^schema/$', schema_view),
+
     url(r'', include(wagtail_urls)),
 ]
 

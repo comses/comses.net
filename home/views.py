@@ -8,6 +8,9 @@ from rest_framework.pagination import PageNumberPagination
 from wagtail.wagtailsearch.models import Query
 from django.shortcuts import render
 from wagtail.wagtailsearch.backends import get_search_backend
+import logging
+
+logger = logging.getLogger(__name__)
 
 search = get_search_backend()
 
@@ -21,6 +24,7 @@ class SmallResultSetPagination(PageNumberPagination):
         count = self.page.paginator.count
         n_pages = count // self.page_size + 1
         page_ind = int(self.request.query_params.get('page', 1))
+        logger.debug("Request page")
         return Response({
             'page_ind': page_ind,
             'count': count,

@@ -25,6 +25,7 @@ BASE_DIR = os.path.dirname(PROJECT_DIR)
 # Application definition
 
 INSTALLED_APPS = [
+    'drupal_migrator',
     'home',
     'search',
 
@@ -52,6 +53,7 @@ INSTALLED_APPS = [
 
     'django_extensions',
     'rest_framework',
+    'rest_framework_swagger',
 
     'wagtail.contrib.modeladmin',
     'wagtailmenus',

@@ -15,6 +15,8 @@ from wagtail.wagtailadmin.edit_handlers import FieldPanel, StreamFieldPanel
 from wagtail.wagtailimages.blocks import ImageChooserBlock
 from wagtail.wagtailsearch import index
 
+from django.utils.translation import ugettext_lazy as _
+
 from datetime import datetime
 
 
@@ -84,11 +86,11 @@ class Profile(models.Model):
     Additional academic information about a User
     """
 
-    user = models.OneToOneField(User)
+    user = models.OneToOneField(User, help_text=_('User associated with profile'))
 
     degrees = models.TextField(max_length=500)
     summary = models.TextField(max_length=2000)
-    picture = models.ImageField(null=True)
+    picture = models.ImageField(null=True, help_text=_('Picture of user'))
 
     academia_edu = models.URLField(null=True)
     blog = models.URLField(null=True)
@@ -136,11 +138,25 @@ class Model(index.Indexed, models.Model):
     ]
 
 
+class License(models.Model):
+    name = models.TextField(max_length=100)
+    address = models.URLField()
+
+
+class Platform(models.Model):
+    name = models.TextField(max_length=100)
+    address = models.URLField()
+
 
 class ModelVersion(models.Model):
     content = models.TextField(max_length=4000)
     documentation = models.TextField(max_length=12000)
     date_created = models.DateTimeField()
     date_modified = models.DateTimeField()
+
+    language = models.TextField(max_length=100)
+    license = models.ForeignKey(License, null=True)
+    os = models.TextField(max_length=100)
+    platform = models.ForeignKey(Platform)
 
     model = models.ForeignKey(Model, related_name='modelversion_set')

@@ -1,30 +1,60 @@
-"""
-Management command for loading JSON dump of old CoMSES.net website into the new site
-"""
-
-from django.core.management.base import BaseCommand
-
 import json
 import os
+import io
+import csv
+
 from typing import Dict, List
 from django.contrib.auth.models import User
-from ...models import Author, Event, Job, Model, ModelVersion, ModelKeywords, Keyword, Profile
+from home.models import Author, Event, Job, Model, ModelVersion, ModelKeywords, Keyword, Profile, License, Platform
+from .json_field_util import get_field_first, get_field
 from datetime import datetime
 from django.utils import translation
 
 
-def get_field_first(obj, field_name, attribute_name, default=''):
-    if obj[field_name]:
-        return obj[field_name]['und'][0][attribute_name] or default
-    else:
-        return default
+def load_data(model, s: str) -> Dict[int, Dict]:
+    f = io.StringIO(s)
+    rows = csv.DictReader(f)
+
+    instances = []
+    for row in rows:
+        instances.append(model(**row))
+
+    model.objects.bulk_create(instances)
+    # TODO: set sequence number to start after last value when moved over to Postgres
 
 
-def get_field(obj, field_name):
-    if obj[field_name]:
-        return obj[field_name]['und']
-    else:
-        return []
+LICENSE_LEVELS = \
+    """id,name,address
+    1,"GNU GPL, Version 2",http://www.gnu.org/licenses/gpl-2.0.html
+    2,"GNU GPL, Version 3",http://www.gnu.org/licenses/gpl-3.0.html
+    3,"Apache License, Version 2.0",http://www.apache.org/licenses/LICENSE-2.0.html
+    4,"Creative Commons (cc by)",http://creativecommons.org/licenses/by/3.0/
+    5,"Creative Commons (cc by-sa)",http://creativecommons.org/licenses/by-sa/3.0/
+    6,"Creative Commons (cc by-nd)",http://creativecommons.org/licenses/by-nd/3.0
+    7,"Creative Commons (cc by-nc)",http://creativecommons.org/licenses/by-nc/3.0
+    8,"Creative Commons (cc by-nc-sa)",http://creativecommons.org/licenses/by-nc-sa/3.0
+    9,"Creative Commons (cc by-nc-nd)",http://creativecommons.org/licenses/by-nc-nd/3.0
+    10,"Academic Free License 3.0",http://www.opensource.org/licenses/afl-3.0.php
+    11,"BSD 2-Clause",http://opensource.org/licenses/BSD-2-Clause"""
+
+PLATFORM_LEVELS = \
+    """id,name,address
+    0,Other,NULL
+    1,"Ascape 5",http://ascape.sourceforge.net/
+    2,Breve,http://www.spiderland.org/
+    3,Cormas,http://cormas.cirad.fr/en/outil/outil.htm
+    4,DEVSJAVA,http://www.acims.arizona.edu/SOFTWARE/software.shtml
+    5,Ecolab,http://ecolab.sourceforge.net/
+    6,Mason,http://www.cs.gmu.edu/~eclab/projects/mason/
+    7,MASS,http://mass.aitia.ai/
+    8,MobilDyc,http://w3.avignon.inra.fr/mobidyc/index.php/English_summary
+    9,NetLogo,http://ccl.northwestern.edu/netlogo/
+    10,Repast,http://repast.sourceforge.net/
+    11,Sesam,http://www.simsesam.de/
+    12,StarLogo,http://education.mit.edu/starlogo/
+    13,Swarm,http://www.swarm.org/
+    14,AnyLogic,http://www.anylogic.com/
+    15,Matlab,http://www.mathworks.com/products/matlab/"""
 
 
 class Extractor:
@@ -187,46 +217,95 @@ class ModelExtractor(Extractor):
 
 
 class ModelVersionExtractor(Extractor):
+    OS_LEVELS = [
+        'Other',
+        'Linux',
+        'Apple OS X',
+        'Microsoft Windows',
+        'Platform Independent',
+    ]
+
+    LANGUAGE_LEVELS = [
+        'Other',
+        'C',
+        'C++',
+        'Java',
+        'Logo (variant)',
+        'Perl',
+        'Python',
+    ]
+
     def _load(self, raw_model_version, model_id_map: Dict[str, int]):
-        model_nid = raw_model_version['field_modelversion_model']['und'][0]['nid']
-        content = raw_model_version['body']['und'][0]['value'] if raw_model_version['body'] else ''
-        content = content or ''
+        model_nid = get_field_first(raw_model_version, 'field_modelversion_model', 'nid')
+        content = get_field_first(raw_model_version, 'body', 'value')
+
+        language = self.LANGUAGE_LEVELS[
+            int(get_field_first(raw_model_version, 'field_modelversion_language', 'value', 0))]
+        license_id = get_field_first(raw_model_version, 'field_modelversion_license', 'value', None)
+        os = self.OS_LEVELS[int(get_field_first(raw_model_version, 'field_modelversion_os', 'value', 0))]
+        platform_id = int(get_field_first(raw_model_version, 'field_modelversion_platform', 'value', 0))
+
         if model_nid and model_nid in model_id_map:
             model_version = ModelVersion(
                 content=content,
                 date_created=self.to_datetime(raw_model_version['created']),
                 date_modified=self.to_datetime(raw_model_version['changed']),
+
+                language=language,
+                license_id=license_id,
+                os=os,
+                platform_id=platform_id,
+
                 model_id=model_id_map[model_nid])
             model_version.save()
+            return raw_model_version['nid'], model_version.id
 
     def extract_all(self, model_id_map: Dict[str, int]):
+        model_version_id_map = {}
         for raw_model_version in self.data:
-            self._load(raw_model_version, model_id_map)
+            result = self._load(raw_model_version, model_id_map)
+            if result:
+                drupal_id, id = result
+                model_version_id_map[drupal_id] = id
+        return model_version_id_map
 
 
-class Command(BaseCommand):
-    def add_arguments(self, parser):
-        parser.add_argument('--directory', '-d',
-                            help='directory to load Drupal 7 data dump from')
+class IDMapper:
+    def __init__(self, author_id_map, user_id_map, tag_id_map, model_id_map, model_version_id_map):
+        self._maps = {
+            Author: author_id_map,
+            User: user_id_map,
+            ModelKeywords: tag_id_map,
+            Model: model_id_map,
+            ModelVersion: model_version_id_map
+        }
 
-    def handle(self, *args, **options):
-        # TODO: associate picture with profile
-        directory = options['directory']
+    def __getitem__(self, item):
+        return self._maps[item]
 
-        author_extractor = AuthorExtractor.from_file(os.path.join(directory, "Author.json"))
-        event_extractor = EventExtractor.from_file(os.path.join(directory, "Event.json"))
-        job_extractor = JobExtractor.from_file(os.path.join(directory, "Forum.json"))
-        model_extractor = ModelExtractor.from_file(os.path.join(directory, "Model.json"))
-        model_version_extractor = ModelVersionExtractor.from_file(os.path.join(directory, "ModelVersion.json"))
-        profile_extractor = ProfileExtractor.from_file(os.path.join(directory, "Profile2.json"))
-        taxonomy_extractor = TaxonomyExtractor.from_file(os.path.join(directory, "Taxonomy.json"))
-        user_extractor = UserExtractor.from_file(os.path.join(directory, "User.json"))
 
-        author_id_map = author_extractor.extract_all()
-        user_id_map = user_extractor.extract_all()
-        job_extractor.extract_all(user_id_map)
-        event_extractor.extract_all(user_id_map)
-        tag_id_map = taxonomy_extractor.extract_all()
-        model_id_map = model_extractor.extract_all(user_id_map=user_id_map, tag_id_map=tag_id_map, author_id_map=author_id_map)
-        model_version_extractor.extract_all(model_id_map)
-        profile_extractor.extract_all(user_id_map)
+def load(directory: str):
+    # TODO: associate picture with profile
+    author_extractor = AuthorExtractor.from_file(os.path.join(directory, "Author.json"))
+    event_extractor = EventExtractor.from_file(os.path.join(directory, "Event.json"))
+    job_extractor = JobExtractor.from_file(os.path.join(directory, "Forum.json"))
+    model_extractor = ModelExtractor.from_file(os.path.join(directory, "Model.json"))
+    model_version_extractor = ModelVersionExtractor.from_file(os.path.join(directory, "ModelVersion.json"))
+    profile_extractor = ProfileExtractor.from_file(os.path.join(directory, "Profile2.json"))
+    taxonomy_extractor = TaxonomyExtractor.from_file(os.path.join(directory, "Taxonomy.json"))
+    user_extractor = UserExtractor.from_file(os.path.join(directory, "User.json"))
+
+    load_data(License, LICENSE_LEVELS)
+    load_data(Platform, PLATFORM_LEVELS)
+
+    author_id_map = author_extractor.extract_all()
+    user_id_map = user_extractor.extract_all()
+    job_extractor.extract_all(user_id_map)
+    event_extractor.extract_all(user_id_map)
+    tag_id_map = taxonomy_extractor.extract_all()
+    model_id_map = model_extractor.extract_all(user_id_map=user_id_map, tag_id_map=tag_id_map,
+                                               author_id_map=author_id_map)
+    model_version_id_map = model_version_extractor.extract_all(model_id_map)
+    profile_extractor.extract_all(user_id_map)
+
+    return IDMapper(author_id_map, user_id_map, tag_id_map, model_id_map, model_version_id_map)

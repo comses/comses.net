@@ -4,7 +4,11 @@ wagtailmenus==1.6.0
 django-debug-toolbar==1.5
 django-extensions==1.7.4
 djangorestframework==3.5.1
+django-rest-swagger==2.1.0
 django-compressor==2.1
 django-reversion==2.0.7
 
+pygit2==0.24.2
+
 Sphinx
+ipython
