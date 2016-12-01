@@ -11,7 +11,7 @@ services:
     environment:
       ES_JAVA_OPTS: "-Xms2g -Xmx2g"
   db:
-    image: postgres:9
+    image: postgres:9.5
     volumes:
       - data:/var/lib/postgresql/data
     ports:

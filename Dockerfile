@@ -1,8 +1,8 @@
-FROM comses/base
+FROM ubuntu:16.04
 
-RUN apk add --no-cache musl-dev gcc python3-dev libxml2-dev libxslt-dev build-base pcre-dev linux-headers \
-# utility dependencies
-        curl git bash ssmtp mailx libgit2-dev libffi-dev libjpeg-turbo-dev postgresql-client postgresql-dev
+RUN apt-get update && apt-get install -y python3-dev libxml2-dev libgit2-dev postgresql-client \
+        libpq-dev curl libxslt-dev python3-pip libffi-dev libjpeg-turbo8-dev \
+        && update-alternatives --install /usr/bin/python python /usr/bin/python3 1000
 
 ENV PYTHONUNBUFFERED 1
 COPY requirements.txt /tmp/
