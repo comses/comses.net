@@ -102,8 +102,12 @@ WSGI_APPLICATION = 'wagtail_comses_net.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': os.environ.get('DB_NAME', 'wagtailcms'),
+        'USER': os.environ.get('DB_USER', 'comsesnet'),
+        'PASSWORD': 'CHANGE_THIS_PASSWORD_IN_PRODUCTION',
+        'HOST': 'db',
+        'PORT': '5432',
     }
 }
 

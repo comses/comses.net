@@ -5,6 +5,9 @@ from .base import *
 DEBUG = False
 
 try:
-    from .local import *
-except ImportError:
-    pass
+    LOCAL_SETTINGS
+except NameError:
+    try:
+        from .local import *
+    except ImportError:
+        pass

@@ -1,1 +1,12 @@
+LOCAL_SETTINGS = True
 SECRET_KEY = None
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': os.environ.get('DB_NAME', 'wagtailcms'),
+        'USER': os.environ.get('DB_USER', 'comsesnet'),
+        'PASSWORD': 'CHANGE_THIS_PASSWORD_IN_PRODUCTION',
+        'HOST': 'db',
+        'PORT': '5432',
+    }
+}

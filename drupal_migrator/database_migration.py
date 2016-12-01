@@ -1,18 +1,18 @@
+import csv
+import io
 import json
 import os
-import io
-import csv
 
-from typing import Dict, List
-from django.contrib.auth.models import User
-from home.models import Author, Event, Job, Model, ModelVersion, ModelKeywords, Keyword, Profile, License, Platform
-from .json_field_util import get_field_first, get_field
 from datetime import datetime
+from django.contrib.auth.models import User
 from django.utils import translation
+from home.models import Author, Event, Job, Model, ModelVersion, ModelKeywords, Keyword, Profile, License, Platform
+from typing import Dict, List
 
+from .json_field_util import get_field_first, get_field
 
 def load_data(model, s: str) -> Dict[int, Dict]:
-    f = io.StringIO(s)
+    f = io.StringIO(s.strip())
     rows = csv.DictReader(f)
 
     instances = []
@@ -23,8 +23,7 @@ def load_data(model, s: str) -> Dict[int, Dict]:
     # TODO: set sequence number to start after last value when moved over to Postgres
 
 
-LICENSE_LEVELS = \
-    """id,name,address
+LICENSE_LEVELS = """id,name,address
     1,"GNU GPL, Version 2",http://www.gnu.org/licenses/gpl-2.0.html
     2,"GNU GPL, Version 3",http://www.gnu.org/licenses/gpl-3.0.html
     3,"Apache License, Version 2.0",http://www.apache.org/licenses/LICENSE-2.0.html
@@ -37,8 +36,7 @@ LICENSE_LEVELS = \
     10,"Academic Free License 3.0",http://www.opensource.org/licenses/afl-3.0.php
     11,"BSD 2-Clause",http://opensource.org/licenses/BSD-2-Clause"""
 
-PLATFORM_LEVELS = \
-    """id,name,address
+PLATFORM_LEVELS = """id,name,address
     0,Other,NULL
     1,"Ascape 5",http://ascape.sourceforge.net/
     2,Breve,http://www.spiderland.org/
@@ -265,8 +263,8 @@ class ModelVersionExtractor(Extractor):
         for raw_model_version in self.data:
             result = self._load(raw_model_version, model_id_map)
             if result:
-                drupal_id, id = result
-                model_version_id_map[drupal_id] = id
+                drupal_id, pk = result
+                model_version_id_map[drupal_id] = pk
         return model_version_id_map
 
 

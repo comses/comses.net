@@ -1,0 +1,62 @@
+version: '2'
+services:
+  elasticsearch:
+    image: elasticsearch:5
+    volumes:
+      - ./deploy/elasticsearch.conf.d/log4j2.properties:/usr/share/elasticsearch/config/log4j2.properties
+      - esindex:/usr/share/elasticsearch/data
+    ports:
+      - "127.0.0.1:9200:9200"
+      - "127.0.0.1:9300:9300"
+    environment:
+      ES_JAVA_OPTS: "-Xms2g -Xmx2g"
+  db:
+    image: postgres:9
+    volumes:
+      - data:/var/lib/postgresql/data
+    ports:
+      - "127.0.0.1:5433:5432"
+    environment:
+      POSTGRES_USER: comsesnet
+      # FIXME: replace with something more secure, see https://github.com/docker/docker/issues/13490
+      POSTGRES_PASSWORD: CHANGEME_COMSESNET_DB_PASSWORD
+      POSTGRES_DB: comsesnet
+  cms:
+    build: .
+    image: comses/wagtailcms
+    volumes:
+      - .:/code
+      - ./deploy/elasticsearch.conf.d:/etc/elasticsearch
+      - logs:/code/logs
+    command: /code/deploy/app/dev.sh
+    environment:
+      DB_USER: comsesnet
+      DB_HOST: db
+      DB_NAME: comsesnet
+      DB_PORT: 5432
+    ports:
+      - "127.0.0.1:8000:8000"
+    links:
+      - db
+      - elasticsearch
+  test:
+    image: cms
+    volumes:
+      - .:/code
+      - logs:/code/logs
+    command: /code/deploy/app/test.sh
+    environment:
+      DB_USER: comsesnet
+      DB_HOST: db
+      DB_NAME: comsesnet
+      DB_PORT: 5432
+    links:
+      - db
+      - elasticsearch
+volumes:
+  esindex:
+    driver: local
+  data:
+    driver: local
+  logs:
+    driver: local
