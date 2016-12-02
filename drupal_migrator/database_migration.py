@@ -61,7 +61,7 @@ class Extractor:
 
     @classmethod
     def from_file(cls, file_name):
-        with open(file_name, "r") as f:
+        with open(file_name, 'r', encoding='UTF-8') as f:
             data = json.load(f)
             return cls(data)
 
