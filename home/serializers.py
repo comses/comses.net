@@ -1,14 +1,8 @@
 from rest_framework import serializers
-from .models import Author, Event, Job, Model, ModelVersion, Keyword
+from .models import Event, Job
 from django.contrib.auth.models import User
 from django.core.urlresolvers import reverse_lazy
 from django.utils.translation import ugettext_lazy as _
-
-
-class AuthorSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Author
-        fields = '__all__'
 
 
 class EventSerializer(serializers.ModelSerializer):
@@ -33,20 +27,3 @@ class JobSerializer(serializers.ModelSerializer):
     class Meta:
         model = Job
         fields = ('id', 'title', 'creator', 'date_created', 'content', 'url')
-
-
-class ModelVersionSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = ModelVersion
-        fields = ('id', 'content')
-
-
-class ModelSerializer(serializers.ModelSerializer):
-    authors = AuthorSerializer(many=True, read_only=True)
-    creator = CreatorSerializer(read_only=True)
-    modelversion_set = ModelVersionSerializer(many=True)
-    keywords = serializers.StringRelatedField(many=True)
-
-    class Meta:
-        model = Model
-        fields = '__all__'

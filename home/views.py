@@ -1,5 +1,6 @@
-from .models import Event, Job, Model, ModelVersion
-from .serializers import EventSerializer, JobSerializer, ModelSerializer, ModelVersionSerializer
+from library.models import Code, CodeRelease
+from .models import Event, Job
+from .serializers import EventSerializer, JobSerializer
 from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
 from rest_framework import generics, viewsets
 from rest_framework.response import Response
@@ -79,14 +80,3 @@ class JobViewSet(viewsets.ModelViewSet):
         job = Job.objects.get(id=kwargs['pk'])
         serializer = JobSerializer(job)
         return Response(serializer.data)
-
-
-class ModelViewSet(viewsets.ModelViewSet):
-    queryset = Model.objects.all()
-    serializer_class = ModelSerializer
-    pagination_class = SmallResultSetPagination
-    renderer_classes = (TemplateHTMLRenderer, JSONRenderer,)
-
-    @property
-    def template_name(self):
-        return 'home/model/{}.html'.format(self.action)

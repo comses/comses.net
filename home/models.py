@@ -6,12 +6,13 @@ from __future__ import absolute_import, unicode_literals
 
 from django.db import models
 from django.contrib.auth.models import User
+from modelcluster.fields import ParentalKey
 
 from wagtail.wagtailcore.fields import StreamField
 from wagtail.wagtailcore import blocks
-from wagtail.wagtailcore.models import Page
+from wagtail.wagtailcore.models import Page, Orderable
 from wagtailmenus.models import MenuPage
-from wagtail.wagtailadmin.edit_handlers import FieldPanel, StreamFieldPanel
+from wagtail.wagtailadmin.edit_handlers import FieldPanel, StreamFieldPanel, InlinePanel
 from wagtail.wagtailimages.blocks import ImageChooserBlock
 from wagtail.wagtailsearch import index
 
@@ -20,8 +21,34 @@ from django.utils.translation import ugettext_lazy as _
 from datetime import datetime
 
 
-class HomePage(MenuPage):
-    pass
+class CarouselItem(models.Model):
+    image = models.ForeignKey('wagtailimages.Image',
+                              null=True,
+                              blank=True,
+                              on_delete=models.SET_NULL,
+                              related_name='+')
+    caption = models.CharField(max_length=500, blank=True)
+
+    class Meta:
+        abstract = True
+
+
+class FeaturedContentItem(Orderable, CarouselItem):
+    page = ParentalKey('HomePage', related_name='featured_content_queue')
+
+
+class HomePage(Page):
+    body = StreamField([
+        ('heading', blocks.CharBlock(classname="full title")),
+        ('paragraph', blocks.RichTextBlock()),
+        ('image', ImageChooserBlock()),
+    ])
+
+    content_panels = [
+        FieldPanel('title', classname='full title'),
+        StreamFieldPanel('body'),
+        InlinePanel('featured_content_queue', label=_('Featured Content')),
+    ]
 
 
 class BlogPage(MenuPage):
@@ -38,42 +65,36 @@ class BlogPage(MenuPage):
     ]
 
 
-class Author(models.Model):
-    first_name = models.TextField(max_length=100, default='')
-    middle_name = models.TextField(max_length=100, default='')
-    last_name = models.TextField(max_length=100, default='')
-
-
 class Event(index.Indexed, models.Model):
-    title = models.TextField(max_length=1000)
+    title = models.CharField(max_length=500)
     date_created = models.DateTimeField()
     date_modified = models.DateTimeField()
-    content = models.TextField(max_length=5000)
+    description = models.TextField()
     # datetimerange_event = DateTimeRangeField()
     early_registration_deadline = models.DateTimeField(null=True)
     submission_deadline = models.DateTimeField(null=True)
-    location = models.TextField(max_length=200)
+    location = models.CharField(max_length=200)
 
     creator = models.ForeignKey(User)
 
     search_fields = [
         index.SearchField('title', partial_match=True, boost=10),
-        index.SearchField('content', partial_match=True),
+        index.SearchField('description', partial_match=True),
         index.SearchField('creator'),
     ]
 
 
 class Job(index.Indexed, models.Model):
-    title = models.TextField(max_length=1000)
+    title = models.CharField(max_length=500)
     date_created = models.DateTimeField()
     date_modified = models.DateTimeField()
-    content = models.TextField(max_length=5000)
+    description = models.TextField()
 
     creator = models.ForeignKey(User)
 
     search_fields = [
         index.SearchField('title', partial_match=True, boost=10),
-        index.SearchField('content', partial_match=True),
+        index.SearchField('description', partial_match=True),
         index.SearchField('creator'),
     ]
 
@@ -88,75 +109,17 @@ class Profile(models.Model):
 
     user = models.OneToOneField(User, help_text=_('User associated with profile'))
 
-    degrees = models.TextField(max_length=500)
-    summary = models.TextField(max_length=2000)
+    degrees = models.CharField(max_length=500)
+    summary = models.TextField()
     picture = models.ImageField(null=True, help_text=_('Picture of user'))
 
-    academia_edu = models.URLField(null=True)
+    academia_edu_url = models.URLField(null=True)
+    linkedin_url = models.URLField(null=True)
+    personal_homepage_url = models.URLField(null=True)
+    institutional_homepage_url = models.URLField(null=True)
+    research_gate_url = models.URLField(null=True)
     blog = models.URLField(null=True)
     curriculum_vitae = models.URLField(null=True)
     institution = models.URLField(null=True)
-    linkedin = models.URLField(null=True)
-    personal = models.URLField(null=True)
-    research_gate = models.URLField(null=True)
-
-
-class ModelKeywords(models.Model):
-    model = models.ForeignKey('Model')
-    keyword = models.ForeignKey('Keyword')
-
-
-class Keyword(models.Model):
-    name = models.TextField(max_length=100)
-
-    def __str__(self):
-        return self.name
-
-
-class Model(index.Indexed, models.Model):
-    title = models.TextField(max_length=1000)
-    content = models.TextField(max_length=4000)
-    date_created = models.DateTimeField()
-    date_modified = models.DateTimeField()
-    is_replicated = models.BooleanField()
-
-    # The original data was stored inline like this
-    # If this gets integrated with catalog these should be foreign keys
-
-    # We should also allow one model to have multiple references
-    reference = models.TextField(max_length=1000)
-    replication_reference = models.TextField(max_length=1000)
-
-    keywords = models.ManyToManyField(Keyword, related_name='models', through=ModelKeywords)
-    creator = models.ForeignKey(User)
-    authors = models.ManyToManyField(Author)
-
-    search_fields = [
-        index.SearchField('title', partial_match=True, boost=10),
-        index.SearchField('content', partial_match=True),
-        index.SearchField('creator'),
-    ]
-
-
-class License(models.Model):
-    name = models.TextField(max_length=100)
-    address = models.URLField()
-
-
-class Platform(models.Model):
-    name = models.TextField(max_length=100)
-    address = models.URLField()
-
-
-class ModelVersion(models.Model):
-    content = models.TextField(max_length=4000)
-    documentation = models.TextField(max_length=12000)
-    date_created = models.DateTimeField()
-    date_modified = models.DateTimeField()
-
-    language = models.TextField(max_length=100)
-    license = models.ForeignKey(License, null=True)
-    os = models.TextField(max_length=100)
-    platform = models.ForeignKey(Platform)
-
-    model = models.ForeignKey(Model, related_name='modelversion_set')
+    orcid = models.CharField(help_text=_("16 digit number with - at every 4, e.g., 0000-0002-1825-0097"),
+                             max_length=19)

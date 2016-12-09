@@ -23,9 +23,9 @@ BASE_DIR = os.path.dirname(PROJECT_DIR)
 
 
 # Application definition
-
 INSTALLED_APPS = [
     'drupal_migrator',
+    'library',
     'home',
     'search',
 
