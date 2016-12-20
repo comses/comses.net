@@ -1,5 +1,5 @@
 Django>=1.10,<1.11
-wagtail>=1.7,<1.8
+wagtail==1.8
 wagtailmenus==1.6.0
 django-debug-toolbar==1.5
 django-extensions==1.7.4
@@ -10,6 +10,8 @@ django-reversion==2.0.7
 django-markupfield==1.4.1
 psycopg2==2.6.2
 pygit2==0.24.2
+django-location-field==1.6.1
+django-model-utils==2.6
 
 Sphinx
 ipython

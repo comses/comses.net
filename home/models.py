@@ -1,7 +1,3 @@
-"""
-Models for CoMSES.net
-"""
-
 from __future__ import absolute_import, unicode_literals
 
 from django.db import models
@@ -19,6 +15,10 @@ from wagtail.wagtailsearch import index
 from django.utils.translation import ugettext_lazy as _
 
 from datetime import datetime
+
+"""
+Wagtail-related models
+"""
 
 
 class CarouselItem(models.Model):
@@ -100,26 +100,3 @@ class Job(index.Indexed, models.Model):
 
     def __str__(self):
         return "{}. Created by {} on {}".format(self.title, self.creator.username, str(self.date_created))
-
-
-class Profile(models.Model):
-    """
-    Additional academic information about a User
-    """
-
-    user = models.OneToOneField(User, help_text=_('User associated with profile'))
-
-    degrees = models.CharField(max_length=500)
-    summary = models.TextField()
-    picture = models.ImageField(null=True, help_text=_('Picture of user'))
-
-    academia_edu_url = models.URLField(null=True)
-    linkedin_url = models.URLField(null=True)
-    personal_homepage_url = models.URLField(null=True)
-    institutional_homepage_url = models.URLField(null=True)
-    research_gate_url = models.URLField(null=True)
-    blog = models.URLField(null=True)
-    curriculum_vitae = models.URLField(null=True)
-    institution = models.URLField(null=True)
-    orcid = models.CharField(help_text=_("16 digit number with - at every 4, e.g., 0000-0002-1825-0097"),
-                             max_length=19)
