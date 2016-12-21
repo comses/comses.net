@@ -1,0 +1,12 @@
+[default]
+DEBUG=True
+
+[database]
+DB_NAME=${DB_NAME}
+DB_USER=${DB_USER}
+DB_HOST=${DB_HOST}
+DB_PORT=${DB_PORT}
+DB_PASSWORD=${DB_PASSWORD}
+
+[secrets]
+SECRET_KEY=${DJANGO_SECRET_KEY}

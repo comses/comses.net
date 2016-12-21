@@ -1,5 +1,10 @@
 # Docker
 docker-compose.yml
+config.ini
+# backup files
+*~
+# ctags
+tags
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
