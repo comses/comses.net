@@ -70,7 +70,7 @@ class Code(index.Indexed, ClusterableModel):
     description = models.TextField()
     date_created = models.DateTimeField(auto_now_add=True)
     last_modified = models.DateTimeField(auto_now=True)
-    is_replicated = models.BooleanField()
+    is_replication = models.BooleanField(default=False)
 
     # original Drupal data was stored inline like this
     # If this gets integrated with catalog these should be foreign keys and converted into M2M relationships
@@ -89,14 +89,19 @@ class Code(index.Indexed, ClusterableModel):
         index.SearchField('submitter'),
     ]
 
+    def __str__(self):
+        return "{0} {1} ({2})".format(self.title, self.date_created, self.submitter)
+
 
 class Contributor(models.Model):
     ROLES = Choices(
         ('Author', _('Author')),
         ('Architect', _('Architect')),
-        ('Maintainer', _('Maintainer')),
-        ('Tester', _('Tester')),
+        ('Curator', _('Curator')),
         ('Designer', _('Designer')),
+        ('Maintainer', _('Maintainer')),
+        ('Submitter', _('Submitter')),
+        ('Tester', _('Tester')),
     )
     code = models.ForeignKey(Code, on_delete=models.CASCADE)
     person = models.ForeignKey(Person, on_delete=models.CASCADE)

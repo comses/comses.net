@@ -6,7 +6,9 @@ import os
 from datetime import datetime
 from django.contrib.auth.models import User
 from django.utils import translation
-from home.models import Author, Event, Job, Model, ModelVersion, ModelKeywords, Keyword, Profile, License, Platform
+from library.models import Contributor, Code, CodeRelease, CodeKeyword, Person, License, Platform
+from home.models import Event, Job
+from taggit.models import Tag
 from typing import Dict, List
 
 from .json_field_util import get_field_first, get_field
@@ -121,7 +123,7 @@ class UserExtractor(Extractor):
 
 class ProfileExtractor(Extractor):
     def _extract(self, raw_profile, user_id_map):
-        return Profile(
+        return Person(
             user_id=user_id_map[raw_profile['uid']],
             summary=get_field_first(raw_profile, 'field_profile2_research', 'value'),
             degrees='',  # TODO: change this to a text array field after moving to Postgres
@@ -136,7 +138,7 @@ class ProfileExtractor(Extractor):
 
     def extract_all(self, user_id_map):
         detached_profiles = [self._extract(raw_profile, user_id_map) for raw_profile in self.data]
-        Profile.objects.bulk_create(detached_profiles)
+        Person.objects.bulk_create(detached_profiles)
 
 
 class TaxonomyExtractor(Extractor):
@@ -146,7 +148,7 @@ class TaxonomyExtractor(Extractor):
 
         translation.activate('en')
         for raw_tag in raw_tags:
-            keyword = Keyword.objects.create(name=raw_tag['name'])
+            keyword = Tag.objects.create(name=raw_tag['name'])
             tag_id_map[raw_tag['tid']] = keyword.id
 
         return tag_id_map
@@ -154,15 +156,15 @@ class TaxonomyExtractor(Extractor):
 
 class AuthorExtractor(Extractor):
     def _extract(self, raw_author):
-        return Author(first_name=get_field_first(raw_author, 'field_model_authorfirst', 'value', ''),
-                      middle_name=get_field_first(raw_author, 'field_model_authormiddle', 'value', ''),
-                      last_name=get_field_first(raw_author, 'field_model_authorlast', 'value', ''))
+        return Contributor(first_name=get_field_first(raw_author, 'field_model_authorfirst', 'value', ''),
+                           middle_name=get_field_first(raw_author, 'field_model_authormiddle', 'value', ''),
+                           last_name=get_field_first(raw_author, 'field_model_authorlast', 'value', ''))
 
     def extract_all(self):
         detached_authors = [self._extract(raw_author) for raw_author in self.data]
         item_ids = [raw_author['item_id'] for raw_author in self.data]
-        Author.objects.bulk_create(detached_authors)
-        author_id_map = dict(zip(item_ids, [a[0] for a in Author.objects.order_by('id').values_list('id')]))
+        Contributor.objects.bulk_create(detached_authors)
+        author_id_map = dict(zip(item_ids, [a[0] for a in Contributor.objects.order_by('id').values_list('id')]))
         return author_id_map
 
 
@@ -179,15 +181,15 @@ class ModelExtractor(Extractor):
 
         raw_author_ids = [raw_author['value'] for raw_author in get_field(raw_model, 'field_model_author')]
         author_ids = [author_id_map[raw_author_id] for raw_author_id in raw_author_ids]
-        return (Model(title=raw_model['title'],
-                      content=content,
-                      date_created=self.to_datetime(raw_model['created']),
-                      date_modified=self.to_datetime(raw_model['changed']),
-                      is_replicated=self.convert_bool_str(
-                          get_field_first(raw_model, 'field_model_replicated', 'value', '0')),
-                      reference=get_field_first(raw_model, 'field_model_reference', 'value', ''),
-                      replication_reference=get_field_first(raw_model, 'field_model_publication_text', 'value', ''),
-                      creator_id=user_id_map[raw_model['uid']]), author_ids)
+        return (Code(title=raw_model['title'],
+                     content=content,
+                     date_created=self.to_datetime(raw_model['created']),
+                     date_modified=self.to_datetime(raw_model['changed']),
+                     is_replication=self.convert_bool_str(
+                         get_field_first(raw_model, 'field_model_replicated', 'value', '0')),
+                     reference=get_field_first(raw_model, 'field_model_reference', 'value', ''),
+                     replication_reference=get_field_first(raw_model, 'field_model_publication_text', 'value', ''),
+                     creator_id=user_id_map[raw_model['uid']]), author_ids)
 
     def extract_all(self, user_id_map, tag_id_map, author_id_map):
         raw_models = [raw_model for raw_model in self.data if raw_model['body']['und'][0]['value']]
@@ -197,7 +199,7 @@ class ModelExtractor(Extractor):
         for (detached_model, author_ids) in detached_model_author_ids:
             detached_model.save()
             for author_id in author_ids:
-                detached_model.authors.add(Author.objects.get(id=author_id))
+                detached_model.authors.add(Contributor.objects.get(id=author_id))
 
         models = [el[0] for el in detached_model_author_ids]
         model_id_map = dict(zip(nids, [m.id for m in models]))
@@ -206,10 +208,10 @@ class ModelExtractor(Extractor):
         for raw_model in raw_models:
             if raw_model['taxonomy_vocabulary_6']:
                 for keyword in raw_model['taxonomy_vocabulary_6']['und']:
-                    model_keyword = ModelKeywords(model_id=model_id_map[raw_model['nid']],
-                                                  keyword_id=tag_id_map[keyword['tid']])
+                    model_keyword = CodeKeyword(model_id=model_id_map[raw_model['nid']],
+                                                keyword_id=tag_id_map[keyword['tid']])
                     model_keywords.append(model_keyword)
-        ModelKeywords.objects.bulk_create(model_keywords)
+        CodeKeyword.objects.bulk_create(model_keywords)
 
         return model_id_map
 
@@ -244,7 +246,7 @@ class ModelVersionExtractor(Extractor):
         platform_id = int(get_field_first(raw_model_version, 'field_modelversion_platform', 'value', 0))
 
         if model_nid and model_nid in model_id_map:
-            model_version = ModelVersion(
+            model_version = CodeRelease(
                 content=content,
                 date_created=self.to_datetime(raw_model_version['created']),
                 date_modified=self.to_datetime(raw_model_version['changed']),
@@ -271,11 +273,11 @@ class ModelVersionExtractor(Extractor):
 class IDMapper:
     def __init__(self, author_id_map, user_id_map, tag_id_map, model_id_map, model_version_id_map):
         self._maps = {
-            Author: author_id_map,
+            Contributor: author_id_map,
             User: user_id_map,
-            ModelKeywords: tag_id_map,
-            Model: model_id_map,
-            ModelVersion: model_version_id_map
+            CodeKeyword: tag_id_map,
+            Code: model_id_map,
+            CodeRelease: model_version_id_map
         }
 
     def __getitem__(self, item):
