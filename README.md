@@ -1,11 +1,5 @@
-# CoMSES.net Site
+# CoMSES.net wagtail site
 
-Instructions:
+Build Instructions:
 -------------
-
-Be sure to copy `local.example.py` to `local.py` and create a secret key.
-
-Dependencies:
--------------
-
-`apt-get install libgit2-dev`
+Run `bash build.sh` to generate the Django secret key, database passwords, and build the image.
