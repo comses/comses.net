@@ -1,4 +1,5 @@
 from django.contrib.auth.models import User
+from django.contrib.postgres.fields import ArrayField, JSONField
 from django.db import models
 from django.utils.translation import ugettext_lazy as _
 from modelcluster.fields import ParentalKey
@@ -15,6 +16,10 @@ class CodeKeyword(TaggedItemBase):
 
 class ProgrammingLanguage(TaggedItemBase):
     content_object = ParentalKey('library.Code', related_name='programming_language')
+
+
+class ResearchKeyword(TaggedItemBase):
+    content_object = ParentalKey('library.Person', related_name='keywords')
 
 
 class License(models.Model):
@@ -43,6 +48,7 @@ class Person(models.Model):
 
     full_member = models.BooleanField(default=False, help_text=_('CoMSES Net Full Member'))
 
+
     # FIXME: add location field eventually, with postgis
     # location = LocationField(based_fields=['city'], zoom=7)
 
@@ -50,19 +56,25 @@ class Person(models.Model):
     middle_name = models.CharField(max_length=100, blank=True)
     family_name = models.CharField(max_length=100, blank=True)
     email = models.EmailField(blank=True)
-    degrees = models.CharField(max_length=500)
+    degrees = ArrayField(models.CharField(max_length=255))
+    institutions = JSONField(default=dict)
+    research_interests = models.TextField()
+    research_keywords = ClusterTaggableManager(through=ResearchKeyword, blank=True)
     summary = models.TextField()
+
     picture = models.ImageField(null=True, help_text=_('Picture of user'))
     academia_edu_url = models.URLField(null=True)
     research_gate_url = models.URLField(null=True)
     linkedin_url = models.URLField(null=True)
     personal_homepage_url = models.URLField(null=True)
     institutional_homepage_url = models.URLField(null=True)
+
     blog_url = models.URLField(null=True)
     cv_url = models.URLField(null=True)
     institution = models.ForeignKey(Institution)
     orcid = models.CharField(help_text=_("16 digit number with - at every 4, e.g., 0000-0002-1825-0097"),
                              max_length=19)
+
 
 
 class Code(index.Indexed, ClusterableModel):

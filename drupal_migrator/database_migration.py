@@ -11,7 +11,7 @@ from home.models import Event, Job
 from taggit.models import Tag
 from typing import Dict, List
 
-from .json_field_util import get_field_first, get_field
+from .json_field_util import get_first_field, get_field, get_field_attributes
 
 def load_data(model, s: str) -> Dict[int, Dict]:
     f = io.StringIO(s.strip())
@@ -78,9 +78,9 @@ class EventExtractor(Extractor):
             title=raw_event['title'],
             date_created=self.to_datetime(raw_event['created']),
             date_modified=self.to_datetime(raw_event['changed']),
-            content=get_field_first(raw_event, 'body', 'value'),
-            early_registration_deadline=get_field_first(raw_event, 'field_earlyregistration', 'value', None),
-            submission_deadline=get_field_first(raw_event, 'field_submissiondeadline', 'value', None),
+            description=get_first_field(raw_event, 'body', 'value'),
+            early_registration_deadline=get_first_field(raw_event, 'field_earlyregistration', 'value', None),
+            submission_deadline=get_first_field(raw_event, 'field_submissiondeadline', 'value', None),
             creator_id=user_id_map[raw_event['uid']])
 
     def extract_all(self, user_id_map: Dict[str, int]):
@@ -94,7 +94,7 @@ class JobExtractor(Extractor):
             title=raw_job['title'],
             date_created=self.to_datetime(raw_job['created']),
             date_modified=self.to_datetime(raw_job['changed']),
-            content=raw_job['body']['und'][0]['value'],
+            description=raw_job['body']['und'][0]['value'],
             creator_id=user_id_map[raw_job['uid']])
 
     def extract_all(self, user_id_map: Dict[str, int]):
@@ -122,19 +122,26 @@ class UserExtractor(Extractor):
 
 
 class ProfileExtractor(Extractor):
-    def _extract(self, raw_profile, user_id_map):
-        return Person(
+    def _extract(self, raw_profile, user_id_map, taxonomy_id_map):
+        person = Person(
             user_id=user_id_map[raw_profile['uid']],
-            summary=get_field_first(raw_profile, 'field_profile2_research', 'value'),
-            degrees='',  # TODO: change this to a text array field after moving to Postgres
-
-            academia_edu=get_field_first(raw_profile, 'field_profile2_academiaedu_link', 'url'),
-            blog=get_field_first(raw_profile, 'field_profile2_blog_link', 'url'),
-            curriculum_vitae=get_field_first(raw_profile, 'field_profile2_cv_link', 'url'),
-            institution=get_field_first(raw_profile, 'field_profile2_institution_link', 'url'),
-            linkedin=get_field_first(raw_profile, 'field_profile2_linkedin_link', 'url'),
-            personal=get_field_first(raw_profile, 'field_profile2_personal_link', 'url'),
-            research_gate=get_field_first(raw_profile, 'field_profile2_researchgate_link', 'url'))
+            summary=get_first_field(raw_profile, 'field_profile2_research'),
+            given_name=get_first_field(raw_profile, 'field_profile2_firstname'),
+            middle_name=get_first_field(raw_profile, 'field_profile2_middlename'),
+            family_name=get_first_field(raw_profile, 'field_profile2_lastname'),
+            research_interests=get_first_field(raw_profile, 'field_profile2_research'),
+            institutions=get_field(raw_profile, 'institutions'),
+            degrees=get_field_attributes(raw_profile, 'field_profile2_degrees'),
+            academia_edu_url=get_first_field(raw_profile, 'field_profile2_academiaedu_link', 'url'),
+            blog_url=get_first_field(raw_profile, 'field_profile2_blog_link', 'url'),
+            cv_url=get_first_field(raw_profile, 'field_profile2_cv_link', 'url'),
+            institutional_homepage_url=get_first_field(raw_profile, 'field_profile2_institution_link', 'url'),
+            linkedin_url=get_first_field(raw_profile, 'field_profile2_linkedin_link', 'url'),
+            personal_homepage_url=get_first_field(raw_profile, 'field_profile2_personal_link', 'url'),
+            # FIXME: add comses full member boolean or Group
+            research_gate_url=get_first_field(raw_profile, 'field_profile2_researchgate_link', 'url'))
+        person.research_keywords.add(*[taxonomy_id_map[tid] for tid in get_field_attributes(raw_profile, 'taxonomy_vocabulary_6', 'tid')])
+        return person
 
     def extract_all(self, user_id_map):
         detached_profiles = [self._extract(raw_profile, user_id_map) for raw_profile in self.data]
@@ -156,9 +163,9 @@ class TaxonomyExtractor(Extractor):
 
 class AuthorExtractor(Extractor):
     def _extract(self, raw_author):
-        return Contributor(first_name=get_field_first(raw_author, 'field_model_authorfirst', 'value', ''),
-                           middle_name=get_field_first(raw_author, 'field_model_authormiddle', 'value', ''),
-                           last_name=get_field_first(raw_author, 'field_model_authorlast', 'value', ''))
+        return Contributor(first_name=get_first_field(raw_author, 'field_model_authorfirst', 'value', ''),
+                           middle_name=get_first_field(raw_author, 'field_model_authormiddle', 'value', ''),
+                           last_name=get_first_field(raw_author, 'field_model_authorlast', 'value', ''))
 
     def extract_all(self):
         detached_authors = [self._extract(raw_author) for raw_author in self.data]
@@ -186,9 +193,9 @@ class ModelExtractor(Extractor):
                      date_created=self.to_datetime(raw_model['created']),
                      date_modified=self.to_datetime(raw_model['changed']),
                      is_replication=self.convert_bool_str(
-                         get_field_first(raw_model, 'field_model_replicated', 'value', '0')),
-                     reference=get_field_first(raw_model, 'field_model_reference', 'value', ''),
-                     replication_reference=get_field_first(raw_model, 'field_model_publication_text', 'value', ''),
+                         get_first_field(raw_model, 'field_model_replicated', 'value', '0')),
+                     reference=get_first_field(raw_model, 'field_model_reference', 'value', ''),
+                     replication_reference=get_first_field(raw_model, 'field_model_publication_text', 'value', ''),
                      creator_id=user_id_map[raw_model['uid']]), author_ids)
 
     def extract_all(self, user_id_map, tag_id_map, author_id_map):
@@ -236,14 +243,14 @@ class ModelVersionExtractor(Extractor):
     ]
 
     def _load(self, raw_model_version, model_id_map: Dict[str, int]):
-        model_nid = get_field_first(raw_model_version, 'field_modelversion_model', 'nid')
-        content = get_field_first(raw_model_version, 'body', 'value')
+        model_nid = get_first_field(raw_model_version, 'field_modelversion_model', 'nid')
+        content = get_first_field(raw_model_version, 'body', 'value')
 
         language = self.LANGUAGE_LEVELS[
-            int(get_field_first(raw_model_version, 'field_modelversion_language', 'value', 0))]
-        license_id = get_field_first(raw_model_version, 'field_modelversion_license', 'value', None)
-        os = self.OS_LEVELS[int(get_field_first(raw_model_version, 'field_modelversion_os', 'value', 0))]
-        platform_id = int(get_field_first(raw_model_version, 'field_modelversion_platform', 'value', 0))
+            int(get_first_field(raw_model_version, 'field_modelversion_language', 'value', 0))]
+        license_id = get_first_field(raw_model_version, 'field_modelversion_license', 'value', None)
+        os = self.OS_LEVELS[int(get_first_field(raw_model_version, 'field_modelversion_os', 'value', 0))]
+        platform_id = int(get_first_field(raw_model_version, 'field_modelversion_platform', 'value', 0))
 
         if model_nid and model_nid in model_id_map:
             model_version = CodeRelease(
@@ -291,8 +298,8 @@ def load(directory: str):
     job_extractor = JobExtractor.from_file(os.path.join(directory, "Forum.json"))
     model_extractor = ModelExtractor.from_file(os.path.join(directory, "Model.json"))
     model_version_extractor = ModelVersionExtractor.from_file(os.path.join(directory, "ModelVersion.json"))
-    profile_extractor = ProfileExtractor.from_file(os.path.join(directory, "Profile2.json"))
     taxonomy_extractor = TaxonomyExtractor.from_file(os.path.join(directory, "Taxonomy.json"))
+    profile_extractor = ProfileExtractor.from_file(os.path.join(directory, "Profile2.json"))
     user_extractor = UserExtractor.from_file(os.path.join(directory, "User.json"))
 
     load_data(License, LICENSE_LEVELS)
@@ -306,6 +313,6 @@ def load(directory: str):
     model_id_map = model_extractor.extract_all(user_id_map=user_id_map, tag_id_map=tag_id_map,
                                                author_id_map=author_id_map)
     model_version_id_map = model_version_extractor.extract_all(model_id_map)
-    profile_extractor.extract_all(user_id_map)
+    profile_extractor.extract_all(user_id_map, tag_id_map)
 
     return IDMapper(author_id_map, user_id_map, tag_id_map, model_id_map, model_version_id_map)

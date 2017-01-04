@@ -3,7 +3,7 @@
 from .database_migration import IDMapper
 from ..home.models import Model
 from django.contrib.auth.models import User
-from .json_field_util import get_field_first
+from .json_field_util import get_first_field
 
 import datetime
 import filecmp
@@ -32,11 +32,11 @@ class ModelVersionFiles:
 
     @classmethod
     def from_raw_model_version(cls, origin_folder, destination_folder, raw_model_version: Dict):
-        code = cls.transform_uri(get_field_first(raw_model_version, 'field_modelversion_code', 'uri'))
-        dataset = cls.transform_uri(get_field_first(raw_model_version, 'field_modelversion_dataset', 'uri'))
-        addfiles = cls.transform_uri(get_field_first(raw_model_version, 'field_modelversion_addfiles', 'uri'))
-        sensitivity = cls.transform_uri(get_field_first(raw_model_version, 'field_modelversion_sensitivity', 'uri'))
-        documentation = cls.transform_uri(get_field_first(raw_model_version, 'field_modelversion_documentation', 'uri'))
+        code = cls.transform_uri(get_first_field(raw_model_version, 'field_modelversion_code', 'uri'))
+        dataset = cls.transform_uri(get_first_field(raw_model_version, 'field_modelversion_dataset', 'uri'))
+        addfiles = cls.transform_uri(get_first_field(raw_model_version, 'field_modelversion_addfiles', 'uri'))
+        sensitivity = cls.transform_uri(get_first_field(raw_model_version, 'field_modelversion_sensitivity', 'uri'))
+        documentation = cls.transform_uri(get_first_field(raw_model_version, 'field_modelversion_documentation', 'uri'))
 
         return cls(destination_folder, origin_folder, code, dataset, addfiles, sensitivity, documentation)
 
@@ -111,13 +111,13 @@ class ModelVersionMetadata:
 
     @classmethod
     def from_raw_model_version(cls, raw_model_version):
-        language = get_field_first(raw_model_version, 'field_modelversion_language', 'value')
-        language_version = get_field_first(raw_model_version, 'field_modelversion_language_ver', 'value')
-        license = get_field_first(raw_model_version, 'field_modelversion_license', 'value')
-        os = get_field_first(raw_model_version, 'field_modelversion_os', 'value')
-        os_version = get_field_first(raw_model_version, 'field_modelversion_os_version', 'value')
-        platform = get_field_first(raw_model_version, 'field_modelversion_platform', 'value')
-        platform_version = get_field_first(raw_model_version, 'field_modelversion_platform_ver', 'value')
+        language = get_first_field(raw_model_version, 'field_modelversion_language', 'value')
+        language_version = get_first_field(raw_model_version, 'field_modelversion_language_ver', 'value')
+        license = get_first_field(raw_model_version, 'field_modelversion_license', 'value')
+        os = get_first_field(raw_model_version, 'field_modelversion_os', 'value')
+        os_version = get_first_field(raw_model_version, 'field_modelversion_os_version', 'value')
+        platform = get_first_field(raw_model_version, 'field_modelversion_platform', 'value')
+        platform_version = get_first_field(raw_model_version, 'field_modelversion_platform_ver', 'value')
 
         return cls(language, language_version, license, os, os_version, platform, platform_version)
 
@@ -153,8 +153,8 @@ def create_repos(nid_to_id_mapper: IDMapper, json_dump_path: str, root_path: str
     id_models = Model.objects.in_bulk()
 
     for raw_model_version in raw_model_versions:
-        drupal_model_id = get_field_first(raw_model_version, 'field_modelversion_model', 'nid')
-        version_id = get_field_first(raw_model_version, 'field_modelversion_number', 'value')
+        drupal_model_id = get_first_field(raw_model_version, 'field_modelversion_model', 'nid')
+        version_id = get_first_field(raw_model_version, 'field_modelversion_number', 'value')
 
         if drupal_model_id and version_id:
             id = nid_to_id_mapper[Model][drupal_model_id]

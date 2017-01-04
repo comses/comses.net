@@ -67,8 +67,8 @@ class BlogPage(MenuPage):
 
 class Event(index.Indexed, models.Model):
     title = models.CharField(max_length=500)
-    date_created = models.DateTimeField()
-    date_modified = models.DateTimeField()
+    date_created = models.DateTimeField(auto_now_add=True)
+    date_modified = models.DateTimeField(auto_now=True)
     description = models.TextField()
     # datetimerange_event = DateTimeRangeField()
     early_registration_deadline = models.DateTimeField(null=True)
@@ -86,8 +86,8 @@ class Event(index.Indexed, models.Model):
 
 class Job(index.Indexed, models.Model):
     title = models.CharField(max_length=500)
-    date_created = models.DateTimeField()
-    date_modified = models.DateTimeField()
+    date_created = models.DateTimeField(auto_now_add=True)
+    date_modified = models.DateTimeField(auto_now=True)
     description = models.TextField()
 
     creator = models.ForeignKey(User)
