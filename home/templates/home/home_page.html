@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% load static %}
+{% load render_bundle from webpack_loader %}
 
 {% block body_class %}template-homepage{% endblock %}
 
@@ -29,6 +30,8 @@
         </div>
     </section>
     <section class="row">
+        <div id="react-app"></div>
+        {% render_bundle 'main' %}
         <div class="col-md-4">
             <h3>Search Model Library</h3>
             <p>Search our comprehensive database of agent based models relating to the fields you're interested in</p>
@@ -78,5 +81,5 @@
 {% endblock %}
 
 {% block extra_js %}
-    <script src="{% static 'js/bundle.js' %}"></script>
+
 {% endblock %}

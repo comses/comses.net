@@ -69,6 +69,12 @@ class MemberProfile(index.Indexed, ClusterableModel):
     orcid = models.CharField(help_text=_("16 digits, - between every 4th digit, e.g., 0000-0002-1825-0097"),
                              max_length=19)
 
+    search_fields = [
+        index.SearchField('title', partial_match=True, boost=10),
+        index.SearchField('content', partial_match=True),
+        index.SearchField('creator__username'),
+    ]
+
 
 class CarouselItem(models.Model):
     image = models.ForeignKey('wagtailimages.Image',
@@ -80,7 +86,6 @@ class CarouselItem(models.Model):
 
     class Meta:
         abstract = True
-
 
 class FeaturedContentItem(Orderable, CarouselItem):
     page = ParentalKey('HomePage', related_name='featured_content_queue')

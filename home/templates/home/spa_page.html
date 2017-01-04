@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% load static %}
+{%  load render_bundle from webpack_loader %}
+{% block body_class %}template-homepage{% endblock %}
+
+{% block header %}
+    <h1>A growing collection of resources for model-based science</h1>
+
+    <br>
+    <p class="text-uppercase">A model library, tutorials and FAQ's on agent-based modeling</p>
+
+    <br>
+    <div>
+        <button type="button" class="btn btn-primary btn-lg">View model library</button>
+        <button type="button" class="btn btn-primary btn-lg">Our community</button>
+    </div>
+{% endblock %}
+
+
+
+{% block content %}
+    <div id="app"></div>
+    {% render_bundle 'app' %}
+{#    <script src="{% static 'dist/main.js' %}"></script>#}
+{% endblock %}
+
+{% block extra_js %}
+{% endblock %}
