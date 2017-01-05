@@ -4,14 +4,14 @@ import json
 import os
 
 from datetime import datetime
-from django.contrib.auth.models import User
+from django.contrib.auth.models import User, Group
 from django.utils import translation
 from library.models import Contributor, Code, CodeRelease, CodeKeyword, Person, License, Platform
 from home.models import Event, Job
 from taggit.models import Tag
 from typing import Dict, List
 
-from .json_field_util import get_first_field, get_field, get_field_attributes
+from .utils import get_first_field, get_field, get_field_attributes
 
 def load_data(model, s: str) -> Dict[int, Dict]:
     f = io.StringIO(s.strip())
@@ -104,58 +104,77 @@ class JobExtractor(Extractor):
 
 
 class UserExtractor(Extractor):
-    def _uid(self, raw_user):
-        return raw_user['uid']
 
-    def _extract(self, raw_user):
-        # print(raw_user)
-        return User(
+    ADMIN_GROUP = Group.objects.get(name='Admins')
+    EDITOR_GROUP = Group.objects.get(name='Editors')
+    REVIEWER_GROUP = Group.objects.get(name='Reviewers')
+    MEMBER_GROUP = Group.objects.get(name='Full Members')
+
+    @staticmethod
+    def _extract(raw_user):
+        """ assumes existence of editor, reviewer, full_member, admin groups """
+        user = User.objects.create(
             username=raw_user['name'],
-            email=raw_user['mail'])
+            email=raw_user['mail'],
+            date_joined=Extractor.to_datetime(raw_user['created']),
+            last_login=Extractor.to_datetime(raw_user['login']),
+        )
+        user.drupal_uid=raw_user['uid']
+        roles = raw_user['roles'].values()
+        Person.objects.create(email=user.email, timezone=raw_user['timezone'], user=user)
+        if 'administrator' in roles:
+            user.is_superuser = True
+            user.groups.add(UserExtractor.ADMIN_GROUP)
+            user.groups.add(UserExtractor.MEMBER_GROUP)
+        if 'comses member' in roles:
+            user.groups.add(UserExtractor.MEMBER_GROUP)
+        if 'comses editor' in roles:
+            user.groups.add(UserExtractor.EDITOR_GROUP)
+        if 'comses reviewer' in roles:
+            user.groups.add(UserExtractor.REVIEWER_GROUP)
+        return user
 
     def extract_all(self):
-        users = [self._extract(raw_user) for raw_user in self.data]
-        uids = [self._uid(raw_user) for raw_user in self.data]
-        User.objects.bulk_create(users)
-        user_id_map = dict(zip(uids, [u[0] for u in User.objects.order_by('id').values_list('id')]))
+        """
+        Returns a mapping of drupal user ids to Django User pks.
+        :return: dict
+        """
+        users = [UserExtractor._extract(raw_user) for raw_user in self.data]
+        user_id_map = dict([(user.drupal_uid, user.pk) for user in users])
         return user_id_map
 
 
 class ProfileExtractor(Extractor):
-    def _extract(self, raw_profile, user_id_map, taxonomy_id_map):
-        person = Person(
-            user_id=user_id_map[raw_profile['uid']],
-            summary=get_first_field(raw_profile, 'field_profile2_research'),
-            given_name=get_first_field(raw_profile, 'field_profile2_firstname'),
-            middle_name=get_first_field(raw_profile, 'field_profile2_middlename'),
-            family_name=get_first_field(raw_profile, 'field_profile2_lastname'),
-            research_interests=get_first_field(raw_profile, 'field_profile2_research'),
-            institutions=get_field(raw_profile, 'institutions'),
-            degrees=get_field_attributes(raw_profile, 'field_profile2_degrees'),
-            academia_edu_url=get_first_field(raw_profile, 'field_profile2_academiaedu_link', 'url'),
-            blog_url=get_first_field(raw_profile, 'field_profile2_blog_link', 'url'),
-            cv_url=get_first_field(raw_profile, 'field_profile2_cv_link', 'url'),
-            institutional_homepage_url=get_first_field(raw_profile, 'field_profile2_institution_link', 'url'),
-            linkedin_url=get_first_field(raw_profile, 'field_profile2_linkedin_link', 'url'),
-            personal_homepage_url=get_first_field(raw_profile, 'field_profile2_personal_link', 'url'),
-            # FIXME: add comses full member boolean or Group
-            research_gate_url=get_first_field(raw_profile, 'field_profile2_researchgate_link', 'url'))
-        person.research_keywords.add(*[taxonomy_id_map[tid] for tid in get_field_attributes(raw_profile, 'taxonomy_vocabulary_6', 'tid')])
-        return person
 
-    def extract_all(self, user_id_map):
-        detached_profiles = [self._extract(raw_profile, user_id_map) for raw_profile in self.data]
-        Person.objects.bulk_create(detached_profiles)
+    def extract_all(self, user_id_map, taxonomy_id_map):
+        for raw_profile in self.data:
+            person = Person.objects.get(user_id=user_id_map[raw_profile['uid']])
+            Person.objects.filter(pk=person.pk).update(
+                given_name=get_first_field(raw_profile, 'field_profile2_firstname'),
+                middle_name=get_first_field(raw_profile, 'field_profile2_middlename'),
+                family_name=get_first_field(raw_profile, 'field_profile2_lastname'),
+                research_interests=get_first_field(raw_profile, 'field_profile2_research'),
+                institutions=get_field(raw_profile, 'institutions'),
+                degrees=get_field_attributes(raw_profile, 'field_profile2_degrees'),
+                academia_edu_url=get_first_field(raw_profile, 'field_profile2_academiaedu_link', 'url'),
+                blog_url=get_first_field(raw_profile, 'field_profile2_blog_link', 'url'),
+                cv_url=get_first_field(raw_profile, 'field_profile2_cv_link', 'url'),
+                institutional_homepage_url=get_first_field(raw_profile, 'field_profile2_institution_link', 'url'),
+                linkedin_url=get_first_field(raw_profile, 'field_profile2_linkedin_link', 'url'),
+                personal_homepage_url=get_first_field(raw_profile, 'field_profile2_personal_link', 'url'),
+                research_gate_url=get_first_field(raw_profile, 'field_profile2_researchgate_link', 'url')
+            )
+            person.research_keywords.add(
+                *[taxonomy_id_map[tid] for tid in get_field_attributes(raw_profile, 'taxonomy_vocabulary_6', 'tid')])
 
 
 class TaxonomyExtractor(Extractor):
     def extract_all(self):
         raw_tags = [raw_tag for raw_tag in self.data if raw_tag['vocabulary_machine_name'] == 'vocabulary_6']
         tag_id_map = {}
-
         translation.activate('en')
         for raw_tag in raw_tags:
-            keyword = Tag.objects.create(name=raw_tag['name'])
+            keyword, created = Tag.objects.get_or_create(name=raw_tag['name'])
             tag_id_map[raw_tag['tid']] = keyword.id
 
         return tag_id_map

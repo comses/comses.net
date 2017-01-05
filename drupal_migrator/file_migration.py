@@ -3,7 +3,7 @@
 from .database_migration import IDMapper
 from ..home.models import Model
 from django.contrib.auth.models import User
-from .json_field_util import get_first_field
+from .utils import get_first_field
 
 import datetime
 import filecmp

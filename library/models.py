@@ -1,12 +1,14 @@
 from django.contrib.auth.models import User
 from django.contrib.postgres.fields import ArrayField, JSONField
 from django.db import models
+from django.utils import timezone
 from django.utils.translation import ugettext_lazy as _
 from modelcluster.fields import ParentalKey
 from modelcluster.models import ClusterableModel
 from modelcluster.contrib.taggit import ClusterTaggableManager
 from model_utils import Choices
 from taggit.models import TaggedItemBase
+from timezone_field import TimeZoneField
 
 from wagtail.wagtailsearch import index
 
@@ -39,8 +41,11 @@ class Institution(models.Model):
     url = models.URLField(null=True)
     acronym = models.CharField(max_length=50)
 
+    def __str__(self):
+        return self.name
 
-class Person(models.Model):
+
+class Person(index.Indexed, ClusterableModel):
     """
     Contains additional comses.net information, possibly linked to a CoMSES Member / site account
     """
@@ -52,17 +57,19 @@ class Person(models.Model):
     # FIXME: add location field eventually, with postgis
     # location = LocationField(based_fields=['city'], zoom=7)
 
+    timezone = TimeZoneField(blank=True)
+
     given_name = models.CharField(max_length=100, blank=True)
     middle_name = models.CharField(max_length=100, blank=True)
     family_name = models.CharField(max_length=100, blank=True)
     email = models.EmailField(blank=True)
-    degrees = ArrayField(models.CharField(max_length=255))
+    degrees = ArrayField(models.CharField(max_length=255), null=True)
     institutions = JSONField(default=dict)
-    research_interests = models.TextField()
+    research_interests = models.TextField(blank=True)
     research_keywords = ClusterTaggableManager(through=ResearchKeyword, blank=True)
-    summary = models.TextField()
+    summary = models.TextField(blank=True)
 
-    picture = models.ImageField(null=True, help_text=_('Picture of user'))
+    picture = models.ImageField(null=True, help_text=_('Profile picture'))
     academia_edu_url = models.URLField(null=True)
     research_gate_url = models.URLField(null=True)
     linkedin_url = models.URLField(null=True)
@@ -71,8 +78,8 @@ class Person(models.Model):
 
     blog_url = models.URLField(null=True)
     cv_url = models.URLField(null=True)
-    institution = models.ForeignKey(Institution)
-    orcid = models.CharField(help_text=_("16 digit number with - at every 4, e.g., 0000-0002-1825-0097"),
+    institution = models.ForeignKey(Institution, null=True)
+    orcid = models.CharField(help_text=_("16 digits with a dash '-' between every 4th digit, e.g., 0000-0002-1825-0097"),
                              max_length=19)
 
 
@@ -80,7 +87,7 @@ class Person(models.Model):
 class Code(index.Indexed, ClusterableModel):
     title = models.CharField(max_length=370)
     description = models.TextField()
-    date_created = models.DateTimeField(auto_now_add=True)
+    date_created = models.DateTimeField(default=timezone.now)
     last_modified = models.DateTimeField(auto_now=True)
     is_replication = models.BooleanField(default=False)
 
@@ -128,7 +135,7 @@ class CodeRelease(models.Model):
     description = models.TextField()
     documentation = models.TextField()
     embargo_end_date = models.DateField(null=True, blank=True)
-    date_created = models.DateTimeField(auto_now_add=True)
+    date_created = models.DateTimeField(default=timezone.now)
     last_modified = models.DateTimeField(auto_now=True)
     os = models.CharField(max_length=100)
     license = models.ForeignKey(License, null=True)

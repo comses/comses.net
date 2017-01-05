@@ -50,6 +50,7 @@ DJANGO_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'django_extensions',
+    'timezone_field',
     'rest_framework',
     'rest_framework_swagger',
 ]
