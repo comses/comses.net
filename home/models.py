@@ -1,8 +1,15 @@
-from __future__ import absolute_import, unicode_literals
-
-from django.db import models
 from django.contrib.auth.models import User
+from django.contrib.postgres.fields import ArrayField, JSONField
+from django.db import models
+from django.utils import timezone
+from django.utils.translation import ugettext_lazy as _
+
+from modelcluster.contrib.taggit import ClusterTaggableManager
 from modelcluster.fields import ParentalKey
+from modelcluster.models import ClusterableModel
+from taggit.models import TaggedItemBase
+
+from timezone_field import TimeZoneField
 
 from wagtail.wagtailcore.fields import StreamField
 from wagtail.wagtailcore import blocks
@@ -12,13 +19,56 @@ from wagtail.wagtailadmin.edit_handlers import FieldPanel, StreamFieldPanel, Inl
 from wagtail.wagtailimages.blocks import ImageChooserBlock
 from wagtail.wagtailsearch import index
 
-from django.utils.translation import ugettext_lazy as _
 
-from datetime import datetime
 
 """
 Wagtail-related models
 """
+
+class Institution(models.Model):
+    name = models.CharField(max_length=200)
+    url = models.URLField(null=True)
+    acronym = models.CharField(max_length=50)
+
+    def __str__(self):
+        return self.name
+
+
+class MemberProfileTag(TaggedItemBase):
+    content_object = ParentalKey('home.MemberProfile', related_name='tagged_members')
+
+
+class MemberProfile(index.Indexed, ClusterableModel):
+    """
+    Contains additional comses.net information, possibly linked to a CoMSES Member / site account
+    """
+    user = models.OneToOneField(User, null=True, on_delete=models.SET_NULL, related_name='member_profile')
+
+    full_member = models.BooleanField(default=False, help_text=_('CoMSES Net Full Member'))
+
+    # FIXME: add location field eventually, with postgis
+    # location = LocationField(based_fields=['city'], zoom=7)
+
+    timezone = TimeZoneField(blank=True)
+
+    degrees = ArrayField(models.CharField(max_length=255), null=True)
+    institutions = JSONField(default=dict)
+    research_interests = models.TextField(blank=True)
+    keywords = ClusterTaggableManager(through=MemberProfileTag, blank=True)
+    summary = models.TextField(blank=True)
+
+    picture = models.ImageField(null=True, help_text=_('Profile picture'))
+    academia_edu_url = models.URLField(null=True)
+    research_gate_url = models.URLField(null=True)
+    linkedin_url = models.URLField(null=True)
+    personal_homepage_url = models.URLField(null=True)
+    institutional_homepage_url = models.URLField(null=True)
+
+    blog_url = models.URLField(null=True)
+    cv_url = models.URLField(null=True)
+    institution = models.ForeignKey(Institution, null=True)
+    orcid = models.CharField(help_text=_("16 digits, - between every 4th digit, e.g., 0000-0002-1825-0097"),
+                             max_length=19)
 
 
 class CarouselItem(models.Model):
@@ -65,37 +115,46 @@ class BlogPage(MenuPage):
     ]
 
 
-class Event(index.Indexed, models.Model):
+class EventTag(TaggedItemBase):
+    content_object = ParentalKey('home.Event', related_name='tagged_events')
+
+
+class Event(index.Indexed, ClusterableModel):
     title = models.CharField(max_length=500)
-    date_created = models.DateTimeField(auto_now_add=True)
-    date_modified = models.DateTimeField(auto_now=True)
+    date_created = models.DateTimeField(default=timezone.now)
+    last_modified = models.DateTimeField(auto_now=True)
     description = models.TextField()
     # datetimerange_event = DateTimeRangeField()
     early_registration_deadline = models.DateTimeField(null=True)
     submission_deadline = models.DateTimeField(null=True)
     location = models.CharField(max_length=200)
+    tags = ClusterTaggableManager(through=EventTag, blank=True)
 
-    creator = models.ForeignKey(User)
+    submitter = models.ForeignKey(User)
 
     search_fields = [
         index.SearchField('title', partial_match=True, boost=10),
         index.SearchField('description', partial_match=True),
-        index.SearchField('creator'),
+        index.SearchField('submitter'),
     ]
 
 
-class Job(index.Indexed, models.Model):
-    title = models.CharField(max_length=500)
-    date_created = models.DateTimeField(auto_now_add=True)
-    date_modified = models.DateTimeField(auto_now=True)
-    description = models.TextField()
+class JobTag(TaggedItemBase):
+    content_object = ParentalKey('home.Job', related_name='tagged_jobs')
 
-    creator = models.ForeignKey(User)
+class Job(index.Indexed, ClusterableModel):
+    title = models.CharField(max_length=500)
+    date_created = models.DateTimeField(default=timezone.now)
+    last_modified = models.DateTimeField(auto_now=True)
+    description = models.TextField()
+    tags = ClusterTaggableManager(through=JobTag, blank=True)
+
+    submitter = models.ForeignKey(User)
 
     search_fields = [
         index.SearchField('title', partial_match=True, boost=10),
         index.SearchField('description', partial_match=True),
-        index.SearchField('creator'),
+        index.SearchField('submitter'),
     ]
 
     def __str__(self):

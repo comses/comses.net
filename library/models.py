@@ -1,5 +1,4 @@
 from django.contrib.auth.models import User
-from django.contrib.postgres.fields import ArrayField, JSONField
 from django.db import models
 from django.utils import timezone
 from django.utils.translation import ugettext_lazy as _
@@ -8,20 +7,17 @@ from modelcluster.models import ClusterableModel
 from modelcluster.contrib.taggit import ClusterTaggableManager
 from model_utils import Choices
 from taggit.models import TaggedItemBase
-from timezone_field import TimeZoneField
+
 
 from wagtail.wagtailsearch import index
 
+
 class CodeKeyword(TaggedItemBase):
-    content_object = ParentalKey('library.Code', related_name='keyword_set')
+    content_object = ParentalKey('library.Code', related_name='tagged_code_keywords')
 
 
 class ProgrammingLanguage(TaggedItemBase):
-    content_object = ParentalKey('library.Code', related_name='programming_language')
-
-
-class ResearchKeyword(TaggedItemBase):
-    content_object = ParentalKey('library.Person', related_name='keywords')
+    content_object = ParentalKey('library.Code', related_name='tagged_pl_code')
 
 
 class License(models.Model):
@@ -36,52 +32,12 @@ class Platform(models.Model):
     url = models.URLField(blank=True)
 
 
-class Institution(models.Model):
-    name = models.CharField(max_length=200)
-    url = models.URLField(null=True)
-    acronym = models.CharField(max_length=50)
-
-    def __str__(self):
-        return self.name
-
-
-class Person(index.Indexed, ClusterableModel):
-    """
-    Contains additional comses.net information, possibly linked to a CoMSES Member / site account
-    """
-    user = models.OneToOneField(User, null=True, on_delete=models.SET_NULL)
-
-    full_member = models.BooleanField(default=False, help_text=_('CoMSES Net Full Member'))
-
-
-    # FIXME: add location field eventually, with postgis
-    # location = LocationField(based_fields=['city'], zoom=7)
-
-    timezone = TimeZoneField(blank=True)
-
+class Contributor(index.Indexed, models.Model):
     given_name = models.CharField(max_length=100, blank=True)
     middle_name = models.CharField(max_length=100, blank=True)
     family_name = models.CharField(max_length=100, blank=True)
     email = models.EmailField(blank=True)
-    degrees = ArrayField(models.CharField(max_length=255), null=True)
-    institutions = JSONField(default=dict)
-    research_interests = models.TextField(blank=True)
-    research_keywords = ClusterTaggableManager(through=ResearchKeyword, blank=True)
-    summary = models.TextField(blank=True)
-
-    picture = models.ImageField(null=True, help_text=_('Profile picture'))
-    academia_edu_url = models.URLField(null=True)
-    research_gate_url = models.URLField(null=True)
-    linkedin_url = models.URLField(null=True)
-    personal_homepage_url = models.URLField(null=True)
-    institutional_homepage_url = models.URLField(null=True)
-
-    blog_url = models.URLField(null=True)
-    cv_url = models.URLField(null=True)
-    institution = models.ForeignKey(Institution, null=True)
-    orcid = models.CharField(help_text=_("16 digits with a dash '-' between every 4th digit, e.g., 0000-0002-1825-0097"),
-                             max_length=19)
-
+    user = models.ForeignKey(User, null=True)
 
 
 class Code(index.Indexed, ClusterableModel):
@@ -100,7 +56,7 @@ class Code(index.Indexed, ClusterableModel):
 
     keywords = ClusterTaggableManager(through=CodeKeyword, blank=True)
     submitter = models.ForeignKey(User)
-    authors = models.ManyToManyField(Person, through='Contributor', through_fields=('code', 'person'))
+    contributors = models.ManyToManyField(Contributor, through='CodeContributor', through_fields=('code', 'contributor'))
 
     search_fields = [
         index.SearchField('title', partial_match=True, boost=10),
@@ -112,7 +68,7 @@ class Code(index.Indexed, ClusterableModel):
         return "{0} {1} ({2})".format(self.title, self.date_created, self.submitter)
 
 
-class Contributor(models.Model):
+class CodeContributor(models.Model):
     ROLES = Choices(
         ('Author', _('Author')),
         ('Architect', _('Architect')),
@@ -122,13 +78,14 @@ class Contributor(models.Model):
         ('Submitter', _('Submitter')),
         ('Tester', _('Tester')),
     )
+    # FIXME: should this be to CodeRelease instead?
     code = models.ForeignKey(Code, on_delete=models.CASCADE)
-    person = models.ForeignKey(Person, on_delete=models.CASCADE)
+    contributor = models.ForeignKey(Contributor, on_delete=models.CASCADE)
     role = models.CharField(max_length=100, choices=ROLES, default=ROLES.Author)
     index = models.PositiveSmallIntegerField(help_text=_('Ordering field for code contributors'))
 
 
-class CodeRelease(models.Model):
+class CodeRelease(index.Indexed, models.Model):
     live = models.BooleanField(default=True)
     has_unpublished_changes = models.BooleanField(default=False)
     first_published_at = models.DateTimeField(null=True, blank=True)
@@ -140,5 +97,6 @@ class CodeRelease(models.Model):
     os = models.CharField(max_length=100)
     license = models.ForeignKey(License, null=True)
     programming_language = ClusterTaggableManager(through=ProgrammingLanguage, blank=True)
-    platform = models.ForeignKey(Platform)
+    platform = models.ForeignKey(Platform, null=True)
     code = models.ForeignKey(Code, related_name='releases')
+    release_number = models.CharField(max_length=32, help_text=_("Semver release number or 1,2,3"))
