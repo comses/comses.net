@@ -123,11 +123,14 @@ class Event(index.Indexed, ClusterableModel):
     title = models.CharField(max_length=500)
     date_created = models.DateTimeField(default=timezone.now)
     last_modified = models.DateTimeField(auto_now=True)
+    summary = models.CharField(max_length=300, blank=True)
     description = models.TextField()
     # datetimerange_event = DateTimeRangeField()
     early_registration_deadline = models.DateTimeField(null=True)
     submission_deadline = models.DateTimeField(null=True)
-    location = models.CharField(max_length=200)
+    start_date = models.DateTimeField()
+    end_date = models.DateTimeField(null=True)
+    location = models.CharField(max_length=300)
     tags = ClusterTaggableManager(through=EventTag, blank=True)
 
     submitter = models.ForeignKey(User)
@@ -142,10 +145,12 @@ class Event(index.Indexed, ClusterableModel):
 class JobTag(TaggedItemBase):
     content_object = ParentalKey('home.Job', related_name='tagged_jobs')
 
+
 class Job(index.Indexed, ClusterableModel):
     title = models.CharField(max_length=500)
     date_created = models.DateTimeField(default=timezone.now)
     last_modified = models.DateTimeField(auto_now=True)
+    summary = models.CharField(max_length=300, blank=True)
     description = models.TextField()
     tags = ClusterTaggableManager(through=JobTag, blank=True)
 
@@ -158,4 +163,4 @@ class Job(index.Indexed, ClusterableModel):
     ]
 
     def __str__(self):
-        return "{}. Created by {} on {}".format(self.title, self.creator.username, str(self.date_created))
+        return "{0} posted by {1} on {2}".format(self.title, self.submitter.get_full_name(), str(self.date_created))

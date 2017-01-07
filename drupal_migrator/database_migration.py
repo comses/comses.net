@@ -14,6 +14,10 @@ from typing import Dict, List
 
 from .utils import get_first_field, get_field, get_field_attributes
 
+import logging
+
+logger = logging.getLogger(__name__)
+
 def load_data(model, s: str) -> Dict[int, Dict]:
     f = io.StringIO(s.strip())
     rows = csv.DictReader(f)
@@ -70,19 +74,31 @@ class Extractor:
             return cls(data)
 
     @staticmethod
-    def to_datetime(unix_timestamp: str, tz: datetime.tzinfo=pytz.UTC):
-        return datetime.fromtimestamp(float(unix_timestamp), tz=tz)
+    def timestamp_to_datetime(unix_timestamp: str, tz: datetime.tzinfo=pytz.UTC):
+        try:
+            return datetime.fromtimestamp(float(unix_timestamp), tz=tz)
+        except:
+            return None
 
 
 class EventExtractor(Extractor):
+    EVENT_DATE_FORMAT = '%Y-%m-%dT%H:%M:%S'
+
+    @staticmethod
+    def parse_event_date_string(date_string: str):
+        return datetime.strptime(date_string, EventExtractor.EVENT_DATE_FORMAT)
+
     def _extract(self, raw_event, user_id_map: Dict[str, int]) -> Event:
         return Event(
             title=raw_event['title'],
-            date_created=self.to_datetime(raw_event['created']),
-            last_modified=self.to_datetime(raw_event['changed']),
-            description=get_first_field(raw_event, 'body', 'value'),
-            early_registration_deadline=get_first_field(raw_event, 'field_earlyregistration', 'value', None),
-            submission_deadline=get_first_field(raw_event, 'field_submissiondeadline', 'value', None),
+            date_created=self.timestamp_to_datetime(raw_event['created']),
+            last_modified=self.timestamp_to_datetime(raw_event['changed']),
+            summary=get_first_field(raw_event, 'body', attribute_name='summary', default=''),
+            description=get_first_field(raw_event, 'body'),
+            early_registration_deadline=self.timestamp_to_datetime(get_first_field(raw_event, 'field_earlyregistration')),
+            submission_deadline=self.timestamp_to_datetime(get_first_field(raw_event, 'field_submissiondeadline')),
+            start_date=self.parse_event_date_string(get_first_field(raw_event, 'field_eventdate')),
+            end_date=self.parse_event_date_string(get_first_field(raw_event, 'field_eventdate', 'value2')),
             submitter_id=user_id_map.get(raw_event['uid'], 3)
         )
 
@@ -95,15 +111,17 @@ class JobExtractor(Extractor):
     def _extract(self, raw_job: Dict, user_id_map: Dict[str, int]):
         return Job(
             title=raw_job['title'],
-            date_created=self.to_datetime(raw_job['created']),
-            last_modified=self.to_datetime(raw_job['changed']),
-            description=raw_job['body']['und'][0]['value'],
+            date_created=self.timestamp_to_datetime(raw_job['created']),
+            last_modified=self.timestamp_to_datetime(raw_job['changed']),
+            description=get_first_field(raw_job, 'body'),
             submitter_id=user_id_map.get(raw_job['uid'], 3)
         )
 
     def extract_all(self, user_id_map: Dict[str, int]):
-        raw_jobs = [raw_job for raw_job in self.data if raw_job['forum_tid'] == "13"]
-        jobs = [self._extract(raw_job, user_id_map) for raw_job in raw_jobs]
+        jobs = []
+        for forum_post in self.data:
+            if forum_post['forum_tid'] == "13":
+                jobs.append(self._extract(forum_post, user_id_map))
         Job.objects.bulk_create(jobs)
 
 
@@ -125,8 +143,8 @@ class UserExtractor(Extractor):
             username=username,
             email=email,
             defaults={
-                "date_joined": Extractor.to_datetime(raw_user['created']),
-                "last_login": Extractor.to_datetime(raw_user['login']),
+                "date_joined": Extractor.timestamp_to_datetime(raw_user['created']),
+                "last_login": Extractor.timestamp_to_datetime(raw_user['login']),
             }
         )
         user.drupal_uid=raw_user['uid']
@@ -197,12 +215,20 @@ class ProfileExtractor(Extractor):
 
 
 class TaxonomyExtractor(Extractor):
+
+    def sanitize(self, tag: str) -> str:
+        if len(tag) > 100:
+            logger.debug("toolongtag: %s", tag)
+            return tag[:100]
+        return tag
+
     def extract_all(self):
         tag_id_map = {}
         for raw_tag in self.data:
             if raw_tag['vocabulary_machine_name'] == 'vocabulary_6':
-                keyword, created = Tag.objects.get_or_create(name=raw_tag['name'])
-                tag_id_map[raw_tag['tid']] = keyword.id
+                tagname = self.sanitize(raw_tag['name'])
+                tag, created = Tag.objects.get_or_create(name=tagname)
+                tag_id_map[raw_tag['tid']] = tag.id
         return tag_id_map
 
 
@@ -239,8 +265,8 @@ class ModelExtractor(Extractor):
         author_ids = [author_id_map[raw_author_id] for raw_author_id in raw_author_ids]
         return (Code(title=raw_model['title'],
                      content=content,
-                     date_created=self.to_datetime(raw_model['created']),
-                     last_modified=self.to_datetime(raw_model['changed']),
+                     date_created=self.timestamp_to_datetime(raw_model['created']),
+                     last_modified=self.timestamp_to_datetime(raw_model['changed']),
                      is_replication=self.convert_bool_str(
                          get_first_field(raw_model, 'field_model_replicated', 'value', '0')),
                      reference=get_first_field(raw_model, 'field_model_reference', 'value', ''),
@@ -304,8 +330,8 @@ class ModelVersionExtractor(Extractor):
         if model_nid and model_nid in model_id_map:
             model_version = CodeRelease(
                 content=content,
-                date_created=self.to_datetime(raw_model_version['created']),
-                last_modified=self.to_datetime(raw_model_version['changed']),
+                date_created=self.timestamp_to_datetime(raw_model_version['created']),
+                last_modified=self.timestamp_to_datetime(raw_model_version['changed']),
                 language=language,
                 license_id=license_id,
                 os=os,
