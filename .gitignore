@@ -1,5 +1,6 @@
 # Docker
 docker-compose.yml
+generated-*.yml
 config.ini
 # backup files
 *~
