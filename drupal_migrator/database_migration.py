@@ -216,9 +216,14 @@ class ProfileExtractor(Extractor):
 
 class TaxonomyExtractor(Extractor):
 
-    def sanitize(self, tag: str) -> str:
+    # DELIMITER_REGEX = re.compile('[;,]')
+
+    DELIMITERS = (';', ',', '.')
+    @staticmethod
+    def sanitize(tag: str) -> str:
+        rv = tag.strip()
         if len(tag) > 100:
-            logger.debug("toolongtag: %s", tag)
+            logger.debug("tag_too_long: %s", tag)
             return tag[:100]
         return tag
 
@@ -226,9 +231,17 @@ class TaxonomyExtractor(Extractor):
         tag_id_map = {}
         for raw_tag in self.data:
             if raw_tag['vocabulary_machine_name'] == 'vocabulary_6':
-                tagname = self.sanitize(raw_tag['name'])
-                tag, created = Tag.objects.get_or_create(name=tagname)
-                tag_id_map[raw_tag['tid']] = tag.id
+                raw_tag_name = raw_tag['name']
+                tags = [raw_tag_name]
+                # if the taxonomy was manually delimited by semicolons, commas, or periods and not split by Drupal
+                # try, in that order, to split them
+                for delim in self.DELIMITERS:
+                    if delim in raw_tag_name:
+                        tags = raw_tag_name.split(delim)
+                        break
+                for t in tags:
+                    tag, created = Tag.objects.get_or_create(name=self.sanitize(t))
+                    tag_id_map[raw_tag['tid']] = tag.id
         return tag_id_map
 
 
@@ -263,7 +276,7 @@ class ModelExtractor(Extractor):
 
         raw_author_ids = [raw_author['value'] for raw_author in get_field(raw_model, 'field_model_author')]
         author_ids = [author_id_map[raw_author_id] for raw_author_id in raw_author_ids]
-        return (Code(title=raw_model['title'],
+        code = Code(title=raw_model['title'],
                      content=content,
                      date_created=self.timestamp_to_datetime(raw_model['created']),
                      last_modified=self.timestamp_to_datetime(raw_model['changed']),
@@ -271,7 +284,10 @@ class ModelExtractor(Extractor):
                          get_first_field(raw_model, 'field_model_replicated', 'value', '0')),
                      reference=get_first_field(raw_model, 'field_model_reference', 'value', ''),
                      replication_reference=get_first_field(raw_model, 'field_model_publication_text', 'value', ''),
-                     submitter_id=user_id_map[raw_model.get('uid', 3)]), author_ids)
+                     submitter_id=user_id_map[raw_model.get('uid', 3)])
+        code.nid = raw_model['nid']
+        code.author_ids = author_ids
+        return code
 
     def extract_all(self, user_id_map, tag_id_map, author_id_map):
         raw_models = [raw_model for raw_model in self.data if raw_model['body']['und'][0]['value']]
