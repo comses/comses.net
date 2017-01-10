@@ -2,6 +2,7 @@ FROM ubuntu:16.04
 
 RUN apt-get update && apt-get install -y \
         curl \
+        git \
         libffi-dev \
         libgit2-dev \
         libjpeg-turbo8-dev \

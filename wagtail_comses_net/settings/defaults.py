@@ -58,6 +58,7 @@ DJANGO_APPS = [
 COMSES_APPS = [
     'library',
     'home',
+    'citation',
 ]
 
 INSTALLED_APPS = WAGTAIL_APPS + DJANGO_APPS + COMSES_APPS
