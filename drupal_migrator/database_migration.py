@@ -6,8 +6,7 @@ import pytz
 
 from datetime import datetime
 from django.contrib.auth.models import User, Group
-from django.utils import translation
-from library.models import Contributor, Code, CodeRelease, CodeKeyword, License, Platform
+from library.models import Contributor, Code, CodeRelease, CodeKeyword, License, Platform, CodeContributor
 from home.models import Event, Job, MemberProfile
 from taggit.models import Tag
 from typing import Dict, List
@@ -93,7 +92,7 @@ class EventExtractor(Extractor):
             title=raw_event['title'],
             date_created=self.timestamp_to_datetime(raw_event['created']),
             last_modified=self.timestamp_to_datetime(raw_event['changed']),
-            summary=get_first_field(raw_event, 'body', attribute_name='summary', default=''),
+            summary=get_first_field(raw_event, 'body', attribute_name='summary', default='')[:300],
             description=get_first_field(raw_event, 'body'),
             early_registration_deadline=self.timestamp_to_datetime(get_first_field(raw_event, 'field_earlyregistration')),
             submission_deadline=self.timestamp_to_datetime(get_first_field(raw_event, 'field_submissiondeadline')),
@@ -272,46 +271,33 @@ class ModelExtractor(Extractor):
             raise ValueError('replication value "{}" is not valid'.format(str))
 
     def _extract(self, raw_model, user_id_map, author_id_map):
-        content = raw_model['body']['und'][0]['value'] or ''
-
         raw_author_ids = [raw_author['value'] for raw_author in get_field(raw_model, 'field_model_author')]
         author_ids = [author_id_map[raw_author_id] for raw_author_id in raw_author_ids]
         code = Code(title=raw_model['title'],
-                     content=content,
-                     date_created=self.timestamp_to_datetime(raw_model['created']),
-                     last_modified=self.timestamp_to_datetime(raw_model['changed']),
-                     is_replication=self.convert_bool_str(
-                         get_first_field(raw_model, 'field_model_replicated', 'value', '0')),
-                     reference=get_first_field(raw_model, 'field_model_reference', 'value', ''),
-                     replication_reference=get_first_field(raw_model, 'field_model_publication_text', 'value', ''),
-                     submitter_id=user_id_map[raw_model.get('uid', 3)])
+                    description=get_first_field(raw_model, field_name='body', default=''),
+                    date_created=self.timestamp_to_datetime(raw_model['created']),
+                    last_modified=self.timestamp_to_datetime(raw_model['changed']),
+                    is_replication=self.convert_bool_str(
+                        get_first_field(raw_model, 'field_model_replicated', 'value', '0')),
+                    reference=get_first_field(raw_model, 'field_model_reference', 'value', ''),
+                    replication_reference=get_first_field(raw_model, 'field_model_publication_text', 'value', ''),
+                    submitter_id=user_id_map[raw_model.get('uid', 3)])
         code.nid = raw_model['nid']
         code.author_ids = author_ids
+        code.keyword_tids = get_field_attributes(raw_model, 'taxonomy_vocabulary_6', attribute_name='tid')
         return code
 
     def extract_all(self, user_id_map, tag_id_map, author_id_map):
-        raw_models = [raw_model for raw_model in self.data if raw_model['body']['und'][0]['value']]
-        detached_model_author_ids = [self._extract(raw_model, user_id_map, author_id_map) for raw_model in raw_models]
-        nids = [raw_model['nid'] for raw_model in raw_models]
-
-        for (detached_model, author_ids) in detached_model_author_ids:
-            detached_model.save()
-            for author_id in author_ids:
-                detached_model.authors.add(Contributor.objects.get(id=author_id))
-
-        models = [el[0] for el in detached_model_author_ids]
-        model_id_map = dict(zip(nids, [m.id for m in models]))
-
-        model_keywords = []
-        for raw_model in raw_models:
-            if raw_model['taxonomy_vocabulary_6']:
-                for keyword in raw_model['taxonomy_vocabulary_6']['und']:
-                    model_keyword = CodeKeyword(model_id=model_id_map[raw_model['nid']],
-                                                keyword_id=tag_id_map[keyword['tid']])
-                    model_keywords.append(model_keyword)
-        CodeKeyword.objects.bulk_create(model_keywords)
-
-        return model_id_map
+        model_code_list = [self._extract(raw_model, user_id_map, author_id_map) for raw_model in self.data]
+        for model_code in model_code_list:
+            model_code.save()
+            for idx, author_id in enumerate(model_code.author_ids):
+                CodeContributor.objects.create(contributor_id=author_id,
+                                               code_id=model_code.pk,
+                                               index=idx)
+            # FIXME: some tids may have been converted to multiple tags due to splitting
+            for tid in model_code.keyword_tids:
+                model_code.keywords.add(Tag.objects.get(pk=tag_id_map[tid]))
 
 
 class ModelVersionExtractor(Extractor):
