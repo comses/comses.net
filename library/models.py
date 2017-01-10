@@ -48,15 +48,26 @@ class Code(index.Indexed, ClusterableModel):
     is_replication = models.BooleanField(default=False)
 
     # original Drupal data was stored inline like this
-    # If this gets integrated with catalog these should be foreign keys and converted into M2M relationships
+    # after catalog integration these should be foreign keys and converted into M2M relationships
 
+    # publication metadata
     # We should also allow a model to have multiple references
-    reference = models.TextField()
-    replication_reference = models.TextField()
+    publications = models.ManyToManyField('citation.Publication', through='CodePublication',
+                                          related_name='code_publications')
+    references = models.ManyToManyField('citation.Publication',
+                                        related_name='code_references')
+    replication_references = models.ManyToManyField('citation.Publication',
+                                                    related_name='code_replication_references')
+
+    references_text = models.TextField()
+    replication_references_text = models.TextField()
 
     keywords = ClusterTaggableManager(through=CodeKeyword, blank=True)
     submitter = models.ForeignKey(User)
-    contributors = models.ManyToManyField(Contributor, through='CodeContributor', through_fields=('code', 'contributor'))
+    contributors = models.ManyToManyField(Contributor, through='CodeContributor')
+    # should be stored in code project directory
+    # image = models.ImageField()
+
 
     search_fields = [
         index.SearchField('title', partial_match=True, boost=10),
@@ -66,6 +77,13 @@ class Code(index.Indexed, ClusterableModel):
 
     def __str__(self):
         return "{0} {1} ({2})".format(self.title, self.date_created, self.submitter)
+
+
+class CodePublication(models.Model):
+    code = models.ForeignKey(Code, on_delete=models.CASCADE)
+    publication = models.ForeignKey('citation.Publication', on_delete=models.CASCADE)
+    is_primary = models.BooleanField(default=False)
+    index = models.PositiveIntegerField(default=1)
 
 
 class CodeContributor(models.Model):

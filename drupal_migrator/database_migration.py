@@ -263,12 +263,6 @@ class AuthorExtractor(Extractor):
 
 
 class ModelExtractor(Extractor):
-    @staticmethod
-    def convert_bool_str(str):
-        if str in ['0', '1']:
-            return str == '1'
-        else:
-            raise ValueError('replication value "{}" is not valid'.format(str))
 
     def _extract(self, raw_model, user_id_map, author_id_map):
         raw_author_ids = [raw_author['value'] for raw_author in get_field(raw_model, 'field_model_author')]
@@ -277,11 +271,10 @@ class ModelExtractor(Extractor):
                     description=get_first_field(raw_model, field_name='body', default=''),
                     date_created=self.timestamp_to_datetime(raw_model['created']),
                     last_modified=self.timestamp_to_datetime(raw_model['changed']),
-                    is_replication=self.convert_bool_str(
-                        get_first_field(raw_model, 'field_model_replicated', 'value', '0')),
-                    reference=get_first_field(raw_model, 'field_model_reference', 'value', ''),
-                    replication_reference=get_first_field(raw_model, 'field_model_publication_text', 'value', ''),
-                    submitter_id=user_id_map[raw_model.get('uid', 3)])
+                    is_replication=bool(int(get_first_field(raw_model, 'field_model_replicated', default='0'))),
+                    references_text=get_first_field(raw_model, 'field_model_reference', default=''),
+                    replication_references_text=get_first_field(raw_model, 'field_model_publication_text', default=''),
+                    submitter_id=user_id_map[raw_model.get('uid')])
         code.nid = raw_model['nid']
         code.author_ids = author_ids
         code.keyword_tids = get_field_attributes(raw_model, 'taxonomy_vocabulary_6', attribute_name='tid')
