@@ -300,7 +300,7 @@ class ModelExtractor(Extractor):
                                                index=idx)
             # FIXME: some tids may have been converted to multiple tags due to splitting
             for tid in model_code.keyword_tids:
-                model_code.keywords.add(Tag.objects.get(pk=tag_id_map[tid]))
+                model_code.keywords.add(tag_id_map[tid])
             model_id_map[model_code.identifier] = model_code
         return model_id_map
 
