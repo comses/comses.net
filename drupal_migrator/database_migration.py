@@ -66,6 +66,13 @@ class Extractor:
     def __init__(self, data):
         self.data = data
 
+    @staticmethod
+    def int_to_bool(integer_value, default=False) -> bool:
+        try:
+            return bool(int(integer_value))
+        except:
+            return default
+
     @classmethod
     def from_file(cls, file_name):
         with open(file_name, 'r', encoding='UTF-8') as f:
@@ -271,17 +278,18 @@ class ModelExtractor(Extractor):
                     description=get_first_field(raw_model, field_name='body', default=''),
                     date_created=self.timestamp_to_datetime(raw_model['created']),
                     last_modified=self.timestamp_to_datetime(raw_model['changed']),
-                    is_replication=bool(int(get_first_field(raw_model, 'field_model_replicated', default='0'))),
+                    is_replication=Extractor.to_bool(get_first_field(raw_model, 'field_model_replicated', default='0')),
                     references_text=get_first_field(raw_model, 'field_model_reference', default=''),
                     replication_references_text=get_first_field(raw_model, 'field_model_publication_text', default=''),
+                    identifier = raw_model['nid'],
                     submitter_id=user_id_map[raw_model.get('uid')])
-        code.nid = raw_model['nid']
         code.author_ids = author_ids
         code.keyword_tids = get_field_attributes(raw_model, 'taxonomy_vocabulary_6', attribute_name='tid')
         return code
 
     def extract_all(self, user_id_map, tag_id_map, author_id_map):
         model_code_list = [self._extract(raw_model, user_id_map, author_id_map) for raw_model in self.data]
+        model_id_map = {}
         for model_code in model_code_list:
             model_code.save()
             for idx, author_id in enumerate(model_code.author_ids):
@@ -291,16 +299,12 @@ class ModelExtractor(Extractor):
             # FIXME: some tids may have been converted to multiple tags due to splitting
             for tid in model_code.keyword_tids:
                 model_code.keywords.add(Tag.objects.get(pk=tag_id_map[tid]))
+            model_id_map[model_code.identifier] = model_code
+        return model_id_map
+
 
 
 class ModelVersionExtractor(Extractor):
-    OPERATING_SYSTEMS = [
-        'Other',
-        'Linux',
-        'Apple OS X',
-        'Microsoft Windows',
-        'Platform Independent',
-    ]
 
     PROGRAMMING_LANGUAGES = [
         'Other',
@@ -312,34 +316,44 @@ class ModelVersionExtractor(Extractor):
         'Python',
     ]
 
-    def _load(self, raw_model_version, model_id_map: Dict[str, int]):
-        model_nid = get_first_field(raw_model_version, 'field_modelversion_model', 'nid')
-        content = get_first_field(raw_model_version, 'body', 'value')
+    def _extract(self, raw_model_version, model_id_map: Dict[str, int]):
+        model_nid = get_first_field(raw_model_version, 'field_modelversion_model', attribute_name='nid')
 
-        language = self.PROGRAMMING_LANGUAGES[
-            int(get_first_field(raw_model_version, 'field_modelversion_language', 'value', 0))]
-        license_id = get_first_field(raw_model_version, 'field_modelversion_license', 'value', None)
-        os = self.OPERATING_SYSTEMS[int(get_first_field(raw_model_version, 'field_modelversion_os', 'value', 0))]
-        platform_id = int(get_first_field(raw_model_version, 'field_modelversion_platform', 'value', 0))
 
-        if model_nid and model_nid in model_id_map:
-            model_version = CodeRelease(
-                content=content,
+        license_id = get_first_field(raw_model_version, 'field_modelversion_license', default=None)
+        platform_id = int(get_first_field(raw_model_version, 'field_modelversion_platform', default=0))
+        platform_id = platform_id,
+        code = model_id_map.get(model_nid)
+        if code:
+            description = get_first_field(raw_model_version, 'body')
+            language = self.PROGRAMMING_LANGUAGES[int(get_first_field(raw_model_version, 'field_modelversion_language',
+                                                                     default=0))]
+            dependencies = {
+                'programming_language': {
+                    'name': language,
+                    'version': get_first_field(raw_model_version, 'field_modelversion_language_ver', default='')
+                }
+            }
+            model_version = code.releases.create(
+                description=description,
                 date_created=self.timestamp_to_datetime(raw_model_version['created']),
                 last_modified=self.timestamp_to_datetime(raw_model_version['changed']),
-                language=language,
-                license_id=license_id,
-                os=os,
-                platform_id=platform_id,
-                model_id=model_id_map[model_nid]
+                os=int(get_first_field(raw_model_version, 'field_modelversion_os', default=0)),
+                identifier=raw_model_version['vid'],
+                dependencies=dependencies,
             )
-            model_version.save()
+            model_version.programming_languages.add(language)
+            # TODO: add model platforms, license, and files
+            #model_version.platforms.add()
             return raw_model_version['nid'], model_version.id
+        else:
+            logger.warning("Unable to locate parent model nid %s for version %s", model_nid, raw_model_version['vid'])
+            return None
 
     def extract_all(self, model_id_map: Dict[str, int]):
         model_version_id_map = {}
         for raw_model_version in self.data:
-            result = self._load(raw_model_version, model_id_map)
+            result = self._extract(raw_model_version, model_id_map)
             if result:
                 drupal_id, pk = result
                 model_version_id_map[drupal_id] = pk
@@ -373,14 +387,15 @@ def load(directory: str):
 
     if License.objects.count() == 0:
         load_data(License, LICENSES)
-    if Platform.objects.count() == 0:
-        load_data(Platform, PLATFORMS)
+    # if Platform.objects.count() == 0:
+    #     load_data(Platform, PLATFORMS)
     author_id_map = author_extractor.extract_all()
     user_id_map = user_extractor.extract_all()
     job_extractor.extract_all(user_id_map)
     event_extractor.extract_all(user_id_map)
     tag_id_map = taxonomy_extractor.extract_all()
-    model_id_map = model_extractor.extract_all(user_id_map=user_id_map, tag_id_map=tag_id_map,
+    model_id_map = model_extractor.extract_all(user_id_map=user_id_map,
+                                               tag_id_map=tag_id_map,
                                                author_id_map=author_id_map)
     model_version_id_map = model_version_extractor.extract_all(model_id_map)
     profile_extractor.extract_all(user_id_map, tag_id_map)

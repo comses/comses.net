@@ -24,10 +24,14 @@ class CodeKeyword(TaggedItemBase):
 
 class ProgrammingLanguage(TaggedItemBase):
     content_object = ParentalKey('library.CodeRelease', related_name='tagged_release_languages')
+    url = models.URLField(blank=True)
+    description = models.TextField(blank=True)
 
 
 class Platform(TaggedItemBase):
     content_object = ParentalKey('library.CodeRelease', related_name='tagged_release_platforms')
+    url = models.URLField(blank=True)
+    description = models.TextField(blank=True)
 
 
 class ContributorAffiliation(TaggedItemBase):
@@ -66,6 +70,10 @@ class Code(index.Indexed, ClusterableModel):
     # shortname = models.CharField(max_length=128, unique=True)
     title = models.CharField(max_length=500)
     description = models.TextField()
+
+    live = models.BooleanField(default=False)
+    has_unpublished_changes = models.BooleanField(default=False)
+    first_published_at = models.DateTimeField(null=True, blank=True)
     date_created = models.DateTimeField(default=timezone.now)
     last_modified = models.DateTimeField(auto_now=True)
     is_replication = models.BooleanField(default=False)
@@ -150,31 +158,34 @@ class CodeContributor(models.Model):
 
 class CodeRelease(index.Indexed, ClusterableModel):
     OPERATING_SYSTEMS = Choices(
-        ('Mac OS', _('Mac OS')),
-        ('Platform Independent', _('Platform Independent')),
-        ('Unix/Linux', _('Unix/Linux')),
-        ('Windows', _('Windows')),
+        (0, 'other', _('Other')),
+        (1, 'linux', _('Unix/Linux')),
+        (2, 'macos', _('Mac OS')),
+        (3, 'windows', _('Windows')),
+        (4, 'independent', _('Platform Independent')),
     )
     date_created = models.DateTimeField(default=timezone.now)
     last_modified = models.DateTimeField(auto_now=True)
-    live = models.BooleanField(default=False)
-    has_unpublished_changes = models.BooleanField(default=False)
-    first_published_at = models.DateTimeField(null=True, blank=True)
+
+    peer_reviewed = models.BooleanField(default=False)
 
     identifier = models.CharField(max_length=128, unique=True)
+    doi = models.CharField(max_length=128, unique=True, blank=True, null=True)
 
     dependencies = JSONField(
         default=list,
-        help_text=_('List of JSON dependencies (identifier, name, version, packageSystem, OS, URL)'))
+        help_text=_('List of JSON dependencies (identifier, name, version, packageSystem, OS, URL)')
+    )
 
     description = models.TextField()
     documentation = models.TextField()
     embargo_end_date = models.DateField(null=True, blank=True)
 
-    release_number = models.CharField(max_length=32, help_text=_("Semver release number or 1,2,3"))
+    release_number = models.CharField(max_length=32,
+                                      help_text=_("Simple or semver version number, e.g., v1/v2/v3 or v1.0.0, v1.0.1"))
 
-    os = models.CharField(max_length=100, choices=OPERATING_SYSTEMS, blank=True)
-    platform = ClusterTaggableManager(through=Platform, blank=True, related_name='platforms')
-    programming_language = ClusterTaggableManager(through=ProgrammingLanguage, blank=True,
-                                                  related_name='programming_languages')
+    os = models.CharField(max_length=32, choices=OPERATING_SYSTEMS, blank=True)
+    platforms = ClusterTaggableManager(through=Platform, blank=True, related_name='platform_code_releases')
+    programming_languages = ClusterTaggableManager(through=ProgrammingLanguage, blank=True,
+                                                   related_name='pl_code_releases')
     code = models.ForeignKey(Code, related_name='releases')
