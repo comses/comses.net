@@ -213,9 +213,11 @@ class ProfileExtractor(Extractor):
                                                           attribute_name='url')
             profile.research_gate_url=get_first_field(raw_profile, 'field_profile2_researchgate_link',
                                                       attribute_name='url')
-            profile.keywords.add(*[taxonomy_id_map[tid] for tid in get_field_attributes(raw_profile,
-                                                                                        'taxonomy_vocabulary_6',
-                                                                                        attribute_name='tid')])
+            tags = [taxonomy_id_map[tid] for tid in get_field_attributes(raw_profile,
+                                                                         'taxonomy_vocabulary_6',
+                                                                         attribute_name='tid')]
+            logger.debug("tags: %s", tags)
+            profile.keywords.add(*tags)
             profile.save()
             user.save()
 
@@ -247,7 +249,7 @@ class TaxonomyExtractor(Extractor):
                         break
                 for t in tags:
                     tag, created = Tag.objects.get_or_create(name=self.sanitize(t))
-                    tag_id_map[raw_tag['tid']] = tag.id
+                    tag_id_map[raw_tag['tid']] = tag
         return tag_id_map
 
 
@@ -278,7 +280,7 @@ class ModelExtractor(Extractor):
                     description=get_first_field(raw_model, field_name='body', default=''),
                     date_created=self.timestamp_to_datetime(raw_model['created']),
                     last_modified=self.timestamp_to_datetime(raw_model['changed']),
-                    is_replication=Extractor.to_bool(get_first_field(raw_model, 'field_model_replicated', default='0')),
+                    is_replication=Extractor.int_to_bool(get_first_field(raw_model, 'field_model_replicated', default='0')),
                     references_text=get_first_field(raw_model, 'field_model_reference', default=''),
                     replication_references_text=get_first_field(raw_model, 'field_model_publication_text', default=''),
                     identifier = raw_model['nid'],
