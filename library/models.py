@@ -1,15 +1,21 @@
 from django.contrib.auth.models import User
 from django.db import models
+from django.contrib.postgres.fields import JSONField
 from django.utils import timezone
 from django.utils.translation import ugettext_lazy as _
+
 from modelcluster.fields import ParentalKey
 from modelcluster.models import ClusterableModel
 from modelcluster.contrib.taggit import ClusterTaggableManager
 from model_utils import Choices
+
 from taggit.models import TaggedItemBase
-
-
 from wagtail.wagtailsearch import index
+
+import logging
+import uuid
+
+logger = logging.getLogger(__name__)
 
 
 class CodeKeyword(TaggedItemBase):
@@ -17,7 +23,15 @@ class CodeKeyword(TaggedItemBase):
 
 
 class ProgrammingLanguage(TaggedItemBase):
-    content_object = ParentalKey('library.Code', related_name='tagged_pl_code')
+    content_object = ParentalKey('library.CodeRelease', related_name='tagged_release_languages')
+
+
+class Platform(TaggedItemBase):
+    content_object = ParentalKey('library.CodeRelease', related_name='tagged_release_platforms')
+
+
+class ContributorAffiliation(TaggedItemBase):
+    content_object = ParentalKey('library.Contributor')
 
 
 class License(models.Model):
@@ -26,48 +40,65 @@ class License(models.Model):
     url = models.URLField(blank=True)
 
 
-class Platform(models.Model):
-    name = models.CharField(max_length=255)
-    description = models.TextField()
-    url = models.URLField(blank=True)
-
-
-class Contributor(index.Indexed, models.Model):
+class Contributor(index.Indexed, ClusterableModel):
     given_name = models.CharField(max_length=100, blank=True)
     middle_name = models.CharField(max_length=100, blank=True)
     family_name = models.CharField(max_length=100, blank=True)
+    affiliation = ClusterTaggableManager(through=ContributorAffiliation, blank=True)
+    type = models.CharField(max_length=16,
+                            choices=(('person', 'person'), ('organization', 'organization')),
+                            default='person')
     email = models.EmailField(blank=True)
     user = models.ForeignKey(User, null=True)
 
+    @property
+    def full_name(self):
+        if self.type == 'person':
+            return '{0} {1}'.format(self.given_name, self.family_name).strip()
+        else:
+            return self.given_name
+
+    def __str__(self):
+        return "{0} ({1})".format(self.full_name, self.affiliation)
+
 
 class Code(index.Indexed, ClusterableModel):
-    title = models.CharField(max_length=370)
+    # shortname = models.CharField(max_length=128, unique=True)
+    title = models.CharField(max_length=500)
     description = models.TextField()
     date_created = models.DateTimeField(default=timezone.now)
     last_modified = models.DateTimeField(auto_now=True)
     is_replication = models.BooleanField(default=False)
+
+    identifier = models.CharField(max_length=128, unique=True)
+    doi = models.CharField(max_length=128, unique=True, blank=True, null=True)
+    uuid = models.UUIDField(unique=True, default=uuid.uuid4, editable=False)
+
+    repository_url = models.URLField(blank=True)
 
     # original Drupal data was stored inline like this
     # after catalog integration these should be foreign keys and converted into M2M relationships
 
     # publication metadata
     # We should also allow a model to have multiple references
-    publications = models.ManyToManyField('citation.Publication', through='CodePublication',
-                                          related_name='code_publications')
-    references = models.ManyToManyField('citation.Publication',
-                                        related_name='code_references')
-    replication_references = models.ManyToManyField('citation.Publication',
-                                                    related_name='code_replication_references')
-
     references_text = models.TextField()
     replication_references_text = models.TextField()
+    # M2M relationships for publications
+    publications = models.ManyToManyField(
+        'citation.Publication',
+        through='CodePublication',
+        related_name='code_publications',
+        help_text=_('Publications on this work'))
+    references = models.ManyToManyField('citation.Publication',
+                                        related_name='code_references',
+                                        help_text=_('Related publications'))
+    relationships = JSONField(default=list)
 
     keywords = ClusterTaggableManager(through=CodeKeyword, blank=True)
     submitter = models.ForeignKey(User)
     contributors = models.ManyToManyField(Contributor, through='CodeContributor')
     # should be stored in code project directory
-    # image = models.ImageField()
-
+    images = JSONField(default=list)
 
     search_fields = [
         index.SearchField('title', partial_match=True, boost=10),
@@ -85,36 +116,65 @@ class CodePublication(models.Model):
     is_primary = models.BooleanField(default=False)
     index = models.PositiveIntegerField(default=1)
 
+# Cherry picked from
+# https://www.ngdc.noaa.gov/metadata/published/xsd/schema/resources/Codelist/gmxCodelists.xml#CI_RoleCode
+ROLES = Choices(
+    ('author', _('Author')),
+    ('publisher', _('Publisher')),
+    ('custodian', _('Custodian')),
+    ('resourceProvider', _('Resource Provider')),
+    ('maintainer', _('Maintainer')),
+    ('pointOfContact', _('Point of contact')),
+    ('editor', _('Editor')),
+    ('contributor', _('Contributor')),
+    ('collaborator', _('Collaborator')),
+    ('funder', _('Funder')),
+    ('copyrightHolder', _("Copyright holder")),
+)
+
 
 class CodeContributor(models.Model):
-    ROLES = Choices(
-        ('Author', _('Author')),
-        ('Architect', _('Architect')),
-        ('Curator', _('Curator')),
-        ('Designer', _('Designer')),
-        ('Maintainer', _('Maintainer')),
-        ('Submitter', _('Submitter')),
-        ('Tester', _('Tester')),
-    )
+
     # FIXME: should this be to CodeRelease instead?
     code = models.ForeignKey(Code, on_delete=models.CASCADE)
     contributor = models.ForeignKey(Contributor, on_delete=models.CASCADE)
-    role = models.CharField(max_length=100, choices=ROLES, default=ROLES.Author)
+    include_in_citation = models.BooleanField(default=True)
+    is_maintainer = models.BooleanField(default=False)
+    is_rights_holder = models.BooleanField(default=False)
+    role = models.CharField(max_length=100, choices=ROLES, default=ROLES.author,
+                            help_text=_('''
+                            Roles from https://www.ngdc.noaa.gov/metadata/published/xsd/schema/resources/Codelist/gmxCodelists.xml#CI_RoleCode
+                            '''))
     index = models.PositiveSmallIntegerField(help_text=_('Ordering field for code contributors'))
 
 
-class CodeRelease(index.Indexed, models.Model):
-    live = models.BooleanField(default=True)
+class CodeRelease(index.Indexed, ClusterableModel):
+    OPERATING_SYSTEMS = Choices(
+        ('Mac OS', _('Mac OS')),
+        ('Platform Independent', _('Platform Independent')),
+        ('Unix/Linux', _('Unix/Linux')),
+        ('Windows', _('Windows')),
+    )
+    date_created = models.DateTimeField(default=timezone.now)
+    last_modified = models.DateTimeField(auto_now=True)
+    live = models.BooleanField(default=False)
     has_unpublished_changes = models.BooleanField(default=False)
     first_published_at = models.DateTimeField(null=True, blank=True)
+
+    identifier = models.CharField(max_length=128, unique=True)
+
+    dependencies = JSONField(
+        default=list,
+        help_text=_('List of JSON dependencies (identifier, name, version, packageSystem, OS, URL)'))
+
     description = models.TextField()
     documentation = models.TextField()
     embargo_end_date = models.DateField(null=True, blank=True)
-    date_created = models.DateTimeField(default=timezone.now)
-    last_modified = models.DateTimeField(auto_now=True)
-    os = models.CharField(max_length=100)
-    license = models.ForeignKey(License, null=True)
-    programming_language = ClusterTaggableManager(through=ProgrammingLanguage, blank=True)
-    platform = models.ForeignKey(Platform, null=True)
-    code = models.ForeignKey(Code, related_name='releases')
+
     release_number = models.CharField(max_length=32, help_text=_("Semver release number or 1,2,3"))
+
+    os = models.CharField(max_length=100, choices=OPERATING_SYSTEMS, blank=True)
+    platform = ClusterTaggableManager(through=Platform, blank=True, related_name='platforms')
+    programming_language = ClusterTaggableManager(through=ProgrammingLanguage, blank=True,
+                                                  related_name='programming_languages')
+    code = models.ForeignKey(Code, related_name='releases')

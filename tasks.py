@@ -3,7 +3,6 @@ from invoke.tasks import call
 
 import logging
 import os
-import re
 import sys
 
 
@@ -11,9 +10,14 @@ import sys
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "wagtail_comses_net.settings.dev")
 
+from django.conf import settings
+
 env = {
     'python': 'python3',
     'project_name': 'cms',
+    'db_name': settings.DATABASES['default']['NAME'],
+    'db_host': settings.DATABASES['default']['HOST'],
+    'db_user': settings.DATABASES['default']['USER'],
     'project_conf': os.environ.get('DJANGO_SETTINGS_MODULE'),
     'coverage_omit_patterns': ('test', 'settings', 'migrations', 'wsgi', 'management', 'tasks', 'apps.py'),
 }
@@ -99,7 +103,6 @@ def create_pgpass_file(ctx, force=False):
     pgpass_path = os.path.join(os.path.expanduser('~'), '.pgpass')
     if os.path.isfile(pgpass_path) and not force:
         return
-    from django.conf import settings
     with open(pgpass_path, 'w+') as pgpass:
         db_password = settings.DATABASES['default']['PASSWORD']
         pgpass.write('db:*:*:{db_user}:{db_password}\n'.format(db_password=db_password, **env))
@@ -119,3 +122,15 @@ def initialize_database_schema(ctx, clean=True):
             ctx.run('find {0} -name 00*.py -delete -print'.format(migration_dir))
     dj(ctx, 'makemigrations')
     dj(ctx, 'migrate --noinput')
+
+
+@task(aliases=['rdb', 'resetdb'])
+def reset_database(ctx):
+    create_pgpass_file(ctx)
+    ctx.run('psql -h {db_host} -c "alter database {db_name} connection limit 1;" -w {db_name} {db_user}'.format(**env),
+            echo=True, warn=True)
+    ctx.run('psql -h {db_host} -c "select pg_terminate_backend(pid) from pg_stat_activity where datname=\'{db_name}\'" -w {db_name} {db_user}'.format(**env),
+            echo=True, warn=True)
+    ctx.run('dropdb -w --if-exists -e {db_name} -U {db_user} -h {db_host}'.format(**env), echo=True, warn=True)
+    ctx.run('createdb -w {db_name} -U {db_user} -h {db_host}'.format(**env), echo=True, warn=True)
+    initialize_database_schema(ctx, False)

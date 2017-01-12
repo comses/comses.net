@@ -294,7 +294,7 @@ class ModelExtractor(Extractor):
 
 
 class ModelVersionExtractor(Extractor):
-    OS_LEVELS = [
+    OPERATING_SYSTEMS = [
         'Other',
         'Linux',
         'Apple OS X',
@@ -302,7 +302,7 @@ class ModelVersionExtractor(Extractor):
         'Platform Independent',
     ]
 
-    LANGUAGE_LEVELS = [
+    PROGRAMMING_LANGUAGES = [
         'Other',
         'C',
         'C++',
@@ -316,10 +316,10 @@ class ModelVersionExtractor(Extractor):
         model_nid = get_first_field(raw_model_version, 'field_modelversion_model', 'nid')
         content = get_first_field(raw_model_version, 'body', 'value')
 
-        language = self.LANGUAGE_LEVELS[
+        language = self.PROGRAMMING_LANGUAGES[
             int(get_first_field(raw_model_version, 'field_modelversion_language', 'value', 0))]
         license_id = get_first_field(raw_model_version, 'field_modelversion_license', 'value', None)
-        os = self.OS_LEVELS[int(get_first_field(raw_model_version, 'field_modelversion_os', 'value', 0))]
+        os = self.OPERATING_SYSTEMS[int(get_first_field(raw_model_version, 'field_modelversion_os', 'value', 0))]
         platform_id = int(get_first_field(raw_model_version, 'field_modelversion_platform', 'value', 0))
 
         if model_nid and model_nid in model_id_map:

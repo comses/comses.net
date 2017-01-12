@@ -1,6 +1,6 @@
 def get_first_field(obj, field_name, attribute_name='value', default=''):
     try:
-        return obj[field_name]['und'][0][attribute_name]
+        return obj[field_name]['und'][0][attribute_name] or default
     except:
         return default
 
@@ -16,6 +16,6 @@ def get_field_attributes(json_object, field_name, attribute_name='value', defaul
 
 def get_field(obj, field_name, default=''):
     try:
-        return obj[field_name]['und']
+        return obj[field_name]['und'] or default
     except:
         return default
