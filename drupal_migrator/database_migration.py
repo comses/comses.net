@@ -186,6 +186,7 @@ class ProfileExtractor(Extractor):
             drupal_uid = raw_profile['uid']
             user_id = user_id_map.get(drupal_uid, -1)
             if user_id == -1:
+                logger.warning("Drupal UID %s not found in user id map", drupal_uid)
                 continue
             user = User.objects.get(pk=user_id)
             profile = user.member_profile
@@ -203,19 +204,20 @@ class ProfileExtractor(Extractor):
             profile.degrees = get_field_attributes(raw_profile, 'field_profile2_degrees')
             profile.academia_edu_url = get_first_field(raw_profile, 'field_profile2_academiaedu_link',
                                                        attribute_name='url')
-            profile.blog_url=get_first_field(raw_profile, 'field_profile2_blog_link', attribute_name='url')
-            profile.cv_url=get_first_field(raw_profile, 'field_profile2_cv_link', attribute_name='url')
-            profile.institutional_homepage_url=get_first_field(raw_profile, 'field_profile2_institution_link',
+            profile.cv_url = get_first_field(raw_profile, 'field_profile2_cv_link', attribute_name='url')
+            profile.institutional_homepage_url = get_first_field(raw_profile, 'field_profile2_institution_link',
                                                                attribute_name='url')
-            profile.linkedin_url=get_first_field(raw_profile, 'field_profile2_linkedin_link',
+            profile.linkedin_url = get_first_field(raw_profile, 'field_profile2_linkedin_link',
                                                  attribute_name='url')
-            profile.personal_homepage_url=get_first_field(raw_profile, 'field_profile2_personal_link',
+            profile.personal_homepage_url = get_first_field(raw_profile, 'field_profile2_personal_link',
                                                           attribute_name='url')
-            profile.research_gate_url=get_first_field(raw_profile, 'field_profile2_researchgate_link',
+            profile.researchgate_url = get_first_field(raw_profile, 'field_profile2_researchgate_link',
                                                       attribute_name='url')
-            tags = [taxonomy_id_map[tid] for tid in get_field_attributes(raw_profile,
-                                                                         'taxonomy_vocabulary_6',
-                                                                         attribute_name='tid')]
+            for url in ('academia_edu_url', 'cv_url', 'institutional_homepage_url', 'personal_homepage_url', 'researchgate_url'):
+                if len(getattr(profile, url, '')) > 200:
+                    logger.debug("Ignoring overlong %s URL %s", url, getattr(profile, url))
+                    setattr(profile, url, '')
+            tags = [taxonomy_id_map[tid] for tid in get_field_attributes(raw_profile, 'taxonomy_vocabulary_6', attribute_name='tid') if tid in taxonomy_id_map]
             logger.debug("tags: %s", tags)
             profile.keywords.add(*tags)
             profile.save()
@@ -292,16 +294,19 @@ class ModelExtractor(Extractor):
     def extract_all(self, user_id_map, tag_id_map, author_id_map):
         model_code_list = [self._extract(raw_model, user_id_map, author_id_map) for raw_model in self.data]
         model_id_map = {}
+        contributors = []
         for model_code in model_code_list:
             model_code.save()
             for idx, author_id in enumerate(model_code.author_ids):
-                CodeContributor.objects.create(contributor_id=author_id,
-                                               code_id=model_code.pk,
-                                               index=idx)
+                contributors.append(
+                    CodeContributor(contributor_id=author_id,
+                                    code_id=model_code.pk,
+                                    index=idx)
+                )
             # FIXME: some tids may have been converted to multiple tags due to splitting
-            for tid in model_code.keyword_tids:
-                model_code.keywords.add(tag_id_map[tid])
+            model_code.keywords.add(*[tag_id_map[tid] for tid in model_code.keyword_tids])
             model_id_map[model_code.identifier] = model_code
+        CodeContributor.objects.bulk_create(contributors)
         return model_id_map
 
 

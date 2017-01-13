@@ -17,6 +17,30 @@ import uuid
 
 logger = logging.getLogger(__name__)
 
+# Cherry picked from
+# https://www.ngdc.noaa.gov/metadata/published/xsd/schema/resources/Codelist/gmxCodelists.xml#CI_RoleCode
+ROLES = Choices(
+    ('author', _('Author')),
+    ('publisher', _('Publisher')),
+    ('custodian', _('Custodian')),
+    ('resourceProvider', _('Resource Provider')),
+    ('maintainer', _('Maintainer')),
+    ('pointOfContact', _('Point of contact')),
+    ('editor', _('Editor')),
+    ('contributor', _('Contributor')),
+    ('collaborator', _('Collaborator')),
+    ('funder', _('Funder')),
+    ('copyrightHolder', _("Copyright holder")),
+)
+
+OPERATING_SYSTEMS = Choices(
+    ('other', _('Other')),
+    ('linux', _('Unix/Linux')),
+    ('macos', _('Mac OS')),
+    ('windows', _('Windows')),
+    ('platform_independent', _('Platform Independent')),
+)
+
 
 class CodeKeyword(TaggedItemBase):
     content_object = ParentalKey('library.Code', related_name='tagged_code_keywords')
@@ -124,22 +148,6 @@ class CodePublication(models.Model):
     is_primary = models.BooleanField(default=False)
     index = models.PositiveIntegerField(default=1)
 
-# Cherry picked from
-# https://www.ngdc.noaa.gov/metadata/published/xsd/schema/resources/Codelist/gmxCodelists.xml#CI_RoleCode
-ROLES = Choices(
-    ('author', _('Author')),
-    ('publisher', _('Publisher')),
-    ('custodian', _('Custodian')),
-    ('resourceProvider', _('Resource Provider')),
-    ('maintainer', _('Maintainer')),
-    ('pointOfContact', _('Point of contact')),
-    ('editor', _('Editor')),
-    ('contributor', _('Contributor')),
-    ('collaborator', _('Collaborator')),
-    ('funder', _('Funder')),
-    ('copyrightHolder', _("Copyright holder")),
-)
-
 
 class CodeContributor(models.Model):
 
@@ -157,13 +165,7 @@ class CodeContributor(models.Model):
 
 
 class CodeRelease(index.Indexed, ClusterableModel):
-    OPERATING_SYSTEMS = Choices(
-        (0, 'other', _('Other')),
-        (1, 'linux', _('Unix/Linux')),
-        (2, 'macos', _('Mac OS')),
-        (3, 'windows', _('Windows')),
-        (4, 'independent', _('Platform Independent')),
-    )
+
     date_created = models.DateTimeField(default=timezone.now)
     last_modified = models.DateTimeField(auto_now=True)
 

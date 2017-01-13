@@ -52,21 +52,20 @@ class MemberProfile(index.Indexed, ClusterableModel):
     timezone = TimeZoneField(blank=True)
 
     degrees = ArrayField(models.CharField(max_length=255), null=True)
-    institutions = JSONField(default=dict)
     research_interests = models.TextField(blank=True)
     keywords = ClusterTaggableManager(through=MemberProfileTag, blank=True)
     summary = models.TextField(blank=True)
 
     picture = models.ImageField(null=True, help_text=_('Profile picture'))
     academia_edu_url = models.URLField(null=True)
-    research_gate_url = models.URLField(null=True)
+    researchgate_url = models.URLField(null=True)
     linkedin_url = models.URLField(null=True)
     personal_homepage_url = models.URLField(null=True)
     institutional_homepage_url = models.URLField(null=True)
-
     blog_url = models.URLField(null=True)
-    cv_url = models.URLField(null=True)
+    cv_url = models.URLField(null=True, max_length=500)
     institution = models.ForeignKey(Institution, null=True)
+    affiliations = JSONField(default=list, help_text=_("JSON-LD list of affiliated institutions"))
     orcid = models.CharField(help_text=_("16 digits, - between every 4th digit, e.g., 0000-0002-1825-0097"),
                              max_length=19)
 
