@@ -77,35 +77,6 @@ MIDDLEWARE = [
     'wagtail.wagtailredirects.middleware.RedirectMiddleware',
 ]
 
-# logging configuration
-LOGGING = {
-    'version': 1,
-    'disable_existing_loggers': False,
-    'formatters': {
-        'verbose': {
-            'format': '%(asctime)s %(levelname)-7s %(name)s:%(funcName)s:%(lineno)d %(message)s',
-            'datefmt': '%Y-%m-%d %H:%M:%S'
-        },
-        'simple': {
-            'format': "%(levelname)-8s %(message)s"
-        }
-    },
-    'handlers': {
-        'console': {
-            'class': 'logging.StreamHandler',
-            'level': 'DEBUG',
-            'formatter': 'verbose'
-        }
-    },
-    'loggers': {
-        'home': {
-            'level': 'DEBUG',
-            'handlers': ['console'],
-            'propagate': False
-        }
-    }
-}
-
 
 ROOT_URLCONF = 'wagtail_comses_net.urls'
 
@@ -149,6 +120,55 @@ DATABASES = {
         'PORT': config.get('database', 'DB_PORT'),
     }
 }
+
+LOG_DIRECTORY = config.get('logging', 'LOG_DIRECTORY', fallback='./logs')
+
+# logging configuration
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'root': {
+        'level': 'ERROR',
+        'handlers': ['rollingfile', 'console'],
+    },
+    'formatters': {
+        'verbose': {
+            'format': '%(asctime)s %(levelname)-7s %(name)s:%(funcName)s:%(lineno)d %(message)s',
+            'datefmt': '%Y-%m-%d %H:%M:%S'
+        },
+        'simple': {
+            'format': "%(levelname)-8s %(message)s"
+        }
+    },
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+            'level': 'DEBUG',
+            'formatter': 'verbose'
+        },
+        'rollingfile': {
+            'level': 'DEBUG',
+            'class': 'logging.handlers.RotatingFileHandler',
+            'formatter': 'verbose',
+            'filename': os.path.join(LOG_DIRECTORY, 'comsesnet.log'),
+            'backupCount': 6,
+            'maxBytes': 10000000,
+        },
+    },
+    'loggers': {
+        'home': {
+            'level': 'DEBUG',
+            'handlers': ['console'],
+            'propagate': False
+        },
+        'library': {
+            'level': 'DEBUG',
+            'handlers': ['console', 'rollingfile'],
+            'propagate': False,
+        }
+    }
+}
+
 
 # Internationalization
 # https://docs.djangoproject.com/en/1.10/topics/i18n/
