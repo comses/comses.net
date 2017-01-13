@@ -6,16 +6,19 @@ import pytz
 
 from datetime import datetime
 from django.contrib.auth.models import User, Group
-from library.models import Contributor, Code, CodeRelease, CodeKeyword, License, Platform, CodeContributor
+from library.models import (Contributor, Code, CodeRelease, CodeKeyword, License,
+                            CodeContributor, Platform, OPERATING_SYSTEMS)
 from home.models import Event, Job, MemberProfile
 from taggit.models import Tag
-from typing import Dict, List
+from typing import Dict
 
 from .utils import get_first_field, get_field, get_field_attributes
 
 import logging
 
+
 logger = logging.getLogger(__name__)
+
 
 def load_data(model, s: str) -> Dict[int, Dict]:
     f = io.StringIO(s.strip())
@@ -30,6 +33,7 @@ def load_data(model, s: str) -> Dict[int, Dict]:
 
 
 LICENSES = """id,name,url
+    0,"None",""
     1,"GNU GPLv2",http://www.gnu.org/licenses/gpl-2.0.html
     2,"GNU GPLv3",http://www.gnu.org/licenses/gpl-3.0.html
     3,"Apache License, Version 2.0",http://www.apache.org/licenses/LICENSE-2.0.html
@@ -323,13 +327,13 @@ class ModelVersionExtractor(Extractor):
         'Python',
     ]
 
+    OS_LIST = [os[0] for os in OPERATING_SYSTEMS]
+
     def _extract(self, raw_model_version, model_id_map: Dict[str, int]):
         model_nid = get_first_field(raw_model_version, 'field_modelversion_model', attribute_name='nid')
-
-
-        license_id = get_first_field(raw_model_version, 'field_modelversion_license', default=None)
         platform_id = int(get_first_field(raw_model_version, 'field_modelversion_platform', default=0))
-        platform_id = platform_id,
+        license_id = int(get_first_field(raw_model_version, 'field_modelversion_license', default=0))
+        platform = Platform.objects.get(pk=platform_id)
         code = model_id_map.get(model_nid)
         if code:
             description = get_first_field(raw_model_version, 'body')
@@ -345,13 +349,14 @@ class ModelVersionExtractor(Extractor):
                 description=description,
                 date_created=self.timestamp_to_datetime(raw_model_version['created']),
                 last_modified=self.timestamp_to_datetime(raw_model_version['changed']),
-                os=int(get_first_field(raw_model_version, 'field_modelversion_os', default=0)),
+                os=self.OS_LIST[int(get_first_field(raw_model_version, 'field_modelversion_os', default=0))],
+                license_id=license_id,
                 identifier=raw_model_version['vid'],
                 dependencies=dependencies,
             )
             model_version.programming_languages.add(language)
-            # TODO: add model platforms, license, and files
-            #model_version.platforms.add()
+            model_version.platforms.add(platform.name)
+            # FIXME: add files
             return raw_model_version['nid'], model_version.id
         else:
             logger.warning("Unable to locate parent model nid %s for version %s", model_nid, raw_model_version['vid'])
@@ -394,8 +399,9 @@ def load(directory: str):
 
     if License.objects.count() == 0:
         load_data(License, LICENSES)
-    # if Platform.objects.count() == 0:
-    #     load_data(Platform, PLATFORMS)
+    if Platform.objects.count() == 0:
+        load_data(Platform, PLATFORMS)
+
     author_id_map = author_extractor.extract_all()
     user_id_map = user_extractor.extract_all()
     job_extractor.extract_all(user_id_map)

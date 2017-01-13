@@ -48,14 +48,28 @@ class CodeKeyword(TaggedItemBase):
 
 class ProgrammingLanguage(TaggedItemBase):
     content_object = ParentalKey('library.CodeRelease', related_name='tagged_release_languages')
+
+
+class Platform(models.Model):
+    name = models.CharField(max_length=100)
+    description = models.TextField(blank=True)
+    url = models.URLField(blank=True)
+
+    @staticmethod
+    def upload_path(instance, filename):
+        return 'platforms/{0}/{1}'.format(instance.name, filename)
+
+
+class PlatformRelease(models.Model):
+    platform = models.ForeignKey(Platform)
+    version = models.CharField(max_length=100)
     url = models.URLField(blank=True)
     description = models.TextField(blank=True)
+    archive = models.FileField(upload_to=Platform.upload_path)
 
 
-class Platform(TaggedItemBase):
+class PlatformTag(TaggedItemBase):
     content_object = ParentalKey('library.CodeRelease', related_name='tagged_release_platforms')
-    url = models.URLField(blank=True)
-    description = models.TextField(blank=True)
 
 
 class ContributorAffiliation(TaggedItemBase):
@@ -63,7 +77,7 @@ class ContributorAffiliation(TaggedItemBase):
 
 
 class License(models.Model):
-    name = models.CharField(max_length=100)
+    name = models.CharField(max_length=200)
     text = models.TextField()
     url = models.URLField(blank=True)
 
@@ -72,12 +86,16 @@ class Contributor(index.Indexed, ClusterableModel):
     given_name = models.CharField(max_length=100, blank=True)
     middle_name = models.CharField(max_length=100, blank=True)
     family_name = models.CharField(max_length=100, blank=True)
-    affiliation = ClusterTaggableManager(through=ContributorAffiliation, blank=True)
+    affiliations = ClusterTaggableManager(through=ContributorAffiliation)
     type = models.CharField(max_length=16,
                             choices=(('person', 'person'), ('organization', 'organization')),
                             default='person')
     email = models.EmailField(blank=True)
     user = models.ForeignKey(User, null=True)
+
+    @property
+    def name(self):
+        return self.full_name
 
     @property
     def full_name(self):
@@ -86,8 +104,12 @@ class Contributor(index.Indexed, ClusterableModel):
         else:
             return self.given_name
 
+    @property
+    def formatted_affiliations(self):
+        return ' '.join(self.affiliations.all())
+
     def __str__(self):
-        return "{0} ({1})".format(self.full_name, self.affiliation)
+        return "{0} {1} {2}".format(self.full_name, self.email, self.formatted_affiliations)
 
 
 class Code(index.Indexed, ClusterableModel):
@@ -126,7 +148,7 @@ class Code(index.Indexed, ClusterableModel):
                                         help_text=_('Related publications'))
     relationships = JSONField(default=list)
 
-    keywords = ClusterTaggableManager(through=CodeKeyword, blank=True)
+    keywords = ClusterTaggableManager(through=CodeKeyword)
     submitter = models.ForeignKey(User)
     contributors = models.ManyToManyField(Contributor, through='CodeContributor')
     # should be stored in code project directory
@@ -176,18 +198,24 @@ class CodeRelease(index.Indexed, ClusterableModel):
 
     dependencies = JSONField(
         default=list,
-        help_text=_('List of JSON dependencies (identifier, name, version, packageSystem, OS, URL)')
+        help_text=_('JSON list of software dependencies (identifier, name, version, packageSystem, OS, URL)')
     )
 
+    license = models.ForeignKey(License)
     description = models.TextField()
     documentation = models.TextField()
     embargo_end_date = models.DateField(null=True, blank=True)
 
     release_number = models.CharField(max_length=32,
-                                      help_text=_("Simple or semver version number, e.g., v1/v2/v3 or v1.0.0, v1.0.1"))
+                                      help_text=_("Simple or semver version number, e.g., v1/v2/v3 or v1.2.7"))
 
     os = models.CharField(max_length=32, choices=OPERATING_SYSTEMS, blank=True)
-    platforms = ClusterTaggableManager(through=Platform, blank=True, related_name='platform_code_releases')
-    programming_languages = ClusterTaggableManager(through=ProgrammingLanguage, blank=True,
+    '''
+    FIXME: platforms / programming languages could be covered via dependencies, need to decide which
+    is the central source of truth. Or we could augment dependencies JSON field with structured metadata and
+    leave it as the junk drawer.
+    '''
+    platforms = ClusterTaggableManager(through=PlatformTag, related_name='platform_code_releases')
+    programming_languages = ClusterTaggableManager(through=ProgrammingLanguage,
                                                    related_name='pl_code_releases')
     code = models.ForeignKey(Code, related_name='releases')
