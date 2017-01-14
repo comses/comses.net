@@ -42,8 +42,8 @@ OPERATING_SYSTEMS = Choices(
 )
 
 
-class CodeKeyword(TaggedItemBase):
-    content_object = ParentalKey('library.Codebase', related_name='tagged_code_keywords')
+class CodebaseKeyword(TaggedItemBase):
+    content_object = ParentalKey('library.Codebase', related_name='tagged_codebase_keywords')
 
 
 class ProgrammingLanguage(TaggedItemBase):
@@ -141,18 +141,18 @@ class Codebase(index.Indexed, ClusterableModel):
     # M2M relationships for publications
     publications = models.ManyToManyField(
         'citation.Publication',
-        through='CodePublication',
-        related_name='code_publications',
+        through='CodebasePublication',
+        related_name='codebases',
         help_text=_('Publications on this work'))
     references = models.ManyToManyField('citation.Publication',
-                                        related_name='code_references',
+                                        related_name='codebase_references',
                                         help_text=_('Related publications'))
     relationships = JSONField(default=list)
 
-    keywords = ClusterTaggableManager(through=CodeKeyword)
+    keywords = ClusterTaggableManager(through=CodebaseKeyword)
     submitter = models.ForeignKey(User)
-    contributors = models.ManyToManyField(Contributor, through='CodeContributor')
-    # should be stored in code project directory
+    contributors = models.ManyToManyField(Contributor, through='CodebaseContributor')
+    # should be stored in codebase project directory
     images = JSONField(default=list)
 
     search_fields = [
@@ -166,7 +166,7 @@ class Codebase(index.Indexed, ClusterableModel):
 
 
 class CodebasePublication(models.Model):
-    code = models.ForeignKey(Codebase, on_delete=models.CASCADE)
+    codebase = models.ForeignKey(Codebase, on_delete=models.CASCADE)
     publication = models.ForeignKey('citation.Publication', on_delete=models.CASCADE)
     is_primary = models.BooleanField(default=False)
     index = models.PositiveIntegerField(default=1)
@@ -174,8 +174,8 @@ class CodebasePublication(models.Model):
 
 class CodebaseContributor(models.Model):
 
-    # FIXME: should this be to CodeRelease instead?
-    code = models.ForeignKey(Codebase, on_delete=models.CASCADE)
+    # FIXME: should this be to CodebaseRelease instead?
+    codebase = models.ForeignKey(Codebase, on_delete=models.CASCADE)
     contributor = models.ForeignKey(Contributor, on_delete=models.CASCADE)
     include_in_citation = models.BooleanField(default=True)
     is_maintainer = models.BooleanField(default=False)
@@ -184,7 +184,7 @@ class CodebaseContributor(models.Model):
                             help_text=_('''
                             Roles from https://www.ngdc.noaa.gov/metadata/published/xsd/schema/resources/Codelist/gmxCodelists.xml#CI_RoleCode
                             '''))
-    index = models.PositiveSmallIntegerField(help_text=_('Ordering field for code contributors'))
+    index = models.PositiveSmallIntegerField(help_text=_('Ordering field for codebase contributors'))
 
 
 class CodebaseRelease(index.Indexed, ClusterableModel):
@@ -216,7 +216,7 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
     is the central source of truth. Or we could augment dependencies JSON field with structured metadata and
     leave it as the junk drawer.
     '''
-    platforms = ClusterTaggableManager(through=PlatformTag, related_name='platform_code_releases')
+    platforms = ClusterTaggableManager(through=PlatformTag, related_name='platform_codebase_releases')
     programming_languages = ClusterTaggableManager(through=ProgrammingLanguage,
-                                                   related_name='pl_code_releases')
-    code = models.ForeignKey(Codebase, related_name='releases')
+                                                   related_name='pl_codebase_releases')
+    codebase = models.ForeignKey(Codebase, related_name='releases')

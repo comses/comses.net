@@ -6,7 +6,7 @@ import pytz
 
 from datetime import datetime
 from django.contrib.auth.models import User, Group
-from library.models import (Contributor, Codebase, CodebaseRelease, CodeKeyword, License,
+from library.models import (Contributor, Codebase, CodebaseRelease, CodebaseKeyword, License,
                             CodebaseContributor, Platform, OPERATING_SYSTEMS)
 from home.models import Event, Job, MemberProfile
 from taggit.models import Tag
@@ -159,9 +159,9 @@ class UserExtractor(Extractor):
                 "last_login": Extractor.timestamp_to_datetime(raw_user['login']),
             }
         )
-        user.drupal_uid=raw_user['uid']
+        user.drupal_uid = raw_user['uid']
         roles = raw_user['roles'].values()
-        MemberProfile.objects.get_or_create(user=user, defaults={"timezone":raw_user['timezone']})
+        MemberProfile.objects.get_or_create(user=user, defaults={"timezone": raw_user['timezone']})
         if 'administrator' in roles:
             user.is_superuser = True
             user.save()
@@ -188,6 +188,7 @@ class UserExtractor(Extractor):
 class ProfileExtractor(Extractor):
 
     def extract_all(self, user_id_map, taxonomy_id_map):
+        contributors = []
         for raw_profile in self.data:
             drupal_uid = raw_profile['uid']
             user_id = user_id_map.get(drupal_uid, -1)
@@ -198,13 +199,12 @@ class ProfileExtractor(Extractor):
             profile = user.member_profile
             user.first_name = get_first_field(raw_profile, 'field_profile2_firstname')
             user.last_name = get_first_field(raw_profile, 'field_profile2_lastname')
-            contributor = Contributor.objects.create(
+            contributors.append(Contributor(
                 given_name=user.first_name,
                 middle_name=get_first_field(raw_profile, 'field_profile2_middlename'),
                 family_name=user.last_name,
                 email=user.email,
-                user=user,
-            )
+                user=user))
             profile.research_interests = get_first_field(raw_profile, 'field_profile2_research')
             profile.institutions = get_field(raw_profile, 'institutions')
             profile.degrees = get_field_attributes(raw_profile, 'field_profile2_degrees')
@@ -212,22 +212,22 @@ class ProfileExtractor(Extractor):
                                                        attribute_name='url')
             profile.cv_url = get_first_field(raw_profile, 'field_profile2_cv_link', attribute_name='url')
             profile.institutional_homepage_url = get_first_field(raw_profile, 'field_profile2_institution_link',
-                                                               attribute_name='url')
+                                                                 attribute_name='url')
             profile.linkedin_url = get_first_field(raw_profile, 'field_profile2_linkedin_link',
-                                                 attribute_name='url')
+                                                   attribute_name='url')
             profile.personal_homepage_url = get_first_field(raw_profile, 'field_profile2_personal_link',
-                                                          attribute_name='url')
+                                                            attribute_name='url')
             profile.researchgate_url = get_first_field(raw_profile, 'field_profile2_researchgate_link',
-                                                      attribute_name='url')
+                                                       attribute_name='url')
             for url in ('academia_edu_url', 'cv_url', 'institutional_homepage_url', 'personal_homepage_url', 'researchgate_url'):
                 if len(getattr(profile, url, '')) > 200:
-                    logger.debug("Ignoring overlong %s URL %s", url, getattr(profile, url))
+                    logger.warning("Ignoring overlong %s URL %s", url, getattr(profile, url))
                     setattr(profile, url, '')
             tags = [taxonomy_id_map[tid] for tid in get_field_attributes(raw_profile, 'taxonomy_vocabulary_6', attribute_name='tid') if tid in taxonomy_id_map]
-            logger.debug("tags: %s", tags)
             profile.keywords.add(*tags)
             profile.save()
             user.save()
+        Contributor.objects.bulk_create(contributors)
 
 
 class TaxonomyExtractor(Extractor):
@@ -235,13 +235,14 @@ class TaxonomyExtractor(Extractor):
     # DELIMITER_REGEX = re.compile('[;,]')
 
     DELIMITERS = (';', ',', '.')
+
     @staticmethod
     def sanitize(tag: str) -> str:
         rv = tag.strip()
         if len(tag) > 100:
-            logger.debug("tag_too_long: %s", tag)
-            return tag[:100]
-        return tag
+            logger.warning("tag_too_long: %s", tag)
+            return tag[:100].strip()
+        return rv
 
     def extract_all(self):
         tag_id_map = {}
@@ -256,6 +257,7 @@ class TaxonomyExtractor(Extractor):
                         tags = raw_tag_name.split(delim)
                         break
                 for t in tags:
+                    t = self.sanitize(t)
                     tag, created = Tag.objects.get_or_create(name=self.sanitize(t))
                     tag_id_map[raw_tag['tid']] = tag
         return tag_id_map
@@ -291,8 +293,8 @@ class ModelExtractor(Extractor):
                         is_replication=Extractor.int_to_bool(get_first_field(raw_model, 'field_model_replicated', default='0')),
                         references_text=get_first_field(raw_model, 'field_model_reference', default=''),
                         replication_references_text=get_first_field(raw_model, 'field_model_publication_text', default=''),
-                        identifier = raw_model['nid'],
-                        peer_reviewed = self.int_to_bool(get_first_field(raw_model, 'field_model_certified', default=0)),
+                        identifier=raw_model['nid'],
+                        peer_reviewed=self.int_to_bool(get_first_field(raw_model, 'field_model_certified', default=0)),
                         submitter_id=user_id_map[raw_model.get('uid')])
         code.author_ids = author_ids
         code.keyword_tids = get_field_attributes(raw_model, 'taxonomy_vocabulary_6', attribute_name='tid')
@@ -307,7 +309,7 @@ class ModelExtractor(Extractor):
             for idx, author_id in enumerate(model_code.author_ids):
                 contributors.append(
                     CodebaseContributor(contributor_id=author_id,
-                                        code_id=model_code.pk,
+                                        codebase_id=model_code.pk,
                                         index=idx)
                 )
             # FIXME: some tids may have been converted to multiple tags due to splitting
@@ -315,7 +317,6 @@ class ModelExtractor(Extractor):
             model_id_map[model_code.identifier] = model_code
         CodebaseContributor.objects.bulk_create(contributors)
         return model_id_map
-
 
 
 class ModelVersionExtractor(Extractor):
@@ -341,7 +342,7 @@ class ModelVersionExtractor(Extractor):
         if code:
             description = get_first_field(raw_model_version, 'body')
             language = self.PROGRAMMING_LANGUAGES[int(get_first_field(raw_model_version, 'field_modelversion_language',
-                                                                     default=0))]
+                                                                      default=0))]
             dependencies = {
                 'programming_language': {
                     'name': language,
@@ -380,7 +381,7 @@ class IDMapper:
         self._maps = {
             Contributor: author_id_map,
             User: user_id_map,
-            CodeKeyword: tag_id_map,
+            CodebaseKeyword: tag_id_map,
             Codebase: model_id_map,
             CodebaseRelease: model_version_id_map
         }
