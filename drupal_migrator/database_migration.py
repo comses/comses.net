@@ -1,9 +1,4 @@
-import csv
-import io
-import json
-import os
-import pytz
-
+from collections import defaultdict
 from datetime import datetime
 from django.contrib.auth.models import User, Group
 from library.models import (Contributor, Codebase, CodebaseRelease, CodebaseKeyword, License,
@@ -14,8 +9,13 @@ from typing import Dict
 
 from .utils import get_first_field, get_field, get_field_attributes
 
+import csv
+import io
+import json
 import logging
-
+import os
+import pytz
+import re
 
 logger = logging.getLogger(__name__)
 
@@ -52,6 +52,10 @@ PLATFORMS = """id,name,url
     13,Swarm,http://www.swarm.org/
     14,AnyLogic,http://www.anylogic.com/
     15,Matlab,http://www.mathworks.com/products/matlab/"""
+
+
+def flatten(ls):
+    return [item for sublist in ls for item in sublist]
 
 
 def load_data(model, s: str):
@@ -187,7 +191,7 @@ class UserExtractor(Extractor):
 
 class ProfileExtractor(Extractor):
 
-    def extract_all(self, user_id_map, taxonomy_id_map):
+    def extract_all(self, user_id_map, tag_id_map):
         contributors = []
         for raw_profile in self.data:
             drupal_uid = raw_profile['uid']
@@ -223,7 +227,7 @@ class ProfileExtractor(Extractor):
                 if len(getattr(profile, url, '')) > 200:
                     logger.warning("Ignoring overlong %s URL %s", url, getattr(profile, url))
                     setattr(profile, url, '')
-            tags = [taxonomy_id_map[tid] for tid in get_field_attributes(raw_profile, 'taxonomy_vocabulary_6', attribute_name='tid') if tid in taxonomy_id_map]
+            tags = flatten([tag_id_map[tid] for tid in get_field_attributes(raw_profile, 'taxonomy_vocabulary_6', attribute_name='tid') if tid in tag_id_map])
             profile.keywords.add(*tags)
             profile.save()
             user.save()
@@ -232,9 +236,8 @@ class ProfileExtractor(Extractor):
 
 class TaxonomyExtractor(Extractor):
 
-    # DELIMITER_REGEX = re.compile('[;,]')
-
-    DELIMITERS = (';', ',', '.')
+    # DELIMITERS = (';', ',', '.')
+    DELIMITER_REGEX = re.compile(r';|,|\.')
 
     @staticmethod
     def sanitize(tag: str) -> str:
@@ -245,21 +248,18 @@ class TaxonomyExtractor(Extractor):
         return rv
 
     def extract_all(self):
-        tag_id_map = {}
+        tag_id_map = defaultdict(list)
         for raw_tag in self.data:
             if raw_tag['vocabulary_machine_name'] == 'vocabulary_6':
                 raw_tag_name = raw_tag['name']
                 tags = [raw_tag_name]
                 # if the taxonomy was manually delimited by semicolons, commas, or periods and not split by Drupal
                 # try, in that order, to split them
-                for delim in self.DELIMITERS:
-                    if delim in raw_tag_name:
-                        tags = raw_tag_name.split(delim)
-                        break
+                tags = filter(lambda x: x.strip(), re.split(self.DELIMITER_REGEX, raw_tag_name))
                 for t in tags:
                     t = self.sanitize(t)
-                    tag, created = Tag.objects.get_or_create(name=self.sanitize(t))
-                    tag_id_map[raw_tag['tid']] = tag
+                    tag, created = Tag.objects.get_or_create(name=t)
+                    tag_id_map[raw_tag['tid']].append(t)
         return tag_id_map
 
 
@@ -313,7 +313,7 @@ class ModelExtractor(Extractor):
                                         index=idx)
                 )
             # FIXME: some tids may have been converted to multiple tags due to splitting
-            model_code.keywords.add(*[tag_id_map[tid] for tid in model_code.keyword_tids])
+            model_code.keywords.add(*flatten([tag_id_map[tid] for tid in model_code.keyword_tids]))
             model_id_map[model_code.identifier] = model_code
         CodebaseContributor.objects.bulk_create(contributors)
         return model_id_map
