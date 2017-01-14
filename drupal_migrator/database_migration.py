@@ -6,8 +6,8 @@ import pytz
 
 from datetime import datetime
 from django.contrib.auth.models import User, Group
-from library.models import (Contributor, Code, CodeRelease, CodeKeyword, License,
-                            CodeContributor, Platform, OPERATING_SYSTEMS)
+from library.models import (Contributor, Codebase, CodebaseRelease, CodeKeyword, License,
+                            CodebaseContributor, Platform, OPERATING_SYSTEMS)
 from home.models import Event, Job, MemberProfile
 from taggit.models import Tag
 from typing import Dict
@@ -18,18 +18,6 @@ import logging
 
 
 logger = logging.getLogger(__name__)
-
-
-def load_data(model, s: str) -> Dict[int, Dict]:
-    f = io.StringIO(s.strip())
-    rows = csv.DictReader(f)
-
-    instances = []
-    for row in rows:
-        instances.append(model(**row))
-
-    model.objects.bulk_create(instances)
-    # TODO: set sequence number to start after last value when moved over to Postgres
 
 
 LICENSES = """id,name,url
@@ -66,6 +54,18 @@ PLATFORMS = """id,name,url
     15,Matlab,http://www.mathworks.com/products/matlab/"""
 
 
+def load_data(model, s: str):
+    f = io.StringIO(s.strip())
+    rows = csv.DictReader(f)
+
+    instances = []
+    for row in rows:
+        instances.append(model(**row))
+
+    model.objects.bulk_create(instances)
+    # TODO: set sequence number to start after last value when moved over to Postgres
+
+
 class Extractor:
     def __init__(self, data):
         self.data = data
@@ -75,19 +75,21 @@ class Extractor:
         try:
             return bool(int(integer_value))
         except:
+            logger.debug("Could not convert %s to bool", integer_value)
             return default
 
     @classmethod
-    def from_file(cls, file_name):
-        with open(file_name, 'r', encoding='UTF-8') as f:
+    def from_file(cls, filename):
+        with open(filename, 'r', encoding='UTF-8') as f:
             data = json.load(f)
             return cls(data)
 
     @staticmethod
-    def timestamp_to_datetime(unix_timestamp: str, tz: datetime.tzinfo=pytz.UTC):
+    def timestamp_to_datetime(unix_timestamp: str, tz=pytz.UTC):
         try:
             return datetime.fromtimestamp(float(unix_timestamp), tz=tz)
         except:
+            logger.warning("Could not convert timestamp %s", unix_timestamp)
             return None
 
 
@@ -282,15 +284,16 @@ class ModelExtractor(Extractor):
     def _extract(self, raw_model, user_id_map, author_id_map):
         raw_author_ids = [raw_author['value'] for raw_author in get_field(raw_model, 'field_model_author')]
         author_ids = [author_id_map[raw_author_id] for raw_author_id in raw_author_ids]
-        code = Code(title=raw_model['title'],
-                    description=get_first_field(raw_model, field_name='body', default=''),
-                    date_created=self.timestamp_to_datetime(raw_model['created']),
-                    last_modified=self.timestamp_to_datetime(raw_model['changed']),
-                    is_replication=Extractor.int_to_bool(get_first_field(raw_model, 'field_model_replicated', default='0')),
-                    references_text=get_first_field(raw_model, 'field_model_reference', default=''),
-                    replication_references_text=get_first_field(raw_model, 'field_model_publication_text', default=''),
-                    identifier = raw_model['nid'],
-                    submitter_id=user_id_map[raw_model.get('uid')])
+        code = Codebase(title=raw_model['title'],
+                        description=get_first_field(raw_model, field_name='body', default=''),
+                        date_created=self.timestamp_to_datetime(raw_model['created']),
+                        last_modified=self.timestamp_to_datetime(raw_model['changed']),
+                        is_replication=Extractor.int_to_bool(get_first_field(raw_model, 'field_model_replicated', default='0')),
+                        references_text=get_first_field(raw_model, 'field_model_reference', default=''),
+                        replication_references_text=get_first_field(raw_model, 'field_model_publication_text', default=''),
+                        identifier = raw_model['nid'],
+                        peer_reviewed = self.int_to_bool(get_first_field(raw_model, 'field_model_certified', default=0)),
+                        submitter_id=user_id_map[raw_model.get('uid')])
         code.author_ids = author_ids
         code.keyword_tids = get_field_attributes(raw_model, 'taxonomy_vocabulary_6', attribute_name='tid')
         return code
@@ -303,14 +306,14 @@ class ModelExtractor(Extractor):
             model_code.save()
             for idx, author_id in enumerate(model_code.author_ids):
                 contributors.append(
-                    CodeContributor(contributor_id=author_id,
-                                    code_id=model_code.pk,
-                                    index=idx)
+                    CodebaseContributor(contributor_id=author_id,
+                                        code_id=model_code.pk,
+                                        index=idx)
                 )
             # FIXME: some tids may have been converted to multiple tags due to splitting
             model_code.keywords.add(*[tag_id_map[tid] for tid in model_code.keyword_tids])
             model_id_map[model_code.identifier] = model_code
-        CodeContributor.objects.bulk_create(contributors)
+        CodebaseContributor.objects.bulk_create(contributors)
         return model_id_map
 
 
@@ -378,8 +381,8 @@ class IDMapper:
             Contributor: author_id_map,
             User: user_id_map,
             CodeKeyword: tag_id_map,
-            Code: model_id_map,
-            CodeRelease: model_version_id_map
+            Codebase: model_id_map,
+            CodebaseRelease: model_version_id_map
         }
 
     def __getitem__(self, item):

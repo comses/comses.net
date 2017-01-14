@@ -1,4 +1,4 @@
-from library.models import Code, CodeRelease
+from library.models import Codebase, CodebaseRelease
 from .models import Event, Job
 from .serializers import EventSerializer, JobSerializer
 from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage

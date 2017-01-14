@@ -1,10 +1,10 @@
 from django.shortcuts import render
 from rest_framework import generics, viewsets
 
-from .models import Code
+from .models import Codebase
 
 class CodeViewSet(viewsets.ModelViewSet):
-    queryset = Code.objects.all()
+    queryset = Codebase.objects.all()
     serializer_class = CodeSerializer
     pagination_class = SmallResultSetPagination
     renderer_classes = (TemplateHTMLRenderer, JSONRenderer,)

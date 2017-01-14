@@ -43,11 +43,11 @@ OPERATING_SYSTEMS = Choices(
 
 
 class CodeKeyword(TaggedItemBase):
-    content_object = ParentalKey('library.Code', related_name='tagged_code_keywords')
+    content_object = ParentalKey('library.Codebase', related_name='tagged_code_keywords')
 
 
 class ProgrammingLanguage(TaggedItemBase):
-    content_object = ParentalKey('library.CodeRelease', related_name='tagged_release_languages')
+    content_object = ParentalKey('library.CodebaseRelease', related_name='tagged_release_languages')
 
 
 class Platform(models.Model):
@@ -69,7 +69,7 @@ class PlatformRelease(models.Model):
 
 
 class PlatformTag(TaggedItemBase):
-    content_object = ParentalKey('library.CodeRelease', related_name='tagged_release_platforms')
+    content_object = ParentalKey('library.CodebaseRelease', related_name='tagged_release_platforms')
 
 
 class ContributorAffiliation(TaggedItemBase):
@@ -112,7 +112,7 @@ class Contributor(index.Indexed, ClusterableModel):
         return "{0} {1} {2}".format(self.full_name, self.email, self.formatted_affiliations)
 
 
-class Code(index.Indexed, ClusterableModel):
+class Codebase(index.Indexed, ClusterableModel):
     # shortname = models.CharField(max_length=128, unique=True)
     title = models.CharField(max_length=500)
     description = models.TextField()
@@ -123,6 +123,7 @@ class Code(index.Indexed, ClusterableModel):
     date_created = models.DateTimeField(default=timezone.now)
     last_modified = models.DateTimeField(auto_now=True)
     is_replication = models.BooleanField(default=False)
+    peer_reviewed = models.BooleanField(default=False)
 
     identifier = models.CharField(max_length=128, unique=True)
     doi = models.CharField(max_length=128, unique=True, blank=True, null=True)
@@ -164,17 +165,17 @@ class Code(index.Indexed, ClusterableModel):
         return "{0} {1} ({2})".format(self.title, self.date_created, self.submitter)
 
 
-class CodePublication(models.Model):
-    code = models.ForeignKey(Code, on_delete=models.CASCADE)
+class CodebasePublication(models.Model):
+    code = models.ForeignKey(Codebase, on_delete=models.CASCADE)
     publication = models.ForeignKey('citation.Publication', on_delete=models.CASCADE)
     is_primary = models.BooleanField(default=False)
     index = models.PositiveIntegerField(default=1)
 
 
-class CodeContributor(models.Model):
+class CodebaseContributor(models.Model):
 
     # FIXME: should this be to CodeRelease instead?
-    code = models.ForeignKey(Code, on_delete=models.CASCADE)
+    code = models.ForeignKey(Codebase, on_delete=models.CASCADE)
     contributor = models.ForeignKey(Contributor, on_delete=models.CASCADE)
     include_in_citation = models.BooleanField(default=True)
     is_maintainer = models.BooleanField(default=False)
@@ -186,7 +187,7 @@ class CodeContributor(models.Model):
     index = models.PositiveSmallIntegerField(help_text=_('Ordering field for code contributors'))
 
 
-class CodeRelease(index.Indexed, ClusterableModel):
+class CodebaseRelease(index.Indexed, ClusterableModel):
 
     date_created = models.DateTimeField(default=timezone.now)
     last_modified = models.DateTimeField(auto_now=True)
@@ -206,7 +207,7 @@ class CodeRelease(index.Indexed, ClusterableModel):
     documentation = models.TextField()
     embargo_end_date = models.DateField(null=True, blank=True)
 
-    release_number = models.CharField(max_length=32,
+    version_number = models.CharField(max_length=32,
                                       help_text=_("Simple or semver version number, e.g., v1/v2/v3 or v1.2.7"))
 
     os = models.CharField(max_length=32, choices=OPERATING_SYSTEMS, blank=True)
@@ -218,4 +219,4 @@ class CodeRelease(index.Indexed, ClusterableModel):
     platforms = ClusterTaggableManager(through=PlatformTag, related_name='platform_code_releases')
     programming_languages = ClusterTaggableManager(through=ProgrammingLanguage,
                                                    related_name='pl_code_releases')
-    code = models.ForeignKey(Code, related_name='releases')
+    code = models.ForeignKey(Codebase, related_name='releases')
