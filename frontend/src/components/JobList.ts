@@ -22,7 +22,7 @@ import {SET_JOB_QUERY_TEXT} from '../store/types'
                         v-for="job in jobs"
                         v-bind:id="job.id"
                         v-bind:title="job.title"
-                        v-bind:content="job.content"
+                        v-bind:description="job.description"
                         v-bind:date_created="job.date_created">
                 </c-job-item>
                 <c-paginator

@@ -1,7 +1,7 @@
 <template>
     <div>
         <h1>{{ job_detail.title }} ({{ job_detail.date_created }})</h1>
-        <p>{{ job_detail.content }}</p>
+        <p>{{ job_detail.description }}</p>
     </div>
 </template>
 <style>

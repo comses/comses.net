@@ -69,12 +69,6 @@ class MemberProfile(index.Indexed, ClusterableModel):
     orcid = models.CharField(help_text=_("16 digits, - between every 4th digit, e.g., 0000-0002-1825-0097"),
                              max_length=19)
 
-    search_fields = [
-        index.SearchField('title', partial_match=True, boost=10),
-        index.SearchField('content', partial_match=True),
-        index.SearchField('creator__username'),
-    ]
-
 
 class CarouselItem(models.Model):
     image = models.ForeignKey('wagtailimages.Image',
@@ -163,7 +157,7 @@ class Job(index.Indexed, ClusterableModel):
     search_fields = [
         index.SearchField('title', partial_match=True, boost=10),
         index.SearchField('description', partial_match=True),
-        index.SearchField('submitter'),
+        index.SearchField('submitter__username'),
     ]
 
     def __str__(self):

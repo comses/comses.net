@@ -3,7 +3,6 @@ wagtailmenus==2.0.3
 django-extensions==1.7.5
 djangorestframework-jsonapi==2.1.1
 django-rest-swagger==2.1.0
-django-compressor==2.1
 django-reversion==2.0.8
 django-markupfield==1.4.1
 psycopg2==2.6.2

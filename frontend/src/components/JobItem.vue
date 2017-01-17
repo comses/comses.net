@@ -10,7 +10,7 @@
 <script lang="ts">
     import * as Vue from 'vue'
     export default {
-        props: ['id', 'title', 'date_created', 'content' ],
+        props: ['id', 'title', 'date_created', 'description' ],
         components: {
 
         }

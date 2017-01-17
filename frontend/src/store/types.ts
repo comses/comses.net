@@ -4,7 +4,7 @@ export const RETRIEVE_JOB_BY_ID = 'RETRIEVE_JOB_BY_ID';
 export const SET_JOB_QUERY_TEXT = 'SET_JOB_QUERY_TEXT';
 
 export interface Job {
-    content: string,
+    description: string,
     creator: {username: string},
     date_created: string,
     id: number,

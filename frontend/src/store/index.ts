@@ -17,7 +17,7 @@ const initialState: types.State = {
             url: '',
             date_created: '',
             creator: { username: ''},
-            content: ''
+            description: ''
         },
         list: {
             count: 0,
