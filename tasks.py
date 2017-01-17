@@ -120,7 +120,7 @@ def initialize_database_schema(ctx, clean=True):
         for app in ('home', 'library'):
             migration_dir = os.path.join(app, 'migrations')
             ctx.run('find {0} -name 00*.py -delete -print'.format(migration_dir))
-    dj(ctx, 'makemigrations')
+    dj(ctx, 'makemigrations home library')
     dj(ctx, 'migrate --noinput')
 
 

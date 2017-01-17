@@ -123,6 +123,8 @@ DATABASES = {
 
 LOG_DIRECTORY = config.get('logging', 'LOG_DIRECTORY', fallback='./logs')
 
+HASH_STORAGE_ROOT = config.get('storage', 'HASH_STORAGE_ROOT', fallback=os.path.join(BASE_DIR, 'repository'))
+
 # logging configuration
 LOGGING = {
     'version': 1,
@@ -200,6 +202,7 @@ STATIC_URL = '/static/'
 
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 MEDIA_URL = '/media/'
+
 
 # Wagtail settings
 

@@ -28,6 +28,8 @@ services:
       - .:/code
       - ./deploy/elasticsearch.conf.d:/etc/elasticsearch
       - logs:/code/logs
+      - library:/library
+      - storage:/data
       - ./deploy/conf/config.ini:/secrets/config.ini
     command: /code/deploy/app/dev.sh
     environment:
@@ -55,6 +57,10 @@ services:
       - ${DB_HOST}
       - elasticsearch
 volumes:
+  storage:
+    driver: local
+  library:
+    driver: local
   esindex:
     driver: local
   data:

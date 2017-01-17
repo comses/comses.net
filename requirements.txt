@@ -11,5 +11,7 @@ pygit2==0.24.2
 django-location-field==1.6.1
 django-model-utils==2.6
 django-timezone-field==2.0
+# need to skip dependency checking on this
+hashfs==0.7.0
 # CoMSES citation app
 -e git+https://github.com/comses/citation.git#egg=citation

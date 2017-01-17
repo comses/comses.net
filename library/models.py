@@ -12,6 +12,8 @@ from model_utils import Choices
 from taggit.models import TaggedItemBase
 from wagtail.wagtailsearch import index
 
+from .storage import HashStorage
+
 import logging
 import uuid
 
@@ -65,7 +67,7 @@ class PlatformRelease(models.Model):
     version = models.CharField(max_length=100)
     url = models.URLField(blank=True)
     description = models.TextField(blank=True)
-    archive = models.FileField(upload_to=Platform.upload_path)
+    archive = models.FileField(upload_to=Platform.upload_path, null=True)
 
 
 class PlatformTag(TaggedItemBase):
@@ -113,6 +115,7 @@ class Contributor(index.Indexed, ClusterableModel):
 
 
 class Codebase(index.Indexed, ClusterableModel):
+
     # shortname = models.CharField(max_length=128, unique=True)
     title = models.CharField(max_length=500)
     description = models.TextField()
@@ -220,3 +223,6 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
     programming_languages = ClusterTaggableManager(through=ProgrammingLanguage,
                                                    related_name='pl_codebase_releases')
     codebase = models.ForeignKey(Codebase, related_name='releases')
+
+    submission_package = models.FileField(storage=HashStorage('/data/sip/'), null=True)
+    archival_package = models.FileField(storage=HashStorage('/archive/'), null=True)

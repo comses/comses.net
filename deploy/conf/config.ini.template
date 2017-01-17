@@ -10,3 +10,10 @@ DB_PASSWORD=${DB_PASSWORD}
 
 [secrets]
 SECRET_KEY=${DJANGO_SECRET_KEY}
+
+[logging]
+LOGGING_DIRECTORY=/code/logs
+
+[storage]
+HASH_STORAGE_ROOT=/data
+LIBRARY_ROOT=/library
