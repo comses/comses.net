@@ -5,10 +5,7 @@ from django.core.files.base import ContentFile
 
 from ..models import Codebase, CodebaseRelease
 
-import pathlib
 import logging
-
-
 
 logger = logging.getLogger(__name__)
 
@@ -35,9 +32,8 @@ class CodebaseTest(BaseModelTestCase):
         self.assertEquals(self.c1.base_library_dir, '/library/{0}'.format(self.c1.uuid))
         self.assertEquals(self.c1.base_git_dir, '/repository/{0}'.format(self.c1.uuid))
 
-
     def test_make_release(self):
         content = ContentFile('Bunches of test content')
-        release = self.c1.make_release(content)
+        release = self.c1.make_release(submitted_package=content)
         self.assertEquals(self.c1.latest_version, release)
         self.assertEquals(CodebaseRelease.objects.get(codebase=self.c1, version_number=release.version_number), release)

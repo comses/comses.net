@@ -337,6 +337,7 @@ class ModelVersionExtractor(Extractor):
         model_nid = get_first_field(raw_model_version, 'field_modelversion_model', attribute_name='nid')
         platform_id = int(get_first_field(raw_model_version, 'field_modelversion_platform', default=0))
         license_id = int(get_first_field(raw_model_version, 'field_modelversion_license', default=0))
+        version_number = int(get_first_field(raw_model_version, 'field_modelversion_number', default=1))
         platform = Platform.objects.get(pk=platform_id)
         code = model_id_map.get(model_nid)
         if code:
@@ -358,6 +359,7 @@ class ModelVersionExtractor(Extractor):
                 identifier=raw_model_version['vid'],
                 dependencies=dependencies,
                 submitter=code.submitter,
+                version_number="1.{0}.0".format(version_number-1),
             )
             model_version.programming_languages.add(language)
             model_version.platforms.add(platform.name)

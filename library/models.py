@@ -5,6 +5,8 @@ from django.db import models
 from django.utils import timezone
 from django.utils.translation import ugettext_lazy as _
 
+from enum import Enum
+
 from modelcluster.fields import ParentalKey
 from modelcluster.models import ClusterableModel
 from modelcluster.contrib.taggit import ClusterTaggableManager
@@ -17,7 +19,6 @@ import bagit
 import logging
 import pathlib
 import semver
-import shutil
 import uuid
 
 logger = logging.getLogger(__name__)
@@ -118,6 +119,11 @@ class Contributor(index.Indexed, ClusterableModel):
         return "{0} {1} {2}".format(self.full_name, self.email, self.formatted_affiliations)
 
 
+class SemanticVersion(Enum):
+    MAJOR = semver.bump_major
+    MINOR = semver.bump_minor
+    PATCH = semver.bump_patch
+
 class Codebase(index.Indexed, ClusterableModel):
 
     """
@@ -177,36 +183,33 @@ class Codebase(index.Indexed, ClusterableModel):
 
     @staticmethod
     def _release_upload_path(instance, filename):
-        return instance.get_library_path('bagit', 'sip', filename)
+        return pathlib.Path(instance.submitted_package_path, filename)
 
     @property
     def base_library_dir(self):
         # FIXME: slice up UUID eventually if needed
-        return pathlib.Path(settings.LIBRARY_ROOT, self.uuid)
+        return pathlib.Path(settings.LIBRARY_ROOT, str(self.uuid))
 
     @property
     def base_git_dir(self):
-        return pathlib.Path(settings.REPOSITORY_ROOT, self.uuid)
+        return pathlib.Path(settings.REPOSITORY_ROOT, str(self.uuid))
 
-    def make_release(self, archive=None, submitter=None, major=False, minor=False, patch=False, **kwargs):
+    def make_release(self, submitter=None, version_number=None, version_bump=None, **kwargs):
         if submitter is None:
             submitter = self.submitter
-        version_number = '1.0.0'
-        if self.latest_version is not None:
-            version_number = self.latest_version.version_number
-            if major:
-                version_number = semver.bump_major(version_number)
-            elif minor:
-                version_number = semver.bump_minor(version_number)
-            elif patch:
-                version_number = semver.bump_patch(version_number)
-            else:
-                version_number = semver.bump_minor(version_number)
-                logger.debug("No explicit guidance on how to increment version number, making new minor release: %s",
-                             version_number)
+        if version_number is None:
+            # start off at v1.0.0
+            version_number = '1.0.0'
+            # check for the latest version and reinitialize if it exists
+            if self.latest_version is not None:
+                version_number = self.latest_version.version_number
+                if version_bump is None:
+                    logger.debug("using default minor release version bump for %s",
+                                 version_number)
+                    version_bump = SemanticVersion.MINOR
+                version_number = version_bump(version_number)
         release = self.releases.create(
             submitter=submitter,
-            submitted_package=archive,
             version_number=version_number,
             **kwargs
         )
@@ -288,7 +291,7 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
     submitter = models.ForeignKey(User)
 
     def get_library_path(self, *args):
-        return pathlib.Path(self.codebase.base_library_dir, 'releases', self.pk, *args)
+        return pathlib.Path(self.codebase.base_library_dir, 'releases', str(self.pk), *map(str, args))
 
     @property
     def bagit_path(self):
@@ -317,6 +320,9 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
                     'Contact-Email': self.submitter.email,
                 })
                 return bag
+
+    def __str__(self):
+        return '{0} {1} {2}'.format(self.codebase, self.version_number, self.submitted_package_path)
 
     class Meta:
         unique_together = ('codebase', 'version_number')
