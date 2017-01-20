@@ -349,7 +349,7 @@ class ModelVersionExtractor(Extractor):
                     'version': get_first_field(raw_model_version, 'field_modelversion_language_ver', default='')
                 }
             }
-            model_version = code.releases.create(
+            model_version = code.make_release(
                 description=description,
                 date_created=self.timestamp_to_datetime(raw_model_version['created']),
                 last_modified=self.timestamp_to_datetime(raw_model_version['changed']),
@@ -357,6 +357,7 @@ class ModelVersionExtractor(Extractor):
                 license_id=license_id,
                 identifier=raw_model_version['vid'],
                 dependencies=dependencies,
+                submitter=code.submitter,
             )
             model_version.programming_languages.add(language)
             model_version.platforms.add(platform.name)

@@ -121,9 +121,16 @@ DATABASES = {
     }
 }
 
-LOG_DIRECTORY = config.get('logging', 'LOG_DIRECTORY', fallback='./logs')
+LOG_DIRECTORY = config.get('logging', 'LOG_DIRECTORY', fallback=os.path.join(BASE_DIR, 'logs'))
+LIBRARY_ROOT = config.get('storage', 'LIBRARY_ROOT', fallback=os.path.join(BASE_DIR, 'library'))
+REPOSITORY_ROOT = config.get('storage', 'REPOSITORY_ROOT', fallback=os.path.join(BASE_DIR, 'repository'))
 
-HASH_STORAGE_ROOT = config.get('storage', 'HASH_STORAGE_ROOT', fallback=os.path.join(BASE_DIR, 'repository'))
+for d in (LOG_DIRECTORY, LIBRARY_ROOT, REPOSITORY_ROOT):
+    try:
+        if not os.path.isdir(d):
+            os.mkdir(d)
+    except OSError:
+        print("Unable to create directory", d)
 
 # logging configuration
 LOGGING = {
