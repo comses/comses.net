@@ -2,6 +2,7 @@ from library.models import Codebase, CodebaseRelease
 from .models import Event, Job
 from .serializers import EventSerializer, JobSerializer
 from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
+from django.contrib.auth.models import User
 from rest_framework import generics, viewsets
 from rest_framework.response import Response
 from rest_framework.renderers import JSONRenderer, TemplateHTMLRenderer
@@ -78,5 +79,13 @@ class JobViewSet(viewsets.ModelViewSet):
 
     def retrieve(self, request, *args, **kwargs):
         job = Job.objects.get(id=kwargs['pk'])
+        serializer = JobSerializer(job)
+        return Response(serializer.data)
+
+    def create(self, request, *args, **kwargs):
+        submitter = request.user
+        job = Job.objects.create(title=request.data['title'],
+                                 description=request.data['description'],
+                                 submitter=submitter)
         serializer = JobSerializer(job)
         return Response(serializer.data)

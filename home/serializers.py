@@ -4,7 +4,6 @@ from django.contrib.auth.models import User
 from django.core.urlresolvers import reverse_lazy
 from django.utils.translation import ugettext_lazy as _
 
-
 class EventSerializer(serializers.ModelSerializer):
     class Meta:
         model = Event
@@ -18,7 +17,7 @@ class CreatorSerializer(serializers.ModelSerializer):
 
 
 class JobSerializer(serializers.ModelSerializer):
-    creator = CreatorSerializer(read_only=True, help_text=_('User that created the job description'))
+    submitter = CreatorSerializer(read_only=True, help_text=_('User that created the job description'))
     url = serializers.SerializerMethodField(help_text=_('URL to the detail page of the job'))
 
     def get_url(self, obj):
@@ -26,4 +25,4 @@ class JobSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Job
-        fields = ('id', 'title', 'creator', 'date_created', 'description', 'url')
+        fields = ('id', 'title', 'submitter', 'date_created', 'description', 'url')

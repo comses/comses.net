@@ -9,10 +9,12 @@ from wagtail.wagtailadmin import urls as wagtailadmin_urls
 from wagtail.wagtailcore import urls as wagtail_urls
 from wagtail.wagtaildocs import urls as wagtaildocs_urls
 from home import urls as home_urls
+from library import urls as library_urls
 
 from wagtail.contrib.wagtailapi import urls as wagtailapi_urls
 
 from rest_framework_swagger.views import get_swagger_view
+from rest_framework_jwt.views import obtain_jwt_token
 
 schema_view = get_swagger_view(title='CoMSES.net API')
 
@@ -24,10 +26,11 @@ urlpatterns = [
 
     url(r'^search/$', search_views.search, name='search'),
     url(r'^home/', include(home_urls)),
+    url(r'^library/', include(library_urls)),
 
     url(r'^api/', include(wagtailapi_urls)),
     url(r'^schema/$', schema_view),
-
+    url(r'^api-token-auth/', obtain_jwt_token),
     url(r'', include(wagtail_urls)),
 ]
 

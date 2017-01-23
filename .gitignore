@@ -102,3 +102,7 @@ db.sqlite3
 
 # IDE
 .idea/
+
+# Docker PyCharm
+logs/
+src/

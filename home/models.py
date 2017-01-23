@@ -145,7 +145,8 @@ class JobTag(TaggedItemBase):
 
 
 class Job(index.Indexed, ClusterableModel):
-    title = models.CharField(max_length=500)
+    # Help text is shown in OpenAPI
+    title = models.CharField(max_length=500, help_text=_('Name of Job'))
     date_created = models.DateTimeField(default=timezone.now)
     last_modified = models.DateTimeField(auto_now=True)
     summary = models.CharField(max_length=300, blank=True)
@@ -157,7 +158,7 @@ class Job(index.Indexed, ClusterableModel):
     search_fields = [
         index.SearchField('title', partial_match=True, boost=10),
         index.SearchField('description', partial_match=True),
-        index.SearchField('submitter__username'),
+        index.SearchField('submitter'),
     ]
 
     def __str__(self):

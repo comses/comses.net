@@ -2,7 +2,6 @@ import * as Vue from 'vue';
 
 import store from './store/index'
 import router from './router-config'
-import actions from './store/actions'
 
 import './components/ClassComponentsHooks'
 import { sync } from 'vuex-router-sync';

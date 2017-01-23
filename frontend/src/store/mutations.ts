@@ -1,20 +1,47 @@
-import * as types from './types'
-import { State, Job, JobList } from './types'
+import { State, Job, JobPage } from './types'
 
-export default {
-    [types.RECIEVE_ALL] (state: State, job_list: JobList) {
-        state.job.list = job_list;
+// don't use this in components, use MutationAPI instead
+export const mutations = {
+    SET_JOB_PAGE(state: State, job_page: JobPage): void {
+        state.job.page = job_page;
     },
 
-    [types.RETRIEVE_JOB_BY_ID] (state: State, job: Job) {
+    SET_JOB(state: State, job: Job): void {
         state.job.detail = job;
     },
 
-    [types.GET_JOB_FROM_JOB_LIST_BY_IND] (state: State, job_ind: number) {
-        state.job.detail = state.job.list.results[job_ind];
+    SET_JOB_BY_IND(state: State, ind: number): void {
+        state.job.detail = state.job.page.results[ind];
     },
 
-    [types.SET_JOB_QUERY_TEXT] (state: State, text: string) {
-        state.job.search = text;
+    SET_JOB_SEARCH(state: State, search: string): void {
+        state.job.search = search;
     }
+};
+
+interface SetJobPage {
+    type: 'SET_JOB_PAGE',
+    job_page: JobPage
 }
+
+interface SetJob {
+    type: 'SET_JOB',
+    job: Job
+}
+
+interface SetJobByInd {
+    type: 'SET_JOB_BY_IND',
+    ind: number
+}
+
+interface SetJobSearchText {
+    type: 'SET_JOB_SEARCH',
+    search: string
+}
+
+export const MutationAPI = {
+    setJobPage: (job_page: JobPage): SetJobPage => ({ type: 'SET_JOB_PAGE', job_page }),
+    setJob: (job: Job): SetJob => ({ type: 'SET_JOB', job}),
+    setJobByInd: (ind: number): SetJobByInd => ({ type: 'SET_JOB_BY_IND', ind}),
+    setJobSearch: (search: string): SetJobSearchText => ({ type: 'SET_JOB_SEARCH', search})
+};
