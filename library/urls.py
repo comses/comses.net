@@ -4,4 +4,6 @@ from . import views
 
 router = routers.DefaultRouter()
 router.register(r'code', views.CodeViewSet)
+router.register(r'code_release', views.CodebaseReleaseViewSet)
+
 urlpatterns = router.urls

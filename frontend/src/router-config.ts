@@ -9,7 +9,7 @@ import JobList from './components/job/list'
 
 
 
-import {ActionAPI} from "./store/actions";
+import { api } from "./store/index";
 
 Vue.use(Router);
 
@@ -43,11 +43,11 @@ const router = new Router({
 router.beforeEach((to, from, next) => {
     switch (to.name) {
         case routes.JOB_LIST: {
-            store.dispatch(ActionAPI.fetchJobPage(<any>to.query));
+            store.dispatch(api.job.actions.fetchList(<any>to.query));
             break;
         }
         case routes.JOB_DETAIL: {
-            store.dispatch(ActionAPI.fetchOrSetJob(parseInt(to.params['jobId'])));
+            store.dispatch(api.job.actions.fetchDetail(parseInt(to.params['jobId'])));
             break;
         }
     }

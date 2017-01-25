@@ -9,15 +9,15 @@ class ContributorSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
-class CodeReleaseSerializer(serializers.ModelSerializer):
+class CodebaseReleaseSerializer(serializers.ModelSerializer):
     class Meta:
         model = CodebaseRelease
         fields = '__all__'
 
 
-class CodeSerializer(serializers.ModelSerializer):
+class CodebaseSerializer(serializers.ModelSerializer):
     contributors = ContributorSerializer(many=True, read_only=True)
-    releases = CodeReleaseSerializer(many=True)
+    releases = CodebaseReleaseSerializer(many=True)
     keywords = serializers.StringRelatedField(many=True)
 
     class Meta:
