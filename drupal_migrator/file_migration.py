@@ -1,9 +1,11 @@
 """Convert Drupal File System Data into git repo"""
 
+from library.models import Codebase, CodebaseRelease
 from .database_migration import IDMapper
-from ..home.models import Model
+from .utils import get_first_field, is_imageish
 from django.contrib.auth.models import User
-from .utils import get_first_field
+from typing import Dict
+from urllib.parse import urlparse
 
 import datetime
 import filecmp
@@ -11,12 +13,81 @@ import os
 import json
 import shutil
 import re
-from typing import Dict
-from urllib.parse import urlparse
 import logging
 import pygit2
 
+
 logger = logging.getLogger(__name__)
+
+
+class ModelVersionFileset:
+
+    def __init__(self, basedir, version_number:int):
+        self.basedir = basedir
+        self.semver = '1.%d.0'.format(version_number)
+
+
+    def migrate(self, release: CodebaseRelease):
+        # for now, copy basedirs over verbatim
+        shutil.copytree(self.basedir, release.bagit_path)
+        # create zipfile, documentation
+
+
+class ModelFileset:
+
+    VERSION_REGEX = re.compile('\d+')
+
+    def __init__(self, model_id:int, dir_entry):
+        self._model_id = model_id
+        self._dir_entry = dir_entry
+        self._versions = []
+        self._media = []
+        for f in os.scandir(dir_entry):
+            vd = f.is_dir() and self.is_version_dir(f.name)
+            if vd:
+                self._versions.append(ModelVersionFileset(f, int(vd)))
+            elif is_imageish(f):
+                self._media.append(f)
+            else:
+                logger.debug("What is this abomination? %s", f)
+
+    @staticmethod
+    def is_version_dir(candidate: str):
+        return candidate.startswith('v') and ModelFileset.VERSION_REGEX.search(candidate)
+
+    @staticmethod
+    def to_semver_string(version_number: str):
+        return '1.%s.0'.format(version_number)
+
+
+    def migrate(self):
+        codebase = Codebase.objects.get(identifier=self._model_id)
+        for version in self._versions:
+            release = codebase.releases.get(version_number=version.semver)
+            logger.debug("migrating to release %s", release)
+            version.migrate(release)
+        for m in self._media:
+            shutil.copyfile(m, codebase.media_dir)
+            codebase.images.append({
+                'name': m.name,
+                'url': codebase.media_url(m.name),
+            })
+        codebase.save()
+
+
+def load(src_dir: str):
+    for dir_entry in os.scandir(src_dir):
+        if dir_entry.is_dir():
+            try:
+                model_id = int(dir_entry.name)
+                mfs = ModelFileset(model_id, dir_entry)
+                logger.debug("processing %s", dir_entry.path)
+                mfs.migrate()
+            except:
+                logger.warning("Unmodel-library-like file: %s", dir_entry)
+                pass
+
+
 
 
 class ModelVersionFiles:
@@ -150,14 +221,14 @@ def create_repos(nid_to_id_mapper: IDMapper, json_dump_path: str, root_path: str
     """
     raw_model_versions = json.load(os.path.join(json_dump_path, 'ModelVersion.json'))
 
-    id_models = Model.objects.in_bulk()
+    id_models = Codebase.objects.in_bulk()
 
     for raw_model_version in raw_model_versions:
         drupal_model_id = get_first_field(raw_model_version, 'field_modelversion_model', 'nid')
         version_id = get_first_field(raw_model_version, 'field_modelversion_number', 'value')
 
         if drupal_model_id and version_id:
-            id = nid_to_id_mapper[Model][drupal_model_id]
+            id = nid_to_id_mapper[Codebase][drupal_model_id]
             model = id_models[id]
             creator = model.creator
 

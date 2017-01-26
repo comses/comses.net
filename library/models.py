@@ -185,6 +185,13 @@ class Codebase(index.Indexed, ClusterableModel):
     def _release_upload_path(instance, filename):
         return pathlib.Path(instance.submitted_package_path, filename)
 
+    def subpath(self, *args):
+        return pathlib.Path(self.base_library_dir, *args)
+
+    @property
+    def media_dir(self):
+        return self.subpath('media')
+
     @property
     def base_library_dir(self):
         # FIXME: slice up UUID eventually if needed
@@ -263,25 +270,22 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
 
     identifier = models.CharField(max_length=128, unique=True)
     doi = models.CharField(max_length=128, unique=True, blank=True, null=True)
-
-    dependencies = JSONField(
-        default=list,
-        help_text=_('JSON list of software dependencies (identifier, name, version, packageSystem, OS, URL)')
-    )
-
     license = models.ForeignKey(License, null=True)
-    # FIXME: replace with README.md
-    description = models.TextField(blank=True)
-    documentation = models.TextField(blank=True)
+    # FIXME: replace with or append/prepend README.md
+    description = models.TextField(blank=True, help_text=_('Markdown formattable text, e.g., run conditions'))
+    documentation = models.FileField(null=True, help_text=_('Fulltext documentation file (PDF/PDFA)'))
     embargo_end_date = models.DateField(null=True, blank=True)
     version_number = models.CharField(max_length=32,
                                       help_text=_('semver string, e.g., 1.0.5, see semver.org'))
 
     os = models.CharField(max_length=32, choices=OPERATING_SYSTEMS, blank=True)
+    dependencies = JSONField(
+        default=list,
+        help_text=_('JSON list of software dependencies (identifier, name, version, packageSystem, OS, URL)')
+    )
     '''
-    FIXME: platforms / programming languages could be covered via dependencies, need to decide which
-    is the central source of truth. Or we could augment dependencies JSON field with structured metadata and
-    leave it as the junk drawer.
+    platform and programming language tags are also dependencies that can reference additional metadata in the
+    dependencies JSONField
     '''
     platforms = ClusterTaggableManager(through=PlatformTag, related_name='platform_codebase_releases')
     programming_languages = ClusterTaggableManager(through=ProgrammingLanguage,
@@ -291,7 +295,7 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
     submitter = models.ForeignKey(User)
 
     def get_library_path(self, *args):
-        return pathlib.Path(self.codebase.base_library_dir, 'releases', str(self.pk), *map(str, args))
+        return self.codebase.subpath('releases', str(self.pk), *map(str, args))
 
     @property
     def bagit_path(self):
