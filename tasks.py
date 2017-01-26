@@ -71,6 +71,14 @@ def server(ctx, ip="0.0.0.0", port=8000):
 def import_drupal_data(ctx, directory='incoming'):
     dj(ctx, 'import_drupal_data -d {0}'.format(directory))
 
+@task(aliases=['icf'])
+def import_library_files(ctx, directory='incoming/models'):
+    dj(ctx, 'import_codebase_files -d {0}'.format(directory))
+
+
+@task(import_drupal_data, import_library_files)
+def import_all(ctx):
+    pass
 
 '''
 @task(aliases=['rfd'])
