@@ -175,6 +175,11 @@ LOGGING = {
             'level': 'DEBUG',
             'handlers': ['console', 'rollingfile'],
             'propagate': False,
+        },
+        'drupal_migrator': {
+            'level': 'DEBUG',
+            'handlers': ['console', 'rollingfile'],
+            'propagate': False,
         }
     }
 }
