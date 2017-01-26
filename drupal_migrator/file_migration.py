@@ -2,7 +2,7 @@
 
 from library.models import Codebase, CodebaseRelease
 from .database_migration import IDMapper
-from .utils import get_first_field, is_imageish
+from .utils import get_first_field, is_media
 from django.contrib.auth.models import User
 from typing import Dict
 from urllib.parse import urlparse
@@ -22,14 +22,13 @@ logger = logging.getLogger(__name__)
 
 class ModelVersionFileset:
 
-    def __init__(self, basedir, version_number:int):
+    def __init__(self, basedir, version_number: int):
         self.basedir = basedir
-        self.semver = '1.%d.0'.format(version_number)
-
+        self.semver = '1.{0}.0'.format(version_number - 1)
 
     def migrate(self, release: CodebaseRelease):
         # for now, copy basedirs over verbatim
-        shutil.copytree(self.basedir, release.bagit_path)
+        shutil.copytree(self.basedir, str(release.bagit_path))
         # create zipfile, documentation
 
 
@@ -37,17 +36,18 @@ class ModelFileset:
 
     VERSION_REGEX = re.compile('\d+')
 
-    def __init__(self, model_id:int, dir_entry):
+    def __init__(self, model_id: int, dir_entry):
         self._model_id = model_id
+        logger.debug("model id: %s", model_id)
         self._dir_entry = dir_entry
         self._versions = []
         self._media = []
-        for f in os.scandir(dir_entry):
+        for f in os.scandir(dir_entry.path):
             vd = f.is_dir() and self.is_version_dir(f.name)
             if vd:
-                self._versions.append(ModelVersionFileset(f, int(vd)))
-            elif is_imageish(f):
-                self._media.append(f)
+                self._versions.append(ModelVersionFileset(f.path, int(vd.group(0))))
+            elif is_media(f.path):
+                self._media.append(f.path)
             else:
                 logger.debug("What is this abomination? %s", f)
 
@@ -55,19 +55,14 @@ class ModelFileset:
     def is_version_dir(candidate: str):
         return candidate.startswith('v') and ModelFileset.VERSION_REGEX.search(candidate)
 
-    @staticmethod
-    def to_semver_string(version_number: str):
-        return '1.%s.0'.format(version_number)
-
-
     def migrate(self):
         codebase = Codebase.objects.get(identifier=self._model_id)
         for version in self._versions:
+            logger.debug("looking for version %s in codebase %s", version.semver, codebase)
             release = codebase.releases.get(version_number=version.semver)
-            logger.debug("migrating to release %s", release)
             version.migrate(release)
         for m in self._media:
-            shutil.copyfile(m, codebase.media_dir)
+            shutil.copyfile(m, str(codebase.media_dir))
             codebase.images.append({
                 'name': m.name,
                 'url': codebase.media_url(m.name),
@@ -76,18 +71,18 @@ class ModelFileset:
 
 
 def load(src_dir: str):
+    logger.debug("LOADING FROM %s", src_dir)
     for dir_entry in os.scandir(src_dir):
+        logger.debug("checking out %s", dir_entry)
         if dir_entry.is_dir():
             try:
                 model_id = int(dir_entry.name)
-                mfs = ModelFileset(model_id, dir_entry)
                 logger.debug("processing %s", dir_entry.path)
+                mfs = ModelFileset(model_id, dir_entry)
                 mfs.migrate()
             except:
-                logger.warning("Unmodel-library-like file: %s", dir_entry)
+                logger.exception("Unmodel-library-like file: %s", dir_entry.name)
                 pass
-
-
 
 
 class ModelVersionFiles:
@@ -241,7 +236,7 @@ def create_repos(nid_to_id_mapper: IDMapper, json_dump_path: str, root_path: str
                                                                            destination_folder=destination_folder,
                                                                            raw_model_version=raw_model_version)
             logger.debug("Preparing '{}' Version {} for update with Drupal ID: {}".format(
-                    destination_folder, version_id, drupal_model_id))
+                destination_folder, version_id, drupal_model_id))
             model_version_files.update_or_create_files()
             logger.debug("Updated '{}' Version {} for update".format(destination_folder, version_id))
             commit(repo, "Version {}".format(version_id), creator)
