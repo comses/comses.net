@@ -25,13 +25,13 @@ class SmallResultSetPagination(PageNumberPagination):
     def get_paginated_response(self, data, **kwargs):
         count = self.page.paginator.count
         n_pages = count // self.page_size + 1
-        page_ind = int(self.request.query_params.get('page', 1))
+        page = int(self.request.query_params.get('page', 1))
         logger.debug("Request page")
         return Response({
-            'page_ind': page_ind,
+            'page': page,
             'count': count,
             'query': self.request.query_params.get('query'),
-            'range': list(range(max(1, page_ind - 4), min(n_pages + 1, page_ind + 5))),
+            'range': list(range(max(1, page - 4), min(n_pages + 1, page + 5))),
             'n_pages': n_pages,
             'results': data
         }, **kwargs)

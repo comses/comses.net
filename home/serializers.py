@@ -20,6 +20,7 @@ class CreatorSerializer(serializers.ModelSerializer):
 class JobSerializer(serializers.ModelSerializer):
     submitter = CreatorSerializer(read_only=True, help_text=_('User that created the job description'))
     url = serializers.SerializerMethodField(help_text=_('URL to the detail page of the job'))
+    date_created = serializers.DateTimeField(format='%Y-%m-%d')
 
     def get_url(self, obj):
         return reverse_lazy('job-detail', kwargs={'pk': obj.id})

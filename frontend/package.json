@@ -12,7 +12,8 @@
   },
   "dependencies": {
     "axios": "^0.15.3",
-    "bootstrap": "^4.0.0-alpha.5",
+    "bootstrap": "^4.0.0-alpha.6",
+    "font-awesome": "^4.7.0",
     "query-string": "^4.3.0",
     "typescript-json-schema": "^0.5.1",
     "vue": "^2.1.0",

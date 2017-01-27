@@ -1,10 +1,10 @@
 <template>
     <nav aria-label="Paginator">
         <ul class="pagination">
-            <li v-for="p_ind in range" :class="{ 'page-item': true, active: p_ind == page_ind }">
-                <router-link :to="{ name: route, query: { page_ind: p_ind, query } }"
+            <li v-for="p in range" :class="{ 'page-item': true, active: p == page }">
+                <router-link :to="{ name: route, query: { page: p, query } }"
                              class="page-link">
-                    {{ p_ind }}
+                    {{ p }}
                 </router-link>
             </li>
         </ul>

@@ -1,6 +1,7 @@
 wagtail==1.8
 wagtailmenus==2.0.3
 django-extensions==1.7.5
+django-rest-auth==0.9.0
 djangorestframework-jsonapi==2.1.1
 django-rest-swagger==2.1.1
 django-reversion==2.0.8

@@ -19,11 +19,10 @@ from wagtail.wagtailadmin.edit_handlers import FieldPanel, StreamFieldPanel, Inl
 from wagtail.wagtailimages.blocks import ImageChooserBlock
 from wagtail.wagtailsearch import index
 
-
-
 """
 Wagtail-related models
 """
+
 
 class Institution(models.Model):
     name = models.CharField(max_length=200)
@@ -81,6 +80,7 @@ class CarouselItem(models.Model):
     class Meta:
         abstract = True
 
+
 class FeaturedContentItem(Orderable, CarouselItem):
     page = ParentalKey('HomePage', related_name='featured_content_queue')
 
@@ -111,6 +111,8 @@ class BlogPage(MenuPage):
         FieldPanel('date'),
         StreamFieldPanel('body'),
     ]
+
+    api_fields = ['date', 'body']
 
 
 class EventTag(TaggedItemBase):
@@ -158,7 +160,7 @@ class Job(index.Indexed, ClusterableModel):
     search_fields = [
         index.SearchField('title', partial_match=True, boost=10),
         index.SearchField('description', partial_match=True),
-        index.SearchField('submitter'),
+        index.SearchField('submitter__username'),
     ]
 
     def __str__(self):
