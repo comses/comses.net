@@ -25,22 +25,29 @@ env = {
 logger = logging.getLogger(__name__)
 
 
-@task
-def clean_update(ctx):
-    ctx.run("git fetch --all && git reset --hard origin/master")
-
-
-@task
-def sh(ctx):
-    dj(ctx, 'shell_plus --ipython', pty=True)
-
-
 def dj(ctx, command, **kwargs):
     """
     Run a Django manage.py command on the server.
     """
     ctx.run('{python} manage.py {dj_command} --settings {project_conf}'.format(dj_command=command, **env),
             **kwargs)
+
+
+@task
+def clean_update(ctx):
+    ctx.run("git fetch --all && git reset --hard origin/master")
+
+
+@task
+def clean(ctx, revert=False):
+    ctx.run("find . -name '*.pyc' -o -name 'generated-*' -delete -print")
+    if revert:
+        clean_update(ctx)
+
+
+@task
+def sh(ctx):
+    dj(ctx, 'shell_plus --ipython', pty=True)
 
 
 @task

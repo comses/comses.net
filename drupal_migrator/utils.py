@@ -31,11 +31,11 @@ def get_field(obj, field_name, default=''):
 def is_media(path: str):
     logger.debug("checking media type of %s", path)
     mimetype = mimetypes.guess_type('file:/{0}'.format(path))
-    if mimetype[0] and mimetype[0].startswith('image'):
+    if mimetype[0] and mimetype[0].startswith(('image', 'video')):
         return True
     try:
         Image.open(path)
         return True
     except IOError:
-        logger.debug("path %s to be an image")
+        logger.exception("path %s wasn't quite imagelike enough")
     return False

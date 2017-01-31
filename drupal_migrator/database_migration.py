@@ -89,12 +89,21 @@ class Extractor:
             return cls(data)
 
     @staticmethod
-    def timestamp_to_datetime(unix_timestamp: str, tz=pytz.UTC):
-        try:
-            return datetime.fromtimestamp(float(unix_timestamp), tz=tz)
-        except:
-            logger.warning("Could not convert timestamp %s", unix_timestamp)
-            return None
+    def to_datetime(drupal_datetime_string: str, tz=pytz.UTC):
+        if drupal_datetime_string.strip():
+            # majority of incoming Drupal datetime strings are unix timestamps, e.g.,
+            # http://drupal.stackexchange.com/questions/45443/why-timestamp-format-was-chosen-for-users-created-field
+            try:
+                return datetime.fromtimestamp(float(drupal_datetime_string), tz=tz)
+            except:
+                logger.exception("Could not convert as a timestamp: %s", drupal_datetime_string)
+            # occasionally they are also date strings like '2010-08-01 00:00:00'
+            try:
+                return datetime.strptime(drupal_datetime_string, '%Y-%m-%d %H:%M:%S')
+            except:
+                logger.exception("Could not convert as a datetime string: %s", drupal_datetime_string)
+            # give up at this point, fall through to return None
+        return None
 
 
 class EventExtractor(Extractor):
@@ -107,12 +116,12 @@ class EventExtractor(Extractor):
     def _extract(self, raw_event, user_id_map: Dict[str, int]) -> Event:
         return Event(
             title=raw_event['title'],
-            date_created=self.timestamp_to_datetime(raw_event['created']),
-            last_modified=self.timestamp_to_datetime(raw_event['changed']),
+            date_created=self.to_datetime(raw_event['created']),
+            last_modified=self.to_datetime(raw_event['changed']),
             summary=get_first_field(raw_event, 'body', attribute_name='summary', default='')[:300],
             description=get_first_field(raw_event, 'body'),
-            early_registration_deadline=self.timestamp_to_datetime(get_first_field(raw_event, 'field_earlyregistration')),
-            submission_deadline=self.timestamp_to_datetime(get_first_field(raw_event, 'field_submissiondeadline')),
+            early_registration_deadline=self.to_datetime(get_first_field(raw_event, 'field_earlyregistration')),
+            submission_deadline=self.to_datetime(get_first_field(raw_event, 'field_submissiondeadline')),
             start_date=self.parse_event_date_string(get_first_field(raw_event, 'field_eventdate')),
             end_date=self.parse_event_date_string(get_first_field(raw_event, 'field_eventdate', 'value2')),
             submitter_id=user_id_map.get(raw_event['uid'], 3)
@@ -127,8 +136,8 @@ class JobExtractor(Extractor):
     def _extract(self, raw_job: Dict, user_id_map: Dict[str, int]):
         return Job(
             title=raw_job['title'],
-            date_created=self.timestamp_to_datetime(raw_job['created']),
-            last_modified=self.timestamp_to_datetime(raw_job['changed']),
+            date_created=self.to_datetime(raw_job['created']),
+            last_modified=self.to_datetime(raw_job['changed']),
             description=get_first_field(raw_job, 'body'),
             submitter_id=user_id_map.get(raw_job['uid'], 3)
         )
@@ -159,8 +168,8 @@ class UserExtractor(Extractor):
             username=username,
             email=email,
             defaults={
-                "date_joined": Extractor.timestamp_to_datetime(raw_user['created']),
-                "last_login": Extractor.timestamp_to_datetime(raw_user['login']),
+                "date_joined": Extractor.to_datetime(raw_user['created']),
+                "last_login": Extractor.to_datetime(raw_user['login']),
             }
         )
         user.drupal_uid = raw_user['uid']
@@ -197,7 +206,7 @@ class ProfileExtractor(Extractor):
             drupal_uid = raw_profile['uid']
             user_id = user_id_map.get(drupal_uid, -1)
             if user_id == -1:
-                logger.warning("Drupal UID %s not found in user id map", drupal_uid)
+                logger.warning("Drupal UID %s not found in user id map, skipping", drupal_uid)
                 continue
             user = User.objects.get(pk=user_id)
             profile = user.member_profile
@@ -288,8 +297,8 @@ class ModelExtractor(Extractor):
         author_ids = [author_id_map[raw_author_id] for raw_author_id in raw_author_ids]
         code = Codebase(title=raw_model['title'],
                         description=get_first_field(raw_model, field_name='body', default=''),
-                        date_created=self.timestamp_to_datetime(raw_model['created']),
-                        last_modified=self.timestamp_to_datetime(raw_model['changed']),
+                        date_created=self.to_datetime(raw_model['created']),
+                        last_modified=self.to_datetime(raw_model['changed']),
                         is_replication=Extractor.int_to_bool(get_first_field(raw_model, 'field_model_replicated', default='0')),
                         references_text=get_first_field(raw_model, 'field_model_reference', default=''),
                         replication_references_text=get_first_field(raw_model, 'field_model_publication_text', default=''),
@@ -352,8 +361,8 @@ class ModelVersionExtractor(Extractor):
             }
             model_version = code.make_release(
                 description=description,
-                date_created=self.timestamp_to_datetime(raw_model_version['created']),
-                last_modified=self.timestamp_to_datetime(raw_model_version['changed']),
+                date_created=self.to_datetime(raw_model_version['created']),
+                last_modified=self.to_datetime(raw_model_version['changed']),
                 os=self.OS_LIST[int(get_first_field(raw_model_version, 'field_modelversion_os', default=0))],
                 license_id=license_id,
                 identifier=raw_model_version['vid'],

@@ -38,7 +38,6 @@ class ModelFileset:
 
     def __init__(self, model_id: int, dir_entry):
         self._model_id = model_id
-        logger.debug("model id: %s", model_id)
         self._dir_entry = dir_entry
         self._versions = []
         self._media = []
@@ -47,7 +46,7 @@ class ModelFileset:
             if vd:
                 self._versions.append(ModelVersionFileset(f.path, int(vd.group(0))))
             elif is_media(f.path):
-                self._media.append(f.path)
+                self._media.append(f)
             else:
                 logger.debug("What is this abomination? %s", f)
 
@@ -61,11 +60,11 @@ class ModelFileset:
             logger.debug("looking for version %s in codebase %s", version.semver, codebase)
             release = codebase.releases.get(version_number=version.semver)
             version.migrate(release)
-        for m in self._media:
-            shutil.copyfile(m, str(codebase.media_dir))
+        for media_dir_entry in self._media:
+            shutil.copyfile(media_dir_entry.path, str(codebase.media_dir))
             codebase.images.append({
-                'name': m.name,
-                'url': codebase.media_url(m.name),
+                'name': media_dir_entry.name,
+                'url': codebase.media_url(media_dir_entry.name),
             })
         codebase.save()
 
@@ -73,7 +72,6 @@ class ModelFileset:
 def load(src_dir: str):
     logger.debug("LOADING FROM %s", src_dir)
     for dir_entry in os.scandir(src_dir):
-        logger.debug("checking out %s", dir_entry)
         if dir_entry.is_dir():
             try:
                 model_id = int(dir_entry.name)

@@ -201,6 +201,12 @@ class Codebase(index.Indexed, ClusterableModel):
     def base_git_dir(self):
         return pathlib.Path(settings.REPOSITORY_ROOT, str(self.uuid))
 
+    def get_absolute_url(self):
+        return '/codebase/{0}'.format(self.identifier)
+
+    def media_url(self, name):
+        return '{0}/media/{1}'.format(self.get_absolute_url(), name)
+
     def make_release(self, submitter=None, version_number=None, version_bump=None, **kwargs):
         if submitter is None:
             submitter = self.submitter
