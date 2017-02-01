@@ -1,4 +1,4 @@
-"""Convert Drupal File System Data into git repo"""
+""" migrate Drupal filesystem data into the new library structure """
 
 from library.models import Codebase, CodebaseRelease
 from library import fs
@@ -23,6 +23,12 @@ logger = logging.getLogger(__name__)
 
 class ModelVersionFileset:
 
+    OPENABM_VERSIONDIRS_MAP = {
+        'dataset': 'data',
+        'sensitivity': 'results'
+        # one to one mappings for doc and code
+    }
+
     def __init__(self, basedir, version_number: int):
         self.basedir = basedir
         self.semver = '1.{0}.0'.format(version_number - 1)
@@ -37,18 +43,14 @@ class ModelVersionFileset:
             # this version directory may have code/ doc/ dataset/ sensitivity/ directories
             for f in os.scandir(fdir.path):
                 logger.debug("inspecting file %s", f)
-                destination_dir = fdir.name
                 if fs.is_archive(f.name):
                     logger.debug("unpacking %s to %s", f.path, submitted_package_path)
                     shutil.unpack_archive(f.path, submitted_package_path)
-                    continue
-                elif fdir.name in ('sensitivity', 'dataset'):
-                    destination_dir = 'data'
                 else:
-                    logger.warning("fallthrough copying file %s into subdir %s", f, fdir.name)
-                destination_path = str(release.submitted_package_path(destination_dir))
-                os.makedirs(destination_path, exist_ok=True)
-                shutil.copy(f.path, destination_path)
+                    destination_dir = self.OPENABM_VERSIONDIRS_MAP.get(fdir.name, fdir.name)
+                    destination_path = str(release.submitted_package_path(destination_dir))
+                    os.makedirs(destination_path, exist_ok=True)
+                    shutil.copy(f.path, destination_path)
 
         for root, dirs, files in os.walk(submitted_package_path, topdown=True):
             if root == '__MACOSX':
@@ -101,8 +103,10 @@ class ModelFileset:
         codebase.save()
 
 
+
 def load(src_dir: str):
     logger.debug("LOADING FROM %s", src_dir)
+    shutil.register_unpack_format('rar', ['.rar'], fs.unrar)
     for dir_entry in os.scandir(src_dir):
         if dir_entry.is_dir():
             try:
@@ -112,7 +116,6 @@ def load(src_dir: str):
                 mfs.migrate()
             except:
                 logger.exception("Unmodel-library-like file: %s", dir_entry.name)
-                pass
 
 
 class ModelVersionFiles:

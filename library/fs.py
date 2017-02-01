@@ -2,13 +2,14 @@ import logging
 import mimetypes
 from PIL import Image
 
+import rarfile
 import shutil
 
 logger = logging.getLogger(__name__)
 
 
 def is_archive(path: str):
-    logger.debug("checking archive-ness of %s", path)
+    logger.debug("checking for archive: %s", path)
     mimetype = mimetypes.guess_type(path)
     if mimetype[0] and mimetype[0].endswith(('tar', 'zip', 'rar')):
         return mimetype[0]
@@ -28,8 +29,7 @@ def is_media(path: str):
     return False
 
 
-def is_system_file(filename: str):
-    logger.debug("checking if %s is a system file", filename)
+def is_system_file(filename: str) -> bool:
     return filename in ('__MACOSX', '.DS_Store')
 
 
@@ -39,3 +39,8 @@ def rm_system_files(path):
         shutil.rmtree(path)
         return True
     return False
+
+
+def unrar(archive_path, dst_dir: str):
+    with rarfile.RarFile(archive_path) as rf:
+        rf.extractall(dst_dir)
