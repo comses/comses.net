@@ -37,3 +37,5 @@ class CodebaseTest(BaseModelTestCase):
         release = self.c1.make_release(submitted_package=content)
         self.assertEquals(self.c1.latest_version, release)
         self.assertEquals(CodebaseRelease.objects.get(codebase=self.c1, version_number=release.version_number), release)
+
+

@@ -119,7 +119,7 @@ class Contributor(index.Indexed, ClusterableModel):
         return "{0} {1} {2}".format(self.full_name, self.email, self.formatted_affiliations)
 
 
-class SemanticVersion(Enum):
+class SemanticVersionBump(Enum):
     MAJOR = semver.bump_major
     MINOR = semver.bump_minor
     PATCH = semver.bump_patch
@@ -127,8 +127,7 @@ class SemanticVersion(Enum):
 class Codebase(index.Indexed, ClusterableModel):
 
     """
-    Metadata applicable to a child set of CodebaseReleases
-
+    Metadata applicable to a set of CodebaseReleases
     """
 
     # shortname = models.CharField(max_length=128, unique=True)
@@ -218,7 +217,7 @@ class Codebase(index.Indexed, ClusterableModel):
                 if version_bump is None:
                     logger.debug("using default minor release version bump for %s",
                                  version_number)
-                    version_bump = SemanticVersion.MINOR
+                    version_bump = SemanticVersionBump.MINOR
                 version_number = version_bump(version_number)
         release = self.releases.create(
             submitter=submitter,

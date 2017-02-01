@@ -39,28 +39,29 @@ class ModelVersionFileset:
         # copy basedirs over verbatim into the working directory
         shutil.copytree(self.basedir, working_directory_path)
         # scan workdir path for hidden files that should be deleted
-        for fdir in os.scandir(working_directory_path):
-            # this version directory may have code/ doc/ dataset/ sensitivity/ directories
-            for f in os.scandir(fdir.path):
-                logger.debug("inspecting file %s", f)
+        for version_dir in os.scandir(working_directory_path):
+            # version directory with possible code/ doc/ dataset/ sensitivity/ directories
+            for f in os.scandir(version_dir.path):
+                destination_dir = self.OPENABM_VERSIONDIRS_MAP.get(version_dir.name, version_dir.name)
+                destination_path = str(release.submitted_package_path(destination_dir))
                 if fs.is_archive(f.name):
-                    logger.debug("unpacking %s to %s", f.path, submitted_package_path)
-                    shutil.unpack_archive(f.path, submitted_package_path)
+                    logger.debug("unpacking archive %s to %s", f.path, destination_path)
+                    shutil.unpack_archive(f.path, destination_path)
                 else:
-                    destination_dir = self.OPENABM_VERSIONDIRS_MAP.get(fdir.name, fdir.name)
-                    destination_path = str(release.submitted_package_path(destination_dir))
                     os.makedirs(destination_path, exist_ok=True)
                     shutil.copy(f.path, destination_path)
 
         for root, dirs, files in os.walk(submitted_package_path, topdown=True):
             if root == '__MACOSX':
+                # special case for parent __MACOSX system files, skip
                 logger.debug("deleting mac os x system directory")
                 shutil.rmtree(root)
-                continue
-            for f in files:
-                if fs.is_system_file(f):
-                    logger.debug("deleting system file %s", f)
-                    os.remove(os.path.join(root, f))
+            else:
+                # otherwise, scan and remove any system files
+                removed_files = fs.rm_system_files(root, files)
+                if removed_files:
+                    logger.warning("Deleted system files: %s", removed_files)
+        # FIXME: clean up working_directory_path eventually
 
 
 class ModelFileset:
@@ -73,22 +74,22 @@ class ModelFileset:
         self._versions = []
         self._media = []
         for f in os.scandir(dir_entry.path):
-            vd = f.is_dir() and self.is_version_dir(f.name)
+            vd = self.is_version_dir(f)
             if vd:
                 self._versions.append(ModelVersionFileset(f.path, int(vd.group(0))))
             elif fs.is_media(f.path):
                 self._media.append(f)
             else:
-                logger.debug("What is this abomination? %s", f)
+                logger.warning("unexpected file in %s: %s", dir_entry.path, f)
 
     @staticmethod
-    def is_version_dir(candidate: str):
-        return candidate.startswith('v') and ModelFileset.VERSION_REGEX.search(candidate)
+    def is_version_dir(candidate):
+        return candidate.is_dir() and candidate.name.startswith('v') and ModelFileset.VERSION_REGEX.search(candidate.name)
 
     def migrate(self):
         codebase = Codebase.objects.get(identifier=self._model_id)
         for version in self._versions:
-            logger.debug("looking for version %s in codebase %s", version.semver, codebase)
+            logger.debug("Migrating codebase %s v%s", codebase.title, version.semver)
             release = codebase.releases.get(version_number=version.semver)
             version.migrate(release)
         media_dir = str(codebase.media_dir())
