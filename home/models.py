@@ -138,7 +138,10 @@ class Event(index.Indexed, ClusterableModel):
     search_fields = [
         index.SearchField('title', partial_match=True, boost=10),
         index.SearchField('description', partial_match=True),
-        index.SearchField('submitter'),
+        index.RelatedFields('submitter', [
+            index.SearchField('username'),
+            index.SearchField('get_full_name'),
+        ]),
     ]
 
 
@@ -160,7 +163,10 @@ class Job(index.Indexed, ClusterableModel):
     search_fields = [
         index.SearchField('title', partial_match=True, boost=10),
         index.SearchField('description', partial_match=True),
-        index.SearchField('submitter__username'),
+        index.RelatedFields('submitter', [
+            index.SearchField('username'),
+            index.SearchField('get_full_name'),
+        ]),
     ]
 
     def __str__(self):
