@@ -1,0 +1,15 @@
+{
+  "title": "Job",
+  "type": "object",
+  "properties": {
+    "submitter": {
+      "$ref": "user.json"
+    },
+    "title": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    }
+  }
+}

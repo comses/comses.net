@@ -3,11 +3,11 @@ import * as Router from 'vue-router'
 
 import store from './store/index'
 
-import JobCreate from './components/job/create'
-import JobDetail from './components/job/detail.vue'
-import JobList from './components/job/list'
-import DraftCode from './components/codebase/modify'
-import { ResourceDetail } from './components/resources/detail'
+import JobCreate from './pages/job/create'
+import JobDetail from './pages/job/detail.vue'
+import JobList from './pages/job/list'
+import DraftCode from './pages/codebase/modify'
+import { ResourceDetail } from './pages/resources/detail'
 
 
 import { api } from "./store/index";
@@ -51,7 +51,7 @@ const router = new Router({
             name: routes.EVENT_LIST,
             component: JobList,
             meta: {
-                name: 'Events'
+                heading: 'Events'
             }
         },
         {
@@ -59,7 +59,7 @@ const router = new Router({
             name: routes.CODEBASE_LIST,
             component: DraftCode,
             meta: {
-                name: 'Code Bases'
+                heading: 'Code Bases'
             }
         },
         {
@@ -67,7 +67,7 @@ const router = new Router({
             name: routes.RESOURCE_LIST,
             component: ResourceDetail,
             meta: {
-                name: 'Resources'
+                heading: 'Resources'
             }
         },
         {
@@ -75,7 +75,8 @@ const router = new Router({
             name: routes.HOME,
             component: ResourceDetail,
             meta: {
-                name: 'Home'
+                heading: 'A growing collection of resources for model-based science',
+                subheading: 'A Model Library, Tutorials and FAQs on Agent Based Modeling'
             }
         }
         // {
@@ -98,6 +99,7 @@ router.beforeEach((to, from, next) => {
             break;
         }
         case routes.RESOURCE_LIST: {
+            // TODO: lookup a list instead of a particular hardwired page
             store.dispatch(api.resource.actions.fetchDetail(3));
             break;
         }

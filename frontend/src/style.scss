@@ -1,0 +1,78 @@
+$text-color: #6d6c71;
+$link-color: #22b1e6;
+$button-color: #92c02e;
+$rules-color: #ced9ee;
+$link-hover: darken($text-color, 20%);
+$button-hover: darken($button-color, 20%);
+$background-color: #f0f4fa;
+
+$brand-primary: $button-color;
+
+@import url('https://fonts.googleapis.com/css?family=Open+Sans');
+$font-family-base: 'Open Sans', Roboto, 'Helvetica Neue', sans-serif;
+
+@import "../node_modules/bootstrap/scss/bootstrap";
+
+$fa-font-path: '../node_modules/font-awesome/fonts/';
+@import '../node_modules/font-awesome/scss/font-awesome';
+
+.logo {
+  font: 0/0 a;
+  color: transparent;
+  text-shadow: none;
+  background-color: transparent;
+  border: 0;
+  background-image: url("assets/logo.png");
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: auto;
+  display: inline-block;
+  height: 64px !important;
+  width: 283px !important;
+}
+
+
+
+.carousel {
+  background: #f0f4fa url("../../wagtail_comses_net/static/images/background-carousel.png") repeat top center;
+  overflow: hidden;
+  padding-top: 40px;
+  padding-bottom: 40px;
+  text-align: center;
+  vertical-align: middle;
+
+  /*
+   Move carousel down so that it is below header
+   We could polyfill position:sticky for Chrome instead
+    */
+  margin-top: 105px;
+}
+
+.carousel h1,
+.carousel h4,
+.carousel p {
+  font-weight: 300;
+  font-family: 'Open Sans', sans-serif;
+  color: white;
+}
+
+header {
+  padding: 20px 0;
+  background-color: $white;
+}
+
+footer {
+  padding: 75px 0;
+  background-image: url("../../wagtail_comses_net/static/images/background-footer.png");
+  color: $white;
+}
+
+.content-block {
+  padding: 20px 0;
+}
+
+.compact {
+  padding: 2px 2px;
+}
+
+// Special Cards for carousel, frontpage three across and two across

@@ -1,13 +1,7 @@
 <template>
     <div>
         <c-header></c-header>
-        <section class="carousel">
-            <div class="container">
-                <div class="row">
-                    <h1>{{ $route.meta.name }}</h1>
-                </div>
-            </div>
-        </section>
+        <c-subheader :heading="$route.meta.heading" :subheading="$route.meta.subheading"></c-subheader>
 
         <section class="content-block container">
             <router-view></router-view>
@@ -17,12 +11,14 @@
 </template>
 
 <script lang="ts">
-    import Footer from './footer'
-    import Header from './header'
+    import Footer from './components/footer'
+    import Header from './components/header'
+    import SubHeader from './components/subheader'
     export default {
         components: {
             'c-footer': Footer,
-            'c-header': Header
+            'c-header': Header,
+            'c-subheader': SubHeader
         }
     };
 

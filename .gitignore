@@ -104,5 +104,5 @@ db.sqlite3
 .idea/
 
 # Docker PyCharm
-logs/
-src/
+/logs/
+/src/
