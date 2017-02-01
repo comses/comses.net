@@ -1,8 +1,9 @@
 """Convert Drupal File System Data into git repo"""
 
 from library.models import Codebase, CodebaseRelease
+from library import fs
 from .database_migration import IDMapper
-from .utils import get_first_field, is_media
+from .utils import get_first_field
 from django.contrib.auth.models import User
 from typing import Dict
 from urllib.parse import urlparse
@@ -27,9 +28,37 @@ class ModelVersionFileset:
         self.semver = '1.{0}.0'.format(version_number - 1)
 
     def migrate(self, release: CodebaseRelease):
-        # for now, copy basedirs over verbatim
-        shutil.copytree(self.basedir, str(release.bagit_path))
-        # create zipfile, documentation
+        working_directory_path = str(release.workdir_path)
+        submitted_package_path = str(release.submitted_package_path())
+        # copy basedirs over verbatim into the working directory
+        shutil.copytree(self.basedir, working_directory_path)
+        # scan workdir path for hidden files that should be deleted
+        for fdir in os.scandir(working_directory_path):
+            # this version directory may have code/ doc/ dataset/ sensitivity/ directories
+            for f in os.scandir(fdir.path):
+                logger.debug("inspecting file %s", f)
+                destination_dir = fdir.name
+                if fs.is_archive(f.name):
+                    logger.debug("unpacking %s to %s", f.path, submitted_package_path)
+                    shutil.unpack_archive(f.path, submitted_package_path)
+                    continue
+                elif fdir.name in ('sensitivity', 'dataset'):
+                    destination_dir = 'data'
+                else:
+                    logger.warning("fallthrough copying file %s into subdir %s", f, fdir.name)
+                destination_path = str(release.submitted_package_path(destination_dir))
+                os.makedirs(destination_path, exist_ok=True)
+                shutil.copy(f.path, destination_path)
+
+        for root, dirs, files in os.walk(submitted_package_path, topdown=True):
+            if root == '__MACOSX':
+                logger.debug("deleting mac os x system directory")
+                shutil.rmtree(root)
+                continue
+            for f in files:
+                if fs.is_system_file(f):
+                    logger.debug("deleting system file %s", f)
+                    os.remove(os.path.join(root, f))
 
 
 class ModelFileset:
@@ -45,7 +74,7 @@ class ModelFileset:
             vd = f.is_dir() and self.is_version_dir(f.name)
             if vd:
                 self._versions.append(ModelVersionFileset(f.path, int(vd.group(0))))
-            elif is_media(f.path):
+            elif fs.is_media(f.path):
                 self._media.append(f)
             else:
                 logger.debug("What is this abomination? %s", f)
@@ -60,10 +89,13 @@ class ModelFileset:
             logger.debug("looking for version %s in codebase %s", version.semver, codebase)
             release = codebase.releases.get(version_number=version.semver)
             version.migrate(release)
+        media_dir = str(codebase.media_dir())
+        os.makedirs(media_dir, exist_ok=True)
         for media_dir_entry in self._media:
-            shutil.copyfile(media_dir_entry.path, str(codebase.media_dir))
+            shutil.copy(media_dir_entry.path, media_dir)
             codebase.images.append({
                 'name': media_dir_entry.name,
+                'path': media_dir,
                 'url': codebase.media_url(media_dir_entry.name),
             })
         codebase.save()

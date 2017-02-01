@@ -183,14 +183,13 @@ class Codebase(index.Indexed, ClusterableModel):
 
     @staticmethod
     def _release_upload_path(instance, filename):
-        return pathlib.Path(instance.submitted_package_path, filename)
+        return pathlib.Path(instance.workdir_path, filename)
 
     def subpath(self, *args):
         return pathlib.Path(self.base_library_dir, *args)
 
-    @property
-    def media_dir(self):
-        return self.subpath('media')
+    def media_dir(self, *args):
+        return self.subpath('media', *args)
 
     @property
     def base_library_dir(self):
@@ -301,7 +300,7 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
     submitter = models.ForeignKey(User)
 
     def get_library_path(self, *args):
-        return self.codebase.subpath('releases', str(self.pk), *map(str, args))
+        return self.codebase.subpath('releases', str(self.identifier), *map(str, args))
 
     @property
     def bagit_path(self):
@@ -312,8 +311,16 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
         return self.codebase.base_git_dir
 
     @property
-    def submitted_package_path(self):
-        return self.get_library_path('bagit', 'sip')
+    def workdir_path(self):
+        ''' a working directory scratch space path'''
+        return self.get_library_path('workdir')
+
+    def submitted_package_path(self, *args):
+        return self.get_library_path('sip', *args)
+
+    @property
+    def archival_information_package_path(self):
+        return self.bagit_path
 
     def make_bagit(self):
         if self.submitted_package is None:
@@ -332,7 +339,7 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
                 return bag
 
     def __str__(self):
-        return '{0} {1} {2}'.format(self.codebase, self.version_number, self.submitted_package_path)
+        return '{0} {1} {2}'.format(self.codebase, self.version_number, self.submitted_package_path())
 
     class Meta:
         unique_together = ('codebase', 'version_number')
