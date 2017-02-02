@@ -39,7 +39,6 @@ class ModelVersionFileset:
         submitted_package_path = str(release.submitted_package_path())
         # copy basedirs over verbatim into the working directory
         shutil.copytree(self.basedir, working_directory_path)
-        has_files = False
         for codebase_version_dir in os.scandir(working_directory_path):
             # codebase version directory = code/ doc/ dataset/ sensitivity/ directories
             for f in os.scandir(codebase_version_dir.path):
@@ -52,7 +51,6 @@ class ModelVersionFileset:
                 else:
                     os.makedirs(destination_path, exist_ok=True)
                     shutil.copy(f.path, destination_path)
-                has_files = True
 
         # clean up garbage / system metadata files
         for root, dirs, files in os.walk(submitted_package_path, topdown=True):
@@ -62,12 +60,11 @@ class ModelVersionFileset:
                 shutil.rmtree(root)
             else:
                 # otherwise, scan and remove any system files
-                removed_files = fs.rm_system_files(root, files)
+                removed_files = fs.rm_system_files(root, dirs, files)
                 if removed_files:
                     logger.warning("Deleted system files: %s", removed_files)
         # create bagit bags on the sips
-        if has_files:
-            release.get_or_create_sip_bag()
+        release.get_or_create_sip_bag()
         # FIXME: clean up working_directory_path eventually
 
 

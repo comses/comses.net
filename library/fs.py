@@ -47,7 +47,7 @@ def is_system_file(filename: str) -> bool:
     return filename in ('__MACOSX', '.DS_Store') or filename.startswith('~') or filename.endswith('~')
 
 
-def rm_system_files(base_dir, candidates):
+def rm_system_files(base_dir, dirs, files):
     """
     Removes all files that appear to be system or backup files from the base directory passed in as root.
     :param base_dir: base directory for all candidate filenames
@@ -55,11 +55,11 @@ def rm_system_files(base_dir, candidates):
     :return: a list of removed system files, if any
     """
     removed_files = []
-    for f in candidates:
-        if is_system_file(f):
-            full_path = os.path.join(base_dir, f)
+    for candidate in dirs + files:
+        if is_system_file(candidate):
+            full_path = os.path.join(base_dir, candidate)
             removed_files.append(full_path)
-            if os.path.isdir(full_path):
+            if candidate in dirs:
                 shutil.rmtree(full_path)
             else:
                 os.remove(full_path)

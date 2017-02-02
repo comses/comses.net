@@ -16,7 +16,6 @@ from taggit.models import TaggedItemBase
 from wagtail.wagtailsearch import index
 
 from . import fs
-import bagit
 import logging
 import pathlib
 import semver
@@ -117,7 +116,9 @@ class Contributor(index.Indexed, ClusterableModel):
         return ' '.join(self.affiliations.all())
 
     def __str__(self):
-        return "{0} {1} {2}".format(self.full_name, self.email, self.formatted_affiliations)
+        if self.email:
+            return '{0} ({1})'.format(self.full_name, self.email)
+        return self.full_name
 
 
 class SemanticVersionBump(Enum):
@@ -203,13 +204,13 @@ class Codebase(index.Indexed, ClusterableModel):
     @property
     def contributor_list(self):
         # FIXME: messy
-        contributor_list = ['{1}, {0} {2}'.format(t[0].strip(), t[1].strip(), t[2].strip()).strip()
+        contributor_list = ['{1}, {0} {2}'.format(*t).strip()
                             for t in self.contributors.values_list('given_name', 'family_name', 'middle_name')]
         contributor_list.sort()
         return contributor_list
 
     def get_absolute_url(self):
-        return '/codebase/{0}'.format(self.identifier)
+        return '/codedoc/{0}'.format(self.identifier)
 
     def media_url(self, name):
         return '{0}/media/{1}'.format(self.get_absolute_url(), name)
@@ -313,7 +314,10 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
         :param args: args are joined as subpaths of
         :return: full pathlib.Path to this codebase release with args subpaths
         """
-        return self.codebase.subpath('releases', str(self.version_number), *map(str, args))
+        return self.codebase.subpath('releases', 'v{0}'.format(self.version_number), *map(str, args))
+
+    def get_absolute_url(self):
+        return '{0}/release/{1}'.format(self.codebase.get_absolute_url(), self.version_number)
 
     @property
     def bagit_path(self):
@@ -340,7 +344,9 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
         return {
             'Contact-Name': self.submitter.get_full_name(),
             'Contact-Email': self.submitter.email,
-            'Authors': str(self.codebase.contributor_list),
+            'Author': self.codebase.contributor_list,
+            'Version-Number': self.version_number,
+            'Codebase-DOI': str(self.codebase.doi),
             'DOI': str(self.doi),
             # FIXME: check codemeta for additional metadata
         }
@@ -349,7 +355,7 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
         return fs.make_bag(str(self.submitted_package_path()), self.bagit_info)
 
     def __str__(self):
-        return '{0} {1} {2}'.format(self.codebase, self.version_number, self.submitted_package_path())
+        return '{0} v{1} {2}'.format(self.codebase, self.version_number, self.submitted_package_path())
 
     class Meta:
         unique_together = ('codebase', 'version_number')
