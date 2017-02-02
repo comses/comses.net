@@ -15,6 +15,7 @@ from model_utils import Choices
 from taggit.models import TaggedItemBase
 from wagtail.wagtailsearch import index
 
+from . import fs
 import bagit
 import logging
 import pathlib
@@ -199,6 +200,14 @@ class Codebase(index.Indexed, ClusterableModel):
     def base_git_dir(self):
         return pathlib.Path(settings.REPOSITORY_ROOT, str(self.uuid))
 
+    @property
+    def contributor_list(self):
+        # FIXME: messy
+        contributor_list = ['{1}, {0} {2}'.format(t[0].strip(), t[1].strip(), t[2].strip()).strip()
+                            for t in self.contributors.values_list('given_name', 'family_name', 'middle_name')]
+        contributor_list.sort()
+        return contributor_list
+
     def get_absolute_url(self):
         return '/codebase/{0}'.format(self.identifier)
 
@@ -273,7 +282,7 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
     flagged = models.BooleanField(default=False)
 
     identifier = models.CharField(max_length=128, unique=True)
-    doi = models.CharField(max_length=128, unique=True, blank=True, null=True)
+    doi = models.CharField(max_length=128, unique=True, null=True)
     license = models.ForeignKey(License, null=True)
     # FIXME: replace with or append/prepend README.md
     description = models.TextField(blank=True, help_text=_('Markdown formattable text, e.g., run conditions'))
@@ -299,7 +308,12 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
     submitter = models.ForeignKey(User)
 
     def get_library_path(self, *args):
-        return self.codebase.subpath('releases', str(self.identifier), *map(str, args))
+        """
+        Currently <codebase.path>/releases/<version_number>/arg0/arg1/arg2/.../argn
+        :param args: args are joined as subpaths of
+        :return: full pathlib.Path to this codebase release with args subpaths
+        """
+        return self.codebase.subpath('releases', str(self.version_number), *map(str, args))
 
     @property
     def bagit_path(self):
@@ -321,21 +335,18 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
     def archival_information_package_path(self):
         return self.bagit_path
 
-    def make_bagit(self):
-        if self.submitted_package is None:
-            logger.debug("%s has no submission file to archive", self.identifier)
-            return
-        else:
-            try:
-                bag = bagit.Bag(self.bagit_path)
-                logger.debug("Valid bag already found for %s - ignoring request to archive", self.identifier)
-                return bag.is_valid()
-            except bagit.BagError:
-                bag = bagit.make_bag(self.bagit_path, {
-                    'Contact-Name': self.submitter.get_full_name(),
-                    'Contact-Email': self.submitter.email,
-                })
-                return bag
+    @property
+    def bagit_info(self):
+        return {
+            'Contact-Name': self.submitter.get_full_name(),
+            'Contact-Email': self.submitter.email,
+            'Authors': str(self.codebase.contributor_list),
+            'DOI': str(self.doi),
+            # FIXME: check codemeta for additional metadata
+        }
+
+    def get_or_create_sip_bag(self):
+        return fs.make_bag(str(self.submitted_package_path()), self.bagit_info)
 
     def __str__(self):
         return '{0} {1} {2}'.format(self.codebase, self.version_number, self.submitted_package_path())

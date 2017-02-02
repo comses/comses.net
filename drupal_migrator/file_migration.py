@@ -34,15 +34,17 @@ class ModelVersionFileset:
         self.semver = '1.{0}.0'.format(version_number - 1)
 
     def migrate(self, release: CodebaseRelease):
+        logger.debug("migrating %s with %s", self.semver, release)
         working_directory_path = str(release.workdir_path)
         submitted_package_path = str(release.submitted_package_path())
         # copy basedirs over verbatim into the working directory
         shutil.copytree(self.basedir, working_directory_path)
-        # scan workdir path for hidden files that should be deleted
-        for version_dir in os.scandir(working_directory_path):
-            # version directory with possible code/ doc/ dataset/ sensitivity/ directories
-            for f in os.scandir(version_dir.path):
-                destination_dir = self.OPENABM_VERSIONDIRS_MAP.get(version_dir.name, version_dir.name)
+        has_files = False
+        for codebase_version_dir in os.scandir(working_directory_path):
+            # codebase version directory = code/ doc/ dataset/ sensitivity/ directories
+            for f in os.scandir(codebase_version_dir.path):
+                destination_dir = self.OPENABM_VERSIONDIRS_MAP.get(codebase_version_dir.name,
+                                                                   codebase_version_dir.name)
                 destination_path = str(release.submitted_package_path(destination_dir))
                 if fs.is_archive(f.name):
                     logger.debug("unpacking archive %s to %s", f.path, destination_path)
@@ -50,7 +52,9 @@ class ModelVersionFileset:
                 else:
                     os.makedirs(destination_path, exist_ok=True)
                     shutil.copy(f.path, destination_path)
+                has_files = True
 
+        # clean up garbage / system metadata files
         for root, dirs, files in os.walk(submitted_package_path, topdown=True):
             if root == '__MACOSX':
                 # special case for parent __MACOSX system files, skip
@@ -61,6 +65,9 @@ class ModelVersionFileset:
                 removed_files = fs.rm_system_files(root, files)
                 if removed_files:
                     logger.warning("Deleted system files: %s", removed_files)
+        # create bagit bags on the sips
+        if has_files:
+            release.get_or_create_sip_bag()
         # FIXME: clean up working_directory_path eventually
 
 
@@ -104,9 +111,8 @@ class ModelFileset:
         codebase.save()
 
 
-
 def load(src_dir: str):
-    logger.debug("LOADING FROM %s", src_dir)
+    logger.debug("MIGRATING %s", src_dir)
     shutil.register_unpack_format('rar', ['.rar'], fs.unrar)
     for dir_entry in os.scandir(src_dir):
         if dir_entry.is_dir():
@@ -116,122 +122,7 @@ def load(src_dir: str):
                 mfs = ModelFileset(model_id, dir_entry)
                 mfs.migrate()
             except:
-                logger.exception("Unmodel-library-like file: %s", dir_entry.name)
-
-
-class ModelVersionFiles:
-    def __init__(self, origin_folder: str, destination_folder: str, code: str, dataset: str, addfiles: str,
-                 sensitivity: str, documentation: str):
-        self.destination_folder = destination_folder
-        self.origin_folder = origin_folder
-        self.code = code
-        self.dataset = dataset
-        self.addfiles = addfiles
-        self.sensitivity = sensitivity
-        self.documentation = documentation
-
-    @classmethod
-    def from_raw_model_version(cls, origin_folder, destination_folder, raw_model_version: Dict):
-        code = cls.transform_uri(get_first_field(raw_model_version, 'field_modelversion_code', 'uri'))
-        dataset = cls.transform_uri(get_first_field(raw_model_version, 'field_modelversion_dataset', 'uri'))
-        addfiles = cls.transform_uri(get_first_field(raw_model_version, 'field_modelversion_addfiles', 'uri'))
-        sensitivity = cls.transform_uri(get_first_field(raw_model_version, 'field_modelversion_sensitivity', 'uri'))
-        documentation = cls.transform_uri(get_first_field(raw_model_version, 'field_modelversion_documentation', 'uri'))
-
-        return cls(destination_folder, origin_folder, code, dataset, addfiles, sensitivity, documentation)
-
-    @property
-    def rel_paths(self):
-        return [self.code, self.dataset, self.addfiles, self.sensitivity, self.documentation]
-
-    @staticmethod
-    def _extract_if_archive(full_path):
-        import tarfile
-        import zipfile
-
-        archive = None
-        if tarfile.is_tarfile(full_path):
-            archive = tarfile.TarFile(full_path)
-        elif zipfile.is_zipfile(full_path):
-            archive = zipfile.ZipFile(full_path)
-
-        if archive:
-            archive.extractall()
-            archive.close()
-            shutil.rmtree(full_path)
-
-    @staticmethod
-    def patch_existing_file(origin_path, destination_path):
-        with open(origin_path, 'rb') as origin_file:
-            with open(destination_path, 'wb') as destination_file:
-                destination_file.write(origin_file.read())
-
-    @staticmethod
-    def transform_uri(uri: str):
-        return urlparse(uri).path or None
-
-    def _extract_archives(self):
-        for rel_path in self.rel_paths:
-            self._extract_if_archive(os.path.join(self.origin_folder, rel_path))
-
-    @classmethod
-    def _update_or_create_files(cls, dcmp, origin_folder, destination_folder):
-        """
-        Recursively updates and creates files using a directory diff
-        """
-        for diff_file in dcmp.diff_files:
-            cls.patch_existing_file(os.path.join(origin_folder, diff_file),
-                                    os.path.join(destination_folder, diff_file))
-
-        for new_file_or_directory in dcmp.right_only:
-            shutil.copy(os.path.join(origin_folder, new_file_or_directory), destination_folder)
-
-        for folder_name, sub_dcmp in dcmp.subdirs.items():
-            cls._update_or_create_files(sub_dcmp,
-                                        os.path.join(origin_folder, folder_name),
-                                        os.path.join(destination_folder, folder_name))
-
-    def update_or_create_files(self):
-        self._extract_archives()
-        dcmp = filecmp.dircmp(self.origin_folder, self.destination_folder)
-        self._update_or_create_files(dcmp, self.origin_folder, self.destination_folder)
-
-
-class ModelVersionMetadata:
-    def __init__(self, language, language_version, license,
-                 os, os_version,
-                 platform, platform_version):
-        self.language = language
-        self.language_version = language_version
-        self.license = license
-        self.os = os
-        self.os_version = os_version
-        self.platform = platform
-        self.platform_version = platform_version
-
-    @classmethod
-    def from_raw_model_version(cls, raw_model_version):
-        language = get_first_field(raw_model_version, 'field_modelversion_language', 'value')
-        language_version = get_first_field(raw_model_version, 'field_modelversion_language_ver', 'value')
-        license = get_first_field(raw_model_version, 'field_modelversion_license', 'value')
-        os = get_first_field(raw_model_version, 'field_modelversion_os', 'value')
-        os_version = get_first_field(raw_model_version, 'field_modelversion_os_version', 'value')
-        platform = get_first_field(raw_model_version, 'field_modelversion_platform', 'value')
-        platform_version = get_first_field(raw_model_version, 'field_modelversion_platform_ver', 'value')
-
-        return cls(language, language_version, license, os, os_version, platform, platform_version)
-
-    @staticmethod
-    def join(*args):
-        return ' '.join([arg for arg in args if arg])
-
-    def show(self):
-        return json.dumps({
-            'language': self.join(self.language, self.language_version),
-            'license': self.license,
-            'os': self.join(self.os, self.os_version),
-            'platform': self.join(self.platform, self.platform_version)
-        }, sort_keys=True, indent=4, separators=(',', ': '))
+                logger.exception("Un-model-library-like directory: %s", dir_entry.name)
 
 
 def sanitize_name(name: str) -> str:

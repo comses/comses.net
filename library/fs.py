@@ -1,3 +1,4 @@
+import bagit
 import logging
 import mimetypes
 import os
@@ -68,3 +69,10 @@ def rm_system_files(base_dir, candidates):
 def unrar(archive_path, dst_dir: str):
     with rarfile.RarFile(archive_path) as rf:
         rf.extractall(dst_dir)
+
+
+def make_bag(path, info: dict):
+    try:
+        return bagit.Bag(path)
+    except bagit.BagError as e:
+        return bagit.make_bag(path, info)
