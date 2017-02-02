@@ -2,3 +2,7 @@
 *.pyc
 *.log
 *.pid
+incoming
+logs
+tags
+__pycache__
