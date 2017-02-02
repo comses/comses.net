@@ -103,10 +103,10 @@ class Contributor(index.Indexed, ClusterableModel):
     def name(self):
         return self.get_full_name()
 
-    def get_full_name(self, given_name_first=False):
+    def get_full_name(self, family_name_first=False):
         if self.type == 'person':
             # Bah
-            if given_name_first:
+            if family_name_first:
                 return '{0}, {1} {2}'.format(self.family_name, self.given_name, self.middle_name).strip()
             elif self.middle_name:
                 return '{0} {1} {2}'.format(self.given_name, self.middle_name, self.family_name)
