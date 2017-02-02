@@ -8,12 +8,19 @@
     body{
         background-color:#ffffff;
     }
+
 </style>
 <script lang="ts">
-    import { mapGetters } from 'vuex'
+    import {mapGetters} from 'vuex'
 
     export default {
-        computed:  {
+        watch: {
+            '$route': function (val) {
+                console.log(this.$router.resolve('/jobs/detail/1'));
+                console.log(val);
+            }
+        },
+        computed: {
             ...mapGetters('jobs', ['detail', 'list'])
         }
     }

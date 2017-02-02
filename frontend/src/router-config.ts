@@ -7,10 +7,10 @@ import JobCreate from './pages/job/create'
 import JobDetail from './pages/job/detail.vue'
 import JobList from './pages/job/list'
 import DraftCode from './pages/codebase/modify'
-import { ResourceDetail } from './pages/resources/detail'
+import {ResourceDetail} from './pages/resources/detail'
 
 
-import { api } from "./store/index";
+import {api} from "./store/index";
 
 Vue.use(Router);
 
@@ -18,6 +18,7 @@ const routes = {
     JOB_CREATE: 'job_create',
     JOB_DETAIL: 'job_detail',
     JOB_LIST: 'job_list',
+    JOB_UPDATE: 'job_update',
     CODEBASE_LIST: 'codebase_list',
     EVENT_LIST: 'event_list',
     RESOURCE_LIST: 'resource_list',
@@ -26,15 +27,15 @@ const routes = {
 };
 
 const router = new Router({
+    mode: 'history',
     routes: [
         {
             path: '/jobs/',
             name: routes.JOB_LIST,
             component: JobList,
-            children: [],
             meta: {
-                name: 'Jobs'
-            }
+                heading: 'Jobs'
+            },
         },
         {
             path: '/jobs/create/',
@@ -42,7 +43,12 @@ const router = new Router({
             component: JobCreate
         },
         {
-            path: '/jobs/:jobId/',
+            path: '/jobs/update/:jobId/',
+            name: routes.JOB_UPDATE,
+            component: JobCreate
+        },
+        {
+            path: '/jobs/detail/:jobId/',
             name: routes.JOB_DETAIL,
             component: JobDetail,
         },
@@ -95,6 +101,7 @@ router.beforeEach((to, from, next) => {
             break;
         }
         case routes.JOB_DETAIL: {
+            console.log('detail');
             store.dispatch(api.job.actions.fetchDetail(parseInt(to.params['jobId'])));
             break;
         }

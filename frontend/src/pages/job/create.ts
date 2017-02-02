@@ -22,6 +22,10 @@ import { api } from '../../store/index'
         </div>`
 })
 class JobCreate extends Vue implements Job {
+    // determine whether you are creating or updating based on wat route you are on
+    // update -> grab the appropriate state from the store
+    // create -> use the default store state
+
     description = '';
     title = '';
 
@@ -30,13 +34,15 @@ class JobCreate extends Vue implements Job {
     }
 
     setDescription(event) {
-        this.description = event.target.value;
+        // this.description = event.target.value;
+        this.$store.commit({type: 'job/draft/setDescription', data: event.target.value});
     }
 
     create() {
         this.$store.dispatch(api.job.actions.modify({
             description: this.description,
-            title: this.title
+            title: this.title,
+
         }));
         this.$router.go(-1);
     }

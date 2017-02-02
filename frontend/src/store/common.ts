@@ -149,8 +149,6 @@ export class ViewSet<T> {
         },
 
         setList(state: State<T>, payload: Payload<Page<T>>): void {
-            console.log(state);
-            console.log(payload);
             state.list = payload.data;
         },
 

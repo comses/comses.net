@@ -13,21 +13,46 @@ import Component from 'vue-class-component'
                     </nav>
                 </div>
                 <div class="col-sm-12 col-md-6 col-lg-8">
-                    <nav class="nav justify-content-end">
-                        <router-link :to="{ name: 'codebase_list' }" class="nav-link">Model Library</router-link>
-                        <router-link :to="{ name: 'event_list' }" class="nav-link">Events</router-link>
-                        <router-link :to="{ name: 'job_list' }" class="nav-link">Jobs</router-link>
-                        <router-link :to="{ name: 'resource_list' }" class="nav-link">Resources</router-link>
-                        <a class="fa fa-search nav-link" href="#"></a>
-                        <a class= "fa fa-chevron-down nav-link" href="#"></a>
-                    </nav>
+                    <ul class="nav justify-content-end">
+                        <li class="nav-item">
+                            <router-link :to="{ name: 'codebase_list' }" class="nav-link">Model Library</router-link>
+                        </li>
+                        <li class="nav-item">
+                            <router-link :to="{ name: 'event_list' }" class="nav-link">Events</router-link>
+                        </li>
+                        <li>
+                            <router-link :to="{ name: 'job_list' }" class="nav-link">Jobs</router-link>
+                        </li>
+                        <li class="nav-item">
+                            <router-link :to="{ name: 'resource_list' }" class="nav-link">Resources</router-link>
+                        </li>
+                        <li class="nav-item">
+                            <a class="fa fa-search nav-link" href="#"></a>
+                        </li>
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" data-toggle="dropdown" role="button" href="#" aria-haspopup="true" aria-expanded="true">
+                                <span class="fa fa-chevron-down"></span>
+                            </a>
+                            <div class="dropdown-menu">
+                                <a class="dropdown-item" href="#">Log In</a>
+                                <a class="dropdown-item" href="#">Log Out</a>
+                                <a class="dropdown-item" href="#">Profile</a>
+                            </div> 
+                        </li>
+                    </ul>
                 </div>
             </div>
         </div>
     </header>`
 })
 class Header extends Vue {
+    get loggedIn(): boolean {
+        return this.$store.state.account.loggedIn;
+    }
 
+    // need to track whether or not we are currently logged in
+    // logged in -> log out, profile
+    // not logged in -> log in
 }
 
 export default Header
