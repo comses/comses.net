@@ -1,25 +1,23 @@
+import logging
+import pathlib
+import uuid
+from enum import Enum
+
+import semver
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.contrib.postgres.fields import JSONField
 from django.db import models
 from django.utils import timezone
 from django.utils.translation import ugettext_lazy as _
-
-from enum import Enum
-
+from model_utils import Choices
+from modelcluster.contrib.taggit import ClusterTaggableManager
 from modelcluster.fields import ParentalKey
 from modelcluster.models import ClusterableModel
-from modelcluster.contrib.taggit import ClusterTaggableManager
-from model_utils import Choices
-
 from taggit.models import TaggedItemBase
 from wagtail.wagtailsearch import index
 
 from . import fs
-import logging
-import pathlib
-import semver
-import uuid
 
 logger = logging.getLogger(__name__)
 
@@ -96,18 +94,24 @@ class Contributor(index.Indexed, ClusterableModel):
     affiliations = ClusterTaggableManager(through=ContributorAffiliation)
     type = models.CharField(max_length=16,
                             choices=(('person', 'person'), ('organization', 'organization')),
-                            default='person')
+                            default='person',
+                            help_text=_('organizations only use given_name'))
     email = models.EmailField(blank=True)
     user = models.ForeignKey(User, null=True)
 
     @property
     def name(self):
-        return self.full_name
+        return self.get_full_name()
 
-    @property
-    def full_name(self):
+    def get_full_name(self, given_name_first=False):
         if self.type == 'person':
-            return '{0} {1}'.format(self.given_name, self.family_name).strip()
+            # Bah
+            if given_name_first:
+                return '{0}, {1} {2}'.format(self.family_name, self.given_name, self.middle_name).strip()
+            elif self.middle_name:
+                return '{0} {1} {2}'.format(self.given_name, self.middle_name, self.family_name)
+            else:
+                return '{0} {1}'.format(self.given_name, self.family_name)
         else:
             return self.given_name
 
@@ -117,8 +121,8 @@ class Contributor(index.Indexed, ClusterableModel):
 
     def __str__(self):
         if self.email:
-            return '{0} ({1})'.format(self.full_name, self.email)
-        return self.full_name
+            return '{0} {1}'.format(self.get_full_name(), self.email)
+        return self.get_full_name()
 
 
 class SemanticVersionBump(Enum):
@@ -204,9 +208,7 @@ class Codebase(index.Indexed, ClusterableModel):
     @property
     def contributor_list(self):
         # FIXME: messy
-        contributor_list = ['{1}, {0} {2}'.format(*t).strip()
-                            for t in self.contributors.values_list('given_name', 'family_name', 'middle_name')]
-        contributor_list.sort()
+        contributor_list = [c.get_full_name(family_name_first=True) for c in self.contributors.order_by('family_name')]
         return contributor_list
 
     def get_absolute_url(self):
@@ -271,9 +273,9 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
 
     For now, simple FS organization in lieu of HashFS or other content addressable filesystem.
 
-    * release tarballs or zipfiles located at /library/<codebase_identifier>/releases/<release_identifier>/<version_number>.(tar.gz|zip)
-    * release bagits at /library/<codebase_identifier>/releases/<release_identifier>/bagit/
-    *  git repository in /repository/<codebase_identifier>/
+    * release tarballs or zipfiles located at /library/<codebase_identifier>/releases/<version_number>/<id>.(tar.gz|zip)
+    * release bagits at /library/<codebase_identifier>/releases/<release_identifier>/sip
+    * git repository in /repository/<codebase_identifier>/
     """
 
     date_created = models.DateTimeField(default=timezone.now)

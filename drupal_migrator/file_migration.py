@@ -1,22 +1,16 @@
 """ migrate Drupal filesystem data into the new library structure """
 
-from library.models import Codebase, CodebaseRelease
-from library import fs
-from .database_migration import IDMapper
-from .utils import get_first_field
-from django.contrib.auth.models import User
-from typing import Dict
-from urllib.parse import urlparse
-
 import datetime
-import filecmp
-import os
-import json
-import shutil
-import re
 import logging
-import pygit2
+import os
+import re
+import shutil
 
+import pygit2
+from django.contrib.auth.models import User
+
+from library import fs
+from library.models import Codebase, CodebaseRelease
 
 logger = logging.getLogger(__name__)
 
@@ -124,47 +118,6 @@ def load(src_dir: str):
 
 def sanitize_name(name: str) -> str:
     return re.sub(r"\W+", "_", name)
-
-
-def create_repos(nid_to_id_mapper: IDMapper, json_dump_path: str, root_path: str, dest_path: str):
-    """
-    Creates git repos out of the files that are part of each of its model versions.
-
-    :param nid_to_id_mapper: mapping between drupal ids and database ids
-    :param json_dump_path: path to where the JSON dump of the Drupal DB is
-    :param root_path: path to the root of where the OpenABM Drupal stores its files
-    :param dest_path: path to where the Git Repos will be stored
-    :return:
-    """
-    raw_model_versions = json.load(os.path.join(json_dump_path, 'ModelVersion.json'))
-
-    id_models = Codebase.objects.in_bulk()
-
-    for raw_model_version in raw_model_versions:
-        drupal_model_id = get_first_field(raw_model_version, 'field_modelversion_model', 'nid')
-        version_id = get_first_field(raw_model_version, 'field_modelversion_number', 'value')
-
-        if drupal_model_id and version_id:
-            id = nid_to_id_mapper[Codebase][drupal_model_id]
-            model = id_models[id]
-            creator = model.creator
-
-            origin_folder = os.path.join(root_path, drupal_model_id, "v{}".format(version_id))
-            destination_folder = os.path.join(dest_path, creator.get_full_name(),
-                                              sanitize_name(model.title))
-
-            repo = get_or_create_repo(destination_folder)
-            model_version_files = ModelVersionFiles.from_raw_model_version(origin_folder=origin_folder,
-                                                                           destination_folder=destination_folder,
-                                                                           raw_model_version=raw_model_version)
-            logger.debug("Preparing '{}' Version {} for update with Drupal ID: {}".format(
-                destination_folder, version_id, drupal_model_id))
-            model_version_files.update_or_create_files()
-            logger.debug("Updated '{}' Version {} for update".format(destination_folder, version_id))
-            commit(repo, "Version {}".format(version_id), creator)
-            logger.debug("Committed '{}' Version {}".format(destination_folder, version_id))
-        else:
-            logger.warning('Model version with Drupal ID {} does not have a model. Ignoring.'.format(drupal_model_id))
 
 
 def get_or_create_repo(full_path: str) -> pygit2.Repository:

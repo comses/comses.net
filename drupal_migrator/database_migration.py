@@ -1,21 +1,21 @@
-from collections import defaultdict
-from datetime import datetime
-from django.contrib.auth.models import User, Group
-from library.models import (Contributor, Codebase, CodebaseRelease, CodebaseKeyword, License,
-                            CodebaseContributor, Platform, OPERATING_SYSTEMS)
-from home.models import Event, Job, MemberProfile
-from taggit.models import Tag
-from typing import Dict
-
-from .utils import get_first_field, get_field, get_field_attributes
-
 import csv
 import io
 import json
 import logging
 import os
-import pytz
 import re
+from collections import defaultdict
+from datetime import datetime
+from typing import Dict
+
+import pytz
+from django.contrib.auth.models import User, Group
+from taggit.models import Tag
+
+from home.models import Event, Job, MemberProfile
+from library.models import (Contributor, Codebase, CodebaseRelease, CodebaseKeyword, License,
+                            CodebaseContributor, Platform, OPERATING_SYSTEMS)
+from .utils import get_first_field, get_field, get_field_attributes
 
 logger = logging.getLogger(__name__)
 
@@ -285,9 +285,7 @@ class AuthorExtractor(Extractor):
     def extract_all(self):
         contributors = [self._extract(raw_author) for raw_author in self.data]
         Contributor.objects.bulk_create(contributors)
-        return dict(
-            [(c.item_id, c.pk) for c in contributors]
-        )
+        return dict([(c.item_id, c.pk) for c in contributors])
 
 
 class ModelExtractor(Extractor):
@@ -295,7 +293,7 @@ class ModelExtractor(Extractor):
     def _extract(self, raw_model, user_id_map, author_id_map):
         raw_author_ids = [raw_author['value'] for raw_author in get_field(raw_model, 'field_model_author')]
         author_ids = [author_id_map[raw_author_id] for raw_author_id in raw_author_ids]
-        code = Codebase(title=raw_model['title'],
+        code = Codebase(title=raw_model['title'].strip(),
                         description=get_first_field(raw_model, field_name='body', default=''),
                         date_created=self.to_datetime(raw_model['created']),
                         last_modified=self.to_datetime(raw_model['changed']),
@@ -423,10 +421,7 @@ def load(directory: str):
     job_extractor.extract_all(user_id_map)
     event_extractor.extract_all(user_id_map)
     tag_id_map = taxonomy_extractor.extract_all()
-    model_id_map = model_extractor.extract_all(user_id_map=user_id_map,
-                                               tag_id_map=tag_id_map,
-                                               author_id_map=author_id_map)
+    model_id_map = model_extractor.extract_all(user_id_map, tag_id_map, author_id_map)
     model_version_id_map = model_version_extractor.extract_all(model_id_map)
     profile_extractor.extract_all(user_id_map, tag_id_map)
-
     return IDMapper(author_id_map, user_id_map, tag_id_map, model_id_map, model_version_id_map)

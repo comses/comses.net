@@ -1,10 +1,10 @@
-import bagit
 import logging
 import mimetypes
 import os
-import rarfile
 import shutil
 
+import bagit
+import rarfile
 from PIL import Image
 
 logger = logging.getLogger(__name__)
