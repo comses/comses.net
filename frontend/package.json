@@ -1,13 +1,13 @@
 {
-  "name": "typescript-vue-example",
+  "name": "comsesnet.ui",
   "version": "1.0.0",
-  "description": "A typescript vue example",
-  "author": "CoMSES comses@asu.edu",
+  "description": "comses.net vuejs UI",
+  "author": "CoMSES Net devs devs@comses.net",
   "private": true,
   "scripts": {
     "dev": "./node_modules/webpack/bin/webpack.js --config build/webpack.dev.conf.js --watch",
     "build": "node build/build.js",
-    "test": "./node_modules/mocha/bin/mocha -r ./node_modules/ts-node/register.js test/tests.ts",
+    "test": "./node_modules/mocha/bin/mocha -r ./node_modules/ts-node/register test/tests.ts",
     "dtsgen": "./node_modules/dtsgenerator/bin/dtsgen"
   },
   "dependencies": {
@@ -39,7 +39,7 @@
     "html-webpack-plugin": "^2.26.0",
     "json-loader": "^0.5.4",
     "mocha": "^3.2.0",
-    "node-sass": "^3.13.0",
+    "node-sass": "^4.5.0",
     "openapi-client": "^0.8.3",
     "opn": "^4.0.2",
     "ora": "^0.3.0",
@@ -54,7 +54,7 @@
     "vue-loader": "^10.0.0",
     "vue-style-loader": "^1.0.0",
     "vue-template-compiler": "^2.1.8",
-    "webpack": "^1.13.2",
+    "webpack": "^1.14",
     "webpack-bundle-tracker": "^0.2.0",
     "webpack-dev-server": "^1.16.2",
     "webpack-merge": "^0.14.1"

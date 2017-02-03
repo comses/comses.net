@@ -17,7 +17,7 @@ module.exports = merge(baseWebpackConfig, {
   // eval-source-map is faster for development
   devtool: '#eval-source-map',
   plugins: [
-    new BundleTracker({filename: './webpack-stats.json'}),
+    new BundleTracker({filename: '/static/webpack-stats.json'}),
     new webpack.DefinePlugin({
       'process.env': config.dev.env
     }),
