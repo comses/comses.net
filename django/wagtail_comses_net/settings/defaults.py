@@ -206,9 +206,11 @@ STATICFILES_FINDERS = [
     'django.contrib.staticfiles.finders.AppDirectoriesFinder',
 ]
 
+WEBPACK_DIR = '/webpack'
+
 STATICFILES_DIRS = [
     os.path.join(PROJECT_DIR, 'static'),
-    os.path.join(BASE_DIR, 'frontend'),
+    WEBPACK_DIR
 ]
 
 STATIC_ROOT = os.path.join(BASE_DIR, 'static')
@@ -224,14 +226,14 @@ WAGTAIL_SITE_NAME = "wagtail_comses_net"
 
 WEBPACK_LOADER = {
     'DEFAULT': {
-        'BUNDLE_DIR_NAME': 'dist/',
-        'STATS_FILE': os.path.join(BASE_DIR, 'frontend/webpack-stats.json'),
+        'BUNDLE_DIR_NAME': 'assets/',
+        'STATS_FILE': os.path.join(WEBPACK_DIR, 'webpack-stats.json'),
     }
 }
 
 # Base URL to use when referring to full URLs within the Wagtail admin backend -
 # e.g. in notification emails. Don't include '/admin' or a trailing slash
-BASE_URL = 'http://example.com'
+BASE_URL = 'https://www.comses.net'
 
 WAGTAILMENUS_DEFAULT_MAIN_MENU_TEMPLATE = 'home/includes/menu.html'
 

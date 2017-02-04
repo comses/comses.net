@@ -14,23 +14,21 @@ services:
     image: postgres:9.5
     volumes:
       - data:/var/lib/postgresql/data
-    ports:
-      - "127.0.0.1:5433:5432"
     environment:
       # No need to modify if autofilled by ./build.sh envsubst
       # FIXME: eventually replace with init sql script, see https://github.com/docker/docker/issues/13490
-      POSTGRES_USER: ${DB_USER}
-      POSTGRES_PASSWORD: ${DB_PASSWORD}
-      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: "${DB_USER}"
+      POSTGRES_PASSWORD: "${DB_PASSWORD}"
+      POSTGRES_DB: "${DB_NAME}"
   cms:
-    build: .
+    build: django
     image: comses/wagtailcms
     volumes:
       - .:/code
       - ./deploy/elasticsearch.conf.d:/etc/elasticsearch
       - logs:/code/logs
       - library:/library
-      - storage:/data
+      - repository:/repository
       - ./deploy/conf/config.ini:/secrets/config.ini
     command: /code/deploy/app/prod.sh
     args:
@@ -45,22 +43,8 @@ services:
     links:
       - ${DB_HOST}
       - elasticsearch
-  test:
-    image: cms
-    volumes:
-      - .:/code
-      - logs:/code/logs
-    command: /code/deploy/app/test.sh
-    environment:
-      DB_USER: ${DB_USER}
-      DB_HOST: ${DB_HOST}
-      DB_NAME: ${DB_NAME}
-      DB_PORT: ${DB_PORT}
-    links:
-      - ${DB_HOST}
-      - elasticsearch
 volumes:
-  storage:
+  repository:
     driver: local
   library:
     driver: local

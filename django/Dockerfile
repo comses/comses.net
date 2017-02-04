@@ -3,7 +3,6 @@ FROM comses/base
 RUN apt-get update && apt-get install -q -y \
         curl \
         git \
-        npm \
         libffi-dev \
         libgit2-dev \
         libjpeg-turbo8-dev \
@@ -25,8 +24,5 @@ ENV PYTHONUNBUFFERED=1 \
 WORKDIR /code
 COPY requirements.txt $REQUIREMENTS_FILE /tmp/
 RUN pip3 install -r /tmp/$REQUIREMENTS_FILE
-RUN apt-get install -y nodejs && cd /usr/bin && ln -s nodejs node && cd /code
-COPY frontend/package.json frontend/package.json
-RUN cd frontend && npm install && cd ..
 # FIXME: run as restricted user, remove unnecessary packages
 CMD ["/code/deploy/app/dev.sh"]

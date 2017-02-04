@@ -4,10 +4,10 @@ var path = require('path')
 module.exports = {
   build: {
     env: require('./prod.env'),
-    index: path.resolve(__dirname, '../dist/index.html'),
-    assetsRoot: '/static',
+    // index: path.resolve(__dirname, '../dist/index.html'),
+    assetsRoot: '/webpack',
     assetsSubDirectory: 'assets',
-    assetsPublicPath: '/static/assets/',
+    assetsPublicPath: '/webpack/assets',
     productionSourceMap: true,
     // Gzip off by default as many popular static hosts such as
     // Surge or Netlify already gzip all static assets for you.
@@ -20,7 +20,7 @@ module.exports = {
     env: require('./dev.env'),
     port: 8080,
     assetsSubDirectory: 'assets',
-    assetsPublicPath: '/static/assets/',
+    assetsPublicPath: '/webpack/assets',
     proxyTable: {},
     // CSS Sourcemaps off by default because relative paths are "buggy"
     // with this option, according to the CSS-Loader README
