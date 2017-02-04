@@ -1,4 +1,4 @@
-version: '2'
+version: '3'
 services:
   elasticsearch:
     image: elasticsearch:5
@@ -30,6 +30,8 @@ services:
       - library:/library
       - repository:/repository
       - ./deploy/conf/config.ini:/secrets/config.ini
+      - webpack:/webpack
+      - static:/static
     command: /code/deploy/app/prod.sh
     args:
       REQUIREMENTS_FILE: requirements-prod.txt
@@ -44,6 +46,10 @@ services:
       - ${DB_HOST}
       - elasticsearch
 volumes:
+  webpack:
+    driver: local
+  static:
+    driver: local
   repository:
     driver: local
   library:

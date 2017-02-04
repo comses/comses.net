@@ -209,11 +209,10 @@ STATICFILES_FINDERS = [
 WEBPACK_DIR = '/webpack'
 
 STATICFILES_DIRS = [
-    os.path.join(PROJECT_DIR, 'static'),
     WEBPACK_DIR
 ]
 
-STATIC_ROOT = os.path.join(BASE_DIR, 'static')
+STATIC_ROOT = '/static'
 STATIC_URL = '/static/'
 
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')

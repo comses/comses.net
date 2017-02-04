@@ -1,4 +1,4 @@
-version: '2'
+version: '3'
 services:
   elasticsearch:
     image: elasticsearch:5
@@ -40,6 +40,7 @@ services:
       - ./deploy/app:/code/deploy/app
       - ./deploy/conf/config.ini:/secrets/config.ini
       - webpack:/webpack
+      - static:/static
     command: /code/deploy/app/dev.sh
     environment:
       DB_USER: ${DB_USER}
@@ -67,6 +68,8 @@ services:
       - ${DB_HOST}
       - elasticsearch
 volumes:
+  static:
+    driver: local
   webpack:
     driver: local
   repository:

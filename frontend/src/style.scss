@@ -22,7 +22,7 @@ $fa-font-path: '../node_modules/font-awesome/fonts/';
   text-shadow: none;
   background-color: transparent;
   border: 0;
-  background-image: url("assets/images/logo.png");
+  background-image: url("./assets/images/logo.png");
   background-position: center;
   background-repeat: no-repeat;
   background-size: auto;
@@ -34,7 +34,7 @@ $fa-font-path: '../node_modules/font-awesome/fonts/';
 
 
 .carousel {
-  background: #f0f4fa url("assets/images/background-carousel.png") repeat top center;
+  background: #f0f4fa url("./assets/images/background-carousel.png") repeat top center;
   overflow: hidden;
   padding-top: 40px;
   padding-bottom: 40px;
@@ -63,7 +63,7 @@ header {
 
 footer {
   padding: 75px 0;
-  background-image: url("assets/images/background-footer.png");
+  background-image: url("./assets/images/background-footer.png");
   color: $white;
 }
 
