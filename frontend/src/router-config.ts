@@ -3,9 +3,10 @@ import * as Router from 'vue-router'
 
 import store from './store/index'
 
-import JobCreate from './pages/job/create'
+import Home from './pages/home/home.vue'
+import JobCreate from './pages/job/create.vue'
 import JobDetail from './pages/job/detail.vue'
-import JobList from './pages/job/list'
+import JobList from './pages/job/list.vue'
 import DraftCode from './pages/codebase/modify'
 import {ResourceDetail} from './pages/resources/detail'
 
@@ -79,7 +80,7 @@ const router = new Router({
         {
             path: '',
             name: routes.HOME,
-            component: ResourceDetail,
+            component: Home,
             meta: {
                 heading: 'A growing collection of resources for model-based science',
                 subheading: 'A Model Library, Tutorials and FAQs on Agent Based Modeling'

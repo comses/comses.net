@@ -1,6 +1,6 @@
 from library.models import Codebase, CodebaseRelease
 from .models import Event, Job
-from .serializers import EventSerializer, JobSerializer
+from .serializers import EventSerializer, JobSerializer, TagSerializer
 from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
 from django.contrib.auth.models import User
 from rest_framework import generics, viewsets
@@ -11,6 +11,7 @@ from wagtail.wagtailsearch.models import Query
 from django.shortcuts import render
 from wagtail.wagtailsearch.backends import get_search_backend
 import logging
+from taggit.models import Tag
 
 logger = logging.getLogger(__name__)
 
@@ -84,8 +85,17 @@ class JobViewSet(viewsets.ModelViewSet):
 
     def create(self, request, *args, **kwargs):
         submitter = request.user
+        tags = request.data['tags']
         job = Job.objects.create(title=request.data['title'],
                                  description=request.data['description'],
                                  submitter=submitter)
+        job.tags.add(*[tag['name'] for tag in tags])
         serializer = JobSerializer(job)
         return Response(serializer.data)
+
+
+class TagViewSet(viewsets.ModelViewSet):
+    serializer_class = TagSerializer
+    queryset = Tag.objects.all()
+    pagination_class = SmallResultSetPagination
+    renderer_classes = (JSONRenderer,)

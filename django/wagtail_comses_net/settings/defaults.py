@@ -119,6 +119,7 @@ DATABASES = {
         'PASSWORD': config.get('database', 'DB_PASSWORD'),
         'HOST': config.get('database', 'DB_HOST'),
         'PORT': config.get('database', 'DB_PORT'),
+        'ATOMIC_REQUESTS': True,
     }
 }
 

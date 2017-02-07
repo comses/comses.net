@@ -22,8 +22,8 @@ const codebase: Codebase = {
             contributors: []
         };
 
-const jobs_viewset = new ViewSet('jobs', '/home/jobs/', job);
-const codebase_viewset = new ViewSet('codebases', '/library/code/', codebase);
+const jobs_viewset = new ViewSet('jobs', '/api/wagtail/jobs/', job);
+const codebase_viewset = new ViewSet('codebases', '/api/library/code/', codebase);
 
 export default new Vuex.Store({
     modules: { jobs: jobs_viewset.module, codebases: codebase_viewset.module, resources }

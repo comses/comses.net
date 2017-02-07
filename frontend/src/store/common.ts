@@ -161,7 +161,7 @@ export class ViewSet<T> {
 
         const fetch = (name: keyof State<T>, mutationName: string) =>
             ({commit}: ActionContext<State<T>, any>, payload: Payload<number>) => {
-            return axios.get(base_url + payload.data).then(response =>
+            return axios.get(base_url + payload.data + '/').then(response =>
                 commit({ type: mutationName, data: response.data}));
         };
 

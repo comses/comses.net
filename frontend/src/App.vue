@@ -11,9 +11,9 @@
 </template>
 
 <script lang="ts">
-    import Footer from './components/footer'
-    import Header from './components/header'
-    import SubHeader from './components/subheader'
+    import Footer from './components/footer.vue'
+    import Header from './components/header.vue'
+    import SubHeader from './components/subheader.vue'
     export default {
         components: {
             'c-footer': Footer,

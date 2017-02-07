@@ -6,32 +6,26 @@ from django.contrib import admin
 
 from search import views as search_views
 from wagtail.wagtailadmin import urls as wagtailadmin_urls
-from wagtail.wagtailcore import urls as wagtail_urls
-from wagtail.wagtaildocs import urls as wagtaildocs_urls
-from home import urls as home_urls
-from library import urls as library_urls
 
-from wagtail.contrib.wagtailapi import urls as wagtailapi_urls
+from home import urls as wagtailapi_urls
+from library import urls as library_urls
 
 from rest_framework_swagger.views import get_swagger_view
 from rest_framework_jwt.views import obtain_jwt_token
 
+from django.views.generic import TemplateView
+
 schema_view = get_swagger_view(title='CoMSES.net API')
 
 urlpatterns = [
-    url(r'^django-admin/', include(admin.site.urls)),
+    url(r'^wagtail/admin/', include(wagtailadmin_urls)),
 
-    url(r'^admin/', include(wagtailadmin_urls)),
-    url(r'^documents/', include(wagtaildocs_urls)),
-
-    url(r'^search/$', search_views.search, name='search'),
-    url(r'^home/', include(home_urls)),
-    url(r'^library/', include(library_urls)),
-
-    url(r'^api/', include(wagtailapi_urls)),
-    url(r'^schema/$', schema_view),
-    url(r'^api-token-auth/', obtain_jwt_token),
-    url(r'', include(wagtail_urls)),
+    url(r'^api/library/', include(library_urls)),
+    url(r'^api/search/$', search_views.search, name='search'),
+    url(r'^api/wagtail/', include(wagtailapi_urls)),
+    url(r'^api/schema/$', schema_view),
+    url(r'^api/token/', obtain_jwt_token),
+    url(r'.*', TemplateView.as_view(template_name='home/spa_page.html'), name='home'),
 ]
 
 
