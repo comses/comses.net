@@ -1,17 +1,17 @@
 <template>
     <div>
-        <h2>Create a new job</h2>
+        <h2 v-if>Edit a job</h2>
         <form>
             <div class="form-group">
                 <label>Title</label>
-                <input type="text" class="form-control" placeholder="Enter Title" v-model="title">
+                <input type="text" class="form-control" placeholder="Enter Title" v-model="data.title">
             </div>
             <div class="form-group">
                 <label>Description</label>
-                <textarea class="form-control" v-model="description"></textarea>
+                <markdown v-model="data.description"></markdown>
             </div>
             <multiselect
-                    v-model="selectedTags"
+                    v-model="data.tags"
                     label="name"
                     track-by="name"
                     placeholder="Type to find keywords"
@@ -26,7 +26,7 @@
                     :limit="6"
                     @search-change="fetchMatchingTags">
             </multiselect>
-            <button type="button" class="btn btn-primary" @click="create">Submit</button>
+            <button type="button" class="btn btn-primary" @click="createOrUpdate">Submit</button>
         </form>
     </div>
 </template>
@@ -39,46 +39,69 @@
     import {api} from '../../store/index'
     import {api as axios} from '../../api/index'
     import * as queryString from 'query-string'
+    import {job as defaultJob} from '../../store/defaults'
+    import Markdown from 'components/markdown.vue'
 
     import Multiselect from 'vue-multiselect'
+    import { Errors } from 'store/common'
 
     @Component({
         components: {
-            Multiselect
+            Multiselect,
+            Markdown
         }
     })
-    class JobCreate extends Vue implements Job {
+    class JobCreate extends Vue {
         // determine whether you are creating or updating based on wat route you are on
         // update -> grab the appropriate state from the store
         // create -> use the default store state
 
-        error = '';
-        description = '';
+        data = {...defaultJob};
+        errors: Errors<Job> = {};
         isLoading = false;
-        selectedTags = [];
         matchingTags = [];
-        title = '';
 
-        create() {
-            this.$store.dispatch(api.job.actions.modify({
-                description: this.description,
-                title: this.title,
-                tags: this.selectedTags
-            }))
-                    .then(repsonse => this.$router.go(-1))
-                    .catch(response => this.error = response.data);
+        routeId() {
+            return parseInt(this.$route.params['jobId']);
+        }
+
+        replaceFormState() {
+            const id = this.routeId();
+            if (this.data.id !== id && !isNaN(id)) {
+                axios.get('/api/wagtail/jobs/' + id + '/')
+                        .then(response => {
+                            console.log(response);
+                            this.data = response.data;
+                        })
+            }
+        }
+
+        created() {
+            this.replaceFormState();
+        }
+
+        createOrUpdate() {
+            const id = this.routeId();
+            let data = {...this.data};
+            if (!isNaN(id)) {
+                data.id = id;
+            }
+            const payload = api.job.actions.modify(data);
+            this.$store.dispatch(payload)
+                    .then(response => console.log(response))
+                    .catch(response => this.errors = response.data);
         }
 
         fetchMatchingTags(query) {
             this.isLoading = true;
-            axios.get('/api/wagtail/tag/?' + queryString.stringify({ query, page: 1 }))
+            axios.get('/api/wagtail/tags/?' + queryString.stringify({query, page: 1}))
                     .then(response => {
-                        this.matchingTags = response.data.results
+                        this.matchingTags = response.data.results;
                         this.isLoading = false;
                     })
                     .catch(response => {
                         this.isLoading = false;
-                        this.error = response.data
+                        this.errors = response.data
                     })
         }
     }

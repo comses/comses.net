@@ -9,7 +9,7 @@
                 <router-link :to="{ name: 'job_list', query: { query: search, page: 1 }}" class="btn btn-primary">
                     Search
                 </router-link>
-                <router-link :to="{ name: 'job_update', params: { jobId: 1 }}"
+                <router-link :to="{ name: 'job_create' }"
                              class="btn btn-primary btn float-md-right mt-xs-1">
                     <span class="fa fa-plus"></span>
                 </router-link>

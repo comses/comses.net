@@ -83,6 +83,19 @@ class JobViewSet(viewsets.ModelViewSet):
         serializer = JobSerializer(job)
         return Response(serializer.data)
 
+    def update(self, request, *args, **kwargs):
+        tag_names = [raw_tag['name'] for raw_tag in request.data['tags']]
+        job = Job.objects.get(id=request.data['id'])
+        logger.debug(tag_names)
+        if job:
+            job.tags.clear()
+            job.tags.add(*tag_names)
+            job.title = request.data['title']
+            job.description = request.data['description']
+            job.save()
+        serializer = JobSerializer(job)
+        return Response(serializer.data)
+
     def create(self, request, *args, **kwargs):
         submitter = request.user
         tags = request.data['tags']
@@ -99,3 +112,22 @@ class TagViewSet(viewsets.ModelViewSet):
     queryset = Tag.objects.all()
     pagination_class = SmallResultSetPagination
     renderer_classes = (JSONRenderer,)
+
+    def get_list_queryset(self):
+        search_query = self.request.query_params.get('query')
+        if search_query:
+            queryset = Tag.objects.filter(name__icontains=search_query).order_by('name')
+        else:
+            queryset = Tag.objects.order_by('name')
+        return queryset
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_list_queryset()
+
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = TagSerializer(page, many=True)
+            return self.get_paginated_response(data=serializer.data)
+
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)

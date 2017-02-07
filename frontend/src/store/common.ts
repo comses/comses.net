@@ -1,6 +1,10 @@
 import {Module, ActionContext} from 'vuex'
-import { api as axios } from '../api/index'
+import {api as axios} from '../api/index'
 import * as queryString from 'query-string'
+
+export type Errors<T> = {
+    [P in keyof T]?: Array<string>
+}
 
 export interface NullWithId {
     id?: number
@@ -42,6 +46,7 @@ export interface Job extends NullWithId {
     submitter?: User
     title: string
     description: string
+    tags: Array<{name: string}>
 }
 
 export interface Codebase extends NullWithId {
@@ -161,21 +166,22 @@ export class ViewSet<T> {
 
         const fetch = (name: keyof State<T>, mutationName: string) =>
             ({commit}: ActionContext<State<T>, any>, payload: Payload<number>) => {
-            return axios.get(base_url + payload.data + '/').then(response =>
-                commit({ type: mutationName, data: response.data}));
-        };
+                return axios.get(base_url + payload.data + '/').then(response =>
+                    commit({type: mutationName, data: response.data}));
+            };
 
         const fetchList = ({commit}: ActionContext<State<T>, any>, payload: Payload<PageQuery>) => {
             console.log(payload);
             return axios.get(base_url + '?' + queryString.stringify(payload.data)).then(response =>
-                commit({ type: 'setList', data: response.data}))
+                commit({type: 'setList', data: response.data}))
         };
 
         const modify = <T extends NullWithId>({commit}: ActionContext<State<T>, any>, payload: Payload<T>) => {
+            console.log(payload);
             if (payload.data.id === undefined) {
                 return axios.post(base_url, payload.data);
             } else {
-                return axios.put(base_url + payload.data.id, modify);
+                return axios.put(base_url + payload.data.id + '/', payload.data);
             }
         };
 
@@ -201,7 +207,10 @@ export class ViewSet<T> {
         return {
             fetchDetail: (id: number): Payload<number> => ({data: id, type: this.name + '/fetchDetail'}),
             fetchModify: (id: number): Payload<number> => ({data: id, type: this.name + '/fetchModify'}),
-            fetchList: (page_query: PageQuery): Payload<PageQuery> => ({data: page_query, type: this.name + '/fetchList'}),
+            fetchList: (page_query: PageQuery): Payload<PageQuery> => ({
+                data: page_query,
+                type: this.name + '/fetchList'
+            }),
             modify: <T>(record: T): Payload<T> => ({data: record, type: this.name + '/modify'})
         }
     }

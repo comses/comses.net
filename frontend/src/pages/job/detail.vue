@@ -1,8 +1,8 @@
 <template>
     <div>
         <h1>{{ detail.title }} ({{ detail.date_created }})</h1>
-        <p>{{ detail.description }}</p>
-        <span v-for="tag in detail.tags" class="p-2 m-1 badge badge-primary">{{ tag.name }}</span>
+        <div v-html="markdown"></div>
+        <c-tag-list :tags="detail.tags"></c-tag-list>
     </div>
 </template>
 <style>
@@ -14,6 +14,8 @@
 </style>
 <script lang="ts">
     import {mapGetters} from 'vuex'
+    import TagList from 'components/taglist'
+    import * as marked from 'marked'
 
     export default {
         watch: {
@@ -23,7 +25,13 @@
             }
         },
         computed: {
-            ...mapGetters('jobs', ['detail', 'list'])
+            ...mapGetters('jobs', ['detail', 'list']),
+            markdown() {
+                return marked(this.detail.description, {sanitize: true})
+            }
+        },
+        components: {
+            'c-tag-list': TagList
         }
     }
 </script>

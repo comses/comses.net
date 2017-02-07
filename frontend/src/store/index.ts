@@ -1,26 +1,14 @@
 import * as Vue from 'vue'
 import * as Vuex from 'vuex'
 
-import { Codebase, Job, ViewSet } from './common'
+import { job, codebase } from './defaults'
+import { ViewSet } from './common'
 import resources, { api as resource_api } from './resource'
 
 
 Vue.use(Vuex);
 
-const job: Job = {
-    description: '',
-    title: ''
-};
 
-const codebase: Codebase = {
-            title: '',
-            description: '',
-            doi: null,
-            live: false,
-            is_replication: false,
-            keywords: [],
-            contributors: []
-        };
 
 const jobs_viewset = new ViewSet('jobs', '/api/wagtail/jobs/', job);
 const codebase_viewset = new ViewSet('codebases', '/api/library/code/', codebase);
