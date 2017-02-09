@@ -6,7 +6,7 @@ module.exports = {
     env: require('./prod.env'),
     // index: path.resolve(__dirname, '../dist/index.html'),
     assetsRoot: '/webpack',
-    assetsSubDirectory: 'assets',
+    assetsSubDirectory: 'prod/assets',
     assetsPublicPath: '/static/',
     productionSourceMap: true,
     // Gzip off by default as many popular static hosts such as
@@ -19,7 +19,7 @@ module.exports = {
   dev: {
     env: require('./dev.env'),
     assetsRoot: '/webpack',
-    assetsSubDirectory: 'assets',
+    assetsSubDirectory: 'dev/assets',
     assetsPublicPath: '/static/',
     port: 8080,
     proxyTable: {},

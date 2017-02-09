@@ -2,6 +2,7 @@ var path = require('path')
 var config = require('../config')
 var utils = require('./utils')
 var projectRoot = path.resolve(__dirname, '../')
+var webpack = require('webpack')
 
 var env = process.env.NODE_ENV
 // check env & config/index.js to decide weither to enable CSS Sourcemaps for the
@@ -10,18 +11,27 @@ var cssSourceMapDev = (env === 'development' && config.dev.cssSourceMap)
 var cssSourceMapProd = (env === 'production' && config.build.productionSourceMap)
 var useCssSourceMap = cssSourceMapDev || cssSourceMapProd
 
+const ExtractTextPlugin = require('extract-text-webpack-plugin')
+
+const extractSCSS = new ExtractTextPlugin({filename: '[name]-[contenthash].css'})
+
 module.exports = {
     entry: {
-        app: './src/main.ts'
+        app: './src/main.ts',
+        // styles: './src/style.scss'
     },
     output: {
         path: config.build.assetsRoot,
+        filename: utils.assetsPath('js/[name].[chunkhash].js'),
+        chunkFilename: utils.assetsPath('js/[id].[chunkhash].js'),
         publicPath: process.env.NODE_ENV === 'production' ? config.build.assetsPublicPath : config.dev.assetsPublicPath,
-        filename: '[name]-[hash:7].js'
     },
     resolve: {
-        extensions: ['', '.js', '.vue', '.ts'],
-        fallback: [path.join(__dirname, '../node_modules')],
+        extensions: ['.js', '.vue', '.ts'],
+        modules: [
+            path.join(projectRoot, 'src'),
+            path.join(projectRoot, 'node_modules')
+        ],
         alias: {
             'vue$': 'vue/dist/vue.common.js',
             'src': path.resolve(__dirname, '../src'),
@@ -32,31 +42,54 @@ module.exports = {
         }
     },
     resolveLoader: {
-        fallback: [path.join(__dirname, '../node_modules')]
+        modules: [path.join(__dirname, '../node_modules')]
     },
     module: {
-        loaders: [
+        rules: [
             {
                 test: /\.scss$/,
-                loaders: ["style", "css", "sass"]
+                loader: extractSCSS.extract({
+                    fallback: "style-loader",
+                    use: ['css-loader', 'sass-loader']
+                })
             },
             {
                 test: /\.vue$/,
-                loader: 'vue'
+                loader: 'vue-loader',
+                options: {
+                    loaders: {
+                        scss: extractSCSS.extract({
+                            fallback: 'vue-style-loader',
+                            use: ['css-loader', 'sass-loader']
+                        })
+                    },
+                    esModule: true,
+                    extract: true,
+                    postcss: [
+                        require('autoprefixer')({
+                            browsers: ['last 2 versions']
+                        })
+                    ]
+                }
             },
             {
                 test: /\.ts$/,
-                loader: 'ts',
+                loader: 'ts-loader',
                 include: projectRoot,
-                exclude: /node_modules/
+                exclude: /node_modules/,
+                options: {
+                    // 5. Append a ".ts" file to all ".vue" file thus typescript can preprocess the file
+                    appendTsSuffixTo: [/\.vue$/]
+                }
             },
-            {
-                test: /\.json$/,
-                loader: 'json'
-            },
+            // Webpack 2 Includes by default
+            // {
+            //     test: /\.json$/,
+            //     use: 'json-loader'
+            // },
             {
                 test: /\.(png|jpe?g|gif|svg)(\?.*)?$/,
-                loader: 'url',
+                loader: 'url-loader',
                 query: {
                     limit: 10000,
                     name: utils.assetsPath('img/[name].[hash:7].[ext]')
@@ -64,25 +97,53 @@ module.exports = {
             },
             {
                 test: /\.(woff2?|eot|ttf|otf)(\?.*)?$/,
-                loader: 'url',
-                query: {
+                loader: 'url-loader',
+                options: {
                     limit: 10000,
                     name: utils.assetsPath('fonts/[name].[hash:7].[ext]')
                 }
             }
         ]
     },
-    vue: {
-        loaders: utils.cssLoaders({sourceMap: useCssSourceMap}),
-        esModule: true,
-        postcss: [
-            require('autoprefixer')({
-                browsers: ['last 2 versions']
-            })
-        ]
-    },
-    // 5. append a ".ts" file to all ".vue" file thus typescript can preprocess the file
-    ts: {
-        appendTsSuffixTo: [/\.vue$/]
-    }
-}
+    plugins: [
+        new webpack.ProvidePlugin({
+            $: "jquery",
+            jQuery: "jquery",
+            "window.jQuery": "jquery",
+            Tether: "tether",
+            "window.Tether": "tether",
+            Alert: "exports-loader?Alert!bootstrap/js/dist/alert",
+            Button: "exports-loader?Button!bootstrap/js/dist/button",
+            Carousel: "exports-loader?Carousel!bootstrap/js/dist/carousel",
+            Collapse: "exports-loader?Collapse!bootstrap/js/dist/collapse",
+            Dropdown: "exports-loader?Dropdown!bootstrap/js/dist/dropdown",
+            Modal: "exports-loader?Modal!bootstrap/js/dist/modal",
+            Popover: "exports-loader?Popover!bootstrap/js/dist/popover",
+            Scrollspy: "exports-loader?Scrollspy!bootstrap/js/dist/scrollspy",
+            Tab: "exports-loader?Tab!bootstrap/js/dist/tab",
+            Tooltip: "exports-loader?Tooltip!bootstrap/js/dist/tooltip",
+            Util: "exports-loader?Util!bootstrap/js/dist/util",
+        }),
+        extractSCSS,
+        // split vendor js into its own file
+        new webpack.optimize.CommonsChunkPlugin({
+            name: 'vendor',
+            minChunks: function (module, count) {
+                // any required modules inside node_modules are extracted to vendor
+                return (
+                    module.resource &&
+                    /\.js$/.test(module.resource) &&
+                    module.resource.indexOf(
+                        path.join(__dirname, '../node_modules')
+                    ) === 0
+                )
+            }
+        }),
+        // extract webpack runtime and module manifest to its own file in order to
+        // prevent vendor hash from being updated whenever app bundle is updated
+        new webpack.optimize.CommonsChunkPlugin({
+            name: 'manifest',
+            chunks: ['vendor']
+        })
+    ]
+};
