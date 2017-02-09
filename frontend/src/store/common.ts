@@ -58,6 +58,8 @@ export interface Codebase extends NullWithId {
     doi: string | null
 
     keywords: Array<string>
+
+    repository_url: string
     contributors: Array<string>
 
 }

@@ -10,22 +10,24 @@
                 <label>Description</label>
                 <markdown v-model="data.description"></markdown>
             </div>
-            <multiselect
-                    v-model="data.tags"
-                    label="name"
-                    track-by="name"
-                    placeholder="Type to find keywords"
-                    :options="matchingTags"
-                    :multiple="true"
-                    :loading="isLoading"
-                    :searchable="true"
-                    :internal-search="false"
-                    :clear-on-select="false"
-                    :close-on-select="false"
-                    :options-limit="50"
-                    :limit="6"
-                    @search-change="fetchMatchingTags">
-            </multiselect>
+            <c-tagger v-model="data.tags" v-on:errors="setTagErrors">
+            </c-tagger>
+            <!--<multiselect-->
+                    <!--v-model="data.tags"-->
+                    <!--label="name"-->
+                    <!--track-by="name"-->
+                    <!--placeholder="Type to find keywords"-->
+                    <!--:options="matchingTags"-->
+                    <!--:multiple="true"-->
+                    <!--:loading="isLoading"-->
+                    <!--:searchable="true"-->
+                    <!--:internal-search="false"-->
+                    <!--:clear-on-select="false"-->
+                    <!--:close-on-select="false"-->
+                    <!--:options-limit="50"-->
+                    <!--:limit="6"-->
+                    <!--@search-change="fetchMatchingTags">-->
+            <!--</multiselect>-->
             <button type="button" class="btn btn-primary" @click="createOrUpdate">Submit</button>
         </form>
     </div>
@@ -44,11 +46,13 @@
 
     import Multiselect from 'vue-multiselect'
     import { Errors } from 'store/common'
+    import Tagger from 'components/tagger.vue'
 
     @Component({
         components: {
-            Multiselect,
-            Markdown
+            // Multiselect,
+            Markdown,
+            'c-tagger': Tagger
         }
     })
     class JobCreate extends Vue {
@@ -60,6 +64,10 @@
         errors: Errors<Job> = {};
         isLoading = false;
         matchingTags = [];
+
+        setTagErrors(tag_errors) {
+            this.errors.tags = tag_errors;
+        }
 
         routeId() {
             return parseInt(this.$route.params['jobId']);

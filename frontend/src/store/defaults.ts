@@ -13,5 +13,6 @@ export const codebase: Codebase = {
     live: false,
     is_replication: false,
     keywords: [],
+    repository_url: '',
     contributors: []
 };

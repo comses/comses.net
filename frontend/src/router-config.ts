@@ -7,7 +7,7 @@ import Home from './pages/home/home.vue'
 import JobCreate from './pages/job/create.vue'
 import JobDetail from './pages/job/detail.vue'
 import JobList from './pages/job/list.vue'
-import DraftCode from './pages/codebase/modify'
+import CodeCreateOrUpdate from './pages/codebase/createOrUpdate.vue'
 import {ResourceDetail} from './pages/resources/detail'
 
 
@@ -64,7 +64,7 @@ const router = new Router({
         {
             path: '/codebases/',
             name: routes.CODEBASE_LIST,
-            component: DraftCode,
+            component: CodeCreateOrUpdate,
             meta: {
                 heading: 'Code Bases'
             }
