@@ -17,5 +17,8 @@ before_install:
   - docker-compose version
 install: 
   - echo "1" | ./build.sh 
+  - pip3 install coveralls
 script:
-  - docker-compose run --rm -e RUN_COVERALLS=true pytest
+  - docker-compose run --rm pytest
+after_success:
+  - coveralls
