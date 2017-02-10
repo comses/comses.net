@@ -10,8 +10,6 @@
         </ul>
     </nav>
 </template>
-<style>
-</style>
 <script lang="ts">
     import {mapGetters} from 'vuex'
     import * as _ from 'lodash'

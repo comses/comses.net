@@ -8,12 +8,6 @@
         <small class="text-muted">{{ help }}</small>
     </div>
 </template>
-<style>
-    body{
-        background-color:#ff0000;
-    }
-
-</style>
 <script lang="ts">
     import { Component, Prop } from 'vue-property-decorator'
     import BaseControl from './base'

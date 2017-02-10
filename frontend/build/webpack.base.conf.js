@@ -11,14 +11,10 @@ var cssSourceMapDev = (env === 'development' && config.dev.cssSourceMap)
 var cssSourceMapProd = (env === 'production' && config.build.productionSourceMap)
 var useCssSourceMap = cssSourceMapDev || cssSourceMapProd
 
-const ExtractTextPlugin = require('extract-text-webpack-plugin')
-
-const extractSCSS = new ExtractTextPlugin({filename: '[name]-[contenthash].css'})
-
 module.exports = {
     entry: {
         app: './src/main.ts',
-        // styles: './src/style.scss'
+        styles: './src/style.ts'
     },
     output: {
         path: config.build.assetsRoot,
@@ -47,19 +43,12 @@ module.exports = {
     module: {
         rules: [
             {
-                test: /\.scss$/,
-                loader: extractSCSS.extract({
-                    fallback: "style-loader",
-                    use: ['css-loader', 'sass-loader']
-                })
-            },
-            {
                 test: /\.vue$/,
                 loader: 'vue-loader',
                 options: {
                     loaders: {
-                        scss: extractSCSS.extract({
-                            fallback: 'vue-style-loader',
+                        scss: utils.extractSCSS.extract({
+                            // fallback: 'vue-style-loader',
                             use: ['css-loader', 'sass-loader']
                         })
                     },
@@ -82,11 +71,6 @@ module.exports = {
                     appendTsSuffixTo: [/\.vue$/]
                 }
             },
-            // Webpack 2 Includes by default
-            // {
-            //     test: /\.json$/,
-            //     use: 'json-loader'
-            // },
             {
                 test: /\.(png|jpe?g|gif|svg)(\?.*)?$/,
                 loader: 'url-loader',
@@ -124,7 +108,7 @@ module.exports = {
             Tooltip: "exports-loader?Tooltip!bootstrap/js/dist/tooltip",
             Util: "exports-loader?Util!bootstrap/js/dist/util",
         }),
-        extractSCSS,
+        utils.extractSCSS,
         // split vendor js into its own file
         new webpack.optimize.CommonsChunkPlugin({
             name: 'vendor',

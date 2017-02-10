@@ -11,7 +11,7 @@ module.exports = merge(baseWebpackConfig, {
         chunkFilename: utils.assetsPath('js/[id].[chunkhash].js')
     },
     module: {
-        rules: utils.styleLoaders({sourceMap: config.dev.cssSourceMap})
+        rules: utils.styleLoaders({sourceMap: config.dev.cssSourceMap, extract: true})
     },
     devServer: {
         historyApiFallback: true,
