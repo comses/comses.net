@@ -55,10 +55,12 @@ services:
       - elasticsearch
       - js
   pytest:
-    image: cms
+    image: comses/wagtailcms
     volumes:
-      - .:/code
+      - ./django:/code
       - logs:/code/logs
+      - ./deploy/app:/code/deploy/app
+      - ./deploy/conf/config.ini:/secrets/config.ini
     command: /code/deploy/app/test.sh
     environment:
       DB_USER: ${DB_USER}

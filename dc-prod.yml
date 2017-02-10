@@ -24,7 +24,6 @@ services:
     build: django
     image: comses/wagtailcms
     volumes:
-      - .:/code
       - ./deploy/elasticsearch.conf.d:/etc/elasticsearch
       - logs:/code/logs
       - library:/library
