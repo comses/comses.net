@@ -28,7 +28,6 @@ services:
       - ./frontend:/code
       - webpack:/webpack
       - /code/node_modules
-    command: tail -f /dev/null
   cms:
     build: django
     image: comses/wagtailcms
