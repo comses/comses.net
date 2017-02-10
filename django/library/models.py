@@ -200,7 +200,7 @@ class Codebase(index.Indexed, ClusterableModel):
     @property
     def contributor_list(self):
         # FIXME: messy
-        contributor_list = [c.contributor.get_full_name(family_name_first=True) for c in self.contributors.order_by('family_name')]
+        contributor_list = [c.contributor.get_full_name(family_name_first=True) for c in self.contributors.order_by('index')]
         return contributor_list
 
     def get_absolute_url(self):
