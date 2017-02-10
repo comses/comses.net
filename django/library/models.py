@@ -46,8 +46,8 @@ OPERATING_SYSTEMS = Choices(
 )
 
 
-class CodebaseKeyword(TaggedItemBase):
-    content_object = ParentalKey('library.Codebase', related_name='tagged_codebase_keywords')
+class CodebaseTag(TaggedItemBase):
+    content_object = ParentalKey('library.Codebase', related_name='tagged_codebases')
 
 
 class ProgrammingLanguage(TaggedItemBase):
@@ -130,10 +130,10 @@ class SemanticVersionBump(Enum):
     MINOR = semver.bump_minor
     PATCH = semver.bump_patch
 
-class Codebase(index.Indexed, ClusterableModel):
 
+class Codebase(index.Indexed, ClusterableModel):
     """
-    Metadata applicable to a set of CodebaseReleases
+    Metadata applicable across a set of CodebaseReleases
     """
 
     # shortname = models.CharField(max_length=128, unique=True)
@@ -155,35 +155,23 @@ class Codebase(index.Indexed, ClusterableModel):
     latest_version = models.ForeignKey('CodebaseRelease', null=True, related_name='latest_version')
 
     repository_url = models.URLField(blank=True,
-                                     help_text=_('URL to actual source code repository, e.g., https://github.com/comses/cms'))
+                                     help_text=_('URL to code repository, e.g., https://github.com/comses/wolf-sheep'))
     # original Drupal data was stored inline like this
     # after catalog integration remove these / replace with M2M relationships
     # publication metadata
     # We should also allow a model to have multiple references
     references_text = models.TextField(blank=True)
     replication_references_text = models.TextField(blank=True)
-    # M2M relationships for publications
-    publications = models.ManyToManyField(
-        'citation.Publication',
-        through='CodebasePublication',
-        related_name='codebases',
-        help_text=_('Publications on this work'))
-    references = models.ManyToManyField('citation.Publication',
-                                        related_name='codebase_references',
-                                        help_text=_('Related publications'))
+    tags = ClusterTaggableManager(through=CodebaseTag)
     # consider storing related publications in JSON.
     relationships = JSONField(default=list)
 
-    keywords = ClusterTaggableManager(through=CodebaseKeyword)
-    submitter = models.ForeignKey(User)
-    contributors = models.ManyToManyField(Contributor, through='CodebaseContributor')
     # should be stored in codebase base dir/images
     images = JSONField(default=list)
 
     search_fields = [
         index.SearchField('title', partial_match=True, boost=10),
         index.SearchField('description', partial_match=True),
-        index.SearchField('submitter'),
     ]
 
     @staticmethod
@@ -206,9 +194,13 @@ class Codebase(index.Indexed, ClusterableModel):
         return pathlib.Path(settings.REPOSITORY_ROOT, str(self.uuid))
 
     @property
+    def contributors(self):
+        return CodebaseContributor.objects.select_related('release', 'contributor').filter(release__codebase__id=self.pk)
+
+    @property
     def contributor_list(self):
         # FIXME: messy
-        contributor_list = [c.get_full_name(family_name_first=True) for c in self.contributors.order_by('family_name')]
+        contributor_list = [c.contributor.get_full_name(family_name_first=True) for c in self.contributors.order_by('family_name')]
         return contributor_list
 
     def get_absolute_url(self):
@@ -217,9 +209,12 @@ class Codebase(index.Indexed, ClusterableModel):
     def media_url(self, name):
         return '{0}/media/{1}'.format(self.get_absolute_url(), name)
 
-    def make_release(self, submitter=None, version_number=None, version_bump=None, **kwargs):
-        if submitter is None:
-            submitter = self.submitter
+    def make_release(self, submitter=None, submitter_id=None, version_number=None, version_bump=None, **kwargs):
+        if submitter_id is None:
+            if submitter is None:
+                submitter = User.objects.first()
+                logger.warning("No submitter or submitter_id specified when creating release, using first user %s", submitter)
+            submitter_id = submitter.pk
         if version_number is None:
             # start off at v1.0.0
             version_number = '1.0.0'
@@ -232,7 +227,7 @@ class Codebase(index.Indexed, ClusterableModel):
                     version_bump = SemanticVersionBump.MINOR
                 version_number = version_bump(version_number)
         release = self.releases.create(
-            submitter=submitter,
+            submitter_id=submitter_id,
             version_number=version_number,
             **kwargs
         )
@@ -241,29 +236,14 @@ class Codebase(index.Indexed, ClusterableModel):
         return release
 
     def __str__(self):
-        return "{0} {1} ({2})".format(self.title, self.date_created, self.submitter)
+        return "{0} {1}".format(self.title, self.date_created)
 
 
 class CodebasePublication(models.Model):
-    codebase = models.ForeignKey(Codebase, on_delete=models.CASCADE)
+    release = models.ForeignKey('CodebaseRelease', on_delete=models.CASCADE)
     publication = models.ForeignKey('citation.Publication', on_delete=models.CASCADE)
     is_primary = models.BooleanField(default=False)
     index = models.PositiveIntegerField(default=1)
-
-
-class CodebaseContributor(models.Model):
-
-    # FIXME: decide if we are tracking contributions to each CodebaseRelease or the Codebase as a whole
-    codebase = models.ForeignKey(Codebase, on_delete=models.CASCADE)
-    contributor = models.ForeignKey(Contributor, on_delete=models.CASCADE)
-    include_in_citation = models.BooleanField(default=True)
-    is_maintainer = models.BooleanField(default=False)
-    is_rights_holder = models.BooleanField(default=False)
-    role = models.CharField(max_length=100, choices=ROLES, default=ROLES.author,
-                            help_text=_('''
-                            Roles from https://www.ngdc.noaa.gov/metadata/published/xsd/schema/resources/Codelist/gmxCodelists.xml#CI_RoleCode
-                            '''))
-    index = models.PositiveSmallIntegerField(help_text=_('Ordering field for codebase contributors'))
 
 
 class CodebaseRelease(index.Indexed, ClusterableModel):
@@ -307,8 +287,18 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
     programming_languages = ClusterTaggableManager(through=ProgrammingLanguage,
                                                    related_name='pl_codebase_releases')
     codebase = models.ForeignKey(Codebase, related_name='releases')
-    submitted_package = models.FileField(upload_to=Codebase._release_upload_path, null=True)
     submitter = models.ForeignKey(User)
+    contributors = models.ManyToManyField(Contributor, through='CodebaseContributor')
+    submitted_package = models.FileField(upload_to=Codebase._release_upload_path, null=True)
+    # M2M relationships for publications
+    publications = models.ManyToManyField(
+        'citation.Publication',
+        through=CodebasePublication,
+        related_name='releases',
+        help_text=_('Publications on this work'))
+    references = models.ManyToManyField('citation.Publication',
+                                        related_name='codebase_references',
+                                        help_text=_('Related publications'))
 
     def get_library_path(self, *args):
         """
@@ -357,7 +347,21 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
         return fs.make_bag(str(self.submitted_package_path()), self.bagit_info)
 
     def __str__(self):
-        return '{0} v{1} {2}'.format(self.codebase, self.version_number, self.submitted_package_path())
+        return '{0} {1} v{2} {3}'.format(self.codebase, self.submitter.username, self.version_number,
+                                         self.submitted_package_path())
 
     class Meta:
         unique_together = ('codebase', 'version_number')
+
+
+class CodebaseContributor(models.Model):
+    release = models.ForeignKey(CodebaseRelease, on_delete=models.CASCADE)
+    contributor = models.ForeignKey(Contributor, on_delete=models.CASCADE)
+    include_in_citation = models.BooleanField(default=True)
+    is_maintainer = models.BooleanField(default=False)
+    is_rights_holder = models.BooleanField(default=False)
+    role = models.CharField(max_length=100, choices=ROLES, default=ROLES.author,
+                            help_text=_('''
+                            Roles from https://www.ngdc.noaa.gov/metadata/published/xsd/schema/resources/Codelist/gmxCodelists.xml#CI_RoleCode
+                            '''))
+    index = models.PositiveSmallIntegerField(help_text=_('Ordering field for codebase contributors'))

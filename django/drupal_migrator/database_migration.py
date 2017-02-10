@@ -13,7 +13,7 @@ from django.contrib.auth.models import User, Group
 from taggit.models import Tag
 
 from home.models import Event, Job, MemberProfile
-from library.models import (Contributor, Codebase, CodebaseRelease, CodebaseKeyword, License,
+from library.models import (Contributor, Codebase, CodebaseRelease, CodebaseTag, License,
                             CodebaseContributor, Platform, OPERATING_SYSTEMS)
 from .utils import get_first_field, get_field, get_field_attributes
 
@@ -293,7 +293,7 @@ class ModelExtractor(Extractor):
     def _extract(self, raw_model, user_id_map, author_id_map):
         raw_author_ids = [raw_author['value'] for raw_author in get_field(raw_model, 'field_model_author')]
         author_ids = [author_id_map[raw_author_id] for raw_author_id in raw_author_ids]
-        code = Codebase(title=raw_model['title'].strip(),
+        code = Codebase.objects.create(title=raw_model['title'].strip(),
                         description=get_first_field(raw_model, field_name='body', default=''),
                         date_created=self.to_datetime(raw_model['created']),
                         last_modified=self.to_datetime(raw_model['changed']),
@@ -301,8 +301,8 @@ class ModelExtractor(Extractor):
                         references_text=get_first_field(raw_model, 'field_model_reference', default=''),
                         replication_references_text=get_first_field(raw_model, 'field_model_publication_text', default=''),
                         identifier=raw_model['nid'],
-                        peer_reviewed=self.int_to_bool(get_first_field(raw_model, 'field_model_certified', default=0)),
-                        submitter_id=user_id_map[raw_model.get('uid')])
+                        peer_reviewed=self.int_to_bool(get_first_field(raw_model, 'field_model_certified', default=0)))
+        code.submitter_id = user_id_map[raw_model.get('uid')]
         code.author_ids = author_ids
         code.keyword_tids = get_field_attributes(raw_model, 'taxonomy_vocabulary_6', attribute_name='tid')
         return code
@@ -310,19 +310,16 @@ class ModelExtractor(Extractor):
     def extract_all(self, user_id_map, tag_id_map, author_id_map):
         model_code_list = [self._extract(raw_model, user_id_map, author_id_map) for raw_model in self.data]
         model_id_map = {}
-        contributors = []
+
         for model_code in model_code_list:
-            model_code.save()
+            model_code.cached_contributors = []
             for idx, author_id in enumerate(model_code.author_ids):
-                contributors.append(
-                    CodebaseContributor(contributor_id=author_id,
-                                        codebase_id=model_code.pk,
-                                        index=idx)
+                model_code.cached_contributors.append(
+                    CodebaseContributor(contributor_id=author_id, index=idx)
                 )
             # FIXME: some tids may have been converted to multiple tags due to splitting
-            model_code.keywords.add(*flatten([tag_id_map[tid] for tid in model_code.keyword_tids]))
+            model_code.tags.add(*flatten([tag_id_map[tid] for tid in model_code.keyword_tids]))
             model_id_map[model_code.identifier] = model_code
-        CodebaseContributor.objects.bulk_create(contributors)
         return model_id_map
 
 
@@ -346,8 +343,8 @@ class ModelVersionExtractor(Extractor):
         license_id = int(get_first_field(raw_model_version, 'field_modelversion_license', default=0))
         version_number = int(get_first_field(raw_model_version, 'field_modelversion_number', default=1))
         platform = Platform.objects.get(pk=platform_id)
-        code = model_id_map.get(model_nid)
-        if code:
+        codebase = model_id_map.get(model_nid)
+        if codebase:
             description = get_first_field(raw_model_version, 'body')
             language = self.PROGRAMMING_LANGUAGES[int(get_first_field(raw_model_version, 'field_modelversion_language',
                                                                       default=0))]
@@ -357,7 +354,7 @@ class ModelVersionExtractor(Extractor):
                     'version': get_first_field(raw_model_version, 'field_modelversion_language_ver', default='')
                 }
             }
-            model_version = code.make_release(
+            model_version = codebase.make_release(
                 description=description,
                 date_created=self.to_datetime(raw_model_version['created']),
                 last_modified=self.to_datetime(raw_model_version['changed']),
@@ -365,11 +362,21 @@ class ModelVersionExtractor(Extractor):
                 license_id=license_id,
                 identifier=raw_model_version['vid'],
                 dependencies=dependencies,
-                submitter=code.submitter,
+                submitter_id=codebase.submitter_id,
                 version_number="1.{0}.0".format(version_number-1),
             )
             model_version.programming_languages.add(language)
             model_version.platforms.add(platform.name)
+            release_contributors = []
+            # re-create new CodebaseContributors for each model version
+            # do not modify codebase.contributors in place, otherwise it'd overwrite previous version contributors
+            for contributor in codebase.cached_contributors:
+                release_contributors.append(CodebaseContributor(
+                    index=contributor.index,
+                    contributor_id=contributor.contributor_id,
+                    release_id=model_version.pk
+                ))
+            CodebaseContributor.objects.bulk_create(release_contributors)
             # FIXME: add files
             return raw_model_version['nid'], model_version.id
         else:
@@ -391,7 +398,7 @@ class IDMapper:
         self._maps = {
             Contributor: author_id_map,
             User: user_id_map,
-            CodebaseKeyword: tag_id_map,
+            CodebaseTag: tag_id_map,
             Codebase: model_id_map,
             CodebaseRelease: model_version_id_map
         }
