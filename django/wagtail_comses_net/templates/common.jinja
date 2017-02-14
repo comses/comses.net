@@ -1,0 +1,24 @@
+{% macro paginator(list_state) %}
+    <nav aria-label="Paginator">
+        <ul class="pagination">
+            {% for page_ind in list_state.range %}
+                <li class="page-item{% if page_ind == list_state.page %} active{% endif %}">
+                    <a href="{{ 'url' }}" class="page-link">{{ page_ind }}</a>
+                </li>
+            {% endfor %}
+        </ul>
+    </nav>
+{% endmacro %}
+
+{% macro list_page(list_state, search_component, item_component) %}
+    {% block content %}
+        {% include search_component %}
+        <div class="list-group row">
+            {% for item in list %}
+                {% include item_component %}
+            {% endfor %}
+        </div>
+    {% endblock %}
+
+    {% call paginator(list_state) %}{% endcall %}
+{% endmacro %}

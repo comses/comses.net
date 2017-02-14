@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+
+{% block subheader %}Job{% endblock %}
+
+{% block content %}
+    <h3>{{ title }}</h3>
+    <h4>Created on: {{ date_created }}</h4>
+    {{ description|linebreaks }}
+{% endblock %}

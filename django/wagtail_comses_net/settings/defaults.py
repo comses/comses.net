@@ -50,6 +50,7 @@ DJANGO_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'django_extensions',
+    'django_jinja',
     'timezone_field',
     'rest_framework',
     'rest_framework_swagger',
@@ -60,6 +61,7 @@ COMSES_APPS = [
     'library',
     'home',
     'citation',
+    'wagtail_comses_net'
 ]
 
 INSTALLED_APPS = WAGTAIL_APPS + DJANGO_APPS + COMSES_APPS
@@ -78,15 +80,24 @@ MIDDLEWARE = [
     'wagtail.wagtailredirects.middleware.RedirectMiddleware',
 ]
 
-
 ROOT_URLCONF = 'wagtail_comses_net.urls'
+
+from django_jinja.builtins import DEFAULT_EXTENSIONS
 
 TEMPLATES = [
     {
+        'BACKEND': 'django_jinja.backend.Jinja2',
+        'APP_DIRS': True,
+        'OPTIONS': {
+            'match_extension': '.jinja',
+            "app_dirname": "templates",
+            "extensions": DEFAULT_EXTENSIONS + [
+                "django_jinja.builtins.extensions.DjangoExtraFiltersExtension",
+            ],
+        }
+    },
+    {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [
-            os.path.join(PROJECT_DIR, 'templates'),
-        ],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -185,7 +196,6 @@ LOGGING = {
     }
 }
 
-
 # Internationalization
 # https://docs.djangoproject.com/en/1.10/topics/i18n/
 
@@ -219,7 +229,6 @@ STATIC_URL = '/static/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 MEDIA_URL = '/media/'
 
-
 # Wagtail settings
 
 WAGTAIL_SITE_NAME = "wagtail_comses_net"
@@ -238,7 +247,7 @@ BASE_URL = 'https://www.comses.net'
 WAGTAILMENUS_DEFAULT_MAIN_MENU_TEMPLATE = 'home/includes/menu.html'
 
 REST_FRAMEWORK = {
-    'DEFAULT_PERMISSION_CLASSES': ('rest_framework.permissions.IsAdminUser',),
+    # 'DEFAULT_PERMISSION_CLASSES': ('rest_framework.permissions.IsAdminUser',),
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework.authentication.SessionAuthentication',
         'rest_framework.authentication.BasicAuthentication',

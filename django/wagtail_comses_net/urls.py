@@ -25,7 +25,7 @@ urlpatterns = [
     url(r'^api/wagtail/', include(wagtailapi_urls)),
     url(r'^api/schema/$', schema_view),
     url(r'^api/token/', obtain_jwt_token),
-    url(r'.*', TemplateView.as_view(template_name='home/spa_page.html'), name='home'),
+    url(r'.*', TemplateView.as_view(template_name='base.jinja'), name='home'),
 ]
 
 

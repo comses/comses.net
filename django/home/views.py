@@ -46,7 +46,7 @@ class EventViewSet(viewsets.ModelViewSet):
 
     @property
     def template_name(self):
-        return 'home/event/{}.html'.format(self.action)
+        return 'home/events/{}.jinja'.format(self.action)
 
 
 class JobViewSet(viewsets.ModelViewSet):
@@ -57,7 +57,7 @@ class JobViewSet(viewsets.ModelViewSet):
 
     @property
     def template_name(self):
-        return 'home/job/{}.html'.format(self.action)
+        return 'home/jobs/{}.jinja'.format(self.action)
 
     def get_list_queryset(self):
         search_query = self.request.query_params.get('query')
@@ -111,7 +111,11 @@ class TagViewSet(viewsets.ModelViewSet):
     serializer_class = TagSerializer
     queryset = Tag.objects.all()
     pagination_class = SmallResultSetPagination
-    renderer_classes = (JSONRenderer,)
+    renderer_classes = (TemplateHTMLRenderer, JSONRenderer,)
+
+    @property
+    def template_name(self):
+        return '/home/tags/{}.jinja'.format(self.action)
 
     def get_list_queryset(self):
         search_query = self.request.query_params.get('query')
