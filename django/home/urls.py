@@ -2,6 +2,7 @@ from django.conf.urls import url, include
 from rest_framework import routers
 from . import views
 from wagtail.contrib.wagtailapi import urls as wagtailapi_urls
+from wagtail_comses_net.view_helpers import create_edit_routes, remove_api_root
 
 router = routers.DefaultRouter()
 router.register(r'events', views.EventViewSet)
@@ -13,4 +14,8 @@ urlpatterns = [
     url(r'^', include(wagtailapi_urls)),
 ]
 
-urlpatterns += router.urls
+urlpatterns += remove_api_root(router.urls)
+
+edit_route_form_data = { 'lookup_field': 'pk', 'lookup_regex': r'\d+', 'app_name': 'home'}
+for url_prefix in ['jobs', 'events']:
+    urlpatterns += create_edit_routes(url_prefix=url_prefix, **edit_route_form_data)

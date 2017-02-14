@@ -19,6 +19,8 @@ from wagtail.wagtailadmin.edit_handlers import FieldPanel, StreamFieldPanel, Inl
 from wagtail.wagtailimages.blocks import ImageChooserBlock
 from wagtail.wagtailsearch import index
 
+from wagtail_comses_net.permissions import PermissionMixin
+
 """
 Wagtail-related models
 """
@@ -37,7 +39,7 @@ class MemberProfileTag(TaggedItemBase):
     content_object = ParentalKey('home.MemberProfile', related_name='tagged_members')
 
 
-class MemberProfile(index.Indexed, ClusterableModel):
+class MemberProfile(index.Indexed, ClusterableModel, PermissionMixin):
     """
     Contains additional comses.net information, possibly linked to a CoMSES Member / site account
     """
@@ -67,6 +69,10 @@ class MemberProfile(index.Indexed, ClusterableModel):
     affiliations = JSONField(default=list, help_text=_("JSON-LD list of affiliated institutions"))
     orcid = models.CharField(help_text=_("16 digits, - between every 4th digit, e.g., 0000-0002-1825-0097"),
                              max_length=19)
+
+    @property
+    def owner(self):
+        return self.user
 
 
 class CarouselItem(models.Model):
@@ -119,7 +125,7 @@ class EventTag(TaggedItemBase):
     content_object = ParentalKey('home.Event', related_name='tagged_events')
 
 
-class Event(index.Indexed, ClusterableModel):
+class Event(index.Indexed, ClusterableModel, PermissionMixin):
     title = models.CharField(max_length=500)
     date_created = models.DateTimeField(default=timezone.now)
     last_modified = models.DateTimeField(auto_now=True)
@@ -143,6 +149,10 @@ class Event(index.Indexed, ClusterableModel):
             index.SearchField('get_full_name'),
         ]),
     ]
+
+    @property
+    def owner(self):
+        return self.submitter
 
 
 class JobTag(TaggedItemBase):
@@ -171,3 +181,7 @@ class Job(index.Indexed, ClusterableModel):
 
     def __str__(self):
         return "{0} posted by {1} on {2}".format(self.title, self.submitter.get_full_name(), str(self.date_created))
+
+    @property
+    def owner(self):
+        return self.submitter

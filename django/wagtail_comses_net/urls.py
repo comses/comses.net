@@ -20,12 +20,12 @@ schema_view = get_swagger_view(title='CoMSES.net API')
 urlpatterns = [
     url(r'^wagtail/admin/', include(wagtailadmin_urls)),
 
-    url(r'^api/library/', include(library_urls)),
+    url(r'^', include(library_urls)),
     url(r'^api/search/$', search_views.search, name='search'),
-    url(r'^api/wagtail/', include(wagtailapi_urls)),
+    url(r'^', include(wagtailapi_urls)),
     url(r'^api/schema/$', schema_view),
     url(r'^api/token/', obtain_jwt_token),
-    url(r'.*', TemplateView.as_view(template_name='base.jinja'), name='home'),
+    url(r'^$', TemplateView.as_view(template_name='base.jinja'), name='home'),
 ]
 
 

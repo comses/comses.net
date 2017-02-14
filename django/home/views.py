@@ -7,11 +7,10 @@ from rest_framework import generics, viewsets
 from rest_framework.response import Response
 from rest_framework.renderers import JSONRenderer, TemplateHTMLRenderer
 from rest_framework.pagination import PageNumberPagination
-from wagtail.wagtailsearch.models import Query
-from django.shortcuts import render
 from wagtail.wagtailsearch.backends import get_search_backend
 import logging
 from taggit.models import Tag
+from django.views.generic import TemplateView
 
 logger = logging.getLogger(__name__)
 
@@ -42,7 +41,6 @@ class EventViewSet(viewsets.ModelViewSet):
     serializer_class = EventSerializer
     queryset = Event.objects.all()
     pagination_class = SmallResultSetPagination
-    renderer_classes = (TemplateHTMLRenderer, JSONRenderer,)
 
     @property
     def template_name(self):
@@ -53,7 +51,6 @@ class JobViewSet(viewsets.ModelViewSet):
     serializer_class = JobSerializer
     queryset = Job.objects.all()
     pagination_class = SmallResultSetPagination
-    renderer_classes = (TemplateHTMLRenderer, JSONRenderer,)
 
     @property
     def template_name(self):
@@ -111,7 +108,6 @@ class TagViewSet(viewsets.ModelViewSet):
     serializer_class = TagSerializer
     queryset = Tag.objects.all()
     pagination_class = SmallResultSetPagination
-    renderer_classes = (TemplateHTMLRenderer, JSONRenderer,)
 
     @property
     def template_name(self):

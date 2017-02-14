@@ -17,6 +17,8 @@ from modelcluster.models import ClusterableModel
 from taggit.models import TaggedItemBase
 from wagtail.wagtailsearch import index
 
+from wagtail_comses_net.permissions import PermissionMixin
+
 from . import fs
 
 logger = logging.getLogger(__name__)
@@ -125,13 +127,15 @@ class Contributor(index.Indexed, ClusterableModel):
         return self.get_full_name()
 
 
+
+
 class SemanticVersionBump(Enum):
     MAJOR = semver.bump_major
     MINOR = semver.bump_minor
     PATCH = semver.bump_patch
 
 
-class Codebase(index.Indexed, ClusterableModel):
+class Codebase(index.Indexed, ClusterableModel, PermissionMixin):
     """
     Metadata applicable across a set of CodebaseReleases
     """
@@ -173,6 +177,10 @@ class Codebase(index.Indexed, ClusterableModel):
         index.SearchField('title', partial_match=True, boost=10),
         index.SearchField('description', partial_match=True),
     ]
+
+    @property
+    def owner(self):
+        return self.latest_version.owner
 
     @staticmethod
     def _release_upload_path(instance, filename):
@@ -299,6 +307,10 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
     references = models.ManyToManyField('citation.Publication',
                                         related_name='codebase_references',
                                         help_text=_('Related publications'))
+
+    @property
+    def owner(self):
+        return self.submitter
 
     def get_library_path(self, *args):
         """

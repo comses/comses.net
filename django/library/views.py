@@ -11,7 +11,6 @@ class CodeViewSet(viewsets.ModelViewSet):
     queryset = Codebase.objects.all()
     serializer_class = CodebaseSerializer
     pagination_class = PageNumberPagination
-    renderer_classes = (TemplateHTMLRenderer, JSONRenderer,)
 
     @property
     def template_name(self):
