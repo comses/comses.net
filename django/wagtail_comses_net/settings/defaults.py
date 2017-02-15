@@ -10,7 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/1.10/ref/settings/
 """
 
-from __future__ import absolute_import, unicode_literals
+from django_jinja.builtins import DEFAULT_EXTENSIONS
 
 import configparser
 import os
@@ -38,8 +38,8 @@ WAGTAIL_APPS = [
     'wagtail.wagtailcore',
     'wagtail.contrib.modeladmin',
     'wagtailmenus',
-    'modelcluster',
     'taggit',
+    'modelcluster',
     'search',
 ]
 DJANGO_APPS = [
@@ -49,9 +49,13 @@ DJANGO_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+]
+
+THIRD_PARTY_APPS = [
     'django_extensions',
     'django_jinja',
     'timezone_field',
+    'social_django',
     'rest_framework',
     'rest_framework_swagger',
     'webpack_loader',
@@ -64,7 +68,7 @@ COMSES_APPS = [
     'wagtail_comses_net'
 ]
 
-INSTALLED_APPS = WAGTAIL_APPS + DJANGO_APPS + COMSES_APPS
+INSTALLED_APPS = COMSES_APPS + WAGTAIL_APPS + DJANGO_APPS + THIRD_PARTY_APPS
 
 MIDDLEWARE = [
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -80,9 +84,17 @@ MIDDLEWARE = [
     'wagtail.wagtailredirects.middleware.RedirectMiddleware',
 ]
 
+AUTHENTICATION_BACKENDS = (
+    'social_core.backends.facebook.FacebookOAuth2',
+    'social_core.backends.github.GithubOAuth2',
+    'social_core.backends.google.GoogleOAuth2',
+    'social_core.backends.twitter.TwitterOAuth',
+    'django.contrib.auth.backends.ModelBackend',
+)
+
+
 ROOT_URLCONF = 'wagtail_comses_net.urls'
 
-from django_jinja.builtins import DEFAULT_EXTENSIONS
 
 TEMPLATES = [
     {
@@ -105,6 +117,10 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+
+                'social_django.context_processors.backends',
+                'social_django.context_processors.login_redirect',
+
                 'wagtail.contrib.settings.context_processors.settings',
                 'wagtailmenus.context_processors.wagtailmenus',
             ],
@@ -113,6 +129,9 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'wagtail_comses_net.wsgi.application'
+
+# make tags case insensitive
+TAGGIT_CASE_INSENSITIVE = True
 
 # Database
 # https://docs.djangoproject.com/en/1.10/ref/settings/#databases
@@ -231,7 +250,7 @@ MEDIA_URL = '/media/'
 
 # Wagtail settings
 
-WAGTAIL_SITE_NAME = "wagtail_comses_net"
+WAGTAIL_SITE_NAME = "CoMSES NET CMS"
 
 WEBPACK_LOADER = {
     'DEFAULT': {
@@ -258,3 +277,9 @@ REST_FRAMEWORK = {
     ),
     'PAGE_SIZE': 10
 }
+
+# SSO and social auth configuration
+
+SOCIAL_AUTH_URL_NAMESPACE = 'socialauth'
+DISCOURSE_BASE_URL = 'https://forum.comses.net'
+DISCOURSE_SSO_SECRET = config.get('secrets', 'DISCOURSE_SSO_SECRET')
