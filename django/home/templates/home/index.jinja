@@ -1,0 +1,24 @@
+{% extends "base.jinja" %}
+
+{% block introduction %}
+    <h1>A growing collection of resources for computational <br> model-based science.</h1>
+    <h4>A versioned archive of computational models and their digital context, tutorials, and FAQ's on agent based modeling</h4>
+
+    <a class='btn btn-primary' href='{{ url("library:codebase-list") }}'>View model library</a>
+{% endblock %}
+{% block page %}
+    <section class='mission'>
+        <div>CoMSES Net is a group of researchers, educators and professionals with the common goal of improving the way
+            we develop, share, and use agent based modeling in the social and life sciences.
+        </div>
+    </section>
+    <section class='callout-3'>
+        {# FIXME: add 3 dynamic callouts #}
+    </section>
+    <section class='featured-content'>
+    </section>
+    <section class='recent-activity'>
+    </section>
+    <section class='community-highlight'>
+    </section>
+{% endblock %}

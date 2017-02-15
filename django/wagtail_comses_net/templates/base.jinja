@@ -4,7 +4,7 @@
             <div class="row">
                 <div class="col-sm-12 col-md-6 col-lg-4">
                     <nav class="nav">
-                        <a href="{{ url('home') }}" class="nav-link">
+                        <a href="{{ url('home:index') }}" class="nav-link">
                             <span class="logo">CoMSES Network | OpenABM</span>
                         </a>
                     </nav>
@@ -12,13 +12,13 @@
                 <div class="col-sm-12 col-md-6 col-lg-8">
                     <ul class="nav justify-content-end">
                         <li class="nav-item">
-                            <a href="{{ url('codebase-list') }}" class="nav-link">Model Library</a>
+                            <a href="{{ url('library:codebase-list') }}" class="nav-link">Model Library</a>
                         </li>
                         <li class="nav-item">
-                            <a href="{{ url('event-list') }}" class="nav-link">Events</a>
+                            <a href="{{ url('home:event-list') }}" class="nav-link">Events</a>
                         </li>
                         <li>
-                            <a href="{{ url('job-list') }}" class="nav-link">Jobs</a>
+                            <a href="{{ url('home:job-list') }}" class="nav-link">Jobs</a>
                         </li>
                         <li class="nav-item">
                             <a href="#" class="nav-link">Resources</a>
@@ -113,7 +113,7 @@
         </div>
     </div>
 
-    <p class="copyright text-center">© 2016 CoMSES Net</p>
+    <p class="copyright text-center">© 2016 - {{ now('Y') }} CoMSES Net</p>
 </footer>
 {% endmacro %}
 
@@ -127,9 +127,9 @@
     <meta charset="utf-8"/>
     <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
     <title>
-        {% block title %}Home{% endblock %}
+        {% block title %}CoMSES Net{% endblock %}
         {% block title_suffix %}{% endblock %}</title>
-    <meta name="description" content=""/>
+    <meta name="description" content="CoMSES Net is an international research coordination network dedicated to fostering open and reproducible scientific computation through cyberinfrastructure and community development."/>
     <meta name="viewport" content="width=device-width, initial-scale=1"/>
 
     {# Global stylesheets #}
@@ -142,15 +142,16 @@
 </head>
 
 <body class="{% block body_class %}{% endblock %}">
-
 {{ header() }}
-<section class="carousel">
+<section class='introduction'>
+{% block introduction %}
     <div class="container">
         <div class="row">
-            {% block subheader %}{% endblock %}
         </div>
     </div>
+{% endblock %}
 </section>
+{% block page %}
 <section>
     <div class="container">
         <div class="row">
@@ -158,6 +159,7 @@
         </div>
     </div>
 </section>
+{% endblock page %}
 {{ footer() }}
 
 {% block extra_js %}

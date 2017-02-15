@@ -9,6 +9,9 @@ $background-color: #f0f4fa;
 $brand-primary: $button-color;
 
 @import url('https://fonts.googleapis.com/css?family=Open+Sans');
+@import url('https://fonts.googleapis.com/css?family=Abel');
+@import url('https://fontlibrary.org/face/u-din-1451-mittelschrift');
+
 $font-family-base: 'Open Sans', Roboto, 'Helvetica Neue', sans-serif;
 
 @import "../node_modules/bootstrap/scss/bootstrap";
@@ -61,8 +64,53 @@ $fa-font-path: '../node_modules/font-awesome/fonts/';
   margin-top: 10px;
 }
 
+.introduction {
+    /* FIXME: pull full background-introduction.png from PSDs instead of halved version from comses.net landing page */
+  background: #f0f4fa url("./assets/images/background-introduction.png") repeat top center;
+  overflow: hidden;
+  padding-top: 40px;
+  padding-bottom: 40px;
+  text-align: center;
+  vertical-align: middle;
+  /*
+   Move carousel down so that it is below header
+   We could polyfill position:sticky for Chrome instead
+    */
+  margin-top: 105px;
+
+  h1, h2, h3, h4 {
+      padding-top: 40px;
+      font-family: 'Abel', 'Open Sans', sans-serif;
+      color: white;
+      font-weight: 200;
+  }
+  h1 {
+      font-size: 3.5em;
+  }
+  h4 {
+      font-size: 1em;
+      text-transform: uppercase;
+      padding-bottom: 30px;
+  }
+  a {
+      padding: 20px;
+  }
+}
+
+.mission {
+    background: #eee;
+    text-align: center;
+    vertical-align: middle;
+    padding-top: 40px;
+    padding-bottom: 40px;
+
+
+}
+
+
+/* FIXME: update for the gray Featured Content carousel, http://clients.fervorcreative.com/proofs/asu/comses/r2/#1 */
 .carousel {
-  background: #f0f4fa url("./assets/images/background-carousel.png") repeat top center;
+  background: #f0f4fa url("./assets/images/background-footer.png") repeat top center;
   overflow: hidden;
   padding-top: 40px;
   padding-bottom: 40px;
