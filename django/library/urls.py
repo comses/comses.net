@@ -5,7 +5,7 @@ from rest_framework.routers import SimpleRouter
 
 router = SimpleRouter()
 router.register(r'codebase', CodebaseViewSet)
-router.register(r'codebase/<uuid>/release', CodebaseReleaseViewSet)
+router.register(r'codebase/(?P<uuid>[0-9]+)/releases', CodebaseReleaseViewSet)
 
 urlpatterns = [
     url(r'^', include(router.urls)),

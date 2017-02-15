@@ -1,0 +1,68 @@
+version: '2'
+services:
+  elasticsearch:
+    image: elasticsearch:5
+    volumes:
+      - ./deploy/elasticsearch.conf.d/log4j2.properties:/usr/share/elasticsearch/config/log4j2.properties
+      - esindex:/usr/share/elasticsearch/data
+    ports:
+      - "127.0.0.1:9200:9200"
+      - "127.0.0.1:9300:9300"
+    environment:
+      ES_JAVA_OPTS: "-Xms2g -Xmx2g"
+  db:
+    image: postgres:9.5
+    volumes:
+      - data:/var/lib/postgresql/data
+    ports:
+      - "127.0.0.1:5433:5432"
+    environment:
+      # FIXME: replace with init sql script, see https://github.com/docker/docker/issues/13490
+      POSTGRES_USER: {DB_USER}
+      POSTGRES_PASSWORD: {DB_PASSWORD}
+      POSTGRES_DB: {DB_NAME}
+  js:
+    build: frontend
+    image: comses/wagtailjs
+    volumes:
+      - ./frontend:{DOCKER_CODE_ROOT}
+      - {HOST_WEBPACK_ROOT}:{DOCKER_WEBPACK_ROOT}
+      - /code/node_modules
+  cms:
+    build: django
+    image: comses/wagtailcms
+    volumes:
+      - ./django:/code
+      - ./deploy/elasticsearch.conf.d:{ELASTICSEARCH_PATH}
+      - {HOST_LOG_ROOT}:{DOCKER_LOG_ROOT}
+      - {HOST_LIBRARY_ROOT}:{DOCKER_LIBRARY_ROOT}
+      - {HOST_REPOSITORY_ROOT}:{DOCKER_REPOSITORY_ROOT}
+      - ./deploy/app:/code/deploy/app
+      - ./deploy/conf/config.ini:/secrets/config.ini
+      - {HOST_WEBPACK_ROOT}:{DOCKER_WEBPACK_ROOT}
+      - {HOST_STATIC_ROOT}:{DOCKER_STATIC_ROOT}
+    command: /code/deploy/app/dev.sh
+    ports:
+      - "127.0.0.1:8000:8000"
+    links:
+      - db
+      - elasticsearch
+      - js
+  pytest:
+    image: comses/wagtailcms
+    volumes:
+      - ./django:/code
+      - {HOST_LOG_ROOT}:{DOCKER_LOG_ROOT}
+      - ./deploy/app:/code/deploy/app
+      - ./deploy/conf/config.ini:/secrets/config.ini
+    command: /code/deploy/app/test.sh
+    links:
+      - db
+      - elasticsearch
+volumes:
+  esindex:
+    driver: local
+  data:
+    driver: local
+  logs:
+    driver: local

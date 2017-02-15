@@ -54,81 +54,84 @@
 {% endmacro %}
 
 {% macro footer() %}
-<footer class="footer">
-    <div class="container">
-        <div class="row">
-            <div class="col-xs-12 col-lg-3">
-                <ul class="social-media">
-                    <li>
-                        <a href="https://github.com/comses" title="GitHub" target="_blank">
+    <footer class="footer">
+        <div class="container">
+            <div class="row">
+                <div class="col-xs-12 col-lg-3">
+                    <ul class="social-media">
+                        <li>
+                            <a href="https://github.com/comses" title="GitHub" target="_blank">
                 <span class="fa-stack">
                   <i class="fa fa-circle fa-stack-2x"></i>
                   <i class="fa fa-code-fork fa-inverse fa-stack-1x"></i>
                 </span>
-                        </a>
-                    </li>
-                    <li>
-                        <a href="https://twitter.com/openabm_comses" title="Twitter" target="_blank">
+                            </a>
+                        </li>
+                        <li>
+                            <a href="https://twitter.com/openabm_comses" title="Twitter" target="_blank">
                   <span class="fa-stack">
                     <i class="fa fa-circle fa-stack-2x"></i>
                     <i class="fa fa-twitter fa-inverse fa-stack-1x"></i>
                   </span>
-                        </a>
-                    </li>
+                            </a>
+                        </li>
 
-                    <!--
-                    <li>
-                      <a href="http://www.openabm.org/rss.xml" title="RSS Feed">
-                        <span class="fa-stack">
-                          <i class="fa fa-circle fa-stack-2x"></i>
-                          <i class="fa fa-rss fa-inverse fa-stack-1x"></i>
-                        </span>
-                      </a>
-                    </li>
-                    -->
+                        <!--
+                        <li>
+                          <a href="http://www.openabm.org/rss.xml" title="RSS Feed">
+                            <span class="fa-stack">
+                              <i class="fa fa-circle fa-stack-2x"></i>
+                              <i class="fa fa-rss fa-inverse fa-stack-1x"></i>
+                            </span>
+                          </a>
+                        </li>
+                        -->
 
-                    <li>
-                        <a href="http://eepurl.com/b8GCUv" title="Email Sign Up" target="_blank">
+                        <li>
+                            <a href="http://eepurl.com/b8GCUv" title="Email Sign Up" target="_blank">
                   <span class="fa-stack">
                     <i class="fa fa-circle fa-stack-2x"></i>
                     <i class="fa fa-envelope fa-inverse fa-stack-1x"></i>
                   </span>
-                        </a>
-                    </li>
-                </ul>
-            </div>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
 
-            <div class="col-xs-12 col-lg-9">
-                <ul class="organizations">
-                    <li>
-                        <a href="http://www.asu.edu/" target="_blank">
-                            <img src="{{ static("images/logo-asu.png") }}" alt="Arizona State University">
-                        </a>
-                    </li>
+                <div class="col-xs-12 col-lg-9">
+                    <ul class="organizations">
+                        <li>
+                            <a href="http://www.asu.edu/" target="_blank">
+                                <img src="{{ static("images/logo-asu.png") }}" alt="Arizona State University">
+                            </a>
+                        </li>
 
-                    <li>
-                        <a href="https://creativecommons.org/" target="_blank">
-                            <img src="{{ static("images/logo-cc.png") }}" alt="Creative Commons">
-                        </a>
-                    </li>
+                        <li>
+                            <a href="https://creativecommons.org/" target="_blank">
+                                <img src="{{ static("images/logo-cc.png") }}" alt="Creative Commons">
+                            </a>
+                        </li>
 
-                    <li>
-                        <a href="http://www.nsf.gov/" target="_blank">
-                            <img src="{{ static("images/logo-nsf.png") }}" alt="National Science Foundation">
-                        </a>
-                    </li>
-                </ul>
+                        <li>
+                            <a href="http://www.nsf.gov/" target="_blank">
+                                <img src="{{ static("images/logo-nsf.png") }}" alt="National Science Foundation">
+                            </a>
+                        </li>
+                    </ul>
+                </div>
             </div>
         </div>
-    </div>
-
     <p class="copyright text-center">© 2016 - {{ now('Y') }} CoMSES Net</p>
 </footer>
+
 {% endmacro %}
 <!DOCTYPE html>
-<!--[if lt IE 7]>      <html class="no-js lt-ie9 lt-ie8 lt-ie7"> <![endif]-->
-<!--[if IE 7]>         <html class="no-js lt-ie9 lt-ie8"> <![endif]-->
-<!--[if IE 8]>         <html class="no-js lt-ie9"> <![endif]-->
+<!--[if lt IE 7]>
+<html class="no-js lt-ie9 lt-ie8 lt-ie7"> <![endif]-->
+<!--[if IE 7]>
+<html class="no-js lt-ie9 lt-ie8"> <![endif]-->
+<!--[if IE 8]>
+<html class="no-js lt-ie9"> <![endif]-->
 <!--[if gt IE 8]><!-->
 <html lang="en" class="no-js"> <!--<![endif]-->
 <head>
@@ -142,6 +145,7 @@
 
     {# Global stylesheets #}
     {{ render_bundle('styles') }}
+    {#    {{ render_bundle('app') }}#}
 
     {% block extra_css %}
         {# Override this in templates to add extra stylesheets #}

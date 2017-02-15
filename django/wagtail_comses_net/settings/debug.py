@@ -101,7 +101,6 @@ AUTHENTICATION_BACKENDS = (
 
 ROOT_URLCONF = 'wagtail_comses_net.urls'
 
-
 TEMPLATES = [
     {
         'BACKEND': 'django_jinja.backend.Jinja2',
@@ -160,7 +159,12 @@ TAGGIT_CASE_INSENSITIVE = True
 # https://docs.djangoproject.com/en/1.10/ref/settings/#databases
 
 config = configparser.ConfigParser()
-config.read('/secrets/config.ini')
+
+# test to see if django is in docker
+if os.getcwd() == '/code':
+    config.read('/secrets/config.ini')
+else:
+    config.read('../deploy/conf/config.ini')
 
 SECRET_KEY = config.get('secrets', 'SECRET_KEY')
 
@@ -233,6 +237,11 @@ LOGGING = {
             'level': 'DEBUG',
             'handlers': ['console', 'rollingfile'],
             'propagate': False,
+        },
+        'wagtail_comses_net': {
+            'level': 'DEBUG',
+            'handlers': ['console', 'rollingfile'],
+            'propagate': False
         }
     }
 }
@@ -258,13 +267,13 @@ STATICFILES_FINDERS = [
     'django.contrib.staticfiles.finders.AppDirectoriesFinder',
 ]
 
-WEBPACK_DIR = '/webpack'
+WEBPACK_DIR = config.get('storage', 'WEBPACK_ROOT')
 
 STATICFILES_DIRS = [
     WEBPACK_DIR
 ]
 
-STATIC_ROOT = '/static'
+STATIC_ROOT = config.get('storage', 'STATIC_ROOT')
 STATIC_URL = '/static/'
 
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
@@ -290,7 +299,9 @@ BASE_URL = 'https://www.comses.net'
 WAGTAILMENUS_DEFAULT_MAIN_MENU_TEMPLATE = 'home/includes/menu.html'
 
 REST_FRAMEWORK = {
-    'DEFAULT_PERMISSION_CLASSES': ('wagtail_comses_net.permissions.ComsesPermissions',),
+    'DEFAULT_PERMISSION_CLASSES': (
+        'wagtail_comses_net.permissions.ComsesPermissions',
+    ),
     'DEFAULT_RENDERER_CLASSES': (
         'rest_framework.renderers.JSONRenderer',
     ),
@@ -316,3 +327,13 @@ REGISTRATION_SALT = 'rj9_!qbnz#bcm__w-xo8htm+!y2dd8!!g&qgpwd*omfed!lxnw'
 SOCIAL_AUTH_URL_NAMESPACE = 'socialauth'
 DISCOURSE_BASE_URL = 'https://forum.comses.net'
 DISCOURSE_SSO_SECRET = config.get('secrets', 'DISCOURSE_SSO_SECRET')
+
+DEBUG = True
+
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+
+MIDDLEWARE += ['debug_toolbar.middleware.DebugToolbarMiddleware']
+
+INSTALLED_APPS += ['drupal_migrator', 'debug_toolbar']
+
+ALLOWED_HOSTS = ['localhost', 'borges.cbie.asu.edu',]

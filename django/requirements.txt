@@ -15,6 +15,7 @@ django-model-utils==2.6.1
 django-timezone-field==2.0
 bagit==1.5.4
 semver==2.7.4
+django-guardian==1.4.6
 django-jinja==2.2.2
 django-registration==2.2
 invoke

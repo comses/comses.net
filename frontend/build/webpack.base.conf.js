@@ -110,6 +110,9 @@ module.exports = {
             Tooltip: "exports-loader?Tooltip!bootstrap/js/dist/tooltip",
             Util: "exports-loader?Util!bootstrap/js/dist/util",
         }),
+        new webpack.LoaderOptionsPlugin({
+        //     postcss: {},
+        }),
         utils.extractSCSS,
         // split vendor js into its own file
         new webpack.optimize.CommonsChunkPlugin({

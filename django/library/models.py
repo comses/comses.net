@@ -17,8 +17,6 @@ from modelcluster.models import ClusterableModel
 from taggit.models import TaggedItemBase
 from wagtail.wagtailsearch import index
 
-from wagtail_comses_net.permissions import PermissionMixin
-
 from . import fs
 
 logger = logging.getLogger(__name__)
@@ -127,15 +125,13 @@ class Contributor(index.Indexed, ClusterableModel):
         return self.get_full_name()
 
 
-
-
 class SemanticVersionBump(Enum):
     MAJOR = semver.bump_major
     MINOR = semver.bump_minor
     PATCH = semver.bump_patch
 
 
-class Codebase(index.Indexed, ClusterableModel, PermissionMixin):
+class Codebase(index.Indexed, ClusterableModel):
     """
     Metadata applicable across a set of CodebaseReleases
     """
@@ -173,14 +169,12 @@ class Codebase(index.Indexed, ClusterableModel, PermissionMixin):
     # should be stored in codebase base dir/images
     images = JSONField(default=list)
 
+    submitter = models.ForeignKey(User)
+
     search_fields = [
         index.SearchField('title', partial_match=True, boost=10),
         index.SearchField('description', partial_match=True),
     ]
-
-    @property
-    def owner(self):
-        return self.latest_version.owner
 
     @staticmethod
     def _release_upload_path(instance, filename):
@@ -203,12 +197,14 @@ class Codebase(index.Indexed, ClusterableModel, PermissionMixin):
 
     @property
     def contributors(self):
-        return CodebaseContributor.objects.select_related('release', 'contributor').filter(release__codebase__id=self.pk)
+        return CodebaseContributor.objects.select_related('release', 'contributor').filter(
+            release__codebase__id=self.pk)
 
     @property
     def contributor_list(self):
         # FIXME: messy
-        contributor_list = [c.contributor.get_full_name(family_name_first=True) for c in self.contributors.order_by('index')]
+        contributor_list = [c.contributor.get_full_name(family_name_first=True) for c in
+                            self.contributors.order_by('index')]
         return contributor_list
 
     def get_absolute_url(self):
@@ -221,7 +217,8 @@ class Codebase(index.Indexed, ClusterableModel, PermissionMixin):
         if submitter_id is None:
             if submitter is None:
                 submitter = User.objects.first()
-                logger.warning("No submitter or submitter_id specified when creating release, using first user %s", submitter)
+                logger.warning("No submitter or submitter_id specified when creating release, using first user %s",
+                               submitter)
             submitter_id = submitter.pk
         if version_number is None:
             # start off at v1.0.0
@@ -244,7 +241,10 @@ class Codebase(index.Indexed, ClusterableModel, PermissionMixin):
         return release
 
     def __str__(self):
-        return "{0} {1}".format(self.title, self.date_created)
+        return "{0} {1} identifier={2}".format(self.title, self.date_created, repr(self.identifier))
+
+    class Meta:
+        permissions = (('view_codebase', 'Can view codebase'),)
 
 
 class CodebasePublication(models.Model):
@@ -309,8 +309,8 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
                                         help_text=_('Related publications'))
 
     @property
-    def owner(self):
-        return self.submitter
+    def live(self):
+        return self.codebase.live
 
     def get_library_path(self, *args):
         """
@@ -364,6 +364,7 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
 
     class Meta:
         unique_together = ('codebase', 'version_number')
+        permissions = (('view_codebase_release', 'Can view codebase release'),)
 
 
 class CodebaseContributor(models.Model):

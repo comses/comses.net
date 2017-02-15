@@ -28,6 +28,7 @@ urlpatterns = [
     url(r'^api/token/', obtain_jwt_token),
     url(r'^api/search/$', search_views.search, name='search'),
     url(r'^', include(wagtail_urls)),
+    url(r'^api-auth/', include('rest_framework.urls')),
 ]
 
 if settings.DEBUG:

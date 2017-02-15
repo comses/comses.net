@@ -4,6 +4,7 @@
 docker-compose.yml
 generated-*.yml
 config.ini
+*.backup
 # backup files
 *~
 # ctags

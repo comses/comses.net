@@ -15,9 +15,9 @@ urlpatterns = [
     url(r'^resources', TemplateView.as_view(template_name='home/resources.jinja'),
         name='resources'),
     url(r'^community', TemplateView.as_view(template_name='home/community.jinja'), name='community'),
-    url(r'^api-auth/', include('rest_framework.urls', namespace='rest_framework')),
 ]
 
+urlpatterns += router.urls
 
 edit_route_form_data = {'lookup_field': 'pk', 'lookup_regex': r'\d+', 'app_name': 'home'}
 for url_prefix in ['jobs', 'events']:

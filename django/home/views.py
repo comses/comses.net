@@ -1,16 +1,13 @@
-from library.models import Codebase, CodebaseRelease
 from .models import Event, Job
 from .serializers import EventSerializer, JobSerializer, TagSerializer
-from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
-from django.contrib.auth.models import User
-from rest_framework import generics, viewsets
 from rest_framework.response import Response
-from rest_framework.renderers import JSONRenderer, TemplateHTMLRenderer
 from rest_framework.pagination import PageNumberPagination
+from rest_framework import viewsets
 from wagtail.wagtailsearch.backends import get_search_backend
 import logging
 from taggit.models import Tag
-from django.views.generic import TemplateView
+
+from django.shortcuts import get_object_or_404
 
 logger = logging.getLogger(__name__)
 
@@ -75,33 +72,8 @@ class JobViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data)
 
-    def retrieve(self, request, *args, **kwargs):
-        job = Job.objects.get(id=kwargs['pk'])
-        serializer = JobSerializer(job)
-        return Response(serializer.data)
-
-    def update(self, request, *args, **kwargs):
-        tag_names = [raw_tag['name'] for raw_tag in request.data['tags']]
-        job = Job.objects.get(id=request.data['id'])
-        logger.debug(tag_names)
-        if job:
-            job.tags.clear()
-            job.tags.add(*tag_names)
-            job.title = request.data['title']
-            job.description = request.data['description']
-            job.save()
-        serializer = JobSerializer(job)
-        return Response(serializer.data)
-
-    def create(self, request, *args, **kwargs):
-        submitter = request.user
-        tags = request.data['tags']
-        job = Job.objects.create(title=request.data['title'],
-                                 description=request.data['description'],
-                                 submitter=submitter)
-        job.tags.add(*[tag['name'] for tag in tags])
-        serializer = JobSerializer(job)
-        return Response(serializer.data)
+    class Meta:
+        permissions = (('view_job', 'View Jobs'))
 
 
 class TagViewSet(viewsets.ModelViewSet):

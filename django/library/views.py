@@ -1,8 +1,6 @@
-from django.shortcuts import render
-from rest_framework import generics, viewsets
 from .serializers import CodebaseSerializer, CodebaseReleaseSerializer
 from rest_framework.pagination import PageNumberPagination
-from rest_framework.renderers import TemplateHTMLRenderer, JSONRenderer
+from rest_framework import viewsets
 
 from .models import Codebase, CodebaseRelease
 

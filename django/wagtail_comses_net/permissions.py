@@ -1,17 +1,22 @@
-from rest_framework.permissions import BasePermission, SAFE_METHODS
+from rest_framework.permissions import DjangoObjectPermissions
+
+import logging
+
+logger = logging.getLogger(__name__)
 
 
-class PermissionMixin:
-
-    def has_edit_permission(self, user):
-        return self.owner == user
+SAFE_METHODS = ('GET', 'HEAD', 'OPTIONS')
 
 
-class IsEditable(BasePermission):
-    """All models must have a has_edit_permission method"""
+class ComsesPermissions(DjangoObjectPermissions):
+    authenticated_users_only = False
 
-    def has_object_permission(self, request, view, obj):
-        if request.method in SAFE_METHODS:
-            return True
-
-        return obj.has_edit_permission(request.user)
+    perms_map = {
+        'GET': ['%(app_label)s.view_%(model_name)s'],
+        'OPTIONS': [],
+        'HEAD': [],
+        'POST': ['%(app_label)s.add_%(model_name)s'],
+        'PUT': ['%(app_label)s.change_%(model_name)s'],
+        'PATCH': ['%(app_label)s.change_%(model_name)s'],
+        'DELETE': ['%(app_label)s.delete_%(model_name)s'],
+    }

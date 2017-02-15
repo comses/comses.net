@@ -15,7 +15,9 @@ from wagtail.wagtailcore.models import Page, Orderable
 from wagtail.wagtailimages.edit_handlers import ImageChooserPanel
 from wagtail.wagtailsearch import index
 
-from wagtail_comses_net.permissions import PermissionMixin
+import logging
+
+logger = logging.getLogger(__name__)
 
 """
 Wagtail Page models and related supporting Models and Settings
@@ -48,7 +50,7 @@ class MemberProfileTag(TaggedItemBase):
     content_object = ParentalKey('home.MemberProfile', related_name='tagged_members')
 
 
-class MemberProfile(index.Indexed, ClusterableModel, PermissionMixin):
+class MemberProfile(index.Indexed, ClusterableModel):
     """
     Contains additional comses.net information, possibly linked to a CoMSES Member / site account
     """
@@ -79,9 +81,12 @@ class MemberProfile(index.Indexed, ClusterableModel, PermissionMixin):
     orcid = models.CharField(help_text=_("16 digits, - between every 4th digit, e.g., 0000-0002-1825-0097"),
                              max_length=19)
 
-    @property
-    def owner(self):
-        return self.user
+    def __str__(self):
+        if self.user:
+            return "username={} is_superuser={} is_active={}".format(self.user.username, self.user.is_superuser,
+                                                                     self.user.is_active)
+        else:
+            return "id={}".format(self.id)
 
 
 class LinkFields(models.Model):
@@ -157,7 +162,6 @@ class LandingPage(Page):
 
 
 class NewsIndexPage(Page):
-
     def get_context(self, request):
         context = super(NewsIndexPage, self).get_context(request)
         context['news_entries'] = NewsPage.objects.child_of(self).live()
@@ -212,7 +216,7 @@ class EventTag(TaggedItemBase):
     content_object = ParentalKey('home.Event', related_name='tagged_events')
 
 
-class Event(index.Indexed, ClusterableModel, PermissionMixin):
+class Event(index.Indexed, ClusterableModel):
     title = models.CharField(max_length=500)
     date_created = models.DateTimeField(default=timezone.now)
     last_modified = models.DateTimeField(auto_now=True)
@@ -238,8 +242,15 @@ class Event(index.Indexed, ClusterableModel, PermissionMixin):
     ]
 
     @property
-    def owner(self):
-        return self.submitter
+    def live(self):
+        return True
+
+    def __str__(self):
+        return "{} posted by {} on {}".format(repr(self.title), repr(self.submitter.username),
+                                              str(self.date_created))
+
+    class Meta:
+        permissions = (('view_event', 'Can view events'),)
 
 
 class JobTag(TaggedItemBase):
@@ -255,7 +266,7 @@ class Job(index.Indexed, ClusterableModel):
     description = models.TextField()
     tags = ClusterTaggableManager(through=JobTag, blank=True)
 
-    submitter = models.ForeignKey(User)
+    submitter = models.ForeignKey(User, related_name='jobs')
 
     search_fields = [
         index.SearchField('title', partial_match=True, boost=10),
@@ -266,9 +277,17 @@ class Job(index.Indexed, ClusterableModel):
         ]),
     ]
 
+    @property
+    def live(self):
+        return True
+
     def __str__(self):
-        return "{0} posted by {1} on {2}".format(self.title, self.submitter.get_full_name(), str(self.date_created))
+        return "{0} posted by {1} on {2}".format(repr(self.title), repr(self.submitter.username),
+                                                 str(self.date_created))
 
     @property
     def owner(self):
         return self.submitter
+
+    class Meta:
+        permissions = (('view_job', 'Can view job'),)

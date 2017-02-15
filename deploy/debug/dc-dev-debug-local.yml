@@ -1,0 +1,23 @@
+version: '2'
+services:
+  db:
+    extends:
+      file: generated-docker-compose-global.yml
+      service: db
+
+  elasticsearch:
+    extends:
+      file: generated-docker-compose-global.yml
+      service: elasticsearch
+
+  js:
+    extends:
+      file: generated-docker-compose-global.yml
+      service: js
+volumes:
+  esindex:
+    driver: local
+  data:
+    driver: local
+  logs:
+    driver: local
