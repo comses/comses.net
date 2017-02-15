@@ -254,7 +254,7 @@ class TaxonomyExtractor(Extractor):
         if len(tag) > 100:
             logger.warning("tag_too_long: %s", tag)
             return tag[:100].strip()
-        return rv
+        return rv.lower()
 
     def extract_all(self):
         tag_id_map = defaultdict(list)
@@ -293,15 +293,16 @@ class ModelExtractor(Extractor):
     def _extract(self, raw_model, user_id_map, author_id_map):
         raw_author_ids = [raw_author['value'] for raw_author in get_field(raw_model, 'field_model_author')]
         author_ids = [author_id_map[raw_author_id] for raw_author_id in raw_author_ids]
-        code = Codebase.objects.create(title=raw_model['title'].strip(),
-                        description=get_first_field(raw_model, field_name='body', default=''),
-                        date_created=self.to_datetime(raw_model['created']),
-                        last_modified=self.to_datetime(raw_model['changed']),
-                        is_replication=Extractor.int_to_bool(get_first_field(raw_model, 'field_model_replicated', default='0')),
-                        references_text=get_first_field(raw_model, 'field_model_reference', default=''),
-                        replication_references_text=get_first_field(raw_model, 'field_model_publication_text', default=''),
-                        identifier=raw_model['nid'],
-                        peer_reviewed=self.int_to_bool(get_first_field(raw_model, 'field_model_certified', default=0)))
+        code = Codebase.objects.create(
+            title=raw_model['title'].strip(),
+            description=get_first_field(raw_model, field_name='body', default=''),
+            date_created=self.to_datetime(raw_model['created']),
+            last_modified=self.to_datetime(raw_model['changed']),
+            is_replication=Extractor.int_to_bool(get_first_field(raw_model, 'field_model_replicated', default='0')),
+            references_text=get_first_field(raw_model, 'field_model_reference', default=''),
+            replication_references_text=get_first_field(raw_model, 'field_model_publication_text', default=''),
+            identifier=raw_model['nid'],
+            peer_reviewed=self.int_to_bool(get_first_field(raw_model, 'field_model_certified', default=0)))
         code.submitter_id = user_id_map[raw_model.get('uid')]
         code.author_ids = author_ids
         code.keyword_tids = get_field_attributes(raw_model, 'taxonomy_vocabulary_6', attribute_name='tid')
