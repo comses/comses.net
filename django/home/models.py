@@ -11,13 +11,14 @@ from taggit.models import TaggedItemBase
 
 from timezone_field import TimeZoneField
 
+from wagtail.wagtailadmin.edit_handlers import (FieldPanel, InlinePanel, PageChooserPanel, MultiFieldPanel)
 from wagtail.wagtailcore.fields import StreamField
 from wagtail.wagtailcore import blocks
 from wagtail.wagtailcore.models import Page, Orderable
-from wagtailmenus.models import MenuPage
-from wagtail.wagtailadmin.edit_handlers import FieldPanel, StreamFieldPanel, InlinePanel
 from wagtail.wagtailimages.blocks import ImageChooserBlock
+from wagtail.wagtailimages.edit_handlers import ImageChooserPanel
 from wagtail.wagtailsearch import index
+from wagtailmenus.models import MenuPage
 
 from wagtail_comses_net.permissions import PermissionMixin
 
@@ -75,50 +76,75 @@ class MemberProfile(index.Indexed, ClusterableModel, PermissionMixin):
         return self.user
 
 
-class CarouselItem(models.Model):
+class LinkFields(models.Model):
+    """
+    Cribbed from github.com/wagtail/wagtaildemo
+    """
+    link_external = models.URLField("External link", blank=True)
+    link_page = models.ForeignKey(
+        Page,
+        null=True,
+        blank=True,
+        related_name='+'
+    )
+    link_codebase = models.ForeignKey(
+        'library.Codebase',
+        null=True,
+        blank=True,
+        related_name='+'
+    )
+
+    @property
+    def link(self):
+        if self.link_page:
+            return self.link_page.url
+        elif self.link_codebase:
+            return self.link_codebase.get_absolute_url()
+        else:
+            return self.link_external
+
+    panels = [
+        FieldPanel('link_external'),
+        PageChooserPanel('link_page'),
+        # figure out how to link codebase / events / jobs into FeaturedContentItem
+        # CodebaseChooserPanel('link_codebase'),
+    ]
+
+    class Meta:
+        abstract = True
+
+
+class CarouselItem(LinkFields):
     image = models.ForeignKey('wagtailimages.Image',
                               null=True,
                               blank=True,
                               on_delete=models.SET_NULL,
                               related_name='+')
-    caption = models.CharField(max_length=500, blank=True)
+    embed_url = models.URLField("Embed URL", blank=True)
+    caption = models.CharField(max_length=500)
+    title = models.CharField(max_length=255)
+
+    panels = [
+        ImageChooserPanel('image'),
+        FieldPanel('embed_url'),
+        FieldPanel('caption'),
+        FieldPanel('title'),
+        MultiFieldPanel(LinkFields.panels, "Link"),
+    ]
 
     class Meta:
         abstract = True
 
 
 class FeaturedContentItem(Orderable, CarouselItem):
-    page = ParentalKey('HomePage', related_name='featured_content_queue')
+    page = ParentalKey('home.LandingPage', related_name='featured_content_queue')
 
 
-class HomePage(Page):
-    body = StreamField([
-        ('heading', blocks.CharBlock(classname="full title")),
-        ('paragraph', blocks.RichTextBlock()),
-        ('image', ImageChooserBlock()),
-    ])
-
+class LandingPage(Page):
+    template = 'index.jinja'
     content_panels = [
-        FieldPanel('title', classname='full title'),
-        StreamFieldPanel('body'),
         InlinePanel('featured_content_queue', label=_('Featured Content')),
     ]
-
-
-class BlogPage(MenuPage):
-    date = models.DateField("Post Date")
-    body = StreamField([
-        ('heading', blocks.CharBlock(classname="full title")),
-        ('paragraph', blocks.RichTextBlock()),
-        ('image', ImageChooserBlock()),
-    ])
-
-    content_panels = Page.content_panels + [
-        FieldPanel('date'),
-        StreamFieldPanel('body'),
-    ]
-
-    api_fields = ['date', 'body']
 
 
 class EventTag(TaggedItemBase):
