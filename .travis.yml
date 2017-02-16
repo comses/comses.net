@@ -19,6 +19,6 @@ install:
   - echo "1" | ./build.sh 
   - pip3 install coveralls
 script:
-  - docker-compose run --rm pytest
+  - docker-compose run --rm cms /code/deploy/app/test.sh
 after_success:
   - coveralls

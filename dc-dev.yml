@@ -14,8 +14,6 @@ services:
     image: postgres:9.5
     volumes:
       - data:/var/lib/postgresql/data
-    ports:
-      - "127.0.0.1:5433:5432"
     environment:
       # FIXME: replace with init sql script, see https://github.com/docker/docker/issues/13490
       POSTGRES_USER: "${DB_USER}"
@@ -53,22 +51,6 @@ services:
       - ${DB_HOST}
       - elasticsearch
       - js
-  pytest:
-    image: comses/wagtailcms
-    volumes:
-      - ./django:/code
-      - logs:/code/logs
-      - ./deploy/app:/code/deploy/app
-      - ./deploy/conf/config.ini:/secrets/config.ini
-    command: /code/deploy/app/test.sh
-    environment:
-      DB_USER: ${DB_USER}
-      DB_HOST: ${DB_HOST}
-      DB_NAME: ${DB_NAME}
-      DB_PORT: ${DB_PORT}
-    links:
-      - ${DB_HOST}
-      - elasticsearch
 volumes:
   static:
     driver: local
