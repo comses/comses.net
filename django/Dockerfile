@@ -23,9 +23,10 @@ ENV PYTHONUNBUFFERED=1 \
 
 ARG REQUIREMENTS_FILE=requirements-dev.txt
 
-COPY . /code
-RUN pip3 install -r /code/$REQUIREMENTS_FILE \
+COPY $REQUIREMENTS_FILE requirements.txt /tmp/
+RUN pip3 install -r /tmp/$REQUIREMENTS_FILE \
         && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 # FIXME: run as restricted user, remove unnecessary packages
+COPY . /code
 WORKDIR /code
 CMD ["/code/deploy/app/dev.sh"]
