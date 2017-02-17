@@ -3,28 +3,36 @@ from django.contrib.postgres.fields import ArrayField, JSONField
 from django.db import models
 from django.utils import timezone
 from django.utils.translation import ugettext_lazy as _
-
 from modelcluster.contrib.taggit import ClusterTaggableManager
 from modelcluster.fields import ParentalKey
 from modelcluster.models import ClusterableModel
 from taggit.models import TaggedItemBase
-
 from timezone_field import TimeZoneField
-
+from wagtail.contrib.settings.models import BaseSetting, register_setting
 from wagtail.wagtailadmin.edit_handlers import (FieldPanel, InlinePanel, PageChooserPanel, MultiFieldPanel)
-from wagtail.wagtailcore.fields import StreamField
-from wagtail.wagtailcore import blocks
+from wagtail.wagtailcore.fields import RichTextField
 from wagtail.wagtailcore.models import Page, Orderable
-from wagtail.wagtailimages.blocks import ImageChooserBlock
 from wagtail.wagtailimages.edit_handlers import ImageChooserPanel
 from wagtail.wagtailsearch import index
-from wagtailmenus.models import MenuPage
 
 from wagtail_comses_net.permissions import PermissionMixin
 
 """
-Wagtail-related models
+Wagtail Page models and related supporting Models and Settings
+
 """
+
+
+@register_setting
+class ComsesNetSettings(BaseSetting):
+    mission_statement = models.CharField(max_length=255)
+
+
+@register_setting
+class SocialMediaSettings(BaseSetting):
+    facebook = models.URLField(help_text=_('Facebook URL'), blank=True)
+    youtube = models.URLField(help_text=_('CoMSES Net YouTube Channel'))
+    twitter = models.URLField(help_text=_('CoMSES Net official Twitter account'))
 
 
 class Institution(models.Model):
@@ -142,8 +150,61 @@ class FeaturedContentItem(Orderable, CarouselItem):
 
 class LandingPage(Page):
     template = 'index.jinja'
+
     content_panels = [
         InlinePanel('featured_content_queue', label=_('Featured Content')),
+    ]
+
+
+class NewsIndexPage(Page):
+
+    def get_context(self, request):
+        context = super(NewsIndexPage, self).get_context(request)
+        context['news_entries'] = NewsPage.objects.child_of(self).live()
+        return context
+
+
+class NewsPage(Page):
+    body = RichTextField()
+    date = models.DateField("Post date")
+    feed_image = models.ForeignKey(
+        'wagtailimages.Image',
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name='+'
+    )
+
+    search_fields = Page.search_fields + [
+        index.SearchField('body'),
+        index.FilterField('date')
+    ]
+
+    # Editor panels configuration
+    content_panels = Page.content_panels + [
+        FieldPanel('date'),
+        FieldPanel('body', classname="full"),
+        InlinePanel('related_links', label="Related links"),
+    ]
+
+    promote_panels = [
+        MultiFieldPanel(Page.promote_panels, "Common page configuration"),
+        ImageChooserPanel('feed_image'),
+    ]
+
+    # Parent page / subpage type rules
+    parent_page_types = ['home.NewsIndexPage']
+    subpage_types = []
+
+
+class NewsPageRelatedLink(Orderable):
+    page = ParentalKey(NewsPage, related_name='related_links')
+    name = models.CharField(max_length=255)
+    url = models.URLField()
+
+    panels = [
+        FieldPanel('name'),
+        FieldPanel('url'),
     ]
 
 

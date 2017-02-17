@@ -9,7 +9,7 @@ router.register(r'jobs', views.JobViewSet)
 router.register(r'tags', views.TagViewSet)
 
 urlpatterns = [
-    url(r'^', TemplateView.as_view(template_name='home/index.jinja'), name='index'),
+    url(r'^$', TemplateView.as_view(template_name='home/index.jinja'), name='index'),
     url(r'^resources', TemplateView.as_view(template_name='home/resources.jinja'), name='community'),
     url(r'^community', TemplateView.as_view(template_name='home/community.jinja'), name='community'),
     url(r'^api-auth/', include('rest_framework.urls', namespace='rest_framework')),

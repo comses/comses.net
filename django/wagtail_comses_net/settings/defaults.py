@@ -37,11 +37,13 @@ WAGTAIL_APPS = [
     'wagtail.wagtailadmin',
     'wagtail.wagtailcore',
     'wagtail.contrib.modeladmin',
+    'wagtail.contrib.settings',
     'wagtailmenus',
     'taggit',
     'modelcluster',
     'search',
 ]
+
 DJANGO_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -105,6 +107,7 @@ TEMPLATES = [
             "app_dirname": "templates",
             "extensions": DEFAULT_EXTENSIONS + [
                 "django_jinja.builtins.extensions.DjangoExtraFiltersExtension",
+                'wagtail.contrib.settings.jinja2tags.settings',
             ],
         }
     },
@@ -250,7 +253,9 @@ MEDIA_URL = '/media/'
 
 # Wagtail settings
 
-WAGTAIL_SITE_NAME = "CoMSES NET CMS"
+WAGTAIL_SITE_NAME = "CoMSES Network"
+APPEND_SLASH = True
+WAGTAIL_APPEND_SLASH = True
 
 WEBPACK_LOADER = {
     'DEFAULT': {
