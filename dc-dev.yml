@@ -45,7 +45,7 @@ services:
       DB_HOST: ${DB_HOST}
       DB_NAME: ${DB_NAME}
       DB_PORT: ${DB_PORT}
-      - CLEAN_DATABASE
+      CLEAN_DATABASE:
     ports:
       - "127.0.0.1:8000:8000"
     links:
