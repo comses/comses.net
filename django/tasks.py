@@ -130,7 +130,7 @@ def backup(ctx, path='/backups/postgres'):
 
 
 @task(aliases=['idb', 'initdb'])
-def initialize_database_schema(ctx, clean=True):
+def initialize_database_schema(ctx, clean=False):
     if clean:
         for app in ('home', 'library'):
             migration_dir = os.path.join(app, 'migrations')
