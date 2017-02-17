@@ -5,12 +5,12 @@ $rules-color: #ced9ee;
 $link-hover: darken($text-color, 20%);
 $button-hover: darken($button-color, 20%);
 $background-color: #f0f4fa;
+$body-bg: #f0f4fa;
 
 $brand-primary: $button-color;
 
 @import url('https://fonts.googleapis.com/css?family=Open+Sans');
 @import url('https://fonts.googleapis.com/css?family=Abel');
-@import url('https://fontlibrary.org/face/u-din-1451-mittelschrift');
 
 $font-family-base: 'Open Sans', Roboto, 'Helvetica Neue', sans-serif;
 
@@ -65,15 +65,14 @@ $fa-font-path: '../node_modules/font-awesome/fonts/';
 }
 
 .introduction {
-    /* FIXME: pull full background-introduction.png from PSDs instead of halved version from comses.net landing page */
-  background: #f0f4fa url("./assets/images/background-introduction.png") repeat top center;
+  background: url("./assets/images/background-introduction.png") repeat top center;
   overflow: hidden;
   padding-top: 40px;
   padding-bottom: 40px;
   text-align: center;
   vertical-align: middle;
   /*
-   Move carousel down so that it is below header
+   Move introduction below header
    We could polyfill position:sticky for Chrome instead
     */
   margin-top: 105px;
@@ -98,19 +97,15 @@ $fa-font-path: '../node_modules/font-awesome/fonts/';
 }
 
 .mission {
-    background: #eee;
     text-align: center;
     vertical-align: middle;
     padding-top: 40px;
     padding-bottom: 40px;
-
-
 }
-
 
 /* FIXME: update for the gray Featured Content carousel, http://clients.fervorcreative.com/proofs/asu/comses/r2/#1 */
 .carousel {
-  background: #f0f4fa url("./assets/images/background-footer.png") repeat top center;
+  background: url("./assets/images/background-footer.png") repeat top center;
   overflow: hidden;
   padding-top: 40px;
   padding-bottom: 40px;
@@ -134,13 +129,13 @@ $fa-font-path: '../node_modules/font-awesome/fonts/';
 
 header {
   padding: 20px 0;
-  background-color: $white;
+  background-color: $background-color;
 }
 
 footer {
   padding: 75px 0;
   background-image: url("./assets/images/background-footer.png");
-  color: $white;
+  color: $background-color;
 }
 
 .content-block {
