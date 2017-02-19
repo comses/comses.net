@@ -15,36 +15,63 @@ services:
     volumes:
       - data:/var/lib/postgresql/data
     environment:
-      # No need to modify if autofilled by ./build.sh envsubst
-      # FIXME: eventually replace with init sql script, see https://github.com/docker/docker/issues/13490
+      # autofilled by ./build.sh envsubst
+      # FIXME: replace with init sql script, see https://github.com/docker/docker/issues/13490
       POSTGRES_USER: "${DB_USER}"
       POSTGRES_PASSWORD: "${DB_PASSWORD}"
       POSTGRES_DB: "${DB_NAME}"
+  js:
+    # TODO: build assets into /static directly and terminate
+    build: frontend
+    image: comses/wagtailjs
+    volumes:
+      - ./frontend:/code
+      - webpack:/webpack
+      - /code/node_modules
+  nginx:
+    image: nginx:latest
+    volumes:
+      - ./deploy/app/nginx-haproxy.conf:/etc/nginx/nginx.conf
+      - ./deploy/app/uwsgi_params:/etc/nginx/uwsgi_params
+      - sockets:/sockets
+      - static:/static
+      - logs:/var/log/nginx
+    command: ["nginx", "-g", "daemon off;"]
+    ports:
+      - "127.0.0.1:8880:80"
+    links:
+      - cms
   cms:
-    build: django
+    build: 
+      context: ./django
+      args:
+        REQUIREMENTS_FILE: requirements-prod.txt
     image: comses/wagtailcms
     volumes:
+      - ./deploy/app:/code/deploy/app
+      - ./deploy/conf/config.ini:/secrets/config.ini
       - ./deploy/elasticsearch.conf.d:/etc/elasticsearch
       - logs:/code/logs
       - library:/library
       - repository:/repository
-      - ./deploy/conf/config.ini:/secrets/config.ini
       - webpack:/webpack
       - static:/static
+      - sockets:/sockets
     command: /code/deploy/app/prod.sh
-    args:
-      REQUIREMENTS_FILE: requirements-prod.txt
     environment:
+      DJANGO_SETTINGS_MODULE: "wagtail_comses_net.settings.production"
       DB_USER: ${DB_USER}
       DB_HOST: ${DB_HOST}
       DB_NAME: ${DB_NAME}
       DB_PORT: ${DB_PORT}
     ports:
-      - "127.0.0.1:8000:8000"
+      - "127.0.0.1:9191:9191" # uWSGI stats server
     links:
       - ${DB_HOST}
       - elasticsearch
 volumes:
+  sockets:
+    driver: local
   webpack:
     driver: local
   static:

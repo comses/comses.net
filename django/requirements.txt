@@ -16,6 +16,7 @@ django-timezone-field==2.0
 bagit==1.5.4
 semver==2.7.4
 django-jinja==2.2.2
+invoke
 django-webpack-loader
 rarfile
 # need to skip dependency checking, scandir fails pip3 install in the container

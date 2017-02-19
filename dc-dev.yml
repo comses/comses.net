@@ -28,19 +28,20 @@ services:
       - /code/node_modules
   cms:
     build: django
-    image: comses/wagtailcms
+    image: comses/wagtailcms_dev
     volumes:
       - ./django:/code
+      - ./deploy/app:/code/deploy/app
+      - ./deploy/conf/config.ini:/secrets/config.ini
       - ./deploy/elasticsearch.conf.d:/etc/elasticsearch
       - logs:/code/logs
       - library:/library
       - repository:/repository
-      - ./deploy/app:/code/deploy/app
-      - ./deploy/conf/config.ini:/secrets/config.ini
       - webpack:/webpack
       - static:/static
     command: /code/deploy/app/dev.sh
     environment:
+      DJANGO_SETTINGS_MODULE: "wagtail_comses_net.settings.dev"
       DB_USER: ${DB_USER}
       DB_HOST: ${DB_HOST}
       DB_NAME: ${DB_NAME}

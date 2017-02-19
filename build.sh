@@ -2,7 +2,7 @@
 
 # Adapted from http://lukeswart.net/2016/03/lets-deploy-part-1/
 
-DEPLOY=dev # or prod
+DEPLOY=${DEPLOY:-"dev"} # or prod
 DEFAULT_COMPOSE_TEMPLATE="dc-${DEPLOY}.yml"
 DOCKER_COMPOSE_TEMPLATE=${1:-$DEFAULT_COMPOSE_TEMPLATE}
 CONFIG_INI=deploy/conf/config.ini

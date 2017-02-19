@@ -3,5 +3,4 @@
 Sphinx
 ipython
 django-debug-toolbar
-invoke
 coverage
