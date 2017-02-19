@@ -3,6 +3,12 @@ from .defaults import *
 DEBUG = False
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 
-MEDIA_ROOT = '/comses/media'
+# FIXME: remove after successful data migration
+INSTALLED_APPS += ['drupal_migrator']
 
-STATIC_ROOT = '/comses/static'
+ALLOWED_HOSTS = ['.comses.net']
+
+# TODO: refactor root paths, repository / library / etc
+MEDIA_ROOT = '/shared/media'
+
+STATIC_ROOT = '/static'
