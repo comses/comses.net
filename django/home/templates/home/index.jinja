@@ -2,23 +2,62 @@
 
 {% block introduction %}
     <h1>A growing collection of resources for computational <br> model-based science.</h1>
-    <h4>A versioned archive of computational models and their digital context, tutorials, and FAQ's on agent based modeling</h4>
+    <h2>A versioned repository of computational models &amp; their digital context, tutorials, and FAQ's on agent based modeling</h2>
 
-    <a class='btn btn-primary' href='{{ url("library:codebase-list") }}'>View model library</a>
+    <div class='container'>
+        <div class='row'>
+            <div class='col'>
+                <a class='btn btn-primary' href='{{ url("library:codebase-list") }}'>View model library</a>
+            </div>
+            <div class='col'>
+                <a class='btn btn-primary' href='/resources'>Resources for modelers</a>
+            </div>
+        </div>
+    </div>
+    {# FIXME: add link to resources #}
 {% endblock %}
 {% block page %}
+<div class='container'>
     <section class='mission'>
-        <div>CoMSES Net is a group of researchers, educators and professionals with the common goal of improving the way
-            we develop, share, and use agent based modeling in the social and life sciences.
+        <div class='row'>
+            <div>CoMSES Net is a group of researchers, educators and professionals with the common goal of improving the way
+                we develop, share, and use agent based modeling in the social and life sciences.
+            </div>
         </div>
     </section>
-    <section class='callout-3'>
-        {# FIXME: add 3 dynamic callouts #}
+    <section class='callouts'>
+        <div class='row'>
+            <div class='col'>
+                <img src='{{ static("images/icons/submit.png") }}' alt='Submit a Model'>
+                <h3><a href='{{ url("library:codebase-add") }}'>Submit a Model</a></h3>
+                <div class='caption'>
+                    Archive the software you used to derive a publishable finding. Other researchers will be able to
+                    discover, cite, and run your software in a reproducible containerized environment.
+                </div>
+            </div>
+            <div class='col'>
+                <img src='{{ static("images/icons/search.png") }}' alt='Professional Opportunities'>
+                <h3>Professional Opportunities</h3>
+                <div class='caption'>
+                    Available jobs and appointments submitted by the CoMSES Net Community.
+                </div>
+            </div>
+            <div class='col'>
+                <img src='{{ static("images/icons/groups.png") }}' alt='Upcoming Events'>
+                <h3>Upcoming Events</h3>
+                <div class='caption'>
+                    Upcoming conferences, workshops, and other events curated by the CoMSES Net Community
+                </div>
+            </div>
+        </div>
     </section>
     <section class='featured-content'>
+        <div class='row'>
+        </div>
     </section>
     <section class='recent-activity'>
     </section>
     <section class='community-highlight'>
     </section>
+</div>
 {% endblock %}

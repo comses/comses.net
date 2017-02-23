@@ -1,15 +1,13 @@
 from django.conf.urls import url, include
-from . import views
-from wagtail_comses_net.view_helpers import RouterWithoutAPIRoot
+from django.views.generic.base import TemplateView
+from .views import CodebaseViewSet, CodebaseReleaseViewSet
+from rest_framework.routers import SimpleRouter
 
-code_router = RouterWithoutAPIRoot()
-code_router.register(r'code', views.CodeViewSet)
-
-codebase_router = RouterWithoutAPIRoot()
-codebase_router.register(r'codebase', views.CodebaseReleaseViewSet)
+router = SimpleRouter()
+router.register(r'codebase', CodebaseViewSet)
+router.register(r'codebase/<uuid>/release', CodebaseReleaseViewSet)
 
 urlpatterns = [
-    url(r'^(?P<code_uuid>\d+)/', include(codebase_router.urls_without_api_root))
+    url(r'^', include(router.urls)),
+    url(r'^codebase/add', TemplateView.as_view(template_name='library/codebase/add.jinja'), name='codebase-add'),
 ]
-
-urlpatterns += code_router.urls_without_api_root

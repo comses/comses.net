@@ -86,7 +86,7 @@ $fa-font-path: '../node_modules/font-awesome/fonts/';
   h1 {
       font-size: 3.5em;
   }
-  h4 {
+  h2 {
       font-size: 1em;
       text-transform: uppercase;
       padding-bottom: 30px;
@@ -94,6 +94,18 @@ $fa-font-path: '../node_modules/font-awesome/fonts/';
   a {
       padding: 20px;
   }
+}
+
+.callouts {
+    img {
+        display: block;
+        margin: auto;
+    }
+    h3 {
+        text-align: center;
+        padding: 1em;
+        font-size: 1.2em;
+    }
 }
 
 .mission {

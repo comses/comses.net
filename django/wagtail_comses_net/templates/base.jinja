@@ -27,11 +27,12 @@
                             <a class="fa fa-search nav-link" href="#"></a>
                         </li>
                         <li class="nav-item dropdown">
-                            <a class="nav-link dropdown-toggle" data-toggle="dropdown" role="button" href="#"
-                               aria-haspopup="true" aria-expanded="true">
+                            <a class="nav-link dropdown-toggle" id='userDropdownMenuLink' 
+                               data-toggle="dropdown" role="button" href="#"
+                               aria-haspopup="true" aria-expanded="false">
                                 <span class="fa fa-chevron-down"></span>
                             </a>
-                            <div class="dropdown-menu">
+                            <div class="dropdown-menu" aria-labelledby='userDropdownMenuLink'>
                                 <a class="dropdown-item" href="#">Log In</a>
                                 <a class="dropdown-item" href="#">Log Out</a>
                                 <a class="dropdown-item" href="#">Profile</a>
@@ -116,21 +117,20 @@
     <p class="copyright text-center">© 2016 - {{ now('Y') }} CoMSES Net</p>
 </footer>
 {% endmacro %}
-
 <!DOCTYPE html>
 <!--[if lt IE 7]>      <html class="no-js lt-ie9 lt-ie8 lt-ie7"> <![endif]-->
 <!--[if IE 7]>         <html class="no-js lt-ie9 lt-ie8"> <![endif]-->
 <!--[if IE 8]>         <html class="no-js lt-ie9"> <![endif]-->
 <!--[if gt IE 8]><!-->
-<html class="no-js"> <!--<![endif]-->
+<html lang="en" class="no-js"> <!--<![endif]-->
 <head>
     <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no"/>
     <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
     <title>
         {% block title %}CoMSES Net{% endblock %}
         {% block title_suffix %}{% endblock %}</title>
     <meta name="description" content="CoMSES Net is an international research coordination network dedicated to fostering open and reproducible scientific computation through cyberinfrastructure and community development."/>
-    <meta name="viewport" content="width=device-width, initial-scale=1"/>
 
     {# Global stylesheets #}
     {{ render_bundle('manifest') }}
@@ -151,12 +151,14 @@
     </div>
 {% endblock %}
 </section>
+
 {% block page %}
-<section>
+<section class='page'>
     <div class="container">
-        <div class="row">
-            {% block content %}{% endblock content %}
-        </div>
+        {% block content %}
+            <div class="row">
+            </div>
+        {% endblock content %}
     </div>
 </section>
 {% endblock page %}
@@ -165,5 +167,6 @@
 {% block extra_js %}
     {# Override this in templates to add extra javascript #}
 {% endblock %}
+{{ render_bundle('vendor') }}
 </body>
 </html>

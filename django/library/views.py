@@ -7,7 +7,7 @@ from rest_framework.renderers import TemplateHTMLRenderer, JSONRenderer
 from .models import Codebase, CodebaseRelease
 
 
-class CodeViewSet(viewsets.ModelViewSet):
+class CodebaseViewSet(viewsets.ModelViewSet):
     queryset = Codebase.objects.all()
     serializer_class = CodebaseSerializer
     pagination_class = PageNumberPagination

@@ -1,11 +1,11 @@
 from rest_framework import serializers
 
-from .models import Contributor, Codebase, CodebaseRelease
+from .models import CodebaseContributor, Codebase, CodebaseRelease
 
 
-class ContributorSerializer(serializers.ModelSerializer):
+class CodebaseContributorSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Contributor
+        model = CodebaseContributor
         fields = '__all__'
 
 
@@ -16,9 +16,9 @@ class CodebaseReleaseSerializer(serializers.ModelSerializer):
 
 
 class CodebaseSerializer(serializers.ModelSerializer):
-    contributors = ContributorSerializer(many=True, read_only=True)
+    contributors = CodebaseContributorSerializer(many=True, read_only=True)
     releases = CodebaseReleaseSerializer(many=True)
-    keywords = serializers.StringRelatedField(many=True)
+    tags = serializers.StringRelatedField(many=True)
 
     class Meta:
         model = Codebase
