@@ -5,8 +5,8 @@ $rules-color: #ced9ee;
 $link-hover: darken($text-color, 20%);
 $button-hover: darken($button-color, 20%);
 $white: #f0f4fa;
-$body-bg: #f0f4fa;
-$light-blue-gray: #dfeff0;
+$body-bg: $white;
+$light-blue-gray: #c3d9ee;
 $default-padding: 60px;
 
 $brand-primary: $button-color;

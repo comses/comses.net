@@ -20,6 +20,8 @@ PROJECT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # base directory is one level above the project directory
 BASE_DIR = os.path.dirname(PROJECT_DIR)
 
+DEBUG = True
+
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/1.10/howto/deployment/checklist/
 
@@ -103,12 +105,16 @@ TEMPLATES = [
         'BACKEND': 'django_jinja.backend.Jinja2',
         'APP_DIRS': True,
         'OPTIONS': {
-            'match_extension': '.jinja',
-            "app_dirname": "templates",
+            'match_extension': None,
+            'app_dirname': 'templates-jinja2',
+            'newstyle_gettext': True,
             "extensions": DEFAULT_EXTENSIONS + [
                 "django_jinja.builtins.extensions.DjangoExtraFiltersExtension",
                 'wagtail.contrib.settings.jinja2tags.settings',
+                'jinja2.ext.i18n',
             ],
+            'auto_reload': DEBUG,
+            'translation_engine': 'django.utils.translation',
         }
     },
     {
@@ -283,7 +289,16 @@ REST_FRAMEWORK = {
     'PAGE_SIZE': 10
 }
 
-# SSO and social auth configuration
+# SSO, user registration, and social auth configuration
+
+
+# django-registration settings https://django-registration.readthedocs.io/en/2.2/settings.html
+ACCOUNT_ACTIVATION_DAYS = 120  # number of days an account has to activate
+REGISTRATION_OPEN = True
+# apparently does not need to be secret, see
+# https://django-registration.readthedocs.io/en/2.2/hmac.html#security-considerations
+REGISTRATION_SALT = 'rj9_!qbnz#bcm__w-xo8htm+!y2dd8!!g&qgpwd*omfed!lxnw'
+
 
 SOCIAL_AUTH_URL_NAMESPACE = 'socialauth'
 DISCOURSE_BASE_URL = 'https://forum.comses.net'

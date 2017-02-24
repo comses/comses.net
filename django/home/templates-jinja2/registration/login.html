@@ -1,0 +1,45 @@
+{% extends "base.jinja" %}
+{% block title %}CoMSES Net Sign In{% endblock %}
+
+{% block introduction %}
+    <h1>Sign In</h1>
+{% endblock %}
+
+{% block content %}
+<div class='row' style='padding-top: 20px;'>
+    <div class='col'>
+        <div class="alert alert-danger">
+            Forgot your password? <a href="{{ url('auth_password_reset') }}">Request a new password</a> or
+            <a href="{{ url('register') }}">sign up for a CoMSES Net account</a>.
+        </div>
+    </div>
+</div>
+<div class="row">
+    <div class="col">
+        <h3>Welcome back</h3>
+        <p>Sign in with your CoMSES Net Account</p>
+        <form id='signin-form' role="form" class="form-horizontal" method="post">
+            {% csrf_token %}
+            <div id='username' class='form-group'>
+                <input type='email' class='form-control' placeholder='Username or email'>
+                <small class='form-text text-muted'>Enter the username or email address you used to register with this site.</small>
+            </div>
+            <div id='password' class='form-group'>
+                <input type='password' class='form-control' placeholder='Password'>
+            </div>
+            <button type="submit" class="btn btn-primary">
+                <i class='fa fa-sign-in'></i> Sign In
+            </button>
+        </form>
+    </div>
+    <div class='col'>
+        <h3>External Sign In</h3>
+        <p>Or use an existing social account to sign in</p>
+        <div class='social-buttons btn-group-vertical'>
+            <a class='btn btn-lg btn-secondary btn-social btn-github' href="{{ url('socialauth:begin', 'github') }}"><i class='fa fa-github-square'></i> github</a>
+            <a class='btn btn-lg btn-facebook btn-secondary btn-social' href="{{ url('socialauth:begin', 'facebook') }}"><i class='fa fa-facebook'></i> facebook</a>
+            <a class="btn btn-lg btn-google btn-secondary btn-social" href="{{ url('socialauth:begin', 'google-oauth2') }}" data-onsuccess="onSignIn" data-theme="dark"><i class='fa fa-google'></i> google</a>
+        </div>
+    </div>
+</div>
+{% endblock content %}

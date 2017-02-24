@@ -12,7 +12,8 @@ router.register(r'tags', views.TagViewSet)
 urlpatterns = [
     url(r'^$', TemplateView.as_view(template_name='home/index.jinja'), name='index'),
     url(r'^', include(router.urls)),
-    url(r'^resources', TemplateView.as_view(template_name='home/resources.jinja'), name='community'),
+    url(r'^resources', TemplateView.as_view(template_name='home/resources.jinja'),
+        name='resources'),
     url(r'^community', TemplateView.as_view(template_name='home/community.jinja'), name='community'),
     url(r'^api-auth/', include('rest_framework.urls', namespace='rest_framework')),
 ]

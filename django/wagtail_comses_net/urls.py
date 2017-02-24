@@ -7,15 +7,21 @@ from wagtail.wagtailadmin import urls as wagtailadmin_urls
 from wagtail.wagtailcore import urls as wagtail_urls
 
 from home import urls as home_urls
+from home import account_urls
 from library import urls as library_urls
 from search import views as search_views
 
 schema_view = get_swagger_view(title='CoMSES.net API')
 
-urlpatterns = [
-    # url(r'^auth/', include('social_django.urls', namespace='socialauth')),
-    url(r'^wagtail/admin/', include(wagtailadmin_urls)),
 
+"""
+Primary URLConf entry point into the comses.net website
+"""
+
+urlpatterns = [
+    url(r'^auth/', include('social_django.urls', namespace='socialauth')),
+    url(r'^wagtail/admin/', include(wagtailadmin_urls)),
+    url(r'^', include(account_urls)),
     url(r'^', include(home_urls, namespace='home')),
     url(r'^', include(library_urls, namespace='library')),
     url(r'^api/schema/$', schema_view),

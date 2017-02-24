@@ -37,7 +37,7 @@ class SocialMediaSettings(BaseSetting):
 
 class Institution(models.Model):
     name = models.CharField(max_length=200)
-    url = models.URLField(null=True)
+    url = models.URLField(null=True, blank=True)
     acronym = models.CharField(max_length=50)
 
     def __str__(self):
