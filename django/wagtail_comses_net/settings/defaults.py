@@ -115,6 +115,18 @@ TEMPLATES = [
             ],
             'auto_reload': DEBUG,
             'translation_engine': 'django.utils.translation',
+            'context_processors': [
+                'django.template.context_processors.debug',
+                'django.template.context_processors.request',
+                'django.contrib.auth.context_processors.auth',
+                'django.contrib.messages.context_processors.messages',
+
+                'social_django.context_processors.backends',
+                'social_django.context_processors.login_redirect',
+
+                'wagtail.contrib.settings.context_processors.settings',
+                'wagtailmenus.context_processors.wagtailmenus',
+            ],
         }
     },
     {

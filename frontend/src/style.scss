@@ -134,8 +134,6 @@ $fa-font-path: '../node_modules/font-awesome/fonts/';
     padding-top: $default-padding;
     padding-bottom: $default-padding;
 }
-
-/* FIXME: update for the gray Featured Content carousel, http://clients.fervorcreative.com/proofs/asu/comses/r2/#1 */
 .carousel {
   background: url("./assets/images/background-featured-content.png") repeat top center;
   overflow: hidden;
@@ -143,20 +141,10 @@ $fa-font-path: '../node_modules/font-awesome/fonts/';
   padding-bottom: 40px;
   text-align: center;
   vertical-align: middle;
-
-  /*
-   Move carousel down so that it is below header
-   We could polyfill position:sticky for Chrome instead
-    */
   margin-top: 105px;
-}
-
-.carousel h1,
-.carousel h4,
-.carousel p {
-  font-weight: 300;
   font-family: 'Open Sans', sans-serif;
-  color: white;
+  color: $white;
+  font-weight: 300;
 }
 
 header {
@@ -177,5 +165,3 @@ footer {
 .compact {
   padding: 2px 2px;
 }
-
-// Special Cards for carousel, frontpage three across and two across
