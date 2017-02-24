@@ -6,6 +6,8 @@ $link-hover: darken($text-color, 20%);
 $button-hover: darken($button-color, 20%);
 $background-color: #f0f4fa;
 $body-bg: #f0f4fa;
+$grey-bg: #dcdcdc;
+$default-padding: 60px;
 
 $brand-primary: $button-color;
 
@@ -97,6 +99,7 @@ $fa-font-path: '../node_modules/font-awesome/fonts/';
 }
 
 .callouts {
+    padding-top: 50px;
     img {
         display: block;
         margin: auto;
@@ -108,11 +111,25 @@ $fa-font-path: '../node_modules/font-awesome/fonts/';
     }
 }
 
+.featured-content {
+}
+
+.recent-activity {
+    padding-top: $default-padding;
+    padding-bottom: $default-padding;
+}
+.community-highlight {
+    padding-top: $default-padding;
+    padding-bottom: $default-padding;
+    text-align: center;
+    background-color: $grey-bg;
+}
 .mission {
+    background-color: $grey-bg;
     text-align: center;
     vertical-align: middle;
-    padding-top: 40px;
-    padding-bottom: 40px;
+    padding-top: $default-padding;
+    padding-bottom: $default-padding;
 }
 
 /* FIXME: update for the gray Featured Content carousel, http://clients.fervorcreative.com/proofs/asu/comses/r2/#1 */
