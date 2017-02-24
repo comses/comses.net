@@ -33,7 +33,7 @@ class JobSerializer(serializers.ModelSerializer):
     tags = TagSerializer(many=True)
 
     def get_url(self, obj):
-        return reverse_lazy('job-detail', kwargs={'pk': obj.id})
+        return reverse_lazy('home:job-detail', kwargs={'pk': obj.id})
 
     class Meta:
         model = Job
