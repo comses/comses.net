@@ -4,9 +4,9 @@ $button-color: #92c02e;
 $rules-color: #ced9ee;
 $link-hover: darken($text-color, 20%);
 $button-hover: darken($button-color, 20%);
-$background-color: #f0f4fa;
+$white: #f0f4fa;
 $body-bg: #f0f4fa;
-$grey-bg: #dcdcdc;
+$light-blue-gray: #dfeff0;
 $default-padding: 60px;
 
 $brand-primary: $button-color;
@@ -110,8 +110,11 @@ $fa-font-path: '../node_modules/font-awesome/fonts/';
         font-size: 1.2em;
     }
 }
-
 .featured-content {
+    h1 {
+        text-align: center;
+        color: $white;
+    }
 }
 
 .recent-activity {
@@ -122,10 +125,10 @@ $fa-font-path: '../node_modules/font-awesome/fonts/';
     padding-top: $default-padding;
     padding-bottom: $default-padding;
     text-align: center;
-    background-color: $grey-bg;
+    background-color: $light-blue-gray;
 }
 .mission {
-    background-color: $grey-bg;
+    background-color: $light-blue-gray;
     text-align: center;
     vertical-align: middle;
     padding-top: $default-padding;
@@ -134,7 +137,7 @@ $fa-font-path: '../node_modules/font-awesome/fonts/';
 
 /* FIXME: update for the gray Featured Content carousel, http://clients.fervorcreative.com/proofs/asu/comses/r2/#1 */
 .carousel {
-  background: url("./assets/images/background-footer.png") repeat top center;
+  background: url("./assets/images/background-featured-content.png") repeat top center;
   overflow: hidden;
   padding-top: 40px;
   padding-bottom: 40px;
@@ -158,13 +161,13 @@ $fa-font-path: '../node_modules/font-awesome/fonts/';
 
 header {
   padding: 20px 0;
-  background-color: $background-color;
+  background-color: $white;
 }
 
 footer {
   padding: 75px 0;
   background-image: url("./assets/images/background-footer.png");
-  color: $background-color;
+  color: $white;
 }
 
 .content-block {

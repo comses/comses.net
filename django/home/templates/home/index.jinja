@@ -35,14 +35,14 @@
             </div>
             <div class='col'>
                 <img src='{{ static("images/icons/search.png") }}' alt='Professional Opportunities'>
-                <h3>Professional Opportunities</h3>
+                <h3><a href='{{ url("home:job-list") }}'>Professional Opportunities</a></h3>
                 <div class='caption'>
                     Available jobs and appointments submitted by the CoMSES Net Community.
                 </div>
             </div>
             <div class='col'>
                 <img src='{{ static("images/icons/groups.png") }}' alt='Upcoming Events'>
-                <h3>Upcoming Events</h3>
+                <h3><a href='{{ url("home:event-list") }}'>Upcoming Events</a></h3>
                 <div class='caption'>
                     Upcoming conferences, workshops, and other events curated by the CoMSES Net Community
                 </div>
@@ -51,6 +51,7 @@
     </section>
 </div>
 <section class='featured-content carousel'>
+    <h1>Featured Content</h1>
     <div id='featured-content-carousel' class='carousel slide' data-ride='carousel'>
         <ol class="carousel-indicators">
             <li data-target="#featured-content-carousel" data-slide-to="0" class="active"></li>
