@@ -5,12 +5,11 @@
 </template>
 
 <script lang="ts">
-
     import * as Vue from 'vue'
     import Component from 'vue-class-component'
+    import Carousel from 'components/carousel'
 
     @Component({
-        template: ``
     })
     class Home extends Vue {
 

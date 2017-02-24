@@ -13,7 +13,7 @@ var useCssSourceMap = cssSourceMapDev || cssSourceMapProd
 
 module.exports = {
     entry: {
-        app: './src/main.ts',
+        home: './src/pages/home/home.ts',
         vendors: './src/vendors.js',
         styles: './src/style.scss'
     },
@@ -45,9 +45,10 @@ module.exports = {
         rules: [
             {
                 test: /\.vue$/,
-                loader: 'vue-loader',
+                loaders: 'vue-loader',
                 options: {
                     loaders: {
+                        ts: 'ts-loader',
                         scss: utils.extractSCSS.extract({
                             // fallback: 'vue-style-loader',
                             use: ['css-loader', 'sass-loader']

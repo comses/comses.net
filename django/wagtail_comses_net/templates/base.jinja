@@ -133,7 +133,6 @@
     <meta name="description" content="CoMSES Net is an international research coordination network dedicated to fostering open and reproducible scientific computation through cyberinfrastructure and community development."/>
 
     {# Global stylesheets #}
-    {{ render_bundle('manifest') }}
     {{ render_bundle('styles') }}
 
     {% block extra_css %}
@@ -164,9 +163,10 @@
 {% endblock page %}
 {{ footer() }}
 
-{% block extra_js %}
+{% block js %}
     {# Override this in templates to add extra javascript #}
 {% endblock %}
+{{ render_bundle('manifest') }}
 {{ render_bundle('vendors') }}
 </body>
 </html>
