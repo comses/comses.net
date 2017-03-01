@@ -29,8 +29,11 @@ class ComsesObjectPermissionBackend(object):
             return False
 
     def has_perm(self, user_obj, perm, obj=None):
-        if isinstance(user_obj, AnonymousUser) and self.get_action(perm) == 'view':
-            return True
+        if user_obj.is_anonymous() and self.get_action(perm) == 'view':
+            if obj:
+                return obj.live
+            else:
+                return True
         if not user_obj.is_active:
             return False
         if not obj:

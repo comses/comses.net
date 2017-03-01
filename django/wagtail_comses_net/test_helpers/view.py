@@ -5,7 +5,9 @@ from django.urls import reverse
 from django.shortcuts import get_object_or_404
 from hypothesis.extra import django as hypothesis_django
 from hypothesis import strategies as st
-from django.contrib.auth.models import Group, User, Permission
+from django.contrib.auth.models import Group, User, Permission, AnonymousUser
+
+MAX_EXAMPLES = 15
 
 
 def letters(min_size=1, max_size=20):
@@ -34,11 +36,12 @@ class ViewSetTestCase(hypothesis_django.TestCase):
     def is_db_action_permitted(self, user: User, action: str, obj):
         perm = self.make_perm(action)
         return user.has_perm(perm) and user.has_perm(perm, obj)
+            # (user.is_anonymous and action == 'view') or (user.has_perm(perm) and user.has_perm(perm, obj))
 
     def get_serialized_data(self, obj):
         return self.serializer_cls(obj).data
 
-    def check_response_status_code(self, action, response, permitted):
+    def _check_response_status_code(self, action, response, permitted):
         if permitted:
             status_code = self.action_success_map[action]
             self.assertEqual(response.status_code, status_code)
@@ -55,8 +58,7 @@ class ViewSetTestCase(hypothesis_django.TestCase):
             {'put': 'update', 'get': 'retrieve', 'post': 'create', 'delete': 'destroy'})(request, pk=data['id'])
         return response
 
-    def create_add_response(self, user: User, obj):
-        data = self.get_serialized_data(obj)
+    def create_add_response(self, user, data):
         data.pop('id')
 
         http_method = self.action_http_map['add']
@@ -67,24 +69,31 @@ class ViewSetTestCase(hypothesis_django.TestCase):
             {'put': 'update', 'get': 'retrieve', 'post': 'create', 'delete': 'destroy'})(request)
         return response
 
-    def create_change_response(self, user: User, obj):
-        data = self.get_serialized_data(obj)
+    def create_change_response(self, user: User, data):
         return self._create_response('change', data, user)
 
-    def create_delete_response(self, user: User, obj):
-        data = self.get_serialized_data(obj)
+    def create_delete_response(self, user: User, data):
         return self._create_response('delete', data, user)
 
-    def create_view_response(self, user: User, obj):
-        data = self.get_serialized_data(obj)
+    def create_view_response(self, user: User, data):
         return self._create_response('view', data, user)
 
-    def create_response(self, action: str, user: User, obj):
-        return getattr(self, 'create_' + action + '_response')(user, obj)
+    def create_response(self, action: str, user: User, data):
+        return getattr(self, 'create_' + action + '_response')(user, data)
 
-    def _check_authorization(self, user: User, obj, action: str, permitted: bool):
+    def _check_serialization_round_trip(self, obj):
+        """This provides a more helpful error message when
+        `save(deserialize(serialize(obj))) raises an error`"""
+        data = self.get_serialized_data(obj)
+        serializer = self.serializer_cls(obj, data=data)
+        if serializer.is_valid(raise_exception=True):
+            serializer.save()
+        return data
+
+    def _check_authorization(self, user, obj, action: str, permitted: bool):
         self.assertEqual(self.is_db_action_permitted(user, action, obj), permitted)
-        self.check_response_status_code(action, self.create_response(action, user, obj), permitted)
+        data = self._check_serialization_round_trip(obj)
+        self._check_response_status_code(action, self.create_response(action, user, data), permitted)
 
     def make_perm(self, action):
         return "{}.{}_{}".format(self.model_cls._meta.app_label, action, self.model_cls._meta.model_name)
@@ -97,6 +106,14 @@ class ViewSetTestCase(hypothesis_django.TestCase):
         # Bust the cache and recheck authorizations
         user = get_object_or_404(user._meta.model, pk=user.id)
         return user
+
+    def check_anonymous_authorization(self, obj):
+        anonymous = AnonymousUser()
+        live = obj.live
+        self._check_authorization(anonymous, obj, 'view', live)
+        self._check_authorization(anonymous, obj, 'add', False)
+        self._check_authorization(anonymous, obj, 'change', False)
+        self._check_authorization(anonymous, obj, 'delete', False)
 
     def check_authorization(self, action, profile, obj):
         user = profile.user

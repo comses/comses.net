@@ -1,12 +1,12 @@
 from django.contrib.auth.models import Group, User, Permission
 from hypothesis.extra.django.models import models
-from hypothesis import strategies as st, Verbosity
+from hypothesis import strategies as st
 from hypothesis.extra.datetime import datetimes
 from hypothesis import given, settings
 from ..models import Job, Event, MemberProfile
 from ..serializers import JobSerializer, EventSerializer
 from ..views import JobViewSet, EventViewSet
-from wagtail_comses_net.test_helpers.view import ViewSetTestCase, letters
+from wagtail_comses_net.test_helpers.view import ViewSetTestCase, letters, MAX_EXAMPLES
 
 import logging
 
@@ -72,42 +72,31 @@ class JobViewsetTestCase(ViewSetTestCase):
     detail_url_name = 'home:job-detail'
     list_url_name = 'home:job-list'
 
-    @settings(max_examples=5)
-    @given(generate_job_data())
-    def test_add(self, data):
-        profiles, obj = data
+    @settings(max_examples=MAX_EXAMPLES)
+    @given(generate_job_data(), st.sampled_from(('change', 'add', 'view')))
+    def test_add_change_view(self, data, action):
+        profiles, job = data
         owner, user = profiles
 
-        self.check_authorization('add', owner, obj)
-        self.check_authorization('add', user, obj)
+        self.check_authorization(action, owner, job)
+        self.check_authorization(action, user, job)
 
-    @settings(max_examples=5)
-    @given(generate_job_data())
-    def test_change(self, data):
-        profiles, obj = data
-        owner, user = profiles
-
-        self.check_authorization('change', owner, obj)
-        self.check_authorization('change', user, obj)
-
-    @settings(max_examples=5)
+    @settings(max_examples=MAX_EXAMPLES)
     @given(generate_job_data())
     def test_delete(self, data):
-        profiles, obj = data
+        profiles, job = data
         owner, user = profiles
 
-        self.check_authorization('delete', owner, obj)
-        obj.save()
-        self.check_authorization('delete', user, obj)
+        self.check_authorization('delete', owner, job)
+        job.save()
+        self.check_authorization('delete', user, job)
 
-    @settings(max_examples=5)
+    @settings(max_examples=MAX_EXAMPLES, perform_health_check=False)
     @given(generate_job_data())
-    def test_view(self, data):
-        profiles, obj = data
-        owner, user = profiles
+    def test_anonymous(self, data):
+        profiles, job = data
 
-        self.check_authorization('view', owner, obj)
-        self.check_authorization('view', user, obj)
+        self.check_anonymous_authorization(job)
 
 
 class EventViewSetTestCase(ViewSetTestCase):
@@ -117,21 +106,28 @@ class EventViewSetTestCase(ViewSetTestCase):
     detail_url_name = 'home:event-detail'
     list_url_name = 'home:event-list'
 
-    @settings(max_examples=10)
+    @settings(max_examples=MAX_EXAMPLES)
     @given(generate_event_data(), st.sampled_from(('change', 'add', 'view')))
     def test_add_change_view(self, data, action):
-        profiles, obj = data
+        profiles, event = data
         owner, user = profiles
 
-        self.check_authorization(action, owner, obj)
-        self.check_authorization(action, user, obj)
+        self.check_authorization(action, owner, event)
+        self.check_authorization(action, user, event)
 
-    @settings(max_examples=5)
+    @settings(max_examples=MAX_EXAMPLES)
     @given(generate_event_data())
     def test_delete(self, data):
-        profiles, obj = data
+        profiles, event = data
         owner, user = profiles
 
-        self.check_authorization('delete', owner, obj)
-        obj.save()
-        self.check_authorization('delete', user, obj)
+        self.check_authorization('delete', owner, event)
+        event.save()
+        self.check_authorization('delete', user, event)
+
+    @settings(max_examples=MAX_EXAMPLES)
+    @given(generate_event_data())
+    def test_anonymous(self, data):
+        profiles, event = data
+
+        self.check_anonymous_authorization(event)

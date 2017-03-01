@@ -1,4 +1,4 @@
-from wagtail_comses_net.test_helpers.view import ViewSetTestCase, letters
+from wagtail_comses_net.test_helpers.view import ViewSetTestCase, letters, MAX_EXAMPLES
 from hypothesis import strategies as st
 from hypothesis.extra.django.models import models
 from hypothesis import given, settings
@@ -44,8 +44,7 @@ class CodebaseViewSetTestCase(ViewSetTestCase):
     detail_url_name = 'library:codebase-detail'
     list_url_name = 'library:codebase-list'
 
-    def create_add_response(self, user: User, obj):
-        data = self.get_serialized_data(obj)
+    def create_add_response(self, user: User, data):
         data.pop('id')
         data['identifier'] = str(st.uuids().example())
 
@@ -57,7 +56,7 @@ class CodebaseViewSetTestCase(ViewSetTestCase):
             {'put': 'update', 'get': 'retrieve', 'post': 'create', 'delete': 'destroy'})(request)
         return response
 
-    @settings(max_examples=10, perform_health_check=False)
+    @settings(max_examples=MAX_EXAMPLES)
     @given(generate_codebases(), st.sampled_from(('change', 'add', 'view')))
     def test_add_change_view(self, data, action):
         profiles, codebases = data
@@ -66,7 +65,7 @@ class CodebaseViewSetTestCase(ViewSetTestCase):
         self.check_authorization(action, owner, codebases[0])
         self.check_authorization(action, user, codebases[1])
 
-    @settings(max_examples=5)
+    @settings(max_examples=MAX_EXAMPLES)
     @given(generate_codebases())
     def test_delete(self, data):
         profiles, codebases = data
@@ -74,3 +73,10 @@ class CodebaseViewSetTestCase(ViewSetTestCase):
 
         self.check_authorization('delete', owner, codebases[0])
         self.check_authorization('delete', user, codebases[1])
+
+    @settings(max_examples=MAX_EXAMPLES)
+    @given(generate_codebases())
+    def test_anonymous(self, data):
+        profiles, codebases = data
+
+        self.check_anonymous_authorization(codebases[0])
