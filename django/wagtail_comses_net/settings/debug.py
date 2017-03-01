@@ -164,7 +164,7 @@ config = configparser.ConfigParser()
 if os.getcwd() == '/code':
     config.read('/secrets/config.ini')
 else:
-    config.read('../deploy/conf/config.ini')
+    config.read('../deploy/conf/config.ini.debug')
 
 SECRET_KEY = config.get('secrets', 'SECRET_KEY')
 

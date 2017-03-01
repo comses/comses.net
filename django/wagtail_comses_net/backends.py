@@ -1,11 +1,15 @@
-from django.core.exceptions import PermissionDenied
 from django.db import models
-from guardian.shortcuts import get_perms
-
+from django.contrib.auth.models import AnonymousUser
 
 class ComsesObjectPermissionBackend(object):
     def authenticate(self, username, password):
         return None
+
+    @staticmethod
+    def get_action(perm):
+        unnamespaced_perm = perm.rsplit('.', 1)[1]
+        action = unnamespaced_perm.split('_', 1)[0]
+        return action
 
     @staticmethod
     def get_view_perm(obj: models.Model):
@@ -25,9 +29,11 @@ class ComsesObjectPermissionBackend(object):
             return False
 
     def has_perm(self, user_obj, perm, obj=None):
+        if isinstance(user_obj, AnonymousUser) and self.get_action(perm) == 'view':
+            return True
+        if not user_obj.is_active:
+            return False
         if not obj:
             return False
-        if not user_obj.is_active:
-            raise PermissionDenied
         return user_obj == obj.submitter or \
                self.has_view_perm(user_obj, perm, obj)
