@@ -21,14 +21,14 @@ services:
       POSTGRES_DB: "${DB_NAME}"
   js:
     build: frontend
-    image: comses/wagtailjs
+    image: comses/wagtailjs:latest
     volumes:
       - ./frontend:/code
       - webpack:/webpack
       - /code/node_modules
   cms:
     build: django
-    image: comses/wagtailcms_dev
+    image: comses/wagtailcms_dev:latest
     volumes:
       - ./django:/code
       - ./deploy/app:/code/deploy/app

@@ -22,8 +22,8 @@ services:
       POSTGRES_DB: "${DB_NAME}"
   js:
     # TODO: build assets into /static directly and terminate
-    build: frontend
-    image: comses/wagtailjs
+    build: ./frontend
+    image: comses/wagtailjs:latest
     volumes:
       - ./frontend:/code
       - webpack:/webpack
@@ -46,7 +46,7 @@ services:
       context: ./django
       args:
         REQUIREMENTS_FILE: requirements-prod.txt
-    image: comses/wagtailcms
+    image: comses/wagtailcms:latest
     volumes:
       - ./deploy/app:/code/deploy/app
       - ./deploy/conf/config.ini:/secrets/config.ini
