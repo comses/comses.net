@@ -6,7 +6,7 @@ from hypothesis import given, settings
 from ..models import Job, Event, MemberProfile
 from ..serializers import JobSerializer, EventSerializer
 from ..views import JobViewSet, EventViewSet
-from wagtail_comses_net.test_helpers.view import ViewSetTestCase, letters, MAX_EXAMPLES
+from core.test_helpers.view import ViewSetTestCase, letters, MAX_EXAMPLES
 
 import logging
 

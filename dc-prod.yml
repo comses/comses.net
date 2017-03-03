@@ -59,7 +59,7 @@ services:
       - sockets:/sockets
     command: /code/deploy/app/prod.sh
     environment:
-      DJANGO_SETTINGS_MODULE: "wagtail_comses_net.settings.production"
+      DJANGO_SETTINGS_MODULE: "core.settings.production"
       DB_USER: ${DB_USER}
       DB_HOST: ${DB_HOST}
       DB_NAME: ${DB_NAME}

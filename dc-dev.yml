@@ -41,7 +41,7 @@ services:
       - static:/static
     command: /code/deploy/app/dev.sh
     environment:
-      DJANGO_SETTINGS_MODULE: "wagtail_comses_net.settings.dev"
+      DJANGO_SETTINGS_MODULE: "core.settings.dev"
       DB_USER: ${DB_USER}
       DB_HOST: ${DB_HOST}
       DB_NAME: ${DB_NAME}

@@ -2,7 +2,7 @@ from django.conf.urls import url, include
 from django.views.generic import TemplateView
 from . import views
 from rest_framework.routers import SimpleRouter
-from wagtail_comses_net.view_helpers import create_edit_routes
+from core.view_helpers import create_edit_routes
 
 router = SimpleRouter()
 router.register(r'events', views.EventViewSet)

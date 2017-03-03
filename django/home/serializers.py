@@ -5,7 +5,7 @@ from django.contrib.auth.models import User
 from django.core.urlresolvers import reverse_lazy
 from django.utils.translation import ugettext_lazy as _
 from taggit.models import Tag
-from wagtail_comses_net.serializer_helpers import EditableSerializerMixin, save_tags
+from core.serializer_helpers import EditableSerializerMixin, save_tags
 
 
 class CreatorSerializer(serializers.ModelSerializer):

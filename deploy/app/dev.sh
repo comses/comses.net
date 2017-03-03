@@ -1,7 +1,7 @@
 #!/bin/sh
 
 CLEAN_DATABASE=${CLEAN_DATABASE:-true}
-DJANGO_SETTINGS_MODULE="wagtail_comses_net.settings.dev"
+DJANGO_SETTINGS_MODULE="core.settings.dev"
 
 /bin/sh /code/deploy/app/common.sh
 #/code/deploy/app/wait-for-it.sh elasticsearch:9200 -- python manage.py rebuild_index --noinput

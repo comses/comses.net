@@ -20,7 +20,7 @@
 import os
 import sys
 sys.path.insert(0, os.path.abspath('..'))
-os.environ['DJANGO_SETTINGS_MODULE'] = 'wagtail_comses_net.settings.dev'
+os.environ['DJANGO_SETTINGS_MODULE'] = 'core.settings.dev'
 import django
 django.setup()
 
