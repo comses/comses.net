@@ -1,6 +1,6 @@
-{% set login_url = url("auth_login") %}
-{% set logout_url = url("auth_logout") %}
-{% set profile_url = url("profile") %}
+{% set login_url = url("account:auth_login") %}
+{% set logout_url = url("account:auth_logout") %}
+{% set profile_url = url("account:profile") %}
 
 {% macro header() %}
     <header class="fixed-top">
@@ -28,15 +28,11 @@
                             <a href="#" class="nav-link">Resources</a>
                         </li>
                         <li class="nav-item">
-                            <a class="fa fa-search nav-link" href="#"></a>
+                            <a class="nav-link" href="/search"><i class='fa fa-search'></i></a>
                         </li>
-                        {% if not request.user.is_authenticated %}
-                            <li class='nav-item'>
-                                <a class="fa fa-sign-in" href="{{ login_url }}">Sign In</a>
-                            </li>
-                        {% else %}
+                        {% if request.user.is_authenticated %}
                             <li class="nav-item dropdown">
-                            <a class="nav-link dropdown-toggle" id='userDropdownMenuLink' 
+                            <a class="nav-link dropdown-toggle" id='userDropdownMenuLink'
                                data-toggle="dropdown" role="button" href="#" aria-haspopup="true" aria-expanded="false">
                                 <span class="fa fa-chevron-down"></span>
                             </a>
@@ -44,6 +40,10 @@
                                 <a class="dropdown-item" href="{{ logout_url }}">Log Out</a>
                                 <a class="dropdown-item" href="{{ profile_url }}">Profile</a>
                             </div>
+                            </li>
+                        {% else %}
+                            <li class='nav-item'>
+                                <a class="nav-link" href="{{ login_url }}"><i class='fa fa-sign-in'></i> Sign In</a>
                             </li>
                         {% endif %}
                     </ul>
@@ -144,8 +144,7 @@
     <meta name="description" content="CoMSES Net is an international research coordination network dedicated to fostering open and reproducible scientific computation through cyberinfrastructure and community development."/>
 
     {# Global stylesheets #}
-    {{ render_bundle('styles') }}
-    {#    {{ render_bundle('app') }}#}
+    {{ render_bundle('styles', 'css') }}
 
     {% block extra_css %}
         {# Override this in templates to add extra stylesheets #}

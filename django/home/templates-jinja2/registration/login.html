@@ -9,8 +9,8 @@
 <div class='row' style='padding-top: 20px;'>
     <div class='col'>
         <div class="alert alert-danger">
-            Forgot your password? <a href="{{ url('auth_password_reset') }}">Request a new password</a> or
-            <a href="{{ url('register') }}">sign up for a CoMSES Net account</a>.
+            Forgot your password? <a href="{{ url('account:auth_password_reset') }}">Request a new password</a> or
+            <a href="{{ url('account:membership') }}">sign up for a CoMSES Net account</a>.
         </div>
     </div>
 </div>
@@ -34,11 +34,12 @@
     </div>
     <div class='col'>
         <h3>External Sign In</h3>
-        <p>Or use an existing social account to sign in</p>
-        <div class='social-buttons btn-group-vertical'>
-            <a class='btn btn-lg btn-secondary btn-social btn-github' href="{{ url('socialauth:begin', 'github') }}"><i class='fa fa-github-square'></i> github</a>
-            <a class='btn btn-lg btn-facebook btn-secondary btn-social' href="{{ url('socialauth:begin', 'facebook') }}"><i class='fa fa-facebook'></i> facebook</a>
-            <a class="btn btn-lg btn-google btn-secondary btn-social" href="{{ url('socialauth:begin', 'google-oauth2') }}" data-onsuccess="onSignIn" data-theme="dark"><i class='fa fa-google'></i> google</a>
+        <p>Sign-in using your ORCID or GitHub accounts</p>
+        <div class='btn-group-vertical'>
+            <a class='btn btn-lg btn-secondary btn-social btn-github' href="{{ url('socialauth:begin', 'github') }}"><i class='fa fa-github-square'></i> GitHub Sign In</a>
+            <a class='btn btn-lg btn-secondary btn-social' href="{{ url('socialauth:begin', 'orcid') }}">
+                <img src='//orcid.org/sites/default/files/images/orcid_24x24.png'> ORCID Sign In
+            </a>
         </div>
     </div>
 </div>

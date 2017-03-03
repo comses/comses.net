@@ -110,14 +110,15 @@ TEMPLATES = [
             'match_extension': None,
             'app_dirname': 'templates-jinja2',
             'newstyle_gettext': True,
+            # DEFAULT_EXTENSIONS at https://github.com/niwinz/django-jinja/blob/master/django_jinja/builtins/__init__.py
             "extensions": DEFAULT_EXTENSIONS + [
                 "django_jinja.builtins.extensions.DjangoExtraFiltersExtension",
                 'wagtail.contrib.settings.jinja2tags.settings',
-                'jinja2.ext.i18n',
             ],
             'auto_reload': DEBUG,
             'translation_engine': 'django.utils.translation',
             'context_processors': [
+# FIXME: remove debug context processor in prod
                 'django.template.context_processors.debug',
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
@@ -129,6 +130,8 @@ TEMPLATES = [
                 'wagtail.contrib.settings.context_processors.settings',
                 'wagtailmenus.context_processors.wagtailmenus',
             ],
+            'autoescape': True,
+            'auto_reload': DEBUG,
         }
     },
     {

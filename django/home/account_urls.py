@@ -8,6 +8,7 @@ urlpatterns = [
     # also pulls in urls from
     # https://github.com/ubernostrum/django-registration/blob/master/registration/auth_urls.py
     url(r'^accounts/', include('registration.backends.hmac.urls')),
+    url(r'^accounts/membership/', TemplateView.as_view(template_name='registration/membership.html'), name='membership'),
     url(r'^accounts/register/', RegistrationView.as_view(form_class=RegistrationForm),
         name='register'),
     url(r'^accounts/profile/', TemplateView.as_view(template_name='accounts/profile.jinja'), 
