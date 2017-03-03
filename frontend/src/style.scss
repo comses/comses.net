@@ -36,27 +36,27 @@ $fa-font-path: '../node_modules/font-awesome/fonts/';
   width: 283px !important;
 }
 
+.page {
+    padding-top: $default-padding;
+    padding-bottom: $default-padding;
+}
+
 .social-media {
   list-style: none;
   padding-left: 0;
   text-align: center;
-}
-
-.social-media li {
-  display: inline-block;
-  text-align: center;
-}
-
-.social-media a {
-  font-size: 32px;
-}
-
-.social-media a .fa-stack {
-  color: #6f717a;
-}
-
-.social-media a .fa-stack:hover {
-  color: #7b7d87;
+  li {
+      display: inline-block;
+  }
+  a {
+      font-size: 32px;
+  }
+  a .fa-stack {
+      color: #6f717a;
+  }
+  a .fa-stack:hover {
+      color: #7b7d87;
+  }
 }
 
 .organizations li {
