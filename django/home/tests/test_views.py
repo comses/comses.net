@@ -46,6 +46,7 @@ def generate_with_event(submitter):
     return models(Event,
                   title=letters(),
                   description=letters(),
+                  location=letters(),
                   date_created=datetimes(min_year=2000, max_year=2017),
                   early_registration_deadline=datetimes(min_year=2000, max_year=2017),
                   submission_deadline=datetimes(min_year=2000, max_year=2017),
