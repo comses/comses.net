@@ -1,6 +1,7 @@
 from django.conf import settings
 from django.conf.urls import include, url
 from django.contrib import admin
+from django.contrib.auth import views as auth_views
 from rest_framework_jwt.views import obtain_jwt_token
 from rest_framework_swagger.views import get_swagger_view
 
@@ -22,16 +23,19 @@ Primary URLConf entry point into the comses.net website
 """
 
 urlpatterns = [
-    url(r'^auth/', include('social_django.urls', namespace='socialauth')),
-    url(r'^wagtail/admin/', include(wagtailadmin_urls)),
-    url(r'^django/admin/', include(admin.site.urls)),
     url(r'^', include(account_urls, namespace='account')),
+    # FIXME: have to hardcode this one because it gets reversed in
+    # https://github.com/django/django/blob/master/django/contrib/auth/views.py#L223
+    url(r'^password/reset/done/$', auth_views.password_reset_done, name='auth_password_reset_done'),
     url(r'^', include(home_urls, namespace='home')),
     url(r'^', include(library_urls, namespace='library')),
+    url(r'^auth/', include('social_django.urls', namespace='socialauth')),
+    url(r'^wagtail/admin/', include(wagtailadmin_urls)),
+    url(r'^', include(wagtail_urls)),
+    url(r'^django/admin/', include(admin.site.urls)),
     url(r'^api/schema/$', schema_view),
     url(r'^api/token/', obtain_jwt_token),
     url(r'^api/search/$', search_views.search, name='search'),
-    url(r'^', include(wagtail_urls)),
     url(r'^api-auth/', include('rest_framework.urls')),
 ]
 

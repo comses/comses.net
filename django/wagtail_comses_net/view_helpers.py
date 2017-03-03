@@ -1,10 +1,5 @@
 from django.views.generic import TemplateView
 from django.conf.urls import url
-from rest_framework.routers import DefaultRouter
-from rest_framework.response import Response
-from rest_framework.mixins import UpdateModelMixin, DestroyModelMixin, CreateModelMixin
-from rest_framework import status
-from rest_framework.viewsets import ModelViewSet
 import os
 
 import logging
@@ -24,9 +19,3 @@ def create_edit_routes(url_prefix: str, lookup_field: str, lookup_regex: str, ap
         url(create_form_url, TemplateView.as_view(template_name=template_name),
             name='{url_prefix}-create'.format(url_prefix=url_prefix))
     ]
-
-
-class RouterWithoutAPIRoot(DefaultRouter):
-    @property
-    def urls_without_api_root(self):
-        return [url for url in self.get_urls() if url.name != 'api-root']

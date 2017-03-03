@@ -26,23 +26,29 @@
     <section class='callouts'>
         <div class='row'>
             <div class='col'>
-                <img src='{{ static("images/icons/submit.png") }}' alt='Submit a Model'>
-                <h3><a href='{{ url("library:codebase-add") }}'>Submit a Model</a></h3>
+                <a href='{{ url("library:codebase-add") }}'>
+                    <img src='{{ static("images/icons/submit.png") }}' alt='Submit a Model'>
+                    <h3>Submit a Model</h3>
+                </a>
                 <div class='caption'>
                     Archive the software you used to derive a publishable finding. Other researchers will be able to
                     discover, cite, and run your software in a reproducible containerized environment.
                 </div>
             </div>
             <div class='col'>
-                <img src='{{ static("images/icons/search.png") }}' alt='Professional Opportunities'>
-                <h3><a href='{{ url("home:job-list") }}'>Professional Opportunities</a></h3>
+                <a href='{{ url("home:job-list") }}'>
+                    <img src='{{ static("images/icons/search.png") }}' alt='Professional Opportunities'>
+                    <h3>Professional Opportunities</h3>
+                </a>
                 <div class='caption'>
                     Available jobs and appointments submitted by the CoMSES Net Community.
                 </div>
             </div>
             <div class='col'>
-                <img src='{{ static("images/icons/groups.png") }}' alt='Upcoming Events'>
-                <h3><a href='{{ url("home:event-list") }}'>Upcoming Events</a></h3>
+                <a href='{{ url("home:event-list") }}'>
+                    <img src='{{ static("images/icons/groups.png") }}' alt='Upcoming Events'>
+                    <h3>Upcoming Events</h3>
+                </a>
                 <div class='caption'>
                     Upcoming conferences, workshops, and other events curated by the CoMSES Net Community
                 </div>
