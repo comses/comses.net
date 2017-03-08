@@ -88,9 +88,9 @@ class TagViewSet(viewsets.ModelViewSet):
     def get_list_queryset(self):
         search_query = self.request.query_params.get('query')
         if search_query:
-            queryset = Tag.objects.filter(name__icontains=search_query).order_by('name')
+            queryset = Tag.objects.filter(name__icontains=search_query).order_by('-date_created', 'name')
         else:
-            queryset = Tag.objects.order_by('name')
+            queryset = Tag.objects.order_by('-date_created', 'name')
         return queryset
 
     def list(self, request, *args, **kwargs):
