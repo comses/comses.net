@@ -13,13 +13,7 @@ RUN apt-get update && apt-get install -q -y \
         python3-dev \
         python3-pip \
         unrar-free \
-        && update-alternatives --install /usr/bin/python python /usr/bin/python3 1000 \
-        && locale-gen en_US.UTF-8
-
-ENV PYTHONUNBUFFERED=1 \
-    LANG=en_US.UTF-8 \
-    LANGUAGE=en_US:en \
-    LC_ALL=en_US.UTF-8
+        && update-alternatives --install /usr/bin/python python /usr/bin/python3 1000
 
 ARG REQUIREMENTS_FILE=requirements-dev.txt
 
