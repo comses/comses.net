@@ -43,7 +43,7 @@
 
         fetchMatchingTags(query) {
             this.isLoading = true;
-            axios.get('/api/wagtail/tags/?' + queryString.stringify({query, page: 1}))
+            axios.get('/tags/?' + queryString.stringify({query, page: 1}))
                     .then(response => {
                         this.matchingTags = response.data.results;
                         this.isLoading = false;

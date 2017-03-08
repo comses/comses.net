@@ -294,6 +294,7 @@ REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': ('core.permissions.ComsesPermissions',),
     'DEFAULT_RENDERER_CLASSES': (
         'rest_framework.renderers.JSONRenderer',
+        'core.renderers.ComsesHTMLRenderer',
     ),
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework.authentication.SessionAuthentication',

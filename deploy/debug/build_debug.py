@@ -33,7 +33,7 @@ def generate_environment(build_type):
         DB_NAME=db_name,
         DB_HOST='db' if build_type == 'global' else 'localhost',
         DB_PASSWORD=db_password,
-        DB_PORT='5432' if build_type == 'global' else '5433',
+        DB_PORT='5432' if build_type == 'global' else '5434',
         DB_USER=db_user,
         DISCOURSE_SSO_SECRET=discourse_sso_secret,
         DJANGO_SECRET_KEY=django_secret_key,

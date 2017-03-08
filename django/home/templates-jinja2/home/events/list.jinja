@@ -8,7 +8,7 @@
         </div>
         <div class="col-sm-3">
             <button class="btn btn-primary">Search</button>
-            <a href="{{ url('home:job-create') }}"
+            <a href="{{ url('home:event-create') }}"
                          class="btn btn-primary btn float-md-right mt-xs-1">
                 <span class="fa fa-plus"></span>
             </a>
@@ -19,9 +19,9 @@
 {% macro item_component(item) %}
     <div class="list-group-item list-group-item-action">
         <div class="col-xs-12 col-sm-6 col-md-2">
-            <a href="{{ url('home:job-detail', pk=item.id) }}" class="p-2 fa fa-edit">
+            <a href="{{ url('home:event-detail', pk=item.id) }}" class="p-2 fa fa-edit">
             </a>
-            <a href="{{ url('home:job-update', pk=item.id) }}" class="p-2 fa fa-eye">
+            <a href="{{ url('home:event-update', pk=item.id) }}" class="p-2 fa fa-eye">
             </a>
         </div>
         <div class="col-xs-12 col-md-8 flex-sm-last flex-md-unordered">
@@ -33,12 +33,12 @@
 
 {% block title %}Job Search{% endblock %}
 
-{% block introduction %}<h1 id="query">Job Search</h1>{% endblock %}
+{% block introduction %}<h1 id="query">Event Search</h1>{% endblock %}
 
-{% block subheader %}<h1>Jobs</h1>{% endblock %}
+{% block subheader %}<h1>Events</h1>{% endblock %}
 
 {% block content %}
     {{ list_page(__all__, search_component, item_component) }}
     <br>
-    {{ paginator('home:job-list', __all__) }}
+    {{ paginator('home:event-list', __all__) }}
 {% endblock %}

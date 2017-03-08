@@ -174,10 +174,12 @@
 {% endblock page %}
 {{ footer() }}
 
+{{ render_bundle('manifest') }}
+{{ render_bundle('vendors') }}
+
+
 {% block js %}
     {# Override this in templates to add extra javascript #}
 {% endblock %}
-{{ render_bundle('manifest') }}
-{{ render_bundle('vendors') }}
 </body>
 </html>

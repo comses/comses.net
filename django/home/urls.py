@@ -5,9 +5,9 @@ from rest_framework.routers import SimpleRouter
 from core.view_helpers import create_edit_routes
 
 router = SimpleRouter()
-router.register(r'events', views.EventViewSet)
-router.register(r'jobs', views.JobViewSet)
-router.register(r'tags', views.TagViewSet)
+router.register(r'events', views.EventViewSet, base_name='event')
+router.register(r'jobs', views.JobViewSet, base_name='job')
+router.register(r'tags', views.TagViewSet, base_name='tag')
 
 urlpatterns = [
     url(r'^$', TemplateView.as_view(template_name='home/index.jinja'), name='index'),
@@ -20,5 +20,5 @@ urlpatterns = [
 urlpatterns += router.urls
 
 edit_route_form_data = {'lookup_field': 'pk', 'lookup_regex': r'\d+', 'app_name': 'home'}
-for url_prefix in ['jobs', 'events']:
-    urlpatterns += create_edit_routes(url_prefix=url_prefix, **edit_route_form_data)
+for base_name in ['job', 'event']:
+    urlpatterns += create_edit_routes(base_name=base_name, prefix=base_name + 's', **edit_route_form_data)

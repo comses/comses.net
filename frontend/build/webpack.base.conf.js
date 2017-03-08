@@ -14,6 +14,8 @@ var useCssSourceMap = cssSourceMapDev || cssSourceMapProd
 module.exports = {
     entry: {
         home: './src/pages/home/home.ts',
+        jobs: './src/pages/job/job.ts',
+        events: './src/pages/event/event.ts',
         vendors: './src/vendors.js',
         styles: './src/style.scss'
     },
@@ -50,8 +52,12 @@ module.exports = {
                     loaders: {
                         ts: 'ts-loader',
                         scss: utils.extractSCSS.extract({
-                            // fallback: 'vue-style-loader',
+                            fallback: 'vue-style-loader',
                             use: ['css-loader', 'sass-loader']
+                        }),
+                        css: utils.extractSCSS.extract({
+                            fallback: 'vue-style-loader',
+                            use: ['css-loader']
                         })
                     },
                     esModule: true,

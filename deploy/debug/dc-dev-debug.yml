@@ -15,7 +15,7 @@ services:
     volumes:
       - data:/var/lib/postgresql/data
     ports:
-      - "127.0.0.1:5433:5432"
+      - "127.0.0.1:5434:5432"
     environment:
       # FIXME: replace with init sql script, see https://github.com/docker/docker/issues/13490
       POSTGRES_USER: {DB_USER}
@@ -43,7 +43,7 @@ services:
       - {HOST_STATIC_ROOT}:{DOCKER_STATIC_ROOT}
     command: /code/deploy/app/dev.sh
     ports:
-      - "127.0.0.1:8000:8000"
+      - "127.0.0.1:8004:8000"
     links:
       - db
       - elasticsearch

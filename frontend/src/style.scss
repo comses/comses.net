@@ -20,6 +20,9 @@ $font-family-base: 'Open Sans', Roboto, 'Helvetica Neue', sans-serif;
 
 $fa-font-path: '../node_modules/font-awesome/fonts/';
 @import '../node_modules/font-awesome/scss/font-awesome';
+// Need to fix webpack build so css in vue files is included. This is a temporary workaround
+@import '../node_modules/vue-multiselect/dist/vue-multiselect.min.css';
+
 
 .logo {
   font: 0/0 a;

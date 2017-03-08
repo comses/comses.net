@@ -61,11 +61,11 @@ def update(serializer_update, instance, validated_data):
 
 class EventSerializer(serializers.ModelSerializer, EditableSerializerMixin):
     submitter = CreatorSerializer(read_only=True, help_text=_('User that created the event'))
-    url = serializers.SerializerMethodField(help_text=_('URL to the detail page of the job'))
+    location = serializers.SerializerMethodField(help_text=_('URL to the detail page of the job'))
     date_created = serializers.DateTimeField(format='%Y-%m-%d', read_only=True)
     tags = TagSerializer(many=True)
 
-    def get_url(self, obj):
+    def get_location(self, obj):
         return reverse_lazy('home:event-detail', kwargs={'pk': obj.id})
 
     def create(self, validated_data):
@@ -82,11 +82,11 @@ class EventSerializer(serializers.ModelSerializer, EditableSerializerMixin):
 class JobSerializer(serializers.ModelSerializer, EditableSerializerMixin):
     # need nested serializer for submitter
     submitter = CreatorSerializer(read_only=True, help_text=_('User that created the job description'))
-    url = serializers.SerializerMethodField(help_text=_('URL to the detail page of the job'))
+    location = serializers.SerializerMethodField(help_text=_('URL to the detail page of the job'))
     date_created = serializers.DateTimeField(format='%Y-%m-%d', read_only=True)
     tags = TagSerializer(many=True)
 
-    def get_url(self, obj):
+    def get_location(self, obj):
         return reverse_lazy('home:job-detail', kwargs={'pk': obj.id})
 
     def create(self, validated_data):
@@ -97,4 +97,4 @@ class JobSerializer(serializers.ModelSerializer, EditableSerializerMixin):
 
     class Meta:
         model = Job
-        fields = ('id', 'title', 'submitter', 'date_created', 'description', 'url', 'tags', 'editable')
+        fields = ('id', 'title', 'submitter', 'date_created', 'description', 'location', 'tags', 'editable')

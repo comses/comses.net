@@ -12,22 +12,6 @@
             </div>
             <c-tagger v-model="data.tags" v-on:errors="setTagErrors">
             </c-tagger>
-            <!--<multiselect-->
-                    <!--v-model="data.tags"-->
-                    <!--label="name"-->
-                    <!--track-by="name"-->
-                    <!--placeholder="Type to find keywords"-->
-                    <!--:options="matchingTags"-->
-                    <!--:multiple="true"-->
-                    <!--:loading="isLoading"-->
-                    <!--:searchable="true"-->
-                    <!--:internal-search="false"-->
-                    <!--:clear-on-select="false"-->
-                    <!--:close-on-select="false"-->
-                    <!--:options-limit="50"-->
-                    <!--:limit="6"-->
-                    <!--@search-change="fetchMatchingTags">-->
-            <!--</multiselect>-->
             <button type="button" class="btn btn-primary" @click="createOrUpdate">Submit</button>
         </form>
     </div>
@@ -36,16 +20,14 @@
 <script lang="ts">
     import * as Vue from 'vue'
     import Component from 'vue-class-component'
-    import {mapGetters, Store} from "vuex";
     import  {Job} from '../../store/common'
-    import {api} from '../../store/index'
     import {api as axios} from '../../api/index'
     import * as queryString from 'query-string'
     import {job as defaultJob} from '../../store/defaults'
     import Markdown from 'components/markdown.vue'
 
     import Multiselect from 'vue-multiselect'
-    import { Errors } from 'store/common'
+    // import {Errors} from 'store/common'
     import Tagger from 'components/tagger.vue'
 
     @Component({
@@ -60,8 +42,9 @@
         // update -> grab the appropriate state from the store
         // create -> use the default store state
 
+        id = null;
         data = {...defaultJob};
-        errors: Errors<Job> = {};
+        errors = { tags: []};
         isLoading = false;
         matchingTags = [];
 
@@ -69,14 +52,17 @@
             this.errors.tags = tag_errors;
         }
 
-        routeId() {
-            return parseInt(this.$route.params['jobId']);
+        matchUpdateUrl(pathname) {
+            let match = pathname.match(/\/jobs\/([0-9]+)\/update\//);
+            if (match !== null) {
+                match = match[1];
+            }
+            return match
         }
 
-        replaceFormState() {
-            const id = this.routeId();
-            if (this.data.id !== id && !isNaN(id)) {
-                axios.get('/api/wagtail/jobs/' + id + '/')
+        replaceFormState(id) {
+            if (id !== null) {
+                axios.get('/jobs/' + id + '/')
                         .then(response => {
                             console.log(response);
                             this.data = response.data;
@@ -85,32 +71,20 @@
         }
 
         created() {
-            this.replaceFormState();
+            this.id = this.matchUpdateUrl(document.location.pathname);
+            this.replaceFormState(this.id);
         }
 
         createOrUpdate() {
-            const id = this.routeId();
-            let data = {...this.data};
-            if (!isNaN(id)) {
-                data.id = id;
+            if (this.id === null) {
+                axios.post('/jobs/', this.data)
+                        .then(response => console.log(response))
+                        .catch(response => this.errors = response.data);
+            } else {
+                axios.put('/jobs/' + this.id + '/', this.data)
+                        .then(response => console.log(response))
+                        .catch(response => this.errors = response.data);
             }
-            const payload = api.job.actions.modify(data);
-            this.$store.dispatch(payload)
-                    .then(response => console.log(response))
-                    .catch(response => this.errors = response.data);
-        }
-
-        fetchMatchingTags(query) {
-            this.isLoading = true;
-            axios.get('/api/wagtail/tags/?' + queryString.stringify({query, page: 1}))
-                    .then(response => {
-                        this.matchingTags = response.data.results;
-                        this.isLoading = false;
-                    })
-                    .catch(response => {
-                        this.isLoading = false;
-                        this.errors = response.data
-                    })
         }
     }
 

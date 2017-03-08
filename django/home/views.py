@@ -15,7 +15,7 @@ search = get_search_backend()
 
 
 class SmallResultSetPagination(PageNumberPagination):
-    page_size = 20
+    page_size = 10
     page_size_query_param = 'page_size'
     max_page_size = 200
 
@@ -25,7 +25,7 @@ class SmallResultSetPagination(PageNumberPagination):
         page = int(self.request.query_params.get('page', 1))
         logger.debug("Request page")
         return Response({
-            'page': page,
+            'current_page': page,
             'count': count,
             'query': self.request.query_params.get('query'),
             'range': list(range(max(1, page - 4), min(n_pages + 1, page + 5))),
@@ -46,8 +46,8 @@ class EventViewSet(viewsets.ModelViewSet):
 
 class JobViewSet(viewsets.ModelViewSet):
     serializer_class = JobSerializer
-    queryset = Job.objects.all()
     pagination_class = SmallResultSetPagination
+    queryset = Job.objects.all()
 
     @property
     def template_name(self):
@@ -103,3 +103,6 @@ class TagViewSet(viewsets.ModelViewSet):
 
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data)
+
+    class Meta:
+        permissions = (('view_tag', 'View Tags'))
