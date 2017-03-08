@@ -1,29 +1,20 @@
 <template>
     <div class="editor">
-        <textarea class="form-group" v-bind:value="value" v-on:input="updateValue($event.target.value)" debounce="300">
-        </textarea>
-        <div v-html="markdown"></div>
+        <div class="container-fluid p-0">
+            <div class="row p-0 row-eq-height">
+                <div class="p-1 col-6">
+                    <textarea v-bind:value="value" v-on:input="updateValue($event.target.value)"
+                              debounce="300">
+                    </textarea>
+                </div>
+                <div class="p-1 col-6">
+                    <div v-html="markdown" class="preview"></div>
+                </div>
+            </div>
+        </div>
     </div>
 </template>
 <style scoped>
-html, body, .editor {
-  margin: 0;
-  height: 100%;
-  font-family: 'Helvetica Neue', Arial, sans-serif;
-  color: #333;
-}
-
-textarea, .editor div {
-  display: inline-block;
-  width: 49%;
-  height: 100%;
-  vertical-align: top;
-  -webkit-box-sizing: border-box;
-  -moz-box-sizing: border-box;
-  box-sizing: border-box;
-  padding: 0 20px;
-}
-
 textarea {
   border: none;
   border-right: 1px solid #ccc;
@@ -33,12 +24,14 @@ textarea {
   font-size: 14px;
   font-family: 'Monaco', courier, monospace;
   padding: 20px;
+  height: 100%;
+  width: 100%;
+  overflow: auto;
 }
 
 code {
   color: #f66;
 }
-
 </style>
 <script lang="ts">
     import * as Vue from 'vue'
