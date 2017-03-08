@@ -6,7 +6,7 @@ from hypothesis import given, settings
 from ..models import Job, Event, MemberProfile
 from ..serializers import JobSerializer, EventSerializer
 from ..views import JobViewSet, EventViewSet
-from core.test_helpers.view import ViewSetTestCase, letters, MAX_EXAMPLES
+from core.tests.base import ViewSetTestCase, letters, MAX_EXAMPLES
 
 import logging
 
@@ -17,8 +17,7 @@ def generate_with_user(username):
     return models(User,
                   username=st.just(str(username)),
                   email=st.just(str(username) + "@comses.net")) \
-        .flatmap(
-        lambda user: st.tuples(st.just(user), models(MemberProfile, user=st.just(user), affiliations=st.just([]))))
+        .flatmap(lambda user: st.tuples(st.just(user), models(MemberProfile, user=st.just(user), affiliations=st.just([]))))
 
 
 def generate_with_job(submitter):
@@ -68,7 +67,7 @@ def generate_event_data(draw):
     return profiles, event
 
 
-class JobViewsetTestCase(ViewSetTestCase):
+class JobViewSetTestCase(ViewSetTestCase):
     model_cls = Job
     modelviewset_cls = JobViewSet
     serializer_cls = JobSerializer

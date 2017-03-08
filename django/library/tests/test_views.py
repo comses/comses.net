@@ -1,4 +1,4 @@
-from core.test_helpers.view import ViewSetTestCase, letters, MAX_EXAMPLES
+from core.tests.base import ViewSetTestCase, letters, MAX_EXAMPLES
 from hypothesis import strategies as st
 from hypothesis.extra.django.models import models
 from hypothesis import given, settings
