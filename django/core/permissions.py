@@ -1,14 +1,12 @@
-from rest_framework.permissions import DjangoObjectPermissions
+from rest_framework import permissions
 
 import logging
 
 logger = logging.getLogger(__name__)
 
 
-SAFE_METHODS = ('GET', 'HEAD', 'OPTIONS')
+class ComsesPermissions(permissions.DjangoObjectPermissions):
 
-
-class ComsesPermissions(DjangoObjectPermissions):
     authenticated_users_only = False
 
     perms_map = {
@@ -20,3 +18,13 @@ class ComsesPermissions(DjangoObjectPermissions):
         'PATCH': ['%(app_label)s.change_%(model_name)s'],
         'DELETE': ['%(app_label)s.delete_%(model_name)s'],
     }
+
+    def has_permission(self, request, view):
+        """
+        Returns true iff this is a read-only request, delegates all other per-object responsibility
+        to ObjectPermissionsBackend
+        :param request:
+        :param view:
+        :return:
+        """
+        return request.method in permissions.SAFE_METHODS

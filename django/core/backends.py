@@ -1,42 +1,37 @@
-from django.db import models
-from django.contrib.auth.models import AnonymousUser
+import logging
 
-class ComsesObjectPermissionBackend(object):
+logger = logging.getLogger(__name__)
+
+
+class ComsesObjectPermissionBackend():
+    """
+    Authorization / Permissions backend that short-circuits if an object is "live", e.g., public or if the
+    object's "submitter" property is the same as the user.
+    """
+
+    PUBLISHED_ATTRIBUTE_KEY = "live"
+    OWNER_ATTRIBUTE_KEY = "submitter"
+
     def authenticate(self, username, password):
         return None
 
     @staticmethod
-    def get_action(perm):
-        unnamespaced_perm = perm.rsplit('.', 1)[1]
-        action = unnamespaced_perm.split('_', 1)[0]
-        return action
+    def is_view_action(perm: str):
+        """
+        :param perm: string permission
+        :return: Returns True if string permission defined by the perms_map in ComsesPermission corresponds to
+        a GET request (e.g., contains "view_"), False otherwise
+        """
+        return 'view_' in perm
 
-    @staticmethod
-    def get_view_perm(obj: models.Model):
-        app_label = obj._meta.app_label
-        model_name = obj._meta.model_name
-        return "{}.view_{}".format(app_label, model_name)
-
-    def has_view_perm(self, user_obj, perm, obj):
-        if perm != self.get_view_perm(obj):
-            return False
-
-        # Give permission to anyone that has global view permission
-        has_permission = self.get_view_perm(obj) in user_obj.get_all_permissions()
-        if obj.live:
-            return has_permission
-        else:
-            return False
-
-    def has_perm(self, user_obj, perm, obj=None):
-        if user_obj.is_anonymous() and self.get_action(perm) == 'view':
-            if obj:
-                return obj.live
-            else:
-                return True
-        if not user_obj.is_active:
-            return False
-        if not obj:
-            return False
-        return user_obj == obj.submitter or \
-               self.has_view_perm(user_obj, perm, obj)
+    def has_perm(self, user, perm, obj=None):
+        """
+        execute after admin / superuser checks in standard
+        ModelBackend but right before django-guardian's ObjectPermissionBackend
+        """
+        logger.debug("checking if %s has perms %s on obj %s", user, perm, obj)
+        if self.is_view_action(perm):
+            return getattr(obj, self.PUBLISHED_ATTRIBUTE_KEY, True)
+        # a write action, basic check to see if this user is the
+        # submitter of the given object.
+        return user == getattr(obj, self.OWNER_ATTRIBUTE_KEY, None)

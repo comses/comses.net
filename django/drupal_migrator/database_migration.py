@@ -157,7 +157,6 @@ class UserExtractor(Extractor):
     EDITOR_GROUP, c = Group.objects.get_or_create(name='Editors')
     REVIEWER_GROUP, c = Group.objects.get_or_create(name='Reviewers')
     MEMBER_GROUP, c = Group.objects.get_or_create(name='Full Members')
-    VISITOR_GROUP, c = Group.objects.get_or_create(name='Visitors')
 
     @staticmethod
     def _extract(raw_user):
@@ -184,6 +183,7 @@ class UserExtractor(Extractor):
             user.groups.add(UserExtractor.MEMBER_GROUP)
         if 'comses member' in roles:
             user.groups.add(UserExtractor.MEMBER_GROUP)
+            user.groups.add(UserExtractor.REVIEWER_GROUP)
 
         if 'comses editor' in roles:
             user.groups.add(UserExtractor.EDITOR_GROUP)
@@ -197,15 +197,8 @@ class UserExtractor(Extractor):
         Returns a mapping of drupal user ids to Django User pks.
         :return: dict
         """
-        view_permissions = Permission.objects.filter(codename__startswith='view')
-        self.VISITOR_GROUP.permissions.set(view_permissions)
-        edit_permissions = Permission.objects.exclude(codename__startswith='view')
-        self.MEMBER_GROUP.permissions.set(edit_permissions)
-
         users = [UserExtractor._extract(raw_user) for raw_user in self.data]
         user_id_map = dict([(user.drupal_uid, user.pk) for user in users if user is not None])
-
-        self.VISITOR_GROUP.user_set = User.objects.all()
         return user_id_map
 
 
