@@ -26,13 +26,10 @@ def generate_with_codebase(submitter):
 
 @st.composite
 def generate_codebases(draw):
-    visitors = draw(models(Group))
     usernames = ['0000000000',
                  '0000000001']
     user_profiles = [draw(generate_with_user(username)) for username in usernames]
     users, profiles = zip(*user_profiles)
-    visitors.permissions = Permission.objects.filter(codename__startswith='view_')
-    visitors.user_set = User.objects.all()
     codebases = draw(st.lists(generate_with_codebase(users[0]), min_size=2, max_size=2))
     return profiles, codebases
 

@@ -30,13 +30,10 @@ def generate_with_job(submitter):
 
 @st.composite
 def generate_job_data(draw):
-    visitors = draw(models(Group))
     usernames = ['0000000000',
                  '0000000001']  # draw(st.lists(st.text(min_size=10, max_size=20), unique=True, min_size=2, max_size=2))
     user_profiles = [draw(generate_with_user(username)) for username in usernames]
     users, profiles = zip(*user_profiles)
-    visitors.permissions = Permission.objects.filter(codename__startswith='view_')
-    visitors.user_set = User.objects.all()
     job = draw(generate_with_job(users[0]))
     return profiles, job
 
@@ -56,13 +53,10 @@ def generate_with_event(submitter):
 
 @st.composite
 def generate_event_data(draw):
-    visitors = draw(models(Group))
     usernames = draw(st.lists(st.text(min_size=10, max_size=20), unique=True, min_size=2, max_size=2))
     # logger.debug(usernames)
     user_profiles = [draw(generate_with_user(username)) for username in usernames]
     users, profiles = zip(*user_profiles)
-    visitors.permissions = Permission.objects.filter(codename__startswith='view_')
-    visitors.user_set = User.objects.all()
     event = draw(generate_with_event(users[0]))
     return profiles, event
 
