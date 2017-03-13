@@ -1,6 +1,6 @@
-{% set login_url = url("account:auth_login") %}
-{% set logout_url = url("account:auth_logout") %}
-{% set profile_url = url("account:profile") %}
+{% set login_url = url("auth_login") %}
+{% set logout_url = url("auth_logout") %}
+{% set profile_url = url("home:profile") %}
 
 {% macro header() %}
     <header class="fixed-top">
@@ -37,8 +37,8 @@
                                 <span class="fa fa-chevron-down"></span>
                             </a>
                             <div class="dropdown-menu" aria-labelledby='userDropdownMenuLink'>
-                                <a class="dropdown-item" href="{{ logout_url }}">Log Out</a>
-                                <a class="dropdown-item" href="{{ profile_url }}">Profile</a>
+                                <a class="dropdown-item" href="{{ profile_url }}"><i class='fa fa-user'></i> Profile</a>
+                                <a class="dropdown-item" href="{{ logout_url }}"><i class='fa fa-sign-out'></i> Sign Out</a>
                             </div>
                             </li>
                         {% else %}

@@ -88,10 +88,7 @@ MIDDLEWARE = [
 ]
 
 AUTHENTICATION_BACKENDS = (
-    'social_core.backends.facebook.FacebookOAuth2',
     'social_core.backends.github.GithubOAuth2',
-    'social_core.backends.google.GoogleOAuth2',
-    'social_core.backends.twitter.TwitterOAuth',
     'django.contrib.auth.backends.ModelBackend',
     'core.backends.ComsesObjectPermissionBackend',
     'guardian.backends.ObjectPermissionBackend'
@@ -116,7 +113,7 @@ TEMPLATES = [
             'auto_reload': DEBUG,
             'translation_engine': 'django.utils.translation',
             'context_processors': [
-# FIXME: remove debug context processor in prod
+                # FIXME: remove debug context processor in prod
                 'django.template.context_processors.debug',
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
@@ -192,7 +189,7 @@ LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
     'root': {
-        'level': 'ERROR',
+        'level': 'DEBUG',
         'handlers': ['rollingfile', 'console'],
     },
     'formatters': {
@@ -289,6 +286,12 @@ WEBPACK_LOADER = {
 BASE_URL = 'https://www.comses.net'
 
 WAGTAILMENUS_DEFAULT_MAIN_MENU_TEMPLATE = 'home/includes/menu.html'
+
+# authentication settings
+LOGIN_REDIRECT_URL = '/'
+LOGOUT_REDIRECT_URL = '/'
+WAGTAIL_FRONTEND_LOGIN_URL = 'auth_login'
+
 
 REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': ('core.permissions.ComsesPermissions',),

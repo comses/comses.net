@@ -1,13 +1,13 @@
+import logging
+
+from rest_framework import viewsets
+from rest_framework.pagination import PageNumberPagination
+from rest_framework.response import Response
+from taggit.models import Tag
+from wagtail.wagtailsearch.backends import get_search_backend
+
 from .models import Event, Job
 from .serializers import EventSerializer, JobSerializer, TagSerializer
-from rest_framework.response import Response
-from rest_framework.pagination import PageNumberPagination
-from rest_framework import viewsets
-from wagtail.wagtailsearch.backends import get_search_backend
-import logging
-from taggit.models import Tag
-
-from django.shortcuts import get_object_or_404
 
 logger = logging.getLogger(__name__)
 

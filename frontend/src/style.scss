@@ -150,6 +150,10 @@ $fa-font-path: '../node_modules/font-awesome/fonts/';
   font-weight: 300;
 }
 
+.errorlist {
+    @extend .alert-danger;
+}
+
 header {
   padding: 20px 0;
   background-color: $white;
