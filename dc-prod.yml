@@ -11,7 +11,7 @@ services:
     environment:
       ES_JAVA_OPTS: "-Xms2g -Xmx2g"
   ${DB_HOST}:
-    image: postgres:9.5
+    image: comses/postgis:9.5
     volumes:
       - data:/var/lib/postgresql/data
     environment:
@@ -31,8 +31,8 @@ services:
   nginx:
     image: nginx:latest
     volumes:
-      - ./deploy/app/nginx-haproxy.conf:/etc/nginx/nginx.conf
-      - ./deploy/app/uwsgi_params:/etc/nginx/uwsgi_params
+      - ./deploy/nginx/nginx-haproxy.conf:/etc/nginx/nginx.conf
+      - ./deploy/nginx/uwsgi_params:/etc/nginx/uwsgi_params
       - sockets:/sockets
       - static:/static
       - logs:/var/log/nginx
@@ -48,16 +48,15 @@ services:
         REQUIREMENTS_FILE: requirements-prod.txt
     image: comses/wagtailcms:latest
     volumes:
-      - ./deploy/app:/code/deploy/app
       - ./deploy/conf/config.ini:/secrets/config.ini
       - ./deploy/elasticsearch.conf.d:/etc/elasticsearch
+      - ./django/deploy/prod.sh:/etc/services/django/run
       - logs:/code/logs
       - library:/library
       - repository:/repository
       - webpack:/webpack
       - static:/static
       - sockets:/sockets
-    command: /code/deploy/app/prod.sh
     environment:
       DJANGO_SETTINGS_MODULE: "core.settings.production"
       DB_USER: ${DB_USER}

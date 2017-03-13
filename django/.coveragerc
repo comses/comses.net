@@ -1,0 +1,11 @@
+[run]
+source =
+    home
+    core
+    library
+    drupal_migrator
+
+[paths]
+source =
+    ./
+    /code/*

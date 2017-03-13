@@ -11,7 +11,7 @@ services:
     environment:
       ES_JAVA_OPTS: "-Xms2g -Xmx2g"
   ${DB_HOST}:
-    image: postgres:9.5
+    image: comses/postgis:9.5
     volumes:
       - data:/var/lib/postgresql/data
     environment:
@@ -31,7 +31,6 @@ services:
     image: comses/wagtailcms_dev:latest
     volumes:
       - ./django:/code
-      - ./deploy/app:/code/deploy/app
       - ./deploy/conf/config.ini:/secrets/config.ini
       - ./deploy/elasticsearch.conf.d:/etc/elasticsearch
       - logs:/code/logs
