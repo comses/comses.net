@@ -16,6 +16,7 @@ from taggit.models import Tag
 from home.models import Event, Job, MemberProfile
 from library.models import (Contributor, Codebase, CodebaseRelease, CodebaseTag, License,
                             CodebaseContributor, Platform, OPERATING_SYSTEMS)
+from core.summarization import summarize_to_text
 from .utils import get_first_field, get_field, get_field_attributes
 
 logger = logging.getLogger(__name__)
@@ -115,12 +116,16 @@ class EventExtractor(Extractor):
         return datetime.strptime(date_string, EventExtractor.EVENT_DATE_FORMAT)
 
     def _extract(self, raw_event, user_id_map: Dict[str, int]) -> Event:
+        description = get_first_field(raw_event, 'body')
+        summary = get_first_field(raw_event, 'body', attribute_name='summary', default='')[:300] \
+            or summarize_to_text(description, sentences_count=2)
+
         return Event(
             title=raw_event['title'],
             date_created=self.to_datetime(raw_event['created']),
             last_modified=self.to_datetime(raw_event['changed']),
-            summary=get_first_field(raw_event, 'body', attribute_name='summary', default='')[:300],
-            description=get_first_field(raw_event, 'body'),
+            summary=summary,
+            description=description,
             early_registration_deadline=self.to_datetime(get_first_field(raw_event, 'field_earlyregistration')),
             submission_deadline=self.to_datetime(get_first_field(raw_event, 'field_submissiondeadline')),
             start_date=self.parse_event_date_string(get_first_field(raw_event, 'field_eventdate')),
@@ -135,11 +140,14 @@ class EventExtractor(Extractor):
 
 class JobExtractor(Extractor):
     def _extract(self, raw_job: Dict, user_id_map: Dict[str, int]):
+        description = get_first_field(raw_job, 'body')
+        summary = summarize_to_text(description, sentences_count=2)
         return Job(
             title=raw_job['title'],
             date_created=self.to_datetime(raw_job['created']),
             last_modified=self.to_datetime(raw_job['changed']),
-            description=get_first_field(raw_job, 'body'),
+            description=description,
+            summary=summary,
             submitter_id=user_id_map.get(raw_job['uid'], 3)
         )
 

@@ -12,6 +12,8 @@ from home import urls as home_urls
 from library import urls as library_urls
 from search import views as search_views
 
+from . import views
+
 # from django_jinja import views as jinja_views
 
 schema_view = get_swagger_view(title='CoMSES.net API')
@@ -28,6 +30,7 @@ urlpatterns = [
     # FIXME: have to hardcode this one because it gets reversed in
     url(r'^', include(home_urls, namespace='home')),
     url(r'^', include(library_urls, namespace='library')),
+    url(r'^summarize/$', views.summarize_text, name='summarize'),
     url(r'^auth/', include('social_django.urls', namespace='socialauth')),
     url(r'^wagtail/admin/', include(wagtailadmin_urls)),
     url(r'^django/admin/', include(admin.site.urls)),
