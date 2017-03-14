@@ -1,0 +1,15 @@
+{
+  "title": "Search",
+  "type": "object",
+  "properties": {
+    "query": { "type": "string", "default": ""},
+    "tags": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": []
+    }
+  },
+  "required": ["query", "tags"]
+}
