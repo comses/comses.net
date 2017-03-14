@@ -17,7 +17,7 @@
                 This field can be created from the description by pressing the summarize button.
             </small>
         </div>
-        <c-tagger v-model="data.tags" v-on:errors="setTagErrors">
+        <c-tagger v-model="tags" v-on:errors="setTagErrors">
         </c-tagger>
         <small class="form-text text-muted">A list of tags to associate with a job. Tags help people search for jobs.
         </small>
@@ -43,6 +43,12 @@
             // Multiselect,
             Markdown,
             'c-tagger': Tagger
+        },
+        computed: {
+            'tags': function() {
+                const self: any = this;
+                return self.data.tags.map(t => { return {name: t}});
+            }
         }
     })
     class JobCreate extends Vue {
