@@ -1,6 +1,7 @@
 from rest_framework import serializers
 
 from .models import CodebaseContributor, Codebase, CodebaseRelease
+from taggit.models import Tag
 from core.serializer_helpers import EditableSerializerMixin, save_tags
 from home import serializers as home_serializers
 from django.core.urlresolvers import reverse_lazy
@@ -30,7 +31,7 @@ class CodebaseSerializer(serializers.ModelSerializer):
     contributors = CodebaseContributorSerializer(many=True, read_only=True)
     releases = CodebaseReleaseSerializer(read_only=True, many=True)
     date_created = serializers.DateTimeField(format='%Y-%m-%d', read_only=True)
-    tags = home_serializers.TagSerializer(many=True)
+    tags = serializers.SlugRelatedField(many=True, slug_field='name', queryset=Tag.objects.all())
     url = serializers.SerializerMethodField(help_text=_('URL to the detail page of the codebase'))
     submitter = home_serializers.CreatorSerializer(read_only=True)
 

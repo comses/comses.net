@@ -38,7 +38,7 @@ class TagSerializer(serializers.ModelSerializer):
 
 def create(model_cls, validated_data, context):
     # Create related many to many
-    tags = TagSerializer(many=True, data=validated_data.pop('tags'))
+    tags = TagSerializer(many=True, data=[{'name': name} for name in validated_data.pop('tags')])
     if tags.is_valid(raise_exception=True):
         tags.save()
     # Add read only properties without defaults
@@ -51,7 +51,7 @@ def create(model_cls, validated_data, context):
 
 
 def update(serializer_update, instance, validated_data):
-    tags = TagSerializer(many=True, data=validated_data.pop('tags'))
+    tags = TagSerializer(many=True, data=[{'name': name} for name in validated_data.pop('tags')])
     if tags.is_valid(raise_exception=True):
         tags.save()
     obj = serializer_update(instance, validated_data)
@@ -63,7 +63,7 @@ class EventSerializer(serializers.ModelSerializer, EditableSerializerMixin):
     submitter = CreatorSerializer(read_only=True, help_text=_('User that created the event'))
     location = serializers.SerializerMethodField(help_text=_('URL to the detail page of the job'))
     date_created = serializers.DateTimeField(format='%Y-%m-%d', read_only=True)
-    tags = TagSerializer(many=True)
+    tags = serializers.SlugRelatedField(many=True, slug_field='name', queryset=Tag.objects.all())
 
     def get_location(self, obj):
         return reverse_lazy('home:event-detail', kwargs={'pk': obj.id})
@@ -84,7 +84,7 @@ class JobSerializer(serializers.ModelSerializer, EditableSerializerMixin):
     submitter = CreatorSerializer(read_only=True, help_text=_('User that created the job description'))
     location = serializers.SerializerMethodField(help_text=_('URL to the detail page of the job'))
     date_created = serializers.DateTimeField(format='%Y-%m-%d', read_only=True)
-    tags = TagSerializer(many=True)
+    tags = serializers.SlugRelatedField(many=True, slug_field='name', queryset=Tag.objects.all())
 
     def get_location(self, obj):
         return reverse_lazy('home:job-detail', kwargs={'pk': obj.id})
