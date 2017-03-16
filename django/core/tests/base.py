@@ -6,7 +6,7 @@ from hypothesis.extra import django as hypothesis_django
 from hypothesis import strategies as st
 from django.contrib.auth.models import Group, User, Permission, AnonymousUser
 
-MAX_EXAMPLES = 15
+MAX_EXAMPLES = 20
 
 
 def letters(min_size=1, max_size=20):

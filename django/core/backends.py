@@ -2,7 +2,7 @@ import logging
 from django.core.exceptions import PermissionDenied
 from guardian import shortcuts as sc
 from django.db.models import FieldDoesNotExist
-from guardian.models import UserObjectPermission
+from guardian.shortcuts import get_perms
 from django.contrib.auth.models import User
 
 logger = logging.getLogger(__name__)
@@ -41,10 +41,15 @@ def has_authenticated_model_permission(user, perm, obj):
     return True
 
 
-def has_view_permission(perm, obj):
+def has_view_permission(perm, user, obj):
+    """Users should have permission to view an object if it is published or they have any permission on the object"""
     if is_view_action(perm):
-        return getattr(obj, PUBLISHED_ATTRIBUTE_KEY, True)
-
+        published = getattr(obj, PUBLISHED_ATTRIBUTE_KEY, True)
+        if published:
+            return True
+        else:
+            perms = get_perms(user, obj)
+            return bool(perms)
     return False
 
 
@@ -52,10 +57,10 @@ def has_submitter_permission(user, obj):
     return user == getattr(obj, OWNER_ATTRIBUTE_KEY, None)
 
 
-def make_view_perm(model):
+def make_change_delete_view_perms(model):
     model_name = model._meta.model_name
     app_label = model._meta.app_label
-    return '{}.view_{}'.format(app_label, model_name)
+    return ['{}.{}_{}'.format(app_label, action, model_name) for action in ['change', 'delete', 'view']]
 
 
 def has_field(model, field_name):
@@ -74,15 +79,17 @@ def get_db_user(user):
 
 
 def get_viewable_objects_for_user(user, queryset):
+    """A user can view an object in a list view if they have any permissions on the object
+    (currently change, delete or view permission)"""
     model = queryset.model
-    perms = make_view_perm(model)
+    perms = make_change_delete_view_perms(model)
     kwargs = {}
     if has_field(model, PUBLISHED_ATTRIBUTE_KEY):
         user = get_db_user(user)
         kwargs[PUBLISHED_ATTRIBUTE_KEY] = True
         is_live_queryset = model.objects.filter(**kwargs)
         is_submitter_queryset = model.objects.filter(submitter=user)
-        has_object_permission_queryset = sc.get_objects_for_user(user, perms=perms, accept_global_perms=False)
+        has_object_permission_queryset = sc.get_objects_for_user(user, perms=perms, any_perm=True, accept_global_perms=False)
         queryset &= has_object_permission_queryset | is_live_queryset | is_submitter_queryset
 
     return queryset
@@ -105,5 +112,5 @@ class ComsesObjectPermissionBackend:
             raise PermissionDenied
 
         return has_authenticated_model_permission(user, perm, obj) or \
-               has_view_permission(perm, obj) or \
+               has_view_permission(perm, user, obj) or \
                has_submitter_permission(user, obj)
