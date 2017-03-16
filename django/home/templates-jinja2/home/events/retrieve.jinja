@@ -7,5 +7,5 @@
 
 {% block content %}
     <h4>Created on: {{ date_created }}</h4>
-    {{ description|linebreaks }}
+    {{ markdown(description)|safe }}
 {% endblock %}

@@ -1,5 +1,5 @@
 {% extends "base.jinja" %}
-{% from "common.jinja" import list_page, paginator %}
+{% from "common.jinja" import item_component, list_page, paginator %}
 
 {% macro search_component() %}
     <form class="form-group row" action="{{ url('home:job-list') }}" method="get" enctype="application/x-www-form-urlencoded">
@@ -16,29 +16,19 @@
     </form>
 {% endmacro %}
 
-{% macro item_component(item) %}
-    <div class="list-group-item list-group-item-action">
-        <div class="col-xs-12 col-sm-6 col-md-2">
-            <a href="{{ url('home:event-detail', pk=item.id) }}" class="p-2 fa fa-edit">
-            </a>
-            <a href="{{ url('home:event-update', pk=item.id) }}" class="p-2 fa fa-eye">
-            </a>
-        </div>
-        <div class="col-xs-12 col-md-8 flex-sm-last flex-md-unordered">
-            <span>{{ item.title }}</span>
-        </div>
-        <small class="col-xs-12 col-sm-6 col-md-2 text-right">{{ item.date_created }}</small>
-    </div>
-{% endmacro %}
-
-{% block title %}Job Search{% endblock %}
+{% block title %}Event Search{% endblock %}
 
 {% block introduction %}<h1 id="query">Event Search</h1>{% endblock %}
 
 {% block subheader %}<h1>Events</h1>{% endblock %}
 
 {% block content %}
-    {{ list_page(__all__, search_component, item_component) }}
+    <div id="app"></div>
+    {{ list_page(__all__, item_component, 'home:event-detail') }}
     <br>
     {{ paginator('home:event-list', __all__) }}
+{% endblock %}
+
+{% block js %}
+    {{ render_bundle('event_list') }}
 {% endblock %}

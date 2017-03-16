@@ -1,18 +1,20 @@
 <template>
     <form class="form-group row" action="url" method="get"
           enctype="application/x-www-form-urlencoded">
-        <div class="col-xs-12 col-sm-9">
+        <div class="col-12">
             <input type="text" class="form-control" name="query" placeholder="Search" v-model="data.query">
         </div>
-        <div class="col-sm-3">
-            <button class="btn btn-primary" type="button" @click="submitSearch">Search</button>
-            <a href="/jobs/create/"
-               class="btn btn-primary btn float-md-right mt-xs-1">
-                <span class="fa fa-plus"></span>
-            </a>
+        <div class="col-12">
+            <c-tagger v-model='data.tags' v-on:errors='setTagErrors'>
+            </c-tagger>
+            <small class="form-text text-muted">Filter by all the selected tags (all tags must be matched, not just
+                one)
+            </small>
         </div>
-        <c-tagger v-model='data.tags' v-on:errors='setTagErrors'>
-        </c-tagger>
+        <div class="col-12">
+            <button class="btn btn-primary" type="button" @click="submitSearch">Search</button>
+            <a class="btn btn-primary pull-right" :href="createUrl">Create {{ model_name }}</a>
+        </div>
     </form>
 </template>
 <script lang="ts">
@@ -29,9 +31,17 @@
     @Component({
         components: {
             'c-tagger': Tagger
+        },
+        computed: {
+            createUrl() {
+                return window.location.pathname + 'create/'
+            }
         }
     })
     class SearchForm extends Vue {
+        @Prop
+        model_name: string;
+
         data: Search = {query: '', tags: []};
 
         created() {
@@ -41,8 +51,10 @@
                 console.error(searchSchemaValidate.errors);
             }
 
-            const tags = qs.tags.map(t => {return { name: t}});
-            this.data = { query: qs.query, tags};
+            const tags = qs.tags.map(t => {
+                return {name: t}
+            });
+            this.data = {query: qs.query, tags};
         }
 
         errors: Errors<Search>;
@@ -53,7 +65,7 @@
 
         submitSearch() {
             const tags = this.data.tags.map(t => t.name);
-            const data = { query: this.data.query, tags};
+            const data = {query: this.data.query, tags};
             const q = queryString.stringify(data);
             window.location.search = q;
         }

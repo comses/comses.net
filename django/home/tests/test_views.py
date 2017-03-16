@@ -16,14 +16,22 @@ logger = logging.getLogger(__name__)
 def generate_with_user(username):
     return models(User,
                   username=st.just(str(username)),
-                  email=st.just(str(username) + "@comses.net")) \
-        .flatmap(lambda user: st.tuples(st.just(user), models(MemberProfile, user=st.just(user), affiliations=st.just([]))))
+                  email=st.just(str(username) + "@comses.net"),
+                  first_name=letters(),
+                  last_name=letters(),
+                  password=st.just('')) \
+        .flatmap(lambda user: st.tuples(st.just(user), models(MemberProfile, user=st.just(user),
+                                                              summary=st.just(''),
+                                                              research_interests=st.just(''),
+                                                              affiliations=st.just([]),
+                                                              orcid=st.just(''))))
 
 
 def generate_with_job(submitter):
     return models(Job,
                   title=letters(),
                   description=letters(),
+                  summary=letters(),
                   date_created=datetimes(min_year=2000, max_year=2017),
                   submitter=st.just(submitter))
 
@@ -31,7 +39,7 @@ def generate_with_job(submitter):
 @st.composite
 def generate_job_data(draw):
     usernames = ['0000000000',
-                 '0000000001']  # draw(st.lists(st.text(min_size=10, max_size=20), unique=True, min_size=2, max_size=2))
+                 '0000000001']
     user_profiles = [draw(generate_with_user(username)) for username in usernames]
     users, profiles = zip(*user_profiles)
     job = draw(generate_with_job(users[0]))
@@ -40,8 +48,9 @@ def generate_job_data(draw):
 
 def generate_with_event(submitter):
     return models(Event,
-                  title=letters(),
                   description=letters(),
+                  summary=letters(),
+                  title=letters(),
                   location=letters(),
                   date_created=datetimes(min_year=2000, max_year=2017),
                   early_registration_deadline=datetimes(min_year=2000, max_year=2017),
@@ -53,8 +62,8 @@ def generate_with_event(submitter):
 
 @st.composite
 def generate_event_data(draw):
-    usernames = draw(st.lists(st.text(min_size=10, max_size=20), unique=True, min_size=2, max_size=2))
-    # logger.debug(usernames)
+    usernames = ['0000000000',
+                 '0000000001']
     user_profiles = [draw(generate_with_user(username)) for username in usernames]
     users, profiles = zip(*user_profiles)
     event = draw(generate_with_event(users[0]))
@@ -68,7 +77,7 @@ class JobViewSetTestCase(ViewSetTestCase):
     detail_url_name = 'home:job-detail'
     list_url_name = 'home:job-list'
 
-    @settings(max_examples=MAX_EXAMPLES)
+    @settings(max_examples=MAX_EXAMPLES, perform_health_check=False)
     @given(generate_job_data(), st.sampled_from(('change', 'add', 'view')))
     def test_add_change_view(self, data, action):
         profiles, job = data
@@ -111,7 +120,7 @@ class EventViewSetTestCase(ViewSetTestCase):
         self.check_authorization(action, owner, event)
         self.check_authorization(action, user, event)
 
-    @settings(max_examples=MAX_EXAMPLES)
+    @settings(max_examples=MAX_EXAMPLES, perform_health_check=False)
     @given(generate_event_data())
     def test_delete(self, data):
         profiles, event = data

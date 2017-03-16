@@ -15,7 +15,9 @@ module.exports = {
     entry: {
         home: './src/pages/home/home.ts',
         jobs: './src/pages/job/create.ts',
-        events: './src/pages/event/event.ts',
+        events: './src/pages/event/create.ts',
+        job_list: './src/pages/job/list.ts',
+        event_list: './src/pages/event/list.ts',
         vendors: './src/vendors.js',
         styles: './src/style.scss'
     },

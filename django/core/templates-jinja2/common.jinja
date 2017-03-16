@@ -3,18 +3,45 @@
         <ul class="pagination">
             {% for page in list_state.range %}
                 <li class="page-item{% if page == list_state.current_page %} active{% endif %}">
-                    <a href="{{ url(url_name) }}?query={{ list_state.query or '' }}&page={{ page }}#query" class="page-link">{{ page }}</a>
+                    <a href="{{ url(url_name) }}?{{ list_state.query_params }}&page={{ page }}#query"
+                       class="page-link">{{ page }}</a>
                 </li>
             {% endfor %}
         </ul>
     </nav>
 {% endmacro %}
 
-{% macro list_page(list_state, search_component, item_component) %}
-    {{ search_component() }}
-    <div class="list-group row">
+{% macro item_component(item, detail_url_name) %}
+    <div class="search-result">
+        <div class="date-info">
+            <small class="text-muted">Last Updated: {{ item.last_modified }}</small>
+            <small class="text-muted pull-right">Created on: {{ item.date_created }}</small>
+        </div>
+        <div class="title">
+            <h1 class="p-0 m-0"><a href="{{ url(detail_url_name, pk=item.id) }}">{{ item.title }}</a></h1>
+            <small>Submitted by:
+                <a href="/profile/{{ item.submitter.username }}/">{{ item.submitter.username }}</a>
+            </small>
+        </div>
+        {% if item.summary %}
+        <div class="summary">
+            {{ markdown(item.summary)|safe }}
+        </div>
+        {% endif %}
+        {%  if item.tags %}
+        <div class="tag-list">
+            {% for tag in item.tags %}
+                <span class="badge badge-primary p-1">{{ tag.name }}</span>
+            {% endfor %}
+        </div>
+        {%  endif %}
+    </div>
+{% endmacro %}
+
+{% macro list_page(list_state, item_component, detail_url_name) %}
+    <div>
         {% for item in list_state.results %}
-            {{ item_component(item) }}
+            {{ item_component(item, detail_url_name) }}
         {% endfor %}
     </div>
 {% endmacro %}

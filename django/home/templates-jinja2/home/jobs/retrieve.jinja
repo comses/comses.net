@@ -1,11 +1,15 @@
 {% extends "base.jinja" %}
 {% from "common.jinja" import list_page, paginator %}
 
+{% set perm = True %}
+
 {% block title %}Job: {{ title }}{% endblock %}
 
 {% block introduction %}<h1>Job: {{ title }}</h1>{% endblock %}
 
 {% block content %}
-    <h4>Created on: {{ date_created }}</h4>
-    {{ description|linebreaks }}
+
+    <h6 class="text-right">{{ date_created }}</h6>
+    {{ markdown(description)|safe }}
+    {% if perm %}<h6><a class="btn btn-primary btn-sm" href="{{ url('home:job-update', pk=id) }}">Edit</a></h6>{% endif %}
 {% endblock %}

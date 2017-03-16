@@ -59,10 +59,11 @@ def update(serializer_update, instance, validated_data):
     return obj
 
 
-class EventSerializer(serializers.ModelSerializer, EditableSerializerMixin):
+class EventSerializer(serializers.ModelSerializer):
     submitter = CreatorSerializer(read_only=True, help_text=_('User that created the event'))
     location = serializers.SerializerMethodField(help_text=_('URL to the detail page of the job'))
     date_created = serializers.DateTimeField(format='%Y-%m-%d', read_only=True)
+    last_modified = serializers.DateTimeField(format='%Y-%m-%d', read_only=True)
     tags = serializers.SlugRelatedField(many=True, slug_field='name', queryset=Tag.objects.all())
 
     def get_location(self, obj):
@@ -79,11 +80,12 @@ class EventSerializer(serializers.ModelSerializer, EditableSerializerMixin):
         fields = '__all__'
 
 
-class JobSerializer(serializers.ModelSerializer, EditableSerializerMixin):
+class JobSerializer(serializers.ModelSerializer):
     # need nested serializer for submitter
     submitter = CreatorSerializer(read_only=True, help_text=_('User that created the job description'))
     location = serializers.SerializerMethodField(help_text=_('URL to the detail page of the job'))
     date_created = serializers.DateTimeField(format='%Y-%m-%d', read_only=True)
+    last_modified = serializers.DateTimeField(format='%Y-%m-%d', read_only=True)
     tags = serializers.SlugRelatedField(many=True, slug_field='name', queryset=Tag.objects.all())
 
     def get_location(self, obj):
@@ -97,4 +99,5 @@ class JobSerializer(serializers.ModelSerializer, EditableSerializerMixin):
 
     class Meta:
         model = Job
-        fields = ('id', 'title', 'submitter', 'date_created', 'description', 'location', 'tags', 'editable')
+        fields = ('id', 'title', 'submitter', 'date_created', 'last_modified',
+                  'description', 'summary', 'location', 'tags')

@@ -10,7 +10,7 @@ MAX_EXAMPLES = 15
 
 
 def letters(min_size=1, max_size=20):
-    return st.text(alphabet=st.characters(whitelist_categories=('Ll', 'Lu')), min_size=min_size, max_size=max_size)
+    return st.text(alphabet=st.characters(whitelist_categories=('Ll', 'Lu'), blacklist_characters='\x00'), min_size=min_size, max_size=max_size)
 
 
 class ViewSetTestCase(hypothesis_django.TestCase):

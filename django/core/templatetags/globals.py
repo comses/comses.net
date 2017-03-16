@@ -3,6 +3,8 @@ from django.conf import settings
 from django.template import defaultfilters
 from django.utils.timezone import get_current_timezone
 from django_jinja import library
+from ..summarization import summarize
+from ..utils import markdown_to_sanitized_html
 
 from webpack_loader.templatetags import webpack_loader as wl
 
@@ -21,6 +23,15 @@ def now(format_string):
     tzinfo = get_current_timezone() if settings.USE_TZ else None
     return defaultfilters.date(datetime.now(tz=tzinfo), format_string)
 
+
+@library.global_function
+def summarize_markdown(md):
+    return summarize(md, 2)
+
+
+@library.global_function
+def markdown(md):
+    return markdown_to_sanitized_html(md)
 
 # # http://stackoverflow.com/questions/6453652/how-to-add-the-current-query-string-to-an-url-in-a-django-template
 # @register.simple_tag

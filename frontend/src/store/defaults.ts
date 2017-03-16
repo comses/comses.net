@@ -2,6 +2,7 @@ import {Job, Codebase} from './common'
 
 export const job: Job = {
     description: '',
+    summary: '',
     title: '',
     tags: []
 };

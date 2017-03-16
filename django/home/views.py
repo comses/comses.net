@@ -1,11 +1,14 @@
 import logging
 
+from django.http import QueryDict
+
 from rest_framework import viewsets
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 from taggit.models import Tag
 from wagtail.wagtailsearch.backends import get_search_backend
 
+from core.view_helpers import get_search_queryset
 from .models import Event, Job
 from .serializers import EventSerializer, JobSerializer, TagSerializer
 
@@ -20,6 +23,18 @@ class SmallResultSetPagination(PageNumberPagination):
     max_page_size = 200
 
     def get_paginated_response(self, data, **kwargs):
+        query_params = QueryDict('', mutable=True)
+
+        query = self.request.query_params.get('query')
+        if query:
+            query_params['query'] = query
+        tags = self.request.query_params.getlist('tags')
+        if tags:
+            query_params['tags'] = tags
+        order_by = self.request.query_params.getlist('order_by')
+        if order_by:
+            query_params['order_by'] = order_by
+
         count = self.page.paginator.count
         n_pages = count // self.page_size + 1
         page = int(self.request.query_params.get('page', 1))
@@ -28,6 +43,7 @@ class SmallResultSetPagination(PageNumberPagination):
             'current_page': page,
             'count': count,
             'query': self.request.query_params.get('query'),
+            'query_params': query_params.urlencode(),
             'range': list(range(max(1, page - 4), min(n_pages + 1, page + 5))),
             'n_pages': n_pages,
             'results': data
@@ -36,8 +52,11 @@ class SmallResultSetPagination(PageNumberPagination):
 
 class EventViewSet(viewsets.ModelViewSet):
     serializer_class = EventSerializer
-    queryset = Event.objects.all()
+    queryset = Event.objects.order_by('-date_created')
     pagination_class = SmallResultSetPagination
+
+    def get_queryset(self):
+        return get_search_queryset(self)
 
     @property
     def template_name(self):
@@ -53,27 +72,8 @@ class JobViewSet(viewsets.ModelViewSet):
     def template_name(self):
         return 'home/jobs/{}.jinja'.format(self.action)
 
-    def get_list_queryset(self):
-        search_query = self.request.query_params.get('query')
-        if search_query:
-            queryset = search.search(search_query, Job.objects.order_by('-date_created'))
-        else:
-            queryset = Job.objects.order_by('-date_created')
-        return queryset
-
-    def list(self, request, *args, **kwargs):
-        queryset = self.get_list_queryset()
-
-        page = self.paginate_queryset(queryset)
-        if page is not None:
-            serializer = JobSerializer(page, many=True)
-            return self.get_paginated_response(data=serializer.data)
-
-        serializer = self.get_serializer(queryset, many=True)
-        return Response(serializer.data)
-
-    class Meta:
-        permissions = (('view_job', 'View Jobs'))
+    def get_queryset(self):
+        return get_search_queryset(self)
 
 
 class TagViewSet(viewsets.ModelViewSet):
@@ -85,24 +85,10 @@ class TagViewSet(viewsets.ModelViewSet):
     def template_name(self):
         return '/home/tags/{}.jinja'.format(self.action)
 
-    def get_list_queryset(self):
-        search_query = self.request.query_params.get('query')
-        if search_query:
-            queryset = Tag.objects.filter(name__icontains=search_query).order_by('-date_created', 'name')
+    def get_queryset(self):
+        query = self.request.query_params.get('query')
+        if query:
+            queryset = Tag.objects.filter(name__icontains=query).order_by('name')
         else:
             queryset = Tag.objects.order_by('-date_created', 'name')
         return queryset
-
-    def list(self, request, *args, **kwargs):
-        queryset = self.get_list_queryset()
-
-        page = self.paginate_queryset(queryset)
-        if page is not None:
-            serializer = TagSerializer(page, many=True)
-            return self.get_paginated_response(data=serializer.data)
-
-        serializer = self.get_serializer(queryset, many=True)
-        return Response(serializer.data)
-
-    class Meta:
-        permissions = (('view_tag', 'View Tags'))

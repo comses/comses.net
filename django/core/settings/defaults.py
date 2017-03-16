@@ -126,7 +126,6 @@ TEMPLATES = [
                 'wagtailmenus.context_processors.wagtailmenus',
             ],
             'autoescape': True,
-            'auto_reload': DEBUG,
         }
     },
     {

@@ -11,7 +11,7 @@
         </div>
         <div class="form-group">
             <label>Summary</label>
-            <markdown class="form-control" v-model="data.summary"></markdown>
+            <markdown v-model="data.summary"></markdown>
             <button class="btn btn-secondary btn-sm" type="button" @click="createSummaryFromDescription">Summarize</button>
             <small class="form-text text-muted">A short summary of the job for display in search results.
                 This field can be created from the description by pressing the summarize button.

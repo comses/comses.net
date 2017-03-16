@@ -1,15 +1,16 @@
 $text-color: #6d6c71;
 $link-color: #22b1e6;
-$button-color: #92c02e;
+$brand-primary: #92c02e;
 $rules-color: #ced9ee;
 $link-hover: darken($text-color, 20%);
-$button-hover: darken($button-color, 20%);
+$button-hover: darken($brand-primary, 20%);
 $white: #f0f4fa;
 $body-bg: $white;
 $light-blue-gray: #c3d9ee;
 $default-padding: 60px;
 
-$brand-primary: $button-color;
+// Components overrides
+$border-radius: .0rem;
 
 @import url('https://fonts.googleapis.com/css?family=Open+Sans');
 @import url('https://fonts.googleapis.com/css?family=Abel');
@@ -171,4 +172,32 @@ footer {
 
 .compact {
   padding: 2px 2px;
+}
+
+.search-result {
+  @extend .card;
+  &:hover {
+    background-color: darken($body-bg, 5%);
+  }
+  h1 {
+    font-size: 1em;
+  }
+}
+
+.search-result {
+  .date-info {
+    @extend .card-title, .px-3;
+  }
+
+  .title {
+    @extend .card-block, .py-1;
+  }
+
+  .summary {
+    @extend .card-block, .py-1;
+  }
+
+  .tag-list {
+    @extend .card-block, .py-1;
+  }
 }

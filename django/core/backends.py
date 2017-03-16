@@ -1,6 +1,9 @@
 import logging
 from django.core.exceptions import PermissionDenied
-from guardian.shortcuts import get_objects_for_user
+from guardian import shortcuts as sc
+from django.db.models import FieldDoesNotExist
+from guardian.models import UserObjectPermission
+from django.contrib.auth.models import User
 
 logger = logging.getLogger(__name__)
 
@@ -47,6 +50,42 @@ def has_view_permission(perm, obj):
 
 def has_submitter_permission(user, obj):
     return user == getattr(obj, OWNER_ATTRIBUTE_KEY, None)
+
+
+def make_view_perm(model):
+    model_name = model._meta.model_name
+    app_label = model._meta.app_label
+    return '{}.view_{}'.format(app_label, model_name)
+
+
+def has_field(model, field_name):
+    try:
+        model._meta.get_field(field_name)
+        return True
+    except FieldDoesNotExist:
+        return False
+
+
+def get_db_user(user):
+    """Replaces AnonymousUser with Guardian anonymous user db record. Otherwise returns input"""
+    if user.is_anonymous:
+        user = User.objects.get(username='AnonymousUser')
+    return user
+
+
+def get_viewable_objects_for_user(user, queryset):
+    model = queryset.model
+    perms = make_view_perm(model)
+    kwargs = {}
+    if has_field(model, PUBLISHED_ATTRIBUTE_KEY):
+        user = get_db_user(user)
+        kwargs[PUBLISHED_ATTRIBUTE_KEY] = True
+        is_live_queryset = model.objects.filter(**kwargs)
+        is_submitter_queryset = model.objects.filter(submitter=user)
+        has_object_permission_queryset = sc.get_objects_for_user(user, perms=perms, accept_global_perms=False)
+        queryset &= has_object_permission_queryset | is_live_queryset | is_submitter_queryset
+
+    return queryset
 
 
 class ComsesObjectPermissionBackend:

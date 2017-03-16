@@ -15,6 +15,8 @@ def generate_with_codebase(submitter):
     return models(Codebase,
                   title=letters(),
                   description=letters(),
+                  references_text=letters(),
+                  replication_references_text=letters(),
                   uuid=st.uuids(),
                   repository_url=st.just(''),
                   doi=st.just(None),
