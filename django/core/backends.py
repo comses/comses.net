@@ -42,7 +42,10 @@ def has_authenticated_model_permission(user, perm, obj):
 
 
 def has_view_permission(perm, user, obj):
-    """Users should have permission to view an object if it is published or they have any permission on the object"""
+    """Users should have permission to view an object if it is published or they have any permission on the object
+    
+    This can be interpreted as having change or delete permission on an object implying that they have view permission
+    on the object"""
     if is_view_action(perm):
         published = getattr(obj, PUBLISHED_ATTRIBUTE_KEY, True)
         if published:
