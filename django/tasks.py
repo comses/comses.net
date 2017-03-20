@@ -6,7 +6,7 @@ import os
 import sys
 
 
-# push current working directory onto the path to access catalog.settings
+# push current working directory onto the path to access core.settings
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "core.settings.dev")
 
@@ -20,6 +20,7 @@ env = {
     'db_user': settings.DATABASES['default']['USER'],
     'project_conf': os.environ.get('DJANGO_SETTINGS_MODULE'),
     'coverage_omit_patterns': ('test', 'settings', 'migrations', 'wsgi', 'management', 'tasks', 'apps.py'),
+    'coverage_src_patterns': ('home', 'library', 'core',),
 }
 
 logger = logging.getLogger(__name__)
@@ -58,7 +59,8 @@ def test(ctx, name=None, coverage=False):
         apps = ''
     if coverage:
         ignored = ['*{0}*'.format(ignored_pkg) for ignored_pkg in env['coverage_omit_patterns']]
-        coverage_cmd = "coverage run --source=home,library --omit=" + ','.join(ignored)
+        coverage_cmd = "coverage run --source={0} --omit={1}".format(','.join(env['coverage_src_patterns']),
+                                                                     ','.join(ignored))
     else:
         coverage_cmd = env['python']
     ctx.run('{coverage_cmd} manage.py test {apps}'.format(apps=apps, coverage_cmd=coverage_cmd))
