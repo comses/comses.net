@@ -46,11 +46,12 @@
     </div>
 {% endmacro %}
 
-
-{% macro foo() %}
-    <div>Hello!</div>
-{% endmacro %}
-
-{% macro bar(arg) %}
-    {{ arg() }}
+{% macro retrieve_introduction(title) %}
+    <div class="container">
+        <div class="row">
+            <div class="col-12">
+                <h1>{{ title }}</h1>
+            </div>
+        </div>
+    </div>
 {% endmacro %}

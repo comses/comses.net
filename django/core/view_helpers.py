@@ -4,6 +4,8 @@ import os
 import re
 from wagtail.wagtailsearch.backends import get_search_backend
 from rest_framework.exceptions import ValidationError
+from guardian.decorators import permission_required_or_403
+from django.contrib.auth.decorators import login_required
 
 from core.backends import get_viewable_objects_for_user
 
@@ -26,17 +28,15 @@ def create_edit_routes(prefix: str, model, lookup_field: str, lookup_regex: str)
 
     perm = app_name + '.change_' + base_name
 
-    # create_view = login_required()(TemplateView.as_view(template_name=template_name))
-    create_view = TemplateView.as_view(template_name=template_name)
-    # update_view = permission_required_or_403(perm, (model, lookup_field, lookup_field))(
-    #     TemplateView.as_view(template_name=template_name))
-    update_view = TemplateView.as_view(template_name=template_name)
+    create_view = login_required()(TemplateView.as_view(template_name=template_name))
+    update_view = permission_required_or_403(perm, (model, lookup_field, lookup_field))(
+        TemplateView.as_view(template_name=template_name))
 
     return [
-        url(create_form_url, update_view,
-            name='{base_name}-create'.format(base_name=base_name)),
-        url(update_form_url, create_view,
+        url(update_form_url, update_view,
             name='{base_name}-update'.format(base_name=base_name)),
+        url(create_form_url, create_view,
+            name='{base_name}-create'.format(base_name=base_name)),
     ]
 
 
