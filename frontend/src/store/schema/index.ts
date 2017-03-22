@@ -1,5 +1,20 @@
 import * as Ajv from 'ajv'
-const search = require('json-loader!store/schema/search.json');
+const search = {
+  "id": "/search",
+  "title": "Search",
+  "type": "object",
+  "properties": {
+    "query": { "type": "string", "default": ""},
+    "tags": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": []
+    }
+  },
+  "required": ["query", "tags"]
+};
 
 const ajv = new Ajv({ useDefaults: true, coerceTypes: 'array' });
 
