@@ -1,7 +1,6 @@
 import 'bootstrap'
 import 'vue'
-import 'vuex'
-import 'vue-router'
+import 'lodash';
 import 'vue-multiselect'
 import 'vue-property-decorator'
 import 'ajv'

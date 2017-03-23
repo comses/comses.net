@@ -1,9 +1,10 @@
 <template>
-    <div class="editor">
+    <div :class="['form-group', hasDanger]">
+        <slot name="label"></slot>
         <div class="container-fluid p-0">
             <div class="row p-0 row-eq-height">
                 <div class="p-1 col-6">
-                    <textarea v-bind:value="value" v-on:input="updateValue($event.target.value)"
+                    <textarea :class="[ formControlDanger ]" v-bind:value="value.value" v-on:input="updateValue($event.target.value)"
                               debounce="300">
                     </textarea>
                 </div>
@@ -12,6 +13,8 @@
                 </div>
             </div>
         </div>
+        <div v-if="hasErrors" class="form-control-feedback">{{ errorMessage }}</div>
+        <slot name="help"></slot>
     </div>
 </template>
 <style scoped>
@@ -32,23 +35,20 @@ textarea {
 code {
   color: #f66;
 }
+
 </style>
 <script lang="ts">
-    import * as Vue from 'vue'
+    import BaseControl from 'components/forms/base'
     import {Component, Prop} from 'vue-property-decorator'
     import * as marked from 'marked'
 
     @Component
-    class MarkDown extends Vue {
+    class MarkDown extends BaseControl {
         @Prop
-        value: string;
+        value: { value: string, errors: Array<string> };
 
         get markdown() {
-            return marked.parse(this.value, {sanitize: true})
-        }
-
-        updateValue(value: string) {
-            this.$emit('input', value);
+            return marked.parse(this.value.value, {sanitize: true})
         }
     }
 

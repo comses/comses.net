@@ -38,9 +38,7 @@ class TagSerializer(serializers.ModelSerializer):
 
 def create(model_cls, validated_data, context):
     # Create related many to many
-    tags = TagSerializer(many=True, data=[{'name': name} for name in validated_data.pop('tags')])
-    if tags.is_valid(raise_exception=True):
-        tags.save()
+    tags = TagSerializer(many=True, data=validated_data.pop('tags'))
     # Add read only properties without defaults
     user = context['request'].user
     validated_data['submitter_id'] = user.id
@@ -51,9 +49,7 @@ def create(model_cls, validated_data, context):
 
 
 def update(serializer_update, instance, validated_data):
-    tags = TagSerializer(many=True, data=[{'name': name} for name in validated_data.pop('tags')])
-    if tags.is_valid(raise_exception=True):
-        tags.save()
+    tags = TagSerializer(many=True, data=validated_data.pop('tags'))
     obj = serializer_update(instance, validated_data)
     save_tags(obj, tags)
     return obj
@@ -61,12 +57,12 @@ def update(serializer_update, instance, validated_data):
 
 class EventSerializer(serializers.ModelSerializer):
     submitter = CreatorSerializer(read_only=True, help_text=_('User that created the event'))
-    location = serializers.SerializerMethodField(help_text=_('URL to the detail page of the job'))
+    relative_url = serializers.SerializerMethodField(help_text=_('URL to the detail page of the job'))
     date_created = serializers.DateTimeField(format='%Y-%m-%d', read_only=True)
     last_modified = serializers.DateTimeField(format='%Y-%m-%d', read_only=True)
-    tags = serializers.SlugRelatedField(many=True, slug_field='name', queryset=Tag.objects.all())
+    tags = TagSerializer(many=True)
 
-    def get_location(self, obj):
+    def get_relative_url(self, obj):
         return reverse_lazy('home:event-detail', kwargs={'pk': obj.id})
 
     def create(self, validated_data):
@@ -83,12 +79,12 @@ class EventSerializer(serializers.ModelSerializer):
 class JobSerializer(serializers.ModelSerializer):
     # need nested serializer for submitter
     submitter = CreatorSerializer(read_only=True, help_text=_('User that created the job description'))
-    location = serializers.SerializerMethodField(help_text=_('URL to the detail page of the job'))
+    relative_url = serializers.SerializerMethodField(help_text=_('URL to the detail page of the job'))
     date_created = serializers.DateTimeField(format='%Y-%m-%d', read_only=True)
     last_modified = serializers.DateTimeField(format='%Y-%m-%d', read_only=True)
-    tags = serializers.SlugRelatedField(many=True, slug_field='name', queryset=Tag.objects.all())
+    tags = TagSerializer(many=True)
 
-    def get_location(self, obj):
+    def get_relative_url(self, obj) -> str:
         return reverse_lazy('home:job-detail', kwargs={'pk': obj.id})
 
     def create(self, validated_data):
@@ -100,4 +96,4 @@ class JobSerializer(serializers.ModelSerializer):
     class Meta:
         model = Job
         fields = ('id', 'title', 'submitter', 'date_created', 'last_modified',
-                  'description', 'summary', 'location', 'tags')
+                  'description', 'summary', 'relative_url', 'tags')

@@ -1,4 +1,4 @@
-import {Job, Codebase} from './common'
+import {Job, CalendarEvent, Codebase} from './common'
 
 export const job: Job = {
     description: '',
@@ -16,4 +16,16 @@ export const codebase: Codebase = {
     keywords: [],
     repository_url: '',
     contributors: []
+};
+
+export const defaultEvent: CalendarEvent = {
+    description: '',
+    summary: '',
+    title: '',
+    tags: [],
+    location: '',
+    early_registration_deadline: '',
+    submission_deadline: '',
+    start_date: '',
+    end_date: ''
 };

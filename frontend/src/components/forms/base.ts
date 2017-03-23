@@ -4,32 +4,31 @@ import {Component, Prop} from 'vue-property-decorator'
 @Component
 class BaseControl extends Vue {
     @Prop
-    errors: Array<string>;
+    value: { value, errors: Array<string> };
 
-    @Prop
-    value;
-
-    @Prop({default: ''})
-    help: string;
+    get hasErrors() {
+        return this.value.errors.length > 0;
+    }
 
     get errorMessage() {
-        return this.errors.join('. ');
+        console.log(this.value.errors);
+        return this.value.errors.join('. ');
     }
 
     get hasDanger() {
         return {
-            'has-danger': this.errors.length > 0
+            'has-danger': this.hasErrors
         };
     }
 
     get formControlDanger() {
         return {
-            'form-control-danger': this.errors.length > 0
+            'form-control-danger': this.hasErrors
         };
     }
 
     updateValue(value) {
-        this.$emit('input', value);
+        this.$emit('input', {value, errors: this.value.errors});
     }
 }
 

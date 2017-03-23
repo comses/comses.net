@@ -28,3 +28,4 @@ def save_tags(instance, tags):
     db_tags = tags.save()
     instance.tags.clear()
     instance.tags.add(*db_tags)
+    instance.save()

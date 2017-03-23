@@ -1,5 +1,4 @@
 import * as Vue from 'vue'
-import {Store, mapGetters} from "vuex";
 
 enum InputType {
     text,

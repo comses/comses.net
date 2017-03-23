@@ -90,5 +90,5 @@ class TagViewSet(viewsets.ModelViewSet):
         if query:
             queryset = Tag.objects.filter(name__icontains=query).order_by('name')
         else:
-            queryset = Tag.objects.order_by('-date_created', 'name')
+            queryset = Tag.objects.order_by('name')
         return queryset

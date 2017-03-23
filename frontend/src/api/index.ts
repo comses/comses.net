@@ -1,6 +1,7 @@
 import axios from 'axios'
 import {AxiosResponse} from "axios";
 import * as _ from 'lodash'
+import {PageContext, ValidationErrors, PageState, Lens} from "../store/common";
 
 function getCookie(name) {
     let cookieValue: null | string = null;
@@ -26,56 +27,128 @@ api.interceptors.request.use(config => {
 }, error => Promise.reject(error));
 
 
-const handle_error =
+// General error handling
+
+const handleError =
     (reactions: {
-        validation_error: (data: {non_field_errors?: Array<string>}, fail_message: string) => void,
-        network_error: (fail_message: string) => void,
-        other_error: (fail_message: string) => void
+        handleValidationErrors: (data: {non_field_errors?: Array<string>}, fail_message: string) => void,
+        handleNetworkError: (fail_message: string) => void,
+        handleOtherError: (fail_message: string) => void
     }, fail_message: string) => (result) => {
 
         if (!result.response) {
-            reactions.network_error(result.message || 'NetworkError: ' + fail_message)
+            reactions.handleNetworkError(result.message || 'NetworkError: ' + fail_message)
         } else {
             const response = result.response;
             const content_type = response.headers['content-type'];
             const status = response.status;
             if (status === 400 && content_type === 'application/json') {
-                reactions.validation_error(response.data, 'ValidationError: ' + fail_message)
+                reactions.handleValidationErrors(response.data, 'ValidationError: ' + fail_message)
             } else {
-                reactions.other_error('OtherError: ' + fail_message);
+                reactions.handleOtherError('OtherError: ' + fail_message);
             }
         }
         return result;
     };
 
-const handle_network_error = (page: any) => (fail_message: string): void => {
-    page.main_error = fail_message;
+const handleNetworkError = <T>(context: PageContext<T>) => (fail_message: string): void => {
+    context.mainError([fail_message]);
 };
 
-const handle_validation_error = (page: any) => (data: {non_field_errors?: Array<string>}, fail_message: string): void => {
-    page.main_error = data.non_field_errors || fail_message;
-    page.validation_errors = data;
+const handleOtherError = handleNetworkError;
+
+/*
+ * Error handling for when the whole state is replaced
+ */
+
+const rootHandleValidationErrors = <T>(context: PageContext<T>) => (data: ValidationErrors<T>,
+                                                                    fail_message: string): void => {
+    context.mainError(data.non_field_errors || [fail_message]);
+    delete data.non_field_errors;
+    context.validationErrors(data);
 };
 
-const handle_other_error = handle_network_error;
-
-export const default_handle_error = (page: any) => handle_error({
-    validation_error: handle_validation_error(page),
-    network_error: handle_network_error(page),
-    other_error: handle_other_error(page)
+const rootHandleError = <T>(context: PageContext<T>) => handleError({
+    handleValidationErrors: rootHandleValidationErrors(context),
+    handleNetworkError: handleNetworkError(context),
+    handleOtherError: handleOtherError(context)
 }, 'Unknown error occurred');
 
-// 400 -> ValidationError
-// Other 400
 
-function delete_record(url: string) {
-    return api.delete(url);
+const rootHandleSuccess = <T>(url: string, context: PageContext<T>) => (response: AxiosResponse) => {
+    context.data(response.data);
+    context.validationErrors({});
+    context.mainError([]);
+    // window.location.href = document.referrer || url;
+};
+
+
+export function rootDeleteRecord<T>(context: PageContext<T>, url: string) {
+    return api.delete(url).then(rootHandleSuccess(url, context), rootHandleError(context));
 }
 
-function update_record<T>(url: string, payload: T) {
-    return api.put(url, payload);
+export function rootUpdateRecord<T, P>(context: PageContext<T>, url: string, payload: P) {
+    return api.put(url, payload).then(rootHandleSuccess(url, context), rootHandleError(context));
 }
 
-function create_record<T>(url: string, payload: T) {
-    return api.post(url, payload);
+export function rootCreateRecord<T, P>(context: PageContext<T>, url: string, payload: P) {
+    return api.post(url, payload).then(rootHandleSuccess(url, context), rootHandleError(context));
+}
+
+export function rootRetrieveRecord<T>(context: PageContext<T>, url: string) {
+    return api.get(url).then(rootHandleSuccess(url, context), rootHandleError(context))
+}
+
+/*
+ * Nested error handling for when a subset of the state is replaced
+ */
+
+const relatedSetErrors = (errors) => (old_state) => {
+    old_state.errors = errors;
+    return errors
+};
+
+export const relatedTransformSuccess = <T>(data: T) => (state: { value: any }): { value: any } => {
+    state.value = data;
+    return state;
+};
+
+// handle errors that occur that only modify a slice of the page state
+const relatedHandleError = (stateLens: Lens) => handleError({
+    handleValidationErrors: (data: {non_field_errors?: Array<string>}, fail_message: string) => {
+        const errors = _.map(_.values(data), el => el.toString());
+        stateLens.over(relatedSetErrors(errors));
+    },
+    handleNetworkError: (fail_message: string) => {
+        stateLens.over(relatedSetErrors([fail_message]));
+    },
+    handleOtherError: (fail_message: string) => {
+        stateLens.over(relatedSetErrors([fail_message]));
+    }
+}, 'Unknown error occurred');
+
+const relatedHandleSuccess =
+    (stateLens, data_transform: <T, S>(data: T) => (state: S) => S) =>
+    (response: AxiosResponse) => {
+    stateLens.over(data_transform(response.data));
+};
+
+export function relatedRetrieveRecord<T, S>(stateLens, data_transform: (data: T) => (state: S) => S, url: string) {
+    return api.get(url).then(
+        relatedHandleSuccess(stateLens, data_transform),
+        relatedHandleError(stateLens))
+}
+
+export function relatedCreateRecord<T, S, P>(stateLens, data_transform: (data: T) => (state: S) => S, url: string, payload: P) {
+    return api.post(url, payload).then(
+        relatedHandleSuccess(stateLens, data_transform),
+        relatedHandleError(stateLens))
+}
+
+export function createDefaultState<T>(defaultValue: T) {
+    let content: any = {};
+    for (const k in defaultValue) {
+        content[k] = { value: defaultValue[k], errors: []}
+    }
+    return { mainError: [], content };
 }
