@@ -5,8 +5,10 @@ docker-compose.yml
 generated-*.yml
 config.ini
 *.backup
-# backup files
+# backup files and metadata
+.DS_Store
 *~
+*.swp
 # ctags
 tags
 # Byte-compiled / optimized / DLL files
