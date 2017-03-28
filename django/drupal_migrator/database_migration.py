@@ -9,16 +9,16 @@ from datetime import datetime
 from typing import Dict
 
 import pytz
-
 from allauth.socialaccount.models import SocialApp
 from django.conf import settings
 from django.contrib.auth.models import User, Group
+from django.contrib.sites.models import Site
 from taggit.models import Tag
 
+from core.summarization import summarize_to_text
 from home.models import Event, Job, MemberProfile
 from library.models import (Contributor, Codebase, CodebaseRelease, CodebaseTag, License,
                             CodebaseContributor, Platform, OPERATING_SYSTEMS)
-from core.summarization import summarize_to_text
 from .utils import get_first_field, get_field, get_field_attributes
 
 logger = logging.getLogger(__name__)
