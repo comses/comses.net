@@ -27,6 +27,10 @@ ARG REQUIREMENTS_FILE=requirements-dev.txt
 COPY $REQUIREMENTS_FILE requirements.txt /tmp/
 COPY ./deploy/dev.sh /etc/service/django/run
 RUN pip3 install -r /tmp/$REQUIREMENTS_FILE && \
+# install NLTK data
+    python3 -m nltk.downloader -d /usr/share/nltk_data \
+        punkt stopwords wordnet words verbnet averaged_perceptron_tagger maxent_ne_chunker \
+        names && \
     chmod a+x /etc/service/django/run && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 # FIXME: run as restricted user, remove unnecessary packages
