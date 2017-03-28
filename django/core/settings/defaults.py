@@ -337,11 +337,11 @@ ACCOUNT_TEMPLATE_EXTENSION = 'jinja'
 ACCOUNT_PRESERVE_USERNAME_CASING = False
 ACCOUNT_LOGIN_ON_PASSWORD_RESET=True
 
-ORCID_CLIENT_ID = config.get('secrets', 'ORCID_CLIENT_ID', '')
-ORCID_CLIENT_SECRET = config.get('secrets', 'ORCID_CLIENT_SECRET', '')
+ORCID_CLIENT_ID = config.get('secrets', 'ORCID_CLIENT_ID', fallback='')
+ORCID_CLIENT_SECRET = config.get('secrets', 'ORCID_CLIENT_SECRET', fallback='')
 
-GITHUB_CLIENT_ID = config.get('secrets', 'GITHUB_CLIENT_ID', '')
-ORCID_CLIENT_SECRET = config.get('secrets', 'GITHUB_CLIENT_SECRET', '')
+GITHUB_CLIENT_ID = config.get('secrets', 'GITHUB_CLIENT_ID', fallback='')
+ORCID_CLIENT_SECRET = config.get('secrets', 'GITHUB_CLIENT_SECRET', fallback='')
 
 SOCIALACCOUNT_PROVIDERS = {
     'github': {
