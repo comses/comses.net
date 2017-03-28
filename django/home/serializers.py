@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from taggit.models import Tag
-from .models import Event, Job
+from .models import Event, Job, CarouselItem
 from django.contrib.auth.models import User
 from django.core.urlresolvers import reverse_lazy
 from django.utils.translation import ugettext_lazy as _
@@ -97,3 +97,11 @@ class JobSerializer(serializers.ModelSerializer):
         model = Job
         fields = ('id', 'title', 'submitter', 'date_created', 'last_modified',
                   'description', 'summary', 'relative_url', 'tags')
+
+
+class CarouselItemSerializer(serializers.ModelSerializer):
+    image = serializers.SlugRelatedField(read_only=True, slug_field='file')
+
+    class Meta:
+        model = CarouselItem
+        fields = ('image', 'caption', 'title', )

@@ -159,7 +159,12 @@ TAGGIT_CASE_INSENSITIVE = True
 # https://docs.djangoproject.com/en/1.10/ref/settings/#databases
 
 config = configparser.ConfigParser()
-config.read('/secrets/config.ini')
+
+# test to see if django is in docker
+if os.getcwd() == '/code':
+    config.read('/secrets/config.ini')
+else:
+    config.read('../deploy/conf/config.ini.debug')
 
 SECRET_KEY = config.get('secrets', 'SECRET_KEY')
 

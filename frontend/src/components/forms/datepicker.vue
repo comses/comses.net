@@ -1,7 +1,7 @@
 <template>
     <div :class="['form-group', hasDanger]">
         <slot name="label"></slot>
-        <datepicker v-model="date" wrapper-class="input-group" input-class="form-control" :clear-button="clearButton"></datepicker>
+        <datepicker v-model="date" wrapper-class="input-group" :input-class="['form-control', formControlDanger]" :clear-button="clearButton"></datepicker>
         <div v-if="hasErrors" class="form-control-feedback">{{ errorMessage }}</div>
         <slot name="help"></slot>
     </div>

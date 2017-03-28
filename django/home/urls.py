@@ -9,6 +9,8 @@ router = SimpleRouter()
 router.register(r'events', views.EventViewSet, base_name='event')
 router.register(r'jobs', views.JobViewSet, base_name='job')
 router.register(r'tags', views.TagViewSet, base_name='tag')
+# router.register(r'carousel', views.CarouselItemView, base_name='carousel')
+
 
 urlpatterns = []
 edit_route_form_data = {'lookup_field': 'pk', 'lookup_regex': r'\d+'}

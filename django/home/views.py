@@ -5,15 +5,15 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.views.generic import DetailView
 from django.http import QueryDict
 
-from rest_framework import viewsets
+from rest_framework import viewsets, generics
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 from taggit.models import Tag
 from wagtail.wagtailsearch.backends import get_search_backend
 
 from core.view_helpers import get_search_queryset
-from .models import Event, Job
-from .serializers import EventSerializer, JobSerializer, TagSerializer
+from .models import Event, Job, CarouselItem
+from .serializers import EventSerializer, JobSerializer, TagSerializer, CarouselItemSerializer
 
 logger = logging.getLogger(__name__)
 
@@ -109,3 +109,10 @@ class ProfileView(LoginRequiredMixin, DetailView):
             return super(ProfileView, self).get_object()
         except:
             return self.request.user
+
+
+#
+# class CarouselItemView(generics.ListAPIView):
+#     serializer_class = CarouselItemSerializer
+#     queryset = CarouselItem.objects.all()
+#     pagination_class = SmallResultSetPagination
