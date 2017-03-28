@@ -11,7 +11,6 @@ class BaseControl extends Vue {
     }
 
     get errorMessage() {
-        console.log(this.value.errors);
         return this.value.errors.join('. ');
     }
 

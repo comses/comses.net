@@ -2,8 +2,8 @@
     <div :class="['form-group', hasDanger]">
         <slot name="label"></slot>
         <input :type="type" :class="['form-control', formControlDanger]"
-               v-on:input="updateValue($event.target.value)"
-               v-bind:value="value.value">
+               @input="updateValue($event.target.value)"
+               :value="value.value">
         <div v-if="hasErrors" class="form-control-feedback">{{ errorMessage }}</div>
         <slot name="help"></slot>
     </div>

@@ -8,14 +8,46 @@
             <label class="form-control-label" slot="label">Location</label>
             <small class="form-text text-muted" slot="help">The address of where the event takes place</small>
         </c-input>
-        <markdown v-model="state.content.description" :errors="validationErrors.description">
+        <div class="row">
+            <div class="col-6">
+                <c-datepicker v-model="state.content.start_date">
+                    <label class="form-control-label" slot="label">Start Date</label>
+                    <small class="form-text text-muted" slot="help">The date the event begins at</small>
+                </c-datepicker>
+            </div>
+            <div class="col-6">
+                <c-datepicker v-model="state.content.end_date" :clearButton="true">
+                    <label class="form-control-label" slot="label">End Date</label>
+                    <small class="form-text text-muted" slot="help">The date the event ends at</small>
+                </c-datepicker>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-6 d-inline">
+                <c-datepicker v-model="state.content.early_registration_deadline" :clearButton="true">
+                    <label class="form-control-label" slot="label">Early Registration Deadline</label>
+                    <small class="form-text text-muted" slot="help">The last day for early registration of the event
+                        (inclusive)
+                    </small>
+                </c-datepicker>
+            </div>
+            <div class="col-6 d-inline">
+                <c-datepicker v-model="state.content.submission_deadline" :clearButton="true">
+                    <label class="form-control-label" slot="label">Submission Deadline</label>
+                    <small class="form-text text-muted" slot="help">The last day to register for the event (inclusive)
+                    </small>
+                </c-datepicker>
+            </div>
+        </div>
+        <markdown v-model="state.content.description" minHeight="20em">
             <label class="form-control-label" slot="label">Description</label>
             <small slot="help" class="form-text text-muted">Detailed information about the job</small>
         </markdown>
         <markdown v-model="state.content.summary">
             <label slot="label">Summary</label>
             <div slot="help">
-                <button class="btn btn-secondary btn-sm" type="button" @click="createSummaryFromDescription">Summarize
+                <button class="btn btn-secondary btn-sm" type="button" @click="createSummaryFromDescription">
+                    Summarize
                 </button>
                 <small class="form-text text-muted">A short summary of the job for display in search results.
                     This field can be created from the description by pressing the summarize button.
@@ -24,7 +56,8 @@
         </markdown>
         <c-tagger v-model="state.content.tags.value" v-on:errors="setTagErrors">
         </c-tagger>
-        <small class="form-text text-muted">A list of tags to associate with a job. Tags help people search for jobs.
+        <small class="form-text text-muted">A list of tags to associate with a job. Tags help people search for
+            jobs.
         </small>
         <button type="button" class="mt-3 btn btn-primary" @click="createOrUpdate">Submit</button>
     </form>
@@ -36,16 +69,16 @@
     import Component from 'vue-class-component'
     import  {CalendarEvent, Lens} from '../../store/common'
     import {api, createDefaultState, relatedCreateRecord, relatedTransformSuccess} from '../../api/index'
-    import * as queryString from 'query-string'
     import {defaultEvent} from '../../store/defaults'
     import Markdown from 'components/forms/markdown.vue'
     import Tagger from 'components/tagger.vue'
     import Input from 'components/forms/input.vue'
+    import Datepicker from 'components/forms/datepicker.vue';
 
     @Component({
         components: {
-            // Multiselect,
             Markdown,
+            'c-datepicker': Datepicker,
             'c-tagger': Tagger,
             'c-input': Input
         },
