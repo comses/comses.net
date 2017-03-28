@@ -20,6 +20,7 @@
         <div class="title">
             <h1 class="p-0 m-0"><a href="{{ url(detail_url_name, pk=item.id) }}">{{ item.title }}</a></h1>
             <small>Submitted by:
+                {# FIXME: this should delegate to MemberProfile.get_absolute_url instead #}
                 <a href="/profile/{{ item.submitter.username }}/">{{ item.submitter.username }}</a>
             </small>
         </div>

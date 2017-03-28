@@ -48,8 +48,9 @@ DJANGO_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
-    'django.contrib.sessions',
     'django.contrib.messages',
+    'django.contrib.sessions',
+    'django.contrib.sites',
     'django.contrib.staticfiles',
 ]
 
@@ -57,21 +58,26 @@ THIRD_PARTY_APPS = [
     'django_extensions',
     'django_jinja',
     'guardian',
-    'timezone_field',
-    'social_django',
     'rest_framework',
     'rest_framework_swagger',
+    'timezone_field',
     'webpack_loader',
+    # django-allauth setup
+    'allauth',
+    'allauth.account',
+    'allauth.socialaccount',
+    'allauth.socialaccount.providers.github',
+    'allauth.socialaccount.providers.orcid',
 ]
 
 COMSES_APPS = [
+    'citation',
+    'core',
     'library',
     'home',
-    'citation',
-    'core'
 ]
 
-INSTALLED_APPS = COMSES_APPS + WAGTAIL_APPS + DJANGO_APPS + THIRD_PARTY_APPS
+INSTALLED_APPS = DJANGO_APPS + WAGTAIL_APPS + COMSES_APPS + THIRD_PARTY_APPS
 
 MIDDLEWARE = [
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -88,11 +94,14 @@ MIDDLEWARE = [
 ]
 
 AUTHENTICATION_BACKENDS = (
-    'social_core.backends.github.GithubOAuth2',
     'django.contrib.auth.backends.ModelBackend',
+    'allauth.account.auth_backends.AuthenticationBackend',
     'core.backends.ComsesObjectPermissionBackend',
     'guardian.backends.ObjectPermissionBackend'
 )
+
+# create a site in migration
+SITE_ID = 1
 
 ROOT_URLCONF = 'core.urls'
 
@@ -102,8 +111,7 @@ TEMPLATES = [
         'BACKEND': 'django_jinja.backend.Jinja2',
         'APP_DIRS': True,
         'OPTIONS': {
-            'match_extension': None,
-            'app_dirname': 'templates-jinja2',
+            'match_extension': '.jinja',
             'newstyle_gettext': True,
             # DEFAULT_EXTENSIONS at https://github.com/niwinz/django-jinja/blob/master/django_jinja/builtins/__init__.py
             "extensions": DEFAULT_EXTENSIONS + [
@@ -118,9 +126,6 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
-
-                'social_django.context_processors.backends',
-                'social_django.context_processors.login_redirect',
 
                 'wagtail.contrib.settings.context_processors.settings',
                 'wagtailmenus.context_processors.wagtailmenus',
@@ -137,9 +142,6 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
-
-                'social_django.context_processors.backends',
-                'social_django.context_processors.login_redirect',
 
                 'wagtail.contrib.settings.context_processors.settings',
                 'wagtailmenus.context_processors.wagtailmenus',
@@ -186,10 +188,10 @@ for d in (LOG_DIRECTORY, LIBRARY_ROOT, REPOSITORY_ROOT):
 # logging configuration
 LOGGING = {
     'version': 1,
-    'disable_existing_loggers': False,
+    'disable_existing_loggers': True,
     'root': {
-        'level': 'DEBUG',
-        'handlers': ['rollingfile', 'console'],
+        'level': 'WARNING',
+        'handlers': ['console', 'rollingfile'],
     },
     'formatters': {
         'verbose': {
@@ -203,8 +205,16 @@ LOGGING = {
     'handlers': {
         'console': {
             'class': 'logging.StreamHandler',
-            'level': 'DEBUG',
+            'level': 'INFO',
             'formatter': 'verbose'
+        },
+        'djangofile': {
+            'level': 'DEBUG',
+            'class': 'logging.handlers.RotatingFileHandler',
+            'formatter': 'verbose',
+            'filename': os.path.join(LOG_DIRECTORY, 'django.log'),
+            'backupCount': 6,
+            'maxBytes': 10000000,
         },
         'rollingfile': {
             'level': 'DEBUG',
@@ -216,9 +226,19 @@ LOGGING = {
         },
     },
     'loggers': {
+        'django': {
+            'level': 'INFO',
+            'handlers': ['console', 'djangofile'],
+            'propagate': False,
+        },
+        'core': {
+            'level': 'DEBUG',
+            'handlers': ['console', 'rollingfile'],
+            'propagate': False
+        },
         'home': {
             'level': 'DEBUG',
-            'handlers': ['console'],
+            'handlers': ['console', 'rollingfile'],
             'propagate': False
         },
         'library': {
@@ -306,17 +326,30 @@ REST_FRAMEWORK = {
     'PAGE_SIZE': 10
 }
 
-# SSO, user registration, and social auth configuration
+# SSO, user registration, and django-allauth configuration, see
+# https://django-allauth.readthedocs.io/en/latest/configuration.html
+# ACCOUNT_ADAPTER = 'core.adapter.AccountAdapter'
+ACCOUNT_EMAIL_CONFIRMATION_EXPIRE_DAYS = 15
+ACCOUNT_EMAIL_REQUIRED = True
+ACCOUNT_EMAIL_VERIFICATION = "mandatory"
+ACCOUNT_SIGNUP_FORM_CLASS = 'home.forms.SignupForm'
+ACCOUNT_TEMPLATE_EXTENSION = 'jinja'
+ACCOUNT_PRESERVE_USERNAME_CASING = False
+ACCOUNT_LOGIN_ON_PASSWORD_RESET=True
 
+SOCIALACCOUNT_PROVIDERS = {
+    'github': {
+        'SCOPE': [
+            'user',
+            'repo',
+            'read:org',
+        ],
+    },
+    'orcid': {
+        'BASE_DOMAIN': 'sandbox.orcid.org',
+        'MEMBER_API': True,
+    },
+}
 
-# django-registration settings https://django-registration.readthedocs.io/en/2.2/settings.html
-ACCOUNT_ACTIVATION_DAYS = 120  # number of days an account has to activate
-REGISTRATION_OPEN = True
-# apparently does not need to be secret, see
-# https://django-registration.readthedocs.io/en/2.2/hmac.html#security-considerations
-REGISTRATION_SALT = 'rj9_!qbnz#bcm__w-xo8htm+!y2dd8!!g&qgpwd*omfed!lxnw'
-
-
-SOCIAL_AUTH_URL_NAMESPACE = 'socialauth'
 DISCOURSE_BASE_URL = 'https://forum.comses.net'
 DISCOURSE_SSO_SECRET = config.get('secrets', 'DISCOURSE_SSO_SECRET')

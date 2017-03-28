@@ -81,6 +81,9 @@ class MemberProfile(index.Indexed, ClusterableModel):
     orcid = models.CharField(help_text=_("16 digits, - between every 4th digit, e.g., 0000-0002-1825-0097"),
                              max_length=19)
 
+    def get_absolute_url(self):
+        return '/accounts/profile/{0}'.format(self.user.username)
+
     def __str__(self):
         if self.user:
             return "username={} is_superuser={} is_active={}".format(self.user.username, self.user.is_superuser,

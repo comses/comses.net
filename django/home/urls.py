@@ -2,10 +2,8 @@ from django.conf.urls import url, include
 from django.views.generic import TemplateView
 from . import views
 from . import models
-from .forms import RegistrationForm
 from rest_framework.routers import SimpleRouter
 from core.view_helpers import create_edit_routes
-from registration.backends.hmac.views import RegistrationView
 
 router = SimpleRouter()
 router.register(r'events', views.EventViewSet, base_name='event')
@@ -26,10 +24,9 @@ urlpatterns += [
     # account URLs
     url(r'^accounts/membership/', TemplateView.as_view(template_name='registration/membership.html'),
         name='membership'),
-    url(r'^accounts/register/', RegistrationView.as_view(form_class=RegistrationForm),
+    url(r'^accounts/register/', TemplateView.as_view(template_name='registration/registration_form.html'),
         name='register'),
-    url(r'^accounts/profile/', TemplateView.as_view(template_name='accounts/profile.jinja'),
-        name='profile'),
+    url(r'^accounts/profile/', TemplateView.as_view(template_name='account/profile.jinja'),
+        name='account_profile'),
+    url(r'^accounts/profile/(?P<username>\w+)', views.ProfileView.as_view(), name='user_profile'),
 ]
-
-urlpatterns += router.urls

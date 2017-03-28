@@ -26,12 +26,11 @@ Primary URLConf entry point into the comses.net website
 urlpatterns = [
     # also pulls in urls from
     # https://github.com/ubernostrum/django-registration/blob/master/registration/auth_urls.py
-    url(r'^auth/', include('registration.backends.hmac.urls')),
+    url(r'^accounts/', include('allauth.urls')),
     # FIXME: have to hardcode this one because it gets reversed in
     url(r'^', include(home_urls, namespace='home')),
     url(r'^', include(library_urls, namespace='library')),
     url(r'^summarize/$', views.summarize_text, name='summarize'),
-    url(r'^auth/', include('social_django.urls', namespace='socialauth')),
     url(r'^wagtail/admin/', include(wagtailadmin_urls)),
     url(r'^django/admin/', include(admin.site.urls)),
     url(r'^', include(wagtail_urls)),

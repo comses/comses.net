@@ -3,6 +3,7 @@ from django.conf import settings
 from django.template import defaultfilters
 from django.utils.timezone import get_current_timezone
 from django_jinja import library
+from allauth.socialaccount import providers
 from ..summarization import summarize
 from ..utils import markdown_to_sanitized_html
 
@@ -22,6 +23,12 @@ def now(format_string):
     """
     tzinfo = get_current_timezone() if settings.USE_TZ else None
     return defaultfilters.date(datetime.now(tz=tzinfo), format_string)
+
+
+@library.global_function
+def provider_login_url(request, provider_id, process="login"):
+    provider = providers.registry.by_id(provider_id, request)
+    return provider.get_login_url(request, process=process)
 
 
 @library.global_function

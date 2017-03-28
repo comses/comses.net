@@ -1,5 +1,8 @@
 import logging
 
+from django.contrib.auth.models import User
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.views.generic import DetailView
 from django.http import QueryDict
 
 from rest_framework import viewsets
@@ -83,7 +86,7 @@ class TagViewSet(viewsets.ModelViewSet):
 
     @property
     def template_name(self):
-        return '/home/tags/{}.jinja'.format(self.action)
+        return 'home/tags/{}.jinja'.format(self.action)
 
     def get_queryset(self):
         query = self.request.query_params.get('query')
@@ -92,3 +95,17 @@ class TagViewSet(viewsets.ModelViewSet):
         else:
             queryset = Tag.objects.order_by('name')
         return queryset
+
+
+class ProfileView(LoginRequiredMixin, DetailView):
+
+    # need to check permissions
+    template_name = 'account/profile.jinja'
+    model = User
+    slug_field = 'username'
+
+    def get_object(self):
+        try:
+            return super(ProfileView, self).get_object()
+        except:
+            return self.request.user

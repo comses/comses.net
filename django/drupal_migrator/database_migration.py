@@ -7,10 +7,12 @@ import re
 from collections import defaultdict
 from datetime import datetime
 from typing import Dict
-from django.conf import settings
 
 import pytz
-from django.contrib.auth.models import User, Group, Permission
+
+from allauth.socialaccount.models import SocialApp
+from django.conf import settings
+from django.contrib.auth.models import User, Group
 from taggit.models import Tag
 
 from home.models import Event, Job, MemberProfile
@@ -185,6 +187,7 @@ class UserExtractor(Extractor):
         roles = raw_user['roles'].values()
         MemberProfile.objects.get_or_create(user=user, defaults={"timezone": raw_user['timezone']})
         if 'administrator' in roles:
+            user.is_staff = True
             user.is_superuser = True
             user.save()
             user.groups.add(UserExtractor.ADMIN_GROUP)
@@ -436,6 +439,26 @@ def load(directory: str):
         load_data(License, LICENSES)
     if Platform.objects.count() == 0:
         load_data(Platform, PLATFORMS)
+
+    if SocialApp.objects.count() == 0:
+        site = Site.objects.get(pk=1)
+        # site.domain = 'test.comses.net'
+        # site.name = 'CoRe at CoMSES.Net'
+        # site.save()
+        orcid_app = SocialApp.objects.create(
+            provider='orcid',
+            name='ORCID',
+            client_id=settings.ORCID_CLIENT_ID,
+            secret=settings.ORCID_CLIENT_SECRET,
+        )
+        orcid_app.sites.add(site)
+        github_app = SocialApp.objects.create(
+            provider='github',
+            name='GitHub',
+            client_id=settings.GITHUB_CLIENT_ID,
+            secret=settings.GITHUB_CLIENT_SECRET,
+        )
+        github_app.sites.add(site)
 
     author_id_map = author_extractor.extract_all()
     user_id_map = user_extractor.extract_all()
