@@ -79,6 +79,15 @@ class Extractor:
         self.data = data
 
     @staticmethod
+    def sanitize(data: str, max_length: int=None) -> str:
+        _sanitized_data = data.strip().lower()
+        if max_length is not None:
+            if len(_sanitized_data) > max_length:
+                logger.warning("data exceeded max length %s: %s", max_length, data)
+                return _sanitized_data[:max_length]
+        return _sanitized_data
+
+    @staticmethod
     def int_to_bool(integer_value, default=False) -> bool:
         try:
             return bool(int(integer_value))
@@ -171,8 +180,8 @@ class UserExtractor(Extractor):
     @staticmethod
     def _extract(raw_user):
         """ assumes existence of editor, reviewer, full_member, admin groups """
-        username = raw_user['name']
-        email = raw_user['mail']
+        username = Extractor.sanitize(raw_user['name'])
+        email = Extractor.sanitize(raw_user['mail'])
         if not all([username, email]):
             return
         user, created = User.objects.get_or_create(
@@ -263,14 +272,6 @@ class TaxonomyExtractor(Extractor):
     # DELIMITERS = (';', ',', '.')
     DELIMITER_REGEX = re.compile(r';|,|\.')
 
-    @staticmethod
-    def sanitize(tag: str) -> str:
-        rv = tag.strip()
-        if len(tag) > 100:
-            logger.warning("tag_too_long: %s", tag)
-            return tag[:100].strip()
-        return rv.lower()
-
     def extract_all(self):
         tag_id_map = defaultdict(list)
         for raw_tag in self.data:
@@ -281,9 +282,9 @@ class TaxonomyExtractor(Extractor):
                 # try, in that order, to split them
                 tags = filter(lambda x: x.strip(), re.split(self.DELIMITER_REGEX, raw_tag_name))
                 for t in tags:
-                    t = self.sanitize(t)
-                    tag, created = Tag.objects.get_or_create(name=t)
-                    tag_id_map[raw_tag['tid']].append(t)
+                    sanitized_tag = self.sanitize(t, 100)
+                    tag, created = Tag.objects.get_or_create(name=sanitized_tag)
+                    tag_id_map[raw_tag['tid']].append(sanitized_tag)
         return tag_id_map
 
 
