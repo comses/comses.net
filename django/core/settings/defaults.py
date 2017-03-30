@@ -94,7 +94,7 @@ MIDDLEWARE = [
 ]
 
 AUTHENTICATION_BACKENDS = (
-    'django.contrib.auth.backends.ModelBackend',
+    'core.backends.EmailAuthenticationBackend',
     'allauth.account.auth_backends.AuthenticationBackend',
     'core.backends.ComsesObjectPermissionBackend',
     'guardian.backends.ObjectPermissionBackend'
@@ -341,7 +341,7 @@ ORCID_CLIENT_ID = config.get('secrets', 'ORCID_CLIENT_ID', fallback='')
 ORCID_CLIENT_SECRET = config.get('secrets', 'ORCID_CLIENT_SECRET', fallback='')
 
 GITHUB_CLIENT_ID = config.get('secrets', 'GITHUB_CLIENT_ID', fallback='')
-ORCID_CLIENT_SECRET = config.get('secrets', 'GITHUB_CLIENT_SECRET', fallback='')
+GITHUB_CLIENT_SECRET = config.get('secrets', 'GITHUB_CLIENT_SECRET', fallback='')
 
 SOCIALACCOUNT_PROVIDERS = {
     'github': {

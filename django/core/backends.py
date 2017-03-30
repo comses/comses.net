@@ -1,9 +1,11 @@
 import logging
-from django.core.exceptions import PermissionDenied
-from guardian import shortcuts as sc
-from django.db.models import FieldDoesNotExist
-from guardian.shortcuts import get_perms
+
+from django.contrib.auth.backends import ModelBackend
 from django.contrib.auth.models import User
+from django.core.exceptions import PermissionDenied
+from django.db.models import FieldDoesNotExist
+from guardian import shortcuts as sc
+from guardian.shortcuts import get_perms
 
 logger = logging.getLogger(__name__)
 
@@ -98,12 +100,22 @@ def get_viewable_objects_for_user(user, queryset):
     return queryset
 
 
+class EmailAuthenticationBackend(ModelBackend):
+
+    def authenticate(self, request, username=None, password=None, **kwargs):
+        l_username = username.lower().strip()
+        candidate = User.objects.filter(email=l_username)
+        if candidate.exists():
+            return candidate.first().check_password(password)
+        return super(EmailAuthenticationBackend, self).authenticate(l_username, password, **kwargs)
+
+
 class ComsesObjectPermissionBackend:
     """
     Allow user that submitted the obj to perform any action with it
     """
 
-    def authenticate(self, username, password):
+    def authenticate(self, username, password, **kwargs):
         return None
 
     def has_perm(self, user, perm, obj=None):
