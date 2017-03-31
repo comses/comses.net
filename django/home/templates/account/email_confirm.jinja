@@ -1,0 +1,26 @@
+{% extends "base.jinja" %}
+
+{% block introduction %}
+    <h1>Confirm your email address</h1>
+{% endblock %}
+{% block content %}
+    {% if confirmation %}
+
+        {% set email=confirmation.email_address.email %}
+        {% set user_display=confirmation.email_address.user %}
+        {# {% user_display confirmation.email_address.user as user_display %} #}
+
+        <p>Please confirm that <a href="mailto:{{ email }}">{{ email }}</a> is an e-mail address for user {{ user_display }}.</p>
+
+        <form method="post" action="{{ url('account_confirm_email', confirmation.key) }}">
+            {% csrf_token %}
+            <button class='btn btn-primary' type="submit">{% trans %}Confirm {% endtrans %}</button>
+        </form>
+
+    {% else %}
+
+        {% set email_url=url('account_email') %}
+
+        <p>This e-mail confirmation link expired or is invalid. Please <a href="{{ email_url }}">issue a new e-mail confirmation request</a>.</p>
+    {% endif %}
+{% endblock %}

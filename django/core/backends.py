@@ -44,8 +44,8 @@ def has_authenticated_model_permission(user, perm, obj):
 
 
 def has_view_permission(perm, user, obj):
-    """Users should have permission to view an object if it is published or they have any permission on the object
-    
+    """
+    Users should have permission to view an object if it is published or they have any permission on the object
     This can be interpreted as having change or delete permission on an object implying that they have view permission
     on the object"""
     if is_view_action(perm):
@@ -104,10 +104,11 @@ class EmailAuthenticationBackend(ModelBackend):
 
     def authenticate(self, request, username=None, password=None, **kwargs):
         l_username = username.lower().strip()
-        candidate = User.objects.filter(email=l_username)
-        if candidate.exists():
-            return candidate.first().check_password(password)
-        return super(EmailAuthenticationBackend, self).authenticate(l_username, password, **kwargs)
+        try:
+            user = User.objects.get(email=l_username)
+            return user.check_password(password) and user
+        except User.DoesNotExist:
+            return super(EmailAuthenticationBackend, self).authenticate(l_username, password, **kwargs)
 
 
 class ComsesObjectPermissionBackend:
@@ -127,5 +128,5 @@ class ComsesObjectPermissionBackend:
             raise PermissionDenied
 
         return has_authenticated_model_permission(user, perm, obj) or \
-               has_view_permission(perm, user, obj) or \
-               has_submitter_permission(user, obj)
+            has_view_permission(perm, user, obj) or \
+            has_submitter_permission(user, obj)

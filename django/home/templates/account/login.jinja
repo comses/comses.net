@@ -23,7 +23,7 @@
         <form id='signin-form' role="form" class="form-horizontal" method="post">
             {% csrf_token %}
             <div id='username' class='form-group {{ 'has-danger' if has_errors }}'>
-                <input name='username' type='text' class='form-control' placeholder='Username or email'>
+                <input name='login' type='text' class='form-control' placeholder='Username or email'>
                 <small class='form-text text-muted'>Enter the username or email address you used to register with this site.</small>
             </div>
             <div id='password' class='form-group {{ 'has-danger' if has_errors }}'>

@@ -1,0 +1,16 @@
+{% extends "base.jinja" %}
+
+{% block introduction %}
+    <h1>Verify your email address</h1>
+{% endblock %}
+{% block content %}
+    <p>We have sent an email to you for verification. Please check your email for this message and follow the link
+    provided to finalize your registration on our site. 
+    </p>
+    <p>
+    If you don't receive the email within a few minutes, please <a href='{{ url('home:contact') }}'>contact us</a>.
+    </p>
+    <p>
+    Thanks for joining the CoMSES Network community!
+    </p>
+{% endblock %}
