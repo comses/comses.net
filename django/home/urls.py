@@ -20,6 +20,7 @@ urlpatterns += [
     url(r'^', include(router.urls)),
     url(r'^resources/$', TemplateView.as_view(template_name='home/resources.jinja'),
         name='resources'),
+    url(r'^contact/$', TemplateView.as_view(template_name='home/contact.jinja'), name='contact'),
     url(r'^community/$', TemplateView.as_view(template_name='home/community.jinja'), name='community'),
     # account URLs
     url(r'^accounts/membership/', TemplateView.as_view(template_name='registration/membership.html'),
