@@ -3,185 +3,177 @@
 {% set profile_url = url("home:account_profile") %}
 
 {% macro header() %}
-    <header class="fixed-top">
-        <div class="container">
-            <div class="row">
-                <div class="col-sm-12 col-md-6 col-lg-4">
-                    <nav class="nav">
-                        <a href="{{ url('home:index') }}" class="nav-link">
-                            <span class="logo">CoMSES Network | OpenABM</span>
-                        </a>
-                    </nav>
-                </div>
-                <div class="col-sm-12 col-md-6 col-lg-8">
-                    <ul class="nav justify-content-end">
-                        <li class="nav-item">
-                            <a href="{{ url('library:codebase-list') }}" class="nav-link">Model Library</a>
-                        </li>
-                        <li class="nav-item">
-                            <a href="{{ url('home:event-list') }}" class="nav-link">Events</a>
-                        </li>
-                        <li>
-                            <a href="{{ url('home:job-list') }}" class="nav-link">Jobs</a>
-                        </li>
-                        <li class="nav-item">
-                            <a href="#" class="nav-link">Resources</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="/search"><i class='fa fa-search'></i></a>
-                        </li>
-                        {% if request.user.is_authenticated %}
-                            <li class="nav-item dropdown">
+<header class="fixed-top">
+    <div class="container">
+        <div class="row">
+            <div class="col-sm-12 col-md-6 col-lg-4">
+                <nav class="nav">
+                    <a href="{{ url('home:index') }}" class="nav-link">
+                        <span class="logo">CoMSES Network | OpenABM</span>
+                    </a>
+                </nav>
+            </div>
+            <div class="col-sm-12 col-md-6 col-lg-8">
+                <ul class="nav justify-content-end">
+                    <li class="nav-item">
+                        <a href="{{ url('library:codebase-list') }}" class="nav-link">Model Library</a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="{{ url('home:event-list') }}" class="nav-link">Events</a>
+                    </li>
+                    <li>
+                        <a href="{{ url('home:job-list') }}" class="nav-link">Jobs</a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="#" class="nav-link">Resources</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/search"><i class='fa fa-search'></i></a>
+                    </li>
+                    {% if request.user.is_authenticated %}
+                        <li class="nav-item dropdown">
                             <a class="nav-link dropdown-toggle" id='userDropdownMenuLink'
                                data-toggle="dropdown" role="button" href="#" aria-haspopup="true" aria-expanded="false">
                                 <span class="fa fa-chevron-down"></span>
                             </a>
                             <div class="dropdown-menu" aria-labelledby='userDropdownMenuLink'>
                                 <a class="dropdown-item" href="{{ profile_url }}"><i class='fa fa-user'></i> Profile</a>
-                                {# FIXME: logout needs to be POSTed - see
-                                http://django-allauth.readthedocs.io/en/latest/views.html#logout-account-logout #}
-                                <a class="dropdown-item" href="{{ logout_url }}"><i class='fa fa-sign-out'></i> Sign Out</a>
+                                {# POST logouts, see http://django-allauth.readthedocs.io/en/latest/views.html#logout-account-logout #}
+                                <form id='logoutForm' method='post' action='{{ logout_url }}'>
+                                    {% csrf_token %}
+                                    {% if redirect_field_value %}
+                                        <input type="hidden" name="{{ redirect_field_name }}" value="{{ redirect_field_value }}"/>
+                                    {% endif %}
+                                    <input type='submit' style='display: none;'>
+                                </form>
+                                <a class="dropdown-item" onclick='return submitLogout();' href="{{ logout_url }}"><i class='fa fa-sign-out'></i> Sign Out</a>
                             </div>
-                            </li>
-                        {% else %}
-                            <li class='nav-item'>
-                                <a class="nav-link" href="{{ login_url }}"><i class='fa fa-sign-in'></i> Sign In</a>
-                            </li>
-                        {% endif %}
-                    </ul>
-                </div>
+                        </li>
+                    {% else %}
+                        <li class='nav-item'>
+                            <a class="nav-link" href="{{ login_url }}"><i class='fa fa-sign-in'></i> Sign In</a>
+                        </li>
+                    {% endif %}
+                </ul>
             </div>
         </div>
-    </header>
+    </div>
+</header>
 {% endmacro %}
 
 {% macro footer() %}
-    <footer class="footer">
-        <div class="container">
-            <div class="row">
-                <div class="col-xs-12 col-lg-3">
-                    <ul class="social-media">
-                        <li>
-                            <a href="https://github.com/comses" title="GitHub" target="_blank">
-                <span class="fa-stack">
-                  <i class="fa fa-circle fa-stack-2x"></i>
-                  <i class="fa fa-code-fork fa-inverse fa-stack-1x"></i>
-                </span>
-                            </a>
-                        </li>
-                        <li>
-                            <a href="https://twitter.com/openabm_comses" title="Twitter" target="_blank">
-                  <span class="fa-stack">
-                    <i class="fa fa-circle fa-stack-2x"></i>
-                    <i class="fa fa-twitter fa-inverse fa-stack-1x"></i>
-                  </span>
-                            </a>
-                        </li>
-
-                        <!--
-                        <li>
-                          <a href="http://www.openabm.org/rss.xml" title="RSS Feed">
-                            <span class="fa-stack">
-                              <i class="fa fa-circle fa-stack-2x"></i>
-                              <i class="fa fa-rss fa-inverse fa-stack-1x"></i>
-                            </span>
-                          </a>
-                        </li>
-                        -->
-
-                        <li>
-                            <a href="http://eepurl.com/b8GCUv" title="Email Sign Up" target="_blank">
-                  <span class="fa-stack">
-                    <i class="fa fa-circle fa-stack-2x"></i>
-                    <i class="fa fa-envelope fa-inverse fa-stack-1x"></i>
-                  </span>
-                            </a>
-                        </li>
-                    </ul>
-                </div>
-
-                <div class="col-xs-12 col-lg-9">
-                    <ul class="organizations">
-                        <li>
-                            <a href="http://www.asu.edu/" target="_blank">
-                                <img src="{{ static("images/logo-asu.png") }}" alt="Arizona State University">
-                            </a>
-                        </li>
-
-                        <li>
-                            <a href="https://creativecommons.org/" target="_blank">
-                                <img src="{{ static("images/logo-cc.png") }}" alt="Creative Commons">
-                            </a>
-                        </li>
-
-                        <li>
-                            <a href="http://www.nsf.gov/" target="_blank">
-                                <img src="{{ static("images/logo-nsf.png") }}" alt="National Science Foundation">
-                            </a>
-                        </li>
-                    </ul>
-                </div>
-            </div>
-        </div>
-    <p class="copyright text-center">© 2016 - {{ now('Y') }} CoMSES Net</p>
-</footer>
-
-{% endmacro %}
-<!DOCTYPE html>
-<!--[if lt IE 7]>
-<html class="no-js lt-ie9 lt-ie8 lt-ie7"> <![endif]-->
-<!--[if IE 7]>
-<html class="no-js lt-ie9 lt-ie8"> <![endif]-->
-<!--[if IE 8]>
-<html class="no-js lt-ie9"> <![endif]-->
-<!--[if gt IE 8]><!-->
-<html lang="en" class="no-js"> <!--<![endif]-->
-<head>
-    <meta charset="utf-8"/>
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no"/>
-    <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
-    <title>
-        {% block title %}CoMSES Net{% endblock %}
-        {% block title_suffix %}{% endblock %}</title>
-    <meta name="description" content="CoMSES Net is an international research coordination network dedicated to fostering open and reproducible scientific computation through cyberinfrastructure and community development."/>
-
-    {# Global stylesheets #}
-    {{ render_bundle('styles', 'css') }}
-
-    {% block extra_css %}
-        {# Override this in templates to add extra stylesheets #}
-    {% endblock %}
-</head>
-
-<body class="{% block body_class %}{% endblock %}">
-{{ header() }}
-<section class='introduction'>
-{% block introduction %}
+<footer class="footer">
     <div class="container">
         <div class="row">
+            <div class="col-xs-12 col-lg-3">
+                <ul class="social-media">
+                    <li>
+                        <a href="https://github.com/comses" title="GitHub" target="_blank">
+                            <span class="fa-stack">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fa fa-code-fork fa-inverse fa-stack-1x"></i>
+                            </span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="https://twitter.com/openabm_comses" title="Twitter" target="_blank">
+                            <span class="fa-stack">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fa fa-twitter fa-inverse fa-stack-1x"></i>
+                            </span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="http://eepurl.com/b8GCUv" title="Email Sign Up" target="_blank">
+                            <span class="fa-stack">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fa fa-envelope fa-inverse fa-stack-1x"></i>
+                            </span>
+                        </a>
+                    </li>
+                </ul>
+            </div>
+            <div class="col-xs-12 col-lg-9">
+                <ul class="organizations">
+                    <li>
+                        <a href="http://www.asu.edu/" target="_blank">
+                            <img src="{{ static("images/logo-asu.png") }}" alt="Arizona State University">
+                        </a>
+                    </li>
+
+                    <li>
+                        <a href="https://creativecommons.org/" target="_blank">
+                            <img src="{{ static("images/logo-cc.png") }}" alt="Creative Commons">
+                        </a>
+                    </li>
+
+                    <li>
+                        <a href="http://www.nsf.gov/" target="_blank">
+                            <img src="{{ static("images/logo-nsf.png") }}" alt="National Science Foundation">
+                        </a>
+                    </li>
+                </ul>
+            </div>
         </div>
     </div>
-{% endblock %}
-</section>
+    <p class="copyright text-center">&copy; 2016 - {{ now('Y') }} CoMSES Net</p>
+</footer>
+{% endmacro %}
+<!DOCTYPE html>
+<html lang="en" class="no-js">
+    <head>
+        <meta charset="utf-8"/>
+        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no"/>
+        <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+        <title>
+            {% block title %}CoMSES Net{% endblock %}
+            {% block title_suffix %}{% endblock %}</title>
+        <meta name="description" content="CoMSES Net is an international research coordination network dedicated to fostering good practices for computational modeling through cyberinfrastructure and community development."/>
 
-{% block page %}
-<section class='page'>
-    <div class="container">
-        {% block content %}
-            <div class="row">
-            </div>
-        {% endblock content %}
-    </div>
-</section>
-{% endblock page %}
-{{ footer() }}
+        {# Global stylesheets #}
+        {{ render_bundle('styles', 'css') }}
 
-{{ render_bundle('manifest') }}
-{{ render_bundle('vendors') }}
+        {% block extra_css %}
+            {# Override this in templates to add extra stylesheets #}
+        {% endblock %}
+    </head>
+
+    <body class="{% block body_class %}{% endblock %}">
+        {{ header() }}
+        <section class='introduction'>
+            {% block introduction %}
+                <div class="container">
+                    <div class="row">
+                    </div>
+                </div>
+            {% endblock %}
+        </section>
+
+        {% block page %}
+            <section class='page'>
+                <div class="container">
+                    {% block content %}
+                        <div class="row">
+                        </div>
+                    {% endblock content %}
+                </div>
+            </section>
+        {% endblock page %}
+        {{ footer() }}
+
+        {{ render_bundle('manifest') }}
+        {{ render_bundle('vendors') }}
+
+        <script>
+        function submitLogout() {
+            document.getElementById('logoutForm').submit();
+            return false;
+        }
+        </script>
 
 
-{% block js %}
-    {# Override this in templates to add extra javascript #}
-{% endblock %}
-</body>
+        {% block js %}
+            {# Override this in templates to add extra javascript #}
+        {% endblock %}
+    </body>
 </html>

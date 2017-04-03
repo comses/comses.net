@@ -4,5 +4,12 @@
     <h1>Sign Out</h1>
 {% endblock %}
 {% block content %}
-    {{ form }}
+    <p>{% trans %}Are you sure you want to sign out?{% endtrans %}</p>
+    <form method="post">
+        {% csrf_token %}
+        {% if redirect_field_value %}
+            <input type="hidden" name="{{ redirect_field_name }}" value="{{ redirect_field_value }}"/>
+        {% endif %}
+        <button class='btn btn-primary' type="submit">{% trans %}Sign Out{% endtrans %}</button>
+    </form>
 {% endblock %}
