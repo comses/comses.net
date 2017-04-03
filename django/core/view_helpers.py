@@ -4,6 +4,7 @@ import os
 import re
 from wagtail.wagtailsearch.backends import get_search_backend
 from rest_framework.exceptions import ValidationError
+from rest_framework.response import Response
 from guardian.decorators import permission_required_or_403
 from django.contrib.auth.decorators import login_required
 
@@ -76,3 +77,13 @@ def get_search_queryset(self):
         queryset.model = model
 
     return queryset
+
+
+def retrieve_with_perms(self, request, *args, **kwargs):
+    instance = self.get_object()
+    serializer = self.get_serializer(instance)
+    data = serializer.data
+    data['has_change_perm'] = request.user.has_perm('change_' + instance._meta.model_name, instance)
+    data['has_delete_perm'] = request.user.has_perm('delete_' + instance._meta.model_name, instance)
+
+    return Response(data)

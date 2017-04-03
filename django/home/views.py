@@ -2,6 +2,7 @@ import logging
 
 from django.contrib.auth.models import User
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.contenttypes.models import ContentType
 from django.views.generic import DetailView
 from django.http import QueryDict
 
@@ -11,7 +12,7 @@ from rest_framework.response import Response
 from taggit.models import Tag
 from wagtail.wagtailsearch.backends import get_search_backend
 
-from core.view_helpers import get_search_queryset
+from core.view_helpers import get_search_queryset, retrieve_with_perms
 from .models import Event, Job, CarouselItem
 from .serializers import EventSerializer, JobSerializer, TagSerializer, CarouselItemSerializer
 
@@ -65,6 +66,9 @@ class EventViewSet(viewsets.ModelViewSet):
     def template_name(self):
         return 'home/events/{}.jinja'.format(self.action)
 
+    def retrieve(self, request, *args, **kwargs):
+        return retrieve_with_perms(self, request, *args, **kwargs)
+
 
 class JobViewSet(viewsets.ModelViewSet):
     serializer_class = JobSerializer
@@ -77,6 +81,9 @@ class JobViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         return get_search_queryset(self)
+
+    def retrieve(self, request, *args, **kwargs):
+        return retrieve_with_perms(self, request, *args, **kwargs)
 
 
 class TagViewSet(viewsets.ModelViewSet):

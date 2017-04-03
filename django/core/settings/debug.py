@@ -267,7 +267,7 @@ STATICFILES_FINDERS = [
     'django.contrib.staticfiles.finders.AppDirectoriesFinder',
 ]
 
-WEBPACK_DIR = config.get('storage', 'WEBPACK_ROOT')
+WEBPACK_DIR = config.get('storage', 'WEBPACK_ROOT', fallback='/webpack')
 
 STATICFILES_DIRS = [
     WEBPACK_DIR

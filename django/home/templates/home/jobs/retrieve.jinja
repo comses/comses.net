@@ -1,7 +1,5 @@
 {% extends "base.jinja" %}
-{% from "common.jinja" import retrieve_introduction %}
-
-{% set perm = True %}
+{% from "common.jinja" import retrieve_introduction, permission_button_group %}
 
 {% block title %}Job: {{ title }}{% endblock %}
 
@@ -13,8 +11,12 @@
 
     <h6 class="text-right">{{ date_created }}</h6>
     {{ markdown(description)|safe }}
-    {% if perm %}<h6><a class="btn btn-primary btn-sm" href="{{ url('home:job-update', pk=id) }}">Edit</a></h6>
-    {% endif %}
-    {% if perm %}<h6><a class="btn btn-danger btn-sm" href="{{ url('home:job-update', pk=id) }}">Delete</a></h6>
-    {% endif %}
+    <div class="btn-group">
+        {% if has_change_perm %}
+            <a type="button" class="btn btn-primary btn-sm" href="{{ url('home:job-update', pk=id) }}">Edit</a>
+        {% endif %}
+        {% if has_delete_perm %}
+            <a type="button" class="btn btn-danger btn-sm" href="{{ url('home:job-detail', pk=id) }}">Delete</a>
+        {% endif %}
+    </div>
 {% endblock %}

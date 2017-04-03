@@ -14,7 +14,7 @@ from wagtail.wagtailcore.fields import RichTextField
 from wagtail.wagtailcore.models import Page, Orderable
 from wagtail.wagtailimages.edit_handlers import ImageChooserPanel
 from wagtail.wagtailsearch import index
-
+from guardian.shortcuts import get_objects_for_user
 import logging
 
 logger = logging.getLogger(__name__)

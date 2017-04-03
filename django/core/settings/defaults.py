@@ -161,7 +161,9 @@ TAGGIT_CASE_INSENSITIVE = True
 config = configparser.ConfigParser()
 
 # test to see if django is in docker
-if os.getcwd() == '/code':
+IS_IN_DOCKER = os.getcwd() == '/code'
+
+if IS_IN_DOCKER:
     config.read('/secrets/config.ini')
 else:
     config.read('../deploy/conf/config.ini.debug')
@@ -280,7 +282,7 @@ STATICFILES_FINDERS = [
     'django.contrib.staticfiles.finders.AppDirectoriesFinder',
 ]
 
-WEBPACK_DIR = '/webpack'
+WEBPACK_DIR = config.get('storage', 'WEBPACK_ROOT', fallback='/webpack')
 
 STATICFILES_DIRS = [
     WEBPACK_DIR
