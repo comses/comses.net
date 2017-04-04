@@ -83,7 +83,12 @@ def retrieve_with_perms(self, request, *args, **kwargs):
     instance = self.get_object()
     serializer = self.get_serializer(instance)
     data = serializer.data
-    data['has_change_perm'] = request.user.has_perm('change_' + instance._meta.model_name, instance)
-    data['has_delete_perm'] = request.user.has_perm('delete_' + instance._meta.model_name, instance)
+    data = _add_change_delete_perms(instance, data, request.user)
 
     return Response(data)
+
+
+def _add_change_delete_perms(instance, data, user):
+    data['has_change_perm'] = user.has_perm('change_' + instance._meta.model_name, instance)
+    data['has_delete_perm'] = user.has_perm('delete_' + instance._meta.model_name, instance)
+    return data

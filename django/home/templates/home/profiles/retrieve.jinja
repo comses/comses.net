@@ -1,0 +1,10 @@
+{% extends "base.jinja" %}
+{% from "common.jinja" import retrieve_introduction %}
+
+{% block introduction %}
+    {{ retrieve_introduction("Profile: " + get_full_name) }}
+{% endblock %}
+
+{% block content %}
+
+{% endblock %}

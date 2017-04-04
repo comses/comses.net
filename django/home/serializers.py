@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from taggit.models import Tag
-from .models import Event, Job, CarouselItem
+from .models import Event, Job, FeaturedContentItem, MemberProfile
 from django.contrib.auth.models import User
 from django.core.urlresolvers import reverse_lazy
 from django.utils.translation import ugettext_lazy as _
@@ -99,9 +99,28 @@ class JobSerializer(serializers.ModelSerializer):
                   'description', 'summary', 'relative_url', 'tags')
 
 
-class CarouselItemSerializer(serializers.ModelSerializer):
+class FeaturedContentItemSerializer(serializers.ModelSerializer):
     image = serializers.SlugRelatedField(read_only=True, slug_field='file')
 
     class Meta:
-        model = CarouselItem
+        model = FeaturedContentItem
         fields = ('image', 'caption', 'title', )
+
+
+class MemberProfileSerializer(serializers.ModelSerializer):
+    full_member = serializers.BooleanField(read_only=True)
+
+    class Meta:
+        model = MemberProfile
+        exclude = ('timezone',)
+
+
+class UserSerializer(serializers.ModelSerializer):
+    member_profile = MemberProfileSerializer(read_only=True, allow_null=True)
+    username = serializers.CharField(read_only=True)
+    is_superuser = serializers.BooleanField(read_only=True)
+    is_staff = serializers.BooleanField(read_only=True)
+
+    class Meta:
+        model = User
+        fields = ('first_name', 'last_name', 'username', 'is_superuser', 'is_staff', 'member_profile', 'get_full_name', )

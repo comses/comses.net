@@ -3,7 +3,7 @@ import logging
 from django.contrib.auth.models import User
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.contenttypes.models import ContentType
-from django.views.generic import DetailView
+from django.views.generic.base import TemplateView
 from django.http import QueryDict
 
 from rest_framework import viewsets, generics
@@ -13,8 +13,8 @@ from taggit.models import Tag
 from wagtail.wagtailsearch.backends import get_search_backend
 
 from core.view_helpers import get_search_queryset, retrieve_with_perms
-from .models import Event, Job, CarouselItem
-from .serializers import EventSerializer, JobSerializer, TagSerializer, CarouselItemSerializer
+from .models import Event, Job, FeaturedContentItem
+from .serializers import EventSerializer, JobSerializer, TagSerializer, FeaturedContentItemSerializer, UserSerializer
 
 logger = logging.getLogger(__name__)
 
@@ -104,22 +104,38 @@ class TagViewSet(viewsets.ModelViewSet):
         return queryset
 
 
-class ProfileView(LoginRequiredMixin, DetailView):
+class ProfileViewSet(viewsets.ModelViewSet):
+    serializer_class = UserSerializer
+    queryset = User.objects.all()
+    pagination_class = SmallResultSetPagination
 
-    # need to check permissions
-    template_name = 'account/profile.jinja'
-    model = User
-    slug_field = 'username'
+    @property
+    def template_name(self):
+        return 'home/profles/{}.jinja'.format(self.action)
 
-    def get_object(self):
-        try:
-            return super(ProfileView, self).get_object()
-        except:
-            return self.request.user
+    def get_queryset(self):
+        return get_search_queryset(self)
+
+    def retrieve(self, request, *args, **kwargs):
+        return retrieve_with_perms(self, request, *args, **kwargs)
 
 
-#
-# class CarouselItemView(generics.ListAPIView):
-#     serializer_class = CarouselItemSerializer
-#     queryset = CarouselItem.objects.all()
-#     pagination_class = SmallResultSetPagination
+class ProfileView(LoginRequiredMixin, TemplateView):
+
+    template_name = 'home/profiles/retrieve.jinja'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        user = self.request.user
+        serializer = UserSerializer(user)
+        data = serializer.data
+        for key in data:
+            context[key] = data[key]
+
+        return context
+
+
+class FeaturedContentListAPIView(generics.ListAPIView):
+    serializer_class = FeaturedContentItemSerializer
+    queryset = FeaturedContentItem.objects.all()
+    pagination_class = SmallResultSetPagination

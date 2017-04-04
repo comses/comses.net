@@ -9,8 +9,7 @@ router = SimpleRouter()
 router.register(r'events', views.EventViewSet, base_name='event')
 router.register(r'jobs', views.JobViewSet, base_name='job')
 router.register(r'tags', views.TagViewSet, base_name='tag')
-# router.register(r'carousel', views.CarouselItemView, base_name='carousel')
-
+router.register(r'profiles', views.ProfileViewSet, base_name='profile')
 
 urlpatterns = []
 edit_route_form_data = {'lookup_field': 'pk', 'lookup_regex': r'\d+'}
@@ -29,7 +28,7 @@ urlpatterns += [
         name='membership'),
     url(r'^accounts/register/', TemplateView.as_view(template_name='registration/registration_form.html'),
         name='register'),
-    url(r'^accounts/profile/', TemplateView.as_view(template_name='account/profile.jinja'),
-        name='account_profile'),
-    url(r'^accounts/profile/(?P<username>\w+)', views.ProfileView.as_view(), name='user_profile'),
+    url(r'^accounts/profile/$', views.ProfileView.as_view(), name='account_profile'),
+    # url(r'^accounts/profile/(?P<username>\w+)', views.ProfileViewSet.as_view(), name='user_profile'),
+    url(r'^carousel/', views.FeaturedContentListAPIView.as_view(), name='carousel')
 ]
