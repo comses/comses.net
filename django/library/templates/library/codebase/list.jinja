@@ -1,0 +1,33 @@
+{% extends "base.jinja" %}
+{% from "common.jinja" import item_component, list_page, paginator %}
+
+{% macro search_component() %}
+    <form class="form-group row" action="{{ url('library:codebase-list') }}" method="get" enctype="application/x-www-form-urlencoded">
+        <div class="col-xs-12 col-sm-9">
+            <input type="text" class="form-control" name="query" placeholder="Search" value="{{ query or '' }}">
+        </div>
+        <div class="col-sm-3">
+            <button class="btn btn-primary">Search</button>
+            <a href="{{ url('library:codebase-create') }}" class="btn btn-primary btn float-md-right mt-xs-1">
+                <i class="fa fa-plus"></i>
+            </a>
+        </div>
+    </form>
+{% endmacro %}
+
+{% block title %}Codebases{% endblock %}
+
+{% block introduction %}<h1 id="query">Codebases</h1>{% endblock %}
+
+{% block subheader %}<h1>Codebases</h1>{% endblock %}
+
+{% block content %}
+    <div id="app"></div>
+    {{ list_page(__all__, item_component, 'library:codebase-detail') }}
+    <br>
+    {{ paginator('library:codebase-list', __all__) }}
+{% endblock %}
+
+{% block js %}
+    {# {{ render_bundle('codebase_list') }} #}
+{% endblock %}
