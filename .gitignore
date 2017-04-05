@@ -1,6 +1,9 @@
+# app specific
+incoming
 # coveralls
 .coveralls.yml
 # Docker
+docker
 docker-compose.yml
 generated-*.yml
 config.ini
