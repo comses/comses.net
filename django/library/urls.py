@@ -4,10 +4,9 @@ from .views import CodebaseViewSet, CodebaseReleaseViewSet
 from rest_framework.routers import SimpleRouter
 
 router = SimpleRouter()
-router.register(r'codebase', CodebaseViewSet)
-router.register(r'codebase/(?P<uuid>[0-9]+)/releases', CodebaseReleaseViewSet)
+router.register(r'codebases', CodebaseViewSet, base_name='codebase')
+router.register(r'codebases/(?P<identifier>\w+)/releases', CodebaseReleaseViewSet, base_name='release')
 
-urlpatterns = [
-    url(r'^', include(router.urls)),
+urlpatterns = router.urls + [
     url(r'^codebase/add', TemplateView.as_view(template_name='library/codebase/add.jinja'), name='codebase-add'),
 ]

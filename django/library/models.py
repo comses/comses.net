@@ -8,6 +8,7 @@ from django.conf import settings
 from django.contrib.auth.models import User
 from django.contrib.postgres.fields import JSONField
 from django.db import models
+from django.urls import reverse_lazy
 from django.utils import timezone
 from django.utils.translation import ugettext_lazy as _
 from model_utils import Choices
@@ -139,6 +140,7 @@ class Codebase(index.Indexed, ClusterableModel):
     # shortname = models.CharField(max_length=128, unique=True)
     title = models.CharField(max_length=500)
     description = models.TextField()
+    summary = models.CharField(max_length=500, blank=True)
 
     live = models.BooleanField(default=False)
     has_unpublished_changes = models.BooleanField(default=False)
@@ -208,7 +210,7 @@ class Codebase(index.Indexed, ClusterableModel):
         return contributor_list
 
     def get_absolute_url(self):
-        return '/codedoc/{0}'.format(self.identifier)
+        return '{0}{1}'.format(reverse_lazy('library:codebase-list'), self.identifier)
 
     def media_url(self, name):
         return '{0}/media/{1}'.format(self.get_absolute_url(), name)
@@ -277,6 +279,7 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
     license = models.ForeignKey(License, null=True)
     # FIXME: replace with or append/prepend README.md
     description = models.TextField(blank=True, help_text=_('Markdown formattable text, e.g., run conditions'))
+    summary = models.CharField(max_length=500, blank=True)
     documentation = models.FileField(null=True, help_text=_('Fulltext documentation file (PDF/PDFA)'))
     embargo_end_date = models.DateField(null=True, blank=True)
     version_number = models.CharField(max_length=32,

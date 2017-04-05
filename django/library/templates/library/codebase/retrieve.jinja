@@ -1,0 +1,61 @@
+{% extends "base.jinja" %}
+{% from "common.jinja" import retrieve_introduction %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block introduction %}{{ retrieve_introduction('CoMSES Net Codebase Library') }}{% endblock %}
+
+{% block content %}
+    {# XXX: hard-coded breadcrumb trail #}
+    <small>
+    <ol class='breadcrumb'>
+        <li class='breadcrumb-item'><a href='/'>Home</a></li>
+        <li class='breadcrumb-item'><a href='{{ url('library:codebase-list') }}'>Codebase Library</a></li>
+        <li class='breadcrumb-item active'>{{ title }}</li>
+    </ol>
+    </small>
+    <div class='row'>
+        <div class='col-md-9'>
+            <h2>{{ title }}</h2>
+            <p>
+            {{ markdown(description)|safe }}
+            </p>
+        </div>
+        <div class='col-md-3 card'>
+            <div class='card-header'>
+                {% if peer_reviewed %}
+                    <i class='fa fa-trophy fa-2x'></i> 
+                {% endif %}
+                Metadata 
+            </div>
+            <div class='card-block'>
+                <h5 class='card-title'>Authors</h5>
+                <p class='card-text'>
+                {% for c in contributors %}
+                    {{ c.contributor }}
+                    {{ c.affiliations }}
+                {% endfor %}
+                </p>
+                <h5 class='card-title'>Publish Date</h5>
+                <p class='card-text'>
+                {{ first_published_at }}
+                </p>
+
+                <h5 class='card-title'>Last Updated</h5>
+                <p class='card-text'>
+                {{ last_modified }}
+                </p>
+
+            </div>
+        </div>
+    {#
+    <div class="btn-group">
+        {% if has_change_perm %}
+            <a type="button" class="btn btn-primary btn-sm" href="{{ url('home:event-update', pk=id) }}">Edit</a>
+        {% endif %}
+        {% if has_delete_perm %}
+            <a type="button" class="btn btn-danger btn-sm" href="{{ url('home:event-detail', pk=id) }}">Delete</a>
+        {% endif %}
+    </div>
+    #}
+{% endblock %}
