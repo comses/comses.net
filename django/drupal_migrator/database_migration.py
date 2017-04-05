@@ -6,11 +6,11 @@ import os
 import re
 from collections import defaultdict
 from datetime import datetime
-from typing import Dict
 
 import pytz
 from django.contrib.auth.models import User, Group
 from taggit.models import Tag
+from typing import Dict
 
 from core.summarization import summarize_to_text
 from home.models import Event, Job, MemberProfile
@@ -310,8 +310,11 @@ class ModelExtractor(Extractor):
             title=raw_model['title'].strip(),
             description=get_first_field(raw_model, field_name='body', default=''),
             date_created=self.to_datetime(raw_model['created']),
+            live=self.int_to_bool(raw_model['status']),
             last_modified=self.to_datetime(raw_model['changed']),
             is_replication=Extractor.int_to_bool(get_first_field(raw_model, 'field_model_replicated', default='0')),
+            uuid=raw_model['uuid'],
+            first_published_at=self.to_datetime(raw_model['created']),
             references_text=get_first_field(raw_model, 'field_model_reference', default=''),
             replication_references_text=get_first_field(raw_model, 'field_model_publication_text', default=''),
             identifier=raw_model['nid'],
