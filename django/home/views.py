@@ -111,7 +111,7 @@ class ProfileViewSet(viewsets.ModelViewSet):
 
     @property
     def template_name(self):
-        return 'home/profles/{}.jinja'.format(self.action)
+        return 'home/profiles/{}.jinja'.format(self.action)
 
     def get_queryset(self):
         return get_search_queryset(self)
@@ -128,10 +128,7 @@ class ProfileView(LoginRequiredMixin, TemplateView):
         context = super().get_context_data(**kwargs)
         user = self.request.user
         serializer = UserSerializer(user)
-        data = serializer.data
-        for key in data:
-            context[key] = data[key]
-
+        context.update(serializer.data)
         return context
 
 
