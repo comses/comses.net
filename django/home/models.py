@@ -1,6 +1,9 @@
+import logging
+
 from django.contrib.auth.models import User
 from django.contrib.postgres.fields import ArrayField, JSONField
 from django.db import models
+from django.urls import reverse_lazy
 from django.utils import timezone
 from django.utils.translation import ugettext_lazy as _
 from modelcluster.contrib.taggit import ClusterTaggableManager
@@ -14,8 +17,6 @@ from wagtail.wagtailcore.fields import RichTextField
 from wagtail.wagtailcore.models import Page, Orderable
 from wagtail.wagtailimages.edit_handlers import ImageChooserPanel
 from wagtail.wagtailsearch import index
-from guardian.shortcuts import get_objects_for_user
-import logging
 
 logger = logging.getLogger(__name__)
 
@@ -82,7 +83,7 @@ class MemberProfile(index.Indexed, ClusterableModel):
                              max_length=19)
 
     def get_absolute_url(self):
-        return '/accounts/profile/{0}'.format(self.user.username)
+        return '{0}{1}'.format(reverse_lazy('home:profile-list'), self.user.username)
 
     def __str__(self):
         if self.user:

@@ -1,6 +1,5 @@
 {% set login_url = url("account_login") %}
 {% set logout_url = url("account_logout") %}
-{% set profile_url = url("home:account_profile") %}
 
 {% macro header() %}
 <header class="fixed-top">
@@ -37,7 +36,7 @@
                                 <span class="fa fa-chevron-down"></span>
                             </a>
                             <div class="dropdown-menu" aria-labelledby='userDropdownMenuLink'>
-                                <a class="dropdown-item" href="{{ profile_url }}"><i class='fa fa-user'></i> Profile</a>
+                                <a class="dropdown-item" href="{{ url('home:profile-detail', username=request.user.username) }}"><i class='fa fa-user'></i> Profile</a>
                                 {# POST logouts, see http://django-allauth.readthedocs.io/en/latest/views.html#logout-account-logout #}
                                 <form id='logoutForm' method='post' action='{{ logout_url }}'>
                                     {% csrf_token %}

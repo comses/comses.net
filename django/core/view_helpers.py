@@ -53,6 +53,12 @@ def clean_order_by(order_by_params):
 
 
 def get_search_queryset(self):
+    """
+    FIXME: this is broken, as not every linked entity will have a `date_created` field
+    give this a parameterizable ordering field instead
+    :param self: 
+    :return: 
+    """
     query = self.request.query_params.get('query')
     tags = self.request.query_params.getlist('tags')
     order_by = clean_order_by(self.request.query_params.getlist('order_by'))

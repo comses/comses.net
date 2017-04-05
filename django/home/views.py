@@ -1,11 +1,7 @@
 import logging
 
 from django.contrib.auth.models import User
-from django.contrib.auth.mixins import LoginRequiredMixin
-from django.contrib.contenttypes.models import ContentType
-from django.views.generic.base import TemplateView
 from django.http import QueryDict
-
 from rest_framework import viewsets, generics
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
@@ -56,11 +52,11 @@ class SmallResultSetPagination(PageNumberPagination):
 
 class EventViewSet(viewsets.ModelViewSet):
     serializer_class = EventSerializer
-    queryset = Event.objects.order_by('-date_created')
+    queryset = Event.objects.all()
     pagination_class = SmallResultSetPagination
 
     def get_queryset(self):
-        return get_search_queryset(self)
+        return get_search_queryset(self).order_by('-date_created')
 
     @property
     def template_name(self):
@@ -98,13 +94,13 @@ class TagViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         query = self.request.query_params.get('query')
         if query:
-            queryset = Tag.objects.filter(name__icontains=query).order_by('name')
-        else:
-            queryset = Tag.objects.order_by('name')
-        return queryset
+            queryset = Tag.objects.filter(name__icontains=query)
+        return queryset.order_by('name')
 
 
 class ProfileViewSet(viewsets.ModelViewSet):
+    lookup_field = 'username'
+    lookup_value_regex = '\w+'
     serializer_class = UserSerializer
     queryset = User.objects.all()
     pagination_class = SmallResultSetPagination
@@ -114,22 +110,12 @@ class ProfileViewSet(viewsets.ModelViewSet):
         return 'home/profiles/{}.jinja'.format(self.action)
 
     def get_queryset(self):
+        # FIXME: this is broken, as Users / MemberProfiles do not have a `date_created` field
+        # fix get_search_queryset to have a parameterizable ordering field
         return get_search_queryset(self)
 
     def retrieve(self, request, *args, **kwargs):
         return retrieve_with_perms(self, request, *args, **kwargs)
-
-
-class ProfileView(LoginRequiredMixin, TemplateView):
-
-    template_name = 'home/profiles/retrieve.jinja'
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        user = self.request.user
-        serializer = UserSerializer(user)
-        context.update(serializer.data)
-        return context
 
 
 class FeaturedContentListAPIView(generics.ListAPIView):

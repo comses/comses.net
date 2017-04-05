@@ -1,15 +1,15 @@
 from django.conf.urls import url, include
 from django.views.generic import TemplateView
-from . import views
-from . import models
 from rest_framework.routers import SimpleRouter
+
 from core.view_helpers import create_edit_routes
+from . import models, views
 
 router = SimpleRouter()
 router.register(r'events', views.EventViewSet, base_name='event')
 router.register(r'jobs', views.JobViewSet, base_name='job')
 router.register(r'tags', views.TagViewSet, base_name='tag')
-router.register(r'profiles', views.ProfileViewSet, base_name='profile')
+router.register(r'users', views.ProfileViewSet, base_name='profile')
 
 urlpatterns = []
 edit_route_form_data = {'lookup_field': 'pk', 'lookup_regex': r'\d+'}
@@ -28,7 +28,5 @@ urlpatterns += [
         name='membership'),
     url(r'^accounts/register/', TemplateView.as_view(template_name='registration/registration_form.html'),
         name='register'),
-    url(r'^accounts/profile/$', views.ProfileView.as_view(), name='account_profile'),
-    # url(r'^accounts/profile/(?P<username>\w+)', views.ProfileViewSet.as_view(), name='user_profile'),
     url(r'^carousel/', views.FeaturedContentListAPIView.as_view(), name='carousel')
 ]

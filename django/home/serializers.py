@@ -1,17 +1,19 @@
-from rest_framework import serializers
-from taggit.models import Tag
-from .models import Event, Job, FeaturedContentItem, MemberProfile
 from django.contrib.auth.models import User
 from django.core.urlresolvers import reverse_lazy
 from django.utils.translation import ugettext_lazy as _
+from rest_framework import serializers
 from taggit.models import Tag
-from core.serializer_helpers import EditableSerializerMixin, save_tags
+
+from core.serializer_helpers import save_tags
+from .models import Event, Job, FeaturedContentItem, MemberProfile
 
 
 class CreatorSerializer(serializers.ModelSerializer):
+    profile_url = serializers.URLField(source='member_profile.get_absolute_url')
+
     class Meta:
         model = User
-        fields = ('username',)
+        fields = ('username', 'profile_url')
 
 
 class TagListSerializer(serializers.ListSerializer):
