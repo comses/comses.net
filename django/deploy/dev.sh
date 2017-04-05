@@ -11,4 +11,4 @@ else
     echo "Using existing db schema"
     /code/deploy/wait-for-it.sh db:5432 -- invoke initialize_database_schema
 fi
-exec /code/manage.py runserver 0.0.0.0:8000
+nohup /code/manage.py runserver 0.0.0.0:8000

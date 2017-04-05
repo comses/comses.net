@@ -4,7 +4,7 @@ services:
     image: elasticsearch:5
     volumes:
       - ./deploy/elasticsearch.conf.d/log4j2.properties:/usr/share/elasticsearch/config/log4j2.properties
-      - esindex:/usr/share/elasticsearch/data
+      - ./docker/esdata:/usr/share/elasticsearch/data
     ports:
       - "127.0.0.1:9200:9200"
       - "127.0.0.1:9300:9300"
@@ -13,7 +13,7 @@ services:
   ${DB_HOST}:
     image: comses/postgis:9.5
     volumes:
-      - data:/var/lib/postgresql/data
+      - ./docker/pgdata:/var/lib/postgresql/data
     environment:
       # FIXME: replace with init sql script, see https://github.com/docker/docker/issues/13490
       POSTGRES_USER: "${DB_USER}"
@@ -21,49 +21,33 @@ services:
       POSTGRES_DB: "${DB_NAME}"
   js:
     build: frontend
-    image: comses/wagtailjs:latest
+    image: comses/cmsjs_dev:latest
     volumes:
       - ./frontend:/code
-      - webpack:/webpack
+      - ./docker/shared/webpack:/shared/webpack
       - /code/node_modules
   cms:
     build: django
-    image: comses/wagtailcms_dev:latest
+    image: comses/cms_dev:latest
     volumes:
       - ./django:/code
       - ./deploy/conf/config.ini:/secrets/config.ini
       - ./deploy/elasticsearch.conf.d:/etc/elasticsearch
-      - logs:/code/logs
-      - library:/library
-      - repository:/repository
-      - webpack:/webpack
-      - static:/static
-    command: /code/deploy/app/dev.sh
+      - ./docker/shared/logs:/shared/logs
+      - ./docker/shared/library:/shared/library
+      - ./docker/shared/repository:/shared/repository
+      - ./docker/shared/webpack:/shared/webpack
+      - ./docker/shared/static:/shared/static
     environment:
       DJANGO_SETTINGS_MODULE: "core.settings.dev"
       DB_USER: ${DB_USER}
       DB_HOST: ${DB_HOST}
       DB_NAME: ${DB_NAME}
       DB_PORT: ${DB_PORT}
-      CLEAN_DATABASE:
+      CLEAN_DATABASE: "false"
     ports:
       - "127.0.0.1:8000:8000"
     links:
       - ${DB_HOST}
       - elasticsearch
       - js
-volumes:
-  static:
-    driver: local
-  webpack:
-    driver: local
-  repository:
-    driver: local
-  library:
-    driver: local
-  esindex:
-    driver: local
-  data:
-    driver: local
-  logs:
-    driver: local

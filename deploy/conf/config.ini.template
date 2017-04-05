@@ -13,9 +13,10 @@ SECRET_KEY=${DJANGO_SECRET_KEY}
 DISCOURSE_SSO_SECRET=${DISCOURSE_SSO_SECRET:-changeme}
 
 [logging]
-LOGGING_DIRECTORY=/code/logs
+LOGGING_DIRECTORY=/shared/logs
 
 [storage]
-DATA_STORAGE_ROOT=/data
-LIBRARY_ROOT=/library
-REPOSITORY_ROOT=/repository
+DATA_ROOT=/shared
+LIBRARY_ROOT=/shared/library
+REPOSITORY_ROOT=/shared/repository
+WEBPACK_ROOT=/shared/webpack
