@@ -5,7 +5,7 @@ module.exports = {
   build: {
     env: require('./prod.env'),
     // index: path.resolve(__dirname, '../dist/index.html'),
-    assetsRoot: '/webpack',
+    assetsRoot: '/shared/webpack',
     assetsSubDirectory: 'prod/assets',
     assetsPublicPath: '/static/',
     productionSourceMap: true,
@@ -18,7 +18,7 @@ module.exports = {
   },
   dev: {
     env: require('./dev.env'),
-    assetsRoot: '/webpack',
+    assetsRoot: '/shared/webpack',
     assetsSubDirectory: 'dev/assets',
     assetsPublicPath: '/static/',
     port: 8080,
