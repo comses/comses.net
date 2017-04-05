@@ -75,6 +75,10 @@ def coverage(ctx):
 def server(ctx, ip="0.0.0.0", port=8000):
     dj(ctx, 'runserver {ip}:{port}'.format(ip=ip, port=port), capture=False)
 
+@task(aliases=['ss'])
+def setup_site(ctx, site_name='CoMSES Net',
+               site_domain='localhost'):
+    dj(ctx, 'setup_site --site-name="{0}" --site-domain="{1}"'.format(site_name, site_domain))
 
 @task(aliases=['idd'])
 def import_drupal_data(ctx, directory='incoming'):

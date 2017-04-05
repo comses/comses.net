@@ -1,10 +1,9 @@
 """
-Management command for loading JSON dump of old CoMSES.net website into the new site
+Load openabm.org JSON dumps into the new site
 """
 
 from django.core.management.base import BaseCommand
-from django.contrib.auth.models import Group
-from ...database_migration import load
+from drupal_migrator.database_migration import load
 
 import logging
 
@@ -14,7 +13,7 @@ logger = logging.getLogger(__name__)
 class Command(BaseCommand):
     def add_arguments(self, parser):
         parser.add_argument('--directory', '-d',
-                            help='directory to load Drupal 7 data dump from')
+                            help='Directory with Drupal 7 JSON data dumps to be loaded')
 
     def handle(self, *args, **options):
         directory = options['directory']
