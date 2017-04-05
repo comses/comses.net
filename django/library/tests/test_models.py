@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.contrib.auth.models import User
 from django.test import TestCase
 from django.core.files.base import ContentFile
@@ -5,6 +6,7 @@ from django.core.files.base import ContentFile
 from ..models import Codebase, CodebaseRelease
 
 import logging
+import pathlib
 
 logger = logging.getLogger(__name__)
 
@@ -26,8 +28,8 @@ class CodebaseTest(BaseModelTestCase):
                                           )
 
     def test_base_dir(self):
-        self.assertEquals(str(self.c1.base_library_dir), '/library/{0}'.format(self.c1.uuid))
-        self.assertEquals(str(self.c1.base_git_dir), '/repository/{0}'.format(self.c1.uuid))
+        self.assertEquals(self.c1.base_library_dir, pathlib.Path(settings.LIBRARY_ROOT, str(self.c1.uuid)))
+        self.assertEquals(self.c1.base_git_dir, pathlib.Path(settings.REPOSITORY_ROOT, str(self.c1.uuid)))
 
     def test_make_release(self):
         content = ContentFile('Bunches of test content')
