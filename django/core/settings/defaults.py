@@ -160,13 +160,8 @@ TAGGIT_CASE_INSENSITIVE = True
 
 config = configparser.ConfigParser()
 
-# test to see if django is in docker
-IS_IN_DOCKER = os.getcwd() == '/code'
-
-if IS_IN_DOCKER:
-    config.read('/secrets/config.ini')
-else:
-    config.read('../deploy/conf/config.ini.debug')
+# FIXME: set up better shared paths
+config.read('/secrets/config.ini')
 
 SECRET_KEY = config.get('secrets', 'SECRET_KEY')
 
@@ -282,13 +277,13 @@ STATICFILES_FINDERS = [
     'django.contrib.staticfiles.finders.AppDirectoriesFinder',
 ]
 
-WEBPACK_DIR = config.get('storage', 'WEBPACK_ROOT', fallback='/webpack')
+WEBPACK_DIR = config.get('storage', 'WEBPACK_ROOT', fallback='/shared/webpack')
 
 STATICFILES_DIRS = [
     WEBPACK_DIR
 ]
 
-STATIC_ROOT = '/static'
+STATIC_ROOT = '/shared/static'
 STATIC_URL = '/static/'
 
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
@@ -342,7 +337,7 @@ ACCOUNT_EMAIL_VERIFICATION = "mandatory"
 ACCOUNT_SIGNUP_FORM_CLASS = 'home.forms.SignupForm'
 ACCOUNT_TEMPLATE_EXTENSION = 'jinja'
 ACCOUNT_PRESERVE_USERNAME_CASING = False
-ACCOUNT_LOGIN_ON_PASSWORD_RESET=True
+ACCOUNT_LOGIN_ON_PASSWORD_RESET = True
 
 ORCID_CLIENT_ID = config.get('secrets', 'ORCID_CLIENT_ID', fallback='')
 ORCID_CLIENT_SECRET = config.get('secrets', 'ORCID_CLIENT_SECRET', fallback='')
