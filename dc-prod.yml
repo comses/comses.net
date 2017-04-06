@@ -2,6 +2,7 @@ version: '3'
 services:
   elasticsearch:
     image: elasticsearch:5
+    restart: always
     volumes:
       - ./deploy/elasticsearch.conf.d/log4j2.properties:/usr/share/elasticsearch/config/log4j2.properties
       - ./docker/esdata:/usr/share/elasticsearch/data
@@ -12,6 +13,7 @@ services:
       ES_JAVA_OPTS: "-Xms2g -Xmx2g"
   ${DB_HOST}:
     image: comses/postgis:9.5
+    restart: always
     volumes:
       - ./docker/pgdata:/var/lib/postgresql/data
     environment:
@@ -33,6 +35,7 @@ services:
       - /code/node_modules
   nginx:
     image: nginx:latest
+    restart: always
     volumes:
       - ./deploy/nginx/nginx-haproxy.conf:/etc/nginx/nginx.conf
       - ./deploy/nginx/uwsgi_params:/etc/nginx/uwsgi_params
@@ -50,6 +53,7 @@ services:
       args:
         REQUIREMENTS_FILE: requirements-prod.txt
     image: comses/cms:latest
+    restart: always
     volumes:
       - ./deploy/conf/config.ini:/secrets/config.ini
       - ./deploy/elasticsearch.conf.d:/etc/elasticsearch
