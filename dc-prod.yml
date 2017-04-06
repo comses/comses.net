@@ -4,7 +4,7 @@ services:
     image: elasticsearch:5
     volumes:
       - ./deploy/elasticsearch.conf.d/log4j2.properties:/usr/share/elasticsearch/config/log4j2.properties
-      - esindex:/usr/share/elasticsearch/data
+      - ./docker/esdata:/usr/share/elasticsearch/data
     ports:
       - "127.0.0.1:9200:9200"
       - "127.0.0.1:9300:9300"
@@ -13,7 +13,7 @@ services:
   ${DB_HOST}:
     image: comses/postgis:9.5
     volumes:
-      - data:/var/lib/postgresql/data
+      - ./docker/pgdata:/var/lib/postgresql/data
     environment:
       # autofilled by ./build.sh envsubst
       # FIXME: replace with init sql script, see https://github.com/docker/docker/issues/13490
@@ -21,21 +21,24 @@ services:
       POSTGRES_PASSWORD: "${DB_PASSWORD}"
       POSTGRES_DB: "${DB_NAME}"
   js:
-    # TODO: build assets into /static directly and terminate
+    # TODO: build assets into /shared/webpack directly and terminate
+    # FIXME: currently needs a second Django `./manage.py collectstatic` to move generated assets from Django into
+    # static directory, seems we should be able to skip that step
+    # command: "npm run build"
     build: ./frontend
-    image: comses/wagtailjs:latest
+    image: comses/cmsjs:latest
     volumes:
       - ./frontend:/code
-      - webpack:/webpack
+      - ./docker/shared/webpack:/shared/webpack
       - /code/node_modules
   nginx:
     image: nginx:latest
     volumes:
       - ./deploy/nginx/nginx-haproxy.conf:/etc/nginx/nginx.conf
       - ./deploy/nginx/uwsgi_params:/etc/nginx/uwsgi_params
-      - sockets:/sockets
-      - static:/static
-      - logs:/var/log/nginx
+      - ./docker/shared/logs/nginx:/var/log/nginx
+      - ./docker/shared/static:/shared/static
+      - sockets:/shared/sockets
     command: ["nginx", "-g", "daemon off;"]
     ports:
       - "127.0.0.1:8880:80"
@@ -46,17 +49,18 @@ services:
       context: ./django
       args:
         REQUIREMENTS_FILE: requirements-prod.txt
-    image: comses/wagtailcms:latest
+    image: comses/cms:latest
     volumes:
       - ./deploy/conf/config.ini:/secrets/config.ini
       - ./deploy/elasticsearch.conf.d:/etc/elasticsearch
-      - ./django/deploy/prod.sh:/etc/services/django/run
-      - logs:/code/logs
-      - library:/library
-      - repository:/repository
-      - webpack:/webpack
-      - static:/static
-      - sockets:/sockets
+      - ./django/deploy/prod.sh:/etc/service/django/run
+      - ./docker/shared/input:/shared/input
+      - ./docker/shared/logs/cms:/shared/logs
+      - ./docker/shared/library:/shared/library
+      - ./docker/shared/repository:/shared/repository
+      - ./docker/shared/webpack:/shared/webpack
+      - ./docker/shared/static:/shared/static
+      - sockets:/shared/sockets
     environment:
       DJANGO_SETTINGS_MODULE: "core.settings.production"
       DB_USER: ${DB_USER}
@@ -69,19 +73,4 @@ services:
       - ${DB_HOST}
       - elasticsearch
 volumes:
-  sockets:
-    driver: local
-  webpack:
-    driver: local
-  static:
-    driver: local
-  repository:
-    driver: local
-  library:
-    driver: local
-  esindex:
-    driver: local
-  data:
-    driver: local
-  logs:
-    driver: local
+    sockets:

@@ -11,4 +11,4 @@ ALLOWED_HOSTS = ['.comses.net']
 # TODO: refactor root paths, repository / library / etc
 MEDIA_ROOT = '/shared/media'
 
-STATIC_ROOT = '/static'
+STATIC_ROOT = '/shared/static'

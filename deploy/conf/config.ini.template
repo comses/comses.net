@@ -13,7 +13,7 @@ SECRET_KEY=${DJANGO_SECRET_KEY}
 DISCOURSE_SSO_SECRET=${DISCOURSE_SSO_SECRET:-changeme}
 
 [logging]
-LOGGING_DIRECTORY=/shared/logs
+LOG_DIRECTORY=/shared/logs
 
 [storage]
 DATA_ROOT=/shared
