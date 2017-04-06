@@ -1,7 +1,7 @@
-from core.tests.base import ViewSetTestCase, letters, MAX_EXAMPLES
+from core.tests.base import ViewSetTestCase, text, text, MAX_EXAMPLES
 from hypothesis import strategies as st
 from hypothesis.extra.django.models import models
-from hypothesis import given, settings
+from hypothesis import given, settings, Verbosity
 from ..models import Codebase
 from ..views import CodebaseViewSet
 from ..serializers import CodebaseSerializer
@@ -13,23 +13,25 @@ from django.urls import reverse
 
 def generate_with_codebase(submitter):
     return models(Codebase,
-                  title=letters(),
-                  description=letters(),
-                  references_text=letters(),
-                  replication_references_text=letters(),
+                  title=text(),
+                  description=text(),
+                  summary=text(),
                   uuid=st.uuids(),
+                  references_text=st.just(''),
+                  replication_references_text=st.just(''),
                   repository_url=st.just(''),
                   doi=st.just(None),
                   images=st.just([]),
                   identifier=st.uuids(),
+                  relationships=st.just([]),
                   submitter=st.just(submitter),
-                  relationships=st.just([]))
+                  )
 
 
 @st.composite
+@settings(verbosity=Verbosity.verbose)
 def generate_codebases(draw):
-    usernames = ['0000000000',
-                 '0000000001']
+    usernames = ['0000000000', '0000000001']
     user_profiles = [draw(generate_with_user(username)) for username in usernames]
     users, profiles = zip(*user_profiles)
     codebases = draw(st.lists(generate_with_codebase(users[0]), min_size=2, max_size=2))
@@ -55,7 +57,7 @@ class CodebaseViewSetTestCase(ViewSetTestCase):
             {'put': 'update', 'get': 'retrieve', 'post': 'create', 'delete': 'destroy'})(request)
         return response
 
-    @settings(max_examples=MAX_EXAMPLES)
+    @settings(max_examples=MAX_EXAMPLES, verbosity=Verbosity.verbose)
     @given(generate_codebases(), st.sampled_from(('change', 'add', 'view')))
     def test_add_change_view(self, data, action):
         profiles, codebases = data
@@ -77,5 +79,4 @@ class CodebaseViewSetTestCase(ViewSetTestCase):
     @given(generate_codebases())
     def test_anonymous(self, data):
         profiles, codebases = data
-
         self.check_anonymous_authorization(codebases[0])

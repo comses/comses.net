@@ -1,16 +1,22 @@
-from rest_framework.test import APIRequestFactory, force_authenticate
-from rest_framework import status
-from guardian.shortcuts import assign_perm
+from django.contrib.auth.models import User, AnonymousUser
 from django.urls import reverse
-from hypothesis.extra import django as hypothesis_django
+from guardian.shortcuts import assign_perm
 from hypothesis import strategies as st
-from django.contrib.auth.models import Group, User, Permission, AnonymousUser
+from hypothesis.extra import django as hypothesis_django
+from rest_framework import status
+from rest_framework.test import APIRequestFactory, force_authenticate
 
 MAX_EXAMPLES = 20
 
+DEFAULT_ALPHABET = st.characters(whitelist_categories={'Lu', 'Ll', 'Lt', 'Lm', 'Lo'}, blacklist_characters='\x00')
 
-def letters(min_size=1, max_size=20):
-    return st.text(alphabet=st.characters(whitelist_categories=('Ll', 'Lu'), blacklist_characters='\x00'), min_size=min_size, max_size=max_size)
+
+def text(min_size=1, max_size=20):
+    return st.text(alphabet=DEFAULT_ALPHABET, min_size=min_size, max_size=max_size)
+
+
+def dois(**kwargs):
+    return st.text(alphabet=DEFAULT_ALPHABET, **kwargs)
 
 
 class ViewSetTestCase(hypothesis_django.TestCase):
@@ -50,7 +56,10 @@ class ViewSetTestCase(hypothesis_django.TestCase):
     def _create_response(self, action, data, user):
         http_method = self.action_http_map[action]
         request_factory = getattr(self.factory, http_method)
-        request = request_factory(reverse(self.detail_url_name, kwargs={'pk': data['id']}), data=data, format='json')
+        # FIXME: this needs to be customized for Codebase, whose lookup_field is 'identifier', not 'pk'
+        # special casing for now, revisit later
+        lookup_key = 'identifier' if 'codebase' in self.detail_url_name else 'pk'
+        request = request_factory(reverse(self.detail_url_name, kwargs={lookup_key: data['id']}), data=data, format='json')
         force_authenticate(request, user)
         response = self.modelviewset_cls.as_view(
             {'put': 'update', 'get': 'retrieve', 'post': 'create', 'delete': 'destroy'})(request, pk=data['id'])

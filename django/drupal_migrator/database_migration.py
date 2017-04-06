@@ -106,13 +106,13 @@ class Extractor:
             try:
                 return datetime.fromtimestamp(float(drupal_datetime_string), tz=tz)
             except:
-                logger.exception("Could not convert as a timestamp: %s", drupal_datetime_string)
+                logger.warning("Could not convert as a timestamp: %s", drupal_datetime_string)
             # occasionally they are also date strings like '2010-08-01 00:00:00'
             try:
                 return datetime.strptime(drupal_datetime_string, '%Y-%m-%d %H:%M:%S')
             except:
-                logger.exception("Could not convert as a datetime string: %s", drupal_datetime_string)
-            # give up at this point, fall through to return None
+                logger.exception("Expecting a datetime string or a float / unix timestamp but received: %s ", drupal_datetime_string)
+            # give up, fall through and return None
         return None
 
 

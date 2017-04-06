@@ -33,13 +33,14 @@ class CodebaseReleaseSerializer(serializers.ModelSerializer, EditableSerializerM
 
 class CodebaseSerializer(serializers.ModelSerializer):
     contributors = CodebaseContributorSerializer(many=True, read_only=True)
-    releases = CodebaseReleaseSerializer(read_only=True, many=True)
+    releases = CodebaseReleaseSerializer(many=True, read_only=True)
     date_created = serializers.DateTimeField(format='%Y-%m-%d', read_only=True)
     tags = home_serializers.TagSerializer(many=True)
-    absolute_url = serializers.URLField(source='get_absolute_url', help_text=_('URL to the detail page of the codebase'))
+    absolute_url = serializers.URLField(source='get_absolute_url', read_only=True,
+                                        help_text=_('URL to the detail page of the codebase'))
     submitter = home_serializers.CreatorSerializer(read_only=True)
     summary = serializers.SerializerMethodField()
-    last_modified = serializers.DateTimeField(format='%c')
+    last_modified = serializers.DateTimeField(format='%c', read_only=True)
 
     @staticmethod
     def get_summary(obj):
