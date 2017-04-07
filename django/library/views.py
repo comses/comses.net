@@ -1,5 +1,6 @@
 from django.shortcuts import get_object_or_404
 from rest_framework import viewsets
+from django.urls import resolve
 
 from home.views import SmallResultSetPagination
 from .models import Codebase, CodebaseRelease
@@ -12,23 +13,12 @@ logger = logging.getLogger(__name__)
 
 class CodebaseViewSet(viewsets.ModelViewSet):
     lookup_field = 'identifier'
-    multiple_lookup_fields = ('identifier', 'uuid', 'pk')
+    lookup_url_kwarg = 'pk'
     lookup_value_regex = '\w+'
+
     queryset = Codebase.objects.all()
     serializer_class = CodebaseSerializer
     pagination_class = SmallResultSetPagination
-
-    def get_object(self):
-        queryset = self.get_queryset()
-        filter_dict = {}
-        for field in self.multiple_lookup_fields:
-            filter_value = self.kwargs.get(field)
-            if filter_value:
-                filter_dict[field] = filter_value
-        obj = get_object_or_404(queryset, **filter_dict)
-        self.check_object_permissions(self.request, obj)
-        return obj
-
 
     @property
     def template_name(self):
@@ -36,5 +26,13 @@ class CodebaseViewSet(viewsets.ModelViewSet):
 
 
 class CodebaseReleaseViewSet(viewsets.ModelViewSet):
+    lookup_field = 'id'
+    lookup_url_kwarg = 'release_pk'
+
     queryset = CodebaseRelease.objects.all()
     serializer_class = CodebaseReleaseSerializer
+
+    def get_queryset(self):
+        resolved = resolve(self.request.path)
+        codebase_id = resolved.kwargs['pk']
+        return self.queryset.filter(codebase_id=codebase_id)

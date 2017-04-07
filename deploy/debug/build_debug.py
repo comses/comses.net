@@ -26,7 +26,7 @@ def generate_environment(build_type):
         LOG_ROOT='logs',
         REPOSITORY_ROOT='repository',
         STATIC_ROOT='static',
-        WEBPACK_ROOT='webpack',
+        WEBPACK_ROOT='shared/webpack',
     )
 
     config = dict(

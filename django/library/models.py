@@ -198,7 +198,7 @@ class Codebase(index.Indexed, ClusterableModel):
         return pathlib.Path(settings.REPOSITORY_ROOT, str(self.uuid))
 
     @property
-    def contributors(self):
+    def all_contributors(self):
         return CodebaseContributor.objects.select_related('release', 'contributor').filter(
             release__codebase__id=self.pk)
 
@@ -305,6 +305,7 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
     publications = models.ManyToManyField(
         'citation.Publication',
         through=CodebasePublication,
+
         related_name='releases',
         help_text=_('Publications on this work'))
     references = models.ManyToManyField('citation.Publication',
@@ -371,8 +372,8 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
 
 
 class CodebaseContributor(models.Model):
-    release = models.ForeignKey(CodebaseRelease, on_delete=models.CASCADE)
-    contributor = models.ForeignKey(Contributor, on_delete=models.CASCADE)
+    release = models.ForeignKey(CodebaseRelease, on_delete=models.CASCADE, related_name='codebase_contributors')
+    contributor = models.ForeignKey(Contributor, on_delete=models.CASCADE, related_name='codebase_contributors')
     include_in_citation = models.BooleanField(default=True)
     is_maintainer = models.BooleanField(default=False)
     is_rights_holder = models.BooleanField(default=False)
