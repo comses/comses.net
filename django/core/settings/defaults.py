@@ -117,6 +117,9 @@ TEMPLATES = [
             "extensions": DEFAULT_EXTENSIONS + [
                 "django_jinja.builtins.extensions.DjangoExtraFiltersExtension",
                 'wagtail.contrib.settings.jinja2tags.settings',
+                'wagtail.wagtailcore.jinja2tags.core',
+                'wagtail.wagtailadmin.jinja2tags.userbar',
+                'wagtail.wagtailimages.jinja2tags.images',
             ],
             'auto_reload': DEBUG,
             'translation_engine': 'django.utils.translation',
