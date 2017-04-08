@@ -5,8 +5,7 @@ import logging
 import os
 import sys
 
-
-# push current working directory onto the path to access core.settings
+# push tasks.py current directory onto the path to access core.settings
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "core.settings.dev")
 
@@ -89,7 +88,7 @@ def import_codebase_files(ctx, directory='incoming/models'):
     dj(ctx, 'import_codebase_files -d {0}'.format(directory))
 
 
-@task(import_drupal_data, import_codebase_files, aliases=['ima'])
+@task(import_drupal_data, import_codebase_files, setup_site, aliases=['ima'])
 def import_all(ctx):
     pass
 
