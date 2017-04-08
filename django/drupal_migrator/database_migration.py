@@ -1,3 +1,4 @@
+import contextlib
 import csv
 import io
 import json
@@ -71,6 +72,24 @@ def load_data(model, s: str):
     # TODO: set sequence number to start after last value when moved over to Postgres
 
 
+@contextlib.contextmanager
+def suppress_auto_now(model, *field_names):
+    _original_values = {}
+    for field_name in field_names:
+        field = model._meta.get_field(field_name)
+        _original_values[field] = {
+            'auto_now': field.auto_now,
+            'auto_now_add': field.auto_now_add,
+        }
+        field.auto_now = False
+        field.auto_now_add = False
+    try:
+        yield
+    finally:
+        for field, values in _original_values.items():
+            field.auto_now = values['auto_now']
+            field.auto_now_add = values['auto_now_add']
+
 class Extractor:
     def __init__(self, data):
         self.data = data
@@ -143,7 +162,8 @@ class EventExtractor(Extractor):
 
     def extract_all(self, user_id_map: Dict[str, int]):
         events = [self._extract(raw_event, user_id_map) for raw_event in self.data]
-        Event.objects.bulk_create(events)
+        with suppress_auto_now(Event, 'last_modified', 'date_created'):
+            Event.objects.bulk_create(events)
 
 
 class JobExtractor(Extractor):
@@ -164,7 +184,8 @@ class JobExtractor(Extractor):
         for forum_post in self.data:
             if forum_post['forum_tid'] == "13":
                 jobs.append(self._extract(forum_post, user_id_map))
-        Job.objects.bulk_create(jobs)
+        with suppress_auto_now(Job, 'last_modified', 'date_created'):
+            Job.objects.bulk_create(jobs)
 
 
 class UserExtractor(Extractor):
@@ -306,20 +327,21 @@ class ModelExtractor(Extractor):
     def _extract(self, raw_model, user_id_map, author_id_map):
         raw_author_ids = [raw_author['value'] for raw_author in get_field(raw_model, 'field_model_author')]
         author_ids = [author_id_map[raw_author_id] for raw_author_id in raw_author_ids]
-        code = Codebase.objects.create(
-            title=raw_model['title'].strip(),
-            description=get_first_field(raw_model, field_name='body', default=''),
-            date_created=self.to_datetime(raw_model['created']),
-            live=self.int_to_bool(raw_model['status']),
-            last_modified=self.to_datetime(raw_model['changed']),
-            is_replication=Extractor.int_to_bool(get_first_field(raw_model, 'field_model_replicated', default='0')),
-            uuid=raw_model['uuid'],
-            first_published_at=self.to_datetime(raw_model['created']),
-            references_text=get_first_field(raw_model, 'field_model_reference', default=''),
-            replication_references_text=get_first_field(raw_model, 'field_model_publication_text', default=''),
-            identifier=raw_model['nid'],
-            submitter_id=user_id_map[raw_model.get('uid')],
-            peer_reviewed=self.int_to_bool(get_first_field(raw_model, 'field_model_certified', default=0)))
+        with suppress_auto_now(Codebase, 'last_modified'):
+            code = Codebase.objects.create(
+                title=raw_model['title'].strip(),
+                description=get_first_field(raw_model, field_name='body', default=''),
+                date_created=self.to_datetime(raw_model['created']),
+                live=self.int_to_bool(raw_model['status']),
+                last_modified=self.to_datetime(raw_model['changed']),
+                is_replication=Extractor.int_to_bool(get_first_field(raw_model, 'field_model_replicated', default='0')),
+                uuid=raw_model['uuid'],
+                first_published_at=self.to_datetime(raw_model['created']),
+                references_text=get_first_field(raw_model, 'field_model_reference', default=''),
+                replication_references_text=get_first_field(raw_model, 'field_model_publication_text', default=''),
+                identifier=raw_model['nid'],
+                submitter_id=user_id_map[raw_model.get('uid')],
+                peer_reviewed=self.int_to_bool(get_first_field(raw_model, 'field_model_certified', default=0)))
         code.submitter_id = user_id_map[raw_model.get('uid')]
         code.author_ids = author_ids
         code.keyword_tids = get_field_attributes(raw_model, 'taxonomy_vocabulary_6', attribute_name='tid')
@@ -372,31 +394,31 @@ class ModelVersionExtractor(Extractor):
                     'version': get_first_field(raw_model_version, 'field_modelversion_language_ver', default='')
                 }
             }
-            model_version = codebase.make_release(
-                description=description,
-                date_created=self.to_datetime(raw_model_version['created']),
-                last_modified=self.to_datetime(raw_model_version['changed']),
-                os=self.OS_LIST[int(get_first_field(raw_model_version, 'field_modelversion_os', default=0))],
-                license_id=license_id,
-                identifier=raw_model_version['vid'],
-                dependencies=dependencies,
-                submitter_id=codebase.submitter_id,
-                version_number="1.{0}.0".format(version_number-1),
-            )
-            model_version.programming_languages.add(language)
-            model_version.platforms.add(platform.name)
-            release_contributors = []
-            # re-create new CodebaseContributors for each model version
-            # do not modify codebase.contributors in place, otherwise it'd overwrite previous version contributors
-            for contributor in codebase.cached_contributors:
-                release_contributors.append(CodebaseContributor(
-                    index=contributor.index,
-                    contributor_id=contributor.contributor_id,
-                    release_id=model_version.pk
-                ))
-            CodebaseContributor.objects.bulk_create(release_contributors)
-            # FIXME: add files
-            return raw_model_version['nid'], model_version.id
+            with suppress_auto_now(CodebaseRelease, 'last_modified'):
+                model_version = codebase.make_release(
+                    description=description,
+                    date_created=self.to_datetime(raw_model_version['created']),
+                    last_modified=self.to_datetime(raw_model_version['changed']),
+                    os=self.OS_LIST[int(get_first_field(raw_model_version, 'field_modelversion_os', default=0))],
+                    license_id=license_id,
+                    identifier=raw_model_version['vid'],
+                    dependencies=dependencies,
+                    submitter_id=codebase.submitter_id,
+                    version_number="1.{0}.0".format(version_number-1),
+                )
+                model_version.programming_languages.add(language)
+                model_version.platforms.add(platform.name)
+                release_contributors = []
+                # re-create new CodebaseContributors for each model version
+                # do not modify codebase.contributors in place or it will overwrite previous version contributors
+                for contributor in codebase.cached_contributors:
+                    release_contributors.append(CodebaseContributor(
+                        index=contributor.index,
+                        contributor_id=contributor.contributor_id,
+                        release_id=model_version.pk
+                    ))
+                CodebaseContributor.objects.bulk_create(release_contributors)
+                return raw_model_version['nid'], model_version.id
         else:
             logger.warning("Unable to locate parent model nid %s for version %s", model_nid, raw_model_version['vid'])
             return None
