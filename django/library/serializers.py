@@ -13,7 +13,7 @@ class ContributorSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Contributor
-        fields = ('name', 'email', 'user', )
+        fields = ('name', 'email', 'user',)
 
 
 class CodebaseContributorSerializer(serializers.ModelSerializer):
@@ -37,7 +37,8 @@ class CodebaseReleaseSerializer(serializers.ModelSerializer):
     programming_languages = home_serializers.TagSerializer(many=True)
 
     def get_relative_url(self, obj) -> str:
-        return reverse_lazy('library:codebaserelease-detail', kwargs={'release_pk': obj.codebase_id, 'pk': obj.id})
+        return reverse_lazy('library:codebaserelease-detail',
+                            kwargs={'pk': obj.codebase.identifier, 'version_number': obj.version_number})
 
     class Meta:
         model = CodebaseRelease

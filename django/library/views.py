@@ -1,4 +1,3 @@
-from django.shortcuts import get_object_or_404
 from rest_framework import viewsets
 from django.urls import resolve
 
@@ -14,7 +13,7 @@ logger = logging.getLogger(__name__)
 class CodebaseViewSet(viewsets.ModelViewSet):
     lookup_field = 'identifier'
     lookup_url_kwarg = 'pk'
-    lookup_value_regex = '\w+'
+    lookup_value_regex = r'\w+'
 
     queryset = Codebase.objects.all()
     serializer_class = CodebaseSerializer
@@ -26,13 +25,14 @@ class CodebaseViewSet(viewsets.ModelViewSet):
 
 
 class CodebaseReleaseViewSet(viewsets.ModelViewSet):
-    lookup_field = 'id'
-    lookup_url_kwarg = 'release_pk'
+    lookup_field = 'version_number'
+    lookup_value_regex = r'\d+\.\d+\.\d+'
 
     queryset = CodebaseRelease.objects.all()
     serializer_class = CodebaseReleaseSerializer
+    pagination_class = SmallResultSetPagination
 
     def get_queryset(self):
         resolved = resolve(self.request.path)
-        codebase_id = resolved.kwargs['pk']
-        return self.queryset.filter(codebase_id=codebase_id)
+        identifier = resolved.kwargs['pk']
+        return self.queryset.filter(codebase__identifier=identifier)

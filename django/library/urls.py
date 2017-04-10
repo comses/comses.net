@@ -6,9 +6,6 @@ from rest_framework.routers import SimpleRouter
 from core.view_helpers import create_edit_routes
 
 router = SimpleRouter()
-router.register(r'codebases', CodebaseViewSet, base_name='codebase')
-router.register(r'codebases/(?P<identifier>\w+)/releases', CodebaseReleaseViewSet, base_name='release')
-
 router.register(r'codebases', CodebaseViewSet)
 router.register(r'codebases/(?P<pk>[0-9]+)/releases', CodebaseReleaseViewSet)
 
