@@ -198,7 +198,7 @@ class Codebase(index.Indexed, ClusterableModel):
         return pathlib.Path(settings.REPOSITORY_ROOT, str(self.uuid))
 
     @property
-    def contributors(self):
+    def all_contributors(self):
         return CodebaseContributor.objects.select_related('release', 'contributor').filter(
             release__codebase__id=self.pk)
 
@@ -210,7 +210,7 @@ class Codebase(index.Indexed, ClusterableModel):
         return contributor_list
 
     def get_absolute_url(self):
-        return '{0}{1}'.format(reverse_lazy('library:codebase-list'), self.identifier)
+        return reverse_lazy('library:codebase-detail', kwargs={'identifier': self.identifier})
 
     def media_url(self, name):
         return '{0}/media/{1}'.format(self.get_absolute_url(), name)
@@ -305,6 +305,7 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
     publications = models.ManyToManyField(
         'citation.Publication',
         through=CodebasePublication,
+
         related_name='releases',
         help_text=_('Publications on this work'))
     references = models.ManyToManyField('citation.Publication',
@@ -324,7 +325,8 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
         return self.codebase.subpath('releases', 'v{0}'.format(self.version_number), *map(str, args))
 
     def get_absolute_url(self):
-        return '{0}/release/{1}'.format(self.codebase.get_absolute_url(), self.version_number)
+        return reverse_lazy('library:codebaserelease-detail',
+                            kwargs={'identifier': self.codebase.identifier, 'version_number': self.version_number})
 
     @property
     def bagit_path(self):
@@ -371,8 +373,8 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
 
 
 class CodebaseContributor(models.Model):
-    release = models.ForeignKey(CodebaseRelease, on_delete=models.CASCADE)
-    contributor = models.ForeignKey(Contributor, on_delete=models.CASCADE)
+    release = models.ForeignKey(CodebaseRelease, on_delete=models.CASCADE, related_name='codebase_contributors')
+    contributor = models.ForeignKey(Contributor, on_delete=models.CASCADE, related_name='codebase_contributors')
     include_in_citation = models.BooleanField(default=True)
     is_maintainer = models.BooleanField(default=False)
     is_rights_holder = models.BooleanField(default=False)

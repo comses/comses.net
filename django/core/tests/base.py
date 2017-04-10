@@ -59,10 +59,13 @@ class ViewSetTestCase(hypothesis_django.TestCase):
         # FIXME: this needs to be customized for Codebase, whose lookup_field is 'identifier', not 'pk'
         # special casing for now, revisit later
         lookup_key = 'identifier' if 'codebase' in self.detail_url_name else 'pk'
-        request = request_factory(reverse(self.detail_url_name, kwargs={lookup_key: data['id']}), data=data, format='json')
+        lookup_value = data['identifier'] if lookup_key == 'identifier' else data['id']
+        request = request_factory(reverse(self.detail_url_name, kwargs={lookup_key: lookup_value}), data=data,
+                                  format='json')
         force_authenticate(request, user)
         response = self.modelviewset_cls.as_view(
-            {'put': 'update', 'get': 'retrieve', 'post': 'create', 'delete': 'destroy'})(request, pk=data['id'])
+            {'put': 'update', 'get': 'retrieve', 'post': 'create', 'delete': 'destroy'})(request,
+                                                                                         **{lookup_key: lookup_value})
         return response
 
     def create_add_response(self, user, data):
