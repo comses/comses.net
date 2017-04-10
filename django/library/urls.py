@@ -7,11 +7,10 @@ from core.view_helpers import create_edit_routes
 
 router = SimpleRouter()
 router.register(r'codebases', CodebaseViewSet)
-router.register(r'codebases/(?P<pk>[0-9]+)/releases', CodebaseReleaseViewSet)
+router.register(r'codebases/(?P<identifier>\w+)/releases', CodebaseReleaseViewSet)
 
-urlpatterns = []
-urlpatterns += create_edit_routes(prefix=Codebase._meta.object_name.lower() + 's', model=Codebase, lookup_field='pk',
-                                  lookup_regex=r'\d+')
+urlpatterns = create_edit_routes(prefix=Codebase._meta.object_name.lower() + 's', model=Codebase, lookup_field='identifier',
+                                 lookup_regex=r'\w+')
 
 urlpatterns += [
     url(r'^', include(router.urls)),

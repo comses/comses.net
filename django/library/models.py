@@ -210,7 +210,7 @@ class Codebase(index.Indexed, ClusterableModel):
         return contributor_list
 
     def get_absolute_url(self):
-        return '{0}{1}'.format(reverse_lazy('library:codebase-list'), self.identifier)
+        return reverse_lazy('library:codebase-detail', kwargs={'identifier': self.identifier})
 
     def media_url(self, name):
         return '{0}/media/{1}'.format(self.get_absolute_url(), name)
@@ -325,7 +325,8 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
         return self.codebase.subpath('releases', 'v{0}'.format(self.version_number), *map(str, args))
 
     def get_absolute_url(self):
-        return '{0}/release/{1}'.format(self.codebase.get_absolute_url(), self.version_number)
+        return reverse_lazy('library:codebaserelease-detail',
+                            kwargs={'identifier': self.codebase.identifier, 'version_number': self.version_number})
 
     @property
     def bagit_path(self):

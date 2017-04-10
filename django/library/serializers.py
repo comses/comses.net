@@ -30,21 +30,20 @@ class CodebaseContributorSerializer(serializers.ModelSerializer):
 
 class CodebaseReleaseSerializer(serializers.ModelSerializer):
     date_created = serializers.DateTimeField(format='%Y-%m-%d', read_only=True)
-    relative_url = serializers.SerializerMethodField(help_text=_('URL to the detail page of the codebase'))
+    absolute_url = serializers.SerializerMethodField(help_text=_('URL to the detail page of the codebase'))
     codebase_contributors = CodebaseContributorSerializer(many=True)
     submitter = home_serializers.UserSerializer(label='Submitter')
     platforms = home_serializers.TagSerializer(many=True)
     programming_languages = home_serializers.TagSerializer(many=True)
 
-    def get_relative_url(self, obj) -> str:
-        return reverse_lazy('library:codebaserelease-detail',
-                            kwargs={'pk': obj.codebase.identifier, 'version_number': obj.version_number})
+    def get_absolute_url(self, obj) -> str:
+        return obj.get_absolute_url()
 
     class Meta:
         model = CodebaseRelease
         fields = ('date_created', 'last_modified', 'peer_reviewed', 'doi', 'description', 'license', 'documentation',
                   'embargo_end_date', 'version_number', 'os', 'platforms', 'programming_languages', 'submitter',
-                  'codebase_contributors', 'submitted_package', 'relative_url')
+                  'codebase_contributors', 'submitted_package', 'absolute_url')
 
 
 class CodebaseSerializer(serializers.ModelSerializer):
@@ -64,7 +63,7 @@ class CodebaseSerializer(serializers.ModelSerializer):
             return shorten(obj.description, width=500)
 
     def get_absolute_url(self, obj) -> str:
-        return reverse_lazy('library:codebase-detail', kwargs={'pk': obj.id})
+        return obj.get_absolute_url()
 
     def create(self, validated_data):
         return home_serializers.create(self.Meta.model, validated_data, self.context)

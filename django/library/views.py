@@ -12,7 +12,6 @@ logger = logging.getLogger(__name__)
 
 class CodebaseViewSet(viewsets.ModelViewSet):
     lookup_field = 'identifier'
-    lookup_url_kwarg = 'pk'
     lookup_value_regex = r'\w+'
 
     queryset = Codebase.objects.all()
@@ -34,5 +33,5 @@ class CodebaseReleaseViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         resolved = resolve(self.request.path)
-        identifier = resolved.kwargs['pk']
+        identifier = resolved.kwargs['identifier']
         return self.queryset.filter(codebase__identifier=identifier)
