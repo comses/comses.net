@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 
 class CodebaseViewSet(viewsets.ModelViewSet):
     lookup_field = 'identifier'
-    lookup_value_regex = r'\w+'
+    lookup_value_regex = r'\w(\w|-)*'
 
     queryset = Codebase.objects.all()
     serializer_class = CodebaseSerializer
