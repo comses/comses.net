@@ -13,4 +13,4 @@ urlpatterns = router.urls
 urlpatterns += create_edit_routes(prefix=Codebase._meta.object_name.lower() + 's',
                                   model=Codebase,
                                   lookup_field='identifier',
-                                  lookup_regex=r'[\w-.]+')
+                                  lookup_regex=r'[\w\-.]+')
