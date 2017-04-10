@@ -1,11 +1,10 @@
-from django.core.urlresolvers import reverse_lazy
+from textwrap import shorten
+
 from django.utils.translation import ugettext_lazy as _
 from rest_framework import serializers
 
-from textwrap import shorten
-from .models import Contributor, CodebaseContributor, Codebase, CodebaseRelease
 from home import serializers as home_serializers
-from .models import CodebaseContributor, Codebase, CodebaseRelease
+from .models import CodebaseContributor, Codebase, CodebaseRelease, Contributor
 
 
 class ContributorSerializer(serializers.ModelSerializer):
@@ -28,7 +27,8 @@ class CodebaseContributorSerializer(serializers.ModelSerializer):
 
 class CodebaseReleaseSerializer(serializers.ModelSerializer):
     date_created = serializers.DateTimeField(format='%Y-%m-%d', read_only=True)
-    absolute_url = serializers.URLField(source='get_absolute_url', help_text=_('URL to the detail page of the codebase'))
+    absolute_url = serializers.URLField(source='get_absolute_url', read_only=True,
+                                        help_text=_('URL to the detail page of the codebase'))
     codebase_contributors = CodebaseContributorSerializer(many=True)
     submitter = home_serializers.UserSerializer(label='Submitter')
     platforms = home_serializers.TagSerializer(many=True)
@@ -47,7 +47,7 @@ class CodebaseSerializer(serializers.ModelSerializer):
     date_created = serializers.DateTimeField(format='%Y-%m-%d', read_only=True)
     last_modified = serializers.DateTimeField(format='%Y-%m-%d', read_only=True)
     tags = home_serializers.TagSerializer(many=True)
-    absolute_url = serializers.URLField(source='get_absolute_url')
+    absolute_url = serializers.URLField(source='get_absolute_url', read_only=True)
     submitter = home_serializers.CreatorSerializer(read_only=True)
 
     @staticmethod
