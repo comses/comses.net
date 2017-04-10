@@ -18,9 +18,7 @@ class ContributorSerializer(serializers.ModelSerializer):
 
 class CodebaseContributorSerializer(serializers.ModelSerializer):
     contributor = ContributorSerializer()
-
     user = serializers.ReadOnlyField(source='contributor.user')
-    contributor = serializers.ReadOnlyField(source='contributor.get_full_name')
     affiliations = serializers.ReadOnlyField(source='contributor.formatted_affiliations')
 
     class Meta:
