@@ -5,13 +5,7 @@ from rest_framework.compat import template_render
 class RootContextHTMLRenderer(TemplateHTMLRenderer):
     def render(self, data, accepted_media_type=None, renderer_context=None):
         """
-        Renders data to HTML, using Django's standard template rendering.
-
-        The template name is determined by (in order of preference):
-
-        1. An explicit .template_name set on the response.
-        2. An explicit .template_name set on this class.
-        3. The return result of calling view.get_template_names().
+        Same as TemplateHTMLRenderer but adds a root __all__ variable that contains the entire serialized object
         """
         renderer_context = renderer_context or {}
         view = renderer_context['view']
