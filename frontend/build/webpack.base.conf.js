@@ -18,6 +18,7 @@ module.exports = {
         events: './src/pages/event/create.ts',
         job_list: './src/pages/job/list.ts',
         event_list: './src/pages/event/list.ts',
+        codebase_list: './src/pages/codebase/list.ts',
         vendors: './src/vendors.js',
         styles: './src/style.scss'
     },

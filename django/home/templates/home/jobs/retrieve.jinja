@@ -1,22 +1,56 @@
 {% extends "base.jinja" %}
-{% from "common.jinja" import retrieve_introduction, permission_button_group %}
+{% from "common.jinja" import retrieve_introduction, permission_button_group, breadcrumb %}
 
 {% block title %}Job: {{ title }}{% endblock %}
 
 {% block introduction %}
-    {{ retrieve_introduction("Job: " + title) }}
+    {{ retrieve_introduction("Job Postings") }}
 {% endblock %}
 
 {% block content %}
-
-    <h6 class="text-right">{{ date_created }}</h6>
-    {{ markdown(description)|safe }}
-    <div class="btn-group">
-        {% if has_change_perm %}
-            <a type="button" class="btn btn-primary btn-sm" href="{{ url('home:job-update', pk=id) }}">Edit</a>
-        {% endif %}
-        {% if has_delete_perm %}
-            <a type="button" class="btn btn-danger btn-sm" href="{{ url('home:job-detail', pk=id) }}">Delete</a>
-        {% endif %}
+    {{ breadcrumb([
+        {'url': '/', 'description': 'Home'},
+        {'url': url('home:job-list'), 'description': 'Job Postings' },
+        {'description': title }
+        ]) }}
+    <div class="row">
+        <div class="col-sm-12 col-md-9">
+            <h1>{{ title }}</h1>
+            {{ markdown(description)|safe }}
+            <div class="btn-group">
+                {% if has_change_perm %}
+                    <a type="button" class="btn btn-primary btn-sm" href="{{ url('home:job-update', pk=id) }}">Edit</a>
+                {% endif %}
+                {% if has_delete_perm %}
+                    <a type="button" class="btn btn-danger btn-sm" href="{{ url('home:job-detail', pk=id) }}">Delete</a>
+                {% endif %}
+            </div>
+        </div>
+        <div class="col-sm-12 col-md-3">
+            <div class="card-metadata">
+                <div class="card-block">
+                    <small>
+                        <b class="card-title">Contact</b>
+                        <br>
+                        <b class="card-title">Date Published</b>
+                        <p class="card-text">{{ date_created }}</p>
+                        <b class="card-title">Last Updated</b>
+                        <p class="card-text">{{ last_modified }}</p>
+                        <b class="card-title">Views</b>
+                        <br>
+                        <b class="card-title">Status</b>
+                    </small>
+                </div>
+            </div>
+            <div class="card-metadata">
+                <div class="card-block">
+                    <b>Share</b>
+                    <span class="col-2 fa fa-linkedin-square"></span>
+                    <span class="col-2 fa fa-facebook-square"></span>
+                    <span class="col-2 fa fa-twitter-square"></span>
+                    <span class="col-2 fa fa-envelope-square"></span>
+                </div>
+            </div>
+        </div>
     </div>
 {% endblock %}

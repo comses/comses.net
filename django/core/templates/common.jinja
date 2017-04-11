@@ -41,7 +41,7 @@
         <div class="title">
             <h1><a href="{{ url(detail_url_name, pk=item.id) }}">{{ item.title }}</a></h1>
             <small>Submitted by:
-                <a href="{{ item.submitter.profile_url }}">{{ item.submitter.username }}</a>
+                <a href="{{ item.submitter.profile_url }}">{{ item.submitter.full_name }}</a>
             </small>
         </div>
         {% if item.summary %}
@@ -75,4 +75,19 @@
             </div>
         </div>
     </div>
+{% endmacro %}
+
+
+{% macro breadcrumb(items) %}
+    <small>
+        <ol class="breadcrumb">
+            {% for item in items %}
+                {% if not loop.last %}
+                    <li class="breadcrumb-item"><a href="{{ item.url }}">{{ item.description }}</a></li>
+                {% else %}
+                    <li class="breadcrumb-item active">{{ item.description }}</li>
+                {% endif %}
+            {% endfor %}
+        </ol>
+    </small>
 {% endmacro %}

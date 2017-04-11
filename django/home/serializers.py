@@ -9,11 +9,12 @@ from .models import Event, Job, FeaturedContentItem, MemberProfile
 
 
 class CreatorSerializer(serializers.ModelSerializer):
-    profile_url = serializers.URLField(source='member_profile.get_absolute_url')
+    profile_url = serializers.URLField(source='member_profile.get_absolute_url', read_only=True)
+    full_name = serializers.CharField(source='get_full_name', read_only=True)
 
     class Meta:
         model = User
-        fields = ('username', 'profile_url')
+        fields = ('username', 'full_name', 'profile_url')
 
 
 class TagListSerializer(serializers.ListSerializer):
@@ -58,13 +59,13 @@ def update(serializer_update, instance, validated_data):
 
 
 class EventSerializer(serializers.ModelSerializer):
-    submitter = CreatorSerializer(read_only=True, help_text=_('User that created the event'))
+    submitter = CreatorSerializer(read_only=True, help_text=_('User that created the event'), label='Submitter')
     relative_url = serializers.SerializerMethodField(help_text=_('URL to the detail page of the job'))
     date_created = serializers.DateTimeField(format='%Y-%m-%d', read_only=True)
     last_modified = serializers.DateTimeField(format='%Y-%m-%d', read_only=True)
-    tags = TagSerializer(many=True)
+    tags = TagSerializer(many=True, label='Tags')
 
-    def get_relative_url(self, obj):
+    def get_relative_url(self, obj) -> str:
         return reverse_lazy('home:event-detail', kwargs={'pk': obj.id})
 
     def create(self, validated_data):
@@ -80,11 +81,12 @@ class EventSerializer(serializers.ModelSerializer):
 
 class JobSerializer(serializers.ModelSerializer):
     # need nested serializer for submitter
-    submitter = CreatorSerializer(read_only=True, help_text=_('User that created the job description'))
+    submitter = CreatorSerializer(read_only=True, help_text=_('User that created the job description'),
+                                  label='Submitter')
     relative_url = serializers.SerializerMethodField(help_text=_('URL to the detail page of the job'))
     date_created = serializers.DateTimeField(format='%Y-%m-%d', read_only=True)
     last_modified = serializers.DateTimeField(format='%Y-%m-%d', read_only=True)
-    tags = TagSerializer(many=True)
+    tags = TagSerializer(many=True, label='Tags')
 
     def get_relative_url(self, obj) -> str:
         return reverse_lazy('home:job-detail', kwargs={'pk': obj.id})
@@ -106,7 +108,7 @@ class FeaturedContentItemSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = FeaturedContentItem
-        fields = ('image', 'caption', 'title', )
+        fields = ('image', 'caption', 'title',)
 
 
 class MemberProfileSerializer(serializers.ModelSerializer):
@@ -125,4 +127,4 @@ class UserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ('first_name', 'last_name', 'username', 'is_superuser', 'is_staff', 'member_profile', 'get_full_name', )
+        fields = ('first_name', 'last_name', 'username', 'is_superuser', 'is_staff', 'member_profile', 'get_full_name',)

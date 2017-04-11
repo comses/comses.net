@@ -31,22 +31,27 @@
 
 {% macro render_codebase_result(item, detail_url_name) %}
     <div class="search-result">
-        <div class="date-info">
-            <small class="text-muted">Last Updated: {{ item.last_modified }}</small>
-            <small class="text-muted pull-right">Created on: {{ item.date_created }}</small>
-        </div>
         <div class="row">
-            <div class="col-2">
-                <img src="/static/images/logo.png" class="img-fluid img-thumbnail">
+            <div class="col-md-12 col-lg-3">
+                <img src="holder.js/200x200" class="img-fluid img-thumbnail">
             </div>
-            <div class="col-10">
+            <div class="col-md-12 col-lg-9">
                 <div class="title">
                     <h1>
                         <a href="{{ url("library:codebase-detail", identifier=item.identifier) }}">{{ item.title }}</a>
                     </h1>
-                    <small>Submitted by:
-                        {# FIXME: this should delegate to MemberProfile.get_absolute_url instead #}
-                        <a href="{{ item.submitter.profile_url }}/">{{ item.submitter.username }}</a>
+                    <small>
+                        {% for codebase_contributor in item.all_contributors %}
+                            {% if codebase_contributor.username %}
+                                <a href="{{ codebase_contributor.profile_url }}/">{{ codebase_contributor.name }}</a>
+                            {% else %}
+                                <span>{{ codebase_contributor.name }}</span>
+                            {% endif %}
+                            {% if not loop.last %}
+                            ,
+                            {% endif %}
+                        {% endfor %}
+                        | Last Updated: {{ item.last_modified }}, Created on: {{ item.date_created }}
                     </small>
                 </div>
                 {% if item.summary %}
@@ -57,7 +62,7 @@
                 {% if item.tags %}
                     <div class="tag-list">
                         {% for tag in item.tags %}
-                            <small><span class="tag">{{ tag.name }}</span></small>
+                            <span class="tag">{{ tag.name }}</span>
                         {% endfor %}
                     </div>
                 {% endif %}
@@ -67,5 +72,6 @@
 {% endmacro %}
 
 {% block js %}
-    {# {{ render_bundle('codebase_list') }} #}
+    {{ super() }}
+    {{ render_bundle('codebase_list') }}
 {% endblock %}

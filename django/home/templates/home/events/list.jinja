@@ -23,6 +23,7 @@
 
 {% block content %}
     <div id="app"></div>
+    <div id="example"></div>
     {{ list_page(__all__, item_component, 'home:event-detail') }}
     <br>
     {{ paginator('home:event-list', __all__) }}

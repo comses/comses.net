@@ -1,13 +1,27 @@
+
+
+$rules-color: lighten(#ced9ee, 5%);
+
+/*
+ * Bootstrap Overrides
+ */
 $text-color: #6d6c71;
 $link-color: #22b1e6;
 $brand-primary: #92c02e;
-$rules-color: lighten(#ced9ee, 5%);
 $link-hover: darken($text-color, 20%);
 $button-hover: darken($brand-primary, 20%);
 $white: #f0f4fa;
 $body-bg: $white;
 $light-blue-gray: #c3d9ee;
 $default-padding: 60px;
+
+// Font Size Overrides
+$font-size-h1: 1.8rem;
+$font-size-h2: 1.6rem;
+$font-size-h3: 1.4rem;
+$font-size-h4: 1.2rem;
+$font-size-h5: 1.1rem;
+$font-size-h6: 1.0rem;
 
 // Components overrides
 $border-radius: .0rem;
@@ -235,4 +249,29 @@ footer {
 
 .datepicker-clear-button:hover {
   color: red;
+}
+
+// Responsive Typography
+
+html {
+  font-size: 12px;
+}
+
+
+@include media-breakpoint-up(sm) {
+  html {
+    font-size: 13px;
+  }
+}
+
+@include media-breakpoint-up(md) {
+  html {
+    font-size: 14px;
+  }
+}
+
+@include media-breakpoint-up(lg) {
+  html {
+    font-size: 15px;
+  }
 }

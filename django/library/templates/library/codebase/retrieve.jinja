@@ -1,5 +1,5 @@
 {% extends "base.jinja" %}
-{% from "common.jinja" import retrieve_introduction %}
+{% from "common.jinja" import retrieve_introduction, breadcrumb %}
 
 {% block title %}{{ title }}{% endblock %}
 
@@ -7,13 +7,11 @@
 
 {% block content %}
     {# XXX: hard-coded breadcrumb trail #}
-    <small>
-        <ol class='breadcrumb'>
-            <li class='breadcrumb-item'><a href='/'>Home</a></li>
-            <li class='breadcrumb-item'><a href='{{ url('library:codebase-list') }}'>Codebase Library</a></li>
-            <li class='breadcrumb-item active'>{{ title }}</li>
-        </ol>
-    </small>
+    {{ breadcrumb([
+        {'url': '/', 'description': 'Home'},
+        {'url': url('library:codebase-list'), 'description': 'Codebase Library' },
+        {'description': title }
+        ]) }}
     <div class='row'>
         <div class='col-md-9'>
             <h1 class="pb-4">{{ title }}</h1>

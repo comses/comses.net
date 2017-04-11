@@ -56,7 +56,7 @@ class EventViewSet(viewsets.ModelViewSet):
     pagination_class = SmallResultSetPagination
 
     def get_queryset(self):
-        return get_search_queryset(self).order_by('-date_created')
+        return get_search_queryset(self)
 
     @property
     def template_name(self):
