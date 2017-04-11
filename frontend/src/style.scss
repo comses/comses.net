@@ -1,7 +1,7 @@
 $text-color: #6d6c71;
 $link-color: #22b1e6;
 $brand-primary: #92c02e;
-$rules-color: #ced9ee;
+$rules-color: lighten(#ced9ee, 5%);
 $link-hover: darken($text-color, 20%);
 $button-hover: darken($brand-primary, 20%);
 $white: #f0f4fa;
@@ -179,30 +179,54 @@ footer {
 
 .search-result {
   @extend .card;
-  &:hover {
-    background-color: darken($body-bg, 5%);
-  }
   h1 {
     font-size: 1em;
   }
 }
 
 .search-result {
+  border-left: none;
+  border-right: none;
+  padding-top: 2em;
+  padding-bottom: 2em;
+
   .date-info {
-    @extend .card-title, .px-3;
+    @extend .card-title;
   }
 
   .title {
-    @extend .card-block, .py-1;
+    @extend .card-block;
+    padding: 0;
+
+    h1 {
+      font-weight: 700;
+    }
   }
 
   .summary {
-    @extend .card-block, .py-1;
+    @extend .card-block;
+    padding: 0;
   }
 
   .tag-list {
-    @extend .card-block, .py-1;
+    @extend .card-block;
+    padding: 1em 0 0;
+
+    .tag {
+      padding: 0.75em;
+      @extend .badge;
+      background-color: $rules-color;
+      color: $link-color;
+    }
   }
+}
+
+.card-metadata {
+  @extend .card;
+  margin-top: 0.5em;
+  margin-bottom: 0.5em;
+  background-color: $rules-color;
+  border: none;
 }
 
 .datepicker-clear-button {

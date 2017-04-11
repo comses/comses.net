@@ -20,40 +20,47 @@
             {{ markdown(description)|safe }}
         </div>
         <div class="col-md-3">
-            <div class='card'>
-                <div class='card-header'>
-                    {% if peer_reviewed %}
-                        <i class='fa fa-trophy fa-2x'></i>
-                    {% endif %}
-                    Metadata
-                </div>
+            <div class='card-metadata'>
                 <div class='card-block'>
-                    <h5 class='card-title'>Authors</h5>
-                    <p class='card-text'>
-                        {% for c in contributors %}
-                            {{ c.contributor.name }}
-                            {{ c.affiliations }}
-                        {% endfor %}
-                    </p>
-                    <h5 class='card-title'>Publish Date</h5>
-                    <p class='card-text'>
-                        {{ first_published_at }}
-                    </p>
+                    <small>
+                        <b class="card-title">Authors</b>
+                        <p class='card-text'>
+                            {% for c in contributors %}
+                                {{ c.contributor.name }}
+                                {{ c.affiliations }}
+                            {% endfor %}
+                        </p>
+                        <b class="card-title">Publish Date</b>
+                        <p class='card-text'>
+                            {{ first_published_at }}
+                        </p>
 
-                    <h5 class='card-title'>Last Updated</h5>
-                    <p class='card-text'>
-                        {{ last_modified }}
-                    </p>
+                        <b class="card-title">Last Updated</b>
+                        <p class='card-text'>
+                            {{ last_modified }}
+                        </p>
+
+                        <b class="card-title">Downloads: </b><br>
+
+                        <b class="card-title">Status</b>
+                        <p class="card-text">
+                        {% if peer_reviewed %}
+                            <i class='fa fa-trophy fa-2x'></i> Reviewed
+                        {% else %}
+                            Unreviewed
+                        {% endif %}
+                        </p>
+                    </small>
 
                 </div>
             </div>
-            <div class="card my-2">
+            <div class="card-metadata">
                 <div class="card-block">
                     <button type="button" class="col-12 my-1 btn btn-primary">Download</button>
                     <button type="button" class="col-12 my-1 btn btn-primary">Follow</button>
                 </div>
             </div>
-            <div class="card my-2">
+            <div class="card-metadata">
                 <div class="card-block">
                     <b>Share</b>
                     <span class="col-2 fa fa-linkedin-square"></span>

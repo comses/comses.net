@@ -39,7 +39,7 @@
             <small class="text-muted pull-right">Created on: {{ item.date_created }}</small>
         </div>
         <div class="title">
-            <h1 class="p-0 m-0"><a href="{{ url(detail_url_name, pk=item.id) }}">{{ item.title }}</a></h1>
+            <h1><a href="{{ url(detail_url_name, pk=item.id) }}">{{ item.title }}</a></h1>
             <small>Submitted by:
                 <a href="{{ item.submitter.profile_url }}">{{ item.submitter.username }}</a>
             </small>
