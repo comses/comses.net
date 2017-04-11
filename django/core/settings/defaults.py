@@ -163,8 +163,13 @@ TAGGIT_CASE_INSENSITIVE = True
 
 config = configparser.ConfigParser()
 
+IS_IN_DOCKER = os.path.exists('/secrets/config.ini')
+
 # FIXME: set up better shared paths
-config.read('/secrets/config.ini')
+if IS_IN_DOCKER:
+    config.read('/secrets/config.ini')
+else:
+    config.read('../deploy/conf/config.ini.debug')
 
 SECRET_KEY = config.get('secrets', 'SECRET_KEY')
 
