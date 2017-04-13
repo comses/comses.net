@@ -1,4 +1,10 @@
+import logging
+
 from django import forms
+
+from .models import Institution
+
+logger = logging.getLogger(__name__)
 
 
 class SignupForm(forms.Form):
