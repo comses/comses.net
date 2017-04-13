@@ -51,9 +51,9 @@ def sh(ctx):
 
 
 @task
-def test(ctx, name=None, coverage=False):
-    if name is not None:
-        apps = name
+def test(ctx, tests=None, coverage=False):
+    if tests is not None:
+        apps = tests
     else:
         apps = ''
     if coverage:
