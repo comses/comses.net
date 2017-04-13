@@ -6,6 +6,7 @@ import urllib
 
 
 from django.conf import settings
+from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.http import QueryDict, HttpResponseBadRequest, HttpResponseRedirect
 from rest_framework import viewsets, generics
@@ -56,6 +57,7 @@ class SmallResultSetPagination(PageNumberPagination):
         }, **kwargs)
 
 
+@login_required
 def discourse_sso(request):
     '''
     Code adapted from https://meta.discourse.org/t/sso-example-for-django/14258
@@ -82,12 +84,15 @@ def discourse_sso(request):
 
     # Build the return payload
     qs = urllib.parse.parse_qs(decoded)
+    user = request.user
+    # FIXME: create a sync endpoint to sync up admins and groups (e.g., CoMSES full member Discourse group)
     params = {
         'nonce': qs['nonce'][0],
-        'email': request.user.email,
-        'external_id': request.user.id,
-        'username': request.user.username,
+        'email': user.email,
+        'external_id': user.id,
+        'username': user.username,
         'require_activation': 'true',
+        'name': user.get_full_name(),
     }
 
     return_payload = base64.encodestring(bytes(urllib.urlencode(params), 'utf-8'))
