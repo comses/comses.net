@@ -2,7 +2,7 @@ import base64
 import hashlib
 import hmac
 import logging
-import urllib
+from urllib import parse
 
 
 from django.conf import settings
@@ -70,7 +70,7 @@ def discourse_sso(request):
 
     # Validate the payload
 
-    payload = bytes(urllib.unquote(payload), encoding='utf-8')
+    payload = bytes(parse.unquote(payload), encoding='utf-8')
     decoded = base64.decodestring(payload).decode('utf-8')
     if len(payload) == 0 or 'nonce' not in decoded:
         return HttpResponseBadRequest('Invalid payload. Please contact support if this problem persists.')
@@ -83,7 +83,7 @@ def discourse_sso(request):
         return HttpResponseBadRequest('Invalid payload. Please contact support if this problem persists.')
 
     # Build the return payload
-    qs = urllib.parse.parse_qs(decoded)
+    qs = parse.parse_qs(decoded)
     user = request.user
     # FIXME: create a sync endpoint to sync up admins and groups (e.g., CoMSES full member Discourse group)
     params = {
@@ -95,13 +95,14 @@ def discourse_sso(request):
         'name': user.get_full_name(),
     }
 
-    return_payload = base64.encodestring(bytes(urllib.urlencode(params), 'utf-8'))
+    return_payload = base64.encodestring(bytes(parse.urlencode(params), 'utf-8'))
     h = hmac.new(key, return_payload, digestmod=hashlib.sha256)
-    query_string = urllib.urlencode({'sso': return_payload, 'sig': h.hexdigest()})
+    query_string = parse.urlencode({'sso': return_payload, 'sig': h.hexdigest()})
 
     # Redirect back to Discourse
 
     discourse_sso_url = '{0}/session/sso_login?{1}'.format(settings.DISCOURSE_BASE_URL, query_string)
+    logger.warning("discourse redirect url: %s", discourse_sso_url)
     return HttpResponseRedirect(discourse_sso_url)
 
 

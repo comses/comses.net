@@ -9,7 +9,7 @@ DB_PORT=${DB_PORT}
 DB_PASSWORD=${DB_PASSWORD}
 
 [discourse]
-DISCOURSE_BASE_URL='https://forum.comses.net'
+DISCOURSE_BASE_URL=https://forum.comses.net
 
 [email]
 EMAIL_HOST=smtp.sparkpostmail.com
