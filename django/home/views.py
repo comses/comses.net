@@ -45,7 +45,6 @@ class SmallResultSetPagination(PageNumberPagination):
         count = self.page.paginator.count
         n_pages = count // self.page_size + 1
         page = int(self.request.query_params.get('page', 1))
-        logger.debug("Request page")
         return Response({
             'current_page': page,
             'count': count,
@@ -100,9 +99,7 @@ def discourse_sso(request):
     query_string = parse.urlencode({'sso': return_payload, 'sig': h.hexdigest()})
 
     # Redirect back to Discourse
-
     discourse_sso_url = '{0}/session/sso_login?{1}'.format(settings.DISCOURSE_BASE_URL, query_string)
-    logger.warning("discourse redirect url: %s", discourse_sso_url)
     return HttpResponseRedirect(discourse_sso_url)
 
 

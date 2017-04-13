@@ -100,58 +100,11 @@ AUTHENTICATION_BACKENDS = (
     'guardian.backends.ObjectPermissionBackend'
 )
 
-# create a site in migration
+# Enable the sites framework for Wagtail + django-allauth
 SITE_ID = 1
 
 ROOT_URLCONF = 'core.urls'
 
-
-TEMPLATES = [
-    {
-        'BACKEND': 'django_jinja.backend.Jinja2',
-        'APP_DIRS': True,
-        'OPTIONS': {
-            'match_extension': '.jinja',
-            'newstyle_gettext': True,
-            # DEFAULT_EXTENSIONS at https://github.com/niwinz/django-jinja/blob/master/django_jinja/builtins/__init__.py
-            "extensions": DEFAULT_EXTENSIONS + [
-                "django_jinja.builtins.extensions.DjangoExtraFiltersExtension",
-                'wagtail.contrib.settings.jinja2tags.settings',
-                'wagtail.wagtailcore.jinja2tags.core',
-                'wagtail.wagtailadmin.jinja2tags.userbar',
-                'wagtail.wagtailimages.jinja2tags.images',
-            ],
-            'auto_reload': DEBUG,
-            'translation_engine': 'django.utils.translation',
-            'context_processors': [
-                # FIXME: remove debug context processor in prod
-                'django.template.context_processors.debug',
-                'django.template.context_processors.request',
-                'django.contrib.auth.context_processors.auth',
-                'django.contrib.messages.context_processors.messages',
-
-                'wagtail.contrib.settings.context_processors.settings',
-                'wagtailmenus.context_processors.wagtailmenus',
-            ],
-            'autoescape': True,
-        }
-    },
-    {
-        'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'APP_DIRS': True,
-        'OPTIONS': {
-            'context_processors': [
-                'django.template.context_processors.debug',
-                'django.template.context_processors.request',
-                'django.contrib.auth.context_processors.auth',
-                'django.contrib.messages.context_processors.messages',
-
-                'wagtail.contrib.settings.context_processors.settings',
-                'wagtailmenus.context_processors.wagtailmenus',
-            ],
-        },
-    },
-]
 
 # make tags case insensitive
 TAGGIT_CASE_INSENSITIVE = True
@@ -342,6 +295,7 @@ REST_FRAMEWORK = {
 # SSO, user registration, and django-allauth configuration, see
 # https://django-allauth.readthedocs.io/en/latest/configuration.html
 # ACCOUNT_ADAPTER = 'core.adapter.AccountAdapter'
+ACCOUNT_AUTHENTICATION_METHOD = 'username_email'
 ACCOUNT_EMAIL_CONFIRMATION_EXPIRE_DAYS = 15
 ACCOUNT_EMAIL_REQUIRED = True
 ACCOUNT_EMAIL_VERIFICATION = "mandatory"
@@ -349,6 +303,7 @@ ACCOUNT_SIGNUP_FORM_CLASS = 'home.forms.SignupForm'
 ACCOUNT_TEMPLATE_EXTENSION = 'jinja'
 ACCOUNT_PRESERVE_USERNAME_CASING = False
 ACCOUNT_LOGIN_ON_PASSWORD_RESET = True
+ACCOUNT_LOGIN_ON_EMAIL_CONFIRMATION = True
 
 ORCID_CLIENT_ID = config.get('secrets', 'ORCID_CLIENT_ID', fallback='')
 ORCID_CLIENT_SECRET = config.get('secrets', 'ORCID_CLIENT_SECRET', fallback='')
@@ -372,3 +327,53 @@ SOCIALACCOUNT_PROVIDERS = {
 
 DISCOURSE_BASE_URL = config.get('discourse', 'DISCOURSE_BASE_URL', fallback='https://forum.comses.net')
 DISCOURSE_SSO_SECRET = config.get('secrets', 'DISCOURSE_SSO_SECRET')
+
+TEMPLATES = [
+    {
+        'BACKEND': 'django_jinja.backend.Jinja2',
+        'APP_DIRS': True,
+        'OPTIONS': {
+            'match_extension': '.jinja',
+            'newstyle_gettext': True,
+            # DEFAULT_EXTENSIONS at https://github.com/niwinz/django-jinja/blob/master/django_jinja/builtins/__init__.py
+            "extensions": DEFAULT_EXTENSIONS + [
+                "django_jinja.builtins.extensions.DjangoExtraFiltersExtension",
+                'wagtail.contrib.settings.jinja2tags.settings',
+                'wagtail.wagtailcore.jinja2tags.core',
+                'wagtail.wagtailadmin.jinja2tags.userbar',
+                'wagtail.wagtailimages.jinja2tags.images',
+            ],
+            'constants': {
+                'DISCOURSE_BASE_URL': DISCOURSE_BASE_URL
+            },
+            'auto_reload': True,  # FIXME: disable this in production
+            'translation_engine': 'django.utils.translation',
+            'context_processors': [
+                # FIXME: remove debug context processor in production
+                'django.template.context_processors.debug',
+                'django.template.context_processors.request',
+                'django.contrib.auth.context_processors.auth',
+                'django.contrib.messages.context_processors.messages',
+
+                'wagtail.contrib.settings.context_processors.settings',
+                'wagtailmenus.context_processors.wagtailmenus',
+            ],
+            'autoescape': True,
+        }
+    },
+    {
+        'BACKEND': 'django.template.backends.django.DjangoTemplates',
+        'APP_DIRS': True,
+        'OPTIONS': {
+            'context_processors': [
+                'django.template.context_processors.debug',
+                'django.template.context_processors.request',
+                'django.contrib.auth.context_processors.auth',
+                'django.contrib.messages.context_processors.messages',
+
+                'wagtail.contrib.settings.context_processors.settings',
+                'wagtailmenus.context_processors.wagtailmenus',
+            ],
+        },
+    },
+]
