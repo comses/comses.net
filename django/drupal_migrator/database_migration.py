@@ -18,7 +18,7 @@ from core.summarization import summarize_to_text
 from home.models import Event, Job, MemberProfile
 from library.models import (Contributor, Codebase, CodebaseRelease, CodebaseTag, License,
                             CodebaseContributor, Platform, OPERATING_SYSTEMS)
-from .utils import get_first_field, get_field, get_field_attributes
+from .utils import get_first_field, get_field, get_field_attributes, to_datetime
 
 logger = logging.getLogger(__name__)
 
@@ -123,24 +123,6 @@ class Extractor:
             data = json.load(f)
             return cls(data)
 
-    @staticmethod
-    def to_datetime(drupal_datetime_string: str, tz=pytz.UTC):
-        if drupal_datetime_string.strip():
-            # majority of incoming Drupal datetime strings are unix timestamps, e.g.,
-            # http://drupal.stackexchange.com/questions/45443/why-timestamp-format-was-chosen-for-users-created-field
-            try:
-                return datetime.fromtimestamp(float(drupal_datetime_string), tz=tz)
-            except:
-                logger.warning("Could not convert as a timestamp: %s", drupal_datetime_string)
-            # occasionally they are also date strings like '2010-08-01 00:00:00'
-            try:
-                return datetime.strptime(drupal_datetime_string, '%Y-%m-%d %H:%M:%S')
-            except:
-                logger.exception("Expecting a datetime string or a float / unix timestamp but received: %s ",
-                                 drupal_datetime_string)
-                # give up, fall through and return None
-        return None
-
 
 class EventExtractor(Extractor):
     EVENT_DATE_FORMAT = '%Y-%m-%dT%H:%M:%S'
@@ -156,12 +138,12 @@ class EventExtractor(Extractor):
 
         return Event(
             title=raw_event['title'],
-            date_created=self.to_datetime(raw_event['created']),
-            last_modified=self.to_datetime(raw_event['changed']),
+            date_created=to_datetime(raw_event['created']),
+            last_modified=to_datetime(raw_event['changed']),
             summary=summary,
             description=self.sanitize_text(description),
-            early_registration_deadline=self.to_datetime(get_first_field(raw_event, 'field_earlyregistration')),
-            submission_deadline=self.to_datetime(get_first_field(raw_event, 'field_submissiondeadline')),
+            early_registration_deadline=to_datetime(get_first_field(raw_event, 'field_earlyregistration')),
+            submission_deadline=to_datetime(get_first_field(raw_event, 'field_submissiondeadline')),
             start_date=self.parse_event_date_string(get_first_field(raw_event, 'field_eventdate')),
             end_date=self.parse_event_date_string(get_first_field(raw_event, 'field_eventdate', 'value2')),
             submitter_id=user_id_map.get(raw_event['uid'], 3)
@@ -179,8 +161,8 @@ class JobExtractor(Extractor):
         summary = summarize_to_text(description, sentences_count=2)
         return Job(
             title=raw_job['title'],
-            date_created=self.to_datetime(raw_job['created']),
-            last_modified=self.to_datetime(raw_job['changed']),
+            date_created=to_datetime(raw_job['created']),
+            last_modified=to_datetime(raw_job['changed']),
             summary=summary,
             description=self.sanitize_text(description),
             submitter_id=user_id_map.get(raw_job['uid'], 3)
@@ -212,8 +194,8 @@ class UserExtractor(Extractor):
             username=username,
             email=email,
             defaults={
-                "date_joined": Extractor.to_datetime(raw_user['created']),
-                "last_login": Extractor.to_datetime(raw_user['login']),
+                "date_joined": to_datetime(raw_user['created']),
+                "last_login": to_datetime(raw_user['login']),
             }
         )
         user.drupal_uid = raw_user['uid']
@@ -345,12 +327,12 @@ class ModelExtractor(Extractor):
             code = Codebase.objects.create(
                 title=raw_model['title'].strip(),
                 description=self.sanitize_text(get_first_field(raw_model, field_name='body', default='')),
-                date_created=self.to_datetime(raw_model['created']),
+                date_created=to_datetime(raw_model['created']),
                 live=self.int_to_bool(raw_model['status']),
-                last_modified=self.to_datetime(raw_model['changed']),
+                last_modified=to_datetime(raw_model['changed']),
                 is_replication=Extractor.int_to_bool(get_first_field(raw_model, 'field_model_replicated', default='0')),
                 uuid=raw_model['uuid'],
-                first_published_at=self.to_datetime(raw_model['created']),
+                first_published_at=to_datetime(raw_model['created']),
                 references_text=get_first_field(raw_model, 'field_model_reference', default=''),
                 replication_references_text=get_first_field(raw_model, 'field_model_publication_text', default=''),
                 identifier=raw_model['nid'],
@@ -410,8 +392,8 @@ class ModelVersionExtractor(Extractor):
             with suppress_auto_now(CodebaseRelease, 'last_modified'):
                 model_version = codebase.make_release(
                     description=self.sanitize_text(description),
-                    date_created=self.to_datetime(raw_model_version['created']),
-                    last_modified=self.to_datetime(raw_model_version['changed']),
+                    date_created=to_datetime(raw_model_version['created']),
+                    last_modified=to_datetime(raw_model_version['changed']),
                     os=self.OS_LIST[int(get_first_field(raw_model_version, 'field_modelversion_os', default=0))],
                     license_id=license_id,
                     identifier=raw_model_version['vid'],
