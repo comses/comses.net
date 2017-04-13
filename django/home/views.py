@@ -1,7 +1,13 @@
+import base64
+import hashlib
+import hmac
 import logging
+import urllib
 
+
+from django.conf import settings
 from django.contrib.auth.models import User
-from django.http import QueryDict
+from django.http import QueryDict, HttpResponseBadRequest, HttpResponseRedirect
 from rest_framework import viewsets, generics
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
@@ -48,6 +54,50 @@ class SmallResultSetPagination(PageNumberPagination):
             'n_pages': n_pages,
             'results': data
         }, **kwargs)
+
+
+def discourse_sso(request):
+    '''
+    Code adapted from https://meta.discourse.org/t/sso-example-for-django/14258
+    '''
+    payload = request.GET.get('sso')
+    signature = request.GET.get('sig')
+
+    if None in [payload, signature]:
+        return HttpResponseBadRequest('No SSO payload or signature. Please contact support if this problem persists.')
+
+    # Validate the payload
+
+    payload = bytes(urllib.unquote(payload), encoding='utf-8')
+    decoded = base64.decodestring(payload).decode('utf-8')
+    if len(payload) == 0 or 'nonce' not in decoded:
+        return HttpResponseBadRequest('Invalid payload. Please contact support if this problem persists.')
+
+    key = bytes(settings.DISCOURSE_SSO_SECRET, encoding='utf-8')  # must not be unicode
+    h = hmac.new(key, payload, digestmod=hashlib.sha256)
+    this_signature = h.hexdigest()
+
+    if this_signature != signature:
+        return HttpResponseBadRequest('Invalid payload. Please contact support if this problem persists.')
+
+    # Build the return payload
+    qs = urllib.parse.parse_qs(decoded)
+    params = {
+        'nonce': qs['nonce'][0],
+        'email': request.user.email,
+        'external_id': request.user.id,
+        'username': request.user.username,
+        'require_activation': 'true',
+    }
+
+    return_payload = base64.encodestring(bytes(urllib.urlencode(params), 'utf-8'))
+    h = hmac.new(key, return_payload, digestmod=hashlib.sha256)
+    query_string = urllib.urlencode({'sso': return_payload, 'sig': h.hexdigest()})
+
+    # Redirect back to Discourse
+
+    discourse_sso_url = '{0}/session/sso_login?{1}'.format(settings.DISCOURSE_BASE_URL, query_string)
+    return HttpResponseRedirect(discourse_sso_url)
 
 
 class EventViewSet(viewsets.ModelViewSet):

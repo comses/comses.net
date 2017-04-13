@@ -367,5 +367,5 @@ SOCIALACCOUNT_PROVIDERS = {
     },
 }
 
-DISCOURSE_BASE_URL = 'https://forum.comses.net'
+DISCOURSE_BASE_URL = config.get('discourse', 'DISCOURSE_BASE_URL', fallback='https://forum.comses.net')
 DISCOURSE_SSO_SECRET = config.get('secrets', 'DISCOURSE_SSO_SECRET')
