@@ -153,15 +153,15 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = 'core.wsgi.application'
-
 # make tags case insensitive
 TAGGIT_CASE_INSENSITIVE = True
 
-# Database
-# https://docs.djangoproject.com/en/1.10/ref/settings/#databases
-
 config = configparser.ConfigParser()
+
+# default from email for various automated emails sent by Django
+DEFAULT_FROM_EMAIL = config.get('email', 'DEFAULT_FROM_EMAIL', fallback='info@comses.net')
+# email address used for errors emails sent to ADMINS and MANAGERS
+SERVER_EMAIL = config.get('email', 'SERVER_EMAIL', fallback='admin@comses.net')
 
 IS_IN_DOCKER = os.path.exists('/secrets/config.ini')
 
@@ -172,6 +172,9 @@ else:
     config.read('../deploy/conf/config.ini.debug')
 
 SECRET_KEY = config.get('secrets', 'SECRET_KEY')
+
+# Database configuration
+# https://docs.djangoproject.com/en/1.11/ref/settings/#databases
 
 DATABASES = {
     'default': {

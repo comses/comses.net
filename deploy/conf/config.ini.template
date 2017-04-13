@@ -1,15 +1,26 @@
 [default]
 DEBUG=True
 
-[discourse]
-DISCOURSE_BASE_URL='https://forum.comses.net'
-
 [database]
 DB_NAME=${DB_NAME}
 DB_USER=${DB_USER}
 DB_HOST=${DB_HOST}
 DB_PORT=${DB_PORT}
 DB_PASSWORD=${DB_PASSWORD}
+
+[discourse]
+DISCOURSE_BASE_URL='https://forum.comses.net'
+
+[email]
+EMAIL_HOST=smtp.sparkpostmail.com
+EMAIL_PORT=587
+EMAIL_HOST_USER=
+EMAIL_HOST_PASSWORD=
+EMAIL_SUBJECT_PREFIX="[comses.net]"
+
+[logging]
+LOG_DIRECTORY=/shared/logs
+
 
 [secrets]
 DISCOURSE_SSO_SECRET=${DISCOURSE_SSO_SECRET:-changeme}
@@ -21,11 +32,9 @@ ORCID_CLIENT_SECRET=${ORCID_CLIENT_SECRET}
 GITHUB_CLIENT_ID=${GITHUB_CLIENT_ID}
 GITHUB_CLIENT_SECRET=${GITHUB_CLIENT_SECRET}
 
-[logging]
-LOG_DIRECTORY=/shared/logs
-
 [storage]
 DATA_ROOT=/shared
 LIBRARY_ROOT=/shared/library
 REPOSITORY_ROOT=/shared/repository
 WEBPACK_ROOT=/shared/webpack
+
