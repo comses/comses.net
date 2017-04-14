@@ -90,7 +90,7 @@ def discourse_sso(request):
         'email': user.email,
         'external_id': user.id,
         'username': user.username,
-        'require_activation': 'true',
+        'require_activation': 'false',
         'name': user.get_full_name(),
     }
 
