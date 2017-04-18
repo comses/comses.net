@@ -40,7 +40,7 @@ class SocialMediaSettings(BaseSetting):
 
 class Institution(models.Model):
     name = models.CharField(max_length=200)
-    url = models.URLField(null=True, blank=True)
+    url = models.URLField(blank=True)
     acronym = models.CharField(max_length=50)
 
     def __str__(self):
@@ -64,19 +64,14 @@ class MemberProfile(index.Indexed, ClusterableModel):
 
     timezone = TimeZoneField(blank=True)
 
-    degrees = ArrayField(models.CharField(max_length=255), null=True)
+    degrees = ArrayField(models.CharField(max_length=255), blank=True)
     research_interests = models.TextField(blank=True)
     keywords = ClusterTaggableManager(through=MemberProfileTag, blank=True)
-    summary = models.TextField(blank=True)
-
+    summary = models.TextField(max_length=500, blank=True,
+                               help_text=_('Brief bio'))
     picture = models.ImageField(null=True, help_text=_('Profile picture'))
-    academia_edu_url = models.URLField(null=True)
-    researchgate_url = models.URLField(null=True)
-    linkedin_url = models.URLField(null=True)
-    personal_homepage_url = models.URLField(null=True)
-    institutional_homepage_url = models.URLField(null=True)
-    blog_url = models.URLField(null=True)
-    cv_url = models.URLField(null=True, max_length=500)
+    personal_url = models.URLField(blank=True)
+    professional_url = models.URLField(blank=True)
     institution = models.ForeignKey(Institution, null=True)
     affiliations = JSONField(default=list, help_text=_("JSON-LD list of affiliated institutions"))
     orcid = models.CharField(help_text=_("16 digits, - between every 4th digit, e.g., 0000-0002-1825-0097"),
@@ -138,7 +133,8 @@ class CarouselItem(LinkFields):
                               on_delete=models.SET_NULL,
                               related_name='+')
     embed_url = models.URLField("Embed URL", blank=True)
-    caption = models.CharField(max_length=500)
+    caption = models.CharField(max_length=255)
+    summary = models.TextField(max_length=600, blank=True)
     title = models.CharField(max_length=255)
 
     panels = [
@@ -160,7 +156,11 @@ class FeaturedContentItem(Orderable, CarouselItem):
 class LandingPage(Page):
     template = 'home/index.jinja'
 
-    content_panels = [
+    def get_context(self, request):
+        context = super(LandingPage, self).get_context(request)
+        return context
+
+    content_panels = Page.content_panels + [
         InlinePanel('featured_content_queue', label=_('Featured Content')),
     ]
 
@@ -221,16 +221,15 @@ class EventTag(TaggedItemBase):
 
 
 class Event(index.Indexed, ClusterableModel):
-    title = models.CharField(max_length=500)
+    title = models.CharField(max_length=300)
     date_created = models.DateTimeField(default=timezone.now)
     last_modified = models.DateTimeField(auto_now=True)
-    summary = models.CharField(max_length=300, blank=True)
+    summary = models.CharField(max_length=500, blank=True)
     description = models.TextField()
-    # datetimerange_event = DateTimeRangeField()
-    early_registration_deadline = models.DateTimeField(null=True)
-    submission_deadline = models.DateTimeField(null=True)
+    early_registration_deadline = models.DateTimeField(null=True, blank=True)
+    submission_deadline = models.DateTimeField(null=True, blank=True)
     start_date = models.DateTimeField()
-    end_date = models.DateTimeField(null=True)
+    end_date = models.DateTimeField(null=True, blank=True)
     location = models.CharField(max_length=300)
     tags = ClusterTaggableManager(through=EventTag, blank=True)
 
@@ -262,11 +261,10 @@ class JobTag(TaggedItemBase):
 
 
 class Job(index.Indexed, ClusterableModel):
-    # Help text is shown in OpenAPI
-    title = models.CharField(max_length=500, help_text=_('Name of Job'))
+    title = models.CharField(max_length=300, help_text=_('Job title'))
     date_created = models.DateTimeField(default=timezone.now)
     last_modified = models.DateTimeField(auto_now=True)
-    summary = models.CharField(max_length=300, blank=True)
+    summary = models.CharField(max_length=500, blank=True)
     description = models.TextField()
     tags = ClusterTaggableManager(through=JobTag, blank=True)
 
@@ -286,8 +284,11 @@ class Job(index.Indexed, ClusterableModel):
         return True
 
     def __str__(self):
-        return "{0} posted by {1} on {2}".format(repr(self.title), repr(self.submitter.username),
-                                                 str(self.date_created))
+        return "{0} posted by {1} on {2}".format(
+            self.title, 
+            self.submitter.username,
+            self.date_created.strftime('%c')
+        )
 
     @property
     def owner(self):

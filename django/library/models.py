@@ -138,37 +138,42 @@ class Codebase(index.Indexed, ClusterableModel):
     """
 
     # shortname = models.CharField(max_length=128, unique=True)
-    title = models.CharField(max_length=500)
+    title = models.CharField(max_length=300)
     description = models.TextField()
     summary = models.CharField(max_length=500, blank=True)
 
     live = models.BooleanField(default=False)
     has_unpublished_changes = models.BooleanField(default=False)
     first_published_at = models.DateTimeField(null=True, blank=True)
+
     date_created = models.DateTimeField(default=timezone.now)
     last_modified = models.DateTimeField(auto_now=True)
     is_replication = models.BooleanField(default=False)
+    # FIXME: should this be a rollup of peer reviewed CodebaseReleases?
     peer_reviewed = models.BooleanField(default=False)
 
+# FIXME: right now leaning towards identifier as the agnostic way to ID any given Codebase. It is currently set to the
+# old Drupal NID but that means we need to come up with something on model upload
     identifier = models.CharField(max_length=128, unique=True)
-    doi = models.CharField(max_length=128, unique=True, blank=True, null=True)
+    doi = models.CharField(max_length=128, unique=True, null=True)
     uuid = models.UUIDField(unique=True, default=uuid.uuid4, editable=False)
 
     latest_version = models.ForeignKey('CodebaseRelease', null=True, related_name='latest_version')
 
     repository_url = models.URLField(blank=True,
                                      help_text=_('URL to code repository, e.g., https://github.com/comses/wolf-sheep'))
-    # original Drupal data was stored inline like this
+    # FIXME: original Drupal data was stored inline like this
     # after catalog integration remove these / replace with M2M relationships
     # publication metadata
     # We should also allow a model to have multiple references
     references_text = models.TextField(blank=True)
     replication_references_text = models.TextField(blank=True)
     tags = ClusterTaggableManager(through=CodebaseTag)
-    # consider storing related publications in JSON.
+    # evaluate this JSONField as an add-anything way to record relationships between this Codebase and other entities
+    # with URLs / resolvable identifiers
     relationships = JSONField(default=list)
 
-    # should be stored in codebase base dir/images
+    # stored in self.media_dir('images')
     images = JSONField(default=list)
 
     submitter = models.ForeignKey(User)
@@ -261,7 +266,7 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
     A snapshot of a codebase at a particular moment in time, versioned and addressable in a git repo behind-the-scenes
     and a bagit repository.
 
-    For now, simple FS organization in lieu of HashFS or other content addressable filesystem.
+    Currently using simple FS organization in lieu of HashFS or other content addressable filesystem.
 
     * release tarballs or zipfiles located at /library/<codebase_identifier>/releases/<version_number>/<id>.(tar.gz|zip)
     * release bagits at /library/<codebase_identifier>/releases/<release_identifier>/sip
@@ -271,8 +276,14 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
     date_created = models.DateTimeField(default=timezone.now)
     last_modified = models.DateTimeField(auto_now=True)
 
+    live = models.BooleanField(default=False)
+    has_unpublished_changes = models.BooleanField(default=False)
+    first_published_at = models.DateTimeField(null=True, blank=True)
+
     peer_reviewed = models.BooleanField(default=False)
     flagged = models.BooleanField(default=False)
+
+    download_count = models.PositiveIntegerField(default=0)
 
     identifier = models.CharField(max_length=128, unique=True)
     doi = models.CharField(max_length=128, unique=True, null=True)
@@ -311,10 +322,6 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
     references = models.ManyToManyField('citation.Publication',
                                         related_name='codebase_references',
                                         help_text=_('Related publications'))
-
-    @property
-    def live(self):
-        return self.codebase.live
 
     def get_library_path(self, *args):
         """
