@@ -70,7 +70,7 @@ def discourse_sso(request):
     # Validate the payload
 
     payload = bytes(parse.unquote(payload), encoding='utf-8')
-    decoded = base64.decodestring(payload).decode('utf-8')
+    decoded = base64.decodebytes(payload).decode('utf-8')
     if len(payload) == 0 or 'nonce' not in decoded:
         return HttpResponseBadRequest('Invalid payload. Please contact support if this problem persists.')
 
@@ -94,7 +94,7 @@ def discourse_sso(request):
         'name': user.get_full_name(),
     }
 
-    return_payload = base64.encodestring(bytes(parse.urlencode(params), 'utf-8'))
+    return_payload = base64.encodebytes(bytes(parse.urlencode(params), 'utf-8'))
     h = hmac.new(key, return_payload, digestmod=hashlib.sha256)
     query_string = parse.urlencode({'sso': return_payload, 'sig': h.hexdigest()})
 
