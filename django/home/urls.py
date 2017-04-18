@@ -17,9 +17,5 @@ for model in [models.Job, models.Event]:
     urlpatterns += create_edit_routes(prefix=model._meta.object_name.lower() + 's', model=model, **edit_route_form_data)
 
 urlpatterns += [
-    # FIXME: replace this with Wagtail LandingPage
-    url(r'^$', TemplateView.as_view(template_name='home/index.jinja'), name='index'),
     url(r'^discourse/sso$', views.discourse_sso, name='discourse_sso'),
-    # account URLs
-    url(r'^carousel/', views.FeaturedContentListAPIView.as_view(), name='carousel')
 ]

@@ -158,7 +158,7 @@ class FeaturedContentItem(Orderable, CarouselItem):
 
 
 class LandingPage(Page):
-    template = 'index.jinja'
+    template = 'home/index.jinja'
 
     content_panels = [
         InlinePanel('featured_content_queue', label=_('Featured Content')),
