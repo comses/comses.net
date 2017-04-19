@@ -1,3 +1,4 @@
+import imghdr
 import logging
 import mimetypes
 import os
@@ -20,6 +21,13 @@ def is_archive(path: str):
     if mimetype[0] and mimetype[0].endswith(('tar', 'zip', 'rar')):
         return mimetype[0]
     return None
+
+
+def is_image(path: str):
+    try:
+        return imghdr.what(path)
+    except:
+        return None
 
 
 def is_media(path: str):

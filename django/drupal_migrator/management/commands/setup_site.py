@@ -58,6 +58,8 @@ class Command(BaseCommand):
         return site
 
     def create_home_page(self):
+        if LandingPage.objects.count() > 0:
+            LandingPage.objects.delete()
         root_page = Page.objects.get(pk=1)
         logger.debug("attaching to root page %s", root_page)
         # delete initial welcome page

@@ -17,8 +17,8 @@ from modelcluster.contrib.taggit import ClusterTaggableManager
 from modelcluster.fields import ParentalKey
 from modelcluster.models import ClusterableModel
 from taggit.models import TaggedItemBase
-from wagtail.wagtailsearch import index
 from wagtail.wagtailimages.models import Image
+from wagtail.wagtailsearch import index
 
 from . import fs
 
@@ -200,11 +200,14 @@ class Codebase(index.Indexed, ClusterableModel):
 
     def get_featured_image(self):
         if self.images:
-            image_dict = self.images[0]
-            filename = image_dict['name']
-            path = pathlib.Path(image_dict['path'], filename)
-            image = Image(title=self.title, file=ImageFile(path.open()), name=filename)
-            return image
+            for image_dict in self.images:
+                filename = image_dict['name']
+                # returns the first image
+                if fs.is_image(filename):
+                    path = pathlib.Path(image_dict['path'], filename)
+                    image = Image(title=self.title, file=ImageFile(path.open('rb')), uploaded_by_user=self.submitter)
+                    image.save()
+                    return image
         return None
 
     def subpath(self, *args):
