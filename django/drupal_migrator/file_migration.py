@@ -2,6 +2,7 @@
 
 import datetime
 import logging
+import mimetypes
 import os
 import re
 import shutil
@@ -41,6 +42,7 @@ class ModelVersionFileset:
                 destination_path = str(release.submitted_package_path(destination_dir))
                 if fs.is_archive(f.name):
                     logger.debug("unpacking archive %s to %s", f.path, destination_path)
+                    os.makedirs(destination_path, exist_ok=True)
                     shutil.unpack_archive(f.path, destination_path)
                 else:
                     os.makedirs(destination_path, exist_ok=True)
@@ -59,7 +61,7 @@ class ModelVersionFileset:
                     logger.warning("Deleted system files: %s", removed_files)
         # create bagit bags on the sips
         release.get_or_create_sip_bag()
-        # FIXME: clean up working_directory_path eventually
+        # FIXME: clean up working_directory_path
 
 
 class ModelFileset:
@@ -86,19 +88,24 @@ class ModelFileset:
 
     def migrate(self):
         codebase = Codebase.objects.get(identifier=self._model_id)
+        codebase.media = []
         for version in self._versions:
             logger.debug("Migrating codebase %s v%s", codebase.title, version.semver)
             release = codebase.releases.get(version_number=version.semver)
             version.migrate(release)
+        # FIXME: in 3.6, os.makedirs will accept media_dir as a path-like object
         media_dir = str(codebase.media_dir())
         os.makedirs(media_dir, exist_ok=True)
         for media_dir_entry in self._media:
             shutil.copy(media_dir_entry.path, media_dir)
-            codebase.images.append({
+            image_metadata = {
                 'name': media_dir_entry.name,
                 'path': media_dir,
+                'mimetype': mimetypes.guess_type(media_dir_entry.path),
                 'url': codebase.media_url(media_dir_entry.name),
-            })
+                'featured': fs.is_image(media_dir_entry.path),
+            }
+            codebase.media.append(image_metadata)
         codebase.save()
 
 

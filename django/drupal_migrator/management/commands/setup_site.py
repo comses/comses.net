@@ -64,10 +64,9 @@ class Command(BaseCommand):
         logger.debug("attaching to root page %s", root_page)
         # delete initial welcome page
         Page.objects.filter(slug='home').delete()
-        landing_page = LandingPage(title='Network for Computational Modeling in the Social and Ecological Sciences',
+        landing_page = LandingPage(title='CoMSES Net Home Page',
                                    slug='home')
-        featured_codebases = Codebase.objects.filter(peer_reviewed=True)
-        for codebase in featured_codebases:
+        for codebase in Codebase.objects.filter(peer_reviewed=True):
             # if there are multiple images, just pull the first
             logger.debug("converting %s to FeaturedContentItem", codebase)
             landing_page.featured_content_queue.add(FeaturedContentItem(**codebase.as_featured_content_dict()))
@@ -78,5 +77,5 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         index_page = self.create_home_page()
         # argparse converts dashes to underscores
-        site = self.create_site(site_name=options['site_name'], hostname=options['site_domain'], root_page=index_page)
+        self.create_site(site_name=options['site_name'], hostname=options['site_domain'], root_page=index_page)
         self.create_social_apps()

@@ -175,9 +175,11 @@ class Codebase(index.Indexed, ClusterableModel):
     # with URLs / resolvable identifiers
     relationships = JSONField(default=list)
 
-    # stored in self.media_dir('images')
-    # FIXME: consider replacing this with collection of Wagtail Images (created at file migration time for initial bootstrap).
-    images = JSONField(default=list)
+    # JSONField list of image metadata records with paths referring to self.media_dir()
+    media = JSONField(default=list,
+                      help_text=_("JSON metadata dict of media associated with this Codebase"))
+
+    featured_images = models.ManyToManyField(Image)
 
     submitter = models.ForeignKey(User)
 
@@ -199,14 +201,17 @@ class Codebase(index.Indexed, ClusterableModel):
         )
 
     def get_featured_image(self):
-        if self.images:
-            for image_dict in self.images:
-                filename = image_dict['name']
-                # returns the first image
-                if fs.is_image(filename):
-                    path = pathlib.Path(image_dict['path'], filename)
+        if self.featured_images.exists():
+            return self.featured_images.first()
+        if self.media:
+            for media_metadata in self.media:
+                # return the first featured image
+                if media_metadata['featured']:
+                    filename = media_metadata['name']
+                    path = pathlib.Path(media_metadata['path'], filename)
                     image = Image(title=self.title, file=ImageFile(path.open('rb')), uploaded_by_user=self.submitter)
                     image.save()
+                    self.featured_images.add(image)
                     return image
         return None
 
