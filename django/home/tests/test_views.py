@@ -20,11 +20,16 @@ def generate_with_user(username):
                   first_name=text(),
                   last_name=text(),
                   password=st.just('')) \
-        .flatmap(lambda user: st.tuples(st.just(user), models(MemberProfile, user=st.just(user),
-                                                              summary=st.just(''),
-                                                              research_interests=st.just(''),
-                                                              affiliations=st.just([]),
-                                                              orcid=st.just(''))))
+        .flatmap(lambda user: st.tuples(st.just(user),
+                                        models(MemberProfile,
+                                               user=st.just(user),
+                                               summary=st.just(''),
+                                               research_interests=st.just(''),
+                                               affiliations=st.just([]),
+                                               personal_url=st.just(''),
+                                               professional_url=st.just(''),
+                                               degrees=st.just([]),
+                                               orcid=st.just(''))))
 
 
 def generate_with_job(submitter):
