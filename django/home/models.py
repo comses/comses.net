@@ -64,7 +64,7 @@ class MemberProfile(index.Indexed, ClusterableModel):
 
     timezone = TimeZoneField(blank=True)
 
-    degrees = ArrayField(models.CharField(max_length=255), blank=True)
+    degrees = ArrayField(models.CharField(max_length=255), blank=True, default=list)
     research_interests = models.TextField(blank=True)
     keywords = ClusterTaggableManager(through=MemberProfileTag, blank=True)
     summary = models.TextField(max_length=500, blank=True,

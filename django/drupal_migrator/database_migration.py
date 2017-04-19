@@ -7,11 +7,11 @@ import os
 import re
 from collections import defaultdict
 from datetime import datetime
+from typing import Dict
 
 import pytz
 from django.contrib.auth.models import User, Group
 from taggit.models import Tag
-from typing import Dict
 
 from core.summarization import summarize_to_text
 from home.models import Event, Job, MemberProfile
@@ -20,7 +20,6 @@ from library.models import (Contributor, Codebase, CodebaseRelease, CodebaseTag,
 from .utils import get_first_field, get_field, get_field_attributes
 
 logger = logging.getLogger(__name__)
-
 
 LICENSES = """id,name,url
     0,"None",""
@@ -90,12 +89,13 @@ def suppress_auto_now(model, *field_names):
             field.auto_now = values['auto_now']
             field.auto_now_add = values['auto_now_add']
 
+
 class Extractor:
     def __init__(self, data):
         self.data = data
 
     @staticmethod
-    def sanitize(data: str, max_length: int=None) -> str:
+    def sanitize(data: str, max_length: int = None) -> str:
         _sanitized_data = data.strip().lower()
         if max_length is not None:
             if len(_sanitized_data) > max_length:
@@ -130,8 +130,9 @@ class Extractor:
             try:
                 return datetime.strptime(drupal_datetime_string, '%Y-%m-%d %H:%M:%S')
             except:
-                logger.exception("Expecting a datetime string or a float / unix timestamp but received: %s ", drupal_datetime_string)
-            # give up, fall through and return None
+                logger.exception("Expecting a datetime string or a float / unix timestamp but received: %s ",
+                                 drupal_datetime_string)
+                # give up, fall through and return None
         return None
 
 
@@ -145,7 +146,7 @@ class EventExtractor(Extractor):
     def _extract(self, raw_event, user_id_map: Dict[str, int]) -> Event:
         description = get_first_field(raw_event, 'body')
         summary = get_first_field(raw_event, 'body', attribute_name='summary', default='')[:300] \
-            or summarize_to_text(description, sentences_count=2)
+                  or summarize_to_text(description, sentences_count=2)
 
         return Event(
             title=raw_event['title'],
@@ -174,8 +175,8 @@ class JobExtractor(Extractor):
             title=raw_job['title'],
             date_created=self.to_datetime(raw_job['created']),
             last_modified=self.to_datetime(raw_job['changed']),
-            description=description,
             summary=summary,
+            description=description,
             submitter_id=user_id_map.get(raw_job['uid'], 3)
         )
 
@@ -189,7 +190,6 @@ class JobExtractor(Extractor):
 
 
 class UserExtractor(Extractor):
-
     ADMIN_GROUP, c = Group.objects.get_or_create(name='Admins')
     EDITOR_GROUP, c = Group.objects.get_or_create(name='Editors')
     REVIEWER_GROUP, c = Group.objects.get_or_create(name='Reviewers')
@@ -241,7 +241,6 @@ class UserExtractor(Extractor):
 
 
 class ProfileExtractor(Extractor):
-
     def extract_all(self, user_id_map, tag_id_map):
         contributors = []
         for raw_profile in self.data:
@@ -262,23 +261,34 @@ class ProfileExtractor(Extractor):
                 user=user))
             profile.research_interests = get_first_field(raw_profile, 'field_profile2_research')
             profile.institutions = get_field(raw_profile, 'institutions')
-            profile.degrees = get_field_attributes(raw_profile, 'field_profile2_degrees')
-            profile.academia_edu_url = get_first_field(raw_profile, 'field_profile2_academiaedu_link',
-                                                       attribute_name='url')
-            profile.cv_url = get_first_field(raw_profile, 'field_profile2_cv_link', attribute_name='url')
-            profile.institutional_homepage_url = get_first_field(raw_profile, 'field_profile2_institution_link',
-                                                                 attribute_name='url')
-            profile.linkedin_url = get_first_field(raw_profile, 'field_profile2_linkedin_link',
-                                                   attribute_name='url')
-            profile.personal_homepage_url = get_first_field(raw_profile, 'field_profile2_personal_link',
-                                                            attribute_name='url')
-            profile.researchgate_url = get_first_field(raw_profile, 'field_profile2_researchgate_link',
-                                                       attribute_name='url')
-            for url in ('academia_edu_url', 'cv_url', 'institutional_homepage_url', 'personal_homepage_url', 'researchgate_url'):
+            profile.degrees = get_field_attributes(raw_profile, 'field_profile2_degrees') or []
+            profile.personal_url = get_first_field(raw_profile, 'field_profile2_personal_link', attribute_name='url')
+
+            # try to aggregate various URLs
+            linkedin_url = get_first_field(raw_profile, 'field_profile2_linkedin_link',
+                                           attribute_name='url')
+            academia_edu_url = get_first_field(raw_profile, 'field_profile2_academiaedu_link',
+                                               attribute_name='url')
+            cv_url = get_first_field(raw_profile, 'field_profile2_cv_link', attribute_name='url')
+            institutional_homepage_url = get_first_field(raw_profile, 'field_profile2_institution_link',
+                                                         attribute_name='url')
+            researchgate_url = get_first_field(raw_profile, 'field_profile2_researchgate_link',
+                                               attribute_name='url')
+
+            profile.professional_url = institutional_homepage_url \
+                                       or researchgate_url \
+                                       or academia_edu_url \
+                                       or cv_url \
+                                       or linkedin_url
+
+            for url in (
+            'academia_edu_url', 'cv_url', 'institutional_homepage_url', 'personal_homepage_url', 'researchgate_url'):
                 if len(getattr(profile, url, '')) > 200:
                     logger.warning("Ignoring overlong %s URL %s", url, getattr(profile, url))
                     setattr(profile, url, '')
-            tags = flatten([tag_id_map[tid] for tid in get_field_attributes(raw_profile, 'taxonomy_vocabulary_6', attribute_name='tid') if tid in tag_id_map])
+            tags = flatten([tag_id_map[tid] for tid in
+                            get_field_attributes(raw_profile, 'taxonomy_vocabulary_6', attribute_name='tid') if
+                            tid in tag_id_map])
             profile.keywords.add(*tags)
             profile.save()
             user.save()
@@ -286,7 +296,6 @@ class ProfileExtractor(Extractor):
 
 
 class TaxonomyExtractor(Extractor):
-
     # DELIMITERS = (';', ',', '.')
     DELIMITER_REGEX = re.compile(r';|,|\.')
 
@@ -323,7 +332,6 @@ class AuthorExtractor(Extractor):
 
 
 class ModelExtractor(Extractor):
-
     def _extract(self, raw_model, user_id_map, author_id_map):
         raw_author_ids = [raw_author['value'] for raw_author in get_field(raw_model, 'field_model_author')]
         author_ids = [author_id_map[raw_author_id] for raw_author_id in raw_author_ids]
@@ -364,7 +372,6 @@ class ModelExtractor(Extractor):
 
 
 class ModelVersionExtractor(Extractor):
-
     PROGRAMMING_LANGUAGES = [
         'Other',
         'C',
@@ -404,7 +411,7 @@ class ModelVersionExtractor(Extractor):
                     identifier=raw_model_version['vid'],
                     dependencies=dependencies,
                     submitter_id=codebase.submitter_id,
-                    version_number="1.{0}.0".format(version_number-1),
+                    version_number="1.{0}.0".format(version_number - 1),
                 )
                 model_version.programming_languages.add(language)
                 model_version.platforms.add(platform.name)
