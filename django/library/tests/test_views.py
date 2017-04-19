@@ -21,7 +21,7 @@ def generate_with_codebase(submitter):
                   replication_references_text=st.just(''),
                   repository_url=st.just(''),
                   doi=st.just(None),
-                  images=st.just([]),
+                  media=st.just([]),
                   identifier=st.uuids(),
                   relationships=st.just([]),
                   submitter=st.just(submitter),
