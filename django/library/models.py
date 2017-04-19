@@ -7,6 +7,7 @@ import semver
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.contrib.postgres.fields import JSONField
+from django.core.files.images import ImageFile
 from django.db import models
 from django.urls import reverse_lazy
 from django.utils import timezone
@@ -17,6 +18,7 @@ from modelcluster.fields import ParentalKey
 from modelcluster.models import ClusterableModel
 from taggit.models import TaggedItemBase
 from wagtail.wagtailsearch import index
+from wagtail.wagtailimages.models import Image
 
 from . import fs
 
@@ -174,6 +176,7 @@ class Codebase(index.Indexed, ClusterableModel):
     relationships = JSONField(default=list)
 
     # stored in self.media_dir('images')
+    # FIXME: consider replacing this with collection of Wagtail Images (created at file migration time for initial bootstrap).
     images = JSONField(default=list)
 
     submitter = models.ForeignKey(User)
@@ -186,6 +189,23 @@ class Codebase(index.Indexed, ClusterableModel):
     @staticmethod
     def _release_upload_path(instance, filename):
         return pathlib.Path(instance.workdir_path, filename)
+
+    def as_featured_content_dict(self):
+        return dict(
+            title=self.title,
+            summary=self.summary,
+            image=self.get_featured_image(),
+            link_codebase=self,
+        )
+
+    def get_featured_image(self):
+        if self.images:
+            image_dict = self.images[0]
+            filename = image_dict['name']
+            path = pathlib.Path(image_dict['path'], filename)
+            image = Image(title=self.title, file=ImageFile(path.open()), name=filename)
+            return image
+        return None
 
     def subpath(self, *args):
         return pathlib.Path(self.base_library_dir, *args)
@@ -211,7 +231,7 @@ class Codebase(index.Indexed, ClusterableModel):
     def contributor_list(self):
         # FIXME: messy
         contributor_list = [c.contributor.get_full_name(family_name_first=True) for c in
-                            self.contributors.order_by('index')]
+                            self.all_contributors.order_by('index')]
         return contributor_list
 
     def get_absolute_url(self):

@@ -88,9 +88,10 @@ def import_codebase_files(ctx, directory='incoming/models'):
     dj(ctx, 'import_codebase_files -d {0}'.format(directory))
 
 
-@task(import_drupal_data, import_codebase_files, setup_site, aliases=['ima'])
+@task(import_drupal_data, import_codebase_files, aliases=['ima'])
 def import_all(ctx):
     pass
+
 
 '''
 @task(aliases=['rfd'])

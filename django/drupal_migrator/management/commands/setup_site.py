@@ -10,7 +10,8 @@ from django.contrib.sites.models import Site as DjangoSite
 from django.core.management.base import BaseCommand
 from wagtail.wagtailcore.models import Page, Site
 
-from home.models import LandingPage
+from home.models import LandingPage, FeaturedContentItem
+from library.models import Codebase
 
 logger = logging.getLogger(__name__)
 
@@ -58,10 +59,17 @@ class Command(BaseCommand):
 
     def create_home_page(self):
         root_page = Page.objects.get(pk=1)
+        logger.debug("attaching to root page %s", root_page)
         # delete initial welcome page
         Page.objects.filter(slug='home').delete()
         landing_page = LandingPage(title='Network for Computational Modeling in the Social and Ecological Sciences',
                                    slug='home')
+        featured_codebases = Codebase.objects.filter(peer_reviewed=True)
+        for codebase in featured_codebases:
+            # if there are multiple images, just pull the first
+            logger.debug("converting %s to FeaturedContentItem", codebase)
+            landing_page.featured_content_queue.add(FeaturedContentItem(**codebase.as_featured_content_dict()))
+
         root_page.add_child(instance=landing_page)
         return landing_page
 
