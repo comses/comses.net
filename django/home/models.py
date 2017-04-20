@@ -158,6 +158,7 @@ class LandingPage(Page):
 
     def get_context(self, request):
         context = super(LandingPage, self).get_context(request)
+        context['featured_content'] = self.featured_content_queue.all()[:5]
         return context
 
     content_panels = Page.content_panels + [
