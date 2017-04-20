@@ -41,6 +41,7 @@ services:
       - ./deploy/nginx/uwsgi_params:/etc/nginx/uwsgi_params
       - ./docker/shared/logs/nginx:/var/log/nginx
       - ./docker/shared/static:/shared/static
+      - ./docker/shared/media:/shared/media
       - sockets:/shared/sockets
     command: ["nginx", "-g", "daemon off;"]
     ports:
