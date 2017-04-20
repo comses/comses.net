@@ -10,6 +10,7 @@ from datetime import datetime
 from typing import Dict
 
 import pytz
+from bs4 import BeautifulSoup
 from django.contrib.auth.models import User, Group
 from taggit.models import Tag
 
@@ -104,6 +105,11 @@ class Extractor:
         return _sanitized_data
 
     @staticmethod
+    def sanitize_text(data: str, max_length: int = None) -> str:
+        _sanitized_data = BeautifulSoup(data.strip())
+        return _sanitized_data.get_text()
+
+    @staticmethod
     def int_to_bool(integer_value, default=False) -> bool:
         try:
             return bool(int(integer_value))
@@ -153,7 +159,7 @@ class EventExtractor(Extractor):
             date_created=self.to_datetime(raw_event['created']),
             last_modified=self.to_datetime(raw_event['changed']),
             summary=summary,
-            description=description,
+            description=self.sanitize_text(description),
             early_registration_deadline=self.to_datetime(get_first_field(raw_event, 'field_earlyregistration')),
             submission_deadline=self.to_datetime(get_first_field(raw_event, 'field_submissiondeadline')),
             start_date=self.parse_event_date_string(get_first_field(raw_event, 'field_eventdate')),
@@ -176,7 +182,7 @@ class JobExtractor(Extractor):
             date_created=self.to_datetime(raw_job['created']),
             last_modified=self.to_datetime(raw_job['changed']),
             summary=summary,
-            description=description,
+            description=self.sanitize_text(description),
             submitter_id=user_id_map.get(raw_job['uid'], 3)
         )
 
@@ -338,7 +344,7 @@ class ModelExtractor(Extractor):
         with suppress_auto_now(Codebase, 'last_modified'):
             code = Codebase.objects.create(
                 title=raw_model['title'].strip(),
-                description=get_first_field(raw_model, field_name='body', default=''),
+                description=self.sanitize_text(get_first_field(raw_model, field_name='body', default='')),
                 date_created=self.to_datetime(raw_model['created']),
                 live=self.int_to_bool(raw_model['status']),
                 last_modified=self.to_datetime(raw_model['changed']),
@@ -403,7 +409,7 @@ class ModelVersionExtractor(Extractor):
             }
             with suppress_auto_now(CodebaseRelease, 'last_modified'):
                 model_version = codebase.make_release(
-                    description=description,
+                    description=self.sanitize_text(description),
                     date_created=self.to_datetime(raw_model_version['created']),
                     last_modified=self.to_datetime(raw_model_version['changed']),
                     os=self.OS_LIST[int(get_first_field(raw_model_version, 'field_modelversion_os', default=0))],

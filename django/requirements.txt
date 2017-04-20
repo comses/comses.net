@@ -1,24 +1,26 @@
 wagtail==1.9
-wagtailmenus==2.2.1
+wagtailmenus==2.2.2
 django-allauth==0.31.0
-django-extensions==1.7.7
+django-extensions==1.7.8
 django-rest-auth==0.9.1
 djangorestframework-jsonapi==2.1.1
-djangorestframework-jwt==1.9.0
+djangorestframework-jwt==1.10.0
 django-rest-swagger==2.1.2
 django-reversion==2.0.8
 psycopg2==2.7.1
 pygit2==0.24.2
-django-location-field==2.0.2
-django-model-utils==2.6.1
+django-location-field==2.0.3
+django-model-utils==3.0.0
 django-timezone-field==2.0
 bagit==1.5.4
 semver==2.7.6
-django-guardian==1.4.6
+django-guardian==1.4.8
 django-jinja==2.2.2
+# deployment and management dependencies
 invoke
 django-webpack-loader
 rarfile
+beautifulsoup4==4.5.3
 # CoMSES citation app
 -e git+https://github.com/comses/citation.git#egg=citation
 # NLP Summary dependencies
