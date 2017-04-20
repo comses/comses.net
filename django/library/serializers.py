@@ -66,5 +66,4 @@ class CodebaseSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Codebase
-        fields = '__all__'
         exclude = ('featured_images',)
