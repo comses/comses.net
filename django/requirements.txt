@@ -18,6 +18,7 @@ django-guardian==1.4.8
 django-jinja==2.2.2
 # deployment and management dependencies
 invoke
+ipython
 django-webpack-loader
 rarfile
 beautifulsoup4==4.5.3

@@ -65,6 +65,7 @@ services:
       - ./docker/shared/repository:/shared/repository
       - ./docker/shared/webpack:/shared/webpack
       - ./docker/shared/static:/shared/static
+      - ./docker/shared/media:/shared/media
       - sockets:/shared/sockets
     environment:
       DJANGO_SETTINGS_MODULE: "core.settings.production"

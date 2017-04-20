@@ -1,7 +1,6 @@
 -r requirements.txt
 # dev requirements
 Sphinx
-ipython
 django-debug-toolbar
 coverage
 coveralls
