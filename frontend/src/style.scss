@@ -155,17 +155,41 @@ $fa-font-path: '../node_modules/font-awesome/fonts/';
   padding-bottom: $default-padding;
 }
 
-.carousel {
+.featured-content {
   background: url("./assets/images/background-featured-content.png") repeat top center;
   overflow: hidden;
   padding-top: 40px;
   padding-bottom: 40px;
-  text-align: center;
   vertical-align: middle;
   margin-top: 105px;
   font-family: 'Open Sans', sans-serif;
   color: $white;
   font-weight: 300;
+
+  #featured-content-carousel {
+      height: 300px;
+  }
+
+  h1 {
+      text-align: center;
+  }
+
+  .carousel-inner {
+      height: 300px;
+      overflow: visible;
+  }
+  .carousel-text {
+      margin-left: -200px;
+  }
+  .carousel-item {
+      height: 300px;
+  }
+  .carousel-caption {
+      text-align: left;
+  }
+  .row {
+      height: 300px;
+  }
 }
 
 .errorlist {

@@ -56,9 +56,10 @@
         </div>
     </section>
 </div>
-<section class='featured-content carousel'>
+<section class='featured-content'>
     <h1>Featured Content</h1>
-    <div id='featured-content-carousel' class='carousel slide' data-ride='carousel', data-pause='hover'>
+    <div id='featured-content-carousel' class='carousel slide' {# data-ride='carousel' #} data-pause='hover'>
+        {#
         <ol class="carousel-indicators">
             {% for _ in featured_content %}
                 <li data-target="#featured-content-carousel" data-slide-to="{{ loop.index0 }}"
@@ -66,16 +67,27 @@
                 </li>
             {% endfor %}
         </ol>
+        #}
         <div class="carousel-inner" role="listbox">
             {% for item in featured_content %}
                 <div class="carousel-item {% if loop.index0 == 0 %}active{% endif %}">
-                    <div class='carousel-caption d-none d-md-block'>
-                        <h3>{{ item.title }}</h3>
-                        <p>
-                        {{ item.summary }}
-                        </p>
+                    <div class='container'>
+                        <div class='row'>
+                            <div class='col-md-3 mx-auto my-auto carousel-image'>
+                                <a class='d-block img-fluid' href='{{ item.link }}'>
+                                    {{ image(item.image, "height-300", class='d-block img-fluid') }}
+                                </a>
+                            </div>
+                            <div class='col-md-8 carousel-text'>
+                                <div class='carousel-caption d-md-block'>
+                                    <h3><a href='{{ item.link }}'>{{ item.title }}</a></h3>
+                                    <p>
+                                    {{ item.summary }}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                    {{ image(item.image, "height-300", class='d-block mx-auto') }}
                 </div>
             {% endfor %}
         </div>

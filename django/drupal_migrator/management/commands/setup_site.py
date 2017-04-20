@@ -68,9 +68,11 @@ class Command(BaseCommand):
                                    slug='home')
         for codebase in Codebase.objects.filter(peer_reviewed=True):
             # if there are multiple images, just pull the first
-            logger.debug("converting %s to FeaturedContentItem", codebase)
-            landing_page.featured_content_queue.add(FeaturedContentItem(**codebase.as_featured_content_dict()))
-
+            fc_dict = codebase.as_featured_content_dict()
+            if fc_dict['image']:
+                landing_page.featured_content_queue.add(FeaturedContentItem(**fc_dict))
+        # FIXME: this generates an error the first time it runs, probably due to an error in how we are deleting
+        # the initial welcome page.
         root_page.add_child(instance=landing_page)
         return landing_page
 

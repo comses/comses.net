@@ -2,6 +2,7 @@ import logging
 import pathlib
 import uuid
 from enum import Enum
+from textwrap import shorten
 
 import semver
 from django.conf import settings
@@ -195,7 +196,7 @@ class Codebase(index.Indexed, ClusterableModel):
     def as_featured_content_dict(self):
         return dict(
             title=self.title,
-            summary=self.summary,
+            summary=self.summarized_description,
             image=self.get_featured_image(),
             link_codebase=self,
         )
@@ -220,6 +221,10 @@ class Codebase(index.Indexed, ClusterableModel):
 
     def media_dir(self, *args):
         return self.subpath('media', *args)
+
+    @property
+    def summarized_description(self):
+        return self.summary if self.summary else shorten(self.description, width=500)
 
     @property
     def base_library_dir(self):
