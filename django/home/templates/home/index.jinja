@@ -9,9 +9,11 @@
             <div class='col'>
                 <a class='btn btn-primary' href='{{ url("library:codebase-list") }}'>View model library</a>
             </div>
+            {#
             <div class='col'>
                 <a class='btn btn-primary' href='/resources'>Resources for modelers</a>
             </div>
+            #}
         </div>
     </div>
     {# FIXME: add link to resources #}
@@ -31,17 +33,18 @@
                     <h3>Submit a Model</h3>
                 </a>
                 <div class='caption'>
-                    Archive the software you used to derive a publishable finding. Other researchers will be able to
-                    discover, cite, and run your software in a reproducible containerized environment.
+                    Preserve the complete digital artifacts used to derive a publishable finding. Other researchers will be able to
+                    discover, cite, and run your code in a reproducible containerized environment.
                 </div>
             </div>
             <div class='col'>
                 <a href='{{ url("home:job-list") }}'>
                     <img src='{{ static("images/icons/search.png") }}' alt='Professional Opportunities'>
-                    <h3>Professional Opportunities</h3>
+                    <h3>Resources for Modelers</h3>
                 </a>
                 <div class='caption'>
-                    Available jobs and appointments submitted by the CoMSES Net Community.
+                    Comprehensive lists and tutorials on agent based modeling platforms, Documentation standards, Educational materials (curricula,
+                    lesson plans, examples of formative/summative assessment), Guides to good practice for reuse and reproducibility
                 </div>
             </div>
             <div class='col'>
@@ -58,7 +61,7 @@
 </div>
 <section class='featured-content'>
     <h1>Featured Content</h1>
-    <div id='featured-content-carousel' class='carousel slide' {# data-ride='carousel' #} data-pause='hover'>
+    <div id='featured-content-carousel' class='carousel slide' data-ride='carousel' data-pause='hover'>
         {#
         <ol class="carousel-indicators">
             {% for _ in featured_content %}
@@ -105,13 +108,22 @@
     <div class='container'>
         <div class='row'>
             <div class='col'>
-                <h3><img src='{{ static("images/icons/recent.png") }}' alt='Recent Activity'> Recent Activity</h3>
-                The last three things that happened
+                <h3><img src='{{ static("images/icons/recent.png") }}' alt='Recent Forum Posts'> Recent Forum Posts</h3>
+                {% for post in recent_forum_activity %}
+                    <div class='activity'>
+                        <h4><a href='{{ post.url }}'>{{ post.title }}</a></h4>
+                        <small class='text-muted'>Posted by {{ post.submitter }} - {{ post.date_created.strftime('%c') }}</small>
+                    </div>
+                {% endfor %}
             </div>
             <div class='col'>
                 <h3><img src='{{ static("images/icons/chat-window.png") }}' alt='Latest Jobs'> Latest Jobs &amp; Appointments</h3>
-                
-                Latest jobs and appointments
+                {% for job in latest_jobs %}
+                    <div class='activity'>
+                        <h4><a href='{{ job.get_absolute_url() }}'>{{ job.title }}</a></h4>
+                        <small class='text-muted'>Posted {{job.date_created.strftime('%c')}}</small>
+                    </div>
+                {% endfor %}
             </div>
         </div>
     </div>

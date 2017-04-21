@@ -3,7 +3,7 @@ import logging
 from django.contrib.auth.models import User
 from django.contrib.postgres.fields import ArrayField, JSONField
 from django.db import models
-from django.urls import reverse_lazy
+from django.urls import reverse
 from django.utils import timezone
 from django.utils.translation import ugettext_lazy as _
 from modelcluster.contrib.taggit import ClusterTaggableManager
@@ -78,7 +78,7 @@ class MemberProfile(index.Indexed, ClusterableModel):
                              max_length=19)
 
     def get_absolute_url(self):
-        return '{0}{1}'.format(reverse_lazy('home:profile-list'), self.user.username)
+        return reverse('home:profile-detail', kwargs={ 'username': self.user.username })
 
     def __str__(self):
         if self.user:
@@ -155,10 +155,41 @@ class FeaturedContentItem(Orderable, CarouselItem):
 
 class LandingPage(Page):
     template = 'home/index.jinja'
+    FEATURED_CONTENT_COUNT = 6
+
+    def get_featured_content(self):
+        return self.featured_content_queue.all()[:self.FEATURED_CONTENT_COUNT]
+
+    def get_recent_forum_activity(self):
+        return [
+            {
+                'title': 'This is a sequence of things that should come from Discourse',
+                'submitter': User.objects.first(),
+                'date_created': timezone.now(),
+                'url': 'https://forum.comses.net',
+            },
+            {
+                'title': 'This is something else that should come from Discourse',
+                'submitter': User.objects.first(),
+                'date_created': timezone.now(),
+                'url': 'https://forum.comses.net',
+            },
+            {
+                'title': 'And another',
+                'submitter': User.objects.first(),
+                'date_created': timezone.now(),
+                'url': 'https://forum.comses.net',
+            }
+        ]
+
+    def get_latest_jobs(self):
+        return Job.objects.order_by('-date_created')[:3]
 
     def get_context(self, request):
         context = super(LandingPage, self).get_context(request)
-        context['featured_content'] = self.featured_content_queue.all()[:5]
+        context['featured_content'] = self.get_featured_content()
+        context['recent_forum_activity'] = self.get_recent_forum_activity()
+        context['latest_jobs'] = self.get_latest_jobs()
         return context
 
     content_panels = Page.content_panels + [
@@ -284,9 +315,12 @@ class Job(index.Indexed, ClusterableModel):
     def live(self):
         return True
 
+    def get_absolute_url(self):
+        return reverse('home:job-detail', kwargs={'pk': self.pk})
+
     def __str__(self):
         return "{0} posted by {1} on {2}".format(
-            self.title, 
+            self.title,
             self.submitter.username,
             self.date_created.strftime('%c')
         )

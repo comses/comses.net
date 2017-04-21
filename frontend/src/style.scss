@@ -155,6 +155,10 @@ $fa-font-path: '../node_modules/font-awesome/fonts/';
   padding-bottom: $default-padding;
 }
 
+div.activity {
+    padding: 10px 5px 10px 5px;
+}
+
 .featured-content {
   background: url("./assets/images/background-featured-content.png") repeat top center;
   overflow: hidden;
@@ -167,7 +171,7 @@ $fa-font-path: '../node_modules/font-awesome/fonts/';
   font-weight: 300;
 
   #featured-content-carousel {
-      height: 300px;
+      height: 320px;
   }
 
   h1 {
@@ -175,20 +179,20 @@ $fa-font-path: '../node_modules/font-awesome/fonts/';
   }
 
   .carousel-inner {
-      height: 300px;
+      height: 320px;
       overflow: visible;
   }
   .carousel-text {
       margin-left: -200px;
   }
   .carousel-item {
-      height: 300px;
+      height: 320px;
   }
   .carousel-caption {
       text-align: left;
   }
   .row {
-      height: 300px;
+      height: 320px;
   }
 }
 
@@ -296,6 +300,6 @@ html {
 
 @include media-breakpoint-up(lg) {
   html {
-    font-size: 15px;
+    font-size: 16px;
   }
 }
