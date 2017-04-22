@@ -182,11 +182,15 @@ class LandingPage(Page):
     def get_latest_jobs(self):
         return Job.objects.order_by('-date_created')[:3]
 
+    def get_upcoming_events(self):
+        return Event.objects.upcoming().order_by('start_date')[:3]
+
     def get_context(self, request):
         context = super(LandingPage, self).get_context(request)
         context['featured_content'] = self.get_featured_content()
         context['recent_forum_activity'] = self.get_recent_forum_activity()
         context['latest_jobs'] = self.get_latest_jobs()
+        context['upcoming_events'] = self.get_upcoming_events()
         return context
 
     content_panels = Page.content_panels + [
@@ -249,6 +253,12 @@ class EventTag(TaggedItemBase):
     content_object = ParentalKey('home.Event', related_name='tagged_events')
 
 
+class EventQuerySet(models.QuerySet):
+
+    def upcoming(self):
+        return self.filter(start_date__gte=timezone.now())
+
+
 class Event(index.Indexed, ClusterableModel):
     title = models.CharField(max_length=300)
     date_created = models.DateTimeField(default=timezone.now)
@@ -261,6 +271,8 @@ class Event(index.Indexed, ClusterableModel):
     end_date = models.DateTimeField(null=True, blank=True)
     location = models.CharField(max_length=300)
     tags = ClusterTaggableManager(through=EventTag, blank=True)
+
+    objects = EventQuerySet.as_manager()
 
     submitter = models.ForeignKey(User)
 
@@ -276,6 +288,9 @@ class Event(index.Indexed, ClusterableModel):
     @property
     def live(self):
         return True
+
+    def get_absolute_url(self):
+        return reverse('home:event-detail', kwargs={'pk': self.pk})
 
     def __str__(self):
         return "{} posted by {} on {}".format(repr(self.title), repr(self.submitter.username),

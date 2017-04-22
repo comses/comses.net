@@ -43,7 +43,7 @@
                 </div>
             </div>
             <div class='col'>
-                <a href='{{ url("home:job-list") }}'>
+                <a href='/resources/'>
                     <img src='{{ static("images/icons/search.png") }}' alt='Resources for Computational Modelers'>
                     <h3>Resources for Modelers</h3>
                 </a>
@@ -149,10 +149,13 @@
                         <small><a href='{{ url("home:event-list") }}'>View All</a></small>
                     </div>
                 </div>
-                {% for job in latest_jobs %}
+                {% for item in upcoming_events %}
                     <div class='activity'>
-                    <h4><a href='{{ job.get_absolute_url() }}'>{{ job.title }}</a></h4>
-                    <small class='text-muted'>Posted {{job.date_created.strftime('%c')}}</small>
+                    <h4><a href='{{ item.get_absolute_url() }}'>{{ item.title }}</a></h4>
+                    <small class='text-muted'>
+                        <p>Location: {{item.location }}</p>
+                        <p>Event Dates: {{item.start_date.strftime('%a, %m/%d/%Y')}} to {{ item.end_date.strftime('%a, %m/%d/%Y') }}</p>
+                    </small>
                     </div>
                 {% endfor %}
             </div>
