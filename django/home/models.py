@@ -27,11 +27,6 @@ Wagtail Page models and related supporting Models and Settings
 
 
 @register_setting
-class ComsesNetSettings(BaseSetting):
-    mission_statement = models.CharField(max_length=255)
-
-
-@register_setting
 class SocialMediaSettings(BaseSetting):
     facebook = models.URLField(help_text=_('Facebook URL'), blank=True)
     youtube = models.URLField(help_text=_('CoMSES Net YouTube Channel'))
@@ -78,7 +73,7 @@ class MemberProfile(index.Indexed, ClusterableModel):
                              max_length=19)
 
     def get_absolute_url(self):
-        return reverse('home:profile-detail', kwargs={ 'username': self.user.username })
+        return reverse('home:profile-detail', kwargs={'username': self.user.username})
 
     def __str__(self):
         if self.user:
@@ -156,6 +151,8 @@ class FeaturedContentItem(Orderable, CarouselItem):
 class LandingPage(Page):
     template = 'home/index.jinja'
     FEATURED_CONTENT_COUNT = 6
+
+    mission_statement = models.CharField(max_length=512)
 
     def get_featured_content(self):
         return self.featured_content_queue.all()[:self.FEATURED_CONTENT_COUNT]

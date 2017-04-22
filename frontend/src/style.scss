@@ -133,16 +133,18 @@ $fa-font-path: '../node_modules/font-awesome/fonts/';
   }
 }
 
-.recent-activity {
+.community {
   padding-top: $default-padding;
   padding-bottom: $default-padding;
-}
-
-.community-highlight {
-  padding-top: $default-padding;
-  padding-bottom: $default-padding;
-  text-align: center;
-  background-color: $light-blue-gray;
+  h1 {
+      text-align: center;
+      padding-bottom: 1.5rem;
+  }
+  .row {
+      padding-top: 30px;
+      padding-bottom: 30px;
+  }
+  
 }
 
 .mission {

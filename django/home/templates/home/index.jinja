@@ -20,8 +20,13 @@
 {% endblock %}
 {% block page %}
 <section class='mission'>
-    <div>CoMSES Net is a group of researchers, educators and professionals with the common goal of improving the way
-        we develop, share, and use agent based modeling in the social and life sciences.
+    <div class='container'>
+        <div class='row'>
+            <div class='col'>
+                {{ page.mission_statement }}
+                <a href='/about/'>Learn more</a>
+            </div>
+        </div>
     </div>
 </section>
 <div class='container'>
@@ -29,22 +34,22 @@
         <div class='row'>
             <div class='col'>
                 <a href='{{ url("library:codebase-create") }}'>
-                    <img src='{{ static("images/icons/submit.png") }}' alt='Submit a Model'>
-                    <h3>Submit a Model</h3>
+                    <img src='{{ static("images/icons/submit.png") }}' alt='Publish your code'>
+                    <h3>Publish your Code</h3>
                 </a>
                 <div class='caption'>
-                    Preserve the complete digital artifacts used to derive a publishable finding. Other researchers will be able to
+                    Preserve the complete digital pipeline used to derive a publishable finding. Other researchers will be able to
                     discover, cite, and run your code in a reproducible containerized environment.
                 </div>
             </div>
             <div class='col'>
                 <a href='{{ url("home:job-list") }}'>
-                    <img src='{{ static("images/icons/search.png") }}' alt='Professional Opportunities'>
+                    <img src='{{ static("images/icons/search.png") }}' alt='Resources for Computational Modelers'>
                     <h3>Resources for Modelers</h3>
                 </a>
                 <div class='caption'>
-                    Comprehensive lists and tutorials on agent based modeling platforms, Documentation standards, Educational materials (curricula,
-                    lesson plans, examples of formative/summative assessment), Guides to good practice for reuse and reproducibility
+                    Comprehensive lists and tutorials on agent based modeling platforms, documentation standards, educational materials (curricula,
+                    lesson plans, examples of formative or summative assessment), guides to good practice for reuse and reproducibility
                 </div>
             </div>
             <div class='col'>
@@ -104,11 +109,28 @@
         </a>
     </div>
 </section>
-<section class='recent-activity'>
+<section class='community'>
+    <h1>Our Community</h1>
     <div class='container'>
         <div class='row'>
             <div class='col'>
-                <h3><img src='{{ static("images/icons/recent.png") }}' alt='Recent Forum Posts'> Recent Forum Posts</h3>
+                Oh, it's you, Ben. Sorry about that. What's on tap for today? Oh yeah, Mango Reinhardt, the thinking man's pop. Thank
+                you, Ben. Ah-ah-ah, hold on, Ben, aren't you forgetting something? Come on, come on, what are you waiting for? Daddy
+                needs his medicine. I'm sick, baby. I'm sick. Come on, baby. Daddy needs his feel-good juice. (scorpion stings him
+                again) Ooh yeah, that's the stuff. That's what daddy needs, yeah, see, see, what it is, is we're all a community,
+                and uh, when you're a community, and love enters into it....(falls asleep)
+            </div>
+        </div>
+        <div class='row'>
+            <div class='col'>
+                <div class='row'>
+                    <div class='col'>
+                        <h3>Recent Forum Posts</h3>
+                    </div>
+                    <div class='col text-right'>
+                        <small><a class='text-right' href='{{ DISCOURSE_BASE_URL }}'>View Forum</a></small>
+                    </div>
+                </div>
                 {% for post in recent_forum_activity %}
                     <div class='activity'>
                         <h4><a href='{{ post.url }}'>{{ post.title }}</a></h4>
@@ -116,21 +138,26 @@
                     </div>
                 {% endfor %}
             </div>
+            <div class='col-1'>
+            </div>
             <div class='col'>
-                <h3><img src='{{ static("images/icons/chat-window.png") }}' alt='Latest Jobs'> Latest Jobs &amp; Appointments</h3>
+                <div class='row'>
+                    <div class='col'>
+                        <h3>Upcoming Events</h3>
+                    </div>
+                    <div class='col text-right'>
+                        <small><a href='{{ url("home:event-list") }}'>View All</a></small>
+                    </div>
+                </div>
                 {% for job in latest_jobs %}
                     <div class='activity'>
-                        <h4><a href='{{ job.get_absolute_url() }}'>{{ job.title }}</a></h4>
-                        <small class='text-muted'>Posted {{job.date_created.strftime('%c')}}</small>
+                    <h4><a href='{{ job.get_absolute_url() }}'>{{ job.title }}</a></h4>
+                    <small class='text-muted'>Posted {{job.date_created.strftime('%c')}}</small>
                     </div>
                 {% endfor %}
             </div>
         </div>
     </div>
-</section>
-<section class='community-highlight'>
-    <h2>In the Community</h2>
-    Blog posts? News posts? Highlight Discourse posts?
 </section>
 {% endblock %}
 

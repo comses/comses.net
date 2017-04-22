@@ -65,7 +65,11 @@ class Command(BaseCommand):
         # delete initial welcome page
         Page.objects.filter(slug='home').delete()
         landing_page = LandingPage(title='CoMSES Net Home Page',
-                                   slug='home')
+                                   slug='home',
+                                   mission_statement='''CoMSES Net is an international network of researchers, educators
+                                   and professionals with the common goal of improving the way we develop, share, and
+                                   use agent based modeling in the social and life sciences.
+                                   ''')
         for codebase in Codebase.objects.filter(peer_reviewed=True):
             # if there are multiple images, just pull the first
             fc_dict = codebase.as_featured_content_dict()
