@@ -153,7 +153,7 @@ class TagViewSet(viewsets.ModelViewSet):
 
 class ProfileViewSet(viewsets.ModelViewSet):
     lookup_field = 'username'
-    lookup_value_regex = '\w+'
+    lookup_value_regex = '[\w\.]+'
     serializer_class = UserSerializer
     queryset = User.objects.all()
     pagination_class = SmallResultSetPagination
