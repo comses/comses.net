@@ -78,9 +78,7 @@ $fa-font-path: '../node_modules/font-awesome/fonts/';
 
 .organizations li {
   display: inline-block;
-  margin-right: 10px;
-  margin-left: 10px;
-  margin-top: 10px;
+  margin: 10px 10px 0px 10px;
 }
 
 .introduction {
@@ -203,12 +201,20 @@ div.activity {
 header {
   padding: 20px 0;
   background-color: $white;
+  .nav-link {
+      font-size: .8em;
+      color: $text-color;
+  }
 }
 
 footer {
   padding: 75px 0;
   background-image: url("./assets/images/background-footer.png");
   color: $white;
+  .row {
+      padding-top: 20px;
+      padding-bottom: 20px;
+  }
 }
 
 .content-block {

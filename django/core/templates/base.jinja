@@ -1,9 +1,10 @@
 {% set login_url = url("account_login") %}
 {% set logout_url = url("account_logout") %}
+{% set signup_url = url("account_signup") %}
 
 {% macro header() %}
 <header class="fixed-top">
-    <div class="container">
+    <div class="container-fluid">
         <div class="row">
             <div class="col-sm-12 col-md-6 col-lg-4">
                 <nav class="nav">
@@ -12,25 +13,34 @@
                     </a>
                 </nav>
             </div>
-            <div class="col-sm-12 col-md-6 col-lg-8">
+            <div class="col-sm-12 col-md-6 col-lg-8 my-auto">
                 <ul class="nav justify-content-end">
+                    {# FIXME: replace with wagtailmenu #}
                     <li class="nav-item">
-                        <a href="{{ url('library:codebase-list') }}" class="nav-link">Model Library</a>
-                    </li>
-                    <li class='nav-item'>
-                        <a href="{{ DISCOURSE_BASE_URL }}" class='nav-link'>Forums</a>
+                        <a href="{{ url('library:codebase-list') }}" class="nav-link">Computational Library</a>
                     </li>
                     <li class="nav-item">
                         <a href="{{ url('home:event-list') }}" class="nav-link">Events</a>
                     </li>
                     <li>
+                        <a href="/community/" class="nav-link">Community</a>
+                    </li>
+                    {#
+                    <li>
                         <a href="{{ url('home:job-list') }}" class="nav-link">Jobs</a>
                     </li>
-                    <li class="nav-item">
-                        <a href="#" class="nav-link">Resources</a>
+                    #}
+                    <li class='nav-item'>
+                        <a href="{{ DISCOURSE_BASE_URL }}" class='nav-link'>Forums</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="/search"><i class='fa fa-search'></i></a>
+                        <a href="/resources/" class="nav-link">Resources</a>
+                    </li>
+                    <li class='nav-item'>
+                        <a href='/about' class='nav-link'>About</a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="/search" class="nav-link"><i class='fa fa-search'></i></a>
                     </li>
                     {% if request.user.is_authenticated %}
                         <li class="nav-item dropdown">
@@ -66,6 +76,15 @@
 {% macro footer() %}
 <footer class="footer">
     <div class="container">
+        <div class='row'>
+            <div class='col'>
+            </div>
+            <div class='col text-center'>
+                <a class='btn btn-primary' href='{{ signup_url }}'>Become a member</a>
+            </div>
+            <div class='col'>
+            </div>
+        </div>
         <div class="row">
             <div class="col-xs-12 col-lg-3">
                 <ul class="social-media">
@@ -102,13 +121,11 @@
                             <img src="{{ static("images/logo-asu.png") }}" alt="Arizona State University">
                         </a>
                     </li>
-
                     <li>
                         <a href="https://creativecommons.org/" target="_blank">
                             <img src="{{ static("images/logo-cc.png") }}" alt="Creative Commons">
                         </a>
                     </li>
-
                     <li>
                         <a href="http://www.nsf.gov/" target="_blank">
                             <img src="{{ static("images/logo-nsf.png") }}" alt="National Science Foundation">
@@ -172,10 +189,8 @@
             return false;
         }
         </script>
-
-
+        <script src="https://cdn.rawgit.com/imsky/holder/master/holder.js"></script>
         {% block js %}
-            <script src="https://cdn.rawgit.com/imsky/holder/master/holder.js"></script>
             {# Override this in templates to add extra javascript #}
         {% endblock %}
     </body>
