@@ -39,7 +39,6 @@ $fa-font-path: '../node_modules/font-awesome/fonts/';
 @import '../node_modules/vue-multiselect/dist/vue-multiselect.min.css';
 
 .logo {
-  font: 0/0 a;
   color: transparent;
   text-shadow: none;
   background-color: transparent;
@@ -200,8 +199,7 @@ div.activity {
   @extend .alert-danger;
 }
 
-header {
-  padding: 20px 0;
+nav {
   background-color: $white;
   .nav-link {
       font-size: .8em;
