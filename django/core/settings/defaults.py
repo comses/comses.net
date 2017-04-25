@@ -105,6 +105,17 @@ SITE_ID = 1
 
 ROOT_URLCONF = 'core.urls'
 
+# configure elasticsearch 5 wagtail backend
+WAGTAILSEARCH_BACKENDS = {
+    'default': {
+        'BACKEND': 'wagtail.wagtailsearch.backends.elasticsearch5',
+        'URLS': ['http://elasticsearch:9200', 'http://elasticsearch:9300'],
+        'INDEX': 'wagtail',
+        'TIMEOUT': 5,
+        'OPTIONS': {},
+        'INDEX_SETTINGS': {}
+    }
+}
 
 # make tags case insensitive
 TAGGIT_CASE_INSENSITIVE = True

@@ -7,6 +7,7 @@ djangorestframework-jsonapi==2.2.0
 djangorestframework-jwt==1.10.0
 django-rest-swagger==2.1.2
 django-reversion==2.0.8
+elasticsearch>=5.0.0,<6.0.0
 psycopg2==2.7.1
 pygit2==0.24.2
 django-location-field==2.0.3
