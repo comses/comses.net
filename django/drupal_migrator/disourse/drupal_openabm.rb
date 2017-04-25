@@ -1,3 +1,6 @@
+# Adapted from 'drupal.rb' import script in Discourse
+# See discourse/script/import_scripts/drupal.rb at https://github.com/discourse/discourse
+
 require "mysql2"
 require File.expand_path(File.dirname(__FILE__) + "/base.rb")
 
@@ -49,7 +52,7 @@ class ImportScripts::Drupal < ImportScripts::Base
     create_replies
 
     begin
-      create_admin(email: 'neil.lalonde@discourse.org', username: UserNameSuggester.suggest('neil'))
+      create_admin(email: 'admin@comses.net', username: UserNameSuggester.suggest('comses'))
     rescue => e
       puts '', "Failed to create admin user"
       puts e.message
