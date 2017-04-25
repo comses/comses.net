@@ -82,6 +82,21 @@ class MemberProfile(index.Indexed, ClusterableModel):
         else:
             return "id={}".format(self.id)
 
+    search_fields = [
+        index.SearchField('summary', partial_match=True, boost=10),
+        index.SearchField('research_interests', partial_match=True),
+        index.RelatedFields('institution', [
+            index.SearchField('name'),
+        ]),
+        index.RelatedFields('keywords', [
+            index.SearchField('name'),
+        ]),
+        index.RelatedFields('user', [
+            index.SearchField('username'),
+            index.SearchField('email'),
+            index.SearchField('get_full_name'),
+        ]),
+    ]
 
 class LinkFields(models.Model):
     """
@@ -279,8 +294,14 @@ class Event(index.Indexed, ClusterableModel):
     search_fields = [
         index.SearchField('title', partial_match=True, boost=10),
         index.SearchField('description', partial_match=True),
+        index.SearchField('start_date'),
+        index.SearchField('location'),
+        index.RelatedFields('tags', [
+            index.SearchField('name'),
+        ]),
         index.RelatedFields('submitter', [
             index.SearchField('username'),
+            index.SearchField('email'),
             index.SearchField('get_full_name'),
         ]),
     ]
@@ -317,6 +338,10 @@ class Job(index.Indexed, ClusterableModel):
     search_fields = [
         index.SearchField('title', partial_match=True, boost=10),
         index.SearchField('description', partial_match=True),
+        index.SearchField('date_created'),
+        index.RelatedFields('tags', [
+            index.SearchField('name'),
+        ]),
         index.RelatedFields('submitter', [
             index.SearchField('username'),
             index.SearchField('get_full_name'),

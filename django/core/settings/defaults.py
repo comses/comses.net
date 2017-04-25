@@ -111,6 +111,7 @@ WAGTAILSEARCH_BACKENDS = {
         'BACKEND': 'wagtail.wagtailsearch.backends.elasticsearch5',
         'URLS': ['http://elasticsearch:9200'],
         'INDEX': 'wagtail',
+        'ATOMIC_REBUILD': True,
         # 'AUTO_UPDATE': False,
         'TIMEOUT': 10,
         'OPTIONS': {
