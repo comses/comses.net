@@ -109,10 +109,13 @@ ROOT_URLCONF = 'core.urls'
 WAGTAILSEARCH_BACKENDS = {
     'default': {
         'BACKEND': 'wagtail.wagtailsearch.backends.elasticsearch5',
-        'URLS': ['http://elasticsearch:9200', 'http://elasticsearch:9300'],
+        'URLS': ['http://elasticsearch:9200'],
         'INDEX': 'wagtail',
-        'TIMEOUT': 5,
-        'OPTIONS': {},
+        # 'AUTO_UPDATE': False,
+        'TIMEOUT': 10,
+        'OPTIONS': {
+            'max_retries': 2,
+        },
         'INDEX_SETTINGS': {}
     }
 }
