@@ -47,14 +47,14 @@
                     class='btn my-2 my-sm-0' type='submit'><i class='fa fa-search'></i></button>
                     </form>
                 </li>
-                {% if request.user.is_authenticated %}
+                {% if user.is_authenticated %}
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" id='userDropdownMenuLink'
                            data-toggle="dropdown" role="button" href="#" aria-haspopup="true" aria-expanded="false">
                             <span class="fa fa-user-o"></span>
                         </a>
                         <div class="dropdown-menu" aria-labelledby='userDropdownMenuLink'>
-                            <a class="dropdown-item" href="{{ url('home:profile-detail', username=request.user.username) }}"><i class='fa fa-user-o'></i> Your Account</a>
+                            <a class="dropdown-item" href="{{ url('home:profile-detail', username=user.username) }}"><i class='fa fa-user-o'></i> Your Account</a>
                             {# POST logouts, see http://django-allauth.readthedocs.io/en/latest/views.html#logout-account-logout #}
                             <form id='logoutForm' method='post' action='{{ logout_url }}'>
                                 {% csrf_token %}
@@ -80,15 +80,18 @@
 {% macro footer() %}
 <footer class="footer">
     <div class="container">
-        <div class='row'>
-            <div class='col'>
+        {% if not user.is_authenticated or not user.member_profile.full_member %}
+            <div class='row'>
+                <div class='col'>
+                </div>
+                <div class='col text-center'>
+                    {% set member_url = url('home:profile-detail', username=user.username) if user.is_authenticated else signup_url %}
+                    <a class='btn btn-primary' href='{{ member_url }}'>Become a member</a>
+                </div>
+                <div class='col'>
+                </div>
             </div>
-            <div class='col text-center'>
-                <a class='btn btn-primary' href='{{ signup_url }}'>Become a member</a>
-            </div>
-            <div class='col'>
-            </div>
-        </div>
+        {% endif %}
         <div class="row">
             <div class="col-xs-12 col-lg-3">
                 <ul class="social-media">
