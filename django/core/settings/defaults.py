@@ -112,7 +112,7 @@ WAGTAILSEARCH_BACKENDS = {
         'URLS': ['http://elasticsearch:9200'],
         'INDEX': 'wagtail',
         'ATOMIC_REBUILD': True,
-        # 'AUTO_UPDATE': False,
+        'AUTO_UPDATE': False,
         'TIMEOUT': 10,
         'OPTIONS': {
             'max_retries': 2,

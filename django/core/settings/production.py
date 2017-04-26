@@ -25,3 +25,17 @@ STATIC_ROOT = '/shared/static'
 
 WSGI_APPLICATION = 'core.wsgi.application'
 
+WAGTAILSEARCH_BACKENDS = {
+    'default': {
+        'BACKEND': 'wagtail.wagtailsearch.backends.elasticsearch5',
+        'URLS': ['http://elasticsearch:9200'],
+        'INDEX': 'wagtail',
+        'ATOMIC_REBUILD': True,
+        'AUTO_UPDATE': True,
+        'TIMEOUT': 10,
+        'OPTIONS': {
+            'max_retries': 2,
+        },
+        'INDEX_SETTINGS': {}
+    }
+}
