@@ -1,4 +1,4 @@
 -r requirements.txt
 # prod requirements
 newrelic
-uwsgi==2.0.14
+uwsgi==2.0.15
