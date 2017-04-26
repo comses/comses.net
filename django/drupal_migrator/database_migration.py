@@ -95,7 +95,7 @@ class Extractor:
         self.data = data
 
     @staticmethod
-    def sanitize(data: str, strip_whitespace=False, max_length: int = None) -> str:
+    def sanitize(data: str, max_length: int = None, strip_whitespace=False) -> str:
         if strip_whitespace:
             _sanitized_data = data.replace(' ', '').lower()
         else:
@@ -301,7 +301,7 @@ class TaxonomyExtractor(Extractor):
                 # try, in that order, to split them
                 tags = filter(lambda x: x.strip(), re.split(self.DELIMITER_REGEX, raw_tag_name))
                 for t in tags:
-                    sanitized_tag = self.sanitize(t, 100)
+                    sanitized_tag = self.sanitize(t, max_length=100)
                     tag, created = Tag.objects.get_or_create(name=sanitized_tag)
                     tag_id_map[raw_tag['tid']].append(sanitized_tag)
         return tag_id_map
