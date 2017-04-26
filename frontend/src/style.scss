@@ -1,7 +1,4 @@
-
-
 $rules-color: lighten(#ced9ee, 5%);
-
 /*
  * Bootstrap Overrides
  */
@@ -110,6 +107,14 @@ $fa-font-path: '../node_modules/font-awesome/fonts/';
   a {
     padding: 20px;
   }
+}
+
+ol.breadcrumb {
+    margin-top: -50px;
+    padding-bottom: 30px;
+    margin-left: 0px;
+    padding-left: 0px;
+    background-color: $white;
 }
 
 .callouts {
@@ -271,7 +276,16 @@ footer {
     }
   }
 }
-
+.tags {
+    @extend .card-block;
+    padding: 1em 0 0;
+    .tag {
+        padding: 1em;
+        @extend .badge;
+        background-color: $rules-color;
+        color: $link-color;
+    }
+}
 .card-metadata {
   @extend .card;
   margin-top: 0.5em;
@@ -293,7 +307,6 @@ footer {
 html {
   font-size: 12px;
 }
-
 
 @include media-breakpoint-up(sm) {
   html {

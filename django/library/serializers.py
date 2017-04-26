@@ -27,6 +27,7 @@ class CodebaseContributorSerializer(serializers.ModelSerializer):
 
 
 class CodebaseReleaseSerializer(serializers.ModelSerializer):
+    first_published_at = serializers.DateTimeField(format='%c', read_only=True)
     date_created = serializers.DateTimeField(format='%Y-%m-%d', read_only=True)
     absolute_url = serializers.URLField(source='get_absolute_url', read_only=True,
                                         help_text=_('URL to the detail page of the codebase'))
@@ -39,17 +40,20 @@ class CodebaseReleaseSerializer(serializers.ModelSerializer):
         model = CodebaseRelease
         fields = ('date_created', 'last_modified', 'peer_reviewed', 'doi', 'description', 'license', 'documentation',
                   'embargo_end_date', 'version_number', 'os', 'platforms', 'programming_languages', 'submitter',
-                  'codebase_contributors', 'submitted_package', 'absolute_url')
+                  'codebase_contributors', 'submitted_package', 'absolute_url', 'first_published_at', 'download_count')
 
 
 class CodebaseSerializer(serializers.ModelSerializer):
     all_contributors = CodebaseContributorSerializer(many=True, read_only=True)
     releases = CodebaseReleaseSerializer(read_only=True, many=True)
+    first_published_at = serializers.DateTimeField(format='%c', read_only=True)
     date_created = serializers.DateTimeField(format='%Y-%m-%d', read_only=True)
     last_modified = serializers.DateTimeField(format='%Y-%m-%d', read_only=True)
     tags = home_serializers.TagSerializer(many=True)
     absolute_url = serializers.URLField(source='get_absolute_url', read_only=True)
     submitter = home_serializers.CreatorSerializer(read_only=True)
+    latest_version = CodebaseReleaseSerializer(read_only=True)
+    download_count = serializers.IntegerField(read_only=True)
 
     @staticmethod
     def get_summary(obj):

@@ -5,17 +5,31 @@
 
 {% block introduction %}{{ retrieve_introduction('CoMSES Net Codebase Library') }}{% endblock %}
 
-{% block content %}
-    {# XXX: hard-coded breadcrumb trail #}
+{% block breadcrumb %}
     {{ breadcrumb([
         {'url': '/', 'description': 'Home'},
         {'url': url('library:codebase-list'), 'description': 'Codebase Library' },
         {'description': title }
         ]) }}
+{% endblock %}
+
+{% block content %}
     <div class='row'>
         <div class='col-md-9'>
             <h1 class="pb-4">{{ title }}</h1>
+            <div class='metadata'>
+                <b>Platform:</b> {{ latest_version.platforms }}
+                <b>Version: </b> {{ latest_version.version_number }} <a href='{{latest_version.absolute_url}}'>(View Latest)</a>
+                <b>Language:</b> {{ latest_version.programming_languages }}
+            </div>
+            <div class='tags'>
+                {% for tag in tags %}
+                    <a class='tag' href='/search?tag={{ tag.name }}'>{{ tag.name }}</a>
+                {% endfor %}
+            </div>
+            <p>
             {{ markdown(description)|safe }}
+            </p>
         </div>
         <div class="col-md-3">
             <div class='card-metadata'>
@@ -23,8 +37,8 @@
                     <small>
                         <b class="card-title">Authors</b>
                         <p class='card-text'>
-                            {% for c in contributors %}
-                                {{ c.contributor.name }}
+                            {% for c in all_contributors %}
+                                {{ c.name }}
                                 {{ c.affiliations }}
                             {% endfor %}
                         </p>
@@ -38,8 +52,8 @@
                             {{ last_modified }}
                         </p>
 
-                        <b class="card-title">Downloads: </b><br>
-
+                        <b class="card-title">Downloads: </b>{{ download_count }}
+                        <br>
                         <b class="card-title">Status</b>
                         <p class="card-text">
                         {% if peer_reviewed %}

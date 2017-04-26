@@ -10,7 +10,7 @@ from django.contrib.auth.models import User
 from django.contrib.postgres.fields import JSONField
 from django.core.files.images import ImageFile
 from django.db import models
-from django.urls import reverse_lazy
+from django.urls import reverse
 from django.utils import timezone
 from django.utils.translation import ugettext_lazy as _
 from model_utils import Choices
@@ -238,17 +238,20 @@ class Codebase(index.Indexed, ClusterableModel):
     @property
     def all_contributors(self):
         return CodebaseContributor.objects.select_related('release', 'contributor').filter(
-            release__codebase__id=self.pk)
+            release__codebase__id=self.pk).distinct('contributor')
 
     @property
     def contributor_list(self):
-        # FIXME: messy
         contributor_list = [c.contributor.get_full_name(family_name_first=True) for c in
-                            self.all_contributors.order_by('index')]
+                            self.all_contributors]
         return contributor_list
 
+    @property
+    def download_count(self):
+        return self.releases.aggregate(all_downloads=models.Sum('download_count'))['all_downloads']
+
     def get_absolute_url(self):
-        return reverse_lazy('library:codebase-detail', kwargs={'identifier': self.identifier})
+        return reverse('library:codebase-detail', kwargs={'identifier': self.identifier})
 
     def media_url(self, name):
         return '{0}/media/{1}'.format(self.get_absolute_url(), name)
@@ -365,8 +368,8 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
         return self.codebase.subpath('releases', 'v{0}'.format(self.version_number), *map(str, args))
 
     def get_absolute_url(self):
-        return reverse_lazy('library:codebaserelease-detail',
-                            kwargs={'identifier': self.codebase.identifier, 'version_number': self.version_number})
+        return reverse('library:codebaserelease-detail',
+                       kwargs={'identifier': self.codebase.identifier, 'version_number': self.version_number})
 
     @property
     def bagit_path(self):
