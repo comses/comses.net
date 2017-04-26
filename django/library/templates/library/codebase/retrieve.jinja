@@ -18,9 +18,15 @@
         <div class='col-md-9'>
             <h1 class="pb-4">{{ title }}</h1>
             <div class='metadata'>
-                <b>Platform:</b> {{ latest_version.platforms }}
-                <b>Version: </b> {{ latest_version.version_number }} <a href='{{latest_version.absolute_url}}'>(View Latest)</a>
-                <b>Language:</b> {{ latest_version.programming_languages }}
+                <b>Platform:</b> 
+                {% for p in latest_version.platforms %}
+                    <a class='tag' href='/search?tag={{ p.name }}'>{{ p.name }}</a>
+                {% endfor %}
+                <b>Version: </b> {{ latest_version.version_number }} <small><a href='{{latest_version.absolute_url}}'>(View Latest)</a></small>
+                <b>Language:</b> 
+                {% for pl in latest_version.programming_languages %}
+                    <a class='tag' href='/search?tag={{ pl.name }}'>{{ pl.name }}</a>
+                {% endfor %}
             </div>
             <div class='tags'>
                 {% for tag in tags %}
