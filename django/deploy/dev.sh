@@ -1,15 +1,20 @@
-#!/bin/sh
+#!/bin/bash
 
-CLEAN_DATABASE=${CLEAN_DATABASE:-true}
+CLEAN_DATABASE=${CLEAN_DATABASE:-"false"}
 DJANGO_SETTINGS_MODULE="core.settings.dev"
 
 chmod a+x /code/deploy/*.sh
-if [ "$CLEAN_DATABASE" = true ]; then
-    echo "Destroying and initializing database from scratch"
-    /code/deploy/wait-for-it.sh db:5432 -- invoke initialize_database_schema --clean
-else
-    echo "Using existing db schema"
-    /code/deploy/wait-for-it.sh db:5432 -- invoke initialize_database_schema
-fi
+
+initdb() {
+    cd /code;
+    if [["$CLEAN_DATABASE" == "true"]]; then
+        echo "Destroying and initializing database from scratch"
+        /code/deploy/wait-for-it.sh db:5432 -- invoke initialize_database_schema --clean
+    else
+        echo "Using existing db schema"
+        /code/deploy/wait-for-it.sh db:5432 -- invoke initialize_database_schema
+    fi
+}
+initdb
 /code/deploy/wait-for-it.sh elasticsearch:9200 -- /code/manage.py update_index
 nohup /code/manage.py runserver 0.0.0.0:8000
