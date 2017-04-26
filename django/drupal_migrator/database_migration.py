@@ -9,7 +9,6 @@ from collections import defaultdict
 from datetime import datetime
 from typing import Dict
 
-import pytz
 from bs4 import BeautifulSoup
 from django.contrib.auth.models import User, Group
 from taggit.models import Tag
@@ -38,22 +37,22 @@ LICENSES = """id,name,url
     12,"MIT License", https://opensource.org/licenses/MIT"""
 
 PLATFORMS = """id,name,url
-    0,Other,NULL
-    1,"Ascape",http://ascape.sourceforge.net/
-    2,Breve,http://www.spiderland.org/
-    3,Cormas,http://cormas.cirad.fr/en/outil/outil.htm
-    4,DEVS,http://acims.asu.edu/software/devs-suite/
-    5,Ecolab,http://ecolab.sourceforge.net/
-    6,Mason,http://cs.gmu.edu/~eclab/projects/mason/
-    7,MASS,http://mass.aitia.ai/
-    8,MobilDyc,http://w3.avignon.inra.fr/mobidyc/index.php/English_summary
-    9,NetLogo,http://ccl.northwestern.edu/netlogo/
-    10,Repast,http://repast.github.io
-    11,Sesam,http://www.simsesam.de/
-    12,StarLogo,http://education.mit.edu/starlogo/
-    13,Swarm,http://www.swarm.org/
-    14,AnyLogic,http://www.anylogic.com/
-    15,Matlab,http://www.mathworks.com/products/matlab/"""
+    0,other,NULL
+    1,"ascape",http://ascape.sourceforge.net/
+    2,breve,http://www.spiderland.org/
+    3,cormas,http://cormas.cirad.fr/en/outil/outil.htm
+    4,devs,http://acims.asu.edu/software/devs-suite/
+    5,ecolab,http://ecolab.sourceforge.net/
+    6,mason,http://cs.gmu.edu/~eclab/projects/mason/
+    7,mass,http://mass.aitia.ai/
+    8,mobildyc,http://w3.avignon.inra.fr/mobidyc/index.php/English_summary
+    9,netlogo,http://ccl.northwestern.edu/netlogo/
+    10,repast,http://repast.github.io
+    11,sesam,http://www.simsesam.de/
+    12,starlogo,http://education.mit.edu/starlogo/
+    13,swarm,http://www.swarm.org/
+    14,anylogic,http://www.anylogic.com/
+    15,matlab,http://www.mathworks.com/products/matlab/"""
 
 
 def flatten(ls):
@@ -96,8 +95,11 @@ class Extractor:
         self.data = data
 
     @staticmethod
-    def sanitize(data: str, max_length: int = None) -> str:
-        _sanitized_data = data.strip().lower()
+    def sanitize(data: str, strip_whitespace=False, max_length: int = None) -> str:
+        if strip_whitespace:
+            _sanitized_data = data.replace(' ', '').lower()
+        else:
+            _sanitized_data = data.strip().lower()
         if max_length is not None:
             if len(_sanitized_data) > max_length:
                 logger.warning("data exceeded max length %s: %s", max_length, data)
@@ -106,7 +108,7 @@ class Extractor:
 
     @staticmethod
     def sanitize_text(data: str, max_length: int = None) -> str:
-        _sanitized_data = BeautifulSoup(data.strip())
+        _sanitized_data = BeautifulSoup(data.strip(), "lxml")
         return _sanitized_data.get_text()
 
     @staticmethod
@@ -186,9 +188,10 @@ class UserExtractor(Extractor):
     @staticmethod
     def _extract(raw_user):
         """ assumes existence of editor, reviewer, full_member, admin groups """
-        username = Extractor.sanitize(raw_user['name'])
+        username = Extractor.sanitize(raw_user['name'], strip_whitespace=True)
         email = Extractor.sanitize(raw_user['mail'])
         if not all([username, email]):
+            logger.warning("No username or email set: %s", [username, email])
             return
         user, created = User.objects.get_or_create(
             username=username,
@@ -198,6 +201,7 @@ class UserExtractor(Extractor):
                 "last_login": to_datetime(raw_user['login']),
             }
         )
+
         user.drupal_uid = raw_user['uid']
         roles = raw_user['roles'].values()
         MemberProfile.objects.get_or_create(user=user, defaults={"timezone": raw_user['timezone']})
@@ -210,12 +214,10 @@ class UserExtractor(Extractor):
         if 'comses member' in roles:
             user.groups.add(UserExtractor.MEMBER_GROUP)
             user.groups.add(UserExtractor.REVIEWER_GROUP)
-
         if 'comses editor' in roles:
             user.groups.add(UserExtractor.EDITOR_GROUP)
         if 'comses reviewer' in roles:
             user.groups.add(UserExtractor.REVIEWER_GROUP)
-
         return user
 
     def extract_all(self):
@@ -223,14 +225,24 @@ class UserExtractor(Extractor):
         Returns a mapping of drupal user ids to Django User pks.
         :return: dict
         """
-        users = [UserExtractor._extract(raw_user) for raw_user in self.data]
-        user_id_map = dict([(user.drupal_uid, user.pk) for user in users if user is not None])
+        contributors = []
+        user_id_map = {}
+        for raw_user in self.data:
+            user = UserExtractor._extract(raw_user)
+            if user:
+                user_id_map[user.drupal_uid] = user.pk
+                contributors.append(Contributor(
+                    given_name=user.first_name,
+                    family_name=user.last_name,
+                    email=user.email,
+                    user=user))
+        Contributor.objects.bulk_create(contributors)
         return user_id_map
 
 
 class ProfileExtractor(Extractor):
     def extract_all(self, user_id_map, tag_id_map):
-        contributors = []
+
         for raw_profile in self.data:
             drupal_uid = raw_profile['uid']
             user_id = user_id_map.get(drupal_uid, -1)
@@ -241,18 +253,12 @@ class ProfileExtractor(Extractor):
             profile = user.member_profile
             user.first_name = get_first_field(raw_profile, 'field_profile2_firstname')
             user.last_name = get_first_field(raw_profile, 'field_profile2_lastname')
-            contributors.append(Contributor(
-                given_name=user.first_name,
-                middle_name=get_first_field(raw_profile, 'field_profile2_middlename'),
-                family_name=user.last_name,
-                email=user.email,
-                user=user))
             profile.research_interests = get_first_field(raw_profile, 'field_profile2_research')
             profile.institutions = get_field(raw_profile, 'institutions')
             profile.degrees = get_field_attributes(raw_profile, 'field_profile2_degrees') or []
             profile.personal_url = get_first_field(raw_profile, 'field_profile2_personal_link', attribute_name='url')
 
-            # try to aggregate various URLs
+            # crude aggregation of the wretched smorgasbord of incoming urls
             linkedin_url = get_first_field(raw_profile, 'field_profile2_linkedin_link',
                                            attribute_name='url')
             academia_edu_url = get_first_field(raw_profile, 'field_profile2_academiaedu_link',
@@ -269,8 +275,7 @@ class ProfileExtractor(Extractor):
                                        or cv_url \
                                        or linkedin_url
 
-            for url in (
-            'academia_edu_url', 'cv_url', 'institutional_homepage_url', 'personal_homepage_url', 'researchgate_url'):
+            for url in ('professional_url', 'personal_url'):
                 if len(getattr(profile, url, '')) > 200:
                     logger.warning("Ignoring overlong %s URL %s", url, getattr(profile, url))
                     setattr(profile, url, '')
@@ -280,7 +285,6 @@ class ProfileExtractor(Extractor):
             profile.keywords.add(*tags)
             profile.save()
             user.save()
-        Contributor.objects.bulk_create(contributors)
 
 
 class TaxonomyExtractor(Extractor):
@@ -305,24 +309,40 @@ class TaxonomyExtractor(Extractor):
 
 class AuthorExtractor(Extractor):
     def _extract(self, raw_author):
-        contributor = Contributor(
-            given_name=get_first_field(raw_author, 'field_model_authorfirst', default=''),
-            middle_name=get_first_field(raw_author, 'field_model_authormiddle', default=''),
-            family_name=get_first_field(raw_author, 'field_model_authorlast', default='')
-        )
-        contributor.item_id = raw_author['item_id']
-        return contributor
+        given_name = get_first_field(raw_author, 'field_model_authorfirst', default='')
+        middle_name = get_first_field(raw_author, 'field_model_authormiddle', default='')
+        family_name = get_first_field(raw_author, 'field_model_authorlast', default='')
+        if any([given_name, middle_name, family_name]):
+            try:
+                contributor = Contributor.objects.get(given_name=given_name, family_name=family_name)
+            except Exception as e:
+                contributor = Contributor(
+                    given_name=given_name,
+                    middle_name=middle_name,
+                    family_name=family_name,
+                )
+            contributor.item_id = raw_author['item_id']
+            return contributor
 
     def extract_all(self):
-        contributors = [self._extract(raw_author) for raw_author in self.data]
+        author_id_map = {}
+        contributors = []
+        for raw_author in self.data:
+            c = self._extract(raw_author)
+            if c:
+                author_id_map[c.item_id] = c.pk
+                contributors.append(c)
         Contributor.objects.bulk_create(contributors)
-        return dict([(c.item_id, c.pk) for c in contributors])
+        return author_id_map
 
 
 class ModelExtractor(Extractor):
     def _extract(self, raw_model, user_id_map, author_id_map):
         raw_author_ids = [raw_author['value'] for raw_author in get_field(raw_model, 'field_model_author')]
-        author_ids = [author_id_map[raw_author_id] for raw_author_id in raw_author_ids]
+        author_ids = set([author_id_map[raw_author_id] for raw_author_id in raw_author_ids])
+        submitter_id = user_id_map[raw_model.get('uid')]
+        if not author_ids:
+            author_ids.add(submitter_id)
         with suppress_auto_now(Codebase, 'last_modified'):
             code = Codebase.objects.create(
                 title=raw_model['title'].strip(),
@@ -336,11 +356,11 @@ class ModelExtractor(Extractor):
                 references_text=get_first_field(raw_model, 'field_model_reference', default=''),
                 replication_references_text=get_first_field(raw_model, 'field_model_publication_text', default=''),
                 identifier=raw_model['nid'],
-                submitter_id=user_id_map[raw_model.get('uid')],
+                submitter_id=submitter_id,
                 peer_reviewed=self.int_to_bool(get_first_field(raw_model, 'field_model_certified', default=0)))
-        code.submitter_id = user_id_map[raw_model.get('uid')]
-        code.author_ids = author_ids
-        code.keyword_tids = get_field_attributes(raw_model, 'taxonomy_vocabulary_6', attribute_name='tid')
+
+            code.author_ids = author_ids
+            code.keyword_tids = get_field_attributes(raw_model, 'taxonomy_vocabulary_6', attribute_name='tid')
         return code
 
     def extract_all(self, user_id_map, tag_id_map, author_id_map):
@@ -361,13 +381,13 @@ class ModelExtractor(Extractor):
 
 class ModelVersionExtractor(Extractor):
     PROGRAMMING_LANGUAGES = [
-        'Other',
-        'C',
-        'C++',
-        'Java',
-        'Logo (variant)',
-        'Perl',
-        'Python',
+        'other',
+        'c',
+        'c++',
+        'java',
+        'netlogo',
+        'perl',
+        'python',
     ]
 
     OS_LIST = [os[0] for os in OPERATING_SYSTEMS]
@@ -381,8 +401,9 @@ class ModelVersionExtractor(Extractor):
         codebase = model_id_map.get(model_nid)
         if codebase:
             description = get_first_field(raw_model_version, 'body')
-            language = self.PROGRAMMING_LANGUAGES[int(get_first_field(raw_model_version, 'field_modelversion_language',
-                                                                      default=0))]
+            language = ModelVersionExtractor.PROGRAMMING_LANGUAGES[int(
+                get_first_field(raw_model_version, 'field_modelversion_language', default=0))
+            ]
             dependencies = {
                 'programming_language': {
                     'name': language,
@@ -390,7 +411,7 @@ class ModelVersionExtractor(Extractor):
                 }
             }
             with suppress_auto_now(CodebaseRelease, 'last_modified'):
-                model_version = codebase.make_release(
+                codebase_release = codebase.make_release(
                     description=self.sanitize_text(description),
                     date_created=to_datetime(raw_model_version['created']),
                     last_modified=to_datetime(raw_model_version['changed']),
@@ -401,8 +422,8 @@ class ModelVersionExtractor(Extractor):
                     submitter_id=codebase.submitter_id,
                     version_number="1.{0}.0".format(version_number - 1),
                 )
-                model_version.programming_languages.add(language)
-                model_version.platforms.add(platform.name)
+                codebase_release.programming_languages.add(language)
+                codebase_release.platforms.add(platform.name.lower())
                 release_contributors = []
                 # re-create new CodebaseContributors for each model version
                 # do not modify codebase.contributors in place or it will overwrite previous version contributors
@@ -410,10 +431,11 @@ class ModelVersionExtractor(Extractor):
                     release_contributors.append(CodebaseContributor(
                         index=contributor.index,
                         contributor_id=contributor.contributor_id,
-                        release_id=model_version.pk
+                        release_id=codebase_release.pk
                     ))
                 CodebaseContributor.objects.bulk_create(release_contributors)
-                return raw_model_version['nid'], model_version.id
+                codebase_release.save()
+                return raw_model_version['nid'], codebase_release.id
         else:
             logger.warning("Unable to locate parent model nid %s for version %s", model_nid, raw_model_version['vid'])
             return None

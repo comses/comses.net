@@ -193,6 +193,13 @@ class Codebase(index.Indexed, ClusterableModel):
     def _release_upload_path(instance, filename):
         return pathlib.Path(instance.workdir_path, filename)
 
+    @staticmethod
+    def assign_latest_release():
+        for codebase in Codebase.objects.all():
+            codebase.latest_version = codebase.releases.order_by('-version_number').first()
+            codebase.save()
+
+
     def as_featured_content_dict(self):
         return dict(
             title=self.title,
