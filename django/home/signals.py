@@ -31,7 +31,7 @@ def sync_wagtail_sites(sender, instance: WagtailSite, created : bool, **kwargs):
     :param kwargs: 
     :return: 
     """
-    if instance.is_default_site and all(instance.site_name, instance.hostname):
+    if instance.is_default_site and all([instance.site_name, instance.hostname]):
         site = Site.objects.first()
         site.name = instance.site_name
         site.domain = instance.hostname
