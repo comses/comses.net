@@ -296,8 +296,8 @@ WAGTAIL_FRONTEND_LOGIN_URL = 'auth_login'
 REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': ('core.permissions.ComsesPermissions',),
     'DEFAULT_RENDERER_CLASSES': (
-        'rest_framework.renderers.JSONRenderer',
         'core.renderers.RootContextHTMLRenderer',
+        'rest_framework.renderers.JSONRenderer',
     ),
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework.authentication.SessionAuthentication',

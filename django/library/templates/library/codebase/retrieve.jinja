@@ -1,5 +1,5 @@
 {% extends "base.jinja" %}
-{% from "common.jinja" import retrieve_introduction, breadcrumb %}
+{% from "common.jinja" import retrieve_introduction, breadcrumb, discourse_embed_script %}
 
 {% block title %}{{ title }}{% endblock %}
 
@@ -62,11 +62,11 @@
                         <br>
                         <b class="card-title">Status</b>
                         <p class="card-text">
-                        {% if peer_reviewed %}
-                            <i class='fa fa-trophy fa-2x'></i> Reviewed
-                        {% else %}
-                            Unreviewed
-                        {% endif %}
+                            {% if peer_reviewed %}
+                                <i class='fa fa-trophy fa-2x'></i> Reviewed
+                            {% else %}
+                                Unreviewed
+                            {% endif %}
                         </p>
                     </small>
 
@@ -88,5 +88,12 @@
                 </div>
             </div>
         </div>
+        <div class="col-12">
+            <div id="discourse-comments"></div>
+        </div>
     </div>
+{% endblock %}
+
+{% block js %}
+    {{ discourse_embed_script() }}
 {% endblock %}

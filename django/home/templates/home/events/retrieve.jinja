@@ -1,5 +1,5 @@
 {% extends "base.jinja" %}
-{% from "common.jinja" import retrieve_introduction, breadcrumb %}
+{% from "common.jinja" import retrieve_introduction, breadcrumb, discourse_embed_script %}
 
 {% block title %}Event: {{ title }}{% endblock %}
 
@@ -63,5 +63,12 @@
                 </div>
             </div>
         </div>
+        <div class="col-12">
+            <div id="discourse-comments"></div>
+        </div>
     </div>
+{% endblock %}
+
+{% block js %}
+    {{ discourse_embed_script() }}
 {% endblock %}

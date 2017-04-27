@@ -1,5 +1,5 @@
 {% extends "base.jinja" %}
-{% from "common.jinja" import retrieve_introduction, permission_button_group, breadcrumb %}
+{% from "common.jinja" import retrieve_introduction, permission_button_group, breadcrumb, discourse_embed_script %}
 
 {% block title %}Job: {{ title }}{% endblock %}
 
@@ -15,8 +15,10 @@
         ]) }}
     <div class="row">
         <div class="col-sm-12 col-md-9">
-            <h1>{{ title }}</h1>
-            {{ markdown(description)|safe }}
+            <div id="content">
+                <h1>{{ title }}</h1>
+                {{ markdown(description)|safe }}
+            </div>
             <div class="btn-group">
                 {% if has_change_perm %}
                     <a type="button" class="btn btn-primary btn-sm" href="{{ url('home:job-update', pk=id) }}">Edit</a>
@@ -52,5 +54,12 @@
                 </div>
             </div>
         </div>
+        <div class="col-12">
+            <div id="discourse-comments"></div>
+        </div>
     </div>
+{% endblock %}
+
+{% block js %}
+    {{ discourse_embed_script() }}
 {% endblock %}
