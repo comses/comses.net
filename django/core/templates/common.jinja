@@ -93,10 +93,11 @@
 {% endmacro %}
 
 {% macro discourse_embed_script() %}
+    {# See https://meta.discourse.org/t/embedding-discourse-comments-via-javascript/31963 for details #}
     <script type="text/javascript">
 
         DiscourseEmbed = {
-            discourseUrl: 'http://localhost/',
+            discourseUrl: "{{ DISCOURSE_BASE_URL }}/",
             discourseEmbedUrl: window.location.href
         };
 
