@@ -2,7 +2,7 @@ import logging
 
 from django import forms
 
-from .models import Institution
+from .models import Institution, ComsesGroups
 
 logger = logging.getLogger(__name__)
 
@@ -33,5 +33,6 @@ class SignupForm(forms.Form):
             institution = Institution.objects.get_or_create(name=institution_name)
             user.member_profile.institution = institution
         full_member = data['full_member']
-        user.member_profile.full_member = full_member
+        if full_member:
+            user.groups.add(ComsesGroups.FULL_MEMBER.get_group())
         user.member_profile.save()

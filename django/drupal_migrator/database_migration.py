@@ -14,7 +14,7 @@ from django.contrib.auth.models import User, Group
 from taggit.models import Tag
 
 from core.summarization import summarize_to_text
-from home.models import Event, Job, MemberProfile
+from home.models import Event, Job, MemberProfile, ComsesGroups
 from library.models import (Contributor, Codebase, CodebaseRelease, CodebaseTag, License,
                             CodebaseContributor, Platform, OPERATING_SYSTEMS)
 from .utils import get_first_field, get_field, get_field_attributes, to_datetime
@@ -180,10 +180,7 @@ class JobExtractor(Extractor):
 
 
 class UserExtractor(Extractor):
-    ADMIN_GROUP, c = Group.objects.get_or_create(name='Admins')
-    EDITOR_GROUP, c = Group.objects.get_or_create(name='Editors')
-    REVIEWER_GROUP, c = Group.objects.get_or_create(name='Reviewers')
-    MEMBER_GROUP, c = Group.objects.get_or_create(name='Full Members')
+    (ADMIN_GROUP, EDITOR_GROUP, MEMBER_GROUP, REVIEWER_GROUP) = ComsesGroups.initialize()
 
     @staticmethod
     def _extract(raw_user):
@@ -204,6 +201,11 @@ class UserExtractor(Extractor):
 
         user.drupal_uid = raw_user['uid']
         roles = raw_user['roles'].values()
+        """
+        FIXME: home.apps isn't loading despite documentation stating that it should with a management command
+        (https://docs.djangoproject.com/en/1.10/ref/applications/#initialization-process)
+        so MemberProfile syncing with Users isn't happening and must be manually driven.
+        """
         MemberProfile.objects.get_or_create(user=user, defaults={"timezone": raw_user['timezone']})
         if 'administrator' in roles:
             user.is_staff = True

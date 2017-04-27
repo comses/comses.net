@@ -1,6 +1,6 @@
 import logging
 
-from django.contrib.auth.models import User
+from django.contrib.auth.models import User, Group
 from django.contrib.postgres.fields import ArrayField, JSONField
 from django.db import models
 from django.urls import reverse
@@ -18,12 +18,33 @@ from wagtail.wagtailcore.models import Page, Orderable
 from wagtail.wagtailimages.edit_handlers import ImageChooserPanel
 from wagtail.wagtailsearch import index
 
+from enum import Enum
+
 logger = logging.getLogger(__name__)
 
 """
 Wagtail Page models and related supporting Models and Settings
 
 """
+
+
+class ComsesGroups(Enum):
+    ADMIN = "Admins"
+    EDITOR = "Editors"
+    FULL_MEMBER = "Full Members"
+    REVIEWER = "Reviewers"
+
+    @staticmethod
+    def initialize():
+        return [
+            Group.objects.get_or_create(name=g.value)[0] for g in ComsesGroups
+        ]
+
+    def get_group(self):
+        g = getattr(self, 'group', None)
+        if g is None:
+            self.group = Group.objects.get(name=self.value)
+        return g
 
 
 @register_setting
@@ -52,8 +73,6 @@ class MemberProfile(index.Indexed, ClusterableModel):
     """
     user = models.OneToOneField(User, null=True, on_delete=models.SET_NULL, related_name='member_profile')
 
-    full_member = models.BooleanField(default=False, help_text=_('CoMSES Net Full Member'))
-
     # FIXME: add location field eventually, with postgis
     # location = LocationField(based_fields=['city'], zoom=7)
 
@@ -71,6 +90,10 @@ class MemberProfile(index.Indexed, ClusterableModel):
     affiliations = JSONField(default=list, help_text=_("JSON-LD list of affiliated institutions"))
     orcid = models.CharField(help_text=_("16 digits, - between every 4th digit, e.g., 0000-0002-1825-0097"),
                              max_length=19)
+
+    @property
+    def full_member(self):
+        return ComsesGroups.FULL_MEMBER.get_group() in self.groups
 
     def get_absolute_url(self):
         return reverse('home:profile-detail', kwargs={'username': self.user.username})
