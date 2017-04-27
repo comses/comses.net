@@ -49,6 +49,10 @@ class Command(BaseCommand):
             github_app.sites.add(site)
 
     def create_site(self, site_name, hostname, root_page):
+        # FIXME: appears to be needed for signal handling despite docs that state it shouldn't be necessary
+        # revisit and remove at some point if due to misconfiguration
+        from django.apps import apps
+        apps.get_app_config('home').ready()
         site = Site.objects.first() if Site.objects.count() > 0 else Site()
         site.site_name = site_name
         site.hostname = hostname
@@ -63,21 +67,22 @@ class Command(BaseCommand):
         root_page = Page.objects.get(pk=1)
         logger.debug("attaching to root page %s", root_page)
         # delete initial welcome page
+        landing_page = LandingPage(
+            title='CoMSES Net Home Page',
+            slug='homey',
+            mission_statement='''CoMSES Net is an international network of researchers, educators 
+            and professionals with the common goal of improving the way we develop, share, and
+            use agent based modeling in the social and life sciences.
+            ''')
+        root_page.add_child(instance=landing_page)
         Page.objects.filter(slug='home').delete()
-        landing_page = LandingPage(title='CoMSES Net Home Page',
-                                   slug='home',
-                                   mission_statement='''CoMSES Net is an international network of researchers, educators
-                                   and professionals with the common goal of improving the way we develop, share, and
-                                   use agent based modeling in the social and life sciences.
-                                   ''')
+        landing_page.slug = 'home'
+        landing_page.save()
         for codebase in Codebase.objects.filter(peer_reviewed=True):
             # if there are multiple images, just pull the first
             fc_dict = codebase.as_featured_content_dict()
             if fc_dict['image']:
                 landing_page.featured_content_queue.add(FeaturedContentItem(**fc_dict))
-        # FIXME: this generates an error the first time it runs, probably due to an error in how we are deleting
-        # the initial welcome page.
-        root_page.add_child(instance=landing_page)
         return landing_page
 
     def handle(self, *args, **options):
