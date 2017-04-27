@@ -11,18 +11,25 @@
     "dtsgen": "./node_modules/dtsgenerator/bin/dtsgen"
   },
   "dependencies": {
-    "ajv": "^4.11.5",
+    "ajv": "^4.11.7",
     "axios": "^0.15.3",
     "bootstrap": "^4.0.0-alpha.6",
     "font-awesome": "^4.7.0",
     "marked": "^0.3.6",
-    "query-string": "^4.3.0",
+    "mocha": "^3.3.0",
+    "node-sass": "^4.5.2",
+    "query-string": "^4.3.4",
+    "typescript": "^2.3.1",
     "typescript-json-schema": "^0.5.1",
-    "vue": "^2.1.0",
+    "typings": "^2.1.1",
+    "vue": "^2.3.0",
     "vue-class-component": "^4.4.0",
     "vue-multiselect": "^2.0.0-beta.13",
     "vue-property-decorator": "^3.4.0",
-    "vuejs-datepicker": "^0.6.4"
+    "vue-template-compiler": "^2.3.0",
+    "vuejs-datepicker": "^0.6.5",
+    "webpack": "^2.4.1",
+    "webpack-dev-server": "^2.4.5"
   },
   "devDependencies": {
     "autoprefixer": "^6.4.0",
