@@ -231,11 +231,18 @@ class UserExtractor(Extractor):
             user = UserExtractor._extract(raw_user)
             if user:
                 user_id_map[user.drupal_uid] = user.pk
-                contributors.append(Contributor(
-                    given_name=user.first_name,
-                    family_name=user.last_name,
-                    email=user.email,
-                    user=user))
+                try:
+                    contributor = Contributor.objects.get(given_name=user.first_name, family_name=user.last_name)
+                    if not all([contributor.email, contributor.user]):
+                        contributor.email = user.email
+                        contributor.user = user
+                        contributor.save()
+                except:
+                    contributors.append(Contributor(
+                        given_name=user.first_name,
+                        family_name=user.last_name,
+                        email=user.email,
+                        user=user))
         Contributor.objects.bulk_create(contributors)
         return user_id_map
 
@@ -313,16 +320,14 @@ class AuthorExtractor(Extractor):
         middle_name = get_first_field(raw_author, 'field_model_authormiddle', default='')
         family_name = get_first_field(raw_author, 'field_model_authorlast', default='')
         if any([given_name, middle_name, family_name]):
-            try:
-                contributor = Contributor.objects.get(given_name=given_name, family_name=family_name)
-            except Exception as e:
-                contributor = Contributor(
-                    given_name=given_name,
-                    middle_name=middle_name,
-                    family_name=family_name,
-                )
+            contributor = Contributor.objects.create(
+                given_name=given_name,
+                middle_name=middle_name,
+                family_name=family_name,
+            )
             contributor.item_id = raw_author['item_id']
             return contributor
+        return None
 
     def extract_all(self):
         author_id_map = {}
@@ -332,7 +337,6 @@ class AuthorExtractor(Extractor):
             if c:
                 author_id_map[c.item_id] = c.pk
                 contributors.append(c)
-        Contributor.objects.bulk_create(contributors)
         return author_id_map
 
 
@@ -341,8 +345,7 @@ class ModelExtractor(Extractor):
         raw_author_ids = [raw_author['value'] for raw_author in get_field(raw_model, 'field_model_author')]
         author_ids = set([author_id_map[raw_author_id] for raw_author_id in raw_author_ids])
         submitter_id = user_id_map[raw_model.get('uid')]
-        if not author_ids:
-            author_ids.add(submitter_id)
+        author_ids.add(submitter_id)
         with suppress_auto_now(Codebase, 'last_modified'):
             code = Codebase.objects.create(
                 title=raw_model['title'].strip(),
