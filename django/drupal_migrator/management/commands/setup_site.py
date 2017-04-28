@@ -62,27 +62,25 @@ class Command(BaseCommand):
         return site
 
     def create_home_page(self):
-        if LandingPage.objects.count() > 0:
-            LandingPage.objects.delete()
-        root_page = Page.objects.get(pk=1)
-        logger.debug("attaching to root page %s", root_page)
-        # delete initial welcome page
+        root_page = Page.objects.get(path='0001')
+        # delete root page's initial children.
+        root_page.get_children().delete()
         landing_page = LandingPage(
             title='CoMSES Net Home Page',
-            slug='homey',
+            slug='home',
             mission_statement='''CoMSES Net is an international network of researchers, educators 
             and professionals with the common goal of improving the way we develop, share, and
             use agent based modeling in the social and life sciences.
             ''')
-        root_page.add_child(instance=landing_page)
-        Page.objects.filter(slug='home').delete()
-        landing_page.slug = 'home'
-        landing_page.save()
         for codebase in Codebase.objects.filter(peer_reviewed=True):
             # if there are multiple images, just pull the first
             fc_dict = codebase.as_featured_content_dict()
             if fc_dict['image']:
                 landing_page.featured_content_queue.add(FeaturedContentItem(**fc_dict))
+        # refresh from DB before adding more nodes so treebeard can clean up its internal leaky abstraction
+        # https://django-treebeard.readthedocs.io/en/latest/caveats.html
+        root_page.refresh_from_db()
+        root_page.add_child(instance=landing_page)
         return landing_page
 
     def handle(self, *args, **options):
