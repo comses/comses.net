@@ -1,21 +1,24 @@
-{% extends "base.jinja" %}
+{% extends "sidebar_layout.jinja" %}
 {% from "common.jinja" import item_component, list_page, paginator, breadcrumb %}
 
 {% block title %}Jobs and Appointments {% endblock %}
 
 {% block introduction %}<h1>Jobs &amp; Appointments </h1>{% endblock %}
-{% block breadcrumb %}
+{% block top %}
     {{ breadcrumb([
     {'text': 'Jobs & Appointments' }
-    ]) 
-    }}
+    ]) }}
+    <div id="app"></div>
 {% endblock %}
 
 {% block content %}
-    <div id="app"></div>
     {{ list_page(__all__, item_component, 'home:job-detail') }}
-    <br>
-    {{ paginator('home:job-list', __all__) }}
+{% endblock %}
+
+{% block bottom %}
+    <div class="col">
+        {{ paginator('home:job-list', __all__) }}
+    </div>
 {% endblock %}
 
 {% block js %}

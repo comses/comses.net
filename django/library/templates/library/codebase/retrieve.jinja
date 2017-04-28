@@ -1,97 +1,96 @@
-{% extends "base.jinja" %}
+{% extends "sidebar_layout.jinja" %}
 {% from "common.jinja" import retrieve_introduction, breadcrumb, discourse_embed_script %}
 
 {% block title %}{{ title }}{% endblock %}
 
 {% block introduction %}<h1>Computational Model Library</h1>{% endblock %}
 
-{% block breadcrumb %}
-    {{ 
-    breadcrumb([
+{% block top %}
+    {{ breadcrumb([
     {'url': url('library:codebase-list'), 'text': 'Computational Model Library' },
     {'text': title }
-    ]) 
-    }}
+    ]) }}
 {% endblock %}
 
 {% block content %}
-    <div class='row'>
-        <div class='col-md-9'>
-            <h1 class="pb-4">{{ title }}</h1>
-            <div class='metadata'>
-                <b>Platform:</b> 
-                {% for p in latest_version.platforms %}
-                    <a class='tag' href='/search?tag={{ p.name }}'>{{ p.name }}</a>
-                {% endfor %}
-                <b>Version: </b> {{ latest_version.version_number }} <small><a href='{{latest_version.absolute_url}}'>(View Latest)</a></small>
-                <b>Language:</b> 
-                {% for pl in latest_version.programming_languages %}
-                    <a class='tag' href='/search?tag={{ pl.name }}'>{{ pl.name }}</a>
-                {% endfor %}
-            </div>
-            <div class='tags'>
-                {% for tag in tags %}
-                    <a class='tag' href='/search?tag={{ tag.name }}'>{{ tag.name }}</a>
-                {% endfor %}
-            </div>
-            <p>
-            {{ markdown(description)|safe }}
-            </p>
-        </div>
-        <div class="col-md-3">
-            <div class='card-metadata'>
-                <div class='card-block'>
-                    <small>
-                        <b class="card-title">Authors</b>
-                        <p class='card-text'>
-                            {% for c in all_contributors %}
-                                {{ c.name }}
-                                {{ c.affiliations }}
-                            {% endfor %}
-                        </p>
-                        <b class="card-title">Publish Date</b>
-                        <p class='card-text'>
-                            {{ first_published_at }}
-                        </p>
+    <h1 class="pb-4">{{ title }}</h1>
+    <div class='metadata'>
+        <b>Platform:</b>
+        {% for p in latest_version.platforms %}
+            <a class='tag' href='/search?tag={{ p.name }}'>{{ p.name }}</a>
+        {% endfor %}
+        <b>Version: </b> {{ latest_version.version_number }}
+        <small><a href='{{ latest_version.absolute_url }}'>(View Latest)</a></small>
+        <b>Language:</b>
+        {% for pl in latest_version.programming_languages %}
+            <a class='tag' href='/search?tag={{ pl.name }}'>{{ pl.name }}</a>
+        {% endfor %}
+    </div>
+    <div class='tags'>
+        {% for tag in tags %}
+            <a class='tag' href='/search?tag={{ tag.name }}'>{{ tag.name }}</a>
+        {% endfor %}
+    </div>
+    <p>
+        {{ markdown(description)|safe }}
+    </p>
+{% endblock %}
 
-                        <b class="card-title">Last Updated</b>
-                        <p class='card-text'>
-                            {{ last_modified }}
-                        </p>
+{% block sidebar %}
+    <div class='card-metadata'>
+        <div class='card-block'>
+            <small>
+                <b class="card-title">Authors</b>
+                <p class='card-text'>
+                    {% for c in all_contributors %}
+                        {{ c.name }}
+                        {{ c.affiliations }}
+                    {% endfor %}
+                </p>
+                <b class="card-title">Publish Date</b>
+                <p class='card-text'>
+                    {{ first_published_at }}
+                </p>
 
-                        <b class="card-title">Downloads: </b>{{ download_count }}
-                        <br>
-                        <b class="card-title">Status</b>
-                        <p class="card-text">
-                            {% if peer_reviewed %}
-                                <i class='fa fa-trophy fa-2x'></i> Reviewed
-                            {% else %}
-                                Unreviewed
-                            {% endif %}
-                        </p>
-                    </small>
+                <b class="card-title">Last Updated</b>
+                <p class='card-text'>
+                    {{ last_modified }}
+                </p>
 
-                </div>
-            </div>
-            <div class="card-metadata">
-                <div class="card-block">
-                    <button type="button" class="col-12 my-1 btn btn-primary">Download</button>
-                    <button type="button" class="col-12 my-1 btn btn-primary">Follow</button>
-                </div>
-            </div>
-            <div class="card-metadata">
-                <div class="card-block">
-                    <b>Share</b>
-                    <span class="col-2 fa fa-linkedin-square"></span>
-                    <span class="col-2 fa fa-facebook-square"></span>
-                    <span class="col-2 fa fa-twitter-square"></span>
-                    <span class="col-2 fa fa-envelope-square"></span>
-                </div>
-            </div>
+                <b class="card-title">Downloads: </b>{{ download_count }}
+                <br>
+                <b class="card-title">Status</b>
+                <p class="card-text">
+                    {% if peer_reviewed %}
+                        <i class='fa fa-trophy fa-2x'></i> Reviewed
+                    {% else %}
+                        Unreviewed
+                    {% endif %}
+                </p>
+            </small>
+
         </div>
-        <div class="col-12">
-            <div id="discourse-comments"></div>
+    </div>
+    <div class="card-metadata">
+        <div class="card-block">
+            <button type="button" class="col-12 my-1 btn btn-primary">Download</button>
+            <button type="button" class="col-12 my-1 btn btn-primary">Follow</button>
         </div>
+    </div>
+    <div class="card-metadata">
+        <div class="card-block">
+            <b>Share</b>
+            <span class="col-2 fa fa-linkedin-square"></span>
+            <span class="col-2 fa fa-facebook-square"></span>
+            <span class="col-2 fa fa-twitter-square"></span>
+            <span class="col-2 fa fa-envelope-square"></span>
+        </div>
+    </div>
+{% endblock %}
+
+{% block bottom %}
+    <div class="col">
+        <div id="discourse-comments"></div>
     </div>
 {% endblock %}
 

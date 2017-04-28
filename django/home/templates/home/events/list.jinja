@@ -1,8 +1,9 @@
-{% extends "base.jinja" %}
+{% extends "sidebar_layout.jinja" %}
 {% from "common.jinja" import item_component, list_page, paginator, breadcrumb %}
 
 {% macro search_component() %}
-    <form class="form-group row" action="{{ url('home:job-list') }}" method="get" enctype="application/x-www-form-urlencoded">
+    <form class="form-group row" action="{{ url('home:job-list') }}" method="get"
+          enctype="application/x-www-form-urlencoded">
         <div class="col-xs-12 col-sm-9">
             <input type="text" class="form-control" name="query" placeholder="Search" value="{{ query or '' }}">
         </div>
@@ -19,16 +20,20 @@
 
 {% block introduction %}<h1>Community Events</h1>{% endblock %}
 
-{% block breadcrumb %}
+{% block top %}
     {{ breadcrumb([{'text': 'Community Events' }]) }}
+    <div id="app"></div>
 {% endblock %}
 
 {% block content %}
-    <div id="app"></div>
     <div id="example"></div>
     {{ list_page(__all__, item_component, 'home:event-detail') }}
-    <br>
-    {{ paginator('home:event-list', __all__) }}
+{% endblock %}
+
+{% block bottom %}
+    <div class="col">
+        {{ paginator('home:event-list', __all__) }}
+    </div>
 {% endblock %}
 
 {% block js %}
