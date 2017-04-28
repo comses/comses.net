@@ -23,14 +23,21 @@ class ImportScripts::Drupal < ImportScripts::Base
   end
 
   def categories_query
-    @client.query("SELECT tid, name, description FROM taxonomy_term_data WHERE vid = #{VID}")
+    @client.query("SELECT tid, name, description FROM taxonomy_term_data WHERE vid = #{VID} AND tid = #{TID}")
   end
 
   def execute
-    create_users(@client.query("SELECT uid id, name, mail email, created FROM users;")) do |row|
+    create_users(@client.query("SELECT uid id, name, mail email, created FROM users WHERE name <> 'alee';")) do |row|
       {id: row['id'], username: row['name'], email: row['email'], created_at: Time.zone.at(row['created'])}
     end
 
+    begin
+      create_admin(email: 'allen.lee@asu.edu', username: UserNameSuggester.suggest('alee'))
+    rescue => e
+      puts '', "Failed to create admin user"
+      puts e.message
+    end
+ 
     # You'll need to edit the following query for your Drupal install:
     #
     #   * Drupal allows duplicate category names, so you may need to exclude some categories or rename them here.
@@ -39,6 +46,8 @@ class ImportScripts::Drupal < ImportScripts::Base
     create_categories(categories_query) do |c|
       {id: c['tid'], name: c['name'], description: c['description']}
     end
+
+    create_forum_categories
 
     # "Nodes" in Drupal are divided into types. Here we import two types,
     # and will later import all the comments/replies for each node.
@@ -51,13 +60,7 @@ class ImportScripts::Drupal < ImportScripts::Base
 
     create_replies
 
-    begin
-      create_admin(email: 'admin@comses.net', username: UserNameSuggester.suggest('comses'))
-    rescue => e
-      puts '', "Failed to create admin user"
-      puts e.message
-    end
-  end
+ end
 
   def create_blog_topics
     puts '', "creating blog topics"
@@ -92,6 +95,23 @@ class ImportScripts::Drupal < ImportScripts::Base
     end
   end
 
+  def create_forum_categories
+    puts '', "creating forum categories"
+
+    admin = User.where(:username => "alee").first
+    categories = [
+        { name: 'Jobs', user_id: admin.id, description: 'Comment on posted jobs here',
+          color: 'FF0000', read_restricted: false },
+        { name: 'Events', user_id: admin.id, description: 'Comment on posted events here',
+          color: '00FF00', read_restricted: false },
+        { name: 'Codebases', user_id: admin.id, description: 'Comment on posted code bases here',
+          color: '0000FF', read_restricted: false }
+    ]
+    categories.each do |category|
+        create_category(category, nil)
+    end
+  end
+
   def create_forum_topics
     puts '', "creating forum topics"
 
@@ -100,6 +120,7 @@ class ImportScripts::Drupal < ImportScripts::Base
           FROM forum_index fi, node n
          WHERE n.type = 'forum'
            AND fi.nid = n.nid
+           AND fi.tid = #{TID}
            AND n.status = 1;").first['count']
 
     batch_size = 1000
@@ -118,6 +139,7 @@ class ImportScripts::Drupal < ImportScripts::Base
                field_data_body f
          WHERE n.type = 'forum'
            AND fi.nid = n.nid
+           AND fi.tid = #{TID}
            AND n.nid = f.entity_id
            AND n.status = 1
          LIMIT #{batch_size}
