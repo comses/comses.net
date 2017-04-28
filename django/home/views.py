@@ -146,8 +146,9 @@ class TagViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         query = self.request.query_params.get('query')
+        queryset = Tag.objects.all()
         if query:
-            queryset = Tag.objects.filter(name__icontains=query)
+            queryset = queryset.filter(name__icontains=query)
         return queryset.order_by('name')
 
 
