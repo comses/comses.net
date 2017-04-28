@@ -1,0 +1,12 @@
+max-line-length: 120
+uses:
+  - django
+requirements:
+  - django/requirements-dev.txt
+  - djanto/requirements-prod.txt
+ignore-paths:
+  - frontend
+  - deploy
+  - doc
+python-targets:
+  - 3
