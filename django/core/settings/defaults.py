@@ -166,12 +166,12 @@ for d in (LOG_DIRECTORY, LIBRARY_ROOT, REPOSITORY_ROOT):
     except OSError:
         print("Unable to create directory", d)
 
-# logging configuration
+# simple dev logging configuration
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': True,
     'root': {
-        'level': 'WARNING',
+        'level': 'DEBUG',
         'handlers': ['console', 'rollingfile'],
     },
     'formatters': {
@@ -179,9 +179,6 @@ LOGGING = {
             'format': '%(asctime)s %(levelname)-7s %(name)s:%(funcName)s:%(lineno)d %(message)s',
             'datefmt': '%Y-%m-%d %H:%M:%S'
         },
-        'simple': {
-            'format': "%(levelname)-8s %(message)s"
-        }
     },
     'handlers': {
         'console': {
@@ -208,30 +205,10 @@ LOGGING = {
     },
     'loggers': {
         'django': {
-            'level': 'INFO',
+            'level': 'DEBUG',
             'handlers': ['console', 'djangofile'],
             'propagate': False,
         },
-        'core': {
-            'level': 'DEBUG',
-            'handlers': ['console', 'rollingfile'],
-            'propagate': False
-        },
-        'home': {
-            'level': 'DEBUG',
-            'handlers': ['console', 'rollingfile'],
-            'propagate': False
-        },
-        'library': {
-            'level': 'DEBUG',
-            'handlers': ['console', 'rollingfile'],
-            'propagate': False,
-        },
-        'drupal_migrator': {
-            'level': 'DEBUG',
-            'handlers': ['console', 'rollingfile'],
-            'propagate': False,
-        }
     }
 }
 

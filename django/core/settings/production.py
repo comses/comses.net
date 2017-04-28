@@ -13,9 +13,6 @@ EMAIL_HOST_PASSWORD = config.get('email', 'EMAIL_HOST_PASSWORD', fallback='')
 EMAIL_SUBJECT_PREFIX = config.get('email', 'EMAIL_SUBJECT_PREFIX', fallback='[comses.net]')
 EMAIL_USE_TLS = True
 
-# FIXME: remove after successful data migration
-INSTALLED_APPS += ['drupal_migrator']
-
 ALLOWED_HOSTS = ['.comses.net']
 
 # TODO: refactor root paths, repository / library / etc
@@ -39,3 +36,76 @@ WAGTAILSEARCH_BACKENDS = {
         'INDEX_SETTINGS': {}
     }
 }
+INSTALLED_APPS += [
+    'raven.contrib.django.raven_compat'
+    # FIXME: remove after successful data migration
+    'drupal_migrator',
+]
+
+RAVEN_CONFIG = {
+    'dsn': config.get('logging', 'SENTRY_DSN', fallback=''),
+    # If you are using git, you can also automatically configure the
+    # release based on the git info.
+    'release': raven.fetch_git_sha(BASE_DIR),
+}
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': True,
+    'root': {
+        'level': 'WARNING',
+        'handlers': ['sentry', 'rollingfile'],
+    },
+    'formatters': {
+        'verbose': {
+            # 'format': '%(levelname)s %(asctime)s %(module)s %(process)d %(thread)d %(message)s'
+            'format': '%(asctime)s %(levelname)-7s %(name)s:%(funcName)s:%(lineno)d %(message)s',
+            'datefmt': '%Y-%m-%d %H:%M:%S'
+        },
+    },
+    'handlers': {
+        'sentry': {
+            'level': 'WARNING',
+            'class': 'raven.contrib.django.raven_compat.handlers.SentryHandler',
+        },
+        'console': {
+            'level': 'DEBUG',
+            'class': 'logging.StreamHandler',
+            'formatter': 'verbose'
+        },
+        'djangofile': {
+            'level': 'DEBUG',
+            'class': 'logging.handlers.RotatingFileHandler',
+            'formatter': 'verbose',
+            'filename': os.path.join(LOG_DIRECTORY, 'django.log'),
+            'backupCount': 6,
+            'maxBytes': 10000000,
+        },
+        'rollingfile': {
+            'level': 'DEBUG',
+            'class': 'logging.handlers.RotatingFileHandler',
+            'formatter': 'verbose',
+            'filename': os.path.join(LOG_DIRECTORY, 'comsesnet.log'),
+            'backupCount': 6,
+            'maxBytes': 10000000,
+        },
+    },
+    'loggers': {
+        'django': {
+            'level': 'DEBUG',
+            'handlers': ['console', 'djangofile'],
+            'propagate': False,
+        },
+        'raven': {
+            'level': 'DEBUG',
+            'handlers': ['console'],
+            'propagate': False,
+        },
+        'sentry.errors': {
+            'level': 'DEBUG',
+            'handlers': ['console'],
+            'propagate': False,
+        },
+    }
+}
+

@@ -20,6 +20,7 @@ EMAIL_SUBJECT_PREFIX="[comses.net]"
 
 [logging]
 LOG_DIRECTORY=/shared/logs
+SENTRY_DSN='https://none:none@sentry.example.com/1'
 
 
 [secrets]
