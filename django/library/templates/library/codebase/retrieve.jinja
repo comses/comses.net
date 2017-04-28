@@ -6,11 +6,12 @@
 {% block introduction %}{{ retrieve_introduction('CoMSES Net Codebase Library') }}{% endblock %}
 
 {% block breadcrumb %}
-    {{ breadcrumb([
-        {'url': '/', 'description': 'Home'},
-        {'url': url('library:codebase-list'), 'description': 'Codebase Library' },
-        {'description': title }
-        ]) }}
+    {{ 
+    breadcrumb([
+    {'url': url('library:codebase-list'), 'text': 'Codebase Library' },
+    {'text': title }
+    ]) 
+    }}
 {% endblock %}
 
 {% block content %}

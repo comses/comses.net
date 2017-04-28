@@ -1,5 +1,5 @@
 {% extends "base.jinja" %}
-{% from "common.jinja" import list_page, paginator %}
+{% from "common.jinja" import list_page, paginator, breadcrumb %}
 
 {% macro search_component() %}
     <form class="form-group row" action="{{ url('library:codebase-list') }}" method="get"
@@ -16,11 +16,16 @@
     </form>
 {% endmacro %}
 
-{% block title %}Codebases{% endblock %}
+{% block title %}CoMSES Net Computational Model Library{% endblock %}
 
-{% block introduction %}<h1 id="query">Codebases</h1>{% endblock %}
+{% block introduction %}<h1>Computational Model Library</h1>{% endblock %}
 
-{% block subheader %}<h1>Codebases</h1>{% endblock %}
+{% block breadcrumb %}
+    {{ 
+    breadcrumb([
+    {'text': 'Computational Model Library'}
+    ]) }}
+{% endblock %}
 
 {% block content %}
     <div id="app"></div>

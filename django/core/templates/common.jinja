@@ -81,11 +81,12 @@
 {% macro breadcrumb(items) %}
     <small>
         <ol class="breadcrumb">
+            <li class='breadcrumb-item'><a href='/'>Home</a></li>
             {% for item in items %}
-                {% if not loop.last %}
-                    <li class="breadcrumb-item"><a href="{{ item.url }}">{{ item.description }}</a></li>
+                {% if loop.last %}
+                    <li class="breadcrumb-item active">{{ item.text }}</li>
                 {% else %}
-                    <li class="breadcrumb-item active">{{ item.description }}</li>
+                    <li class="breadcrumb-item"><a href="{{ item.url }}">{{ item.text }}</a></li>
                 {% endif %}
             {% endfor %}
         </ol>

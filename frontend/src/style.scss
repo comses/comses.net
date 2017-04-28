@@ -77,17 +77,21 @@ $fa-font-path: '../node_modules/font-awesome/fonts/';
   margin: 10px 10px 0px 10px;
 }
 
+.landing-page-introduction {
+    text-align: center !important;
+}
+
 .introduction {
   background: url("./assets/images/background-introduction.png") repeat top center;
   overflow: hidden;
   padding-top: 40px;
-  padding-bottom: 40px;
-  text-align: center;
+  padding-bottom: 60px;
+  text-align: left;
   vertical-align: middle;
   /*
    Move introduction below header
    We could polyfill position:sticky for Chrome instead
-    */
+   */
   margin-top: 105px;
 
   h1, h2, h3, h4 {
@@ -175,7 +179,7 @@ div.activity {
   font-weight: 300;
 
   #featured-content-carousel {
-      height: 320px;
+      height: 350px;
   }
 
   h1 {
@@ -183,7 +187,7 @@ div.activity {
   }
 
   .carousel-inner {
-      height: 320px;
+      height: 350px;
       overflow: visible;
   }
   .carousel-text {

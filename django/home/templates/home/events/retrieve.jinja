@@ -1,26 +1,30 @@
 {% extends "base.jinja" %}
-{% from "common.jinja" import retrieve_introduction, breadcrumb, discourse_embed_script %}
+{% from "common.jinja" import breadcrumb, discourse_embed_script %}
 
 {% block title %}Event: {{ title }}{% endblock %}
 
-{% block introduction %}{{ retrieve_introduction("Event Listings") }}{% endblock %}
+{% block introduction %}<h1>Community Events</h1>{% endblock %}
+
+{% block breadcrumb %}
+    {{ breadcrumb([
+    {'url': url('home:event-list'), 'text': 'Events' },
+    {'text': title }
+    ]) 
+    }}
+{% endblock %}
+
 
 {% block content %}
-    {{ breadcrumb([
-            {'url': '/', 'description': 'Home'},
-            {'url': url('home:event-list'), 'description': 'Events' },
-            {'description': title }
-        ]) }}
     <div class="row">
         <div class="col-sm-12 col-md-9">
             <h1>{{ title }}</h1>
             {{ markdown(description)|safe }}
             <div class="btn-group">
                 {% if has_change_perm %}
-                    <a type="button" class="btn btn-primary btn-sm" href="{{ url('home:job-update', pk=id) }}">Edit</a>
+                    <a type="button" class="btn btn-primary btn-sm" href="{{ url('home:event-update', pk=id) }}">Edit</a>
                 {% endif %}
                 {% if has_delete_perm %}
-                    <a type="button" class="btn btn-danger btn-sm" href="{{ url('home:job-detail', pk=id) }}">Delete</a>
+                    <a type="button" class="btn btn-danger btn-sm" href="{{ url('home:event-detail', pk=id) }}">Delete</a>
                 {% endif %}
             </div>
         </div>

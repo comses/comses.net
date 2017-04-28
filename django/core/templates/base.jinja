@@ -167,12 +167,10 @@
     <body class="{% block body_class %}{% endblock %}">
         {{ navbar() }}
         <section class='introduction'>
-            {% block introduction %}
-                <div class="container">
-                    <div class="row">
-                    </div>
-                </div>
-            {% endblock %}
+            <div class="container">
+                {% block introduction %}
+                {% endblock %}
+            </div>
         </section>
 
         {% block page %}

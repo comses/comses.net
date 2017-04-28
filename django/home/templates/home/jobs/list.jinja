@@ -1,11 +1,15 @@
 {% extends "base.jinja" %}
-{% from "common.jinja" import item_component, list_page, paginator %}
+{% from "common.jinja" import item_component, list_page, paginator, breadcrumb %}
 
-{% block title %}Job Search{% endblock %}
+{% block title %}Jobs and Appointments {% endblock %}
 
-{% block introduction %}<h1 id="query">Job Search</h1>{% endblock %}
-
-{% block subheader %}<h1>Jobs</h1>{% endblock %}
+{% block introduction %}<h1>Jobs &amp; Appointments </h1>{% endblock %}
+{% block breadcrumb %}
+    {{ breadcrumb([
+    {'text': 'Jobs & Appointments' }
+    ]) 
+    }}
+{% endblock %}
 
 {% block content %}
     <div id="app"></div>

@@ -1,5 +1,5 @@
 {% extends "base.jinja" %}
-{% from "common.jinja" import item_component, list_page, paginator %}
+{% from "common.jinja" import item_component, list_page, paginator, breadcrumb %}
 
 {% macro search_component() %}
     <form class="form-group row" action="{{ url('home:job-list') }}" method="get" enctype="application/x-www-form-urlencoded">
@@ -15,11 +15,13 @@
     </form>
 {% endmacro %}
 
-{% block title %}Event Search{% endblock %}
+{% block title %}Community Events{% endblock %}
 
-{% block introduction %}<h1 id="query">Event Search</h1>{% endblock %}
+{% block introduction %}<h1>Community Events</h1>{% endblock %}
 
-{% block subheader %}<h1>Events</h1>{% endblock %}
+{% block breadcrumb %}
+    {{ breadcrumb([{'text': 'Community Events' }]) }}
+{% endblock %}
 
 {% block content %}
     <div id="app"></div>
