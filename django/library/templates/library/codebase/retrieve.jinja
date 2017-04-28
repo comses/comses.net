@@ -3,12 +3,12 @@
 
 {% block title %}{{ title }}{% endblock %}
 
-{% block introduction %}{{ retrieve_introduction('CoMSES Net Codebase Library') }}{% endblock %}
+{% block introduction %}<h1>Computational Model Library</h1>{% endblock %}
 
 {% block breadcrumb %}
     {{ 
     breadcrumb([
-    {'url': url('library:codebase-list'), 'text': 'Codebase Library' },
+    {'url': url('library:codebase-list'), 'text': 'Computational Model Library' },
     {'text': title }
     ]) 
     }}
