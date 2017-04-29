@@ -21,6 +21,7 @@ from taggit.models import TaggedItemBase
 from wagtail.wagtailimages.models import Image
 from wagtail.wagtailsearch import index
 
+from home.models import Platform
 from . import fs
 
 logger = logging.getLogger(__name__)
@@ -330,7 +331,8 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
     platform and programming language tags are also dependencies that can reference additional metadata in the
     dependencies JSONField
     '''
-    platforms = ClusterTaggableManager(through=CodebaseReleasePlatformTag, related_name='platform_codebase_releases')
+    platform_tags = ClusterTaggableManager(through=CodebaseReleasePlatformTag, related_name='platform_codebase_releases')
+    platforms = models.ManyToManyField(Platform)
     programming_languages = ClusterTaggableManager(through=ProgrammingLanguage,
                                                    related_name='pl_codebase_releases')
     codebase = models.ForeignKey(Codebase, related_name='releases')

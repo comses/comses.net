@@ -258,7 +258,7 @@ class PlatformTag(TaggedItemBase):
 
 @register_snippet
 class Platform(index.Indexed, ClusterableModel):
-    title = models.CharField(max_length=255)
+    name = models.CharField(max_length=255)
     active = models.BooleanField(default=True)
     description = models.CharField(max_length=512, blank=True)
     date_created = models.DateTimeField(default=timezone.now)
@@ -269,7 +269,7 @@ class Platform(index.Indexed, ClusterableModel):
     @staticmethod
     def _upload_path(instance, filename):
         # FIXME: base in MEDIA_ROOT?
-        return pathlib.Path('platforms', instance.platform.title, filename)
+        return pathlib.Path('platforms', instance.platform.name, filename)
 
     panels = [
         FieldPanel('title'),
@@ -279,7 +279,7 @@ class Platform(index.Indexed, ClusterableModel):
     ]
 
     search_fields = [
-        index.SearchField('title'),
+        index.SearchField('name'),
         index.SearchField('description'),
         index.SearchField('active'),
         index.RelatedFields('tags', [
@@ -288,7 +288,7 @@ class Platform(index.Indexed, ClusterableModel):
     ]
 
     def __str__(self):
-        return self.title
+        return self.name
 
 
 class PlatformRelease(models.Model):

@@ -38,21 +38,21 @@ LICENSES = """id,name,url
 
 PLATFORMS = """id,name,url
     0,other,NULL
-    1,"Ascape",http://ascape.sourceforge.net/
+    1,Ascape,http://ascape.sourceforge.net/
     2,Breve,http://www.spiderland.org/
-    3,CORMAS,http://cormas.cirad.fr/en/outil/outil.htm
+    3,Cormas,http://cormas.cirad.fr/en/outil/outil.htm
     4,DEVS,http://acims.asu.edu/software/devs-suite/
     5,EcoLab,http://ecolab.sourceforge.net/
-    6,mason,http://cs.gmu.edu/~eclab/projects/mason/
-    7,mass,http://mass.aitia.ai/
-    8,mobildyc,http://w3.avignon.inra.fr/mobidyc/index.php/English_summary
-    9,netlogo,http://ccl.northwestern.edu/netlogo/
-    10,repast,http://repast.github.io
-    11,sesam,http://www.simsesam.de/
-    12,starlogo,http://education.mit.edu/starlogo/
-    13,swarm,http://www.swarm.org/
-    14,anylogic,http://www.anylogic.com/
-    15,matlab,http://www.mathworks.com/products/matlab/"""
+    6,Mason,http://cs.gmu.edu/~eclab/projects/mason/
+    7,Mass,http://mass.aitia.ai/
+    8,Mobildyc,http://w3.avignon.inra.fr/mobidyc/index.php/English_summary
+    9,NetLogo,http://ccl.northwestern.edu/netlogo/
+    10,Repast,http://repast.github.io
+    11,SeSAm,http://www.simsesam.de/
+    12,StarLogo,http://education.mit.edu/portfolio_page/starlogo-tng/
+    13,Swarm,http://www.swarm.org/
+    14,AnyLogic,http://www.anylogic.com/
+    15,Matlab,http://www.mathworks.com/products/matlab/"""
 
 
 def flatten(ls):
@@ -428,7 +428,7 @@ class ModelVersionExtractor(Extractor):
                     version_number="1.{0}.0".format(version_number - 1),
                 )
                 codebase_release.programming_languages.add(language)
-                codebase_release.platforms.add(platform.name.lower())
+                codebase_release.platforms.add(platform)
                 release_contributors = []
                 # re-create new CodebaseContributors for each model version
                 # do not modify codebase.contributors in place or it will overwrite previous version contributors
