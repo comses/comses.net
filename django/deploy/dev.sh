@@ -7,7 +7,7 @@ chmod a+x /code/deploy/*.sh
 
 initdb() {
     cd /code;
-    if [["$CLEAN_DATABASE" == "true"]]; then
+    if [ "$CLEAN_DATABASE" = "true" ]; then
         echo "Destroying and initializing database from scratch"
         /code/deploy/wait-for-it.sh db:5432 -- invoke initialize_database_schema --clean
     else
