@@ -10,7 +10,7 @@ from django.contrib.sites.models import Site as DjangoSite
 from django.core.management.base import BaseCommand
 from wagtail.wagtailcore.models import Page, Site
 
-from home.models import LandingPage, FeaturedContentItem
+from home.models import LandingPage, FeaturedContentItem, SocialMediaSettings
 from library.models import Codebase
 
 logger = logging.getLogger(__name__)
@@ -59,6 +59,11 @@ class Command(BaseCommand):
         site.is_default_site = True
         site.root_page = root_page
         site.save()
+        sms = SocialMediaSettings.for_site(site)
+        sms.youtube_url = 'https://www.youtube.com/user/CoMSESNet/'
+        sms.twitter_account = 'openabm_comses'
+        sms.mailing_list_url = 'http://eepurl.com/b8GCUv'
+        sms.save()
         return site
 
     def create_home_page(self):

@@ -58,25 +58,7 @@ class ProgrammingLanguage(TaggedItemBase):
     content_object = ParentalKey('library.CodebaseRelease', related_name='tagged_release_languages')
 
 
-class Platform(models.Model):
-    name = models.CharField(max_length=100)
-    description = models.TextField(blank=True)
-    url = models.URLField(blank=True)
-
-    @staticmethod
-    def _upload_path(instance, filename):
-        return pathlib.Path('platforms', instance.name, filename)
-
-
-class PlatformRelease(models.Model):
-    platform = models.ForeignKey(Platform)
-    version = models.CharField(max_length=100)
-    url = models.URLField(blank=True)
-    description = models.TextField(blank=True)
-    archive = models.FileField(upload_to=Platform._upload_path, null=True)
-
-
-class PlatformTag(TaggedItemBase):
+class CodebaseReleasePlatformTag(TaggedItemBase):
     content_object = ParentalKey('library.CodebaseRelease', related_name='tagged_release_platforms')
 
 
@@ -348,7 +330,7 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
     platform and programming language tags are also dependencies that can reference additional metadata in the
     dependencies JSONField
     '''
-    platforms = ClusterTaggableManager(through=PlatformTag, related_name='platform_codebase_releases')
+    platforms = ClusterTaggableManager(through=CodebaseReleasePlatformTag, related_name='platform_codebase_releases')
     programming_languages = ClusterTaggableManager(through=ProgrammingLanguage,
                                                    related_name='pl_codebase_releases')
     codebase = models.ForeignKey(Codebase, related_name='releases')

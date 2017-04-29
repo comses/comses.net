@@ -14,9 +14,9 @@ from django.contrib.auth.models import User, Group
 from taggit.models import Tag
 
 from core.summarization import summarize_to_text
-from home.models import Event, Job, MemberProfile, ComsesGroups
+from home.models import Event, Job, MemberProfile, ComsesGroups, Platform
 from library.models import (Contributor, Codebase, CodebaseRelease, CodebaseTag, License,
-                            CodebaseContributor, Platform, OPERATING_SYSTEMS)
+                            CodebaseContributor, OPERATING_SYSTEMS)
 from .utils import get_first_field, get_field, get_field_attributes, to_datetime
 
 logger = logging.getLogger(__name__)
@@ -38,11 +38,11 @@ LICENSES = """id,name,url
 
 PLATFORMS = """id,name,url
     0,other,NULL
-    1,"ascape",http://ascape.sourceforge.net/
-    2,breve,http://www.spiderland.org/
-    3,cormas,http://cormas.cirad.fr/en/outil/outil.htm
-    4,devs,http://acims.asu.edu/software/devs-suite/
-    5,ecolab,http://ecolab.sourceforge.net/
+    1,"Ascape",http://ascape.sourceforge.net/
+    2,Breve,http://www.spiderland.org/
+    3,CORMAS,http://cormas.cirad.fr/en/outil/outil.htm
+    4,DEVS,http://acims.asu.edu/software/devs-suite/
+    5,EcoLab,http://ecolab.sourceforge.net/
     6,mason,http://cs.gmu.edu/~eclab/projects/mason/
     7,mass,http://mass.aitia.ai/
     8,mobildyc,http://w3.avignon.inra.fr/mobidyc/index.php/English_summary

@@ -1,4 +1,6 @@
 import logging
+import pathlib
+from enum import Enum
 
 from django.contrib.auth.models import User, Group
 from django.contrib.postgres.fields import ArrayField, JSONField
@@ -9,6 +11,7 @@ from django.utils.translation import ugettext_lazy as _
 from modelcluster.contrib.taggit import ClusterTaggableManager
 from modelcluster.fields import ParentalKey
 from modelcluster.models import ClusterableModel
+from taggit.managers import TaggableManager
 from taggit.models import TaggedItemBase
 from timezone_field import TimeZoneField
 from wagtail.contrib.settings.models import BaseSetting, register_setting
@@ -17,8 +20,8 @@ from wagtail.wagtailcore.fields import RichTextField
 from wagtail.wagtailcore.models import Page, Orderable
 from wagtail.wagtailimages.edit_handlers import ImageChooserPanel
 from wagtail.wagtailsearch import index
-
-from enum import Enum
+from wagtail.wagtailsnippets.edit_handlers import SnippetChooserPanel
+from wagtail.wagtailsnippets.models import register_snippet
 
 logger = logging.getLogger(__name__)
 
@@ -41,17 +44,18 @@ class ComsesGroups(Enum):
         ]
 
     def get_group(self):
-        g = getattr(self, 'group', None)
-        if g is None:
-            self.group = Group.objects.get(name=self.value)
-        return g
+        _group = getattr(self, 'group', None)
+        if _group is None:
+            _group = self.group = Group.objects.get(name=self.value)
+        return _group
 
 
 @register_setting
 class SocialMediaSettings(BaseSetting):
-    facebook = models.URLField(help_text=_('Facebook URL'), blank=True)
-    youtube = models.URLField(help_text=_('CoMSES Net YouTube Channel'))
-    twitter = models.URLField(help_text=_('CoMSES Net official Twitter account'))
+    facebook_url = models.URLField(help_text=_('Facebook URL'), blank=True)
+    youtube_url = models.URLField(help_text=_('CoMSES Net YouTube Channel'), blank=True)
+    twitter_account = models.CharField(max_length=128, help_text=_('CoMSES Net official Twitter account'), blank=True)
+    mailing_list_url = models.URLField(help_text=_('Mailing List Signup'), blank=True)
 
 
 class Institution(models.Model):
@@ -121,6 +125,7 @@ class MemberProfile(index.Indexed, ClusterableModel):
         ]),
     ]
 
+
 class LinkFields(models.Model):
     """
     Cribbed from github.com/wagtail/wagtaildemo
@@ -151,7 +156,7 @@ class LinkFields(models.Model):
     panels = [
         FieldPanel('link_external'),
         PageChooserPanel('link_page'),
-        # figure out how to link codebase / events / jobs into FeaturedContentItem
+        # figure out how to manually link codebase / events / jobs into FeaturedContentItem
         # CodebaseChooserPanel('link_codebase'),
     ]
 
@@ -189,6 +194,7 @@ class FeaturedContentItem(Orderable, CarouselItem):
 class LandingPage(Page):
     template = 'home/index.jinja'
     FEATURED_CONTENT_COUNT = 6
+    MAX_CALLOUT_ENTRIES = 3
 
     mission_statement = models.CharField(max_length=512)
 
@@ -218,10 +224,10 @@ class LandingPage(Page):
         ]
 
     def get_latest_jobs(self):
-        return Job.objects.order_by('-date_created')[:3]
+        return Job.objects.order_by('-date_created')[:self.MAX_CALLOUT_ENTRIES]
 
     def get_upcoming_events(self):
-        return Event.objects.upcoming().order_by('start_date')[:3]
+        return Event.objects.upcoming().order_by('start_date')[:self.MAX_CALLOUT_ENTRIES]
 
     def get_context(self, request):
         context = super(LandingPage, self).get_context(request)
@@ -234,6 +240,91 @@ class LandingPage(Page):
     content_panels = Page.content_panels + [
         InlinePanel('featured_content_queue', label=_('Featured Content')),
     ]
+
+
+class CommunityIndexPage(Page):
+    template = 'home/community/index.jinja'
+    summary = models.CharField(max_length=500, help_text=_("Summary blurb"))
+
+
+class ResourcesIndexPage(Page):
+    template = 'home/resources/index.jinja'
+    summary = models.CharField(max_length=500, help_text=_("Summary blurb for Resources index"))
+
+
+class PlatformTag(TaggedItemBase):
+    content_object = ParentalKey('home.Platform', related_name='tagged_platforms')
+
+
+@register_snippet
+class Platform(index.Indexed, ClusterableModel):
+    title = models.CharField(max_length=255)
+    active = models.BooleanField(default=True)
+    description = models.CharField(max_length=512, blank=True)
+    date_created = models.DateTimeField(default=timezone.now)
+    last_modified = models.DateTimeField(auto_now=True)
+    url = models.URLField(blank=True)
+    tags = TaggableManager(through=PlatformTag, blank=True)
+
+    @staticmethod
+    def _upload_path(instance, filename):
+        # FIXME: base in MEDIA_ROOT?
+        return pathlib.Path('platforms', instance.platform.title, filename)
+
+    panels = [
+        FieldPanel('title'),
+        FieldPanel('url'),
+        FieldPanel('description'),
+        FieldPanel('tags'),
+    ]
+
+    search_fields = [
+        index.SearchField('title'),
+        index.SearchField('description'),
+        index.SearchField('active'),
+        index.RelatedFields('tags', [
+            index.SearchField('name'),
+        ]),
+    ]
+
+    def __str__(self):
+        return self.title
+
+
+class PlatformRelease(models.Model):
+    platform = models.ForeignKey(Platform)
+    version = models.CharField(max_length=100)
+    url = models.URLField(blank=True)
+    notes = models.TextField(blank=True)
+    archive = models.FileField(upload_to=Platform._upload_path, null=True)
+
+
+class PlatformSnippetPlacement(Orderable, models.Model):
+    page = ParentalKey('home.PlatformsIndexPage', related_name='platform_placements')
+    platform = models.ForeignKey(Platform)
+
+    class Meta:
+        verbose_name = 'platform placement'
+        verbose_name_plural = 'platform placements'
+
+    panels = [
+        SnippetChooserPanel('platform'),
+    ]
+
+    def __str__(self):
+        return "Snippet placement for {0}".format(self.platform.title)
+
+
+class PlatformsIndexPage(Page):
+    template = 'home/platforms/index.jinja'
+
+    content_panels = Page.content_panels + [
+        InlinePanel('platform_placements', label='Platforms'),
+    ]
+
+
+class AboutPage(Page):
+    template = 'home/about.jinja'
 
 
 class NewsIndexPage(Page):

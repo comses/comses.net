@@ -3,6 +3,12 @@
 {% set signup_url = url("account_signup") %}
 
 {% macro navbar() %}
+<script>
+function submitLogout() {
+    document.getElementById('logoutForm').submit(); 
+    return false;
+}
+</script>
 <nav class='navbar navbar-toggleable-md navbar-light fixed-top'>
     <div class='container'>
         <button class='navbar-toggler navbar-toggler-right' type='button' data-toggle='collapse'
@@ -94,32 +100,34 @@
         {% endif %}
         <div class="row">
             <div class="col-xs-12 col-lg-3">
-                <ul class="social-media">
-                    <li>
-                        <a href="https://github.com/comses" title="GitHub" target="_blank">
-                            <span class="fa-stack">
-                                <i class="fa fa-circle fa-stack-2x"></i>
-                                <i class="fa fa-code-fork fa-inverse fa-stack-1x"></i>
-                            </span>
-                        </a>
-                    </li>
-                    <li>
-                        <a href="https://twitter.com/openabm_comses" title="Twitter" target="_blank">
-                            <span class="fa-stack">
-                                <i class="fa fa-circle fa-stack-2x"></i>
-                                <i class="fa fa-twitter fa-inverse fa-stack-1x"></i>
-                            </span>
-                        </a>
-                    </li>
-                    <li>
-                        <a href="http://eepurl.com/b8GCUv" title="Email Sign Up" target="_blank">
-                            <span class="fa-stack">
-                                <i class="fa fa-circle fa-stack-2x"></i>
-                                <i class="fa fa-envelope fa-inverse fa-stack-1x"></i>
-                            </span>
-                        </a>
-                    </li>
-                </ul>
+                {% with social_settings=settings.home.SocialMediaSettings %}
+                    <ul class="social-media">
+                        <li>
+                            <a href="https://github.com/comses" title="GitHub" target="_blank">
+                                <span class="fa-stack">
+                                    <i class="fa fa-circle fa-stack-2x"></i>
+                                    <i class="fa fa-code-fork fa-inverse fa-stack-1x"></i>
+                                </span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="https://twitter.com/{{ social_settings.twitter_account }}" title="Follow us at @{{ social_settings.twitter_account }}" target="_blank">
+                                <span class="fa-stack">
+                                    <i class="fa fa-circle fa-stack-2x"></i>
+                                    <i class="fa fa-twitter fa-inverse fa-stack-1x"></i>
+                                </span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="{{ social_settings.mailing_list_url }}" title="Email Sign Up" target="_blank">
+                                <span class="fa-stack">
+                                    <i class="fa fa-circle fa-stack-2x"></i>
+                                    <i class="fa fa-envelope fa-inverse fa-stack-1x"></i>
+                                </span>
+                            </a>
+                        </li>
+                    </ul>
+                {% endwith %}
             </div>
             <div class="col-xs-12 col-lg-9">
                 <ul class="organizations">
@@ -142,9 +150,10 @@
             </div>
         </div>
     </div>
-    <p class="copyright text-center">&copy; 2016 - {{ now('Y') }} CoMSES Net</p>
+    <p class="copyright text-center">&copy; 2007 - {{ now('Y') }} CoMSES Net</p>
 </footer>
 {% endmacro %}
+
 <!DOCTYPE html>
 <html lang="en" class="no-js">
     <head>
@@ -185,17 +194,12 @@
                 </div>
             </section>
         {% endblock page %}
+
         {{ footer() }}
 
         {{ render_bundle('manifest') }}
         {{ render_bundle('vendors') }}
 
-        <script>
-        function submitLogout() {
-            document.getElementById('logoutForm').submit();
-            return false;
-        }
-        </script>
         <script src="https://cdn.rawgit.com/imsky/holder/master/holder.js"></script>
         {% block js %}
             {# Override this in templates to add extra javascript #}
