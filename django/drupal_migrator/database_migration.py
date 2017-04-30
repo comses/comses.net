@@ -52,7 +52,22 @@ PLATFORMS = """id,name,url
     12,StarLogo,http://education.mit.edu/portfolio_page/starlogo-tng/
     13,Swarm,http://www.swarm.org/
     14,AnyLogic,http://www.anylogic.com/
-    15,Matlab,http://www.mathworks.com/products/matlab/"""
+    15,Matlab,http://www.mathworks.com/products/matlab/
+    16,AgentBase,http://agentbase.org/
+    17,"Agent Modeling Platform (AMP)",http://www.eclipse.org/amp/
+    18,Agentscript,http://agentscript.org/
+    19,CRAFTY,https://www.wiki.ed.ac.uk/display/CRAFTY/Home
+    20,ENVISION,http://envision.bioe.orst.edu/
+    21,FLAME,http://flame.ac.uk/
+    22,GAMA,https://github.com/gama-platform
+    23,"Insight Maker",https://insightmaker.com/
+    24,JAMSIM,https://github.com/compassresearchcentre/jamsim
+    25,JAS-mine,http://www.jas-mine.net/
+    26,Jason,http://jason.sourceforge.net/wp/
+    27,JILDT,http://jildt.sourceforge.net/
+    28,MADeM,http://www.uv.es/grimo/jmadem/
+    29,MATSim,http://www.matsim.org/
+    """
 
 
 def flatten(ls):
@@ -390,7 +405,7 @@ class ModelVersionExtractor(Extractor):
         'c',
         'c++',
         'java',
-        'netlogo',
+        'logo (variant)',
         'perl',
         'python',
     ]

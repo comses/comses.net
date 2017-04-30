@@ -1,0 +1,75 @@
+{% extends "sidebar_layout.jinja" %}
+{% from "common.jinja" import subnav %}
+
+{% block title %}Computational Modeling Platforms{% endblock %}
+
+{% block introduction %}<h1>Resources for Computational Modelers</h1>{% endblock %}
+
+{% block top %}
+{{ subnav([
+{ 'url': '/resources/', 'text': 'Community Resources' },
+{ 'url': '/modeling-platforms/', 'text': 'Modeling Platforms', 'active': True },
+{ 'url': '/journals/', 'text': 'Modeling Journals' },
+{ 'url': '/standards/', 'text': 'Standards and Guides to Good Practice' },
+])
+}}
+<div class='jumbotron'>
+    <h1 class='display-5'>Computational Modeling Platforms</h1>
+    <p class='lead'>
+    Computational modeling platforms provide a wide range of modeling strategies, scaffolding, and support for
+    developers of agent-based models. If you have any corrections or a new platform to include please 
+    <a href='/contact/'>contact us</a>!
+    </p> 
+</div>
+{% endblock %}
+
+{% block content %}a
+    {# FIXME: add pagination #}
+    {% for p in platforms %}
+        <hr />
+        <a href='{{ p.platform.url }}'>{{ p.platform.name }}</a>
+        <p>
+        {{ p.platform.description }}
+        </p>
+        <div class='tags'>
+            {% for tag in p.platform.tags.all() %}
+                <a class='tag' href='/search?tag={{ tag.name }}'>{{ tag.name }}</a>
+            {% endfor %}
+        </div>
+    {% endfor %}
+{% endblock %}
+{% block sidebar %}
+    <div class="card-metadata">
+        <div class="card-title">
+            Search
+        </div>
+        <div class="card-block">
+            <form>
+                <div class="form-group">
+                    <label>Keywords</label>
+                </div>
+                <div class="form-group">
+
+                </div>
+            </form>
+        </div>
+    </div>
+    <div class="card-metadata">
+        <div class="card-title">
+            Tags
+        </div>
+        <div class="card-block">
+
+        </div>
+    </div>
+    <div class="card-metadata">
+        <div class="card-title">
+            Authors
+        </div>
+        <div class="card-block">
+
+        </div>
+    </div>
+    <div class="btn btn-primary w-100">Submit a model</div>
+
+{% endblock %}

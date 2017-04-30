@@ -312,16 +312,21 @@ class PlatformSnippetPlacement(Orderable, models.Model):
     ]
 
     def __str__(self):
-        return "Snippet placement for {0}".format(self.platform.title)
+        return "Snippet placement for {0}".format(self.platform.name)
 
 
 class PlatformsIndexPage(Page):
-    template = 'home/platforms/index.jinja'
+    template = 'home/resources/platforms/index.jinja'
 
     content_panels = Page.content_panels + [
         InlinePanel('platform_placements', label='Platforms'),
     ]
 
+    def get_context(self, request):
+        context = super().get_context(request)
+        # FIXME: add pagination
+        context['platforms'] = self.platform_placements.order_by('platform__name').all()
+        return context
 
 class AboutPage(Page):
     template = 'home/about.jinja'

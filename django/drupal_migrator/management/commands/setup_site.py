@@ -10,7 +10,8 @@ from django.contrib.sites.models import Site as DjangoSite
 from django.core.management.base import BaseCommand
 from wagtail.wagtailcore.models import Page, Site
 
-from home.models import LandingPage, FeaturedContentItem, SocialMediaSettings
+from home.models import (LandingPage, FeaturedContentItem, SocialMediaSettings,
+                         PlatformsIndexPage, Platform, PlatformSnippetPlacement)
 from library.models import Codebase
 
 logger = logging.getLogger(__name__)
@@ -48,7 +49,7 @@ class Command(BaseCommand):
             )
             github_app.sites.add(site)
 
-    def create_site(self, site_name, hostname, root_page):
+    def create_site(self, site_name, hostname):
         # FIXME: appears to be needed for signal handling despite docs that state it shouldn't be necessary
         # revisit and remove at some point if due to misconfiguration
         from django.apps import apps
@@ -57,16 +58,16 @@ class Command(BaseCommand):
         site.site_name = site_name
         site.hostname = hostname
         site.is_default_site = True
-        site.root_page = root_page
+        site.root_page = self.landing_page
         site.save()
         sms = SocialMediaSettings.for_site(site)
         sms.youtube_url = 'https://www.youtube.com/user/CoMSESNet/'
         sms.twitter_account = 'openabm_comses'
         sms.mailing_list_url = 'http://eepurl.com/b8GCUv'
         sms.save()
-        return site
+        self.site = site
 
-    def create_home_page(self):
+    def create_landing_page(self):
         root_page = Page.objects.get(path='0001')
         # delete root page's initial children.
         root_page.get_children().delete()
@@ -86,10 +87,20 @@ class Command(BaseCommand):
         # https://django-treebeard.readthedocs.io/en/latest/caveats.html
         root_page.refresh_from_db()
         root_page.add_child(instance=landing_page)
-        return landing_page
+        self.landing_page = landing_page
+
+    def create_platforms_page(self):
+        platforms_index_page = PlatformsIndexPage(title='Computational Modeling Platforms', slug='modeling-platforms')
+        for platform in Platform.objects.all().order_by('-name'):
+            platforms_index_page.platform_placements.add(
+                PlatformSnippetPlacement(platform=platform)
+            )
+        self.landing_page.add_child(instance=platforms_index_page)
 
     def handle(self, *args, **options):
-        index_page = self.create_home_page()
+        self.create_landing_page()
         # argparse converts dashes to underscores
-        self.create_site(site_name=options['site_name'], hostname=options['site_domain'], root_page=index_page)
+        self.create_site(site_name=options['site_name'], hostname=options['site_domain'])
         self.create_social_apps()
+        # create community, about, resources pages
+        self.create_platforms_page()

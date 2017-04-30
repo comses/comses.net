@@ -78,6 +78,21 @@
 {% endmacro %}
 
 
+{% macro subnav(items) %}
+<ul class='nav nav-tabs justify-content-center'>
+    {% for item in items %}
+        <li class='nav-item'>
+        {% if item.active %}
+            <a class='nav-link active' href='{{ item.url }}'>{{ item.text }}</a>
+        {% else %}
+            <a class='nav-link' href='{{ item.url }}'>{{ item.text }}</a>
+        {% endif %}
+        </li>
+    {% endfor %}
+</ul>
+{% endmacro %}
+
+
 {% macro breadcrumb(items) %}
     <small>
         <ol class="breadcrumb">
