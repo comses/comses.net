@@ -1,17 +1,14 @@
 from django.conf import settings
 from django.conf.urls import include, url
 from django.contrib import admin
-from django.contrib.auth import views as auth_views
 from rest_framework_jwt.views import obtain_jwt_token
 from rest_framework_swagger.views import get_swagger_view
-
 from wagtail.wagtailadmin import urls as wagtailadmin_urls
 from wagtail.wagtailcore import urls as wagtail_urls
 
 from home import urls as home_urls
 from library import urls as library_urls
 from search import views as search_views
-
 from . import views
 
 # from django_jinja import views as jinja_views
