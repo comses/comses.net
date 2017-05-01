@@ -102,7 +102,7 @@ def get_viewable_objects_for_user(user, queryset):
 
 class EmailAuthenticationBackend(ModelBackend):
 
-    def authenticate(self, request, username=None, password=None, **kwargs):
+    def authenticate(self, username=None, password=None, **kwargs):
         l_username = username.lower().strip()
         try:
             user = User.objects.get(email=l_username)
