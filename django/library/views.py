@@ -20,7 +20,7 @@ class CodebaseViewSet(viewsets.ModelViewSet):
 
     @property
     def template_name(self):
-        return 'library/codebase/{}.jinja'.format(self.action)
+        return 'library/codebases/{}.jinja'.format(self.action)
 
 
 class CodebaseReleaseViewSet(viewsets.ModelViewSet):
