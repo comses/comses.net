@@ -11,7 +11,7 @@ from django.core.management.base import BaseCommand
 from wagtail.wagtailcore.models import Page, Site
 
 from home.models import (LandingPage, FeaturedContentItem, SocialMediaSettings,
-                         PlatformsIndexPage, Platform, PlatformSnippetPlacement)
+                         PlatformsIndexPage, Platform, PlatformSnippetPlacement, ResourcesIndexPage)
 from library.models import Codebase
 
 logger = logging.getLogger(__name__)
@@ -89,13 +89,26 @@ class Command(BaseCommand):
         root_page.add_child(instance=landing_page)
         self.landing_page = landing_page
 
-    def create_platforms_page(self):
+    def create_resources_section(self):
+        resources_index = ResourcesIndexPage(
+            title='Community Resources',
+            slug='resources',
+            summary='''CoMSES Net is dedicated to fostering open and reproducible computational modeling through 
+            cyberinfrastructure and community development. We maintain these community curated resources 
+            to help new and experienced computational modelers improve the discoverability, reuse, 
+            and reproducibility of our computational models. Feel free to [contact us](/contact/) if you have any 
+            resources to add or comments. 
+            ''',
+        )
+        self.landing_page.add_child(instance=resources_index)
         platforms_index_page = PlatformsIndexPage(title='Computational Modeling Platforms', slug='modeling-platforms')
         for platform in Platform.objects.all().order_by('-name'):
             platforms_index_page.platform_placements.add(
                 PlatformSnippetPlacement(platform=platform)
             )
-        self.landing_page.add_child(instance=platforms_index_page)
+        resources_index.add_child(instance=platforms_index_page)
+
+
 
     def handle(self, *args, **options):
         self.create_landing_page()
@@ -103,4 +116,4 @@ class Command(BaseCommand):
         self.create_site(site_name=options['site_name'], hostname=options['site_domain'])
         self.create_social_apps()
         # create community, about, resources pages
-        self.create_platforms_page()
+        self.create_resources_section()
