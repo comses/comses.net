@@ -16,13 +16,18 @@ from taggit.managers import TaggableManager
 from taggit.models import TaggedItemBase
 from timezone_field import TimeZoneField
 from wagtail.contrib.settings.models import BaseSetting, register_setting
-from wagtail.wagtailadmin.edit_handlers import (FieldPanel, InlinePanel, PageChooserPanel, MultiFieldPanel)
-from wagtail.wagtailcore.fields import RichTextField
+from wagtail.wagtailadmin.edit_handlers import (FieldPanel, InlinePanel, PageChooserPanel, MultiFieldPanel,
+                                                StreamFieldPanel)
+from wagtail.wagtailcore import blocks
+from wagtail.wagtailcore.fields import RichTextField, StreamField
 from wagtail.wagtailcore.models import Page, Orderable
+from wagtail.wagtailimages.blocks import ImageChooserBlock
 from wagtail.wagtailimages.edit_handlers import ImageChooserPanel
 from wagtail.wagtailsearch import index
 from wagtail.wagtailsnippets.edit_handlers import SnippetChooserPanel
 from wagtail.wagtailsnippets.models import register_snippet
+
+from core.utils import get_canonical_image
 
 logger = logging.getLogger(__name__)
 
@@ -267,6 +272,32 @@ class CategoryIndexPage(Page):
     heading = models.CharField(max_length=128, help_text=_("Short name to be placed in introduction header."))
     summary = models.CharField(max_length=1000, help_text=_('Summary blurb for this category index page.'))
 
+    def add_navigation_links(self, navigation_tuples):
+        """
+        Takes an ordered list of tuples and adds them as navigation links.
+        :param navigation_tuples: 
+        :return: 
+        """
+        for idx, (name, url) in enumerate(navigation_tuples):
+            self.navigation_links.add(
+                CategoryIndexNavigationLink(title=name, url=url, sort_order=idx)
+            )
+
+    def add_callout(self, image_path, title, caption, sort_order=None, user=None):
+        if user is None:
+            user = User.objects.first()
+        _image = get_canonical_image(path=image_path,
+                                     title=title,
+                                     user=user)
+        self.callouts.add(
+            CategoryIndexItem(
+                title=title,
+                sort_order=sort_order,
+                caption=caption,
+                image=_image,
+            )
+        )
+
     def get_navigation_links(self):
         """
         Returns a nested dict for use by the subnav Jinja2 tag.
@@ -287,6 +318,24 @@ class CategoryIndexPage(Page):
     search_fields = [
         index.SearchField('title'),
         index.SearchField('summary')
+    ]
+
+
+class StreamPage(Page):
+    template = models.CharField(max_length=128, default='home/stream_page.jinja')
+    date = models.DateField("Post date", default=timezone.now)
+    description = models.CharField(max_length=512, blank=True)
+
+    body = StreamField([
+        ('heading', blocks.CharBlock(classname='full title')),
+        ('paragraph', blocks.RichTextBlock()),
+        ('image', ImageChooserBlock()),
+        ('url', blocks.URLBlock(required=False))
+    ])
+
+    content_panels = Page.content_panels + [
+        FieldPanel('date'),
+        StreamFieldPanel('body'),
     ]
 
 
