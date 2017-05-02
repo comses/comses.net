@@ -277,6 +277,8 @@ class CategoryIndexPage(Page):
         ]
 
     content_panels = Page.content_panels + [
+        FieldPanel('heading'),
+        FieldPanel('summary'),
         InlinePanel('callouts', label=_('Captioned Image Callouts')),
         InlinePanel('navigation_links', label=_('Subnavigation Links')),
     ]
