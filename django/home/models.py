@@ -313,8 +313,7 @@ class CategoryIndexPage(Page):
         InlinePanel('navigation_links', label=_('Subnavigation Links')),
     ]
 
-    search_fields = [
-        index.SearchField('title'),
+    search_fields = Page.search_fields + [
         index.SearchField('summary')
     ]
 
