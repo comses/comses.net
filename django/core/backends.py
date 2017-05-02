@@ -11,6 +11,7 @@ logger = logging.getLogger(__name__)
 
 OWNER_ATTRIBUTE_KEY = "submitter"
 PUBLISHED_ATTRIBUTE_KEY = "live"
+DELETABLE_ATTRIBUTE_KEY = 'deletable'
 
 
 def is_object_action(perm: str):
@@ -30,6 +31,10 @@ def is_view_action(perm: str):
     return 'view_' in perm
 
 
+def is_delete_action(perm: str):
+    return 'delete_' in perm
+
+
 def has_authenticated_model_permission(user, perm, obj):
     if user.is_active and not is_object_action(perm):
         return True
@@ -41,6 +46,14 @@ def has_authenticated_model_permission(user, perm, obj):
         raise PermissionDenied
 
     return True
+
+
+def has_delete_permission(perm, obj):
+    if is_delete_action(perm):
+        deletable = getattr(obj, DELETABLE_ATTRIBUTE_KEY, True)
+        if not deletable:
+            raise PermissionDenied
+    return False
 
 
 def has_view_permission(perm, user, obj):
@@ -94,14 +107,14 @@ def get_viewable_objects_for_user(user, queryset):
         kwargs[PUBLISHED_ATTRIBUTE_KEY] = True
         is_live_queryset = model.objects.filter(**kwargs)
         is_submitter_queryset = model.objects.filter(submitter=user)
-        has_object_permission_queryset = sc.get_objects_for_user(user, perms=perms, any_perm=True, accept_global_perms=False)
+        has_object_permission_queryset = sc.get_objects_for_user(user, perms=perms, any_perm=True,
+                                                                 accept_global_perms=False)
         queryset &= has_object_permission_queryset | is_live_queryset | is_submitter_queryset
 
     return queryset
 
 
 class EmailAuthenticationBackend(ModelBackend):
-
     def authenticate(self, username=None, password=None, **kwargs):
         l_username = username.lower().strip()
         try:
@@ -128,5 +141,6 @@ class ComsesObjectPermissionBackend:
             raise PermissionDenied
 
         return has_authenticated_model_permission(user, perm, obj) or \
-            has_view_permission(perm, user, obj) or \
-            has_submitter_permission(user, obj)
+               has_delete_permission(perm, obj) or \
+               has_view_permission(perm, user, obj) or \
+               has_submitter_permission(user, obj)

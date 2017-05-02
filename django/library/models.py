@@ -172,6 +172,10 @@ class Codebase(index.Indexed, ClusterableModel):
         index.SearchField('description', partial_match=True),
     ]
 
+    @property
+    def deletable(self):
+        return not self.live
+
     @staticmethod
     def _release_upload_path(instance, filename):
         return pathlib.Path(instance.workdir_path, filename)

@@ -126,6 +126,10 @@ class ViewSetTestCase(hypothesis_django.TestCase):
             self._check_authorization(user, obj, action, True)
             return
 
+        if action == 'delete' and not getattr(obj, 'deletable', True):
+            self._check_authorization(user, obj, action, False)
+            return
+
         if obj.submitter == user:
             self._check_authorization(user, obj, action, True)
             return
