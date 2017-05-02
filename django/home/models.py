@@ -267,8 +267,7 @@ class CategoryIndexNavigationLink(Orderable, models.Model):
 
 
 class CategoryIndexPage(Page):
-    # FIXME: CommunityIndexPage and ResourcesIndexPage could be merged into this wagtail Model
-    template = 'home/category_index.jinja'
+    template = models.CharField(max_length=128, default='home/category_index.jinja')
     heading = models.CharField(max_length=128, help_text=_("Short name to be placed in introduction header."))
     summary = models.CharField(max_length=1000, help_text=_('Summary blurb for this category index page.'))
 
@@ -286,9 +285,7 @@ class CategoryIndexPage(Page):
     def add_callout(self, image_path, title, caption, sort_order=None, user=None):
         if user is None:
             user = User.objects.first()
-        _image = get_canonical_image(path=image_path,
-                                     title=title,
-                                     user=user)
+        _image = get_canonical_image(path=image_path, title=title, user=user)
         self.callouts.add(
             CategoryIndexItem(
                 title=title,
@@ -309,6 +306,7 @@ class CategoryIndexPage(Page):
         ]
 
     content_panels = Page.content_panels + [
+        # don't expose template to web form for now, could wreak havoc
         FieldPanel('heading'),
         FieldPanel('summary', widget=forms.Textarea),
         InlinePanel('callouts', label=_('Captioned Image Callouts')),
@@ -337,16 +335,6 @@ class StreamPage(Page):
         FieldPanel('date'),
         StreamFieldPanel('body'),
     ]
-
-
-class CommunityIndexPage(Page):
-    template = 'home/community/index.jinja'
-    summary = models.CharField(max_length=500, help_text=_("Summary blurb for Community index"))
-
-
-class ResourcesIndexPage(Page):
-    template = 'home/resources/index.jinja'
-    summary = models.CharField(max_length=500, help_text=_("Summary blurb for Resources index"))
 
 
 class PlatformTag(TaggedItemBase):
@@ -428,9 +416,6 @@ class PlatformsIndexPage(Page):
         # FIXME: add pagination
         context['platforms'] = self.get_platforms()
         return context
-
-class AboutPage(Page):
-    template = 'home/about.jinja'
 
 
 class NewsIndexPage(Page):
