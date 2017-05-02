@@ -3,22 +3,17 @@ Initializes Wagtail Page Models and other canned data.
 """
 
 import logging
-import pathlib
 
 from allauth.socialaccount.models import SocialApp
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.contrib.sites.models import Site as DjangoSite
-from django.core.files.images import ImageFile
 from django.core.management.base import BaseCommand
 from django.urls import reverse
 from wagtail.wagtailcore.models import Page, Site
-from wagtail.wagtailimages.models import Image
 
-from core.utils import get_canonical_image
 from home.models import (LandingPage, FeaturedContentItem, SocialMediaSettings,
-                         PlatformsIndexPage, Platform, PlatformSnippetPlacement, ResourcesIndexPage, CommunityIndexPage,
-                         CategoryIndexPage, CategoryIndexNavigationLink, CategoryIndexItem, StreamPage)
+                         PlatformsIndexPage, Platform, PlatformSnippetPlacement, CategoryIndexPage, StreamPage)
 from library.models import Codebase
 
 logger = logging.getLogger(__name__)
