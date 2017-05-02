@@ -1,0 +1,38 @@
+{% extends "base.jinja" %}
+{% from "common.jinja" import subnav %}
+
+{% block title %}{{ page.title }}{% endblock %}
+
+{% block introduction %}
+    <h1>{{ page.heading }}</h1>
+{% endblock %}
+
+{% block content %}
+    {{ subnav(page.get_navigation_links()) }}
+   <div class='jumbotron'>
+       <h1 class='display-5'>{{ page.title }}</h1>
+       <p class='lead'>
+       {{ page.summary }}
+       </p> 
+   </div>
+   <section class='callouts'>
+       {% for batched_callouts in page.callouts.all()|batch(3) %}
+           <div class='row'>
+               {% for item in batched_callouts %}
+                   <div class='col'>
+                       {% if item.url %}
+                           <a href='{{ item.url }}'>{{ image(item.image, "height-50", class='img-fluid d-block') }}</a>
+                       {% else %}
+                           {{ image(item.image, "height-50", class='img-fluid d-block') }}
+                       {% endif %}
+                       <h3>{{ item.title }}</h3>
+                       <div class='caption'>
+                           {{ item.caption }}
+                       </div>
+                   </div>
+               {% endfor %}
+           </div>
+       {% endfor %}
+   </section>
+{% endblock %} 
+

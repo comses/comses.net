@@ -3,15 +3,21 @@ Initialize Wagtail Models and other canned data.
 """
 
 import logging
+import pathlib
 
 from allauth.socialaccount.models import SocialApp
 from django.conf import settings
+from django.contrib.auth.models import User
 from django.contrib.sites.models import Site as DjangoSite
+from django.core.files.images import ImageFile
 from django.core.management.base import BaseCommand
 from wagtail.wagtailcore.models import Page, Site
+from wagtail.wagtailimages.models import Image
 
+from drupal_migrator.utils import get_canonical_image
 from home.models import (LandingPage, FeaturedContentItem, SocialMediaSettings,
-                         PlatformsIndexPage, Platform, PlatformSnippetPlacement, ResourcesIndexPage, CommunityIndexPage)
+                         PlatformsIndexPage, Platform, PlatformSnippetPlacement, ResourcesIndexPage, CommunityIndexPage,
+                         CategoryIndexPage, CategoryIndexNavigationLink, CategoryIndexItem)
 from library.models import Codebase
 
 logger = logging.getLogger(__name__)
@@ -75,7 +81,7 @@ class Command(BaseCommand):
         landing_page = LandingPage(
             title='CoMSES Net Home Page',
             slug='home',
-            mission_statement='''CoMSES Net is an international network of researchers, educators 
+            mission_statement='''CoMSES Net is an international network of researchers, educators
             and professionals with the common goal of improving the way we develop, share, and
             use agent based modeling in the social and life sciences.
             ''')
@@ -94,11 +100,11 @@ class Command(BaseCommand):
         resources_index = ResourcesIndexPage(
             title='Community Resources',
             slug='resources',
-            summary='''CoMSES Net is dedicated to fostering open and reproducible computational modeling through 
-            cyberinfrastructure and community development. We maintain these community curated resources 
-            to help new and experienced computational modelers improve the discoverability, reuse, 
-            and reproducibility of our computational models. Feel free to [contact us](/contact/) if you have any 
-            resources to add or comments. 
+            summary='''CoMSES Net is dedicated to fostering open and reproducible computational modeling through
+            cyberinfrastructure and community development. We maintain these community curated resources
+            to help new and experienced computational modelers improve the discoverability, reuse,
+            and reproducibility of our computational models. Feel free to [contact us](/contact/) if you have any
+            resources to add or comments.
             ''',
         )
         self.landing_page.add_child(instance=resources_index)
@@ -109,13 +115,12 @@ class Command(BaseCommand):
             )
         resources_index.add_child(instance=platforms_index_page)
 
-
     def create_community_section(self):
         community_index = CommunityIndexPage(
             title='Welcome to the CoMSES Net Community',
             slug='community',
             summary='''
-            CoMSES Net is dedicated to fostering open and reproducible scientific computation through cyberinfrastructure 
+            CoMSES Net is dedicated to fostering open and reproducible scientific computation through cyberinfrastructure
             and community development. We are curating a growing collection of resources for model-based science including
             tutorials and FAQ's on agent-based modeling, a computational model library to help researchers archive their
             work and discover and reuse other's works, and forums for discussions, job postings, and events.
@@ -123,6 +128,72 @@ class Command(BaseCommand):
         )
         self.landing_page.add_child(instance=community_index)
 
+    def create_about_section(self):
+        about_index = CategoryIndexPage(
+            heading='About',
+            title='About CoMSES Net / OpenABM',
+            slug='about',
+            summary='''
+            Welcome! CoMSES Net, the Network for Computational Modeling in Social and Ecological Sciences, is an open
+            community of researchers, educators, and professionals with a common goal - improving the way we develop,
+            share, use, and re-use agent based and computational models for the study of social and ecological systems.
+
+            CoMSES Net joins the NSF West Big Data Innovation Hub as a spoke in NSF's new national Big Data network and
+            is dedicated to fostering open and reproducible scientific computation through cyberinfrastructure and
+            community development.
+            '''
+        )
+        for idx, (name, url) in enumerate([('Overview', '/about/'), ('People', '/people/'), ('FAQs', '/faq/'), ('Contact', '/contact/')]):
+            about_index.navigation_links.add(
+                CategoryIndexNavigationLink(title=name, url=url, sort_order=idx)
+            )
+
+        alee = User.objects.get(username='alee')
+
+        preservation_image = get_canonical_image(path='core/static/images/icons/digital-archive.png',
+                                                 title='Provide trusted digital preservation and curation',
+                                                 user=alee)
+        about_index.callouts.add(
+            CategoryIndexItem(
+                title='Provide trusted digital preservation and curation',
+                sort_order=1,
+                caption='''
+                You cannot reuse or reproduce that which you cannot find or understand due to lack of context and
+                metadata.
+                ''',
+                image=preservation_image,
+            )
+        )
+
+        promote_image = get_canonical_image(path='core/static/images/icons/culture.png',
+                                            title='Promote a culture of sharing',
+                                            user=alee)
+        about_index.callouts.add(
+            CategoryIndexItem(
+                title='Promote a Culture of Sharing, Reuse, and Credit',
+                sort_order=2,
+                caption='''
+                Publish or perish. Share or shrivel.
+                ''',
+                image=promote_image
+            )
+        )
+
+        theory_image = get_canonical_image(path='core/static/images/icons/cog.png',
+                                           title='Improve theoretical and methodological practice',
+                                           user=alee)
+        about_index.callouts.add(
+            CategoryIndexItem(
+                title='Improve theoretical and methodological practice',
+                sort_order=3,
+                caption='''
+                Engaging with practitioners to address theoretical concerns and improve methodological practices for
+                reuse and reusability.
+                ''',
+                image=theory_image
+            )
+        )
+        self.landing_page.add_child(instance=about_index)
 
     def handle(self, *args, **options):
         self.create_landing_page()
@@ -132,3 +203,4 @@ class Command(BaseCommand):
         # create community, about, resources pages
         self.create_community_section()
         self.create_resources_section()
+        self.create_about_section()

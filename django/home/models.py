@@ -242,9 +242,8 @@ class LandingPage(Page):
     ]
 
 
-
-class CategoryIndexItem(Orderable):
-    page = ParentalKey('home.CategoryIndexPage', related_name='linked_categories')
+class CategoryIndexItem(Orderable, models.Model):
+    page = ParentalKey('home.CategoryIndexPage', related_name='callouts')
     image = models.ForeignKey('wagtailimages.Image',
                               null=True,
                               blank=True,
@@ -252,17 +251,41 @@ class CategoryIndexItem(Orderable):
                               related_name='+')
     url = models.URLField("Linked page URL", blank=True)
     title = models.CharField(max_length=255)
-    caption = models.CharField(max_length=255)
+    caption = models.CharField(max_length=600)
+
+
+class CategoryIndexNavigationLink(Orderable, models.Model):
+    page = ParentalKey('home.CategoryIndexPage', related_name='navigation_links')
+    url = models.URLField("Linked URL")
+    title = models.CharField(max_length=128)
 
 
 class CategoryIndexPage(Page):
     # FIXME: CommunityIndexPage and ResourcesIndexPage could be merged into this wagtail Model
     template = 'home/category_index.jinja'
-    summary = models.CharField(max_length=500, help_text=_('Summary blurb for this category index page.'))
+    heading = models.CharField(max_length=128, help_text=_("Short name to be placed in introduction header."))
+    summary = models.CharField(max_length=1000, help_text=_('Summary blurb for this category index page.'))
+
+    def get_navigation_links(self):
+        """
+        Returns a nested dict for use by the subnav Jinja2 tag.
+        :return: 
+        """
+        return [
+            {'url': nav.url, 'text': nav.title, 'active': self.slug in nav.url}
+            for nav in self.navigation_links.all()
+        ]
 
     content_panels = Page.content_panels + [
-        InlinePanel('linked_categories', label=_('Linked Subpages'))
+        InlinePanel('callouts', label=_('Captioned Image Callouts')),
+        InlinePanel('navigation_links', label=_('Subnavigation Links')),
     ]
+
+    search_fields = [
+        index.SearchField('title'),
+        index.SearchField('summary')
+    ]
+
 
 class CommunityIndexPage(Page):
     template = 'home/community/index.jinja'

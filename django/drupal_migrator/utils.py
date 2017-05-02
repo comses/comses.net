@@ -1,7 +1,11 @@
 import logging
+import pathlib
 from datetime import datetime
 import pytz
 import re
+
+from django.core.files.images import ImageFile
+from wagtail.wagtailimages.models import Image
 
 logger = logging.getLogger(__name__)
 
@@ -44,3 +48,15 @@ def to_datetime(drupal_datetime_string: str, tz=pytz.UTC):
             logger.exception("Expecting a datetime string or a float / unix timestamp but received: %s ", drupal_datetime_string)
         # give up, fall through and return None
     return None
+
+
+def get_canonical_image(title=None, path=None, user=None):
+    _image_path = pathlib.Path(path)
+    if Image.objects.filter(title=title).exists():
+        _image = Image.objects.get(title=title)
+    else:
+        _image = Image.objects.create(
+            title=title,
+            file=ImageFile(_image_path.open('rb')),
+            uploaded_by_user=user)
+    return _image
