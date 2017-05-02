@@ -93,6 +93,11 @@ def import_all(ctx):
     pass
 
 
+@task(aliases=['esli'])
+def update_elasticsearch_license(ctx, license_file='/secrets/es5-license.json'):
+    ctx.run("curl -XPUT 'http://elasticsearch:9200/_xpack/license?acknowledge=true' -H 'Content-Type: application/json' -d @{0}".format(license_file))
+
+
 '''
 @task(aliases=['rfd'])
 def restore_from_dump(ctx, dumpfile='dump.sql', init_db_schema=True, force=False):
