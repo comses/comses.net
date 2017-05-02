@@ -46,7 +46,7 @@
         </div>
         {% if item.summary %}
             <div class="summary">
-                {{ markdown(item.summary)|safe }}
+                {{ item.summary|markdown }}
             </div>
         {% endif %}
         {% if item.tags %}
