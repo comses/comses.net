@@ -131,6 +131,7 @@ class Codebase(index.Indexed, ClusterableModel):
     live = models.BooleanField(default=False)
     has_unpublished_changes = models.BooleanField(default=False)
     first_published_at = models.DateTimeField(null=True, blank=True)
+    last_published_on = models.DateTimeField(null=True, blank=True)
 
     date_created = models.DateTimeField(default=timezone.now)
     last_modified = models.DateTimeField(auto_now=True)
@@ -309,6 +310,7 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
     live = models.BooleanField(default=False)
     has_unpublished_changes = models.BooleanField(default=False)
     first_published_at = models.DateTimeField(null=True, blank=True)
+    last_published_on = models.DateTimeField(null=True, blank=True)
 
     peer_reviewed = models.BooleanField(default=False)
     flagged = models.BooleanField(default=False)

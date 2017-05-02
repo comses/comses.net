@@ -5,7 +5,7 @@ import json
 import logging
 import os
 import re
-from collections import defaultdict
+from collections import defaultdict, Iterable
 from datetime import datetime
 from typing import Dict
 
@@ -87,16 +87,18 @@ def load_data(model, s: str):
 
 
 @contextlib.contextmanager
-def suppress_auto_now(model, *field_names):
+def suppress_auto_now(model_classes, *field_names):
     _original_values = {}
     for field_name in field_names:
-        field = model._meta.get_field(field_name)
-        _original_values[field] = {
-            'auto_now': field.auto_now,
-            'auto_now_add': field.auto_now_add,
-        }
-        field.auto_now = False
-        field.auto_now_add = False
+        _ms = model_classes if isinstance(model_classes, Iterable) else [model_classes]
+        for model in _ms:
+            field = model._meta.get_field(field_name)
+            _original_values[field] = {
+                'auto_now': field.auto_now,
+                'auto_now_add': field.auto_now_add,
+            }
+            field.auto_now = False
+            field.auto_now_add = False
     try:
         yield
     finally:
@@ -369,7 +371,7 @@ class ModelExtractor(Extractor):
                 description=self.sanitize_text(get_first_field(raw_model, field_name='body', default='')),
                 date_created=to_datetime(raw_model['created']),
                 live=self.int_to_bool(raw_model['status']),
-                last_modified=to_datetime(raw_model['changed']),
+                last_published_on=to_datetime(raw_model['changed']),
                 is_replication=Extractor.int_to_bool(get_first_field(raw_model, 'field_model_replicated', default='0')),
                 uuid=raw_model['uuid'],
                 first_published_at=to_datetime(raw_model['created']),
@@ -430,11 +432,12 @@ class ModelVersionExtractor(Extractor):
                     'version': get_first_field(raw_model_version, 'field_modelversion_language_ver', default='')
                 }
             }
-            with suppress_auto_now(CodebaseRelease, 'last_modified'):
+            with suppress_auto_now([Codebase, CodebaseRelease], 'last_modified'):
                 codebase_release = codebase.make_release(
                     description=self.sanitize_text(description),
                     date_created=to_datetime(raw_model_version['created']),
-                    last_modified=to_datetime(raw_model_version['changed']),
+                    first_published_at=to_datetime(raw_model_version['created']),
+                    last_published_on=to_datetime(raw_model_version['changed']),
                     os=self.OS_LIST[int(get_first_field(raw_model_version, 'field_modelversion_os', default=0))],
                     license_id=license_id,
                     identifier=raw_model_version['vid'],
