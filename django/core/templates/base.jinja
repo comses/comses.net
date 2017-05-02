@@ -175,13 +175,14 @@ function submitLogout() {
 
     <body class="{% block body_class %}{% endblock %}">
         {{ navbar() }}
-        <section class='introduction'>
+        {% block introduction_section %}
+            <section class='introduction'>
             <div class="container">
                 {% block introduction %}
                 {% endblock %}
             </div>
-        </section>
-
+            </section>
+        {% endblock %}
         {% block page %}
             <section class='page'>
                 <div class="container">

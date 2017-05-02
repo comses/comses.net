@@ -9,7 +9,7 @@ $link-hover: darken($text-color, 20%);
 $button-hover: darken($brand-primary, 20%);
 $white: #f0f4fa;
 $body-bg: $white;
-$light-blue-gray: #c3d9ee;
+$light-blue-gray: #ced9ee;
 $default-padding: 60px;
 
 // Font Size Overrides
@@ -78,28 +78,19 @@ $fa-font-path: '../node_modules/font-awesome/fonts/';
 }
 
 .landing-page-introduction {
-    text-align: center !important;
-}
-
-.introduction {
-  background: url("./assets/images/background-introduction.png") repeat top center;
   overflow: hidden;
+  margin-top: 105px;
+  background: url("./assets/images/background-introduction.png") repeat top center;
   padding-top: 40px;
   padding-bottom: 60px;
-  text-align: left;
-  vertical-align: middle;
-  /*
-   Move introduction below header
-   We could polyfill position:sticky for Chrome instead
-   */
-  margin-top: 105px;
-
+  text-align: center;
+  height: 480px;
   h1, h2, h3, h4 {
     padding-top: 40px;
     font-family: 'Abel', 'Open Sans', sans-serif;
     color: white;
     font-weight: 200;
-  }
+}
   h1 {
     font-size: 3.5em;
   }
@@ -107,6 +98,26 @@ $fa-font-path: '../node_modules/font-awesome/fonts/';
     font-size: 1em;
     text-transform: uppercase;
     padding-bottom: 30px;
+  }
+}
+
+.introduction {
+  overflow: hidden;
+  margin-top: 105px;
+  background: url("./assets/images/background-introduction.png") repeat top center;
+  text-align: left;
+  vertical-align: middle;
+  height: 125px;
+  /*
+   Move introduction below header
+   We could polyfill position:sticky for Chrome instead
+   */
+
+  h1, h2, h3, h4 {
+    padding-top: 40px;
+    font-family: 'Abel', 'Open Sans', sans-serif;
+    color: white;
+    font-weight: 200;
   }
   a {
     padding: 20px;

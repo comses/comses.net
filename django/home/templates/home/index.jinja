@@ -1,15 +1,17 @@
 {% extends "base.jinja" %}
 
-{% block introduction %}
-    <div class='landing-page-introduction'>
-        <h1>A growing collection of resources for computational <br> model-based science.</h1>
-        <h2>A versioned repository of computational models &amp; their digital context, tutorials, and FAQ's on agent based modeling</h2>
-        <div class='row'>
-            <div class='col'>
-                <a class='btn btn-primary' href='{{ url("library:codebase-list") }}'>View model library</a>
+{% block introduction_section %}
+    <section class='landing-page-introduction'>
+        <div class='container'>
+            <h1>A growing collection of resources for computational <br> model-based science.</h1>
+            <h2>A versioned repository of computational models &amp; their digital context, tutorials, and FAQ's on agent based modeling</h2>
+            <div class='row'>
+                <div class='col'>
+                    <a class='btn btn-primary' href='{{ url("library:codebase-list") }}'>View model library</a>
+                </div>
             </div>
         </div>
-    </div>
+    </section>
 {% endblock %}
 {% block page %}
 <section class='mission'>
