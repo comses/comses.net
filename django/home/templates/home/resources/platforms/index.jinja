@@ -19,18 +19,21 @@
     Computational modeling platforms provide a wide range of modeling strategies, scaffolding, and support for
     developers of agent-based models. If you have any corrections or a new platform to include please 
     <a href='/contact/'>contact us</a>!
-    </p> 
+    </p>
 </div>
 {% endblock %}
 
-{% block content %}a
+{% block content %}
     {# FIXME: add pagination #}
     {% for p in platforms %}
         <hr />
-        <a href='{{ p.platform.url }}'>{{ p.platform.name }}</a>
-        <p>
-        {{ p.platform.description }}
-        </p>
+        <a target='_blank' href='{{ p.platform.url }}'>{{ p.platform.name }}</a>
+        {% if p.platform.active %}
+            <span class='text-success'><i class='fa fa-check-circle-o'></i></span>
+        {% else %}
+            <span class='text-danger'><i class='fa fa-exclamation'></i></span>
+        {% endif %}
+        <p>{{ p.platform.description }}</p>
         <div class='tags'>
             {% for tag in p.platform.tags.all() %}
                 <a class='tag' href='/search?tag={{ tag.name }}'>{{ tag.name }}</a>
@@ -41,7 +44,7 @@
 {% block sidebar %}
     <div class="card-metadata">
         <div class="card-title">
-            Search
+            <h1>Tags</h1>
         </div>
         <div class="card-block">
             <form>
@@ -54,22 +57,6 @@
             </form>
         </div>
     </div>
-    <div class="card-metadata">
-        <div class="card-title">
-            Tags
-        </div>
-        <div class="card-block">
-
-        </div>
-    </div>
-    <div class="card-metadata">
-        <div class="card-title">
-            Authors
-        </div>
-        <div class="card-block">
-
-        </div>
-    </div>
-    <div class="btn btn-primary w-100">Submit a model</div>
+    <div><a class='btn btn-primary w-100' href='{{ url("library:codebase-create") }}'>Submit a model</a></div>
 
 {% endblock %}

@@ -322,10 +322,14 @@ class PlatformsIndexPage(Page):
         InlinePanel('platform_placements', label='Platforms'),
     ]
 
+    def get_platforms(self):
+        # returns queryset of PlatformSnippetPlacements
+        return self.platform_placements.exclude(platform__name='other').order_by('platform__name').all()
+
     def get_context(self, request):
         context = super().get_context(request)
         # FIXME: add pagination
-        context['platforms'] = self.platform_placements.order_by('platform__name').all()
+        context['platforms'] = self.get_platforms()
         return context
 
 class AboutPage(Page):
