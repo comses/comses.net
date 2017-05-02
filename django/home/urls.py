@@ -11,6 +11,7 @@ router.register(r'events', views.EventViewSet, base_name='event')
 router.register(r'jobs', views.JobViewSet, base_name='job')
 router.register(r'tags', views.TagViewSet, base_name='tag')
 router.register(r'users', views.ProfileViewSet, base_name='profile')
+router.register(r'calendar_events', views.EventCalendarList, base_name='calendar_event')
 
 urlpatterns = [
     url(r'^discourse/sso$', views.discourse_sso, name='discourse_sso'),

@@ -3,13 +3,16 @@ import hashlib
 import hmac
 import logging
 from urllib import parse
-
+from dateutil.parser import parse as datetime_parse
+from dateutil import tz
 
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
+from django.db.models.query_utils import Q
+from django.db.models.functions import Coalesce
 from django.http import QueryDict, HttpResponseBadRequest, HttpResponseRedirect
-from rest_framework import viewsets, generics
+from rest_framework import viewsets, generics, mixins
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 from taggit.models import Tag
@@ -17,7 +20,8 @@ from wagtail.wagtailsearch.backends import get_search_backend
 
 from core.view_helpers import get_search_queryset, retrieve_with_perms
 from .models import Event, Job, FeaturedContentItem
-from .serializers import EventSerializer, JobSerializer, TagSerializer, FeaturedContentItemSerializer, UserSerializer
+from .serializers import EventSerializer, EventCalendarSerializer, JobSerializer, TagSerializer, \
+    FeaturedContentItemSerializer, UserSerializer
 
 logger = logging.getLogger(__name__)
 
@@ -117,6 +121,74 @@ class EventViewSet(viewsets.ModelViewSet):
 
     def retrieve(self, request, *args, **kwargs):
         return retrieve_with_perms(self, request, *args, **kwargs)
+
+
+class EventCalendarList(mixins.ListModelMixin, viewsets.GenericViewSet):
+    serializer_class = EventCalendarSerializer
+    queryset = Event.objects.all()
+
+    def get_queryset(self):
+        tzinfo = tz.gettz(settings.TIME_ZONE)
+        start = datetime_parse(self.request.query_params['start'])
+        start = start.replace(tzinfo=tzinfo)
+        end = datetime_parse(self.request.query_params['end'])
+        end = end.replace(tzinfo=tzinfo)
+
+        early_registration_deadline_queryset = self.queryset.filter(
+            Q(early_registration_deadline__gte=start) & Q(early_registration_deadline__lte=end))
+        submission_deadline_queryset = self.queryset.filter(
+            Q(submission_deadline__gte=start) & Q(submission_deadline__lte=end))
+        queryset = self.queryset.exclude(Q(start_date__gte=end)).exclude(
+            Q(end_date__lte=start))
+        queryset = queryset | early_registration_deadline_queryset | submission_deadline_queryset
+        queryset._date_range = start, end
+        return queryset
+
+    @staticmethod
+    def to_calendar_early_registration_deadline_event(event):
+        return {
+            'title': 'Early Registration Deadline: ' + event.title,
+            'start': event.early_registration_deadline.isoformat(),
+            'url': event.get_absolute_url()
+        }
+
+    @staticmethod
+    def to_calendar_submission_deadline_event(event):
+        return {
+            'title': 'Submission Deadline: ' + event.title,
+            'start': event.submission_deadline.isoformat(),
+            'url': event.get_absolute_url()
+        }
+
+    @staticmethod
+    def to_calendar_event(event):
+        return {
+            'title': event.title,
+            'start': event.start_date.isoformat(),
+            'end': event.end_date.isoformat(),
+            'url': event.get_absolute_url()
+        }
+
+    def list(self, request, *args, **kwargs):
+        """Arrange events so that early registration deadline, registration deadline and the actual event
+        are events to be rendered in the calendar"""
+
+        queryset = self.get_queryset()
+        start, end = queryset._date_range
+        events = list(queryset)
+
+        calendar_events = []
+        for event in events:
+            if event.early_registration_deadline and start <= event.early_registration_deadline <= end:
+                calendar_events.append(self.to_calendar_early_registration_deadline_event(event))
+
+            if event.submission_deadline and start <= event.submission_deadline <= end:
+                calendar_events.append(self.to_calendar_submission_deadline_event(event))
+
+            if event.start_date and not (event.start_date > end or event.end_date < start):
+                calendar_events.append(self.to_calendar_event(event))
+
+        return Response(data=calendar_events)
 
 
 class JobViewSet(viewsets.ModelViewSet):

@@ -79,6 +79,15 @@ class EventSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
+class EventCalendarSerializer(serializers.ModelSerializer):
+    start = serializers.DateTimeField(source='start_date')
+    end = serializers.DateTimeField(source='end_date')
+
+    class Meta:
+        model = Event
+        fields = ('title', 'start', 'end',)
+
+
 class JobSerializer(serializers.ModelSerializer):
     # need nested serializer for submitter
     submitter = CreatorSerializer(read_only=True, help_text=_('User that created the job description'),
