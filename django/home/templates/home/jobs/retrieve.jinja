@@ -16,7 +16,7 @@
 {% block content %}
     <div id="content">
         <h1>{{ title }}</h1>
-        {{ markdown(description)|safe }}
+        {{ description|markdown }}
     </div>
     <div class="btn-group">
         {% if has_change_perm %}

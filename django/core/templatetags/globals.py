@@ -1,13 +1,15 @@
 from datetime import datetime
+
+from allauth.socialaccount import providers
 from django.conf import settings
 from django.template import defaultfilters
 from django.utils.timezone import get_current_timezone
 from django_jinja import library
-from allauth.socialaccount import providers
+from jinja2 import Markup
+from webpack_loader.templatetags import webpack_loader as wl
+
 from ..summarization import summarize
 from ..utils import markdown_to_sanitized_html
-
-from webpack_loader.templatetags import webpack_loader as wl
 
 
 @library.global_function
@@ -36,9 +38,14 @@ def summarize_markdown(md):
     return summarize(md, 2)
 
 
-@library.global_function
-def markdown(md):
-    return markdown_to_sanitized_html(md)
+@library.filter
+def markdown(text: str):
+    """
+    Returns a sanitized HTML string representing the rendered version of the incoming Markdown text.
+    :param text: string markdown source text to be converted
+    :return: sanitized html string, explicitly marked as safe via jinja2.Markup
+    """
+    return Markup(markdown_to_sanitized_html(text))
 
 # # http://stackoverflow.com/questions/6453652/how-to-add-the-current-query-string-to-an-url-in-a-django-template
 # @register.simple_tag

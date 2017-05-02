@@ -98,14 +98,14 @@ class Command(BaseCommand):
 
     def create_resources_section(self):
         resources_index = ResourcesIndexPage(
-            title='Community Resources',
+            title='Resources',
             slug='resources',
-            summary='''CoMSES Net is dedicated to fostering open and reproducible computational modeling through
-            cyberinfrastructure and community development. We maintain these community curated resources
-            to help new and experienced computational modelers improve the discoverability, reuse,
-            and reproducibility of our computational models. Feel free to [contact us](/contact/) if you have any
-            resources to add or comments.
-            ''',
+            summary=('CoMSES Net is dedicated to fostering open and reproducible computational modeling through '
+                     'cyberinfrastructure and community development. We maintain these community curated resources '
+                     'to help new and experienced computational modelers improve the discoverability, reuse, and '
+                     'reproducibility of our computational models. Feel free to [contact us](/contact/) if you have any'
+                     'resources to add or comments.'
+                     )
         )
         self.landing_page.add_child(instance=resources_index)
         platforms_index_page = PlatformsIndexPage(title='Computational Modeling Platforms', slug='modeling-platforms')
@@ -119,8 +119,7 @@ class Command(BaseCommand):
         community_index = CommunityIndexPage(
             title='Welcome to the CoMSES Net Community',
             slug='community',
-            summary='''
-            CoMSES Net is dedicated to fostering open and reproducible scientific computation through cyberinfrastructure
+            summary='''CoMSES Net is dedicated to fostering open and reproducible scientific computation through cyberinfrastructure
             and community development. We are curating a growing collection of resources for model-based science including
             tutorials and FAQ's on agent-based modeling, a computational model library to help researchers archive their
             work and discover and reuse other's works, and forums for discussions, job postings, and events.
@@ -133,8 +132,7 @@ class Command(BaseCommand):
             heading='About',
             title='About CoMSES Net / OpenABM',
             slug='about',
-            summary='''
-            Welcome! CoMSES Net, the Network for Computational Modeling in Social and Ecological Sciences, is an open
+            summary='''Welcome! CoMSES Net, the Network for Computational Modeling in Social and Ecological Sciences, is an open
             community of researchers, educators, and professionals with a common goal - improving the way we develop,
             share, use, and re-use agent based and computational models for the study of social and ecological systems.
 
@@ -157,10 +155,8 @@ class Command(BaseCommand):
             CategoryIndexItem(
                 title='Provide trusted digital preservation and curation',
                 sort_order=1,
-                caption='''
-                You cannot reuse or reproduce that which you cannot find or understand due to lack of context and
-                metadata.
-                ''',
+                caption='''You cannot reuse or reproduce that which you cannot find or understand due to lack of context
+                and metadata.''',
                 image=preservation_image,
             )
         )
@@ -172,9 +168,7 @@ class Command(BaseCommand):
             CategoryIndexItem(
                 title='Promote a Culture of Sharing, Reuse, and Credit',
                 sort_order=2,
-                caption='''
-                Publish or perish. Share or shrivel.
-                ''',
+                caption='''Publish or perish. Share or shrivel.''',
                 image=promote_image
             )
         )
@@ -186,10 +180,8 @@ class Command(BaseCommand):
             CategoryIndexItem(
                 title='Improve theoretical and methodological practice',
                 sort_order=3,
-                caption='''
-                Engaging with practitioners to address theoretical concerns and improve methodological practices for
-                reuse and reusability.
-                ''',
+                caption='''Engaging with practitioners to address theoretical concerns and improve methodological practices for
+                reuse and reusability.''',
                 image=theory_image
             )
         )

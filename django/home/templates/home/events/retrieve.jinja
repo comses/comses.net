@@ -14,7 +14,7 @@
 
 {% block content %}
     <h1>{{ title }}</h1>
-    {{ markdown(description)|safe }}
+    {{ description|markdown }}
     <div class="btn-group">
         {% if has_change_perm %}
             <a type="button" class="btn btn-primary btn-sm" href="{{ url('home:event-update', pk=id) }}">Edit</a>
