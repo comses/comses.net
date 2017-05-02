@@ -2,6 +2,7 @@ import logging
 import pathlib
 from enum import Enum
 
+from django import forms
 from django.contrib.auth.models import User, Group
 from django.contrib.postgres.fields import ArrayField, JSONField
 from django.db import models
@@ -249,14 +250,14 @@ class CategoryIndexItem(Orderable, models.Model):
                               blank=True,
                               on_delete=models.SET_NULL,
                               related_name='+')
-    url = models.URLField("Linked page URL", blank=True)
+    url = models.CharField("Relative path, absolute path, or URL", max_length=200, blank=True)
     title = models.CharField(max_length=255)
     caption = models.CharField(max_length=600)
 
 
 class CategoryIndexNavigationLink(Orderable, models.Model):
     page = ParentalKey('home.CategoryIndexPage', related_name='navigation_links')
-    url = models.URLField("Linked URL")
+    url = models.CharField("Relative path, absolute path, or full URL", max_length=255)
     title = models.CharField(max_length=128)
 
 
@@ -278,7 +279,7 @@ class CategoryIndexPage(Page):
 
     content_panels = Page.content_panels + [
         FieldPanel('heading'),
-        FieldPanel('summary'),
+        FieldPanel('summary', widget=forms.Textarea),
         InlinePanel('callouts', label=_('Captioned Image Callouts')),
         InlinePanel('navigation_links', label=_('Subnavigation Links')),
     ]
