@@ -8,7 +8,7 @@ from core.serializer_helpers import save_tags
 from .models import Event, Job, FeaturedContentItem, MemberProfile
 
 
-class CreatorSerializer(serializers.ModelSerializer):
+class LinkedUserSerializer(serializers.ModelSerializer):
     profile_url = serializers.URLField(source='member_profile.get_absolute_url', read_only=True)
     full_name = serializers.CharField(source='get_full_name', read_only=True)
 
@@ -59,7 +59,7 @@ def update(serializer_update, instance, validated_data):
 
 
 class EventSerializer(serializers.ModelSerializer):
-    submitter = CreatorSerializer(read_only=True, help_text=_('User that created the event'), label='Submitter')
+    submitter = LinkedUserSerializer(read_only=True, help_text=_('User that created the event'), label='Submitter')
     relative_url = serializers.SerializerMethodField(help_text=_('URL to the detail page of the job'))
     date_created = serializers.DateTimeField(format='%Y-%m-%d', read_only=True)
     last_modified = serializers.DateTimeField(format='%Y-%m-%d', read_only=True)
@@ -89,9 +89,8 @@ class EventCalendarSerializer(serializers.ModelSerializer):
 
 
 class JobSerializer(serializers.ModelSerializer):
-    # need nested serializer for submitter
-    submitter = CreatorSerializer(read_only=True, help_text=_('User that created the job description'),
-                                  label='Submitter')
+    submitter = LinkedUserSerializer(read_only=True, help_text=_('User that created the job description'),
+                                     label='Submitter')
     relative_url = serializers.SerializerMethodField(help_text=_('URL to the detail page of the job'))
     date_created = serializers.DateTimeField(format='%Y-%m-%d', read_only=True)
     last_modified = serializers.DateTimeField(format='%Y-%m-%d', read_only=True)
@@ -125,15 +124,18 @@ class MemberProfileSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = MemberProfile
-        exclude = ('timezone',)
+        fields = ('__all__')
 
 
 class UserSerializer(serializers.ModelSerializer):
     member_profile = MemberProfileSerializer(read_only=True, allow_null=True)
+    profile_url = serializers.URLField(source='member_profile.get_absolute_url', read_only=True)
     username = serializers.CharField(read_only=True)
     is_superuser = serializers.BooleanField(read_only=True)
     is_staff = serializers.BooleanField(read_only=True)
+    date_joined = serializers.DateTimeField(read_only=True, format='%c')
 
     class Meta:
         model = User
-        fields = ('first_name', 'last_name', 'username', 'is_superuser', 'is_staff', 'member_profile', 'get_full_name',)
+        fields = ('first_name', 'last_name', 'username', 'is_superuser', 'is_staff', 'member_profile', 'get_full_name',
+                  'profile_url', 'date_joined')

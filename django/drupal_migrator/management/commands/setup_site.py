@@ -11,7 +11,7 @@ from django.core.management.base import BaseCommand
 from wagtail.wagtailcore.models import Page, Site
 
 from home.models import (LandingPage, FeaturedContentItem, SocialMediaSettings,
-                         PlatformsIndexPage, Platform, PlatformSnippetPlacement, ResourcesIndexPage)
+                         PlatformsIndexPage, Platform, PlatformSnippetPlacement, ResourcesIndexPage, CommunityIndexPage)
 from library.models import Codebase
 
 logger = logging.getLogger(__name__)
@@ -71,6 +71,7 @@ class Command(BaseCommand):
         root_page = Page.objects.get(path='0001')
         # delete root page's initial children.
         root_page.get_children().delete()
+        LandingPage.objects.delete()
         landing_page = LandingPage(
             title='CoMSES Net Home Page',
             slug='home',
@@ -109,6 +110,19 @@ class Command(BaseCommand):
         resources_index.add_child(instance=platforms_index_page)
 
 
+    def create_community_section(self):
+        community_index = CommunityIndexPage(
+            title='Welcome to the CoMSES Net Community',
+            slug='community',
+            summary='''
+            CoMSES Net is dedicated to fostering open and reproducible scientific computation through cyberinfrastructure 
+            and community development. We are curating a growing collection of resources for model-based science including
+            tutorials and FAQ's on agent-based modeling, a computational model library to help researchers archive their
+            work and discover and reuse other's works, and forums for discussions, job postings, and events.
+            '''
+        )
+        self.landing_page.add_child(instance=community_index)
+
 
     def handle(self, *args, **options):
         self.create_landing_page()
@@ -116,4 +130,5 @@ class Command(BaseCommand):
         self.create_site(site_name=options['site_name'], hostname=options['site_domain'])
         self.create_social_apps()
         # create community, about, resources pages
+        self.create_community_section()
         self.create_resources_section()

@@ -242,9 +242,31 @@ class LandingPage(Page):
     ]
 
 
+
+class CategoryIndexItem(Orderable):
+    page = ParentalKey('home.CategoryIndexPage', related_name='linked_categories')
+    image = models.ForeignKey('wagtailimages.Image',
+                              null=True,
+                              blank=True,
+                              on_delete=models.SET_NULL,
+                              related_name='+')
+    url = models.URLField("Linked page URL", blank=True)
+    title = models.CharField(max_length=255)
+    caption = models.CharField(max_length=255)
+
+
+class CategoryIndexPage(Page):
+    # FIXME: CommunityIndexPage and ResourcesIndexPage could be merged into this wagtail Model
+    template = 'home/category_index.jinja'
+    summary = models.CharField(max_length=500, help_text=_('Summary blurb for this category index page.'))
+
+    content_panels = Page.content_panels + [
+        InlinePanel('linked_categories', label=_('Linked Subpages'))
+    ]
+
 class CommunityIndexPage(Page):
     template = 'home/community/index.jinja'
-    summary = models.CharField(max_length=500, help_text=_("Summary blurb"))
+    summary = models.CharField(max_length=500, help_text=_("Summary blurb for Community index"))
 
 
 class ResourcesIndexPage(Page):

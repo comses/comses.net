@@ -238,7 +238,7 @@ class ProfileViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         # FIXME: this is broken, as Users / MemberProfiles do not have a `date_created` field
         # fix get_search_queryset to have a parameterizable ordering field
-        return get_search_queryset(self)
+        return User.objects.filter(is_active=True)
 
     def retrieve(self, request, *args, **kwargs):
         return retrieve_with_perms(self, request, *args, **kwargs)
