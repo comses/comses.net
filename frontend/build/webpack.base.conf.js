@@ -19,7 +19,7 @@ module.exports = {
         job_list: './src/pages/job/list.ts',
         event_list: './src/pages/event/list.ts',
         codebase_list: './src/pages/codebase/list.ts',
-        vendors: './src/vendors.js',
+        vendors: './src/vendors.ts',
         styles: './src/style.scss'
     },
     output: {

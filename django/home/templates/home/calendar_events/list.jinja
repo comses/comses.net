@@ -1,0 +1,40 @@
+{% extends "sidebar_layout.jinja" %}
+{% from "common.jinja" import item_component, list_page, paginator, breadcrumb %}
+
+{% block extra_css %}
+    <link rel='stylesheet' href="//cdnjs.cloudflare.com/ajax/libs/fullcalendar/3.4.0/fullcalendar.min.css"/>
+{% endblock %}
+
+{% block title %}Community Events{% endblock %}
+
+{% block introduction %}<h1>Community Events</h1>{% endblock %}
+
+{% block top %}
+    {{ breadcrumb([{'text': 'Community Events' }]) }}
+{% endblock %}
+
+{% block content %}
+    <div id="calendar"></div>
+    <a class="my-3 btn btn-primary" href="{{ url('home:event-list') }}">List View</a>
+{% endblock %}
+
+{% block js %}
+    {{ super() }}
+    {# TODO: Should use npm to store the calendar dependencies #}
+    <script src="//cdnjs.cloudflare.com/ajax/libs/moment.js/2.18.1/moment.min.js"></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/fullcalendar/3.4.0/fullcalendar.min.js"></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/fullcalendar/3.4.0/fullcalendar.print.css"></script>
+    <script>
+        {# TODO: display description in tooltip as well #}
+        $(document).ready(function () {
+            $('#calendar').fullCalendar({
+                events: '/calendar_events/',
+                eventRender: function(event, element) {
+                    let eventElement = element[0];
+                    eventElement.setAttribute('data-toggle', 'tooltip');
+                    eventElement.setAttribute('title', event.title);
+                }
+            });
+        });
+    </script>
+{% endblock %}

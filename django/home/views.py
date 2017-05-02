@@ -10,10 +10,11 @@ from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.db.models.query_utils import Q
-from django.db.models.functions import Coalesce
+from django.views.generic import TemplateView
 from django.http import QueryDict, HttpResponseBadRequest, HttpResponseRedirect
 from rest_framework import viewsets, generics, mixins
 from rest_framework.pagination import PageNumberPagination
+from rest_framework.renderers import JSONRenderer
 from rest_framework.response import Response
 from taggit.models import Tag
 from wagtail.wagtailsearch.backends import get_search_backend
@@ -127,7 +128,7 @@ class EventCalendarList(mixins.ListModelMixin, viewsets.GenericViewSet):
     serializer_class = EventCalendarSerializer
     queryset = Event.objects.all()
 
-    def get_queryset(self):
+    def get_list_queryset(self):
         tzinfo = tz.gettz(settings.TIME_ZONE)
         start = datetime_parse(self.request.query_params['start'])
         start = start.replace(tzinfo=tzinfo)
@@ -144,12 +145,17 @@ class EventCalendarList(mixins.ListModelMixin, viewsets.GenericViewSet):
         queryset._date_range = start, end
         return queryset
 
+    @property
+    def template_name(self):
+        return 'home/calendar_events/{}.jinja'.format(self.action)
+
     @staticmethod
     def to_calendar_early_registration_deadline_event(event):
         return {
             'title': 'Early Registration Deadline: ' + event.title,
             'start': event.early_registration_deadline.isoformat(),
-            'url': event.get_absolute_url()
+            'url': event.get_absolute_url(),
+            'color': '#aaa',
         }
 
     @staticmethod
@@ -157,7 +163,8 @@ class EventCalendarList(mixins.ListModelMixin, viewsets.GenericViewSet):
         return {
             'title': 'Submission Deadline: ' + event.title,
             'start': event.submission_deadline.isoformat(),
-            'url': event.get_absolute_url()
+            'url': event.get_absolute_url(),
+            'color': '#ccc',
         }
 
     @staticmethod
@@ -166,14 +173,18 @@ class EventCalendarList(mixins.ListModelMixin, viewsets.GenericViewSet):
             'title': event.title,
             'start': event.start_date.isoformat(),
             'end': event.end_date.isoformat(),
-            'url': event.get_absolute_url()
+            'url': event.get_absolute_url(),
+            'color': '#92c02e',
         }
 
     def list(self, request, *args, **kwargs):
         """Arrange events so that early registration deadline, registration deadline and the actual event
         are events to be rendered in the calendar"""
 
-        queryset = self.get_queryset()
+        if not request.query_params:
+            return Response(data={}, template_name='home/calendar_events/list.jinja')
+
+        queryset = self.get_list_queryset()
         start, end = queryset._date_range
         events = list(queryset)
 
