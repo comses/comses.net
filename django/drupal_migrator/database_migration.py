@@ -14,7 +14,7 @@ from django.contrib.auth.models import User, Group
 from taggit.models import Tag
 
 from core.summarization import summarize_to_text
-from home.models import Event, Job, MemberProfile, ComsesGroups, Platform
+from home.models import Event, Job, MemberProfile, ComsesGroups, Platform, Download
 from library.models import (Contributor, Codebase, CodebaseRelease, CodebaseTag, License,
                             CodebaseContributor, OPERATING_SYSTEMS)
 from .utils import get_first_field, get_field, get_field_attributes, to_datetime
@@ -477,6 +477,105 @@ class ModelVersionExtractor(Extractor):
         return model_version_id_map
 
 
+class ValidationError(KeyError):
+    pass
+
+
+class DownloadCountExtractor:
+    """
+    Download data extracted the openabm website using
+
+    ```
+    SELECT id as nid, timestamp as date_created, download_count.uid, ip_address, referrer, node.type
+    FROM openabm.download_count as download_count
+    INNER JOIN openabm.node as node on node.nid = download_count.id
+    INTO OUTFILE '/var/backups/DownloadCountAll.csv'
+    FIELDS TERMINATED BY ','
+        OPTIONALLY ENCLOSED BY '"'
+    LINES TERMINATED BY '\n';
+    ```
+    """
+
+    def __init__(self, data):
+        self.data = data
+
+    @classmethod
+    def from_file(cls, file_path: str):
+        with open(file_path, 'r') as f:
+            return cls(list(csv.DictReader(f)))
+
+    @staticmethod
+    def _get_instance(raw_download, instance_id_map, field_name: str, message: str):
+        drupal_id = raw_download[field_name]
+        instance = instance_id_map.get(drupal_id)
+        if instance is None:
+            raise ValidationError(message.format(drupal_id))
+
+        return instance
+
+    @classmethod
+    def _get_user_id(cls, raw_download, user_id_map):
+        user = user_id_map.get(raw_download['uid'])
+        if not user:
+            logger.info("Unable to locate user with Drupal UID %s. Setting user NULL", raw_download['uid'])
+        return user
+
+    @classmethod
+    def _get_codebase_release(cls, raw_download, model_version_id_map):
+        codebase_release_id = cls._get_instance(raw_download, model_version_id_map, 'nid',
+                                                "Unable to locate associated model version nid {}")
+        return CodebaseRelease.objects.get(id=codebase_release_id)
+
+    @classmethod
+    def _get_codebase(cls, raw_download, model_id_map):
+        return cls._get_instance(raw_download, model_id_map, 'nid',
+                                 "Unable to locate associated model nid {}")
+
+    @classmethod
+    def _extract_model(cls, raw_download, model_id_map, user_id_map):
+        user_id = cls._get_user_id(raw_download, user_id_map)
+        codebase = cls._get_codebase(raw_download, model_id_map)
+        return Download(date_created=to_datetime(raw_download['date_created']),
+                        user_id=user_id,
+                        content_object=codebase,
+                        ip_address=raw_download['ip_address'],
+                        referrer=raw_download['referrer'])
+
+    @classmethod
+    def _extract_model_version(cls, raw_download, model_version_id_map, user_id_map):
+        user_id = cls._get_user_id(raw_download, user_id_map)
+        codebase_release = cls._get_codebase_release(raw_download, model_version_id_map)
+        return Download(date_created=to_datetime(raw_download['date_created']),
+                        user_id=user_id,
+                        content_object=codebase_release,
+                        ip_address=raw_download['ip_address'],
+                        referrer=Extractor.sanitize(raw_download['referrer'], max_length=200))
+
+    def extract_all(self, model_id_map: Dict[str, int], model_version_id_map: Dict[str, int],
+                    user_id_map: Dict[str, int]):
+        """
+        Some download counts in Drupal are at the Codebase Level but here they are at the CodebaseRelease level. In order
+         to match the new database structure I make the assumption that all codebase level downloads occurred at the last
+         release of the codebase
+        """
+        downloads = []
+        for raw_download in self.data:
+            try:
+                if raw_download['type'] == 'model':
+                    download = self._extract_model(raw_download, model_id_map, user_id_map)
+                elif raw_download['type'] == 'modelversion':
+                    download = self._extract_model_version(raw_download, model_version_id_map, user_id_map)
+                else:
+                    raise ValidationError('Invalid node type %s', raw_download['type'])
+
+                downloads.append(download)
+
+            except ValidationError as e:
+                logger.warning(e.args[0])
+
+        Download.objects.bulk_create(downloads)
+
+
 class IDMapper:
     def __init__(self, author_id_map, user_id_map, tag_id_map, model_id_map, model_version_id_map):
         self._maps = {
@@ -501,7 +600,7 @@ def load(directory: str):
     model_version_extractor = ModelVersionExtractor.from_file(os.path.join(directory, "ModelVersion.json"))
     taxonomy_extractor = TaxonomyExtractor.from_file(os.path.join(directory, "Taxonomy.json"))
     profile_extractor = ProfileExtractor.from_file(os.path.join(directory, "Profile2.json"))
-
+    download_extractor = DownloadCountExtractor.from_file(os.path.join(directory, "DownloadCount.csv"))
 
     if License.objects.count() == 0:
         load_data(License, LICENSES)
@@ -516,4 +615,5 @@ def load(directory: str):
     model_id_map = model_extractor.extract_all(user_id_map, tag_id_map, author_id_map)
     model_version_id_map = model_version_extractor.extract_all(model_id_map)
     profile_extractor.extract_all(user_id_map, tag_id_map)
+    download_extractor.extract_all(model_id_map, model_version_id_map, user_id_map)
     return IDMapper(author_id_map, user_id_map, tag_id_map, model_id_map, model_version_id_map)

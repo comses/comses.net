@@ -4,6 +4,8 @@ from enum import Enum
 
 from django import forms
 from django.contrib.auth.models import User, Group
+from django.contrib.contenttypes.fields import GenericForeignKey
+from django.contrib.contenttypes.models import ContentType
 from django.contrib.postgres.fields import ArrayField, JSONField
 from django.db import models
 from django.urls import reverse
@@ -47,13 +49,25 @@ class ComsesGroups(Enum):
     def initialize():
         return [
             Group.objects.get_or_create(name=g.value)[0] for g in ComsesGroups
-        ]
+            ]
 
     def get_group(self):
         _group = getattr(self, 'group', None)
         if _group is None:
             _group = self.group = Group.objects.get(name=self.value)
         return _group
+
+
+class Download(models.Model):
+    date_created = models.DateTimeField(default=timezone.now)
+
+    user = models.ForeignKey(User, null=True)
+    content_type = models.ForeignKey(ContentType)
+    object_id = models.PositiveIntegerField()
+    content_object = GenericForeignKey('content_type', 'object_id')
+
+    ip_address = models.GenericIPAddressField()
+    referrer = models.URLField(max_length=500)
 
 
 @register_setting
@@ -474,7 +488,6 @@ class EventTag(TaggedItemBase):
 
 
 class EventQuerySet(models.QuerySet):
-
     def upcoming(self):
         return self.filter(start_date__gte=timezone.now())
 
