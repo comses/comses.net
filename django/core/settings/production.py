@@ -37,7 +37,7 @@ WAGTAILSEARCH_BACKENDS = {
     }
 }
 INSTALLED_APPS += [
-    'raven.contrib.django.raven_compat'
+    'raven.contrib.django.raven_compat',
     # FIXME: remove after successful data migration
     'drupal_migrator',
 ]
@@ -46,7 +46,7 @@ RAVEN_CONFIG = {
     'dsn': config.get('logging', 'SENTRY_DSN', fallback=''),
     # If you are using git, you can also automatically configure the
     # release based on the git info.
-    'release': raven.fetch_git_sha(BASE_DIR),
+    # 'release': raven.fetch_git_sha(BASE_DIR),
 }
 
 LOGGING = {
