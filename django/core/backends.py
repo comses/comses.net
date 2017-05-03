@@ -102,6 +102,9 @@ def get_viewable_objects_for_user(user, queryset):
     model = queryset.model
     perms = make_change_delete_view_perms(model)
     kwargs = {}
+
+    # Do not filter the queryset if the model does not have the PUBLISHED_ATTRIBUTE_KEY
+    # (models without PUBLISHED_ATTRIBUTE_KEY are assumed to be live so are always included in list results)
     if has_field(model, PUBLISHED_ATTRIBUTE_KEY):
         user = get_db_user(user)
         kwargs[PUBLISHED_ATTRIBUTE_KEY] = True
