@@ -153,7 +153,7 @@ class EventExtractor(Extractor):
     def _extract(self, raw_event, user_id_map: Dict[str, int]) -> Event:
         description = get_first_field(raw_event, 'body')
         summary = get_first_field(raw_event, 'body', attribute_name='summary', default='')[:300] \
-                  or summarize_to_text(description, sentences_count=2)
+            or summarize_to_text(description, sentences_count=2)
 
         return Event(
             title=raw_event['title'],
@@ -366,12 +366,14 @@ class ModelExtractor(Extractor):
         submitter_id = user_id_map[raw_model.get('uid')]
         author_ids.add(submitter_id)
         with suppress_auto_now(Codebase, 'last_modified'):
+            last_changed = to_datetime(raw_model['changed'])
             code = Codebase.objects.create(
                 title=raw_model['title'].strip(),
                 description=self.sanitize_text(get_first_field(raw_model, field_name='body', default='')),
                 date_created=to_datetime(raw_model['created']),
                 live=self.int_to_bool(raw_model['status']),
-                last_published_on=to_datetime(raw_model['changed']),
+                last_published_on=last_changed,
+                last_modified=last_changed,
                 is_replication=Extractor.int_to_bool(get_first_field(raw_model, 'field_model_replicated', default='0')),
                 uuid=raw_model['uuid'],
                 first_published_at=to_datetime(raw_model['created']),
@@ -433,11 +435,13 @@ class ModelVersionExtractor(Extractor):
                 }
             }
             with suppress_auto_now([Codebase, CodebaseRelease], 'last_modified'):
+                last_changed = to_datetime(raw_model_version['changed'])
                 codebase_release = codebase.make_release(
                     description=self.sanitize_text(description),
                     date_created=to_datetime(raw_model_version['created']),
                     first_published_at=to_datetime(raw_model_version['created']),
-                    last_published_on=to_datetime(raw_model_version['changed']),
+                    last_modified=last_changed,
+                    last_published_on=last_changed,
                     os=self.OS_LIST[int(get_first_field(raw_model_version, 'field_modelversion_os', default=0))],
                     license_id=license_id,
                     identifier=raw_model_version['vid'],
