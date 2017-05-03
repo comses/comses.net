@@ -13,6 +13,7 @@ echo "For improved security, you should have a 'comses' user with uid/gid of 271
 
 set -a
 . deploy/conf/docker.env
+cp deploy/conf/docker.env .env
 
 if [[ -f "$CONFIG_INI" ]]; then
     echo "Existing $CONFIG_INI will be overwritten and you may lose access to existing containerized data. Continue?"
