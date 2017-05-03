@@ -54,7 +54,7 @@ services:
     image: comses/postgis:9.5
     restart: always
     volumes:
-      - ./docker/pgdata:/var/lib/postgresql/data
+      - ./docker/shared/pgdata:/var/lib/postgresql/data
     environment:
       # autofilled by ./build.sh envsubst
       # FIXME: replace with init sql script, see https://github.com/docker/docker/issues/13490

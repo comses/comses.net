@@ -28,7 +28,7 @@ services:
   ${DB_HOST}:
     image: comses/postgis:9.5
     volumes:
-      - ./docker/pgdata:/var/lib/postgresql/data
+      - ./docker/shared/pgdata:/var/lib/postgresql/data
     environment:
       # FIXME: replace with init sql script, see https://github.com/docker/docker/issues/13490
       POSTGRES_USER: "${DB_USER}"
