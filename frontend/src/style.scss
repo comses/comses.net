@@ -12,6 +12,11 @@ $body-bg: $white;
 $light-blue-gray: #ced9ee;
 $default-padding: 60px;
 
+// Button Overrides
+$btn-secondary-bg: $link-color;
+$btn-secondary-color: #fff;
+$btn-secondary-border: $link-color;
+
 // Font Size Overrides
 $font-size-h1: 1.8rem;
 $font-size-h2: 1.6rem;
@@ -22,6 +27,7 @@ $font-size-h6: 1.0rem;
 
 // Components overrides
 $border-radius: .0rem;
+$border-radius-sm: .0rem;
 
 @import url('https://fonts.googleapis.com/css?family=Open+Sans');
 @import url('https://fonts.googleapis.com/css?family=Abel');
@@ -90,7 +96,7 @@ $fa-font-path: '../node_modules/font-awesome/fonts/';
     font-family: 'Abel', 'Open Sans', sans-serif;
     color: white;
     font-weight: 200;
-}
+  }
   h1 {
     font-size: 3.5em;
   }
@@ -125,11 +131,11 @@ $fa-font-path: '../node_modules/font-awesome/fonts/';
 }
 
 ol.breadcrumb {
-    margin-top: -50px;
-    padding-bottom: 30px;
-    margin-left: 0px;
-    padding-left: 0px;
-    background-color: $white;
+  margin-top: -50px;
+  padding-bottom: 30px;
+  margin-left: 0px;
+  padding-left: 0px;
+  background-color: $white;
 }
 
 .callouts {
@@ -157,14 +163,14 @@ ol.breadcrumb {
   padding-top: $default-padding;
   padding-bottom: $default-padding;
   h1 {
-      text-align: center;
-      padding-bottom: 1.5rem;
+    text-align: center;
+    padding-bottom: 1.5rem;
   }
   .row {
-      padding-top: 30px;
-      padding-bottom: 30px;
+    padding-top: 30px;
+    padding-bottom: 30px;
   }
-  
+
 }
 
 .mission {
@@ -176,7 +182,7 @@ ol.breadcrumb {
 }
 
 div.activity {
-    padding: 10px 5px 10px 5px;
+  padding: 10px 5px 10px 5px;
 }
 
 .featured-content {
@@ -191,28 +197,28 @@ div.activity {
   font-weight: 300;
 
   #featured-content-carousel {
-      height: 350px;
+    height: 350px;
   }
 
   h1 {
-      text-align: center;
+    text-align: center;
   }
 
   .carousel-inner {
-      height: 350px;
-      overflow: visible;
+    height: 350px;
+    overflow: visible;
   }
   .carousel-text {
-      margin-left: -200px;
+    margin-left: -200px;
   }
   .carousel-item {
-      height: 320px;
+    height: 320px;
   }
   .carousel-caption {
-      text-align: left;
+    text-align: left;
   }
   .row {
-      height: 320px;
+    height: 320px;
   }
 }
 
@@ -223,11 +229,11 @@ div.activity {
 nav {
   background-color: $white;
   .nav-link {
-      font-size: .8em;
-      color: $text-color;
+    font-size: .8em;
+    color: $text-color;
   }
   .nav-link:hover {
-      text-decoration: underline;
+    text-decoration: underline;
   }
 }
 
@@ -236,8 +242,8 @@ footer {
   background-image: url("./assets/images/background-footer.png");
   color: $white;
   .row {
-      padding-top: 20px;
-      padding-bottom: 20px;
+    padding-top: 20px;
+    padding-bottom: 20px;
   }
 }
 
@@ -292,27 +298,36 @@ footer {
     }
   }
 }
-.tags {
-    @extend .card-block;
-    padding: 1em 0 0;
-    .tag {
-        padding: 1em;
-        @extend .badge;
-        background-color: $rules-color;
-        color: $link-color;
-    }
 
-    a.tag:hover {
-        color: $link-color;
-        text-decoration: underline;
-    }
+.tags {
+  @extend .card-block;
+  padding: 1em 0 0;
+  .tag {
+    padding: 1em;
+    @extend .badge;
+    background-color: $rules-color;
+    color: $link-color;
+  }
+
+  a.tag:hover {
+    color: $link-color;
+    text-decoration: underline;
+  }
 }
+
 .card-metadata {
   @extend .card;
   margin-top: 0.5em;
   margin-bottom: 0.5em;
   background-color: $rules-color;
   border: none;
+
+  .card-title {
+    @extend .card-block;
+    padding: 0 1.25rem;
+    font-size: 1.5rem;
+    margin-bottom: 0;
+  }
 }
 
 .datepicker-clear-button {

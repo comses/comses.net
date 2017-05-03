@@ -1,3 +1,3 @@
-import SearchForm from 'components/search_form.vue'
+import SearchForm from 'components/sidebar.vue'
 
-new SearchForm({propsData: {model_name: 'Codebase'}}).$mount('#app');
+new SearchForm().$mount('#sidebar');

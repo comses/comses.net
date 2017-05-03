@@ -21,9 +21,15 @@
 {% block introduction %}<h1>Computational Model Library</h1>{% endblock %}
 
 {% block top %}
+<<<<<<< d70ec25924a59990a14291315c97f0aae78a6faf
     {{ breadcrumb([{'text': 'Computational Model Library'}]) }}
 
     <div id="app"></div>
+=======
+    {{ breadcrumb([
+    {'text': 'Computational Model Library'}
+    ]) }}
+>>>>>>> Added sidebar with fake data
 {% endblock %}
 
 {% block content %}
@@ -37,37 +43,7 @@
 {% endblock %}
 
 {% block sidebar %}
-    <div class="card-metadata">
-        <div class="card-title">
-            Search
-        </div>
-        <div class="card-block">
-            <form>
-                <div class="form-group">
-                    <label>Keywords</label>
-                </div>
-                <div class="form-group">
-
-                </div>
-            </form>
-        </div>
-    </div>
-    <div class="card-metadata">
-        <div class="card-title">
-            Tags
-        </div>
-        <div class="card-block">
-
-        </div>
-    </div>
-    <div class="card-metadata">
-        <div class="card-title">
-            Authors
-        </div>
-        <div class="card-block">
-        </div>
-    </div>
-    {{ submit_model_btn() }}
+    <div id="sidebar"></div>
 {% endblock %}
 
 {% macro render_codebase_result(item, detail_url_name) %}
