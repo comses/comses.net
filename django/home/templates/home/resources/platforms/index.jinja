@@ -1,5 +1,5 @@
 {% extends "sidebar_layout.jinja" %}
-{% from "common.jinja" import subnav %}
+{% from "common.jinja" import subnav, submit_model_btn %}
 
 {% block title %}Computational Modeling Platforms{% endblock %}
 
@@ -57,6 +57,6 @@
             </form>
         </div>
     </div>
-    <div><a class='btn btn-primary w-100' href='{{ url("library:codebase-create") }}'>Submit a model</a></div>
+    {{ submit_model_btn() }}
 
 {% endblock %}

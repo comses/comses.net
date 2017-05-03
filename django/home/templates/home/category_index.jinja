@@ -17,22 +17,19 @@
    </div>
    <section class='callouts'>
        {% for batched_callouts in page.callouts.all()|batch(3) %}
-           <div class='row'>
+           <div class='row p-5'>
                {% for item in batched_callouts %}
                    <div class='col'>
-                       {% if item.url %}
-                           <a href='{{ item.url }}'>{{ image(item.image, "height-50", class='img-fluid d-block') }}</a>
-                       {% else %}
+                       {% if item.url %}<a href='{{ item.url }}'>{% endif %}
                            {{ image(item.image, "height-50", class='img-fluid d-block') }}
-                       {% endif %}
-                       <h3>{{ item.title }}</h3>
+                           <h3>{{ item.title }}</h3>
+                       {% if item.url %} </a> {% endif %}
                        <div class='caption'>
-                           {{ item.caption }}
+                           {{ item.caption|markdown }}
                        </div>
                    </div>
                {% endfor %}
            </div>
        {% endfor %}
    </section>
-{% endblock %} 
-
+{% endblock %}

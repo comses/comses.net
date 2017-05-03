@@ -48,7 +48,7 @@ class CodebaseSerializer(serializers.ModelSerializer):
     releases = CodebaseReleaseSerializer(read_only=True, many=True)
     first_published_at = serializers.DateTimeField(format='%c', read_only=True)
     date_created = serializers.DateTimeField(format='%Y-%m-%d', read_only=True)
-    last_modified = serializers.DateTimeField(format='%Y-%m-%d', read_only=True)
+    last_published_on = serializers.DateTimeField(format='%b %d, %Y', read_only=True)
     tags = home_serializers.TagSerializer(many=True)
     absolute_url = serializers.URLField(source='get_absolute_url', read_only=True)
     submitter = home_serializers.LinkedUserSerializer(read_only=True)

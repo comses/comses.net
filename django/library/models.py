@@ -21,7 +21,6 @@ from taggit.models import TaggedItemBase
 from wagtail.wagtailimages.models import Image
 from wagtail.wagtailsearch import index
 
-from home.models import Platform
 from . import fs
 
 logger = logging.getLogger(__name__)
@@ -337,7 +336,7 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
     dependencies JSONField
     '''
     platform_tags = ClusterTaggableManager(through=CodebaseReleasePlatformTag, related_name='platform_codebase_releases')
-    platforms = models.ManyToManyField(Platform)
+    platforms = models.ManyToManyField('home.Platform')
     programming_languages = ClusterTaggableManager(through=ProgrammingLanguage,
                                                    related_name='pl_codebase_releases')
     codebase = models.ForeignKey(Codebase, related_name='releases')
@@ -422,3 +421,6 @@ class CodebaseContributor(models.Model):
                             Roles from https://www.ngdc.noaa.gov/metadata/published/xsd/schema/resources/Codelist/gmxCodelists.xml#CI_RoleCode
                             '''))
     index = models.PositiveSmallIntegerField(help_text=_('Ordering field for codebase contributors'))
+
+    def __str__(self):
+        return "{0} contributor {1}".format(self.release, self.contributor)

@@ -1,5 +1,5 @@
 {% extends "sidebar_layout.jinja" %}
-{% from "common.jinja" import list_page, paginator, breadcrumb %}
+{% from "common.jinja" import list_page, paginator, breadcrumb, submit_model_btn %}
 
 {% macro search_component() %}
     <form class="form-group row" action="{{ url('library:codebase-list') }}" method="get"
@@ -65,10 +65,9 @@
             Authors
         </div>
         <div class="card-block">
-
         </div>
     </div>
-    <div class="btn btn-primary w-100">Submit a model</div>
+    {{ submit_model_btn() }}
 {% endblock %}
 
 {% macro render_codebase_result(item, detail_url_name) %}
@@ -89,15 +88,12 @@
                     <small>
                         {% for codebase_contributor in item.all_contributors %}
                             {% if codebase_contributor.username %}
-                                <a href="{{ codebase_contributor.profile_url }}/">{{ codebase_contributor.name }}</a>
+                                <a href="{{ codebase_contributor.profile_url }}">{{ codebase_contributor.name }}</a>
                             {% else %}
                                 <span>{{ codebase_contributor.name }}</span>
                             {% endif %}
-                            {% if not loop.last %}
-                                ,
-                            {% endif %}
                         {% endfor %}
-                        | Last Updated: {{ item.last_modified }}, Created on: {{ item.date_created }}
+                        | Published {{ item.last_published_on }}
                     </small>
                 </div>
                 <div class="summary">
