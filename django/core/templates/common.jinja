@@ -70,17 +70,6 @@
     </div>
 {% endmacro %}
 
-{% macro retrieve_introduction(title) %}
-    <div class="container">
-        <div class="row">
-            <div class="col-12">
-                <h1>{{ title }}</h1>
-            </div>
-        </div>
-    </div>
-{% endmacro %}
-
-
 {% macro subnav(items) %}
 <ul class='nav nav-tabs justify-content-center'>
     {% for item in items %}
@@ -94,7 +83,6 @@
     {% endfor %}
 </ul>
 {% endmacro %}
-
 
 {% macro breadcrumb(items) %}
     <small>
@@ -113,6 +101,7 @@
 
 {% macro discourse_embed_script() %}
     {# See https://meta.discourse.org/t/embedding-discourse-comments-via-javascript/31963 for details #}
+    {% if not is_debug() %}
     <script type="text/javascript">
 
         DiscourseEmbed = {
@@ -128,4 +117,5 @@
             (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(d);
         })();
     </script>
+    {% endif %}
 {% endmacro %}

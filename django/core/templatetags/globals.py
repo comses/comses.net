@@ -28,6 +28,11 @@ def now(format_string):
 
 
 @library.global_function
+def is_debug():
+    return settings.DEBUG
+
+
+@library.global_function
 def provider_login_url(request, provider_id, process="login"):
     provider = providers.registry.by_id(provider_id, request)
     return provider.get_login_url(request, process=process)
