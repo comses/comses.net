@@ -1,5 +1,5 @@
 {% extends "sidebar_layout.jinja" %}
-{% from "common.jinja" import retrieve_introduction, breadcrumb, discourse_embed_script %}
+{% from "common.jinja" import breadcrumb, discourse_embed_script %}
 
 {% block title %}{{ title }}{% endblock %}
 
@@ -15,25 +15,25 @@
 {% block content %}
     <h1 class="pb-4">{{ title }}</h1>
     <div class='metadata'>
-        <b>Platform:</b>
+        <b class='pr-2'>Platform:</b>
         {% for p in latest_version.platforms %}
             <a class='tag' href='/search?tag={{ p.name }}'>{{ p.name }}</a>
         {% endfor %}
-        <b>Version: </b> {{ latest_version.version_number }}
+        <b class='pl-2'>Version: </b> {{ latest_version.version_number }}
         <small><a href='{{ latest_version.absolute_url }}'>(View Latest)</a></small>
-        <b>Language:</b>
+        <b class='pl-2'>Language:</b>
         {% for pl in latest_version.programming_languages %}
             <a class='tag' href='/search?tag={{ pl.name }}'>{{ pl.name }}</a>
         {% endfor %}
     </div>
     <div class='tags'>
         {% for tag in tags %}
-            <a class='tag' href='/search?tag={{ tag.name }}'>{{ tag.name }}</a>
+            <a class='tag p-2' href='/search?tag={{ tag.name }}'>{{ tag.name }}</a>
         {% endfor %}
     </div>
-    <p>
+    <div id='discourse-content' class='pt-4'>
         {{ description|markdown }}
-    </p>
+    </div>
 {% endblock %}
 
 {% block sidebar %}
@@ -85,12 +85,6 @@
             <span class="col-2 fa fa-twitter-square"></span>
             <span class="col-2 fa fa-envelope-square"></span>
         </div>
-    </div>
-{% endblock %}
-
-{% block bottom %}
-    <div class="col">
-        <div id="discourse-comments"></div>
     </div>
 {% endblock %}
 

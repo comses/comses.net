@@ -1,7 +1,7 @@
 {% extends "sidebar_layout.jinja" %}
 {% from "common.jinja" import permission_button_group, breadcrumb, discourse_embed_script %}
 
-{% block title %}Job: {{ title }}{% endblock %}
+{% block title %}{{ title }}{% endblock %}
 
 {% block introduction %}
     <h1>Job Postings</h1>
@@ -14,7 +14,7 @@
 {% endblock %}
 
 {% block content %}
-    <div id="content">
+    <div id="discourse-content">
         <h1>{{ title }}</h1>
         {{ description|markdown }}
     </div>

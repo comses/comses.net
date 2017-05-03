@@ -13,8 +13,10 @@
 {% endblock %}
 
 {% block content %}
-    <h1>{{ title }}</h1>
-    {{ description|markdown }}
+    <div id='discourse-content'>
+        <h1>{{ title }}</h1>
+        {{ description|markdown }}
+    </div>
     <div class="btn-group">
         {% if has_change_perm %}
             <a type="button" class="btn btn-primary btn-sm" href="{{ url('home:event-update', pk=id) }}">Edit</a>

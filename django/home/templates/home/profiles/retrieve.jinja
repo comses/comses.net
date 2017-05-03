@@ -1,10 +1,11 @@
 {% extends "base.jinja" %}
-{% from "common.jinja" import retrieve_introduction %}
 
 {% block introduction %}
-    {{ retrieve_introduction("Profile: " + get_full_name) }}
+    <h1>User Profile: {{ get_full_name }}</h1>
 {% endblock %}
 
 {% block content %}
-
+    <div class='row'>
+        All the relevant user details go here.
+    </div>
 {% endblock %}
