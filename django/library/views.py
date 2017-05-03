@@ -1,11 +1,12 @@
-from rest_framework import viewsets
-from django.urls import resolve
+import logging
 
+from django.urls import resolve
+from rest_framework import viewsets
+
+from core.view_helpers import get_search_queryset
 from home.views import SmallResultSetPagination
 from .models import Codebase, CodebaseRelease
 from .serializers import CodebaseSerializer, CodebaseReleaseSerializer
-
-import logging
 
 logger = logging.getLogger(__name__)
 
@@ -13,10 +14,12 @@ logger = logging.getLogger(__name__)
 class CodebaseViewSet(viewsets.ModelViewSet):
     lookup_field = 'identifier'
     lookup_value_regex = r'[\w\-.]+'
-
-    queryset = Codebase.objects.all()
     serializer_class = CodebaseSerializer
     pagination_class = SmallResultSetPagination
+    queryset = Codebase.objects.all()
+
+    def get_queryset(self):
+        return get_search_queryset(self)
 
     @property
     def template_name(self):
