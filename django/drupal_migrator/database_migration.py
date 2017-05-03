@@ -339,7 +339,7 @@ class AuthorExtractor(Extractor):
         middle_name = get_first_field(raw_author, 'field_model_authormiddle', default='')
         family_name = get_first_field(raw_author, 'field_model_authorlast', default='')
         if any([given_name, middle_name, family_name]):
-            contributor = Contributor.objects.create(
+            contributor, created = Contributor.objects.get_or_create(
                 given_name=given_name,
                 middle_name=middle_name,
                 family_name=family_name,
@@ -364,7 +364,7 @@ class ModelExtractor(Extractor):
         raw_author_ids = [raw_author['value'] for raw_author in get_field(raw_model, 'field_model_author')]
         author_ids = set([author_id_map[raw_author_id] for raw_author_id in raw_author_ids])
         submitter_id = user_id_map[raw_model.get('uid')]
-        author_ids.add(author_id_map[submitter_id])
+        author_ids.add(Contributor.objects.get(user__pk=submitter_id).pk)
         with suppress_auto_now(Codebase, 'last_modified'):
             last_changed = to_datetime(raw_model['changed'])
             code = Codebase.objects.create(
@@ -493,6 +493,7 @@ class IDMapper:
 
 def load(directory: str):
     # TODO: associate picture with profile
+    user_extractor = UserExtractor.from_file(os.path.join(directory, "User.json"))
     author_extractor = AuthorExtractor.from_file(os.path.join(directory, "Author.json"))
     event_extractor = EventExtractor.from_file(os.path.join(directory, "Event.json"))
     job_extractor = JobExtractor.from_file(os.path.join(directory, "Forum.json"))
@@ -500,7 +501,7 @@ def load(directory: str):
     model_version_extractor = ModelVersionExtractor.from_file(os.path.join(directory, "ModelVersion.json"))
     taxonomy_extractor = TaxonomyExtractor.from_file(os.path.join(directory, "Taxonomy.json"))
     profile_extractor = ProfileExtractor.from_file(os.path.join(directory, "Profile2.json"))
-    user_extractor = UserExtractor.from_file(os.path.join(directory, "User.json"))
+
 
     if License.objects.count() == 0:
         load_data(License, LICENSES)
