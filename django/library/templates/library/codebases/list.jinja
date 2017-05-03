@@ -21,9 +21,7 @@
 {% block introduction %}<h1>Computational Model Library</h1>{% endblock %}
 
 {% block top %}
-    {{ breadcrumb([
-    {'text': 'Computational Model Library'}
-    ]) }}
+    {{ breadcrumb([{'text': 'Computational Model Library'}]) }}
 
     <div id="app"></div>
 {% endblock %}
@@ -77,12 +75,16 @@
     <div class="search-result">
         <div class="row">
             <div class="col-md-12 col-lg-3">
-                <img src="holder.js/200x200" class="img-fluid img-thumbnail">
+                {% if item.featured_image is none %}
+                    <img src="holder.js/200x200" class="img-fluid img-thumbnail">
+                {% else %}
+                    {{ image(item.featured_image, "height-200", class="img-fluid img-thumbnail") }}
+                {% endif %}
             </div>
             <div class="col-md-12 col-lg-9">
                 <div class="title">
                     <h1>
-                        <a href="{{ url("library:codebase-detail", identifier=item.identifier) }}">{{ item.title }}</a>
+                        <a href="{{ url(detail_url_name, identifier=item.identifier) }}">{{ item.title }}</a>
                     </h1>
                     <small>
                         {% for codebase_contributor in item.all_contributors %}
@@ -98,11 +100,9 @@
                         | Last Updated: {{ item.last_modified }}, Created on: {{ item.date_created }}
                     </small>
                 </div>
-                {% if item.summary %}
-                    <div class="summary">
-                        {{ item.summary|markdown }}
-                    </div>
-                {% endif %}
+                <div class="summary">
+                    {{ item.summarized_description|markdown }}
+                </div>
                 {% if item.tags %}
                     <div class="tag-list">
                         {% for tag in item.tags %}

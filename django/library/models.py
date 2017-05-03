@@ -187,7 +187,6 @@ class Codebase(index.Indexed, ClusterableModel):
             codebase.latest_version = codebase.releases.order_by('-version_number').first()
             codebase.save()
 
-
     def as_featured_content_dict(self):
         return dict(
             title=self.title,

@@ -60,13 +60,11 @@ def update(serializer_update, instance, validated_data):
 
 class EventSerializer(serializers.ModelSerializer):
     submitter = LinkedUserSerializer(read_only=True, help_text=_('User that created the event'), label='Submitter')
-    relative_url = serializers.SerializerMethodField(help_text=_('URL to the detail page of the job'))
+    absolute_url = serializers.URLField(source='get_absolute_url',
+                                        read_only=True, help_text=_('URL to the detail page of the event'))
     date_created = serializers.DateTimeField(format='%Y-%m-%d', read_only=True)
     last_modified = serializers.DateTimeField(format='%Y-%m-%d', read_only=True)
     tags = TagSerializer(many=True, label='Tags')
-
-    def get_relative_url(self, obj) -> str:
-        return reverse_lazy('home:event-detail', kwargs={'pk': obj.id})
 
     def create(self, validated_data):
         return create(self.Meta.model, validated_data, self.context)
@@ -91,13 +89,14 @@ class EventCalendarSerializer(serializers.ModelSerializer):
 class JobSerializer(serializers.ModelSerializer):
     submitter = LinkedUserSerializer(read_only=True, help_text=_('User that created the job description'),
                                      label='Submitter')
-    relative_url = serializers.SerializerMethodField(help_text=_('URL to the detail page of the job'))
+    absolute_url = serializers.URLField(
+        source='get_absolute_url',
+        read_only=True,
+        help_text=_('URL to the detail page of the job'))
+
     date_created = serializers.DateTimeField(format='%Y-%m-%d', read_only=True)
     last_modified = serializers.DateTimeField(format='%Y-%m-%d', read_only=True)
     tags = TagSerializer(many=True, label='Tags')
-
-    def get_relative_url(self, obj) -> str:
-        return reverse_lazy('home:job-detail', kwargs={'pk': obj.id})
 
     def create(self, validated_data):
         return create(self.Meta.model, validated_data, self.context)
@@ -108,7 +107,7 @@ class JobSerializer(serializers.ModelSerializer):
     class Meta:
         model = Job
         fields = ('id', 'title', 'submitter', 'date_created', 'last_modified',
-                  'description', 'summary', 'relative_url', 'tags')
+                  'description', 'summary', 'absolute_url', 'tags')
 
 
 class FeaturedContentItemSerializer(serializers.ModelSerializer):

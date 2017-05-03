@@ -54,13 +54,8 @@ class CodebaseSerializer(serializers.ModelSerializer):
     submitter = home_serializers.LinkedUserSerializer(read_only=True)
     latest_version = CodebaseReleaseSerializer(read_only=True)
     download_count = serializers.IntegerField(read_only=True)
-
-    @staticmethod
-    def get_summary(obj):
-        if obj.summary:
-            return obj.summary
-        else:
-            return shorten(obj.description, width=500)
+    summarized_description = serializers.CharField(read_only=True)
+    featured_image = serializers.ReadOnlyField(source='get_featured_image')
 
     def create(self, validated_data):
         return home_serializers.create(self.Meta.model, validated_data, self.context)

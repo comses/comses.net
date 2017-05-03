@@ -18,6 +18,7 @@ semver==2.7.6
 django-guardian==1.4.8
 django-jinja==2.3.0
 # deployment and management dependencies
+dealer==2.0.5
 invoke
 ipython
 django-webpack-loader
