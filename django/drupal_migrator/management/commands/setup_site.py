@@ -127,6 +127,7 @@ class Command(BaseCommand):
         resources_index.add_callout(
             image_path='core/static/images/icons/modeling-platforms.png',
             title='Modeling Platforms',
+            url='modeling-platforms/',
             user=self.default_user,
             sort_order=1,
             caption=('Preserve the complete digital pipeline used to derive a publishable finding. Other researchers '
@@ -135,6 +136,7 @@ class Command(BaseCommand):
         resources_index.add_callout(
             image_path='core/static/images/icons/journals.png',
             title='Scholarly Journals',
+            url='journals/',
             caption=('A community curated list of scholarly journals covering a wide range methodological and '
                      'theoretical concerns for agent-based other types of computational modeling.'),
             user=self.default_user,
@@ -143,18 +145,20 @@ class Command(BaseCommand):
         resources_index.add_callout(
             image_path='core/static/images/icons/standards.png',
             title='Documentation Standards',
+            url='standards/',
             caption=('Advancing the use of agent-based models in scholarly research demands rigorous standards in model '
-                     'and experiment documentation. Volker Grimm et al. have developed a protocol for describing ' 
+                     'and experiment documentation. Volker Grimm et al. have developed a protocol for describing '
                      'agent-based and individual-based models called '
                      '[ODD (Overview, Design Concepts, and Details)](https://doi.org/10.1016/j.ecolmodel.2010.08.019) '
                      '"designed to ensure that such descriptions are readable and complete."'
-            ),
+                     ),
             user=self.default_user,
             sort_order=2,
         )
         resources_index.add_callout(
             image_path='core/static/images/icons/educational-materials.png',
             title='Educational Materials',
+            url='educational-materials/',
             caption=('Tutorials, websites, books, and classroom / course materials on agent-based modeling that cover '
                      'various modeling platforms (e.g., RePast, NetLogo, Mason, FLAME).'),
             user=self.default_user,
@@ -163,6 +167,7 @@ class Command(BaseCommand):
         resources_index.add_callout(
             image_path='core/static/images/icons/guides-to-good-practice.png',
             title='Guides to Good Practice',
+            url='guides-to-good-practice/',
             caption=('Good practices for agent-based modeling as inspired by '
                      '[this Software Carpentry paper](https://swcarpentry.github.io/good-enough-practices-in-scientific-computing/)'),
             user=self.default_user,
@@ -170,6 +175,7 @@ class Command(BaseCommand):
         )
         resources_index.add_callout(
             image_path='core/static/images/icons/events.png',
+            url=reverse('home:event-list'),
             title='Find Upcoming Events',
             caption=('Find calls for papers and participation in upcoming conferences, workshops, and other events '
                      'curated by the CoMSES Net Community.'),
@@ -207,15 +213,16 @@ class Command(BaseCommand):
             title='Connect with Researchers',
             user=self.default_user,
             sort_order=1,
-            caption='''Follow other researchers, their models, or other topics of interest. Engage in discussions,
-            participate in upcoming events, or find a new job. Preserve the complete digital pipeline used to derive a 
-            publishable finding. Other researchers will be able to discover, cite, and run your code in a reproducible 
-            containerized environment.'''
+            caption=('Follow other researchers, their models, or other topics of interest. Engage in discussions, '
+                     'participate in upcoming events, or find a new job. Preserve the complete digital pipeline used to '
+                     'derive a publishable finding. Other researchers will be able to discover, cite, and run your code '
+                     'in a reproducible' 'containerized environment.')
         )
 
         community_index.add_callout(
             image_path='core/static/images/icons/events.png',
             title='Find Upcoming Events',
+            url=reverse('home:event-list'),
             user=self.default_user,
             sort_order=2,
             caption=('Find calls for papers and participation in upcoming conferences, workshops, and other events '
@@ -225,9 +232,10 @@ class Command(BaseCommand):
         community_index.add_callout(
             image_path='core/static/images/icons/jobs.png',
             title='Search Jobs & Appointments',
+            url=reverse('home:job-list'),
             user=self.default_user,
             sort_order=3,
-            caption=('We maintain an open job board with academic and industry positions relevant to the CoMSES Net ' 
+            caption=('We maintain an open job board with academic and industry positions relevant to the CoMSES Net '
                      'Community. Any CoMSES Net Member can register and post positions here.')
         )
         self.landing_page.add_child(instance=community_index)
@@ -239,9 +247,9 @@ class Command(BaseCommand):
             slug='about',
             summary='''Welcome! CoMSES Net, the Network for Computational Modeling in Social and Ecological Sciences, is an open
             community of researchers, educators, and professionals with a common goal - improving the way we develop,
-            share, use, and re-use agent based and computational models for the study of social and ecological systems. 
+            share, use, and re-use agent based and computational models for the study of social and ecological systems.
             We have been developing a computational model library to preserve the digital artifacts and source code that
-            comprise an agent based model and encourage you to register and 
+            comprise an agent based model and encourage you to register and
             [add your models to the archive](/codebases/create/). We are governed by an international board and ex-officio
             members (PIs of the projects that fund CoMSES Net) and operate under [these by-laws](/about/by-laws). 
             '''

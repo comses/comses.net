@@ -274,15 +274,15 @@ class CategoryIndexPage(Page):
     def add_navigation_links(self, navigation_tuples):
         """
         Takes an ordered list of tuples and adds them as navigation links.
-        :param navigation_tuples: 
-        :return: 
+        :param navigation_tuples:
+        :return:
         """
         for idx, (name, url) in enumerate(navigation_tuples):
             self.navigation_links.add(
                 CategoryIndexNavigationLink(title=name, url=url, sort_order=idx)
             )
 
-    def add_callout(self, image_path, title, caption, sort_order=None, user=None):
+    def add_callout(self, image_path, title, caption, sort_order=None, user=None, url=''):
         if user is None:
             user = User.objects.first()
         _image = get_canonical_image(path=image_path, title=title, user=user)
@@ -292,13 +292,14 @@ class CategoryIndexPage(Page):
                 sort_order=sort_order,
                 caption=caption,
                 image=_image,
+                url=url,
             )
         )
 
     def get_navigation_links(self):
         """
         Returns a nested dict for use by the subnav Jinja2 tag.
-        :return: 
+        :return:
         """
         return [
             {'url': nav.url, 'text': nav.title, 'active': self.slug in nav.url}
