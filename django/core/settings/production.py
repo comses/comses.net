@@ -54,7 +54,7 @@ LOGGING = {
     'disable_existing_loggers': True,
     'root': {
         'level': 'WARNING',
-        'handlers': ['sentry', 'rollingfile'],
+        'handlers': ['sentry', 'rollingfile', 'console'],
     },
     'formatters': {
         'verbose': {
@@ -91,6 +91,11 @@ LOGGING = {
         },
     },
     'loggers': {
+        'django.db.backends': {
+            'level': 'ERROR',
+            'handlers': ['djangofile', 'sentry'],
+            'propagate': False,
+        },
         'django': {
             'level': 'DEBUG',
             'handlers': ['console', 'djangofile'],
