@@ -364,7 +364,7 @@ class ModelExtractor(Extractor):
         raw_author_ids = [raw_author['value'] for raw_author in get_field(raw_model, 'field_model_author')]
         author_ids = set([author_id_map[raw_author_id] for raw_author_id in raw_author_ids])
         submitter_id = user_id_map[raw_model.get('uid')]
-        author_ids.add(submitter_id)
+        author_ids.add(author_id_map[submitter_id])
         with suppress_auto_now(Codebase, 'last_modified'):
             last_changed = to_datetime(raw_model['changed'])
             code = Codebase.objects.create(
