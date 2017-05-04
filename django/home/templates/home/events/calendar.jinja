@@ -1,8 +1,10 @@
 {% extends "base.jinja" %}
 {% from "common.jinja" import item_component, list_page, paginator, breadcrumb, subnav %}
 
+{% set FULLCALENDAR_VERSION="3.4.0" %}
+
 {% block extra_css %}
-    <link rel='stylesheet' href="//cdnjs.cloudflare.com/ajax/libs/fullcalendar/3.4.0/fullcalendar.min.css">
+    <link rel='stylesheet' href="//cdnjs.cloudflare.com/ajax/libs/fullcalendar/{{FULLCALENDAR_VERSION}}/fullcalendar.min.css">
 {% endblock %}
 
 {% block title %}Community Events{% endblock %}
@@ -14,8 +16,8 @@
     {{ breadcrumb([{'text': 'Community Events' }]) }}
     {# FIXME: make a tab navigation to switch between list view and calendar view #}
     {{ subnav([ 
-    {'text': 'Calendar View', 'active': True},
-    {'text': 'List View', 'url': url('home:event-list')},
+    {'text': 'Calendar View', 'url': url('home:events-calendar'), 'active': True},
+    {'text': 'List View', 'url': url('home:event-list'), },
     ])
     }}
     <div id="calendar"></div>
@@ -25,7 +27,7 @@
     {{ super() }}
     {# TODO: Should use npm to store the calendar dependencies #}
     <script src="//cdnjs.cloudflare.com/ajax/libs/moment.js/2.18.1/moment.min.js"></script>
-    <script src="//cdnjs.cloudflare.com/ajax/libs/fullcalendar/3.4.0/fullcalendar.min.js"></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/fullcalendar/{{FULLCALENDAR_VERSION}}/fullcalendar.min.js"></script>
     <script>
         {# TODO: display description in tooltip as well #}
         $(document).ready(function () {

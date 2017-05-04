@@ -55,10 +55,15 @@
                     </h1>
                     <small>
                         {% for codebase_contributor in item.all_contributors %}
+                            {% set badge_class='badge-success' if codebase_contributor.profile_url else 'badge-default' %}
+                            {% if codebase_contributor.profile_url %}
+                                <a href="{{ codebase_contributor.profile_url }}">
+                            {% endif %}
+                            <span class='badge {{badge_class}}'>
+                                    {{ codebase_contributor.name }}
+                                </span>
                             {% if codebase_contributor.username %}
-                                <a href="{{ codebase_contributor.profile_url }}">{{ codebase_contributor.name }}</a>
-                            {% else %}
-                                <span>{{ codebase_contributor.name }}</span>
+                                </a>
                             {% endif %}
                         {% endfor %}
                         | Published {{ item.last_published_on }}

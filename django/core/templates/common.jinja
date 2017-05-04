@@ -72,11 +72,7 @@
 <ul class='nav nav-tabs justify-content-center'>
     {% for item in items %}
         <li class='nav-item'>
-        {% if item.active %}
-            <a class='nav-link active' href='{{ item.url }}'>{{ item.text }}</a>
-        {% else %}
-            <a class='nav-link' href='{{ item.url }}'>{{ item.text }}</a>
-        {% endif %}
+            <a class='nav-link {{ "active" if item.active else "" }}' href='{{ item.url }}'>{{ item.text }}</a>
         </li>
     {% endfor %}
 </ul>

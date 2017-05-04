@@ -1,19 +1,8 @@
 {% extends "base.jinja" %}
 {% from "common.jinja" import item_component, list_page, paginator, breadcrumb, subnav %}
 
-{% macro search_component() %}
-    <form class="form-group row" action="{{ url('home:job-list') }}" method="get"
-          enctype="application/x-www-form-urlencoded">
-        <div class="col-xs-12 col-sm-9">
-            <input type="text" class="form-control" name="query" placeholder="Search" value="{{ query or '' }}">
-        </div>
-        <div class="col-sm-3">
-            <button class="btn btn-primary">Search</button>
-            <a href="{{ url('home:event-create') }}" class="btn btn-primary btn float-md-right mt-xs-1">
-                <span class="fa fa-plus"></span>
-            </a>
-        </div>
-    </form>
+{% macro render_event(event, detail_url) %}
+{# FIXME: add event start / end dates #}
 {% endmacro %}
 
 {% block title %}Community Events{% endblock %}
@@ -24,7 +13,7 @@
     {{ breadcrumb([{'text': 'Community Events' }]) }}
     {{ subnav([ 
     {'text': 'Calendar View', 'url': url('home:events-calendar')},
-    {'text': 'List View', 'active': True},
+    {'text': 'List View', 'url': url('home:event-list'), 'active': True},
     ])
     }}
 
@@ -32,8 +21,6 @@
         <div id="app"></div>
     </div>
     {{ list_page(__all__, item_component, 'home:event-detail') }}
-
-
     <div class='row'>
         <div class="col">
             {{ paginator('home:event-list', __all__) }}
