@@ -1,11 +1,11 @@
-import jinja2
+from textwrap import shorten
 
+import jinja2
 from sumy.nlp.stemmers import Stemmer
 from sumy.nlp.tokenizers import Tokenizer
 from sumy.parsers.html import HtmlParser
 from sumy.summarizers.luhn import LuhnSummarizer
 from sumy.utils import get_stop_words
-from textwrap import shorten
 
 from .utils import markdown_to_sanitized_html
 
