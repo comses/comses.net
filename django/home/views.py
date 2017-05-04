@@ -124,9 +124,9 @@ class EventViewSet(viewsets.ModelViewSet):
         return retrieve_with_perms(self, request, *args, **kwargs)
 
 
-class EventCalendarList(mixins.ListModelMixin, viewsets.GenericViewSet):
-    serializer_class = EventCalendarSerializer
+class EventCalendarList(generics.ListAPIView):
     queryset = Event.objects.all()
+    template_name = 'home/events/calendar.jinja'
 
     def get_list_queryset(self):
         tzinfo = tz.gettz(settings.TIME_ZONE)
@@ -135,6 +135,7 @@ class EventCalendarList(mixins.ListModelMixin, viewsets.GenericViewSet):
         end = datetime_parse(self.request.query_params['end'])
         end = end.replace(tzinfo=tzinfo)
 
+        # push this into EventQuerySet
         early_registration_deadline_queryset = self.queryset.filter(
             Q(early_registration_deadline__gte=start) & Q(early_registration_deadline__lte=end))
         submission_deadline_queryset = self.queryset.filter(
@@ -142,12 +143,7 @@ class EventCalendarList(mixins.ListModelMixin, viewsets.GenericViewSet):
         queryset = self.queryset.exclude(Q(start_date__gte=end)).exclude(
             Q(end_date__lte=start))
         queryset = queryset | early_registration_deadline_queryset | submission_deadline_queryset
-        queryset._date_range = start, end
-        return queryset
-
-    @property
-    def template_name(self):
-        return 'home/calendar_events/{}.jinja'.format(self.action)
+        return queryset, start, end
 
     @staticmethod
     def to_calendar_early_registration_deadline_event(event):
@@ -182,14 +178,11 @@ class EventCalendarList(mixins.ListModelMixin, viewsets.GenericViewSet):
         are events to be rendered in the calendar"""
 
         if not request.query_params:
-            return Response(data={}, template_name='home/calendar_events/list.jinja')
+            return Response(data={})
 
-        queryset = self.get_list_queryset()
-        start, end = queryset._date_range
-        events = list(queryset)
-
+        queryset, start, end = self.get_list_queryset()
         calendar_events = []
-        for event in events:
+        for event in list(queryset):
             if event.early_registration_deadline and start <= event.early_registration_deadline <= end:
                 calendar_events.append(self.to_calendar_early_registration_deadline_event(event))
 

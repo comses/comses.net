@@ -1,5 +1,5 @@
-{% extends "sidebar_layout.jinja" %}
-{% from "common.jinja" import item_component, list_page, paginator, breadcrumb %}
+{% extends "base.jinja" %}
+{% from "common.jinja" import item_component, list_page, paginator, breadcrumb, subnav %}
 
 {% macro search_component() %}
     <form class="form-group row" action="{{ url('home:job-list') }}" method="get"
@@ -20,19 +20,24 @@
 
 {% block introduction %}<h1>Community Events</h1>{% endblock %}
 
-{% block top %}
-    {{ breadcrumb([{'text': 'Community Events' }]) }}
-    <div id="app"></div>
-{% endblock %}
-
 {% block content %}
-    <div id="example"></div>
-    {{ list_page(__all__, item_component, 'home:event-detail') }}
-{% endblock %}
+    {{ breadcrumb([{'text': 'Community Events' }]) }}
+    {{ subnav([ 
+    {'text': 'Calendar View', 'url': url('home:events-calendar')},
+    {'text': 'List View', 'active': True},
+    ])
+    }}
 
-{% block bottom %}
-    <div class="col">
-        {{ paginator('home:event-list', __all__) }}
+    <div class='row p-3'>
+        <div id="app"></div>
+    </div>
+    {{ list_page(__all__, item_component, 'home:event-detail') }}
+
+
+    <div class='row'>
+        <div class="col">
+            {{ paginator('home:event-list', __all__) }}
+        </div>
     </div>
 {% endblock %}
 

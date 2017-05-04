@@ -63,11 +63,9 @@
 {% endmacro %}
 
 {% macro list_page(list_state, item_component, detail_url_name) %}
-    <div>
-        {% for item in list_state.results %}
-            {{ item_component(item, detail_url_name) }}
-        {% endfor %}
-    </div>
+    {% for item in list_state.results %}
+        {{ item_component(item, detail_url_name) }}
+    {% endfor %}
 {% endmacro %}
 
 {% macro subnav(items) %}
