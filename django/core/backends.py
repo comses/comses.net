@@ -118,7 +118,7 @@ def get_viewable_objects_for_user(user, queryset):
 
 
 class EmailAuthenticationBackend(ModelBackend):
-    def authenticate(self, username=None, password=None, **kwargs):
+    def authenticate(self, request, username=None, password=None, **kwargs):
         l_username = username.lower().strip()
         try:
             user = User.objects.get(email=l_username)
@@ -132,7 +132,7 @@ class ComsesObjectPermissionBackend:
     Allow user that submitted the obj to perform any action with it
     """
 
-    def authenticate(self, username, password, **kwargs):
+    def authenticate(self, request, username, password, **kwargs):
         return None
 
     def has_perm(self, user, perm, obj=None):
