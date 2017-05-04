@@ -5,15 +5,44 @@
 {% macro navbar() %}
 <nav class='navbar navbar-toggleable-md navbar-light fixed-top'>
     <div class='container'>
-        <button class='navbar-toggler navbar-toggler-right' type='button' data-toggle='collapse'
+        <button class='navbar-toggler navbar-toggler-right align-self-center mt-3' type='button' data-toggle='collapse'
             data-target='#navbar-content' aria-controls='navbar-content' aria-expanded='false' aria-label='Toggle navigation'>
             <span class='navbar-toggler-icon'></span>
         </button>
-        <a class='navbar-brand' href='/'>
+        <a class='navbar-brand pt-3' href='/'>
             <span class="logo">CoMSES Network | OpenABM</span>
         </a>
-        <div class='collapse navbar-collapse my-auto justify-content-end' id='navbar-content'>
-            <ul class='navbar-nav'>
+        <div class='collapse navbar-collapse flex-md-column my-auto justify-content-end' id='navbar-content'>
+            <ul class='navbar-nav ml-auto small'>
+                {% if user.is_authenticated %}
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" id='userDropdownMenuLink'
+                           data-toggle="dropdown" role="button" href="#" aria-haspopup="true" aria-expanded="false">
+                            <span class="fa fa-user-o"></span>
+                        </a>
+                        <div class="dropdown-menu" aria-labelledby='userDropdownMenuLink'>
+                            <a class="dropdown-item" href="{{ url('home:profile-detail', username=user.username) }}"><i class='fa fa-user-o'></i> Your Account</a>
+                            {# POST logouts, see http://django-allauth.readthedocs.io/en/latest/views.html#logout-account-logout #}
+                            <form id='logoutForm' method='post' action='{{ logout_url }}'>
+                                {% csrf_token %}
+                                {% if redirect_field_value %}
+                                    <input type="hidden" name="{{ redirect_field_name }}" value="{{ redirect_field_value }}"/>
+                                {% endif %}
+                                <input type='submit' style='display: none;'>
+                            </form>
+                            <a class="dropdown-item" onclick='return submitLogout();' href="{{ logout_url }}"><i class='fa fa-sign-out'></i> Sign Out</a>
+                        </div>
+                    </li>
+                {% else %}
+                    <li class='nav-item'>
+                        <a class="nav-link" href="{{ login_url }}">Sign In <i class='fa fa-sign-in'></i></a>
+                    </li>
+                    <li class='nav-item'>
+                        <a class='nav-link' href="{{ signup_url }}">Become a Member</a>
+                    </li>
+                {% endif %}
+            </ul>
+            <ul class='navbar-nav ml-auto'>
                 {# FIXME: consider replacing with wagtailmenu #}
                 <li class="nav-item">
                     <a href="{{ url('library:codebase-list') }}" class="nav-link">Computational Library</a>
@@ -39,7 +68,7 @@
                     <a href='/about/' class='nav-link'>About</a>
                 </li>
                 <li id='search-dropdown' class="nav-item dropdown">
-                    <a id='search-button' onclick='focusSearch()' href='/search/' class='my-0 p-1 dropdown-toggle' data-toggle='dropdown' aria-expanded='false' aria-haspopup='true'>
+                    <a id='search-button' onclick='focusSearch()' href='/search/' class='p-1 dropdown-toggle' data-toggle='dropdown' aria-expanded='false' aria-haspopup='true'>
                         <i class='fa fa-search'></i>
                     </a>
                     <div id='header-search-form' class='p-2 dropdown-menu' aria-labelledby='search-button'>
@@ -52,30 +81,6 @@
                         </form>
                     </div>
                 </li>
-                {% if user.is_authenticated %}
-                    <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" id='userDropdownMenuLink'
-                           data-toggle="dropdown" role="button" href="#" aria-haspopup="true" aria-expanded="false">
-                            <span class="fa fa-user-o"></span>
-                        </a>
-                        <div class="dropdown-menu" aria-labelledby='userDropdownMenuLink'>
-                            <a class="dropdown-item" href="{{ url('home:profile-detail', username=user.username) }}"><i class='fa fa-user-o'></i> Your Account</a>
-                            {# POST logouts, see http://django-allauth.readthedocs.io/en/latest/views.html#logout-account-logout #}
-                            <form id='logoutForm' method='post' action='{{ logout_url }}'>
-                                {% csrf_token %}
-                                {% if redirect_field_value %}
-                                    <input type="hidden" name="{{ redirect_field_name }}" value="{{ redirect_field_value }}"/>
-                                {% endif %}
-                                <input type='submit' style='display: none;'>
-                            </form>
-                            <a class="dropdown-item" onclick='return submitLogout();' href="{{ logout_url }}"><i class='fa fa-sign-out'></i> Sign Out</a>
-                        </div>
-                    </li>
-                {% else %}
-                    <li class='nav-item'>
-                        <a class="nav-link" href="{{ login_url }}">Sign In <i class='fa fa-sign-in'></i></a>
-                    </li>
-                {% endif %}
             </ul>
         </div>
     </div>
