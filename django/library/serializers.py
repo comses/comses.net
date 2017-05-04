@@ -4,6 +4,7 @@ from django.utils.http import urlencode
 from django.utils.translation import ugettext_lazy as _
 from rest_framework import serializers
 
+from core.serializer_helpers import YMD_DATETIME_FORMAT
 from home import serializers as home_serializers
 from .models import CodebaseContributor, Codebase, CodebaseRelease, Contributor
 
@@ -39,8 +40,8 @@ class CodebaseContributorSerializer(serializers.ModelSerializer):
 
 
 class CodebaseReleaseSerializer(serializers.ModelSerializer):
-    first_published_at = serializers.DateTimeField(format='%c', read_only=True)
-    date_created = serializers.DateTimeField(format='%Y-%m-%d', read_only=True)
+    first_published_at = serializers.DateTimeField(format=YMD_DATETIME_FORMAT, read_only=True)
+    date_created = serializers.DateTimeField(format=YMD_DATETIME_FORMAT, read_only=True)
     absolute_url = serializers.URLField(source='get_absolute_url', read_only=True,
                                         help_text=_('URL to the detail page of the codebase'))
     codebase_contributors = CodebaseContributorSerializer(many=True)
@@ -58,9 +59,9 @@ class CodebaseReleaseSerializer(serializers.ModelSerializer):
 class CodebaseSerializer(serializers.ModelSerializer):
     all_contributors = CodebaseContributorSerializer(many=True, read_only=True)
     releases = CodebaseReleaseSerializer(read_only=True, many=True)
-    first_published_at = serializers.DateTimeField(format='%c', read_only=True)
-    date_created = serializers.DateTimeField(format='%Y-%m-%d', read_only=True)
-    last_published_on = serializers.DateTimeField(format='%b %d, %Y', read_only=True)
+    first_published_at = serializers.DateTimeField(read_only=True)
+    date_created = serializers.DateTimeField(read_only=True)
+    last_published_on = serializers.DateTimeField(read_only=True)
     tags = home_serializers.TagSerializer(many=True)
     absolute_url = serializers.URLField(source='get_absolute_url', read_only=True)
     submitter = home_serializers.LinkedUserSerializer(read_only=True)

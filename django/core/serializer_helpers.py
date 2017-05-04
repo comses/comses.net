@@ -1,11 +1,11 @@
 from rest_framework import serializers
 from django.utils.translation import ugettext_lazy as _
-from django.contrib.auth.models import User
-from typing import Optional
 
 import logging
 
 logger = logging.getLogger(__name__)
+
+YMD_DATETIME_FORMAT = '%Y-%m-%d'
 
 
 class EditableSerializerMixin(serializers.Serializer):

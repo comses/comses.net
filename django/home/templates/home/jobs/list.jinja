@@ -1,10 +1,37 @@
 {% extends "sidebar_layout.jinja" %}
-{% from "common.jinja" import item_component, list_page, paginator, breadcrumb %}
+{% from "common.jinja" import list_page, paginator, breadcrumb %}
+
+{% macro render_job(item, detail_url_name) %}
+    <div class="search-result">
+        <div class="date-info">
+            <small class="text-muted">Last Updated: {{ item.last_modified }}</small>
+            <small class="text-muted pull-right">Created on: {{ item.date_created }}</small>
+        </div>
+        <div class="title">
+            <h1><a href="{{ url(detail_url_name, pk=item.id) }}">{{ item.title }}</a></h1>
+            <small>Submitted by:
+                <a href="{{ item.submitter.profile_url }}">{{ item.submitter.full_name }}</a>
+            </small>
+        </div>
+        {% if item.summary %}
+            <div class="summary">
+                {{ item.summary|markdown }}
+            </div>
+        {% endif %}
+        {% if item.tags %}
+            <div class="tag-list">
+                {% for tag in item.tags %}
+                    <span class="badge badge-primary p-1">{{ tag.name }}</span>
+                {% endfor %}
+            </div>
+        {% endif %}
+    </div>
+{% endmacro %}
 
 {% block title %}Jobs and Appointments {% endblock %}
 
 {% block introduction %}<h1>Jobs &amp; Appointments </h1>{% endblock %}
-{% block top %}
+{% block breadcrumb %}
     {{ breadcrumb([
     {'text': 'Jobs & Appointments' }
     ]) }}
@@ -12,7 +39,7 @@
 {% endblock %}
 
 {% block content %}
-    {{ list_page(__all__, item_component, 'home:job-detail') }}
+    {{ list_page(__all__, render_job, 'home:job-detail') }}
 {% endblock %}
 
 {% block bottom %}

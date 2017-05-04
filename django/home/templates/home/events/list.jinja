@@ -1,33 +1,54 @@
-{% extends "base.jinja" %}
-{% from "common.jinja" import item_component, list_page, paginator, breadcrumb, subnav %}
+{% extends "sidebar_layout.jinja" %}
+{% from "common.jinja" import list_page, paginator, breadcrumb, subnav %}
 
-{% macro render_event(event, detail_url) %}
-{# FIXME: add event start / end dates #}
+{% macro render_event(item, detail_url_name) %}
+    <div class="search-result">
+        <div class="date-info">
+            <small class="text-muted">Last Updated: {{ item.last_modified }}</small>
+            <small class="text-muted pull-right">Created on: {{ item.date_created }}</small>
+        </div>
+        <div class="title">
+            <h1><a href="{{ url(detail_url_name, pk=item.id) }}">{{ item.title }}</a></h1>
+            <small>Submitted by:
+                <a href="{{ item.submitter.profile_url }}">{{ item.submitter.full_name }}</a>
+            </small>
+        </div>
+        {% if item.summary %}
+            <div class="summary">
+                {{ item.summary|markdown }}
+            </div>
+        {% endif %}
+        {% if item.tags %}
+            <div class="tag-list">
+                {% for tag in item.tags %}
+                    <span class="badge badge-primary p-1">{{ tag.name }}</span>
+                {% endfor %}
+            </div>
+        {% endif %}
+        <div class="date-info">
+            <small class="text-muted">Early Registration Deadline: {{ item.early_registration_deadline }}</small>
+            <small class="text-muted pull-right">Submission Deadline: {{ item.submission_deadline }}</small>
+        </div>
+    </div>
 {% endmacro %}
 
 {% block title %}Community Events{% endblock %}
 
 {% block introduction %}<h1>Community Events</h1>{% endblock %}
 
-{% block content %}
+{% block top %}
     {{ breadcrumb([{'text': 'Community Events' }]) }}
-    {{ subnav([ 
+{% endblock %}
+
+{% block content %}
+    {{ subnav([
     {'text': 'Calendar View', 'url': url('home:events-calendar')},
     {'text': 'List View', 'url': url('home:event-list'), 'active': True},
-    ])
-    }}
-
-    <div class='row p-3'>
-        <div id="app"></div>
-    </div>
-    {{ list_page(__all__, item_component, 'home:event-detail') }}
+    ]) }}
+    {{ list_page(__all__, render_event, 'home:event-detail') }}
     <div class='row'>
         <div class="col">
             {{ paginator('home:event-list', __all__) }}
         </div>
     </div>
-{% endblock %}
-
-{% block js %}
-    {{ render_bundle('event_list') }}
 {% endblock %}

@@ -335,11 +335,19 @@ footer {
   background-color: $rules-color;
   border: none;
 
-  .card-title {
+  .title {
     @extend .card-block;
     padding: 0 1.25rem;
     font-size: 1.5rem;
     margin-bottom: 0;
+  }
+
+  .info {
+    @extend .card-text;
+  }
+
+  .label {
+    @extend .card-title;
   }
 }
 
