@@ -9,7 +9,7 @@ logger = logging.getLogger(__name__)
 
 class SignupForm(forms.Form):
     username = forms.CharField(max_length=200, strip=True, required=True)
-    email = forms.EmailField(max_length=200, strip=True, required=True)
+    email = forms.EmailField(max_length=200, required=True)
     first_name = forms.CharField(max_length=200, strip=True, required=False)
     last_name = forms.CharField(max_length=200, strip=True, required=False)
     institution = forms.CharField(max_length=200, strip=True, required=False)

@@ -1,4 +1,4 @@
-wagtail==1.9.1
+wagtail==1.10
 wagtailmenus==2.2.2
 django-allauth==0.31.0
 django-extensions==1.7.8
