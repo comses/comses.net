@@ -26,8 +26,14 @@
             </div>
         {% endif %}
         <div class="date-info">
-            <small class="text-muted">Early Registration Deadline: {{ item.early_registration_deadline }}</small>
-            <small class="text-muted pull-right">Submission Deadline: {{ item.submission_deadline }}</small>
+            <small class="text-muted">Early Registration
+                Deadline: {{ item.early_registration_deadline|truncate_midnight }}</small>
+            <small class="text-muted pull-right">Submission
+                Deadline: {{ item.submission_deadline|truncate_midnight }}</small>
+        </div>
+        <div class="date-info">
+            <small class="text-muted">Start Date: {{ item.start_date|truncate_midnight }}</small>
+            <small class="text-muted pull-right">End Date: {{ item.end_date|truncate_midnight }}</small>
         </div>
     </div>
 {% endmacro %}

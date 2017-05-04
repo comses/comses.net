@@ -65,11 +65,6 @@ class EventSerializer(serializers.ModelSerializer):
     date_created = serializers.DateTimeField(read_only=True)
     last_modified = serializers.DateTimeField(read_only=True)
 
-    submission_deadline = serializers.DateTimeField(format=YMD_DATETIME_FORMAT)
-    early_registration_deadline = serializers.DateTimeField(format=YMD_DATETIME_FORMAT)
-    start_date = serializers.DateTimeField(format=YMD_DATETIME_FORMAT)
-    end_date = serializers.DateTimeField(format=YMD_DATETIME_FORMAT)
-
     tags = TagSerializer(many=True, label='Tags')
 
     def create(self, validated_data):

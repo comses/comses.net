@@ -1,3 +1,5 @@
+from typing import Optional
+
 from datetime import datetime
 
 from allauth.socialaccount import providers
@@ -5,6 +7,8 @@ from django.conf import settings
 from django.template import defaultfilters
 from django.utils.timezone import get_current_timezone
 from django_jinja import library
+from dateutil.parser import parse as datetime_parse
+from core.serializer_helpers import YMD_DATETIME_FORMAT
 from jinja2 import Markup
 from webpack_loader.templatetags import webpack_loader as wl
 
@@ -51,6 +55,18 @@ def markdown(text: str):
     :return: sanitized html string, explicitly marked as safe via jinja2.Markup
     """
     return Markup(markdown_to_sanitized_html(text))
+
+
+@library.filter
+def truncate_midnight(text: Optional[str]):
+    if text is None:
+        return None
+
+    d = datetime_parse(text)
+    if d.minute == 0 and d.second == 0 and d.hour == 0:
+        return d.strftime(YMD_DATETIME_FORMAT)
+    else:
+        return text
 
 # # http://stackoverflow.com/questions/6453652/how-to-add-the-current-query-string-to-an-url-in-a-django-template
 # @register.simple_tag

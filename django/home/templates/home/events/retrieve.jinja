@@ -41,16 +41,16 @@
                 <br>
 
                 <b class="label">Early Registration Deadline</b>
-                <p class="info">{{ early_registration_deadline }}</p>
+                <p class="info">{{ early_registration_deadline|truncate_midnight }}</p>
 
                 <b class="label">Submission Deadline</b>
-                <p class="info">{{ submission_deadline }}</p>
+                <p class="info">{{ submission_deadline|truncate_midnight }}</p>
 
                 <b class="label">Start Date</b>
-                <p class="info">{{ start_date }}</p>
+                <p class="info">{{ start_date|truncate_midnight }}</p>
 
                 <b class="label">End Date</b>
-                <p class="info">{{ end_date }}</p>
+                <p class="info">{{ end_date|truncate_midnight }}</p>
 
                 <b class="label">Status</b>
             </small>
