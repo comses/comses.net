@@ -127,6 +127,8 @@ class Codebase(index.Indexed, ClusterableModel):
     description = models.TextField()
     summary = models.CharField(max_length=500, blank=True)
 
+    featured = models.BooleanField(default=False)
+
     live = models.BooleanField(default=False)
     has_unpublished_changes = models.BooleanField(default=False)
     first_published_at = models.DateTimeField(null=True, blank=True)

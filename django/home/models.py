@@ -105,8 +105,7 @@ class MemberProfile(index.Indexed, ClusterableModel):
     degrees = ArrayField(models.CharField(max_length=255), blank=True, default=list)
     research_interests = models.TextField(blank=True)
     keywords = ClusterTaggableManager(through=MemberProfileTag, blank=True)
-    summary = models.TextField(max_length=500, blank=True,
-                               help_text=_('Brief bio'))
+    bio = models.TextField(max_length=500, blank=True, help_text=_('Brief bio'))
     picture = models.ImageField(null=True, help_text=_('Profile picture'))
     personal_url = models.URLField(blank=True)
     professional_url = models.URLField(blank=True)
@@ -130,7 +129,7 @@ class MemberProfile(index.Indexed, ClusterableModel):
             return "id={}".format(self.id)
 
     search_fields = [
-        index.SearchField('summary', partial_match=True, boost=10),
+        index.SearchField('bio', partial_match=True, boost=10),
         index.SearchField('research_interests', partial_match=True),
         index.RelatedFields('institution', [
             index.SearchField('name'),

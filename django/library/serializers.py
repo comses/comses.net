@@ -1,10 +1,13 @@
-from textwrap import shorten
+import logging
 
+from django.utils.http import urlencode
 from django.utils.translation import ugettext_lazy as _
 from rest_framework import serializers
 
 from home import serializers as home_serializers
 from .models import CodebaseContributor, Codebase, CodebaseRelease, Contributor
+
+logger = logging.getLogger(__name__)
 
 
 class ContributorSerializer(serializers.ModelSerializer):
@@ -19,7 +22,16 @@ class CodebaseContributorSerializer(serializers.ModelSerializer):
     name = serializers.CharField(source='contributor.name', read_only=True)
     username = serializers.CharField(source='contributor.user.username', read_only=True)
     affiliations = serializers.CharField(source='contributor.formatted_affiliations', read_only=True)
-    profile_url = serializers.CharField(source='contributor.user.member_profile.get_absolute_url', read_only=True)
+    profile_url = serializers.SerializerMethodField()
+
+    def get_profile_url(self, instance):
+        user = instance.contributor.user
+        if user:
+            return user.member_profile.get_absolute_url()
+        else:
+            # FIXME: replace with reverse('core:search', ...)
+            logger.error("name: %s", instance.contributor.name)
+            return '/search?{0}'.format(urlencode({'person': instance.contributor.name}))
 
     class Meta:
         model = CodebaseContributor

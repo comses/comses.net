@@ -7,14 +7,15 @@ import os
 import re
 from collections import defaultdict, Iterable
 from datetime import datetime
+from textwrap import shorten
 from typing import Dict
 
 from bs4 import BeautifulSoup
-from django.contrib.auth.models import User, Group
+from django.contrib.auth.models import User
 from taggit.models import Tag
 
 from core.summarization import summarize_to_text
-from home.models import Event, Job, MemberProfile, ComsesGroups, Platform, Download
+from home.models import Event, Job, MemberProfile, ComsesGroups, Platform, Download, Institution
 from library.models import (Contributor, Codebase, CodebaseRelease, CodebaseTag, License,
                             CodebaseContributor, OPERATING_SYSTEMS)
 from .utils import get_first_field, get_field, get_field_attributes, to_datetime
@@ -120,13 +121,15 @@ class Extractor:
         if max_length is not None:
             if len(_sanitized_data) > max_length:
                 logger.warning("data exceeded max length %s: %s", max_length, data)
-                return _sanitized_data[:max_length]
+                return shorten(_sanitized_data, max_length)
         return _sanitized_data
 
     @staticmethod
     def sanitize_text(data: str, max_length: int = None) -> str:
-        _sanitized_data = BeautifulSoup(data.strip(), "lxml")
-        return _sanitized_data.get_text()
+        _sanitized_data = BeautifulSoup(data.strip(), "lxml").get_text()
+        if max_length is not None:
+            return shorten(_sanitized_data, max_length)
+        return _sanitized_data
 
     @staticmethod
     def int_to_bool(integer_value, default=False) -> bool:
@@ -151,16 +154,15 @@ class EventExtractor(Extractor):
         return datetime.strptime(date_string, EventExtractor.EVENT_DATE_FORMAT)
 
     def _extract(self, raw_event, user_id_map: Dict[str, int]) -> Event:
-        description = get_first_field(raw_event, 'body')
-        summary = get_first_field(raw_event, 'body', attribute_name='summary', default='')[:300] \
-            or summarize_to_text(description, sentences_count=2)
-
+        summary = self.sanitize_text(get_first_field(raw_event, 'body', attribute_name='summary', default=''),
+                                     max_length=300)
+        description = self.sanitize_text(get_first_field(raw_event, 'body'))
         return Event(
             title=raw_event['title'],
             date_created=to_datetime(raw_event['created']),
             last_modified=to_datetime(raw_event['changed']),
             summary=summary,
-            description=self.sanitize_text(description),
+            description=description,
             early_registration_deadline=to_datetime(get_first_field(raw_event, 'field_earlyregistration')),
             submission_deadline=to_datetime(get_first_field(raw_event, 'field_submissiondeadline')),
             start_date=self.parse_event_date_string(get_first_field(raw_event, 'field_eventdate')),
@@ -244,31 +246,17 @@ class UserExtractor(Extractor):
         Returns a mapping of drupal user ids to Django User pks.
         :return: dict
         """
-        contributors = []
         user_id_map = {}
         for raw_user in self.data:
             user = UserExtractor._extract(raw_user)
             if user:
                 user_id_map[user.drupal_uid] = user.pk
-                try:
-                    contributor = Contributor.objects.get(given_name=user.first_name, family_name=user.last_name)
-                    if not all([contributor.email, contributor.user]):
-                        contributor.email = user.email
-                        contributor.user = user
-                        contributor.save()
-                except:
-                    contributors.append(Contributor(
-                        given_name=user.first_name,
-                        family_name=user.last_name,
-                        email=user.email,
-                        user=user))
-        Contributor.objects.bulk_create(contributors)
         return user_id_map
 
 
 class ProfileExtractor(Extractor):
     def extract_all(self, user_id_map, tag_id_map):
-
+        contributors = []
         for raw_profile in self.data:
             drupal_uid = raw_profile['uid']
             user_id = user_id_map.get(drupal_uid, -1)
@@ -276,13 +264,17 @@ class ProfileExtractor(Extractor):
                 logger.warning("Drupal UID %s not found in user id map, skipping", drupal_uid)
                 continue
             user = User.objects.get(pk=user_id)
-            profile = user.member_profile
             user.first_name = get_first_field(raw_profile, 'field_profile2_firstname')
             user.last_name = get_first_field(raw_profile, 'field_profile2_lastname')
-            profile.research_interests = get_first_field(raw_profile, 'field_profile2_research')
-            profile.institutions = get_field(raw_profile, 'institutions')
-            profile.degrees = get_field_attributes(raw_profile, 'field_profile2_degrees') or []
-            profile.personal_url = get_first_field(raw_profile, 'field_profile2_personal_link', attribute_name='url')
+            member_profile = user.member_profile
+            member_profile.research_interests = get_first_field(raw_profile, 'field_profile2_research')
+            raw_institutions = get_field(raw_profile, 'institutions')
+            if raw_institutions:
+                raw_institution = raw_institutions[0]
+                institution = Institution.objects.get_or_create(name=raw_institution['title'], url=raw_institution['url'])
+                member_profile.institution = institution
+            member_profile.degrees = get_field_attributes(raw_profile, 'field_profile2_degrees') or []
+            member_profile.personal_url = get_first_field(raw_profile, 'field_profile2_personal_link', attribute_name='url')
 
             # crude aggregation of the wretched smorgasbord of incoming urls
             linkedin_url = get_first_field(raw_profile, 'field_profile2_linkedin_link',
@@ -294,23 +286,33 @@ class ProfileExtractor(Extractor):
                                                          attribute_name='url')
             researchgate_url = get_first_field(raw_profile, 'field_profile2_researchgate_link',
                                                attribute_name='url')
-
-            profile.professional_url = institutional_homepage_url \
-                                       or researchgate_url \
-                                       or academia_edu_url \
-                                       or cv_url \
-                                       or linkedin_url
-
+            member_profile.professional_url = institutional_homepage_url \
+                                              or researchgate_url \
+                                              or academia_edu_url \
+                                              or cv_url \
+                                              or linkedin_url
             for url in ('professional_url', 'personal_url'):
-                if len(getattr(profile, url, '')) > 200:
-                    logger.warning("Ignoring overlong %s URL %s", url, getattr(profile, url))
-                    setattr(profile, url, '')
+                if len(getattr(member_profile, url, '')) > 200:
+                    logger.warning("Ignoring overlong %s URL %s", url, getattr(member_profile, url))
+                    setattr(member_profile, url, '')
             tags = flatten([tag_id_map[tid] for tid in
                             get_field_attributes(raw_profile, 'taxonomy_vocabulary_6', attribute_name='tid') if
                             tid in tag_id_map])
-            profile.keywords.add(*tags)
-            profile.save()
+            member_profile.keywords.add(*tags)
+            member_profile.save()
             user.save()
+            try:
+                contributor = Contributor.objects.get(given_name=user.first_name, family_name=user.last_name)
+                contributor.email = user.email
+                contributor.user = user
+                contributor.save()
+            except:
+                contributors.append(
+                    Contributor(given_name=user.first_name,
+                                family_name=user.last_name,
+                                email=user.email,
+                                user=user))
+        Contributor.objects.bulk_create(contributors)
 
 
 class TaxonomyExtractor(Extractor):
@@ -341,8 +343,8 @@ class AuthorExtractor(Extractor):
         if any([given_name, middle_name, family_name]):
             contributor, created = Contributor.objects.get_or_create(
                 given_name=given_name,
-                middle_name=middle_name,
                 family_name=family_name,
+                defaults={'middle_name': middle_name}
             )
             contributor.item_id = raw_author['item_id']
             return contributor
@@ -364,16 +366,24 @@ class ModelExtractor(Extractor):
         raw_author_ids = [raw_author['value'] for raw_author in get_field(raw_model, 'field_model_author')]
         author_ids = set([author_id_map[raw_author_id] for raw_author_id in raw_author_ids])
         submitter_id = user_id_map[raw_model.get('uid')]
-        author_ids.add(Contributor.objects.get(user__pk=submitter_id).pk)
         with suppress_auto_now(Codebase, 'last_modified'):
             last_changed = to_datetime(raw_model['changed'])
+            handle = get_first_field(raw_model, 'field_model_handle', default=None)
+            peer_reviewed = self.int_to_bool(get_first_field(raw_model, 'field_model_certified', default=0))
+            # set peer reviewed codebases as featured
+            featured = self.int_to_bool(get_first_field(raw_model, 'field_model_featured', default=0)) or peer_reviewed
             code = Codebase.objects.create(
                 title=raw_model['title'].strip(),
                 description=self.sanitize_text(get_first_field(raw_model, field_name='body', default='')),
+                summary=self.sanitize_text(
+                    get_first_field(raw_model, field_name='body', attribute_name='summary', default=''),
+                    max_length=500
+                ),
                 date_created=to_datetime(raw_model['created']),
                 live=self.int_to_bool(raw_model['status']),
                 last_published_on=last_changed,
                 last_modified=last_changed,
+                doi=handle,
                 is_replication=Extractor.int_to_bool(get_first_field(raw_model, 'field_model_replicated', default='0')),
                 uuid=raw_model['uuid'],
                 first_published_at=to_datetime(raw_model['created']),
@@ -381,7 +391,9 @@ class ModelExtractor(Extractor):
                 replication_references_text=get_first_field(raw_model, 'field_model_publication_text', default=''),
                 identifier=raw_model['nid'],
                 submitter_id=submitter_id,
-                peer_reviewed=self.int_to_bool(get_first_field(raw_model, 'field_model_certified', default=0)))
+                featured=featured,
+                peer_reviewed=peer_reviewed
+            )
 
             code.author_ids = author_ids
             code.keyword_tids = get_field_attributes(raw_model, 'taxonomy_vocabulary_6', attribute_name='tid')
@@ -592,8 +604,8 @@ class IDMapper:
 
 def load(directory: str):
     # TODO: associate picture with profile
-    user_extractor = UserExtractor.from_file(os.path.join(directory, "User.json"))
     author_extractor = AuthorExtractor.from_file(os.path.join(directory, "Author.json"))
+    user_extractor = UserExtractor.from_file(os.path.join(directory, "User.json"))
     event_extractor = EventExtractor.from_file(os.path.join(directory, "Event.json"))
     job_extractor = JobExtractor.from_file(os.path.join(directory, "Forum.json"))
     model_extractor = ModelExtractor.from_file(os.path.join(directory, "Model.json"))
@@ -607,13 +619,20 @@ def load(directory: str):
     if Platform.objects.count() == 0:
         load_data(Platform, PLATFORMS)
 
+    # extract Codebase Authors, then try to correlate with existing Users
     author_id_map = author_extractor.extract_all()
+    # extract Users first so that we have a remote chance of correlating Authors with Users
     user_id_map = user_extractor.extract_all()
+    # extract Drupal taxonomy terms
+    tag_id_map = taxonomy_extractor.extract_all()
+    # profile extraction adds first name / last name and MemberProfile fields to Users.
+    profile_extractor.extract_all(user_id_map, tag_id_map)
+
     job_extractor.extract_all(user_id_map)
     event_extractor.extract_all(user_id_map)
-    tag_id_map = taxonomy_extractor.extract_all()
+
     model_id_map = model_extractor.extract_all(user_id_map, tag_id_map, author_id_map)
     model_version_id_map = model_version_extractor.extract_all(model_id_map)
-    profile_extractor.extract_all(user_id_map, tag_id_map)
+
     download_extractor.extract_all(model_id_map, model_version_id_map, user_id_map)
     return IDMapper(author_id_map, user_id_map, tag_id_map, model_id_map, model_version_id_map)
