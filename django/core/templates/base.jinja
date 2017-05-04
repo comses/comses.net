@@ -3,12 +3,6 @@
 {% set signup_url = url("account_signup") %}
 
 {% macro navbar() %}
-<script>
-function submitLogout() {
-    document.getElementById('logoutForm').submit(); 
-    return false;
-}
-</script>
 <nav class='navbar navbar-toggleable-md navbar-light fixed-top'>
     <div class='container'>
         <button class='navbar-toggler navbar-toggler-right' type='button' data-toggle='collapse'
@@ -20,7 +14,7 @@ function submitLogout() {
         </a>
         <div class='collapse navbar-collapse my-auto justify-content-end' id='navbar-content'>
             <ul class='navbar-nav'>
-                {# FIXME: replace with wagtailmenu #}
+                {# FIXME: consider replacing with wagtailmenu #}
                 <li class="nav-item">
                     <a href="{{ url('library:codebase-list') }}" class="nav-link">Computational Library</a>
                 </li>
@@ -44,14 +38,19 @@ function submitLogout() {
                 <li class='nav-item'>
                     <a href='/about/' class='nav-link'>About</a>
                 </li>
-                <li class="nav-item">
-                    <form class='form-inline my-2 my-lg-0'>
-                        {% csrf_token %}
-                        {# <input id='searchbox' class='collapse form-control mr-sm-2' type='text' placeholder='Search'>
-                        #}
-                        <button data-toggle='collapse' data-target='#searchbox' aria-expanded='false' aria-controls='searchbox'
-                    class='btn my-2 my-sm-0' type='submit'><i class='fa fa-search'></i></button>
-                    </form>
+                <li id='search-dropdown' class="nav-item dropdown">
+                    <a id='search-button' onclick='focusSearch()' href='/search/' class='my-0 p-1 dropdown-toggle' data-toggle='dropdown' aria-expanded='false' aria-haspopup='true'>
+                        <i class='fa fa-search'></i>
+                    </a>
+                    <div id='header-search-form' class='p-2 dropdown-menu' aria-labelledby='search-button'>
+                        <form>
+                            {% csrf_token %}
+                            <input id='header-search-input' type='text' class='p-2 form-control' placeholder='search entire site' autofocus>
+                            <div class='float-right'>
+                                <small><a href='/search'>options</a></small>
+                            </div>
+                        </form>
+                    </div>
                 </li>
                 {% if user.is_authenticated %}
                     <li class="nav-item dropdown">
@@ -74,13 +73,22 @@ function submitLogout() {
                     </li>
                 {% else %}
                     <li class='nav-item'>
-                        <a class="nav-link" href="{{ login_url }}"><i class='fa fa-sign-in'></i> Sign In</a>
+                        <a class="nav-link" href="{{ login_url }}">Sign In <i class='fa fa-sign-in'></i></a>
                     </li>
                 {% endif %}
             </ul>
         </div>
     </div>
 </nav>
+<script>
+function submitLogout() {
+    document.getElementById('logoutForm').submit(); 
+    return false;
+}
+function focusSearch() {
+    setTimeout(function() { document.getElementById("header-search-input").focus() }, 0);
+}
+</script>
 {% endmacro %}
 
 {% macro footer() %}

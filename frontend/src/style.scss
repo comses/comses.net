@@ -222,6 +222,22 @@ div.activity {
   }
 }
 
+#search-dropdown {
+    .dropdown-toggle::after {
+        display: none;
+    }
+}
+
+#search-button {
+    font-size: .8rem;
+    color: $text-color;
+}
+
+#header-search-form {
+    left: -15rem;
+    width: 22rem;
+}
+
 .errorlist {
   @extend .alert-danger;
 }
@@ -229,7 +245,7 @@ div.activity {
 nav {
   background-color: $white;
   .nav-link {
-    font-size: .8em;
+    font-size: .8rem;
     color: $text-color;
   }
   .nav-link:hover {
@@ -260,9 +276,6 @@ footer {
   h1 {
     font-size: 1em;
   }
-}
-
-.search-result {
   border-left: none;
   border-right: none;
   padding-top: 2em;
