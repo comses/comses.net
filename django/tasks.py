@@ -88,7 +88,7 @@ def import_codebase_files(ctx, directory='incoming/models'):
     dj(ctx, 'import_codebase_files -d {0}'.format(directory))
 
 
-@task(import_drupal_data, import_codebase_files, aliases=['ima'])
+@task(import_drupal_data, import_codebase_files, setup_site, aliases=['ima'])
 def import_all(ctx):
     pass
 
@@ -146,7 +146,7 @@ def initialize_database_schema(ctx, clean=False):
         for app in ('home', 'library'):
             migration_dir = os.path.join(app, 'migrations')
             ctx.run('find {0} -name 00*.py -delete -print'.format(migration_dir))
-    dj(ctx, 'makemigrations home library')
+    dj(ctx, 'makemigrations home library --noinput')
     dj(ctx, 'migrate --noinput')
 
 
