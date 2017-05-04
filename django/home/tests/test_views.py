@@ -23,7 +23,7 @@ def generate_with_user(username):
         .flatmap(lambda user: st.tuples(st.just(user),
                                         models(MemberProfile,
                                                user=st.just(user),
-                                               summary=st.just(''),
+                                               bio=st.just(''),
                                                research_interests=st.just(''),
                                                affiliations=st.just([]),
                                                personal_url=st.just(''),
