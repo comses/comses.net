@@ -7,10 +7,10 @@
 
 {% block top %}
 {{ subnav([
-{ 'url': '/resources/', 'text': 'Community Resources' },
-{ 'url': '/modeling-platforms/', 'text': 'Modeling Platforms', 'active': True },
-{ 'url': '/journals/', 'text': 'Modeling Journals' },
-{ 'url': '/standards/', 'text': 'Standards and Guides to Good Practice' },
+{ 'url': '/resources/', 'text': 'Resources' },
+{ 'url': '/resources/modeling-platforms/', 'text': 'Modeling Platforms', 'active': True },
+{ 'url': '/journals/', 'text': 'Journals' },
+{ 'url': '/standards/', 'text': 'Standards' },
 ])
 }}
 <div class='jumbotron'>
@@ -31,9 +31,9 @@
         {% if p.platform.active %}
             <span class='text-success'><i class='fa fa-check-circle-o'></i></span>
         {% else %}
-            <span class='text-danger'><i class='fa fa-exclamation'></i></span>
+            <span class='text-danger'><i class='fa fa-flag'></i></span>
         {% endif %}
-        <p>{{ p.platform.description }}</p>
+        <div class='description'>{{ p.platform.description|markdown }}</div>
         <div class='tags'>
             {% for tag in p.platform.tags.all() %}
                 <a class='tag' href='/search?tag={{ tag.name }}'>{{ tag.name }}</a>
