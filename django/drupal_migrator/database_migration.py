@@ -24,18 +24,18 @@ logger = logging.getLogger(__name__)
 
 LICENSES = """id,name,url
     0,"None",""
-    1,"GNU GPLv2",http://www.gnu.org/licenses/gpl-2.0.html
-    2,"GNU GPLv3",http://www.gnu.org/licenses/gpl-3.0.html
-    3,"Apache License, Version 2.0",http://www.apache.org/licenses/LICENSE-2.0.html
-    4,"Creative Commons (cc by)",http://creativecommons.org/licenses/by/3.0/
-    5,"Creative Commons (cc by-sa)",http://creativecommons.org/licenses/by-sa/3.0/
-    6,"Creative Commons (cc by-nd)",http://creativecommons.org/licenses/by-nd/3.0
-    7,"Creative Commons (cc by-nc)",http://creativecommons.org/licenses/by-nc/3.0
-    8,"Creative Commons (cc by-nc-sa)",http://creativecommons.org/licenses/by-nc-sa/3.0
-    9,"Creative Commons (cc by-nc-nd)",http://creativecommons.org/licenses/by-nc-nd/3.0
-    10,"Academic Free License 3.0",http://www.opensource.org/licenses/afl-3.0.php
-    11,"BSD 2-Clause",http://opensource.org/licenses/BSD-2-Clause
-    12,"MIT License", https://opensource.org/licenses/MIT"""
+    1,"GPL-2.0",http://www.gnu.org/licenses/gpl-2.0.html
+    2,"GPL-3.0",http://www.gnu.org/licenses/gpl-3.0.html
+    3,"Apache-2.0",http://www.apache.org/licenses/LICENSE-2.0.html
+    4,"CC-BY-3.0",http://creativecommons.org/licenses/by/3.0/
+    5,"CC-BY-SA-3.0",http://creativecommons.org/licenses/by-sa/3.0/
+    6,"CC-BY-ND-3.0",http://creativecommons.org/licenses/by-nd/3.0
+    7,"CC-BY-NC-3.0",http://creativecommons.org/licenses/by-nc/3.0
+    8,"CC-BY-NC-SA-3.0",http://creativecommons.org/licenses/by-nc-sa/3.0
+    9,"CC-BY-NC-ND-3.0",http://creativecommons.org/licenses/by-nc-nd/3.0
+    10,"AFL-3.0",http://www.opensource.org/licenses/afl-3.0.php
+    11,"BSD-2-Clause",http://opensource.org/licenses/BSD-2-Clause
+    12,"MIT", https://opensource.org/licenses/MIT"""
 
 PLATFORMS = """id,active,name,url,description
     0,f,other,NULL,''
@@ -64,7 +64,7 @@ PLATFORMS = """id,active,name,url,description
     23,t,"Insight Maker",https://insightmaker.com/,"Use Insight Maker to start with a conceptual map of your Insight and then convert it into a complete simulation model. Insight Maker supports extensive diagramming and modeling features that enable you to easily create representations of your system."
     24,t,JAMSIM,https://github.com/compassresearchcentre/jamsim,"JAMSIM is a framework for creating microsimulation models in Java. It provides code and packages for common features of microsimulation models for end users."
     25,t,JAS-mine,http://www.jas-mine.net/,"JAS-mine is a Java platform that aims at providing a unique simulation tool for discrete-event simulations, including agent-based and microsimulation models."
-    26,t,Jason,https://github.com/jason-lang/jason,"Jason is an interpreter for an extended version of AgentSpeak. It implements the operational semantics of that language, and provides a platform for the development of multi-agent systems, with many user-customisable features. Jason is available as Open Source, and is distributed under GNU LGPL."    
+    26,t,Jason,https://github.com/jason-lang/jason,"Jason is an interpreter for an extended version of AgentSpeak. It implements the operational semantics of that language, and provides a platform for the development of multi-agent systems, with many user-customisable features. Jason is available as Open Source, and is distributed under GNU LGPL."
     27,t,MADeM,http://www.uv.es/grimo/jmadem/,"The MADeM (Multi-modal Agent Decision Making) model provides agents with a general mechanism to make socially acceptable decisions. In this kind of decisions, the members of an organization are required to express their preferences with regard to the different solutions for a specific decision problem. The whole model is based on the MARA (Multi-Agent Resource Allocation) theory, therefore, it represents each one of these solutions as a set of resource allocations."
     28,t,MATSim,http://www.matsim.org/,\"MATSim is an open-source framework to implement large-scale agent-based transport simulations.\""""
 
@@ -285,10 +285,10 @@ class ProfileExtractor(Extractor):
             researchgate_url = get_first_field(raw_profile, 'field_profile2_researchgate_link',
                                                attribute_name='url')
             member_profile.professional_url = institutional_homepage_url \
-                                              or researchgate_url \
-                                              or academia_edu_url \
-                                              or cv_url \
-                                              or linkedin_url
+                or researchgate_url \
+                or academia_edu_url \
+                or cv_url \
+                or linkedin_url
             for url in ('professional_url', 'personal_url'):
                 if len(getattr(member_profile, url, '')) > 200:
                     logger.warning("Ignoring overlong %s URL %s", url, getattr(member_profile, url))
