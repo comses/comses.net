@@ -15,6 +15,7 @@ from wagtail.wagtailcore.models import Page, Site
 from home.models import (LandingPage, FeaturedContentItem, SocialMediaSettings,
                          PlatformsIndexPage, Platform, PlatformSnippetPlacement, CategoryIndexPage, StreamPage)
 from library.models import Codebase
+from drupal_migrator.database_migration import load_licenses, load_platforms
 
 logger = logging.getLogger(__name__)
 
@@ -27,7 +28,6 @@ class Command(BaseCommand):
         self.landing_page = None
         self.default_user = User.objects.get(username='alee')
 
-
     def add_arguments(self, parser):
         parser.add_argument('--site-name',
                             default='CoMSES Net',
@@ -35,8 +35,15 @@ class Command(BaseCommand):
         parser.add_argument('--site-domain',
                             default='www.comses.net',
                             help='Site domain name, e.g., www.comses.net')
+        parser.add_argument('--reload-platforms', default=False, action='store_true')
+        parser.add_argument('--reload-licenses', default=False, action='store_true')
 
     def handle(self, *args, **options):
+        if options['reload_platforms']:
+            load_platforms()
+        if options['reload_licenses']:
+            load_licenses()
+
         self.create_landing_page()
         # argparse converts dashes to underscores
         self.create_site(site_name=options['site_name'], hostname=options['site_domain'])
@@ -114,8 +121,8 @@ class Command(BaseCommand):
             summary=('CoMSES Net is dedicated to fostering open and reproducible computational modeling through '
                      'cyberinfrastructure and community development. We maintain these community curated resources '
                      'to help new and experienced computational modelers improve the discoverability, reuse, and '
-                     'reproducibility of our computational models. Feel free to [contact us](/contact/) if you have any'
-                     'resources to add or comments.'
+                     'reproducibility of their computational models. Please [contact us](/contact/) with '
+                     'feedback or additional resources - your contributions are appreciated!'
                      )
         )
         resources_index.add_navigation_links([

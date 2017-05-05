@@ -15,7 +15,7 @@ from django.contrib.auth.models import User
 from taggit.models import Tag
 
 from core.summarization import summarize_to_text
-from home.models import Event, Job, MemberProfile, ComsesGroups, Platform, Download, Institution
+from home.models import Event, Job, MemberProfile, Platform, Download, ComsesGroups, Institution
 from library.models import (Contributor, Codebase, CodebaseRelease, CodebaseTag, License,
                             CodebaseContributor, OPERATING_SYSTEMS)
 from .utils import get_first_field, get_field, get_field_attributes, to_datetime
@@ -37,38 +37,36 @@ LICENSES = """id,name,url
     11,"BSD 2-Clause",http://opensource.org/licenses/BSD-2-Clause
     12,"MIT License", https://opensource.org/licenses/MIT"""
 
-PLATFORMS = """id,name,url
-    0,other,NULL
-    1,Ascape,http://ascape.sourceforge.net/
-    2,Breve,http://www.spiderland.org/
-    3,Cormas,http://cormas.cirad.fr/en/outil/outil.htm
-    4,DEVS,http://acims.asu.edu/software/devs-suite/
-    5,EcoLab,http://ecolab.sourceforge.net/
-    6,Mason,http://cs.gmu.edu/~eclab/projects/mason/
-    7,Mass,http://mass.aitia.ai/
-    8,Mobildyc,http://w3.avignon.inra.fr/mobidyc/index.php/English_summary
-    9,NetLogo,http://ccl.northwestern.edu/netlogo/
-    10,Repast,http://repast.github.io
-    11,SeSAm,http://www.simsesam.de/
-    12,StarLogo,http://education.mit.edu/portfolio_page/starlogo-tng/
-    13,Swarm,http://www.swarm.org/
-    14,AnyLogic,http://www.anylogic.com/
-    15,Matlab,http://www.mathworks.com/products/matlab/
-    16,AgentBase,http://agentbase.org/
-    17,"Agent Modeling Platform (AMP)",http://www.eclipse.org/amp/
-    18,Agentscript,http://agentscript.org/
-    19,CRAFTY,https://www.wiki.ed.ac.uk/display/CRAFTY/Home
-    20,ENVISION,http://envision.bioe.orst.edu/
-    21,FLAME,http://flame.ac.uk/
-    22,GAMA,https://github.com/gama-platform
-    23,"Insight Maker",https://insightmaker.com/
-    24,JAMSIM,https://github.com/compassresearchcentre/jamsim
-    25,JAS-mine,http://www.jas-mine.net/
-    26,Jason,http://jason.sourceforge.net/wp/
-    27,JILDT,http://jildt.sourceforge.net/
-    28,MADeM,http://www.uv.es/grimo/jmadem/
-    29,MATSim,http://www.matsim.org/
-    """
+PLATFORMS = """id,active,name,url,description
+    0,f,other,NULL,''
+    1,t,Ascape,http://ascape.sourceforge.net/,"Ascape is an innovative tool for developing and exploring general-purpose agent-based models. It is designed to be flexible and powerful, but also approachable, easy to use and expressive. Models can be developed in Ascape using far less code than in other tools. Ascape models are easier to explore, and profound changes to the models can be made with minimal code changes. Ascape offers a broad array of modeling and visualization tools."
+    2,f,Breve,http://www.spiderland.org/,"breve is a free, open-source software package which makes it easy to build 3D simulations of multi-agent systems and artificial life. Using Python, or using a simple scripting language called steve, you can define the behaviors of agents in a 3D world and observe how they interact. breve includes physical simulation and collision detection so you can simulate realistic creatures, and an OpenGL display engine so you can visualize your simulated worlds."
+    3,t,Cormas,http://cormas.cirad.fr/en/outil/outil.htm,"Cormas is a simulation platform based on the VisualWorks programming environment which allows the development of applications in the object-oriented programming language SmallTalk. Cormas pre-defined entities are SmallTalk generic classes from which, by specialization and refining, users can create specific entities for their own model."
+    4,t,DEVS-Suite,http://acims.asu.edu/software/devs-suite/,"DEVS-Suite 3.0.0 is the first discrete-event/discrete-time simulator that offers the capability to generate and visualize Superdense Time Trajectories. Two new types of time-based trajectories (plots) are introduced to the Business Intelligence Reporting Tool (BIRT) and then integrated into the DEVS-Suite 2.1.0. This simulator supports a rich set of menu-driven capabilities to create and customize two new kinds of time-based trajectories."
+    5,t,EcoLab,http://ecolab.sourceforge.net/,"EcoLab is both the name of a software package and a research project that is looking at the dynamics of evolution."
+    6,t,Mason,http://cs.gmu.edu/~eclab/projects/mason/,"MASON is a fast discrete-event multiagent simulation library core in Java, designed to be the foundation for large custom-purpose Java simulations, and also to provide more than enough functionality for many lightweight simulation needs. MASON contains both a model library and an optional suite of visualization tools in 2D and 3D."
+    7,f,Mass,http://mass.aitia.ai/,"A modeling platform consisting of the Functional Agent-based Language for Simulation (FABLES) programming language, a participatory simulations software, and the Model Exploration Module (MEME), which manages experiments for batch processing and analysis."
+    8,f,Mobildyc,http://w3.avignon.inra.fr/mobidyc/index.php/English_summary,"Mobidyc is a software project that aims to promote Individual-Based Modelling in the field of ecology, biology and environment. It is the acronym for MOdelling Based on Individuals for the DYnamics of Communities."
+    9,t,NetLogo,http://ccl.northwestern.edu/netlogo/,"NetLogo is a multi-agent programmable modeling environment. It is used by tens of thousands of students, teachers and researchers worldwide. It also powers HubNet participatory simulations. It is authored by Uri Wilensky and developed at the CCL. You can download it free of charge."
+    10,t,Repast,http://repast.github.io,"The Repast Suite is a family of advanced, free, and open source agent-based modeling and simulation platforms that have collectively been under continuous development for over 15 years."
+    11,t,SeSAm,http://www.simsesam.de/,"SeSAm (Shell for Simulated Agent Systems) provides a generic environment for modeling and experimenting with agent-based simulation. We specially focused on providing a tool for the easy construction of complex models, which include dynamic interdependencies or emergent behaviour."
+    12,t,StarLogo,http://education.mit.edu/portfolio_page/starlogo-tng/,"StarLogo TNG is a downloadable programming environment that lets students and teachers create 3D games and simulations for understanding complex systems."
+    13,t,Swarm,http://www.swarm.org/,"Swarm is a platform for agent-based models (ABMs) that includes a conceptual framework for designing, describing, and conducting experiments on ABMs"
+    14,t,AnyLogic,http://www.anylogic.com/,"A Java Eclipse-based modeling platform that supports System Dynamics, Process-centric (AKA Discrete Event), and Agent Based Modeling."
+    15,t,MATLAB,http://www.mathworks.com/products/matlab/,"MATLAB is a multi-paradigm numerical computing environment and programming language developed by MathWorks."
+    16,t,AgentBase,http://agentbase.org/,"AgentBase.org allows you to do Agent Based Modeling (ABM) in the browser. You can edit, save, and share models without installing any software or even reloading the page. Models are written in Coffeescript and use the AgentBase library."
+    17,f,"Agent Modeling Platform (AMP)",http://www.eclipse.org/amp/,"The AMP project provides extensible frameworks and exemplary tools for representing, editing, generating, executing and visualizing agent-based models (ABMs) and any other domain requiring spatial, behavioral and functional features."
+    18,t,AgentScript,http://agentscript.org/,"AgentScript is a minimalist Agent Based Modeling (ABM) framework based on NetLogo agent semantics. Its goal is to promote the Agent Oriented Programming model in a highly deployable CoffeeScript/JavaScript implementation. "
+    19,t,CRAFTY,https://www.wiki.ed.ac.uk/display/CRAFTY/Home,"CRAFTY is a large-scale ABM of land use change. It has been designed to allow efficient but powerful simulation of a wide range of land uses and the goods and services they produce. It is fully open-source and can be used without the need for any programming."
+    20,t,ENVISION,http://envision.bioe.orst.edu/,"ENVISION is a GIS-based tool for scenario-based community and regional integrated planning and environmental assessments.  It provides a robust platform for integrating a variety of spatially explicit models of landscape change processes and production for conducting alternative futures analyses."
+    21,t,FLAME,http://flame.ac.uk/,"FLAME is a generic agent-based modelling system which can be used to development applications in many areas. It generates a complete agent-based application which can be compiled and built on the majority of computing systems ranging from laptops to HPC super computers."
+    22,t,GAMA,https://github.com/gama-platform,"GAMA is a modeling and simulation development environment for building spatially explicit agent-based simulations."
+    23,t,"Insight Maker",https://insightmaker.com/,"Use Insight Maker to start with a conceptual map of your Insight and then convert it into a complete simulation model. Insight Maker supports extensive diagramming and modeling features that enable you to easily create representations of your system."
+    24,t,JAMSIM,https://github.com/compassresearchcentre/jamsim,"JAMSIM is a framework for creating microsimulation models in Java. It provides code and packages for common features of microsimulation models for end users."
+    25,t,JAS-mine,http://www.jas-mine.net/,"JAS-mine is a Java platform that aims at providing a unique simulation tool for discrete-event simulations, including agent-based and microsimulation models."
+    26,t,Jason,https://github.com/jason-lang/jason,"Jason is an interpreter for an extended version of AgentSpeak. It implements the operational semantics of that language, and provides a platform for the development of multi-agent systems, with many user-customisable features. Jason is available as Open Source, and is distributed under GNU LGPL."    
+    27,t,MADeM,http://www.uv.es/grimo/jmadem/,"The MADeM (Multi-modal Agent Decision Making) model provides agents with a general mechanism to make socially acceptable decisions. In this kind of decisions, the members of an organization are required to express their preferences with regard to the different solutions for a specific decision problem. The whole model is based on the MARA (Multi-Agent Resource Allocation) theory, therefore, it represents each one of these solutions as a set of resource allocations."
+    28,t,MATSim,http://www.matsim.org/,\"MATSim is an open-source framework to implement large-scale agent-based transport simulations.\""""
 
 
 def flatten(ls):
@@ -409,7 +407,7 @@ class ModelExtractor(Extractor):
                 model_code.cached_contributors.append(
                     CodebaseContributor(contributor_id=author_id, index=idx)
                 )
-            # FIXME: some tids may have been converted to multiple tags due to splitting
+            # NOTE: some tids may have been converted to multiple tags due to splitting
             model_code.tags.add(*flatten([tag_id_map[tid] for tid in model_code.keyword_tids]))
             model_id_map[model_code.identifier] = model_code
         return model_id_map
@@ -440,6 +438,7 @@ class ModelVersionExtractor(Extractor):
             language = ModelVersionExtractor.PROGRAMMING_LANGUAGES[int(
                 get_first_field(raw_model_version, 'field_modelversion_language', default=0))
             ]
+
             dependencies = {
                 'programming_language': {
                     'name': language,
@@ -461,8 +460,14 @@ class ModelVersionExtractor(Extractor):
                     submitter_id=codebase.submitter_id,
                     version_number="1.{0}.0".format(version_number - 1),
                 )
+                # FIXME: if these do not exist in the DB, add them to the list of tags
                 codebase_release.programming_languages.add(language)
                 codebase_release.platforms.add(platform)
+                if platform_id == 0:
+                    # check for platform_ver and add to tags if it exists
+                    platform_version = get_first_field(raw_model_version, 'field_modelversion_platform_ver')
+                    if platform_version:
+                        codebase_release.platform_tags.add(self.sanitize(platform_version))
                 release_contributors = []
                 # re-create new CodebaseContributors for each model version
                 # do not modify codebase.contributors in place or it will overwrite previous version contributors
@@ -602,6 +607,16 @@ class IDMapper:
         return self._maps[item]
 
 
+def load_platforms():
+    Platform.objects.all().delete()
+    load_data(Platform, PLATFORMS)
+
+
+def load_licenses():
+    License.objects.all().delete()
+    load_data(License, LICENSES)
+
+
 def load(directory: str):
     # TODO: associate picture with profile
     author_extractor = AuthorExtractor.from_file(os.path.join(directory, "Author.json"))
@@ -614,10 +629,9 @@ def load(directory: str):
     profile_extractor = ProfileExtractor.from_file(os.path.join(directory, "Profile2.json"))
     download_extractor = DownloadCountExtractor.from_file(os.path.join(directory, "DownloadCount.csv"))
 
-    if License.objects.count() == 0:
-        load_data(License, LICENSES)
-    if Platform.objects.count() == 0:
-        load_data(Platform, PLATFORMS)
+    load_licenses()
+
+    load_platforms()
 
     # extract Codebase Authors, then try to correlate with existing Users
     author_id_map = author_extractor.extract_all()
