@@ -361,6 +361,8 @@ class Platform(index.Indexed, ClusterableModel):
     description = models.CharField(max_length=512, blank=True)
     date_created = models.DateTimeField(default=timezone.now)
     last_modified = models.DateTimeField(auto_now=True)
+    open_source = models.BooleanField(default=False)
+    featured = models.BooleanField(default=False)
     url = models.URLField(blank=True)
     tags = TaggableManager(through=PlatformTag, blank=True)
 
