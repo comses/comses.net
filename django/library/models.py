@@ -155,7 +155,6 @@ class Codebase(index.Indexed, ClusterableModel):
     # We should also allow a model to have multiple references
     references_text = models.TextField(blank=True)
     associated_publication_text = models.TextField(blank=True)
-    replication_references_text = models.TextField(blank=True)
     tags = ClusterTaggableManager(through=CodebaseTag)
     # evaluate this JSONField as an add-anything way to record relationships between this Codebase and other entities
     # with URLs / resolvable identifiers

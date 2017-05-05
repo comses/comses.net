@@ -18,7 +18,7 @@ def generate_with_codebase(submitter):
                   summary=text(),
                   uuid=st.uuids(),
                   references_text=st.just(''),
-                  replication_references_text=st.just(''),
+                  associated_publication_text=st.just(''),
                   repository_url=st.just(''),
                   doi=st.just(None),
                   media=st.just([]),
