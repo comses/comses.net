@@ -154,6 +154,7 @@ class Codebase(index.Indexed, ClusterableModel):
     # publication metadata
     # We should also allow a model to have multiple references
     references_text = models.TextField(blank=True)
+    associated_publication_text = models.TextField(blank=True)
     replication_references_text = models.TextField(blank=True)
     tags = ClusterTaggableManager(through=CodebaseTag)
     # evaluate this JSONField as an add-anything way to record relationships between this Codebase and other entities
@@ -366,6 +367,42 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
     def get_absolute_url(self):
         return reverse('library:codebaserelease-detail',
                        kwargs={'identifier': self.codebase.identifier, 'version_number': self.version_number})
+
+    # FIXME: lift magic constants
+    @property
+    def handle_url(self):
+        if '2286.0/oabm' in self.doi:
+            return 'http://hdl.handle.net/{0}'.format(self.doi)
+        return None
+
+    @property
+    def doi_url(self):
+        return 'http://dx.doi.org/{0}'.format(self.doi)
+
+    @property
+    def permanent_url(self):
+        if self.doi:
+            if '2286.0/oabm' in self.doi:
+                return self.handle_url
+            else:
+                return self.doi_url
+        return 'https://www.comses.net{0}'.format(self.get_absolute_url())
+
+    @property
+    def citation_text(self):
+        authors = ', '.join(self.contributor_list)
+        return '{authors} ({publish_date}). "{title}" (Version {version}). _{cml}_. Retrieved from: {purl}'.format(
+            authors=authors,
+            publish_date=self.last_published_on.strftime('%Y, %B %d'),
+            title=self.codebase.title,
+            version=self.version_number,
+            cml='CoMSES Computational Model Library',
+            purl=self.permanent_url
+        )
+
+    @property
+    def contributor_list(self):
+        return [c.contributor.get_full_name(family_name_first=True) for c in self.codebase_contributors.order_by('index')]
 
     @property
     def bagit_path(self):

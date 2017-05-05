@@ -55,6 +55,15 @@ $fa-font-path: '../node_modules/font-awesome/fonts/';
   width: 283px !important;
 }
 
+.citation {
+    @extend .card;
+    background-color: $rules-color;
+    h2 {
+        font-size: 1rem;
+        font-weight: bolder;
+    }
+}
+
 .page {
   padding-top: $default-padding;
   padding-bottom: $default-padding;

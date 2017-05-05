@@ -362,7 +362,7 @@ class AuthorExtractor(Extractor):
 class ModelExtractor(Extractor):
     def _extract(self, raw_model, user_id_map, author_id_map):
         raw_author_ids = [raw_author['value'] for raw_author in get_field(raw_model, 'field_model_author')]
-        author_ids = set([author_id_map[raw_author_id] for raw_author_id in raw_author_ids])
+        author_ids = [author_id_map[raw_author_id] for raw_author_id in raw_author_ids]
         submitter_id = user_id_map[raw_model.get('uid')]
         with suppress_auto_now(Codebase, 'last_modified'):
             last_changed = to_datetime(raw_model['changed'])
@@ -379,14 +379,14 @@ class ModelExtractor(Extractor):
                 ),
                 date_created=to_datetime(raw_model['created']),
                 live=self.int_to_bool(raw_model['status']),
+                first_published_at=to_datetime(raw_model['created']),
                 last_published_on=last_changed,
                 last_modified=last_changed,
                 doi=handle,
-                is_replication=Extractor.int_to_bool(get_first_field(raw_model, 'field_model_replicated', default='0')),
                 uuid=raw_model['uuid'],
-                first_published_at=to_datetime(raw_model['created']),
+                is_replication=Extractor.int_to_bool(get_first_field(raw_model, 'field_model_replicated', default='0')),
                 references_text=get_first_field(raw_model, 'field_model_reference', default=''),
-                replication_references_text=get_first_field(raw_model, 'field_model_publication_text', default=''),
+                associated_publication_text=get_first_field(raw_model, 'field_model_publication_text', default=''),
                 identifier=raw_model['nid'],
                 submitter_id=submitter_id,
                 featured=featured,
@@ -438,13 +438,15 @@ class ModelVersionExtractor(Extractor):
             language = ModelVersionExtractor.PROGRAMMING_LANGUAGES[int(
                 get_first_field(raw_model_version, 'field_modelversion_language', default=0))
             ]
+            language_version = get_first_field(raw_model_version, 'field_modelversion_language_ver', default='')
 
             dependencies = {
                 'programming_language': {
                     'name': language,
-                    'version': get_first_field(raw_model_version, 'field_modelversion_language_ver', default='')
+                    'version': language_version,
                 }
             }
+            # FIXME: extract runconditions
             with suppress_auto_now([Codebase, CodebaseRelease], 'last_modified'):
                 last_changed = to_datetime(raw_model_version['changed'])
                 codebase_release = codebase.make_release(
@@ -462,12 +464,16 @@ class ModelVersionExtractor(Extractor):
                 )
                 # FIXME: if these do not exist in the DB, add them to the list of tags
                 codebase_release.programming_languages.add(language)
+                if language_version:
+                    codebase_release.programming_languages.add(language_version)
                 codebase_release.platforms.add(platform)
                 if platform_id == 0:
                     # check for platform_ver and add to tags if it exists
                     platform_version = get_first_field(raw_model_version, 'field_modelversion_platform_ver')
                     if platform_version:
                         codebase_release.platform_tags.add(self.sanitize(platform_version))
+                else:
+                    codebase_release.platform_tags.add(platform.name)
                 release_contributors = []
                 # re-create new CodebaseContributors for each model version
                 # do not modify codebase.contributors in place or it will overwrite previous version contributors

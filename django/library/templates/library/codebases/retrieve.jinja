@@ -15,8 +15,9 @@
 {% block content %}
     <h1 class="pb-4">{{ title }}</h1>
     <div class='metadata'>
-        <b class='pr-2'>Platform:</b>
-        {% for p in latest_version.platforms %}
+        <b>Submitted by:</b> <a href='{{submitter.profile_url}}'>{{submitter.full_name}}</a>
+        <b class='pl-2'>Platform:</b>
+        {% for p in latest_version.platform_tags %}
             <a class='tag' href='/search?tag={{ p.name }}'>{{ p.name }}</a>
         {% endfor %}
         <b class='pl-2'>Version: </b> {{ latest_version.version_number }}
@@ -34,6 +35,34 @@
     <div id='discourse-content' class='pt-4'>
         {{ description|markdown }}
     </div>
+    <div class='citation'>
+        <div class='card-block'>
+            <h2 class='card-title'>Cite this Model</h2>
+            <p class='card-text'>
+                {{ latest_version.citation_text|markdown }}
+            </p>
+        </div>
+    </div>
+    {% if replication %}
+        <div class='card-metadata'>
+            <div class='card-block'>
+                <h2 class='card-title'>This is a replication of a previously published model</h2>
+                <p class='card-text'>
+                {{ references_text }}
+                </p>
+            </div>
+        </div>
+    {% endif %}
+    {% if publication_text %}
+        <div class='citation'>
+            <div class='card-block'>
+                <h2 class='card-title'>Associated Publication</h2>
+                <p class='card-text'>
+                {{ publication_text }}
+                </p>
+            </div>
+        </div>
+    {% endif %}
 {% endblock %}
 
 {% block sidebar %}
@@ -43,8 +72,12 @@
                 <b class="card-title">Authors</b>
                 <p class='card-text'>
                     {% for c in all_contributors %}
-                        {{ c.name }}
-                        {{ c.affiliations }}
+                        {% set badge_class='badge-success' if c.username else 'badge-default' %}
+                        <a href='{{c.profile_url}}'>
+                            <span class='badge {{badge_class}}'>
+                                {{ c.name }}
+                            </span>
+                        </a>
                     {% endfor %}
                 </p>
                 <b class="card-title">Publish Date</b>
@@ -54,7 +87,7 @@
 
                 <b class="card-title">Last Updated</b>
                 <p class='card-text'>
-                    {{ last_modified }}
+                    {{ latest_version.last_published_on }}
                 </p>
 
                 <b class="card-title">Downloads: </b>{{ download_count }}
