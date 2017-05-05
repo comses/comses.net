@@ -67,8 +67,7 @@ class ContributorAffiliation(TaggedItemBase):
 
 
 class License(models.Model):
-    name = models.CharField(max_length=200)
-    text = models.TextField()
+    name = models.CharField(max_length=200, help_text=_('SPDX license code from https://spdx.org/licenses/'))
     url = models.URLField(blank=True)
 
 
