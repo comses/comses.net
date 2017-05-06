@@ -13,27 +13,29 @@
 {% endblock %}
 
 {% block content %}
-    <h1 class="codebase-title pb-4">{{ title }}</h1>
-    <div class='metadata'>
-        <b>Submitted by:</b> <a href='{{submitter.profile_url}}'>{{submitter.full_name}}</a>
-        <b class='pl-2'>Platform:</b>
-        {% for p in latest_version.platform_tags %}
-            <a class='tag' href='/search?tag={{ p.name }}'>{{ p.name }}</a>
-        {% endfor %}
-        <b class='pl-2'>Version: </b> {{ latest_version.version_number }}
-        <small><a href='{{ latest_version.absolute_url }}'>(View Latest)</a></small>
-        <b class='pl-2'>Language:</b>
-        {% for pl in latest_version.programming_languages %}
-            <a class='tag' href='/search?tag={{ pl.name }}'>{{ pl.name }}</a>
-        {% endfor %}
-    </div>
-    <div class='tags'>
-        {% for tag in tags %}
-            <a class='tag p-2' href='/search?tag={{ tag.name }}'>{{ tag.name }}</a>
-        {% endfor %}
-    </div>
-    <div id='discourse-content' class='pt-4'>
-        {{ description|markdown }}
+    <div id='discourse-content'>
+        <h1 class="codebase-title pb-4">{{ title }}</h1>
+        <div class='metadata'>
+            <b>Submitted by:</b> <a href='{{submitter.profile_url}}'>{{submitter.full_name}}</a>
+            <b class='pl-2'>Platform:</b>
+            {% for p in latest_version.platform_tags %}
+                <a class='tag' href='/search?tag={{ p.name }}'>{{ p.name }}</a>
+            {% endfor %}
+            <b class='pl-2'>Version: </b> {{ latest_version.version_number }}
+            <small><a href='{{ latest_version.absolute_url }}'>(View Latest)</a></small>
+            <b class='pl-2'>Language:</b>
+            {% for pl in latest_version.programming_languages %}
+                <a class='tag' href='/search?tag={{ pl.name }}'>{{ pl.name }}</a>
+            {% endfor %}
+        </div>
+        <div class='tags'>
+            {% for tag in tags %}
+                <a class='tag p-2' href='/search?tag={{ tag.name }}'>{{ tag.name }}</a>
+            {% endfor %}
+        </div>
+        <div class='pt-4'>
+            {{ description|markdown }}
+        </div>
     </div>
     <div class='card-metadata'>
         <div class='card-block'>
@@ -43,10 +45,16 @@
             </p>
         </div>
     </div>
-    {% if replication %}
+    {% if references_text %}
         <div class='card-metadata'>
             <div class='card-block'>
-                <h2 class='card-title'>This is a replication of a previously published model</h2>
+                <h2 class='card-title'>
+                    {% if replication %}
+                        This is a replication of a previously published model:
+                    {% else %}
+                        References:
+                    {% endif %}
+                </h2>
                 <p class='card-text'>
                 {{ references_text }}
                 </p>
@@ -54,7 +62,7 @@
         </div>
     {% endif %}
     {% if publication_text %}
-        <div class='citation'>
+        <div class='card-metadata'>
             <div class='card-block'>
                 <h2 class='card-title'>Associated Publication</h2>
                 <p class='card-text'>
@@ -63,6 +71,37 @@
             </div>
         </div>
     {% endif %}
+    <ul class='nav nav-tabs codebase-tabs' role='tablist'>
+        <li class='nav-item'>
+            <a class='nav-link active' data-toggle='tab' href='#images' role='tab'>Images</a>
+        </li>
+        <li class='nav-item'>
+            <a class='nav-link' data-toggle='tab' href='#details' role='tab'>Details</a>
+        </li>
+        <li class='nav-item'>
+            <a class='nav-link' data-toggle='tab' href='#versions' role='tab'>Versions</a>
+        </li>
+    </ul>
+    <div class='tab-content'>
+        <div class='tab-pane active' id='images' role='tabpanel'>
+            {# FIXME: iterate through all images #}
+            <div class='p-3'>
+                {{ image(featured_image, "fill-600x400", class='d-block img-fluid') }}
+            </div>
+        </div>
+        <div class='tab-pane' id='details' role='tabpanel'>
+            <div class='container'>
+                All those details
+            </div>
+        </div>
+        <div class='tab-pane' id='versions' role='tabpanel'>
+            <div class='container'>
+                All the versions
+            </div>
+        </div>
+    </div>
+    <hr>
+    <div id='discourse-comments'></div>
 {% endblock %}
 
 {% block sidebar %}
@@ -118,12 +157,42 @@
         </div>
     </div>
     <div class="card-metadata">
-        <div class="card-block">
-            <b>Share</b>
-            <span class="col-2 fa fa-linkedin-square"></span>
-            <span class="col-2 fa fa-facebook-square"></span>
-            <span class="col-2 fa fa-twitter-square"></span>
-            <span class="col-2 fa fa-envelope-square"></span>
+        <div class="card-block my-auto">
+            <ul class='social-media-sm my-auto'>
+                <li class='pr-2'><b>Share</b></li>
+                <li>
+                    <a href='https://linkedin.com' title='LinkedIn' target='_blank'>
+                        <span class='fa-stack'>
+                            <i class='fa fa-circle fa-stack-2x'></i>
+                            <i class='fa fa fa-linkedin fa-inverse fa-stack-1x'></i>
+                        </span>
+                    </a>
+                </li>
+                <li>
+                    <a href='https://facebook.com' title='facebook' target='_blank'>
+                        <span class='fa-stack'>
+                            <i class='fa fa-circle fa-stack-2x'></i>
+                            <i class='fa fa-facebook fa-inverse fa-stack-1x'></i>
+                        </span>
+                    </a>
+                </li>
+                <li>
+                    <a href='https://twitter.com' title='Twitter' target='_blank'>
+                        <span class='fa-stack'>
+                            <i class='fa fa-circle fa-stack-2x'></i>
+                            <i class='fa fa-twitter fa-inverse fa-stack-1x'></i>
+                        </span>
+                    </a>
+                </li>
+                <li>
+                    <a href='#' title='Email'>
+                        <span class='fa-stack'>
+                            <i class='fa fa-circle fa-stack-2x'></i>
+                            <i class='fa fa-envelope fa-inverse fa-stack-1x'></i>
+                        </span>
+                    </a>
+                </li>
+            </ul>
         </div>
     </div>
 {% endblock %}

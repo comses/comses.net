@@ -86,7 +86,7 @@ $fa-font-path: '../node_modules/font-awesome/fonts/';
     display: inline-block;
   }
   a {
-    font-size: 32px;
+    font-size: 2.4rem;
   }
   a .fa-stack {
     color: #6f717a;
@@ -94,6 +94,38 @@ $fa-font-path: '../node_modules/font-awesome/fonts/';
   a .fa-stack:hover {
     color: #7b7d87;
   }
+}
+
+.social-media-sm {
+    @extend .social-media;
+    text-align: left;
+    a {
+        font-size: 0.9rem !important;
+    }
+    li {
+        padding-right: 0.4rem;
+    }
+}
+
+.codebase-tabs {
+    padding-top: 3em;
+    a.nav-link {
+        letter-spacing: 0.15rem;
+        color: $link-color;
+        padding-left: 2rem;
+        padding-right: 2rem;
+        text-transform: uppercase;
+        font-weight: 600;
+        font-size: 1rem;
+    }
+    a.nav-link.active {
+        color: $text-color;
+    }
+}
+
+#discourse-comments {
+    background-color: $body-bg;
+    padding-top: 3em;
 }
 
 .organizations li {
