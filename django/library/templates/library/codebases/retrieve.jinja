@@ -1,5 +1,5 @@
 {% extends "sidebar_layout.jinja" %}
-{% from "common.jinja" import breadcrumb, discourse_embed_script %}
+{% from "common.jinja" import breadcrumb, discourse_embed_script, user_href %}
 
 {% block title %}{{ title }}{% endblock %}
 
@@ -16,7 +16,7 @@
     <div id='discourse-content'>
         <h1 class="codebase-title pb-4">{{ title }}</h1>
         <div class='metadata'>
-            <b>Submitted by:</b> <a href='{{submitter.profile_url}}'>{{submitter.full_name}}</a>
+            <b>Submitted by:</b> {{ user_href(submitter) }}
             <b class='pl-2'>Platform:</b>
             {% for p in latest_version.platform_tags %}
                 <a class='tag' href='/search?tag={{ p.name }}'>{{ p.name }}</a>
@@ -56,7 +56,7 @@
                     {% endif %}
                 </h2>
                 <p class='card-text'>
-                {{ references_text }}
+                {{ references_text|markdown }}
                 </p>
             </div>
         </div>
@@ -66,7 +66,7 @@
             <div class='card-block'>
                 <h2 class='card-title'>Associated Publication</h2>
                 <p class='card-text'>
-                {{ publication_text }}
+                {{ publication_text|markdown }}
                 </p>
             </div>
         </div>
@@ -84,23 +84,57 @@
     </ul>
     <div class='tab-content'>
         <div class='tab-pane active' id='images' role='tabpanel'>
-            {# FIXME: iterate through all images #}
+            {# FIXME: iterate and display all images in media #}
             <div class='p-3'>
-                {{ image(featured_image, "fill-600x400", class='d-block img-fluid') }}
+                {{ image(featured_image, "original", class='d-block img-fluid') }}
             </div>
         </div>
         <div class='tab-pane' id='details' role='tabpanel'>
-            <div class='container'>
-                All those details
+            <div class='card-metadata'>
+                <div class='card-block'>
+                    <div class='section'>
+                        <b class='card-title'>Submitter:</b> {{ user_href(submitter) }}
+                    </div>
+                    <div class='section'>
+                        <b class='card-title'>DOI:</b> {{ doi }}
+                    </div>
+                    <div class='section'>
+                        <b class='card-title'>License:</b> <a href='{{ latest_version.license.url }}'>{{ latest_version.license.name }}</a>
+                    </div>
+                    <div class='section'>
+                        <b class='card-title'>Operating System:</b> {{ latest_version.get_os_display }}
+                    </div>
+                    <div class='section'>
+                        <b class='card-title'>Dependencies:</b> {{ latest_version.dependencies }}
+                    </div>
+                </div>
             </div>
         </div>
         <div class='tab-pane' id='versions' role='tabpanel'>
-            <div class='container'>
-                All the versions
-            </div>
+            <table class='table table-striped'>
+                <thead>
+                    <tr>
+                        <th>Version</th>
+                        <th>Submitter</th>
+                        <th>First published</th>
+                        <th>Last modified</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for release in releases %}
+                        <tr>
+                            <td><a href='{{ release.absolute_url }}'>{{ release.version_number }}</a></td>
+                            <td>{{ user_href(release.submitter) }}</td>
+                            <td>{{ release.first_published_at }}</td>
+                            <td>{{ release.last_published_on }}</td>
+                        </tr>
+                {% endfor %}
+                </tbody>
+            </table>
         </div>
     </div>
     <hr>
+    <h2 class='discourse-comments'>Discussion</h2>
     <div id='discourse-comments'></div>
 {% endblock %}
 

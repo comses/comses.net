@@ -96,6 +96,11 @@ $fa-font-path: '../node_modules/font-awesome/fonts/';
   }
 }
 
+h2.discourse-comments {
+    color: $text-color;
+    font-size: 1.4rem;
+}
+
 .social-media-sm {
     @extend .social-media;
     text-align: left;

@@ -6,12 +6,19 @@ from rest_framework import serializers
 
 from core.serializer_helpers import YMD_DATETIME_FORMAT
 from home import serializers as home_serializers
-from .models import CodebaseContributor, Codebase, CodebaseRelease, Contributor
+from .models import CodebaseContributor, Codebase, CodebaseRelease, Contributor, License
 
 logger = logging.getLogger(__name__)
 
 
 PUBLISH_DATE_FORMAT = '%b %d, %Y'
+
+
+class LicenseSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = License
+        fields = '__all__'
 
 
 class ContributorSerializer(serializers.ModelSerializer):
@@ -53,13 +60,14 @@ class CodebaseReleaseSerializer(serializers.ModelSerializer):
     platforms = home_serializers.TagSerializer(many=True)
     programming_languages = home_serializers.TagSerializer(many=True)
     citation_text = serializers.ReadOnlyField()
+    license = LicenseSerializer()
 
     class Meta:
         model = CodebaseRelease
         fields = ('date_created', 'last_modified', 'peer_reviewed', 'doi', 'description', 'license', 'documentation',
                   'embargo_end_date', 'version_number', 'os', 'platforms', 'programming_languages', 'submitter',
                   'codebase_contributors', 'submitted_package', 'absolute_url', 'first_published_at', 'download_count',
-                  'last_published_on', 'citation_text')
+                  'last_published_on', 'citation_text', 'dependencies', 'get_os_display',)
 
 
 class CodebaseSerializer(serializers.ModelSerializer):

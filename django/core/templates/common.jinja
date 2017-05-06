@@ -1,6 +1,11 @@
 {% macro submit_model_btn() %}
 <div class='submit-model'><a class='btn btn-primary w-100' href='{{ url("library:codebase-create") }}'>Submit a model</a></div>
 {% endmacro %}
+
+{% macro user_href(user) %}
+<a href='{{ user.profile_url }}'>{{ user.full_name }}</a>
+{% endmacro %}
+
 {% macro paginator(url_name, list_state) %}
     <nav aria-label="Paginator">
         {% if list_state.count %}
