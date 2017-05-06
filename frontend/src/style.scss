@@ -288,6 +288,10 @@ div.activity {
     width: 22rem;
 }
 
+.title {
+    color: $text-color;
+}
+
 .errorlist {
   @extend .alert-danger;
 }
@@ -408,9 +412,11 @@ footer {
 
   .title {
     @extend .card-block;
-    padding: 0 1.25rem;
-    font-size: 1.5rem;
+    padding-top: 1rem;
+    padding-bottom: 0rem;
+    font-size: 1.2rem;
     margin-bottom: 0;
+    font-weight: 400;
   }
 
   .info {

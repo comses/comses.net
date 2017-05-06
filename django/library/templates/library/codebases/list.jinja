@@ -7,6 +7,16 @@
 
 {% block top %}
     {{ breadcrumb([{'text': 'Computational Model Library'}]) }}
+    <div class='py-3'>
+        <b class='title'>Sort By:</b> 
+        <select class='custom-select'>
+            <option value='last_published_on' selected>Most Recent</option>
+            <option value='title'>Title</option>
+            <option value='author'>Author</option>
+            <option value='platform'>Platform</option>
+            <option value='language'>Language</option>
+        </select>
+    </div>
 {% endblock %}
 
 {% block content %}
@@ -28,9 +38,11 @@
         <div class="row">
             <div class="col-md-12 col-lg-3">
                 {% if item.featured_image is none %}
-                    <img src="holder.js/200x200" class="img-fluid img-thumbnail">
+                    <img src="holder.js/174x174" class="img-fluid img-thumbnail">
                 {% else %}
-                    {{ image(item.featured_image, "height-200", class="img-fluid img-thumbnail") }}
+                    <a href="{{ url(detail_url_name, identifier=item.identifier) }}">
+                        {{ image(item.featured_image, "fill-174x174", class="img-fluid img-thumbnail") }}
+                    </a>
                 {% endif %}
             </div>
             <div class="col-md-12 col-lg-9">
