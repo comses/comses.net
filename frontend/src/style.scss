@@ -161,13 +161,6 @@ ol.breadcrumb {
   }
 }
 
-.featured-content {
-  h1 {
-    text-align: center;
-    color: $white;
-  }
-}
-
 .community {
   padding-top: $default-padding;
   padding-bottom: $default-padding;
@@ -224,6 +217,7 @@ div.activity {
     height: 320px;
   }
   .carousel-caption {
+    position: initial !important;
     text-align: left;
   }
   .row {

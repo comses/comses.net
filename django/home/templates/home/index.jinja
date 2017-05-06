@@ -74,15 +74,15 @@
                 <div class="carousel-item {% if loop.index0 == 0 %}active{% endif %}">
                     <div class='container'>
                         <div class='row'>
-                            <div class='col-md-4 mx-auto my-auto carousel-image'>
-                                <a class='d-block img-fluid' href='{{ item.link }}'>
-                                    {{ image(item.image, "height-300", class='d-block img-fluid') }}
+                            <div class='col-md-5 mx-auto my-auto carousel-image'>
+                                <a class='d-block' href='{{ item.link }}'>
+                                    {{ image(item.image, "height-300", class='d-block img-fluid float-right') }}
                                 </a>
                             </div>
-                            <div class='col-md-8 carousel-text'>
-                                <div class='carousel-caption my-auto d-md-block'>
+                            <div class='col-md-7 mx-auto my-auto carousel-text'>
+                                <div class='carousel-caption my-auto'>
                                     <h3><a href='{{ item.link }}'>{{ item.title }}</a></h3>
-                                    <p class='my-auto'>
+                                    <p>
                                     {{ item.summary }}
                                     </p>
                                 </div>
