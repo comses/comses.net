@@ -13,7 +13,7 @@
 {% endblock %}
 
 {% block content %}
-    <h1 class="pb-4">{{ title }}</h1>
+    <h1 class="codebase-title pb-4">{{ title }}</h1>
     <div class='metadata'>
         <b>Submitted by:</b> <a href='{{submitter.profile_url}}'>{{submitter.full_name}}</a>
         <b class='pl-2'>Platform:</b>
@@ -35,7 +35,7 @@
     <div id='discourse-content' class='pt-4'>
         {{ description|markdown }}
     </div>
-    <div class='citation'>
+    <div class='card-metadata'>
         <div class='card-block'>
             <h2 class='card-title'>Cite this Model</h2>
             <p class='card-text'>
@@ -68,40 +68,47 @@
 {% block sidebar %}
     <div class='card-metadata'>
         <div class='card-block'>
-            <small>
+            <div class='section'>
                 <b class="card-title">Authors</b>
                 <p class='card-text'>
-                    {% for c in all_contributors %}
-                        {% set badge_class='badge-success' if c.username else 'badge-default' %}
-                        <a href='{{c.profile_url}}'>
-                            <span class='badge {{badge_class}}'>
-                                {{ c.name }}
-                            </span>
-                        </a>
-                    {% endfor %}
+                {% for c in all_contributors %}
+                    {% set badge_class='badge-success' if c.username else 'badge-default' %}
+                    <a href='{{c.profile_url}}'>
+                        <span class='badge {{badge_class}}'>
+                            {{ c.name }}
+                        </span>
+                    </a>
+                {% endfor %}
                 </p>
+            </div>
+            <div class='section'>
                 <b class="card-title">Publish Date</b>
                 <p class='card-text'>
-                    {{ first_published_at }}
+                {{ first_published_at }}
                 </p>
-
+            </div>
+            <div class='section'>
                 <b class="card-title">Last Updated</b>
                 <p class='card-text'>
-                    {{ latest_version.last_published_on }}
+                {{ latest_version.last_published_on }}
                 </p>
-
+            </div>
+            <div class='section'>
                 <b class="card-title">Downloads: </b>{{ download_count }}
-                <br>
+            </div>
+            <div class='section'>
                 <b class="card-title">Status</b>
                 <p class="card-text">
-                    {% if peer_reviewed %}
-                        <i class='fa fa-trophy fa-2x'></i> Reviewed
-                    {% else %}
-                        Unreviewed
-                    {% endif %}
+                {% if peer_reviewed %}
+                    <img src="{{ static("images/icons/peer-reviewed.png") }}" alt="Arizona State University">
+                {% elif user == submitter %}
+                    {# FIXME: check if user has permissions to request review, currently naive submitter check #}
+                    <a class='btn btn-primary'>Request Review</a>
+                {% else %}
+                    Not reviewed
+                {% endif %}
                 </p>
-            </small>
-
+            </div>
         </div>
     </div>
     <div class="card-metadata">
