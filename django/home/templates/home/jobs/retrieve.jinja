@@ -1,5 +1,5 @@
 {% extends "sidebar_layout.jinja" %}
-{% from "common.jinja" import permission_button_group, breadcrumb, discourse_embed_script %}
+{% from "common.jinja" import permission_button_group, breadcrumb, embed_discourse_comments %}
 
 {% block title %}{{ title }}{% endblock %}
 
@@ -62,5 +62,5 @@
 {% endblock %}
 
 {% block js %}
-    {{ discourse_embed_script() }}
+    {{ embed_discourse_comments(true) }}
 {% endblock %}

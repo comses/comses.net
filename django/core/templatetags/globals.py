@@ -32,6 +32,15 @@ def now(format_string):
 
 
 @library.global_function
+def should_enable_discourse(is_public: bool):
+    """
+    Returns True if we are not in DEBUG mode and the detail object (the wagtail Page or django Model, e.g.,
+    Codebase/CodebaseRelease/Event/Job) is public. If there is no 'live' attribute, default to True as it is public by
+    default.
+    """
+    return is_public and not settings.DEBUG
+
+@library.global_function
 def is_debug():
     return settings.DEBUG
 

@@ -71,16 +71,14 @@
     </small>
 {% endmacro %}
 
-{% macro discourse_embed_script() %}
+{% macro embed_discourse_comments(is_public) %}
     {# See https://meta.discourse.org/t/embedding-discourse-comments-via-javascript/31963 for details #}
-    {% if not is_debug() %}
-    <script type="text/javascript">
-
+    {% if should_enable_discourse(is_public) %}
+    <script>
         DiscourseEmbed = {
             discourseUrl: "{{ DISCOURSE_BASE_URL }}/",
             discourseEmbedUrl: window.location.href
         };
-
         (function () {
             var d = document.createElement('script');
             d.type = 'text/javascript';

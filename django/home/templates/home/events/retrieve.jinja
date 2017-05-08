@@ -1,5 +1,5 @@
 {% extends "sidebar_layout.jinja" %}
-{% from "common.jinja" import breadcrumb, discourse_embed_script %}
+{% from "common.jinja" import breadcrumb, embed_discourse_comments %}
 
 {% block title %}Event: {{ title }}{% endblock %}
 
@@ -74,5 +74,5 @@
 {% endblock %}
 
 {% block js %}
-    {{ discourse_embed_script() }}
+    {{ embed_discourse_comments(true) }}
 {% endblock %}

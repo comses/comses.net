@@ -1,5 +1,5 @@
 {% extends "sidebar_layout.jinja" %}
-{% from "common.jinja" import breadcrumb, discourse_embed_script, user_href %}
+{% from "common.jinja" import breadcrumb, embed_discourse_comments, user_href %}
 
 {% block title %}{{ title }}{% endblock %}
 
@@ -86,7 +86,11 @@
         <div class='tab-pane active' id='images' role='tabpanel'>
             {# FIXME: iterate and display all images in media #}
             <div class='p-3'>
-                {{ image(featured_image, "original", class='d-block img-fluid') }}
+                {% if featured_image is not none %}
+                    {{ image(featured_image, "width-780", class='d-block img-fluid') }}
+                {% else %}
+                    <img src="holder.js/780x400?text=No uploaded images" class="img-fluid img-thumbnail">
+                {% endif %}
             </div>
         </div>
         <div class='tab-pane' id='details' role='tabpanel'>
@@ -232,5 +236,5 @@
 {% endblock %}
 
 {% block js %}
-    {{ discourse_embed_script() }}
+    {{ embed_discourse_comments(live) }}
 {% endblock %}
