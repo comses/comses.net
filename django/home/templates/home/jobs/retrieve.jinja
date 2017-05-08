@@ -1,5 +1,5 @@
 {% extends "sidebar_layout.jinja" %}
-{% from "common.jinja" import permission_button_group, breadcrumb, embed_discourse_comments %}
+{% from "common.jinja" import permission_button_group, breadcrumb, embed_discourse_comments, share_card, user_href %}
 
 {% block title %}{{ title }}{% endblock %}
 
@@ -31,32 +31,20 @@
 {% block sidebar %}
     <div class="card-metadata">
         <div class="card-block">
-            <small>
-                <b class="label">Contact</b>
-                <br>
-                <b class="label">Date Published</b>
-                <p class="info">{{ date_created }}</p>
-                <b class="label">Last Updated</b>
-                <p class="info">{{ last_modified }}</p>
-                <b class="label">Views</b>
-                <br>
-                <b class="label">Status</b>
-            </small>
+            <div class='section'>
+                <b class="card-title">Submitter</b>
+                <p class='card-text'> {{ user_href(submitter) }}</p>
+                <b class="card-title">Last Updated</b>
+                <p class="card-text">{{ last_modified }}</p>
+            </div>
         </div>
     </div>
-    <div class="card-metadata">
-        <div class="card-block">
-            <b>Share</b>
-            <span class="col-2 fa fa-linkedin-square"></span>
-            <span class="col-2 fa fa-facebook-square"></span>
-            <span class="col-2 fa fa-twitter-square"></span>
-            <span class="col-2 fa fa-envelope-square"></span>
-        </div>
-    </div>
+    {{ share_card(absolute_url) }}
 {% endblock %}
 
 {% block bottom %}
     <div class="col-12">
+        <h4>Comments</h4>
         <div id="discourse-comments"></div>
     </div>
 {% endblock %}

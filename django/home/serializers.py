@@ -4,7 +4,7 @@ from django.utils.translation import ugettext_lazy as _
 from rest_framework import serializers
 from taggit.models import Tag
 
-from core.serializer_helpers import save_tags, YMD_DATETIME_FORMAT
+from core.serializers import save_tags, PUBLISH_DATE_FORMAT
 from .models import Event, Job, FeaturedContentItem, MemberProfile
 
 
@@ -62,8 +62,8 @@ class EventSerializer(serializers.ModelSerializer):
     submitter = LinkedUserSerializer(read_only=True, help_text=_('User that created the event'), label='Submitter')
     absolute_url = serializers.URLField(source='get_absolute_url',
                                         read_only=True, help_text=_('URL to the detail page of the event'))
-    date_created = serializers.DateTimeField(read_only=True)
-    last_modified = serializers.DateTimeField(read_only=True)
+    date_created = serializers.DateTimeField(format=PUBLISH_DATE_FORMAT, read_only=True)
+    last_modified = serializers.DateTimeField(format=PUBLISH_DATE_FORMAT, read_only=True)
 
     tags = TagSerializer(many=True, label='Tags')
 
@@ -95,8 +95,8 @@ class JobSerializer(serializers.ModelSerializer):
         read_only=True,
         help_text=_('URL to the detail page of the job'))
 
-    date_created = serializers.DateTimeField(format=YMD_DATETIME_FORMAT, read_only=True)
-    last_modified = serializers.DateTimeField(format=YMD_DATETIME_FORMAT, read_only=True)
+    date_created = serializers.DateTimeField(format=PUBLISH_DATE_FORMAT, read_only=True)
+    last_modified = serializers.DateTimeField(format=PUBLISH_DATE_FORMAT, read_only=True)
     tags = TagSerializer(many=True, label='Tags')
 
     def create(self, validated_data):

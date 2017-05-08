@@ -6,6 +6,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 YMD_DATETIME_FORMAT = '%Y-%m-%d'
+PUBLISH_DATE_FORMAT = '%b %d, %Y'
 
 
 class EditableSerializerMixin(serializers.Serializer):

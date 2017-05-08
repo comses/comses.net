@@ -5,10 +5,10 @@ from datetime import datetime
 from allauth.socialaccount import providers
 from django.conf import settings
 from django.template import defaultfilters
+from django.utils.dateparse import parse_datetime
 from django.utils.timezone import get_current_timezone
 from django_jinja import library
-from dateutil.parser import parse as datetime_parse
-from core.serializer_helpers import YMD_DATETIME_FORMAT
+from core.serializers import PUBLISH_DATE_FORMAT
 from jinja2 import Markup
 from webpack_loader.templatetags import webpack_loader as wl
 
@@ -71,9 +71,9 @@ def truncate_midnight(text: Optional[str]):
     if text is None:
         return None
 
-    d = datetime_parse(text)
+    d = parse_datetime(text)
     if d.minute == 0 and d.second == 0 and d.hour == 0:
-        return d.strftime(YMD_DATETIME_FORMAT)
+        return d.strftime(PUBLISH_DATE_FORMAT)
     else:
         return text
 

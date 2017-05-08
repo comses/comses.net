@@ -4,14 +4,11 @@ from django.utils.http import urlencode
 from django.utils.translation import ugettext_lazy as _
 from rest_framework import serializers
 
-from core.serializer_helpers import YMD_DATETIME_FORMAT
+from core.serializers import YMD_DATETIME_FORMAT, PUBLISH_DATE_FORMAT
 from home import serializers as home_serializers
 from .models import CodebaseContributor, Codebase, CodebaseRelease, Contributor, License
 
 logger = logging.getLogger(__name__)
-
-
-PUBLISH_DATE_FORMAT = '%b %d, %Y'
 
 
 class LicenseSerializer(serializers.ModelSerializer):
