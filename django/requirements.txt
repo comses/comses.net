@@ -1,7 +1,7 @@
 wagtail==1.10
 wagtailmenus==2.2.2
-django-allauth==0.31.0
-django-extensions==1.7.8
+django-allauth==0.32.0
+django-extensions==1.7.9
 django-rest-auth==0.9.1
 djangorestframework-jsonapi==2.2.0
 djangorestframework-jwt==1.10.0
@@ -23,7 +23,7 @@ invoke
 ipython
 django-webpack-loader
 rarfile
-beautifulsoup4==4.5.3
+beautifulsoup4==4.6.0
 # CoMSES citation app
 -e git+https://github.com/comses/citation.git#egg=citation
 # NLP Summary dependencies
