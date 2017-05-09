@@ -116,11 +116,21 @@ class SemanticVersionBump(Enum):
     PATCH = semver.bump_patch
 
 
+class CodebaseReleaseDownload(models.Model):
+    date_created = models.DateTimeField(default=timezone.now)
+    user = models.ForeignKey(User, null=True)
+    ip_address = models.GenericIPAddressField()
+    referrer = models.URLField(max_length=500)
+    release = models.ForeignKey('library.CodebaseRelease', related_name='downloads')
+
+    def __str__(self):
+        return "{0}: downloaded {1}".format(self.ip_address, self.release)
+
+
 class Codebase(index.Indexed, ClusterableModel):
     """
     Metadata applicable across a set of CodebaseReleases
     """
-
     # shortname = models.CharField(max_length=128, unique=True)
     title = models.CharField(max_length=300)
     description = models.TextField()
@@ -240,9 +250,9 @@ class Codebase(index.Indexed, ClusterableModel):
                             self.all_contributors]
         return contributor_list
 
-    @property
     def download_count(self):
-        return self.releases.aggregate(all_downloads=models.Sum('download_count'))['all_downloads']
+        return CodebaseReleaseDownload.objects.filter(release__codebase__id=self.pk).aggregate(
+            count=models.Count('id'))['count']
 
     def get_absolute_url(self):
         return reverse('library:codebase-detail', kwargs={'identifier': self.identifier})
@@ -285,7 +295,7 @@ class Codebase(index.Indexed, ClusterableModel):
 
 
 class CodebasePublication(models.Model):
-    release = models.ForeignKey('CodebaseRelease', on_delete=models.CASCADE)
+    release = models.ForeignKey('library.CodebaseRelease', on_delete=models.CASCADE)
     publication = models.ForeignKey('citation.Publication', on_delete=models.CASCADE)
     is_primary = models.BooleanField(default=False)
     index = models.PositiveIntegerField(default=1)
@@ -313,8 +323,6 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
 
     peer_reviewed = models.BooleanField(default=False)
     flagged = models.BooleanField(default=False)
-
-    download_count = models.PositiveIntegerField(default=0)
 
     identifier = models.CharField(max_length=128, unique=True)
     doi = models.CharField(max_length=128, unique=True, null=True)
@@ -398,6 +406,9 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
             cml='CoMSES Computational Model Library',
             purl=self.permanent_url
         )
+
+    def download_count(self):
+        return self.downloads.count()
 
     @property
     def contributor_list(self):

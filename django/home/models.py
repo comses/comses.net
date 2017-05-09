@@ -58,18 +58,6 @@ class ComsesGroups(Enum):
         return _group
 
 
-class Download(models.Model):
-    date_created = models.DateTimeField(default=timezone.now)
-
-    user = models.ForeignKey(User, null=True)
-    content_type = models.ForeignKey(ContentType)
-    object_id = models.PositiveIntegerField()
-    content_object = GenericForeignKey('content_type', 'object_id')
-
-    ip_address = models.GenericIPAddressField()
-    referrer = models.URLField(max_length=500)
-
-
 @register_setting
 class SocialMediaSettings(BaseSetting):
     facebook_url = models.URLField(help_text=_('Facebook URL'), blank=True)

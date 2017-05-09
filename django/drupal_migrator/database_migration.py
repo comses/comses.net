@@ -15,9 +15,9 @@ from django.contrib.auth.models import User
 from taggit.models import Tag
 
 from core.summarization import summarize_to_text
-from home.models import Event, Job, MemberProfile, Platform, Download, ComsesGroups, Institution
+from home.models import Event, Job, MemberProfile, Platform, ComsesGroups, Institution
 from library.models import (Contributor, Codebase, CodebaseRelease, CodebaseTag, License,
-                            CodebaseContributor, OPERATING_SYSTEMS)
+                            CodebaseContributor, OPERATING_SYSTEMS, CodebaseReleaseDownload)
 from .utils import get_first_field, get_field, get_field_attributes, to_datetime
 
 logger = logging.getLogger(__name__)
@@ -554,25 +554,27 @@ class DownloadCountExtractor:
         return cls._get_instance(raw_download, model_id_map, 'nid',
                                  "Unable to locate associated model nid {}")
 
-    @classmethod
     def _extract_model(cls, raw_download, model_id_map, user_id_map):
         user_id = cls._get_user_id(raw_download, user_id_map)
         codebase = cls._get_codebase(raw_download, model_id_map)
-        return Download(date_created=to_datetime(raw_download['date_created']),
-                        user_id=user_id,
-                        content_object=codebase,
-                        ip_address=raw_download['ip_address'],
-                        referrer=raw_download['referrer'])
+        codebase_release = codebase.releases.first()
+        return CodebaseReleaseDownload(
+            date_created=to_datetime(raw_download['date_created']),
+            user_id=user_id,
+            release=codebase_release,
+            ip_address=raw_download['ip_address'],
+            referrer=Extractor.sanitize(raw_download['referrer'], max_length=500))
 
     @classmethod
     def _extract_model_version(cls, raw_download, model_version_id_map, user_id_map):
         user_id = cls._get_user_id(raw_download, user_id_map)
         codebase_release = cls._get_codebase_release(raw_download, model_version_id_map)
-        return Download(date_created=to_datetime(raw_download['date_created']),
-                        user_id=user_id,
-                        content_object=codebase_release,
-                        ip_address=raw_download['ip_address'],
-                        referrer=Extractor.sanitize(raw_download['referrer'], max_length=200))
+        return CodebaseReleaseDownload(
+            date_created=to_datetime(raw_download['date_created']),
+            user_id=user_id,
+            release=codebase_release,
+            ip_address=raw_download['ip_address'],
+            referrer=Extractor.sanitize(raw_download['referrer'], max_length=500))
 
     def extract_all(self, model_id_map: Dict[str, int], model_version_id_map: Dict[str, int],
                     user_id_map: Dict[str, int]):
@@ -585,6 +587,7 @@ class DownloadCountExtractor:
         for raw_download in self.data:
             try:
                 if raw_download['type'] == 'model':
+                    # FIXME: should extract to first version of Codebase.
                     download = self._extract_model(raw_download, model_id_map, user_id_map)
                 elif raw_download['type'] == 'modelversion':
                     download = self._extract_model_version(raw_download, model_version_id_map, user_id_map)
@@ -596,7 +599,7 @@ class DownloadCountExtractor:
             except ValidationError as e:
                 logger.warning(e.args[0])
 
-        Download.objects.bulk_create(downloads)
+        CodebaseReleaseDownload.objects.bulk_create(downloads)
 
 
 class IDMapper:

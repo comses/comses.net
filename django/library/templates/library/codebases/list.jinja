@@ -38,7 +38,7 @@
         <div class="row">
             <div class="col-md-12 col-lg-3">
                 {% if item.featured_image is none %}
-                    <img src="holder.js/174x174" class="img-fluid img-thumbnail">
+                    <img src="holder.js/174x174?text=No submitted images" class="img-fluid img-thumbnail">
                 {% else %}
                     <a href="{{ url(detail_url_name, identifier=item.identifier) }}">
                         {{ image(item.featured_image, "fill-174x174", class="img-fluid img-thumbnail") }}
