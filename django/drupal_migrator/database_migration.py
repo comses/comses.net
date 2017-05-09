@@ -266,7 +266,7 @@ class ProfileExtractor(Extractor):
             user.last_name = get_first_field(raw_profile, 'field_profile2_lastname')
             member_profile = user.member_profile
             member_profile.research_interests = get_first_field(raw_profile, 'field_profile2_research')
-            raw_institutions = get_field(raw_profile, 'institutions')
+            raw_institutions = get_field(raw_profile, 'field_profile2_institutions')
             if raw_institutions:
                 raw_institution = raw_institutions[0]
                 institution = Institution.objects.get_or_create(name=raw_institution['title'], url=raw_institution['url'])
