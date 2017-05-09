@@ -112,7 +112,7 @@ h2.discourse-comments {
     }
 }
 
-.codebase-tabs {
+.detail-tabs {
     padding-top: 3em;
     a.nav-link {
         letter-spacing: 0.15rem;
@@ -360,31 +360,13 @@ footer {
   }
 
   .tag-list {
-    @extend .card-block;
     padding: 1em 0 0;
-
     .tag {
       padding: 0.75em;
-      @extend .badge;
       background-color: $rules-color;
       color: $link-color;
+      font-size: 0.9rem;
     }
-  }
-}
-
-.tags {
-  @extend .card-block;
-  padding: 1em 0 0;
-  .tag {
-    padding: 1em;
-    @extend .badge;
-    background-color: $rules-color;
-    color: $link-color;
-  }
-
-  a.tag:hover {
-    color: $link-color;
-    text-decoration: underline;
   }
 }
 
@@ -392,6 +374,19 @@ footer {
     font-family: 'Alte-DIN-1451-Mittelschrift', 'Open Sans', sans-serif;
     color: $text-color;
     font-weight: 300;
+}
+
+.profile-details {
+    @extend .card;
+    margin-top: 1rem;
+    margin-bottom: 1rem;
+    background-color: $white;
+    color: $text-color;
+    border: none;
+
+    .card-text {
+        font-size: 0.9rem;
+    }
 }
 
 .card-metadata {

@@ -1,5 +1,5 @@
 {% extends "base.jinja" %}
-{% from "common.jinja" import item_component, list_page, paginator, breadcrumb, subnav %}
+{% from "common.jinja" import item_component, list_page, paginator, breadcrumb, subnav, user_href %}
 
 {% block title %}Welcome to the CoMSES Net Community{% endblock %}
 
@@ -9,7 +9,7 @@
     {{ breadcrumb([
     {'url': '/community/', 'text': 'Community'},
     {'url': url("home:profile-list"), 'text': 'Users'},
-    ]) 
+    ])
     }}
     {{ subnav([
     { 'url': '/community/', 'text': 'Community' },
@@ -20,13 +20,13 @@
     }}
 {% endblock %}
 
-{% macro user_component(user, detail_url_name) %}
+{% macro render_user(user, detail_url_name) %}
     <div class="search-result">
         <div class="date-info">
             <small class="text-muted pull-right">Joined on: {{ user.date_joined }}</small>
         </div>
         <div class="title">
-            <h1><a href="{{ user.profile_url }}">{{ user.get_full_name }}</a></h1>
+            <h1>{{ user_href(user) }}</h1>
         </div>
         {% if user.member_profile.tags %}
             <div class="tag-list">
@@ -39,7 +39,7 @@
 {% endmacro %}
 
 {% block content %}
-    {{ list_page(__all__, user_component, 'home:profile-detail') }}
+    {{ list_page(__all__, render_user, 'home:profile-detail') }}
     <div class='row'>
         <div class="col">
             {{ paginator('home:profile-list', __all__) }}

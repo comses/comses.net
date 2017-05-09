@@ -5,7 +5,7 @@ from rest_framework import serializers
 from taggit.models import Tag
 
 from core.serializers import save_tags, PUBLISH_DATE_FORMAT
-from .models import Event, Job, FeaturedContentItem, MemberProfile
+from .models import Event, Job, FeaturedContentItem, MemberProfile, UserMessage
 
 
 class LinkedUserSerializer(serializers.ModelSerializer):
@@ -18,6 +18,9 @@ class LinkedUserSerializer(serializers.ModelSerializer):
 
 
 class TagListSerializer(serializers.ListSerializer):
+    """
+    FIXME: needs to implement update & create from base class.
+    """
     def save(self, **kwargs):
         data_mapping = {item['name']: item for item in self.validated_data}
 
@@ -121,6 +124,13 @@ class FeaturedContentItemSerializer(serializers.ModelSerializer):
 
 class MemberProfileSerializer(serializers.ModelSerializer):
     full_member = serializers.BooleanField(read_only=True)
+    orcid_url = serializers.SerializerMethodField()
+    keywords = TagSerializer(many=True)
+
+    def get_orcid_url(self, instance):
+        if instance.orcid:
+            return 'https://orcid.org/{0}'.format(instance.orcid)
+        return ''
 
     class Meta:
         model = MemberProfile
@@ -128,14 +138,28 @@ class MemberProfileSerializer(serializers.ModelSerializer):
 
 
 class UserSerializer(serializers.ModelSerializer):
-    member_profile = MemberProfileSerializer(read_only=True, allow_null=True)
+    member_profile = MemberProfileSerializer(read_only=True)
+    full_name = serializers.SerializerMethodField()
     profile_url = serializers.URLField(source='member_profile.get_absolute_url', read_only=True)
     username = serializers.CharField(read_only=True)
     is_superuser = serializers.BooleanField(read_only=True)
     is_staff = serializers.BooleanField(read_only=True)
     date_joined = serializers.DateTimeField(read_only=True, format='%c')
 
+    def get_full_name(self, instance):
+        full_name = instance.get_full_name()
+        if not full_name:
+            full_name = instance.username
+        return full_name
+
     class Meta:
         model = User
-        fields = ('first_name', 'last_name', 'username', 'is_superuser', 'is_staff', 'member_profile', 'get_full_name',
+        fields = ('first_name', 'last_name', 'username', 'is_superuser', 'is_staff', 'member_profile', 'full_name',
                   'profile_url', 'date_joined')
+
+
+class UserMessageSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = UserMessage
+        field = ('message', 'user')

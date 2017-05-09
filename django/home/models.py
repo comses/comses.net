@@ -4,8 +4,6 @@ from enum import Enum
 
 from django import forms
 from django.contrib.auth.models import User, Group
-from django.contrib.contenttypes.fields import GenericForeignKey
-from django.contrib.contenttypes.models import ContentType
 from django.contrib.postgres.fields import ArrayField, JSONField
 from django.db import models
 from django.urls import reverse
@@ -49,7 +47,7 @@ class ComsesGroups(Enum):
     def initialize():
         return [
             Group.objects.get_or_create(name=g.value)[0] for g in ComsesGroups
-            ]
+        ]
 
     def get_group(self):
         _group = getattr(self, 'group', None)
@@ -75,8 +73,27 @@ class Institution(models.Model):
         return self.name
 
 
+class UserMessage(models.Model):
+    user = models.ForeignKey(User, related_name='inbox')
+    sender = models.ForeignKey(User, related_name='outbox')
+    message = models.CharField(max_length=512)
+    date_created = models.DateTimeField(auto_now_add=True)
+    read_on = models.DateTimeField(null=True, blank=True)
+
+    def is_read(self):
+        return self.read_on is not None
+
+
 class MemberProfileTag(TaggedItemBase):
     content_object = ParentalKey('home.MemberProfile', related_name='tagged_members')
+
+
+class FollowUser(models.Model):
+    target = models.ForeignKey(User, related_name='followers')
+    source = models.ForeignKey(User, related_name='following')
+
+    def __str__(self):
+        return '{0} following {1}'.format(self.source, self.target)
 
 
 class MemberProfile(index.Indexed, ClusterableModel):
@@ -316,7 +333,7 @@ class CategoryIndexPage(Page):
 
     def get_breadcrumbs(self):
         return [
-            { 'url': item.url, 'text': item.title }
+            {'url': item.url, 'text': item.title}
             for item in self.breadcrumbs.all()
         ]
 

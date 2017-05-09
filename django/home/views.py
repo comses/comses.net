@@ -10,19 +10,23 @@ from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.db.models.query_utils import Q
+from django.utils.decorators import method_decorator
 from django.views.generic import TemplateView
 from django.http import QueryDict, HttpResponseBadRequest, HttpResponseRedirect
-from rest_framework import viewsets, generics, mixins
+from rest_framework import viewsets, generics, mixins, status
+from rest_framework.decorators import detail_route
 from rest_framework.pagination import PageNumberPagination
-from rest_framework.renderers import JSONRenderer
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.renderers import JSONRenderer, TemplateHTMLRenderer
 from rest_framework.response import Response
+from rest_framework.views import APIView
 from taggit.models import Tag
 from wagtail.wagtailsearch.backends import get_search_backend
 
 from core.view_helpers import get_search_queryset, retrieve_with_perms
-from .models import Event, Job, FeaturedContentItem
+from .models import Event, Job, FeaturedContentItem, FollowUser
 from .serializers import EventSerializer, EventCalendarSerializer, JobSerializer, TagSerializer, \
-    FeaturedContentItemSerializer, UserSerializer
+    FeaturedContentItemSerializer, UserSerializer, UserMessageSerializer
 
 logger = logging.getLogger(__name__)
 
@@ -106,6 +110,23 @@ def discourse_sso(request):
     # Redirect back to Discourse
     discourse_sso_url = '{0}/session/sso_login?{1}'.format(settings.DISCOURSE_BASE_URL, query_string)
     return HttpResponseRedirect(discourse_sso_url)
+
+
+class ToggleFollowUser(APIView):
+    permission_classes = (IsAuthenticated, )
+    renderer_classes = (TemplateHTMLRenderer, JSONRenderer)
+
+    def post(self, request, *args, **kwargs):
+        logger.debug("POST with request data: %s", request.data)
+        username = request.data['username']
+        source = request.user
+        target = User.objects.get(username=username)
+        follow_user, created = FollowUser.objects.get_or_create(source=source, target=target)
+        if created:
+            target.following.add(follow_user)
+        else:
+            follow_user.delete()
+        return Response({'following': created})
 
 
 class EventViewSet(viewsets.ModelViewSet):
@@ -240,12 +261,24 @@ class ProfileViewSet(viewsets.ModelViewSet):
         return 'home/profiles/{}.jinja'.format(self.action)
 
     def get_queryset(self):
-        # FIXME: this is broken, as Users / MemberProfiles do not have a `date_created` field
-        # fix get_search_queryset to have a parameterizable ordering field
-        return User.objects.filter(is_active=True)
+        # FIXME: get_search_queryset does not work here as Users / MemberProfiles do not have a `date_created` field
+        # could fix by adding a parameterizable ordering field
+        return User.objects.filter(is_active=True).exclude(pk=1)
 
     def retrieve(self, request, *args, **kwargs):
         return retrieve_with_perms(self, request, *args, **kwargs)
+
+    @detail_route(methods=['post'])
+    @method_decorator(login_required)
+    def message(self, request, *args, **kwargs):
+        logger.debug("POST with request data: %s", request.data)
+        # FIXME: perhaps we should just send an email directly instead of caching in the db.
+        serializer = UserMessageSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 
 
 class FeaturedContentListAPIView(generics.ListAPIView):

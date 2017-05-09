@@ -1,15 +1,15 @@
 {% extends "sidebar_layout.jinja" %}
-{% from "common.jinja" import breadcrumb, subnav %}
+{% from "common.jinja" import breadcrumb, subnav, institution_href %}
 
-{% block title %}User profile for {{ get_full_name }}{% endblock %}
+{% block title %}User profile for {{ full_name }}{% endblock %}
 
-{% block introduction %}<h1>{{ get_full_name }}</h1>{% endblock %}
+{% block introduction %}<h1>{{ full_name }}</h1>{% endblock %}
 
 {% block top %}
     {{ breadcrumb([
     { 'url': '/community/', 'text': 'Community' },
     { 'url': url("home:profile-list"), 'text': 'Users'},
-    { 'text': get_full_name}
+    { 'text': full_name}
     ])
     }}
 
@@ -24,10 +24,117 @@
 
 {% block content %}
     <div class='row'>
-        All the relevant user details go here.
+        <div class='col-3'>
+            <div class='d-block mt-4'>
+                {% set avatar=member_profile.picture %}
+                {% if avatar is none %}
+                    <img src="holder.js/150x150?text=No picture available" class="img-fluid mx-auto d-block rounded-circle">
+                {% else %}
+                    {{ image(avatar, "fill-150x150", class="img-fluid mx-auto d-block rounded-circle") }}
+                {% endif %}
+            </div>
+        </div>
+        <div class='col-9'>
+            <div class='profile-details'>
+                <div class='card-block'>
+                    <h4 class='card-title'>{{ full_name }}</h4>
+                    {% for degree in member_profile.degrees %}
+                        <p class='card-text'>{{ degree }}</p>
+                    {% else %}
+                        <p class='card-text'>No degrees listed.</p>
+                    {% endfor %}
+                    {% for affiliation in member_profile.affiliations %}
+                        <p class='card-text'>{{ affiliation }}</p>
+                    {% endfor %}
+                    <p class='card-text'>{{ member_profile.bio }}</p>
+                    <p class='card-text'>{{ institution_href(member_profile.institution) }}</p>
+                    <p class='card-text'>
+                    {% if member_profile.personal_url %}
+                        <a href='{{ member_profile.personal_url }}' target='_blank'>Personal website</a>
+                    {% endif %}
+                    {% if member_profile.professional_url %}
+                        <a href='{{ member_profile.professional_url }}' target='_blank'>Professional website</a>
+                    {% endif %}
+                    {% if member_profile.orcid %}
+                        <a href='{{ member_profile.orcid_url }}' target='_blank'>ORCID: {{ member_profile.orcid }}</a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    <ul class='nav nav-tabs detail-tabs' role='tablist'>
+        <li class='nav-item'>
+            <a class='nav-link active' data-toggle='tab' href='#code' role='tab'>Models</a>
+        </li>
+        <li class='nav-item'>
+            <a class='nav-link' data-toggle='tab' href='#publications' role='tab'>Publications</a>
+        </li>
+        <li class='nav-item'>
+            <a class='nav-link' data-toggle='tab' href='#bio' role='tab'>Bio</a>
+        </li>
+    </ul>
+    <div class='tab-content'>
+        <div class='tab-pane active' id='code' role='tabpanel'>
+            {# FIXME: use codebase list component #}
+            <div class='p-3'>
+                ALL THE MODELS
+            </div>
+        </div>
+        <div class='tab-pane' id='publications' role='tabpanel'>
+            <div class='p-3'>
+                ALL THE PUBLICATIONS
+            </div>
+        </div>
+        <div class='tab-pane' id='bio' role='tabpanel'>
+            {% if member_profile.bio %}
+                <h2 class='m-0 py-3 title'>Bio</h2>
+                <p class='justify-content-start'>
+                {{ member_profile.bio|markdown }}
+                </p>
+            {% endif %}
+            {% if member_profile.research_interests %}
+                <h2 class='m-0 py-3 title'>Research Interests</h2>
+                <p class='justify-content-start'>
+                {{ member_profile.research_interests }}
+                </p>
+            {% endif %}
+        </div>
     </div>
 {% endblock %}
 
 {% block sidebar %}
-
+    {# FIXME: set up Vue logic for message / follow #}
+    <div class='card-metadata'>
+        <div class='card-block'>
+            <p class='card-text'>
+                <a href='#' onclick='sendMessage()' class='btn btn-primary w-100'>Send Message</a>
+            </p>
+            <p class='card-text'>
+                <a href='#' onclick='toggleFollow()' class='btn btn-primary w-100'>Follow</a>
+            </p>
+            <div class='row'>
+                {# FIXME: hardcoded values for now #}
+                <div class='col text-center'>
+                    <div><b>3</b></div>
+                    <div><small>Following</small></div>
+                </div>
+                <div class='col text-center'>
+                    <div><b>6</b></div>
+                    <div><small>Followers</small></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class='card-metadata'>
+        <div class='card-block'>
+            <h2 class='card-title'>Areas of Interest</h2>
+            <p class='card-text'>
+            {% for keyword in member_profile.keywords %}
+                <a class='m-1 p-1 btn btn-sm btn-outline-secondary' href='/search/tag={{keyword}}'>
+                    {{ keyword.name }}
+                </a>
+            {% endfor %}
+            </p>
+        </div>
+    </div>
 {% endblock %}

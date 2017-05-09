@@ -11,7 +11,8 @@ router.register(r'tags', views.TagViewSet, base_name='tag')
 router.register(r'users', views.ProfileViewSet, base_name='profile')
 
 urlpatterns = [
-    url(r'^discourse/sso$', views.discourse_sso, name='discourse_sso'),
+    url(r'^discourse/sso$', views.discourse_sso, name='discourse-sso'),
+    url(r'^users/follow/$', views.ToggleFollowUser.as_view(), name='follow-user'),
     url(r'^events/calendar/$', views.EventCalendarList.as_view(), name='events-calendar')
 ]
 edit_route_form_data = {'lookup_field': 'pk', 'lookup_regex': r'\d+'}
