@@ -193,6 +193,12 @@ ol.breadcrumb {
   background-color: $white;
 }
 
+.breadcrumb {
+    font-size: 0.8rem;
+    font-weight: 400;
+    text-align: left;
+}
+
 .callouts {
   padding-top: 50px;
   img {

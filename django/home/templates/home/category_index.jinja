@@ -1,5 +1,5 @@
 {% extends "base.jinja" %}
-{% from "common.jinja" import subnav %}
+{% from "common.jinja" import subnav, breadcrumb %}
 
 {% block title %}{{ page.title }}{% endblock %}
 
@@ -8,6 +8,7 @@
 {% endblock %}
 
 {% block content %}
+    {{ breadcrumb(page.get_breadcrumbs()) }}
     {{ subnav(page.get_navigation_links()) }}
    <div class='jumbotron'>
        <h1 class='display-5'>{{ page.title }}</h1>

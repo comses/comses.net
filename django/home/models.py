@@ -267,10 +267,30 @@ class CategoryIndexNavigationLink(Orderable, models.Model):
     title = models.CharField(max_length=128)
 
 
+class CategoryIndexBreadcrumb(Orderable, models.Model):
+    page = ParentalKey('home.CategoryIndexPage', related_name='breadcrumbs')
+    url = models.CharField("Relative / absolute path or full URL", max_length=255, blank=True)
+    title = models.CharField(max_length=255)
+
+    def __str__(self):
+        return '{0}: {1}'.format(self.title, self.url)
+
+
 class CategoryIndexPage(Page):
     template = models.CharField(max_length=128, default='home/category_index.jinja')
     heading = models.CharField(max_length=128, help_text=_("Short name to be placed in introduction header."))
     summary = models.CharField(max_length=1000, help_text=_('Summary blurb for this category index page.'))
+
+    def _add_tuples(self, tuples, cls):
+        related_name = cls._meta.get_field('page').related_query_name()
+        related_manager = getattr(self, related_name)
+        for idx, (title, url) in enumerate(tuples):
+            related_manager.add(
+                cls(title=title, url=url, sort_order=idx)
+            )
+
+    def add_breadcrumbs(self, breadcrumb_tuples):
+        self._add_tuples(breadcrumb_tuples, CategoryIndexBreadcrumb)
 
     def add_navigation_links(self, navigation_tuples):
         """
@@ -278,10 +298,7 @@ class CategoryIndexPage(Page):
         :param navigation_tuples:
         :return:
         """
-        for idx, (name, url) in enumerate(navigation_tuples):
-            self.navigation_links.add(
-                CategoryIndexNavigationLink(title=name, url=url, sort_order=idx)
-            )
+        self._add_tuples(navigation_tuples, CategoryIndexNavigationLink)
 
     def add_callout(self, image_path, title, caption, sort_order=None, user=None, url=''):
         if user is None:
@@ -296,6 +313,12 @@ class CategoryIndexPage(Page):
                 url=url,
             )
         )
+
+    def get_breadcrumbs(self):
+        return [
+            { 'url': item.url, 'text': item.title }
+            for item in self.breadcrumbs.all()
+        ]
 
     def get_navigation_links(self):
         """

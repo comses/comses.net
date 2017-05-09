@@ -1,5 +1,6 @@
 """
-Initializes Wagtail Page Models and other canned data.
+Initializes Wagtail Page Models and other canned data. 
+FIXME: move logic to dedicated module if this gets too unwieldy
 """
 
 import logging
@@ -125,6 +126,9 @@ class Command(BaseCommand):
                      'feedback or additional resources - your contributions are appreciated!'
                      )
         )
+        resources_index.add_breadcrumbs([
+            ('Our Resources', '/resources/')
+        ])
         resources_index.add_navigation_links([
             ('Resources', '/resources/'),
             ('Modeling Platforms', 'modeling-platforms/'),
@@ -208,6 +212,9 @@ class Command(BaseCommand):
             work and discover and reuse other's works, and forums for discussions, job postings, and events.
             '''
         )
+        community_index.add_breadcrumbs([
+            ('Community', '/community/')
+        ])
         community_index.add_navigation_links([
             ('Community', '/community/'),
             ('Forum', settings.DISCOURSE_BASE_URL),
@@ -261,6 +268,7 @@ class Command(BaseCommand):
             members (PIs of the projects that fund CoMSES Net) and operate under [these by-laws](/about/by-laws). 
             '''
         )
+        about_index.add_breadcrumbs([('About CoMSES Net', '/about/')])
         about_index.add_navigation_links([('Overview', '/about/'),
                                           ('People', 'people/'),
                                           ('FAQs', '/faq/'),

@@ -1,11 +1,33 @@
-{% extends "base.jinja" %}
+{% extends "sidebar_layout.jinja" %}
+{% from "common.jinja" import breadcrumb, subnav %}
 
-{% block introduction %}
-    <h1>User Profile: {{ get_full_name }}</h1>
+{% block title %}User profile for {{ get_full_name }}{% endblock %}
+
+{% block introduction %}<h1>{{ get_full_name }}</h1>{% endblock %}
+
+{% block top %}
+    {{ breadcrumb([
+    { 'url': '/community/', 'text': 'Community' },
+    { 'url': url("home:profile-list"), 'text': 'Users'},
+    { 'text': get_full_name}
+    ])
+    }}
+
+    {{ subnav([
+    { 'url': '/community/', 'text': 'Community' },
+    { 'url': DISCOURSE_BASE_URL, 'text': 'Forum' },
+    { 'url': url("home:profile-list"), 'text': 'Users', 'active': True },
+    { 'url': url("home:job-list"), 'text': 'Jobs' },
+    ])
+    }}
 {% endblock %}
 
 {% block content %}
     <div class='row'>
         All the relevant user details go here.
     </div>
+{% endblock %}
+
+{% block sidebar %}
+
 {% endblock %}

@@ -100,18 +100,16 @@
 {% endmacro %}
 
 {% macro breadcrumb(items) %}
-    <small>
-        <ol class="breadcrumb">
-            <li class='breadcrumb-item'><a href='/'>Home</a></li>
-            {% for item in items %}
-                {% if loop.last %}
-                    <li class="breadcrumb-item active">{{ item.text }}</li>
-                {% else %}
-                    <li class="breadcrumb-item"><a href="{{ item.url }}">{{ item.text }}</a></li>
-                {% endif %}
-            {% endfor %}
-        </ol>
-    </small>
+<ol class="breadcrumb">
+    <li class='breadcrumb-item'><a href='/'>Home</a></li>
+    {% for item in items %}
+        {% if loop.last %}
+            <li class="breadcrumb-item active">{{ item.text }}</li>
+        {% else %}
+            <li class="breadcrumb-item"><a href="{{ item.url }}">{{ item.text }}</a></li>
+        {% endif %}
+    {% endfor %}
+</ol>
 {% endmacro %}
 
 {% macro embed_discourse_comments(is_public) %}

@@ -44,13 +44,14 @@
 
 {% block top %}
     {{ breadcrumb([{'text': 'Community Events' }]) }}
-{% endblock %}
-
-{% block content %}
     {{ subnav([
     {'text': 'Calendar View', 'url': url('home:events-calendar')},
     {'text': 'List View', 'url': url('home:event-list'), 'active': True},
-    ]) }}
+    ]) 
+    }}
+{% endblock %}
+
+{% block content %}
     {{ list_page(__all__, render_event, 'home:event-detail') }}
     <div class='row'>
         <div class="col">

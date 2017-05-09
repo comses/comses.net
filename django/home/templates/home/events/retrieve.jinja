@@ -7,7 +7,7 @@
 
 {% block top %}
     {{ breadcrumb([
-    {'url': url('home:event-list'), 'text': 'Events' },
+    {'text': 'Community Events', 'url': url('home:events-calendar')},
     {'text': title }
     ]) }}
 {% endblock %}
@@ -31,7 +31,7 @@
     <div class="card-metadata">
         <div class="card-block">
             <div class='section'>
-                <b class="card-title">Contact</b>
+                <b class="card-title">Submitter</b>
                 <p class="card-text">{{ user_href(submitter) }}</p>
                 <b class="card-title">Last Updated</b>
                 <p class="card-text">{{ last_modified }}</p>
