@@ -1,10 +1,10 @@
 <template>
-    <div :class="['form-group', hasDanger]">
+    <div :class="['form-group', {'has-danger': hasDanger }]">
         <slot name="label"></slot>
-        <input :type="type" :class="['form-control', formControlDanger]"
-               @input="updateValue($event.target.value)"
-               :value="value.value">
-        <div v-if="hasErrors" class="form-control-feedback">{{ errorMessage }}</div>
+        <input type="text" :name="name" class="form-control" :value="value" @input="updateValue($event.target.value)">
+        <div class="form-control-feedback form-control-danger">
+            {{ errorMessage }}
+        </div>
         <slot name="help"></slot>
     </div>
 </template>
@@ -13,8 +13,5 @@
     import BaseControl from './base'
 
     @Component
-    export default class Input extends BaseControl {
-        @Prop
-        type: string;
-    }
+    export default class Input extends BaseControl {}
 </script>

@@ -4,10 +4,10 @@
     "User": {
       "type": "object",
       "required": [
-        "submitter"
+        "username"
       ],
       "properties": {
-        "submitter": {
+        "username": {
           "type": "string",
           "default": ""
         }

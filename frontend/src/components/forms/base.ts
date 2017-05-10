@@ -1,33 +1,33 @@
 import * as Vue from 'vue'
 import {Component, Prop} from 'vue-property-decorator'
+import * as _ from 'lodash'
 
 @Component
 class BaseControl extends Vue {
     @Prop
-    value: { value, errors: Array<string> };
+    value;
 
-    get hasErrors() {
-        return this.value.errors.length > 0;
+    @Prop
+    name;
+
+    @Prop
+    server_errors: Array<string>;
+
+    get hasDanger() {
+        let self: any = this;
+        return (this.server_errors !== undefined && this.server_errors.length > 0) || self.errors.any();
     }
 
     get errorMessage() {
-        return this.value.errors.join('. ');
+        let self: any = this;
+        return _.concat(this.server_errors || [], self.errors.all()).join(', ');
     }
 
-    get hasDanger() {
-        return {
-            'has-danger': this.hasErrors
-        };
-    }
-
-    get formControlDanger() {
-        return {
-            'form-control-danger': this.hasErrors
-        };
-    }
-
-    updateValue(value) {
-        this.$emit('input', {value, errors: this.value.errors});
+    updateValue(value: string) {
+        let self: any = this;
+        self.errors.remove(this.name, 'ajax');
+        this.$emit('input', value);
+        this.$emit('clear', this.name);
     }
 }
 

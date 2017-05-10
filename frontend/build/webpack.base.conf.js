@@ -13,7 +13,6 @@ var useCssSourceMap = cssSourceMapDev || cssSourceMapProd
 
 module.exports = {
     entry: {
-        home: './src/pages/home/home.ts',
         jobs: './src/pages/job/create.ts',
         events: './src/pages/event/create.ts',
         job_list: './src/pages/job/list.ts',

@@ -1,3 +1,6 @@
-import EventCreateOrUpdate from './create.vue'
+import EditEvent from './create.vue'
+import * as Vue from 'vue'
+import * as VeeValidate from 'vee-validate'
 
-new EventCreateOrUpdate().$mount('#app');
+Vue.use(VeeValidate);
+new EditEvent().$mount('#app');

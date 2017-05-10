@@ -1,3 +1,7 @@
-import Job from './create.vue'
+import EditJob from './create.vue'
+import * as Vue from 'vue'
+import * as VeeValidate from 'vee-validate'
 
-new Job().$mount('#app');
+Vue.use(VeeValidate);
+
+const job = new EditJob().$mount('#app');

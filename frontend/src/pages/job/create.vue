@@ -1,14 +1,16 @@
 <template>
     <form>
-        <c-input type="text" v-model="state.content.title">
+        <c-input v-model="state.title" name="title" :server_errors="serverErrors('title')"
+                 @clear="clearField">
             <label class="form-control-label" slot="label">Title</label>
             <small class="form-text text-muted" slot="help">A short title describing the job</small>
         </c-input>
-        <markdown v-model="state.content.description">
+        <c-markdown v-model="state.description" name="description" :server_errors="serverErrors('description')"
+                    @clear="clearField">
             <label class="form-control-label" slot="label">Description</label>
             <small slot="help" class="form-text text-muted">Detailed information about the job</small>
-        </markdown>
-        <markdown v-model="state.content.summary">
+        </c-markdown>
+        <c-markdown v-model="state.summary" name="summary" :server_errors="serverErrors('summary')" @clear="clearField">
             <label slot="label">Summary</label>
             <div slot="help">
                 <button class="btn btn-secondary btn-sm" type="button" @click="createSummaryFromDescription">Summarize
@@ -17,8 +19,8 @@
                     This field can be created from the description by pressing the summarize button.
                 </small>
             </div>
-        </markdown>
-        <c-tagger v-model="state.content.tags.value" v-on:errors="setTagErrors">
+        </c-markdown>
+        <c-tagger v-model="state.tags" name="tags" :server_errors="serverErrors('tags')" @clear="clearField">
         </c-tagger>
         <small class="form-text text-muted">A list of tags to associate with a job. Tags help people search for jobs.
         </small>
@@ -28,40 +30,36 @@
 
 <script lang="ts">
     import * as Vue from 'vue'
-    import {basePageMixin} from 'components/base_page'
     import Component from 'vue-class-component'
-    import  {Job, Lens, Content} from '../../store/common'
-    import {
-        createDefaultState,
-        relatedCreateRecord,
-        relatedTransformSuccess
-    } from '../../api/index'
-    import * as queryString from 'query-string'
-    import {job as defaultJob} from '../../store/defaults'
     import Markdown from 'components/forms/markdown.vue'
     import Tagger from 'components/tagger.vue'
     import Input from 'components/forms/input.vue'
+    import {api} from 'api/index'
+    import * as _ from 'lodash'
+    import {Job} from 'store/common'
 
     @Component({
         components: {
-            // Multiselect,
-            Markdown,
+            'c-markdown': Markdown,
             'c-tagger': Tagger,
             'c-input': Input
-        },
-        mixins: [basePageMixin]
+        }
     })
-    class JobCreate extends Vue {
-        // determine whether you are creating or updating based on wat route you are on
+    class EditJob extends Vue {
+        // determine whether you are creating or updating based on what route you are on
         // update -> grab the appropriate state from the store
         // create -> use the default store state
 
-        id = null;
-        state = createDefaultState(defaultJob);
+        /*
+         * FIXME: this shares many methods with the EditEvent component. Eventually those methods should be in a mixin
+         * or a base class */
 
-        setTagErrors(tag_errors) {
-            this.state.content.tags.errors = tag_errors;
-        }
+        state: Job = {
+            description: '',
+            summary: '',
+            title: '',
+            tags: []
+        };
 
         matchUpdateUrl(pathname) {
             let match = pathname.match(/\/jobs\/([0-9]+)\/update\//);
@@ -71,37 +69,88 @@
             return match
         }
 
-        replaceFormState(id) {
+        serverErrors(field_name: string) {
             let self: any = this;
+            return self.errors.collect(field_name, 'server-side');
+        }
+
+        clearField(field_name: string) {
+            let self: any = this;
+            self.errors.remove(field_name, 'server-side');
+            self.errors.remove('non_fields_errors', 'server-side');
+        }
+
+        initializeForm() {
+            let id = this.matchUpdateUrl(document.location.pathname);
             if (id !== null) {
-                self.retrieve('/jobs/' + id + '/')
+                this.retrieve(id);
             }
         }
 
         created() {
-            this.id = this.matchUpdateUrl(document.location.pathname);
-            this.replaceFormState(this.id);
+            this.initializeForm();
         }
 
         createSummaryFromDescription() {
-            let payload = {description: this.state.content.description.value};
-            relatedCreateRecord(
-                    new Lens(this, ['state', 'content', 'summary']),
-                    relatedTransformSuccess,
-                    '/summarize/',
-                    payload);
+            this.state.summary = _.truncate(this.state.description, {'length': 200, 'omission': '[...]'});
         }
 
         createOrUpdate() {
-            const self: any = this;
-            if (this.id === null) {
-                self.create('/jobs/');
+            if (this.state.id !== undefined) {
+                this.update(this.state.id);
             } else {
-                self.update('/jobs/' + this.id + '/');
+                this.create();
             }
 
         }
+
+        createMainServerError(err) {
+            let self: any = this;
+            self.errors.add('non_field_errors', err, 'server-side', 'server-side');
+        }
+
+        createServerErrors(err: any) {
+            console.log({serverErrors: true, err});
+            let self: any = this;
+            if (err.hasOwnProperty('non_field_errors')) {
+                this.createMainServerError((<any>err).non_field_errors);
+                delete err.non_field_errors;
+            }
+            for (const field_name in err) {
+                self.errors.add(field_name, err[field_name], 'server-side', 'server-side');
+            }
+        }
+
+        retrieve(id: number) {
+            api.jobs.retrieve(id).then(state => this.state = state, this.createMainServerError);
+        }
+
+        create() {
+            api.jobs.create(this.state).then(drf_response => {
+                switch (drf_response.kind) {
+                    case 'state':
+                        this.state = drf_response.payload;
+                        break;
+                    case 'validation_error':
+                        this.createServerErrors(drf_response.payload);
+                        break;
+                }
+            })
+        }
+
+        update(id: number) {
+            api.jobs.update(id, this.state).then(drf_response => {
+                switch (drf_response.kind) {
+                    case 'state':
+                        this.state = drf_response.payload;
+                        break;
+                    case 'validation_error':
+                        this.createServerErrors(drf_response.payload);
+                        break;
+                }
+            })
+        }
     }
 
-    export default JobCreate;
+    export default EditJob;
 </script>

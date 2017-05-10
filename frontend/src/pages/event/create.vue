@@ -1,22 +1,24 @@
 <template>
     <form>
-        <c-input type="text" v-model="state.content.title">
+        <c-input v-model="state.title" name="title" :server_errors="serverErrors('title')" @clear="clearField">
             <label class="form-control-label" slot="label">Title</label>
             <small class="form-text text-muted" slot="help">A short title describing the event</small>
         </c-input>
-        <c-input type="text" v-model="state.content.location">
+        <c-input v-model="state.location" name="location" :server_errors="serverErrors('location')" @clear="clearField">
             <label class="form-control-label" slot="label">Location</label>
             <small class="form-text text-muted" slot="help">The address of where the event takes place</small>
         </c-input>
         <div class="row">
             <div class="col-6">
-                <c-datepicker v-model="state.content.start_date">
+                <c-datepicker v-model="state.start_date" name="start_date" :server_errors="serverErrors('start_date')"
+                              @clear="clearField">
                     <label class="form-control-label" slot="label">Start Date</label>
                     <small class="form-text text-muted" slot="help">The date the event begins at</small>
                 </c-datepicker>
             </div>
             <div class="col-6">
-                <c-datepicker v-model="state.content.end_date" :clearButton="true">
+                <c-datepicker v-model="state.end_date" name="end_date" :server_errors="serverErrors('end_date')"
+                              @clear="clearField" :clearButton="true">
                     <label class="form-control-label" slot="label">End Date</label>
                     <small class="form-text text-muted" slot="help">The date the event ends at</small>
                 </c-datepicker>
@@ -24,7 +26,9 @@
         </div>
         <div class="row">
             <div class="col-6 d-inline">
-                <c-datepicker v-model="state.content.early_registration_deadline" :clearButton="true">
+                <c-datepicker v-model="state.early_registration_deadline" name="early_registration_deadline"
+                              :server_errors="serverErrors('early_registration_deadline')" @clear="clearField"
+                              :clearButton="true">
                     <label class="form-control-label" slot="label">Early Registration Deadline</label>
                     <small class="form-text text-muted" slot="help">The last day for early registration of the event
                         (inclusive)
@@ -32,18 +36,21 @@
                 </c-datepicker>
             </div>
             <div class="col-6 d-inline">
-                <c-datepicker v-model="state.content.submission_deadline" :clearButton="true">
+                <c-datepicker v-model="state.submission_deadline" name="submission_deadline"
+                              :server_errors="serverErrors('submission_deadline')" @clear="clearField"
+                              :clearButton="true">
                     <label class="form-control-label" slot="label">Submission Deadline</label>
                     <small class="form-text text-muted" slot="help">The last day to register for the event (inclusive)
                     </small>
                 </c-datepicker>
             </div>
         </div>
-        <markdown v-model="state.content.description" minHeight="20em">
+        <c-markdown v-model="state.description" name="description" :server_errors="serverErrors('description')"
+                    @clear="clearField" minHeight="20em">
             <label class="form-control-label" slot="label">Description</label>
             <small slot="help" class="form-text text-muted">Detailed information about the job</small>
-        </markdown>
-        <markdown v-model="state.content.summary">
+        </c-markdown>
+        <c-markdown v-model="state.summary" name="summary" :server_errors="serverErrors('summary')" @clear="clearField">
             <label slot="label">Summary</label>
             <div slot="help">
                 <button class="btn btn-secondary btn-sm" type="button" @click="createSummaryFromDescription">
@@ -53,8 +60,8 @@
                     This field can be created from the description by pressing the summarize button.
                 </small>
             </div>
-        </markdown>
-        <c-tagger v-model="state.content.tags.value" v-on:errors="setTagErrors">
+        </c-markdown>
+        <c-tagger v-model="state.tags" name="tags" :server_errors="serverErrors('tags')" @clear="clearField">
         </c-tagger>
         <small class="form-text text-muted">A list of tags to associate with a job. Tags help people search for
             jobs.
@@ -64,20 +71,19 @@
 </template>
 
 <script lang="ts">
-    import {basePageMixin} from 'components/base_page'
     import * as Vue from 'vue'
     import Component from 'vue-class-component'
-    import  {CalendarEvent, Lens} from '../../store/common'
-    import {api, createDefaultState, relatedCreateRecord, relatedTransformSuccess} from '../../api/index'
-    import {defaultEvent} from '../../store/defaults'
+    import  {CalendarEvent} from '../../store/common'
+    import {api} from '../../api/index'
     import Markdown from 'components/forms/markdown.vue'
     import Tagger from 'components/tagger.vue'
     import Input from 'components/forms/input.vue'
     import Datepicker from 'components/forms/datepicker.vue';
+    import * as _ from 'lodash'
 
     @Component({
         components: {
-            Markdown,
+            'c-markdown': Markdown,
             'c-datepicker': Datepicker,
             'c-tagger': Tagger,
             'c-input': Input
@@ -89,19 +95,29 @@
                     return {name: t}
                 });
             }
-        },
-        mixins: [basePageMixin]
+        }
     })
-    class EventEditPage extends Vue {
+    class EditEvent extends Vue {
         // determine whether you are creating or updating based on wat route you are on
         // update -> grab the appropriate state from the store
         // create -> use the default store state
 
-        id = null;
-        state = createDefaultState(defaultEvent);
+        state: CalendarEvent = {
+            description: '',
+            summary: '',
+            title: '',
+            tags: [],
+            location: '',
+            early_registration_deadline: '',
+            submission_deadline: '',
+            start_date: '',
+            end_date: ''
+        };
 
-        setTagErrors(tag_errors) {
-            this.state.content.tags.errors = tag_errors;
+        clearField(field_name: string) {
+            let self: any = this;
+            self.errors.remove(field_name, 'server-side');
+            self.errors.remove('non_fields_errors', 'server-side');
         }
 
         matchUpdateUrl(pathname) {
@@ -112,36 +128,81 @@
             return match
         }
 
-        replaceFormState(id) {
-            const self: any = this;
+        initializeForm() {
+            let id = this.matchUpdateUrl(document.location.pathname);
             if (id !== null) {
-                self.retrieve('/events/' + id + '/');
+                this.retrieve(id);
             }
         }
 
         created() {
-            this.id = this.matchUpdateUrl(document.location.pathname);
-            this.replaceFormState(this.id);
+            this.initializeForm();
         }
 
         createSummaryFromDescription() {
-            relatedCreateRecord(
-                    new Lens(this, ['state', 'content', 'summary']),
-                    relatedTransformSuccess,
-                    '/summarize/',
-                    {description: this.state.content.description.value});
+            this.state.summary = _.truncate(this.state.description, {'length': 200, 'omission': '[...]'});
+        }
+
+        serverErrors(field_name: string) {
+            let self: any = this;
+            return self.errors.collect(field_name, 'server-side');
         }
 
         createOrUpdate() {
-            const self: any = this;
-            if (this.id === null) {
-                self.create('/events/');
+            if (this.state.id !== undefined) {
+                this.update(this.state.id);
             } else {
-                self.update('/events/' + this.id + '/');
+                this.create();
             }
+        }
 
+        retrieve(id: number) {
+            api.events.retrieve(id).then(state => this.state = state);
+        }
+
+        createMainServerError(err) {
+            let self: any = this;
+            self.errors.add('non_field_errors', err, 'server-side', 'server-side');
+        }
+
+        createServerErrors(err: any) {
+            console.log({serverErrors: true, err});
+            let self: any = this;
+            if (err.hasOwnProperty('non_field_errors')) {
+                this.createMainServerError((<any>err).non_field_errors);
+                delete err.non_field_errors;
+            }
+            for (const field_name in err) {
+                self.errors.add(field_name, err[field_name], 'server-side', 'server-side');
+            }
+        }
+
+        create() {
+            api.events.create(this.state).then(drf_response => {
+                switch (drf_response.kind) {
+                    case 'state':
+                        this.state = drf_response.payload;
+                        break;
+                    case 'validation_error':
+                        this.createServerErrors(drf_response.payload);
+                        break;
+                }
+            });
+        }
+
+        update(id: number) {
+            api.events.update(id, this.state).then(drf_response => {
+                switch (drf_response.kind) {
+                    case 'state':
+                        this.state = drf_response.payload;
+                        break;
+                    case 'validation_error':
+                        this.createServerErrors(drf_response.payload);
+                        break;
+                }
+            })
         }
     }
 
-    export default EventEditPage;
+    export default EditEvent;
 </script>

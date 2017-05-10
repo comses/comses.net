@@ -1,5 +1,5 @@
 <template>
-    <div :class="['form-group', hasDanger]">
+    <div :class="['form-group', {'has-danger': hasDanger}]">
         <slot name="label"></slot>
         <div class="container-fluid p-0">
             <div class="btn-group">
@@ -18,7 +18,7 @@
             </div>
             <div class="row p-0 row-eq-height">
                 <div :class="codeStyle">
-                    <textarea :class="[ formControlDanger ]" :style="{ 'min-height': minHeight }" :value="value.value"
+                    <textarea :class="{'form-control-danger': hasDanger }" :style="{ 'min-height': minHeight }" :value="value"
                               @input="updateValue($event.target.value)"
                               debounce="300">
                     </textarea>
@@ -28,7 +28,7 @@
                 </div>
             </div>
         </div>
-        <div v-if="hasErrors" class="form-control-feedback">{{ errorMessage }}</div>
+        <div v-if="hasDanger" class="form-control-feedback">{{ errorMessage }}</div>
         <slot name="help"></slot>
     </div>
 </template>
@@ -105,7 +105,7 @@ code {
         }
 
         get markdown() {
-            return marked.parse(this.value.value, {sanitize: true})
+            return marked.parse(this.value, {sanitize: true})
         }
     }
 
