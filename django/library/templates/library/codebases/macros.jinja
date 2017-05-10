@@ -1,3 +1,4 @@
+{% from "common.jinja" import search_tag_href %}
 {% macro render_codebase_result(item, detail_url_name) %}
     <div class="search-result">
         <div class="row">
@@ -33,7 +34,7 @@
                 {% if item.tags %}
                     <div class="tag-list">
                         {% for tag in item.tags %}
-                            <span class="tag">{{ tag.name }}</span>
+                            {{ search_tag_href(tag) }}
                         {% endfor %}
                     </div>
                 {% endif %}

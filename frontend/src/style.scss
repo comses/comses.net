@@ -41,13 +41,13 @@ $fa-font-path: '../node_modules/font-awesome/fonts/';
 @import '../node_modules/vue-multiselect/dist/vue-multiselect.min.css';
 
 @font-face {
-    font-family: 'Alte-DIN-1451-Mittelschrift';
-    src:url('./assets/fonts/Alte-DIN-1451-Mittelschrift.ttf.woff') format('woff'),
-    url('./assets/fonts/Alte-DIN-1451-Mittelschrift.ttf.svg#Alte-DIN-1451-Mittelschrift') format('svg'),
-    url('./assets/fonts/Alte-DIN-1451-Mittelschrift.ttf.eot'),
-    url('./assets/fonts/Alte-DIN-1451-Mittelschrift.ttf.eot?#iefix') format('embedded-opentype'); 
-    font-weight: normal;
-    font-style: normal;
+  font-family: 'Alte-DIN-1451-Mittelschrift';
+  src: url('./assets/fonts/Alte-DIN-1451-Mittelschrift.ttf.woff') format('woff'),
+  url('./assets/fonts/Alte-DIN-1451-Mittelschrift.ttf.svg#Alte-DIN-1451-Mittelschrift') format('svg'),
+  url('./assets/fonts/Alte-DIN-1451-Mittelschrift.ttf.eot'),
+  url('./assets/fonts/Alte-DIN-1451-Mittelschrift.ttf.eot?#iefix') format('embedded-opentype');
+  font-weight: normal;
+  font-style: normal;
 }
 
 .logo {
@@ -65,12 +65,12 @@ $fa-font-path: '../node_modules/font-awesome/fonts/';
 }
 
 .citation {
-    @extend .card;
-    background-color: $rules-color;
-    h2 {
-        font-size: 1rem;
-        font-weight: bolder;
-    }
+  @extend .card;
+  background-color: $rules-color;
+  h2 {
+    font-size: 1rem;
+    font-weight: bolder;
+  }
 }
 
 .page {
@@ -97,40 +97,40 @@ $fa-font-path: '../node_modules/font-awesome/fonts/';
 }
 
 h2.discourse-comments {
-    color: $text-color;
-    font-size: 1.4rem;
+  color: $text-color;
+  font-size: 1.4rem;
 }
 
 .social-media-sm {
-    @extend .social-media;
-    text-align: left;
-    a {
-        font-size: 0.9rem !important;
-    }
-    li {
-        padding-right: 0.4rem;
-    }
+  @extend .social-media;
+  text-align: left;
+  a {
+    font-size: 0.9rem !important;
+  }
+  li {
+    padding-right: 0.4rem;
+  }
 }
 
 .detail-tabs {
-    padding-top: 3em;
-    a.nav-link {
-        letter-spacing: 0.15rem;
-        color: $link-color;
-        padding-left: 2rem;
-        padding-right: 2rem;
-        text-transform: uppercase;
-        font-weight: 600;
-        font-size: 1rem;
-    }
-    a.nav-link.active {
-        color: $text-color;
-    }
+  padding-top: 3em;
+  a.nav-link {
+    letter-spacing: 0.15rem;
+    color: $link-color;
+    padding-left: 2rem;
+    padding-right: 2rem;
+    text-transform: uppercase;
+    font-weight: 600;
+    font-size: 1rem;
+  }
+  a.nav-link.active {
+    color: $text-color;
+  }
 }
 
 #discourse-comments {
-    background-color: $body-bg;
-    padding-top: 3em;
+  background-color: $body-bg;
+  padding-top: 3em;
 }
 
 .organizations li {
@@ -194,9 +194,9 @@ ol.breadcrumb {
 }
 
 .breadcrumb {
-    font-size: 0.8rem;
-    font-weight: 400;
-    text-align: left;
+  font-size: 0.8rem;
+  font-weight: 400;
+  text-align: left;
 }
 
 .callouts {
@@ -278,24 +278,24 @@ div.activity {
 }
 
 #search-dropdown {
-    .dropdown-toggle::after {
-        display: none;
-    }
+  .dropdown-toggle::after {
+    display: none;
+  }
 }
 
 #search-button {
-    font-size: 1.2rem;
-    color: $text-color;
-    margin-top: 1rem;
+  font-size: 1.2rem;
+  color: $text-color;
+  margin-top: 1rem;
 }
 
 #header-search-form {
-    left: -20rem;
-    width: 22rem;
+  left: -20rem;
+  width: 22rem;
 }
 
 .title {
-    color: $text-color;
+  color: $text-color;
 }
 
 .errorlist {
@@ -358,34 +358,41 @@ footer {
     padding: 1rem 0 .5rem 0;
   }
 
-  .tag-list {
-    padding: 1em 0 0;
-    .tag {
-      padding: 0.75em;
-      background-color: $rules-color;
-      color: $link-color;
-      font-size: 0.9rem;
-    }
+}
+
+.tag-list {
+  .tag {
+    padding: 0.25rem 0.5rem;
+    display: inline-block;
+    line-height: 1.25;
+    background-color: $rules-color;
+    font-size: 0.9rem;
+    margin-top: 0.5rem;
+  }
+  .btn-tag {
+    @extend .btn-sm;
+    padding: 0.25rem 0.25rem;
+    margin: 0.25rem 0.25rem;
   }
 }
 
 .codebase-title {
-    font-family: 'Alte-DIN-1451-Mittelschrift', 'Open Sans', sans-serif;
-    color: $text-color;
-    font-weight: 300;
+  font-family: 'Alte-DIN-1451-Mittelschrift', 'Open Sans', sans-serif;
+  color: $text-color;
+  font-weight: 300;
 }
 
 .profile-details {
-    @extend .card;
-    margin-top: 1rem;
-    margin-bottom: 1rem;
-    background-color: $white;
-    color: $text-color;
-    border: none;
+  @extend .card;
+  margin-top: 1rem;
+  margin-bottom: 1rem;
+  background-color: $white;
+  color: $text-color;
+  border: none;
 
-    .card-text {
-        font-size: 0.9rem;
-    }
+  .card-text {
+    font-size: 0.9rem;
+  }
 }
 
 .card-metadata {
@@ -398,16 +405,16 @@ footer {
   line-height: 1.25rem;
 
   .section {
-      padding-bottom: 2rem;
-      .card-text {
-          padding-top: 0.3rem;
-          font-size: 0.9rem;
-      }
+    padding-bottom: 2rem;
+    .card-text {
+      padding-top: 0.3rem;
+      font-size: 0.9rem;
+    }
   }
 
   .card-title {
-      font-size: 1rem;
-      font-weight: 900;
+    font-size: 1rem;
+    font-weight: 900;
   }
 
   .title {

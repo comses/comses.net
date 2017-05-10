@@ -1,5 +1,5 @@
 {% extends "sidebar_layout.jinja" %}
-{% from "common.jinja" import breadcrumb, subnav, institution_href, search_tag_href %}
+{% from "common.jinja" import breadcrumb, subnav, institution_href, search_tag_btn %}
 {% from "library/codebases/macros.jinja" import render_codebase_result %}t
 
 {% block title %}User profile for {{ full_name }}{% endblock %}
@@ -48,17 +48,33 @@
                         <p class='card-text'>{{ affiliation }}</p>
                     {% endfor %}
                     <p class='card-text'>{{ member_profile.bio }}</p>
-                    <p class='card-text'>{{ institution_href(member_profile.institution) }}</p>
-                    <p class='card-text'>
-                    {% if member_profile.personal_url %}
-                        <a href='{{ member_profile.personal_url }}' target='_blank'>Personal website</a>
-                    {% endif %}
-                    {% if member_profile.professional_url %}
-                        <a href='{{ member_profile.professional_url }}' target='_blank'>Professional website</a>
-                    {% endif %}
-                    {% if member_profile.orcid %}
-                        <a href='{{ member_profile.orcid_url }}' target='_blank'>ORCID: {{ member_profile.orcid }}</a>
-                    {% endif %}
+                    <dl class='row card-text'>
+                        <dt class='col-sm-2'>Institution</dt>
+                        <dd class='col-sm-9'>{{ institution_href(member_profile.institution) }}</dd>
+
+                        <dt class='col-sm-2'>Personal</dt>
+                        <dd class='col-sm-9'>
+                        {% if member_profile.personal_url %}
+                            <a href='{{ member_profile.personal_url }}' target='_blank'>{{ member_profile.personal_url }}</a>
+                        {% endif %}
+                        </dd>
+
+                        <dt class='col-sm-2'>Professional</dt>
+                        <dd class='col-sm-9'>
+                        {% if member_profile.professional_url %}
+                            <a href='{{ member_profile.professional_url }}'target='_blank'>{{ member_profile.professional_url }}</a>
+                        {% endif %}
+                        </dd>
+
+                        <dt class='col-sm-2'>ORCID</dt>
+                        <dd class='col-sm-9'>
+                        {% if member_profile.orcid %}
+                            <a href='{{ member_profile.orcid_url }}' target='_blank'>ORCID: {{ member_profile.orcid }}</a>
+                        {% else %}
+                            None entered
+                        {% endif %}
+                        </dd>
+                    </dl>
                 </div>
             </div>
         </div>
@@ -126,11 +142,11 @@
             <div class='row'>
                 {# FIXME: hardcoded values for now #}
                 <div class='col text-center'>
-                    <div><b>3</b></div>
+                    <div><b>{{ following_count }}</b></div>
                     <div><small>Following</small></div>
                 </div>
                 <div class='col text-center'>
-                    <div><b>6</b></div>
+                    <div><b>{{ follower_count }}</b></div>
                     <div><small>Followers</small></div>
                 </div>
             </div>
@@ -139,9 +155,9 @@
     <div class='card-metadata'>
         <div class='card-block'>
             <h2 class='card-title'>Areas of Interest</h2>
-            <p class='card-text'>
+            <p class='card-text tag-list'>
             {% for keyword in member_profile.keywords %}
-                {{ search_tag_href(keyword) }}
+                {{ search_tag_btn(keyword) }}
             {% endfor %}
             </p>
         </div>

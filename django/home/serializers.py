@@ -2,9 +2,9 @@ from django.contrib.auth.models import User
 from django.utils.translation import ugettext_lazy as _
 from rest_framework import serializers
 
-from core.serializers import PUBLISH_DATE_FORMAT, LinkedUserSerializer, TagSerializer, create, update
+from core.serializers import (PUBLISH_DATE_FORMAT, LinkedUserSerializer, TagSerializer, create, update)
 from library.serializers import CodebaseSerializer
-from .models import Event, Job, FeaturedContentItem, MemberProfile, UserMessage
+from .models import (Event, Job, FeaturedContentItem, MemberProfile, UserMessage, Institution)
 
 
 class EventSerializer(serializers.ModelSerializer):
@@ -34,6 +34,13 @@ class EventCalendarSerializer(serializers.ModelSerializer):
     class Meta:
         model = Event
         fields = ('title', 'start', 'end',)
+
+
+class InstitutionSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Institution
+        fields = ('url', 'name',)
 
 
 class JobSerializer(serializers.ModelSerializer):
@@ -72,6 +79,7 @@ class MemberProfileSerializer(serializers.ModelSerializer):
     full_member = serializers.BooleanField(read_only=True)
     orcid_url = serializers.SerializerMethodField()
     keywords = TagSerializer(many=True)
+    institution = InstitutionSerializer()
 
     def get_orcid_url(self, instance):
         if instance.orcid:
@@ -91,6 +99,8 @@ class UserSerializer(serializers.ModelSerializer):
     is_superuser = serializers.BooleanField(read_only=True)
     is_staff = serializers.BooleanField(read_only=True)
     date_joined = serializers.DateTimeField(read_only=True, format='%c')
+    following_count = serializers.ReadOnlyField(source='followers.count')
+    follower_count = serializers.ReadOnlyField(source='following.count')
 # FIXME: consider loading codebases separately in the ViewSet..
     codebases = CodebaseSerializer(read_only=True, many=True)
 
@@ -103,7 +113,7 @@ class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ('first_name', 'last_name', 'username', 'is_superuser', 'is_staff', 'member_profile', 'full_name',
-                  'profile_url', 'date_joined', 'codebases')
+                  'profile_url', 'date_joined', 'codebases', 'following_count', 'follower_count')
 
 
 class UserMessageSerializer(serializers.ModelSerializer):

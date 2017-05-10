@@ -2,11 +2,15 @@
 <div class='submit-model'><a class='btn btn-primary w-100' href='{{ url("library:codebase-create") }}'>Submit a model</a></div>
 {% endmacro %}
 
-{% macro search_tag_href(tag) %}
-{# FIXME: combination of CSS classes should be extracted into SCSS as a single convenience class #}
-<a class='m-1 p-1 btn btn-sm btn-outline-secondary' href='/search/tag={{tag.name}}'>
+{% macro search_tag_href(tag, css_classes='tag', category=None) %}
+<a class='{{ css_classes }}' href='/search?tag={{tag.name}}'>
     {{ tag.name }}
 </a>
+{% endmacro %}
+
+{% macro search_tag_btn(tag, category=None) %}
+{# FIXME: combination of CSS classes should be extracted into SCSS as a single convenience class #}
+{{ search_tag_href(tag, 'btn btn-tag btn-outline-secondary', category) }}
 {% endmacro %}
 
 {% macro institution_href(institution) %}
