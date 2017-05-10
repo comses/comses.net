@@ -1,5 +1,5 @@
 {% extends "sidebar_layout.jinja" %}
-{% from "common.jinja" import breadcrumb, subnav, institution_href %}
+{% from "common.jinja" import breadcrumb, subnav, institution_href, search_tag_href %}
 
 {% block title %}User profile for {{ full_name }}{% endblock %}
 
@@ -130,9 +130,7 @@
             <h2 class='card-title'>Areas of Interest</h2>
             <p class='card-text'>
             {% for keyword in member_profile.keywords %}
-                <a class='m-1 p-1 btn btn-sm btn-outline-secondary' href='/search/tag={{keyword}}'>
-                    {{ keyword.name }}
-                </a>
+                {{ search_tag_href(keyword) }}
             {% endfor %}
             </p>
         </div>
