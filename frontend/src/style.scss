@@ -355,8 +355,7 @@ footer {
   }
 
   .summary {
-    @extend .card-block;
-    padding: 0;
+    padding: 1rem 0 .5rem 0;
   }
 
   .tag-list {

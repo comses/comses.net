@@ -1,64 +1,10 @@
 from django.contrib.auth.models import User
-from django.core.urlresolvers import reverse_lazy
 from django.utils.translation import ugettext_lazy as _
 from rest_framework import serializers
-from taggit.models import Tag
 
-from core.serializers import save_tags, PUBLISH_DATE_FORMAT
+from core.serializers import PUBLISH_DATE_FORMAT, LinkedUserSerializer, TagSerializer, create, update
+from library.serializers import CodebaseSerializer
 from .models import Event, Job, FeaturedContentItem, MemberProfile, UserMessage
-
-
-class LinkedUserSerializer(serializers.ModelSerializer):
-    profile_url = serializers.URLField(source='member_profile.get_absolute_url', read_only=True)
-    full_name = serializers.CharField(source='get_full_name', read_only=True)
-
-    class Meta:
-        model = User
-        fields = ('username', 'full_name', 'profile_url')
-
-
-class TagListSerializer(serializers.ListSerializer):
-    """
-    FIXME: needs to implement update & create from base class.
-    """
-    def save(self, **kwargs):
-        data_mapping = {item['name']: item for item in self.validated_data}
-
-        # Perform creations and updates.
-        tags = []
-        for tag_name, data in data_mapping.items():
-            tag, created = Tag.objects.get_or_create(name=tag_name)
-            tags.append(tag)
-
-        return tags
-
-
-class TagSerializer(serializers.ModelSerializer):
-    name = serializers.CharField()  # disable uniqueness check so TagListSerializer will validate properly
-
-    class Meta:
-        model = Tag
-        fields = ('name',)
-        list_serializer_class = TagListSerializer
-
-
-def create(model_cls, validated_data, context):
-    # Create related many to many
-    tags = TagSerializer(many=True, data=validated_data.pop('tags'))
-    # Add read only properties without defaults
-    user = context['request'].user
-    validated_data['submitter_id'] = user.id
-    # Relate with other many to many relations
-    obj = model_cls.objects.create(**validated_data)
-    save_tags(obj, tags)
-    return obj
-
-
-def update(serializer_update, instance, validated_data):
-    tags = TagSerializer(many=True, data=validated_data.pop('tags'))
-    obj = serializer_update(instance, validated_data)
-    save_tags(obj, tags)
-    return obj
 
 
 class EventSerializer(serializers.ModelSerializer):
@@ -145,6 +91,8 @@ class UserSerializer(serializers.ModelSerializer):
     is_superuser = serializers.BooleanField(read_only=True)
     is_staff = serializers.BooleanField(read_only=True)
     date_joined = serializers.DateTimeField(read_only=True, format='%c')
+# FIXME: consider loading codebases separately in the ViewSet..
+    codebases = CodebaseSerializer(read_only=True, many=True)
 
     def get_full_name(self, instance):
         full_name = instance.get_full_name()
@@ -155,7 +103,7 @@ class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ('first_name', 'last_name', 'username', 'is_superuser', 'is_staff', 'member_profile', 'full_name',
-                  'profile_url', 'date_joined')
+                  'profile_url', 'date_joined', 'codebases')
 
 
 class UserMessageSerializer(serializers.ModelSerializer):

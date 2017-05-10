@@ -11,9 +11,8 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.db.models.query_utils import Q
 from django.utils.decorators import method_decorator
-from django.views.generic import TemplateView
 from django.http import QueryDict, HttpResponseBadRequest, HttpResponseRedirect
-from rest_framework import viewsets, generics, mixins, status
+from rest_framework import viewsets, generics, status
 from rest_framework.decorators import detail_route
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAuthenticated
@@ -25,8 +24,8 @@ from wagtail.wagtailsearch.backends import get_search_backend
 
 from core.view_helpers import get_search_queryset, retrieve_with_perms
 from .models import Event, Job, FeaturedContentItem, FollowUser
-from .serializers import EventSerializer, EventCalendarSerializer, JobSerializer, TagSerializer, \
-    FeaturedContentItemSerializer, UserSerializer, UserMessageSerializer
+from .serializers import (EventSerializer, JobSerializer, TagSerializer, FeaturedContentItemSerializer, UserSerializer,
+                          UserMessageSerializer)
 
 logger = logging.getLogger(__name__)
 
@@ -263,7 +262,7 @@ class ProfileViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         # FIXME: get_search_queryset does not work here as Users / MemberProfiles do not have a `date_created` field
         # could fix by adding a parameterizable ordering field
-        return User.objects.filter(is_active=True).exclude(pk=1)
+        return User.objects.prefetch_related('codebases').filter(is_active=True).exclude(pk=1)
 
     def retrieve(self, request, *args, **kwargs):
         return retrieve_with_perms(self, request, *args, **kwargs)
@@ -278,7 +277,6 @@ class ProfileViewSet(viewsets.ModelViewSet):
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
 
 
 class FeaturedContentListAPIView(generics.ListAPIView):

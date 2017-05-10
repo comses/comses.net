@@ -1,0 +1,44 @@
+{% macro render_codebase_result(item, detail_url_name) %}
+    <div class="search-result">
+        <div class="row">
+            <div class="col-md-12 col-lg-3">
+                {% if item.featured_image is none %}
+                    <img src="holder.js/175x175?text=No submitted images" class="img-fluid img-thumbnail">
+                {% else %}
+                    <a href="{{ url(detail_url_name, identifier=item.identifier) }}">
+                        {{ image(item.featured_image, "fill-175x175", class="img-fluid img-thumbnail") }}
+                    </a>
+                {% endif %}
+            </div>
+            <div class="col-md-12 col-lg-9">
+                <div class="title">
+                    <h1>
+                        <a href="{{ url(detail_url_name, identifier=item.identifier) }}">{{ item.title }}</a>
+                    </h1>
+                    <small>
+                        {% for codebase_contributor in item.all_contributors %}
+                            {% set badge_class='badge-success' if codebase_contributor.username else 'badge-default' %}
+                            <a href="{{ codebase_contributor.profile_url }}">
+                                <span class='badge {{badge_class}}'>
+                                    {{ codebase_contributor.name }}
+                                </span>
+                            </a>
+                        {% endfor %}
+                        | Published {{ item.last_published_on }}
+                    </small>
+                </div>
+                <div class="summary">
+                    {{ item.summarized_description|markdown }}
+                </div>
+                {% if item.tags %}
+                    <div class="tag-list">
+                        {% for tag in item.tags %}
+                            <span class="tag">{{ tag.name }}</span>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+{% endmacro %}
+

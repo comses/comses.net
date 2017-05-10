@@ -176,7 +176,7 @@ class Codebase(index.Indexed, ClusterableModel):
 
     featured_images = models.ManyToManyField(Image)
 
-    submitter = models.ForeignKey(User)
+    submitter = models.ForeignKey(User, related_name='codebases')
 
     search_fields = [
         index.SearchField('title', partial_match=True, boost=10),

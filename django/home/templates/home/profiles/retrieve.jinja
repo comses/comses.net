@@ -1,5 +1,6 @@
 {% extends "sidebar_layout.jinja" %}
 {% from "common.jinja" import breadcrumb, subnav, institution_href, search_tag_href %}
+{% from "library/codebases/macros.jinja" import render_codebase_result %}t
 
 {% block title %}User profile for {{ full_name }}{% endblock %}
 
@@ -64,40 +65,50 @@
     </div>
     <ul class='nav nav-tabs detail-tabs' role='tablist'>
         <li class='nav-item'>
-            <a class='nav-link active' data-toggle='tab' href='#code' role='tab'>Models</a>
+            <a class='nav-link active' data-toggle='tab' href='#bio' role='tab'>Bio</a>
+        </li>
+        <li class='nav-item'>
+            <a class='nav-link' data-toggle='tab' href='#code' role='tab'>Models</a>
         </li>
         <li class='nav-item'>
             <a class='nav-link' data-toggle='tab' href='#publications' role='tab'>Publications</a>
         </li>
-        <li class='nav-item'>
-            <a class='nav-link' data-toggle='tab' href='#bio' role='tab'>Bio</a>
-        </li>
     </ul>
     <div class='tab-content'>
-        <div class='tab-pane active' id='code' role='tabpanel'>
-            {# FIXME: use codebase list component #}
-            <div class='p-3'>
-                ALL THE MODELS
-            </div>
-        </div>
-        <div class='tab-pane' id='publications' role='tabpanel'>
-            <div class='p-3'>
-                ALL THE PUBLICATIONS
-            </div>
-        </div>
-        <div class='tab-pane' id='bio' role='tabpanel'>
+        <div class='tab-pane active' id='bio' role='tabpanel'>
             {% if member_profile.bio %}
                 <h2 class='m-0 py-3 title'>Bio</h2>
-                <p class='justify-content-start'>
+                <p>
                 {{ member_profile.bio|markdown }}
                 </p>
             {% endif %}
             {% if member_profile.research_interests %}
                 <h2 class='m-0 py-3 title'>Research Interests</h2>
-                <p class='justify-content-start'>
+                <p>
                 {{ member_profile.research_interests }}
                 </p>
             {% endif %}
+            {% if not member_profile.bio and not member_profile.research_interests %}
+                <p class='lead p-5'>
+                No bio entered.
+                </p>
+            {% endif %}
+
+        </div>
+        <div class='tab-pane' id='code' role='tabpanel'>
+            {# FIXME: use codebase list component #}
+            {% for codebase in codebases %}
+                {{ render_codebase_result(codebase, 'library:codebase-detail') }}
+            {% else %}
+                <p class='lead p-5'>
+                No associated codebases.
+                </p>
+            {% endfor %}
+        </div>
+        <div class='tab-pane' id='publications' role='tabpanel'>
+            <p class='lead p-5'>
+            Under construction, check back later!
+            </p>
         </div>
     </div>
 {% endblock %}

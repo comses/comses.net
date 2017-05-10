@@ -1,12 +1,66 @@
-from rest_framework import serializers
-from django.utils.translation import ugettext_lazy as _
-
 import logging
+
+from django.contrib.auth.models import User
+from django.utils.translation import ugettext_lazy as _
+from rest_framework import serializers
+from taggit.models import Tag
 
 logger = logging.getLogger(__name__)
 
 YMD_DATETIME_FORMAT = '%Y-%m-%d'
 PUBLISH_DATE_FORMAT = '%b %d, %Y'
+
+class TagListSerializer(serializers.ListSerializer):
+    """
+    FIXME: needs to implement update & create from base class.
+    """
+    def save(self, **kwargs):
+        data_mapping = {item['name']: item for item in self.validated_data}
+
+        # Perform creations and updates.
+        tags = []
+        for tag_name, data in data_mapping.items():
+            tag, created = Tag.objects.get_or_create(name=tag_name)
+            tags.append(tag)
+
+        return tags
+
+
+class TagSerializer(serializers.ModelSerializer):
+    name = serializers.CharField()  # disable uniqueness check so TagListSerializer will validate properly
+
+    class Meta:
+        model = Tag
+        fields = ('name',)
+        list_serializer_class = TagListSerializer
+
+
+def create(model_cls, validated_data, context):
+    # Create related many to many
+    tags = TagSerializer(many=True, data=validated_data.pop('tags'))
+    # Add read only properties without defaults
+    user = context['request'].user
+    validated_data['submitter_id'] = user.id
+    # Relate with other many to many relations
+    obj = model_cls.objects.create(**validated_data)
+    save_tags(obj, tags)
+    return obj
+
+
+def update(serializer_update, instance, validated_data):
+    tags = TagSerializer(many=True, data=validated_data.pop('tags'))
+    obj = serializer_update(instance, validated_data)
+    save_tags(obj, tags)
+    return obj
+
+
+class LinkedUserSerializer(serializers.ModelSerializer):
+    profile_url = serializers.URLField(source='member_profile.get_absolute_url', read_only=True)
+    full_name = serializers.CharField(source='get_full_name', read_only=True)
+
+    class Meta:
+        model = User
+        fields = ('username', 'full_name', 'profile_url')
 
 
 class EditableSerializerMixin(serializers.Serializer):
