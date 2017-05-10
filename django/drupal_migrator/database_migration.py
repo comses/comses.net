@@ -269,7 +269,7 @@ class ProfileExtractor(Extractor):
             raw_institutions = get_field(raw_profile, 'field_profile2_institutions')
             if raw_institutions:
                 raw_institution = raw_institutions[0]
-                institution = Institution.objects.get_or_create(name=raw_institution['title'], url=raw_institution['url'])
+                institution, created = Institution.objects.get_or_create(name=raw_institution['title'], url=raw_institution['url'])
                 member_profile.institution = institution
             member_profile.degrees = get_field_attributes(raw_profile, 'field_profile2_degrees') or []
             member_profile.personal_url = get_first_field(raw_profile, 'field_profile2_personal_link', attribute_name='url')
