@@ -1,5 +1,7 @@
 <template>
     <form>
+        <c-message-display :messages="serverErrors('non_field_errors')" :classNames="['alert', 'alert-danger']">
+        </c-message-display>
         <c-input v-model="state.title" name="title" :server_errors="serverErrors('title')"
                  @clear="clearField">
             <label class="form-control-label" slot="label">Title</label>
@@ -34,6 +36,7 @@
     import Markdown from 'components/forms/markdown.vue'
     import Tagger from 'components/tagger.vue'
     import Input from 'components/forms/input.vue'
+    import MessageDisplay from 'components/message_display.vue'
     import {api} from 'api/index'
     import * as _ from 'lodash'
     import {Job} from 'store/common'
@@ -42,7 +45,8 @@
         components: {
             'c-markdown': Markdown,
             'c-tagger': Tagger,
-            'c-input': Input
+            'c-input': Input,
+            'c-message-display': MessageDisplay,
         }
     })
     class EditJob extends Vue {
@@ -112,10 +116,6 @@
         createServerErrors(err: any) {
             console.log({serverErrors: true, err});
             let self: any = this;
-            if (err.hasOwnProperty('non_field_errors')) {
-                this.createMainServerError((<any>err).non_field_errors);
-                delete err.non_field_errors;
-            }
             for (const field_name in err) {
                 self.errors.add(field_name, err[field_name], 'server-side', 'server-side');
             }
@@ -126,6 +126,7 @@
         }
 
         create() {
+            (this as any).errors.clear('server-side');
             api.jobs.create(this.state).then(drf_response => {
                 switch (drf_response.kind) {
                     case 'state':
@@ -139,6 +140,7 @@
         }
 
         update(id: number) {
+            (this as any).errors.clear('server-side');
             api.jobs.update(id, this.state).then(drf_response => {
                 switch (drf_response.kind) {
                     case 'state':

@@ -1,5 +1,7 @@
 <template>
     <form>
+        <c-message-display :messages="serverErrors('non_field_errors')" :classNames="['alert', 'alert-danger']">
+        </c-message-display>
         <c-input v-model="state.title" name="title" :server_errors="serverErrors('title')" @clear="clearField">
             <label class="form-control-label" slot="label">Title</label>
             <small class="form-text text-muted" slot="help">A short title describing the event</small>
@@ -79,11 +81,13 @@
     import Tagger from 'components/tagger.vue'
     import Input from 'components/forms/input.vue'
     import Datepicker from 'components/forms/datepicker.vue';
+    import MessageDisplay from 'components/message_display.vue'
     import * as _ from 'lodash'
 
     @Component({
         components: {
             'c-markdown': Markdown,
+            'c-message-display': MessageDisplay,
             'c-datepicker': Datepicker,
             'c-tagger': Tagger,
             'c-input': Input
@@ -178,7 +182,9 @@
         }
 
         create() {
+            (this as any).errors.clear('server-side');
             api.events.create(this.state).then(drf_response => {
+                (this as any).errors.clear('server-side');
                 switch (drf_response.kind) {
                     case 'state':
                         this.state = drf_response.payload;
@@ -191,6 +197,7 @@
         }
 
         update(id: number) {
+            (this as any).errors.clear('server-side');
             api.events.update(id, this.state).then(drf_response => {
                 switch (drf_response.kind) {
                     case 'state':
