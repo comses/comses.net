@@ -1,0 +1,26 @@
+{% csrf_token %}
+{% if form.non_field_errors() %}
+    <div class='alert alert-danger'>
+        <ul class='errors'>
+            {% for error in form.non_field_errors %}
+                <li>{{ error|safe }}</li>
+            {% endfor %}
+        </ul>
+    </div>
+{% endif %}
+{% for field in form %}
+    {% set error_class='has-errors' if field.errors else ''%}
+    <div class='form-group row {{ error_class }}'>
+        <label class='form-control-label col-sm-2' for='{{ field.id_for_label }}'>{{ field.label }}</label>
+        <div class='col-sm-8'>
+            {{ field|add_field_css("form-control") }}
+            {% if field.help_text %}
+                <small class='form-text text-muted'>{{ field.help_text }}</small>
+            {% endif %}
+        </div>
+    </div>
+{% endfor %}
+{% if redirect_field_value %}
+    <input type="hidden" name="{{ redirect_field_name }}" value="{{ redirect_field_value }}" />
+{% endif %}
+

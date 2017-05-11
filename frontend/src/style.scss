@@ -64,13 +64,8 @@ $fa-font-path: '../node_modules/font-awesome/fonts/';
   width: 280px !important;
 }
 
-.citation {
-  @extend .card;
-  background-color: $rules-color;
-  h2 {
-    font-size: 1rem;
-    font-weight: bolder;
-  }
+.has-errors {
+  @extend .has-danger;
 }
 
 .page {

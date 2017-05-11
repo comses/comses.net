@@ -67,6 +67,13 @@ def markdown(text: str):
 
 
 @library.filter
+def add_field_css(field, *args):
+    css_classes = field.css_classes(*args)
+    deduped_css_classes = ' '.join(set(css_classes.split(' ')))
+    return field.as_widget(attrs={'class': deduped_css_classes})
+
+
+@library.filter
 def truncate_midnight(text: Optional[str]):
     if text is None:
         return None

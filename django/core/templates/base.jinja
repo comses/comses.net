@@ -195,7 +195,7 @@ function focusSearch() {
                 {% endblock %}
             </div>
             </section>
-        {% endblock %}
+        {% endblock introduction_section %}
         {% block page %}
             <section class='page'>
                 <div class="container">
@@ -214,7 +214,7 @@ function focusSearch() {
         {{ render_bundle('manifest') }}
         {{ render_bundle('vendors') }}
 
-        <script src="https://cdn.rawgit.com/imsky/holder/master/holder.js"></script>
+        <script src="//cdn.rawgit.com/imsky/holder/master/holder.js"></script>
         {% block js %}
             {# Override this in templates to add extra javascript #}
         {% endblock %}
