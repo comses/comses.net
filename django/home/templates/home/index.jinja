@@ -4,7 +4,7 @@
     <section class='landing-page-introduction'>
         <div class='container'>
             <h1>A growing collection of resources for <br>computational model-based science.</h1>
-            <h2>Community cyberinfrastructure to preserve computational models &amp; their digital context, tutorials, and FAQ's on agent based modeling</h2>
+            <h2>Community cyberinfrastructure to preserve computational models &amp; their digital context<br>+ Educational materials, tutorials and FAQ's on agent based modeling</h2>
             <div class='row'>
                 <div class='col'>
                     <a class='btn btn-primary' href='{{ url("library:codebase-list") }}'>View model library</a>
@@ -159,5 +159,5 @@
 {% endblock %}
 
 {% block js %}
-{{ render_bundle("home") }}
+{{ render_bundle("vendors") }}
 {% endblock %}
