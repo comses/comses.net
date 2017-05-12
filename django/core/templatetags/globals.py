@@ -1,19 +1,19 @@
-from typing import Optional
-
 from datetime import datetime
+from typing import Optional
 
 from allauth.socialaccount import providers
 from django.conf import settings
+from django.forms.widgets import CheckboxInput
 from django.template import defaultfilters
 from django.utils.dateparse import parse_datetime
 from django.utils.timezone import get_current_timezone
 from django_jinja import library
-from core.serializers import PUBLISH_DATE_FORMAT
 from jinja2 import Markup
 from webpack_loader.templatetags import webpack_loader as wl
 
-from ..summarization import summarize
-from ..utils import markdown_to_sanitized_html
+from core.serializers import PUBLISH_DATE_FORMAT
+from core.summarization import summarize
+from core.utils import markdown_to_sanitized_html
 
 
 @library.global_function
@@ -54,6 +54,11 @@ def provider_login_url(request, provider_id, process="login"):
 @library.global_function
 def summarize_markdown(md):
     return summarize(md, 2)
+
+
+@library.global_function
+def is_checkbox(bound_field):
+    return isinstance(bound_field.field.widget, CheckboxInput)
 
 
 @library.filter

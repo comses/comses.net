@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 class SignupForm(forms.Form):
     error_css_class = 'has-errors'
     required_css_class = 'required'
-    
+
     username = forms.CharField(max_length=200, strip=True, required=True)
     email = forms.EmailField(max_length=200, required=True)
     first_name = forms.CharField(max_length=200, strip=True, required=False)
