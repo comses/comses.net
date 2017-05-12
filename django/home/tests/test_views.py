@@ -1,35 +1,16 @@
-from django.contrib.auth.models import Group, User, Permission
-from hypothesis.extra.django.models import models
-from hypothesis import strategies as st
-from hypothesis.extra.datetime import datetimes
-from hypothesis import given, settings
-from ..models import Job, Event, MemberProfile
-from ..serializers import JobSerializer, EventSerializer
-from ..views import JobViewSet, EventViewSet
-from core.tests.base import ViewSetTestCase, text, MAX_EXAMPLES
-
 import logging
 
+from hypothesis import given, settings
+from hypothesis import strategies as st
+from hypothesis.extra.datetime import datetimes
+from hypothesis.extra.django.models import models
+
+from core.tests.base import ViewSetTestCase, text, MAX_EXAMPLES, generate_user
+from home.models import Job, Event
+from home.serializers import JobSerializer, EventSerializer
+from home.views import JobViewSet, EventViewSet
+
 logger = logging.getLogger(__name__)
-
-
-def generate_with_user(username):
-    return models(User,
-                  username=st.just(str(username)),
-                  email=st.just(str(username) + "@comses.net"),
-                  first_name=text(),
-                  last_name=text(),
-                  password=st.just('')) \
-        .flatmap(lambda user: st.tuples(st.just(user),
-                                        models(MemberProfile,
-                                               user=st.just(user),
-                                               bio=st.just(''),
-                                               research_interests=st.just(''),
-                                               affiliations=st.just([]),
-                                               personal_url=st.just(''),
-                                               professional_url=st.just(''),
-                                               degrees=st.just([]),
-                                               orcid=st.just(''))))
 
 
 def generate_with_job(submitter):
@@ -43,12 +24,9 @@ def generate_with_job(submitter):
 
 @st.composite
 def generate_job_data(draw):
-    usernames = ['0000000000',
-                 '0000000001']
-    user_profiles = [draw(generate_with_user(username)) for username in usernames]
-    users, profiles = zip(*user_profiles)
+    users = [draw(generate_user(username)) for username in ('test1', 'test2')]
     job = draw(generate_with_job(users[0]))
-    return profiles, job
+    return users, job
 
 
 def generate_with_event(submitter):
@@ -67,12 +45,9 @@ def generate_with_event(submitter):
 
 @st.composite
 def generate_event_data(draw):
-    usernames = ['0000000000',
-                 '0000000001']
-    user_profiles = [draw(generate_with_user(username)) for username in usernames]
-    users, profiles = zip(*user_profiles)
+    users = [draw(generate_user(username)) for username in ('test1', 'test2')]
     event = draw(generate_with_event(users[0]))
-    return profiles, event
+    return users, event
 
 
 class JobViewSetTestCase(ViewSetTestCase):
@@ -82,30 +57,30 @@ class JobViewSetTestCase(ViewSetTestCase):
     detail_url_name = 'home:job-detail'
     list_url_name = 'home:job-list'
 
-    @settings(max_examples=MAX_EXAMPLES, perform_health_check=False)
-    @given(generate_job_data(), st.sampled_from(('change', 'add', 'view')))
-    def test_add_change_view(self, data, action):
-        profiles, job = data
-        owner, user = profiles
+    @settings(max_examples=MAX_EXAMPLES)
+    @given(generate_job_data())
+    def test_add_change_view(self, data):
+        users, job = data
+        owner, user = users
 
-        self.check_authorization(action, owner, job)
-        self.check_authorization(action, user, job)
+        for action in ('change', 'add', 'view'):
+            self.check_authorization(action, owner, job)
+            self.check_authorization(action, user, job)
 
     @settings(max_examples=MAX_EXAMPLES)
     @given(generate_job_data())
     def test_delete(self, data):
-        profiles, job = data
-        owner, user = profiles
+        users, job = data
+        owner, user = users
 
         self.check_authorization('delete', owner, job)
         job.save()
         self.check_authorization('delete', user, job)
 
-    @settings(max_examples=MAX_EXAMPLES, perform_health_check=False)
+    @settings(max_examples=MAX_EXAMPLES)
     @given(generate_job_data())
     def test_anonymous(self, data):
-        profiles, job = data
-
+        users, job = data
         self.check_anonymous_authorization(job)
 
 
@@ -117,19 +92,20 @@ class EventViewSetTestCase(ViewSetTestCase):
     list_url_name = 'home:event-list'
 
     @settings(max_examples=MAX_EXAMPLES)
-    @given(generate_event_data(), st.sampled_from(('change', 'add', 'view')))
-    def test_add_change_view(self, data, action):
-        profiles, event = data
-        owner, user = profiles
+    @given(generate_event_data())
+    def test_add_change_view(self, data):
+        users, event = data
+        owner, user = users
 
-        self.check_authorization(action, owner, event)
-        self.check_authorization(action, user, event)
+        for action in ('change', 'add', 'view'):
+            self.check_authorization(action, owner, event)
+            self.check_authorization(action, user, event)
 
-    @settings(max_examples=MAX_EXAMPLES, perform_health_check=False)
+    @settings(max_examples=MAX_EXAMPLES)
     @given(generate_event_data())
     def test_delete(self, data):
-        profiles, event = data
-        owner, user = profiles
+        users, event = data
+        owner, user = users
 
         self.check_authorization('delete', owner, event)
         event.save()

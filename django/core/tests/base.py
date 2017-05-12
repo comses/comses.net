@@ -3,10 +3,11 @@ from django.urls import reverse
 from guardian.shortcuts import assign_perm
 from hypothesis import strategies as st
 from hypothesis.extra import django as hypothesis_django
+from hypothesis.extra.django.models import models
 from rest_framework import status
 from rest_framework.test import APIRequestFactory, force_authenticate
 
-MAX_EXAMPLES = 20
+MAX_EXAMPLES = 6
 
 DEFAULT_ALPHABET = st.characters(whitelist_categories={'Lu', 'Ll', 'Lt', 'Lm', 'Lo'}, blacklist_characters='\x00')
 
@@ -17,6 +18,19 @@ def text(min_size=1, max_size=20):
 
 def dois(**kwargs):
     return st.text(alphabet=DEFAULT_ALPHABET, **kwargs)
+
+
+def generate_user(username):
+    return models(User,
+                  username=st.just(str(username)),
+                  email=st.just(str(username) + "@comses.net"),
+                  first_name=text(),
+                  last_name=text(),
+                  password=st.just(''))
+
+
+class HypothesisTestCase(hypothesis_django.TestCase):
+    pass
 
 
 class ViewSetTestCase(hypothesis_django.TestCase):
@@ -116,8 +130,16 @@ class ViewSetTestCase(hypothesis_django.TestCase):
         self._check_authorization(anonymous, obj, 'change', False)
         self._check_authorization(anonymous, obj, 'delete', False)
 
-    def check_authorization(self, action, profile, obj):
-        user = profile.user
+    def check_authorization(self, action, user, obj):
+        """
+        FIXME: refactor & clearly document what each of these conditions is testing
+        
+        
+        :param action: 
+        :param user: 
+        :param obj: 
+        :return: 
+        """
         if not user.is_active:
             self._check_authorization(user, obj, action, False)
             return

@@ -1,14 +1,14 @@
-from core.tests.base import ViewSetTestCase, text, text, MAX_EXAMPLES
+from django.contrib.auth.models import User
+from django.urls import reverse
+from hypothesis import given, settings, Verbosity
 from hypothesis import strategies as st
 from hypothesis.extra.django.models import models
-from hypothesis import given, settings, Verbosity
-from ..models import Codebase
-from ..views import CodebaseViewSet
-from ..serializers import CodebaseSerializer
-from django.contrib.auth.models import User, Group, Permission
-from home.tests.test_views import generate_with_user
 from rest_framework.test import force_authenticate
-from django.urls import reverse
+
+from core.tests.base import ViewSetTestCase, text, MAX_EXAMPLES, generate_user
+from library.models import Codebase
+from library.serializers import CodebaseSerializer
+from library.views import CodebaseViewSet
 
 
 def generate_with_codebase(submitter):
@@ -31,11 +31,9 @@ def generate_with_codebase(submitter):
 @st.composite
 @settings(verbosity=Verbosity.verbose)
 def generate_codebases(draw):
-    usernames = ['0000000000', '0000000001']
-    user_profiles = [draw(generate_with_user(username)) for username in usernames]
-    users, profiles = zip(*user_profiles)
+    users = [draw(generate_user(username)) for username in ('test1', 'test2')]
     codebases = draw(st.lists(generate_with_codebase(users[0]), min_size=2, max_size=2))
-    return profiles, codebases
+    return users, codebases
 
 
 class CodebaseViewSetTestCase(ViewSetTestCase):
@@ -58,19 +56,20 @@ class CodebaseViewSetTestCase(ViewSetTestCase):
         return response
 
     @settings(max_examples=MAX_EXAMPLES, verbosity=Verbosity.verbose)
-    @given(generate_codebases(), st.sampled_from(('change', 'add', 'view')))
-    def test_add_change_view(self, data, action):
-        profiles, codebases = data
-        owner, user = profiles
+    @given(generate_codebases())
+    def test_add_change_view(self, data):
+        users, codebases = data
+        owner, user = users
 
-        self.check_authorization(action, owner, codebases[0])
-        self.check_authorization(action, user, codebases[1])
+        for action in ('change', 'add', 'view'):
+            self.check_authorization(action, owner, codebases[0])
+            self.check_authorization(action, user, codebases[1])
 
     @settings(max_examples=MAX_EXAMPLES)
     @given(generate_codebases())
     def test_delete(self, data):
-        profiles, codebases = data
-        owner, user = profiles
+        users, codebases = data
+        owner, user = users
 
         self.check_authorization('delete', owner, codebases[0])
         self.check_authorization('delete', user, codebases[1])
@@ -78,5 +77,5 @@ class CodebaseViewSetTestCase(ViewSetTestCase):
     @settings(max_examples=MAX_EXAMPLES)
     @given(generate_codebases())
     def test_anonymous(self, data):
-        profiles, codebases = data
+        _users, codebases = data
         self.check_anonymous_authorization(codebases[0])
