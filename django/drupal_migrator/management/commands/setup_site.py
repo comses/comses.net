@@ -74,10 +74,6 @@ class Command(BaseCommand):
             github_app.sites.add(site)
 
     def create_site(self, site_name, hostname):
-        # FIXME: appears to be needed for signal handling despite docs that state it shouldn't be necessary
-        # revisit and remove at some point if due to misconfiguration
-        from django.apps import apps
-        apps.get_app_config('home').ready()
         site = Site.objects.first() if Site.objects.count() > 0 else Site()
         site.site_name = site_name
         site.hostname = hostname

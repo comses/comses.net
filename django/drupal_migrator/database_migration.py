@@ -218,12 +218,8 @@ class UserExtractor(Extractor):
 
         user.drupal_uid = raw_user['uid']
         roles = raw_user['roles'].values()
-        """
-        FIXME: home.apps isn't loading despite documentation stating that it should with a management command
-        (https://docs.djangoproject.com/en/1.10/ref/applications/#initialization-process)
-        so MemberProfile syncing with Users isn't happening and must be manually driven.
-        """
-        MemberProfile.objects.get_or_create(user=user, defaults={"timezone": raw_user['timezone']})
+        user.member_profile.timezone = raw_user['timezone']
+        user.member_profile.save()
         if 'administrator' in roles:
             user.is_staff = True
             user.is_superuser = True

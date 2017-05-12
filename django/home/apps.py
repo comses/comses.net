@@ -5,7 +5,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-class HomeAppConfig(AppConfig):
+class HomeConfig(AppConfig):
     name = 'home'
 
     def ready(self):
@@ -15,4 +15,4 @@ class HomeAppConfig(AppConfig):
         :return: 
         """
         from . import signals
-        logger.warning("fully loaded home signals: %s", signals)
+        logger.debug("fully loaded signals: %s", signals)
