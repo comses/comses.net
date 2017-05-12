@@ -1,5 +1,5 @@
 {% extends "sidebar_layout.jinja" %}
-{% from "common.jinja" import breadcrumb, embed_discourse_comments, user_href, share_card %}
+{% from "common.jinja" import breadcrumb, embed_discourse_comments, user_href, share_card, search_tag_href %}
 
 {% block title %}{{ title }}{% endblock %}
 
@@ -19,18 +19,18 @@
             <b>Submitted by:</b> {{ user_href(submitter) }}
             <b class='pl-2'>Platform:</b>
             {% for p in latest_version.platform_tags %}
-                <a class='tag' href='/search?tag={{ p.name }}'>{{ p.name }}</a>
+                {{ search_tag_href(p) }}
             {% endfor %}
             <b class='pl-2'>Version: </b> {{ latest_version.version_number }}
             <small><a href='{{ latest_version.absolute_url }}'>(View Latest)</a></small>
             <b class='pl-2'>Language:</b>
             {% for pl in latest_version.programming_languages %}
-                <a class='tag' href='/search?tag={{ pl.name }}'>{{ pl.name }}</a>
+                {{ search_tag_href(pl) }}
             {% endfor %}
         </div>
-        <div class='tags'>
+        <div class='tag-list'>
             {% for tag in tags %}
-                <a class='tag p-2' href='/search?tag={{ tag.name }}'>{{ tag.name }}</a>
+                {{ search_tag_href(tag) }}
             {% endfor %}
         </div>
         <div class='pt-4'>
