@@ -16,7 +16,12 @@
                 <label class='custom-control custom-checkbox'>
                     <input name='{{ field.id__for_label }}' type='checkbox' class='custom-control-input'>
                     <span class='custom-control-indicator'></span>
-                    <span class='custom-control-description'>{{ field.label }}</span>
+                    <span class='custom-control-description'>
+                        {{ field.label }}
+                        {% if field.help_text %}
+                            <small class='form-text text-muted'>{{ field.help_text }}</small>
+                        {% endif %}
+                    </span>
                 </label>
             </div>
         </div>
