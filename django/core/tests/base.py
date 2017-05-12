@@ -20,7 +20,7 @@ def dois(**kwargs):
     return st.text(alphabet=DEFAULT_ALPHABET, **kwargs)
 
 
-def generate_user(username):
+def generate_user(username='atest'):
     return models(User,
                   username=st.just(str(username)),
                   email=st.just(str(username) + "@comses.net"),
