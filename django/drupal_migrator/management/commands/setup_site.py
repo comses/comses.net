@@ -123,7 +123,7 @@ class Command(BaseCommand):
                      )
         )
         resources_index.add_breadcrumbs([
-            ('Our Resources', '/resources/')
+            ('Resources', '/resources/')
         ])
         resources_index.add_navigation_links([
             ('Resources', '/resources/'),
@@ -190,10 +190,26 @@ class Command(BaseCommand):
             sort_order=5,
         )
         self.landing_page.add_child(instance=resources_index)
-        platforms_index_page = PlatformsIndexPage(title='Computational Modeling Platforms', slug='modeling-platforms')
-        for platform in Platform.objects.all().order_by('-name'):
+        platforms_index_page = PlatformsIndexPage(
+            title='Computational Modeling Platforms',
+            slug='modeling-platforms',
+            description=("Computational modeling platforms provide a wide range of modeling strategies, scaffolding, "
+                         "and support for developers of agent-based models. Please [let us know](/contact/) if you "
+                         "have any corrections or would like to submit a new platform.")
+        )
+        platforms_index_page.add_breadcrumbs([
+            ('Resources', '/resources/'),
+            ('Modeling Platforms', '/resources/modeling-platforms/'),
+        ])
+        platforms_index_page.add_navigation_links([
+            ('Resources', '/resources/'),
+            ('Modeling Platforms', '/resources/modeling-platforms/'),
+            ('Journals', '/resources/journals/'),
+            ('Standards', '/resources/standards/'),
+        ])
+        for idx, platform in enumerate(Platform.objects.exclude(name='other').order_by('name')):
             platforms_index_page.platform_placements.add(
-                PlatformSnippetPlacement(platform=platform)
+                PlatformSnippetPlacement(sort_order=idx, platform=platform)
             )
         resources_index.add_child(instance=platforms_index_page)
 

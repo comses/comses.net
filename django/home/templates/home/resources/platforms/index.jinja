@@ -1,29 +1,20 @@
-{% extends "sidebar_layout.jinja" %}
-{% from "common.jinja" import subnav, submit_model_btn %}
+{% extends "base.jinja" %}
+{% from "common.jinja" import breadcrumb, subnav, submit_model_btn %}
 
-{% block title %}Computational Modeling Platforms{% endblock %}
+{% block title %}{{ page.title }}{% endblock %}
 
-{% block introduction %}<h1>Resources for Computational Modelers</h1>{% endblock %}
-
-{% block top %}
-{{ subnav([
-{ 'url': '/resources/', 'text': 'Resources' },
-{ 'url': '/resources/modeling-platforms/', 'text': 'Modeling Platforms', 'active': True },
-{ 'url': '/journals/', 'text': 'Journals' },
-{ 'url': '/standards/', 'text': 'Standards' },
-])
-}}
-<div class='jumbotron'>
-    <h1 class='display-5'>Computational Modeling Platforms</h1>
-    <p class='lead'>
-    Computational modeling platforms provide a wide range of modeling strategies, scaffolding, and support for
-    developers of agent-based models. If you have any corrections or a new platform to include please 
-    <a href='/contact/'>contact us</a>!
-    </p>
-</div>
-{% endblock %}
+{% block introduction %}<h1>Resources</h1>{% endblock %}
 
 {% block content %}
+{# FIXME: move these to db #}
+{{ breadcrumb(page.get_breadcrumbs()) }}
+{{ subnav(page.get_navigation_links()) }}
+<div class='jumbotron'>
+    <h1 class='display-5'>{{ page.title }}</h1>
+    <div class='pt-4 lead'>
+        {{ page.description|markdown }}
+    </div>
+</div>
     {# FIXME: add pagination #}
     {% for p in platforms %}
         <hr />

@@ -278,14 +278,14 @@ class CategoryIndexItem(Orderable, models.Model):
     caption = models.CharField(max_length=600)
 
 
-class CategoryIndexNavigationLink(Orderable, models.Model):
-    page = ParentalKey('home.CategoryIndexPage', related_name='navigation_links')
+class SubNavigationLink(Orderable, models.Model):
+    page = ParentalKey(Page, related_name='navigation_links')
     url = models.CharField("Relative path, absolute path, or full URL", max_length=255)
     title = models.CharField(max_length=128)
 
 
-class CategoryIndexBreadcrumb(Orderable, models.Model):
-    page = ParentalKey('home.CategoryIndexPage', related_name='breadcrumbs')
+class Breadcrumb(Orderable, models.Model):
+    page = ParentalKey(Page, related_name='breadcrumbs')
     url = models.CharField("Relative / absolute path or full URL", max_length=255, blank=True)
     title = models.CharField(max_length=255)
 
@@ -293,10 +293,16 @@ class CategoryIndexBreadcrumb(Orderable, models.Model):
         return '{0}: {1}'.format(self.title, self.url)
 
 
-class CategoryIndexPage(Page):
-    template = models.CharField(max_length=128, default='home/category_index.jinja')
-    heading = models.CharField(max_length=128, help_text=_("Short name to be placed in introduction header."))
-    summary = models.CharField(max_length=1000, help_text=_('Summary blurb for this category index page.'))
+class NavigationMixin(object):
+
+    def add_breadcrumbs(self, breadcrumb_tuples):
+        self._add_tuples(breadcrumb_tuples, Breadcrumb)
+
+    def get_breadcrumbs(self):
+        return [
+            {'url': item.url, 'text': item.title}
+            for item in self.breadcrumbs.all()
+        ]
 
     def _add_tuples(self, tuples, cls):
         related_name = cls._meta.get_field('page').related_query_name()
@@ -306,16 +312,29 @@ class CategoryIndexPage(Page):
                 cls(title=title, url=url, sort_order=idx)
             )
 
-    def add_breadcrumbs(self, breadcrumb_tuples):
-        self._add_tuples(breadcrumb_tuples, CategoryIndexBreadcrumb)
-
     def add_navigation_links(self, navigation_tuples):
         """
         Takes an ordered list of tuples and adds them as navigation links.
         :param navigation_tuples:
         :return:
         """
-        self._add_tuples(navigation_tuples, CategoryIndexNavigationLink)
+        self._add_tuples(navigation_tuples, SubNavigationLink)
+
+    def get_navigation_links(self):
+        """
+        Returns a nested dict for use by the subnav Jinja2 tag.
+        :return:
+        """
+        return [
+            {'url': nav.url, 'text': nav.title, 'active': self.slug in nav.url}
+            for nav in self.navigation_links.all()
+        ]
+
+
+class CategoryIndexPage(NavigationMixin, Page):
+    template = models.CharField(max_length=128, default='home/category_index.jinja')
+    heading = models.CharField(max_length=128, help_text=_("Short name to be placed in introduction header."))
+    summary = models.CharField(max_length=1000, help_text=_('Summary blurb for this category index page.'))
 
     def add_callout(self, image_path, title, caption, sort_order=None, user=None, url=''):
         if user is None:
@@ -330,22 +349,6 @@ class CategoryIndexPage(Page):
                 url=url,
             )
         )
-
-    def get_breadcrumbs(self):
-        return [
-            {'url': item.url, 'text': item.title}
-            for item in self.breadcrumbs.all()
-        ]
-
-    def get_navigation_links(self):
-        """
-        Returns a nested dict for use by the subnav Jinja2 tag.
-        :return:
-        """
-        return [
-            {'url': nav.url, 'text': nav.title, 'active': self.slug in nav.url}
-            for nav in self.navigation_links.all()
-        ]
 
     content_panels = Page.content_panels + [
         # don't expose template to web form for now, could wreak havoc
@@ -443,16 +446,17 @@ class PlatformSnippetPlacement(Orderable, models.Model):
         return "Snippet placement for {0}".format(self.platform.name)
 
 
-class PlatformsIndexPage(Page):
+class PlatformsIndexPage(NavigationMixin, Page):
     template = 'home/resources/platforms/index.jinja'
+    description = models.TextField(blank=True)
 
     content_panels = Page.content_panels + [
         InlinePanel('platform_placements', label='Platforms'),
     ]
 
     def get_platforms(self):
-        # returns queryset of PlatformSnippetPlacements
-        return self.platform_placements.exclude(platform__name='other').order_by('platform__name').all()
+        # highlight featured platforms? allow the community to rank them.
+        return self.platform_placements.all()
 
     def get_context(self, request):
         context = super().get_context(request)
