@@ -111,6 +111,11 @@ class Extractor:
         self.data = data
 
     @staticmethod
+    def sanitize_name(name: str):
+        # return re.sub(r'[^\w]',
+        return name.replace('.', '')
+
+    @staticmethod
     def sanitize(data: str, max_length: int = None, strip_whitespace=False) -> str:
         if strip_whitespace:
             _sanitized_data = data.replace(' ', '').lower()
@@ -331,9 +336,9 @@ class TaxonomyExtractor(Extractor):
 
 class AuthorExtractor(Extractor):
     def _extract(self, raw_author):
-        given_name = get_first_field(raw_author, 'field_model_authorfirst', default='')
-        middle_name = get_first_field(raw_author, 'field_model_authormiddle', default='')
-        family_name = get_first_field(raw_author, 'field_model_authorlast', default='')
+        given_name = self.sanitize_name(get_first_field(raw_author, 'field_model_authorfirst', default=''))
+        middle_name = self.sanitize_name(get_first_field(raw_author, 'field_model_authormiddle', default=''))
+        family_name = self.sanitize_name(get_first_field(raw_author, 'field_model_authorlast', default=''))
         if any([given_name, middle_name, family_name]):
             contributor, created = Contributor.objects.get_or_create(
                 given_name=given_name,
@@ -360,6 +365,8 @@ class ModelExtractor(Extractor):
         raw_author_ids = [raw_author['value'] for raw_author in get_field(raw_model, 'field_model_author')]
         author_ids = [author_id_map[raw_author_id] for raw_author_id in raw_author_ids]
         submitter_id = user_id_map[raw_model.get('uid')]
+        if not author_ids:
+            author_ids = [Contributor.objects.get(user__id=submitter_id)]
         with suppress_auto_now(Codebase, 'last_modified'):
             last_changed = to_datetime(raw_model['changed'])
             handle = get_first_field(raw_model, 'field_model_handle', default=None)
@@ -626,12 +633,13 @@ def load(directory: str):
     # TODO: associate picture with profile
     author_extractor = AuthorExtractor.from_file(os.path.join(directory, "Author.json"))
     user_extractor = UserExtractor.from_file(os.path.join(directory, "User.json"))
+    profile_extractor = ProfileExtractor.from_file(os.path.join(directory, "Profile2.json"))
     event_extractor = EventExtractor.from_file(os.path.join(directory, "Event.json"))
     job_extractor = JobExtractor.from_file(os.path.join(directory, "Forum.json"))
     model_extractor = ModelExtractor.from_file(os.path.join(directory, "Model.json"))
     model_version_extractor = ModelVersionExtractor.from_file(os.path.join(directory, "ModelVersion.json"))
     taxonomy_extractor = TaxonomyExtractor.from_file(os.path.join(directory, "Taxonomy.json"))
-    profile_extractor = ProfileExtractor.from_file(os.path.join(directory, "Profile2.json"))
+
     download_extractor = DownloadCountExtractor.from_file(os.path.join(directory, "DownloadCount.csv"))
 
     load_licenses()
