@@ -218,11 +218,12 @@ class Command(BaseCommand):
             heading='Community',
             title='Welcome to the CoMSES Net Community',
             slug='community',
-            summary='''CoMSES Net is dedicated to fostering open and reproducible scientific computation through cyberinfrastructure
-            and community development. We are curating a growing collection of resources for model-based science including
-            tutorials and FAQ's on agent-based modeling, a computational model library to help researchers archive their
-            work and discover and reuse other's works, and forums for discussions, job postings, and events.
-            '''
+            summary=('CoMSES Net is dedicated to fostering open and reproducible scientific computation through '
+                     'cyberinfrastructure and community development. We curate [resources for model-based science](/resources/) '
+                     'including tutorials and FAQs on agent-based modeling, a [computational model library](/codebases/)'
+                     ' to help researchers archive their work and discover and reuse other&apos;s works, and '
+                     '[forums for discussions, job postings, and events.](https://forum.comses.net)'
+                     )
         )
         community_index.add_breadcrumbs([
             ('Community', '/community/')
@@ -237,6 +238,7 @@ class Command(BaseCommand):
         community_index.add_callout(
             image_path='core/static/images/icons/connect.png',
             title='Connect with Researchers',
+            url=reverse('home:profile-list'),
             user=self.default_user,
             sort_order=1,
             caption=('Follow other researchers, their models, or other topics of interest. Engage in discussions, '

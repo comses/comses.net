@@ -1,5 +1,5 @@
 {% extends "sidebar_layout.jinja" %}
-{% from "common.jinja" import list_page, paginator, breadcrumb %}
+{% from "common.jinja" import list_page, paginator, breadcrumb, subnav %}
 
 {% macro render_job(item, detail_url_name) %}
     <div class="search-result">
@@ -31,10 +31,21 @@
 {% block title %}Jobs and Appointments {% endblock %}
 
 {% block introduction %}<h1>Jobs &amp; Appointments </h1>{% endblock %}
-{% block breadcrumb %}
+{% block top %}
     {{ breadcrumb([
+    {'url': '/community/', 'text': 'Community'},
     {'text': 'Jobs & Appointments' }
-    ]) }}
+    ]) 
+    }}
+    {{ subnav([
+    {'url': '/community/', 'text': 'Community'},
+    {'url': DISCOURSE_BASE_URL, 'text': 'Forum'},
+    {'url': url("home:profile-list"), 'text': 'Users'},
+    {'url': url("home:job-list"), 'text': 'Jobs', 'active': true},
+    ])
+    }}
+
+
     <div id="app"></div>
 {% endblock %}
 

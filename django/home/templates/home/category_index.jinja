@@ -12,9 +12,9 @@
     {{ subnav(page.get_navigation_links()) }}
    <div class='jumbotron'>
        <h1 class='display-5'>{{ page.title }}</h1>
-       <p class='lead'>
+       <div class='pt-4 lead'>
        {{ page.summary|markdown}}
-       </p>
+       </div>
    </div>
    <section class='callouts'>
        {% for batched_callouts in page.callouts.all()|batch(3) %}

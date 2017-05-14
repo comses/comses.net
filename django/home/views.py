@@ -260,9 +260,9 @@ class ProfileViewSet(viewsets.ModelViewSet):
         return 'home/profiles/{}.jinja'.format(self.action)
 
     def get_queryset(self):
-        # FIXME: get_search_queryset does not work here as Users / MemberProfiles do not have a `date_created` field
-        # could fix by adding a parameterizable ordering field
-        return User.objects.prefetch_related('codebases').filter(is_active=True).exclude(pk=1)
+        # make sort order parameterizable. Start with ID or last_name? Lots of spam users visible with
+        # last_name / username
+        return User.objects.prefetch_related('codebases').filter(is_active=True).exclude(pk__in=(1,2)).order_by('id')
 
     def retrieve(self, request, *args, **kwargs):
         return retrieve_with_perms(self, request, *args, **kwargs)
