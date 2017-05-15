@@ -36,7 +36,8 @@ def to_datetime(drupal_datetime_string: str, tz=pytz.UTC):
         try:
             return datetime.fromtimestamp(float(drupal_datetime_string), tz=tz)
         except:
-            logger.warning("Could not convert as a timestamp: %s", drupal_datetime_string)
+            # logger.debug("Could not convert as a timestamp: %s", drupal_datetime_string)
+            pass
         # occasionally they are also date strings like '2010-08-01 00:00:00'
         try:
             return datetime.strptime(drupal_datetime_string, '%Y-%m-%d %H:%M:%S')
