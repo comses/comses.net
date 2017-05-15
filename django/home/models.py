@@ -253,8 +253,8 @@ class LandingPage(Page):
     def get_upcoming_events(self):
         return Event.objects.upcoming().order_by('start_date')[:self.MAX_CALLOUT_ENTRIES]
 
-    def get_context(self, request):
-        context = super(LandingPage, self).get_context(request)
+    def get_context(self, request, *args, **kwargs):
+        context = super(LandingPage, self).get_context(request, *args, **kwargs)
         context['featured_content'] = self.get_featured_content()
         context['recent_forum_activity'] = self.get_recent_forum_activity()
         context['latest_jobs'] = self.get_latest_jobs()
@@ -262,6 +262,7 @@ class LandingPage(Page):
         return context
 
     content_panels = Page.content_panels + [
+        FieldPanel('mission_statement', widget=forms.Textarea),
         InlinePanel('featured_content_queue', label=_('Featured Content')),
     ]
 
@@ -278,6 +279,8 @@ class CategoryIndexItem(Orderable, models.Model):
     caption = models.CharField(max_length=600)
 
 
+
+# FIXME: look into replacing these with wagtailmenus FlatMenu or similar
 class SubNavigationLink(Orderable, models.Model):
     page = ParentalKey(Page, related_name='navigation_links')
     url = models.CharField("Relative path, absolute path, or full URL", max_length=255)
@@ -353,6 +356,7 @@ class CategoryIndexPage(NavigationMixin, Page):
     content_panels = Page.content_panels + [
         # don't expose template to web form for now, could wreak havoc
         FieldPanel('heading'),
+        FieldPanel('template'),
         FieldPanel('summary', widget=forms.Textarea),
         InlinePanel('callouts', label=_('Captioned Image Callouts')),
         InlinePanel('navigation_links', label=_('Subnavigation Links')),
@@ -377,6 +381,7 @@ class StreamPage(Page):
 
     content_panels = Page.content_panels + [
         FieldPanel('date'),
+        FieldPanel('description'),
         StreamFieldPanel('body'),
     ]
 
@@ -432,7 +437,7 @@ class PlatformRelease(models.Model):
 
 class PlatformSnippetPlacement(Orderable, models.Model):
     page = ParentalKey('home.PlatformsIndexPage', related_name='platform_placements')
-    platform = models.ForeignKey(Platform)
+    platform = models.ForeignKey(Platform, related_name='+')
 
     class Meta:
         verbose_name = 'platform placement'
@@ -452,6 +457,7 @@ class PlatformsIndexPage(NavigationMixin, Page):
 
     content_panels = Page.content_panels + [
         InlinePanel('platform_placements', label='Platforms'),
+        FieldPanel('description')
     ]
 
     def get_platforms(self):
@@ -463,6 +469,55 @@ class PlatformsIndexPage(NavigationMixin, Page):
         # FIXME: add pagination
         context['platforms'] = self.get_platforms()
         return context
+
+
+class JournalTag(TaggedItemBase):
+    content_object = ParentalKey('home.Journal', related_name='tagged_journals')
+
+
+@register_snippet
+class Journal(index.Indexed, ClusterableModel):
+    name = models.CharField(max_length=255)
+    url = models.URLField()
+    issn = models.CharField(max_length=16, blank=True, help_text=_("Linking ISSN-L for this Journal"))
+    description = models.CharField(max_length=1000)
+    tags = TaggableManager(through=JournalTag, blank=True)
+
+    panels = [
+        FieldPanel('title'),
+        FieldPanel('url'),
+        FieldPanel('issn'),
+        FieldPanel('description', widget=forms.Textarea),
+        FieldPanel('tags'),
+    ]
+
+    search_fields = [
+        index.SearchField('name'),
+        index.SearchField('description'),
+        index.SearchField('issn'),
+        index.RelatedFields('tags', [
+            index.SearchField('name'),
+        ]),
+    ]
+
+
+class JournalSnippetPlacement(Orderable, models.Model):
+    page = ParentalKey('home.JournalsIndexPage', related_name='journal_placements')
+    journal = models.ForeignKey(Journal, related_name='+')
+
+    class Meta:
+        verbose_name = 'journal placement'
+        verbose_name_plural = 'journal placements'
+
+
+class JournalsIndexPage(NavigationMixin, Page):
+    template = 'home/resources/journals/index.jinja'
+    description = models.TextField(blank=True)
+
+    content_panels = Page.content_panels + [
+        FieldPanel('description'),
+        InlinePanel('journal_placements', label='Journals')
+    ]
 
 
 class NewsIndexPage(Page):

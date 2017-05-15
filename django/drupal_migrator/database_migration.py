@@ -15,7 +15,7 @@ from django.contrib.auth.models import User
 from taggit.models import Tag
 
 from core.summarization import summarize_to_text
-from home.models import Event, Job, MemberProfile, Platform, ComsesGroups, Institution
+from home.models import Event, Job, MemberProfile, Platform, ComsesGroups, Institution, Journal
 from library.models import (Contributor, Codebase, CodebaseRelease, CodebaseTag, License,
                             CodebaseContributor, OPERATING_SYSTEMS, CodebaseReleaseDownload)
 from .utils import get_first_field, get_field, get_field_attributes, to_datetime
@@ -36,6 +36,19 @@ LICENSES = """id,name,url
     10,"AFL-3.0",http://www.opensource.org/licenses/afl-3.0.php
     11,"BSD-2-Clause",http://opensource.org/licenses/BSD-2-Clause
     12,"MIT", https://opensource.org/licenses/MIT"""
+
+JOURNALS = """id,name,url,description
+    0,Adaptive Behavior,https://us.sagepub.com/en-us/nam/journal/adaptive-behavior,"The official journal of the International Society for Adaptive Behavior (ISAB) that publishes peer-reviewed articles on adaptive behavior in living organisms and autonomous artificial systems. &quot;The journal explores mechanisms, organizational principles, and architectures that can be expressed in computational, physical, or mathematical models related to the both the functions and dysfunctions of adaptive behavior.&quot;"
+    1,Advances in Complex Systems,http://www.worldscientific.com/page/acs/aims-scope,"A journal that aims to provide a unique medium of communication for multidisciplinary approaches, either empirical or theoretical, to the study of complex systems. The latter are seen as systems comprised of multiple interacting components, or agents."
+    2,Artificial Life,http://www.mitpressjournals.org/loi/artl,"A journal “that investigates the scientific, engineering, philosophical, and social issues involved in our rapidly increasing technological ability to synthesize life-like behaviors from scratch in computers, machines, molecules, and other alternative media.”"
+    3,Complex Adaptive Systems Modeling,http://www.casmodeling.com/,"A multidisciplinary modeling and simulation journal that serves as a forum for original, high-quality peer-reviewed papers with a specific interest and scope limited to agent-based and complex network-based modeling paradigms for Complex Adaptive Systems (CAS)."
+    4,Computational and Mathematical Organization Theory,https://link.springer.com/journal/10588,"A journal focused on advancing “the state of science in formal reasoning, analysis, and system building drawing on and encouraging advances in areas at the confluence of social networks, artificial intelligence, complexity, machine learning, sociology, business, political science, economics, and operations research.”"
+    5,Ecological Modeling,https://www.journals.elsevier.com/ecological-modelling/,"A journal “concerned with the use of mathematical models and systems analysis for the description of ecological processes and for the sustainable management of resources.”"
+    6,Environmental Modelling & Software,http://www.journals.elsevier.com/environmental-modelling-and-software/,"Environmental Modelling & Software publishes contributions, in the form of research articles, reviews, short communications as well as software and data news, on recent advances in environmental modelling and/or software. The aim is to improve our capacity to represent, understand, predict or manage the behaviour of environmental systems at all practical scales, and to communicate those improvements to a wide scientific and professional audience."
+    7,Journal of Artificial Societies and Social Simulation (JASSS),http://jasss.soc.surrey.ac.uk/,"A journal dedicated to the “exploration and understanding of social processes by means of computer simulation.”"
+    8,Journal of Complexity,https://www.journals.elsevier.com/journal-of-complexity/,"A multidisciplinary journal focused on the mathematics and algorithms of computational complexity."
+    9,Swarm Intelligence Journal,https://link.springer.com/journal/11721,"A journal focused on the “theoretical, experimental, and practical aspects of swarm intelligence. Emphasis is given to such topics as the modeling and analysis of collective biological systems; application of biological swarm intelligence models to real-world problems; and theoretical and empirical research in ant colony optimization, particle swarm optimization, swarm robotics, and other swarm intelligence algorithms.”"
+    10,Structure and Dynamics,http://escholarship.org/uc/imbs_socdyn_sdeas,\"An eJournal that examines “aspects of human evolution, social structure and behavior, culture, cognition, or related topics. Our goal is to advance the historic mission of anthropology in the broadest sense to describe and explain the range of variation in human biology, society, culture and civilization across time and space.”\""""
 
 PLATFORMS = """id,active,name,url,description
     0,f,other,NULL,''
@@ -112,8 +125,9 @@ class Extractor:
 
     @staticmethod
     def sanitize_name(name: str):
-        # return re.sub(r'[^\w]',
-        return name.strip().replace('.', '').title()
+        # return re.sub(r'[^\w]', '')
+
+        return ' '.join(name.split()).replace('.', '').title()
 
     @staticmethod
     def sanitize(data: str, max_length: int = None, strip_whitespace=False) -> str:
@@ -625,6 +639,11 @@ def load_licenses():
     load_data(License, LICENSES)
 
 
+def load_journals():
+    Journal.objects.all().delete()
+    load_data(Journal, JOURNALS)
+
+
 def load(directory: str):
     # TODO: associate picture with profile
     user_extractor = UserExtractor.from_file(os.path.join(directory, "User.json"))
@@ -641,6 +660,8 @@ def load(directory: str):
     load_licenses()
 
     load_platforms()
+
+    load_journals()
 
     # extract Users first so that we have a remote chance of correlating Authors with Users
     user_id_map = user_extractor.extract_all()
