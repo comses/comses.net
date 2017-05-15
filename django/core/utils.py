@@ -28,7 +28,7 @@ def markdown_to_sanitized_html(md: str, extensions=None):
     return bleach.clean(bleach.linkify(html), tags=ALLOWED_TAGS)
 
 
-def get_canonical_image(title=None, path=None, user=None):
+def get_canonical_image(title, path, user):
     _image_path = pathlib.Path(path)
     if Image.objects.filter(title=title).exists():
         _image = Image.objects.get(title=title)
