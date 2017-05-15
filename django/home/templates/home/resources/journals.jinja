@@ -1,0 +1,27 @@
+{% extends "base.jinja" %}
+{% from "common.jinja" import breadcrumb, subnav, submit_model_btn, search_tag_href %}
+
+{% block title %}{{ page.title }}{% endblock %}
+
+{% block introduction %}<h1>Resources</h1>{% endblock %}
+
+{% block content %}
+    {{ breadcrumb(page.get_breadcrumbs()) }}
+    {{ subnav(page.get_navigation_links()) }}
+    <div class='jumbotron'>
+        <h1 class='display-5'>{{ page.title }}</h1>
+        <div class='pt-4 lead'>
+            {{ page.description|markdown }}
+        </div>
+    </div>
+    {% for journal_placement in page.journal_placements.all() %}
+        <a target='_blank' href='{{ journal_placement.journal.url }}'>{{ journal_placement.journal.name }}</a>
+        <div class='description'>{{ journal_placement.journal.description|markdown }}</div>
+        <div class='tag-list'>
+            {% for tag in journal_placement.journal.tags.all() %}
+                {{ search_tag_href(tag) }}
+            {% endfor %}
+        </div>
+        <hr/>
+    {% endfor %}
+{% endblock content %}
