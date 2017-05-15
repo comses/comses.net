@@ -127,6 +127,15 @@ class CodebaseReleaseDownload(models.Model):
         return "{0}: downloaded {1}".format(self.ip_address, self.release)
 
 
+class CodebaseQuerySet(models.QuerySet):
+
+    def public(self, **kwargs):
+        return self.filter(live=True, **kwargs)
+
+    def peer_reviewed(self, **kwargs):
+        return self.public(**kwargs).filter(peer_reviewed=True)
+
+
 class Codebase(index.Indexed, ClusterableModel):
     """
     Metadata applicable across a set of CodebaseReleases
@@ -177,6 +186,8 @@ class Codebase(index.Indexed, ClusterableModel):
     featured_images = models.ManyToManyField(Image)
 
     submitter = models.ForeignKey(User, related_name='codebases')
+
+    objects = CodebaseQuerySet.as_manager()
 
     search_fields = [
         index.SearchField('title', partial_match=True, boost=10),
