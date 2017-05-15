@@ -19,10 +19,8 @@
                     <small>
                         {% for codebase_contributor in item.all_contributors %}
                             {% set badge_class='badge-success' if codebase_contributor.username else 'badge-default' %}
-                            <a href="{{ codebase_contributor.profile_url }}">
-                                <span class='badge {{badge_class}}'>
-                                    {{ codebase_contributor.name }}
-                                </span>
+                            <a class='badge {{badge_class}} contributor' href="{{ codebase_contributor.profile_url }}">
+                                {{ codebase_contributor.name }}
                             </a>
                         {% endfor %}
                         | Published {{ item.last_published_on }}

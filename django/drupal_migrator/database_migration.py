@@ -113,7 +113,7 @@ class Extractor:
     @staticmethod
     def sanitize_name(name: str):
         # return re.sub(r'[^\w]',
-        return name.replace('.', '')
+        return name.strip().replace('.', '').title()
 
     @staticmethod
     def sanitize(data: str, max_length: int = None, strip_whitespace=False) -> str:
@@ -246,16 +246,18 @@ class UserExtractor(Extractor):
         :return: dict
         """
         user_id_map = {}
+        contributors = []
         for raw_user in self.data:
             user = UserExtractor._extract(raw_user)
             if user:
                 user_id_map[user.drupal_uid] = user.pk
+                contributors.append(Contributor(user=user, email=user.email))
+        Contributor.objects.bulk_create(contributors)
         return user_id_map
 
 
 class ProfileExtractor(Extractor):
     def extract_all(self, user_id_map, tag_id_map):
-        contributors = []
         for raw_profile in self.data:
             drupal_uid = raw_profile['uid']
             user_id = user_id_map.get(drupal_uid, -1)
@@ -263,8 +265,8 @@ class ProfileExtractor(Extractor):
                 logger.warning("Drupal UID %s not found in user id map, skipping", drupal_uid)
                 continue
             user = User.objects.get(pk=user_id)
-            user.first_name = get_first_field(raw_profile, 'field_profile2_firstname')
-            user.last_name = get_first_field(raw_profile, 'field_profile2_lastname')
+            user.first_name = self.sanitize_name(get_first_field(raw_profile, 'field_profile2_firstname'))
+            user.last_name = self.sanitize_name(get_first_field(raw_profile, 'field_profile2_lastname'))
             member_profile = user.member_profile
             member_profile.research_interests = get_first_field(raw_profile, 'field_profile2_research')
             raw_institutions = get_field(raw_profile, 'field_profile2_institutions')
@@ -300,18 +302,7 @@ class ProfileExtractor(Extractor):
             member_profile.keywords.add(*tags)
             member_profile.save()
             user.save()
-            try:
-                contributor = Contributor.objects.get(given_name=user.first_name, family_name=user.last_name)
-                contributor.email = user.email
-                contributor.user = user
-                contributor.save()
-            except:
-                contributors.append(
-                    Contributor(given_name=user.first_name,
-                                family_name=user.last_name,
-                                email=user.email,
-                                user=user))
-        Contributor.objects.bulk_create(contributors)
+            Contributor.objects.filter(user=user).update(given_name=user.first_name, family_name=user.last_name)
 
 
 class TaxonomyExtractor(Extractor):
@@ -340,23 +331,28 @@ class AuthorExtractor(Extractor):
         middle_name = self.sanitize_name(get_first_field(raw_author, 'field_model_authormiddle', default=''))
         family_name = self.sanitize_name(get_first_field(raw_author, 'field_model_authorlast', default=''))
         if any([given_name, middle_name, family_name]):
-            contributor, created = Contributor.objects.get_or_create(
-                given_name=given_name,
-                family_name=family_name,
-                defaults={'middle_name': middle_name}
-            )
+            try:
+                contributor, created = Contributor.objects.get_or_create(
+                    given_name=given_name,
+                    family_name=family_name,
+                    defaults={'middle_name': middle_name}
+                )
+            except Contributor.MultipleObjectsReturned:
+                logger.warning("Multiple Contributors found named [%s, %s] %s - setting first", family_name, given_name, middle_name)
+                contributor = Contributor.objects.filter(given_name=given_name, family_name=family_name).first()
+                contributor.middle_name = middle_name
+                contributor.save()
+
             contributor.item_id = raw_author['item_id']
             return contributor
         return None
 
     def extract_all(self):
         author_id_map = {}
-        contributors = []
         for raw_author in self.data:
             c = self._extract(raw_author)
             if c:
                 author_id_map[c.item_id] = c.pk
-                contributors.append(c)
         return author_id_map
 
 
@@ -366,7 +362,7 @@ class ModelExtractor(Extractor):
         author_ids = [author_id_map[raw_author_id] for raw_author_id in raw_author_ids]
         submitter_id = user_id_map[raw_model.get('uid')]
         if not author_ids:
-            author_ids = [Contributor.objects.get(user__id=submitter_id)]
+            author_ids = [Contributor.objects.get(user__id=submitter_id).pk]
         with suppress_auto_now(Codebase, 'last_modified'):
             last_changed = to_datetime(raw_model['changed'])
             handle = get_first_field(raw_model, 'field_model_handle', default=None)
@@ -631,9 +627,9 @@ def load_licenses():
 
 def load(directory: str):
     # TODO: associate picture with profile
-    author_extractor = AuthorExtractor.from_file(os.path.join(directory, "Author.json"))
     user_extractor = UserExtractor.from_file(os.path.join(directory, "User.json"))
     profile_extractor = ProfileExtractor.from_file(os.path.join(directory, "Profile2.json"))
+    author_extractor = AuthorExtractor.from_file(os.path.join(directory, "Author.json"))
     event_extractor = EventExtractor.from_file(os.path.join(directory, "Event.json"))
     job_extractor = JobExtractor.from_file(os.path.join(directory, "Forum.json"))
     model_extractor = ModelExtractor.from_file(os.path.join(directory, "Model.json"))
@@ -646,20 +642,18 @@ def load(directory: str):
 
     load_platforms()
 
-    # extract Codebase Authors, then try to correlate with existing Users
-    author_id_map = author_extractor.extract_all()
     # extract Users first so that we have a remote chance of correlating Authors with Users
     user_id_map = user_extractor.extract_all()
     # extract Drupal taxonomy terms
     tag_id_map = taxonomy_extractor.extract_all()
     # profile extraction adds first name / last name and MemberProfile fields to Users.
     profile_extractor.extract_all(user_id_map, tag_id_map)
-
+    # extract Codebase Authors, then try to correlate with existing Users
+    author_id_map = author_extractor.extract_all()
     job_extractor.extract_all(user_id_map)
     event_extractor.extract_all(user_id_map)
-
     model_id_map = model_extractor.extract_all(user_id_map, tag_id_map, author_id_map)
     model_version_id_map = model_version_extractor.extract_all(model_id_map)
-
     download_extractor.extract_all(model_id_map, model_version_id_map, user_id_map)
+
     return IDMapper(author_id_map, user_id_map, tag_id_map, model_id_map, model_version_id_map)
