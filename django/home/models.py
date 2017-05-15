@@ -329,7 +329,7 @@ class NavigationMixin(object):
         :return:
         """
         return [
-            {'url': nav.url, 'text': nav.title, 'active': self.slug in nav.url}
+            {'url': nav.url, 'text': nav.title, 'active': nav.url.endswith(self.slug + '/')}
             for nav in self.navigation_links.all()
         ]
 
@@ -451,13 +451,13 @@ class PlatformSnippetPlacement(Orderable, models.Model):
         return "Snippet placement for {0}".format(self.platform.name)
 
 
-class PlatformsIndexPage(NavigationMixin, Page):
-    template = 'home/resources/platforms/index.jinja'
+class PlatformIndexPage(NavigationMixin, Page):
+    template = 'home/resources/platforms.jinja'
     description = models.TextField(blank=True)
 
     content_panels = Page.content_panels + [
-        InlinePanel('platform_placements', label='Platforms'),
         FieldPanel('description')
+        InlinePanel('platform_placements', label='Platforms'),
     ]
 
     def get_platforms(self):
@@ -510,8 +510,8 @@ class JournalSnippetPlacement(Orderable, models.Model):
         verbose_name_plural = 'journal placements'
 
 
-class JournalsIndexPage(NavigationMixin, Page):
-    template = 'home/resources/journals/index.jinja'
+class JournalIndexPage(NavigationMixin, Page):
+    template = 'home/resources/journals.jinja'
     description = models.TextField(blank=True)
 
     content_panels = Page.content_panels + [

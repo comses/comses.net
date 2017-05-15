@@ -15,8 +15,8 @@ from wagtail.wagtailcore.models import Page, Site
 
 from drupal_migrator.database_migration import load_licenses, load_platforms, load_journals
 from home.models import (LandingPage, FeaturedContentItem, SocialMediaSettings,
-                         PlatformsIndexPage, Platform, PlatformSnippetPlacement, CategoryIndexPage, StreamPage,
-                         JournalsIndexPage, JournalSnippetPlacement, Journal)
+                         PlatformIndexPage, Platform, PlatformSnippetPlacement, CategoryIndexPage, StreamPage,
+                         JournalIndexPage, JournalSnippetPlacement, Journal)
 from library.models import Codebase
 
 logger = logging.getLogger(__name__)
@@ -27,9 +27,9 @@ class ResourceSection():
 
     SUBNAVIGATION_LINKS = (
             ('Resources', '/resources/'),
-            ('Modeling Platforms', 'modeling-platforms/'),
-            ('Journals', 'journals/'),
-            ('Standards', 'standards/'),
+            ('Modeling Platforms', '/resources/modeling-platforms/'),
+            ('Journals', '/resources/journals/'),
+            ('Standards', '/resources/standards/'),
     )
 
     def __init__(self, root_page, default_user):
@@ -46,6 +46,11 @@ class ResourceSection():
                      'to help new and experienced computational modelers improve the discoverability, reuse, and '
                      'reproducibility of their computational models. Please [contact us](/contact/) with '
                      'feedback or additional resources - your contributions are appreciated!'
+                     '\n'
+                     '### Other Web Resources\n'
+                     '[Leigh Tesfatsion](http://www2.econ.iastate.edu/tesfatsi/) also maintains an '
+                     '[online guide for newcomers to agent-based modeling in the social sciences]'
+                     '(http://www2.econ.iastate.edu/tesfatsi/abmread.htm) with many useful links.'
                      )
         )
         # FIXME: replace with wagtailmenus FlatMenu creation and associated with the resources_index
@@ -114,7 +119,7 @@ class ResourceSection():
         return resources_index
 
     def build_platforms_index(self, parent_page):
-        platforms_index_page = PlatformsIndexPage(
+        platforms_index_page = PlatformIndexPage(
             title='Computational Modeling Platforms',
             slug='modeling-platforms',
             description=("Computational modeling platforms provide a wide range of modeling strategies, scaffolding, "
@@ -130,10 +135,13 @@ class ResourceSection():
         parent_page.add_child(instance=platforms_index_page)
 
     def build_journal_page(self, parent):
-        journal_page = JournalsIndexPage(
+        journal_page = JournalIndexPage(
+            slug='journals',
             title='Computational Modeling Journals',
-            description=('An list of scholarly journals that address theoretical and methodological concerns for '
-                         'agent-based modeling and related computational modeling sciences.'),
+            description=('A list of scholarly journals that address theoretical and methodological concerns for '
+                         'agent-based modeling and related computational modeling sciences. To submit any corrections '
+                         'or add a new journal, please [contact us](/contact/).'
+                         ),
         )
         # FIXME: arcane step value slice to pick out Resources -> Journals
         journal_page.add_breadcrumbs(self.SUBNAVIGATION_LINKS[0:3:2])
@@ -172,6 +180,7 @@ class Command(BaseCommand):
                             help='Site domain name, e.g., www.comses.net')
         parser.add_argument('--reload-platforms', default=False, action='store_true')
         parser.add_argument('--reload-licenses', default=False, action='store_true')
+        parser.add_argument('--reload-journals', default=False, action='store_true')
 
     def handle(self, *args, **options):
         if options['reload_platforms']:
