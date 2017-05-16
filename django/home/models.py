@@ -456,7 +456,7 @@ class PlatformIndexPage(NavigationMixin, Page):
     description = models.TextField(blank=True)
 
     content_panels = Page.content_panels + [
-        FieldPanel('description')
+        FieldPanel('description'),
         InlinePanel('platform_placements', label='Platforms'),
     ]
 
@@ -516,7 +516,7 @@ class JournalIndexPage(NavigationMixin, Page):
 
     content_panels = Page.content_panels + [
         FieldPanel('description'),
-        InlinePanel('journal_placements', label='Journals')
+        InlinePanel('journal_placements', label='Journals'),
     ]
 
 
