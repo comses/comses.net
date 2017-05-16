@@ -309,7 +309,7 @@ nav {
   }
 }
 
-footer {
+footer.footer {
   padding: 75px 0;
   background-image: url("./assets/images/background-footer.png");
   color: $white;
@@ -437,6 +437,11 @@ footer {
 
 .datepicker-clear-button:hover {
   color: red;
+}
+
+blockquote {
+  @extend .blockquote;
+  font-size: 1rem;
 }
 
 // Responsive Typography
