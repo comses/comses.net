@@ -1,3 +1,5 @@
+import logging
+
 from django.contrib.auth.models import User
 from django.utils.translation import ugettext_lazy as _
 from rest_framework import serializers
@@ -5,6 +7,8 @@ from rest_framework import serializers
 from core.serializers import (PUBLISH_DATE_FORMAT, LinkedUserSerializer, TagSerializer, create, update)
 from library.serializers import CodebaseSerializer
 from .models import (Event, Job, FeaturedContentItem, MemberProfile, UserMessage, Institution)
+
+logger = logging.getLogger(__name__)
 
 
 class EventSerializer(serializers.ModelSerializer):
@@ -80,6 +84,7 @@ class MemberProfileSerializer(serializers.ModelSerializer):
     orcid_url = serializers.SerializerMethodField()
     keywords = TagSerializer(many=True)
     institution = InstitutionSerializer()
+    avatar = serializers.ReadOnlyField(source='picture')  # needed to materialize the FK relationship for wagtailimages
 
     def get_orcid_url(self, instance):
         if instance.orcid:
@@ -88,7 +93,7 @@ class MemberProfileSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = MemberProfile
-        fields = ('__all__')
+        fields = '__all__'
 
 
 class UserSerializer(serializers.ModelSerializer):

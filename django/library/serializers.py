@@ -38,7 +38,6 @@ class CodebaseContributorSerializer(serializers.ModelSerializer):
             return user.member_profile.get_absolute_url()
         else:
             # FIXME: replace with reverse('core:search', ...)
-            logger.error("name: %s", instance.contributor.name)
             return '/search?{0}'.format(urlencode({'person': instance.contributor.name}))
 
     class Meta:
