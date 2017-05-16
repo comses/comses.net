@@ -22,6 +22,9 @@ def create_member_profile(sender, instance: User, created, **kwargs):
     :return: 
     """
     if created:
+        if instance.username in ('AnonymousUser',):
+            # ignore anonymous user and
+            return
         MemberProfile.objects.get_or_create(user=instance)
 
 
