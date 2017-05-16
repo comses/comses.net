@@ -5,7 +5,11 @@ import markdown
 from django.core.files.images import ImageFile
 from wagtail.wagtailimages.models import Image
 
-ALLOWED_TAGS = bleach.ALLOWED_TAGS + ['p', 'h1', 'h2', 'h3', 'h4', 'pre', 'br', 'div', 'span']
+ALLOWED_TAGS = bleach.ALLOWED_TAGS + ['p', 'h1', 'h2', 'h3', 'h4', 'pre', 'br', 'div', 'span', 'footer']
+
+ALLOWED_ATTRIBUTES = dict(bleach.ALLOWED_ATTRIBUTES,
+                          **{'*': 'class', 'img': 'alt',})
+
 
 DEFAULT_MARKDOWN_EXTENSIONS = [
     'markdown.extensions.extra',
@@ -25,7 +29,7 @@ def markdown_to_sanitized_html(md: str, extensions=None):
         md,
         extensions=extensions
     )
-    return bleach.clean(bleach.linkify(html), tags=ALLOWED_TAGS)
+    return bleach.clean(bleach.linkify(html), tags=ALLOWED_TAGS, attributes=ALLOWED_ATTRIBUTES)
 
 
 def get_canonical_image(title, path, user):
