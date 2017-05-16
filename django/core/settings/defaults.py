@@ -183,7 +183,7 @@ LOGGING = {
     'handlers': {
         'console': {
             'class': 'logging.StreamHandler',
-            'level': 'INFO',
+            'level': 'DEBUG',
             'formatter': 'verbose'
         },
         'djangofile': {
@@ -205,8 +205,28 @@ LOGGING = {
     },
     'loggers': {
         'django': {
+            'level': 'WARNING',
+            'handlers': ['djangofile'],
+            'propagate': False,
+        },
+        'home': {
             'level': 'DEBUG',
-            'handlers': ['console', 'djangofile'],
+            'handlers': ['console', 'rollingfile'],
+            'propagate': False,
+        },
+        'library': {
+            'level': 'DEBUG',
+            'handlers': ['console', 'rollingfile'],
+            'propagate': False,
+        },
+        'core': {
+            'level': 'DEBUG',
+            'handlers': ['console', 'rollingfile'],
+            'propagate': False,
+        },
+        'drupal_migrator': {
+            'level': 'DEBUG',
+            'handlers': ['console', 'rollingfile'],
             'propagate': False,
         },
     }
