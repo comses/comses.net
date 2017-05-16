@@ -267,6 +267,10 @@ class CommunitySection(AbstractSection):
 
 
 class AboutSection(AbstractSection):
+    SUBNAVIGATION_MENU = [('About', '/about/'),
+                          ('People', '/about/people/'),
+                          ('FAQs', '/about/faq/'),
+                          ('Contact', '/about/contact/')]
 
     def build_about_section(self):
         about_index = CategoryIndexPage(
@@ -283,11 +287,8 @@ class AboutSection(AbstractSection):
                      'operate under [these by-laws](/about/by-laws).'
                      ),
         )
-        about_index.add_breadcrumbs([('About CoMSES Net', '/about/')])
-        about_index.add_navigation_links([('Overview', '/about/'),
-                                          ('People', '/about/people/'),
-                                          ('FAQs', '/about/faq/'),
-                                          ('Contact', '/about/contact/')])
+        about_index.add_breadcrumbs(self.SUBNAVIGATION_MENU[:1])
+        about_index.add_navigation_links(self.SUBNAVIGATION_MENU)
         about_index.add_callout(
             image_path='core/static/images/icons/digital-archive.png',
             title='Provide trusted digital preservation and curation',
@@ -325,6 +326,8 @@ class AboutSection(AbstractSection):
                          "community cyberinfrastructure development."
                          ),
         )
+        people_page.add_breadcrumbs(self.SUBNAVIGATION_MENU[0:2])
+        people_page.add_navigation_links(self.SUBNAVIGATION_MENU)
         parent.add_child(instance=people_page)
 
     def build_faq_page(self, parent):
@@ -336,6 +339,8 @@ class AboutSection(AbstractSection):
                          "[register](/accounts/signup/) as a CoMSES Net Member and post it to our forums. With "
                          "enough community interest, it may end up on this list."),
         )
+        faq_page.add_breadcrumbs(self.SUBNAVIGATION_MENU[0:3:2])
+        faq_page.add_navigation_links(self.SUBNAVIGATION_MENU)
         for idx, faq_entry in enumerate(FaqEntry.objects.order_by('id')):
             faq_page.faq_entry_placements.add(
                 FaqEntryPlacement(sort_order=idx, faq_entry=faq_entry)

@@ -371,7 +371,7 @@ class CategoryIndexPage(NavigationMixin, Page):
     ]
 
 
-class StreamPage(Page):
+class StreamPage(Page, NavigationMixin):
     template = models.CharField(max_length=128, default='home/stream_page.jinja')
     date = models.DateField("Post date", default=timezone.now)
     description = models.CharField(max_length=512, blank=True)
