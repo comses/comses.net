@@ -25,6 +25,7 @@ from wagtail.wagtailcore.fields import RichTextField, StreamField
 from wagtail.wagtailcore.models import Page, Orderable
 from wagtail.wagtailimages.blocks import ImageChooserBlock
 from wagtail.wagtailimages.edit_handlers import ImageChooserPanel
+from wagtail.wagtailimages.models import Image
 from wagtail.wagtailsearch import index
 from wagtail.wagtailsnippets.edit_handlers import SnippetChooserPanel
 from wagtail.wagtailsnippets.models import register_snippet
@@ -113,13 +114,13 @@ class MemberProfile(index.Indexed, ClusterableModel):
     research_interests = models.TextField(blank=True)
     keywords = ClusterTaggableManager(through=MemberProfileTag, blank=True)
     bio = models.TextField(max_length=500, blank=True, help_text=_('Brief bio'))
-    picture = models.ImageField(null=True, help_text=_('Profile picture'))
+    picture = models.ForeignKey(Image, null=True, blank=True)  # FIXME: use OneToOne instead?
     personal_url = models.URLField(blank=True)
     professional_url = models.URLField(blank=True)
-    institution = models.ForeignKey(Institution, null=True)
+    institution = models.ForeignKey(Institution, null=True, blank=True)
     affiliations = JSONField(default=list, help_text=_("JSON-LD list of affiliated institutions"))
     orcid = models.CharField(help_text=_("16 digits, - between every 4th digit, e.g., 0000-0002-1825-0097"),
-                             max_length=19)
+                             max_length=19, blank=True)
 
     @property
     def full_member(self):

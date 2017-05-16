@@ -10,7 +10,7 @@ import shutil
 import pygit2
 from django.contrib.auth.models import User
 
-from library import fs
+from core import fs
 from library.models import Codebase, CodebaseRelease
 
 logger = logging.getLogger(__name__)

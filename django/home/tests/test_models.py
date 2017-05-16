@@ -15,7 +15,7 @@ class MemberProfileTestCase(HypothesisTestCase):
         member_profile = user.member_profile
 
         self.assertTrue(user.username in member_profile.get_absolute_url())
-        
+
         self.assertFalse(member_profile.full_member)
         # empty fields
         self.assertFalse(member_profile.orcid)

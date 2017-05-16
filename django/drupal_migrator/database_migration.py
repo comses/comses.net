@@ -1,9 +1,11 @@
 import contextlib
 import csv
+import imghdr
 import io
 import json
 import logging
 import os
+import pathlib
 import re
 from collections import defaultdict, Iterable
 from datetime import datetime
@@ -12,8 +14,11 @@ from typing import Dict
 
 from bs4 import BeautifulSoup
 from django.contrib.auth.models import User
+from django.core.files.images import ImageFile
 from taggit.models import Tag
+from wagtail.wagtailimages.models import Image
 
+from core.fs import is_image
 from core.summarization import summarize_to_text
 from home.models import Event, Job, Platform, ComsesGroups, Institution, Journal, FaqEntry
 from library.models import (Contributor, Codebase, CodebaseRelease, CodebaseTag, License,
@@ -22,6 +27,7 @@ from .utils import get_first_field, get_field, get_field_attributes, to_datetime
 
 logger = logging.getLogger(__name__)
 
+PROFILE_PICTURES_PATH = 'incoming/pictures'
 
 FAQ_ENTRIES = """id,category,question,answer
     0,abm,"What are agent-based models (ABMs)?","Agent-based models are (computational) models of a heterogeneous population of agents and their interactions. The result of the micro-level interactions can be interesting macro-level behavior like cooperation, segregation, fashion, culture, etc. ABMs are also known as multi-agent systems, agent-based systems etc., and is an important field in computer science where agent-based models are developed to do tasks, like searching for information on the internet. Within social science we are interested in agent-behavior that is based on our understanding of human decision making. Agents can represent individuals, households, firms, nations, depending on the application. The heterogeneity of agents is an important aspect of ABM. Heterogeneity can originate from differences is location, knowledge, wealth, social connections, cognitive processes, experience, motivations, preferences, etc. Agents can interact in various ways such as changing the shared environment by harvesting or pollution, exchange of information and resources, and by imitation."
@@ -210,7 +216,7 @@ class EventExtractor(Extractor):
             submission_deadline=to_datetime(get_first_field(raw_event, 'field_submissiondeadline')),
             start_date=self.parse_event_date_string(get_first_field(raw_event, 'field_eventdate')),
             end_date=self.parse_event_date_string(get_first_field(raw_event, 'field_eventdate', 'value2')),
-            submitter_id=user_id_map.get(raw_event['uid'], 3)
+            submitter_id=user_id_map.get(raw_event['uid'], 3),
         )
 
     def extract_all(self, user_id_map: Dict[str, int]):
@@ -242,13 +248,16 @@ class JobExtractor(Extractor):
 
 
 class UserExtractor(Extractor):
-    (ADMIN_GROUP, EDITOR_GROUP, MEMBER_GROUP, REVIEWER_GROUP) = ComsesGroups.initialize()
+    (ADMIN_GROUP, EDITOR_GROUP, FULL_MEMBER_GROUP, REVIEWER_GROUP) = ComsesGroups.initialize()
+
+
 
     @staticmethod
     def _extract(raw_user):
         """ assumes existence of editor, reviewer, full_member, admin groups """
         username = Extractor.sanitize(raw_user['name'], strip_whitespace=True)
         email = Extractor.sanitize(raw_user['mail'])
+        status = raw_user['status']
         if not all([username, email]):
             logger.warning("No username or email set: %s", [username, email])
             return
@@ -260,19 +269,31 @@ class UserExtractor(Extractor):
                 "last_login": to_datetime(raw_user['login']),
             }
         )
+        member_profile = user.member_profile
+        # extract picture
+        picture_dict = raw_user['picture']
+        if picture_dict:
+            picture_path = pathlib.Path(PROFILE_PICTURES_PATH, picture_dict['filename'])
+            if picture_path.exists() and is_image(str(picture_path)):
+                with picture_path.open('rb') as f:
+                    avatar = Image.objects.create(
+                        title="{0} avatar".format(username),
+                        file=ImageFile(f),
+                        uploaded_by_user=user)
+                    member_profile.picture = avatar
 
         user.drupal_uid = raw_user['uid']
         roles = raw_user['roles'].values()
-        user.member_profile.timezone = raw_user['timezone']
-        user.member_profile.save()
+        member_profile.timezone = raw_user['timezone']
+        member_profile.save()
         if 'administrator' in roles:
             user.is_staff = True
             user.is_superuser = True
             user.save()
             user.groups.add(UserExtractor.ADMIN_GROUP)
-            user.groups.add(UserExtractor.MEMBER_GROUP)
+            user.groups.add(UserExtractor.FULL_MEMBER_GROUP)
         if 'comses member' in roles:
-            user.groups.add(UserExtractor.MEMBER_GROUP)
+            user.groups.add(UserExtractor.FULL_MEMBER_GROUP)
             user.groups.add(UserExtractor.REVIEWER_GROUP)
         if 'comses editor' in roles:
             user.groups.add(UserExtractor.EDITOR_GROUP)
@@ -312,10 +333,12 @@ class ProfileExtractor(Extractor):
             raw_institutions = get_field(raw_profile, 'field_profile2_institutions')
             if raw_institutions:
                 raw_institution = raw_institutions[0]
-                institution, created = Institution.objects.get_or_create(name=raw_institution['title'], url=raw_institution['url'])
+                institution, created = Institution.objects.get_or_create(name=raw_institution['title'],
+                                                                         url=raw_institution['url'])
                 member_profile.institution = institution
             member_profile.degrees = get_field_attributes(raw_profile, 'field_profile2_degrees') or []
-            member_profile.personal_url = get_first_field(raw_profile, 'field_profile2_personal_link', attribute_name='url')
+            member_profile.personal_url = get_first_field(raw_profile, 'field_profile2_personal_link',
+                                                          attribute_name='url')
 
             # crude aggregation of the wretched smorgasbord of incoming urls
             linkedin_url = get_first_field(raw_profile, 'field_profile2_linkedin_link',
@@ -378,8 +401,14 @@ class AuthorExtractor(Extractor):
                     defaults={'middle_name': middle_name}
                 )
             except Contributor.MultipleObjectsReturned:
-                logger.warning("Multiple Contributors found named [%s, %s] %s - setting first", family_name, given_name, middle_name)
-                contributor = Contributor.objects.filter(given_name=given_name, family_name=family_name).first()
+                contributors = Contributor.objects.filter(given_name=given_name, family_name=family_name)
+                logger.warning("XXX: multiple contributors (%s) found named [%s %s] %s", contributors,
+                               given_name, family_name, middle_name)
+                contributor = contributors.first()
+                if contributors.filter(user__isnull=False).count() == 1:
+                    contributor = contributors.get(user__isnull=False)
+                else:
+                    logger.warning("XXX: There are multiple users and contributors with this name. Aagh!")
                 contributor.middle_name = middle_name
                 contributor.save()
 
@@ -593,50 +622,35 @@ class DownloadCountExtractor:
         return cls._get_instance(raw_download, model_id_map, 'nid',
                                  "Unable to locate associated model nid {}")
 
-    def _extract_model(cls, raw_download, model_id_map, user_id_map):
-        user_id = cls._get_user_id(raw_download, user_id_map)
-        codebase = cls._get_codebase(raw_download, model_id_map)
-        codebase_release = codebase.releases.first()
-        return CodebaseReleaseDownload(
-            date_created=to_datetime(raw_download['date_created']),
-            user_id=user_id,
-            release=codebase_release,
-            ip_address=raw_download['ip_address'],
-            referrer=Extractor.sanitize(raw_download['referrer'], max_length=500))
-
-    @classmethod
-    def _extract_model_version(cls, raw_download, model_version_id_map, user_id_map):
-        user_id = cls._get_user_id(raw_download, user_id_map)
-        codebase_release = cls._get_codebase_release(raw_download, model_version_id_map)
-        return CodebaseReleaseDownload(
-            date_created=to_datetime(raw_download['date_created']),
-            user_id=user_id,
-            release=codebase_release,
-            ip_address=raw_download['ip_address'],
-            referrer=Extractor.sanitize(raw_download['referrer'], max_length=500))
-
     def extract_all(self, model_id_map: Dict[str, int], model_version_id_map: Dict[str, int],
                     user_id_map: Dict[str, int]):
-        """
-        Some download counts in Drupal are at the Codebase Level but here they are at the CodebaseRelease level. In order
-         to match the new database structure I make the assumption that all codebase level downloads occurred at the last
-         release of the codebase
-        """
+
         downloads = []
         for raw_download in self.data:
             try:
+                user_id = self._get_user_id(raw_download, user_id_map)
+                """
+                Some download counts in Drupal are at the Codebase level but now they are always at the CodebaseRelease 
+                level. In order to match the new database structure assume that all codebase level downloads occurred 
+                at the first release of the codebase
+                """
                 if raw_download['type'] == 'model':
-                    # FIXME: should extract to first version of Codebase.
-                    download = self._extract_model(raw_download, model_id_map, user_id_map)
+                    codebase = self._get_codebase(raw_download, model_id_map)
+
+                    codebase_release = codebase.releases.first()
                 elif raw_download['type'] == 'modelversion':
-                    download = self._extract_model_version(raw_download, model_version_id_map, user_id_map)
+                    codebase_release = self._get_codebase_release(raw_download, model_version_id_map)
                 else:
                     raise ValidationError('Invalid node type %s', raw_download['type'])
-
-                downloads.append(download)
-
+                downloads.append(CodebaseReleaseDownload(
+                    date_created=to_datetime(raw_download['date_created']),
+                    user_id=user_id,
+                    release=codebase_release,
+                    ip_address=raw_download['ip_address'],
+                    referrer=Extractor.sanitize(raw_download['referrer'], max_length=500))
+                )
             except ValidationError as e:
-                logger.warning(e.args[0])
+                logger.exception(e)
 
         CodebaseReleaseDownload.objects.bulk_create(downloads)
 

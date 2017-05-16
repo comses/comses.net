@@ -21,7 +21,7 @@ from taggit.models import TaggedItemBase
 from wagtail.wagtailimages.models import Image
 from wagtail.wagtailsearch import index
 
-from . import fs
+from core import fs
 
 logger = logging.getLogger(__name__)
 
