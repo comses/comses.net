@@ -187,11 +187,18 @@ class Codebase(index.Indexed, ClusterableModel):
 
     submitter = models.ForeignKey(User, related_name='codebases')
 
+
     objects = CodebaseQuerySet.as_manager()
 
     search_fields = [
         index.SearchField('title', partial_match=True, boost=10),
         index.SearchField('description', partial_match=True),
+        index.SearchField('featured'),
+        index.SearchField('first_published_at'),
+        index.SearchField('last_published_on'),
+        index.RelatedFields('tags', [
+            index.SearchField('name'),
+        ]),
     ]
 
     @property
