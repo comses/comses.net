@@ -13,17 +13,23 @@ from django.core.management.base import BaseCommand
 from django.urls import reverse
 from wagtail.wagtailcore.models import Page, Site
 
-from drupal_migrator.database_migration import load_licenses, load_platforms, load_journals
+from drupal_migrator.database_migration import load_licenses, load_platforms, load_journals, load_faq_entries
 from home.models import (LandingPage, FeaturedContentItem, SocialMediaSettings,
-                         PlatformIndexPage, Platform, PlatformSnippetPlacement, CategoryIndexPage, StreamPage,
-                         JournalIndexPage, JournalSnippetPlacement, Journal, MarkdownPage)
+                         PlatformIndexPage, Platform, PlatformSnippetPlacement, CategoryIndexPage, JournalIndexPage,
+                         JournalSnippetPlacement, Journal, MarkdownPage, FaqPage, FaqEntry, FaqEntryPlacement,
+                         StreamPage)
 from library.models import Codebase
 
 logger = logging.getLogger(__name__)
 
+class AbstractSection(object):
+
+    def __init__(self, root_page, default_user):
+        self.root_page = root_page
+        self.default_user = default_user
 
 
-class ResourceSection():
+class ResourceSection(AbstractSection):
 
     SUBNAVIGATION_LINKS = (
             ('Resources', '/resources/'),
@@ -32,9 +38,6 @@ class ResourceSection():
             ('Standards', '/resources/standards/'),
     )
 
-    def __init__(self, root_page, default_user):
-        self.root_page = root_page
-        self.default_user = default_user
 
     def build_resource_index(self):
         resources_index = CategoryIndexPage(
@@ -201,6 +204,152 @@ class ResourceSection():
         self.build_standards_page(resources_index)
 
 
+class CommunitySection(AbstractSection):
+
+    def build_community_index(self):
+        community_index = CategoryIndexPage(
+            heading='Community',
+            title='Welcome to the CoMSES Net Community',
+            slug='community',
+            summary=('CoMSES Net is dedicated to fostering open and reproducible scientific computation through '
+                     'cyberinfrastructure and community development. We curate [resources for '
+                     'model-based science](/resources/) including tutorials and FAQs on agent-based modeling, a '
+                     '[computational model library](/codebases/) to help researchers archive their work and discover '
+                     'and reuse other&apos;s works, and '
+                     '[forums for discussions, job postings, and events.](https://forum.comses.net)'
+                     ),
+        )
+        community_index.add_breadcrumbs([
+            ('Community', '/community/')
+        ])
+        community_index.add_navigation_links([
+            ('Community', '/community/'),
+            ('Forum', settings.DISCOURSE_BASE_URL),
+            ('Users', reverse('home:profile-list')),
+            ('Jobs', reverse('home:job-list')),
+        ])
+        # add callouts
+        community_index.add_callout(
+            image_path='core/static/images/icons/connect.png',
+            title='Connect with Researchers',
+            url=reverse('home:profile-list'),
+            user=self.default_user,
+            sort_order=1,
+            caption=('Follow other researchers, their models, or other topics of interest. Engage in discussions, '
+                     'participate in upcoming events, or find a new job. Preserve the complete digital pipeline used to '
+                     'derive a publishable finding. Other researchers will be able to discover, cite, and run your code '
+                     'in a reproducible' 'containerized environment.')
+        )
+
+        community_index.add_callout(
+            image_path='core/static/images/icons/events.png',
+            title='Find Upcoming Events',
+            url=reverse('home:event-list'),
+            user=self.default_user,
+            sort_order=2,
+            caption=('Find calls for papers and participation in upcoming conferences, workshops, and other events '
+                     'curated by the CoMSES Net Community.'),
+        )
+
+        community_index.add_callout(
+            image_path='core/static/images/icons/jobs.png',
+            title='Search Jobs & Appointments',
+            url=reverse('home:job-list'),
+            user=self.default_user,
+            sort_order=3,
+            caption=('We maintain an open job board with academic and industry positions relevant to the CoMSES Net '
+                     'Community. Any CoMSES Net Member can register and post positions here.')
+        )
+        self.root_page.add_child(instance=community_index)
+
+    def build(self):
+        self.build_community_index()
+
+
+class AboutSection(AbstractSection):
+
+    def build_about_section(self):
+        about_index = CategoryIndexPage(
+            heading='About',
+            title='About CoMSES Net / OpenABM',
+            slug='about',
+            summary=('Welcome! CoMSES Net, the Network for Computational Modeling in Social and Ecological Sciences, '
+                     'is an open community of researchers, educators, and professionals with a common goal - improving '
+                     'the way we develop, share, use, and re-use agent based and computational models for the study of '
+                     'social and ecological systems. We have been developing a computational model library to preserve '
+                    'the digital artifacts and source code that comprise an agent based model and encourage you to '
+                     'register and [add your models to the archive](/codebases/create/). We are governed by an '
+                     'international board and ex-officio members (PIs of the projects that fund CoMSES Net) and '
+                     'operate under [these by-laws](/about/by-laws).'
+                     ),
+        )
+        about_index.add_breadcrumbs([('About CoMSES Net', '/about/')])
+        about_index.add_navigation_links([('Overview', '/about/'),
+                                          ('People', '/about/people/'),
+                                          ('FAQs', '/about/faq/'),
+                                          ('Contact', '/about/contact/')])
+        about_index.add_callout(
+            image_path='core/static/images/icons/digital-archive.png',
+            title='Provide trusted digital preservation and curation',
+            user=self.default_user,
+            sort_order=1,
+            caption='Facilitate reuse and reproducibility with rich contextual metadata.'
+        )
+        about_index.add_callout(
+            image_path='core/static/images/icons/culture.png',
+            title='Promote a culture of sharing',
+            user=self.default_user,
+            sort_order=2,
+            caption='Publish or perish. Share or shrivel.',
+        )
+        about_index.add_callout(
+            image_path='core/static/images/icons/cog.png',
+            title='Improve theoretical and methodological practice',
+            user=self.default_user,
+            sort_order=3,
+            caption='''Engage with practitioners to address theoretical concerns and improve methodological practices 
+            for reuse and reusability.''',
+        )
+        self.root_page.add_child(instance=about_index)
+        return about_index
+
+    def build_people_page(self, parent):
+        people_page = StreamPage(
+            template='home/about/people.jinja',
+            title='People',
+            #heading='About',
+            description=("The CoMSES Net Directorate is led by [Michael Barton](/users/cmbarton/), "
+                         "[Marco Janssen](/users/marcojanssen/], [Lilian Na'ia Alessa](/users/lil.alessa/), "
+                         "[Allen Lee](/users/alee/), and Ken Buetow in consultation with an executive board elected by "
+                         "full CoMSES Net members and a dedicated support staff with expertise in digital curation and "
+                         "community cyberinfrastructure development."
+                         ),
+        )
+        parent.add_child(instance=people_page)
+
+    def build_faq_page(self, parent):
+        faq_page = FaqPage(
+            slug='faq',
+            title='Frequently Asked Questions',
+            description=('We have organized our frequently asked questions into categories to make it easier to find '
+                         "answers.\n\nIf you have a question that is not answered here, you can "
+                         "[register](/accounts/signup/) as a CoMSES Net Member and post it to our forums. With "
+                         "enough community interest, it may end up on this list."),
+        )
+        for idx, faq_entry in enumerate(FaqEntry.objects.order_by('id')):
+            faq_page.faq_entry_placements.add(
+                FaqEntryPlacement(sort_order=idx, faq_entry=faq_entry)
+            )
+        parent.add_child(instance=faq_page)
+
+
+    def build(self):
+        about_index = self.build_about_section()
+        self.build_people_page(about_index)
+        self.build_faq_page(about_index)
+
+
+
 class Command(BaseCommand):
 
     def __init__(self, *args, **kwargs):
@@ -219,6 +368,7 @@ class Command(BaseCommand):
         parser.add_argument('--reload-platforms', default=False, action='store_true')
         parser.add_argument('--reload-licenses', default=False, action='store_true')
         parser.add_argument('--reload-journals', default=False, action='store_true')
+        parser.add_argument('--reload-faq', default=False, action='store_true')
 
     def handle(self, *args, **options):
         if options['reload_platforms']:
@@ -227,15 +377,16 @@ class Command(BaseCommand):
             load_licenses()
         if options['reload_journals']:
             load_journals()
+        if options['reload_faq']:
+            load_faq_entries()
 
         self.create_landing_page()
         # argparse converts dashes to underscores
         self.create_site(site_name=options['site_name'], hostname=options['site_domain'])
         self.create_social_apps()
         # create community, about, resources pages
-        self.create_community_section()
-        ResourceSection(self.landing_page, self.default_user).build()
-        self.create_about_section()
+        for section in (CommunitySection, ResourceSection, AboutSection):
+            section(self.landing_page, self.default_user).build()
 
     @staticmethod
     def create_social_apps():
@@ -293,112 +444,3 @@ class Command(BaseCommand):
         root_page.refresh_from_db()
         root_page.add_child(instance=landing_page)
         self.landing_page = landing_page
-
-
-    def create_community_section(self):
-        community_index = CategoryIndexPage(
-            heading='Community',
-            title='Welcome to the CoMSES Net Community',
-            slug='community',
-            summary=('CoMSES Net is dedicated to fostering open and reproducible scientific computation through '
-                     'cyberinfrastructure and community development. We curate [resources for '
-                     'model-based science](/resources/) including tutorials and FAQs on agent-based modeling, a '
-                     '[computational model library](/codebases/) to help researchers archive their work and discover '
-                     'and reuse other&apos;s works, and '
-                     '[forums for discussions, job postings, and events.](https://forum.comses.net)'
-                     ),
-        )
-        community_index.add_breadcrumbs([
-            ('Community', '/community/')
-        ])
-        community_index.add_navigation_links([
-            ('Community', '/community/'),
-            ('Forum', settings.DISCOURSE_BASE_URL),
-            ('Users', reverse('home:profile-list')),
-            ('Jobs', reverse('home:job-list')),
-        ])
-        # add callouts
-        community_index.add_callout(
-            image_path='core/static/images/icons/connect.png',
-            title='Connect with Researchers',
-            url=reverse('home:profile-list'),
-            user=self.default_user,
-            sort_order=1,
-            caption=('Follow other researchers, their models, or other topics of interest. Engage in discussions, '
-                     'participate in upcoming events, or find a new job. Preserve the complete digital pipeline used to '
-                     'derive a publishable finding. Other researchers will be able to discover, cite, and run your code '
-                     'in a reproducible' 'containerized environment.')
-        )
-
-        community_index.add_callout(
-            image_path='core/static/images/icons/events.png',
-            title='Find Upcoming Events',
-            url=reverse('home:event-list'),
-            user=self.default_user,
-            sort_order=2,
-            caption=('Find calls for papers and participation in upcoming conferences, workshops, and other events '
-                     'curated by the CoMSES Net Community.'),
-        )
-
-        community_index.add_callout(
-            image_path='core/static/images/icons/jobs.png',
-            title='Search Jobs & Appointments',
-            url=reverse('home:job-list'),
-            user=self.default_user,
-            sort_order=3,
-            caption=('We maintain an open job board with academic and industry positions relevant to the CoMSES Net '
-                     'Community. Any CoMSES Net Member can register and post positions here.')
-        )
-        self.landing_page.add_child(instance=community_index)
-
-    def create_about_section(self):
-        about_index = CategoryIndexPage(
-            heading='About',
-            title='About CoMSES Net / OpenABM',
-            slug='about',
-            summary=('Welcome! CoMSES Net, the Network for Computational Modeling in Social and Ecological Sciences, '
-                     'is an open community of researchers, educators, and professionals with a common goal - improving '
-                     'the way we develop, share, use, and re-use agent based and computational models for the study of '
-                     'social and ecological systems. We have been developing a computational model library to preserve '
-                    'the digital artifacts and source code that comprise an agent based model and encourage you to '
-                     'register and [add your models to the archive](/codebases/create/). We are governed by an '
-                     'international board and ex-officio members (PIs of the projects that fund CoMSES Net) and '
-                     'operate under [these by-laws](/about/by-laws).'
-                     ),
-        )
-        about_index.add_breadcrumbs([('About CoMSES Net', '/about/')])
-        about_index.add_navigation_links([('Overview', '/about/'),
-                                          ('People', 'people/'),
-                                          ('FAQs', '/faq/'),
-                                          ('Contact', '/contact/')])
-        about_index.add_callout(
-            image_path='core/static/images/icons/digital-archive.png',
-            title='Provide trusted digital preservation and curation',
-            user=self.default_user,
-            sort_order=1,
-            caption='Facilitate reuse and reproducibility with rich contextual metadata.'
-        )
-        about_index.add_callout(
-            image_path='core/static/images/icons/culture.png',
-            title='Promote a culture of sharing',
-            user=self.default_user,
-            sort_order=2,
-            caption='Publish or perish. Share or shrivel.',
-        )
-        about_index.add_callout(
-            image_path='core/static/images/icons/cog.png',
-            title='Improve theoretical and methodological practice',
-            user=self.default_user,
-            sort_order=3,
-            caption='''Engage with practitioners to address theoretical concerns and improve methodological practices 
-            for reuse and reusability.''',
-        )
-        self.landing_page.add_child(instance=about_index)
-        people_page = StreamPage(
-            title='People',
-            description=("The CoMSES Net Directorate is led by Michael Barton, Marco Janssen, Allen Lee, and Lilian "
-                         "Na'ia Alessa. It also includes an executive board elected by full CoMSES Net members and a "
-                         "support staff with expertise in digital curation and cyberinfrastructure development."
-                         ),
-        )
-        about_index.add_child(instance=people_page)

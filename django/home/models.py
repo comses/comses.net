@@ -1,6 +1,7 @@
 import logging
 import pathlib
 from enum import Enum
+from textwrap import shorten
 
 from django import forms
 from django.contrib.auth.models import User, Group
@@ -9,6 +10,7 @@ from django.db import models
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.translation import ugettext_lazy as _
+from model_utils import Choices
 from modelcluster.contrib.taggit import ClusterTaggableManager
 from modelcluster.fields import ParentalKey
 from modelcluster.models import ClusterableModel
@@ -540,6 +542,54 @@ class JournalIndexPage(NavigationMixin, Page):
     content_panels = Page.content_panels + [
         FieldPanel('description'),
         InlinePanel('journal_placements', label='Journals'),
+    ]
+
+
+@register_snippet
+class FaqEntry(index.Indexed, models.Model):
+    FAQ_CATEGORIES = Choices(
+        ('abm', _('Agent-based Modeling Questions')),
+        ('general', _('General CoMSES Net Questions')),
+        ('model-library', _('Computational Model Library Questions')),
+    )
+    category = models.CharField(max_length=32, choices=FAQ_CATEGORIES, default=FAQ_CATEGORIES.general)
+    question = models.CharField(max_length=128, help_text=_("Short question"))
+    answer = models.TextField(help_text=_("Markdown formatted answer"))
+    date_created = models.DateTimeField(auto_now=True)
+    last_modified = models.DateTimeField(auto_now_add=True)
+    submitter = models.ForeignKey(User, blank=True, null=True)
+
+    def __str__(self):
+        return "[{0}] {1} {2}".format(self.category, self.question, shorten(self.answer, 140))
+
+
+class FaqEntryPlacement(Orderable, models.Model):
+    page = ParentalKey('home.FaqPage', related_name='faq_entry_placements')
+    faq_entry = models.ForeignKey(FaqEntry, related_name='+')
+
+    class Meta:
+        verbose_name = 'faq placement'
+
+
+class FaqPage(Page, NavigationMixin):
+    template = 'home/about/faq.jinja'
+    description = models.CharField(max_length=1000)
+
+    def get_context(self, request, *args, **kwargs):
+        context = super().get_context(request, *args, **kwargs)
+        # FIXME: add pagination
+        context['faq_entries'] = FaqEntry.objects.all()
+        return context
+
+    content_panels = Page.content_panels + [
+        FieldPanel('description'),
+        InlinePanel('faq_entry_placements', label='FAQ Entries')
+    ]
+
+    search_fields = Page.search_fields + [
+        index.RelatedFields('faq_entry_placements', [
+            index.SearchField('faq_entry')
+        ])
     ]
 
 

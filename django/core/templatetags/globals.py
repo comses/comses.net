@@ -14,6 +14,7 @@ from webpack_loader.templatetags import webpack_loader as wl
 from core.serializers import PUBLISH_DATE_FORMAT
 from core.summarization import summarize
 from core.utils import markdown_to_sanitized_html
+from home.models import FaqEntry
 
 
 @library.global_function
@@ -59,6 +60,11 @@ def summarize_markdown(md):
 @library.global_function
 def is_checkbox(bound_field):
     return isinstance(bound_field.field.widget, CheckboxInput)
+
+
+@library.filter
+def faq_category_display(category):
+    return FaqEntry.FAQ_CATEGORIES[category]
 
 
 @library.filter

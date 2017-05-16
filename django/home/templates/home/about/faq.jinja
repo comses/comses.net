@@ -1,0 +1,41 @@
+{% extends "base.jinja" %}
+{% from "common.jinja" import breadcrumb, subnav, submit_model_btn, search_tag_href %}
+
+{% block title %}{{ page.title }}{% endblock %}
+
+{% block introduction %}<h1>About</h1>{% endblock %}
+
+{% block content %}
+    {{ breadcrumb(page.get_breadcrumbs()) }}
+    {{ subnav(page.get_navigation_links()) }}
+    <div class='jumbotron'>
+        <h1 class='display-5'>{{ page.title }}</h1>
+        <div class='pt-4 lead'>
+            {{ page.description|markdown }}
+        </div>
+    </div>
+    <div id='faq-accordion' role='tablist' aria-multiselectable='true'>
+        {% for category, group_list in faq_entries|groupby('category') %}
+            <h3 class='py-3 title'>{{ category|faq_category_display }}</h3>
+            {% for entry in group_list %}
+                {% set entry_id = category ~ "_" ~ entry.pk %}
+                {% set heading_id = "faqHeading_" ~ entry.pk %}
+                <div class='card'>
+                    <div class='card-header' role='tab' id='{{ heading_id }}'>
+                        <h5 class='mb-0'>
+                            <a data-toggle='collapse' data-parent='#faq-accordion' href='#{{entry_id}}'
+                                aria-expanded='false' aria-controls='{{entry_id}}'>
+                                {{ entry.question }}
+                            </a>
+                        </h5>
+                    </div>
+                    <div id='{{entry_id}}' class='collapse' role='tabpanel' aria-labelledby='{{ heading_id }}'>
+                        <div class='card-block'>
+                            {{ entry.answer|markdown }}
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        {% endfor %}
+    </div>
+{% endblock content %}
