@@ -279,8 +279,10 @@ class CategoryIndexItem(Orderable, models.Model):
     caption = models.CharField(max_length=600)
 
 
+class SubnavigationMenu():
+    pass
 
-# FIXME: look into replacing these with wagtailmenus FlatMenu or similar
+
 class SubNavigationLink(Orderable, models.Model):
     page = ParentalKey(Page, related_name='navigation_links')
     url = models.CharField("Relative path, absolute path, or full URL", max_length=255)
@@ -386,6 +388,27 @@ class StreamPage(Page):
     ]
 
 
+class MarkdownPage(NavigationMixin, Page):
+    template = models.CharField(max_length=128, default='home/markdown_page.jinja')
+    heading = models.CharField(max_length=128)
+    date = models.DateField("Post date", default=timezone.now)
+    description = models.CharField(max_length=512, blank=True)
+    body = models.TextField()
+
+    content_panels = Page.content_panels + [
+        FieldPanel('heading'),
+        FieldPanel('date'),
+        FieldPanel('description'),
+        FieldPanel('body'),
+    ]
+
+    search_fields = Page.search_fields + [
+        index.SearchField('date'),
+        index.SearchField('description'),
+        index.SearchField('body')
+    ]
+
+
 class PlatformTag(TaggedItemBase):
     content_object = ParentalKey('home.Platform', related_name='tagged_platforms')
 
@@ -436,7 +459,7 @@ class PlatformRelease(models.Model):
 
 
 class PlatformSnippetPlacement(Orderable, models.Model):
-    page = ParentalKey('home.PlatformsIndexPage', related_name='platform_placements')
+    page = ParentalKey('home.PlatformIndexPage', related_name='platform_placements')
     platform = models.ForeignKey(Platform, related_name='+')
 
     class Meta:
@@ -502,7 +525,7 @@ class Journal(index.Indexed, ClusterableModel):
 
 
 class JournalSnippetPlacement(Orderable, models.Model):
-    page = ParentalKey('home.JournalsIndexPage', related_name='journal_placements')
+    page = ParentalKey('home.JournalIndexPage', related_name='journal_placements')
     journal = models.ForeignKey(Journal, related_name='+')
 
     class Meta:
