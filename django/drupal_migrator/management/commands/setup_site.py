@@ -16,7 +16,7 @@ from wagtail.wagtailcore.models import Page, Site
 from drupal_migrator.database_migration import load_licenses, load_platforms, load_journals
 from home.models import (LandingPage, FeaturedContentItem, SocialMediaSettings,
                          PlatformIndexPage, Platform, PlatformSnippetPlacement, CategoryIndexPage, StreamPage,
-                         JournalIndexPage, JournalSnippetPlacement, Journal)
+                         JournalIndexPage, JournalSnippetPlacement, Journal, MarkdownPage)
 from library.models import Codebase
 
 logger = logging.getLogger(__name__)
@@ -154,7 +154,45 @@ class ResourceSection():
         parent.add_child(instance=journal_page)
 
     def build_standards_page(self, parent):
-        pass
+        standards_page = MarkdownPage(
+            heading='Resources',
+            slug='standards',
+            title='Documentation Standards',
+            description=(
+                'Advancing the use of agent-based models in scholarly research demands rigorous standards in model '
+                'code and experiment documentation. CoMSES Net supports open metadata and documentation standards '
+                'including [codemeta](https://github.com/codemeta/codemeta), [DataCite](https://www.datacite.org/), '
+                'and the [ODD protocol](https://doi.org/10.1016/j.ecolmodel.2010.08.019).'
+            ),
+            body=('[The ODD Protocol](http://www.ufz.de/index.php?de=40429) was initially proposed by Volker Grimm '
+                  'et al. in 2006 with the following rationale: \n\n'
+                  '> Simulation models that describe autonomous individual organisms (individual based models, IBM) or '
+                  'agents (agent-based models, ABM) have become a widely used tool, not only in ecology, but also in '
+                  'many other disciplines dealing with complex systems made up of autonomous entities. However, there '
+                  'is no standard protocol for describing such simulation models, which can make them difficult to '
+                  'understand and to duplicate. '
+                  '<footer class="blockquote-footer">[(Grimm, V. et al., 2006, p.115)]'
+                  '(https://doi.org/10.1016/j.ecolmodel.2006.04.023)</footer> \n\n'
+                  'The ODD is organized around the three main components to be documented about a model: \n\n'
+                  '1. Overview\n'
+                  '2. Design concepts \n'
+                  '3. Details \n\n'
+                  'These components encompass seven sub-elements that must be documented in sufficient depth for the '
+                  'model&apos;s purpose and design to be clear and replicable for a third party: *Purpose, '
+                  'State Variables and Scales, Process Overview and Scheduling, Design Concepts, Initialization, '
+                  'Input, and Submodels*. \n\n'
+                  'In addition to the original 2006 publication, Grimm et al. have continued to publish updates '
+                  'to the protocol with examples of its application to research projects.\n\n'
+                  '- [The ODD Protocol: a review and first update](http://dx.doi.org/10.1016/j.ecolmodel.2010.08.019)\n'
+                  '- [Using the ODD Protocol for Describing Three Agent-Based Social Simulation Models of '
+                  'Land-Use Change](http://jasss.soc.surrey.ac.uk/11/2/3.html)'
+                  )
+        )
+        standards_page.add_breadcrumbs(self.SUBNAVIGATION_LINKS[0:4:3])
+        standards_page.add_navigation_links(self.SUBNAVIGATION_LINKS)
+
+        parent.add_child(instance=standards_page)
+
 
     def build(self):
         resources_index = self.build_resource_index()
