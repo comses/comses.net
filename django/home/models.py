@@ -19,7 +19,7 @@ from taggit.models import TaggedItemBase
 from timezone_field import TimeZoneField
 from wagtail.contrib.settings.models import BaseSetting, register_setting
 from wagtail.wagtailadmin.edit_handlers import (FieldPanel, InlinePanel, PageChooserPanel, MultiFieldPanel,
-                                                StreamFieldPanel)
+                                                StreamFieldPanel, FieldRowPanel)
 from wagtail.wagtailcore import blocks
 from wagtail.wagtailcore.fields import RichTextField, StreamField
 from wagtail.wagtailcore.models import Page, Orderable
@@ -67,10 +67,17 @@ class SocialMediaSettings(BaseSetting):
     mailing_list_url = models.URLField(help_text=_('Mailing List Signup'), blank=True)
 
 
+@register_snippet
 class Institution(models.Model):
     name = models.CharField(max_length=200)
     url = models.URLField(blank=True)
     acronym = models.CharField(max_length=50)
+
+    content_panels = [
+        FieldPanel('name'),
+        FieldPanel('url'),
+        FieldPanel('acronym'),
+    ]
 
     def __str__(self):
         return self.name
@@ -99,6 +106,7 @@ class FollowUser(models.Model):
         return '{0} following {1}'.format(self.source, self.target)
 
 
+@register_snippet
 class MemberProfile(index.Indexed, ClusterableModel):
     """
     Contains additional comses.net information, possibly linked to a CoMSES Member / site account
@@ -114,10 +122,14 @@ class MemberProfile(index.Indexed, ClusterableModel):
     research_interests = models.TextField(blank=True)
     keywords = ClusterTaggableManager(through=MemberProfileTag, blank=True)
     bio = models.TextField(max_length=500, blank=True, help_text=_('Brief bio'))
-    picture = models.ForeignKey(Image, null=True, blank=True)  # FIXME: use OneToOne instead?
+    picture = models.ForeignKey(Image,  # FIXME: use OneToOne instead?
+                                null=True,
+                                blank=True,
+                                on_delete=models.SET_NULL,
+                                related_name='+')
     personal_url = models.URLField(blank=True)
     professional_url = models.URLField(blank=True)
-    institution = models.ForeignKey(Institution, null=True, blank=True)
+    institution = models.ForeignKey(Institution, null=True, blank=True, related_name='member_profile_set')
     affiliations = JSONField(default=list, help_text=_("JSON-LD list of affiliated institutions"))
     orcid = models.CharField(help_text=_("16 digits, - between every 4th digit, e.g., 0000-0002-1825-0097"),
                              max_length=19, blank=True)
@@ -135,6 +147,17 @@ class MemberProfile(index.Indexed, ClusterableModel):
                                                                      self.user.is_active)
         else:
             return "id={}".format(self.id)
+
+    panels = [
+        FieldPanel('bio', widget=forms.Textarea),
+        FieldPanel('research_interests', widget=forms.Textarea),
+        FieldPanel('personal_url'),
+        FieldPanel('professional_url'),
+        FieldPanel('orcid'),
+        FieldPanel('institution'),
+        ImageChooserPanel('picture'),
+        InlinePanel('tagged_members'),
+    ]
 
     search_fields = [
         index.SearchField('bio', partial_match=True, boost=10),

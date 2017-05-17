@@ -91,6 +91,11 @@ $fa-font-path: '../node_modules/font-awesome/fonts/';
   }
 }
 
+h2.people {
+  font-weight: 700;
+  font-size: 2rem;
+}
+
 h2.discourse-comments {
   color: $text-color;
   font-size: 1.4rem;
