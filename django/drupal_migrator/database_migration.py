@@ -405,10 +405,15 @@ class AuthorExtractor(Extractor):
                 logger.warning("XXX: multiple contributors (%s) found named [%s %s] %s", contributors,
                                given_name, family_name, middle_name)
                 contributor = contributors.first()
-                if contributors.filter(user__isnull=False).count() == 1:
-                    contributor = contributors.get(user__isnull=False)
+                if contributors.filter(user__isnull=False).count() >= 1:
+                    # first, try to pick first Contributor with an associated User
+                    contributor = contributors.filter(user__isnull=False).first()
+                elif contributors.exclude(email='').count() >= 1:
+                    # no associated Users, grab first Contributor with an email
+                    contributor = contributors.exclude(email='').first()
                 else:
-                    logger.warning("XXX: There are multiple users and contributors with this name. Aagh!")
+                    #
+                    logger.warning("XXX: There are multiple users and contributors with this name. Picking first one.")
                 contributor.middle_name = middle_name
                 contributor.save()
 
