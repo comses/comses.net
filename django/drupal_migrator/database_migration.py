@@ -708,6 +708,8 @@ def load(directory: str):
 
     load_journals()
 
+    load_faq_entries()
+
     # extract Users first so that we have a remote chance of correlating Authors with Users
     user_id_map = user_extractor.extract_all()
     # extract Drupal taxonomy terms
