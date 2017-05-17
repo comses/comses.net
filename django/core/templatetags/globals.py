@@ -62,10 +62,17 @@ def is_checkbox(bound_field):
     return isinstance(bound_field.field.widget, CheckboxInput)
 
 
-@library.filter
-def faq_category_display(category):
-    return FaqEntry.FAQ_CATEGORIES[category]
-
+@library.global_function
+def get_choices_display(selected_choice, choices):
+    """
+    Takes a model_utils.Choices key entry alongside its parent set of Choices and returns the display value for that
+    particular selected_choice. Tries a pair tuple first ("foo", "Display value for foo") and then the triple
+    (<numeric_id>, "foo", "Display value for foo")
+    """
+    try:
+        return choices[selected_choice]
+    except:
+        return choices[getattr(choices, selected_choice)]
 
 @library.filter
 def markdown(text: str):
