@@ -94,21 +94,21 @@ class MemberProfile(index.Indexed, ClusterableModel):
 
     timezone = TimeZoneField(blank=True)
 
-    degrees = ArrayField(models.CharField(max_length=255), blank=True, default=list)
-    research_interests = models.TextField(blank=True)
-    keywords = ClusterTaggableManager(through=MemberProfileTag, blank=True)
-    bio = models.TextField(max_length=500, blank=True, help_text=_('Brief bio'))
-    picture = models.ForeignKey(Image,  # FIXME: use OneToOne instead?
-                                null=True,
-                                blank=True,
-                                on_delete=models.SET_NULL,
-                                related_name='+')
-    personal_url = models.URLField(blank=True)
-    professional_url = models.URLField(blank=True)
-    institution = models.ForeignKey(Institution, null=True, blank=True, related_name='member_profile_set')
     affiliations = JSONField(default=list, help_text=_("JSON-LD list of affiliated institutions"))
+    bio = models.TextField(max_length=500, blank=True, help_text=_('Brief bio'))
+    degrees = ArrayField(models.CharField(max_length=255), blank=True, default=list)
+    institution = models.ForeignKey(Institution, null=True)
+    keywords = ClusterTaggableManager(through=MemberProfileTag, blank=True)
     orcid = models.CharField(help_text=_("16 digits, - between every 4th digit, e.g., 0000-0002-1825-0097"),
-                             max_length=19, blank=True)
+                             max_length=19)
+    personal_url = models.URLField(blank=True)
+    picture = models.ForeignKey(Image, null=True, help_text=_('Profile picture'))
+    professional_url = models.URLField(blank=True)
+    research_interests = models.TextField(blank=True)
+
+    @property
+    def submitter(self):
+        return self.user
 
     @property
     def full_member(self):
@@ -118,9 +118,10 @@ class MemberProfile(index.Indexed, ClusterableModel):
         return reverse('home:profile-detail', kwargs={'username': self.user.username})
 
     def __str__(self):
-        if self.user:
-            return "username={} is_superuser={} is_active={}".format(self.user.username, self.user.is_superuser,
-                                                                     self.user.is_active)
+        if self.submitter:
+            return "submitter={} is_superuser={} is_active={}".format(self.user.username,
+                                                                      self.user.is_superuser,
+                                                                      self.user.is_active)
         else:
             return "id={}".format(self.id)
 

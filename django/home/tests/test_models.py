@@ -24,6 +24,3 @@ class MemberProfileTestCase(HypothesisTestCase):
         self.assertFalse(member_profile.bio)
         # nullable fields
         self.assertIsNone(member_profile.institution)
-
-
-

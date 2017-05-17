@@ -306,7 +306,7 @@ class Codebase(index.Indexed, ClusterableModel):
         return release
 
     def __str__(self):
-        return "{0} {1} identifier={2}".format(self.title, self.date_created, repr(self.identifier))
+        return "{0} {1} identifier={2} live={3}".format(self.title, self.date_created, repr(self.identifier), repr(self.live))
 
     class Meta:
         permissions = (('view_codebase', 'Can view codebase'),)

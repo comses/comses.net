@@ -3,7 +3,7 @@ import {AxiosResponse} from "axios";
 import * as _ from 'lodash'
 import * as queryString from 'query-string'
 
-function getCookie(name) {
+export function getCookie(name) {
     let cookieValue: null | string = null;
     if (document.cookie && document.cookie != '') {
         let cookies = document.cookie.split(';');
@@ -58,7 +58,7 @@ class Viewset {
 
     list(query: object = {}) {
         // 200 OK
-        const qs = query === {} ? `?${queryString.stringify(query)}` : '';
+        const qs = query === {} ? '': `?${queryString.stringify(query)}`;
         return api_base.get(`/${this.name}/${qs}`).then(response => response.data);
     }
 
@@ -101,5 +101,6 @@ class Viewset {
 export const api = {
     jobs: new Viewset('jobs'),
     events: new Viewset('events'),
-    tags: new Viewset('tags')
+    tags: new Viewset('tags'),
+    users: new Viewset('users')
 };

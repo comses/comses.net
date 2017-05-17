@@ -89,3 +89,15 @@ class CodebaseSerializer(serializers.ModelSerializer):
     class Meta:
         model = Codebase
         exclude = ('featured_images',)
+
+
+class RelatedCodebaseSerializer(serializers.ModelSerializer):
+    """Codebase serializer for MemberProfile"""
+    all_contributors = CodebaseContributorSerializer(many=True, read_only=True)
+    tags = TagSerializer(many=True)
+    last_published_on = serializers.DateTimeField(read_only=True)
+    summarized_description = serializers.CharField(read_only=True)
+
+    class Meta:
+        model = Codebase
+        fields = ('all_contributors', 'tags', 'title', 'last_published_on', 'identifier', 'summarized_description')

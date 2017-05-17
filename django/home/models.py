@@ -197,7 +197,6 @@ class Breadcrumb(Orderable, models.Model):
 
 
 class NavigationMixin(object):
-
     def add_breadcrumbs(self, breadcrumb_tuples):
         self._add_tuples(breadcrumb_tuples, Breadcrumb)
 
@@ -205,7 +204,7 @@ class NavigationMixin(object):
         return [
             {'url': item.url, 'text': item.title}
             for item in self.breadcrumbs.all()
-        ]
+            ]
 
     def _add_tuples(self, tuples, cls):
         related_name = cls._meta.get_field('page').related_query_name()
@@ -231,7 +230,7 @@ class NavigationMixin(object):
         return [
             {'url': nav.url, 'text': nav.title, 'active': nav.url.endswith(self.slug + '/')}
             for nav in self.navigation_links.all()
-        ]
+            ]
 
 
 class CategoryIndexPage(NavigationMixin, Page):

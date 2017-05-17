@@ -1,0 +1,14 @@
+{% extends 'base.jinja' %}
+
+{% block introduction %}<h1>Edit Profile</h1>{% endblock %}
+
+{% block content %}
+<div id="app"></div>
+{% endblock %}
+
+{% block js %}
+{{ render_bundle('profiles') }}
+    <script>
+    new EditProfile.default().$mount('#app');
+    </script>
+{% endblock %}

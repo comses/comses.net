@@ -8,6 +8,7 @@ from core.serializers import (PUBLISH_DATE_FORMAT, LinkedUserSerializer, TagSeri
 from library.serializers import CodebaseSerializer
 from .models import (FeaturedContentItem, UserMessage)
 from core.models import Institution, MemberProfile, Event, Job
+from library.serializers import RelatedCodebaseSerializer
 
 logger = logging.getLogger(__name__)
 
@@ -42,7 +43,6 @@ class EventCalendarSerializer(serializers.ModelSerializer):
 
 
 class InstitutionSerializer(serializers.ModelSerializer):
-
     class Meta:
         model = Institution
         fields = ('url', 'name',)
@@ -81,49 +81,88 @@ class FeaturedContentItemSerializer(serializers.ModelSerializer):
 
 
 class MemberProfileSerializer(serializers.ModelSerializer):
-    full_member = serializers.BooleanField(read_only=True)
+    # User fields
+    date_joined = serializers.DateTimeField(source='user.date_joined', read_only=True, format='%c')
+    family_name = serializers.CharField(source='user.last_name')
+    full_name = serializers.SerializerMethodField(source='user.full_name')
+    given_name = serializers.CharField(source='user.first_name')
+    username = serializers.CharField(source='user.username', read_only=True)
+
+    # Followers
+    follower_count = serializers.ReadOnlyField(source='user.following.count')
+    following_count = serializers.ReadOnlyField(source='user.followers.count')
+
+    codebases = RelatedCodebaseSerializer(read_only=True, many=True)
+
+    # Institution
+    institution_name = serializers.CharField(source='institution.name')
+    institution_url = serializers.URLField(source='institution.url')
+
+    # MemberProfile
+    avatar = serializers.ReadOnlyField(source='picture')  # needed to materialize the FK relationship for wagtailimages
     orcid_url = serializers.SerializerMethodField()
     keywords = TagSerializer(many=True)
-    institution = InstitutionSerializer()
-    avatar = serializers.ReadOnlyField(source='picture')  # needed to materialize the FK relationship for wagtailimages
+    profile_url = serializers.URLField(source='get_absolute_url', read_only=True)
+
+    def get_full_name(self, instance):
+        full_name = instance.user.get_full_name()
+        if not full_name:
+            full_name = instance.user.username
+        return full_name
 
     def get_orcid_url(self, instance):
         if instance.orcid:
             return 'https://orcid.org/{0}'.format(instance.orcid)
         return ''
 
+    def update(self, instance, validated_data):
+        raw_tags = TagSerializer(many=True, data=validated_data.pop('keywords'))
+        user = instance.user
+        raw_user = validated_data.pop('user')
+        user.first_name = raw_user['first_name']
+        user.last_name = raw_user['last_name']
+
+        raw_institution = validated_data.pop('institution')
+        institution = instance.institution
+        if institution:
+            institution.name = raw_institution.get('name')
+            institution.url = raw_institution.get('url')
+            institution.save()
+        else:
+            institution = Institution.objects.create(**raw_institution)
+            instance.institution = institution
+
+        user.save()
+        obj = super().update(instance, validated_data)
+        self.save_keywords(instance, raw_tags)
+        return obj
+
+    @staticmethod
+    def save_keywords(instance, tags):
+        if not tags.is_valid():
+            raise serializers.ValidationError(tags.errors)
+        db_tags = tags.save()
+        instance.keywords.clear()
+        instance.keywords.add(*db_tags)
+        instance.save()
+
     class Meta:
         model = MemberProfile
-        fields = '__all__'
-
-
-class UserSerializer(serializers.ModelSerializer):
-    member_profile = MemberProfileSerializer(read_only=True)
-    full_name = serializers.SerializerMethodField()
-    profile_url = serializers.URLField(source='member_profile.get_absolute_url', read_only=True)
-    username = serializers.CharField(read_only=True)
-    is_superuser = serializers.BooleanField(read_only=True)
-    is_staff = serializers.BooleanField(read_only=True)
-    date_joined = serializers.DateTimeField(read_only=True, format='%c')
-    following_count = serializers.ReadOnlyField(source='followers.count')
-    follower_count = serializers.ReadOnlyField(source='following.count')
-# FIXME: consider loading codebases separately in the ViewSet..
-    codebases = CodebaseSerializer(read_only=True, many=True)
-
-    def get_full_name(self, instance):
-        full_name = instance.get_full_name()
-        if not full_name:
-            full_name = instance.username
-        return full_name
-
-    class Meta:
-        model = User
-        fields = ('first_name', 'last_name', 'username', 'is_superuser', 'is_staff', 'member_profile', 'full_name',
-                  'profile_url', 'date_joined', 'codebases', 'following_count', 'follower_count')
+        fields = (
+            # User
+            'date_joined', 'family_name', 'full_name', 'given_name', 'profile_url',
+            'username',
+            # Follower
+            'follower_count', 'following_count',
+            'codebases',
+            #institution
+            'institution_name', 'institution_url',
+            # MemberProfile
+            'avatar', 'bio', 'degrees', 'bio', 'degrees', 'full_member', 'keywords', 'orcid', 'orcid_url',
+            'personal_url', 'professional_url', 'profile_url', 'research_interests')
 
 
 class UserMessageSerializer(serializers.ModelSerializer):
-
     class Meta:
         model = UserMessage
         field = ('message', 'user')

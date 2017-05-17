@@ -1,4 +1,4 @@
-import EditJob from './create.vue'
+import EditJob from './edit.vue'
 import * as Vue from 'vue'
 import * as VeeValidate from 'vee-validate'
 

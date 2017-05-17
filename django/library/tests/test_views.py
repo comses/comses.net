@@ -55,15 +55,14 @@ class CodebaseViewSetTestCase(ViewSetTestCase):
             {'put': 'update', 'get': 'retrieve', 'post': 'create', 'delete': 'destroy'})(request)
         return response
 
-    @settings(max_examples=MAX_EXAMPLES, verbosity=Verbosity.verbose)
-    @given(generate_codebases())
-    def test_add_change_view(self, data):
+    @settings(max_examples=MAX_EXAMPLES, verbosity=Verbosity.verbose, perform_health_check=False)
+    @given(generate_codebases(), st.sampled_from(('add', 'change', 'view')))
+    def test_add_change_view(self, data, action):
         users, codebases = data
         owner, user = users
 
-        for action in ('change', 'add', 'view'):
-            self.check_authorization(action, owner, codebases[0])
-            self.check_authorization(action, user, codebases[1])
+        self.check_authorization(action, owner, codebases[0])
+        self.check_authorization(action, user, codebases[0])
 
     @settings(max_examples=MAX_EXAMPLES)
     @given(generate_codebases())

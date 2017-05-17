@@ -58,14 +58,13 @@ class JobViewSetTestCase(ViewSetTestCase):
     list_url_name = 'home:job-list'
 
     @settings(max_examples=MAX_EXAMPLES)
-    @given(generate_job_data())
-    def test_add_change_view(self, data):
+    @given(generate_job_data(), st.sampled_from(('add', 'change', 'view')))
+    def test_add_change_view(self, data, action):
         users, job = data
         owner, user = users
 
-        for action in ('change', 'add', 'view'):
-            self.check_authorization(action, owner, job)
-            self.check_authorization(action, user, job)
+        self.check_authorization(action, owner, job)
+        self.check_authorization(action, user, job)
 
     @settings(max_examples=MAX_EXAMPLES)
     @given(generate_job_data())
@@ -92,14 +91,13 @@ class EventViewSetTestCase(ViewSetTestCase):
     list_url_name = 'home:event-list'
 
     @settings(max_examples=MAX_EXAMPLES)
-    @given(generate_event_data())
-    def test_add_change_view(self, data):
+    @given(generate_event_data(), st.sampled_from(('add', 'change', 'view')))
+    def test_add_change_view(self, data, action):
         users, event = data
         owner, user = users
 
-        for action in ('change', 'add', 'view'):
-            self.check_authorization(action, owner, event)
-            self.check_authorization(action, user, event)
+        self.check_authorization(action, owner, event)
+        self.check_authorization(action, user, event)
 
     @settings(max_examples=MAX_EXAMPLES)
     @given(generate_event_data())
