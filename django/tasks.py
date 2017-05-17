@@ -5,7 +5,7 @@ import logging
 import os
 import sys
 
-# push tasks.py current directory onto the path to access core.settings
+# push current directory onto the path to access core.settings
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "core.settings.dev")
 
@@ -74,14 +74,17 @@ def coverage(ctx):
 def server(ctx, ip="0.0.0.0", port=8000):
     dj(ctx, 'runserver {ip}:{port}'.format(ip=ip, port=port), capture=False)
 
+
 @task(aliases=['ss'])
 def setup_site(ctx, site_name='CoMSES Net',
                site_domain='localhost'):
     dj(ctx, 'setup_site --site-name="{0}" --site-domain="{1}"'.format(site_name, site_domain))
 
+
 @task(aliases=['idd'])
 def import_drupal_data(ctx, directory='incoming'):
     dj(ctx, 'import_drupal_data -d {0}'.format(directory))
+
 
 @task(aliases=['icf'])
 def import_codebase_files(ctx, directory='incoming/models'):
@@ -96,32 +99,6 @@ def import_all(ctx):
 @task(aliases=['esli'])
 def update_elasticsearch_license(ctx, license='/secrets/es5-license.json'):
     ctx.run("curl -XPUT 'http://elasticsearch:9200/_xpack/license?acknowledge=true' -H 'Content-Type: application/json' -d @{0}".format(license))
-
-
-'''
-@task(aliases=['rfd'])
-def restore_from_dump(ctx, dumpfile='dump.sql', init_db_schema=True, force=False):
-    import django
-    django.setup()
-    from citation.models import Publication
-    number_of_publications = 0
-    try:
-        number_of_publications = Publication.objects.count()
-    except:
-        pass
-    if number_of_publications > 0 and not force:
-        print("Ignoring restore, database with {0} publications already exists. Use --force to override.".format(number_of_publications))
-    else:
-        create_pgpass_file(ctx)
-        ctx.run('dropdb -w --if-exists -e {db_name} -U {db_user} -h db'.format(**env), echo=True, warn=True)
-        ctx.run('createdb -w {db_name} -U {db_user} -h db'.format(**env), echo=True, warn=True)
-        if os.path.isfile(dumpfile):
-            logger.debug("loading data from %s", dumpfile)
-            ctx.run('psql -w -q -h db {db_name} {db_user} < {dumpfile}'.format(dumpfile=dumpfile, **env),
-                    warn=True)
-    if init_db_schema:
-        initialize_database_schema(ctx)
-'''
 
 
 @task(aliases=['pgpass'])
@@ -142,11 +119,12 @@ def backup(ctx, path='/backups/postgres'):
 
 @task(aliases=['idb', 'initdb'])
 def initialize_database_schema(ctx, clean=False):
+    apps = ('core', 'home', 'library')
     if clean:
-        for app in ('home', 'library'):
+        for app in apps:
             migration_dir = os.path.join(app, 'migrations')
             ctx.run('find {0} -name 00*.py -delete -print'.format(migration_dir))
-    dj(ctx, 'makemigrations home library --noinput')
+    dj(ctx, 'makemigrations {0} --noinput'.format(' '.join(apps)))
     dj(ctx, 'migrate --noinput')
 
 
