@@ -71,10 +71,10 @@ THIRD_PARTY_APPS = [
 ]
 
 COMSES_APPS = [
-    'core',
+    'core.apps.CoreConfig',
     'citation.apps.CitationConfig',
-    'library.apps.LibraryConfig',
     'home.apps.HomeConfig',
+    'library.apps.LibraryConfig',
 ]
 
 INSTALLED_APPS = DJANGO_APPS + WAGTAIL_APPS + COMSES_APPS + THIRD_PARTY_APPS
