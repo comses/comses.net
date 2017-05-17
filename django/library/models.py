@@ -363,7 +363,7 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
     dependencies JSONField
     '''
     platform_tags = ClusterTaggableManager(through=CodebaseReleasePlatformTag, related_name='platform_codebase_releases')
-    platforms = models.ManyToManyField('home.Platform')
+    platforms = models.ManyToManyField('core.Platform')
     programming_languages = ClusterTaggableManager(through=ProgrammingLanguage,
                                                    related_name='pl_codebase_releases')
     codebase = models.ForeignKey(Codebase, related_name='releases')

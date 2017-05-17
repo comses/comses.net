@@ -6,7 +6,7 @@ from django.db.models.signals import post_save
 from django.dispatch import receiver
 from wagtail.wagtailcore.models import Site as WagtailSite
 
-from .models import MemberProfile
+from core.models import MemberProfile
 
 logger = logging.getLogger(__name__)
 

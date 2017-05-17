@@ -1,11 +1,25 @@
 {% extends "base.jinja" %}
+{% from "common.jinja" import breadcrumb, subnav, submit_model_btn, search_tag_href %}
 
-{% block introduction %}
-    <h1>Contact us</h1>
-{% endblock %}
+{% block title %}{{ page.title }}{% endblock %}
+
+{% block introduction %}<h1>About</h1>{% endblock %}
+
 {% block content %}
-    <p>
-    Please contact us at editors@comses.net
-    </p>
-{% endblock %}
-
+    {{ breadcrumb(page.get_breadcrumbs()) }}
+    {{ subnav(page.get_navigation_links()) }}
+    <div class='jumbotron'>
+        <h1 class='display-5'>{{ page.title }}</h1>
+        <div class='pt-4 lead'>
+            {{ page.description|markdown }}
+        </div>
+    </div>
+    <form class="contact" id="contact_form" method="post">
+        {% include "includes/form.jinja" %}
+        <div class='form-group row'>
+            <div class='offset-md-2 col-sm-8'>
+                <button type="submit" class='btn btn-primary'>{% trans %} Sign Up{% endtrans %}</button>
+            </div>
+        </div>
+    </form>
+{% endblock content %}

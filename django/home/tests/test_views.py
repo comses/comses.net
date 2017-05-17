@@ -6,7 +6,7 @@ from hypothesis.extra.datetime import datetimes
 from hypothesis.extra.django.models import models
 
 from core.tests.base import ViewSetTestCase, text, MAX_EXAMPLES, generate_user
-from home.models import Job, Event
+from core.models import Event, Job
 from home.serializers import JobSerializer, EventSerializer
 from home.views import JobViewSet, EventViewSet
 

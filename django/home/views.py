@@ -23,7 +23,8 @@ from taggit.models import Tag
 from wagtail.wagtailsearch.backends import get_search_backend
 
 from core.view_helpers import get_search_queryset, retrieve_with_perms
-from .models import Event, Job, FeaturedContentItem, FollowUser
+from .models import FeaturedContentItem
+from core.models import FollowUser, Event, Job
 from .serializers import (EventSerializer, JobSerializer, TagSerializer, FeaturedContentItemSerializer, UserSerializer,
                           UserMessageSerializer)
 

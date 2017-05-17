@@ -6,7 +6,8 @@ from rest_framework import serializers
 
 from core.serializers import (PUBLISH_DATE_FORMAT, LinkedUserSerializer, TagSerializer, create, update)
 from library.serializers import CodebaseSerializer
-from .models import (Event, Job, FeaturedContentItem, MemberProfile, UserMessage, Institution)
+from .models import (FeaturedContentItem, UserMessage)
+from core.models import Institution, MemberProfile, Event, Job
 
 logger = logging.getLogger(__name__)
 

@@ -20,7 +20,8 @@ from wagtail.wagtailimages.models import Image
 
 from core.fs import is_image
 from core.summarization import summarize_to_text
-from home.models import Event, Job, Platform, ComsesGroups, Institution, Journal, FaqEntry
+from home.models import Journal, FaqEntry
+from core.models import ComsesGroups, Institution, Platform, Event, Job
 from library.models import (Contributor, Codebase, CodebaseRelease, CodebaseTag, License,
                             CodebaseContributor, OPERATING_SYSTEMS, CodebaseReleaseDownload)
 from .utils import get_first_field, get_field, get_field_attributes, to_datetime
@@ -207,7 +208,7 @@ class EventExtractor(Extractor):
                                      max_length=300)
         description = self.sanitize_text(get_first_field(raw_event, 'body'))
         return Event(
-            title=raw_event['title'],
+            title=raw_event['title'].strip(),
             date_created=to_datetime(raw_event['created']),
             last_modified=to_datetime(raw_event['changed']),
             summary=summary,
@@ -227,14 +228,14 @@ class EventExtractor(Extractor):
 
 class JobExtractor(Extractor):
     def _extract(self, raw_job: Dict, user_id_map: Dict[str, int]):
-        description = get_first_field(raw_job, 'body')
+        description = self.sanitize_text(get_first_field(raw_job, 'body'))
         summary = summarize_to_text(description, sentences_count=2)
         return Job(
-            title=raw_job['title'],
+            title=raw_job['title'].strip(),
             date_created=to_datetime(raw_job['created']),
             last_modified=to_datetime(raw_job['changed']),
             summary=summary,
-            description=self.sanitize_text(description),
+            description=description,
             submitter_id=user_id_map.get(raw_job['uid'], 3)
         )
 
@@ -248,9 +249,8 @@ class JobExtractor(Extractor):
 
 
 class UserExtractor(Extractor):
+
     (ADMIN_GROUP, EDITOR_GROUP, FULL_MEMBER_GROUP, REVIEWER_GROUP) = ComsesGroups.initialize()
-
-
 
     @staticmethod
     def _extract(raw_user):
@@ -365,7 +365,8 @@ class ProfileExtractor(Extractor):
             member_profile.keywords.add(*tags)
             member_profile.save()
             user.save()
-            Contributor.objects.filter(user=user).update(given_name=user.first_name, family_name=user.last_name)
+            if all([user.first_name, user.last_name]):
+                Contributor.objects.filter(user=user).update(given_name=user.first_name, family_name=user.last_name)
 
 
 class TaxonomyExtractor(Extractor):
@@ -377,7 +378,6 @@ class TaxonomyExtractor(Extractor):
         for raw_tag in self.data:
             if raw_tag['vocabulary_machine_name'] == 'vocabulary_6':
                 raw_tag_name = raw_tag['name']
-                tags = [raw_tag_name]
                 # if the taxonomy was manually delimited by semicolons, commas, or periods and not split by Drupal
                 # try, in that order, to split them
                 tags = filter(lambda x: x.strip(), re.split(self.DELIMITER_REGEX, raw_tag_name))

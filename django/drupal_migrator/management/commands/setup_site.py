@@ -14,10 +14,11 @@ from django.urls import reverse
 from wagtail.wagtailcore.models import Page, Site
 
 from drupal_migrator.database_migration import load_licenses, load_platforms, load_journals, load_faq_entries
-from home.models import (LandingPage, FeaturedContentItem, SocialMediaSettings,
-                         PlatformIndexPage, Platform, PlatformSnippetPlacement, CategoryIndexPage, JournalIndexPage,
+from home.models import (LandingPage, FeaturedContentItem, PlatformIndexPage, PlatformSnippetPlacement,
+                         CategoryIndexPage, JournalIndexPage,
                          JournalSnippetPlacement, Journal, MarkdownPage, FaqPage, FaqEntry, FaqEntryPlacement,
-                         PeoplePage, PeopleEntryPlacement)
+                         PeoplePage, PeopleEntryPlacement, ContactPage)
+from core.models import SocialMediaSettings, Platform
 from library.models import Codebase
 
 logger = logging.getLogger(__name__)
@@ -368,10 +369,23 @@ class AboutSection(AbstractSection):
             )
         parent.add_child(instance=faq_page)
 
+    def build_contact_page(self, parent):
+        contact_page = ContactPage(
+            slug='contact',
+            title='Contact Us',
+            description=('Please use this form to contact us if you have any concerns, feedback, or corrections. '
+                         'Thanks!')
+        )
+        contact_page.add_breadcrumbs(self.SUBNAVIGATION_MENU[0:4:3])
+        contact_page.add_navigation_links(self.SUBNAVIGATION_MENU)
+        parent.add_child(instance=contact_page)
+
+
     def build(self):
         about_index = self.build_about_section()
         self.build_people_page(about_index)
         self.build_faq_page(about_index)
+        self.build_contact_page(about_index)
 
 
 class Command(BaseCommand):
@@ -442,6 +456,7 @@ class Command(BaseCommand):
         sms.youtube_url = 'https://www.youtube.com/user/CoMSESNet/'
         sms.twitter_account = 'openabm_comses'
         sms.mailing_list_url = 'http://eepurl.com/b8GCUv'
+        sms.contact_form_recipients = 'editors@openabm.org'
         sms.save()
         self.site = site
 
