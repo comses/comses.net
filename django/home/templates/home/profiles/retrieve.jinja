@@ -27,10 +27,10 @@
     <div class='row'>
         <div class='col-3'>
             <div class='d-block mt-4'>
-                {% if member_profile.avatar is none %}
+                {% if avatar is none %}
                     <img src="holder.js/150x150?text=No picture available" class="img-fluid mx-auto d-block rounded-circle">
                 {% else %}
-                    {{ image(member_profile.avatar, "fill-150x150", class="img-fluid img-thumbnail mx-auto d-block rounded-circle") }}
+                    {{ image(avatar, "fill-150x150", class="img-fluid img-thumbnail mx-auto d-block rounded-circle") }}
                 {% endif %}
             </div>
         </div>
@@ -38,37 +38,37 @@
             <div class='profile-details'>
                 <div class='card-block'>
                     <h4 class='card-title'>{{ full_name }}</h4>
-                    {% for degree in member_profile.degrees %}
+                    {% for degree in degrees %}
                         <p class='card-text'>{{ degree }}</p>
                     {% else %}
                         <p class='card-text'>No degrees listed.</p>
                     {% endfor %}
-                    {% for affiliation in member_profile.affiliations %}
+                    {% for affiliation in affiliations %}
                         <p class='card-text'>{{ affiliation }}</p>
                     {% endfor %}
-                    <p class='card-text'>{{ member_profile.bio }}</p>
+                    <p class='card-text'>{{ bio }}</p>
                     <dl class='row card-text'>
                         <dt class='col-sm-2'>Institution</dt>
-                        <dd class='col-sm-9'>{{ institution_href(member_profile.institution) }}</dd>
+                        <dd class='col-sm-9'>{{ institution_href(institution) }}</dd>
 
                         <dt class='col-sm-2'>Personal</dt>
                         <dd class='col-sm-9'>
-                        {% if member_profile.personal_url %}
-                            <a href='{{ member_profile.personal_url }}' target='_blank'>{{ member_profile.personal_url }}</a>
+                        {% if personal_url %}
+                            <a href='{{ personal_url }}' target='_blank'>{{ personal_url }}</a>
                         {% endif %}
                         </dd>
 
                         <dt class='col-sm-2'>Professional</dt>
                         <dd class='col-sm-9'>
-                        {% if member_profile.professional_url %}
-                            <a href='{{ member_profile.professional_url }}'target='_blank'>{{ member_profile.professional_url }}</a>
+                        {% if professional_url %}
+                            <a href='{{ professional_url }}'target='_blank'>{{ professional_url }}</a>
                         {% endif %}
                         </dd>
 
                         <dt class='col-sm-2'>ORCID</dt>
                         <dd class='col-sm-9'>
-                        {% if member_profile.orcid %}
-                            <a href='{{ member_profile.orcid_url }}' target='_blank'>ORCID: {{ member_profile.orcid }}</a>
+                        {% if orcid %}
+                            <a href='{{ orcid_url }}' target='_blank'>ORCID: {{ orcid }}</a>
                         {% else %}
                             None entered
                         {% endif %}
@@ -91,19 +91,19 @@
     </ul>
     <div class='tab-content'>
         <div class='tab-pane active' id='bio' role='tabpanel'>
-            {% if member_profile.bio %}
+            {% if bio %}
                 <h2 class='m-0 py-3 title'>Bio</h2>
                 <p>
-                {{ member_profile.bio|markdown }}
+                {{ bio|markdown }}
                 </p>
             {% endif %}
-            {% if member_profile.research_interests %}
+            {% if research_interests %}
                 <h2 class='m-0 py-3 title'>Research Interests</h2>
                 <p>
-                {{ member_profile.research_interests }}
+                {{ research_interests }}
                 </p>
             {% endif %}
-            {% if not member_profile.bio and not member_profile.research_interests %}
+            {% if not bio and not research_interests %}
                 <p class='lead p-5'>
                 No bio entered.
                 </p>
@@ -133,6 +133,9 @@
     <div class='card-metadata'>
         <div class='card-block'>
             <p class='card-text'>
+                <a href="{{ url('home:profile-update', username=username) }}" class='btn btn-primary w-100'>Edit Profile</a>
+            </p>
+            <p class='card-text'>
                 <a href='#' onclick='sendMessage()' class='btn btn-primary w-100'>Send Message</a>
             </p>
             <p class='card-text'>
@@ -155,7 +158,7 @@
         <div class='card-block'>
             <h2 class='card-title'>Areas of Interest</h2>
             <p class='card-text tag-list'>
-            {% for keyword in member_profile.keywords %}
+            {% for keyword in keywords %}
                 {{ search_tag_btn(keyword) }}
             {% endfor %}
             </p>
