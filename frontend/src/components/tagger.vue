@@ -15,7 +15,7 @@
                 :clear-on-select="false"
                 :close-on-select="false"
                 :options-limit="50"
-                :limit="6"
+                :limit="20"
                 @search-change="fetchMatchingTags">
         </multiselect>
         <div class="form-control-feedback form-control-danger">

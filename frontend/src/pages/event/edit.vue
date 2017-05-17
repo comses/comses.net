@@ -1,12 +1,11 @@
 <template>
     <form>
-        <c-message-display :messages="serverErrors('non_field_errors')" :classNames="['alert', 'alert-danger']">
-        </c-message-display>
-        <c-input v-model="state.title" name="title" :server_errors="serverErrors('title')" @clear="clearField">
+sudp
+        <c-input v-model="state.title" name="title" :server_errors="serverErrors('title')" validate="required" @clear="clearField">
             <label class="form-control-label" slot="label">Title</label>
             <small class="form-text text-muted" slot="help">A short title describing the event</small>
         </c-input>
-        <c-input v-model="state.location" name="location" :server_errors="serverErrors('location')" @clear="clearField">
+        <c-input v-model="state.location" name="location" :server_errors="serverErrors('location')" validate="required" @clear="clearField">
             <label class="form-control-label" slot="label">Location</label>
             <small class="form-text text-muted" slot="help">The address of where the event takes place</small>
         </c-input>
@@ -48,7 +47,7 @@
             </div>
         </div>
         <c-markdown v-model="state.description" name="description" :server_errors="serverErrors('description')"
-                    @clear="clearField" minHeight="20em">
+                    @clear="clearField" validate="required" minHeight="20em">
             <label class="form-control-label" slot="label">Description</label>
             <small slot="help" class="form-text text-muted">Detailed information about the job</small>
         </c-markdown>
@@ -121,7 +120,6 @@
         clearField(field_name: string) {
             let self: any = this;
             self.errors.remove(field_name, 'server-side');
-            self.errors.remove('non_fields_errors', 'server-side');
         }
 
         matchUpdateUrl(pathname) {

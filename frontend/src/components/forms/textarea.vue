@@ -1,25 +1,22 @@
 <template>
-    <div :class="['form-group', hasDanger]">
-        <label class="form-control-label">{{ label }}</label>
-        <textarea :class="['form-control', formControlDanger]" :rows="rows"
-                  v-on:input="updateValue($event.target.value)" v-bind:value="value"></textarea>
-        <div v-if="errors.length > 0" class="form-control-feedback">{{ errorMessage }}</div>
-        <small v-if="help" class="text-muted">{{ help }}</small>
+    <div :class="['form-group', {'has-danger': hasDanger}]">
+        <slot name="label"></slot>
+        <textarea :class="['form-control', {'form-control-danger': hasDanger}]" :rows="rows" v-validate="validate"
+                  @input="updateValue($event.target.value)" :value="value"></textarea>
+        <div class="form-control-feedback form-control-danger">{{ errorMessage }}</div>
+        <slot name="help"></slot>
     </div>
 </template>
 <script lang="ts">
-    import { Component, Prop } from 'vue-property-decorator'
+    import {Component, Prop} from 'vue-property-decorator'
     import BaseControl from './base'
 
     @Component
     export default class TextArea extends BaseControl {
-        @Prop
-        type: string;
+        @Prop({default: ''})
+        validate: string;
 
-        @Prop
-        label: string;
-
-        @Prop({ default: 10})
+        @Prop({default: 10})
         rows: string;
     }
 </script>

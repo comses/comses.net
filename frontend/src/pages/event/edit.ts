@@ -1,4 +1,4 @@
-import EditEvent from './create.vue'
+import EditEvent from './edit.vue'
 import * as Vue from 'vue'
 import * as VeeValidate from 'vee-validate'
 

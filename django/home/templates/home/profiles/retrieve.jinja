@@ -11,16 +11,14 @@
     { 'url': '/community/', 'text': 'Community' },
     { 'url': url("home:profile-list"), 'text': 'Users'},
     { 'text': full_name}
-    ])
-    }}
+    ]) }}
 
     {{ subnav([
     { 'url': '/community/', 'text': 'Community' },
     { 'url': DISCOURSE_BASE_URL, 'text': 'Forum' },
     { 'url': url("home:profile-list"), 'text': 'Users', 'active': True },
     { 'url': url("home:job-list"), 'text': 'Jobs' },
-    ])
-    }}
+    ]) }}
 {% endblock %}
 
 {% block content %}
@@ -28,7 +26,8 @@
         <div class='col-3'>
             <div class='d-block mt-4'>
                 {% if avatar is none %}
-                    <img src="holder.js/150x150?text=No picture available" class="img-fluid mx-auto d-block rounded-circle">
+                    <img src="holder.js/150x150?text=No picture available"
+                         class="img-fluid mx-auto d-block rounded-circle">
                 {% else %}
                     {{ image(avatar, "fill-150x150", class="img-fluid img-thumbnail mx-auto d-block rounded-circle") }}
                 {% endif %}
@@ -53,25 +52,25 @@
 
                         <dt class='col-sm-2'>Personal</dt>
                         <dd class='col-sm-9'>
-                        {% if personal_url %}
-                            <a href='{{ personal_url }}' target='_blank'>{{ personal_url }}</a>
-                        {% endif %}
+                            {% if personal_url %}
+                                <a href='{{ personal_url }}' target='_blank'>{{ personal_url }}</a>
+                            {% endif %}
                         </dd>
 
                         <dt class='col-sm-2'>Professional</dt>
                         <dd class='col-sm-9'>
-                        {% if professional_url %}
-                            <a href='{{ professional_url }}'target='_blank'>{{ professional_url }}</a>
-                        {% endif %}
+                            {% if professional_url %}
+                                <a href='{{ professional_url }}' target='_blank'>{{ professional_url }}</a>
+                            {% endif %}
                         </dd>
 
                         <dt class='col-sm-2'>ORCID</dt>
                         <dd class='col-sm-9'>
-                        {% if orcid %}
-                            <a href='{{ orcid_url }}' target='_blank'>ORCID: {{ orcid }}</a>
-                        {% else %}
-                            None entered
-                        {% endif %}
+                            {% if orcid %}
+                                <a href='{{ orcid_url }}' target='_blank'>ORCID: {{ orcid }}</a>
+                            {% else %}
+                                None entered
+                            {% endif %}
                         </dd>
                     </dl>
                 </div>
@@ -94,18 +93,18 @@
             {% if bio %}
                 <h2 class='m-0 py-3 title'>Bio</h2>
                 <p>
-                {{ bio|markdown }}
+                    {{ bio|markdown }}
                 </p>
             {% endif %}
             {% if research_interests %}
                 <h2 class='m-0 py-3 title'>Research Interests</h2>
                 <p>
-                {{ research_interests }}
+                    {{ research_interests }}
                 </p>
             {% endif %}
             {% if not bio and not research_interests %}
                 <p class='lead p-5'>
-                No bio entered.
+                    No bio entered.
                 </p>
             {% endif %}
 
@@ -116,13 +115,13 @@
                 {{ render_codebase_result(codebase, 'library:codebase-detail') }}
             {% else %}
                 <p class='lead p-5'>
-                No associated codebases.
+                    No associated codebases.
                 </p>
             {% endfor %}
         </div>
         <div class='tab-pane' id='publications' role='tabpanel'>
             <p class='lead p-5'>
-            Under construction, check back later!
+                Under construction, check back later!
             </p>
         </div>
     </div>
@@ -132,9 +131,12 @@
     {# FIXME: set up Vue logic for message / follow #}
     <div class='card-metadata'>
         <div class='card-block'>
-            <p class='card-text'>
-                <a href="{{ url('home:profile-update', username=username) }}" class='btn btn-primary w-100'>Edit Profile</a>
-            </p>
+            {% if has_change_perm %}
+                <p class='card-text'>
+                    <a href="{{ url('home:profile-update', username=username) }}" class='btn btn-primary w-100'>Edit
+                        Profile</a>
+                </p>
+            {% endif %}
             <p class='card-text'>
                 <a href='#' onclick='sendMessage()' class='btn btn-primary w-100'>Send Message</a>
             </p>
@@ -145,11 +147,15 @@
                 {# FIXME: hardcoded values for now #}
                 <div class='col text-center'>
                     <div><b>{{ following_count }}</b></div>
-                    <div><small>Following</small></div>
+                    <div>
+                        <small>Following</small>
+                    </div>
                 </div>
                 <div class='col text-center'>
                     <div><b>{{ follower_count }}</b></div>
-                    <div><small>Followers</small></div>
+                    <div>
+                        <small>Followers</small>
+                    </div>
                 </div>
             </div>
         </div>
@@ -158,9 +164,9 @@
         <div class='card-block'>
             <h2 class='card-title'>Areas of Interest</h2>
             <p class='card-text tag-list'>
-            {% for keyword in keywords %}
-                {{ search_tag_btn(keyword) }}
-            {% endfor %}
+                {% for keyword in keywords %}
+                    {{ search_tag_btn(keyword) }}
+                {% endfor %}
             </p>
         </div>
     </div>
