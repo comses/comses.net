@@ -1,5 +1,5 @@
 """
-Initializes Wagtail Page Models and other canned data. 
+Initializes Wagtail Page Models and other canned data.
 FIXME: move logic to dedicated module if this gets too unwieldy
 """
 
@@ -17,7 +17,7 @@ from drupal_migrator.database_migration import load_licenses, load_platforms, lo
 from home.models import (LandingPage, FeaturedContentItem, SocialMediaSettings,
                          PlatformIndexPage, Platform, PlatformSnippetPlacement, CategoryIndexPage, JournalIndexPage,
                          JournalSnippetPlacement, Journal, MarkdownPage, FaqPage, FaqEntry, FaqEntryPlacement,
-                         StreamPage)
+                         PeoplePage, PeopleEntryPlacement)
 from library.models import Codebase
 
 logger = logging.getLogger(__name__)
@@ -32,12 +32,11 @@ class AbstractSection(object):
 class ResourceSection(AbstractSection):
 
     SUBNAVIGATION_LINKS = (
-            ('Resources', '/resources/'),
-            ('Modeling Platforms', '/resources/modeling-platforms/'),
-            ('Journals', '/resources/journals/'),
-            ('Standards', '/resources/standards/'),
+        ('Resources', '/resources/'),
+        ('Modeling Platforms', '/resources/modeling-platforms/'),
+        ('Journals', '/resources/journals/'),
+        ('Standards', '/resources/standards/'),
     )
-
 
     def build_resource_index(self):
         resources_index = CategoryIndexPage(
@@ -82,11 +81,11 @@ class ResourceSection(AbstractSection):
             title='Documentation Standards',
             url='standards/',
             caption=(
-            'Advancing the use of agent-based models in scholarly research demands rigorous standards in model '
-            'and experiment documentation. Volker Grimm et al. have developed a protocol for describing '
-            'agent-based and individual-based models called '
-            '[ODD (Overview, Design Concepts, and Details)](https://doi.org/10.1016/j.ecolmodel.2010.08.019) '
-            '"designed to ensure that such descriptions are readable and complete."'
+                'Advancing the use of agent-based models in scholarly research demands rigorous standards in model '
+                'and experiment documentation. Volker Grimm et al. have developed a protocol for describing '
+                'agent-based and individual-based models called '
+                '[ODD (Overview, Design Concepts, and Details)](https://doi.org/10.1016/j.ecolmodel.2010.08.019) '
+                '"designed to ensure that such descriptions are readable and complete."'
             ),
             user=self.default_user,
             sort_order=2,
@@ -193,9 +192,7 @@ class ResourceSection(AbstractSection):
         )
         standards_page.add_breadcrumbs(self.SUBNAVIGATION_LINKS[0:4:3])
         standards_page.add_navigation_links(self.SUBNAVIGATION_LINKS)
-
         parent.add_child(instance=standards_page)
-
 
     def build(self):
         resources_index = self.build_resource_index()
@@ -281,7 +278,7 @@ class AboutSection(AbstractSection):
                      'is an open community of researchers, educators, and professionals with a common goal - improving '
                      'the way we develop, share, use, and re-use agent based and computational models for the study of '
                      'social and ecological systems. We have been developing a computational model library to preserve '
-                    'the digital artifacts and source code that comprise an agent based model and encourage you to '
+                     'the digital artifacts and source code that comprise an agent based model and encourage you to '
                      'register and [add your models to the archive](/codebases/create/). We are governed by an '
                      'international board and ex-officio members (PIs of the projects that fund CoMSES Net) and '
                      'operate under [these by-laws](/about/by-laws).'
@@ -308,24 +305,48 @@ class AboutSection(AbstractSection):
             title='Improve theoretical and methodological practice',
             user=self.default_user,
             sort_order=3,
-            caption='''Engage with practitioners to address theoretical concerns and improve methodological practices 
-            for reuse and reusability.''',
+            caption=('Engage with practitioners to address theoretical concerns and improve methodological practices '
+                     'for reuse and reusability.'),
         )
         self.root_page.add_child(instance=about_index)
         return about_index
 
     def build_people_page(self, parent):
-        people_page = StreamPage(
-            template='home/about/people.jinja',
+        people_page = PeoplePage(
             title='People',
-            #heading='About',
+            heading='About',
             description=("The CoMSES Net Directorate is led by [Michael Barton](/users/cmbarton/), "
-                         "[Marco Janssen](/users/marcojanssen/], [Lilian Na'ia Alessa](/users/lil.alessa/), "
+                         "[Marco Janssen](/users/marcojanssen/), [Lilian Na'ia Alessa](/users/lil.alessa/), "
                          "[Allen Lee](/users/alee/), and Ken Buetow in consultation with an executive board elected by "
                          "full CoMSES Net members and a dedicated support staff with expertise in digital curation and "
                          "community cyberinfrastructure development."
                          ),
         )
+        directorate = ('cmbarton', 'marcojanssen', 'lil.alessa', 'alee')
+        offset = 0
+        people_page.add_users(category=PeopleEntryPlacement.CATEGORIES.directorate,
+                              usernames=directorate,
+                              offset=offset)
+        offset += len(directorate)
+        board = ('fstonedahl', 'mzellner', 'clepage', 'wrand', 'mariam.kiran', 'garypolhill', 'abell')
+        people_page.add_users(category=PeopleEntryPlacement.CATEGORIES.board,
+                              usernames=board,
+                              offset=offset)
+        offset += len(board)
+        people_page.add_users(PeopleEntryPlacement.CATEGORIES.digest,
+                              usernames=('john.t.murphy',),
+                              offset=offset)
+        offset += 1
+        staff = ('cpritcha',)
+        people_page.add_users(category=PeopleEntryPlacement.CATEGORIES.staff,
+                              usernames=staff,
+                              offset=offset)
+        offset += len(staff)
+
+        alumni = ('volker.grimm@ufz.de', 'bruceedmonds')
+        people_page.add_users(category=PeopleEntryPlacement.CATEGORIES.alumni,
+                              usernames=alumni,
+                              offset=offset)
         people_page.add_breadcrumbs(self.SUBNAVIGATION_MENU[0:2])
         people_page.add_navigation_links(self.SUBNAVIGATION_MENU)
         parent.add_child(instance=people_page)
@@ -347,12 +368,10 @@ class AboutSection(AbstractSection):
             )
         parent.add_child(instance=faq_page)
 
-
     def build(self):
         about_index = self.build_about_section()
         self.build_people_page(about_index)
         self.build_faq_page(about_index)
-
 
 
 class Command(BaseCommand):

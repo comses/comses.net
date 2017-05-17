@@ -580,6 +580,7 @@ class FaqPage(Page, NavigationMixin):
         context = super().get_context(request, *args, **kwargs)
         # FIXME: add pagination
         context['faq_entries'] = FaqEntry.objects.all()
+        context['faq_categories'] = FaqEntry.FAQ_CATEGORIES
         return context
 
     content_panels = Page.content_panels + [
@@ -591,6 +592,52 @@ class FaqPage(Page, NavigationMixin):
         index.RelatedFields('faq_entry_placements', [
             index.SearchField('faq_entry')
         ])
+    ]
+
+
+class PeopleEntryPlacement(Orderable, models.Model):
+    CATEGORIES = Choices(
+        (1, 'directorate', _('Directorate')),
+        (2, 'board', _('Executive Board')),
+        (3, 'digest', _('CoMSES Digest Editors')),
+        (4, 'staff', _('Staff')),
+        (5, 'alumni', _('Executive Board Alumni')),
+    )
+    page = ParentalKey('home.PeoplePage', related_name='people_entry_placements')
+    member_profile = models.ForeignKey('home.MemberProfile', related_name='+')
+    category = models.PositiveIntegerField(choices=CATEGORIES, default=CATEGORIES.board)
+
+    def __str__(self):
+        return "{0}: {1} {2}".format(self.sort_order, self.member_profile, self.category)
+
+    class Meta:
+        verbose_name = 'people entry placement'
+
+
+class PeoplePage(Page, NavigationMixin):
+    template = 'home/about/people.jinja'
+    heading = models.CharField(max_length=64)
+    description = models.CharField(max_length=1000, blank=True)
+
+    def add_users(self, category, usernames, offset):
+        for idx, username in enumerate(usernames):
+            # manually iterate and get MemberProfile to enforce original ordering
+            profile = MemberProfile.objects.get(user__username=username)
+            self.people_entry_placements.add(
+                PeopleEntryPlacement(sort_order=offset + idx,
+                                     member_profile=profile,
+                                     category=category)
+            )
+
+    def get_context(self, request, *args, **kwargs):
+        context = super().get_context(request, *args, **kwargs)
+        context['people_categories'] = PeopleEntryPlacement.CATEGORIES
+        return context
+
+    content_panels = Page.content_panels + [
+        FieldPanel('heading'),
+        FieldPanel('description'),
+        InlinePanel('people_entry_placements', label='People Entries')
     ]
 
 

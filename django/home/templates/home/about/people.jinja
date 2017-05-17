@@ -1,0 +1,41 @@
+{% extends "base.jinja" %}
+{% from "common.jinja" import breadcrumb, subnav, submit_model_btn, search_tag_href %}
+
+{% block title %}{{ page.title }}{% endblock %}
+
+{% block introduction %}<h1>About</h1>{% endblock %}
+
+{% block content %}
+    {{ breadcrumb(page.get_breadcrumbs()) }}
+    {{ subnav(page.get_navigation_links()) }}
+    <div class='jumbotron'>
+        <h1 class='display-5'>{{ page.title }}</h1>
+        <div class='pt-4 lead'>
+            {{ page.description|markdown }}
+        </div>
+    </div>
+    {% for category, group_list in page.people_entry_placements.all()|sort(attribute='category')|groupby('category') %}
+        <div id='{{ category }}' class='{{ category }}'>
+            <h2 class='title'>{{ get_choices_display(category, people_categories) }}</h2>
+            {% for placement in group_list %}
+                <div class='card'>
+                    <div class='row'>
+                        <div class='col-3'>
+                            <div class='card-title'>
+                                <h3 class='title'>{{ placement.member_profile.user.get_full_name() }}</h3>
+                            </div>
+                            <div class='d-block mx-auto'>
+                                {{ image(placement.member_profile.picture, "fill-150x150", class="img-fluid d-block") }}
+                            </div>
+                        </div>
+                        <div class='col-9'>
+                            {{ placement.member_profile.bio|markdown }}
+                            {{ placement.member_profile.research_interests|markdown }}
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% endfor %}
+    </div>
+{% endblock content %}
