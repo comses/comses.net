@@ -1,5 +1,5 @@
 {% extends "base.jinja" %}
-{% from "common.jinja" import item_component, list_page, paginator, breadcrumb, subnav, user_href %}
+{% from "common.jinja" import item_component, list_page, paginator, breadcrumb, subnav, member_profile_href %}
 
 {% block title %}Welcome to the CoMSES Net Community{% endblock %}
 
@@ -20,17 +20,17 @@
     }}
 {% endblock %}
 
-{% macro render_user(user, detail_url_name) %}
+{% macro render_user(member_profile, detail_url_name) %}
     <div class="search-result">
         <div class="date-info">
-            <small class="text-muted pull-right">Joined on: {{ user.date_joined }}</small>
+            <small class="text-muted pull-right">Joined on: {{ member_profile.date_joined }}</small>
         </div>
         <div class="title">
-            <h1>{{ user_href(user) }}</h1>
+            <h1>{{ member_profile_href(member_profile) }}</h1>
         </div>
-        {% if user.member_profile.tags %}
+        {% if member_profile.tags %}
             <div class="tag-list">
-                {% for tag in user.member_profile.tags %}
+                {% for tag in member_profile.tags %}
                     <span class="badge badge-primary p-1">{{ tag.name }}</span>
                 {% endfor %}
             </div>

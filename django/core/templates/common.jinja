@@ -23,8 +23,8 @@
 {% endif %}
 {% endmacro %}
 
-{% macro user_href(user) %}
-<a href='{{ user.profile_url }}'>{{ user.full_name }}</a>
+{% macro member_profile_href(member_profile) %}
+<a href='{{ member_profile.profile_url }}'>{{ member_profile.full_name }}</a>
 {% endmacro %}
 
 {% macro share_card(url) %}
