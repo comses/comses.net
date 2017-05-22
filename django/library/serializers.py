@@ -97,7 +97,9 @@ class RelatedCodebaseSerializer(serializers.ModelSerializer):
     tags = TagSerializer(many=True)
     last_published_on = serializers.DateTimeField(read_only=True)
     summarized_description = serializers.CharField(read_only=True)
+    featured_image = serializers.ReadOnlyField(source='get_featured_image')
 
     class Meta:
         model = Codebase
-        fields = ('all_contributors', 'tags', 'title', 'last_published_on', 'identifier', 'summarized_description')
+        fields = ('featured_image', 'all_contributors', 'tags', 'title', 'last_published_on', 'identifier',
+                  'summarized_description')
