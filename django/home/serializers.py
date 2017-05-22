@@ -5,7 +5,6 @@ from django.utils.translation import ugettext_lazy as _
 from rest_framework import serializers
 
 from core.serializers import (PUBLISH_DATE_FORMAT, LinkedUserSerializer, TagSerializer, create, update)
-from library.serializers import CodebaseSerializer
 from .models import (FeaturedContentItem, UserMessage)
 from core.models import Institution, MemberProfile, Event, Job
 from library.serializers import RelatedCodebaseSerializer
@@ -92,7 +91,7 @@ class MemberProfileSerializer(serializers.ModelSerializer):
     follower_count = serializers.ReadOnlyField(source='user.following.count')
     following_count = serializers.ReadOnlyField(source='user.followers.count')
 
-    codebases = RelatedCodebaseSerializer(read_only=True, many=True)
+    codebases = RelatedCodebaseSerializer(source='user.codebases', read_only=True, many=True)
 
     # Institution
     institution_name = serializers.CharField(source='institution.name')
@@ -155,7 +154,7 @@ class MemberProfileSerializer(serializers.ModelSerializer):
             # Follower
             'follower_count', 'following_count',
             'codebases',
-            #institution
+            # institution
             'institution_name', 'institution_url',
             # MemberProfile
             'avatar', 'bio', 'degrees', 'bio', 'degrees', 'full_member', 'keywords', 'orcid', 'orcid_url',
