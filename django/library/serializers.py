@@ -95,7 +95,7 @@ class RelatedCodebaseSerializer(serializers.ModelSerializer):
     """Codebase serializer for MemberProfile"""
     all_contributors = CodebaseContributorSerializer(many=True, read_only=True)
     tags = TagSerializer(many=True)
-    last_published_on = serializers.DateTimeField(read_only=True)
+    last_published_on = serializers.DateTimeField(read_only=True, format=PUBLISH_DATE_FORMAT)
     summarized_description = serializers.CharField(read_only=True)
     featured_image = serializers.ReadOnlyField(source='get_featured_image')
 

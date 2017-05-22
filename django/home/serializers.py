@@ -1,13 +1,13 @@
 import logging
 
-from django.contrib.auth.models import User
 from django.utils.translation import ugettext_lazy as _
 from rest_framework import serializers
 
-from core.serializers import (PUBLISH_DATE_FORMAT, LinkedUserSerializer, TagSerializer, create, update)
-from .models import (FeaturedContentItem, UserMessage)
 from core.models import Institution, MemberProfile, Event, Job
+from core.serializers import (PUBLISH_DATE_FORMAT, LinkedUserSerializer, TagSerializer, create, update)
+from library.models import Codebase
 from library.serializers import RelatedCodebaseSerializer
+from .models import (FeaturedContentItem, UserMessage)
 
 logger = logging.getLogger(__name__)
 
@@ -91,7 +91,7 @@ class MemberProfileSerializer(serializers.ModelSerializer):
     follower_count = serializers.ReadOnlyField(source='user.following.count')
     following_count = serializers.ReadOnlyField(source='user.followers.count')
 
-    codebases = RelatedCodebaseSerializer(source='user.codebases', read_only=True, many=True)
+    codebases = serializers.SerializerMethodField()
 
     # Institution
     institution_name = serializers.CharField(source='institution.name')
@@ -102,6 +102,11 @@ class MemberProfileSerializer(serializers.ModelSerializer):
     orcid_url = serializers.SerializerMethodField()
     keywords = TagSerializer(many=True)
     profile_url = serializers.URLField(source='get_absolute_url', read_only=True)
+
+    def get_codebases(self, instance):
+        # FIXME: use django-filter for sort order
+        codebases = Codebase.objects.accessible(instance.user).order_by('-last_published_on')
+        return RelatedCodebaseSerializer(codebases, read_only=True, many=True).data
 
     def get_full_name(self, instance):
         full_name = instance.user.get_full_name()

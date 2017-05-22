@@ -129,6 +129,12 @@ class CodebaseReleaseDownload(models.Model):
 
 class CodebaseQuerySet(models.QuerySet):
 
+    def accessible(self, user, **kwargs):
+        return self.filter(
+            pk__in=CodebaseContributor.objects.filter(contributor__user=user).values_list('release__codebase', flat=True),
+            **kwargs
+        )
+
     def public(self, **kwargs):
         return self.filter(live=True, **kwargs)
 
@@ -186,7 +192,6 @@ class Codebase(index.Indexed, ClusterableModel):
     featured_images = models.ManyToManyField(Image)
 
     submitter = models.ForeignKey(User, related_name='codebases')
-
 
     objects = CodebaseQuerySet.as_manager()
 
