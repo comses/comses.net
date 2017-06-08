@@ -1,4 +1,4 @@
-wagtail==1.10
+wagtail==1.10.1
 wagtailmenus==2.2.2
 django-allauth==0.32.0
 django-extensions==1.7.9
@@ -14,9 +14,9 @@ django-location-field==2.0.3
 django-model-utils==3.0.0
 django-timezone-field==2.0
 bagit==1.5.4
-semver==2.7.6
+semver==2.7.7
 django-guardian==1.4.8
-django-jinja==2.3.0
+django-jinja==2.3.1
 # deployment and management dependencies
 dealer==2.0.5
 invoke
