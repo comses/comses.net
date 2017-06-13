@@ -1,7 +1,10 @@
 import logging
 from textwrap import shorten
 
+import requests
+import udatetime
 from django import forms
+from django.conf import settings
 from django.contrib.auth.models import User
 from django.db import models
 from django.utils import timezone
@@ -25,6 +28,7 @@ from wagtail.wagtailsnippets.models import register_snippet
 from core.models import MemberProfile, Platform, Event, Job
 from core.utils import get_canonical_image
 from home.forms import ContactForm
+from library.models import Codebase
 
 logger = logging.getLogger(__name__)
 
@@ -117,6 +121,7 @@ class LandingPage(Page):
     template = 'home/index.jinja'
     FEATURED_CONTENT_COUNT = 6
     MAX_CALLOUT_ENTRIES = 3
+    RECENT_FORUM_ACTIVITY_COUNT = 5
 
     mission_statement = models.CharField(max_length=512)
 
@@ -124,26 +129,58 @@ class LandingPage(Page):
         return self.featured_content_queue.all()[:self.FEATURED_CONTENT_COUNT]
 
     def get_recent_forum_activity(self):
-        return [
-            {
-                'title': 'This is a sequence of things that should come from Discourse',
-                'submitter': User.objects.first(),
-                'date_created': timezone.now(),
-                'url': 'https://forum.comses.net',
-            },
-            {
-                'title': 'This is something else that should come from Discourse',
-                'submitter': User.objects.first(),
-                'date_created': timezone.now(),
-                'url': 'https://forum.comses.net',
-            },
-            {
-                'title': 'And another',
-                'submitter': User.objects.first(),
-                'date_created': timezone.now(),
-                'url': 'https://forum.comses.net',
-            }
-        ]
+        # FIXME: move to dedicated discourse module / api as we integrate more tightly with discourse
+        # Discourse API endpoint documented at http://docs.discourse.org/#tag/Topics%2Fpaths%2F~1latest.json%2Fget
+        r = requests.get('{0}/{1}'.format(settings.DISCOURSE_BASE_URL, 'latest.json'),
+                         params={'order': 'created', 'sort': 'asc'})
+        posts_dict = r.json()
+        topics = posts_dict['topic_list']['topics']
+        # transform topics list of dictionaries into web template format with title, submitter, date_created, and url.
+        recent_forum_activity = []
+        # stuff this in the Redis Cache.
+        for topic in topics[:self.RECENT_FORUM_ACTIVITY_COUNT]:
+            topic_title = topic['title']
+            topic_url = '{0}/t/{1}/{2}'.format(settings.DISCOURSE_BASE_URL,
+                                               topic['slug'],
+                                               topic['id'])
+            # getting back to the original submitter will involve some trickery.
+            # The Discourse embed Javascript queues up a crawler to hit the given page and parses it for content to use
+            # as the initial topic text. However, this topic gets added as a specific Discourse User (`comses`,
+            # see https://meta.discourse.org/t/embedding-discourse-comments-via-javascript/31963/150 for more details)
+            # and so we won't always have the direct username of the submitter without looking it up by
+            # 1. Discourse category_id (6 = jobs & appointments, 7 = events, 8 = codebase)
+            # 2. Title (not guaranteed to be unique)
+
+            last_poster_username = topic['last_poster_username']
+            submitter = None
+            if last_poster_username == 'comses':
+                category_id = topic['category_id']
+                # special case lookup for real submitter
+                # FIXME: get rid of magic constants
+                target_object = None
+                if category_id == 6:
+                    # jobs and appointments
+                    target_object = Job.objects.filter(title=topic_title).order_by('-date_created').first()
+                elif category_id == 7:
+                    # events
+                    target_object = Event.objects.filter(title=topic_title).order_by('-date_created').first()
+                elif category_id == 8:
+                    target_object = Codebase.objects.filter(title=topic_title).order_by('-date_created').first()
+                submitter = target_object.submitter
+            else:
+                try:
+                    submitter = User.objects.get(username=last_poster_username)
+                except User.DoesNotExist:
+                    pass
+            recent_forum_activity.append(
+                {
+                    'title': topic_title,
+                    'submitter': submitter,
+                    'date_created': udatetime.from_string(topic['last_posted_at']),
+                    'url': topic_url,
+                }
+            )
+        return recent_forum_activity
 
     def get_latest_jobs(self):
         return Job.objects.order_by('-date_created')[:self.MAX_CALLOUT_ENTRIES]
