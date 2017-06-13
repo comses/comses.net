@@ -20,16 +20,22 @@ class LicenseSerializer(serializers.ModelSerializer):
 
 class ContributorSerializer(serializers.ModelSerializer):
     user = LinkedUserSerializer()
+    affiliations_list = TagSerializer(source='affiliations', many=True)
 
     class Meta:
         model = Contributor
-        fields = ('name', 'email', 'user',)
+        fields = ('given_name', 'middle_name', 'family_name', 'name', 'email', 'user', 'type', 'affiliations_list')
 
 
 class CodebaseContributorSerializer(serializers.ModelSerializer):
     name = serializers.CharField(source='contributor.name', read_only=True)
+    family_name = serializers.CharField(source='contributor.family_name')
+    middle_name = serializers.CharField(source='contributor.middle_name')
+    given_name = serializers.CharField(source='contributor.given_name')
+    type = serializers.ChoiceField(source='contributor.type', choices=['person', 'organization'])
     username = serializers.CharField(source='contributor.user.username', read_only=True)
     affiliations = serializers.CharField(source='contributor.formatted_affiliations', read_only=True)
+    affiliations_list = TagSerializer(source='contributor.affiliations', many=True)
     profile_url = serializers.SerializerMethodField()
 
     def get_profile_url(self, instance):
@@ -46,39 +52,40 @@ class CodebaseContributorSerializer(serializers.ModelSerializer):
 
 
 class CodebaseReleaseSerializer(serializers.ModelSerializer):
-    first_published_at = serializers.DateTimeField(format=PUBLISH_DATE_FORMAT, read_only=True)
-    last_published_on = serializers.DateTimeField(format=PUBLISH_DATE_FORMAT, read_only=True)
-    date_created = serializers.DateTimeField(format=YMD_DATETIME_FORMAT, read_only=True)
     absolute_url = serializers.URLField(source='get_absolute_url', read_only=True,
                                         help_text=_('URL to the detail page of the codebase'))
+    citation_text = serializers.ReadOnlyField()
     codebase_contributors = CodebaseContributorSerializer(many=True)
-    submitter = LinkedUserSerializer(label='Submitter')
+    date_created = serializers.DateTimeField(format=YMD_DATETIME_FORMAT, read_only=True)
+    first_published_at = serializers.DateTimeField(format=PUBLISH_DATE_FORMAT, read_only=True)
+    last_published_on = serializers.DateTimeField(format=PUBLISH_DATE_FORMAT, read_only=True)
+    license = LicenseSerializer()
+    os_display = serializers.CharField(source='get_os_display')
     platforms = TagSerializer(many=True)
     programming_languages = TagSerializer(many=True)
-    citation_text = serializers.ReadOnlyField()
-    license = LicenseSerializer()
+    submitter = LinkedUserSerializer(label='Submitter')
 
     class Meta:
         model = CodebaseRelease
-        fields = ('date_created', 'last_modified', 'peer_reviewed', 'doi', 'description', 'license', 'documentation',
-                  'embargo_end_date', 'version_number', 'os', 'platforms', 'programming_languages', 'submitter',
-                  'codebase_contributors', 'submitted_package', 'absolute_url', 'first_published_at', 'download_count',
-                  'last_published_on', 'citation_text', 'dependencies', 'get_os_display',)
+        fields = ('absolute_url', 'citation_text', 'codebase_contributors', 'date_created', 'dependencies',
+                  'description', 'documentation', 'doi', 'download_count', 'embargo_end_date', 'first_published_at',
+                  'last_modified', 'last_published_on', 'license', 'os', 'os_display', 'peer_reviewed', 'platforms',
+                  'programming_languages', 'submitted_package', 'submitter', 'version_number',)
 
 
 class CodebaseSerializer(serializers.ModelSerializer):
-    all_contributors = CodebaseContributorSerializer(many=True, read_only=True)
-    releases = CodebaseReleaseSerializer(read_only=True, many=True)
-    first_published_at = serializers.DateTimeField(format=PUBLISH_DATE_FORMAT, read_only=True)
-    date_created = serializers.DateTimeField(read_only=True)
-    last_published_on = serializers.DateTimeField(format=PUBLISH_DATE_FORMAT, read_only=True)
-    tags = TagSerializer(many=True)
     absolute_url = serializers.URLField(source='get_absolute_url', read_only=True)
-    submitter = LinkedUserSerializer(read_only=True)
-    latest_version = CodebaseReleaseSerializer(read_only=True)
+    all_contributors = CodebaseContributorSerializer(many=True, read_only=True)
+    date_created = serializers.DateTimeField(read_only=True)
     download_count = serializers.IntegerField(read_only=True)
-    summarized_description = serializers.CharField(read_only=True)
     featured_image = serializers.ReadOnlyField(source='get_featured_image')
+    first_published_at = serializers.DateTimeField(format=PUBLISH_DATE_FORMAT, read_only=True)
+    last_published_on = serializers.DateTimeField(format=PUBLISH_DATE_FORMAT, read_only=True)
+    latest_version = CodebaseReleaseSerializer(read_only=True)
+    releases = CodebaseReleaseSerializer(read_only=True, many=True)
+    submitter = LinkedUserSerializer(read_only=True)
+    summarized_description = serializers.CharField(read_only=True)
+    tags = TagSerializer(many=True)
 
     def create(self, validated_data):
         return create(self.Meta.model, validated_data, self.context)

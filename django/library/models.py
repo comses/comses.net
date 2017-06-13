@@ -283,13 +283,7 @@ class Codebase(index.Indexed, ClusterableModel):
     def media_url(self, name):
         return '{0}/media/{1}'.format(self.get_absolute_url(), name)
 
-    def make_release(self, submitter=None, submitter_id=None, version_number=None, version_bump=None, **kwargs):
-        if submitter_id is None:
-            if submitter is None:
-                submitter = User.objects.first()
-                logger.warning("No submitter or submitter_id specified when creating release, using first user %s",
-                               submitter)
-            submitter_id = submitter.pk
+    def make_version_number(self, version_number=None, version_bump=None):
         if version_number is None:
             # start off at v1.0.0
             version_number = '1.0.0'
@@ -301,11 +295,24 @@ class Codebase(index.Indexed, ClusterableModel):
                                  version_number)
                     version_bump = SemanticVersionBump.MINOR
                 version_number = version_bump(version_number)
+        return version_number
+
+    def make_release(self, submitter=None, submitter_id=None, version_number=None, version_bump=None, submitted_package=None, **kwargs):
+        if submitter_id is None:
+            if submitter is None:
+                submitter = User.objects.first()
+                logger.warning("No submitter or submitter_id specified when creating release, using first user %s",
+                               submitter)
+            submitter_id = submitter.pk
+        version_number = self.make_version_number(version_number, version_bump)
         release = self.releases.create(
             submitter_id=submitter_id,
             version_number=version_number,
+            identifier=version_number,
             **kwargs
         )
+        if submitted_package:
+            release.submitted_package.save(submitted_package.name, submitted_package, save=False)
         self.latest_version = release
         self.save()
         return release
@@ -374,7 +381,7 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
     codebase = models.ForeignKey(Codebase, related_name='releases')
     submitter = models.ForeignKey(User)
     contributors = models.ManyToManyField(Contributor, through='CodebaseContributor')
-    submitted_package = models.FileField(upload_to=Codebase._release_upload_path, null=True)
+    submitted_package = models.FileField(upload_to=str(Codebase._release_upload_path), null=True)
     # M2M relationships for publications
     publications = models.ManyToManyField(
         'citation.Publication',
@@ -456,6 +463,10 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
     @property
     def archival_information_package_path(self):
         return self.bagit_path
+
+    def save_file(self, file_obj):
+        """Extract the archive, inspect it's contents and if it's valid store with other releases"""
+        pass
 
     @property
     def bagit_info(self):
