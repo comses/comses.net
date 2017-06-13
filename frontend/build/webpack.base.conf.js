@@ -13,6 +13,7 @@ var useCssSourceMap = cssSourceMapDev || cssSourceMapProd
 
 module.exports = {
     entry: {
+        codebases: './src/pages/codebase/edit.ts',
         jobs: './src/pages/job/edit.ts',
         events: './src/pages/event/edit.ts',
         profiles: './src/pages/profile/edit.ts',

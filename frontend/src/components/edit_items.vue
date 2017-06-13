@@ -1,10 +1,10 @@
 <template>
     <div :class="['form-group', {'has-danger': hasDanger }]">
         <slot name="label"></slot>
-        <input class="form-control" v-model="potential_degree" @keyup.enter="create" placeholder="Add degree">
+        <input class="form-control" v-model="potential_item" @keyup.enter="create" :placeholder="placeholder">
         <draggable :list="value" @start="drag=true" @end="drag=false">
-            <div v-for="(degree, index) in value" :key="index" class="input-group">
-                <input :value="degree" @input="$emit('modify', { index, value: $event.target.value})" class="form-control">
+            <div v-for="(item, index) in value" :key="index" class="input-group">
+                <input :value="item" @input="$emit('modify', { index, value: $event.target.value})" class="form-control">
                 <button type="button" class="input-group-addon" tabindex="-1" @click="$emit('remove', index)">Delete</button>
             </div>
         </draggable>
@@ -20,22 +20,18 @@ import BaseControl from 'components/forms/base'
 import * as draggable from 'vuedraggable'
 
 @Component({
-    components: { draggable },
-    directives: {
-        focus: {
-            inserted(el) {
-                el.focus();
-            }
-        }
-    }
+    components: { draggable }
 })
-export default class EditDegrees extends BaseControl {
+export default class EditTextList extends BaseControl {
+    @Prop({ default: 'Add item'})
+    placeholder: string;
+
     drag: boolean = false;
-    potential_degree: string = '';
+    potential_item: string = '';
 
     create() {
-        this.$emit('create', this.potential_degree);
-        this.potential_degree = '';
+        this.$emit('create', this.potential_item);
+        this.potential_item = '';
     }
 }
 </script>

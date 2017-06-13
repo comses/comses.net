@@ -58,7 +58,7 @@ import Input from 'components/forms/input.vue'
 import Datepicker from 'components/forms/datepicker.vue';
 import TextArea from 'components/forms/textarea.vue'
 import MessageDisplay from 'components/message_display.vue'
-import EditDegrees from 'components/edit_degrees.vue'
+import EditItems from 'components/edit_items.vue'
 import { api, getCookie } from 'api/index'
 import { MemberProfile } from 'store/common'
 import * as _ from 'lodash'
@@ -72,7 +72,7 @@ import * as Dropzone from 'vue2-dropzone'
         'c-tagger': Tagger,
         'c-textarea': TextArea,
         'c-input': Input,
-        'c-edit-degrees': EditDegrees,
+        'c-edit-degrees': EditItems,
         'dropzone': Dropzone,
     }
 })

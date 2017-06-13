@@ -4,12 +4,9 @@
     <h1><i class='fa fa-cloud-upload'></i> Archive your software</h1>
 {% endblock %}
 {% block content %}
-    <div class='row'>
-        <section class='information'>
-            Upload your computational artifacts here.
-        </section>
-    </div>
-    <section class='form-wizard'>
-    </section>
-</div>
+    <div id="app"></div>
+{% endblock %}
+
+{% block js %}
+{{ render_bundle('codebases') }}
 {% endblock %}

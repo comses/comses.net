@@ -1,6 +1,5 @@
 <template>
     <form>
-sudp
         <c-input v-model="state.title" name="title" :server_errors="serverErrors('title')" validate="required" @clear="clearField">
             <label class="form-control-label" slot="label">Title</label>
             <small class="form-text text-muted" slot="help">A short title describing the event</small>

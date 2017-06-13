@@ -19,7 +19,7 @@ export function getCookie(name) {
     return cookieValue;
 }
 
-const api_base = axios.create();
+export const api_base = axios.create();
 api_base.interceptors.request.use(config => {
     config.headers['X-CSRFToken'] = getCookie('csrftoken');
     return config;
@@ -99,6 +99,8 @@ class Viewset {
 }
 
 export const api = {
+    codebases: new Viewset('codebases'),
+    contributors: new Viewset('contributors'), // only list view implemented server side
     jobs: new Viewset('jobs'),
     events: new Viewset('events'),
     tags: new Viewset('tags'),

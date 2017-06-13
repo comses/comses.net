@@ -1,5 +1,5 @@
 {% extends "sidebar_layout.jinja" %}
-{% from "common.jinja" import breadcrumb, embed_discourse_comments, user_href, share_card, search_tag_href %}
+{% from "common.jinja" import breadcrumb, embed_discourse_comments, member_profile_href, share_card, search_tag_href %}
 
 {% block title %}{{ title }}{% endblock %}
 
@@ -16,7 +16,7 @@
     <div id='discourse-content'>
         <h1 class="codebase-title pb-4">{{ title }}</h1>
         <div class='metadata'>
-            <b>Submitted by:</b> {{ user_href(submitter) }}
+            <b>Submitted by:</b> {{ member_profile_href(submitter) }}
             <b class='pl-2'>Platform:</b>
             {% for p in latest_version.platform_tags %}
                 {{ search_tag_href(p) }}
@@ -97,7 +97,7 @@
             <div class='card-metadata'>
                 <div class='card-block'>
                     <div class='section'>
-                        <b class='card-title'>Submitter:</b> {{ user_href(submitter) }}
+                        <b class='card-title'>Submitter:</b> {{ member_profile_href(submitter) }}
                     </div>
                     <div class='section'>
                         <b class='card-title'>DOI:</b> {{ doi }}
@@ -128,7 +128,7 @@
                     {% for release in releases %}
                         <tr>
                             <td><a href='{{ release.absolute_url }}'>{{ release.version_number }}</a></td>
-                            <td>{{ user_href(release.submitter) }}</td>
+                            <td>{{ member_profile_href(release.submitter) }}</td>
                             <td>{{ release.first_published_at }}</td>
                             <td>{{ release.last_published_on }}</td>
                         </tr>
@@ -190,6 +190,9 @@
     </div>
     <div class="card-metadata">
         <div class="card-block">
+            {% if has_change_perm %}
+                <a href="{{ url('library:codebase-update', identifier=identifier) }}" class="col-12 my-1 btn btn-primary">Edit</a>
+            {% endif %}
             <button type="button" class="col-12 my-1 btn btn-primary">Download</button>
             <button type="button" class="col-12 my-1 btn btn-primary">Follow</button>
         </div>
