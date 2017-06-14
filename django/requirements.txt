@@ -18,7 +18,6 @@ bagit==1.5.4
 semver==2.7.7
 django-guardian==1.4.8
 django-jinja==2.3.1
-udatetime==0.0.12
 # deployment and management dependencies
 dealer==2.0.5
 invoke

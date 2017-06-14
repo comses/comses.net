@@ -1,11 +1,12 @@
 import logging
+from datetime import datetime
 from textwrap import shorten
 
 import requests
-import udatetime
 from django import forms
 from django.conf import settings
 from django.contrib.auth.models import User
+from django.core.cache import cache
 from django.db import models
 from django.utils import timezone
 from django.utils.translation import ugettext_lazy as _
@@ -135,7 +136,11 @@ class LandingPage(Page):
                          params={'order': 'created', 'sort': 'asc'})
         posts_dict = r.json()
         topics = posts_dict['topic_list']['topics']
+        recent_forum_activity = cache.get('recent_forum_activity')
+        if recent_forum_activity:
+            return recent_forum_activity
         # transform topics list of dictionaries into web template format with title, submitter, date_created, and url.
+
         recent_forum_activity = []
         # stuff this in the Redis Cache.
         for topic in topics[:self.RECENT_FORUM_ACTIVITY_COUNT]:
@@ -176,10 +181,11 @@ class LandingPage(Page):
                 {
                     'title': topic_title,
                     'submitter': submitter,
-                    'date_created': udatetime.from_string(topic['last_posted_at']),
+                    'date_created': datetime.strptime(topic['last_posted_at'], "%Y-%m-%dT%H:%M:%S.%fZ"),
                     'url': topic_url,
                 }
             )
+        cache.set('recent_forum_activity', recent_forum_activity, 3600)
         return recent_forum_activity
 
     def get_latest_jobs(self):
@@ -241,7 +247,7 @@ class NavigationMixin(object):
         return [
             {'url': item.url, 'text': item.title}
             for item in self.breadcrumbs.all()
-            ]
+        ]
 
     def _add_tuples(self, tuples, cls):
         related_name = cls._meta.get_field('page').related_query_name()
@@ -267,7 +273,7 @@ class NavigationMixin(object):
         return [
             {'url': nav.url, 'text': nav.title, 'active': nav.url.endswith(self.slug + '/')}
             for nav in self.navigation_links.all()
-            ]
+        ]
 
 
 class CategoryIndexPage(NavigationMixin, Page):
@@ -586,5 +592,3 @@ class NewsPageRelatedLink(Orderable):
         FieldPanel('name'),
         FieldPanel('url'),
     ]
-
-
