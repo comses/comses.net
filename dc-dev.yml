@@ -2,6 +2,7 @@ version: '3'
 services:
   redis:
     image: redis:3.2-alpine
+    command: ["redis-server", "/usr/local/etc/redis/redis.conf"]
     volumes:
       - ./deploy/conf/redis.conf:/usr/local/etc/redis/redis.conf
       - ./docker/shared/redis:/data
