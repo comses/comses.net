@@ -304,6 +304,17 @@ REST_FRAMEWORK = {
     'PAGE_SIZE': 10
 }
 
+# add redis cache http://docs.wagtail.io/en/v1.10.1/advanced_topics/performance.html#cache
+CACHES = {
+    'default': {
+        'BACKEND': 'django_redis.cache.RedisCache',
+        'LOCATION': 'redis:6379',
+        'OPTIONS': {
+            'CLIENT_CLASS': 'django_redis.client.DefaultClient',
+        }
+    }
+}
+
 # SSO, user registration, and django-allauth configuration, see
 # https://django-allauth.readthedocs.io/en/latest/configuration.html
 # ACCOUNT_ADAPTER = 'core.adapter.AccountAdapter'
