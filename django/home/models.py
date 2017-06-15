@@ -125,6 +125,7 @@ class LandingPage(Page):
     RECENT_FORUM_ACTIVITY_COUNT = 5
 
     mission_statement = models.CharField(max_length=512)
+    community_statement = models.TextField()
 
     def get_featured_content(self):
         return self.featured_content_queue.all()[:self.FEATURED_CONTENT_COUNT]
@@ -204,6 +205,7 @@ class LandingPage(Page):
 
     content_panels = Page.content_panels + [
         FieldPanel('mission_statement', widget=forms.Textarea),
+        FieldPanel('community_statement'),
         InlinePanel('featured_content_queue', label=_('Featured Content')),
     ]
 
