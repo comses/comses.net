@@ -22,7 +22,6 @@
                 {{ search_tag_href(p) }}
             {% endfor %}
             <b class='pl-2'>Version: </b> {{ latest_version.version_number }}
-            <small><a href='{{ latest_version.absolute_url }}'>(View Latest)</a></small>
             <b class='pl-2'>Language:</b>
             {% for pl in latest_version.programming_languages %}
                 {{ search_tag_href(pl) }}
@@ -106,7 +105,13 @@
                         <b class='card-title'>License:</b> <a href='{{ latest_version.license.url }}'>{{ latest_version.license.name }}</a>
                     </div>
                     <div class='section'>
-                        <b class='card-title'>Operating System:</b> {{ latest_version.get_os_display }}
+                        <b class='card-title'>Operating System:</b> {{ latest_version.os_display }}
+                    </div>
+                    <div class='section'>
+                        <b class='card-title'>Programming Language:</b>
+                        {% for pl in latest_version.programming_languages %}
+                            {{ search_tag_href(pl) }}
+                        {% endfor %}
                     </div>
                     <div class='section'>
                         <b class='card-title'>Dependencies:</b> {{ latest_version.dependencies }}
