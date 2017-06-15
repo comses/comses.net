@@ -8,7 +8,6 @@ from django.conf import settings
 from django.contrib.auth.models import User
 from django.test import TestCase
 from ..models import CodebaseRelease, Codebase
-from ..fs import add_src_upload, add_data_upload
 
 
 class FsTestCase(TestCase):
