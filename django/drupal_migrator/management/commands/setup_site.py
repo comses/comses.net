@@ -1,6 +1,6 @@
 """
 Initializes Wagtail Page Models and other canned data.
-FIXME: move logic to dedicated module if this gets too unwieldy
+FIXME: refactor when this gets too bigly
 """
 
 import logging
@@ -13,16 +13,25 @@ from django.core.management.base import BaseCommand
 from django.urls import reverse
 from wagtail.wagtailcore.models import Page, Site
 
+from core.models import SocialMediaSettings, Platform
 from drupal_migrator.database_migration import load_licenses, load_platforms, load_journals, load_faq_entries
 from home.models import (LandingPage, FeaturedContentItem, PlatformIndexPage, PlatformSnippetPlacement,
-                         CategoryIndexPage, JournalIndexPage,
-                         JournalSnippetPlacement, Journal, MarkdownPage, FaqPage, FaqEntry, FaqEntryPlacement,
+                         CategoryIndexPage, JournalIndexPage, JournalSnippetPlacement, Journal,
+                         MarkdownPage, FaqPage, FaqEntry, FaqEntryPlacement,
                          PeoplePage, PeopleEntryPlacement, ContactPage)
-from core.models import SocialMediaSettings, Platform
 from library.models import Codebase
 
 logger = logging.getLogger(__name__)
 
+
+COMMUNITY_STATEMENT = (
+    'CoMSES Net is dedicated to fostering open and reproducible scientific computation through '
+    'cyberinfrastructure and community development. We develop and curate [resources for model-based '
+    'science](/resources/) including agent-based modeling [tutorials](/resources/tutorials/), [FAQs](/about/faq/), '
+    'and [forums for discussions, job postings, and events.](https://forum.comses.net). We also develop and '
+    'maintain the [OpenABM Computational Model Library](/codebases/), a digital repository for code that supports '
+    'discovery and good practices for software citation, reproducibility and reuse.'
+)
 
 class AbstractSection(object):
 
@@ -66,8 +75,11 @@ class ResourceSection(AbstractSection):
             url='modeling-platforms/',
             user=self.default_user,
             sort_order=1,
-            caption=('Preserve the complete digital pipeline used to derive a publishable finding. Other researchers '
-                     'will be able to discover, cite, and run your code in a reproducible containerized environment.')
+            caption=(
+                'Preserve the complete digital pipeline used to derive a publishable finding in a trusted digital '
+                'repository that supports discovery and good practices for software citation, reproducibility, and '
+                'reuse.'
+            ),
         )
         resources_index.add_callout(
             image_path='core/static/images/icons/journals.png',
@@ -210,13 +222,7 @@ class CommunitySection(AbstractSection):
             heading='Community',
             title='Welcome to the CoMSES Net Community',
             slug='community',
-            summary=('CoMSES Net is dedicated to fostering open and reproducible scientific computation through '
-                     'cyberinfrastructure and community development. We curate [resources for '
-                     'model-based science](/resources/) including tutorials and FAQs on agent-based modeling, a '
-                     '[computational model library](/codebases/) to help researchers archive their work and discover '
-                     'and reuse other&apos;s works, and '
-                     '[forums for discussions, job postings, and events.](https://forum.comses.net)'
-                     ),
+            summary=COMMUNITY_STATEMENT,
         )
         community_index.add_breadcrumbs([
             ('Community', '/community/')
@@ -235,9 +241,10 @@ class CommunitySection(AbstractSection):
             user=self.default_user,
             sort_order=1,
             caption=('Follow other researchers, their models, or other topics of interest. Engage in discussions, '
-                     'participate in upcoming events, or find a new job. Preserve the complete digital pipeline used to '
-                     'derive a publishable finding. Other researchers will be able to discover, cite, and run your code '
-                     'in a reproducible' 'containerized environment.')
+                     'participate in upcoming events, or find a new job. Preserve the complete digital pipeline used '
+                     'to derive a publishable finding in a trusted digital repository that supports discovery and '
+                     'good practices for software citation, reproducibility, and reuse.'
+                     )
         )
 
         community_index.add_callout(
@@ -257,7 +264,7 @@ class CommunitySection(AbstractSection):
             user=self.default_user,
             sort_order=3,
             caption=('We maintain an open job board with academic and industry positions relevant to the CoMSES Net '
-                     'Community. Any CoMSES Net Member can register and post positions here.')
+                     'Community. Any registered CoMSES Net members can post positions here.')
         )
         self.root_page.add_child(instance=community_index)
 
@@ -279,11 +286,12 @@ class AboutSection(AbstractSection):
             summary=('Welcome! CoMSES Net, the Network for Computational Modeling in Social and Ecological Sciences, '
                      'is an open community of researchers, educators, and professionals with a common goal - improving '
                      'the way we develop, share, use, and re-use agent based and computational models for the study of '
-                     'social and ecological systems. We have been developing a computational model library to preserve '
-                     'the digital artifacts and source code that comprise an agent based model and encourage you to '
-                     'register and [add your models to the archive](/codebases/create/). We are governed by an '
-                     'international board and ex-officio members (PIs of the projects that fund CoMSES Net) and '
-                     'operate under [these by-laws](/about/by-laws).'
+                     'social and ecological systems. We develop and maintain the [OpenABM Computational Model Library]('
+                     '/codebases/), a digital repository that supports discovery and good practices for '
+                     'software citation, digital preservation, reproducibility, and reuse. We encourage you to '
+                     'register and [add your models to the archive](/codebases/create/).\n\n'
+                     'We are governed by an international executive board, ex-officio members '
+                     '(PIs on projects that fund CoMSES Net) and adhere to [community drafted by-laws](/about/by-laws/).'
                      ),
         )
         about_index.add_breadcrumbs(self.SUBNAVIGATION_MENU[:1])
@@ -381,12 +389,71 @@ class AboutSection(AbstractSection):
         contact_page.add_navigation_links(self.SUBNAVIGATION_MENU)
         parent.add_child(instance=contact_page)
 
+    def build_bylaws_page(self, parent):
+        bylaws_page = MarkdownPage(
+            heading='CoMSES Net By-Laws',
+            title='CoMSES Net By-Laws',
+            description='Community drafted By-Laws for the operation of CoMSES Net.',
+            slug='by-laws',
+            body=(
+                '[TOC]\n\n'
+                '# Article I: The Organization \n\n'
+                '**A.** This organization shall be known as the Network for Computational Modeling in '
+                'the Social and Ecological Sciences (CoMSES Net)\n'
+                '**B.** CoMSES Net is a scientific research coordination network to support and expand the development and '
+                'use of computational modeling in the social and ecological sciences.\n'
+                '**C.** One of the primary nodes of CoMSES Net is OpenABM, which serves specifically as a platform to '
+                'promote education and use of agent-based modeling\n'
+                '**D.** Toward these ends, the organization will develop actions and projects to further these aims, '
+                'including cyberinfrastructure development and maintenance, workshops and winter/summer schools, '
+                'foster various mechanisms to promote sharing of research and educational material related to '
+                'computational modeling in the social and ecological sciences.\n\n'
+                '# Article II: Membership \n\n'
+                '**A.** Membership is open to all persons who sign up to this website. Registered users can post materials '
+                'to the website. Full members agree to the responsibilities and code of behavior and receive '
+                'additional benefits and obligations as specified at the organizational website. \n'
+                '**B.** Full members have the right to vote for composition of the executive board and are eligible '
+                'to be candidates for the board (See Article III).\n'
+                '**C.** Members can be expelled under exceptional conditions for repeated violations of the members rules, '
+                'confirmed by a unanimous vote of the Board.\n\n'
+                '# Article III: Composition of the Executive Board \n\n'
+                '**A.** The board consists of six elected board members and additional ex-officio members '
+                '(Principal Investigators on the main projects that fund this organization). Each board member will '
+                'generally be responsible for a defined set of tasks related to management of the network. If a '
+                'board member is both elected and qualified to serve as an ex officio member they still have only one '
+                'vote, but are eligible for any rights which apply to either category of board membership.\n'
+                '**B.** The board elects every year an elected member to serve as a chair.\n'
+                '**C.** The board advises on the strategy and operations of the organizations beyond the current funded '
+                'projects. The board can initiate and direct activities using the existing cyberinfrastructure. '
+                'The principal responsibility of funded projects is held by the principal investigators.\n'
+                '**D.** The board meets at least three times a year. Meetings need not be in person, but can be by audio '
+                'or video teleconference.\n'
+                '**E.** Decisions are made by majority vote of the board members.\n'
+                '**F.** Board member terms are three years. Each year two board members rotate off the board and new '
+                'members will be elected. Any other vacancy (due to resignation, incapability determined by two-thirds '
+                'of the board) will be filled by the next annual election.\n\n'
+                '# Article IV: Ex-officio Members \n\n'
+                '**A.** Principal investigators of official projects supporting the CoMSES Net organization.\n'
+                '**B.** Typical support of CoMSES Net includes direct financial support of the organization, '
+                'administrative support in-kind or research activities that directly benefit CoMSES Net and its '
+                'member organizations.\n'
+                '**C.** Any member organization that believes it has met the criteria outlined in IV.A and IV.B can request '
+                'to designate an ex-officio member to the board. This request must be approved by a simple majority '
+                'of the current board.\n\n'
+                '# Article V: Elections \n\n'
+                '**A.** All Full CoMSES members are eligible to vote on elected members of the board.\n'
+                '**B.** Elections shall take place in November/December of each year. Executive Board terms begin '
+                'January 1st.'
+            ),
+        )
+        parent.add_child(instance=bylaws_page)
 
     def build(self):
         about_index = self.build_about_section()
         self.build_people_page(about_index)
         self.build_faq_page(about_index)
         self.build_contact_page(about_index)
+        self.build_bylaws_page(about_index)
 
 
 class Command(BaseCommand):
@@ -473,15 +540,7 @@ class Command(BaseCommand):
                                'with the common goal of improving the way we develop, share, and use agent based '
                                'modeling in the social and ecological sciences.'
                                ),
-            community_statement=(
-                "CoMSES Net is dedicated to fostering open and reproducible scientific computation through "
-                "cyberinfrastructure and community development. We curate resources for model-based science "
-                "including tutorials and FAQs on agent-based modeling, a [computational model library](/codebases) "
-                "where researchers can archive their work and discover and reuse other's works, and open access forums "
-                "for job postings, events, and discussion. \n\n"
-                'As a scientific community of practice, members of the CoMSES Network have access to a suite of '
-                'community resources and also share a responsibility to contribute back to the community.'
-            ),
+            community_statement=COMMUNITY_STATEMENT,
         )
         for codebase in Codebase.objects.peer_reviewed():
             # if there are multiple images, just pull the first
