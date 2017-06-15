@@ -285,7 +285,7 @@ class CategoryIndexPage(NavigationMixin, Page):
 
     def add_callout(self, image_path, title, caption, sort_order=None, user=None, url=''):
         if user is None:
-            user = User.objects.first()
+            user = User.objects.get(username='alee')
         _image = get_canonical_image(path=image_path, title=title, user=user)
         self.callouts.add(
             CategoryIndexItem(
