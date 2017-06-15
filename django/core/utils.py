@@ -8,7 +8,7 @@ from wagtail.wagtailimages.models import Image
 ALLOWED_TAGS = bleach.ALLOWED_TAGS + ['p', 'h1', 'h2', 'h3', 'h4', 'pre', 'br', 'div', 'span', 'footer']
 
 ALLOWED_ATTRIBUTES = dict(bleach.ALLOWED_ATTRIBUTES,
-                          **{'*': 'class', 'img': 'alt',})
+                          **{'*': ['name', 'id', 'class'], 'img': 'alt',})
 
 
 DEFAULT_MARKDOWN_EXTENSIONS = [
