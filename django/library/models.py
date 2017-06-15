@@ -1,6 +1,10 @@
 import logging
 import pathlib
+import os
+import shutil
+import tarfile
 import uuid
+import zipfile
 from enum import Enum
 from textwrap import shorten
 
@@ -13,6 +17,7 @@ from django.db import models
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.translation import ugettext_lazy as _
+from django.utils._os import safe_join
 from model_utils import Choices
 from modelcluster.contrib.taggit import ClusterTaggableManager
 from modelcluster.fields import ParentalKey
@@ -164,8 +169,8 @@ class Codebase(index.Indexed, ClusterableModel):
     # FIXME: should this be a rollup of peer reviewed CodebaseReleases?
     peer_reviewed = models.BooleanField(default=False)
 
-# FIXME: right now leaning towards identifier as the agnostic way to ID any given Codebase. It is currently set to the
-# old Drupal NID but that means we need to come up with something on model upload
+    # FIXME: right now leaning towards identifier as the agnostic way to ID any given Codebase. It is currently set to the
+    # old Drupal NID but that means we need to come up with something on model upload
     identifier = models.CharField(max_length=128, unique=True)
     doi = models.CharField(max_length=128, unique=True, null=True)
     uuid = models.UUIDField(unique=True, default=uuid.uuid4, editable=False)
@@ -467,6 +472,47 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
     def save_file(self, file_obj):
         """Extract the archive, inspect it's contents and if it's valid store with other releases"""
         pass
+
+    def _add_file(self, fileobj, destination_folder: str):
+        path = safe_join(str(self.get_library_path()), destination_folder, fileobj.name)
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        with open(path, 'wb') as source_file:
+            shutil.copyfileobj(fileobj, source_file)
+
+    def _add_archive_file(self, fileobj, destination_folder: str):
+        base_path = str(self.get_library_path())
+        archive_path = safe_join(base_path, 'workdir', fileobj.name)
+        path = safe_join(base_path, destination_folder)
+
+        os.makedirs(os.path.dirname(archive_path), exist_ok=True)
+        os.makedirs(path, exist_ok=True)
+
+        with open(archive_path, 'wb') as archive:
+            shutil.copyfileobj(fileobj, archive)
+        shutil.unpack_archive(archive_path, path)
+
+    def _add_upload(self, fileobj, destination_folder: str):
+        name = os.path.basename(fileobj.name)
+        if fs.is_archive(name):
+            self._add_archive_file(fileobj, destination_folder)
+        else:
+            self._add_file(fileobj, destination_folder)
+
+    def add_data_upload(self, fileobj):
+        self._add_upload(fileobj, 'data')
+
+    def add_src_upload(self, fileobj):
+        self._add_upload(fileobj, 'src')
+
+    def add_doc_upload(self, fileobj):
+        self._add_upload(fileobj, 'docs')
+
+    def delete_upload(self, relpath):
+        path = safe_join(str(self.get_library_path()), relpath)
+        if os.path.isdir(path):
+            shutil.rmtree(path)
+        else:
+            os.unlink(path)
 
     @property
     def bagit_info(self):

@@ -92,6 +92,5 @@ export default class EditTextList extends Vue {
     updateLicense(license_option: { name: string, url: string}) {
         this.codebase_release.license = license_option.name;
     }
-
 }
 </script>

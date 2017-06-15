@@ -3,7 +3,7 @@ import logging
 from django.core.files import File
 from django.urls import resolve
 from django.shortcuts import get_object_or_404
-from rest_framework import viewsets, generics, parsers, renderers
+from rest_framework import viewsets, generics, parsers, renderers, decorators
 from rest_framework.response import Response
 
 from core.view_helpers import get_search_queryset, retrieve_with_perms
@@ -45,6 +45,40 @@ class CodebaseReleaseViewSet(viewsets.ModelViewSet):
         identifier = resolved.kwargs['identifier']
         return self.queryset.filter(codebase__identifier=identifier)
 
+    @decorators.detail_route(methods=['post'],
+                             parser_classes=(parsers.FormParser, parsers.MultiPartParser,),
+                             renderer_classes=(renderers.JSONRenderer,))
+    def upload_data(self, request, identifier, version_number):
+        codebase_release = self.get_object()  # type: CodebaseRelease
+        codebase_release.add_data_upload(request.data['file'])
+        return Response(status=204)
+
+    @decorators.detail_route(methods=['post'],
+                             parser_classes=(parsers.FormParser, parsers.MultiPartParser,),
+                             renderer_classes=(renderers.JSONRenderer,))
+    def upload_src(self, request, identifier, version_number):
+        codebase_release = self.get_object()
+        codebase_release.add_upload_src(request.data['file'])
+        return Response(status=204)
+
+    @decorators.detail_route(methods=['post'],
+                             parser_classes=(parsers.FormParser, parsers.MultiPartParser,),
+                             renderer_classes=(renderers.JSONRenderer,))
+    def upload_doc(self, request, identifier, version_number):
+        codebase_release = self.get_object()
+        codebase_release.add_upload_doc(request.data['file'])
+        return Response(status=204)
+
+    @decorators.detail_route(methods=['post'],
+                             parser_classes=(parsers.JSONParser,),
+                             renderer_classes=(renderers.JSONRenderer,),
+                             url_name='upload-delete',
+                             url_path='upload_delete/(?P<path>[\.\w+/]*[\.\w]+)')
+    def upload_delete(self, request, identifier, version_number, path):
+        codebase_release = self.get_object()
+        codebase_release.delete_upload(path)
+        return Response(status=204)
+
 
 class ContributorList(generics.ListAPIView):
     queryset = Contributor.objects.all()
@@ -62,7 +96,7 @@ class ContributorList(generics.ListAPIView):
 class CodebaseReleaseUploadView(generics.CreateAPIView):
     queryset = CodebaseRelease.objects.all()
     serializer_class = CodebaseReleaseSerializer
-    parser_classes = (parsers.MultiPartParser, parsers.JSONParser, )
+    parser_classes = (parsers.MultiPartParser, parsers.JSONParser,)
     renderer = renderers.JSONRenderer()
 
     def create(self, request, *args, **kwargs):
