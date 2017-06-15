@@ -127,7 +127,10 @@
                 {% for post in recent_forum_activity %}
                     <div class='activity'>
                         <h4><a href='{{ post.url }}'>{{ post.title }}</a></h4>
-                        <small class='text-muted'>Posted by {{ post.submitter }} - {{ post.date_created.strftime('%c') }}</small>
+                        <small class='text-muted'>Posted by 
+                            <a href='{{ post.submitter.member_profile.get_absolute_url() }}'>{{ post.submitter.username }}</a>
+                            - {{ post.date_created.strftime('%c') }}</a>
+                        </small>
                     </div>
                 {% endfor %}
             </div>
