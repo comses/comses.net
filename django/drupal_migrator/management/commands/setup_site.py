@@ -23,6 +23,7 @@ from library.models import Codebase
 
 logger = logging.getLogger(__name__)
 
+
 class AbstractSection(object):
 
     def __init__(self, root_page, default_user):
@@ -472,6 +473,15 @@ class Command(BaseCommand):
                                'with the common goal of improving the way we develop, share, and use agent based '
                                'modeling in the social and ecological sciences.'
                                ),
+            community_statement=(
+                "CoMSES Net is dedicated to fostering open and reproducible scientific computation through "
+                "cyberinfrastructure and community development. We curate resources for model-based science "
+                "including tutorials and FAQs on agent-based modeling, a [computational model library](/codebases) "
+                "where researchers can archive their work and discover and reuse other's works, and open access forums "
+                "for job postings, events, and discussion. \n\n"
+                'As a scientific community of practice, members of the CoMSES Network have access to a suite of '
+                'community resources and also share a responsibility to contribute back to the community.'
+            ),
         )
         for codebase in Codebase.objects.peer_reviewed():
             # if there are multiple images, just pull the first
