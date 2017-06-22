@@ -59,7 +59,8 @@ services:
       - ./docker/shared/repository:/shared/repository
       - ./docker/shared/webpack:/shared/webpack
       - ./docker/shared/static:/shared/static
-    environment:
+      - ./docker/shared/redis:/shared/redis
+  environment:
       DJANGO_SETTINGS_MODULE: "core.settings.dev"
       DB_USER: ${DB_USER}
       DB_HOST: ${DB_HOST}
