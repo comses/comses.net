@@ -2,14 +2,15 @@ import logging
 
 from django.core.files import File
 from django.urls import resolve
-from django.shortcuts import get_object_or_404
-from rest_framework import viewsets, generics, parsers, renderers, decorators
+from rest_framework import viewsets, generics, parsers, renderers
+from rest_framework.decorators import detail_route
 from rest_framework.response import Response
 
 from core.view_helpers import get_search_queryset, retrieve_with_perms
 from home.views import SmallResultSetPagination
 from .models import Codebase, CodebaseRelease, Contributor
-from .serializers import CodebaseSerializer, CodebaseReleaseSerializer, ContributorSerializer
+from .serializers import (CodebaseSerializer, RelatedCodebaseSerializer, CodebaseReleaseSerializer,
+                          ContributorSerializer, )
 
 logger = logging.getLogger(__name__)
 
@@ -17,12 +18,16 @@ logger = logging.getLogger(__name__)
 class CodebaseViewSet(viewsets.ModelViewSet):
     lookup_field = 'identifier'
     lookup_value_regex = r'[\w\-.]+'
-    serializer_class = CodebaseSerializer
     pagination_class = SmallResultSetPagination
     queryset = Codebase.objects.all()
 
     def get_queryset(self):
         return get_search_queryset(self)
+
+    def get_serializer_class(self):
+        if self.action == 'list':
+            return RelatedCodebaseSerializer
+        return CodebaseSerializer
 
     @property
     def template_name(self):
@@ -40,40 +45,44 @@ class CodebaseReleaseViewSet(viewsets.ModelViewSet):
     serializer_class = CodebaseReleaseSerializer
     pagination_class = SmallResultSetPagination
 
+    @property
+    def template_name(self):
+        return 'library/codebases/releases/{}.jinja'.format(self.action)
+
     def get_queryset(self):
         resolved = resolve(self.request.path)
         identifier = resolved.kwargs['identifier']
         return self.queryset.filter(codebase__identifier=identifier)
 
-    @decorators.detail_route(methods=['post'],
-                             parser_classes=(parsers.FormParser, parsers.MultiPartParser,),
-                             renderer_classes=(renderers.JSONRenderer,))
+    @detail_route(methods=['post'],
+                  parser_classes=(parsers.FormParser, parsers.MultiPartParser,),
+                  renderer_classes=(renderers.JSONRenderer,))
     def upload_data(self, request, identifier, version_number):
         codebase_release = self.get_object()  # type: CodebaseRelease
         codebase_release.add_data_upload(request.data['file'])
         return Response(status=204)
 
-    @decorators.detail_route(methods=['post'],
-                             parser_classes=(parsers.FormParser, parsers.MultiPartParser,),
-                             renderer_classes=(renderers.JSONRenderer,))
+    @detail_route(methods=['post'],
+                  parser_classes=(parsers.FormParser, parsers.MultiPartParser,),
+                  renderer_classes=(renderers.JSONRenderer,))
     def upload_src(self, request, identifier, version_number):
         codebase_release = self.get_object()
         codebase_release.add_upload_src(request.data['file'])
         return Response(status=204)
 
-    @decorators.detail_route(methods=['post'],
-                             parser_classes=(parsers.FormParser, parsers.MultiPartParser,),
-                             renderer_classes=(renderers.JSONRenderer,))
+    @detail_route(methods=['post'],
+                  parser_classes=(parsers.FormParser, parsers.MultiPartParser,),
+                  renderer_classes=(renderers.JSONRenderer,))
     def upload_doc(self, request, identifier, version_number):
         codebase_release = self.get_object()
         codebase_release.add_upload_doc(request.data['file'])
         return Response(status=204)
 
-    @decorators.detail_route(methods=['post'],
-                             parser_classes=(parsers.JSONParser,),
-                             renderer_classes=(renderers.JSONRenderer,),
-                             url_name='upload-delete',
-                             url_path='upload_delete/(?P<path>[\.\w+/]*[\.\w]+)')
+    @detail_route(methods=['post'],
+                  parser_classes=(parsers.JSONParser,),
+                  renderer_classes=(renderers.JSONRenderer,),
+                  url_name='upload-delete',
+                  url_path='upload_delete/(?P<path>[\.\w+/]*[\.\w]+)')
     def upload_delete(self, request, identifier, version_number, path):
         codebase_release = self.get_object()
         codebase_release.delete_upload(path)
