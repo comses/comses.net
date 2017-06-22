@@ -51,17 +51,34 @@ class CodebaseContributorSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
+class RelatedCodebaseSerializer(serializers.ModelSerializer):
+    """
+    Sparse codebase serializer
+    """
+    all_contributors = CodebaseContributorSerializer(many=True, read_only=True)
+    tags = TagSerializer(many=True)
+    last_published_on = serializers.DateTimeField(read_only=True, format=PUBLISH_DATE_FORMAT)
+    summarized_description = serializers.CharField(read_only=True)
+    featured_image = serializers.ReadOnlyField(source='get_featured_image')
+
+    class Meta:
+        model = Codebase
+        fields = ('featured_image', 'all_contributors', 'tags', 'title', 'last_published_on', 'identifier',
+                  'summarized_description')
+
+
 class CodebaseReleaseSerializer(serializers.ModelSerializer):
     absolute_url = serializers.URLField(source='get_absolute_url', read_only=True,
                                         help_text=_('URL to the detail page of the codebase'))
     citation_text = serializers.ReadOnlyField()
+    codebase = RelatedCodebaseSerializer(read_only=True)
     codebase_contributors = CodebaseContributorSerializer(many=True)
     date_created = serializers.DateTimeField(format=YMD_DATETIME_FORMAT, read_only=True)
     first_published_at = serializers.DateTimeField(format=PUBLISH_DATE_FORMAT, read_only=True)
     last_published_on = serializers.DateTimeField(format=PUBLISH_DATE_FORMAT, read_only=True)
     license = LicenseSerializer()
     os_display = serializers.CharField(source='get_os_display')
-    platforms = TagSerializer(many=True)
+    platform_tags = TagSerializer(many=True)
     programming_languages = TagSerializer(many=True)
     submitter = LinkedUserSerializer(label='Submitter')
 
@@ -69,8 +86,8 @@ class CodebaseReleaseSerializer(serializers.ModelSerializer):
         model = CodebaseRelease
         fields = ('absolute_url', 'citation_text', 'codebase_contributors', 'date_created', 'dependencies',
                   'description', 'documentation', 'doi', 'download_count', 'embargo_end_date', 'first_published_at',
-                  'last_modified', 'last_published_on', 'license', 'os', 'os_display', 'peer_reviewed', 'platforms',
-                  'programming_languages', 'submitted_package', 'submitter', 'version_number',)
+                  'last_modified', 'last_published_on', 'license', 'os', 'os_display', 'peer_reviewed', 'platform_tags',
+                  'programming_languages', 'submitted_package', 'submitter', 'version_number', 'codebase')
 
 
 class CodebaseSerializer(serializers.ModelSerializer):
@@ -81,7 +98,8 @@ class CodebaseSerializer(serializers.ModelSerializer):
     featured_image = serializers.ReadOnlyField(source='get_featured_image')
     first_published_at = serializers.DateTimeField(format=PUBLISH_DATE_FORMAT, read_only=True)
     last_published_on = serializers.DateTimeField(format=PUBLISH_DATE_FORMAT, read_only=True)
-    latest_version = CodebaseReleaseSerializer(read_only=True)
+    latest_version_number = serializers.ReadOnlyField(source='latest_version.version_number')
+    current_version = CodebaseReleaseSerializer(read_only=True)
     releases = CodebaseReleaseSerializer(read_only=True, many=True)
     submitter = LinkedUserSerializer(read_only=True)
     summarized_description = serializers.CharField(read_only=True)
@@ -97,16 +115,3 @@ class CodebaseSerializer(serializers.ModelSerializer):
         model = Codebase
         exclude = ('featured_images',)
 
-
-class RelatedCodebaseSerializer(serializers.ModelSerializer):
-    """Codebase serializer for MemberProfile"""
-    all_contributors = CodebaseContributorSerializer(many=True, read_only=True)
-    tags = TagSerializer(many=True)
-    last_published_on = serializers.DateTimeField(read_only=True, format=PUBLISH_DATE_FORMAT)
-    summarized_description = serializers.CharField(read_only=True)
-    featured_image = serializers.ReadOnlyField(source='get_featured_image')
-
-    class Meta:
-        model = Codebase
-        fields = ('featured_image', 'all_contributors', 'tags', 'title', 'last_published_on', 'identifier',
-                  'summarized_description')

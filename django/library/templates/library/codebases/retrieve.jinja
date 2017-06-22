@@ -20,6 +20,8 @@
             <b class='pl-2'>Platform:</b>
             {% for p in latest_version.platform_tags %}
                 {{ search_tag_href(p) }}
+            {% else %}
+                None
             {% endfor %}
             <b class='pl-2'>Version: </b> {{ latest_version.version_number }}
             <b class='pl-2'>Language:</b>

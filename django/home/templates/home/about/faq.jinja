@@ -16,7 +16,7 @@
     </div>
     <div id='faq-accordion' role='tablist' aria-multiselectable='true'>
         {% for category, group_list in faq_entries|groupby('category') %}
-            <h3 class='py-3 title'>{{ get_choices_display(category, faq_categories) }}</h3>
+            <h2 id='{{category}}' class='py-3 title'>{{ get_choices_display(category, faq_categories) }}</h3>
             {% for entry in group_list %}
                 {% set entry_id = category ~ "_" ~ entry.pk %}
                 {% set heading_id = "faqHeading_" ~ entry.pk %}

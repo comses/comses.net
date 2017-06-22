@@ -217,7 +217,7 @@ class Codebase(index.Indexed, ClusterableModel):
 
     @staticmethod
     def _release_upload_path(instance, filename):
-        return pathlib.Path(instance.workdir_path, filename)
+        return str(pathlib.Path(instance.workdir_path, filename))
 
     @staticmethod
     def assign_latest_release():
@@ -288,7 +288,7 @@ class Codebase(index.Indexed, ClusterableModel):
     def media_url(self, name):
         return '{0}/media/{1}'.format(self.get_absolute_url(), name)
 
-    def make_version_number(self, version_number=None, version_bump=None):
+    def next_version_number(self, version_number=None, version_bump=None):
         if version_number is None:
             # start off at v1.0.0
             version_number = '1.0.0'
@@ -309,7 +309,7 @@ class Codebase(index.Indexed, ClusterableModel):
                 logger.warning("No submitter or submitter_id specified when creating release, using first user %s",
                                submitter)
             submitter_id = submitter.pk
-        version_number = self.make_version_number(version_number, version_bump)
+        version_number = self.next_version_number(version_number, version_bump)
         release = self.releases.create(
             submitter_id=submitter_id,
             version_number=version_number,
@@ -379,14 +379,15 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
     platform and programming language tags are also dependencies that can reference additional metadata in the
     dependencies JSONField
     '''
-    platform_tags = ClusterTaggableManager(through=CodebaseReleasePlatformTag, related_name='platform_codebase_releases')
+    platform_tags = ClusterTaggableManager(through=CodebaseReleasePlatformTag,
+                                           related_name='platform_codebase_releases')
     platforms = models.ManyToManyField('core.Platform')
     programming_languages = ClusterTaggableManager(through=ProgrammingLanguage,
                                                    related_name='pl_codebase_releases')
     codebase = models.ForeignKey(Codebase, related_name='releases')
     submitter = models.ForeignKey(User)
     contributors = models.ManyToManyField(Contributor, through='CodebaseContributor')
-    submitted_package = models.FileField(upload_to=str(Codebase._release_upload_path), null=True)
+    submitted_package = models.FileField(upload_to=Codebase._release_upload_path, null=True)
     # M2M relationships for publications
     publications = models.ManyToManyField(
         'citation.Publication',
