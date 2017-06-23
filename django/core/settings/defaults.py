@@ -262,7 +262,7 @@ STATICFILES_DIRS = [
 STATIC_ROOT = '/shared/static'
 STATIC_URL = '/static/'
 
-MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+MEDIA_ROOT = '/shared/media'
 MEDIA_URL = '/media/'
 
 # Wagtail settings

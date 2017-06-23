@@ -2,9 +2,7 @@ import logging
 import pathlib
 import os
 import shutil
-import tarfile
 import uuid
-import zipfile
 from enum import Enum
 from textwrap import shorten
 
@@ -217,7 +215,7 @@ class Codebase(index.Indexed, ClusterableModel):
 
     @staticmethod
     def _release_upload_path(instance, filename):
-        return str(pathlib.Path(instance.workdir_path, filename))
+        return str(pathlib.Path(instance.codebase.upload_path, filename))
 
     @staticmethod
     def assign_latest_release():
@@ -251,8 +249,9 @@ class Codebase(index.Indexed, ClusterableModel):
     def subpath(self, *args):
         return pathlib.Path(self.base_library_dir, *args)
 
-    def media_dir(self, *args):
-        return self.subpath('media', *args)
+    @property
+    def upload_path(self):
+        return pathlib.Path(settings.MEDIA_ROOT, str(self.uuid))
 
     @property
     def summarized_description(self):
