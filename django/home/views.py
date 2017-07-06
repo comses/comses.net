@@ -267,8 +267,8 @@ class ProfileViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         # make sort order parameterizable. Start with ID or last_name? Lots of spam users visible with
         # last_name / username
-        return MemberProfile.objects.prefetch_related('user__codebases')\
-            .filter(user__is_active=True).exclude(pk__in=(1, 2)).order_by('id')
+        return self.queryset.prefetch_related('user__codebases')\
+            .filter(user__is_active=True).exclude(user__username__in=('AnonymousUser', 'openabm')).order_by('id')
 
     def retrieve(self, request, *args, **kwargs):
         return retrieve_with_perms(self, request, *args, **kwargs)
