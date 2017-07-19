@@ -29,14 +29,16 @@ class CodebaseViewSet(viewsets.ModelViewSet):
             return RelatedCodebaseSerializer
         return CodebaseSerializer
 
-    def get_serializer(self, *args, **kwargs):
-        codebase = args[0]
-        if 'version_number' in kwargs:
-            current_version = codebase.releases.get(version_number=kwargs['version_number'])
-        else:
-            current_version = codebase.latest_version
-        codebase.current_version = current_version
-        return super().get_serializer(codebase)
+    def get_serializer(self, instance=None, data=None, **kwargs):
+        if instance:
+            if 'version_number' in kwargs:
+                version_number = kwargs.pop('version_number')
+                current_version = instance.releases.get(version_number)
+            else:
+                current_version = instance.latest_version
+            instance.current_version = current_version
+            return super().get_serializer(instance)
+        return super().get_serializer(instance, data=data, **kwargs)
 
     @property
     def template_name(self):

@@ -56,8 +56,8 @@ def get_search_queryset(self):
     """
     FIXME: this is broken, as not every linked entity will have a `date_created` field
     give this a parameterizable ordering field instead
-    :param self: 
-    :return: 
+    :param self:
+    :return:
     """
     query = self.request.query_params.get('query')
     tags = self.request.query_params.getlist('tags')
@@ -86,6 +86,7 @@ def get_search_queryset(self):
 
 
 def retrieve_with_perms(self, request, *args, **kwargs):
+    pk = kwargs.pop('pk', None)
     instance = self.get_object()
     serializer = self.get_serializer(instance, *args, **kwargs)
     data = serializer.data

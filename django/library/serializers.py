@@ -115,4 +115,5 @@ class CodebaseSerializer(serializers.ModelSerializer):
         model = Codebase
         fields = ('absolute_url', 'all_contributors', 'date_created', 'download_count', 'featured_image',
                   'first_published_at', 'last_published_on', 'latest_version_number', 'current_version', 'releases',
-                  'submitter', 'summarized_description', 'tags', 'description', 'title', 'doi', 'identifier',)
+                  'submitter', 'summarized_description', 'tags', 'description', 'title', 'doi', 'identifier', 'id',
+                  )
