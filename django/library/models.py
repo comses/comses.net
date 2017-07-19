@@ -251,7 +251,10 @@ class Codebase(index.Indexed, ClusterableModel):
 
     @property
     def upload_path(self):
-        return pathlib.Path(settings.MEDIA_ROOT, str(self.uuid))
+        return self.media_dir('uploads')
+
+    def media_dir(self, *args):
+        return pathlib.Path(settings.MEDIA_ROOT, str(self.uuid), *args)
 
     @property
     def summarized_description(self):
@@ -312,7 +315,7 @@ class Codebase(index.Indexed, ClusterableModel):
         release = self.releases.create(
             submitter_id=submitter_id,
             version_number=version_number,
-            identifier=version_number,
+            # identifier=version_number,
             **kwargs
         )
         if submitted_package:
