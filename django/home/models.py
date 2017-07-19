@@ -133,6 +133,19 @@ class LandingPage(Page):
     def get_recent_forum_activity(self):
         # FIXME: move to dedicated discourse module / api as we integrate more tightly with discourse
         # Discourse API endpoint documented at http://docs.discourse.org/#tag/Topics%2Fpaths%2F~1latest.json%2Fget
+        if settings.DEBUG:
+            random_submitters = User.objects.filter(pk__in=(3, 5, 7, 11, 13, 17))
+            return [
+                {
+                    'title': "Generated Forum Topic {}".format(i),
+                    'submitter': random_submitters[i],
+                    'date_created': datetime.now(),
+                    'url': "https://forum.example.com/topic/{}".format(i),
+                }
+                for i in range(self.RECENT_FORUM_ACTIVITY_COUNT)
+            ]
+
+        # FIXME: refactor and clean up logic, extract to a sensible discourse api
         r = requests.get('{0}/{1}'.format(settings.DISCOURSE_BASE_URL, 'latest.json'),
                          params={'order': 'created', 'sort': 'asc'})
         posts_dict = r.json()
