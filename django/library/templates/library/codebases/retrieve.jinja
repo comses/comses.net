@@ -18,14 +18,14 @@
         <div class='metadata'>
             <b>Submitted by:</b> {{ member_profile_href(submitter) }}
             <b class='pl-2'>Platform:</b>
-            {% for p in latest_version.platform_tags %}
+            {% for p in current_version.platform_tags %}
                 {{ search_tag_href(p) }}
             {% else %}
                 None
             {% endfor %}
-            <b class='pl-2'>Version: </b> {{ latest_version.version_number }}
+            <b class='pl-2'>Version: </b> {{ current_version.version_number }}
             <b class='pl-2'>Language:</b>
-            {% for pl in latest_version.programming_languages %}
+            {% for pl in current_version.programming_languages %}
                 {{ search_tag_href(pl) }}
             {% endfor %}
         </div>
@@ -42,7 +42,7 @@
         <div class='card-block'>
             <h2 class='card-title'>Cite this Model</h2>
             <p class='card-text'>
-                {{ latest_version.citation_text|markdown }}
+                {{ current_version.citation_text|markdown }}
             </p>
         </div>
     </div>
@@ -104,19 +104,19 @@
                         <b class='card-title'>DOI:</b> {{ doi }}
                     </div>
                     <div class='section'>
-                        <b class='card-title'>License:</b> <a href='{{ latest_version.license.url }}'>{{ latest_version.license.name }}</a>
+                        <b class='card-title'>License:</b> <a href='{{ current_version.license.url }}'>{{ current_version.license.name }}</a>
                     </div>
                     <div class='section'>
-                        <b class='card-title'>Operating System:</b> {{ latest_version.os_display }}
+                        <b class='card-title'>Operating System:</b> {{ current_version.os_display }}
                     </div>
                     <div class='section'>
                         <b class='card-title'>Programming Language:</b>
-                        {% for pl in latest_version.programming_languages %}
+                        {% for pl in current_version.programming_languages %}
                             {{ search_tag_href(pl) }}
                         {% endfor %}
                     </div>
                     <div class='section'>
-                        <b class='card-title'>Dependencies:</b> {{ latest_version.dependencies }}
+                        <b class='card-title'>Dependencies:</b> {{ current_version.dependencies }}
                     </div>
                 </div>
             </div>
@@ -174,7 +174,7 @@
             <div class='section'>
                 <b class="card-title">Last Updated</b>
                 <p class='card-text'>
-                {{ latest_version.last_published_on }}
+                {{ current_version.last_published_on }}
                 </p>
             </div>
             <div class='section'>
