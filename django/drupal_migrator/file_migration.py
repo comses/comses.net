@@ -7,8 +7,11 @@ import os
 import re
 import shutil
 
+import pathlib
 import pygit2
 from django.contrib.auth.models import User
+from django.core.files.images import ImageFile
+from wagtail.wagtailimages.models import Image
 
 from core import fs
 from library.models import Codebase, CodebaseRelease
@@ -94,7 +97,7 @@ class ModelFileset:
             release = codebase.releases.get(version_number=version.semver)
             version.migrate(release)
         # FIXME: in 3.6, os.makedirs will accept media_dir as a path-like object
-        media_dir = str(codebase.media_dir())
+        media_dir = str(codebase.upload_path)
         os.makedirs(media_dir, exist_ok=True)
         for media_dir_entry in self._media:
             shutil.copy(media_dir_entry.path, media_dir)
@@ -105,6 +108,16 @@ class ModelFileset:
                 'url': codebase.media_url(media_dir_entry.name),
                 'featured': fs.is_image(media_dir_entry.path),
             }
+
+            if image_metadata['featured']:
+                filename = image_metadata['name']
+                path = pathlib.Path(image_metadata['path'], filename)
+                image = Image(title=codebase.title,
+                              file=ImageFile(path.open('rb')),
+                              uploaded_by_user=codebase.submitter)
+                image.save()
+                codebase.featured_images.add(image)
+
             codebase.media.append(image_metadata)
         codebase.save()
 

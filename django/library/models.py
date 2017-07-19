@@ -234,16 +234,6 @@ class Codebase(index.Indexed, ClusterableModel):
     def get_featured_image(self):
         if self.featured_images.exists():
             return self.featured_images.first()
-        if self.media:
-            for media_metadata in self.media:
-                # return the first featured image
-                if media_metadata['featured']:
-                    filename = media_metadata['name']
-                    path = pathlib.Path(media_metadata['path'], filename)
-                    image = Image(title=self.title, file=ImageFile(path.open('rb')), uploaded_by_user=self.submitter)
-                    image.save()
-                    self.featured_images.add(image)
-                    return image
         return None
 
     def subpath(self, *args):
