@@ -29,6 +29,15 @@ class CodebaseViewSet(viewsets.ModelViewSet):
             return RelatedCodebaseSerializer
         return CodebaseSerializer
 
+    def get_serializer(self, *args, **kwargs):
+        codebase = args[0]
+        if 'version_number' in kwargs:
+            current_version = codebase.releases.get(version_number=kwargs['version_number'])
+        else:
+            current_version = codebase.latest_version
+        codebase.current_version = current_version
+        return super().get_serializer(codebase)
+
     @property
     def template_name(self):
         return 'library/codebases/{}.jinja'.format(self.action)

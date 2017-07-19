@@ -87,7 +87,7 @@ def get_search_queryset(self):
 
 def retrieve_with_perms(self, request, *args, **kwargs):
     instance = self.get_object()
-    serializer = self.get_serializer(instance)
+    serializer = self.get_serializer(instance, *args, **kwargs)
     data = serializer.data
     data = _add_change_delete_perms(instance, data, request.user)
 
