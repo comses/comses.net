@@ -1,16 +1,16 @@
-from django.views.generic import TemplateView
-from django.conf.urls import url
+import logging
 import os
 import re
-from wagtail.wagtailsearch.backends import get_search_backend
+
+from django.conf.urls import url
+from django.contrib.auth.decorators import login_required
+from django.views.generic import TemplateView
+from guardian.decorators import permission_required_or_403
 from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
-from guardian.decorators import permission_required_or_403
-from django.contrib.auth.decorators import login_required
+from wagtail.wagtailsearch.backends import get_search_backend
 
 from core.backends import get_viewable_objects_for_user
-
-import logging
 
 logger = logging.getLogger(__name__)
 
@@ -86,16 +86,14 @@ def get_search_queryset(self):
 
 
 def retrieve_with_perms(self, request, *args, **kwargs):
-    pk = kwargs.pop('pk', None)
     instance = self.get_object()
-    serializer = self.get_serializer(instance, *args, **kwargs)
+    serializer = self.get_serializer(instance)
     data = serializer.data
-    data = _add_change_delete_perms(instance, data, request.user)
-
+    data = add_change_delete_perms(instance, data, request.user)
     return Response(data)
 
 
-def _add_change_delete_perms(instance, data, user):
+def add_change_delete_perms(instance, data, user):
     data['has_change_perm'] = user.has_perm('change_' + instance._meta.model_name, instance)
     data['has_delete_perm'] = user.has_perm('delete_' + instance._meta.model_name, instance)
     return data

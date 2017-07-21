@@ -6,7 +6,7 @@ from rest_framework import viewsets, generics, parsers, renderers
 from rest_framework.decorators import detail_route
 from rest_framework.response import Response
 
-from core.view_helpers import get_search_queryset, retrieve_with_perms
+from core.view_helpers import get_search_queryset, add_change_delete_perms
 from home.views import SmallResultSetPagination
 from .models import Codebase, CodebaseRelease, Contributor
 from .serializers import (CodebaseSerializer, RelatedCodebaseSerializer, CodebaseReleaseSerializer,
@@ -29,23 +29,19 @@ class CodebaseViewSet(viewsets.ModelViewSet):
             return RelatedCodebaseSerializer
         return CodebaseSerializer
 
-    def get_serializer(self, instance=None, data=None, **kwargs):
-        if instance:
-            if 'version_number' in kwargs:
-                version_number = kwargs.pop('version_number')
-                current_version = instance.releases.get(version_number)
-            else:
-                current_version = instance.latest_version
-            instance.current_version = current_version
-            return super().get_serializer(instance)
-        return super().get_serializer(instance, data=data, **kwargs)
-
     @property
     def template_name(self):
         return 'library/codebases/{}.jinja'.format(self.action)
 
     def retrieve(self, request, *args, **kwargs):
-        return retrieve_with_perms(self, request, *args, **kwargs)
+        instance = self.get_object()
+        if 'version_number' in kwargs:
+            instance.current_version = instance.releases.get(version_number=kwargs['version_number'])
+        else:
+            instance.current_version = instance.latest_version
+        serializer = self.get_serializer(instance)
+        data = add_change_delete_perms(instance, serializer.data, request.user)
+        return Response(data)
 
 
 class CodebaseReleaseViewSet(viewsets.ModelViewSet):

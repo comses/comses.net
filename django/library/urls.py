@@ -7,7 +7,7 @@ from .views import CodebaseViewSet, CodebaseReleaseViewSet, ContributorList, Cod
 
 router = SimpleRouter()
 router.register(r'codebases', CodebaseViewSet)
-router.register(r'codebases/(?P<identifier>\w+)/releases', CodebaseReleaseViewSet)
+router.register(r'codebases/(?P<identifier>[\w\-.]+)/releases', CodebaseReleaseViewSet)
 # router.register(r'contributors', ContributorList)
 
 urlpatterns = create_edit_routes(
