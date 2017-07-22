@@ -87,7 +87,7 @@ const listContributors = _.debounce((state, self) => api.contributors.list(state
         draggable
     }
 })
-export default class EditContributors extends Vue {
+class EditContributors extends Vue {
     @Prop
     contributors: Array<object>;
 
@@ -139,4 +139,6 @@ export default class EditContributors extends Vue {
         this.state = contributor;
     }
 }
+
+export default EditContributors;
 </script>

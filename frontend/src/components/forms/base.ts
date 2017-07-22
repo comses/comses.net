@@ -1,6 +1,9 @@
 import * as Vue from 'vue'
+import * as VeeValidate from 'vee-validate'
 import {Component, Prop} from 'vue-property-decorator'
 import * as _ from 'lodash'
+
+Vue.use(VeeValidate);
 
 @Component
 class BaseControl extends Vue {
@@ -15,19 +18,16 @@ class BaseControl extends Vue {
 
     get hasDanger() {
         let self: any = this;
-        return (this.server_errors !== undefined && this.server_errors.length > 0) || self.errors.any();
+        return self.errors.any();
     }
 
     get errorMessage() {
         let self: any = this;
-        return _.concat(this.server_errors || [], self.errors.all()).join(', ');
+        return self.errors.all().join(', ');
     }
 
     updateValue(value: string) {
-        let self: any = this;
-        self.errors.remove(this.name, 'ajax');
         this.$emit('input', value);
-        this.$emit('clear', this.name);
     }
 }
 
