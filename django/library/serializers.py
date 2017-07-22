@@ -108,7 +108,7 @@ class CodebaseReleaseSerializer(serializers.ModelSerializer):
         fields = ('absolute_url', 'citation_text', 'release_contributors', 'date_created', 'dependencies',
                   'description', 'documentation', 'doi', 'download_count', 'embargo_end_date', 'first_published_at',
                   'last_modified', 'last_published_on', 'license', 'os', 'os_display', 'peer_reviewed', 'platform_tags',
-                  'programming_languages', 'submitted_package', 'submitter', 'version_number', 'codebase', 'identifier', 'pk',)
+                  'programming_languages', 'submitted_package', 'submitter', 'version_number', 'codebase', 'identifier', 'id',)
 
 
 class CodebaseSerializer(serializers.ModelSerializer):
@@ -136,4 +136,4 @@ class CodebaseSerializer(serializers.ModelSerializer):
         model = Codebase
         fields = ('absolute_url', 'all_contributors', 'date_created', 'download_count', 'featured_image',
                   'first_published_at', 'last_published_on', 'latest_version_number', 'current_version', 'releases',
-                  'submitter', 'summarized_description', 'tags', 'description', 'title', 'doi', 'identifier', 'pk',)
+                  'submitter', 'summarized_description', 'tags', 'description', 'title', 'doi', 'identifier', 'id',)
