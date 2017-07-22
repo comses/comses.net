@@ -4,7 +4,7 @@ from django.utils.http import urlencode
 from django.utils.translation import ugettext_lazy as _
 from rest_framework import serializers
 
-from core.serializers import (YMD_DATETIME_FORMAT, PUBLISH_DATE_FORMAT, LinkedUserSerializer, create, update,
+from core.serializers import (YMD_DATETIME_FORMAT, PUBLISH_DATE_FORMAT, LinkedUserSerializer, create, update, save_related,
                               TagSerializer)
 from .models import CodebaseContributor, Codebase, CodebaseRelease, Contributor, License
 
@@ -28,14 +28,7 @@ class ContributorSerializer(serializers.ModelSerializer):
 
 
 class CodebaseContributorSerializer(serializers.ModelSerializer):
-    name = serializers.CharField(source='contributor.name', read_only=True)
-    family_name = serializers.CharField(source='contributor.family_name')
-    middle_name = serializers.CharField(source='contributor.middle_name')
-    given_name = serializers.CharField(source='contributor.given_name')
-    type = serializers.ChoiceField(source='contributor.type', choices=['person', 'organization'])
-    username = serializers.CharField(source='contributor.user.username', read_only=True)
-    affiliations = serializers.CharField(source='contributor.formatted_affiliations', read_only=True)
-    affiliations_list = TagSerializer(source='contributor.affiliations', many=True)
+    contributor = ContributorSerializer()
     profile_url = serializers.SerializerMethodField()
 
     def get_profile_url(self, instance):
@@ -48,7 +41,9 @@ class CodebaseContributorSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = CodebaseContributor
-        fields = '__all__'
+        fields = ('contributor', 'profile_url',
+                  'include_in_citation', 'is_maintainer', 'is_rights_holder',
+                  'role', 'index', )
 
 
 class RelatedCodebaseSerializer(serializers.ModelSerializer):
@@ -61,6 +56,12 @@ class RelatedCodebaseSerializer(serializers.ModelSerializer):
     summarized_description = serializers.CharField(read_only=True)
     featured_image = serializers.ReadOnlyField(source='get_featured_image')
 
+    def create(self, validated_data):
+        return create(self.Meta.model, validated_data, self.context)
+
+    def update(self, instance, validated_data):
+        return update(super().update, instance, validated_data)
+
     class Meta:
         model = Codebase
         fields = ('featured_image', 'all_contributors', 'tags', 'title', 'last_published_on', 'identifier',
@@ -72,7 +73,7 @@ class CodebaseReleaseSerializer(serializers.ModelSerializer):
                                         help_text=_('URL to the detail page of the codebase'))
     citation_text = serializers.ReadOnlyField()
     codebase = RelatedCodebaseSerializer(read_only=True)
-    codebase_contributors = CodebaseContributorSerializer(many=True)
+    release_contributors = CodebaseContributorSerializer(source='codebase_contributors', many=True)
     date_created = serializers.DateTimeField(format=YMD_DATETIME_FORMAT, read_only=True)
     first_published_at = serializers.DateTimeField(format=PUBLISH_DATE_FORMAT, read_only=True)
     last_published_on = serializers.DateTimeField(format=PUBLISH_DATE_FORMAT, read_only=True)
@@ -82,9 +83,29 @@ class CodebaseReleaseSerializer(serializers.ModelSerializer):
     programming_languages = TagSerializer(many=True)
     submitter = LinkedUserSerializer(label='Submitter')
 
+    def update(self, instance, validated_data):
+        programming_languages = TagSerializer(many=True, data=validated_data.pop('programming_languages'))
+        platform_tags = TagSerializer(many=True, data=validated_data.pop('platform_tags'))
+        codebase_contributors = CodebaseContributorSerializer(
+            many=True, data=validated_data.pop('codebase_contributors'))
+        codebase = RelatedCodebaseSerializer(data=validated_data.pop('codebase'))
+
+        instance = super().update(instance, validated_data)
+
+        save_related(instance, programming_languages, 'programming_languages')
+        save_related(instance, platform_tags, 'platform_tags')
+        save_related(instance, codebase_contributors, 'codebase_contributors')
+
+        codebase.is_valid(raise_exception=True)
+        codebase.save()
+        instance.codebase = codebase
+        instance.save()
+
+        return instance
+
     class Meta:
         model = CodebaseRelease
-        fields = ('absolute_url', 'citation_text', 'codebase_contributors', 'date_created', 'dependencies',
+        fields = ('absolute_url', 'citation_text', 'release_contributors', 'date_created', 'dependencies',
                   'description', 'documentation', 'doi', 'download_count', 'embargo_end_date', 'first_published_at',
                   'last_modified', 'last_published_on', 'license', 'os', 'os_display', 'peer_reviewed', 'platform_tags',
                   'programming_languages', 'submitted_package', 'submitter', 'version_number', 'codebase', 'identifier', 'pk',)
@@ -115,5 +136,4 @@ class CodebaseSerializer(serializers.ModelSerializer):
         model = Codebase
         fields = ('absolute_url', 'all_contributors', 'date_created', 'download_count', 'featured_image',
                   'first_published_at', 'last_published_on', 'latest_version_number', 'current_version', 'releases',
-                  'submitter', 'summarized_description', 'tags', 'description', 'title', 'doi', 'identifier', 'pk',
-                  )
+                  'submitter', 'summarized_description', 'tags', 'description', 'title', 'doi', 'identifier', 'pk',)

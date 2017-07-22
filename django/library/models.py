@@ -131,10 +131,10 @@ class CodebaseReleaseDownload(models.Model):
 
 
 class CodebaseQuerySet(models.QuerySet):
-
     def accessible(self, user, **kwargs):
         return self.filter(
-            pk__in=CodebaseContributor.objects.filter(contributor__user=user).values_list('release__codebase', flat=True),
+            pk__in=CodebaseContributor.objects.filter(contributor__user=user).values_list('release__codebase',
+                                                                                          flat=True),
             **kwargs
         )
 
@@ -239,6 +239,9 @@ class Codebase(index.Indexed, ClusterableModel):
     def subpath(self, *args):
         return pathlib.Path(self.base_library_dir, *args)
 
+    def media_dir(self):
+        return settings.MEDIA_ROOT
+
     @property
     def upload_path(self):
         return self.media_dir('uploads')
@@ -294,7 +297,8 @@ class Codebase(index.Indexed, ClusterableModel):
                 version_number = version_bump(version_number)
         return version_number
 
-    def make_release(self, submitter=None, submitter_id=None, version_number=None, version_bump=None, submitted_package=None, **kwargs):
+    def make_release(self, submitter=None, submitter_id=None, version_number=None, version_bump=None,
+                     submitted_package=None, **kwargs):
         if submitter_id is None:
             if submitter is None:
                 submitter = User.objects.first()
@@ -302,12 +306,12 @@ class Codebase(index.Indexed, ClusterableModel):
                                submitter)
             submitter_id = submitter.pk
         version_number = self.next_version_number(version_number, version_bump)
+        identifier = kwargs.pop('identifier', version_number)
         release = self.releases.create(
             submitter_id=submitter_id,
             version_number=version_number,
-            # identifier=version_number,
-            **kwargs
-        )
+            identifier=identifier,
+            **kwargs)
         if submitted_package:
             release.submitted_package.save(submitted_package.name, submitted_package, save=False)
         self.latest_version = release
@@ -315,7 +319,8 @@ class Codebase(index.Indexed, ClusterableModel):
         return release
 
     def __str__(self):
-        return "{0} {1} identifier={2} live={3}".format(self.title, self.date_created, repr(self.identifier), repr(self.live))
+        return "{0} {1} identifier={2} live={3}".format(self.title, self.date_created, repr(self.identifier),
+                                                        repr(self.live))
 
     class Meta:
         permissions = (('view_codebase', 'Can view codebase'),)
@@ -440,7 +445,8 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
 
     @property
     def contributor_list(self):
-        return [c.contributor.get_full_name(family_name_first=True) for c in self.codebase_contributors.order_by('index')]
+        return [c.contributor.get_full_name(family_name_first=True) for c in
+                self.codebase_contributors.order_by('index')]
 
     @property
     def bagit_path(self):
@@ -467,7 +473,8 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
         pass
 
     def _add_file(self, fileobj, destination_folder: str):
-        path = safe_join(str(self.get_library_path()), destination_folder, fileobj.name)
+        path = safe_join(str(self.workdir_path), destination_folder, fileobj.name)
+        logger.debug('add file path %s', path)
         os.makedirs(os.path.dirname(path), exist_ok=True)
         with open(path, 'wb') as source_file:
             shutil.copyfileobj(fileobj, source_file)
@@ -484,28 +491,47 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
             shutil.copyfileobj(fileobj, archive)
         shutil.unpack_archive(archive_path, path)
 
-    def _add_upload(self, fileobj, destination_folder: str):
+    UPLOAD_TYPE_TO_FOLDERNAME = {'data': 'data', 'documentation': 'doc', 'sources': 'code'}
+
+    def get_absolute_upload_retrieve_url(self, upload_type: str, relpath: str):
+        return reverse('library:codebaserelease-download',
+                       kwargs={'identifier': self.codebase.identifier, 'version_number': self.version_number,
+                               'upload_type': upload_type, 'path': relpath})
+
+    def add_upload(self, upload_type: str, fileobj):
+        foldername = self.UPLOAD_TYPE_TO_FOLDERNAME[upload_type]
         name = os.path.basename(fileobj.name)
         if fs.is_archive(name):
-            self._add_archive_file(fileobj, destination_folder)
+            self._add_archive_file(fileobj, foldername)
         else:
-            self._add_file(fileobj, destination_folder)
+            self._add_file(fileobj, foldername)
 
-    def add_data_upload(self, fileobj):
-        self._add_upload(fileobj, 'data')
+    def list_uploads(self, upload_type: str):
+        foldername = self.UPLOAD_TYPE_TO_FOLDERNAME[upload_type]
+        rootdir = safe_join(str(self.workdir_path), foldername)
+        paths = []
+        for dirpath, dirnames, filenames in os.walk(rootdir):
+            for filename in filenames:
+                relpath = os.path.relpath(os.path.join(dirpath, filename), rootdir)
+                paths.append(
+                    dict(path=relpath, url=self.get_absolute_upload_retrieve_url(upload_type, relpath)))
+        return paths
 
-    def add_src_upload(self, fileobj):
-        self._add_upload(fileobj, 'src')
-
-    def add_doc_upload(self, fileobj):
-        self._add_upload(fileobj, 'docs')
-
-    def delete_upload(self, relpath):
-        path = safe_join(str(self.get_library_path()), relpath)
+    def delete_upload(self, upload_type: str, relpath: str):
+        foldername = self.UPLOAD_TYPE_TO_FOLDERNAME[upload_type]
+        path = safe_join(str(self.workdir_path), foldername, relpath)
         if os.path.isdir(path):
             shutil.rmtree(path)
         else:
             os.unlink(path)
+
+    def retrieve_upload(self, upload_type: str, relpath: str):
+        foldername = self.UPLOAD_TYPE_TO_FOLDERNAME[upload_type]
+        path = safe_join(str(self.workdir_path), foldername, relpath)
+        if os.path.isfile(path):
+            return open(path, 'rb')
+        else:
+            raise FileNotFoundError('File "{}" does not exist'.format(relpath))
 
     @property
     def bagit_info(self):

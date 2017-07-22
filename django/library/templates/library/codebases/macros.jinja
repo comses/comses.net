@@ -18,9 +18,9 @@
                     </h1>
                     <small>
                         {% for codebase_contributor in item.all_contributors %}
-                            {% set badge_class='badge-success' if codebase_contributor.username else 'badge-default' %}
+                            {% set badge_class='badge-success' if codebase_contributor.contributor.user else 'badge-default' %}
                             <a class='badge {{badge_class}} contributor' href="{{ codebase_contributor.profile_url }}">
-                                {{ codebase_contributor.name }}
+                                {{ codebase_contributor.contributor.name }}
                             </a>
                         {% endfor %}
                         | Published {{ item.last_published_on }}

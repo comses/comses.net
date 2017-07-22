@@ -1,7 +1,12 @@
 import logging
 
 from django.core.files import File
-from django.urls import resolve
+from django.http import HttpResponse
+from django.urls import resolve, reverse
+
+import mimetypes
+import os
+import pathlib
 from rest_framework import viewsets, generics, parsers, renderers
 from rest_framework.decorators import detail_route
 from rest_framework.response import Response
@@ -17,7 +22,7 @@ logger = logging.getLogger(__name__)
 
 class CodebaseViewSet(viewsets.ModelViewSet):
     lookup_field = 'identifier'
-    lookup_value_regex = r'[\w\-.]+'
+    lookup_value_regex = r'[\w\-\.]+'
     pagination_class = SmallResultSetPagination
     queryset = Codebase.objects.all()
 
@@ -61,39 +66,43 @@ class CodebaseReleaseViewSet(viewsets.ModelViewSet):
         identifier = resolved.kwargs['identifier']
         return self.queryset.filter(codebase__identifier=identifier)
 
-    @detail_route(methods=['post'],
-                  parser_classes=(parsers.FormParser, parsers.MultiPartParser,),
-                  renderer_classes=(renderers.JSONRenderer,))
-    def upload_data(self, request, identifier, version_number):
+    def _list_uploads(self, codebase_release, upload_type, url):
+        return Response(data={
+            'files': codebase_release.list_uploads(upload_type),
+            'upload_url': url}, status=200)
+
+    def _file_upload_operations(self, request, upload_type: str, url):
         codebase_release = self.get_object()  # type: CodebaseRelease
-        codebase_release.add_data_upload(request.data['file'])
-        return Response(status=204)
+        if request.method == 'POST':
+            codebase_release.add_upload(upload_type, request.data['file'])
+            return Response(status=204)
+        elif request.method == 'GET':
+            return self._list_uploads(codebase_release, upload_type, url)
 
-    @detail_route(methods=['post'],
+    @detail_route(methods=['get', 'post'],
                   parser_classes=(parsers.FormParser, parsers.MultiPartParser,),
-                  renderer_classes=(renderers.JSONRenderer,))
-    def upload_src(self, request, identifier, version_number):
-        codebase_release = self.get_object()
-        codebase_release.add_upload_src(request.data['file'])
-        return Response(status=204)
-
-    @detail_route(methods=['post'],
-                  parser_classes=(parsers.FormParser, parsers.MultiPartParser,),
-                  renderer_classes=(renderers.JSONRenderer,))
-    def upload_doc(self, request, identifier, version_number):
-        codebase_release = self.get_object()
-        codebase_release.add_upload_doc(request.data['file'])
-        return Response(status=204)
-
-    @detail_route(methods=['post'],
-                  parser_classes=(parsers.JSONParser,),
                   renderer_classes=(renderers.JSONRenderer,),
-                  url_name='upload-delete',
-                  url_path='upload_delete/(?P<path>[\.\w+/]*[\.\w]+)')
-    def upload_delete(self, request, identifier, version_number, path):
+                  url_name='files',
+                  url_path='(?P<upload_type>[\.\w]+)')
+    def files(self, request, identifier, version_number, upload_type):
+        url = request.path
+        return self._file_upload_operations(request, upload_type, url)
+
+    @detail_route(methods=['delete', 'get'],
+                  parser_classes=(parsers.JSONParser,),
+                  url_name='download',
+                  url_path='(?P<upload_type>[\.\w]+)/(?P<path>([\.\w]+/)*[\.\w]+)')
+    def download(self, request, identifier, version_number, upload_type, path):
         codebase_release = self.get_object()
-        codebase_release.delete_upload(path)
-        return Response(status=204)
+        if request.method == 'DELETE':
+            codebase_release.delete_upload(upload_type, path)
+            return self._list_uploads(codebase_release, upload_type, request.path)
+        elif request.method == 'GET':
+            filename = os.path.basename(path)
+            response = HttpResponse(File(codebase_release.retrieve_upload(upload_type, path)),
+                                    content_type=mimetypes.guess_type(path)[0] or 'application/octet-stream')
+            response['Content-Disposition'] = 'attachment; filename={}'.format(filename)
+            return response
 
 
 class ContributorList(generics.ListAPIView):

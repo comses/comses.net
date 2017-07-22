@@ -185,7 +185,7 @@ class LandingPage(Page):
                     target_object = Event.objects.filter(title=topic_title).order_by('-date_created').first()
                 elif category_id == 8:
                     target_object = Codebase.objects.filter(title=topic_title).order_by('-date_created').first()
-                submitter = target_object.submitter
+                submitter = target_object.submitter if target_object else User.objects.get(username='AnonymousUser')
             else:
                 try:
                     submitter = User.objects.get(username=last_poster_username)
