@@ -62,9 +62,8 @@ def test(ctx, tests=None, coverage=False):
                                                                      ','.join(ignored))
     else:
         coverage_cmd = env['python']
-    ctx.run("DJANGO_SETTINGS_MODULE='core.settings.test' {coverage_cmd} manage.py test {apps}".format(
-        apps=apps,
-        coverage_cmd=coverage_cmd))
+    ctx.run("{coverage_cmd} manage.py test {apps}".format(apps=apps, coverage_cmd=coverage_cmd),
+            env={'DJANGO_SETTINGS_MODULE': 'core.settings.test'})
 
 
 @task(pre=[call(test, coverage=True)])
