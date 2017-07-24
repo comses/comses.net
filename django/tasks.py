@@ -62,7 +62,9 @@ def test(ctx, tests=None, coverage=False):
                                                                      ','.join(ignored))
     else:
         coverage_cmd = env['python']
-    ctx.run('{coverage_cmd} manage.py test {apps}'.format(apps=apps, coverage_cmd=coverage_cmd))
+    ctx.run("DJANGO_SETTINGS_MODULE='core.settings.test' {coverage_cmd} manage.py test {apps}".format(
+        apps=apps,
+        coverage_cmd=coverage_cmd))
 
 
 @task(pre=[call(test, coverage=True)])
@@ -98,7 +100,9 @@ def import_all(ctx):
 
 @task(aliases=['esli'])
 def update_elasticsearch_license(ctx, license='/secrets/es5-license.json'):
-    ctx.run("curl -XPUT 'http://elasticsearch:9200/_xpack/license?acknowledge=true' -H 'Content-Type: application/json' -d @{0}".format(license))
+    ctx.run(
+        "curl -XPUT 'http://elasticsearch:9200/_xpack/license?acknowledge=true' -H 'Content-Type: application/json' -d @{0}".format(
+            license))
 
 
 @task(aliases=['pgpass'])
@@ -110,6 +114,7 @@ def create_pgpass_file(ctx, force=False):
         db_password = settings.DATABASES['default']['PASSWORD']
         pgpass.write('db:*:*:{db_user}:{db_password}\n'.format(db_password=db_password, **env))
         ctx.run('chmod 0600 ~/.pgpass')
+
 
 @task
 def backup(ctx, path='/backups/postgres'):
@@ -133,8 +138,10 @@ def reset_database(ctx):
     create_pgpass_file(ctx)
     ctx.run('psql -h {db_host} -c "alter database {db_name} connection limit 1;" -w {db_name} {db_user}'.format(**env),
             echo=True, warn=True)
-    ctx.run('psql -h {db_host} -c "select pg_terminate_backend(pid) from pg_stat_activity where datname=\'{db_name}\'" -w {db_name} {db_user}'.format(**env),
-            echo=True, warn=True)
+    ctx.run(
+        'psql -h {db_host} -c "select pg_terminate_backend(pid) from pg_stat_activity where datname=\'{db_name}\'" -w {db_name} {db_user}'.format(
+            **env),
+        echo=True, warn=True)
     ctx.run('dropdb -w --if-exists -e {db_name} -U {db_user} -h {db_host}'.format(**env), echo=True, warn=True)
     ctx.run('createdb -w {db_name} -U {db_user} -h {db_host}'.format(**env), echo=True, warn=True)
     initialize_database_schema(ctx, False)

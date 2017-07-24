@@ -480,8 +480,8 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
             shutil.copyfileobj(fileobj, source_file)
 
     def _add_archive_file(self, fileobj, destination_folder: str):
-        base_path = str(self.get_library_path())
-        archive_path = safe_join(base_path, 'workdir', fileobj.name)
+        base_path = str(self.workdir_path)
+        archive_path = safe_join(base_path, fileobj.name)
         path = safe_join(base_path, destination_folder)
 
         os.makedirs(os.path.dirname(archive_path), exist_ok=True)

@@ -9,6 +9,10 @@ from django.contrib.auth.models import User
 from django.test import TestCase
 from ..models import CodebaseRelease, Codebase
 
+import logging
+
+logger = logging.getLogger(__name__)
+
 
 class FsTestCase(TestCase):
     @classmethod
@@ -18,7 +22,7 @@ class FsTestCase(TestCase):
 
     def setUp(self):
         submitter = User.objects.first()
-        self.codebase = Codebase.objects.create(title='codebase', submitter=submitter)
+        self.codebase = Codebase.objects.create(title='codebase', submitter=submitter, identifier='1')
         self.codebase_release = CodebaseRelease.objects.create(
             identifier='0.0.0',
             version_number='0.0.0',
@@ -33,9 +37,9 @@ class FsTestCase(TestCase):
         archive_name = 'zip.zip'
         zip_file.name = archive_name
         zip_file.seek(0)
-        self.codebase_release.add_src_upload(zip_file)
+        self.codebase_release.add_upload('sources', zip_file)
 
-        with open(str(self.codebase_release.get_library_path('src', 'main.py')), 'r') as f:
+        with open(str(self.codebase_release.get_library_path('workdir', 'code', 'main.py')), 'r') as f:
             self.assertEqual(f.read(), self.src_content)
 
     def test_tarfile_saving(self):
@@ -49,20 +53,21 @@ class FsTestCase(TestCase):
         archive_name = 'tar.tar'
         tar_file.name = archive_name
         tar_file.seek(0)
-        self.codebase_release.add_data_upload(tar_file)
+        self.codebase_release.add_upload('data', tar_file)
 
-        with open(str(self.codebase_release.get_library_path('data', 'main.txt')), 'r') as f:
+        with open(str(self.codebase_release.get_library_path('workdir', 'data', 'main.txt')), 'r') as f:
             self.assertEqual(f.read(), self.src_content)
 
     def test_file_saving(self):
         fileobj = io.BytesIO(bytes(self.src_content, 'utf8'))
         fileobj.name = 'main.md'
         fileobj.seek(0)
-        self.codebase_release.add_doc_upload(fileobj)
+        self.codebase_release.add_upload('documentation', fileobj)
 
-        with open(str(self.codebase_release.get_library_path('docs', 'main.md'))) as f:
+        with open(str(self.codebase_release.get_library_path('workdir', 'doc', 'main.md'))) as f:
             self.assertEqual(f.read(), self.src_content)
 
     @classmethod
     def tearDownClass(cls):
         shutil.rmtree(settings.LIBRARY_ROOT, ignore_errors=True)
+        # pass
