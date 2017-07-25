@@ -70,4 +70,3 @@ class FsTestCase(TestCase):
     @classmethod
     def tearDownClass(cls):
         shutil.rmtree(settings.LIBRARY_ROOT, ignore_errors=True)
-        # pass
