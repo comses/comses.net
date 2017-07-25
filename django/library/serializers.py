@@ -65,7 +65,7 @@ class RelatedCodebaseSerializer(serializers.ModelSerializer):
     class Meta:
         model = Codebase
         fields = ('featured_image', 'all_contributors', 'tags', 'title', 'last_published_on', 'identifier',
-                  'summarized_description')
+                  'summarized_description', 'description', 'live', 'repository_url',)
 
 
 class CodebaseReleaseSerializer(serializers.ModelSerializer):

@@ -99,14 +99,13 @@ const roleOptions: Array<{ value: string, label: string }> = [
                     </div>
                     <div class="card-block">
                         <div>User Search</div>
-                        <c-input name="given_name" v-model="releaseContributor.contributor.given_name">
-                            <label class="form-control-label" slot="label">Given Name</label>
+                        <c-input name="username" v-model="releaseContributor.contributor.username" label="User Name">
                         </c-input>
-                        <c-input name="middle_name" v-model="releaseContributor.contributor.middle_name" ref="middleName">
-                            <label class="form-control-label" slot="label">Middle Name</label>
+                        <c-input name="given_name" v-model="releaseContributor.contributor.given_name" label="Given Name">
                         </c-input>
-                        <c-input name="family_name" v-model="releaseContributor.contributor.family_name">
-                            <label class="form-control-label" slot="label">Family Name</label>
+                        <c-input name="middle_name" v-model="releaseContributor.contributor.middle_name" label="Middle Name">
+                        </c-input>
+                        <c-input name="family_name" v-model="releaseContributor.contributor.family_name" label="Family Name">
                         </c-input>
                         <c-edit-affiliations :value="releaseContributor.contributor.affiliations_list" vee-path=""
                             @create="releaseContributor.contributor.affiliations_list.push($event)" 
@@ -115,8 +114,7 @@ const roleOptions: Array<{ value: string, label: string }> = [
                             <label class="form-control-label" slot="label">Affiliations</label>
                             <small class="form-text text-muted" slot="help">The institution(s) and other groups you are affiliated with</small>
                         </c-edit-affiliations>
-                        <c-input type="select" name="type" v-model="releaseContributor.contributor.type">
-                            <label class="form-control-label" slot="label">Contributor Type</label>
+                        <c-input type="select" name="type" v-model="releaseContributor.contributor.type" label="Contributor Type">
                         </c-input>
                         <button type="button" class="btn btn-primary" @click="saveContributor">Save</button>
                     </div>

@@ -13,17 +13,15 @@ class BaseControl extends Vue {
     @Prop
     name;
 
-    @Prop
-    server_errors: Array<string>;
+    @Prop({default: () => []})
+    errorMsgs: Array<string>;
 
     get hasDanger() {
-        let self: any = this;
-        return self.errors.any();
+        return this.errorMsgs.length > 0;
     }
 
     get errorMessage() {
-        let self: any = this;
-        return self.errors.all().join(', ');
+        return this.errorMsgs.join(', ');
     }
 
     updateValue(value: string) {

@@ -7,31 +7,30 @@ import Input from 'components/forms/input.vue'
 import Tagger from 'components/tagger.vue'
 import TextArea from 'components/forms/textarea.vue'
 import { exposeComputed} from './store'
+import * as yup from 'yup'
+
+export const schema = yup.object();
 
 Vue.use(VeeValidate)
 
 @Component({
     template: `<div>
-        <c-input v-model="codebaseTitle" name="title" validate="required">
-            <label class="form-control-label" slot="label">Title</label>
-            <small class="form-text text-muted" slot="help">A short title describing the codebase</small>
+        <c-input v-model="codebaseTitle" name="title" :errorMsgs="codebaseTitleErrors" validate="required" label="Title"
+            help="A short title describing the codebase">
         </c-input>
-        <c-textarea v-model="codebaseDescription" name="description" validate="required" rows="3">
+        <c-textarea v-model="codebaseDescription" :errorMsgs="codebaseDescriptionErrors" name="description" validate="required" rows="3">
             <label class="form-control-label" slot="label">Description</label>
         </c-textarea>
-        <c-checkbox v-model="codebaseLive" name="live" label="Published?">
-            <small class="form-text text-muted" slot="help">Published models are visible to everyone. Unpublished models are visible only to you</small>
+        <c-checkbox v-model="codebaseLive" name="live" :errorMsgs="codebaseLiveErrors" label="Published?"
+            help="Published models are visible to everyone. Unpublished models are visible only to you">
         </c-checkbox>
-        <c-checkbox v-model="codebaseIsReplication" name="replication" label="Is a replication?">
+        <c-checkbox v-model="codebaseIsReplication" :errorMsgs="codebaseIsReplicationErrors" name="replication" label="Is a replication?">
         </c-checkbox>
         <c-tagger v-model="codebaseTags" name="tags">
         </c-tagger>
-        <c-input v-model="codebaseRepositoryUrl" name="repository_url" type="url">
-            <label class="form-control-label" slot="label">Repository URL</label>
-            <small class="form-text text-muted" slot="help">A link to the source repository (on GitHub, BitBucket etcetera). A source repository makes it easier for others collaberate with you on model development.
-            </small>
+        <c-input v-model="codebaseRepositoryUrl" :errorMsgs="codebaseRepositoryUrlErrors" name="repository_url" label="Repository URL"
+            help="A link to the source repository (on GitHub, BitBucket etcetera). A source repository makes it easier for others collaberate with you on model development.">
         </c-input>
-        <button class="btn btn-primary" type="button" @click="validate">Validate</button>
     </div>`,
     components: {
         'c-checkbox': Checkbox,

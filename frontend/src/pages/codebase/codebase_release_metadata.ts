@@ -1,5 +1,6 @@
 import * as Vue from 'vue'
 import { Component, Prop} from 'vue-property-decorator'
+import Checkbox from 'components/forms/checkbox.vue'
 import Datepicker from 'components/forms/datepicker.vue'
 import Markdown from 'components/forms/markdown.vue'
 import TextArea from 'components/forms/textarea.vue'
@@ -9,8 +10,7 @@ import { exposeComputed } from './store'
 
 @Component(<any>{
     template: `<div>
-        <c-textarea v-model="description" name="description" rows="3">
-            <label class="form-control-label" slot="label">Description</label>
+        <c-textarea v-model="description" name="description" rows="3" label="Description">
         </c-textarea>
         <c-datepicker v-model="embargoEndDate" name="embargoEndDate">
             <label class="form-control-label" slot="label">Embargo End Date</label>
@@ -68,17 +68,41 @@ import { exposeComputed } from './store'
                 @search-change="fetchMatchingProgrammingLanguages">
             </multiselect>
         </div>
+        <div>
+            <c-checkbox name="live" v-model="live" label="Published?">
+                <small class="form-text text-muted" slot="help">Published models are visible to everyone. Unpublished models are visible only to you</small>
+            </c-checkbox>
+            <multiselect v-model="licence" label="name" track-by="name" placeholder="Type to find license" :options="licenseOptions">
+                <template slot="option" scope="props">
+                    <div>
+                        <a :href="props.option.url">{{ props.option.name }}</a>
+                    </div>
+                </template>
+            </multiselect>
+            <small class="form-text text-muted">A software licence is a document governing use and redistribution of your model</small>
+        </div>
     </div>`,
     components: {
+        'c-checkbox': Checkbox,
         'c-datepicker': Datepicker,
         'c-input': Input,
         'c-markdown': Markdown,
         'c-textarea': TextArea,
         Multiselect
     },
-    computed: exposeComputed(['description', 'documentation', 'embargo_end_date', 'os', 'platforms', 'programming_languages'])
+    computed: exposeComputed(['description', 'documentation', 'embargo_end_date', 'os', 'platforms', 'programming_languages', 'licence', 'live'])
 })
 export default class Description extends Vue {
+    licenseOptions: Array<{ name: string, url: string }> = [
+        { name: 'Library GPL', url: 'https://opensource.org/licenses/lgpl-license' },
+        { name: 'GPL V2', url: 'https://opensource.org/licenses/gpl-license' },
+        { name: 'GPL V3', url: 'https://opensource.org/licenses/gpl-license' },
+        { name: 'MIT', url: 'https://opensource.org/licenses/MIT' },
+        { name: 'Apache 2.0', url: 'https://opensource.org/licenses/Apache-2.0' },
+        { name: 'BSD 3-Clause', url: 'https://opensource.org/licenses/BSD-3-Clause' },
+        { name: 'BSD 2-Clause', url: 'https://opensource.org/licenses/BSD-2-Clause' }
+    ];
+
     osOptions = [
         { name: 'other', display: 'Other' },
         { name: 'linux', display: 'Unix/Linux' },

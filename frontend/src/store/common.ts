@@ -137,4 +137,5 @@ export interface CodebaseReleaseEdit extends AbstractCodebaseRelease {
         sources: { upload_url: string, files: Array<string> }
     }
     codebase: CodebaseEdit
+    validation_errors: {}
 }

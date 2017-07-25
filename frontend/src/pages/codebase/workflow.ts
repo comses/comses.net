@@ -7,7 +7,7 @@ import { CodebaseReleaseEdit } from 'store/common'
 import { api } from 'api/index'
 
 import Contributors from './contributors'
-import Permissions from './permissions'
+import Submit from './submit'
 import Upload from './upload.vue'
 import CodebaseMetadata from './codebase_metadata'
 import CodebaseReleaseMetadata from './codebase_release_metadata'
@@ -41,10 +41,10 @@ const component = {
                 <router-link :to="{ name: 'contributors' }" class="nav-link" active-class="disabled">Contributors</router-link>
             </li>
             <li class="nav-item">
-                <router-link :to="{ name: 'description' }" class="nav-link" active-class="disabled">Release Metadata</router-link>
+                <router-link :to="{ name: 'detail' }" class="nav-link" active-class="disabled">Detail</router-link>
             </li>
             <li class="nav-item">
-                <router-link :to="{ name: 'permissions' }" class="nav-link" active-class="disabled">Permissions</router-link>
+                <router-link :to="{ name: 'submit' }" class="nav-link" active-class="disabled">Submit</router-link>
             </li>
         </ul>
         <router-view></router-view>
@@ -52,6 +52,7 @@ const component = {
     </div>`,
     router: new VueRouter({
         routes: [
+            { path: '/', redirect: { name: 'codebase'}},
             { path: '/codebase/', component: CodebaseMetadata, name: 'codebase' },
             { path: '/code_upload/', component: Upload, name: 'code_upload',  
                 props: { 
@@ -70,8 +71,8 @@ const component = {
                     instructions: 'Upload documentation associated with a project here. If an archive (zip or tar file) is uploaded it is extracted first. Files with the same name will result in overwrites.'
                 }},
             { path: '/contributors/', component: Contributors, name: 'contributors'},
-            { path: '/description/', component: CodebaseReleaseMetadata, name: 'description'},
-            { path: '/permissions/', component: Permissions, name: 'permissions', props: { permissions: { license: 'GPL V3', live: false }}},
+            { path: '/detail/', component: CodebaseReleaseMetadata, name: 'detail'},
+            { path: '/submit/', component: Submit, name: 'submit'},
         ]
     })
 })
