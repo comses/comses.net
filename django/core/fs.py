@@ -47,6 +47,9 @@ def is_media(path: str):
     return None
 
 
+SYSTEM_FILES = ('__MACOSX', '.DS_Store', '.svn', '.git', '.hg')
+
+
 def is_system_file(filename: str) -> bool:
     """
     :param filename: candidate filename to test
