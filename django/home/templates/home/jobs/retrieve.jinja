@@ -1,5 +1,5 @@
 {% extends "sidebar_layout.jinja" %}
-{% from "common.jinja" import permission_button_group, breadcrumb, embed_discourse_comments, share_card, user_href %}
+{% from "common.jinja" import permission_button_group, breadcrumb, embed_discourse_comments, share_card, member_profile_href %}
 
 {% block title %}{{ title }}{% endblock %}
 
@@ -33,7 +33,7 @@
         <div class="card-block">
             <div class='section'>
                 <b class="card-title">Submitter</b>
-                <p class='card-text'> {{ user_href(submitter) }}</p>
+                <p class='card-text'> {{ member_profile_href(submitter) }}</p>
                 <b class="card-title">Last Updated</b>
                 <p class="card-text">{{ last_modified }}</p>
             </div>
