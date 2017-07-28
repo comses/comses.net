@@ -128,6 +128,7 @@ def initialize_database_schema(ctx, clean=False):
         for app in apps:
             migration_dir = os.path.join(app, 'migrations')
             ctx.run('find {0} -name 00*.py -delete -print'.format(migration_dir))
+    dj(ctx, 'makemigrations citation --noinput')
     dj(ctx, 'makemigrations {0} --noinput'.format(' '.join(apps)))
     dj(ctx, 'migrate --noinput')
 
