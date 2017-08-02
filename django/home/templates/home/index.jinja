@@ -126,7 +126,11 @@
                     <div class='activity'>
                         <h4><a href='{{ post.url }}'>{{ post.title }}</a></h4>
                         <small class='text-muted'>Posted by 
-                            <a href='{{ post.submitter.member_profile.get_absolute_url() }}'>{{ post.submitter.username }}</a>
+                            {% if post.submitter_url %}
+                            <a href='{{ post.submitter_url }}'>{{ post.submitter_name }}</a>
+                            {% else %}
+                            {{ post.submitter_name }}
+                            {% endif %}
                             - {{ post.date_created.strftime('%c') }}</a>
                         </small>
                     </div>

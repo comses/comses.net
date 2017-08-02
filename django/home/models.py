@@ -172,8 +172,10 @@ class LandingPage(Page):
 
             last_poster_username = topic['last_poster_username']
             submitter = None
+            submitter_url = None
             if last_poster_username == 'comses':
                 category_id = topic['category_id']
+                logger.debug("category id: %s, topic title: %s, topic: %s", category_id, topic_title, topic)
                 # special case lookup for real submitter
                 # FIXME: get rid of magic constants
                 target_object = None
@@ -185,7 +187,11 @@ class LandingPage(Page):
                     target_object = Event.objects.filter(title=topic_title).order_by('-date_created').first()
                 elif category_id == 8:
                     target_object = Codebase.objects.filter(title=topic_title).order_by('-date_created').first()
-                submitter = target_object.submitter if target_object else User.objects.get(username='AnonymousUser')
+                if target_object:
+                    submitter = target_object.submitter
+                    submitter_url = submitter.member_profile.get_absolute_url()
+                else:
+                    submitter = User.objects.get(username='AnonymousUser')
             else:
                 try:
                     submitter = User.objects.get(username=last_poster_username)
@@ -194,7 +200,8 @@ class LandingPage(Page):
             recent_forum_activity.append(
                 {
                     'title': topic_title,
-                    'submitter': submitter,
+                    'submitter_name': submitter.username,
+                    'submitter_url': submitter_url,
                     'date_created': datetime.strptime(topic['last_posted_at'], "%Y-%m-%dT%H:%M:%S.%fZ"),
                     'url': topic_url,
                 }
