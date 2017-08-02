@@ -15,7 +15,7 @@ from django.http import QueryDict, HttpResponseBadRequest, HttpResponseRedirect
 from django.shortcuts import get_object_or_404
 from django.utils.decorators import method_decorator
 from rest_framework import viewsets, generics, parsers, status
-from rest_framework.decorators import detail_route
+from rest_framework.decorators import detail_route, list_route
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.renderers import JSONRenderer, TemplateHTMLRenderer
@@ -28,8 +28,9 @@ from wagtail.wagtailsearch.backends import get_search_backend
 from core.view_helpers import get_search_queryset, retrieve_with_perms
 from .models import FeaturedContentItem, MemberProfile
 from core.models import FollowUser, Event, Job
-from .serializers import (EventSerializer, JobSerializer, TagSerializer, FeaturedContentItemSerializer, MemberProfileSerializer,
-                          UserMessageSerializer)
+from .serializers import (EventSerializer, JobSerializer, TagSerializer, FeaturedContentItemSerializer,
+                          MemberProfileSerializer, UserMessageSerializer)
+from .common_serializers import RelatedMemberProfileSerializer
 
 logger = logging.getLogger(__name__)
 
@@ -267,8 +268,12 @@ class ProfileViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         # make sort order parameterizable. Start with ID or last_name? Lots of spam users visible with
         # last_name / username
-        return self.queryset.prefetch_related('user__codebases')\
+        query = self.request.query_params.get('query')
+        queryset = self.queryset.prefetch_related('user__codebases') \
             .filter(user__is_active=True).exclude(user__username__in=('AnonymousUser', 'openabm')).order_by('id')
+        if query:
+            return queryset.filter(user__username__startswith=query)
+        return queryset
 
     def retrieve(self, request, *args, **kwargs):
         return retrieve_with_perms(self, request, *args, **kwargs)
@@ -283,6 +288,12 @@ class ProfileViewSet(viewsets.ModelViewSet):
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    @list_route(methods=['get'])
+    def search(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        serializer = RelatedMemberProfileSerializer(queryset, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 class MemberProfileImageUploadView(generics.CreateAPIView):

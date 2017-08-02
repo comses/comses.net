@@ -1,30 +1,61 @@
 import logging
 
+from django.contrib.auth.models import User
 from django.utils.http import urlencode
 from django.utils.translation import ugettext_lazy as _
 from rest_framework import serializers
 
-from core.serializers import (YMD_DATETIME_FORMAT, PUBLISH_DATE_FORMAT, LinkedUserSerializer, create, update, save_related,
+from core.serializers import (YMD_DATETIME_FORMAT, PUBLISH_DATE_FORMAT, LinkedUserSerializer, create, update,
+                              save_tags,
                               TagSerializer)
 from .models import CodebaseContributor, Codebase, CodebaseRelease, Contributor, License
+from home.common_serializers import RelatedMemberProfileSerializer
 
 logger = logging.getLogger(__name__)
 
 
 class LicenseSerializer(serializers.ModelSerializer):
 
+    def create(self, validated_data):
+        license = License.objects.filter(name=validated_data['name']).first()
+        if license is not None:
+            if validated_data['url'] != license.url:
+                license.url = validated_data['url']
+                license.save()
+        else:
+            license = super().create(validated_data)
+
+        return license
+
     class Meta:
         model = License
-        fields = '__all__'
+        fields = ('name', 'url',)
 
 
 class ContributorSerializer(serializers.ModelSerializer):
-    user = LinkedUserSerializer()
-    affiliations_list = TagSerializer(source='affiliations', many=True)
+    user = RelatedMemberProfileSerializer(required=False, allow_null=True)
+    affiliations = TagSerializer(many=True)
+
+    def _create_or_update(self, validated_data):
+        affiliations_serializer = TagSerializer(many=True, data=validated_data.pop('affiliations'))
+        raw_user = validated_data.pop('user')
+        if raw_user:
+            user = User.objects.get(username=validated_data.pop('user')['username'])
+        else:
+            user = None
+        validated_data['user_id'] = user.id if user else None
+        return affiliations_serializer, user
+
+    def create(self, validated_data):
+        affiliations_list_serializer, user = self._create_or_update(validated_data)
+        instance = super().create(validated_data)
+        save_tags(instance, affiliations_list_serializer, 'affiliations')
+        instance.save()
+        return instance
 
     class Meta:
         model = Contributor
-        fields = ('given_name', 'middle_name', 'family_name', 'name', 'email', 'user', 'type', 'affiliations_list')
+        fields = ('given_name', 'middle_name', 'family_name', 'name', 'email', 'user', 'type', 'affiliations')
 
 
 class CodebaseContributorSerializer(serializers.ModelSerializer):
@@ -39,11 +70,31 @@ class CodebaseContributorSerializer(serializers.ModelSerializer):
             # FIXME: replace with reverse('core:search', ...)
             return '/search?{0}'.format(urlencode({'person': instance.contributor.name}))
 
+    def update(self, instance, validated_data):
+        contributor_serializer = ContributorSerializer(data=validated_data.pop('contributor'))
+        contributor_serializer.is_valid(raise_exception=True)
+        contributor = contributor_serializer.save()
+
+        instance = super().update(instance, validated_data)
+        instance.contributor = contributor
+        instance.save()
+
+    def create(self, validated_data):
+        contributor_serializer = ContributorSerializer()
+        contributor_serializer._errors = {}
+        contributor_serializer._validated_data = validated_data.pop('contributor')
+        contributor = contributor_serializer.save()
+
+        validated_data['release_id'] = self.context['release_id']
+        validated_data['contributor_id'] = contributor.id
+        instance = super().create(validated_data)
+        return instance
+
     class Meta:
         model = CodebaseContributor
         fields = ('contributor', 'profile_url',
                   'include_in_citation', 'is_maintainer', 'is_rights_holder',
-                  'role', 'index', )
+                  'role', 'index',)
 
 
 class RelatedCodebaseSerializer(serializers.ModelSerializer):
@@ -78,37 +129,47 @@ class CodebaseReleaseSerializer(serializers.ModelSerializer):
     first_published_at = serializers.DateTimeField(format=PUBLISH_DATE_FORMAT, read_only=True)
     last_published_on = serializers.DateTimeField(format=PUBLISH_DATE_FORMAT, read_only=True)
     license = LicenseSerializer()
-    os_display = serializers.CharField(source='get_os_display')
-    platform_tags = TagSerializer(many=True)
+    os_display = serializers.CharField(read_only=True, source='get_os_display')
+    platforms = TagSerializer(many=True, source='platform_tags')
     programming_languages = TagSerializer(many=True)
-    submitter = LinkedUserSerializer(label='Submitter')
+    submitter = LinkedUserSerializer(read_only=True, label='Submitter')
 
     def update(self, instance, validated_data):
         programming_languages = TagSerializer(many=True, data=validated_data.pop('programming_languages'))
         platform_tags = TagSerializer(many=True, data=validated_data.pop('platform_tags'))
-        codebase_contributors = CodebaseContributorSerializer(
-            many=True, data=validated_data.pop('codebase_contributors'))
-        codebase = RelatedCodebaseSerializer(data=validated_data.pop('codebase'))
+        release_contributors = CodebaseContributorSerializer(many=True, data=self.initial_data['release_contributors'],
+                                                             context={'release_id': instance.id})
+        release_contributors._validated_data = validated_data.pop('codebase_contributors')
+        release_contributors._errors = {}
+
+        license_serializer = LicenseSerializer(data=validated_data.pop('license'))
+        license_serializer.is_valid(raise_exception=True)
+        license = license_serializer.save()
+
+        save_tags(instance, programming_languages, 'programming_languages')
+        save_tags(instance, platform_tags, 'platform_tags')
+        self.save_release_contributors(instance, release_contributors)
 
         instance = super().update(instance, validated_data)
 
-        save_related(instance, programming_languages, 'programming_languages')
-        save_related(instance, platform_tags, 'platform_tags')
-        save_related(instance, codebase_contributors, 'codebase_contributors')
-
-        codebase.is_valid(raise_exception=True)
-        codebase.save()
-        instance.codebase = codebase
+        instance.license = license
         instance.save()
 
         return instance
+
+    def save_release_contributors(self, instance: CodebaseRelease,
+                                  release_contributors_serializer: CodebaseContributorSerializer):
+        release_contributors_serializer.is_valid(raise_exception=True)
+        release_contributors = release_contributors_serializer.save()
+        instance.codebase_contributors = release_contributors
 
     class Meta:
         model = CodebaseRelease
         fields = ('absolute_url', 'citation_text', 'release_contributors', 'date_created', 'dependencies',
                   'description', 'documentation', 'doi', 'download_count', 'embargo_end_date', 'first_published_at',
-                  'last_modified', 'last_published_on', 'license', 'os', 'os_display', 'peer_reviewed', 'platform_tags',
-                  'programming_languages', 'submitted_package', 'submitter', 'version_number', 'codebase', 'identifier', 'id',)
+                  'last_modified', 'last_published_on', 'license', 'os', 'os_display', 'peer_reviewed', 'platforms',
+                  'programming_languages', 'submitted_package', 'submitter', 'version_number', 'codebase', 'identifier',
+                  'id',)
 
 
 class CodebaseSerializer(serializers.ModelSerializer):

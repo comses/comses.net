@@ -43,7 +43,7 @@ def create(model_cls, validated_data, context):
     validated_data['submitter_id'] = user.id
     # Relate with other many to many relations
     obj = model_cls.objects.create(**validated_data)
-    save_related(obj, tags)
+    save_tags(obj, tags)
     obj.save()
     return obj
 
@@ -51,7 +51,7 @@ def create(model_cls, validated_data, context):
 def update(serializer_update, instance, validated_data):
     tags = TagSerializer(many=True, data=validated_data.pop('tags'))
     instance = serializer_update(instance, validated_data)
-    save_related(instance, tags)
+    save_tags(instance, tags)
     instance.save()
     return instance
 
@@ -79,7 +79,7 @@ class EditableSerializerMixin(serializers.Serializer):
         return request.user.has_perm("{}.change_{}".format(app_label, model_name), obj)
 
 
-def save_related(instance, related, attr: str = 'tags'):
+def save_tags(instance, related, attr: str = 'tags'):
     if not related.is_valid():
         raise serializers.ValidationError(related.errors)
     db_tags = related.save()

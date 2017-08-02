@@ -4,19 +4,12 @@ from django.test import TestCase
 from django.core.files.base import ContentFile
 
 from ..models import Codebase, CodebaseRelease
+from .base import BaseModelTestCase
 
 import logging
 import pathlib
 
 logger = logging.getLogger(__name__)
-
-
-class BaseModelTestCase(TestCase):
-    def setUp(self):
-        self.user = self.create_user()
-
-    def create_user(self, username='test_user', password='test', email='testuser@mailinator.com', **kwargs):
-        return User.objects.create_user(username=username, password=password, **kwargs)
 
 
 class CodebaseTest(BaseModelTestCase):
