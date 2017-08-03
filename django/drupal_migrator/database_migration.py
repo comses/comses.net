@@ -23,7 +23,7 @@ from core.summarization import summarize_to_text
 from home.models import Journal, FaqEntry
 from core.models import ComsesGroups, Institution, Platform, Event, Job
 from library.models import (Contributor, Codebase, CodebaseRelease, CodebaseTag, License,
-                            CodebaseContributor, OPERATING_SYSTEMS, CodebaseReleaseDownload)
+                            ReleaseContributor, OPERATING_SYSTEMS, CodebaseReleaseDownload)
 from .utils import get_first_field, get_field, get_field_attributes, to_datetime
 
 logger = logging.getLogger(__name__)
@@ -478,7 +478,7 @@ class ModelExtractor(Extractor):
             model_code.cached_contributors = []
             for idx, author_id in enumerate(model_code.author_ids):
                 model_code.cached_contributors.append(
-                    CodebaseContributor(contributor_id=author_id, index=idx)
+                    ReleaseContributor(contributor_id=author_id, index=idx)
                 )
             # NOTE: some tids may have been converted to multiple tags due to splitting
             model_code.tags.add(*flatten([tag_id_map[tid] for tid in model_code.keyword_tids]))
@@ -551,12 +551,12 @@ class ModelVersionExtractor(Extractor):
                 # re-create new CodebaseContributors for each model version
                 # do not modify codebase.contributors in place or it will overwrite previous version contributors
                 for contributor in codebase.cached_contributors:
-                    release_contributors.append(CodebaseContributor(
+                    release_contributors.append(ReleaseContributor(
                         index=contributor.index,
                         contributor_id=contributor.contributor_id,
                         release_id=codebase_release.pk
                     ))
-                CodebaseContributor.objects.bulk_create(release_contributors)
+                ReleaseContributor.objects.bulk_create(release_contributors)
                 codebase_release.save()
                 return raw_model_version['nid'], codebase_release.id
         else:

@@ -8,7 +8,7 @@ from rest_framework import serializers
 from core.serializers import (YMD_DATETIME_FORMAT, PUBLISH_DATE_FORMAT, LinkedUserSerializer, create, update,
                               save_tags,
                               TagSerializer)
-from .models import CodebaseContributor, Codebase, CodebaseRelease, Contributor, License
+from .models import ReleaseContributor, Codebase, CodebaseRelease, Contributor, License
 from home.common_serializers import RelatedMemberProfileSerializer
 
 logger = logging.getLogger(__name__)
@@ -60,7 +60,7 @@ class ContributorSerializer(serializers.ModelSerializer):
         fields = ('id', 'given_name', 'middle_name', 'family_name', 'name', 'email', 'user', 'type', 'affiliations')
 
 
-class CodebaseContributorSerializer(serializers.ModelSerializer):
+class ReleaseContributorSerializer(serializers.ModelSerializer):
     contributor = ContributorSerializer()
     profile_url = serializers.SerializerMethodField()
 
@@ -71,15 +71,6 @@ class CodebaseContributorSerializer(serializers.ModelSerializer):
         else:
             # FIXME: replace with reverse('core:search', ...)
             return '/search?{0}'.format(urlencode({'person': instance.contributor.name}))
-
-    def update(self, instance, validated_data):
-        contributor_serializer = ContributorSerializer(data=validated_data.pop('contributor'))
-        contributor_serializer.is_valid(raise_exception=True)
-        contributor = contributor_serializer.save()
-
-        instance = super().update(instance, validated_data)
-        instance.contributor = contributor
-        instance.save()
 
     def create(self, validated_data):
         contributor_serializer = ContributorSerializer()
@@ -93,7 +84,7 @@ class CodebaseContributorSerializer(serializers.ModelSerializer):
         return instance
 
     class Meta:
-        model = CodebaseContributor
+        model = ReleaseContributor
         fields = ('contributor', 'profile_url',
                   'include_in_citation', 'is_maintainer', 'is_rights_holder',
                   'role', 'index',)
@@ -103,7 +94,7 @@ class RelatedCodebaseSerializer(serializers.ModelSerializer):
     """
     Sparse codebase serializer
     """
-    all_contributors = CodebaseContributorSerializer(many=True, read_only=True)
+    all_contributors = ReleaseContributorSerializer(many=True, read_only=True)
     tags = TagSerializer(many=True)
     last_published_on = serializers.DateTimeField(read_only=True, format=PUBLISH_DATE_FORMAT)
     summarized_description = serializers.CharField(read_only=True)
@@ -126,7 +117,7 @@ class CodebaseReleaseSerializer(serializers.ModelSerializer):
                                         help_text=_('URL to the detail page of the codebase'))
     citation_text = serializers.ReadOnlyField()
     codebase = RelatedCodebaseSerializer(read_only=True)
-    release_contributors = CodebaseContributorSerializer(source='codebase_contributors', many=True)
+    release_contributors = ReleaseContributorSerializer(source='codebase_contributors', many=True)
     date_created = serializers.DateTimeField(format=YMD_DATETIME_FORMAT, read_only=True)
     first_published_at = serializers.DateTimeField(format=PUBLISH_DATE_FORMAT, read_only=True)
     last_published_on = serializers.DateTimeField(format=PUBLISH_DATE_FORMAT, read_only=True)
@@ -139,8 +130,8 @@ class CodebaseReleaseSerializer(serializers.ModelSerializer):
     def update(self, instance, validated_data):
         programming_languages = TagSerializer(many=True, data=validated_data.pop('programming_languages'))
         platform_tags = TagSerializer(many=True, data=validated_data.pop('platform_tags'))
-        release_contributors = CodebaseContributorSerializer(many=True, data=self.initial_data['release_contributors'],
-                                                             context={'release_id': instance.id})
+        release_contributors = ReleaseContributorSerializer(many=True, data=self.initial_data['release_contributors'],
+                                                            context={'release_id': instance.id})
         release_contributors._validated_data = validated_data.pop('codebase_contributors')
         release_contributors._errors = {}
 
@@ -160,7 +151,7 @@ class CodebaseReleaseSerializer(serializers.ModelSerializer):
         return instance
 
     def save_release_contributors(self, instance: CodebaseRelease,
-                                  release_contributors_serializer: CodebaseContributorSerializer):
+                                  release_contributors_serializer: ReleaseContributorSerializer):
         release_contributors_serializer.is_valid(raise_exception=True)
         release_contributors = release_contributors_serializer.save()
 
@@ -179,7 +170,7 @@ class CodebaseReleaseSerializer(serializers.ModelSerializer):
 
 class CodebaseSerializer(serializers.ModelSerializer):
     absolute_url = serializers.URLField(source='get_absolute_url', read_only=True)
-    all_contributors = CodebaseContributorSerializer(many=True, read_only=True)
+    all_contributors = ReleaseContributorSerializer(many=True, read_only=True)
     date_created = serializers.DateTimeField(read_only=True)
     download_count = serializers.IntegerField(read_only=True)
     featured_image = serializers.ReadOnlyField(source='get_featured_image')

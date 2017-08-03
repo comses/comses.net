@@ -1,4 +1,4 @@
-from ..serializers import ContributorSerializer, CodebaseContributorSerializer, Codebase, CodebaseRelease
+from ..serializers import ContributorSerializer, ReleaseContributorSerializer, Codebase, CodebaseRelease
 from .base import BaseModelTestCase
 from home.common_serializers import RelatedMemberProfileSerializer
 
@@ -48,8 +48,8 @@ class SerializerTestCase(BaseModelTestCase):
         codebase_release = codebase.make_release(submitter=self.user)
 
         raw_release_contributor = self.create_raw_release_contributor()
-        release_contributor_serializer = CodebaseContributorSerializer(data=raw_release_contributor,
-                                                                       context={'release_id': codebase_release.id})
+        release_contributor_serializer = ReleaseContributorSerializer(data=raw_release_contributor,
+                                                                      context={'release_id': codebase_release.id})
         release_contributor_serializer.is_valid(raise_exception=True)
         release_contributor = release_contributor_serializer.save()
         self.assertEqual(release_contributor.role, raw_release_contributor['role'])

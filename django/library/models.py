@@ -133,8 +133,8 @@ class CodebaseReleaseDownload(models.Model):
 class CodebaseQuerySet(models.QuerySet):
     def accessible(self, user, **kwargs):
         return self.filter(
-            pk__in=CodebaseContributor.objects.filter(contributor__user=user).values_list('release__codebase',
-                                                                                          flat=True),
+            pk__in=ReleaseContributor.objects.filter(contributor__user=user).values_list('release__codebase',
+                                                                                         flat=True),
             **kwargs
         )
 
@@ -264,7 +264,7 @@ class Codebase(index.Indexed, ClusterableModel):
 
     @property
     def all_contributors(self):
-        return CodebaseContributor.objects.select_related('release', 'contributor').filter(
+        return ReleaseContributor.objects.select_related('release', 'contributor').filter(
             release__codebase__id=self.pk).distinct('contributor')
 
     @property
@@ -383,7 +383,7 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
                                                    related_name='pl_codebase_releases')
     codebase = models.ForeignKey(Codebase, related_name='releases')
     submitter = models.ForeignKey(User)
-    contributors = models.ManyToManyField(Contributor, through='CodebaseContributor')
+    contributors = models.ManyToManyField(Contributor, through='ReleaseContributor')
     submitted_package = models.FileField(upload_to=Codebase._release_upload_path, null=True)
     # M2M relationships for publications
     publications = models.ManyToManyField(
@@ -557,7 +557,7 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
         permissions = (('view_codebase_release', 'Can view codebase release'),)
 
 
-class CodebaseContributor(models.Model):
+class ReleaseContributor(models.Model):
     release = models.ForeignKey(CodebaseRelease, on_delete=models.CASCADE, related_name='codebase_contributors')
     contributor = models.ForeignKey(Contributor, on_delete=models.CASCADE, related_name='codebase_contributors')
     include_in_citation = models.BooleanField(default=True)
