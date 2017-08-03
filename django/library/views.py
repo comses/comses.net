@@ -2,11 +2,10 @@ import logging
 
 from django.core.files import File
 from django.http import HttpResponse
-from django.urls import resolve, reverse
+from django.urls import resolve
 
 import mimetypes
 import os
-import pathlib
 from rest_framework import viewsets, generics, parsers, renderers
 from rest_framework.decorators import detail_route
 from rest_framework.response import Response
@@ -111,8 +110,8 @@ class ContributorList(generics.ListAPIView):
     pagination_class = SmallResultSetPagination
 
     def get_queryset(self):
-        q = {'given_name__startswith': self.request.query_params.get('given_name'),
-             'family_name__startswith': self.request.query_params.get('family_name'),
+        q = {'given_name__istartswith': self.request.query_params.get('given_name'),
+             'family_name__istartswith': self.request.query_params.get('family_name'),
              'type': self.request.query_params.get('type')}
         q = {k: v for k, v in q.items() if v}
         return self.queryset.filter(**q).order_by('family_name')
