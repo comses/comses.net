@@ -1,7 +1,7 @@
 <template>
     <div :class="['form-check', {'has-danger': hasDanger }]">
         <label class="form-check-label">
-            <input type="checkbox" :name="name" class="form-check-input" :value="value"
+            <input type="checkbox" :name="name" class="form-check-input" :value="value" :checked="value === true"
                    @change="toggle($event.target.value)">
             <slot name="label" :label="label">{{ label }}</slot>
         </label>
@@ -33,7 +33,7 @@
             if (value === 'true') {
                 v = true
             }
-            this.$emit('input', !v);
+            this.updateValue(!v);
         }
     }
     
