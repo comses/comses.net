@@ -2,7 +2,7 @@
     <div :class="['form-group', {'has-danger': hasDanger}]">
         <slot name="label"></slot>
         <datepicker :value="value" @input="updateValue" wrapper-class="input-group"
-                    :input-class="['form-control', {'form-control-danger': hasDanger}]" :clear-button="clearButton">
+                    :input-class="{'form-control': true, 'form-control-danger': hasDanger}" :clear-button="clearButton" @cleared="cleared">
         </datepicker>
         <div v-if="hasDanger" class="form-control-feedback">{{ errorMessage }}</div>
         <slot name="help"></slot>
@@ -21,5 +21,9 @@
     export default class InputDatepicker extends BaseControl {
         @Prop({default: false})
         clearButton: boolean;
+
+        cleared() {
+            this.updateValue(null);
+        }
     }
 </script>
