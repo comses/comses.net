@@ -42,13 +42,5 @@ Vue.use(VeeValidate)
         ['codebase.title', 'codebase.description', 'codebase.live', 'codebase.is_replication', 'codebase.tags', 'codebase.repository_url'])
 })
 export default class Description extends Vue {
-    validate() {
-        this.$validator.validateAll().then(result => {
-            if (result) {
-                console.log('success');
-            } else {
-                console.log('fail');
-            }
-        })
-    }
+
 }

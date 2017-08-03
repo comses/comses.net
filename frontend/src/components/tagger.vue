@@ -50,8 +50,6 @@
                         this.isLoading = false;
                     })
                     .catch(err => {
-                        let self: any = this;
-                        self.errors.add(this.name, 'Error fetching tags', 'ajax');
                         this.isLoading = false;
                     });
         }
@@ -60,7 +58,6 @@
             let self: any = this;
             this.$emit('input', value);
             this.$emit('clear', this.name);
-            self.errors.remove(this.name, 'ajax');
         }
     }
 </script>
