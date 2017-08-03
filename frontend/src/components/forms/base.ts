@@ -1,6 +1,6 @@
 import * as Vue from 'vue'
 import * as VeeValidate from 'vee-validate'
-import {Component, Prop} from 'vue-property-decorator'
+import { Component, Prop } from 'vue-property-decorator'
 import * as _ from 'lodash'
 
 Vue.use(VeeValidate);
@@ -13,7 +13,7 @@ class BaseControl extends Vue {
     @Prop
     name;
 
-    @Prop({default: () => []})
+    @Prop({ default: () => [] })
     errorMsgs: Array<string>;
 
     get hasDanger() {
@@ -24,7 +24,7 @@ class BaseControl extends Vue {
         return this.errorMsgs.join(', ');
     }
 
-    updateValue(value: string) {
+    updateValue(value: any) {
         this.$emit('input', value);
     }
 }
