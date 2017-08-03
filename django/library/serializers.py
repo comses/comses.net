@@ -33,6 +33,8 @@ class LicenseSerializer(serializers.ModelSerializer):
 
 
 class ContributorSerializer(serializers.ModelSerializer):
+    # Need an ID for Vue-Multiselect
+    id = serializers.IntegerField(read_only=True)
     user = RelatedMemberProfileSerializer(required=False, allow_null=True)
     affiliations = TagSerializer(many=True)
 
@@ -55,7 +57,7 @@ class ContributorSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Contributor
-        fields = ('given_name', 'middle_name', 'family_name', 'name', 'email', 'user', 'type', 'affiliations')
+        fields = ('id', 'given_name', 'middle_name', 'family_name', 'name', 'email', 'user', 'type', 'affiliations')
 
 
 class CodebaseContributorSerializer(serializers.ModelSerializer):
@@ -161,6 +163,9 @@ class CodebaseReleaseSerializer(serializers.ModelSerializer):
                                   release_contributors_serializer: CodebaseContributorSerializer):
         release_contributors_serializer.is_valid(raise_exception=True)
         release_contributors = release_contributors_serializer.save()
+
+        # Old contributors are not deleted from the database
+        instance.contributors.clear()
         instance.codebase_contributors = release_contributors
 
     class Meta:

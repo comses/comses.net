@@ -111,8 +111,8 @@ class ContributorList(generics.ListAPIView):
     pagination_class = SmallResultSetPagination
 
     def get_queryset(self):
-        q = {'given_name': self.request.query_params.get('given_name'),
-             'family_name': self.request.query_params.get('family_name'),
+        q = {'given_name__startswith': self.request.query_params.get('given_name'),
+             'family_name__startswith': self.request.query_params.get('family_name'),
              'type': self.request.query_params.get('type')}
         q = {k: v for k, v in q.items() if v}
         return self.queryset.filter(**q).order_by('family_name')
