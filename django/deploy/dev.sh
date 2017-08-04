@@ -9,10 +9,10 @@ initdb() {
     cd /code;
     if [ "$CLEAN_DATABASE" = "true" ]; then
         echo "Destroying and initializing database from scratch"
-        /code/deploy/wait-for-it.sh db:5432 -- invoke initialize_database_schema --clean
+        /code/deploy/wait-for-it.sh db:5432 -- invoke idb --clean
     else
         echo "Using existing db schema"
-        /code/deploy/wait-for-it.sh db:5432 -- invoke initialize_database_schema
+        /code/deploy/wait-for-it.sh db:5432 -- invoke idb
     fi
 }
 initdb
