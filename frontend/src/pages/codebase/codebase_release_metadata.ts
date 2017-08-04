@@ -1,4 +1,5 @@
 import * as Vue from 'vue'
+import { api_base } from 'api'
 import { Component, Prop} from 'vue-property-decorator'
 import Checkbox from 'components/forms/checkbox.vue'
 import Datepicker from 'components/forms/datepicker.vue'
@@ -10,9 +11,9 @@ import { exposeComputed } from './store'
 
 @Component(<any>{
     template: `<div>
-        <c-textarea v-model="description" name="description" rows="3" label="Description">
+        <c-textarea v-model="description" :errorMsgs="descriptionErrors" name="description" rows="3" label="Description">
         </c-textarea>
-        <c-datepicker v-model="embargoEndDate" name="embargoEndDate">
+        <c-datepicker v-model="embargoEndDate" :errorMsgs="embargoEndDateErrors" name="embargoEndDate" :clearButton="true">
             <label class="form-control-label" slot="label">Embargo End Date</label>
             <small class="form-text text-muted" slot="help">The date your release is automatically published</small>
         </c-datepicker>
@@ -33,7 +34,7 @@ import { exposeComputed } from './store'
             <multiselect
                 :value="platforms"
                 @input="updatePlatforms"
-                label="platforms"
+                label="name"
                 track-by="name"
                 placeholder="Type to find platforms"
                 :options="matchingPlatforms"
@@ -68,17 +69,20 @@ import { exposeComputed } from './store'
                 @search-change="fetchMatchingProgrammingLanguages">
             </multiselect>
         </div>
-        <div>
+        <div class="form-group">
             <c-checkbox name="live" v-model="live" label="Published?">
                 <small class="form-text text-muted" slot="help">Published models are visible to everyone. Unpublished models are visible only to you</small>
             </c-checkbox>
+        </div>
+        <div :class="['form-group', {'has-danger': licenceErrors.length > 0}]">
             <multiselect v-model="licence" label="name" track-by="name" placeholder="Type to find license" :options="licenseOptions">
                 <template slot="option" scope="props">
                     <div>
-                        <a :href="props.option.url">{{ props.option.name }}</a>
+                        {{ props.option.name }} <a :href="props.option.url"><span class="fa fa-external-link"></span></a>
                     </div>
                 </template>
             </multiselect>
+            <div v-if="licenceErrors.length > 0" class="form-control-feedback">{{ licenceErrors.join(', ') }}</div>
             <small class="form-text text-muted">A software licence is a document governing use and redistribution of your model</small>
         </div>
     </div>`,
@@ -133,6 +137,5 @@ export default class Description extends Vue {
     }
 
     fetchMatchingProgrammingLanguages() {
-
     }
 }
