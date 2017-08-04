@@ -23,7 +23,7 @@ const component = {
 @Component(<any>{
     store : new Vuex.Store(store),
     template: `<div>
-        <h1>{{ $store.state.codebase.title }} <i>v{{ $store.state.version_number }}</i></h1>
+        <h1>{{ $store.state.release.codebase.title }} <i>v{{ $store.state.release.version_number }}</i></h1>
         <ul class="nav">
             <li class="nav-item">
                 <router-link :to="{ name: 'codebase'}" class="nav-link" active-class="disabled">Model Metadata</router-link>
@@ -41,7 +41,9 @@ const component = {
                 <router-link :to="{ name: 'contributors' }" class="nav-link" active-class="disabled">Contributors</router-link>
             </li>
             <li class="nav-item">
-                <router-link :to="{ name: 'detail' }" class="nav-link" active-class="disabled">Detail</router-link>
+                <router-link :to="{ name: 'detail' }" class="nav-link" active-class="disabled">
+                    Detail<span class="badge badge-pill badge-danger" v-if="detailPageErrors !== 0">{{ detailPageErrors }} errors</span>
+                </router-link>
             </li>
             <li class="nav-item">
                 <router-link :to="{ name: 'submit' }" class="nav-link" active-class="disabled">Submit</router-link>
@@ -77,6 +79,11 @@ const component = {
     })
 })
 class Workflow extends Vue {
+    get detailPageErrors() {
+        const validation_errors = this.$store.state.validation_errors; 
+        return validation_errors.description.length + validation_errors.embargo_end_date.length;
+    }
+ 
     created() {
         this.$store.dispatch('initialize', {identifier: '2274', version_number: '1.0.0'});
     }
@@ -86,4 +93,7 @@ class Workflow extends Vue {
     }
 }
 
-export default new Workflow();
+let workflow = new Workflow();
+console.log(workflow);
+
+export default workflow;
