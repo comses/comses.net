@@ -1,3 +1,5 @@
+import * as _ from 'lodash'
+
 export interface UndefinedWithId {
     id?: number
 }
@@ -52,13 +54,40 @@ export interface MemberProfile extends UndefinedWithId {
     username: string
 }
 
+interface RelatedMemberProfile {
+    full_name: string
+    institution_name: string
+    institution_url: string
+    profile_url: string
+    username: string | null
+}
+
 export interface Contributor {
-    affiliations_list: Array<string>
+    affiliations: Array<string>
     given_name: string
     middle_name: string
     family_name: string
     type: string
-    user: User | null
+    user: RelatedMemberProfile
+    valid?: boolean // is this property exists display an error
+}
+
+export const emptyContributor = (valid: boolean = false): Contributor => {
+    return {
+        affiliations: [],
+        given_name: '',
+        middle_name: '',
+        family_name: '',
+        type: 'person',
+        user: {
+            full_name: '',
+            institution_name: '',
+            institution_url: '',
+            profile_url: '',
+            username: null
+        },
+        valid
+    }
 }
 
 export interface CodebaseContributor {
@@ -66,7 +95,17 @@ export interface CodebaseContributor {
     is_maintainer: boolean
     is_rights_holder: boolean
     role: string
-    contributor: Contributor | null
+    contributor: Contributor
+}
+
+export const emptyReleaseContributor = (): CodebaseContributor => {
+    return { 
+        _id: _.uniqueId(),
+        is_maintainer: false,
+        is_rights_holder: false,
+        role: 'author',
+        contributor: emptyContributor()
+    }
 }
 
 interface AbstractCodebase extends UndefinedWithId {
@@ -115,8 +154,9 @@ interface AbstractCodebaseRelease extends UndefinedWithId {
     documentation: string
     doi: string | null
     embargo_end_date: string | null
-    licence: string
+    license: string
     live: boolean
+    identifier: string
     os: string
     peer_reviewed: boolean
     platforms: Array<string>
@@ -131,11 +171,15 @@ export interface CodebaseRelease extends AbstractCodebaseRelease {
 }
 
 export interface CodebaseReleaseEdit extends AbstractCodebaseRelease {
+    codebase: CodebaseEdit
+}
+
+export interface CodebaseReleaseStore {
     files: {
         data: { upload_url: string, files: Array<string> }
         documentation: { upload_url: string, files: Array<string> }
         sources: { upload_url: string, files: Array<string> }
     }
-    codebase: CodebaseEdit
+    release: CodebaseReleaseEdit
     validation_errors: {}
 }
