@@ -472,6 +472,10 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
         """Extract the archive, inspect it's contents and if it's valid store with other releases"""
         pass
 
+    @property
+    def index_ordered_release_contributors(self):
+        return self.codebase_contributors.order_by('index')
+
     def _add_file(self, fileobj, destination_folder: str):
         path = safe_join(str(self.workdir_path), destination_folder, fileobj.name)
         logger.debug('add file path %s', path)

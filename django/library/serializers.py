@@ -15,7 +15,6 @@ logger = logging.getLogger(__name__)
 
 
 class LicenseSerializer(serializers.ModelSerializer):
-
     def create(self, validated_data):
         license = License.objects.filter(name=validated_data['name']).first()
         if license is not None:
@@ -60,9 +59,23 @@ class ContributorSerializer(serializers.ModelSerializer):
         fields = ('id', 'given_name', 'middle_name', 'family_name', 'name', 'email', 'user', 'type', 'affiliations')
 
 
+class ListReleaseContributorSerializer(serializers.ListSerializer):
+    def create(self, validated_data):
+        release_contributors = []
+        for i, attr in enumerate(validated_data):
+            attr['index'] = i
+            release_contributor = ReleaseContributorSerializer.prepare_create(self.context, attr)
+            release_contributors.append(release_contributor)
+
+        ReleaseContributor.objects.filter(release_id=self.context['release_id']).delete()
+        ReleaseContributor.objects.bulk_create(release_contributors)
+        return release_contributors
+
+
 class ReleaseContributorSerializer(serializers.ModelSerializer):
     contributor = ContributorSerializer()
     profile_url = serializers.SerializerMethodField()
+    index = serializers.IntegerField(required=False)
 
     def get_profile_url(self, instance):
         user = instance.contributor.user
@@ -72,22 +85,29 @@ class ReleaseContributorSerializer(serializers.ModelSerializer):
             # FIXME: replace with reverse('core:search', ...)
             return '/search?{0}'.format(urlencode({'person': instance.contributor.name}))
 
-    def create(self, validated_data):
+    @staticmethod
+    def prepare_create(context, validated_data):
         contributor_serializer = ContributorSerializer()
         contributor_serializer._errors = {}
         contributor_serializer._validated_data = validated_data.pop('contributor')
         contributor = contributor_serializer.save()
 
-        validated_data['release_id'] = self.context['release_id']
+        validated_data['release_id'] = context['release_id']
         validated_data['contributor_id'] = contributor.id
-        instance = super().create(validated_data)
+        instance = ReleaseContributor(**validated_data)
+        return instance
+
+    def create(self, validated_data):
+        instance = self.prepare_create(self.context, validated_data)
+        instance.save()
         return instance
 
     class Meta:
+        list_serializer_class = ListReleaseContributorSerializer
         model = ReleaseContributor
         fields = ('contributor', 'profile_url',
                   'include_in_citation', 'is_maintainer', 'is_rights_holder',
-                  'role', 'index',)
+                  'role', 'index', )
 
 
 class RelatedCodebaseSerializer(serializers.ModelSerializer):
@@ -98,7 +118,8 @@ class RelatedCodebaseSerializer(serializers.ModelSerializer):
     tags = TagSerializer(many=True)
     last_published_on = serializers.DateTimeField(read_only=True, format=PUBLISH_DATE_FORMAT)
     summarized_description = serializers.CharField(read_only=True)
-    featured_image = serializers.ReadOnlyField(source='get_featured_image')
+
+    # featured_image = serializers.ReadOnlyField(source='get_featured_image')
 
     def create(self, validated_data):
         return create(self.Meta.model, validated_data, self.context)
@@ -108,7 +129,7 @@ class RelatedCodebaseSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Codebase
-        fields = ('featured_image', 'all_contributors', 'tags', 'title', 'last_published_on', 'identifier',
+        fields = ('all_contributors', 'tags', 'title', 'last_published_on', 'identifier',
                   'summarized_description', 'description', 'live', 'repository_url',)
 
 
@@ -117,7 +138,7 @@ class CodebaseReleaseSerializer(serializers.ModelSerializer):
                                         help_text=_('URL to the detail page of the codebase'))
     citation_text = serializers.ReadOnlyField()
     codebase = RelatedCodebaseSerializer(read_only=True)
-    release_contributors = ReleaseContributorSerializer(source='codebase_contributors', many=True)
+    release_contributors = ReleaseContributorSerializer(source='index_ordered_release_contributors', many=True)
     date_created = serializers.DateTimeField(format=YMD_DATETIME_FORMAT, read_only=True)
     first_published_at = serializers.DateTimeField(format=PUBLISH_DATE_FORMAT, read_only=True)
     last_published_on = serializers.DateTimeField(format=PUBLISH_DATE_FORMAT, read_only=True)
