@@ -52,6 +52,7 @@ class CodebaseViewSet(AddEditFormViewSetMixin, viewsets.ModelViewSet):
 
 
 class CodebaseReleaseViewSet(viewsets.ModelViewSet):
+    namespace = 'library/codebases/releases/'
     lookup_field = 'version_number'
     lookup_value_regex = r'\d+\.\d+\.\d+'
 

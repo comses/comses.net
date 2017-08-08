@@ -1,5 +1,4 @@
 from rest_framework.decorators import api_view, permission_classes, renderer_classes
-from rest_framework.permissions import IsAuthenticated
 from rest_framework.renderers import TemplateHTMLRenderer
 from rest_framework.response import Response
 
@@ -44,8 +43,7 @@ class AddEditFormViewSetMixin(object):
         if namespace is None:
             meta = self.get_queryset().model._meta
             app_label = meta.app_label
-            model_name = meta.object_name.lower()
-            namespace = '{0}/{1}s'.format(app_label, model_name)
+            namespace = '{0}/{1}'.format(app_label, meta.verbose_name_plural)
             self.namespace = namespace
         return namespace
 
