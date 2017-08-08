@@ -1,6 +1,6 @@
 <template>
     <div>
-        <div class="btn btn-primary w-100">Submit a model</div>
+        <div class="btn btn-primary w-100"><a class='text-white' href='/codebases/add/'>Submit a model</a></div>
         <div class="card-metadata">
             <div class="title">
                 Search

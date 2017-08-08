@@ -6,10 +6,11 @@ from django.urls import resolve
 
 import mimetypes
 import os
-from rest_framework import viewsets, generics, parsers, renderers
+from rest_framework import viewsets, generics, parsers, renderers, filters
 from rest_framework.decorators import detail_route
 from rest_framework.response import Response
 
+from core.views import AddEditFormViewSetMixin
 from core.view_helpers import get_search_queryset, add_change_delete_perms
 from home.views import SmallResultSetPagination
 from .models import Codebase, CodebaseRelease, Contributor
@@ -19,11 +20,17 @@ from .serializers import (CodebaseSerializer, RelatedCodebaseSerializer, Codebas
 logger = logging.getLogger(__name__)
 
 
-class CodebaseViewSet(viewsets.ModelViewSet):
+class CodebaseViewSet(AddEditFormViewSetMixin, viewsets.ModelViewSet):
+    # namespace = 'library/codebases'
     lookup_field = 'identifier'
     lookup_value_regex = r'[\w\-\.]+'
     pagination_class = SmallResultSetPagination
     queryset = Codebase.objects.all()
+
+    # FIXME: should we use filter_backends
+    # (http://www.django-rest-framework.org/api-guide/filtering/#djangoobjectpermissionsfilter)
+    # instead of get_search_queryset?
+    # filter_backends = (filters.DjangoObjectPermissionsFilter,)
 
     def get_queryset(self):
         return get_search_queryset(self)
@@ -32,10 +39,6 @@ class CodebaseViewSet(viewsets.ModelViewSet):
         if self.action == 'list':
             return RelatedCodebaseSerializer
         return CodebaseSerializer
-
-    @property
-    def template_name(self):
-        return 'library/codebases/{}.jinja'.format(self.action)
 
     def retrieve(self, request, *args, **kwargs):
         instance = self.get_object()
