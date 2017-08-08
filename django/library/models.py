@@ -1,6 +1,6 @@
 import logging
-import pathlib
 import os
+import pathlib
 import shutil
 import uuid
 from enum import Enum
@@ -9,13 +9,12 @@ from textwrap import shorten
 import semver
 from django.conf import settings
 from django.contrib.auth.models import User
-from django.contrib.postgres.fields import JSONField
-from django.core.files.images import ImageFile
+from django.contrib.postgres.fields import JSONField, ArrayField
 from django.db import models
 from django.urls import reverse
 from django.utils import timezone
-from django.utils.translation import ugettext_lazy as _
 from django.utils._os import safe_join
+from django.utils.translation import ugettext_lazy as _
 from model_utils import Choices
 from modelcluster.contrib.taggit import ClusterTaggableManager
 from modelcluster.fields import ParentalKey
@@ -348,7 +347,9 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
     date_created = models.DateTimeField(default=timezone.now)
     last_modified = models.DateTimeField(auto_now=True)
 
-    live = models.BooleanField(default=False)
+    live = models.BooleanField(default=False, help_text=_("Signifies that this release is public."))
+    # there should only be one draft CodebaseRelease ever
+    draft = models.BooleanField(default=False, help_text=_("Signifies that this release is currently being revised."))
     has_unpublished_changes = models.BooleanField(default=False)
     first_published_at = models.DateTimeField(null=True, blank=True)
     last_published_on = models.DateTimeField(null=True, blank=True)
@@ -565,12 +566,12 @@ class ReleaseContributor(models.Model):
     release = models.ForeignKey(CodebaseRelease, on_delete=models.CASCADE, related_name='codebase_contributors')
     contributor = models.ForeignKey(Contributor, on_delete=models.CASCADE, related_name='codebase_contributors')
     include_in_citation = models.BooleanField(default=True)
-    is_maintainer = models.BooleanField(default=False)
-    is_rights_holder = models.BooleanField(default=False)
-    role = models.CharField(max_length=100, choices=ROLES, default=ROLES.author,
-                            help_text=_('''
-                            Roles from https://www.ngdc.noaa.gov/metadata/published/xsd/schema/resources/Codelist/gmxCodelists.xml#CI_RoleCode
-                            '''))
+    roles = ArrayField(models.CharField(
+        max_length=100, choices=ROLES, default=ROLES.author,
+        help_text=_(
+            'Roles from https://www.ngdc.noaa.gov/metadata/published/xsd/schema/resources/Codelist/gmxCodelists.xml#CI_RoleCode'
+        )
+    ))
     index = models.PositiveSmallIntegerField(help_text=_('Ordering field for codebase contributors'))
 
     def __str__(self):
