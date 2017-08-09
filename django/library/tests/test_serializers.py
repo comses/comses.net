@@ -1,6 +1,6 @@
-from ..serializers import ContributorSerializer, ReleaseContributorSerializer, Codebase, CodebaseRelease
 from .base import BaseModelTestCase
-from home.common_serializers import RelatedMemberProfileSerializer
+from ..models import Codebase
+from ..serializers import ContributorSerializer, ReleaseContributorSerializer
 
 
 class SerializerTestCase(BaseModelTestCase):
@@ -27,9 +27,7 @@ class SerializerTestCase(BaseModelTestCase):
         raw_release_contributor = {
             'contributor': self.create_raw_contributor(),
             'include_in_citation': True,
-            'is_maintainer': False,
-            'is_rights_holder': False,
-            'role': 'author'
+            'roles': ['author']
         }
 
         if index is None:
@@ -57,7 +55,7 @@ class SerializerTestCase(BaseModelTestCase):
                                                                       context={'release_id': codebase_release.id})
         release_contributor_serializer.is_valid(raise_exception=True)
         release_contributor = release_contributor_serializer.save()
-        self.assertEqual(release_contributor.role, raw_release_contributor['role'])
+        self.assertEqual(release_contributor.roles, raw_release_contributor['roles'])
 
     def test_multiple_release_contributor_save(self):
         codebase = Codebase.objects.create(title='Test codebase',

@@ -105,9 +105,7 @@ class ReleaseContributorSerializer(serializers.ModelSerializer):
     class Meta:
         list_serializer_class = ListReleaseContributorSerializer
         model = ReleaseContributor
-        fields = ('contributor', 'profile_url',
-                  'include_in_citation', 'is_maintainer', 'is_rights_holder',
-                  'role', 'index', )
+        fields = ('contributor', 'profile_url', 'include_in_citation', 'roles', 'index', )
 
 
 class RelatedCodebaseSerializer(serializers.ModelSerializer):
