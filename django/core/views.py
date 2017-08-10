@@ -29,7 +29,7 @@ class AddEditFormViewSetMixin(object):
     ACTIONS = ('list', 'retrieve', 'add', 'edit', 'delete')
 
     @renderer_classes((TemplateHTMLRenderer,))
-    def edit(self, request):
+    def edit(self, request, **kwargs):
         self.object = self.get_object()
         return Response({'object': self.object})
 
