@@ -12,23 +12,6 @@ const initialState: CodebaseReleaseStore = {
         data: { upload_url: '', files: [] },
         documentation: { upload_url: '', files: [] },
     },
-    validation_errors: {
-        codebase: {
-            title: [],
-            description: [],
-            live: [],
-            is_replication: [],
-            tags: [],
-            repository_url: []
-        },
-        description: [],
-        embargo_end_date: [],
-        os: [],
-        platforms: [],
-        programming_languages: [],
-        live: [],
-        licence: []
-    },
     release: {
         codebase: {
             associatiated_publications_text: '',
@@ -86,11 +69,11 @@ const initialState: CodebaseReleaseStore = {
         institution_url: yup.string(),
         profile_url: yup.string(),
         username: yup.string()
-    }),
+    }).nullable(),
     given_name: yup.string().required(),
     family_name: yup.string().required(),
     middle_name: yup.string(),
-    affilitions: yup.array().of(yup.string()),
+    affilitions: yup.array().of(yup.string()).min(1),
     type: yup.mixed().oneOf(['person', 'organization'])
 });
 
@@ -141,8 +124,40 @@ export function exposeComputed(paths: Array<string>): object {
     return computed;
 }
 
+interface CodebaseReleaseDetail {
+    description: string
+    documentation: string
+    embargo_end_date: string | null
+    os: string
+    license: string
+    live: boolean
+    platforms: Array<{name: string}>
+    programming_languages: Array<{name: string}>
+}
+
 export const store = {
     state: { ...initialState },
+    getters: {
+        detail(state: CodebaseReleaseStore): CodebaseReleaseDetail {
+            return {
+                description: state.release.description,
+                documentation: state.release.documentation,
+                embargo_end_date: state.release.embargo_end_date,
+                os: state.release.os,
+                license: state.release.license,
+                live: state.release.live,
+                platforms: state.release.platforms,
+                programming_languages: state.release.programming_languages
+            }
+        },
+
+        identity(state: CodebaseReleaseStore) {
+            return {
+                identifier: state.release.codebase.identifier,
+                version_number: state.release.version_number
+            }
+        }
+    },
     mutations: {
         setReleaseContributors(state, release_contributors) {
             state.release.release_contributors = release_contributors;
@@ -175,19 +190,6 @@ export const store = {
             state.release.release_contributors.forEach(v => {
                 v._id = _.uniqueId();
             });
-        },
-        createOrReplaceReleaseContributor(state, release_contributor: CodebaseContributor) {
-            const ind = _.findIndex(state.release.release_contributors, rc => release_contributor._id === rc._id);
-            if (ind !== -1) {
-                state.release.release_contributors[ind] = _.extend({}, release_contributor);
-            } else {
-                console.log(state);
-                state.release.release_contributors.push(_.extend({}, release_contributor));
-            }
-        },
-        deleteReleaseContributor(state: CodebaseReleaseStore, _id: string) {
-            const index = _.findIndex(state.release.release_contributors, rc => rc._id === _id);
-            state.release.release_contributors.splice(index, 1);
         }
     },
     actions: {
