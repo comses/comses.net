@@ -1,5 +1,4 @@
 import * as Vue from 'vue'
-import * as VeeValidate from 'vee-validate'
 import { Component, Prop } from 'vue-property-decorator'
 import { Codebase } from 'store/common'
 import Checkbox from 'components/forms/checkbox.vue'
@@ -10,8 +9,6 @@ import { exposeComputed} from './store'
 import * as yup from 'yup'
 
 export const schema = yup.object();
-
-Vue.use(VeeValidate)
 
 @Component({
     template: `<div>
