@@ -105,7 +105,7 @@ class ReleaseContributorSerializer(serializers.ModelSerializer):
     class Meta:
         list_serializer_class = ListReleaseContributorSerializer
         model = ReleaseContributor
-        fields = ('contributor', 'profile_url', 'include_in_citation', 'roles', 'index', )
+        fields = ('contributor', 'profile_url', 'include_in_citation', 'roles', 'index',)
 
 
 class RelatedCodebaseSerializer(serializers.ModelSerializer):
@@ -136,7 +136,8 @@ class CodebaseReleaseSerializer(serializers.ModelSerializer):
                                         help_text=_('URL to the detail page of the codebase'))
     citation_text = serializers.ReadOnlyField()
     codebase = RelatedCodebaseSerializer(read_only=True)
-    release_contributors = ReleaseContributorSerializer(source='index_ordered_release_contributors', many=True)
+    release_contributors = ReleaseContributorSerializer(read_only=True, source='index_ordered_release_contributors',
+                                                        many=True)
     date_created = serializers.DateTimeField(format=YMD_DATETIME_FORMAT, read_only=True)
     first_published_at = serializers.DateTimeField(format=PUBLISH_DATE_FORMAT, read_only=True)
     last_published_on = serializers.DateTimeField(format=PUBLISH_DATE_FORMAT, read_only=True)

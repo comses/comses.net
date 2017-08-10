@@ -91,19 +91,15 @@ export const emptyContributor = (valid: boolean = false): Contributor => {
 }
 
 export interface CodebaseContributor {
-    _id: string;
-    is_maintainer: boolean
-    is_rights_holder: boolean
-    role: string
+    _id: string
+    roles: Array<string>
     contributor: Contributor
 }
 
 export const emptyReleaseContributor = (): CodebaseContributor => {
     return { 
         _id: _.uniqueId(),
-        is_maintainer: false,
-        is_rights_holder: false,
-        role: 'author',
+        roles: ['author'],
         contributor: emptyContributor()
     }
 }

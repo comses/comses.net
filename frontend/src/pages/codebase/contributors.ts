@@ -1,8 +1,8 @@
 import { Prop, Component, Watch } from 'vue-property-decorator'
 import * as Vue from 'vue'
 import { CalendarEvent, CodebaseContributor, Contributor, emptyContributor, emptyReleaseContributor } from '../../store/common'
-import { api } from 'api/index'
-import { store, contributorSchema } from './store'
+import { api, api_base } from 'api/index'
+import { store } from './store'
 import Checkbox from 'components/forms/checkbox.vue'
 import Datepicker from 'components/forms/datepicker.vue'
 import Input from 'components/forms/input.vue'
@@ -17,18 +17,33 @@ import * as yup from 'yup'
 
 const listContributors = _.debounce((state, self) => api.contributors.list(state).then(data => self.matchingContributors = data.results), 800);
 
-const roleOptions: Array<{ value: string, label: string }> = [
-    { value: 'author', label: 'Author' },
-    { value: 'publisher', label: 'Publisher' },
-    { value: 'resourceProvider', label: 'Resource Provider' },
-    { value: 'maintainer', label: 'Maintainer' },
-    { value: 'pointOfContact', label: 'Point of Contact' },
-    { value: 'editor', label: 'Editor' },
-    { value: 'contributor', label: 'Contributor' },
-    { value: 'collaborator', label: 'Collaborator' },
-    { value: 'funder', label: 'Funder' },
-    { value: 'copyrightholder', label: 'Copyright Holder' }
-];
+const contributorSchema = yup.object().shape({
+    user: yup.object().shape({
+        full_name: yup.string(),
+        insitution_name: yup.string(),
+        institution_url: yup.string(),
+        profile_url: yup.string(),
+        username: yup.string()
+    }),
+    given_name: yup.string().required(),
+    family_name: yup.string().required(),
+    middle_name: yup.string(),
+    affilitions: yup.array().of(yup.string()).min(1),
+    type: yup.mixed().oneOf(['person', 'organization'])
+});
+
+const roleLookup = {
+    author: 'Author',
+    publisher: 'Publisher',
+    resourceProvider: 'Resource Provider',
+    maintainer: 'Maintainer',
+    pointOfContact: 'Point of Contact',
+    editor: 'Editor',
+    contributor: 'Contributor',
+    collaberator: 'Collaborator',
+    funder: 'Funder',
+    copyrightholder: 'Copyright Holder'
+}
 
 enum FormContributorState {
     list,
@@ -39,11 +54,11 @@ enum FormContributorState {
 @Component(<any>{
     template: `<div>
         <hr>
-        <label class="form-control-label">Current Contributors</label>
+        <label class="form-control-label">Current Release Contributors</label>
         <draggable v-model="releaseContributors">
             <ul v-for="releaseContributor in releaseContributors" :key="releaseContributor._id" class="list-group">
                 <li class="list-group-item justify-content-between">
-                    {{ releaseContributor.contributor.given_name }} {{ releaseContributor.contributor.family_name }} ({{ releaseContributor.role }})
+                    {{ releaseContributorLabel(releaseContributor) }}
                     <div v-show="matchesState(['list'])">
                         <span class="badge badge-default badge-pill" @click="editReleaseContributor(releaseContributor)">
                             <span class="fa fa-edit"></span>
@@ -127,16 +142,13 @@ enum FormContributorState {
                         <button type="button" class="btn btn-primary" @click="cancelContributor">Cancel</button>
                     </div>
                 </div>
-                <c-checkbox name="is_maintainer" label="Is Maintainer?" v-model="releaseContributor.is_maintainer" :errorMsgs="validationErrors('is_maintainer')">
-                </c-checkbox>
-                <c-checkbox type="checkbox" name="is_rights_holder" label="Is Rights Holder?" v-model="releaseContributor.is_rights_holder" :errorMsgs="validationErrors('is_rights_holder')">
-                </c-checkbox>
                 <div class="form-group">
                     <label class="form-control-label">Role</label>
-                    <multiselect name="role" 
-                        v-model="role"
-                        label="label" 
-                        track-by="value" 
+                    <multiselect name="roles" 
+                        v-model="releaseContributor.roles"
+                        :multiple="true"
+                        :custom-label="roleLabel"
+                        :close-on-select="false" 
                         placeholder="Type to select role" 
                         :options="roleOptions">
                     </multiselect>
@@ -145,6 +157,7 @@ enum FormContributorState {
                 <button type="button" class="btn btn-primary" @click="cancelReleaseContributor">Cancel</button>
             </div>
         </div>
+        <button type="button" class="btn btn-primary" @click="save">Save</button>
     </div>`,
     components: {
         'c-checkbox': Checkbox,
@@ -157,8 +170,17 @@ enum FormContributorState {
     }
 })
 class EditContributors extends Vue {
+    initialize() {
+        this.releaseContributors = this.$store.state.release.release_contributors.map(rc => _.extend({}, rc));
+    }
+
+    created() {
+        this.initialize();
+    }
+
     state: FormContributorState = FormContributorState.list;
     
+    releaseContributors: Array<CodebaseContributor> = [];
     releaseContributor: CodebaseContributor = emptyReleaseContributor();
     releaseContributorErrors = {};
 
@@ -168,37 +190,25 @@ class EditContributors extends Vue {
         family_name: [],
         given_name: [],
     }
-
+    message: string = '';
 
     isLoadingContributors: boolean = false;
     matchingContributors: Array<Contributor> = [];
-    roleOptions: Array<{ value: string, label: string }> = [
-        { value: 'author', label: 'Author' },
-        { value: 'publisher', label: 'Publisher' },
-        { value: 'resourceProvider', label: 'Resource Provider' },
-        { value: 'maintainer', label: 'Maintainer' },
-        { value: 'pointOfContact', label: 'Point of Contact' },
-        { value: 'editor', label: 'Editor' },
-        { value: 'contributor', label: 'Contributor' },
-        { value: 'collaborator', label: 'Collaborator' },
-        { value: 'funder', label: 'Funder' },
-        { value: 'copyrightholder', label: 'Copyright Holder' }
-    ];
 
-    get role() {
-        return <any>_.find(this.roleOptions, roleOption => roleOption.value === (<any>this.releaseContributor).role);
+    roleOptions: Array<string> = Object.keys(roleLookup);
+
+    releaseContributorLabel(releaseContributor: CodebaseContributor) {
+        const name = [releaseContributor.contributor.given_name, releaseContributor.contributor.family_name].join(' ');
+        const roles = releaseContributor.roles.length > 0 ? ` (${releaseContributor.roles.map(this.roleLabel).join(', ')})` : '';
+        return `${name}${roles}`
     }
 
-    set role(roleOption: { label: string, value: string}) {
-        this.releaseContributor.role = roleOption.value;
+    roleLabel(value: string) {
+        return roleLookup[value] || value;
     }
 
-    get releaseContributors() {
-        return this.$store.state.release.release_contributors;
-    }
-
-    set releaseContributors(value) {
-        this.$store.commit('setReleaseContributors', value);
+    get identity() {
+        return this.$store.getters.identity;
     }
 
     matchesState(states: Array<keyof typeof FormContributorState>) {
@@ -226,7 +236,7 @@ class EditContributors extends Vue {
     }
 
     contributorLabel(contributor: Contributor) {
-        let name = [contributor.given_name, contributor.family_name].filter(el => _.isEmpty(el)).join(' ');
+        let name = [contributor.given_name, contributor.family_name].filter(el => !_.isEmpty(el)).join(' ');
         if (!_.isNull(contributor.user)) {
             name = name === '' ? contributor.user.full_name : name;
             const username = contributor.user.username;
@@ -242,14 +252,31 @@ class EditContributors extends Vue {
         }
     }
 
+    save() {
+        const { identifier, version_number } = this.identity;
+        api_base.put(`/codebases/${identifier}/releases/${version_number}/contributors/`, this.releaseContributors)
+            .catch(err => this.message = 'Submission Error')
+            .then(response => this.$store.dispatch('getCodebaseRelease', {identifier, version_number}))
+            .then(_ => this.initialize());
+    }
+
     // Release Contributor
+
+    createOrReplaceReleaseContributor(release_contributor: CodebaseContributor) {
+        const ind = _.findIndex(this.releaseContributors, rc => release_contributor._id === rc._id);
+        if (ind !== -1) {
+            this.releaseContributors[ind] = _.merge({}, release_contributor);
+        } else {
+            this.releaseContributors.push(_.merge({}, release_contributor));
+        }
+    }
 
     editReleaseContributor(releaseContributor?: CodebaseContributor) {
         this._assertState([FormContributorState.list]);
         if (releaseContributor === undefined) {
             this.releaseContributor = emptyReleaseContributor()
         } else {
-            this.releaseContributor = _.extend({}, releaseContributor);
+            this.releaseContributor = _.merge({}, releaseContributor);
         }
         this.state = FormContributorState.editReleaseContributor;
     }
@@ -262,13 +289,14 @@ class EditContributors extends Vue {
 
     saveReleaseContributor() {
         this._assertState([FormContributorState.editReleaseContributor, FormContributorState.editContributor]);
-        this.$store.commit('createOrReplaceReleaseContributor', this.releaseContributor);
+        this.createOrReplaceReleaseContributor(this.releaseContributor);
         this.releaseContributor = emptyReleaseContributor();
         this.state = FormContributorState.list;
     }    
 
     deleteReleaseContributor(_id: string) {
-        this.$store.commit('deleteReleaseContributor', _id);
+        const index = _.findIndex(this.releaseContributors, rc => rc._id === _id);
+        this.releaseContributors.splice(index, 1);
     }
 
     // Contributor
@@ -376,7 +404,6 @@ class EditContributors extends Vue {
                 this.state = FormContributorState.editReleaseContributor;
             }
         })
-        
     }
 
 }
