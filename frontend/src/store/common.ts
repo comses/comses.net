@@ -97,7 +97,7 @@ export interface CodebaseContributor {
 }
 
 export const emptyReleaseContributor = (): CodebaseContributor => {
-    return { 
+    return {
         _id: _.uniqueId(),
         roles: ['author'],
         contributor: emptyContributor()
@@ -155,8 +155,8 @@ interface AbstractCodebaseRelease extends UndefinedWithId {
     identifier: string
     os: string
     peer_reviewed: boolean
-    platforms: Array<string>
-    programming_languages: Array<string>
+    platforms: Array<{ name: string }>
+    programming_languages: Array<{ name: string }>
     submitted_package: string
     submitter: User
     version_number: string
@@ -177,5 +177,4 @@ export interface CodebaseReleaseStore {
         sources: { upload_url: string, files: Array<string> }
     }
     release: CodebaseReleaseEdit
-    validation_errors: {}
 }
