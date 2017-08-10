@@ -1,9 +1,6 @@
 import * as Vue from 'vue'
-import * as VeeValidate from 'vee-validate'
 import { Component, Prop } from 'vue-property-decorator'
 import * as _ from 'lodash'
-
-Vue.use(VeeValidate);
 
 @Component
 class BaseControl extends Vue {

@@ -1,12 +1,14 @@
 <template>
     <div :class="['form-group', {'has-danger': hasDanger }]">
-        <slot name="label"></slot>
+        <slot name="label" :label="label">
+            <label class="form-control-label">{{ label }}</label>
+        </slot>
         <multiselect
                 :value="value"
                 @input="updateValue"
                 label="name"
                 track-by="name"
-                placeholder="Type to find keywords"
+                :placeholder="placeholder"
                 :options="matchingTags"
                 :multiple="true"
                 :loading="isLoading"
@@ -21,7 +23,9 @@
         <div class="form-control-feedback form-control-danger">
             {{ errorMessage }}
         </div>
-        <slot name="help"></slot>
+        <slot name="help" :help="help">
+            <small class="form-text text-muted">{{ help }}</small>
+        </slot>
     </div>
 </template>
 <script lang="ts">
@@ -39,6 +43,15 @@
         }
     })
     export default class Tagger extends BaseControl {
+        @Prop({default: 'Type to find matching tags'})
+        placeholder: string;
+
+        @Prop
+        label: string;
+
+        @Prop
+        help: string;
+
         isLoading = false;
         matchingTags = [];
 
