@@ -59,15 +59,14 @@ class ContributorSerializer(serializers.ModelSerializer):
         fields = ('id', 'given_name', 'middle_name', 'family_name', 'name', 'email', 'user', 'type', 'affiliations')
 
 
-class ListReleaseContributorSerializer(serializers.ListSerializer):
+class ListReleasContributorSerializer(serializers.ListSerializer):
     def create(self, validated_data):
+        ReleaseContributor.objects.filter(release_id=self.context['release_id']).delete()
         release_contributors = []
         for i, attr in enumerate(validated_data):
             attr['index'] = i
-            release_contributor = ReleaseContributorSerializer.prepare_create(self.context, attr)
-            release_contributors.append(release_contributor)
+            release_contributors.append(ReleaseContributorSerializer.create_unsaved(self.context, attr))
 
-        ReleaseContributor.objects.filter(release_id=self.context['release_id']).delete()
         ReleaseContributor.objects.bulk_create(release_contributors)
         return release_contributors
 
@@ -86,7 +85,7 @@ class ReleaseContributorSerializer(serializers.ModelSerializer):
             return '/search?{0}'.format(urlencode({'person': instance.contributor.name}))
 
     @staticmethod
-    def prepare_create(context, validated_data):
+    def create_unsaved(context, validated_data):
         contributor_serializer = ContributorSerializer()
         contributor_serializer._errors = {}
         contributor_serializer._validated_data = validated_data.pop('contributor')
@@ -98,12 +97,12 @@ class ReleaseContributorSerializer(serializers.ModelSerializer):
         return instance
 
     def create(self, validated_data):
-        instance = self.prepare_create(self.context, validated_data)
-        instance.save()
-        return instance
+        release_contributor = self.create_unsaved(self.context, validated_data)
+        release_contributor.save()
+        return release_contributor
 
     class Meta:
-        list_serializer_class = ListReleaseContributorSerializer
+        list_serializer_class = ListReleasContributorSerializer
         model = ReleaseContributor
         fields = ('contributor', 'profile_url', 'include_in_citation', 'roles', 'index',)
 
@@ -116,7 +115,6 @@ class RelatedCodebaseSerializer(serializers.ModelSerializer):
     tags = TagSerializer(many=True)
     last_published_on = serializers.DateTimeField(read_only=True, format=PUBLISH_DATE_FORMAT)
     summarized_description = serializers.CharField(read_only=True)
-
     # featured_image = serializers.ReadOnlyField(source='get_featured_image')
 
     def create(self, validated_data):
@@ -146,14 +144,11 @@ class CodebaseReleaseSerializer(serializers.ModelSerializer):
     platforms = TagSerializer(many=True, source='platform_tags')
     programming_languages = TagSerializer(many=True)
     submitter = LinkedUserSerializer(read_only=True, label='Submitter')
+    version_number = serializers.ReadOnlyField()
 
     def update(self, instance, validated_data):
         programming_languages = TagSerializer(many=True, data=validated_data.pop('programming_languages'))
         platform_tags = TagSerializer(many=True, data=validated_data.pop('platform_tags'))
-        release_contributors = ReleaseContributorSerializer(many=True, data=self.initial_data['release_contributors'],
-                                                            context={'release_id': instance.id})
-        release_contributors._validated_data = validated_data.pop('codebase_contributors')
-        release_contributors._errors = {}
 
         license_serializer = LicenseSerializer(data=validated_data.pop('license'))
         license_serializer.is_valid(raise_exception=True)
@@ -161,7 +156,6 @@ class CodebaseReleaseSerializer(serializers.ModelSerializer):
 
         save_tags(instance, programming_languages, 'programming_languages')
         save_tags(instance, platform_tags, 'platform_tags')
-        self.save_release_contributors(instance, release_contributors)
 
         instance = super().update(instance, validated_data)
 
@@ -184,7 +178,7 @@ class CodebaseReleaseSerializer(serializers.ModelSerializer):
         fields = ('absolute_url', 'citation_text', 'release_contributors', 'date_created', 'dependencies',
                   'description', 'documentation', 'doi', 'download_count', 'embargo_end_date', 'first_published_at',
                   'last_modified', 'last_published_on', 'license', 'os', 'os_display', 'peer_reviewed', 'platforms',
-                  'programming_languages', 'submitted_package', 'submitter', 'version_number', 'codebase', 'identifier',
+                  'programming_languages', 'submitted_package', 'submitter', 'codebase', 'version_number',
                   'id',)
 
 
