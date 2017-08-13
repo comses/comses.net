@@ -1,5 +1,9 @@
-<template>
-    <div :class="['form-group', {'has-danger': hasDanger }]">
+import { Component, Prop } from 'vue-property-decorator'
+import BaseControl from 'components/forms/base'
+import * as draggable from 'vuedraggable'
+
+@Component({
+    template: `<div :class="['form-group', {'has-danger': hasDanger }]">
         <slot name="label"></slot>
         <input class="form-control" v-model="potential_item" @keyup.enter="create" :placeholder="placeholder">
         <draggable :list="value" @start="drag=true" @end="drag=false">
@@ -12,14 +16,7 @@
             {{ errorMessage }}
         </div>
         <slot name="help"></slot>
-    </div>
-</template>
-<script lang="ts">
-import { Component, Prop } from 'vue-property-decorator'
-import BaseControl from 'components/forms/base'
-import * as draggable from 'vuedraggable'
-
-@Component({
+</div>`,
     components: { draggable }
 })
 export default class EditTextList extends BaseControl {
@@ -34,4 +31,3 @@ export default class EditTextList extends BaseControl {
         this.potential_item = '';
     }
 }
-</script>

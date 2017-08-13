@@ -1,8 +1,8 @@
 import { Component, Watch } from 'vue-property-decorator'
 import * as Vue from 'vue'
-import Checkbox from 'components/forms/checkbox.vue'
+import Checkbox from 'components/forms/checkbox'
 import Multiselect from 'vue-multiselect'
-import Input from 'components/forms/input.vue'
+import Input from 'components/forms/input'
 import { exposeComputed } from './store'
 import * as yup from 'yup'
 

@@ -1,5 +1,17 @@
-<template>
-    <div>
+import { Component, Prop } from 'vue-property-decorator'
+import * as queryString from 'query-string'
+import * as Dropzone from 'vue2-dropzone'
+import * as Vue from 'vue'
+import Vuex from 'vuex'
+import { getCookie } from 'api/index'
+import { CodebaseRelease } from 'store/common'
+import { exposeComputed } from './store'
+import { upperFirst } from 'lodash'
+
+Vue.use(Vuex);
+
+@Component(<any>{
+    template: `<div>
         <slot name="label"></slot>
         <!--<input id="upload" type="file" multiple>-->
         <dropzone id="releaseUpload" :acceptedFileTypes="acceptedFileTypes" :url="uploadUrl" :headers="{'X-CSRFToken': csrftoken }" :useFontAwesome="true"
@@ -12,23 +24,7 @@
                 <div class="col-3"><button class="btn btn-sm btn-danger pull-right" @click="deleteFile(file.url)"><span class="fa fa-remove"></span></button></div>
             </div>
         </div>
-    </div>
-</template>
-
-<script lang="ts">
-import { Component, Prop } from 'vue-property-decorator'
-import * as queryString from 'query-string'
-import * as Dropzone from 'vue2-dropzone'
-import * as Vue from 'vue'
-import Vuex from 'vuex'
-import { getCookie } from '../../api/index'
-import { CodebaseRelease } from '../../store/common'
-import { exposeComputed } from './store'
-import { upperFirst } from 'lodash'
-
-Vue.use(Vuex);
-
-@Component(<any>{
+    </div>`,
     components: {
         Dropzone
     },
@@ -80,4 +76,3 @@ export default class Upload extends Vue {
         console.log({file, xhr, formData});
     }
 }
-</script>

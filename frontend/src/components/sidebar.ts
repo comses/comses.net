@@ -1,11 +1,18 @@
-<template>
-    <div>
+
+import * as Vue from 'vue'
+import {Component, Prop} from 'vue-property-decorator'
+
+import Input from 'components/forms/input'
+import Datepicker from 'components/forms/datepicker';
+
+@Component({
+    template: `<div>
         <div class="btn btn-primary w-100"><a class='text-white' href='/codebases/add/'>Submit a model</a></div>
         <div class="card-metadata">
             <div class="title">
                 Search
             </div>
-            <div class="card-block">
+            <div class="card-body">
                 <c-input type="text" v-model="state.keyword_search" name="keyword_search" :server_errors="[]">
                     <label class="form-control-label" slot="label">Keywords</label>
                 </c-input>
@@ -21,7 +28,7 @@
             <div class="title">
                 Tags
             </div>
-            <div class="card-block">
+            <div class="card-body">
                 <c-input type="text" v-model="state.tag_search" name="tag_search" :server_errors="[]">
                     <label class="form-control-label" slot="label">Find Tags</label>
                 </c-input>
@@ -40,7 +47,7 @@
             <div class="title">
                 Authors
             </div>
-            <div class="card-block">
+            <div class="card-body">
                 <c-input type="text" v-model="state.author_search" name="author_search" :server_errors="[]">
                     <label class="form-control-label" slot="label">Find Authors</label>
                 </c-input>
@@ -55,36 +62,26 @@
             </div>
         </div>
         <div class="btn btn-primary w-100">Search</div>
-    </div>
-</template>
-<script lang="ts">
-    import * as Vue from 'vue'
-    import {Component, Prop} from 'vue-property-decorator'
-
-    import Input from 'components/forms/input.vue'
-    import Datepicker from 'components/forms/datepicker.vue';
-
-    @Component({
-        components: {
-            'c-input': Input,
-            'c-date-picker': Datepicker
-        }
-    })
-    export default class Sidebar extends Vue {
-        state = {
-            keyword_search: 'foo',
-            start_date: null,
-            end_date: null,
-            tag_search: 'bar',
-            tags: [
-                {name: 'ecology', selected: false, count: 52},
-                {name: 'decision', selected: true, count: 10}
-            ],
-            author_search: 'baz',
-            authors: [
-                {name: 'Marco Janssen', selected: false, count: 52},
-                {name: 'Michael C. Barton', selected: false, count: 43}
-            ]
-        };
+    </div>`,
+    components: {
+        'c-input': Input,
+        'c-date-picker': Datepicker
     }
-</script>
+})
+export default class Sidebar extends Vue {
+    state = {
+        keyword_search: 'foo',
+        start_date: null,
+        end_date: null,
+        tag_search: 'bar',
+        tags: [
+            {name: 'ecology', selected: false, count: 52},
+            {name: 'decision', selected: true, count: 10}
+        ],
+        author_search: 'baz',
+        authors: [
+            {name: 'Marco Janssen', selected: false, count: 52},
+            {name: 'Michael C. Barton', selected: false, count: 43}
+        ]
+    };
+}

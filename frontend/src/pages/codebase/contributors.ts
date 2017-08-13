@@ -3,14 +3,14 @@ import * as Vue from 'vue'
 import { CalendarEvent, CodebaseContributor, Contributor, emptyContributor, emptyReleaseContributor } from '../../store/common'
 import { api, api_base } from 'api/index'
 import { store } from './store'
-import Checkbox from 'components/forms/checkbox.vue'
-import Datepicker from 'components/forms/datepicker.vue'
-import Input from 'components/forms/input.vue'
-import Markdown from 'components/forms/markdown.vue'
-import MessageDisplay from 'components/message_display.vue'
-import EditItems from 'components/edit_items.vue'
+import Checkbox from 'components/forms/checkbox'
+import Datepicker from 'components/forms/datepicker'
+import Input from 'components/forms/input'
+import Markdown from 'components/forms/markdown'
+import MessageDisplay from 'components/message_display'
+import EditItems from 'components/edit_items'
 import Multiselect from 'vue-multiselect'
-import Username from 'components/username.vue'
+import Username from 'components/username'
 import * as draggable from 'vuedraggable'
 import * as _ from 'lodash'
 import * as yup from 'yup'
@@ -85,7 +85,7 @@ enum FormContributorState {
             <div class="card-header">
                 Release Contributor
             </div>
-            <div class="card-block">
+            <div class="card-body">
                 <div :class="['form-group', contributorPresenceError ? 'has-danger' : '' ]">
                     <label class="form-control-label">Contributor</label>
                     <div class="row">
@@ -119,7 +119,7 @@ enum FormContributorState {
                     <div class="card-header">
                         Create a contributor
                     </div>
-                    <div class="card-block">
+                    <div class="card-body">
                         <c-username name="username" v-model="releaseContributor.contributor.user" label="User Name" help="Find a matching user here">
                         </c-username>
                         <c-input name="given_name" v-model="releaseContributor.contributor.given_name" label="Given Name" :errorMsgs="contributorValidationErrors.given_name">

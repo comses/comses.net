@@ -9,12 +9,12 @@
     "typeRoots": [
       "./node_modules/@types/"
     ],
-    "baseUrl": ".",
+    "baseUrl": "./src",
     "paths": {
-      "components/*": ["src/components/*"],
-      "pages/*": ["src/pages/*"],
-      "api/*": ["src/api/*"],
-      "store/*": ["src/store/*"]
+      "components/*": ["components/*"],
+      "pages/*": ["pages/*"],
+      "api/*": ["api/*"],
+      "store/*": ["store/*"]
     }
   }
 }

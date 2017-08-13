@@ -35,7 +35,7 @@
         </div>
         <div class='col-9'>
             <div class='profile-details'>
-                <div class='card-block'>
+                <div class='card-body'>
                     <h4 class='card-title'>{{ full_name }}</h4>
                     {% for degree in degrees %}
                         <p class='card-text'>{{ degree }}</p>
@@ -130,7 +130,7 @@
 {% block sidebar %}
     {# FIXME: set up Vue logic for message / follow #}
     <div class='card-metadata'>
-        <div class='card-block'>
+        <div class='card-body'>
             {% if has_change_perm %}
                 <p class='card-text'>
                     <a href="{{ url('home:profile-update', username=username) }}" class='btn btn-primary w-100'>Edit
@@ -161,7 +161,7 @@
         </div>
     </div>
     <div class='card-metadata'>
-        <div class='card-block'>
+        <div class='card-body'>
             <h2 class='card-title'>Areas of Interest</h2>
             <p class='card-text tag-list'>
                 {% for keyword in keywords %}
