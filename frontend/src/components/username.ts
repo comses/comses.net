@@ -22,7 +22,7 @@ const debounceFetchMatchingUsers = _.debounce((self: UsernameSearch, query: stri
 }, 800);
 
 @Component({
-    template: `<div :class="['form-group', {'has-danger': hasDanger }]">
+    template: `<div :class="['form-group', {'child-is-invalid': isInvalid }]">
         <slot name="label" :label="label">
             <label class="form-control-label">{{ label }}</label>
         </slot>
@@ -42,7 +42,7 @@ const debounceFetchMatchingUsers = _.debounce((self: UsernameSearch, query: stri
                 :limit="20"
                 @search-change="fetchMatchingUsers">
         </multiselect>
-        <div class="form-control-feedback form-control-danger">
+        <div v-if="isInvalid" class="invalid-feedback">
             {{ [errorMessage, localErrors].filter(msg => msg !== '').join(', ') }}
         </div>
         <slot name="help" :help="help">

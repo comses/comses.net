@@ -29,7 +29,7 @@ enum ViewMode {
 }
 
 @Component({
-    template: `<div :class="['form-group', {'has-danger': hasDanger}]">
+    template: `<div class="form-group">
         <slot name="label"></slot>
         <div class="container-fluid p-0">
             <div class="btn-group">
@@ -48,7 +48,7 @@ enum ViewMode {
             </div>
             <div class="row p-0 row-eq-height">
                 <div :class="codeStyle">
-                    <textarea :class="{'form-control-danger': hasDanger }" :style="{ 'min-height': minHeight }" :value="value"
+                    <textarea :class="{'is-invalid': isInvalid }" :style="{ 'min-height': minHeight }" :value="value"
                                 @input="updateValue($event.target.value)"
                                 debounce="300">
                     </textarea>
@@ -58,7 +58,7 @@ enum ViewMode {
                 </div>
             </div>
         </div>
-        <div v-if="hasDanger" class="form-control-feedback">{{ errorMessage }}</div>
+        <div v-if="is-invalid" class="invalid-feedback">{{ errorMessage }}</div>
         <slot name="help"></slot>
     </div>`
 })

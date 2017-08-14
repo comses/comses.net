@@ -57,7 +57,7 @@ enum FormContributorState {
         <label class="form-control-label">Current Release Contributors</label>
         <draggable v-model="releaseContributors">
             <ul v-for="releaseContributor in releaseContributors" :key="releaseContributor._id" class="list-group">
-                <li class="list-group-item justify-content-between">
+                <li class="list-group-item d-flex justify-content-between">
                     {{ releaseContributorLabel(releaseContributor) }}
                     <div v-show="matchesState(['list'])">
                         <span class="badge badge-default badge-pill" @click="editReleaseContributor(releaseContributor)">
@@ -86,7 +86,7 @@ enum FormContributorState {
                 Release Contributor
             </div>
             <div class="card-body">
-                <div :class="['form-group', contributorPresenceError ? 'has-danger' : '' ]">
+                <div :class="['form-group', contributorPresenceError ? 'child-is-invalid' : '' ]">
                     <label class="form-control-label">Contributor</label>
                     <div class="row">
                         <div class="col-11">
@@ -111,7 +111,7 @@ enum FormContributorState {
                             <button type="button" class="btn btn-primary" @click="editContributor()"><span class="fa fa-plus"></span></button>
                         </div>
                     </div>
-                    <div class="form-control-feedback form-control-danger" v-show="contributorPresenceError">
+                    <div class="invalid-feedback" v-show="contributorPresenceError">
                         {{ contributorPresenceError }}
                     </div>
                 </div>
@@ -132,7 +132,7 @@ enum FormContributorState {
                             @create="releaseContributor.contributor.affiliations.push($event)" 
                             @remove="releaseContributor.contributor.affiliations.splice($event, 1)" 
                             @modify="releaseContributor.contributor.affiliations.splice($event.index, 1, $event.value)"
-                            name="affiliations" placeholder="Add affiliation">
+                            name="affiliations" placeholder="Add affiliation" :errorMsgs="contributorValidationErrors.affiliations">
                             <label class="form-control-label" slot="label">Affiliations</label>
                             <small class="form-text text-muted" slot="help">The institution(s) and other groups you are affiliated with</small>
                         </c-edit-affiliations>

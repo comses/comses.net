@@ -7,7 +7,7 @@ import {api} from '../api/index'
 import Multiselect from 'vue-multiselect'
 
 @Component({
-    template: `<div :class="['form-group', {'has-danger': hasDanger }]">
+    template: `<div :class="['form-group', {'child-is-invalid': isInvalid }]">
         <slot name="label" :label="label">
             <label class="form-control-label">{{ label }}</label>
         </slot>
@@ -28,7 +28,7 @@ import Multiselect from 'vue-multiselect'
                 :limit="20"
                 @search-change="fetchMatchingTags">
         </multiselect>
-        <div class="form-control-feedback form-control-danger">
+        <div v-if="isInvalid" class="invalid-feedback">
             {{ errorMessage }}
         </div>
         <slot name="help" :help="help">

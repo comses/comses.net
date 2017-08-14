@@ -2,15 +2,13 @@ import { Component, Prop } from 'vue-property-decorator'
 import BaseControl from './base'
 
 @Component({
-    template: `<div :class="['form-group', {'has-danger': hasDanger }]">
+    template: `<div class="form-group">
         <slot name="label" :label="label">
             <label class="form-control-label">{{ label }}</label>
         </slot>
-        <input :type="type" :name="name" class="form-control" :value="value"
-                @change="toggle($event.target.value)" v-if="type === 'checkbox'">
-        <input :type="type" :name="name" class="form-control" :value="value"
-                @input="updateValue($event.target.value)" v-else>
-        <div class="form-control-feedback form-control-danger">
+        <input :type="type" :name="name" :class="['form-control', {'is-invalid': isInvalid}]" :value="value"
+                @input="updateValue($event.target.value)">
+        <div class="invalid-feedback">
             {{ errorMessage }}
         </div>
         <slot name="help" :help="help">
