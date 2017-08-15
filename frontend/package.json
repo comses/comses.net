@@ -6,12 +6,11 @@
   "private": true,
   "scripts": {
     "dev": "webpack --config webpack.conf.js --watch",
-    "build": "node build/build.js",
-    "test": "./node_modules/mocha/bin/mocha -r ./node_modules/ts-node/register test/tests.ts",
+    "build": "NODE_ENV=production webpack --config webpack.conf.js",
+    "test": "jest --config jest.json",
     "webpack": "webpack"
   },
   "dependencies": {
-    "ajv": "^4.11.7",
     "axios": "^0.15.3",
     "bootstrap": "4.0.0-beta",
     "font-awesome": "^4.7.0",
@@ -34,8 +33,8 @@
     "yup": "^0.21.3"
   },
   "devDependencies": {
+    "@types/jest": "^20.0.7",
     "@types/lodash": "^4.14.72",
-    "@webpack-blocks/webpack": "^0.4.0",
     "autoprefixer": "^7.1.2",
     "chalk": "^1.1.3",
     "compression-webpack-plugin": "^1.0.0",
@@ -48,6 +47,7 @@
     "file-loader": "^0.11.2",
     "friendly-errors-webpack-plugin": "^1.6.1",
     "function-bind": "^1.0.2",
+    "jest": "^20.0.4",
     "node-sass": "^4.5.0",
     "sass-loader": "^6.0.6",
     "stringify-object": "^3.2.0",
@@ -57,6 +57,7 @@
     "typescript": "^2.4.2",
     "uglifyjs-webpack-plugin": "^0.4.6",
     "url-loader": "^0.5.9",
+    "vue-typescript-jest": "^0.3.0",
     "webpack": "^3.5",
     "webpack-blocks": "^1.0.0-beta.3",
     "webpack-bundle-tracker": "^0.2.0",
