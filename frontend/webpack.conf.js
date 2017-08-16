@@ -99,7 +99,8 @@ module.exports = createConfig([
     ]),
     sourceMaps('source-map'),
     defineConstants({
-        'process.env.NODE_ENV': process.env.NODE_ENV
+        'process.env.NODE_ENV': process.env.NODE_ENV,
+        '__BASE_URL__': process.env.BASE_URL
     }),
     env('development', [
 

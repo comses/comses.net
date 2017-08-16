@@ -18,5 +18,8 @@
   "moduleDirectories": [
     "node_modules",
     "<path_to_your_sources>"
-  ]
+  ],
+  "globals": {
+    "__BASE_URL__": "http://cms:8000"
+  }
 }

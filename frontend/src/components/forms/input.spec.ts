@@ -8,7 +8,7 @@ describe('input.ts', () => {
            el: document.createElement('div'),
            render: (h) => h(Input, { props: { value: 'foo', label }})
        });
-       expect(vm.$el.querySelector('div label').textContent).toBe(label);
+       expect((<HTMLElement>vm.$el.querySelector('div label')).textContent).toBe(label);
        expect((<HTMLInputElement>vm.$el.querySelector('div input')).value).toBe('foo');
    })
 });
