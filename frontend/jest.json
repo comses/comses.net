@@ -16,10 +16,11 @@
     "^store(.*)$": "<rootDir>/src/store$1"
   },
   "moduleDirectories": [
-    "node_modules",
-    "<path_to_your_sources>"
+    "<rootDir>/node_modules/",
+    "<rootDir>/src/"
   ],
   "globals": {
     "__BASE_URL__": "http://cms:8000"
-  }
+  },
+  "testURL": "http://localhost:8000"
 }

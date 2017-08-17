@@ -105,7 +105,7 @@ export function exposeComputed(paths: Array<string>): object {
     let computed = {};
     paths.forEach(function (path) {
         let computed_name = pathToComputedName(path);
-        let error_name = `${computed_name}Errors`
+        let error_name = `${computed_name}Errors`;
         computed[computed_name] = {
             get: function () {
                 return _.get(this.$store.state.release, path);
@@ -113,7 +113,7 @@ export function exposeComputed(paths: Array<string>): object {
             set: function (value) {
                 this.$store.dispatch('setAtPath', { path, value });
             }
-        }
+        };
         computed[error_name] = {
             get: function () {
                 const errorMsg = _.get(this.$store.state.validation_errors, path);
@@ -156,6 +156,9 @@ export const store = {
                 identifier: state.release.codebase.identifier,
                 version_number: state.release.version_number
             }
+        },
+        release_contributors(state: CodebaseReleaseStore) {
+            return state.release.release_contributors;
         }
     },
     mutations: {

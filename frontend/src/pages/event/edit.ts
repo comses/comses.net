@@ -1,5 +1,4 @@
 import * as Vue from 'vue'
-import Component from 'vue-class-component'
 import  {CalendarEvent} from 'store/common'
 import {api} from 'api/index'
 import Markdown from 'components/forms/markdown'
@@ -8,28 +7,40 @@ import Input from 'components/forms/input'
 import Datepicker from 'components/forms/datepicker';
 import MessageDisplay from 'components/message_display'
 import * as _ from 'lodash'
+import {Component, Prop} from "vue-property-decorator";
+import * as yup from 'yup'
+
+const schema = yup.object().shape({
+    description: yup.string().required().meta({initial: ''}),
+    summary: yup.string().meta({initial: ''}),
+    title: yup.string().meta({initial: ''}),
+    tags: yup.array().of(yup.object().shape({ name: yup.string().required()})).meta({initial: []}),
+    location: yup.string().meta({initial: ''}),
+    early_registration_deadline: yup.date().nullable().meta({initial: null}),
+    submission_deadline: yup.date().nullable().meta({initial: null}),
+    start_date: yup.date().required().meta({initial: null}),
+    end_date: yup.date().meta({initial: null})
+});
 
 @Component({
     template: `<form>
-        <c-input v-model="state.title" name="title" :server_errors="serverErrors('title')" validate="required" @clear="clearField">
+        <c-input v-model="state.title" name="title" :errorMsgs="errors.title">
             <label class="form-control-label" slot="label">Title</label>
             <small class="form-text text-muted" slot="help">A short title describing the event</small>
         </c-input>
-        <c-input v-model="state.location" name="location" :server_errors="serverErrors('location')" validate="required" @clear="clearField">
+        <c-input v-model="state.location" name="location" :errorMsgs="errors.location">
             <label class="form-control-label" slot="label">Location</label>
             <small class="form-text text-muted" slot="help">The address of where the event takes place</small>
         </c-input>
         <div class="row">
             <div class="col-6">
-                <c-datepicker v-model="state.start_date" name="start_date" :server_errors="serverErrors('start_date')"
-                                @clear="clearField">
+                <c-datepicker v-model="state.start_date" name="start_date" :errorMsgs="errors.start_date">
                     <label class="form-control-label" slot="label">Start Date</label>
                     <small class="form-text text-muted" slot="help">The date the event begins at</small>
                 </c-datepicker>
             </div>
             <div class="col-6">
-                <c-datepicker v-model="state.end_date" name="end_date" :server_errors="serverErrors('end_date')"
-                                @clear="clearField" :clearButton="true">
+                <c-datepicker v-model="state.end_date" name="end_date" :errorMsgs="errors.end_date" :clearButton="true">
                     <label class="form-control-label" slot="label">End Date</label>
                     <small class="form-text text-muted" slot="help">The date the event ends at</small>
                 </c-datepicker>
@@ -38,8 +49,7 @@ import * as _ from 'lodash'
         <div class="row">
             <div class="col-6 d-inline">
                 <c-datepicker v-model="state.early_registration_deadline" name="early_registration_deadline"
-                                :server_errors="serverErrors('early_registration_deadline')" @clear="clearField"
-                                :clearButton="true">
+                                :errorMsgs="errors.early_registration_deadline">
                     <label class="form-control-label" slot="label">Early Registration Deadline</label>
                     <small class="form-text text-muted" slot="help">The last day for early registration of the event
                         (inclusive)
@@ -48,7 +58,7 @@ import * as _ from 'lodash'
             </div>
             <div class="col-6 d-inline">
                 <c-datepicker v-model="state.submission_deadline" name="submission_deadline"
-                                :server_errors="serverErrors('submission_deadline')" @clear="clearField"
+                                :errorMsgs="errors.submission_deadline"
                                 :clearButton="true">
                     <label class="form-control-label" slot="label">Submission Deadline</label>
                     <small class="form-text text-muted" slot="help">The last day to register for the event (inclusive)
@@ -56,15 +66,14 @@ import * as _ from 'lodash'
                 </c-datepicker>
             </div>
         </div>
-        <c-markdown v-model="state.description" name="description" :server_errors="serverErrors('description')"
+        <c-markdown v-model="state.description" name="description" :errorMsgs="errors.description"
                     @clear="clearField" validate="required" minHeight="20em">
             <label class="form-control-label" slot="label">Description</label>
             <small slot="help" class="form-text text-muted">Detailed information about the job</small>
         </c-markdown>
-        <c-markdown v-model="state.summary" name="summary" :server_errors="serverErrors('summary')" @clear="clearField">
+        <c-markdown v-model="state.summary" name="summary" :errorMsgs="errors.summary">
             <label slot="label">Summary</label>
-            <div slot="help">
-                <button class="btn btn-secondary btn-sm" type="button" @click="createSummaryFromDescription">
+            <div slot="help"><button class="btn btn-secondary btn-sm" type="button" @click="createSummaryFromDescription">
                     Summarize
                 </button>
                 <small class="form-text text-muted">A short summary of the job for display in search results.
@@ -72,7 +81,7 @@ import * as _ from 'lodash'
                 </small>
             </div>
         </c-markdown>
-        <c-tagger v-model="state.tags" name="tags" :server_errors="serverErrors('tags')" @clear="clearField">
+        <c-tagger v-model="state.tags" name="tags" :errorMsgs="errors.tags">
         </c-tagger>
         <small class="form-text text-muted">A list of tags to associate with a job. Tags help people search for
             jobs.
@@ -100,6 +109,9 @@ class EditEvent extends Vue {
     // update -> grab the appropriate state from the store
     // create -> use the default store state
 
+    @Prop
+    id: number | null;
+
     state: CalendarEvent = {
         description: '',
         summary: '',
@@ -117,18 +129,9 @@ class EditEvent extends Vue {
         self.errors.remove(field_name, 'server-side');
     }
 
-    matchUpdateUrl(pathname) {
-        let match = pathname.match(/\/events\/([0-9]+)\/update\//);
-        if (match !== null) {
-            match = match[1];
-        }
-        return match
-    }
-
     initializeForm() {
-        let id = this.matchUpdateUrl(document.location.pathname);
-        if (id !== null) {
-            this.retrieve(id);
+        if (this.id !== null) {
+            this.retrieve(this.id);
         }
     }
 

@@ -27,6 +27,7 @@ api_base.interceptors.request.use(config => {
     return config;
 }, error => Promise.reject(error));
 
+
 function isAxiosResponse(response: any): response is AxiosResponse {
     return response !== undefined && (<AxiosResponse>response).status !== undefined;
 }

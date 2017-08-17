@@ -1,4 +1,5 @@
 import * as Vue from 'vue'
+import * as _ from 'lodash'
 import { api_base } from 'api'
 import { Component, Prop, Watch} from 'vue-property-decorator'
 import Checkbox from 'components/forms/checkbox'
@@ -87,8 +88,11 @@ function validate(self, field_name, value) {
     }
 })
 export default class Description extends Vue {
-    created() {
-        this.state = this.$store.getters.detail;
+    @Prop
+    initialData: object;
+
+    mounted() {
+        this.state = <any>_.merge({}, this.initialData);
     }
 
     get identity() {
@@ -115,7 +119,7 @@ export default class Description extends Vue {
         license: [],
         platforms: [],
         programming_languages: []
-    }
+    };
     message: string = '';
 
     licenseOptions: Array<{ name: string, url: string }> = [

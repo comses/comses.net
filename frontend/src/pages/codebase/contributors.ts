@@ -1,7 +1,7 @@
 import { Prop, Component, Watch } from 'vue-property-decorator'
 import * as Vue from 'vue'
 import { CalendarEvent, CodebaseContributor, Contributor, emptyContributor, emptyReleaseContributor } from '../../store/common'
-import { api, api_base } from 'api/index'
+import { api, api_base } from 'api'
 import { store } from './store'
 import Checkbox from 'components/forms/checkbox'
 import Datepicker from 'components/forms/datepicker'
@@ -52,6 +52,7 @@ enum FormContributorState {
 };
 
 @Component(<any>{
+    // language=Vue
     template: `<div>
         <hr>
         <label class="form-control-label">Current Release Contributors</label>
@@ -189,7 +190,7 @@ class EditContributors extends Vue {
     contributorValidationErrors = {
         family_name: [],
         given_name: [],
-    }
+    };
     message: string = '';
 
     isLoadingContributors: boolean = false;

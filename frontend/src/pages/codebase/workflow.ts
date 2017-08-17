@@ -17,7 +17,7 @@ Vue.use(VueRouter);
 
 const component = {
     template: '<div>TODO</div>'
-}
+};
 
 @Component(<any>{
     store : new Vuex.Store(store),
@@ -43,7 +43,7 @@ const component = {
                     </router-link>
                 </li>
             </ul>
-            <router-view></router-view>
+            <router-view :initialData="initialData"></router-view>
         </div>
         <div v-else>
             <h1>Loading codebase release metadata...</h1>
@@ -75,6 +75,14 @@ const component = {
 })
 class Workflow extends Vue {
     isInitialized: boolean = false;
+
+    get initialData() {
+        switch (this.$route.name) {
+            case 'contributors': return this.$store.getters.release_contributors;
+            case 'detail': return this.$store.getters.detail;
+            default: return {}
+        }
+    }
 
     get detailPageErrors() {
         return 0;
