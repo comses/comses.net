@@ -25,6 +25,7 @@ from taggit.models import Tag
 from wagtail.wagtailimages.models import Image
 from wagtail.wagtailsearch.backends import get_search_backend
 
+from core.views import AddEditFormViewSetMixin
 from core.view_helpers import get_search_queryset, retrieve_with_perms
 from .models import FeaturedContentItem, MemberProfile
 from core.models import FollowUser, Event, Job
@@ -133,7 +134,7 @@ class ToggleFollowUser(APIView):
         return Response({'following': created})
 
 
-class EventViewSet(viewsets.ModelViewSet):
+class EventViewSet(viewsets.ModelViewSet, AddEditFormViewSetMixin):
     serializer_class = EventSerializer
     queryset = Event.objects.all()
     pagination_class = SmallResultSetPagination
@@ -141,17 +142,13 @@ class EventViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         return get_search_queryset(self)
 
-    @property
-    def template_name(self):
-        return 'home/events/{}.jinja'.format(self.action)
-
     def retrieve(self, request, *args, **kwargs):
         return retrieve_with_perms(self, request, *args, **kwargs)
 
 
 class EventCalendarList(generics.ListAPIView):
     queryset = Event.objects.all()
-    template_name = 'home/events/calendar.jinja'
+    template_name = 'core/events/calendar.jinja'
 
     def get_list_queryset(self):
         tzinfo = tz.gettz(settings.TIME_ZONE)
@@ -220,14 +217,10 @@ class EventCalendarList(generics.ListAPIView):
         return Response(data=calendar_events)
 
 
-class JobViewSet(viewsets.ModelViewSet):
+class JobViewSet(viewsets.ModelViewSet, AddEditFormViewSetMixin):
     serializer_class = JobSerializer
     pagination_class = SmallResultSetPagination
     queryset = Job.objects.all()
-
-    @property
-    def template_name(self):
-        return 'home/jobs/{}.jinja'.format(self.action)
 
     def get_queryset(self):
         return get_search_queryset(self)
@@ -253,17 +246,13 @@ class TagViewSet(viewsets.ModelViewSet):
         return queryset.order_by('name')
 
 
-class ProfileViewSet(viewsets.ModelViewSet):
+class ProfileViewSet(viewsets.ModelViewSet, AddEditFormViewSetMixin):
     lookup_field = 'user__username'
     lookup_url_kwarg = 'username'
     lookup_value_regex = '[\w\.\-@]+'
     serializer_class = MemberProfileSerializer
     queryset = MemberProfile.objects.all()
     pagination_class = SmallResultSetPagination
-
-    @property
-    def template_name(self):
-        return 'home/profiles/{}.jinja'.format(self.action)
 
     def get_queryset(self):
         # make sort order parameterizable. Start with ID or last_name? Lots of spam users visible with

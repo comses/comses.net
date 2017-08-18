@@ -43,7 +43,7 @@ class AddEditFormViewSetMixin(object):
         if namespace is None:
             meta = self.get_queryset().model._meta
             app_label = meta.app_label
-            namespace = '{0}/{1}'.format(app_label, meta.verbose_name_plural)
+            namespace = '{0}/{1}'.format(app_label, meta.verbose_name_plural.replace(' ', '_'))
             self.namespace = namespace
         return namespace
 
