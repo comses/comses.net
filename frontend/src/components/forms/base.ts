@@ -13,7 +13,7 @@ class BaseControl extends Vue {
     @Prop({ default: () => [] })
     errorMsgs: Array<string>;
 
-    get hasDanger() {
+    get isInvalid() {
         return this.errorMsgs.length > 0;
     }
 

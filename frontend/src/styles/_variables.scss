@@ -1,0 +1,50 @@
+// Theme colors
+
+$gray-100: #f8f9fa !default;
+$gray-800: #343a40 !default;
+
+$blue:    #007bff !default;
+$red:     #dc3545 !default;
+$yellow:  #ffc107 !default;
+$green:   #28a745 !default;
+$teal:    #20c997 !default;
+$cyan:    #17a2b8 !default;
+
+$secondary-color: #22b1e6;
+
+$theme-colors: (
+  primary: $blue,
+  secondary: $secondary-color,
+  success: $green,
+  info: $cyan,
+  warning: $yellow,
+  danger: $red,
+  light: $gray-100,
+  dark: $gray-800
+) !default;
+
+$button-color-primary: #92c02e;
+
+// Border Radius Override
+$enable-rounded: false;
+
+// // Font Size Overrides
+$h1-font-size: 1.8rem;
+$h2-font-size: 1.6rem;
+$h3-font-size: 1.4rem;
+$h4-font-size: 1.2rem;
+$h5-font-size: 1.1rem;
+$h6-font-size: 1.0rem;
+
+// Links
+
+$link-color: $secondary-color;
+
+// Pagination
+
+$pagination-active-border-color: $button-color-primary;
+$pagination-active-bg: $button-color-primary;
+
+// Badges
+
+$badge-color: $gray-800;

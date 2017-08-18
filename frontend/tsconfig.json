@@ -5,6 +5,16 @@
     "strictNullChecks": true,
     "target": "es5",
     "sourceMap": true,
-    "lib": ["es5", "es2015.core", "es2015.promise", "dom"]
+    "lib": ["es5", "es2015.core", "es2015.promise", "dom"],
+    "typeRoots": [
+      "./node_modules/@types/"
+    ],
+    "baseUrl": "./src",
+    "paths": {
+      "components/*": ["components/*"],
+      "pages/*": ["pages/*"],
+      "api/*": ["api/*"],
+      "store/*": ["store/*"]
+    }
   }
 }

@@ -1,0 +1,22 @@
+{
+  "transform": {
+    ".*\\.(ts|vue)$": "<rootDir>/node_modules/vue-typescript-jest/preprocessor.js"
+  },
+  "testRegex": "(/__tests__/.*|\\.(test|spec))\\.(ts|tsx|js)$",
+  "moduleFileExtensions": [
+    "ts",
+    "js",
+    "vue"
+  ],
+  "moduleNameMapper": {
+    "^vue$": "vue/dist/vue.js",
+    "^api(.*)$": "<rootDir>/src/api$1",
+    "^components(.*)$": "<rootDir>/src/components$1",
+    "^pages(.*)$": "<rootDir>/src/pages$1",
+    "^store(.*)$": "<rootDir>/src/store$1"
+  },
+  "moduleDirectories": [
+    "node_modules",
+    "<path_to_your_sources>"
+  ]
+}

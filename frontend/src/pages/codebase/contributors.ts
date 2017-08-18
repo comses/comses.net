@@ -3,14 +3,14 @@ import * as Vue from 'vue'
 import { CalendarEvent, CodebaseContributor, Contributor, emptyContributor, emptyReleaseContributor } from '../../store/common'
 import { api, api_base } from 'api/index'
 import { store } from './store'
-import Checkbox from 'components/forms/checkbox.vue'
-import Datepicker from 'components/forms/datepicker.vue'
-import Input from 'components/forms/input.vue'
-import Markdown from 'components/forms/markdown.vue'
-import MessageDisplay from 'components/message_display.vue'
-import EditItems from 'components/edit_items.vue'
+import Checkbox from 'components/forms/checkbox'
+import Datepicker from 'components/forms/datepicker'
+import Input from 'components/forms/input'
+import Markdown from 'components/forms/markdown'
+import MessageDisplay from 'components/message_display'
+import EditItems from 'components/edit_items'
 import Multiselect from 'vue-multiselect'
-import Username from 'components/username.vue'
+import Username from 'components/username'
 import * as draggable from 'vuedraggable'
 import * as _ from 'lodash'
 import * as yup from 'yup'
@@ -57,7 +57,7 @@ enum FormContributorState {
         <label class="form-control-label">Current Release Contributors</label>
         <draggable v-model="releaseContributors">
             <ul v-for="releaseContributor in releaseContributors" :key="releaseContributor._id" class="list-group">
-                <li class="list-group-item justify-content-between">
+                <li class="list-group-item d-flex justify-content-between">
                     {{ releaseContributorLabel(releaseContributor) }}
                     <div v-show="matchesState(['list'])">
                         <span class="badge badge-default badge-pill" @click="editReleaseContributor(releaseContributor)">
@@ -85,8 +85,8 @@ enum FormContributorState {
             <div class="card-header">
                 Release Contributor
             </div>
-            <div class="card-block">
-                <div :class="['form-group', contributorPresenceError ? 'has-danger' : '' ]">
+            <div class="card-body">
+                <div :class="['form-group', contributorPresenceError ? 'child-is-invalid' : '' ]">
                     <label class="form-control-label">Contributor</label>
                     <div class="row">
                         <div class="col-11">
@@ -111,7 +111,7 @@ enum FormContributorState {
                             <button type="button" class="btn btn-primary" @click="editContributor()"><span class="fa fa-plus"></span></button>
                         </div>
                     </div>
-                    <div class="form-control-feedback form-control-danger" v-show="contributorPresenceError">
+                    <div class="invalid-feedback" v-show="contributorPresenceError">
                         {{ contributorPresenceError }}
                     </div>
                 </div>
@@ -119,7 +119,7 @@ enum FormContributorState {
                     <div class="card-header">
                         Create a contributor
                     </div>
-                    <div class="card-block">
+                    <div class="card-body">
                         <c-username name="username" v-model="releaseContributor.contributor.user" label="User Name" help="Find a matching user here">
                         </c-username>
                         <c-input name="given_name" v-model="releaseContributor.contributor.given_name" label="Given Name" :errorMsgs="contributorValidationErrors.given_name">
@@ -132,7 +132,7 @@ enum FormContributorState {
                             @create="releaseContributor.contributor.affiliations.push($event)" 
                             @remove="releaseContributor.contributor.affiliations.splice($event, 1)" 
                             @modify="releaseContributor.contributor.affiliations.splice($event.index, 1, $event.value)"
-                            name="affiliations" placeholder="Add affiliation">
+                            name="affiliations" placeholder="Add affiliation" :errorMsgs="contributorValidationErrors.affiliations">
                             <label class="form-control-label" slot="label">Affiliations</label>
                             <small class="form-text text-muted" slot="help">The institution(s) and other groups you are affiliated with</small>
                         </c-edit-affiliations>

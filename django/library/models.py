@@ -571,7 +571,7 @@ class ReleaseContributor(models.Model):
         help_text=_(
             'Roles from https://www.ngdc.noaa.gov/metadata/published/xsd/schema/resources/Codelist/gmxCodelists.xml#CI_RoleCode'
         )
-    ))
+    ), default=list)
     index = models.PositiveSmallIntegerField(help_text=_('Ordering field for codebase contributors'))
 
     def __str__(self):

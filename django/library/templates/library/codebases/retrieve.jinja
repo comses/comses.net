@@ -39,7 +39,7 @@
         </div>
     </div>
     <div class='card-metadata'>
-        <div class='card-block'>
+        <div class='card-body'>
             <h2 class='card-title'>Cite this Model</h2>
             <p class='card-text'>
                 {{ current_version.citation_text|markdown }}
@@ -48,7 +48,7 @@
     </div>
     {% if references_text %}
         <div class='card-metadata'>
-            <div class='card-block'>
+            <div class='card-body'>
                 <h2 class='card-title'>
                     {% if replication %}
                         This is a replication of a previously published model:
@@ -64,7 +64,7 @@
     {% endif %}
     {% if associated_publication_text %}
         <div class='card-metadata'>
-            <div class='card-block'>
+            <div class='card-body'>
                 <h2 class='card-title'>Associated Publication</h2>
                 <p class='card-text'>
                 {{ associated_publication_text|markdown }}
@@ -96,7 +96,7 @@
         </div>
         <div class='tab-pane' id='details' role='tabpanel'>
             <div class='card-metadata'>
-                <div class='card-block'>
+                <div class='card-body'>
                     <div class='section'>
                         <b class='card-title'>Submitter:</b> {{ member_profile_href(submitter) }}
                     </div>
@@ -151,7 +151,7 @@
 
 {% block sidebar %}
     <div class='card-metadata'>
-        <div class='card-block'>
+        <div class='card-body'>
             <div class='section'>
                 <b class="card-title">Authors</b>
                 <p class='card-text'>
@@ -196,7 +196,7 @@
         </div>
     </div>
     <div class="card-metadata">
-        <div class="card-block">
+        <div class="card-body">
             {% if has_change_perm %}
                 <a href="{{ url('library:codebase-update', identifier=identifier) }}" class="col-12 my-1 btn btn-primary">Edit</a>
             {% endif %}

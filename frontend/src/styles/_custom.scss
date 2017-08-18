@@ -1,51 +1,30 @@
-$rules-color: lighten(#ced9ee, 5%);
-/*
- * Bootstrap Overrides
- */
-$text-color: #6d6c71;
-$link-color: #22b1e6;
-$brand-primary: #92c02e;
-$link-hover: darken($text-color, 20%);
-$button-hover: darken($brand-primary, 20%);
-$white: #f0f4fa;
-$body-bg: $white;
-$light-blue-gray: #ced9ee;
-$default-padding: 60px;
-
-// Button Overrides
-$btn-secondary-bg: $link-color;
-$btn-secondary-color: #fff;
-$btn-secondary-border: $link-color;
-
-// Font Size Overrides
-$font-size-h1: 1.8rem;
-$font-size-h2: 1.6rem;
-$font-size-h3: 1.4rem;
-$font-size-h4: 1.2rem;
-$font-size-h5: 1.1rem;
-$font-size-h6: 1.0rem;
-
-// Components overrides
-$border-radius: .0rem;
-$border-radius-sm: .0rem;
-
 @import url('https://fonts.googleapis.com/css?family=Open+Sans');
+
+$default-padding: 60px;
+$text-color: #6d6c71;
+$mission-color: #ced9ee;
+$rules-color: lighten(#ced9ee, 5%);
 
 $font-family-base: 'Open Sans', Roboto, 'Helvetica Neue', sans-serif;
 
-@import "../node_modules/bootstrap/scss/bootstrap";
+.btn-primary {
+  @include button-variant($button-color-primary, $button-color-primary);
+  color: $white;
 
-$fa-font-path: '../node_modules/font-awesome/fonts/';
-@import '../node_modules/font-awesome/scss/font-awesome';
-// Need to fix webpack build so css in vue files is included. This is a temporary workaround
-@import '../node_modules/vue-multiselect/dist/vue-multiselect.min.css';
+  &:hover {
+    color: $white;
+  }
+}
+
+$fa-font-path: '~font-awesome/fonts/';
+@import '~font-awesome/scss/font-awesome';
 
 @font-face {
   font-family: 'Alte-DIN-1451-Mittelschrift';
-  src: url('./assets/fonts/Alte-DIN-1451-Mittelschrift.ttf.woff') format('woff'),
-  url('./assets/fonts/Alte-DIN-1451-Mittelschrift.ttf.svg#Alte-DIN-1451-Mittelschrift') format('svg'),
-  url('./assets/fonts/Alte-DIN-1451-Mittelschrift.ttf.eot'),
-  url('./assets/fonts/Alte-DIN-1451-Mittelschrift.ttf.eot?#iefix') format('embedded-opentype');
+  src: url('../assets/fonts/Alte-DIN-1451-Mittelschrift.ttf.woff') format('woff'),
+  url('../assets/fonts/Alte-DIN-1451-Mittelschrift.ttf.svg#Alte-DIN-1451-Mittelschrift') format('svg'),
+  url('../assets/fonts/Alte-DIN-1451-Mittelschrift.ttf.eot'),
+  url('../assets/fonts/Alte-DIN-1451-Mittelschrift.ttf.eot?#iefix') format('embedded-opentype');
   font-weight: normal;
   font-style: normal;
 }
@@ -55,17 +34,13 @@ $fa-font-path: '../node_modules/font-awesome/fonts/';
   text-shadow: none;
   background-color: transparent;
   border: 0;
-  background-image: url("./assets/images/comses-logo.svg");
+  background-image: url("../assets/images/comses-logo.svg");
   background-position: center;
   background-repeat: no-repeat;
   background-size: 280px 70px;
   display: inline-block;
   height: 70px !important;
   width: 280px !important;
-}
-
-.has-errors {
-  @extend .has-danger;
 }
 
 .page {
@@ -141,7 +116,7 @@ h2.discourse-comments {
 .landing-page-introduction {
   overflow: hidden;
   margin-top: 105px;
-  background: url("./assets/images/background-introduction.png") repeat top center;
+  background: url("../assets/images/background-introduction.png") repeat top center;
   padding-top: 40px;
   padding-bottom: 60px;
   text-align: center;
@@ -166,7 +141,7 @@ h2.discourse-comments {
 .introduction {
   overflow: hidden;
   margin-top: 105px;
-  background: url("./assets/images/background-introduction-200.png") repeat top center;
+  background: url("../assets/images/background-introduction-200.png") repeat top center;
   text-align: left;
   vertical-align: middle;
   height: 125px;
@@ -229,7 +204,7 @@ ol.breadcrumb {
 }
 
 .mission {
-  background-color: $light-blue-gray;
+  background-color: $mission-color;
   text-align: center;
   vertical-align: middle;
   padding-top: $default-padding;
@@ -241,7 +216,7 @@ div.activity {
 }
 
 .featured-content {
-  background: url("./assets/images/background-featured-content.png") repeat top center;
+  background: url("../assets/images/background-featured-content.png") repeat top center;
   overflow: hidden;
   padding-top: 40px;
   padding-bottom: 40px;
@@ -316,7 +291,7 @@ nav {
 
 footer.footer {
   padding: 75px 0;
-  background-image: url("./assets/images/background-footer.png");
+  background-image: url("../assets/images/background-footer.png");
   color: $white;
   .row {
     padding-top: 20px;
@@ -347,7 +322,7 @@ footer.footer {
   }
 
   .title {
-    @extend .card-block;
+    @extend .card-body;
     padding: 0;
 
     h1 {
@@ -419,7 +394,7 @@ footer.footer {
   }
 
   .title {
-    @extend .card-block;
+    @extend .card-body;
     padding-top: 1rem;
     padding-bottom: 0rem;
     font-size: 1.2rem;
@@ -434,14 +409,6 @@ footer.footer {
   .label {
     @extend .card-title;
   }
-}
-
-.datepicker-clear-button {
-  @extend .input-group-addon;
-}
-
-.datepicker-clear-button:hover {
-  color: red;
 }
 
 blockquote {
