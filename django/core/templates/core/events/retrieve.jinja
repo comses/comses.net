@@ -17,14 +17,6 @@
         <h1>{{ title }}</h1>
         {{ description|markdown }}
     </div>
-    <div class="btn-group">
-        {% if has_change_perm %}
-            <a type="button" class="btn btn-primary btn-sm" href="{{ url('home:event-edit', pk=id) }}">Edit</a>
-        {% endif %}
-        {% if has_delete_perm %}
-            <a type="button" class="btn btn-danger btn-sm" href="{{ url('home:event-detail', pk=id) }}">Delete</a>
-        {% endif %}
-    </div>
 {% endblock %}
 
 {% block sidebar %}
@@ -51,10 +43,11 @@
     <div class="card-metadata">
         <div class="card-body">
             {% if has_change_perm %}
-                <a href="{{ url('library:codebase-update', identifier=identifier) }}" class="col-12 my-1 btn btn-primary">Edit</a>
+                <a class="col-12 my-1 btn btn-primary" href="{{ url('home:event-edit', pk=id) }}">Edit</a>
             {% endif %}
-            <button type="button" class="col-12 my-1 btn btn-primary">Download</button>
-            <button type="button" class="col-12 my-1 btn btn-primary">Follow</button>
+            {% if has_delete_perm %}
+                <button type="button" class="col-12 my-1 btn btn-danger" href="{{ url('home:event-detail', pk=id) }}">Delete</button>
+            {% endif %}
         </div>
     </div>
     {{ share_card(absolute_url) }}
