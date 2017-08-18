@@ -19,7 +19,7 @@
     </div>
     <div class="btn-group">
         {% if has_change_perm %}
-            <a type="button" class="btn btn-primary btn-sm" href="{{ url('home:event-update', pk=id) }}">Edit</a>
+            <a type="button" class="btn btn-primary btn-sm" href="{{ url('home:event-edit', pk=id) }}">Edit</a>
         {% endif %}
         {% if has_delete_perm %}
             <a type="button" class="btn btn-danger btn-sm" href="{{ url('home:event-detail', pk=id) }}">Delete</a>
@@ -46,6 +46,15 @@
                 <b class="card-title">End Date</b>
                 <p class="card-text">{{ end_date|truncate_midnight }}</p>
             </div>
+        </div>
+    </div>
+    <div class="card-metadata">
+        <div class="card-body">
+            {% if has_change_perm %}
+                <a href="{{ url('library:codebase-update', identifier=identifier) }}" class="col-12 my-1 btn btn-primary">Edit</a>
+            {% endif %}
+            <button type="button" class="col-12 my-1 btn btn-primary">Download</button>
+            <button type="button" class="col-12 my-1 btn btn-primary">Follow</button>
         </div>
     </div>
     {{ share_card(absolute_url) }}

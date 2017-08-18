@@ -20,7 +20,7 @@
     </div>
     <div class="btn-group">
         {% if has_change_perm %}
-            <a type="button" class="btn btn-primary btn-sm" href="{{ url('home:job-update', pk=id) }}">Edit</a>
+            <a type="button" class="btn btn-primary btn-sm" href="{{ url('home:job-edit', pk=id) }}">Edit</a>
         {% endif %}
         {% if has_delete_perm %}
             <a type="button" class="btn btn-danger btn-sm" href="{{ url('home:job-detail', pk=id) }}">Delete</a>
