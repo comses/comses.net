@@ -14,22 +14,30 @@ import Username from 'components/username'
 import * as draggable from 'vuedraggable'
 import * as _ from 'lodash'
 import * as yup from 'yup'
+import { createFormValidator } from '../form'
 
 const listContributors = _.debounce((state, self) => api.contributors.list(state).then(data => self.matchingContributors = data.results), 800);
 
+const userSchema = yup.object().shape({
+    full_name: yup.string(),
+    insitution_name: yup.string(),
+    institution_url: yup.string(),
+    profile_url: yup.string(),
+    username: yup.string()
+});
+
 const contributorSchema = yup.object().shape({
-    user: yup.object().shape({
-        full_name: yup.string(),
-        insitution_name: yup.string(),
-        institution_url: yup.string(),
-        profile_url: yup.string(),
-        username: yup.string()
-    }),
+    user: yup.mixed().test('is-not-null', '${path} must have a value', value => !_.isNull(value)).label('this'),
     given_name: yup.string().required(),
     family_name: yup.string().required(),
     middle_name: yup.string(),
-    affilitions: yup.array().of(yup.string()).min(1),
+    affiliations: yup.array().of(yup.string()).min(1),
     type: yup.mixed().oneOf(['person', 'organization'])
+});
+
+const releaseContributorSchema = yup.object().shape({
+    contributor: contributorSchema,
+    roles: yup.array().of(yup.string()).min(1).label('affiliations')
 });
 
 const roleLookup = {
@@ -121,23 +129,26 @@ enum FormContributorState {
                         Create a contributor
                     </div>
                     <div class="card-body">
-                        <c-username name="username" v-model="releaseContributor.contributor.user" label="User Name" help="Find a matching user here">
+                        <c-username name="username" v-model="contributor.user"
+                            :errorMsgs="contributorErrors.user"
+                            label="User Name" help="Find a matching user here">
                         </c-username>
-                        <c-input name="given_name" v-model="releaseContributor.contributor.given_name" label="Given Name" :errorMsgs="contributorValidationErrors.given_name">
+                        <c-input name="given_name" v-model="contributor.given_name" label="Given Name" :errorMsgs="contributorErrors.given_name">
                         </c-input>
-                        <c-input name="middle_name" v-model="releaseContributor.contributor.middle_name" label="Middle Name">
+                        <c-input name="middle_name" v-model="contributor.middle_name" label="Middle Name">
                         </c-input>
-                        <c-input name="family_name" v-model="releaseContributor.contributor.family_name" label="Family Name" :errorMsgs="contributorValidationErrors.family_name">
+                        <c-input name="family_name" v-model="contributor.family_name" label="Family Name" :errorMsgs="contributorErrors.family_name">
                         </c-input>
-                        <c-edit-affiliations :value="releaseContributor.contributor.affiliations"
-                            @create="releaseContributor.contributor.affiliations.push($event)" 
-                            @remove="releaseContributor.contributor.affiliations.splice($event, 1)" 
-                            @modify="releaseContributor.contributor.affiliations.splice($event.index, 1, $event.value)"
-                            name="affiliations" placeholder="Add affiliation" :errorMsgs="contributorValidationErrors.affiliations">
-                            <label class="form-control-label" slot="label">Affiliations</label>
-                            <small class="form-text text-muted" slot="help">The institution(s) and other groups you are affiliated with</small>
+                        <c-edit-affiliations :value="contributor.affiliations"
+                            @create="contributor.affiliations.push($event)"
+                            @remove="contributor.affiliations.splice($event, 1)"
+                            @modify="contributor.affiliations.splice($event.index, 1, $event.value)"
+                            name="affiliations" placeholder="Add affiliation"
+                            :errorMsgs="contributorErrors.affiliations"
+                            label="Affiliations"
+                            help="The institution(s) and other groups you are affiliated with. Press enter to add.">
                         </c-edit-affiliations>
-                        <c-input type="select" name="type" v-model="releaseContributor.contributor.type" label="Contributor Type">
+                        <c-input type="select" name="type" v-model="contributor.type" label="Contributor Type" :errorMsgs="contributorErrors.type">
                         </c-input>
                         <button type="button" class="btn btn-primary" @click="saveContributor">Save</button>
                         <button type="button" class="btn btn-primary" @click="cancelContributor">Cancel</button>
@@ -168,7 +179,13 @@ enum FormContributorState {
         'c-username': Username,
         draggable,
         Multiselect,
-    }
+    },
+    mixins: [
+        createFormValidator(contributorSchema,
+            { errorAttributeName: 'contributorErrors', stateAttributeName: 'contributor'},
+            { validationMethodName: 'validateContributor', clearErrorsMethodName: 'clearContributorErrors'}),
+
+    ]
 })
 class EditContributors extends Vue {
     initialize() {
@@ -180,17 +197,12 @@ class EditContributors extends Vue {
     }
 
     state: FormContributorState = FormContributorState.list;
-    
+
     releaseContributors: Array<CodebaseContributor> = [];
     releaseContributor: CodebaseContributor = emptyReleaseContributor();
     releaseContributorErrors = {};
 
-    contributor: Contributor = emptyContributor(true);
     contributorPresenceError: string = '';
-    contributorValidationErrors = {
-        family_name: [],
-        given_name: [],
-    };
     message: string = '';
 
     isLoadingContributors: boolean = false;
@@ -238,11 +250,12 @@ class EditContributors extends Vue {
 
     contributorLabel(contributor: Contributor) {
         let name = [contributor.given_name, contributor.family_name].filter(el => !_.isEmpty(el)).join(' ');
-        if (!_.isNull(contributor.user)) {
-            name = name === '' ? contributor.user.full_name : name;
-            const username = contributor.user.username;
-            
-            return !_.isNull(username) ? `${name} (${contributor.user.username})`: name; 
+        const user = contributor.user;
+        if (!_.isNull(user)) {
+            name = name === '' ? (<any>user).full_name : name;
+            const username = (<any>user).username;
+
+            return !_.isNull(username) ? `${name} (${username})`: name;
         }
         return name;
     }
@@ -275,7 +288,7 @@ class EditContributors extends Vue {
     editReleaseContributor(releaseContributor?: CodebaseContributor) {
         this._assertState([FormContributorState.list]);
         if (releaseContributor === undefined) {
-            this.releaseContributor = emptyReleaseContributor()
+            this.releaseContributor = emptyReleaseContributor();
         } else {
             this.releaseContributor = _.merge({}, releaseContributor);
         }
@@ -293,7 +306,7 @@ class EditContributors extends Vue {
         this.createOrReplaceReleaseContributor(this.releaseContributor);
         this.releaseContributor = emptyReleaseContributor();
         this.state = FormContributorState.list;
-    }    
+    }
 
     deleteReleaseContributor(_id: string) {
         const index = _.findIndex(this.releaseContributors, rc => rc._id === _id);
@@ -303,7 +316,7 @@ class EditContributors extends Vue {
     // Contributor
 
     get formContributor() {
-        /* Vue-Multiselect needs object to be null to display placeholder text contributor is inspected for validity to 
+        /* Vue-Multiselect needs object to be null to display placeholder text contributor is inspected for validity to
         decide whether or not to return null */
         if (!_.isUndefined(this.releaseContributor.contributor.valid) &&
             !this.releaseContributor.contributor.valid) {
@@ -319,32 +332,6 @@ class EditContributors extends Vue {
         }
     }
 
-    validateFamilyName(family_name: string): Promise<boolean> {
-        const familyNameSchema = yup.reach(contributorSchema, 'family_name',);
-        return familyNameSchema.validate(family_name)
-            .then(_ => {
-                this.contributorValidationErrors.family_name = [];
-                return false;
-            })
-            .catch(err => {
-                this.contributorValidationErrors.family_name = err.errors;
-                return true;
-            });
-    }
-
-    validateGivenName(given_name: string): Promise<boolean> {
-        const familyNameSchema = yup.reach(contributorSchema, 'given_name');
-        return familyNameSchema.validate(given_name)
-            .then(_ => { 
-                this.contributorValidationErrors.given_name = []
-                return false;
-            })
-            .catch(err => {
-                this.contributorValidationErrors.given_name = err.errors;
-                return true;
-            }); 
-    }
-
     validateContributorPresence(contributor: Contributor | null): boolean {
         if (_.isNull(contributor)) {
             this.contributorPresenceError = 'Contributor must be set'
@@ -355,55 +342,34 @@ class EditContributors extends Vue {
         }
     }
 
-    isValidContributor(): Promise<boolean> {
-        return Promise.all([
-            this.validateFamilyName(this.releaseContributor.contributor.family_name),
-            this.validateGivenName(this.releaseContributor.contributor.given_name),
-        ]).then(validations => _.sum(validations) === 0)
-    }
-
-    @Watch('releaseContributor.contributor.family_name')
-    onFamilyNameChange(family_name: string) {
-        this.validateFamilyName(family_name);
-    }
-
-    @Watch('releaseContributor.contributor.given_name')
-    onGivenNameChange(given_name: string) {
-        this.validateGivenName(given_name);
-    }
-
     @Watch('formContributor')
     onContributorChange(contributor: Contributor | null) {
         this.validateContributorPresence(contributor);
     }
 
-    resetContributorErrors() {
-        this.contributorValidationErrors.family_name = [];
-        this.contributorValidationErrors.given_name = [];
-        this.contributorPresenceError = '';
-    }
-
     editContributor(contributor?: Contributor) {
         this._assertState([FormContributorState.editReleaseContributor]);
         if (contributor !== undefined) {
-            this.releaseContributor.contributor = contributor;
+            (<any>this).contributor = _.merge({}, this.releaseContributor.contributor);
+
         }
         this.state = FormContributorState.editContributor;
     }
 
     cancelContributor() {
         this._assertState([FormContributorState.editContributor]);
-        this.resetContributorErrors();
         this.releaseContributor.contributor = emptyContributor();
+        (<any>this).clearContributorErrors();
         this.state = FormContributorState.editReleaseContributor;
     }
 
     saveContributor() {
         this._assertState([FormContributorState.editContributor]);
-        this.isValidContributor().then(is_valid => {
-            if (is_valid) {
-                this.state = FormContributorState.editReleaseContributor;
-            }
+        (<any>this).validateContributor().then(() => {
+            this.state = FormContributorState.editReleaseContributor;
+            this.releaseContributor.contributor = _.merge({}, (<any>this).contributor);
+            (<any>this).contributor = emptyContributor();
+            (<any>this).clearContributorErrors();
         })
     }
 

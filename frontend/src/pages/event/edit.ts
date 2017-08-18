@@ -11,15 +11,15 @@ import {Component, Prop} from "vue-property-decorator";
 import * as yup from 'yup'
 
 const schema = yup.object().shape({
-    description: yup.string().required().meta({initial: ''}),
-    summary: yup.string().meta({initial: ''}),
-    title: yup.string().meta({initial: ''}),
-    tags: yup.array().of(yup.object().shape({ name: yup.string().required()})).meta({initial: []}),
-    location: yup.string().meta({initial: ''}),
-    early_registration_deadline: yup.date().nullable().meta({initial: null}),
-    submission_deadline: yup.date().nullable().meta({initial: null}),
-    start_date: yup.date().required().meta({initial: null}),
-    end_date: yup.date().meta({initial: null})
+    description: yup.string().required(),
+    summary: yup.string(),
+    title: yup.string(),
+    tags: yup.array().of(yup.object().shape({ name: yup.string().required()})),
+    location: yup.string(),
+    early_registration_deadline: yup.date().nullable(),
+    submission_deadline: yup.date().nullable(),
+    start_date: yup.date().required(),
+    end_date: yup.date()
 });
 
 @Component({

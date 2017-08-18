@@ -11,6 +11,8 @@ import Multiselect from 'vue-multiselect'
 import Tagger from 'components/tagger'
 import { exposeComputed } from './store'
 import * as yup from 'yup'
+import { createFormValidator } from '../form'
+
 
 const schema = yup.object().shape({
     description: yup.string().required().label('this'),
@@ -25,19 +27,11 @@ const schema = yup.object().shape({
     }).label('this')
 });
 
-function validate(self, field_name, value) {
-    yup.reach(schema, field_name).validate(value)
-        .then(value => self.errors[field_name] = [])
-        .catch(ve => { 
-            self.errors[field_name] = ve.errors
-        });
-}
-
 @Component(<any>{
     template: `<div>
         <c-textarea v-model="state.description" :errorMsgs="errors.description" name="description" rows="3" label="Description">
         </c-textarea>
-        <c-datepicker v-model="state.embargo_end_Date" :errorMsgs="errors.embargo_end_date" name="embargoEndDate" :clearButton="true">
+        <c-datepicker v-model="state.embargo_end_date" :errorMsgs="errors.embargo_end_date" name="embargoEndDate" :clearButton="true">
             <label class="form-control-label" slot="label">Embargo End Date</label>
             <small class="form-text text-muted" slot="help">The date your release is automatically published</small>
         </c-datepicker>
@@ -85,14 +79,16 @@ function validate(self, field_name, value) {
         'c-textarea': TextArea,
         'c-tagger': Tagger,
         Multiselect
-    }
+    },
+    mixins: [
+        createFormValidator(schema,
+            { errorAttributeName: 'errors', stateAttributeName: 'state'},
+            { validationMethodName: 'validate', clearErrorsMethodName: 'clear'})
+    ]
 })
 export default class Description extends Vue {
-    @Prop
-    initialData: object;
-
-    mounted() {
-        this.state = <any>_.merge({}, this.initialData);
+    created() {
+        (<any>this).state = this.$store.getters.detail;
     }
 
     get identity() {
@@ -100,26 +96,6 @@ export default class Description extends Vue {
     }
     isDirty = false;
 
-    state = {
-        description: '',
-        documentation: '',
-        embargo_end_date: null,
-        os: '',
-        platforms: [],
-        programming_languages: [],
-        license: {
-            name: 'GPL v3',
-            url: 'https://opensource.org/licenses/gpl-license',
-        },
-        live: false
-    };
-    errors = {
-        description: [],
-        embargo_end_date: [],
-        license: [],
-        platforms: [],
-        programming_languages: []
-    };
     message: string = '';
 
     licenseOptions: Array<{ name: string, url: string }> = [
@@ -145,48 +121,27 @@ export default class Description extends Vue {
     matchingProgrammingLanguages = [{ name: 'NetLogo' }, { name: 'Python'}];
     isLoadingProgrammingLanguages = false;
 
-    @Watch('state.description')
-    descriptionErrors(description) {
-        validate(this, 'description', description);
-    }
-
-    @Watch('state.programming_languages')
-    programmingLanguageErrors(programming_languages) {
-        validate(this, 'programming_languages', programming_languages);
-    }
-
-    @Watch('state.platforms')
-    platformErrors(platforms) {
-        validate(this, 'platforms', platforms);
-    }
-
     updateOs(value) {
-        this.state.os = value.name
+        (<any>this).state.os = value.name
     }
 
     updatePlatforms(value) {
-        this.state.platforms = value.name
+        (<any>this).state.platforms = value.name
     }
 
     updateProgrammingLanguages(value) {
-        this.state.programming_languages = value.name;
+        (<any>this).state.programming_languages = value.name;
     }
 
     save() {
         const { identifier, version_number } = this.identity;
-        schema.validate(this.state, {abortEarly: false })
-            .then(state =>
-                api_base.put(`/codebases/${identifier}/releases/${version_number}/`, state)
+        (<any>this).validate()
+            .then(() =>
+                api_base.put(`/codebases/${identifier}/releases/${version_number}/`, (<any>this).state)
                     .then(response => this.$store.dispatch('getCodebaseRelease', { identifier, version_number }),
-                          _ => this.message = 'Submission failure'))
-            .catch(ve => { 
-                if (ve instanceof yup.ValidationError) {
-                    ve.inner.forEach(ve_inner => {
-                        this.errors[ve_inner.path] = [ve_inner.message];
-                    })
-                } else {
-                    console.error(ve);
-                }
+                        () => this.message = 'Submission failure'))
+            .catch(ve => {
+                this.message = 'Validation errors';
             });
     }
 }
