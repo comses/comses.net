@@ -95,7 +95,7 @@ class CodebaseReleaseViewSet(viewsets.ModelViewSet):
     @detail_route(methods=['delete', 'get'],
                   parser_classes=(parsers.JSONParser,),
                   url_name='download',
-                  url_path='(?P<upload_type>[\.\w]+)/(?P<path>([\.\w]+/)*[\.\w]+)')
+                  url_path='(?P<upload_type>[\.\w]+)/(?P<path>([\.\w]+/)*[\.\w\-]+)')
     def download(self, request, identifier, version_number, upload_type, path):
         codebase_release = self.get_object()
         if request.method == 'DELETE':

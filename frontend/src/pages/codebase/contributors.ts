@@ -1,7 +1,7 @@
 import { Prop, Component, Watch } from 'vue-property-decorator'
 import * as Vue from 'vue'
 import { CalendarEvent, CodebaseContributor, Contributor, emptyContributor, emptyReleaseContributor } from '../../store/common'
-import { api, api_base } from 'api'
+import { codebaseReleaseAPI, contributorAPI } from 'api'
 import { store } from './store'
 import Checkbox from 'components/forms/checkbox'
 import Datepicker from 'components/forms/datepicker'
@@ -16,7 +16,7 @@ import * as _ from 'lodash'
 import * as yup from 'yup'
 import { createFormValidator } from '../form'
 
-const listContributors = _.debounce((state, self) => api.contributors.list(state).then(data => self.matchingContributors = data.results), 800);
+const listContributors = _.debounce((state, self) => contributorAPI.list(state).then(r => self.matchingContributors = r.data.results), 800);
 
 const userSchema = yup.object().shape({
     full_name: yup.string(),
@@ -35,7 +35,7 @@ const contributorSchema = yup.object().shape({
     type: yup.mixed().oneOf(['person', 'organization'])
 });
 
-const releaseContributorSchema = yup.object().shape({
+export const releaseContributorSchema = yup.object().shape({
     contributor: contributorSchema,
     roles: yup.array().of(yup.string()).min(1).label('affiliations')
 });
@@ -51,7 +51,7 @@ const roleLookup = {
     collaberator: 'Collaborator',
     funder: 'Funder',
     copyrightholder: 'Copyright Holder'
-}
+};
 
 enum FormContributorState {
     list,
@@ -268,7 +268,7 @@ class EditContributors extends Vue {
 
     save() {
         const { identifier, version_number } = this.identity;
-        api_base.put(`/codebases/${identifier}/releases/${version_number}/contributors/`, this.releaseContributors)
+        codebaseReleaseAPI.updateContributors({identifier, version_number}, this.releaseContributors)
             .catch(err => this.message = 'Submission Error')
             .then(response => this.$store.dispatch('getCodebaseRelease', {identifier, version_number}))
             .then(_ => this.initialize());

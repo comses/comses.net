@@ -2,15 +2,11 @@ import { Component, Prop } from 'vue-property-decorator'
 import * as Vue from 'vue'
 import Vuex from 'vuex'
 import VueRouter from 'vue-router'
-import { CodebaseReleaseEdit } from 'store/common'
-import { api } from 'api'
 
 import Contributors from './contributors'
-import Submit from './submit'
 import Upload from './upload'
-import CodebaseMetadata from './codebase_metadata'
 import CodebaseReleaseMetadata from './detail'
-import { store, exposeComputed } from './store'
+import { store } from './store'
 
 Vue.use(Vuex);
 Vue.use(VueRouter);

@@ -1,9 +1,8 @@
 import * as Vue from 'vue'
 import Vuex from 'vuex'
 import { CodebaseReleaseStore, CodebaseContributor } from '../../store/common'
-import { api_base } from '../../api/index'
+import { codebaseReleaseAPI } from 'api'
 import * as _ from 'lodash'
-import axios from 'axios'
 import * as yup from 'yup'
 
 const initialState: CodebaseReleaseStore = {
@@ -197,7 +196,7 @@ export const store = {
     },
     actions: {
         getCodebaseRelease(context, { identifier, version_number }) {
-            return api_base.get(`/codebases/${identifier}/releases/${version_number}/`).then(
+            return codebaseReleaseAPI.retrieve({identifier, version_number}).then(
                 response => context.commit('setCodebaseRelease', response.data));
         },
 
@@ -214,28 +213,19 @@ export const store = {
             validation_error => context.commit('setValidationErrorAtPath', { path, value: validation_error.errors })), 800),
 
         getFiles(context, upload_type) {
-            return api_base.get(`/codebases/${context.state.release.codebase.identifier}/releases/${context.state.release.version_number}/${upload_type}/`).then(
+            return codebaseReleaseAPI.listFiles({
+                identifier: context.state.release.codebase.identifier,
+                version_number: context.state.release.version_number, upload_type}).then(
                 response => context.commit('setFiles', { upload_type, value: response.data }));
         },
 
         deleteFile(context, { upload_type, path }: { upload_type: string, path: string }) {
-            api_base.delete(path).then(response => context.commit('setFiles', { upload_type, value: response.data }));
+            codebaseReleaseAPI.deleteFile({path}).then(response => context.commit('setFiles', { upload_type, value: response.data }));
         },
 
         initialize(context, { identifier, version_number }) {
             return context.dispatch('getCodebaseRelease', { identifier, version_number })
-                .then(r => axios.all([context.dispatch('getFiles', 'data'), context.dispatch('getFiles', 'documentation'), context.dispatch('getFiles', 'sources')]));
-        },
-
-        submitIfValid(context) {
-            console.log(context.state.release);
-            return schema.validate(context.state.release, { recurse: true, abortEarly: false, stripUnknown: true })
-                .then(release => context.dispatch('submit', release))
-                .catch(ve => context.commit('setValidationErrors', ve));
-        },
-
-        submit(context) {
-            return api_base.put(`/codebases/${context.state.release.codebase.identifier}/releases/${context.state.release.version_number}/`, context.state.release);
+                .then(r => Promise.all([context.dispatch('getFiles', 'data'), context.dispatch('getFiles', 'documentation'), context.dispatch('getFiles', 'sources')]));
         }
     }
 };

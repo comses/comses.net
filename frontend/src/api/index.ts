@@ -3,6 +3,7 @@ import {AxiosResponse} from "axios";
 import * as _ from 'lodash'
 import * as queryString from 'query-string'
 import {api_base} from "api/connection"
+import {createDefaultValue} from "pages/form";
 
 export const eventAPI = {
     detailUrl(id) {
@@ -74,18 +75,32 @@ export const codebaseReleaseAPI = {
     detailUrl({identifier, version_number}) {
         return `${__BASE_URL__}/codebases/${identifier}/releases/${version_number}/`;
     },
+    listFileUrl({identifier, version_number, upload_type}) {
+        return `${this.detailUrl({identifier, version_number})}${upload_type}/`;
+    },
     updateContributorUrl({identifier, version_number}) {
-        return `${this.detailUrl(identifier, version_number)}contributors/`;
+        return `${this.detailUrl({identifier, version_number})}contributors/`;
     },
     retrieve({identifier, version_number}) {
         return api_base.get(this.detailUrl({identifier, version_number}));
+    },
+    listFiles({identifier, version_number, upload_type}) {
+        return api_base.get(this.listFileUrl({identifier, version_number, upload_type}));
+    },
+    uploadFile({path}, file, onUploadProgress) {
+        const formData = new FormData();
+        formData.append('file', file);
+        return api_base.post(path, formData, {headers: {'Content-Type': 'multipart/form-data'}, onUploadProgress});
+    },
+    deleteFile({path}) {
+        return api_base.delete(path);
     },
     updateDetail({identifier, version_number}, detail) {
         return api_base.put(
             this.detailUrl(identifier, version_number), detail)
     },
     updateContributors({identifier, version_number}, contributors) {
-        return api_base.put(this.updateContributorUrl(), contributors)
+        return api_base.put(this.updateContributorUrl({identifier, version_number}), contributors)
     }
 };
 
@@ -97,21 +112,17 @@ export const tagAPI = {
         }
         return `${__BASE_URL__}/tags/?${queryString.stringify(filters)}`;
     },
-    list({ query, page = 1}) {
+    list({query, page = 1}) {
         return api_base.get(this.listUrl({query, page}));
     }
 };
 
 export const contributorAPI = {
-    listUrl({query, page}) {
-        let filters: object = {page};
-        if (query) {
-            filters['query'] = query
-        }
+    listUrl(filters: { query?: string, page: number }) {
         return `${__BASE_URL__}/contributors/?${queryString.stringify(filters)}`
     },
-    list({query, page=1}) {
-        return api_base.get(this.listUrl({query,page}));
+    list({query, page = 1}) {
+        return api_base.get(this.listUrl({query, page}));
     }
 };
 
