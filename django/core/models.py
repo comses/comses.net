@@ -100,7 +100,7 @@ class MemberProfile(index.Indexed, ClusterableModel):
     institution = models.ForeignKey(Institution, null=True)
     keywords = ClusterTaggableManager(through=MemberProfileTag, blank=True)
     orcid = models.CharField(help_text=_("16 digits, - between every 4th digit, e.g., 0000-0002-1825-0097"),
-                             max_length=19)
+                             max_length=19, blank=True)
     personal_url = models.URLField(blank=True)
     picture = models.ForeignKey(Image, null=True, help_text=_('Profile picture'))
     professional_url = models.URLField(blank=True)

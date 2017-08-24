@@ -1,23 +1,3 @@
-/* Need CSS module for this 
-
-textarea {
-  border: none;
-  border-right: 1px solid #ccc;
-  resize: none;
-  outline: none;
-  background-color: #f6f6f6;
-  font-size: 14px;
-  font-family: 'Monaco', courier, monospace;
-  padding: 20px;
-  height: 100%;
-  width: 100%;
-  overflow: auto;
-}
-
-code {
-  color: #f66;
-} */
-
 import BaseControl from 'components/forms/base'
 import {Component, Prop} from 'vue-property-decorator'
 import * as marked from 'marked'
@@ -48,7 +28,7 @@ enum ViewMode {
             </div>
             <div class="row p-0 row-eq-height">
                 <div :class="codeStyle">
-                    <textarea :class="{'is-invalid': isInvalid }" :style="{ 'min-height': minHeight }" :value="value"
+                    <textarea :class="['markdown-textarea', {'is-invalid': isInvalid }]" :style="{ 'min-height': minHeight }" :value="value"
                                 @input="updateValue($event.target.value)"
                                 debounce="300">
                     </textarea>
@@ -58,7 +38,7 @@ enum ViewMode {
                 </div>
             </div>
         </div>
-        <div v-if="is-invalid" class="invalid-feedback">{{ errorMessage }}</div>
+        <div v-if="isInvalid" class="invalid-feedback">{{ errorMessage }}</div>
         <slot name="help"></slot>
     </div>`
 })

@@ -1,6 +1,13 @@
-import * as Vue from 'vue'
-import * as VeeValidate from 'vee-validate'
+import EditProfile from './edit'
 
-Vue.use(VeeValidate);
+function matchUpdateUrl(pathname: string): string | null {
+    let match = pathname.match(/\/users\/([0-9a-z\_\-]+)\/edit\//);
+    if (match !== null) {
+        return match[1];
+    }
+    return match
+}
 
-require('expose-loader?EditProfile!./edit');
+const username = matchUpdateUrl(window.location.pathname);
+
+new EditProfile({ propsData: {username}}).$mount('#app');

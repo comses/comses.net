@@ -1,11 +1,7 @@
 import EditEvent from './edit'
-import * as Vue from 'vue'
-import * as VeeValidate from 'vee-validate'
-
-Vue.use(VeeValidate);
 
 function matchUpdateUrl(pathname) {
-    let match = pathname.match(/\/events\/([0-9]+)\/update\//);
+    let match = pathname.match(/\/events\/([0-9]+)\/edit\//);
     if (match !== null) {
         match = match[1];
     }

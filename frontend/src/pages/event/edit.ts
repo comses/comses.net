@@ -1,6 +1,6 @@
 import * as Vue from 'vue'
-import  {CalendarEvent} from 'store/common'
-import {api} from 'api/index'
+import {CalendarEvent} from 'store/common'
+import {eventAPI} from 'api'
 import Markdown from 'components/forms/markdown'
 import Tagger from 'components/tagger'
 import Input from 'components/forms/input'
@@ -9,20 +9,22 @@ import MessageDisplay from 'components/message_display'
 import * as _ from 'lodash'
 import {Component, Prop} from "vue-property-decorator";
 import * as yup from 'yup'
+import {createFormValidator} from "pages/form"
 
-const schema = yup.object().shape({
+export const schema = yup.object().shape({
     description: yup.string().required(),
     summary: yup.string(),
-    title: yup.string(),
-    tags: yup.array().of(yup.object().shape({ name: yup.string().required()})),
-    location: yup.string(),
+    title: yup.string().required(),
+    tags: yup.array().of(yup.object().shape({name: yup.string().required()})),
+    location: yup.string().required(),
     early_registration_deadline: yup.date().nullable(),
     submission_deadline: yup.date().nullable(),
     start_date: yup.date().required(),
     end_date: yup.date()
 });
 
-@Component({
+
+@Component(<any>{
     template: `<form>
         <c-input v-model="state.title" name="title" :errorMsgs="errors.title">
             <label class="form-control-label" slot="label">Title</label>
@@ -58,8 +60,7 @@ const schema = yup.object().shape({
             </div>
             <div class="col-6 d-inline">
                 <c-datepicker v-model="state.submission_deadline" name="submission_deadline"
-                                :errorMsgs="errors.submission_deadline"
-                                :clearButton="true">
+                    :errorMsgs="errors.submission_deadline" :clearButton="true">
                     <label class="form-control-label" slot="label">Submission Deadline</label>
                     <small class="form-text text-muted" slot="help">The last day to register for the event (inclusive)
                     </small>
@@ -67,7 +68,7 @@ const schema = yup.object().shape({
             </div>
         </div>
         <c-markdown v-model="state.description" name="description" :errorMsgs="errors.description"
-                    @clear="clearField" validate="required" minHeight="20em">
+                    minHeight="20em">
             <label class="form-control-label" slot="label">Description</label>
             <small slot="help" class="form-text text-muted">Detailed information about the job</small>
         </c-markdown>
@@ -81,12 +82,13 @@ const schema = yup.object().shape({
                 </small>
             </div>
         </c-markdown>
-        <c-tagger v-model="state.tags" name="tags" :errorMsgs="errors.tags">
+        <c-tagger v-model="state.tags" name="tags" :errorMsgs="errors.tags" label="Tags">
         </c-tagger>
         <small class="form-text text-muted">A list of tags to associate with a job. Tags help people search for
             jobs.
         </small>
-        <button type="button" class="mt-3 btn btn-primary" @click="createOrUpdate">Submit</button>
+        <button type="button" class="mt-3 btn btn-primary" @click="createOrUpdateIfValid">Submit</button>
+        <button type="button" class="mt-3 btn btn-primary" @click="createOrUpdateIfValid">Submit</button>
     </form>`,
     components: {
         'c-markdown': Markdown,
@@ -102,7 +104,16 @@ const schema = yup.object().shape({
                 return {name: t}
             });
         }
-    }
+    },
+    mixins: [
+        createFormValidator(schema, {
+            errorAttributeName: 'errors',
+            stateAttributeName: 'state'
+        }, {
+            validationMethodName: 'validate',
+            clearErrorsMethodName: 'clear'
+        })
+    ]
 })
 class EditEvent extends Vue {
     // determine whether you are creating or updating based on wat route you are on
@@ -112,98 +123,46 @@ class EditEvent extends Vue {
     @Prop
     id: number | null;
 
-    state: CalendarEvent = {
-        description: '',
-        summary: '',
-        title: '',
-        tags: [],
-        location: '',
-        early_registration_deadline: '',
-        submission_deadline: '',
-        start_date: '',
-        end_date: ''
-    };
-
-    clearField(field_name: string) {
-        let self: any = this;
-        self.errors.remove(field_name, 'server-side');
-    }
-
-    initializeForm() {
+    async initializeForm() {
         if (this.id !== null) {
-            this.retrieve(this.id);
+            return this.retrieve(this.id);
         }
     }
+
+    nonFieldErrors: Array<string> = [];
 
     created() {
         this.initializeForm();
     }
 
     createSummaryFromDescription() {
-        this.state.summary = _.truncate(this.state.description, {'length': 200, 'omission': '[...]'});
+        (<any>this).state.summary = _.truncate((<any>this).state.description, {'length': 200, 'omission': '[...]'});
     }
 
-    serverErrors(field_name: string) {
-        let self: any = this;
-        return self.errors.collect(field_name, 'server-side');
-    }
-
-    createOrUpdate() {
-        if (this.state.id !== undefined) {
-            this.update(this.state.id);
-        } else {
-            this.create();
-        }
-    }
-
-    retrieve(id: number) {
-        api.events.retrieve(id).then(state => this.state = state);
-    }
-
-    createMainServerError(err) {
-        let self: any = this;
-        self.errors.add('non_field_errors', err, 'server-side', 'server-side');
-    }
-
-    createServerErrors(err: any) {
-        console.log({serverErrors: true, err});
-        let self: any = this;
-        if (err.hasOwnProperty('non_field_errors')) {
-            this.createMainServerError((<any>err).non_field_errors);
-            delete err.non_field_errors;
-        }
-        for (const field_name in err) {
-            self.errors.add(field_name, err[field_name], 'server-side', 'server-side');
-        }
-    }
-
-    create() {
-        (this as any).errors.clear('server-side');
-        api.events.create(this.state).then(drf_response => {
-            (this as any).errors.clear('server-side');
-            switch (drf_response.kind) {
-                case 'state':
-                    this.state = drf_response.payload;
-                    break;
-                case 'validation_error':
-                    this.createServerErrors(drf_response.payload);
-                    break;
+    createOrUpdateIfValid() {
+        const self: any =this;
+        return self.validate().then(() => {
+            return this.createOrUpdate();
+        }).catch(e => {
+            if (e.statusCode === 400) {
+                this.nonFieldErrors = e.data;
+            } else {
+                this.nonFieldErrors = ['Unknown error'];
             }
         });
     }
 
-    update(id: number) {
-        (this as any).errors.clear('server-side');
-        api.events.update(id, this.state).then(drf_response => {
-            switch (drf_response.kind) {
-                case 'state':
-                    this.state = drf_response.payload;
-                    break;
-                case 'validation_error':
-                    this.createServerErrors(drf_response.payload);
-                    break;
-            }
-        })
+    createOrUpdate() {
+        const self: any = this;
+        if (self.state.id !== undefined) {
+            return eventAPI.update(self.state);
+        } else {
+            return eventAPI.create(self.state);
+        }
+    }
+
+    retrieve(id: number) {
+        return eventAPI.retrieve(id).then(r => (<any>this).state = r.data);
     }
 }
 

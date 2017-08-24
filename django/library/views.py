@@ -111,7 +111,8 @@ class CodebaseReleaseViewSet(viewsets.ModelViewSet):
     @detail_route(methods=['put'])
     def contributors(self, request, **kwargs):
         codebase_release = self.get_object()
-        crs = ReleaseContributorSerializer(many=True, data=request.data, context={'release_id': codebase_release.id})
+        crs = ReleaseContributorSerializer(many=True, data=request.data, context={'release_id': codebase_release.id},
+                                           allow_empty=False)
         crs.is_valid(raise_exception=True)
         crs.save()
         return Response(status=status.HTTP_204_NO_CONTENT)

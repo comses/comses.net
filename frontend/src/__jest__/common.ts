@@ -1,0 +1,1 @@
+export const __BASIC_AUTH_USERNAME__ = 'marcojanssen';
