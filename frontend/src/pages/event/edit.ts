@@ -88,7 +88,6 @@ export const schema = yup.object().shape({
             jobs.
         </small>
         <button type="button" class="mt-3 btn btn-primary" @click="createOrUpdateIfValid">Submit</button>
-        <button type="button" class="mt-3 btn btn-primary" @click="createOrUpdateIfValid">Submit</button>
     </form>`,
     components: {
         'c-markdown': Markdown,
@@ -123,7 +122,7 @@ class EditEvent extends Vue {
     @Prop
     id: number | null;
 
-    async initializeForm() {
+    initializeForm() {
         if (this.id !== null) {
             return this.retrieve(this.id);
         }

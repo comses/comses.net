@@ -11,5 +11,3 @@ import 'vue-property-decorator'
 import 'vue-router'
 import 'vuex'
 import 'yup'
-
-require('expose-loader?connection!api/connection');
