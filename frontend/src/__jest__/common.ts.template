@@ -1,0 +1,3 @@
+// must match user name created in test_frontend.sh
+export const __BASIC_AUTH_USERNAME__ = '__TEST_USER__';
+export const __BASIC_AUTH_PASSWORD__ = '${TEST_BASIC_AUTH_PASSWORD}';

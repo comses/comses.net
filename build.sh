@@ -45,4 +45,16 @@ echo "Running env substitution for DB_PASSWORD ${DB_PASSWORD} and DJANGO_SECRET_
 cat "${CONFIG_INI}".template | envsubst > "${CONFIG_INI}"
 cat "${DOCKER_COMPOSE_TEMPLATE}" | envsubst > generated-"${DOCKER_COMPOSE_TEMPLATE}"
 ln -sf generated-"${DOCKER_COMPOSE_TEMPLATE}" docker-compose.yml
+
+# Templating for integration testing frontend and backend
+
+TEST_FRONTEND_SETUP="django/core/management/common.py"
+TEST_FRONTEND_COMMON="frontend/src/__jest__/common.ts"
+
+echo "Templating for ${TEST_FRONTEND_SETUP} and ${TEST_FRONTEND_COMMON}"
+
+TEST_BASIC_AUTH_PASSWORD=$(head /dev/urandom | tr -dc A-Za-z0-9 | head -c42)
+cat "${TEST_FRONTEND_SETUP}.template" | envsubst > "${TEST_FRONTEND_SETUP}"
+cat "${TEST_FRONTEND_COMMON}.template" | envsubst > "${TEST_FRONTEND_COMMON}"
+
 docker-compose build --pull --force-rm

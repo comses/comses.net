@@ -23,5 +23,5 @@
     "__BASE_URL__": "http://localhost:8000"
   },
   "setupFiles": ["<rootDir>/src/__jest__/mocks.ts"],
-  "testURL": "http://localhost:8000"
+  "testURL": "http://cms:8000"
 }
