@@ -124,7 +124,8 @@ class EmailAuthenticationBackend(ModelBackend):
             user = User.objects.get(email=l_username)
             return user.check_password(password) and user
         except User.DoesNotExist:
-            return super(EmailAuthenticationBackend, self).authenticate(l_username, password, **kwargs)
+            return super(EmailAuthenticationBackend, self).authenticate(request=request, username=username,
+                                                                        password=password, **kwargs)
 
 
 class ComsesObjectPermissionBackend:
