@@ -20,7 +20,7 @@ install:
   - pip3 install python-coveralls coverage
 script:
   - docker-compose run --rm cms /code/deploy/test.sh
-  - docker-compose up -d && docker-compose exec js /code/deploy/test.sh
+  - docker-compose up -d && docker-compose exec cms /code/test_frontend.sh && docker-compose exec js /code/deploy/test.sh
 after_success:
   - cd django && mv .coverage{,.123} && coverage combine --append && coveralls && cd -
   - cd frontend && cat ./coverage/lcov.info | ./node_modules/coveralls/bin/coveralls.js

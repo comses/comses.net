@@ -1,5 +1,6 @@
 import axios from 'axios'
 import {__BASIC_AUTH_USERNAME__} from "./common"
+import * as _ from 'lodash'
 
 function getCookie(name) {
     let cookieValue: string | null = null;
@@ -19,7 +20,7 @@ function getCookie(name) {
 
 const api_base = axios.create({
     headers: {'Content-Type': 'application/json'},
-    auth: {username: __BASIC_AUTH_USERNAME__, password: 'test'}
+    auth: {username: __BASIC_AUTH_USERNAME__, password: '__CORE_COMSES_TEST_USER__'}
 });
 api_base.interceptors.request.use(config => {
     config.headers['X-CSRFToken'] = getCookie('csrftoken');
