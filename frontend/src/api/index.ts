@@ -7,10 +7,10 @@ import {createDefaultValue} from "pages/form";
 
 export const eventAPI = {
     detailUrl(id) {
-        return `${__BASE_URL__}/events/${id}/`;
+        return `/events/${id}/`;
     },
     createUrl() {
-        return `${__BASE_URL__}/events/`;
+        return `/events/`;
     },
     delete(id: number) {
         return api_base.delete(this.detailUrl(id));
@@ -28,10 +28,10 @@ export const eventAPI = {
 
 export const jobAPI = {
     detailUrl(id) {
-        return `${__BASE_URL__}/jobs/${id}/`;
+        return `/jobs/${id}/`;
     },
     createUrl() {
-        return `${__BASE_URL__}/jobs/`;
+        return `/jobs/`;
     },
     retrieve(id) {
         return api_base.get(this.detailUrl(id));
@@ -49,7 +49,7 @@ export const jobAPI = {
 
 export const profileAPI = {
     detailUrl(username: string) {
-        return `${__BASE_URL__}/users/${username}/`;
+        return `/users/${username}/`;
     },
     retrieve(username) {
         return api_base.get(this.detailUrl(username));
@@ -64,7 +64,7 @@ export const profileAPI = {
 
 export const codebaseAPI = {
     createUrl(identifier) {
-        return `${__BASE_URL__}/codebases/${identifier}/`;
+        return `/codebases/${identifier}/`;
     },
     create(identifier) {
         return api_base.post(this.createUrl(identifier));
@@ -73,7 +73,7 @@ export const codebaseAPI = {
 
 export const codebaseReleaseAPI = {
     detailUrl({identifier, version_number}) {
-        return `${__BASE_URL__}/codebases/${identifier}/releases/${version_number}/`;
+        return `/codebases/${identifier}/releases/${version_number}/`;
     },
     listFileUrl({identifier, version_number, upload_type}) {
         return `${this.detailUrl({identifier, version_number})}${upload_type}/`;
@@ -110,7 +110,7 @@ export const tagAPI = {
         if (query) {
             filters['query'] = query;
         }
-        return `${__BASE_URL__}/tags/?${queryString.stringify(filters)}`;
+        return `/tags/?${queryString.stringify(filters)}`;
     },
     list({query, page = 1}) {
         return api_base.get(this.listUrl({query, page}));
@@ -119,7 +119,7 @@ export const tagAPI = {
 
 export const contributorAPI = {
     listUrl(filters: { query?: string, page: number }) {
-        return `${__BASE_URL__}/contributors/?${queryString.stringify(filters)}`
+        return `/contributors/?${queryString.stringify(filters)}`
     },
     list({query, page = 1}) {
         return api_base.get(this.listUrl({query, page}));

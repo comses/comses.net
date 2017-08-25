@@ -19,6 +19,7 @@ export function getCookie(name) {
 
 export const api_base = axios.create({
     headers: { 'Content-Type': 'application/json'},
+    baseURL: __BASE_URL__
 });
 api_base.interceptors.request.use(config => {
     config.headers['X-CSRFToken'] = getCookie('csrftoken');
