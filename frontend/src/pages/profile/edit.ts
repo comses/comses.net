@@ -9,7 +9,6 @@ import MessageDisplay from 'components/message_display'
 import EditItems from 'components/edit_items'
 import {profileAPI} from 'api'
 import {getCookie} from 'api/connection'
-import {MemberProfile} from 'store/common'
 import * as _ from 'lodash'
 import * as Dropzone from 'vue2-dropzone'
 import {createFormValidator} from 'pages/form'
@@ -39,12 +38,12 @@ export const schema = yup.object().shape({
         </c-input>
         <c-textarea v-model="state.research_interests" name="research_interests" :errorMsgs="errors.research_interests" label="Research Interests">
         </c-textarea>
-        <label class="form-control-label">Profile Picture Upload</label>
-        <dropzone id="imageUpload" acceptedFileTypes="image/*" :url="uploadImageURL" :headers="{'X-CSRFToken': csrftoken }" ref="picture_upload" :useFontAwesome="true">
-        </dropzone>
         <div class="form-group">
-            <div class="form-control-label">{{ state.avatar }}</div>
+            <label class="form-control-label">Profile Picture Upload</label>
+            <input type="file" class="form-control-file" @change="uploadImage">
+            <img v-if="state.avatar" :src="state.avatar">
         </div>
+        </dropzone>
         <c-input type="url" v-model="state.orcid" name="orcid" :errorMsgs="errors.orcid" label="ORCID" help="Your ORCID">
         </c-input>
         <c-input type="url" v-model="state.personal_url" name="personal_url" :errorMsgs="errors.personal_url" label="Personal URL" help="A link to your personal modeling related website">
@@ -114,6 +113,13 @@ export default class EditProfile extends Vue {
 
     retrieve(username: string) {
         return profileAPI.retrieve(username).then(r => (<any>this).state = r.data);
+    }
+
+    async uploadImage(event) {
+        let self: any = this;
+        const file = event.target.files[0];
+        const response = await profileAPI.uploadProfilePicture({username: this.username}, file);
+        self.state.avatar = response.data;
     }
 
     get uploadImageURL() {

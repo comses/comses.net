@@ -297,7 +297,7 @@ class MemberProfileImageUploadView(generics.CreateAPIView):
         image.save()
         member_profile.picture = image
         member_profile.save()
-        return Response(status=204)
+        return Response(data=image.get_rendition('fill-150x150').url, status=200)
 
 
 class FeaturedContentListAPIView(generics.ListAPIView):

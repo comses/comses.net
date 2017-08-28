@@ -98,10 +98,16 @@ class MemberProfileSerializer(serializers.ModelSerializer):
     institution_url = serializers.URLField(source='institution.url')
 
     # MemberProfile
-    avatar = serializers.ReadOnlyField(source='picture')  # needed to materialize the FK relationship for wagtailimages
+    avatar = serializers.SerializerMethodField()  # needed to materialize the FK relationship for wagtailimages
     orcid_url = serializers.SerializerMethodField()
     keywords = TagSerializer(many=True)
     profile_url = serializers.URLField(source='get_absolute_url', read_only=True)
+
+    def get_avatar(self, instance):
+        request = self.context.get('request')
+        if request and request.accepted_media_type not in 'text/html':
+            return instance.picture.get_rendition('fill-150x150').url if instance.picture else None
+        return instance.picture
 
     def get_codebases(self, instance):
         # FIXME: use django-filter for sort order

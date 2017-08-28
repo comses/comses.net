@@ -51,6 +51,9 @@ export const profileAPI = {
     detailUrl(username: string) {
         return `/users/${username}/`;
     },
+    uploadPictureUrl(username: string) {
+        return `${this.detailUrl(username)}upload_picture/`
+    },
     retrieve(username) {
         return api_base.get(this.detailUrl(username));
     },
@@ -59,6 +62,11 @@ export const profileAPI = {
     },
     update(profile) {
         return api_base.put(this.detailUrl(profile.username), profile);
+    },
+    uploadProfilePicture({username}, file) {
+        const formData = new FormData();
+        formData.append('file', file);
+        return api_base.post(this.uploadPictureUrl(username), formData, {headers: {'Content-Type': 'multipart/form-data'}})
     }
 };
 

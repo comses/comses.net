@@ -21,11 +21,7 @@ urlpatterns = [
     url(r'^events/calendar/$', views.EventCalendarList.as_view(), name='events-calendar')
 ]
 
-urlpatterns.append(url(r'^users/(?P<username>(\w+))/update/$',
-                       permission_required_or_403(
-                           'core.change_memberprofile', (MemberProfile, 'user__username', 'username'))(
-                           TemplateView.as_view(template_name='home/profiles/update.jinja')), name='profile-update'))
-urlpatterns.append(url(r'users/(?P<username>(\w+))/edit/picture/$', views.MemberProfileImageUploadView.as_view()))
+urlpatterns.append(url(r'users/(?P<username>(\w+))/upload_picture/$', views.MemberProfileImageUploadView.as_view()))
 
 urlpatterns += add_edit_router.urls
 urlpatterns += router.urls
