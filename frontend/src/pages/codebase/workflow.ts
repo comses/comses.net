@@ -31,6 +31,9 @@ const component = {
                     <router-link :to="{ name: 'documentation_upload'}" class="nav-link" active-class="disabled">Upload Documentation</router-link>
                 </li>
                 <li class="nav-item">
+                    <router-link :to="{ name: 'image_upload'}" class="nav-link" active-class="disabled">Upload Images</router-link>
+                </li>
+                <li class="nav-item">
                     <router-link :to="{ name: 'contributors' }" class="nav-link" active-class="disabled">Contributors</router-link>
                 </li>
                 <li class="nav-item">
@@ -64,12 +67,23 @@ const component = {
                     uploadType: 'documentation',
                     instructions: 'Upload documentation associated with a project here. If an archive (zip or tar file) is uploaded it is extracted first. Files with the same name will result in overwrites.'
                 }},
+            { path: '/image_upload/', component: Upload, name: 'image_upload',
+                props: {
+                    uploadType: 'image',
+                    instructions: 'Upload images associated with a project here. If an archive (zip or tar file) is uploaded it is extracted first. Files with the same name will result in overwrites.'
+                }},
             { path: '/contributors/', component: Contributors, name: 'contributors'},
             { path: '/detail/', component: CodebaseReleaseMetadata, name: 'detail'},
         ]
     })
 })
 class Workflow extends Vue {
+    @Prop()
+    identifier: string;
+
+    @Prop()
+    version_number: string;
+
     isInitialized: boolean = false;
 
     get initialData() {
@@ -85,7 +99,11 @@ class Workflow extends Vue {
     }
  
     created() {
-        this.$store.dispatch('initialize', {identifier: '2274', version_number: '1.0.0'}).then(response => this.isInitialized = true);
+        if (this.identifier && this.version_number) {
+            this.$store.dispatch('initialize', {identifier: this.identifier, version_number: this.version_number}).then(response => this.isInitialized = true);
+        } else {
+            this.isInitialized = true;
+        }
     }
 
     createOrSubmit() {
@@ -93,7 +111,4 @@ class Workflow extends Vue {
     }
 }
 
-let workflow = new Workflow();
-console.log(workflow);
-
-export default workflow;
+export default Workflow;
