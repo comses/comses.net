@@ -4,6 +4,7 @@ from django.contrib.auth.models import User
 from django.utils.http import urlencode
 from django.utils.translation import ugettext_lazy as _
 from rest_framework import serializers
+from wagtail.wagtailimages.models import SourceImageIOError
 
 from core.serializers import (YMD_DATETIME_FORMAT, PUBLISH_DATE_FORMAT, LinkedUserSerializer, create, update,
                               save_tags,
@@ -71,6 +72,24 @@ class ListReleasContributorSerializer(serializers.ListSerializer):
         return release_contributors
 
 
+class FeaturedImageMixin(serializers.Serializer):
+    featured_image = serializers.SerializerMethodField()
+
+    def get_featured_image(self, instance):
+        featured_image = instance.get_featured_image()
+        request = self.context.get('request')
+        if featured_image:
+            if request and request.accepted_media_type != 'text/html':
+                try:
+                    return featured_image.get_rendition('width-780').url
+                except SourceImageIOError as e:
+                    logger.error(e)
+                    return None
+            else:
+                return featured_image
+        else:
+            return None
+
 class ReleaseContributorSerializer(serializers.ModelSerializer):
     contributor = ContributorSerializer()
     profile_url = serializers.SerializerMethodField()
@@ -107,7 +126,7 @@ class ReleaseContributorSerializer(serializers.ModelSerializer):
         fields = ('contributor', 'profile_url', 'include_in_citation', 'roles', 'index',)
 
 
-class RelatedCodebaseSerializer(serializers.ModelSerializer):
+class RelatedCodebaseSerializer(serializers.ModelSerializer, FeaturedImageMixin):
     """
     Sparse codebase serializer
     """
@@ -115,7 +134,6 @@ class RelatedCodebaseSerializer(serializers.ModelSerializer):
     tags = TagSerializer(many=True)
     last_published_on = serializers.DateTimeField(read_only=True, format=PUBLISH_DATE_FORMAT)
     summarized_description = serializers.CharField(read_only=True)
-    # featured_image = serializers.ReadOnlyField(source='get_featured_image')
 
     def create(self, validated_data):
         return create(self.Meta.model, validated_data, self.context)
@@ -125,7 +143,7 @@ class RelatedCodebaseSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Codebase
-        fields = ('all_contributors', 'tags', 'title', 'last_published_on', 'identifier',
+        fields = ('all_contributors', 'tags', 'title', 'last_published_on', 'identifier', 'featured_image',
                   'summarized_description', 'description', 'live', 'repository_url',)
 
 
@@ -182,12 +200,11 @@ class CodebaseReleaseSerializer(serializers.ModelSerializer):
                   'id',)
 
 
-class CodebaseSerializer(serializers.ModelSerializer):
+class CodebaseSerializer(serializers.ModelSerializer, FeaturedImageMixin):
     absolute_url = serializers.URLField(source='get_absolute_url', read_only=True)
     all_contributors = ReleaseContributorSerializer(many=True, read_only=True)
     date_created = serializers.DateTimeField(read_only=True)
     download_count = serializers.IntegerField(read_only=True)
-    featured_image = serializers.ReadOnlyField(source='get_featured_image')
     first_published_at = serializers.DateTimeField(format=PUBLISH_DATE_FORMAT, read_only=True)
     last_published_on = serializers.DateTimeField(format=PUBLISH_DATE_FORMAT, read_only=True)
     latest_version_number = serializers.ReadOnlyField(source='latest_version.version_number')

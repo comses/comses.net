@@ -105,7 +105,7 @@ class MemberProfileSerializer(serializers.ModelSerializer):
 
     def get_avatar(self, instance):
         request = self.context.get('request')
-        if request and request.accepted_media_type not in 'text/html':
+        if request and request.accepted_media_type != 'text/html':
             return instance.picture.get_rendition('fill-150x150').url if instance.picture else None
         return instance.picture
 

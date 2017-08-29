@@ -198,7 +198,7 @@
     <div class="card-metadata">
         <div class="card-body">
             {% if has_change_perm %}
-                <a href="{{ url('library:codebase-update', identifier=identifier) }}" class="col-12 my-1 btn btn-primary">Edit</a>
+                <a href="{{ url('library:codebase-edit', identifier=identifier) }}" class="col-12 my-1 btn btn-primary">Edit</a>
             {% endif %}
             <button type="button" class="col-12 my-1 btn btn-primary">Download</button>
             <button type="button" class="col-12 my-1 btn btn-primary">Follow</button>
