@@ -305,7 +305,7 @@ class Codebase(index.Indexed, ClusterableModel):
                                submitter)
             submitter_id = submitter.pk
         version_number = self.next_version_number(version_number, version_bump)
-        identifier = kwargs.pop('identifier', version_number)
+        identifier = kwargs.pop('identifier', None)
         release = self.releases.create(
             submitter_id=submitter_id,
             version_number=version_number,
@@ -357,7 +357,7 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
     peer_reviewed = models.BooleanField(default=False)
     flagged = models.BooleanField(default=False)
 
-    identifier = models.CharField(max_length=128, unique=True)
+    identifier = models.CharField(max_length=128, unique=True, null=True)
     doi = models.CharField(max_length=128, unique=True, null=True)
     license = models.ForeignKey(License, null=True)
     # FIXME: replace with or append/prepend README.md
@@ -496,7 +496,7 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
             shutil.copyfileobj(fileobj, archive)
         shutil.unpack_archive(archive_path, path)
 
-    UPLOAD_TYPE_TO_FOLDERNAME = {'data': 'data', 'documentation': 'doc', 'sources': 'code'}
+    UPLOAD_TYPE_TO_FOLDERNAME = {'data': 'data', 'documentation': 'doc', 'sources': 'code', 'images': 'images'}
 
     def get_absolute_upload_retrieve_url(self, upload_type: str, relpath: str):
         return reverse('library:codebaserelease-download',

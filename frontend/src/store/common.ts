@@ -174,6 +174,7 @@ export interface CodebaseReleaseStore {
     files: {
         data: { upload_url: string, files: Array<string> }
         documentation: { upload_url: string, files: Array<string> }
+        images: { upload_url: string, files: Array<string> }
         sources: { upload_url: string, files: Array<string> }
     }
     release: CodebaseReleaseEdit

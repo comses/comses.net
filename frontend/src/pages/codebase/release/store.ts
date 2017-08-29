@@ -10,6 +10,7 @@ const initialState: CodebaseReleaseStore = {
         sources: { upload_url: '', files: [] },
         data: { upload_url: '', files: [] },
         documentation: { upload_url: '', files: [] },
+        images: { upload_url: '', files: [] },
     },
     release: {
         codebase: {
@@ -225,7 +226,8 @@ export const store = {
 
         initialize(context, { identifier, version_number }) {
             return context.dispatch('getCodebaseRelease', { identifier, version_number })
-                .then(r => Promise.all([context.dispatch('getFiles', 'data'), context.dispatch('getFiles', 'documentation'), context.dispatch('getFiles', 'sources')]));
+                .then(r => Promise.all([context.dispatch('getFiles', 'data'),
+                    context.dispatch('getFiles', 'documentation'), context.dispatch('getFiles', 'sources'), context.dispatch('getFiles', 'images')]));
         }
     }
 };

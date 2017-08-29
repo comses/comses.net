@@ -57,14 +57,27 @@ export default class Description extends Vue {
     @Prop()
     identifier: string;
 
-    async created() {
+    async initializeForm() {
         const response = await codebaseAPI.retrieve(this.identifier);
         (<any>this).state = response.data;
+    }
+
+    created() {
+        this.initializeForm();
+    }
+
+    createOrUpdate() {
+        const self: any = this;
+        if (this.identifier === null) {
+            return codebaseAPI.create(self.state);
+        } else {
+            return codebaseAPI.update(self.state);
+        }
     }
 
     async save() {
         let self: any = this;
         await self.validate();
-        return codebaseAPI.update(self.state);
+        return this.createOrUpdate();
     }
 }

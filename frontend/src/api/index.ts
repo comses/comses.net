@@ -71,8 +71,17 @@ export const profileAPI = {
 };
 
 export const codebaseAPI = {
+    listUrl() {
+        return '/codebases/';
+    },
     detailUrl(identifier) {
         return `/codebases/${identifier}/`;
+    },
+    create(codebase) {
+        return api_base.post(this.listUrl(), codebase);
+    },
+    delete(identifier) {
+        return api_base.delete(this.detailUrl(identifier));
     },
     update(codebase) {
         return api_base.put(this.detailUrl(codebase.identifier), codebase);

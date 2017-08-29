@@ -69,7 +69,7 @@ const component = {
                 }},
             { path: '/image_upload/', component: Upload, name: 'image_upload',
                 props: {
-                    uploadType: 'image',
+                    uploadType: 'images',
                     instructions: 'Upload images associated with a project here. If an archive (zip or tar file) is uploaded it is extracted first. Files with the same name will result in overwrites.'
                 }},
             { path: '/contributors/', component: Contributors, name: 'contributors'},
