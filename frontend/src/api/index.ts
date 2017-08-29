@@ -71,11 +71,14 @@ export const profileAPI = {
 };
 
 export const codebaseAPI = {
-    createUrl(identifier) {
+    detailUrl(identifier) {
         return `/codebases/${identifier}/`;
     },
-    create(identifier) {
-        return api_base.post(this.createUrl(identifier));
+    update(codebase) {
+        return api_base.put(this.detailUrl(codebase.identifier), codebase);
+    },
+    retrieve(identifier) {
+        return api_base.get(this.detailUrl(identifier));
     }
 };
 
@@ -84,7 +87,7 @@ export const codebaseReleaseAPI = {
         return `/codebases/${identifier}/releases/${version_number}/`;
     },
     listFileUrl({identifier, version_number, upload_type}) {
-        return `${this.detailUrl({identifier, version_number})}${upload_type}/`;
+        return `${this.detailUrl({identifier, version_number})}files/${upload_type}/`;
     },
     updateContributorUrl({identifier, version_number}) {
         return `${this.detailUrl({identifier, version_number})}contributors/`;

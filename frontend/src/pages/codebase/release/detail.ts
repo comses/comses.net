@@ -1,6 +1,6 @@
 import * as Vue from 'vue'
 import * as _ from 'lodash'
-import { api_base } from 'api'
+import { codebaseReleaseAPI } from "api/index";
 import { Component, Prop, Watch} from 'vue-property-decorator'
 import Checkbox from 'components/forms/checkbox'
 import Datepicker from 'components/forms/datepicker'
@@ -11,7 +11,7 @@ import Multiselect from 'vue-multiselect'
 import Tagger from 'components/tagger'
 import { exposeComputed } from './store'
 import * as yup from 'yup'
-import { createFormValidator } from '../form'
+import { createFormValidator } from 'pages/form'
 
 
 const schema = yup.object().shape({
@@ -133,15 +133,11 @@ export default class Description extends Vue {
         (<any>this).state.programming_languages = value.name;
     }
 
-    save() {
+    async save() {
         const { identifier, version_number } = this.identity;
-        (<any>this).validate()
-            .then(() =>
-                api_base.put(`/codebases/${identifier}/releases/${version_number}/`, (<any>this).state)
-                    .then(response => this.$store.dispatch('getCodebaseRelease', { identifier, version_number }),
-                        () => this.message = 'Submission failure'))
-            .catch(ve => {
-                this.message = 'Validation errors';
-            });
+        const self: any = this;
+        await self.validate();
+        const response = await codebaseReleaseAPI.updateDetail({identifier, version_number}, (<any>this).state);
+        await this.$store.dispatch('getCodebaseRelease', { identifier, version_number });
     }
 }

@@ -1,12 +1,12 @@
 {% extends "base.jinja" %}
 
 {% block introduction %}
-    <h1><i class='fa fa-cloud-upload'></i> Archive your model</h1>
+    <h1><i class='fa fa-cloud-upload'></i> Archive your software</h1>
 {% endblock %}
 {% block content %}
     <div id="app"></div>
 {% endblock %}
 
 {% block js %}
-{{ render_bundle('codebases') }}
+{{ render_bundle('releases') }}
 {% endblock %}

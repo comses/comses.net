@@ -52,7 +52,7 @@ class CodebaseViewSet(AddEditFormViewSetMixin, viewsets.ModelViewSet):
         return Response(data)
 
 
-class CodebaseReleaseViewSet(viewsets.ModelViewSet):
+class CodebaseReleaseViewSet(AddEditFormViewSetMixin, viewsets.ModelViewSet):
     namespace = 'library/codebases/releases/'
     lookup_field = 'version_number'
     lookup_value_regex = r'\d+\.\d+\.\d+'
@@ -87,7 +87,7 @@ class CodebaseReleaseViewSet(viewsets.ModelViewSet):
                   parser_classes=(parsers.FormParser, parsers.MultiPartParser,),
                   renderer_classes=(renderers.JSONRenderer,),
                   url_name='files',
-                  url_path='(?P<upload_type>[\.\w]+)')
+                  url_path='files/(?P<upload_type>[\.\w]+)')
     def files(self, request, identifier, version_number, upload_type):
         url = request.path
         return self._file_upload_operations(request, upload_type, url)
@@ -95,7 +95,7 @@ class CodebaseReleaseViewSet(viewsets.ModelViewSet):
     @detail_route(methods=['delete', 'get'],
                   parser_classes=(parsers.JSONParser,),
                   url_name='download',
-                  url_path='(?P<upload_type>[\.\w]+)/(?P<path>([\.\w]+/)*[\.\w\-]+)')
+                  url_path='files/(?P<upload_type>[\.\w]+)/(?P<path>([\.\w]+/)*[\.\w\-]+)')
     def download(self, request, identifier, version_number, upload_type, path):
         codebase_release = self.get_object()
         if request.method == 'DELETE':

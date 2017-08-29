@@ -2,7 +2,7 @@ import BaseControl from './forms/base'
 import {Component, Prop} from 'vue-property-decorator'
 
 import * as queryString from 'query-string'
-import {api} from '../api/index'
+import {tagAPI} from 'api'
 
 import Multiselect from 'vue-multiselect'
 
@@ -52,16 +52,11 @@ export default class Tagger extends BaseControl {
     isLoading = false;
     matchingTags = [];
 
-    fetchMatchingTags(query) {
+    async fetchMatchingTags(query) {
         this.isLoading = true;
-        api.tags.list({query, page: 1})
-                .then(state => {
-                    this.matchingTags = state.results;
-                    this.isLoading = false;
-                })
-                .catch(err => {
-                    this.isLoading = false;
-                });
+        const response = await tagAPI.list({query, page: 1});
+        this.matchingTags = response.data.results;
+        this.isLoading = false;
     }
 
     updateValue(value) {

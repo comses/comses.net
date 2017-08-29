@@ -223,5 +223,6 @@ class CodebaseSerializer(serializers.ModelSerializer, FeaturedImageMixin):
     class Meta:
         model = Codebase
         fields = ('absolute_url', 'all_contributors', 'date_created', 'download_count', 'featured_image',
-                  'first_published_at', 'last_published_on', 'latest_version_number', 'current_version', 'releases',
-                  'submitter', 'summarized_description', 'tags', 'description', 'title', 'doi', 'identifier', 'id',)
+                  'repository_url', 'first_published_at', 'last_published_on', 'latest_version_number',
+                  'current_version', 'releases', 'submitter', 'summarized_description', 'tags', 'description', 'title',
+                  'doi', 'identifier', 'id',)

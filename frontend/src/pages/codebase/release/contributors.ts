@@ -1,6 +1,6 @@
 import { Prop, Component, Watch } from 'vue-property-decorator'
 import * as Vue from 'vue'
-import { CalendarEvent, CodebaseContributor, Contributor, emptyContributor, emptyReleaseContributor } from '../../store/common'
+import { CalendarEvent, CodebaseContributor, Contributor, emptyContributor, emptyReleaseContributor } from 'store/common'
 import { codebaseReleaseAPI, contributorAPI } from 'api'
 import { store } from './store'
 import Checkbox from 'components/forms/checkbox'
@@ -14,7 +14,7 @@ import Username from 'components/username'
 import * as draggable from 'vuedraggable'
 import * as _ from 'lodash'
 import * as yup from 'yup'
-import { createFormValidator } from '../form'
+import { createFormValidator } from 'pages/form'
 
 const listContributors = _.debounce((state, self) => contributorAPI.list(state).then(r => self.matchingContributors = r.data.results), 800);
 

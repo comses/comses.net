@@ -18,6 +18,7 @@ const { TsConfigPathsPlugin } = require('awesome-typescript-loader');
 module.exports = createConfig([
     entryPoint({
         codebases: './src/pages/codebase',
+        releases: './src/pages/codebase/release',
         jobs: './src/pages/job',
         events: './src/pages/event',
         profiles: './src/pages/profile',

@@ -1,11 +1,11 @@
-import Workflow from './workflow'
+import EditCodebase from './edit'
 
 function extractUrlParams(pathname: string) {
-    let match = pathname.match(/\/codebases\/([0-9]+)\/releases\/(\d+\.\d+\.\d+)\/edit\//);
+    let match = pathname.match(/\/codebases\/([0-9]+)\/edit\//);
     if (match !== null) {
-        return { identifier: match[1], version_number: match[2] };
+        return { identifier: match[1] };
     }
-    return { identifier: null, version_number: null}
+    return { identifier: null }
 }
 
-new Workflow({ propsData: extractUrlParams(window.location.pathname)}).$mount('#app');
+new EditCodebase({ propsData: extractUrlParams(window.location.pathname)}).$mount('#app');
