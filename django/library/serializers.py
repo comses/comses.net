@@ -212,10 +212,19 @@ class CodebaseSerializer(serializers.ModelSerializer, FeaturedImageMixin):
     releases = CodebaseReleaseSerializer(read_only=True, many=True)
     submitter = LinkedUserSerializer(read_only=True)
     summarized_description = serializers.CharField(read_only=True)
+    identifier = serializers.ReadOnlyField()
     tags = TagSerializer(many=True)
 
     def create(self, validated_data):
-        return create(self.Meta.model, validated_data, self.context)
+        serialized_tags = TagSerializer(many=True, data=validated_data.pop('tags'))
+        user = self.context['request'].user
+        validated_data['submitter_id'] = user.id
+        codebase = self.Meta.model(**validated_data)
+        codebase.identifier = codebase.uuid
+        codebase.save()
+        save_tags(codebase, serialized_tags)
+        codebase.make_release(submitter=user)
+        return codebase
 
     def update(self, instance, validated_data):
         return update(super().update, instance, validated_data)

@@ -439,7 +439,7 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
             version=self.version_number,
             cml='CoMSES Computational Model Library',
             purl=self.permanent_url
-        )
+        )  if self.last_published_on else 'You must publish this model in order to cite it'
 
     def download_count(self):
         return self.downloads.count()
