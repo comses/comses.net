@@ -129,6 +129,9 @@
                         <th>Submitter</th>
                         <th>First published</th>
                         <th>Last modified</th>
+                        {% if has_change_perm %}
+                            <th>Edit</th>
+                        {% endif %}
                     </tr>
                 </thead>
                 <tbody>
@@ -138,6 +141,14 @@
                             <td>{{ member_profile_href(release.submitter) }}</td>
                             <td>{{ release.first_published_at }}</td>
                             <td>{{ release.last_published_on }}</td>
+                            {% if has_change_perm %}
+                                <td>
+                                    <a href="{{ url('library:codebaserelease-edit', identifier=identifier,
+                                        version_number=release.version_number) }}">
+                                        <span class="fa fa-edit"></span>
+                                    </a>
+                                </td>
+                            {% endif %}
                         </tr>
                 {% endfor %}
                 </tbody>
