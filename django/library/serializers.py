@@ -220,6 +220,7 @@ class CodebaseSerializer(serializers.ModelSerializer, FeaturedImageMixin):
         user = self.context['request'].user
         validated_data['submitter_id'] = user.id
         codebase = self.Meta.model(**validated_data)
+        codebase.draft = True
         codebase.identifier = codebase.uuid
         codebase.save()
         save_tags(codebase, serialized_tags)
@@ -227,6 +228,7 @@ class CodebaseSerializer(serializers.ModelSerializer, FeaturedImageMixin):
         return codebase
 
     def update(self, instance, validated_data):
+        validated_data['draft'] = False
         return update(super().update, instance, validated_data)
 
     class Meta:
