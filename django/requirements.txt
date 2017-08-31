@@ -1,23 +1,23 @@
-wagtail==1.11.1
-wagtailmenus==2.3.1
-django-allauth==0.32.0
-django-extensions==1.8.1
+wagtail==1.12.1
+wagtailmenus==2.4
+django-allauth==0.33.0
+django-extensions==1.9.0
 django-rest-auth==0.9.1
 django-redis==4.8.0
 djangorestframework-jsonapi==2.2.0
 djangorestframework-jwt==1.11.0
 django-rest-swagger==2.1.2
-django-reversion==2.0.9
+django-reversion==2.0.10
 elasticsearch>=5.0.0,<6.0.0
-psycopg2==2.7.1
+psycopg2==2.7.3.1
 pygit2==0.24.2
 django-location-field==2.0.3
 django-model-utils==3.0.0
 django-timezone-field==2.0
 bagit==1.5.4
-semver==2.7.7
+semver==2.7.8
 django-guardian==1.4.9
-django-jinja==2.3.1
+django-jinja==2.4.0
 # deployment and management dependencies
 dealer==2.0.5
 invoke
@@ -28,6 +28,6 @@ beautifulsoup4==4.6.0
 # CoMSES citation app
 -e git+https://github.com/comses/citation.git#egg=citation
 # NLP Summary dependencies
-sumy==0.6.0
+sumy==0.7.0
 bleach==2.0.0
-markdown==2.6.8
+markdown==2.6.9
