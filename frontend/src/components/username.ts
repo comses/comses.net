@@ -4,13 +4,13 @@ import {Component, Prop} from 'vue-property-decorator'
 
 import * as queryString from 'query-string'
 import * as _ from 'lodash'
-import {api_base} from 'api/index'
+import {profileAPI} from 'api'
 
 import Multiselect from 'vue-multiselect'
 
 const debounceFetchMatchingUsers = _.debounce((self: UsernameSearch, query: string) => {
     self.isLoading = true;
-    api_base.get(`/users/?${queryString.stringify({query, page: 1})}`)
+    profileAPI.list({query, page: 1})
             .then(response => {
                 self.matchingUsers = response.data.results;
                 self.isLoading = false;
