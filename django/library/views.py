@@ -6,10 +6,10 @@ from django.urls import resolve
 
 import mimetypes
 import os
-from rest_framework import viewsets, generics, parsers, renderers, filters
 from rest_framework import viewsets, generics, parsers, renderers, status
 from rest_framework.decorators import detail_route
 from rest_framework.response import Response
+from rest_framework.exceptions import PermissionDenied
 
 from core.views import AddEditFormViewSetMixin
 from core.view_helpers import get_search_queryset, add_change_delete_perms
@@ -78,6 +78,8 @@ class CodebaseReleaseViewSet(AddEditFormViewSetMixin, viewsets.ModelViewSet):
     def _file_upload_operations(self, request, upload_type: str, url):
         codebase_release = self.get_object()  # type: CodebaseRelease
         if request.method == 'POST':
+            if not codebase_release.live:
+                raise PermissionDenied(detail='files cannot be added on published releases')
             codebase_release.add_upload(upload_type, request.data['file'])
             return Response(status=204)
         elif request.method == 'GET':
@@ -99,6 +101,8 @@ class CodebaseReleaseViewSet(AddEditFormViewSetMixin, viewsets.ModelViewSet):
     def download(self, request, identifier, version_number, upload_type, path):
         codebase_release = self.get_object()
         if request.method == 'DELETE':
+            if not codebase_release.live:
+                raise PermissionDenied(detail='files cannot be deleted from published releases')
             codebase_release.delete_upload(upload_type, path)
             return self._list_uploads(codebase_release, upload_type, request.path)
         elif request.method == 'GET':

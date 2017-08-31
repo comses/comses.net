@@ -306,11 +306,13 @@ class Codebase(index.Indexed, ClusterableModel):
             submitter_id = submitter.pk
         version_number = self.next_version_number(version_number, version_bump)
         identifier = kwargs.pop('identifier', None)
-        release = self.releases.create(
+        release = CodebaseRelease(
             submitter_id=submitter_id,
             version_number=version_number,
             identifier=identifier,
+            codebase=self,
             **kwargs)
+        release.save_draft()
         if submitted_package:
             release.submitted_package.save(submitted_package.name, submitted_package, save=False)
         self.latest_version = release
@@ -552,6 +554,13 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
 
     def get_or_create_sip_bag(self):
         return fs.make_bag(str(self.submitted_package_path()), self.bagit_info)
+
+    def save_draft(self):
+        self.draft=False
+        release = CodebaseRelease.objects.filter(codebase__identifier=self.codebase.identifier, draft=True).first()
+        if release:
+            self.id = release.id
+        self.save()
 
     def __str__(self):
         return '{0} {1} v{2} {3}'.format(self.codebase, self.submitter.username, self.version_number,

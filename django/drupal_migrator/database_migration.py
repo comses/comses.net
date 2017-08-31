@@ -526,6 +526,7 @@ class ModelVersionExtractor(Extractor):
                     description=self.sanitize_text(description),
                     date_created=to_datetime(raw_model_version['created']),
                     first_published_at=to_datetime(raw_model_version['created']),
+                    live=self.int_to_bool(raw_model_version['status']),
                     last_modified=last_changed,
                     last_published_on=last_changed,
                     os=self.OS_LIST[int(get_first_field(raw_model_version, 'field_modelversion_os', default=0))],
