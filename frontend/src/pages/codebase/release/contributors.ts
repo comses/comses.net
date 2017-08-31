@@ -15,6 +15,7 @@ import * as draggable from 'vuedraggable'
 import * as _ from 'lodash'
 import * as yup from 'yup'
 import { createFormValidator } from 'pages/form'
+import * as $ from 'jquery'
 
 const listContributors = _.debounce((state, self) => contributorAPI.list(state).then(r => self.matchingContributors = r.data.results), 800);
 
@@ -124,11 +125,32 @@ enum FormContributorState {
                         {{ contributorPresenceError }}
                     </div>
                 </div>
-                <div v-if="matchesState(['editContributor'])" class="card">
-                    <div class="card-header">
-                        Create a contributor
+                <div class="form-group">
+                    <label class="form-control-label">Role</label>
+                    <multiselect name="roles" 
+                        v-model="releaseContributor.roles"
+                        :multiple="true"
+                        :custom-label="roleLabel"
+                        :close-on-select="false" 
+                        placeholder="Type to select role" 
+                        :options="roleOptions">
+                    </multiselect>
+                </div>
+                <button type="button" class="btn btn-primary" @click="saveReleaseContributor">Save</button>
+                <button type="button" class="btn btn-primary" @click="cancelReleaseContributor">Cancel</button>
+            </div>
+        </div>
+        <button type="button" class="btn btn-primary" @click="save">Save</button>
+        <div class="modal" id="createContributorForm">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Create a contributor</h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                          <span aria-hidden="true">&times;</span>
+                        </button>
                     </div>
-                    <div class="card-body">
+                    <div class="modal-body">
                         <c-username name="username" v-model="contributor.user"
                             :errorMsgs="contributorErrors.user"
                             label="User Name" help="Find a matching user here">
@@ -150,26 +172,14 @@ enum FormContributorState {
                         </c-edit-affiliations>
                         <c-input type="select" name="type" v-model="contributor.type" label="Contributor Type" :errorMsgs="contributorErrors.type">
                         </c-input>
+                    </div>
+                    <div class="modal-footer">
                         <button type="button" class="btn btn-primary" @click="saveContributor">Save</button>
                         <button type="button" class="btn btn-primary" @click="cancelContributor">Cancel</button>
                     </div>
                 </div>
-                <div class="form-group">
-                    <label class="form-control-label">Role</label>
-                    <multiselect name="roles" 
-                        v-model="releaseContributor.roles"
-                        :multiple="true"
-                        :custom-label="roleLabel"
-                        :close-on-select="false" 
-                        placeholder="Type to select role" 
-                        :options="roleOptions">
-                    </multiselect>
-                </div>
-                <button type="button" class="btn btn-primary" @click="saveReleaseContributor">Save</button>
-                <button type="button" class="btn btn-primary" @click="cancelReleaseContributor">Cancel</button>
             </div>
         </div>
-        <button type="button" class="btn btn-primary" @click="save">Save</button>
     </div>`,
     components: {
         'c-checkbox': Checkbox,
@@ -353,6 +363,7 @@ class EditContributors extends Vue {
             (<any>this).contributor = _.merge({}, this.releaseContributor.contributor);
 
         }
+        $('#createContributorForm').modal('show');
         this.state = FormContributorState.editContributor;
     }
 
@@ -360,6 +371,7 @@ class EditContributors extends Vue {
         this._assertState([FormContributorState.editContributor]);
         this.releaseContributor.contributor = emptyContributor();
         (<any>this).clearContributorErrors();
+        $('#createContributorForm').modal('hide');
         this.state = FormContributorState.editReleaseContributor;
     }
 
@@ -367,6 +379,7 @@ class EditContributors extends Vue {
         this._assertState([FormContributorState.editContributor]);
         (<any>this).validateContributor().then(() => {
             this.state = FormContributorState.editReleaseContributor;
+            $('#createContributorForm').modal('hide');
             this.releaseContributor.contributor = _.merge({}, (<any>this).contributor);
             (<any>this).contributor = emptyContributor();
             (<any>this).clearContributorErrors();
