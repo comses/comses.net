@@ -1,4 +1,3 @@
-import SearchForm from 'components/sidebar'
-import * as Vue from 'vue'
+import {SearchCodebases} from 'pages/codebase/search';
 
-new SearchForm().$mount('#sidebar');
+new SearchCodebases().$mount('#sidebar');
