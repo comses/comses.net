@@ -1,5 +1,6 @@
 import BaseControl from './forms/base'
 import {Component, Prop} from 'vue-property-decorator'
+import * as _ from 'lodash'
 
 import * as queryString from 'query-string'
 import {tagAPI} from 'api'
@@ -25,7 +26,9 @@ import Multiselect from 'vue-multiselect'
                 :clear-on-select="false"
                 :close-on-select="false"
                 :options-limit="50"
+                :taggable="true"
                 :limit="20"
+                @tag="addTag"
                 @search-change="fetchMatchingTags">
         </multiselect>
         <div v-if="isInvalid" class="invalid-feedback">
@@ -51,6 +54,10 @@ export default class Tagger extends BaseControl {
 
     isLoading = false;
     matchingTags = [];
+
+    addTag(name, id) {
+        this.updateValue(_.concat(this.value, [{ name}]));
+    }
 
     async fetchMatchingTags(query) {
         this.isLoading = true;
