@@ -39,3 +39,5 @@ LIBRARY_ROOT=/shared/library
 REPOSITORY_ROOT=/shared/repository
 WEBPACK_ROOT=/shared/webpack
 
+[test]
+TEST_BASIC_AUTH_PASSWORD=testing

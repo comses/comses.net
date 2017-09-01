@@ -334,6 +334,8 @@ ORCID_CLIENT_SECRET = config.get('secrets', 'ORCID_CLIENT_SECRET', fallback='')
 GITHUB_CLIENT_ID = config.get('secrets', 'GITHUB_CLIENT_ID', fallback='')
 GITHUB_CLIENT_SECRET = config.get('secrets', 'GITHUB_CLIENT_SECRET', fallback='')
 
+TEST_BASIC_AUTH_PASSWORD = config.get('test', 'TEST_BASIC_AUTH_PASSWORD', fallback='')
+
 SOCIALACCOUNT_PROVIDERS = {
     'github': {
         'SCOPE': [
