@@ -1,10 +1,12 @@
-import { Component, Prop } from 'vue-property-decorator'
+import {Component, Prop} from 'vue-property-decorator'
 import BaseControl from 'components/forms/base'
 import * as draggable from 'vuedraggable'
 
 @Component({
     template: `<div class="form-group">
-        <slot name="label"></slot>
+        <slot name="label" :label="label">
+            <label class="form-control-label">{{ label }}</label>
+        </slot>
         <input :class="['form-control', {'is-invalid': isInvalid}]" v-model="potential_item" @keyup.enter="create" :placeholder="placeholder">
         <draggable :list="value" @start="drag=true" @end="drag=false">
             <div v-for="(item, index) in value" :key="index" class="input-group">
@@ -15,13 +17,21 @@ import * as draggable from 'vuedraggable'
         <div v-if="isInvalid" class="invalid-feedback">
             {{ errorMessage }}
         </div>
-        <slot name="help"></slot>
+        <slot name="help" :help="help">
+            <small class="form-text text-muted">{{ help }}</small>
+        </slot>
     </div>`,
-    components: { draggable }
+    components: {draggable}
 })
 export default class EditTextList extends BaseControl {
-    @Prop({ default: 'Add item'})
+    @Prop({default: 'Add item'})
     placeholder: string;
+
+    @Prop()
+    label: string;
+
+    @Prop()
+    help: string;
 
     drag: boolean = false;
     potential_item: string = '';
