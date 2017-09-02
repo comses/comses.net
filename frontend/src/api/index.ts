@@ -1,9 +1,6 @@
-import axios from 'axios'
 import {AxiosResponse} from "axios";
-import * as _ from 'lodash'
 import * as queryString from 'query-string'
 import {api_base} from "api/connection"
-import {createDefaultValue} from "pages/form";
 
 export const eventAPI = {
     detailUrl(id) {
@@ -48,11 +45,18 @@ export const jobAPI = {
 };
 
 export const profileAPI = {
+    listUrl(q: {query?: string, page: number}) {
+        const qs = queryString.stringify(q);
+        return `/users/${qs ? `?${qs}` : ''}`;
+    },
     detailUrl(username: string) {
         return `/users/${username}/`;
     },
     uploadPictureUrl(username: string) {
         return `${this.detailUrl(username)}upload_picture/`
+    },
+    list(q: {query?: string, page: number}) {
+        return api_base.get(this.listUrl(q));
     },
     retrieve(username) {
         return api_base.get(this.detailUrl(username));
