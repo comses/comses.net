@@ -33,7 +33,7 @@ class AddEditFormViewSetMixin(object):
         self.object = self.get_object()
         return Response({'object': self.object})
 
-    def add(self):
+    def add(self, request, **kwargs):
         # FIXME: need to add an appropriate AnonymousUser check via django-guardian. Normal IsAuthenticated permissions
         # won't work otherwise since AnonymousUser is considered 'authenticated' for some reason.
         return Response({})
