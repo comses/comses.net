@@ -121,7 +121,7 @@ export const codebaseReleaseAPI = {
     },
     updateDetail({identifier, version_number}, detail) {
         return api_base.put(
-            this.detailUrl(identifier, version_number), detail)
+            this.detailUrl({identifier, version_number}), detail)
     },
     updateContributors({identifier, version_number}, contributors) {
         return api_base.put(this.updateContributorUrl({identifier, version_number}), contributors)
