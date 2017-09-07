@@ -1,11 +1,11 @@
 import * as Vue from 'vue'
-import { Component, Prop } from 'vue-property-decorator'
-import { codebaseAPI } from "api/index";
+import {Component, Prop} from 'vue-property-decorator'
+import {codebaseAPI} from "api/index";
 import Checkbox from 'components/forms/checkbox'
 import Input from 'components/forms/input'
 import Tagger from 'components/tagger'
 import TextArea from 'components/forms/textarea'
-import { createFormValidator } from "pages/form";
+import {createFormValidator} from "pages/form";
 import * as yup from 'yup'
 
 export const schema = yup.object().shape({
@@ -13,12 +13,20 @@ export const schema = yup.object().shape({
     description: yup.string().required(),
     live: yup.bool(),
     is_replication: yup.bool(),
-    tags: yup.array().of(yup.object().shape({ name: yup.string().required()})).min(1),
+    tags: yup.array().of(yup.object().shape({name: yup.string().required()})).min(1),
     repository_url: yup.string().url()
 });
 
 @Component(<any>{
     template: `<div>
+        <p>
+        Archiving the software that your research depends on can be tricky. We'll walk you through a submission workflow that
+        guides you through the steps needed to generate a citable software archive that broadly follows recommended practices
+        for <a href='https://www.force11.org/software-citation-principles'>software citation</a>.
+        </p>
+        <p>
+        First, let's figure out what you'd like to call this thing.
+        </p>
         <c-input v-model="state.title" name="title" :errorMsgs="errors.title" label="Title"
             help="A short title describing the codebase">
         </c-input>
@@ -58,8 +66,10 @@ export default class Description extends Vue {
     identifier: string;
 
     async initializeForm() {
-        const response = await codebaseAPI.retrieve(this.identifier);
-        (<any>this).state = response.data;
+        if (this.identifier) {
+            const response = await codebaseAPI.retrieve(this.identifier);
+            (<any>this).state = response.data;
+        }
     }
 
     created() {

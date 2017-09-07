@@ -11,22 +11,16 @@ import * as _ from 'lodash'
 @Component({
     // language=Vue
     template: `
-        <c-search submitLabel="Create a model" searchLabel="Search" submitUrl="/codebases/add/" :searchUrl="query">
+        <c-search submitLabel="Become a member" searchLabel="Search" submitUrl="/accounts/signup/" :searchUrl="query">
             <div slot="searchForm">
                 <div class="card-metadata">
                     <div class="title">
                         Search
                     </div>
                     <div class="card-body">
-                        <c-input type="text" v-model="fullTextSearch" name="fullTextSearch" :errorMsgs="[]">
-                            <label class="form-control-label" slot="label">Keywords</label>
+                        <c-input type="text" v-model="fullTextSearch" name="fullTextSearch">
+                            <label class="form-control-label" slot="label">Universal Search</label>
                         </c-input>
-                        <c-date-picker v-model="startDate" name="startDate" :errorMsgs="[]" :clearButton="true">
-                            <label class="form-control-label" slot="label">Published Start Date</label>
-                        </c-date-picker>
-                        <c-date-picker v-model="endDate" name="endDate" :errorMsgs="[]" :clearButton="true">
-                            <label class="form-control-label" slot="label">Published End Date</label>
-                        </c-date-picker>
                     </div>
                 </div>
                 <div class="card-metadata">
@@ -34,7 +28,7 @@ import * as _ from 'lodash'
                         Tags
                     </div>
                     <div class="card-body">
-                        <c-tagger v-model="tags" placeholder="Type to add tags" label="Find Tags">
+                        <c-tagger v-model="keywords" placeholder="Type to add tags" label="Find Keywords">
                         </c-tagger>
                     </div>
                 </div>
@@ -47,21 +41,15 @@ import * as _ from 'lodash'
         'c-search': Search,
     }
 })
-export class SearchCodebases extends Vue {
+export class SearchProfiles extends Vue {
     fullTextSearch: string = '';
 
-    startDate: string | null = null;
-    endDate: string | null = null;
-
-    tags: Array<{name: string}> = [];
-    contributors = [];
+    keywords: Array<{name: string}> = [];
 
     get query() {
         const queryObject = {
             query: this.fullTextSearch,
-            start_date: this.startDate,
-            end_date: this.endDate,
-            tags: this.tags.map(tag => tag.name)
+            keywords: this.keywords.map(keyword => keyword.name)
         };
         Object.keys(queryObject).forEach(key => {
            if (_.isEmpty(queryObject[key]) || _.isNull(queryObject[key])) {

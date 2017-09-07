@@ -1,1 +1,3 @@
-// FIXME: Import search sidebar component here
+import {SearchEvents} from 'pages/event/search';
+
+new SearchEvents().$mount('#sidebar');

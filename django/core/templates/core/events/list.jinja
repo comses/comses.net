@@ -59,3 +59,11 @@
         </div>
     </div>
 {% endblock %}
+
+{% block sidebar %}
+    <div id="sidebar"></div>
+{% endblock %}
+
+{% block js %}
+{{ render_bundle('event_list') }}
+{% endblock %}

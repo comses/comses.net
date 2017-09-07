@@ -11,21 +11,21 @@ import * as _ from 'lodash'
 @Component({
     // language=Vue
     template: `
-        <c-search submitLabel="Create a model" searchLabel="Search" submitUrl="/codebases/add/" :searchUrl="query">
+        <c-search submitLabel="Create an job" searchLabel="Search" submitUrl="/jobs/add/" :searchUrl="query">
             <div slot="searchForm">
                 <div class="card-metadata">
                     <div class="title">
                         Search
                     </div>
                     <div class="card-body">
-                        <c-input type="text" v-model="fullTextSearch" name="fullTextSearch" :errorMsgs="[]">
+                        <c-input type="text" v-model="fullTextSearch" name="fullTextSearch">
                             <label class="form-control-label" slot="label">Keywords</label>
                         </c-input>
-                        <c-date-picker v-model="startDate" name="startDate" :errorMsgs="[]" :clearButton="true">
-                            <label class="form-control-label" slot="label">Published Start Date</label>
+                        <c-date-picker v-model="initialPostingDate" name="initialPostingDate" :clearButton="true">
+                            <label class="form-control-label" slot="label">Initial Posting Date</label>
                         </c-date-picker>
-                        <c-date-picker v-model="endDate" name="endDate" :errorMsgs="[]" :clearButton="true">
-                            <label class="form-control-label" slot="label">Published End Date</label>
+                        <c-date-picker v-model="lastModifiedDate" name="lastModifiedDate" :clearButton="true">
+                            <label class="form-control-label" slot="label">Last Modified Date</label>
                         </c-date-picker>
                     </div>
                 </div>
@@ -47,11 +47,11 @@ import * as _ from 'lodash'
         'c-search': Search,
     }
 })
-export class SearchCodebases extends Vue {
+export class SearchJobs extends Vue {
     fullTextSearch: string = '';
 
-    startDate: string | null = null;
-    endDate: string | null = null;
+    initialPostingDate = (new Date()).toISOString();
+    lastModifiedDate = (new Date()).toISOString();
 
     tags: Array<{name: string}> = [];
     contributors = [];
@@ -59,8 +59,8 @@ export class SearchCodebases extends Vue {
     get query() {
         const queryObject = {
             query: this.fullTextSearch,
-            start_date: this.startDate,
-            end_date: this.endDate,
+            date_created__gt: this.initialPostingDate,
+            last_modified__gt: this.lastModifiedDate,
             tags: this.tags.map(tag => tag.name)
         };
         Object.keys(queryObject).forEach(key => {

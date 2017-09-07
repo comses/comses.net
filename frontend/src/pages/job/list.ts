@@ -1,1 +1,3 @@
-// FIXME: Import search sidebar component here
+import {SearchJobs} from './search';
+
+new SearchJobs().$mount('#sidebar');

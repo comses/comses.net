@@ -53,6 +53,10 @@
     {{ list_page(__all__, render_job, 'home:job-detail') }}
 {% endblock %}
 
+{% block sidebar %}
+    <div id="sidebar"></div>
+{% endblock %}
+
 {% block bottom %}
     <div class="col">
         {{ paginator('home:job-list', __all__) }}

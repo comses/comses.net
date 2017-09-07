@@ -1,24 +1,5 @@
-{% extends "base.jinja" %}
+{% extends "sidebar_layout.jinja" %}
 {% from "common.jinja" import item_component, list_page, paginator, breadcrumb, subnav, member_profile_href %}
-
-{% block title %}Welcome to the CoMSES Net Community{% endblock %}
-
-{% block introduction %}<h1>Community</h1>{% endblock %}
-
-{% block breadcrumb %}
-    {{ breadcrumb([
-    {'url': '/community/', 'text': 'Community'},
-    {'url': url("home:profile-list"), 'text': 'Users'},
-    ])
-    }}
-    {{ subnav([
-    { 'url': '/community/', 'text': 'Community' },
-    { 'url': DISCOURSE_BASE_URL, 'text': 'Forum' },
-    { 'url': url("home:profile-list"), 'text': 'Users', 'active': True },
-    { 'url': url("home:job-list"), 'text': 'Jobs' },
-    ])
-    }}
-{% endblock %}
 
 {% macro render_user(member_profile, detail_url_name) %}
     <div class="search-result">
@@ -38,11 +19,39 @@
     </div>
 {% endmacro %}
 
+{% block title %}Welcome to the CoMSES Net Community{% endblock %}
+
+{% block introduction %}<h1>Community</h1>{% endblock %}
+
+{% block top %}
+    {{ breadcrumb([
+    {'url': '/community/', 'text': 'Community'},
+    {'url': url("home:profile-list"), 'text': 'Users'},
+    ])
+    }}
+    {{ subnav([
+    { 'url': '/community/', 'text': 'Community' },
+    { 'url': DISCOURSE_BASE_URL, 'text': 'Forum' },
+    { 'url': url("home:profile-list"), 'text': 'Users', 'active': True },
+    { 'url': url("home:job-list"), 'text': 'Jobs' },
+    ])
+    }}
+{% endblock %}
+
 {% block content %}
     {{ list_page(__all__, render_user, 'home:profile-detail') }}
-    <div class='row'>
-        <div class="col">
-            {{ paginator('home:profile-list', __all__) }}
-        </div>
+{% endblock %}
+
+{% block sidebar %}
+    <div id="sidebar"></div>
+{% endblock %}
+
+{% block bottom %}
+    <div class="col">
+        {{ paginator('home:profile-list', __all__) }}
     </div>
+{% endblock %}
+
+{% block js %}
+    {{ render_bundle('profile_list') }}
 {% endblock %}

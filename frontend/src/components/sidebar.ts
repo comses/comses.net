@@ -13,13 +13,13 @@ import Datepicker from 'components/forms/datepicker';
                 Search
             </div>
             <div class="card-body">
-                <c-input type="text" v-model="state.keyword_search" name="keyword_search" :server_errors="[]">
+                <c-input type="text" v-model="state.keyword_search" name="keyword_search" :errorMsgs="[]">
                     <label class="form-control-label" slot="label">Keywords</label>
                 </c-input>
-                <c-date-picker v-model="state.start_date" name="start_date" :server_errors="[]" :clearButton="true">
+                <c-date-picker v-model="state.start_date" name="start_date" :errorMsgs="[]" :clearButton="true">
                     <label class="form-control-label" slot="label">Published Start Date</label>
                 </c-date-picker>
-                <c-date-picker v-model="state.end_date" name="end_date" :server_errors="[]" :clearButton="true">
+                <c-date-picker v-model="state.end_date" name="end_date" :errorMsgs="[]" :clearButton="true">
                     <label class="form-control-label" slot="label">Published End Date</label>
                 </c-date-picker>
             </div>
@@ -29,7 +29,7 @@ import Datepicker from 'components/forms/datepicker';
                 Tags
             </div>
             <div class="card-body">
-                <c-input type="text" v-model="state.tag_search" name="tag_search" :server_errors="[]">
+                <c-input type="text" v-model="state.tag_search" name="tag_search" :errorMsgs="[]">
                     <label class="form-control-label" slot="label">Find Tags</label>
                 </c-input>
                 <div>
