@@ -1,0 +1,39 @@
+{% extends "base.jinja" %}
+
+{% set provider_name = account.get_provider().name %}
+
+{% block introduction %}
+    <h1>Sign Up</h1>
+{% endblock %}
+{% block content %}
+    <p>
+    {% trans %}
+    Please complete the following form to create a new CoMSES Net account linked with your {{ provider_name }} account.
+    Welcome to the CoMSES Net community!
+    {% endtrans %}
+    </p>
+    <form method="post" class='form-inline'>
+        {% csrf_token %}
+
+        {# FIXME: duplication between this and non-error case #}
+        {% for field in form %}
+            {% if field.errors %}
+                <div class='form-group has-error'>
+                    <label for='id_{{field.name}}'>{{field.label}}</label>
+                    {{ add_field_css(field, "form-control") }}
+                    <span class='help-block'>
+                        {% for error in field.errors %}
+                            {{ error }}
+                        {% endfor %}
+                    </span>
+                </div>
+            {% else %}
+                <div class='form-group'>
+                    <label for='id_{{field.name}}'>{{field.label}}</label>
+                    {{ add_field_css(field, "form-control") }}
+                </div>
+            {% endif %}
+        {% endfor %}
+        <button class='btn btn-primary' type="submit">{% trans %}Sign Up{% endtrans %}</button>
+    </form>
+{% endblock %}
