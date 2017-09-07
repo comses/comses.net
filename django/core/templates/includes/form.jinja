@@ -10,7 +10,7 @@
 {% endif %}
 {% for field in form %}
     {% set error_class='has-errors' if field.errors else ''%}
-    {% if is_checkbox(field) %}
+    {% if field|is_checkbox %}
         <div class='form-check row'>
             <div class='offset-md-2 col-sm-8'>
                 <label class='custom-control custom-checkbox'>
