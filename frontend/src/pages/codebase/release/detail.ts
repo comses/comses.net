@@ -8,6 +8,7 @@ import Markdown from 'components/forms/markdown'
 import TextArea from 'components/forms/textarea'
 import Input from 'components/forms/input'
 import Multiselect from 'vue-multiselect'
+import MediumEditor from 'vue2-medium-editor'
 import Tagger from 'components/tagger'
 import { exposeComputed } from './store'
 import * as yup from 'yup'
@@ -29,6 +30,7 @@ const schema = yup.object().shape({
 
 @Component(<any>{
     template: `<div>
+        <medium-editor :text="state.description" v-on:edit="applyTextEdit"></medium-editor>
         <c-textarea v-model="state.description" :errorMsgs="errors.description" name="description" rows="3" label="Description">
         </c-textarea>
         <c-datepicker v-model="state.embargo_end_date" :errorMsgs="errors.embargo_end_date" name="embargoEndDate" :clearButton="true">
@@ -78,7 +80,8 @@ const schema = yup.object().shape({
         'c-markdown': Markdown,
         'c-textarea': TextArea,
         'c-tagger': Tagger,
-        Multiselect
+        Multiselect,
+        MediumEditor
     },
     mixins: [
         createFormValidator(schema,
@@ -120,6 +123,11 @@ export default class Description extends Vue {
 
     matchingProgrammingLanguages = [{ name: 'NetLogo' }, { name: 'Python'}];
     isLoadingProgrammingLanguages = false;
+
+    applyTextEdit(ev) {
+        console.log({ev});
+        (<any>this).state.description = ev.event.target.innerHTML;
+    }
 
     updateOs(value) {
         (<any>this).state.os = value.name
