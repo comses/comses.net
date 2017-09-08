@@ -9,4 +9,4 @@ MIDDLEWARE += ['debug_toolbar.middleware.DebugToolbarMiddleware']
 
 INSTALLED_APPS += ['drupal_migrator', 'debug_toolbar']
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'dev.comses.asu.edu']
+ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'dev.comses.asu.edu', 'cms']
