@@ -8,12 +8,9 @@ import Markdown from 'components/forms/markdown'
 import TextArea from 'components/forms/textarea'
 import Input from 'components/forms/input'
 import Multiselect from 'vue-multiselect'
-import MediumEditor from 'vue2-medium-editor'
 import Tagger from 'components/tagger'
-import { exposeComputed } from './store'
 import * as yup from 'yup'
 import { createFormValidator } from 'pages/form'
-
 
 const schema = yup.object().shape({
     description: yup.string().required().label('this'),
@@ -30,9 +27,8 @@ const schema = yup.object().shape({
 
 @Component(<any>{
     template: `<div>
-        <medium-editor :text="state.description" v-on:edit="applyTextEdit"></medium-editor>
-        <c-textarea v-model="state.description" :errorMsgs="errors.description" name="description" rows="3" label="Description">
-        </c-textarea>
+        <c-markdown v-model="state.description" :errorMsgs="errors.description" name="description" rows="3" label="Description">
+        </c-markdown>
         <c-datepicker v-model="state.embargo_end_date" :errorMsgs="errors.embargo_end_date" name="embargoEndDate" :clearButton="true">
             <label class="form-control-label" slot="label">Embargo End Date</label>
             <small class="form-text text-muted" slot="help">The date your release is automatically published</small>
@@ -81,7 +77,6 @@ const schema = yup.object().shape({
         'c-textarea': TextArea,
         'c-tagger': Tagger,
         Multiselect,
-        MediumEditor
     },
     mixins: [
         createFormValidator(schema,

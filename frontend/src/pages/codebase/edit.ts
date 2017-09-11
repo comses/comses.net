@@ -4,7 +4,7 @@ import {codebaseAPI} from "api/index";
 import Checkbox from 'components/forms/checkbox'
 import Input from 'components/forms/input'
 import Tagger from 'components/tagger'
-import TextArea from 'components/forms/textarea'
+import MarkdownEditor from 'components/forms/markdown'
 import {createFormValidator} from "pages/form";
 import * as yup from 'yup'
 
@@ -30,9 +30,8 @@ export const schema = yup.object().shape({
         <c-input v-model="state.title" name="title" :errorMsgs="errors.title" label="Title"
             help="A short title describing the codebase">
         </c-input>
-        <c-textarea v-model="state.description" :errorMsgs="errors.description" name="description" rows="3">
-            <label class="form-control-label" slot="label">Description</label>
-        </c-textarea>
+        <c-markdown v-model="state.description" :errorMsgs="errors.description" name="description" rows="3" label="Description">
+        </c-markdown>
         <c-checkbox v-model="state.live" name="live" :errorMsgs="errors.live" label="Published?"
             help="Published models are visible to everyone. Unpublished models are visible only to you">
         </c-checkbox>
@@ -48,7 +47,7 @@ export const schema = yup.object().shape({
     components: {
         'c-checkbox': Checkbox,
         'c-input': Input,
-        'c-textarea': TextArea,
+        'c-markdown': MarkdownEditor,
         'c-tagger': Tagger,
     },
     mixins: [
