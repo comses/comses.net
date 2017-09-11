@@ -22,6 +22,7 @@ from wagtail.wagtailimages.models import Image
 from wagtail.wagtailsearch import index
 from wagtail.wagtailsnippets.models import register_snippet
 
+from .fields import MarkdownField
 
 class ComsesGroups(Enum):
     ADMIN = "Admins"
@@ -216,7 +217,7 @@ class Event(index.Indexed, ClusterableModel):
     date_created = models.DateTimeField(default=timezone.now)
     last_modified = models.DateTimeField(auto_now=True)
     summary = models.CharField(max_length=500, blank=True)
-    description = models.TextField()
+    description = MarkdownField()
     early_registration_deadline = models.DateTimeField(null=True, blank=True)
     submission_deadline = models.DateTimeField(null=True, blank=True)
     start_date = models.DateTimeField()
@@ -267,7 +268,7 @@ class Job(index.Indexed, ClusterableModel):
     date_created = models.DateTimeField(default=timezone.now)
     last_modified = models.DateTimeField(auto_now=True)
     summary = models.CharField(max_length=500, blank=True)
-    description = models.TextField()
+    description = MarkdownField()
     tags = ClusterTaggableManager(through=JobTag, blank=True)
 
     submitter = models.ForeignKey(User, related_name='jobs')

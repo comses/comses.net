@@ -24,6 +24,7 @@ from wagtail.wagtailimages.models import Image
 from wagtail.wagtailsearch import index
 
 from core import fs
+from core.fields import MarkdownField
 
 logger = logging.getLogger(__name__)
 
@@ -150,7 +151,7 @@ class Codebase(index.Indexed, ClusterableModel):
     """
     # shortname = models.CharField(max_length=128, unique=True)
     title = models.CharField(max_length=300)
-    description = models.TextField()
+    description = MarkdownField()
     summary = models.CharField(max_length=500, blank=True)
 
     featured = models.BooleanField(default=False)
@@ -363,7 +364,7 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
     doi = models.CharField(max_length=128, unique=True, null=True)
     license = models.ForeignKey(License, null=True)
     # FIXME: replace with or append/prepend README.md
-    description = models.TextField(blank=True, help_text=_('Markdown formattable text, e.g., run conditions'))
+    description = MarkdownField(blank=True, help_text=_('Markdown formattable text, e.g., run conditions'))
     summary = models.CharField(max_length=500, blank=True)
     documentation = models.FileField(null=True, help_text=_('Fulltext documentation file (PDF/PDFA)'))
     embargo_end_date = models.DateField(null=True, blank=True)
