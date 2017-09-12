@@ -1,23 +1,25 @@
 import * as Vue from 'vue'
 import * as _ from 'lodash'
-import { codebaseReleaseAPI } from "api/index";
-import { Component, Prop, Watch} from 'vue-property-decorator'
+import {codebaseReleaseAPI} from "api/index";
+import {Component, Prop, Watch} from 'vue-property-decorator'
 import Checkbox from 'components/forms/checkbox'
 import Datepicker from 'components/forms/datepicker'
 import Markdown from 'components/forms/markdown'
+import MessageDisplay from 'components/message_display'
 import TextArea from 'components/forms/textarea'
 import Input from 'components/forms/input'
 import Multiselect from 'vue-multiselect'
 import Tagger from 'components/tagger'
 import * as yup from 'yup'
-import { createFormValidator } from 'pages/form'
+import {createFormValidator} from 'pages/form'
+import {HandlerShowSuccessMessage} from 'api/handler'
 
 const schema = yup.object().shape({
     description: yup.string().required().label('this'),
     embargo_end_date: yup.date().nullable().label('this'),
     os: yup.string().required().label('this'),
-    platforms: yup.array().of(yup.object().shape({ name: yup.string()})).min(1).label('this'),
-    programming_languages: yup.array().of(yup.object().shape({ name: yup.string()})).min(1).label('this'),
+    platforms: yup.array().of(yup.object().shape({name: yup.string()})).min(1).label('this'),
+    programming_languages: yup.array().of(yup.object().shape({name: yup.string()})).min(1).label('this'),
     live: yup.bool().label('this'),
     license: yup.object().shape({
         name: yup.string().required(),
@@ -67,6 +69,7 @@ const schema = yup.object().shape({
             <div v-if="errors.license > 0" class="form-control-feedback">{{ errors.license.join(', ') }}</div>
             <small class="form-text text-muted">A software licence is a document governing use and redistribution of your model</small>
         </div>
+        <c-message-display :messages="statusMessages"/>
         <button type="button" v-show="!isDirty" class="btn btn-primary" @click="save">Save</button>
     </div>`,
     components: {
@@ -74,15 +77,13 @@ const schema = yup.object().shape({
         'c-datepicker': Datepicker,
         'c-input': Input,
         'c-markdown': Markdown,
+        'c-message-display': MessageDisplay,
         'c-textarea': TextArea,
         'c-tagger': Tagger,
         Multiselect,
     },
-    mixins: [
-        createFormValidator(schema)
-    ]
 })
-export default class Description extends Vue {
+export default class Description extends createFormValidator(schema) {
     created() {
         (<any>this).state = this.$store.getters.detail;
     }
@@ -90,6 +91,7 @@ export default class Description extends Vue {
     get identity() {
         return this.$store.getters.identity;
     }
+
     isDirty = false;
 
     message: string = '';
@@ -110,7 +112,7 @@ export default class Description extends Vue {
         { name: 'macos', display: 'Mac OS' },
         { name: 'windows', display: 'Windows' },
         { name: 'platform_independent', display: 'Platform Independent' },
-    ]
+    ];
     matchingPlatforms = [];
     isLoadingPlatforms = false;
 
@@ -138,7 +140,10 @@ export default class Description extends Vue {
         const { identifier, version_number } = this.identity;
         const self: any = this;
         await self.validate();
-        const response = await codebaseReleaseAPI.updateDetail({identifier, version_number}, (<any>this).state);
-        await this.$store.dispatch('getCodebaseRelease', { identifier, version_number });
+        const response = await codebaseReleaseAPI.updateDetail({
+            identifier,
+            version_number
+        }, new HandlerShowSuccessMessage(this));
+        await this.$store.dispatch('getCodebaseRelease', {identifier, version_number});
     }
 }

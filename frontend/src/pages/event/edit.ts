@@ -9,7 +9,19 @@ import MessageDisplay from 'components/message_display'
 import * as _ from 'lodash'
 import {Component, Prop} from "vue-property-decorator";
 import * as yup from 'yup'
-import {createFormValidator} from "pages/form"
+import {createFormValidator, reachRelated} from "pages/form"
+import {Mixin} from 'util/vue-mixin';
+import {HandlerWithRedirect} from "api/handler";
+
+function dateAfterConstraint(before_name: string, after_name: string) {
+    return (before_date, schema) => {
+        if (_.isNil(before_date) || _.isNaN(before_date.getDate())) {
+            return schema;
+        } else {
+            return schema.min(before_date, `${_.capitalize(after_name)} must be after ${before_name}`);
+        }
+    }
+}
 
 export const schema = yup.object().shape({
     description: yup.string().required(),
@@ -18,11 +30,13 @@ export const schema = yup.object().shape({
     tags: yup.array().of(yup.object().shape({name: yup.string().required()})),
     location: yup.string().required(),
     early_registration_deadline: yup.date().nullable(),
-    submission_deadline: yup.date().nullable(),
-    start_date: yup.date().required(),
-    end_date: yup.date()
+    submission_deadline: yup.date().nullable()
+        .when('early_registration_deadline', dateAfterConstraint('early registration deadline', 'submission deadline')),
+    start_date: yup.date().required()
+        .when('submission_deadline', dateAfterConstraint('submission deadline', 'start date')),
+    end_date: yup.date().nullable()
+        .when('start_date', dateAfterConstraint('start date', 'end date'))
 });
-
 
 @Component(<any>{
     template: `<form>
@@ -51,7 +65,7 @@ export const schema = yup.object().shape({
         <div class="row">
             <div class="col-6 d-inline">
                 <c-datepicker v-model="early_registration_deadline" name="early_registration_deadline"
-                                :errorMsgs="errors.early_registration_deadline">
+                                :errorMsgs="errors.early_registration_deadline" :clearButton="true">
                     <label class="form-control-label" slot="label">Early Registration Deadline</label>
                     <small class="form-text text-muted" slot="help">The last day for early registration of the event
                         (inclusive)
@@ -68,9 +82,7 @@ export const schema = yup.object().shape({
             </div>
         </div>
         <c-markdown v-model="description" name="description" :errorMsgs="errors.description"
-                    minHeight="20em">
-            <label class="form-control-label" slot="label">Description</label>
-            <small slot="help" class="form-text text-muted">Detailed information about the job</small>
+                    minHeight="20em" label="Description" help="Detailed information about the event">
         </c-markdown>
         <c-markdown v-model="summary" name="summary" :errorMsgs="errors.summary">
             <label slot="label">Summary</label>
@@ -87,6 +99,7 @@ export const schema = yup.object().shape({
         <small class="form-text text-muted">A list of tags to associate with a job. Tags help people search for
             jobs.
         </small>
+        <c-message-display :messages="statusMessages"></c-message-display>
         <button type="button" class="mt-3 btn btn-primary" @click="createOrUpdateIfValid">Submit</button>
     </form>`,
     components: {
@@ -96,66 +109,49 @@ export const schema = yup.object().shape({
         'c-tagger': Tagger,
         'c-input': Input
     },
-    computed: {
-        'tags': function () {
-            const self: any = this;
-            return self.data.tags.map(t => {
-                return {name: t}
-            });
-        }
-    },
-    mixins: [
-        createFormValidator(schema)
-    ]
 })
-class EditEvent extends Vue {
+class EditEvent extends createFormValidator(schema) {
     // determine whether you are creating or updating based on wat route you are on
     // update -> grab the appropriate state from the store
     // create -> use the default store state
 
     @Prop
-    id: number | null;
+    _id: number | null;
 
-    initializeForm() {
-        if (this.id !== null) {
-            return this.retrieve(this.id);
-        }
+    detailPageUrl(state) {
+        this.state.id = state.id;
+        return eventAPI.detailUrl(this.state.id);
     }
 
-    nonFieldErrors: Array<string> = [];
+    initializeForm() {
+        if (this._id !== null) {
+            return this.retrieve(this._id);
+        }
+    }
 
     created() {
         this.initializeForm();
     }
 
     createSummaryFromDescription() {
-        (<any>this).state.summary = _.truncate((<any>this).state.description, {'length': 200, 'omission': '[...]'});
+        (<any>this).state.summary = _.truncate(this.state.description, {'length': 200, 'omission': '[...]'});
     }
 
-    createOrUpdateIfValid() {
-        const self: any =this;
-        return self.validate().then(() => {
-            return this.createOrUpdate();
-        }).catch(e => {
-            if (e.statusCode === 400) {
-                this.nonFieldErrors = e.data;
-            } else {
-                this.nonFieldErrors = ['Unknown error'];
-            }
-        });
+    async createOrUpdateIfValid() {
+        await this.validate();
+        this.createOrUpdate();
     }
 
     createOrUpdate() {
-        const self: any = this;
-        if (self.state.id !== undefined) {
-            return eventAPI.update(self.state);
+        if (_.isNil(this.state.id)) {
+            return eventAPI.create(new HandlerWithRedirect(this));
         } else {
-            return eventAPI.create(self.state);
+            return eventAPI.update(this.state.id, new HandlerWithRedirect(this));
         }
     }
 
     retrieve(id: number) {
-        return eventAPI.retrieve(id).then(r => (<any>this).state = r.data);
+        return eventAPI.retrieve(id).then(r => this.state = r.data);
     }
 }
 

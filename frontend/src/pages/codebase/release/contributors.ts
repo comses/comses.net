@@ -1,11 +1,11 @@
-import { Prop, Component, Watch } from 'vue-property-decorator'
+import {Prop, Component, Watch} from 'vue-property-decorator'
 import * as Vue from 'vue'
 import {
     CalendarEvent, CodebaseContributor, Contributor, emptyContributor, emptyReleaseContributor,
     User
 } from 'store/common'
-import { codebaseReleaseAPI, contributorAPI } from 'api'
-import { store } from './store'
+import {codebaseReleaseAPI, contributorAPI} from 'api'
+import {store} from './store'
 import Checkbox from 'components/forms/checkbox'
 import Datepicker from 'components/forms/datepicker'
 import Input from 'components/forms/input'
@@ -19,6 +19,7 @@ import * as _ from 'lodash'
 import * as yup from 'yup'
 import {createDefaultValue, createFormValidator} from 'pages/form'
 import * as $ from 'jquery'
+import {HandlerShowSuccessMessage} from "api/handler";
 
 const listContributors = _.debounce(async (state, self) => {
     self.isLoading = true;
@@ -115,11 +116,8 @@ enum FormContributorState {
         'c-input': Input,
         'c-username': Username,
     },
-    mixins: [
-        createFormValidator(contributorSchema),
-    ]
 })
-class EditContributor extends Vue {
+class EditContributor extends createFormValidator(contributorSchema) {
     @Prop()
     active: boolean;
 
@@ -135,9 +133,9 @@ class EditContributor extends Vue {
         }
     }
 
-    save() {
-        (<any>this).validate(
-            () => this.$emit('save', (<any>this).state));
+    async save() {
+        await this.validate();
+        this.$emit('save', this.state);
     }
 
     cancel() {
@@ -200,11 +198,8 @@ class EditContributor extends Vue {
     components: {
         Multiselect
     },
-    mixins: [
-        createFormValidator(releaseContributorSchema),
-    ]
 })
-class EditReleaseContributor extends Vue {
+class EditReleaseContributor extends createFormValidator(releaseContributorSchema) {
     @Prop()
     releaseContributor;
 
@@ -228,7 +223,7 @@ class EditReleaseContributor extends Vue {
             name = name === '' ? (<any>user).full_name : name;
             const username = (<any>user).username;
 
-            return !_.isNull(username) ? `${name} (${username})`: name;
+            return !_.isNull(username) ? `${name} (${username})` : name;
         }
         return name;
     }
@@ -240,16 +235,16 @@ class EditReleaseContributor extends Vue {
 
     fetchMatchingContributors(searchQuery: string) {
         listContributors.cancel();
-        listContributors({ family_name: searchQuery }, this);
+        listContributors({family_name: searchQuery}, this);
     }
 
     cancel() {
         this.$emit('cancel');
     }
 
-    save() {
-        (<any>this).validate().then(
-            () => this.$emit('save', (<any>this).state));
+    async save() {
+        await this.validate();
+        this.$emit('save', this.state);
     }
 }
 
@@ -258,8 +253,8 @@ class EditReleaseContributor extends Vue {
     template: `<div>
         <hr>
         <label class="form-control-label">Current Release Contributors</label>
-        <draggable v-model="releaseContributors">
-            <ul v-for="releaseContributor in releaseContributors" :key="releaseContributor._id" class="list-group">
+        <draggable v-model="state">
+            <ul v-for="releaseContributor in state" :key="releaseContributor._id" class="list-group">
                 <li class="list-group-item d-flex justify-content-between">
                     {{ releaseContributorLabel(releaseContributor) }}
                     <div v-show="matchesState(['list'])">
@@ -287,11 +282,12 @@ class EditReleaseContributor extends Vue {
             </div>
         </div>
         <c-edit-release-contributor :releaseContributor="releaseContributor"
-                @save="saveReleaseContributor" @cancel="cancelReleaseContributor" 
+                @save="saveReleaseContributor" @cancel="cancelReleaseContributor" ref="releaseContributor"
                 @editContributor="editContributor" v-show="matchesState(['editReleaseContributor'])">
         </c-edit-release-contributor>
+        <c-message-display :messages="statusMessages" />
         <button type="button" class="btn btn-primary" @click="save">Save</button>
-        <c-edit-contributor :contributor="contributor" 
+        <c-edit-contributor :contributor="contributor" ref="contributor"
                             @save="saveContributor" @cancel="cancelContributor">
         </c-edit-contributor>
     </div>`,
@@ -312,16 +308,17 @@ class EditContributors extends Vue {
     initialData: object;
 
     initialize() {
-        this.releaseContributors = this.$store.state.release.release_contributors.map(rc => _.extend({}, rc));
+        this.state = this.$store.state.release.release_contributors.map(rc => _.extend({}, rc));
     }
 
     created() {
         this.initialize();
     }
 
-    state: FormContributorState = FormContributorState.list;
+    formState: FormContributorState = FormContributorState.list;
 
-    releaseContributors: Array<CodebaseContributor> = [];
+    statusMessages: Array<{ classNames: string, message}> = [];
+    state: Array<CodebaseContributor> = [];
     releaseContributor: CodebaseContributor | null = null;
     contributor: Contributor | null = null;
 
@@ -344,29 +341,31 @@ class EditContributors extends Vue {
     matchesState(states: Array<keyof typeof FormContributorState>) {
         console.assert(states.length > 0);
         for (const state of states) {
-            if (FormContributorState[state] === this.state) {
+            if (FormContributorState[state] === this.formState) {
                 return true;
             }
         }
         return false;
     }
 
-    save() {
-        const { identifier, version_number } = this.identity;
-        codebaseReleaseAPI.updateContributors({identifier, version_number}, this.releaseContributors)
-            .catch(err => this.message = 'Submission Error')
-            .then(response => this.$store.dispatch('getCodebaseRelease', {identifier, version_number}))
-            .then(_ => this.initialize());
+    async save() {
+        const {identifier, version_number} = this.identity;
+        const response = await codebaseReleaseAPI.updateContributors({
+            identifier,
+            version_number
+        }, new HandlerShowSuccessMessage(this));
+        await this.$store.dispatch('getCodebaseRelease', {identifier, version_number});
+        this.initialize();
     }
 
     // Release Contributor
 
     createOrReplaceReleaseContributor(release_contributor: CodebaseContributor) {
-        const ind = _.findIndex(this.releaseContributors, rc => release_contributor._id === rc._id);
+        const ind = _.findIndex(this.state, rc => release_contributor._id === rc._id);
         if (ind !== -1) {
-            this.releaseContributors[ind] = _.merge({}, release_contributor);
+            this.state[ind] = _.merge({}, release_contributor);
         } else {
-            this.releaseContributors.push(_.merge({}, release_contributor));
+            this.state.push(_.merge({}, release_contributor));
         }
     }
 
@@ -376,22 +375,22 @@ class EditContributors extends Vue {
         } else {
             this.releaseContributor = _.merge({}, releaseContributor);
         }
-        this.state = FormContributorState.editReleaseContributor;
+        this.formState = FormContributorState.editReleaseContributor;
     }
 
     cancelReleaseContributor() {
-        this.state = FormContributorState.list;
+        this.formState = FormContributorState.list;
     }
 
     saveReleaseContributor(releaseContributor) {
         this.createOrReplaceReleaseContributor(releaseContributor);
         this.releaseContributor = null;
-        this.state = FormContributorState.list;
+        this.formState = FormContributorState.list;
     }
 
     deleteReleaseContributor(_id: string) {
-        const index = _.findIndex(this.releaseContributors, rc => rc._id === _id);
-        this.releaseContributors.splice(index, 1);
+        const index = _.findIndex(this.state, rc => rc._id === _id);
+        this.state.splice(index, 1);
     }
 
     // Contributor
@@ -399,16 +398,16 @@ class EditContributors extends Vue {
     editContributor(contributor: Contributor) {
         this.contributor = _.merge({}, contributor);
         $('#createContributorForm').modal('show');
-        this.state = FormContributorState.editContributor;
+        this.formState = FormContributorState.editContributor;
     }
 
     cancelContributor() {
         $('#createContributorForm').modal('hide');
-        this.state = FormContributorState.editReleaseContributor;
+        this.formState = FormContributorState.editReleaseContributor;
     }
 
     saveContributor() {
-        this.state = FormContributorState.editReleaseContributor;
+        this.formState = FormContributorState.editReleaseContributor;
         $('#createContributorForm').modal('hide');
         if (!_.isNull(this.releaseContributor)) {
             this.releaseContributor.contributor = _.merge({}, (<any>this).contributor);

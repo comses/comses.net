@@ -1,7 +1,7 @@
 import Workflow from './workflow'
 
 function extractUrlParams(pathname: string) {
-    let match = pathname.match(/\/codebases\/([0-9]+)\/releases\/(\d+\.\d+\.\d+)\/edit\//);
+    let match = pathname.match(/\/codebases\/([\w\-]+)\/releases\/(\d+\.\d+\.\d+)\/edit\//);
     if (match !== null) {
         return { identifier: match[1], version_number: match[2] };
     }

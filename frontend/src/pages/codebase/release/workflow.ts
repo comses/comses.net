@@ -105,10 +105,6 @@ class Workflow extends Vue {
             this.isInitialized = true;
         }
     }
-
-    createOrSubmit() {
-        console.log('submit codebase');
-    }
 }
 
 export default Workflow;

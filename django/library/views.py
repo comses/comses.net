@@ -78,7 +78,7 @@ class CodebaseReleaseViewSet(AddEditFormViewSetMixin, viewsets.ModelViewSet):
     def _file_upload_operations(self, request, upload_type: str, url):
         codebase_release = self.get_object()  # type: CodebaseRelease
         if request.method == 'POST':
-            if not codebase_release.live:
+            if codebase_release.live:
                 raise PermissionDenied(detail='files cannot be added on published releases')
             codebase_release.add_upload(upload_type, request.data['file'])
             return Response(status=204)
@@ -101,7 +101,7 @@ class CodebaseReleaseViewSet(AddEditFormViewSetMixin, viewsets.ModelViewSet):
     def download(self, request, identifier, version_number, upload_type, path):
         codebase_release = self.get_object()
         if request.method == 'DELETE':
-            if not codebase_release.live:
+            if codebase_release.live:
                 raise PermissionDenied(detail='files cannot be deleted from published releases')
             codebase_release.delete_upload(upload_type, path)
             return self._list_uploads(codebase_release, upload_type, request.path)

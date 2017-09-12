@@ -439,3 +439,10 @@ html {
     font-size: 16px;
   }
 }
+
+.invalid-feedback-always {
+  display: block;
+  margin-top: .25rem;
+  font-size: .875rem;
+  color: $form-feedback-invalid-color;
+}

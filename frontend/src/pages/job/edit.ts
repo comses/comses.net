@@ -9,6 +9,8 @@ import * as yup from 'yup'
 import {Job} from 'store/common'
 import {createFormValidator} from "pages/form"
 import {Component, Prop} from "vue-property-decorator";
+import {Mixin} from "util/vue-mixin";
+import {HandlerWithRedirect} from "api/handler";
 
 export const schema = yup.object().shape({
     title: yup.string().required(),
@@ -19,8 +21,6 @@ export const schema = yup.object().shape({
 
 @Component(<any>{
     template: `<form>
-        <c-message-display :messages="[]" :classNames="['alert', 'alert-danger']">
-        </c-message-display>
         <c-input v-model="title" name="title" :errorMsgs="errors.title">
             <label class="form-control-label" slot="label">Title</label>
             <small class="form-text text-muted" slot="help">A short title describing the job</small>
@@ -43,6 +43,8 @@ export const schema = yup.object().shape({
         </c-tagger>
         <small class="form-text text-muted">A list of tags to associate with a job. Tags help people search for jobs.
         </small>
+        <c-message-display :messages="statusMessages">
+        </c-message-display>
         <button type="button" class="mt-3 btn btn-primary" @click="createOrUpdate">Submit</button>
     </form>`,
     components: {
@@ -50,22 +52,24 @@ export const schema = yup.object().shape({
         'c-tagger': Tagger,
         'c-input': Input,
         'c-message-display': MessageDisplay,
-    },
-    mixins: [
-        createFormValidator(schema)
-    ]
+    }
 })
-class EditJob extends Vue {
+class EditJob extends createFormValidator(schema) {
     // determine whether you are creating or updating based on what route you are on
     // update -> grab the appropriate state from the store
     // create -> use the default store state
 
     @Prop()
-    id: number | null;
+    _id: number | null;
+
+    detailPageUrl(state) {
+        this.state.id = state.id;
+        return jobAPI.detailUrl(this.state.id);
+    }
 
     initializeForm() {
-        if (this.id !== null) {
-            return this.retrieve(this.id);
+        if (this._id !== null) {
+            return this.retrieve(this._id);
         }
     }
 
@@ -74,28 +78,25 @@ class EditJob extends Vue {
     }
 
     createSummaryFromDescription() {
-        (<any>this).state.summary = _.truncate((<any>this).state.description, {'length': 200, 'omission': '[...]'});
+        this.state.summary = _.truncate(this.state.description, {'length': 200, 'omission': '[...]'});
     }
 
-    createOrUpdate() {
-        const self: any = this;
-        if (this.id === null) {
-            return jobAPI.create(self.state)
+    async createOrUpdateIfValid() {
+        await this.validate();
+        this.createOrUpdate();
+    }
+
+    async createOrUpdate() {
+        if (_.isNil(this.state.id)) {
+            return jobAPI.create(new HandlerWithRedirect(this))
         } else {
-            return jobAPI.update(self.state);
+            return jobAPI.update(this.state.id, new HandlerWithRedirect(this));
         }
-    }
-
-    createOrUpdateIfValid() {
-        const self: any = this;
-        self.validate().then(() => {
-            this.createOrUpdate()
-        });
     }
 
     retrieve(id: number) {
         return jobAPI.retrieve(id).then(r => {
-            (<any>this).state = r.data;
+            this.state = r.data;
             return r;
         });
     }

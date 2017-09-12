@@ -3,9 +3,9 @@ import EditCodebase from './edit'
 function extractUrlParams(pathname: string) {
     let match = pathname.match(/\/codebases\/([\w-]+)\/edit\//);
     if (match !== null) {
-        return { identifier: match[1] };
+        return { _identifier: match[1] };
     }
-    return { identifier: null }
+    return { _identifier: null }
 }
 
 const editCodebase = new EditCodebase({ propsData: extractUrlParams(window.location.pathname)}).$mount('#app');

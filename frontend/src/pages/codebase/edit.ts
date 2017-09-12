@@ -5,8 +5,11 @@ import Checkbox from 'components/forms/checkbox'
 import Input from 'components/forms/input'
 import Tagger from 'components/tagger'
 import MarkdownEditor from 'components/forms/markdown'
-import {createFormValidator} from "pages/form";
+import MessageDisplay from 'components/message_display'
+import {createFormValidator} from "pages/form"
 import * as yup from 'yup'
+import * as _ from 'lodash'
+import {HandlerWithRedirect} from "api/handler"
 
 export const schema = yup.object().shape({
     title: yup.string().required(),
@@ -42,26 +45,30 @@ export const schema = yup.object().shape({
         <c-input v-model="repository_url" :errorMsgs="errors.repository_url" name="repository_url" label="Repository URL"
             help="A link to the source repository (on GitHub, BitBucket etcetera). A source repository makes it easier for others collaberate with you on model development.">
         </c-input>
+        <c-message-display :messages="statusMessages"></c-message-display>
         <button class="btn btn-primary" type="button" @click="save()">Save</button>
     </div>`,
     components: {
         'c-checkbox': Checkbox,
         'c-input': Input,
         'c-markdown': MarkdownEditor,
+        'c-message-display': MessageDisplay,
         'c-tagger': Tagger,
-    },
-    mixins: [
-        createFormValidator(schema)
-    ]
+    }
 })
-export default class Description extends Vue {
-    @Prop()
-    identifier: string;
+export default class Description extends createFormValidator(schema) {
+    @Prop({default: null})
+    _identifier: string;
+
+    detailPageUrl(state) {
+        this.state.identifier = state.identifier;
+        return codebaseAPI.detailUrl(this.state.identifier);
+    }
 
     async initializeForm() {
-        if (this.identifier) {
-            const response = await codebaseAPI.retrieve(this.identifier);
-            (<any>this).state = response.data;
+        if (this._identifier) {
+            const response = await codebaseAPI.retrieve(this._identifier);
+            this.state = response.data;
         }
     }
 
@@ -69,18 +76,16 @@ export default class Description extends Vue {
         this.initializeForm();
     }
 
-    createOrUpdate() {
-        const self: any = this;
-        if (this.identifier === null) {
-            return codebaseAPI.create(self.state);
+    async createOrUpdate() {
+        if (_.isNil(this.state.identifier)) {
+            return codebaseAPI.create(new HandlerWithRedirect(this));
         } else {
-            return codebaseAPI.update(self.state);
+            return codebaseAPI.update(this.state.identifier, new HandlerWithRedirect(this));
         }
     }
 
     async save() {
-        let self: any = this;
-        await self.validate();
+        await this.validate();
         return this.createOrUpdate();
     }
 }

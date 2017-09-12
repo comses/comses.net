@@ -9,6 +9,6 @@ function matchUpdateUrl(pathname) {
     return match
 }
 
-const id = matchUpdateUrl(window.location.pathname);
+const _id = matchUpdateUrl(window.location.pathname);
 
-const job = new EditJob({ propsData: { id }}).$mount('#app');
+const job = new EditJob({ propsData: { _id }}).$mount('#app');

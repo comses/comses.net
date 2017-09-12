@@ -8,5 +8,5 @@ function matchUpdateUrl(pathname) {
     return match
 }
 
-const id = matchUpdateUrl(document.location.pathname);
-new EditEvent({ propsData: {id}}).$mount('#app');
+const _id = matchUpdateUrl(document.location.pathname);
+new EditEvent({ propsData: {_id}}).$mount('#app');

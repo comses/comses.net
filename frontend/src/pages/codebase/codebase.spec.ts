@@ -9,15 +9,19 @@ async function createCodebase() {
         description: 'A simulation where agent compete and cooperate for sugar and spice',
         tags: [{ name: 'Python'}],
     });
-    return codebaseAPI.create(codebase);
+    const vm = new EditCodebase();
+    vm.state = codebase;
+    expect(vm.state.title).toBe('Sugarscape');
+    await vm.createOrUpdate();
+    return vm.state.identifier;
 }
 
 describe('codebase editing', () => {
     it('should allow updating and retrieving of codebases', async () => {
+        const _identifier = await createCodebase();
         try {
-            const response = await createCodebase();
-            const identifier = response.data.identifier;
-            const vm = new EditCodebase({propsData: {identifier}});
+            console.log('foo');
+            const vm = new EditCodebase({propsData: {_identifier}});
             await vm.initializeForm();
             expect((<any>vm).title).toBe('Sugarscape');
 
@@ -26,10 +30,10 @@ describe('codebase editing', () => {
             await vm.initializeForm();
             expect((<any>vm).title).toBe('Codebase Model');
 
-            await codebaseAPI.delete(identifier);
+            await codebaseAPI.delete(_identifier);
         } catch (e) {
             if (e.response) {
-                console.log(e.response)
+                console.log(e)
             }
             throw e;
         }

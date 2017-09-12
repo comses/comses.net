@@ -47,7 +47,8 @@ module.exports = createConfig([
                 'pages': path.resolve(__dirname, 'src/pages'),
                 'assets': path.resolve(__dirname, 'src/assets'),
                 'store': path.resolve(__dirname, 'src/store'),
-                'components': path.resolve(__dirname, 'src/components')
+                'components': path.resolve(__dirname, 'src/components'),
+                'util': path.resolve(__dirname, 'src/util'),
             }
         }
     }),

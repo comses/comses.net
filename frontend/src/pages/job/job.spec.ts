@@ -7,18 +7,18 @@ const title = 'Postdoc on ABM';
 const description = 'Postdoc on ABM at ASU for 2018';
 
 async function createJob() {
+    const vm = new EditJob();
     const job = _.merge(createDefaultValue(schema), {title, description});
-    const vm = new EditJob({propsData: {id: null}});
-    vm.$set(vm, 'state', job);
-    return vm.createOrUpdate();
+    vm.state = job;
+    await vm.createOrUpdate();
+    return vm.state.id;
 }
 
 describe('jobs editing', () => {
     it('should allow updating and retrieving of jobs', async () => {
         try {
-            const response = await createJob();
-            const id = response.data.id;
-            const vm = new EditJob({propsData: {id}});
+            const _id = await createJob();
+            const vm = new EditJob({ propsData: {_id}});
             await vm.initializeForm();
             expect((<any>vm).title).toBe(title);
 
@@ -27,7 +27,7 @@ describe('jobs editing', () => {
             await vm.initializeForm();
             expect((<any>vm).title).toBe('foo');
 
-            await jobAPI.delete(id);
+            await jobAPI.delete(_id);
 
         } catch (e) {
             if (e.response) {

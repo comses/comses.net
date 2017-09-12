@@ -1,51 +1,55 @@
-import {AxiosResponse} from "axios";
+import {AxiosRequestConfig, AxiosResponse} from 'axios'
 import * as queryString from 'query-string'
-import {api_base} from "api/connection"
+import {api} from 'api/connection'
+import {CreateOrUpdateHandler} from "api/handler";
 
 export const eventAPI = {
-    detailUrl(id) {
+    baseUrl: '/jobs/',
+    detailUrl(id: number) {
         return `/events/${id}/`;
     },
     createUrl() {
         return `/events/`;
     },
     delete(id: number) {
-        return api_base.delete(this.detailUrl(id));
+        return api.delete(this.detailUrl(id));
     },
     retrieve(id: number) {
-        return api_base.get(this.detailUrl(id));
+        return api.get(this.detailUrl(id));
     },
-    update(event) {
-        return api_base.put(this.detailUrl(event.id), event);
+    update(id: number, event: CreateOrUpdateHandler) {
+        return api.put(this.detailUrl(id), event);
     },
-    create(event) {
-        return api_base.post(this.createUrl(), event);
+    create(event_component: CreateOrUpdateHandler) {
+        return api.post(this.createUrl(), event_component);
     }
 };
 
 export const jobAPI = {
-    detailUrl(id) {
+    baseUrl: '/jobs/',
+    detailUrl(id: number) {
         return `/jobs/${id}/`;
     },
     createUrl() {
         return `/jobs/`;
     },
-    retrieve(id) {
-        return api_base.get(this.detailUrl(id));
+    retrieve(id: number) {
+        return api.get(this.detailUrl(id));
     },
-    delete(id) {
-        return api_base.delete(this.detailUrl(id));
+    delete(id: number) {
+        return api.delete(this.detailUrl(id));
     },
-    update(job) {
-        return api_base.put(this.detailUrl(job.id), job);
+    update(id: number, job_component: CreateOrUpdateHandler) {
+        return api.put(this.detailUrl(id), job_component);
     },
-    create(job) {
-        return api_base.post(this.createUrl(), job);
+    create(job_component: CreateOrUpdateHandler) {
+        return api.post(this.createUrl(), job_component);
     }
 };
 
 export const profileAPI = {
-    listUrl(q: {query?: string, page: number}) {
+    baseUrl: '/users/',
+    listUrl(q: { query?: string, page: number }) {
         const qs = queryString.stringify(q);
         return `/users/${qs ? `?${qs}` : ''}`;
     },
@@ -55,47 +59,47 @@ export const profileAPI = {
     uploadPictureUrl(username: string) {
         return `${this.detailUrl(username)}upload_picture/`
     },
-    list(q: {query?: string, page: number}) {
-        return api_base.get(this.listUrl(q));
+    list(q: { query?: string, page: number }) {
+        return api.get(this.listUrl(q));
     },
     retrieve(username) {
-        return api_base.get(this.detailUrl(username));
+        return api.get(this.detailUrl(username));
     },
-    create(profile) {
-        return api_base.post(this.detailUrl(profile.username), profile);
-    },
-    update(profile) {
-        return api_base.put(this.detailUrl(profile.username), profile);
+    update(username, profile) {
+        return api.put(this.detailUrl(username), profile);
     },
     uploadProfilePicture({username}, file) {
         const formData = new FormData();
         formData.append('file', file);
-        return api_base.post(this.uploadPictureUrl(username), formData, {headers: {'Content-Type': 'multipart/form-data'}})
+        return api.postForm(this.uploadPictureUrl(username), formData,
+            {headers: {'Content-Type': 'multipart/form-data'}})
     }
 };
 
 export const codebaseAPI = {
+    baseUrl: '/codebases/',
     listUrl() {
-        return '/codebases/';
+        return this.baseUrl;
     },
     detailUrl(identifier) {
         return `/codebases/${identifier}/`;
     },
     create(codebase) {
-        return api_base.post(this.listUrl(), codebase);
+        return api.post(this.listUrl(), codebase);
     },
     delete(identifier) {
-        return api_base.delete(this.detailUrl(identifier));
+        return api.delete(this.detailUrl(identifier));
     },
-    update(codebase) {
-        return api_base.put(this.detailUrl(codebase.identifier), codebase);
+    update(identifier, codebase_component: CreateOrUpdateHandler) {
+        return api.put(this.detailUrl(identifier), codebase_component);
     },
     retrieve(identifier) {
-        return api_base.get(this.detailUrl(identifier));
+        return api.get(this.detailUrl(identifier));
     }
 };
 
 export const codebaseReleaseAPI = {
+    baseUrl: '/codebases/',
     detailUrl({identifier, version_number}) {
         return `/codebases/${identifier}/releases/${version_number}/`;
     },
@@ -106,25 +110,25 @@ export const codebaseReleaseAPI = {
         return `${this.detailUrl({identifier, version_number})}contributors/`;
     },
     retrieve({identifier, version_number}) {
-        return api_base.get(this.detailUrl({identifier, version_number}));
+        return api.get(this.detailUrl({identifier, version_number}));
     },
     listFiles({identifier, version_number, upload_type}) {
-        return api_base.get(this.listFileUrl({identifier, version_number, upload_type}));
+        return api.get(this.listFileUrl({identifier, version_number, upload_type}));
     },
     uploadFile({path}, file, onUploadProgress) {
         const formData = new FormData();
         formData.append('file', file);
-        return api_base.post(path, formData, {headers: {'Content-Type': 'multipart/form-data'}, onUploadProgress});
+        return api.postForm(path, formData, {headers: {'Content-Type': 'multipart/form-data'}, onUploadProgress});
     },
     deleteFile({path}) {
-        return api_base.delete(path);
+        return api.delete(path);
     },
     updateDetail({identifier, version_number}, detail) {
-        return api_base.put(
+        return api.put(
             this.detailUrl({identifier, version_number}), detail)
     },
     updateContributors({identifier, version_number}, contributors) {
-        return api_base.put(this.updateContributorUrl({identifier, version_number}), contributors)
+        return api.put(this.updateContributorUrl({identifier, version_number}), contributors)
     }
 };
 
@@ -137,7 +141,7 @@ export const tagAPI = {
         return `/tags/?${queryString.stringify(filters)}`;
     },
     list({query, page = 1}) {
-        return api_base.get(this.listUrl({query, page}));
+        return api.get(this.listUrl({query, page}));
     }
 };
 
@@ -146,36 +150,6 @@ export const contributorAPI = {
         return `/contributors/?${queryString.stringify(filters)}`
     },
     list({query, page = 1}) {
-        return api_base.get(this.listUrl({query, page}));
+        return api.get(this.listUrl({query, page}));
     }
 };
-
-function isAxiosResponse(response: any): response is AxiosResponse {
-    return response !== undefined && (<AxiosResponse>response).status !== undefined;
-}
-
-class DrfSuccess {
-    constructor(public payload: any) {
-        this.kind = 'state';
-    }
-
-    kind: 'state';
-}
-
-class DrfValidationError {
-    constructor(public payload: any) {
-        this.kind = 'validation_error';
-    }
-
-    kind: 'validation_error';
-}
-
-class DrfOtherError {
-    constructor(public payload: any) {
-        this.kind = 'validation_error';
-    }
-
-    kind: 'validation_error';
-}
-
-type DrfResponse = DrfSuccess | DrfValidationError | DrfOtherError;

@@ -9,7 +9,7 @@ import * as Datepicker from 'vuejs-datepicker'
         <datepicker :value="value" @input="updateDate" wrapper-class="input-group"
                     :input-class="datepickerInputClass" :clear-button="clearButton" @cleared="cleared">
         </datepicker>
-        <div v-if="isInvalid" class="invalid-feedback">{{ errorMessage }}</div>
+        <div v-if="isInvalid" class="invalid-feedback-always">{{ errorMessage }}</div>
         <slot name="help"></slot>
     </div>`,
     components: {

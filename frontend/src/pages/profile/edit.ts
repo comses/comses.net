@@ -8,10 +8,10 @@ import TextArea from 'components/forms/textarea'
 import MessageDisplay from 'components/message_display'
 import EditItems from 'components/edit_items'
 import {profileAPI} from 'api'
-import {getCookie} from 'api/connection'
 import * as _ from 'lodash'
 import * as Dropzone from 'vue2-dropzone'
 import {createFormValidator} from 'pages/form'
+import {HandlerWithRedirect} from "api/handler";
 import * as yup from 'yup'
 
 export const schema = yup.object().shape({
@@ -30,8 +30,6 @@ export const schema = yup.object().shape({
 
 @Component(<any>{
     template: `<form>
-        <c-message-display :messages="[]" :classNames="['alert', 'alert-danger']">
-        </c-message-display>
         <c-input v-model="given_name" name="given_name" :errorMsgs="errors.given_name" label="Given Name">
         </c-input>
         <c-input v-model="family_name" name="family_name" :errorMsgs="errors.family_name" label="Family Name">
@@ -64,6 +62,8 @@ export const schema = yup.object().shape({
         </c-edit-degrees>
         <c-tagger v-model="keywords" name="keywords" :errorMsgs="errors.keywords" label="Keywords">
         </c-tagger>
+        <c-message-display :messages="statusMessages">
+        </c-message-display>
         <button type="button" class="mt-3 btn btn-primary" @click="createOrUpdate">Submit</button>
     </form>`,
     components: {
@@ -75,23 +75,24 @@ export const schema = yup.object().shape({
         'c-input': Input,
         'c-edit-degrees': EditItems,
         'dropzone': Dropzone,
-    },
-    mixins: [
-        createFormValidator(schema)
-    ]
+    }
 })
-export default class EditProfile extends Vue {
+export default class EditProfile extends createFormValidator(schema) {
     @Prop
-    username: string | null;
+    _username: string | null;
 
-    get csrftoken() {
-        // console.log(getCookie('csrftoken'));
-        return getCookie('csrftoken');
+    detailPageUrl(state) {
+        this.state.username = state.username;
+        return profileAPI.detailUrl(this.state.username);
+    }
+
+    detailUrlParams(state) {
+        return state.username;
     }
 
     initializeForm() {
-        if (this.username !== null) {
-            return this.retrieve(this.username)
+        if (this._username !== null) {
+            return this.retrieve(this._username)
         }
     }
 
@@ -100,23 +101,17 @@ export default class EditProfile extends Vue {
     }
 
     createOrUpdate() {
-        const self: any = this;
-        if (self.state.username === null) {
-            return profileAPI.create(self.state);
-        } else {
-            return profileAPI.update(self.state);
-        }
+        return profileAPI.update(this.state.username, new HandlerWithRedirect(this));
     }
 
     retrieve(username: string) {
-        return profileAPI.retrieve(username).then(r => (<any>this).state = r.data);
+        return profileAPI.retrieve(username).then(r => this.state = r.data);
     }
 
     async uploadImage(event) {
-        let self: any = this;
         const file = event.target.files[0];
-        const response = await profileAPI.uploadProfilePicture({username: this.username}, file);
-        self.state.avatar = response.data;
+        const response = await profileAPI.uploadProfilePicture({username: this.state.username}, file);
+        this.state.avatar = response.data;
     }
 
     get uploadImageURL() {

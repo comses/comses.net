@@ -1,5 +1,9 @@
 import * as _ from 'lodash';
 import * as yup from 'yup';
+import {AxiosResponse} from "axios";
+import {isAxiosResponse} from "api/index";
+import * as Vue from 'vue'
+import {Component} from 'vue-property-decorator'
 
 export function createDefaultValue(schema) {
     switch (schema.constructor.name) {
@@ -39,7 +43,8 @@ export function createDefaultValue(schema) {
 
 function createComputed(key: string, validate: (self, value) => Promise<any>) {
     const debouncedValidator = _.debounce((self, value) => validate(self, value)
-        .catch(() => {}), 500);
+        .catch(() => {
+        }), 500);
     return {
         get: function () {
             return this.state[key];
@@ -59,15 +64,43 @@ function createDefaultErrors(keys) {
     return errors;
 }
 
-function createFieldValidator(schema, key: string) {
+function populateErrorsFromValidationError(self, ve) {
+    const errors = ve.inner;
+    if (!_.isNil(ve.path)) {
+        self.errors[ve.path] = ve.message;
+    }
+    for (const error of errors) {
+        self.errors[error.path] = error.message;
+    }
+    self.statusMessages = [{
+        classNames: 'alert alert-warning',
+        message: 'Form not submitted. Please check above for validation errors.'
+    }];
+}
 
+export function reachRelated(schema, key) {
+    const shape = {};
+    const subSchema = yup.reach(schema, key);
+    shape[key] = subSchema;
+
+    const dependentKeys: Array<string> = subSchema._deps;
+    for (const dependentKey of dependentKeys) {
+        const dependentSchema = yup.reach(schema, dependentKey).clone();
+        dependentSchema._conditions = [];
+        dependentSchema._deps = [];
+        shape[dependentKey] = dependentSchema;
+    }
+    return yup.object().shape(shape);
+}
+
+function createFieldValidator(schema, key: string) {
+    const subSchema = reachRelated(schema, key);
     return async function validator(self, value) {
-        const subSchema = yup.reach(schema, key);
         try {
-            const v = await subSchema.validate(value);
+            const v = await subSchema.validate(self.state);
             self.errors[key] = [];
             return v;
-        } catch(e) {
+        } catch (e) {
             if (e.errors) {
                 self.errors[key] = e.errors;
                 return Promise.reject(e);
@@ -87,36 +120,33 @@ export function createFormValidator(schema) {
         validators[key] = validator;
     }, {});
 
-    let vueOptions = {
-        data() {
-            return {
-                state: defaultValue,
-                errors: defaultErrors
-            }
-        },
+    @Component(<any>{
         computed,
-        methods: {
-            validate() {
-                const validationResults = _.chain(this.$options.$validators).toPairs()
-                    .map(([k,v]) => v(this, this[k])).value();
-                return Promise.all(validationResults);
-            },
-            clear() {
-                keys.forEach(key => this.errors[key] = []);
-            },
-            replace(state) {
-                this.clear();
-                this.state = state;
-            }
-        },
         $validators
-    };
+    })
+    class FormValidator extends Vue {
+        statusMessages: Array<{ classNames: string, message: string }> = [];
+        state = defaultValue;
+        errors = defaultErrors;
 
-    return vueOptions;
-}
+        async validate() {
+            try {
+                const state = await schema.validate(this.state, {abortEarly: false});
+            } catch (validationErrors) {
+                populateErrorsFromValidationError(this, validationErrors);
+                throw validationErrors;
+            }
+        }
 
-function retrieve(schema, retrieveAPI) {
-    return async function() {
+        clear() {
+            keys.forEach(key => this.errors[key] = []);
+        }
 
+        replace(state) {
+            this.clear();
+            this.state = state;
+        }
     }
+
+    return FormValidator;
 }

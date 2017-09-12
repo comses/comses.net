@@ -8,6 +8,6 @@ function matchUpdateUrl(pathname: string): string | null {
     return match
 }
 
-const username = matchUpdateUrl(window.location.pathname);
+const _username = matchUpdateUrl(window.location.pathname);
 
-new EditProfile({ propsData: {username}}).$mount('#app');
+new EditProfile({ propsData: {_username}}).$mount('#app');

@@ -13,17 +13,17 @@ async function createEvent() {
         location: 'Boulder, CO',
         description: 'Conference'
     });
-    const vm = new EditEvent({propsData: {id: null}});
-    vm.$set(vm, 'state', event);
-    return vm.createOrUpdate();
+    const vm = new EditEvent();
+    vm.state = event;
+    await vm.createOrUpdate();
+    return vm.state.id;
 }
 
 describe('event editing', () => {
     it('should allow updating and retrieving of events', async () => {
         try {
-            const response = await createEvent();
-            const id = response.data.id;
-            const vm = new EditEvent({propsData: {id}});
+            const _id = await createEvent();
+            const vm = new EditEvent({ propsData: {_id}});
             await vm.initializeForm();
             expect((<any>vm).title).toBe('ESSA 2007');
 
@@ -32,7 +32,7 @@ describe('event editing', () => {
             await vm.initializeForm();
             expect((<any>vm).title).toBe('foo');
 
-            await eventAPI.delete(id);
+            await eventAPI.delete(_id);
 
         } catch (e) {
             if (e.response) {

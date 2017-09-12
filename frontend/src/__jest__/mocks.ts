@@ -1,6 +1,7 @@
 import axios from 'axios'
 import {__BASIC_AUTH_USERNAME__, __BASIC_AUTH_PASSWORD__} from "./common"
 import * as _ from 'lodash'
+import {Api} from 'api/connection'
 
 function getCookie(name) {
     let cookieValue: string | null = null;
@@ -18,16 +19,11 @@ function getCookie(name) {
     return cookieValue;
 }
 
-const api_base = axios.create({
+const api = new Api({
     headers: {'Content-Type': 'application/json'},
     auth: {username: __BASIC_AUTH_USERNAME__, password: __BASIC_AUTH_PASSWORD__}
 });
-api_base.interceptors.request.use(config => {
-    config.headers['X-CSRFToken'] = getCookie('csrftoken');
-    return config;
-}, error => Promise.reject(error));
-
 
 jest.mock('api/connection',
-    () => ({api_base})
+    () => ({api})
 );
