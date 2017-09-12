@@ -27,19 +27,19 @@ export const schema = yup.object().shape({
         <p>
         First, let's figure out what you'd like to call this thing.
         </p>
-        <c-input v-model="state.title" name="title" :errorMsgs="errors.title" label="Title"
+        <c-input v-model="title" name="title" :errorMsgs="errors.title" label="Title"
             help="A short title describing the codebase">
         </c-input>
-        <c-markdown v-model="state.description" :errorMsgs="errors.description" name="description" rows="3" label="Description">
+        <c-markdown v-model="description" :errorMsgs="errors.description" name="description" rows="3" label="Description">
         </c-markdown>
-        <c-checkbox v-model="state.live" name="live" :errorMsgs="errors.live" label="Published?"
+        <c-checkbox v-model="live" name="live" :errorMsgs="errors.live" label="Published?"
             help="Published models are visible to everyone. Unpublished models are visible only to you">
         </c-checkbox>
-        <c-checkbox v-model="state.is_replication" :errorMsgs="errors.is_replication" name="replication" label="Is a replication?">
+        <c-checkbox v-model="is_replication" :errorMsgs="errors.is_replication" name="replication" label="Is a replication?">
         </c-checkbox>
-        <c-tagger v-model="state.tags" name="tags" :errorMsgs="errors.tags" label="Tags">
+        <c-tagger v-model="tags" name="tags" :errorMsgs="errors.tags" label="Tags">
         </c-tagger>
-        <c-input v-model="state.repository_url" :errorMsgs="errors.repository_url" name="repository_url" label="Repository URL"
+        <c-input v-model="repository_url" :errorMsgs="errors.repository_url" name="repository_url" label="Repository URL"
             help="A link to the source repository (on GitHub, BitBucket etcetera). A source repository makes it easier for others collaberate with you on model development.">
         </c-input>
         <button class="btn btn-primary" type="button" @click="save()">Save</button>
@@ -51,13 +51,7 @@ export const schema = yup.object().shape({
         'c-tagger': Tagger,
     },
     mixins: [
-        createFormValidator(schema, {
-            errorAttributeName: 'errors',
-            stateAttributeName: 'state'
-        }, {
-            clearErrorsMethodName: 'clear',
-            validationMethodName: 'validate'
-        })
+        createFormValidator(schema)
     ]
 })
 export default class Description extends Vue {

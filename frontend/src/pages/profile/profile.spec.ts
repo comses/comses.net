@@ -7,12 +7,12 @@ describe('profile editing', () => {
         try {
             const vm = new EditProfile({ propsData: { username: __BASIC_AUTH_USERNAME__}});
             await vm.initializeForm();
-            expect((<any>vm).state.given_name).toBe('Test');
+            expect((<any>vm).given_name).toBe('Test');
 
-            (<any>vm).state.given_name = 'foo';
+            (<any>vm).given_name = 'foo';
             await vm.createOrUpdate();
             await vm.initializeForm();
-            expect((<any>vm).state.given_name).toBe('foo');
+            expect((<any>vm).given_name).toBe('foo');
 
             (<any>vm).state.given_name = 'Test';
             await vm.createOrUpdate();

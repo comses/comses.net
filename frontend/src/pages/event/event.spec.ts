@@ -25,12 +25,12 @@ describe('event editing', () => {
             const id = response.data.id;
             const vm = new EditEvent({propsData: {id}});
             await vm.initializeForm();
-            expect((<any>vm).state.title).toBe('ESSA 2007');
+            expect((<any>vm).title).toBe('ESSA 2007');
 
-            (<any>vm).state.title = 'foo';
+            (<any>vm).title = 'foo';
             await vm.createOrUpdate();
             await vm.initializeForm();
-            expect((<any>vm).state.title).toBe('foo');
+            expect((<any>vm).title).toBe('foo');
 
             await eventAPI.delete(id);
 

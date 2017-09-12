@@ -20,12 +20,12 @@ describe('jobs editing', () => {
             const id = response.data.id;
             const vm = new EditJob({propsData: {id}});
             await vm.initializeForm();
-            expect((<any>vm).state.title).toBe(title);
+            expect((<any>vm).title).toBe(title);
 
-            (<any>vm).state.title = 'foo';
+            (<any>vm).title = 'foo';
             await vm.createOrUpdate();
             await vm.initializeForm();
-            expect((<any>vm).state.title).toBe('foo');
+            expect((<any>vm).title).toBe('foo');
 
             await jobAPI.delete(id);
 

@@ -19,12 +19,12 @@ describe('codebase editing', () => {
             const identifier = response.data.identifier;
             const vm = new EditCodebase({propsData: {identifier}});
             await vm.initializeForm();
-            expect((<any>vm).state.title).toBe('Sugarscape');
+            expect((<any>vm).title).toBe('Sugarscape');
 
-            (<any>vm).state.title = 'Codebase Model';
+            (<any>vm).title = 'Codebase Model';
             await vm.createOrUpdate();
             await vm.initializeForm();
-            expect((<any>vm).state.title).toBe('Codebase Model');
+            expect((<any>vm).title).toBe('Codebase Model');
 
             await codebaseAPI.delete(identifier);
         } catch (e) {

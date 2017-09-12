@@ -32,37 +32,37 @@ export const schema = yup.object().shape({
     template: `<form>
         <c-message-display :messages="[]" :classNames="['alert', 'alert-danger']">
         </c-message-display>
-        <c-input v-model="state.given_name" name="given_name" :errorMsgs="errors.given_name" label="Given Name">
+        <c-input v-model="given_name" name="given_name" :errorMsgs="errors.given_name" label="Given Name">
         </c-input>
-        <c-input v-model="state.family_name" name="family_name" :errorMsgs="errors.family_name" label="Family Name">
+        <c-input v-model="family_name" name="family_name" :errorMsgs="errors.family_name" label="Family Name">
         </c-input>
-        <c-textarea v-model="state.research_interests" name="research_interests" :errorMsgs="errors.research_interests" label="Research Interests">
+        <c-textarea v-model="research_interests" name="research_interests" :errorMsgs="errors.research_interests" label="Research Interests">
         </c-textarea>
         <div class="form-group">
             <label class="form-control-label">Profile Picture Upload</label>
             <input type="file" class="form-control-file" @change="uploadImage">
-            <img v-if="state.avatar" :src="state.avatar">
+            <img v-if="avatar" :src="avatar">
         </div>
         </dropzone>
-        <c-input type="url" v-model="state.orcid" name="orcid" :errorMsgs="errors.orcid" label="ORCID" help="Your ORCID">
+        <c-input type="url" v-model="orcid" name="orcid" :errorMsgs="errors.orcid" label="ORCID" help="Your ORCID">
         </c-input>
-        <c-input type="url" v-model="state.personal_url" name="personal_url" :errorMsgs="errors.personal_url" label="Personal URL" help="A link to your personal modeling related website">
+        <c-input type="url" v-model="personal_url" name="personal_url" :errorMsgs="errors.personal_url" label="Personal URL" help="A link to your personal modeling related website">
         </c-input>
-        <c-input type="url" v-model="state.professional_url" name="professional_url" :errorMsgs="errors.professional_url" 
+        <c-input type="url" v-model="professional_url" name="professional_url" :errorMsgs="errors.professional_url" 
                  label="Professional URL" help="A link to your profile at the your place of work">
         </c-input>
-        <c-input v-model="state.institution_name" name="institution_name" :errorMsgs="errors.institution_name"
+        <c-input v-model="institution_name" name="institution_name" :errorMsgs="errors.institution_name"
             label="Institution" help="The primary place you are currently working at">
         </c-input>
-        <c-input v-model="state.institution_url" name="institution_url" :errorMsgs="errors.institution_url" label="Institution URL">
+        <c-input v-model="institution_url" name="institution_url" :errorMsgs="errors.institution_url" label="Institution URL">
         </c-input>
-        <c-textarea v-model="state.bio" name="bio" :errorMsgs="errors.bio" label="Biography">
+        <c-textarea v-model="bio" name="bio" :errorMsgs="errors.bio" label="Biography">
         </c-textarea>
-        <c-edit-degrees :value="state.degrees" @create="state.degrees.push($event)" @remove="state.degrees.splice($event, 1)" @modify="state.degrees.splice($event.index, 1, $event.value)" name="degrees" :errorMsgs="errors.degrees">
+        <c-edit-degrees :value="degrees" @create="degrees.push($event)" @remove="degrees.splice($event, 1)" @modify="degrees.splice($event.index, 1, $event.value)" name="degrees" :errorMsgs="errors.degrees">
             <label class="form-control-label" slot="label">Degrees</label>
             <small class="form-text text-muted" slot="help">The institution and name of the degrees you recieved</small>
         </c-edit-degrees>
-        <c-tagger v-model="state.keywords" name="keywords" :errorMsgs="errors.keywords" label="Keywords">
+        <c-tagger v-model="keywords" name="keywords" :errorMsgs="errors.keywords" label="Keywords">
         </c-tagger>
         <button type="button" class="mt-3 btn btn-primary" @click="createOrUpdate">Submit</button>
     </form>`,
@@ -77,10 +77,7 @@ export const schema = yup.object().shape({
         'dropzone': Dropzone,
     },
     mixins: [
-        createFormValidator(schema, {
-            stateAttributeName: 'state',
-            errorAttributeName: 'errors'
-        }, {validationMethodName: 'validate', clearErrorsMethodName: 'clear'})
+        createFormValidator(schema)
     ]
 })
 export default class EditProfile extends Vue {

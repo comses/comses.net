@@ -1,16 +1,6 @@
 import * as _ from 'lodash';
 import * as yup from 'yup';
 
-interface FormData {
-    errorAttributeName: string
-    stateAttributeName: string
-}
-
-interface Methods {
-    validationMethodName: string
-    clearErrorsMethodName: string
-}
-
 export function createDefaultValue(schema) {
     switch (schema.constructor.name) {
         case 'ObjectSchema': {
@@ -47,60 +37,86 @@ export function createDefaultValue(schema) {
     }
 }
 
-function createFieldValidator(schema, path: string, data: FormData, vueOptions) {
-
-    const validator = function (self, value) {
-        const subSchema = yup.reach(schema, path);
-        return subSchema.validate(value)
-            .then(function (value) {
-                _.set(self, `${data.errorAttributeName}.${path}`, []);
-                return Promise.resolve(value);
-            })
-            .catch(function (ve) {
-                _.set(self, `${data.errorAttributeName}.${path}`, ve.errors)
-                return Promise.reject(ve);
-            });
-    };
-
-    const debouncedValidator = _.debounce((self, value) => validator(self, value).catch(() => {
-    }), 500);
-
-    _.set(vueOptions, `data.${data.errorAttributeName}.${path}`, []);
-
-    vueOptions.watch[`${data.stateAttributeName}.${path}`] = function (value) {
-        debouncedValidator.cancel();
-        return debouncedValidator(this, value)
-    };
-
-    const globalValidator = self => validator(self, _.get(self, `${data.stateAttributeName}.${path}`));
-
-    return globalValidator;
+function createComputed(key: string, validate: (self, value) => Promise<any>) {
+    const debouncedValidator = _.debounce((self, value) => validate(self, value)
+        .catch(() => {}), 500);
+    return {
+        get: function () {
+            return this.state[key];
+        },
+        set: function (value) {
+            this.state[key] = value;
+            debouncedValidator(this, value);
+        }
+    }
 }
 
-export function createFormValidator(schema, data: FormData, methods: Methods) {
-    let vueOptions: { data: object, watch: object, methods: object } = {
-        data: {},
-        watch: {},
-        methods: {}
-    };
-    vueOptions.data[data.stateAttributeName] = createDefaultValue(schema);
-
-    const validators = Object.keys(schema.fields).map(function (path) {
-        return createFieldValidator(schema, path, data, vueOptions);
+function createDefaultErrors(keys) {
+    const errors = {};
+    keys.forEach(key => {
+        errors[key] = [];
     });
+    return errors;
+}
 
-    const _data = _.merge({}, vueOptions.data);
-    vueOptions.data = function () {
-        return _data;
-    };
-    vueOptions.methods[methods.validationMethodName] = function () {
-        const validationResults = validators.map(v => v(this));
-        return Promise.all(validationResults);
-    };
+function createFieldValidator(schema, key: string) {
 
-    vueOptions.methods[methods.clearErrorsMethodName] = function () {
-        Object.keys(_data[data.errorAttributeName]).forEach(key => this[data.errorAttributeName][key] = []);
+    return async function validator(self, value) {
+        const subSchema = yup.reach(schema, key);
+        try {
+            const v = await subSchema.validate(value);
+            self.errors[key] = [];
+            return v;
+        } catch(e) {
+            if (e.errors) {
+                self.errors[key] = e.errors;
+                return Promise.reject(e);
+            }
+        }
+    };
+}
+
+export function createFormValidator(schema) {
+    const defaultValue = createDefaultValue(schema);
+    const keys = Object.keys(schema.fields);
+    const defaultErrors = createDefaultErrors(keys);
+    const computed = {};
+    const $validators = _.transform(keys, (validators, key) => {
+        const validator = createFieldValidator(schema, key);
+        computed[key] = createComputed(key, validator);
+        validators[key] = validator;
+    }, {});
+
+    let vueOptions = {
+        data() {
+            return {
+                state: defaultValue,
+                errors: defaultErrors
+            }
+        },
+        computed,
+        methods: {
+            validate() {
+                const validationResults = _.chain(this.$options.$validators).toPairs()
+                    .map(([k,v]) => v(this, this[k])).value();
+                return Promise.all(validationResults);
+            },
+            clear() {
+                keys.forEach(key => this.errors[key] = []);
+            },
+            replace(state) {
+                this.clear();
+                this.state = state;
+            }
+        },
+        $validators
     };
 
     return vueOptions;
+}
+
+function retrieve(schema, retrieveAPI) {
+    return async function() {
+
+    }
 }

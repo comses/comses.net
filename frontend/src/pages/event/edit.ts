@@ -26,23 +26,23 @@ export const schema = yup.object().shape({
 
 @Component(<any>{
     template: `<form>
-        <c-input v-model="state.title" name="title" :errorMsgs="errors.title">
+        <c-input v-model="title" name="title" :errorMsgs="errors.title">
             <label class="form-control-label" slot="label">Title</label>
             <small class="form-text text-muted" slot="help">A short title describing the event</small>
         </c-input>
-        <c-input v-model="state.location" name="location" :errorMsgs="errors.location">
+        <c-input v-model="location" name="location" :errorMsgs="errors.location">
             <label class="form-control-label" slot="label">Location</label>
             <small class="form-text text-muted" slot="help">The address of where the event takes place</small>
         </c-input>
         <div class="row">
             <div class="col-6">
-                <c-datepicker v-model="state.start_date" name="start_date" :errorMsgs="errors.start_date">
+                <c-datepicker v-model="start_date" name="start_date" :errorMsgs="errors.start_date">
                     <label class="form-control-label" slot="label">Start Date</label>
                     <small class="form-text text-muted" slot="help">The date the event begins at</small>
                 </c-datepicker>
             </div>
             <div class="col-6">
-                <c-datepicker v-model="state.end_date" name="end_date" :errorMsgs="errors.end_date" :clearButton="true">
+                <c-datepicker v-model="end_date" name="end_date" :errorMsgs="errors.end_date" :clearButton="true">
                     <label class="form-control-label" slot="label">End Date</label>
                     <small class="form-text text-muted" slot="help">The date the event ends at</small>
                 </c-datepicker>
@@ -50,7 +50,7 @@ export const schema = yup.object().shape({
         </div>
         <div class="row">
             <div class="col-6 d-inline">
-                <c-datepicker v-model="state.early_registration_deadline" name="early_registration_deadline"
+                <c-datepicker v-model="early_registration_deadline" name="early_registration_deadline"
                                 :errorMsgs="errors.early_registration_deadline">
                     <label class="form-control-label" slot="label">Early Registration Deadline</label>
                     <small class="form-text text-muted" slot="help">The last day for early registration of the event
@@ -59,7 +59,7 @@ export const schema = yup.object().shape({
                 </c-datepicker>
             </div>
             <div class="col-6 d-inline">
-                <c-datepicker v-model="state.submission_deadline" name="submission_deadline"
+                <c-datepicker v-model="submission_deadline" name="submission_deadline"
                     :errorMsgs="errors.submission_deadline" :clearButton="true">
                     <label class="form-control-label" slot="label">Submission Deadline</label>
                     <small class="form-text text-muted" slot="help">The last day to register for the event (inclusive)
@@ -67,12 +67,12 @@ export const schema = yup.object().shape({
                 </c-datepicker>
             </div>
         </div>
-        <c-markdown v-model="state.description" name="description" :errorMsgs="errors.description"
+        <c-markdown v-model="description" name="description" :errorMsgs="errors.description"
                     minHeight="20em">
             <label class="form-control-label" slot="label">Description</label>
             <small slot="help" class="form-text text-muted">Detailed information about the job</small>
         </c-markdown>
-        <c-markdown v-model="state.summary" name="summary" :errorMsgs="errors.summary">
+        <c-markdown v-model="summary" name="summary" :errorMsgs="errors.summary">
             <label slot="label">Summary</label>
             <div slot="help"><button class="btn btn-secondary btn-sm" type="button" @click="createSummaryFromDescription">
                     Summarize
@@ -82,7 +82,7 @@ export const schema = yup.object().shape({
                 </small>
             </div>
         </c-markdown>
-        <c-tagger v-model="state.tags" name="tags" :errorMsgs="errors.tags" label="Tags">
+        <c-tagger v-model="tags" name="tags" :errorMsgs="errors.tags" label="Tags">
         </c-tagger>
         <small class="form-text text-muted">A list of tags to associate with a job. Tags help people search for
             jobs.
@@ -105,13 +105,7 @@ export const schema = yup.object().shape({
         }
     },
     mixins: [
-        createFormValidator(schema, {
-            errorAttributeName: 'errors',
-            stateAttributeName: 'state'
-        }, {
-            validationMethodName: 'validate',
-            clearErrorsMethodName: 'clear'
-        })
+        createFormValidator(schema)
     ]
 })
 class EditEvent extends Vue {

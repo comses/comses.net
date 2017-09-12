@@ -27,16 +27,16 @@ const schema = yup.object().shape({
 
 @Component(<any>{
     template: `<div>
-        <c-markdown v-model="state.description" :errorMsgs="errors.description" name="description" rows="3" label="Description">
+        <c-markdown v-model="description" :errorMsgs="errors.description" name="description" rows="3" label="Description">
         </c-markdown>
-        <c-datepicker v-model="state.embargo_end_date" :errorMsgs="errors.embargo_end_date" name="embargoEndDate" :clearButton="true">
+        <c-datepicker v-model="embargo_end_date" :errorMsgs="errors.embargo_end_date" name="embargoEndDate" :clearButton="true">
             <label class="form-control-label" slot="label">Embargo End Date</label>
             <small class="form-text text-muted" slot="help">The date your release is automatically published</small>
         </c-datepicker>
         <div class="form-group">
             <label class="form-control-label">Operating System</label>
             <multiselect 
-                :value="state.os"
+                :value="os"
                 @input="updateOs"
                 name="os" 
                 :options="osOptions" 
@@ -45,19 +45,19 @@ const schema = yup.object().shape({
                 track-by="name">
             </multiselect>
         </div>
-        <c-tagger v-model="state.platforms" placeholder="Type to add platforms" 
+        <c-tagger v-model="platforms" placeholder="Type to add platforms" 
             label="Platforms" help="Platforms used in this model" :errorMsgs="errors.platforms">
         </c-tagger>
-        <c-tagger v-model="state.programming_languages" placeholder="Type to add programming languages" 
+        <c-tagger v-model="programming_languages" placeholder="Type to add programming languages" 
             label="Programming Languages" help="Programming languages used in this model" :errorMsgs="errors.programming_languages">
         </c-tagger>
         <div class="form-group">
-            <c-checkbox name="live" v-model="state.live" label="Published?">
+            <c-checkbox name="live" v-model="live" label="Published?">
                 <small class="form-text text-muted" slot="help">Published models are visible to everyone. Unpublished models are visible only to you</small>
             </c-checkbox>
         </div>
         <div :class="['form-group', {'has-danger': errors.license.length > 0}]">
-            <multiselect v-model="state.license" label="name" track-by="name" placeholder="Type to find license" :options="licenseOptions">
+            <multiselect v-model="license" label="name" track-by="name" placeholder="Type to find license" :options="licenseOptions">
                 <template slot="option" scope="props">
                     <div>
                         {{ props.option.name }} <a :href="props.option.url" target="_blank"><span class="fa fa-external-link"></span></a>
@@ -79,9 +79,7 @@ const schema = yup.object().shape({
         Multiselect,
     },
     mixins: [
-        createFormValidator(schema,
-            { errorAttributeName: 'errors', stateAttributeName: 'state'},
-            { validationMethodName: 'validate', clearErrorsMethodName: 'clear'})
+        createFormValidator(schema)
     ]
 })
 export default class Description extends Vue {

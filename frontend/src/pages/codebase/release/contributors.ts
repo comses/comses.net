@@ -1,6 +1,9 @@
 import { Prop, Component, Watch } from 'vue-property-decorator'
 import * as Vue from 'vue'
-import { CalendarEvent, CodebaseContributor, Contributor, emptyContributor, emptyReleaseContributor } from 'store/common'
+import {
+    CalendarEvent, CodebaseContributor, Contributor, emptyContributor, emptyReleaseContributor,
+    User
+} from 'store/common'
 import { codebaseReleaseAPI, contributorAPI } from 'api'
 import { store } from './store'
 import Checkbox from 'components/forms/checkbox'
@@ -14,10 +17,20 @@ import Username from 'components/username'
 import * as draggable from 'vuedraggable'
 import * as _ from 'lodash'
 import * as yup from 'yup'
-import { createFormValidator } from 'pages/form'
+import {createDefaultValue, createFormValidator} from 'pages/form'
 import * as $ from 'jquery'
 
-const listContributors = _.debounce((state, self) => contributorAPI.list(state).then(r => self.matchingContributors = r.data.results), 800);
+const listContributors = _.debounce(async (state, self) => {
+    self.isLoading = true;
+    try {
+        const response = await contributorAPI.list(state);
+        self.matchingContributors = response.data.results;
+        self.isLoading = false;
+    } catch (e) {
+        self.isLoading = false;
+        console.error(e);
+    }
+}, 800);
 
 const userSchema = yup.object().shape({
     full_name: yup.string(),
@@ -37,7 +50,7 @@ const contributorSchema = yup.object().shape({
 });
 
 export const releaseContributorSchema = yup.object().shape({
-    contributor: contributorSchema,
+    contributor: yup.mixed().test('is-not-null', '${path} must have a value', value => !_.isNull(value)).label('this'),
     roles: yup.array().of(yup.string()).min(1).label('affiliations')
 });
 
@@ -59,6 +72,186 @@ enum FormContributorState {
     editReleaseContributor,
     editContributor
 };
+
+@Component(<any>{
+    template: `<div class="modal" id="createContributorForm">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Create a contributor</h5>
+                </div>
+                <div class="modal-body">
+                    <c-username name="username" v-model="user"
+                        :errorMsgs="errors.user"
+                        label="User Name" help="Find a matching user here">
+                    </c-username>
+                    <c-input name="given_name" v-model="given_name" label="Given Name" :errorMsgs="errors.given_name">
+                    </c-input>
+                    <c-input name="middle_name" v-model="middle_name" label="Middle Name" :errorMsgs="errors.middle_name">
+                    </c-input>
+                    <c-input name="family_name" v-model="family_name" label="Family Name" :errorMsgs="errors.family_name">
+                    </c-input>
+                    <c-edit-affiliations :value="affiliations"
+                        @create="affiliations.push($event)"
+                        @remove="affiliations.splice($event, 1)"
+                        @modify="affiliations.splice($event.index, 1, $event.value)"
+                        name="affiliations" placeholder="Add affiliation"
+                        :errorMsgs="errors.affiliations"
+                        label="Affiliations"
+                        help="The institution(s) and other groups you are affiliated with. Press enter to add.">
+                    </c-edit-affiliations>
+                    <c-input type="select" name="type" v-model="type" label="Contributor Type" :errorMsgs="errors.type">
+                    </c-input>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" @click="save">Save</button>
+                    <button type="button" class="btn btn-primary" @click="cancel">Cancel</button>
+                </div>
+            </div>
+        </div>
+    </div>`,
+    components: {
+        'c-edit-affiliations': EditItems,
+        'c-input': Input,
+        'c-username': Username,
+    },
+    mixins: [
+        createFormValidator(contributorSchema),
+    ]
+})
+class EditContributor extends Vue {
+    @Prop()
+    active: boolean;
+
+    @Prop()
+    contributor;
+
+    @Watch('contributor')
+    setFormState(contributor: Contributor | null) {
+        if (!_.isNull(contributor)) {
+            (<any>this).replace(contributor);
+        } else {
+            (<any>this).replace(createDefaultValue(contributorSchema));
+        }
+    }
+
+    save() {
+        (<any>this).validate(
+            () => this.$emit('save', (<any>this).state));
+    }
+
+    cancel() {
+        this.$emit('cancel');
+    }
+}
+
+@Component(<any>{
+    template: `<div class="card">
+        <div class="card-header">
+            Release Contributor
+        </div>
+        <div class="card-body">
+            <div :class="['form-group', errors.contributor.length === 0 ? '' : 'child-is-invalid' ]">
+                <label class="form-control-label">Contributor</label>
+                <div class="row">
+                    <div class="col-11">
+                        <multiselect
+                            v-model="contributor"
+                            :custom-label="contributorLabel"
+                            label="family_name"
+                            track-by="id"
+                            placeholder="Type to find contributor"
+                            :allow-empty="true"
+                            :options="matchingContributors"
+                            :loading="isLoading"
+                            :searchable="true"
+                            :internal-search="false"
+                            :options-limit="50"
+                            :limit="20"
+                            @search-change="fetchMatchingContributors">
+                        </multiselect>
+                    </div>
+                    <div class="col-1">
+                        <button type="button" class="btn btn-primary" @click="$emit('editContributor', state.contributor)"><span class="fa fa-plus"></span></button>
+                    </div>
+                </div>
+                <div class="invalid-feedback" v-show="errors.contributor">
+                    {{ errors.contributor.join(', ') }}
+                </div>
+            </div>
+            <div :class="['form-group', errors.roles.length === 0 ? '' : 'child-is-invalid' ]">
+                <label class="form-control-label">Role</label>
+                <multiselect name="roles" 
+                    v-model="roles"
+                    :multiple="true"
+                    :custom-label="roleLabel"
+                    :close-on-select="false" 
+                    placeholder="Type to select role" 
+                    :options="roleOptions">
+                </multiselect>
+                <div class="invalid-feedback" v-show="errors.roles">
+                    {{ errors.roles.join(', ') }}
+                </div>
+            </div>
+            <button type="button" class="btn btn-primary" @click="save">Save</button>
+            <button type="button" class="btn btn-primary" @click="cancel">Cancel</button>
+        </div>
+    </div>`,
+    components: {
+        Multiselect
+    },
+    mixins: [
+        createFormValidator(releaseContributorSchema),
+    ]
+})
+class EditReleaseContributor extends Vue {
+    @Prop()
+    releaseContributor;
+
+    isLoading: boolean = false;
+    matchingContributors: Array<Contributor> = [];
+    roleOptions: Array<string> = Object.keys(roleLookup);
+
+    @Watch('releaseContributor')
+    setFormState(releaseContributor: CodebaseContributor | null) {
+        if (!_.isNull(releaseContributor)) {
+            (<any>this).replace(releaseContributor);
+        } else {
+            (<any>this).replace(createDefaultValue(releaseContributorSchema));
+        }
+    }
+
+    contributorLabel(contributor: Contributor) {
+        let name = [contributor.given_name, contributor.family_name].filter(el => !_.isEmpty(el)).join(' ');
+        const user = contributor.user;
+        if (!_.isNull(user)) {
+            name = name === '' ? (<any>user).full_name : name;
+            const username = (<any>user).username;
+
+            return !_.isNull(username) ? `${name} (${username})`: name;
+        }
+        return name;
+    }
+
+    roleLabel(value: string) {
+        return roleLookup[value] || value;
+    }
+
+
+    fetchMatchingContributors(searchQuery: string) {
+        listContributors.cancel();
+        listContributors({ family_name: searchQuery }, this);
+    }
+
+    cancel() {
+        this.$emit('cancel');
+    }
+
+    save() {
+        (<any>this).validate().then(
+            () => this.$emit('save', (<any>this).state));
+    }
+}
 
 @Component(<any>{
     // language=Vue
@@ -88,98 +281,19 @@ enum FormContributorState {
                 </small>
             </div>
             <div class="col-1">
-                <button class="btn btn-primary pull-right" type="button" @click="editReleaseContributor()"><span class="fa fa-plus"></span></button>
+                <button class="btn btn-primary pull-right" type="button" @click="editReleaseContributor()">
+                    <span class="fa fa-plus"></span>
+                </button>
             </div>
         </div>
-        <div class="card" v-if="matchesState(['editReleaseContributor', 'editContributor'])">
-            <div class="card-header">
-                Release Contributor
-            </div>
-            <div class="card-body">
-                <div :class="['form-group', contributorPresenceError ? 'child-is-invalid' : '' ]">
-                    <label class="form-control-label">Contributor</label>
-                    <div class="row">
-                        <div class="col-11">
-                            <multiselect
-                                v-model="formContributor"
-                                :custom-label="contributorLabel"
-                                label="family_name"
-                                track-by="id"
-                                placeholder="Type to find contributor"
-                                :allow-empty="true"
-                                :options="matchingContributors"
-                                :loading="isLoadingContributors"
-                                :searchable="true"
-                                :internal-search="false"
-                                :options-limit="50"
-                                :limit="20"
-                                :disabled="matchesState(['editContributor'])"
-                                @search-change="fetchMatchingContributors">
-                            </multiselect>
-                        </div>
-                        <div class="col-1">
-                            <button type="button" class="btn btn-primary" @click="editContributor()"><span class="fa fa-plus"></span></button>
-                        </div>
-                    </div>
-                    <div class="invalid-feedback" v-show="contributorPresenceError">
-                        {{ contributorPresenceError }}
-                    </div>
-                </div>
-                <div class="form-group">
-                    <label class="form-control-label">Role</label>
-                    <multiselect name="roles" 
-                        v-model="releaseContributor.roles"
-                        :multiple="true"
-                        :custom-label="roleLabel"
-                        :close-on-select="false" 
-                        placeholder="Type to select role" 
-                        :options="roleOptions">
-                    </multiselect>
-                </div>
-                <button type="button" class="btn btn-primary" @click="saveReleaseContributor">Save</button>
-                <button type="button" class="btn btn-primary" @click="cancelReleaseContributor">Cancel</button>
-            </div>
-        </div>
+        <c-edit-release-contributor :releaseContributor="releaseContributor"
+                @save="saveReleaseContributor" @cancel="cancelReleaseContributor" 
+                @editContributor="editContributor" v-show="matchesState(['editReleaseContributor'])">
+        </c-edit-release-contributor>
         <button type="button" class="btn btn-primary" @click="save">Save</button>
-        <div class="modal" id="createContributorForm">
-            <div class="modal-dialog" role="document">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title">Create a contributor</h5>
-                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                          <span aria-hidden="true">&times;</span>
-                        </button>
-                    </div>
-                    <div class="modal-body">
-                        <c-username name="username" v-model="contributor.user"
-                            :errorMsgs="contributorErrors.user"
-                            label="User Name" help="Find a matching user here">
-                        </c-username>
-                        <c-input name="given_name" v-model="contributor.given_name" label="Given Name" :errorMsgs="contributorErrors.given_name">
-                        </c-input>
-                        <c-input name="middle_name" v-model="contributor.middle_name" label="Middle Name">
-                        </c-input>
-                        <c-input name="family_name" v-model="contributor.family_name" label="Family Name" :errorMsgs="contributorErrors.family_name">
-                        </c-input>
-                        <c-edit-affiliations :value="contributor.affiliations"
-                            @create="contributor.affiliations.push($event)"
-                            @remove="contributor.affiliations.splice($event, 1)"
-                            @modify="contributor.affiliations.splice($event.index, 1, $event.value)"
-                            name="affiliations" placeholder="Add affiliation"
-                            :errorMsgs="contributorErrors.affiliations"
-                            label="Affiliations"
-                            help="The institution(s) and other groups you are affiliated with. Press enter to add.">
-                        </c-edit-affiliations>
-                        <c-input type="select" name="type" v-model="contributor.type" label="Contributor Type" :errorMsgs="contributorErrors.type">
-                        </c-input>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-primary" @click="saveContributor">Save</button>
-                        <button type="button" class="btn btn-primary" @click="cancelContributor">Cancel</button>
-                    </div>
-                </div>
-            </div>
-        </div>
+        <c-edit-contributor :contributor="contributor" 
+                            @save="saveContributor" @cancel="cancelContributor">
+        </c-edit-contributor>
     </div>`,
     components: {
         'c-checkbox': Checkbox,
@@ -187,17 +301,16 @@ enum FormContributorState {
         'c-message-display': MessageDisplay,
         'c-input': Input,
         'c-username': Username,
+        'c-edit-release-contributor': EditReleaseContributor,
+        'c-edit-contributor': EditContributor,
         draggable,
         Multiselect,
-    },
-    mixins: [
-        createFormValidator(contributorSchema,
-            { errorAttributeName: 'contributorErrors', stateAttributeName: 'contributor'},
-            { validationMethodName: 'validateContributor', clearErrorsMethodName: 'clearContributorErrors'}),
-
-    ]
+    }
 })
 class EditContributors extends Vue {
+    @Prop
+    initialData: object;
+
     initialize() {
         this.releaseContributors = this.$store.state.release.release_contributors.map(rc => _.extend({}, rc));
     }
@@ -209,16 +322,10 @@ class EditContributors extends Vue {
     state: FormContributorState = FormContributorState.list;
 
     releaseContributors: Array<CodebaseContributor> = [];
-    releaseContributor: CodebaseContributor = emptyReleaseContributor();
-    releaseContributorErrors = {};
+    releaseContributor: CodebaseContributor | null = null;
+    contributor: Contributor | null = null;
 
-    contributorPresenceError: string = '';
     message: string = '';
-
-    isLoadingContributors: boolean = false;
-    matchingContributors: Array<Contributor> = [];
-
-    roleOptions: Array<string> = Object.keys(roleLookup);
 
     releaseContributorLabel(releaseContributor: CodebaseContributor) {
         const name = [releaseContributor.contributor.given_name, releaseContributor.contributor.family_name].join(' ');
@@ -244,38 +351,6 @@ class EditContributors extends Vue {
         return false;
     }
 
-    validationErrors(schemaPath: string) {
-        return this.releaseContributorErrors[schemaPath] || [];
-    }
-
-    validate(schemaPath: string, value) {
-        const schema = yup.reach(contributorSchema, schemaPath);
-        schema.validate(value).catch(err => this.releaseContributorErrors[schemaPath] = err.errors);
-    }
-
-    fetchMatchingContributors(searchQuery: string) {
-        listContributors.cancel();
-        listContributors({ family_name: searchQuery }, this);
-    }
-
-    contributorLabel(contributor: Contributor) {
-        let name = [contributor.given_name, contributor.family_name].filter(el => !_.isEmpty(el)).join(' ');
-        const user = contributor.user;
-        if (!_.isNull(user)) {
-            name = name === '' ? (<any>user).full_name : name;
-            const username = (<any>user).username;
-
-            return !_.isNull(username) ? `${name} (${username})`: name;
-        }
-        return name;
-    }
-
-    _assertState(states: Array<FormContributorState>) {
-        if (_.findIndex(states, (state) => this.state === state) === -1) {
-            console.error(`AssertionFailed: Actual '${FormContributorState[this.state]}' not in Possible states ${_.map(states, state => FormContributorState[this.state])}`)
-        }
-    }
-
     save() {
         const { identifier, version_number } = this.identity;
         codebaseReleaseAPI.updateContributors({identifier, version_number}, this.releaseContributors)
@@ -296,9 +371,8 @@ class EditContributors extends Vue {
     }
 
     editReleaseContributor(releaseContributor?: CodebaseContributor) {
-        this._assertState([FormContributorState.list]);
-        if (releaseContributor === undefined) {
-            this.releaseContributor = emptyReleaseContributor();
+        if (_.isUndefined(releaseContributor)) {
+            this.releaseContributor = null;
         } else {
             this.releaseContributor = _.merge({}, releaseContributor);
         }
@@ -306,15 +380,12 @@ class EditContributors extends Vue {
     }
 
     cancelReleaseContributor() {
-        this._assertState([FormContributorState.editReleaseContributor, FormContributorState.editContributor]);
-        this.releaseContributor = emptyReleaseContributor();
         this.state = FormContributorState.list;
     }
 
-    saveReleaseContributor() {
-        this._assertState([FormContributorState.editReleaseContributor, FormContributorState.editContributor]);
-        this.createOrReplaceReleaseContributor(this.releaseContributor);
-        this.releaseContributor = emptyReleaseContributor();
+    saveReleaseContributor(releaseContributor) {
+        this.createOrReplaceReleaseContributor(releaseContributor);
+        this.releaseContributor = null;
         this.state = FormContributorState.list;
     }
 
@@ -325,65 +396,23 @@ class EditContributors extends Vue {
 
     // Contributor
 
-    get formContributor() {
-        /* Vue-Multiselect needs object to be null to display placeholder text contributor is inspected for validity to
-        decide whether or not to return null */
-        if (!_.isUndefined(this.releaseContributor.contributor.valid) &&
-            !this.releaseContributor.contributor.valid) {
-            return null;
-        } else {
-            return this.releaseContributor.contributor;
-        }
-    }
-
-    set formContributor(contributor: any) {
-        if (!_.isNull(contributor)) {
-            this.$set(this.releaseContributor, 'contributor', contributor);
-        }
-    }
-
-    validateContributorPresence(contributor: Contributor | null): boolean {
-        if (_.isNull(contributor)) {
-            this.contributorPresenceError = 'Contributor must be set'
-            return true;
-        } else {
-            this.contributorPresenceError = '';
-            return false;
-        }
-    }
-
-    @Watch('formContributor')
-    onContributorChange(contributor: Contributor | null) {
-        this.validateContributorPresence(contributor);
-    }
-
-    editContributor(contributor?: Contributor) {
-        this._assertState([FormContributorState.editReleaseContributor]);
-        if (contributor !== undefined) {
-            (<any>this).contributor = _.merge({}, this.releaseContributor.contributor);
-
-        }
+    editContributor(contributor: Contributor) {
+        this.contributor = _.merge({}, contributor);
         $('#createContributorForm').modal('show');
         this.state = FormContributorState.editContributor;
     }
 
     cancelContributor() {
-        this._assertState([FormContributorState.editContributor]);
-        this.releaseContributor.contributor = emptyContributor();
-        (<any>this).clearContributorErrors();
         $('#createContributorForm').modal('hide');
         this.state = FormContributorState.editReleaseContributor;
     }
 
     saveContributor() {
-        this._assertState([FormContributorState.editContributor]);
-        (<any>this).validateContributor().then(() => {
-            this.state = FormContributorState.editReleaseContributor;
-            $('#createContributorForm').modal('hide');
+        this.state = FormContributorState.editReleaseContributor;
+        $('#createContributorForm').modal('hide');
+        if (!_.isNull(this.releaseContributor)) {
             this.releaseContributor.contributor = _.merge({}, (<any>this).contributor);
-            (<any>this).contributor = emptyContributor();
-            (<any>this).clearContributorErrors();
-        })
+        }
     }
 
 }

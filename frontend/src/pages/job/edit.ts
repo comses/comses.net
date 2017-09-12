@@ -21,15 +21,15 @@ export const schema = yup.object().shape({
     template: `<form>
         <c-message-display :messages="[]" :classNames="['alert', 'alert-danger']">
         </c-message-display>
-        <c-input v-model="state.title" name="title" :errorMsgs="errors.title">
+        <c-input v-model="title" name="title" :errorMsgs="errors.title">
             <label class="form-control-label" slot="label">Title</label>
             <small class="form-text text-muted" slot="help">A short title describing the job</small>
         </c-input>
-        <c-markdown v-model="state.description" name="description" :errorMsgs="errors.description">
+        <c-markdown v-model="description" name="description" :errorMsgs="errors.description">
             <label class="form-control-label" slot="label">Description</label>
             <small slot="help" class="form-text text-muted">Detailed information about the job</small>
         </c-markdown>
-        <c-markdown v-model="state.summary" name="summary" :errorMsgs="errors.summary">
+        <c-markdown v-model="summary" name="summary" :errorMsgs="errors.summary">
             <label slot="label">Summary</label>
             <div slot="help">
                 <button class="btn btn-secondary btn-sm" type="button" @click="createSummaryFromDescription">Summarize
@@ -39,7 +39,7 @@ export const schema = yup.object().shape({
                 </small>
             </div>
         </c-markdown>
-        <c-tagger v-model="state.tags" name="tags" :errorsMsgs="errors.tags">
+        <c-tagger v-model="tags" name="tags" :errorsMsgs="errors.tags">
         </c-tagger>
         <small class="form-text text-muted">A list of tags to associate with a job. Tags help people search for jobs.
         </small>
@@ -52,9 +52,7 @@ export const schema = yup.object().shape({
         'c-message-display': MessageDisplay,
     },
     mixins: [
-        createFormValidator(schema,
-            {errorAttributeName: 'errors', stateAttributeName: 'state'},
-            {validationMethodName: 'validate', clearErrorsMethodName: 'clear'})
+        createFormValidator(schema)
     ]
 })
 class EditJob extends Vue {
