@@ -337,13 +337,14 @@ GITHUB_CLIENT_SECRET = config.get('secrets', 'GITHUB_CLIENT_SECRET', fallback=''
 TEST_BASIC_AUTH_PASSWORD = config.get('test', 'TEST_BASIC_AUTH_PASSWORD', fallback='')
 
 SOCIALACCOUNT_PROVIDERS = {
+    # https://developer.github.com/apps/building-integrations/setting-up-and-registering-oauth-apps/about-scopes-for-oauth-apps/
     'github': {
         'SCOPE': [
-            'user',
-            'repo',
+            'user:email',
             'read:org',
         ],
     },
+    # http://django-allauth.readthedocs.io/en/latest/providers.html#orcid
     'orcid': {
         'BASE_DOMAIN': 'sandbox.orcid.org',
         'MEMBER_API': True,
