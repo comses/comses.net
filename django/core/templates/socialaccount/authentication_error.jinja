@@ -1,0 +1,15 @@
+{% extends "base.jinja" %}
+
+{% set provider_name = account.get_provider().name %}
+
+{% block introduction %}
+    <h1>Social network login failure</h1>
+{% endblock %}
+{% block content %}
+    <p>
+    {% trans %}
+    Sorry, an error occurred while trying to login via your social network account at {{ provider_name }}. 
+    Please contact us if this persists.
+    {% endtrans %}
+    </p>
+{% endblock %}
