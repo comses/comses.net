@@ -47,29 +47,47 @@
                     {% endfor %}
                     <p class='card-text'>{{ bio }}</p>
                     <dl class='row card-text'>
-                        <dt class='col-sm-2'>Institution</dt>
-                        <dd class='col-sm-9'>{{ institution_href(institution) }}</dd>
-
-                        <dt class='col-sm-2'>Personal</dt>
+                        <dt class='col-sm-3'><u>Institution URL: </u></dt>
+                        <dd class='col-sm-9'>
+                            {% if institution %}
+                                {{ institution_href(institution) }}
+                            {% else %}
+                                No institution entered.
+                            {% endif %}
+                        </dd> 
+                        <dt class='col-sm-3'><u>Personal URL: </u></dt>
                         <dd class='col-sm-9'>
                             {% if personal_url %}
                                 <a href='{{ personal_url }}' target='_blank'>{{ personal_url }}</a>
+                            {% else %}
+                                No personal URL entered.
                             {% endif %}
                         </dd>
 
-                        <dt class='col-sm-2'>Professional</dt>
+                        <dt class='col-sm-3'><u>Professional URL: </u></dt>
                         <dd class='col-sm-9'>
                             {% if professional_url %}
                                 <a href='{{ professional_url }}' target='_blank'>{{ professional_url }}</a>
+                            {% else %}
+                                No professional URL entered.
                             {% endif %}
                         </dd>
 
-                        <dt class='col-sm-2'>ORCID</dt>
+                        <dt class='col-sm-3'><u>ORCID: </u><sup><a target='_blank' href='https://orcid.org'>?</a></sup></dt>
                         <dd class='col-sm-9'>
                             {% if orcid %}
-                                <a href='{{ orcid_url }}' target='_blank'>ORCID: {{ orcid }}</a>
+                                <a target='_blank' href='{{ orcid_url }}'>{{ orcid }}</a>
                             {% else %}
-                                None entered
+                                <a href='{{ provider_login_url(request, "orcid", "connect") }}'>Connect your ORCID account</a>
+                            {% endif %}
+                        </dd>
+
+                        <dt class='col-sm-3'><u>GitHub: </u><sup><a target='_blank' href='https://github.com'>?</a></sup></dt>
+                        <dd class='col-sm-9'>
+                            {% if github %}
+                                <a target='_blank' href='{{ github_url }}'>{{ github }}</a>
+                            {% else %}
+                                <a href='{{ provider_login_url(request, "github", "connect") }}'>Connect your GitHub account</a>
                             {% endif %}
                         </dd>
                     </dl>
@@ -137,12 +155,14 @@
                         Profile</a>
                 </p>
             {% endif %}
-            <p class='card-text'>
-                <a href='#' onclick='sendMessage()' class='btn btn-primary w-100'>Send Message</a>
-            </p>
-            <p class='card-text'>
-                <a href='#' onclick='toggleFollow()' class='btn btn-primary w-100'>Follow</a>
-            </p>
+            {% if request.user.username != username %}
+                <p class='card-text'>
+                    <a href='#' onclick='sendMessage()' class='btn btn-primary w-100'>Send Message</a>
+                </p>
+                <p class='card-text'>
+                    <a href='#' onclick='toggleFollow()' class='btn btn-primary w-100'>Follow</a>
+                </p>
+            {% endif %}
             <div class='row'>
                 {# FIXME: hardcoded values for now #}
                 <div class='col text-center'>
@@ -166,6 +186,8 @@
             <p class='card-text tag-list'>
                 {% for keyword in keywords %}
                     {{ search_tag_btn(keyword) }}
+                {% else %}
+                    None entered
                 {% endfor %}
             </p>
         </div>
