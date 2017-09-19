@@ -25,7 +25,7 @@ from taggit.models import Tag
 from wagtail.wagtailimages.models import Image
 from wagtail.wagtailsearch.backends import get_search_backend
 
-from core.views import AddEditFormViewSetMixin
+from core.views import FormViewSetMixin, FormCreateView, FormUpdateView
 from core.view_helpers import get_search_queryset, retrieve_with_perms
 from .models import FeaturedContentItem, MemberProfile
 from core.models import FollowUser, Event, Job
@@ -134,7 +134,7 @@ class ToggleFollowUser(APIView):
         return Response({'following': created})
 
 
-class EventViewSet(viewsets.ModelViewSet, AddEditFormViewSetMixin):
+class EventViewSet(FormViewSetMixin, viewsets.ModelViewSet):
     serializer_class = EventSerializer
     queryset = Event.objects.all()
     pagination_class = SmallResultSetPagination
@@ -217,7 +217,7 @@ class EventCalendarList(generics.ListAPIView):
         return Response(data=calendar_events)
 
 
-class JobViewSet(viewsets.ModelViewSet, AddEditFormViewSetMixin):
+class JobViewSet(FormViewSetMixin, viewsets.ModelViewSet):
     serializer_class = JobSerializer
     pagination_class = SmallResultSetPagination
     queryset = Job.objects.all()
@@ -246,7 +246,7 @@ class TagViewSet(viewsets.ModelViewSet):
         return queryset.order_by('name')
 
 
-class ProfileViewSet(viewsets.ModelViewSet, AddEditFormViewSetMixin):
+class ProfileViewSet(FormViewSetMixin, viewsets.ModelViewSet):
     lookup_field = 'user__username'
     lookup_url_kwarg = 'username'
     lookup_value_regex = '[\w\.\-@]+'
@@ -304,3 +304,25 @@ class FeaturedContentListAPIView(generics.ListAPIView):
     serializer_class = FeaturedContentItemSerializer
     queryset = FeaturedContentItem.objects.all()
     pagination_class = SmallResultSetPagination
+
+
+class EventCreateView(FormCreateView):
+    model = Event
+
+
+class EventUpdateView(FormUpdateView):
+    model = Event
+
+
+class JobCreateView(FormCreateView):
+    model = Job
+
+
+class JobUpdateView(FormUpdateView):
+    model = Job
+
+
+class ProfileUpdateView(FormUpdateView):
+    model = MemberProfile
+    slug_field = 'user__username'
+    slug_url_kwarg = 'username'

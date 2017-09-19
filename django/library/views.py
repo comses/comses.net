@@ -2,6 +2,7 @@ import logging
 
 from django.core.files import File
 from django.http import HttpResponse
+from django.shortcuts import get_object_or_404
 from django.urls import resolve
 
 import mimetypes
@@ -11,7 +12,7 @@ from rest_framework.decorators import detail_route
 from rest_framework.response import Response
 from rest_framework.exceptions import PermissionDenied
 
-from core.views import AddEditFormViewSetMixin
+from core.views import FormViewSetMixin, FormUpdateView, FormCreateView
 from core.view_helpers import get_search_queryset, add_change_delete_perms
 from home.views import SmallResultSetPagination
 from .models import Codebase, CodebaseRelease, Contributor
@@ -21,8 +22,7 @@ from .serializers import (CodebaseSerializer, RelatedCodebaseSerializer, Codebas
 logger = logging.getLogger(__name__)
 
 
-class CodebaseViewSet(AddEditFormViewSetMixin, viewsets.ModelViewSet):
-    # namespace = 'library/codebases'
+class CodebaseViewSet(FormViewSetMixin, viewsets.ModelViewSet):
     lookup_field = 'identifier'
     lookup_value_regex = r'[\w\-\.]+'
     pagination_class = SmallResultSetPagination
@@ -52,7 +52,17 @@ class CodebaseViewSet(AddEditFormViewSetMixin, viewsets.ModelViewSet):
         return Response(data)
 
 
-class CodebaseReleaseViewSet(AddEditFormViewSetMixin, viewsets.ModelViewSet):
+class CodebaseFormCreateView(FormCreateView):
+    model = Codebase
+
+
+class CodebaseFormUpdateView(FormUpdateView):
+    model = Codebase
+    slug_field = 'identifier'
+    slug_url_kwarg = 'identifier'
+
+
+class CodebaseReleaseViewSet(FormViewSetMixin, viewsets.ModelViewSet):
     namespace = 'library/codebases/releases/'
     lookup_field = 'version_number'
     lookup_value_regex = r'\d+\.\d+\.\d+'
@@ -120,6 +130,23 @@ class CodebaseReleaseViewSet(AddEditFormViewSetMixin, viewsets.ModelViewSet):
         crs.is_valid(raise_exception=True)
         crs.save()
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class CodebaseReleaseFormCreateView(FormCreateView):
+    namespace = 'codebases/releases'
+    model = CodebaseRelease
+
+
+class CodebaseReleaseFormUpdateView(FormUpdateView):
+    namespace = 'codebases/releases'
+    model = CodebaseRelease
+
+    def get_object(self, queryset=None):
+        identifier = self.kwargs['identifier']
+        version_number = self.kwargs['version_number']
+        return get_object_or_404(queryset or CodebaseRelease,
+                                 version_number=version_number,
+                                 codebase__identifier=identifier)
 
 
 class ContributorList(generics.ListAPIView):

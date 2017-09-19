@@ -1,16 +1,21 @@
 from django.conf.urls import url
 
 from core.routers import AddEditRouter
-from .views import CodebaseViewSet, CodebaseReleaseViewSet, ContributorList, CodebaseReleaseUploadView
+from . import views
 
 router = AddEditRouter()
-router.register(r'codebases', CodebaseViewSet)
-router.register(r'codebases/(?P<identifier>[\w\-.]+)/releases', CodebaseReleaseViewSet)
+router.register(r'codebases', views.CodebaseViewSet)
+router.register(r'codebases/(?P<identifier>[\w\-.]+)/releases', views.CodebaseReleaseViewSet)
 # router.register(r'contributors', ContributorList)
 
-urlpatterns = router.urls + [
-    # url(r'^codebases/add/$', login_required(TemplateView(template_name='library/codebases/add.jinja').as_view())),
-    url(r'^contributors/$', ContributorList.as_view()),
+urlpatterns = [
+    url(r'^contributors/$', views.ContributorList.as_view()),
     # FIXME: consider /release/upload instead
-    url(r'^codebases/(?P<identifier>\w+)/update/create_release/$', CodebaseReleaseUploadView.as_view()),
-]
+    url(r'^codebases/add/$', views.CodebaseFormCreateView.as_view(), name='codebase-add'),
+    url(r'^codebases/(?P<identifier>[\w\-.]+)/update/create_release/$', views.CodebaseReleaseUploadView.as_view()),
+    url(r'^codebases/(?P<identifier>[\w\-.]+)/edit/$', views.CodebaseFormUpdateView.as_view(), name='codebase-edit'),
+    url(r'^codebases/(?P<identifier>[\w\-.]+)/releases/(?P<version_number>\d+\.\d+\.\d+)/edit/$',
+        views.CodebaseReleaseFormUpdateView.as_view(), name='codebaserelease-edit'),
+    url(r'^codebases/(?P<identifier>[\w\-.]+)/releases/add/$', views.CodebaseReleaseFormCreateView.as_view(),
+        name='codebaserelease-add'),
+] + router.urls
