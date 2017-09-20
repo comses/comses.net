@@ -46,9 +46,9 @@ def is_debug():
 
 
 @library.global_function
-def provider_login_url(request, provider_id, process="login"):
+def provider_login_url(request, provider_id, **kwargs):
     provider = providers.registry.by_id(provider_id, request)
-    return provider.get_login_url(request, process=process)
+    return provider.get_login_url(request, **kwargs)
 
 
 @library.global_function
