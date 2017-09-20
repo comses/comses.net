@@ -175,6 +175,10 @@ class CodebaseReleaseSerializer(serializers.ModelSerializer):
         save_tags(instance, programming_languages, 'programming_languages')
         save_tags(instance, platform_tags, 'platform_tags')
 
+        # can only change live status if instance is not already live
+        if instance.live:
+            validated_data.pop('live')
+
         instance = super().update(instance, validated_data)
 
         instance.license = license
@@ -195,8 +199,8 @@ class CodebaseReleaseSerializer(serializers.ModelSerializer):
         model = CodebaseRelease
         fields = ('absolute_url', 'citation_text', 'release_contributors', 'date_created', 'dependencies',
                   'description', 'documentation', 'doi', 'download_count', 'embargo_end_date', 'first_published_at',
-                  'last_modified', 'last_published_on', 'license', 'os', 'os_display', 'peer_reviewed', 'platforms',
-                  'programming_languages', 'submitted_package', 'submitter', 'codebase', 'version_number',
+                  'last_modified', 'last_published_on', 'live', 'license', 'os', 'os_display', 'peer_reviewed',
+                  'platforms', 'programming_languages', 'submitted_package', 'submitter', 'codebase', 'version_number',
                   'id',)
 
 

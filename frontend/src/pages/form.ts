@@ -67,10 +67,11 @@ function createDefaultErrors(keys) {
 function populateErrorsFromValidationError(self, ve) {
     const errors = ve.inner;
     if (!_.isNil(ve.path)) {
-        self.errors[ve.path] = ve.message;
+        self.errors[ve.path] = [];
+        self.errors[ve.path].push(ve.message);
     }
     for (const error of errors) {
-        self.errors[error.path] = error.message;
+        self.errors[error.path] = [error.message];
     }
     self.statusMessages = [{
         classNames: 'alert alert-warning',

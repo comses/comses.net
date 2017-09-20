@@ -35,10 +35,10 @@ const schema = yup.object().shape({
             <label class="form-control-label" slot="label">Embargo End Date</label>
             <small class="form-text text-muted" slot="help">The date your release is automatically published</small>
         </c-datepicker>
-        <div class="form-group">
+        <div :class="['form-group', {'child-is-invalid': errors.os.length > 0}]">
             <label class="form-control-label">Operating System</label>
             <multiselect 
-                :value="os"
+                :value="osOption"
                 @input="updateOs"
                 name="os" 
                 :options="osOptions" 
@@ -46,6 +46,7 @@ const schema = yup.object().shape({
                 label="display"
                 track-by="name">
             </multiselect>
+            <div v-if="errors.os.length > 0" class="invalid-feedback">{{ errors.os.join(', ') }}</div>
         </div>
         <c-tagger v-model="platforms" placeholder="Type to add platforms" 
             label="Platforms" help="Platforms used in this model" :errorMsgs="errors.platforms">
@@ -53,12 +54,14 @@ const schema = yup.object().shape({
         <c-tagger v-model="programming_languages" placeholder="Type to add programming languages" 
             label="Programming Languages" help="Programming languages used in this model" :errorMsgs="errors.programming_languages">
         </c-tagger>
-        <div class="form-group">
+        <div class="form-group" v-if="!isPublished">
             <c-checkbox name="live" v-model="live" label="Published?">
-                <small class="form-text text-muted" slot="help">Published models are visible to everyone. Unpublished models are visible only to you</small>
+                <small class="form-text text-muted" slot="help">Published models are visible to everyone. Unpublished models are visible only to you.
+                    Once a model has been published files associated with the release cannot be added, modified or deleted.
+                </small>
             </c-checkbox>
         </div>
-        <div :class="['form-group', {'has-danger': errors.license.length > 0}]">
+        <div :class="['form-group', {'child-is-invalid': errors.license.length > 0}]">
             <multiselect v-model="license" label="name" track-by="name" placeholder="Type to find license" :options="licenseOptions">
                 <template slot="option" scope="props">
                     <div>
@@ -66,7 +69,7 @@ const schema = yup.object().shape({
                     </div>
                 </template>
             </multiselect>
-            <div v-if="errors.license > 0" class="form-control-feedback">{{ errors.license.join(', ') }}</div>
+            <div v-if="errors.license.length > 0" class="invalid-feedback">a license must be selected</div>
             <small class="form-text text-muted">A software licence is a document governing use and redistribution of your model</small>
         </div>
         <c-message-display :messages="statusMessages"/>
@@ -119,21 +122,28 @@ export default class Description extends createFormValidator(schema) {
     matchingProgrammingLanguages = [{ name: 'NetLogo' }, { name: 'Python'}];
     isLoadingProgrammingLanguages = false;
 
+    get isPublished() {
+        return this.$store.state.release.live;
+    }
+
+    get osOption() {
+        return _.find(this.osOptions, (option) => option.name === this.state.os);
+    }
+
     applyTextEdit(ev) {
-        console.log({ev});
-        (<any>this).state.description = ev.event.target.innerHTML;
+        (<any>this).description = ev.event.target.innerHTML;
     }
 
     updateOs(value) {
-        (<any>this).state.os = value.name
+        (<any>this).os = value.name
     }
 
     updatePlatforms(value) {
-        (<any>this).state.platforms = value.name
+        (<any>this).platforms = value.name
     }
 
     updateProgrammingLanguages(value) {
-        (<any>this).state.programming_languages = value.name;
+        (<any>this).programming_languages = value.name;
     }
 
     async save() {
