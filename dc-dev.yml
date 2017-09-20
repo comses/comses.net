@@ -56,6 +56,7 @@ services:
       - ./deploy/elasticsearch.conf.d:/etc/elasticsearch
       - ./docker/shared/logs:/shared/logs
       - ./docker/shared/library:/shared/library
+      - ./docker/shared/media:/shared/media
       - ./docker/shared/repository:/shared/repository
       - ./docker/shared/webpack:/shared/webpack
       - ./docker/shared/static:/shared/static

@@ -107,10 +107,10 @@ services:
       - ./docker/shared/input:/shared/input
       - ./docker/shared/logs/cms:/shared/logs
       - ./docker/shared/library:/shared/library
+      - ./docker/shared/media:/shared/media
       - ./docker/shared/repository:/shared/repository
       - ./docker/shared/webpack:/shared/webpack
       - ./docker/shared/static:/shared/static
-      - ./docker/shared/media:/shared/media
       - ./docker/shared/redis:/shared/redis
       - sockets:/shared/sockets
     environment:
