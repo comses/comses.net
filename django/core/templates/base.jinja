@@ -113,10 +113,10 @@ function focusSearch() {
         {% endif %}
         <div class="row">
             <div class="col-xs-12 col-lg-3">
-                {% with social_settings=settings.home.SocialMediaSettings %}
+                {% with social_settings=settings.core.SocialMediaSettings %}
                     <ul class="social-media">
                         <li>
-                            <a href="https://github.com/comses" title="GitHub" target="_blank">
+                            <a href="https://github.com/{{ social_settings.github_account }}" title="GitHub" target="_blank">
                                 <span class="fa-stack">
                                     <i class="fa fa-circle fa-stack-2x"></i>
                                     <i class="fa fa-code-fork fa-inverse fa-stack-1x"></i>

@@ -24,6 +24,7 @@ from wagtail.wagtailsnippets.models import register_snippet
 
 from .fields import MarkdownField
 
+
 class ComsesGroups(Enum):
     ADMIN = "Admins"
     EDITOR = "Editors"
@@ -47,7 +48,8 @@ class ComsesGroups(Enum):
 class SocialMediaSettings(BaseSetting):
     facebook_url = models.URLField(help_text=_('Facebook URL'), blank=True)
     youtube_url = models.URLField(help_text=_('CoMSES Net YouTube Channel'), blank=True)
-    twitter_account = models.CharField(max_length=128, help_text=_('CoMSES Net official Twitter account'), blank=True)
+    twitter_account = models.CharField(max_length=128, default='comses', help_text=_('CoMSES Net official Twitter account'), blank=True)
+    github_account = models.CharField(max_length=128, default='comses', help_text=_('CoMSES Net official GitHub account'), blank=True)
     mailing_list_url = models.URLField(help_text=_('Mailing List Signup'), blank=True)
     contact_form_recipients = models.EmailField(
         help_text=_('Email address(es) where contact forms will be sent. Separate multiple addresses with commas,'
