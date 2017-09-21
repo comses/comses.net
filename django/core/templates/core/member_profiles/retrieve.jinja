@@ -101,13 +101,13 @@
     <div class='tab-content'>
         <div class='tab-pane active' id='bio' role='tabpanel'>
             {% if bio %}
-                <h2 class='m-0 py-3 title'>Bio</h2>
+                <h3 class='m-0 py-3 title'>Bio</h3>
                 <p>
                     {{ bio|markdown }}
                 </p>
             {% endif %}
             {% if research_interests %}
-                <h2 class='m-0 py-3 title'>Research Interests</h2>
+                <h3 class='m-0 py-3 title'>Research Interests</h3>
                 <p>
                     {{ research_interests }}
                 </p>
@@ -177,9 +177,9 @@
             <h2 class='card-title'>Areas of Interest</h2>
             <p class='card-text tag-list'>
                 {% for keyword in keywords %}
-                    {{ search_tag_btn(keyword) }}
+                    <small>{{ search_tag_btn(keyword) }}</small>
                 {% else %}
-                    None entered
+                    none entered
                 {% endfor %}
             </p>
         </div>
