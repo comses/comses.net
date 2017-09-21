@@ -100,12 +100,34 @@ class MemberProfile(index.Indexed, ClusterableModel):
     degrees = ArrayField(models.CharField(max_length=255), blank=True, default=list)
     institution = models.ForeignKey(Institution, null=True)
     keywords = ClusterTaggableManager(through=MemberProfileTag, blank=True)
-    orcid = models.CharField(help_text=_("16 digits, - between every 4th digit, e.g., 0000-0002-1825-0097"),
-                             max_length=19, blank=True)
+
     personal_url = models.URLField(blank=True)
     picture = models.ForeignKey(Image, null=True, help_text=_('Profile picture'))
     professional_url = models.URLField(blank=True)
     research_interests = models.TextField(blank=True)
+
+    """
+    Returns the ORCID profile URL associated with this member profile if it exists, or None
+    """
+    @property
+    def orcid_url(self):
+        return self.get_social_account_profile_url('orcid')
+
+    """
+    Returns the github profile URL associated with this member profile if it exists, or None
+    """
+    @property
+    def github_url(self):
+        return self.get_social_account_profile_url('github')
+
+    def get_social_account_profile_url(self, provider_name):
+        social_acct = self.get_social_account(provider_name)
+        if social_acct:
+            return social_acct.get_profile_url()
+        return None
+
+    def get_social_account(self, provider_name):
+        return self.user.socialaccount_set.filter(provider=provider_name).first()
 
     @property
     def submitter(self):

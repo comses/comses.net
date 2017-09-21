@@ -1,6 +1,6 @@
 {% extends "sidebar_layout.jinja" %}
-{% from "common.jinja" import breadcrumb, subnav, institution_href, search_tag_btn %}
-{% from "library/codebases/macros.jinja" import render_codebase_result %}t
+{% from "common.jinja" import breadcrumb, subnav, institution_href, search_tag_btn, render_social_profile_url %}
+{% from "library/codebases/macros.jinja" import render_codebase_result %}
 
 {% block title %}User profile for {{ full_name }}{% endblock %}
 
@@ -54,7 +54,7 @@
                             {% else %}
                                 No institution entered.
                             {% endif %}
-                        </dd> 
+                        </dd>
                         <dt class='col-sm-3'><u>Personal URL: </u></dt>
                         <dd class='col-sm-9'>
                             {% if personal_url %}
@@ -75,20 +75,12 @@
 
                         <dt class='col-sm-3'><u>ORCID: </u><sup><a target='_blank' href='https://orcid.org'>?</a></sup></dt>
                         <dd class='col-sm-9'>
-                            {% if orcid %}
-                                <a target='_blank' href='{{ orcid_url }}'>{{ orcid }}</a>
-                            {% else %}
-                                <a href='{{ provider_login_url(request, "orcid", process="connect") }}'>Connect your ORCID account</a>
-                            {% endif %}
+                            {{ render_social_profile_url('orcid', orcid_url, connect=request.user.username == username) }}
                         </dd>
 
                         <dt class='col-sm-3'><u>GitHub: </u><sup><a target='_blank' href='https://github.com'>?</a></sup></dt>
                         <dd class='col-sm-9'>
-                            {% if github %}
-                                <a target='_blank' href='{{ github_url }}'>{{ github }}</a>
-                            {% else %}
-                                <a href='{{ provider_login_url(request, "github", process="connect") }}'><i class='fa fa-github'></i> Connect your GitHub account</a>
-                            {% endif %}
+                            {{ render_social_profile_url('github', github_url, connect=request.user.username == username) }}
                         </dd>
                     </dl>
                 </div>

@@ -99,7 +99,8 @@ class MemberProfileSerializer(serializers.ModelSerializer):
 
     # MemberProfile
     avatar = serializers.SerializerMethodField()  # needed to materialize the FK relationship for wagtailimages
-    orcid_url = serializers.SerializerMethodField()
+    orcid_url = serializers.ReadOnlyField()
+    github_url = serializers.ReadOnlyField()
     keywords = TagSerializer(many=True)
     profile_url = serializers.URLField(source='get_absolute_url', read_only=True)
 
@@ -119,11 +120,6 @@ class MemberProfileSerializer(serializers.ModelSerializer):
         if not full_name:
             full_name = instance.user.username
         return full_name
-
-    def get_orcid_url(self, instance):
-        if instance.orcid:
-            return 'https://orcid.org/{0}'.format(instance.orcid)
-        return ''
 
     def update(self, instance, validated_data):
         raw_tags = TagSerializer(many=True, data=validated_data.pop('keywords'))
@@ -168,7 +164,7 @@ class MemberProfileSerializer(serializers.ModelSerializer):
             # institution
             'institution_name', 'institution_url',
             # MemberProfile
-            'avatar', 'bio', 'degrees', 'bio', 'degrees', 'full_member', 'keywords', 'orcid', 'orcid_url',
+            'avatar', 'bio', 'degrees', 'bio', 'degrees', 'full_member', 'keywords', 'orcid_url', 'github_url',
             'personal_url', 'professional_url', 'profile_url', 'research_interests')
 
 

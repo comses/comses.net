@@ -1,4 +1,5 @@
 {% extends "base.jinja" %}
+{% from "common.jinja" import social_profile_url %}
 
 {% block title %}External Account Connections{% endblock %}
 
@@ -7,7 +8,7 @@
 {% endblock %}
 
 {% block content %}
-    <h2>Connect your CoMSES account with <a href='https://github.com'>GitHub</a> or <a href='https://orcid.org'>ORCID</a></h2>
+    <h2>Connect your CoMSES account with <a target='_blank' href='https://github.com'>GitHub</a> or <a target='_blank' href='https://orcid.org'>ORCID</a></h2>
     <hr>
     <p>
     Connecting your account with GitHub or ORCID carries additional benefits - you will have access to private GitHub
@@ -51,16 +52,10 @@
     <div class='card-block'>
         <ul class="list-group list-group-flush">
             <li class='list-group-item'>
-                <a title="github" class="btn text-left btn-sm btn-social btn-github socialaccount_provider" 
-                                  href="{{ provider_login_url(request, 'github', process="connect") }}">
-                    <span class='fa fa-github'></span> Connect with GitHub
-                </a>
+                {{ render_social_profile_url('github', request.user.member_profile.github_url, connect=True) }}
             </li>
             <li class='list-group-item'>
-                <a title='orcid' class='btn text-left btn-sm btn-social btn-orcid social_account_provider' href='{{ provider_login_url(request, 'orcid', process='connect') }}'>
-                    <img id='orcid-id-logo' src='https://orcid.org/sites/default/files/images/orcid_24x24.png' width='16' height='16'>
-                    Connect with ORCID
-                </a>
+                {{ social_profile_url('orcid', request.user.member_profile.orcid_url, connect=True) }}
             </li>
         </ul>
     </div>
