@@ -1,13 +1,11 @@
-from django.conf import settings
-from django.contrib.auth.models import User
-from django.test import TestCase
-from django.core.files.base import ContentFile
-
-from ..models import Codebase, CodebaseRelease
-from .base import BaseModelTestCase
-
 import logging
 import pathlib
+
+from django.conf import settings
+from django.core.files.base import ContentFile
+
+from .base import BaseModelTestCase
+from ..models import Codebase, CodebaseRelease
 
 logger = logging.getLogger(__name__)
 
