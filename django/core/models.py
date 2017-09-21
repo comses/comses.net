@@ -50,11 +50,12 @@ class SocialMediaSettings(BaseSetting):
     youtube_url = models.URLField(help_text=_('CoMSES Net YouTube Channel'), blank=True)
     twitter_account = models.CharField(max_length=128, default='comses', help_text=_('CoMSES Net official Twitter account'), blank=True)
     github_account = models.CharField(max_length=128, default='comses', help_text=_('CoMSES Net official GitHub account'), blank=True)
-    mailing_list_url = models.URLField(help_text=_('Mailing List Signup'), blank=True)
-    contact_form_recipients = models.EmailField(
+    mailing_list_url = models.URLField(help_text=_('Mailing List Signup URL, i.e., MailChimp signup form'), blank=True)
+    contact_form_recipients = ArrayField(
+        models.EmailField(),
         help_text=_('Email address(es) where contact forms will be sent. Separate multiple addresses with commas,'
-                    ' e.g., `editors@openabm.org,info@openabm.org`')
-    )
+                    ' e.g., `editors@openabm.org,info@openabm.org`'),
+        default=list)
 
 
 @register_snippet
