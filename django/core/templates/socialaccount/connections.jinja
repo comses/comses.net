@@ -1,5 +1,5 @@
 {% extends "base.jinja" %}
-{% from "common.jinja" import social_profile_url %}
+{% from "common.jinja" import render_social_profile_url %}
 
 {% block title %}External Account Connections{% endblock %}
 
@@ -55,7 +55,7 @@
                 {{ render_social_profile_url('github', request.user.member_profile.github_url, connect=True) }}
             </li>
             <li class='list-group-item'>
-                {{ social_profile_url('orcid', request.user.member_profile.orcid_url, connect=True) }}
+                {{ render_social_profile_url('orcid', request.user.member_profile.orcid_url, connect=True) }}
             </li>
         </ul>
     </div>
