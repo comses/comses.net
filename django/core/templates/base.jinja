@@ -18,7 +18,7 @@
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" id='userDropdownMenuLink'
                            data-toggle="dropdown" role="button" href="#" aria-haspopup="true" aria-expanded="false">
-                            <span class="fa fa-user-o"></span>
+                            <span class="fa fa-user-o"></span> {{ user.username }}
                         </a>
                         <div class="dropdown-menu" aria-labelledby='userDropdownMenuLink'>
                             <a class="dropdown-item" href="{{ url('home:profile-detail', username=user.username) }}"><i class='fa fa-user-o'></i> Your Account</a>
