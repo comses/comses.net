@@ -1,9 +1,11 @@
-{% extends "base.html" %}
+{% extends "base.jinja" %}
 
 {% block body_class %}template-404{% endblock %}
 
-{% block content %}
+{% block introduction %}
     <h1>Page not found</h1>
+{% endblock %}
 
+{% block content %}
     <h2>Sorry, this page could not be found.</h2>
 {% endblock %}

@@ -11,10 +11,9 @@ from library import urls as library_urls
 from search import views as search_views
 from . import views
 
-# from django_jinja import views as jinja_views
+from django_jinja import views as jinja_views
 
 schema_view = get_swagger_view(title='CoMSES.net API')
-
 
 """
 Primary URLConf entry point into the comses.net website
@@ -34,13 +33,9 @@ urlpatterns = [
     url(r'^api-auth/', include('rest_framework.urls')),
 ]
 
-
-"""
-handler400 = jinja_views.BadRequest.as_view()
-handler403 = jinja_views.PermissionDenied.as_view()
-handler404 = jinja_views.PageNotFound.as_view()
-handler500 = jinja_views.ServerError.as_view()
-"""
+handler403 = views.permission_denied
+handler404 = views.page_not_found
+handler500 = views.server_error
 
 if settings.DEBUG:
     from django.conf.urls.static import static

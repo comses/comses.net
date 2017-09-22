@@ -2,15 +2,21 @@ import os
 
 from django.views.generic import DetailView, TemplateView
 from django.contrib.auth.views import redirect_to_login
-from django.http import HttpResponseForbidden
+from django.http import HttpResponseForbidden, Http404
 from django.conf import settings
+from django.core.exceptions import PermissionDenied
+from django.shortcuts import render
 
-from rest_framework.decorators import api_view, permission_classes, renderer_classes
-from rest_framework.renderers import TemplateHTMLRenderer
+from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
+from rest_framework.views import exception_handler
 
 from .permissions import ComsesPermissions
 from . import summarization
+
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 @api_view(['POST'], exclude_from_schema=True)
@@ -95,7 +101,7 @@ class PermissionRequiredByHttpMethodMixin:
         if user.has_perms(perms, obj):
             return None
         else:
-            return HttpResponseForbidden()
+            raise PermissionDenied
 
     def dispatch(self, request, *args, **kwargs):
         self.request = request
@@ -114,3 +120,51 @@ class FormUpdateView(PermissionRequiredByHttpMethodMixin, DetailView):
 
 class FormCreateView(PermissionRequiredByHttpMethodMixin, TemplateView):
     method = 'POST'
+
+
+def log_request_failure(exc, request):
+    logger.info(
+        'Request on url {url} by user "{username}" with content_type {content_type} failed with exception {exception}'
+            .format(url=request.path, username=request.user.username, content_type=request.accepted_media_type,
+                    exception=str(exc)))
+
+
+def rest_exception_handler(exc, context):
+    request = context.get('request')
+    if request and request.accepted_media_type == 'text/html':
+        if isinstance(exc, Http404):
+            return page_not_found(request, context=context)
+        elif isinstance(exc, HttpResponseForbidden):
+            return permission_denied(request, context=context)
+        else:
+            return server_error(request, context=context)
+    else:
+        log_request_failure(exc, request)
+        return exception_handler(exc, context)
+
+
+def permission_denied(request, context=None):
+    response = render(
+        request=request,
+        template_name='403.jinja',
+        context=context,
+        status=403)
+    return response
+
+
+def page_not_found(request, context=None):
+    response = render(
+        request=request,
+        template_name='404.jinja',
+        context=context,
+        status=404)
+    return response
+
+
+def server_error(request, context=None):
+    response = render(
+        request=request,
+        template_name='500.jinja',
+        context=context,
+        status=500)
+    return response

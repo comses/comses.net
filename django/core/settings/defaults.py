@@ -301,6 +301,7 @@ REST_FRAMEWORK = {
         'rest_framework.authentication.BasicAuthentication',
         'rest_framework_jwt.authentication.JSONWebTokenAuthentication',
     ),
+    'EXCEPTION_HANDLER': 'core.views.rest_exception_handler',
     'PAGE_SIZE': 10
 }
 
