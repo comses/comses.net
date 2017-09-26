@@ -14,7 +14,7 @@
             <div class="col-md-12 col-lg-9">
                 <div class="title">
                     <h1>
-                        <a href="{{ url(detail_url_name, identifier=item.identifier) }}">{{ item.title }}</a>
+                        <a href="{{ url(detail_url_name, identifier=item.identifier, version_number=item.version_number) }}">{{ item.title }}</a>
                     </h1>
                     <small>
                         {% for codebase_contributor in item.all_contributors %}

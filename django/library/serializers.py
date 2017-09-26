@@ -90,6 +90,7 @@ class FeaturedImageMixin(serializers.Serializer):
         else:
             return None
 
+
 class ReleaseContributorSerializer(serializers.ModelSerializer):
     contributor = ContributorSerializer()
     profile_url = serializers.SerializerMethodField()
@@ -126,12 +127,65 @@ class ReleaseContributorSerializer(serializers.ModelSerializer):
         fields = ('contributor', 'profile_url', 'include_in_citation', 'roles', 'index',)
 
 
+class RelatedCodebaseReleaseSerializer(serializers.ModelSerializer):
+    absolute_url = serializers.URLField(source='get_absolute_url', read_only=True,
+                                        help_text=_('URL to the detail page of the codebase'))
+    release_contributors = ReleaseContributorSerializer(read_only=True, many=True,
+                                                        source='index_ordered_release_contributors', )
+    submitter = LinkedUserSerializer(read_only=True, label='Submitter')
+    first_published_at = serializers.DateTimeField(format=PUBLISH_DATE_FORMAT, read_only=True)
+    last_published_on = serializers.DateTimeField(format=PUBLISH_DATE_FORMAT, read_only=True)
+
+    class Meta:
+        model = CodebaseRelease
+        fields = ('absolute_url', 'release_contributors', 'submitter', 'first_published_at', 'last_published_on',
+                  'version_number')
+
+
+class CodebaseSerializer(serializers.ModelSerializer, FeaturedImageMixin):
+    absolute_url = serializers.URLField(source='get_absolute_url', read_only=True)
+    all_contributors = ReleaseContributorSerializer(many=True, read_only=True)
+    date_created = serializers.DateTimeField(read_only=True)
+    download_count = serializers.IntegerField(read_only=True)
+    first_published_at = serializers.DateTimeField(format=PUBLISH_DATE_FORMAT, read_only=True)
+    last_published_on = serializers.DateTimeField(format=PUBLISH_DATE_FORMAT, read_only=True)
+    latest_version_number = serializers.ReadOnlyField(source='latest_version.version_number')
+    releases = RelatedCodebaseReleaseSerializer(read_only=True, many=True)
+    submitter = LinkedUserSerializer(read_only=True)
+    summarized_description = serializers.CharField(read_only=True)
+    identifier = serializers.ReadOnlyField()
+    tags = TagSerializer(many=True)
+
+    def create(self, validated_data):
+        serialized_tags = TagSerializer(many=True, data=validated_data.pop('tags'))
+        user = self.context['request'].user
+        validated_data['submitter_id'] = user.id
+        codebase = self.Meta.model(**validated_data)
+        codebase.identifier = codebase.uuid
+        codebase.save()
+        save_tags(codebase, serialized_tags)
+        codebase.make_release(submitter=user)
+        return codebase
+
+    def update(self, instance, validated_data):
+        validated_data['draft'] = False
+        return update(super().update, instance, validated_data)
+
+    class Meta:
+        model = Codebase
+        fields = ('absolute_url', 'all_contributors', 'date_created', 'download_count', 'featured_image',
+                  'repository_url', 'first_published_at', 'last_published_on', 'latest_version_number',
+                  'releases', 'submitter', 'summarized_description', 'tags', 'description', 'title',
+                  'doi', 'identifier', 'id',)
+
+
 class RelatedCodebaseSerializer(serializers.ModelSerializer, FeaturedImageMixin):
     """
     Sparse codebase serializer
     """
     all_contributors = ReleaseContributorSerializer(many=True, read_only=True)
     tags = TagSerializer(many=True)
+    version_number = serializers.ReadOnlyField(source='latest_version.version_number')
     last_published_on = serializers.DateTimeField(read_only=True, format=PUBLISH_DATE_FORMAT)
     summarized_description = serializers.CharField(read_only=True)
 
@@ -143,15 +197,15 @@ class RelatedCodebaseSerializer(serializers.ModelSerializer, FeaturedImageMixin)
 
     class Meta:
         model = Codebase
-        fields = ('all_contributors', 'tags', 'title', 'last_published_on', 'identifier', 'featured_image',
-                  'summarized_description', 'description', 'live', 'repository_url',)
+        fields = ('all_contributors', 'tags', 'title', 'last_published_on', 'identifier', 'version_number',
+                  'featured_image', 'summarized_description', 'description', 'live', 'repository_url',)
 
 
 class CodebaseReleaseSerializer(serializers.ModelSerializer):
     absolute_url = serializers.URLField(source='get_absolute_url', read_only=True,
                                         help_text=_('URL to the detail page of the codebase'))
     citation_text = serializers.ReadOnlyField()
-    codebase = RelatedCodebaseSerializer(read_only=True)
+    codebase = CodebaseSerializer(read_only=True)
     release_contributors = ReleaseContributorSerializer(read_only=True, source='index_ordered_release_contributors',
                                                         many=True)
     date_created = serializers.DateTimeField(format=YMD_DATETIME_FORMAT, read_only=True)
@@ -199,44 +253,6 @@ class CodebaseReleaseSerializer(serializers.ModelSerializer):
         model = CodebaseRelease
         fields = ('absolute_url', 'citation_text', 'release_contributors', 'date_created', 'dependencies',
                   'description', 'documentation', 'doi', 'download_count', 'embargo_end_date', 'first_published_at',
-                  'last_modified', 'last_published_on', 'live', 'license', 'os', 'os_display', 'peer_reviewed',
+                  'last_modified', 'last_published_on', 'license', 'live', 'os', 'os_display', 'peer_reviewed',
                   'platforms', 'programming_languages', 'submitted_package', 'submitter', 'codebase', 'version_number',
                   'id',)
-
-
-class CodebaseSerializer(serializers.ModelSerializer, FeaturedImageMixin):
-    absolute_url = serializers.URLField(source='get_absolute_url', read_only=True)
-    all_contributors = ReleaseContributorSerializer(many=True, read_only=True)
-    date_created = serializers.DateTimeField(read_only=True)
-    download_count = serializers.IntegerField(read_only=True)
-    first_published_at = serializers.DateTimeField(format=PUBLISH_DATE_FORMAT, read_only=True)
-    last_published_on = serializers.DateTimeField(format=PUBLISH_DATE_FORMAT, read_only=True)
-    latest_version_number = serializers.ReadOnlyField(source='latest_version.version_number')
-    current_version = CodebaseReleaseSerializer(read_only=True)
-    releases = CodebaseReleaseSerializer(read_only=True, many=True)
-    submitter = LinkedUserSerializer(read_only=True)
-    summarized_description = serializers.CharField(read_only=True)
-    identifier = serializers.ReadOnlyField()
-    tags = TagSerializer(many=True)
-
-    def create(self, validated_data):
-        serialized_tags = TagSerializer(many=True, data=validated_data.pop('tags'))
-        user = self.context['request'].user
-        validated_data['submitter_id'] = user.id
-        codebase = self.Meta.model(**validated_data)
-        codebase.identifier = codebase.uuid
-        codebase.save()
-        save_tags(codebase, serialized_tags)
-        codebase.make_release(submitter=user)
-        return codebase
-
-    def update(self, instance, validated_data):
-        validated_data['draft'] = False
-        return update(super().update, instance, validated_data)
-
-    class Meta:
-        model = Codebase
-        fields = ('absolute_url', 'all_contributors', 'date_created', 'download_count', 'featured_image',
-                  'repository_url', 'first_published_at', 'last_published_on', 'latest_version_number',
-                  'current_version', 'releases', 'submitter', 'summarized_description', 'tags', 'description', 'title',
-                  'doi', 'identifier', 'id',)

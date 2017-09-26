@@ -1,48 +1,69 @@
 {% extends "sidebar_layout.jinja" %}
 {% from "common.jinja" import breadcrumb, embed_discourse_comments, member_profile_href, share_card, search_tag_href %}
 
-{% block title %}{{ title }}{% endblock %}
+{% block title %}{{ codebase.title }}{% endblock %}
 
 {% block introduction %}<h1>Computational Model Library</h1>{% endblock %}
 
 {% block top %}
     {{ breadcrumb([
     {'url': url('library:codebase-list'), 'text': 'Computational Model Library' },
-    {'text': title }
+    {'text': codebase.title },
+    {'text': version_number },
     ]) }}
 {% endblock %}
 
 {% block content %}
     <div id='discourse-content'>
-        <h1 class="codebase-title pb-4">{{ title }}</h1>
+        {% if not live %}
+            <div class="alert alert-danger mt-2">The release you are viewing is unpublished. The latest published
+                version is <a href='{{ url('library:codebaserelease-detail', identifier=codebase.identifier,
+                    version_number=codebase.latest_version_number) }}'>here</a>
+            </div>
+        {% else %}
+            {% if version_number != codebase.latest_version_number %}
+                <div class="alert alert-warning mt-2">The release you are viewing is old. The latest published version is
+                    <a href='{{ url('library:codebaserelease-detail', identifier=codebase.identifier,
+                        version_number=codebase.latest_version_number) }}'>here</a>
+                </div>
+            {% endif %}
+        {% endif %}
+        <h1 class='codebase-title pb-4'>{{ codebase.title }}</h1>
         <div class='metadata'>
             <b>Submitted by:</b> {{ member_profile_href(submitter) }}
             <b class='pl-2'>Platform:</b>
-            {% for p in current_version.platform_tags %}
+            {% for p in platform_tags %}
                 {{ search_tag_href(p) }}
             {% else %}
                 None
             {% endfor %}
-            <b class='pl-2'>Version: </b> {{ current_version.version_number }}
+            <b class='pl-2'>Version: </b> {{ version_number }}
             <b class='pl-2'>Language:</b>
-            {% for pl in current_version.programming_languages %}
+            {% for pl in programming_languages %}
                 {{ search_tag_href(pl) }}
             {% endfor %}
         </div>
         <div class='tag-list'>
-            {% for tag in tags %}
+            {% for tag in codebase.tags %}
                 {{ search_tag_href(tag) }}
             {% endfor %}
         </div>
         <div class='pt-4'>
-            {{ description|markdown }}
+            <h5>General Description</h5>
+            {{ codebase.description|markdown }}
+            <h5>Release Notes</h5>
+            {% if description %}
+                {{ description|markdown }}
+            {% else %}
+                None
+            {% endif %}
         </div>
     </div>
     <div class='card-metadata'>
         <div class='card-body'>
             <h2 class='card-title'>Cite this Model</h2>
             <p class='card-text'>
-                {{ current_version.citation_text|markdown }}
+                {{ citation_text|markdown }}
             </p>
         </div>
     </div>
@@ -50,7 +71,7 @@
         <div class='card-metadata'>
             <div class='card-body'>
                 <h2 class='card-title'>
-                    {% if replication %}
+                    {% if codebase.replication %}
                         This is a replication of a previously published model:
                     {% else %}
                         References:
@@ -62,12 +83,12 @@
             </div>
         </div>
     {% endif %}
-    {% if associated_publication_text %}
+    {% if codebase.associated_publication_text %}
         <div class='card-metadata'>
             <div class='card-body'>
                 <h2 class='card-title'>Associated Publication</h2>
                 <p class='card-text'>
-                {{ associated_publication_text|markdown }}
+                {{ codebase.associated_publication_text|markdown }}
                 </p>
             </div>
         </div>
@@ -87,8 +108,8 @@
         <div class='tab-pane active' id='images' role='tabpanel'>
             {# FIXME: iterate and display all images in media #}
             <div class='p-3'>
-                {% if featured_image is not none %}
-                    {{ image(featured_image, "width-780", class='d-block img-fluid') }}
+                {% if codebase.featured_image is not none %}
+                    {{ image(codebase.featured_image, "width-780", class='d-block img-fluid') }}
                 {% else %}
                     <img src="holder.js/780x400?text=No uploaded images" class="img-fluid img-thumbnail">
                 {% endif %}
@@ -104,19 +125,19 @@
                         <b class='card-title'>DOI:</b> {{ doi }}
                     </div>
                     <div class='section'>
-                        <b class='card-title'>License:</b> <a href='{{ current_version.license.url }}'>{{ current_version.license.name }}</a>
+                        <b class='card-title'>License:</b> <a href='{{ license.url }}'>{{ license.name }}</a>
                     </div>
                     <div class='section'>
-                        <b class='card-title'>Operating System:</b> {{ current_version.os_display }}
+                        <b class='card-title'>Operating System:</b> {{ os_display }}
                     </div>
                     <div class='section'>
                         <b class='card-title'>Programming Language:</b>
-                        {% for pl in current_version.programming_languages %}
+                        {% for pl in programming_languages %}
                             {{ search_tag_href(pl) }}
                         {% endfor %}
                     </div>
                     <div class='section'>
-                        <b class='card-title'>Dependencies:</b> {{ current_version.dependencies }}
+                        <b class='card-title'>Dependencies:</b> {{ dependencies }}
                     </div>
                 </div>
             </div>
@@ -135,7 +156,7 @@
                     </tr>
                 </thead>
                 <tbody>
-                    {% for release in releases %}
+                    {% for release in codebase.releases %}
                         <tr>
                             <td><a href='{{ release.absolute_url }}'>{{ release.version_number }}</a></td>
                             <td>{{ member_profile_href(release.submitter) }}</td>
@@ -143,7 +164,7 @@
                             <td>{{ release.last_published_on }}</td>
                             {% if has_change_perm %}
                                 <td>
-                                    <a href="{{ url('library:codebaserelease-edit', identifier=identifier,
+                                    <a href="{{ url('library:codebaserelease-edit', identifier=codebase.identifier,
                                         version_number=release.version_number) }}">
                                         <span class="fa fa-edit"></span>
                                     </a>
@@ -166,7 +187,7 @@
             <div class='section'>
                 <b class="card-title">Authors</b>
                 <p class='card-text'>
-                {% for c in all_contributors %}
+                {% for c in codebase.all_contributors %}
                     {% set badge_class='badge-success' if c.contributor.user else 'badge-default' %}
                     <a href='{{c.profile_url}}'>
                         <span class='badge {{badge_class}}'>
@@ -185,11 +206,11 @@
             <div class='section'>
                 <b class="card-title">Last Updated</b>
                 <p class='card-text'>
-                {{ current_version.last_published_on }}
+                {{ last_published_on }}
                 </p>
             </div>
             <div class='section'>
-                <b class="card-title">Downloads: </b>{{ download_count }}
+                <b class="card-title">Downloads: </b>{{ codebase.download_count }}
             </div>
             <div class='section'>
                 <b class="card-title">Status</b>
@@ -209,7 +230,7 @@
     <div class="card-metadata">
         <div class="card-body">
             {% if has_change_perm %}
-                <a href="{{ url('library:codebase-edit', identifier=identifier) }}" class="col-12 my-1 btn btn-primary">Edit</a>
+                <a href="{{ url('library:codebase-edit', identifier=codebase.identifier) }}" class="col-12 my-1 btn btn-primary">Edit</a>
             {% endif %}
             <button type="button" class="col-12 my-1 btn btn-primary">Download</button>
             <button type="button" class="col-12 my-1 btn btn-primary">Follow</button>
