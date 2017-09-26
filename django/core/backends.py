@@ -122,7 +122,9 @@ class EmailAuthenticationBackend(ModelBackend):
         l_username = username.lower().strip()
         try:
             user = User.objects.get(email=l_username)
-            return user.check_password(password) and user
+            if user.check_password(password):
+                return user
+            return None
         except User.DoesNotExist:
             return super(EmailAuthenticationBackend, self).authenticate(request=request, username=username,
                                                                         password=password, **kwargs)
@@ -145,6 +147,6 @@ class ComsesObjectPermissionBackend:
             raise PermissionDenied
 
         return has_authenticated_model_permission(user, perm, obj) or \
-               has_delete_permission(perm, obj) or \
-               has_view_permission(perm, user, obj) or \
-               has_submitter_permission(user, obj)
+            has_delete_permission(perm, obj) or \
+            has_view_permission(perm, user, obj) or \
+            has_submitter_permission(user, obj)
