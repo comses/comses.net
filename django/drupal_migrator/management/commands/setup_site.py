@@ -524,7 +524,7 @@ class Command(BaseCommand):
         sms.youtube_url = 'https://www.youtube.com/user/CoMSESNet/'
         sms.twitter_account = 'openabm_comses'
         sms.mailing_list_url = 'http://eepurl.com/b8GCUv'
-        sms.contact_form_recipients = 'editors@openabm.org'
+        sms.contact_form_recipients = ['editors@openabm.org']
         sms.save()
         self.site = site
 
