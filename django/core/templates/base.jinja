@@ -113,7 +113,7 @@ function focusSearch() {
         {% endif %}
         <div class="row">
             <div class="col-xs-12 col-lg-3">
-                {% with social_settings=settings.core.SocialMediaSettings %}
+                {% with social_settings=settings("core.SocialMediaSettings", use_default_site=True) %}
                     <ul class="social-media">
                         <li>
                             <a href="https://github.com/{{ social_settings.github_account }}" title="GitHub" target="_blank">
