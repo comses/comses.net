@@ -232,7 +232,10 @@
             <div class="btn btn-primary w-100">Edit</div>
         </a>
     {% endif %}
-    <button type="button" class="btn btn-primary my-1 w-100">Download</button>
+    <a href="{{  url('library:codebaserelease-download',
+        identifier=codebase.identifier, version_number=version_number) }}">
+        <button type="button" class="btn btn-primary my-1 w-100">Download</button>
+    </a>
     <button type="button" class="btn btn-primary my-1 w-100">Follow</button>
     {{ share_card(absolute_url) }}
 {% endblock %}

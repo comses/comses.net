@@ -18,6 +18,7 @@ from home.views import SmallResultSetPagination
 from .models import Codebase, CodebaseRelease, Contributor
 from .serializers import (CodebaseSerializer, RelatedCodebaseSerializer, CodebaseReleaseSerializer,
                           ContributorSerializer, ReleaseContributorSerializer)
+from core import utils as core_utils
 
 logger = logging.getLogger(__name__)
 
@@ -95,6 +96,19 @@ class CodebaseReleaseViewSet(FormViewSetMixin, viewsets.ModelViewSet):
         elif request.method == 'GET':
             return self._list_uploads(codebase_release, upload_type, url)
 
+    @detail_route(methods=['get'],
+                  renderer_classes=(renderers.JSONRenderer,))
+    def download(self, request, **kwargs):
+        codebase_release = self.get_object()
+        file = File(codebase_release.retrieve_archive())
+        response = HttpResponse(file,
+                                content_type=mimetypes.guess_type(str(codebase_release.archive_path))[0]
+                                             or 'application/octet-stream')
+        response['Content-Disposition'] = 'attachment; filename={}'.format(
+            '{}_v{}.zip'.format(codebase_release.codebase.title.lower().replace(' ', '_'),
+                                codebase_release.version_number))
+        return response
+
     @detail_route(methods=['get', 'post'],
                   parser_classes=(parsers.FormParser, parsers.MultiPartParser,),
                   renderer_classes=(renderers.JSONRenderer,),
@@ -106,9 +120,9 @@ class CodebaseReleaseViewSet(FormViewSetMixin, viewsets.ModelViewSet):
 
     @detail_route(methods=['delete', 'get'],
                   parser_classes=(parsers.JSONParser,),
-                  url_name='download',
+                  url_name='download_unpublished',
                   url_path='files/(?P<upload_type>[\.\w]+)/(?P<path>([\.\w ]+/)*[\.\w\- ]+)')
-    def download(self, request, identifier, version_number, upload_type, path):
+    def download_unpublished(self, request, identifier, version_number, upload_type, path):
         codebase_release = self.get_object()
         if request.method == 'DELETE':
             if codebase_release.live:

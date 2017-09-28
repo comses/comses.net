@@ -22,6 +22,7 @@ from modelcluster.models import ClusterableModel
 from taggit.models import TaggedItemBase
 from wagtail.wagtailimages.models import Image
 from wagtail.wagtailsearch import index
+from zipfile import ZipFile
 
 from core import fs
 from core.fields import MarkdownField
@@ -442,7 +443,7 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
             version=self.version_number,
             cml='CoMSES Computational Model Library',
             purl=self.permanent_url
-        )  if self.last_published_on else 'You must publish this model in order to cite it'
+        ) if self.last_published_on else 'You must publish this model in order to cite it'
 
     def download_count(self):
         return self.downloads.count()
@@ -471,6 +472,10 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
     @property
     def archival_information_package_path(self):
         return self.bagit_path
+
+    @property
+    def archive_path(self):
+        return self.get_library_path('archive.zip')
 
     def save_file(self, file_obj):
         """Extract the archive, inspect it's contents and if it's valid store with other releases"""
@@ -541,6 +546,20 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
         else:
             raise FileNotFoundError('File "{}" does not exist'.format(relpath))
 
+    def retrieve_archive(self):
+        if not self.archive_path.exists():
+            sip_path = self.submitted_package_path()
+            if sip_path.exists():
+                with ZipFile(str(self.archive_path), 'w') as archive:
+                    for root_path, dirs, file_paths in os.walk(str(sip_path)):
+                        for file_path in file_paths:
+                            path = pathlib.Path(root_path, file_path)
+                            archive.write(str(path), arcname=str(path.relative_to(sip_path)))
+            else:
+                raise FileNotFoundError(
+                    'submission package for release {} {} not found'.format(self.codebase.title, self.version_number))
+        return open(str(self.archive_path), 'rb')
+
     @property
     def bagit_info(self):
         return {
@@ -557,7 +576,7 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
         return fs.make_bag(str(self.submitted_package_path()), self.bagit_info)
 
     def save_draft(self):
-        self.draft=False
+        self.draft = False
         release = CodebaseRelease.objects.filter(codebase__identifier=self.codebase.identifier, draft=True).first()
         if release:
             self.id = release.id
