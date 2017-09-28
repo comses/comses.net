@@ -167,3 +167,21 @@ class ViewSetTestCase(hypothesis_django.TestCase):
         self._check_authorization(user, obj, action, False)
         assign_perm(action + '_' + obj._meta.model_name, user, obj)
         self._check_authorization(user, obj, action, True)
+
+
+class UserFactory:
+    def __init__(self):
+        self.id = 0
+
+    def get_username(self):
+        return 'submitter{}'.format(self.id)
+
+    def get_default_data(self):
+        default_data = {'username': self.get_username(), 'email': '{}@gmail.com'.format(self.get_username())}
+        self.id += 1
+        return default_data
+
+    def create(self, **overrides):
+        kwargs = self.get_default_data()
+        kwargs.update(overrides)
+        return User.objects.create(**kwargs)

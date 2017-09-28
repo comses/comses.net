@@ -1,11 +1,17 @@
 import logging
 
+from rest_framework.test import APIClient
+
+from datetime import datetime
+from django.contrib.auth.models import User
+from django.urls import reverse
+from django.test import TestCase
 from hypothesis import given, settings
 from hypothesis import strategies as st
 from hypothesis.extra.datetime import datetimes
 from hypothesis.extra.django.models import models
 
-from core.tests.base import ViewSetTestCase, text, MAX_EXAMPLES, generate_user
+from core.tests.base import ViewSetTestCase, text, MAX_EXAMPLES, generate_user, UserFactory
 from core.models import Event, Job
 from home.serializers import JobSerializer, EventSerializer
 from home.views import JobViewSet, EventViewSet
@@ -115,3 +121,68 @@ class EventViewSetTestCase(ViewSetTestCase):
         profiles, event = data
 
         self.check_anonymous_authorization(event)
+
+
+class JobPageRenderTestCase(TestCase):
+    client_class = APIClient
+
+    def setUp(self):
+        user_factory = UserFactory()
+        self.submitter = user_factory.create()
+        self.job = Job.objects.create(
+            title='PostDoc in ABM',
+            description='PostDoc in ABM at ASU',
+            date_created=datetime.now(),
+            submitter=self.submitter)
+
+    def test_detail(self):
+        response = self.client.get(reverse('home:job-detail', kwargs={'pk': self.job.id}))
+        self.assertEqual(response.status_code, 200)
+
+    def test_list(self):
+        response = self.client.get(reverse('home:job-list'))
+        self.assertEqual(response.status_code, 200)
+
+
+class EventPageRenderTestCase(TestCase):
+    client_class = APIClient
+
+    def setUp(self):
+        user_factory = UserFactory()
+        self.submitter = user_factory.create()
+        self.event = Event.objects.create(
+            title='CoMSES Conference',
+            description='Online Conference',
+            start_date=datetime.now(),
+            submitter=self.submitter)
+
+    def test_detail(self):
+        response = self.client.get(reverse('home:event-detail', kwargs={'pk': self.event.id}))
+        self.assertEqual(response.status_code, 200)
+
+    def test_list(self):
+        response = self.client.get(reverse('home:event-list'))
+        self.assertEqual(response.status_code, 200)
+
+    def test_calendar(self):
+        response = self.client.get(reverse('home:event-calendar'))
+        self.assertEqual(response.status_code, 200)
+
+
+class ProfilePageRenderTestCase(TestCase):
+    client_class = APIClient
+
+    def setUp(self):
+        user_factory = UserFactory()
+        self.submitter = user_factory.create()
+        self.profile = self.submitter.member_profile
+        self.profile.project_url ='https://geocities.com/{}'.format(self.submitter.username)
+        self.profile.save()
+
+    def test_detail(self):
+        response = self.client.get(reverse('home:profile-detail', kwargs={'username': self.submitter.username}))
+        self.assertEqual(response.status_code, 200)
+
+    def test_list(self):
+        response = self.client.get(reverse('home:profile-list'))
+        self.assertEqual(response.status_code, 200)

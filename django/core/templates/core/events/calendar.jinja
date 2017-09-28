@@ -16,7 +16,7 @@
     {{ breadcrumb([{'text': 'Community Events' }]) }}
     {# FIXME: make a tab navigation to switch between list view and calendar view #}
     {{ subnav([ 
-    {'text': 'Calendar View', 'url': url('home:events-calendar'), 'active': True},
+    {'text': 'Calendar View', 'url': url('home:event-calendar'), 'active': True},
     {'text': 'List View', 'url': url('home:event-list'), },
     ])
     }}
