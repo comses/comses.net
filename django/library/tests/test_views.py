@@ -1,14 +1,16 @@
 from django.contrib.auth.models import User
+from django.test import TestCase
 from django.urls import reverse
 from hypothesis import given, settings, Verbosity
 from hypothesis import strategies as st
 from hypothesis.extra.django.models import models
 from rest_framework.test import force_authenticate
 
-from core.tests.base import ViewSetTestCase, text, MAX_EXAMPLES, generate_user
+from core.tests.base import ViewSetTestCase, text, MAX_EXAMPLES, generate_user, UserFactory
 from library.models import Codebase
 from library.serializers import CodebaseSerializer
 from library.views import CodebaseViewSet
+from .base import CodebaseFactory, CodebaseReleaseFactory, ContributorFactory, ReleaseContributorFactory
 
 
 def generate_with_codebase(submitter):
@@ -79,3 +81,37 @@ class CodebaseViewSetTestCase(ViewSetTestCase):
     def test_anonymous(self, data):
         _users, codebases = data
         self.check_anonymous_authorization(codebases[0])
+
+
+class CodebaseRenderPageTestCase(TestCase):
+    def setUp(self):
+        user_factory = UserFactory()
+        codebase_factory = CodebaseFactory()
+        self.submitter = user_factory.create()
+        self.codebase = codebase_factory.create(self.submitter)
+
+    def test_list(self):
+        response = self.client.get(reverse('library:codebase-detail', kwargs={'identifier': self.codebase.identifier}))
+        self.assertTrue(response.status_code, 200)
+
+
+class CodebaseReleaseRenderPageTestCase(TestCase):
+    def setUp(self):
+        user_factory = UserFactory()
+        codebase_factory = CodebaseFactory()
+        contributor_factory = ContributorFactory()
+        codebase_release_factory = CodebaseReleaseFactory()
+
+        self.submitter = user_factory.create()
+        contributor = contributor_factory.create(user=self.submitter)
+
+        self.codebase = codebase_factory.create(submitter=self.submitter)
+        self.codebase_release = codebase_release_factory.create(codebase=self.codebase)
+        release_contributor_factory = ReleaseContributorFactory(codebase_release=self.codebase_release)
+        release_contributor_factory.create(contributor=contributor)
+
+    def test_detail(self):
+        response = self.client.get(reverse('library:codebaserelease-detail',
+                                           kwargs={'identifier': self.codebase.identifier,
+                                                   'version_number': self.codebase_release.version_number}))
+        self.assertTrue(response.status_code, True)
