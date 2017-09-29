@@ -148,6 +148,7 @@ class EventViewSet(FormViewSetMixin, viewsets.ModelViewSet):
 
 class EventCalendarList(generics.ListAPIView):
     queryset = Event.objects.all()
+    # FIXME: refactor this and other apps, https://github.com/comses/core.comses.net/issues/118
     template_name = 'core/events/calendar.jinja'
 
     def get_list_queryset(self):

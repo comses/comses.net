@@ -11,8 +11,6 @@ from library import urls as library_urls
 from search import views as search_views
 from . import views
 
-from django_jinja import views as jinja_views
-
 schema_view = get_swagger_view(title='CoMSES.net API')
 
 """
@@ -37,7 +35,7 @@ handler403 = views.permission_denied
 handler404 = views.page_not_found
 handler500 = views.server_error
 
-if settings.DEBUG:
+if settings.DEPLOY_ENVIRONMENT.is_development():
     from django.conf.urls.static import static
     from django.contrib.staticfiles.urls import staticfiles_urlpatterns
 
