@@ -63,7 +63,7 @@ def test(ctx, tests=None, coverage=False):
     else:
         coverage_cmd = env['python']
     ctx.run("{coverage_cmd} manage.py test {apps}".format(apps=apps, coverage_cmd=coverage_cmd),
-            env={'DJANGO_SETTINGS_MODULE': 'core.settings.test'})
+            env={'DJANGO_SETTINGS_MODULE': 'core.settings.test', 'HYPOTHESIS_VERBOSITY_LEVEL': 'verbose'})
 
 
 @task(pre=[call(test, coverage=True)])
