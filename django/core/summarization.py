@@ -7,7 +7,7 @@ from sumy.parsers.html import HtmlParser
 from sumy.summarizers.luhn import LuhnSummarizer
 from sumy.utils import get_stop_words
 
-from .utils import markdown_to_sanitized_html
+from .fields import render_sanitized_markdown
 
 LANGUAGE = 'english'
 SENTENCES_COUNT = 6
@@ -23,7 +23,7 @@ template = jinja2.Template('''
 
 
 def summarize(md: str, sentences_count=5):
-    sanitized_html = markdown_to_sanitized_html(md)
+    sanitized_html = render_sanitized_markdown(md)
     parser = HtmlParser.from_string(sanitized_html, url=None, tokenizer=Tokenizer(LANGUAGE))
     summary = template.render(sentences=[' '.join(sentence.words) for sentence
                               in summarizer(parser.document, sentences_count)])
@@ -31,9 +31,11 @@ def summarize(md: str, sentences_count=5):
 
 
 def summarize_to_text(md: str, sentences_count, max_length=300):
-    sanitized_html = markdown_to_sanitized_html(md)
-    parser = HtmlParser.from_string(sanitized_html, url=None, tokenizer=Tokenizer(LANGUAGE))
-    summary = '\n\n'.join(' '.join(sentence.words) for sentence in summarizer(parser.document, sentences_count))
-    if max_length is not None:
-        return shorten(summary, width=max_length)
-    return summary
+    sanitized_html = render_sanitized_markdown(md)
+    if sanitized_html:
+        parser = HtmlParser.from_string(sanitized_html, url=None, tokenizer=Tokenizer(LANGUAGE))
+        summary = '\n\n'.join(' '.join(sentence.words) for sentence in summarizer(parser.document, sentences_count))
+        if max_length is not None:
+            return shorten(summary, width=max_length)
+        return summary
+    return ''

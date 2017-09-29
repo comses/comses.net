@@ -1,11 +1,11 @@
 {% extends "base.jinja" %}
 
-{% block body_class %}template-404{% endblock %}
+{% block body_class %}template-403{% endblock %}
 
 {% block introduction %}
-    <h1>Permission Denied</h1>
+    <h1>Access denied</h1>
 {% endblock %}
 
 {% block content %}
-    <h2>Sorry, access to this page is denied.</h2>
+    <h2>Sorry, you do not have access to this resource. Please <a href='{{ contact_url }}'>contact us</a> if this is an error.</h2>
 {% endblock %}

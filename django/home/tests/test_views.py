@@ -11,8 +11,8 @@ from hypothesis import strategies as st
 from hypothesis.extra.datetime import datetimes
 from hypothesis.extra.django.models import models
 
-from core.tests.base import ViewSetTestCase, text, MAX_EXAMPLES, generate_user, UserFactory
 from core.models import Event, Job
+from core.tests.base import ViewSetTestCase, text, MAX_EXAMPLES, generate_user, UserFactory
 from home.serializers import JobSerializer, EventSerializer
 from home.views import JobViewSet, EventViewSet
 
@@ -22,7 +22,7 @@ logger = logging.getLogger(__name__)
 def generate_with_job(submitter):
     return models(Job,
                   title=text(),
-                  description=text(),
+                  description=st.just("# broken"),
                   summary=text(),
                   date_created=datetimes(min_year=2000, max_year=2017),
                   submitter=st.just(submitter))
@@ -37,7 +37,7 @@ def generate_job_data(draw):
 
 def generate_with_event(submitter):
     return models(Event,
-                  description=text(),
+                  description=st.just("# broken"),
                   summary=text(),
                   title=text(),
                   location=text(),
@@ -176,7 +176,7 @@ class ProfilePageRenderTestCase(TestCase):
         user_factory = UserFactory()
         self.submitter = user_factory.create()
         self.profile = self.submitter.member_profile
-        self.profile.project_url ='https://geocities.com/{}'.format(self.submitter.username)
+        self.profile.project_url = 'https://geocities.com/{}'.format(self.submitter.username)
         self.profile.save()
 
     def test_detail(self):

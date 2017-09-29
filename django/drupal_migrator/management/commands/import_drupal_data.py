@@ -2,10 +2,11 @@
 Load openabm.org JSON dumps into the new site
 """
 
-from django.core.management.base import BaseCommand
-from drupal_migrator.database_migration import load
-
 import logging
+
+from django.core.management.base import BaseCommand
+
+from drupal_migrator.database_migration import load
 
 logger = logging.getLogger(__name__)
 

@@ -17,12 +17,12 @@ def generate_with_codebase(submitter):
                   description=text(),
                   summary=text(),
                   uuid=st.uuids(),
-                  references_text=st.just(''),
-                  associated_publication_text=st.just(''),
-                  repository_url=st.just(''),
-                  doi=st.just(None),
+                  references_text=st.just('References'),
+                  associated_publication_text=st.just('Associated publication'),
+                  repository_url=st.just('https://example.com'),
+                  doi=st.just('10.1126/science.1183532'),
                   media=st.just([]),
-                  identifier=st.uuids(),
+                  identifier=text(),
                   relationships=st.just([]),
                   submitter=st.just(submitter),
                   )
@@ -45,6 +45,7 @@ class CodebaseViewSetTestCase(ViewSetTestCase):
 
     def create_add_response(self, user: User, data):
         data.pop('id')
+        # FIXME: using example() is deprecated
         data['identifier'] = str(st.uuids().example())
 
         http_method = self.action_http_map['add']

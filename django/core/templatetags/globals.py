@@ -13,7 +13,7 @@ from webpack_loader.templatetags import webpack_loader as wl
 
 from core.serializers import PUBLISH_DATE_FORMAT
 from core.summarization import summarize
-from core.utils import markdown_to_sanitized_html
+from core.fields import render_sanitized_markdown
 
 
 @library.global_function
@@ -81,7 +81,7 @@ def markdown(text: str):
     :param text: string markdown source text to be converted
     :return: sanitized html string, explicitly marked as safe via jinja2.Markup
     """
-    return Markup(markdown_to_sanitized_html(text))
+    return Markup(render_sanitized_markdown(text))
 
 
 @library.filter

@@ -1,48 +1,61 @@
-import bleach
-import html2text
-import markdown
-from django.db import models
-from django.core.exceptions import ValidationError
 import logging
-import difflib
-import io
+
+import bleach
+import markdown
+from django.utils.html import linebreaks, escape
+from jinja2.utils import urlize
+from markupfield.fields import MarkupField
 
 logger = logging.getLogger(__name__)
 
 
-def sanitize_html(html):
-    return bleach.clean(html,
-                        tags=[
-                            'a', 'b', 'i', 'u', 'p', 'em', 'strong',
-                            'br', 'hr',
-                            'ul', 'ol', 'li',
-                            'pre', 'code', 'blockquote',
-                            'table', 'thead', 'tbody', 'tfoot', 'col', 'colgroup', 'th', 'tr', 'td',
-                            'h1', 'h2', 'h3'
-                        ],
-                        attributes={
-                            'a': ['href', 'title'],
-                            'abbr': ['title'],
-                            'acronym': ['title'],
-                            'code': ['class']
-                        })
+ALLOWED_TAGS = bleach.ALLOWED_TAGS + [
+    'p', 'h1', 'h2', 'h3', 'h4', 'pre', 'br', 'hr', 'div', 'span', 'footer',
+    'table', 'thead', 'tbody', 'tfoot', 'col', 'colgroup', 'th', 'tr', 'td'
+]
+
+ALLOWED_ATTRIBUTES = dict(bleach.ALLOWED_ATTRIBUTES,
+                          **{'*': ['name', 'id', 'class'], 'img': 'alt',})
+
+DEFAULT_MARKDOWN_EXTENSIONS = [
+    'markdown.extensions.extra',
+    'markdown.extensions.codehilite',
+    'markdown.extensions.nl2br',
+    'markdown.extensions.sane_lists',
+    'markdown.extensions.smarty',
+    'markdown.extensions.toc',
+    #    'markdown.extensions.wikilinks',
+]
 
 
-def validate_markdown(value):
-    if value is None:
-        return
-    html = markdown.markdown(value)
-    bleached_html = sanitize_html(html)
-    if html != bleached_html:
-        diff = io.StringIO()
-        diff.writelines(difflib.ndiff(html, bleached_html))
-        raise ValidationError('Markdown not sanitized: {}'.format(diff.getvalue()))
+def render_sanitized_markdown(md_text: str, extensions=None):
+    if extensions is None:
+        extensions = DEFAULT_MARKDOWN_EXTENSIONS
+    html = markdown.markdown(
+        md_text,
+        extensions=extensions
+    )
+    return sanitize_html(html)
 
 
-class MarkdownField(models.TextField):
-    description = "Sanitized Markdown"
-    default_validators = [validate_markdown]
+def sanitize_html(html: str):
+    return bleach.clean(bleach.linkify(html), tags=ALLOWED_TAGS, attributes=ALLOWED_ATTRIBUTES)
 
-    def to_python(self, value):
-        validate_markdown(value)
-        return value
+
+class MarkdownField(MarkupField):
+
+    CUSTOM_RENDERERS = (
+        ('markdown', render_sanitized_markdown),
+        ('html', sanitize_html),
+        ('plain', lambda markup: linebreaks(urlize(escape(markup)))),
+        ('', lambda markup: markup),
+    )
+
+    def __init__(self, **kwargs):
+        kwargs.update(
+            default_markup_type='markdown',
+            markup_choices=MarkdownField.CUSTOM_RENDERERS,
+            blank=True,
+        )
+        super(MarkdownField, self).__init__(**kwargs)
+

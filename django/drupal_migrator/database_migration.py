@@ -1,6 +1,5 @@
 import contextlib
 import csv
-import imghdr
 import io
 import json
 import logging
@@ -19,9 +18,9 @@ from taggit.models import Tag
 from wagtail.wagtailimages.models import Image
 
 from core.fs import is_image
+from core.models import ComsesGroups, Institution, Platform, Event, Job
 from core.summarization import summarize_to_text
 from home.models import Journal, FaqEntry
-from core.models import ComsesGroups, Institution, Platform, Event, Job
 from library.models import (Contributor, Codebase, CodebaseRelease, CodebaseTag, License,
                             ReleaseContributor, OPERATING_SYSTEMS, CodebaseReleaseDownload)
 from .utils import get_first_field, get_field, get_field_attributes, to_datetime
