@@ -2,7 +2,7 @@ import os
 
 from django.views.generic import DetailView, TemplateView
 from django.contrib.auth.views import redirect_to_login
-from django.http import HttpResponseForbidden, Http404
+from django.http import Http404
 from django.conf import settings
 from django.core.exceptions import PermissionDenied
 from django.shortcuts import render
@@ -126,8 +126,8 @@ class FormCreateView(PermissionRequiredByHttpMethodMixin, TemplateView):
 def log_request_failure(exc, request):
     logger.info(
         'Request on url {url} by user "{username}" with content_type {content_type} failed with exception {exception}'
-            .format(url=request.path, username=request.user.username, content_type=request.accepted_media_type,
-                    exception=str(exc)))
+        .format(url=request.path, username=request.user.username, content_type=request.accepted_media_type,
+                exception=str(exc)))
 
 
 def rest_exception_handler(exc, context):
@@ -135,7 +135,7 @@ def rest_exception_handler(exc, context):
     if request and request.accepted_media_type == 'text/html':
         if isinstance(exc, Http404):
             return page_not_found(request, context=context)
-        elif isinstance(exc, PermissionDenied) or isinstance(exc, DrfPermissionDenied):
+        elif isinstance(exc, (PermissionDenied, DrfPermissionDenied)):
             return permission_denied(request, context=context)
         else:
             return server_error(request, context=context)
