@@ -1,7 +1,7 @@
 import logging
 
 from django.core.files import File
-from django.http import HttpResponse
+from django.http import FileResponse
 from django.shortcuts import get_object_or_404
 from django.urls import resolve
 
@@ -18,7 +18,6 @@ from home.views import SmallResultSetPagination
 from .models import Codebase, CodebaseRelease, Contributor
 from .serializers import (CodebaseSerializer, RelatedCodebaseSerializer, CodebaseReleaseSerializer,
                           ContributorSerializer, ReleaseContributorSerializer)
-from core import utils as core_utils
 
 logger = logging.getLogger(__name__)
 
@@ -100,10 +99,7 @@ class CodebaseReleaseViewSet(FormViewSetMixin, viewsets.ModelViewSet):
                   renderer_classes=(renderers.JSONRenderer,))
     def download(self, request, **kwargs):
         codebase_release = self.get_object()
-        file = File(codebase_release.retrieve_archive())
-        response = HttpResponse(file,
-                                content_type=mimetypes.guess_type(str(codebase_release.archive_path))[0]
-                                             or 'application/octet-stream')
+        response = FileResponse(codebase_release.retrieve_archive())
         response['Content-Disposition'] = 'attachment; filename={}'.format(
             '{}_v{}.zip'.format(codebase_release.codebase.title.lower().replace(' ', '_'),
                                 codebase_release.version_number))
@@ -131,8 +127,7 @@ class CodebaseReleaseViewSet(FormViewSetMixin, viewsets.ModelViewSet):
             return self._list_uploads(codebase_release, upload_type, request.path)
         elif request.method == 'GET':
             filename = os.path.basename(path)
-            response = HttpResponse(File(codebase_release.retrieve_upload(upload_type, path)),
-                                    content_type=mimetypes.guess_type(path)[0] or 'application/octet-stream')
+            response = FileResponse(codebase_release.retrieve_upload(upload_type, path))
             response['Content-Disposition'] = 'attachment; filename={}'.format(filename)
             return response
 
