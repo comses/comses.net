@@ -2,16 +2,35 @@
 Django settings for core.comses.net
 
 For more information on this file, see
-https://docs.djangoproject.com/en/1.10/topics/settings/
+https://docs.djangoproject.com/en/1.11/topics/settings/
 
 For the full list of settings and their values, see
-https://docs.djangoproject.com/en/1.10/ref/settings/
+https://docs.djangoproject.com/en/1.11/ref/settings/
 """
-
-from django_jinja.builtins import DEFAULT_EXTENSIONS
 
 import configparser
 import os
+from enum import Enum
+
+# DEFAULT_EXTENSIONS defined at https://github.com/niwinz/django-jinja/blob/master/django_jinja/builtins/__init__.py
+from django_jinja.builtins import DEFAULT_EXTENSIONS
+
+class Environment(Enum):
+    DEVELOPMENT = 0
+    STAGING = 1
+    PRODUCTION = 2
+
+    def is_production(self):
+        return self == Environment.PRODUCTION
+
+    def is_staging(self):
+        return self == Environment.STAGING
+
+    def is_development(self):
+        return self == Environment.DEVELOPMENT
+
+
+DEPLOY_ENVIRONMENT = Environment.DEVELOPMENT
 
 # go two levels up for root project directory
 PROJECT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -21,7 +40,7 @@ BASE_DIR = os.path.dirname(PROJECT_DIR)
 DEBUG = True
 
 # Quick-start development settings - unsuitable for production
-# See https://docs.djangoproject.com/en/1.10/howto/deployment/checklist/
+# See https://docs.djangoproject.com/en/1.11/howto/deployment/checklist/
 
 # Application definition
 WAGTAIL_APPS = [
@@ -229,11 +248,21 @@ LOGGING = {
             'handlers': ['console', 'rollingfile'],
             'propagate': False,
         },
+        'MARKDOWN': {
+            'level': 'ERROR',
+            'handlers': ['console', 'rollingfile'],
+            'propagate': False,
+        },
+        'breadability': {
+            'level': 'ERROR',
+            'handlers': ['console', 'rollingfile'],
+            'propagate': False,
+        },
     }
 }
 
 # Internationalization
-# https://docs.djangoproject.com/en/1.10/topics/i18n/
+# https://docs.djangoproject.com/en/1.11/topics/i18n/
 
 LANGUAGE_CODE = 'en-us'
 
@@ -246,7 +275,7 @@ USE_L10N = True
 USE_TZ = True
 
 # Static files (CSS, JavaScript, Images)
-# https://docs.djangoproject.com/en/1.10/howto/static-files/
+# https://docs.djangoproject.com/en/1.11/howto/static-files/
 
 STATICFILES_FINDERS = [
     'django.contrib.staticfiles.finders.FileSystemFinder',
@@ -305,7 +334,7 @@ REST_FRAMEWORK = {
     'PAGE_SIZE': 10
 }
 
-# add redis cache http://docs.wagtail.io/en/v1.10.1/advanced_topics/performance.html#cache
+# add redis cache http://docs.wagtail.io/en/v1.12.2/advanced_topics/performance.html#cache
 CACHES = {
     'default': {
         'BACKEND': 'django_redis.cache.RedisCache',

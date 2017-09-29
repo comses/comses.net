@@ -1,10 +1,12 @@
 from .defaults import *
 
 DEBUG = False
+DEPLOY_ENVIRONMENT = Environment.PRODUCTION
 
 # EMAIL_BACKEND = 'django.core.mail.backends.filebased.EmailBackend'
 # EMAIL_FILE_PATH = '/shared/logs/mail.log'
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+
 
 EMAIL_HOST = config.get('email', 'EMAIL_HOST', fallback='smtp.sparkpostmail.com')
 EMAIL_PORT = config.get('email', 'EMAIL_PORT', fallback='587')
