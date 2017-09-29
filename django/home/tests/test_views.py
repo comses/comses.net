@@ -176,7 +176,7 @@ class ProfilePageRenderTestCase(TestCase):
         user_factory = UserFactory()
         self.submitter = user_factory.create()
         self.profile = self.submitter.member_profile
-        self.profile.project_url = 'https://geocities.com/{}'.format(self.submitter.username)
+        self.profile.personal_url ='https://geocities.com/{}'.format(self.submitter.username)
         self.profile.save()
 
     def test_detail(self):
