@@ -12,7 +12,7 @@
     {% set error_class='has-errors' if field.errors else ''%}
     {% if field|is_checkbox %}
         <div class='form-check row'>
-            <div class='offset-md-2 col-sm-8'>
+            <div class='offset-sm-2 col-sm-8'>
                 <label class='custom-control custom-checkbox'>
                     <input name='{{ field.id__for_label }}' type='checkbox' class='custom-control-input'>
                     <span class='custom-control-indicator'></span>
