@@ -113,7 +113,6 @@ MIDDLEWARE = [
 ]
 
 AUTHENTICATION_BACKENDS = (
-    'core.backends.EmailAuthenticationBackend',
     'allauth.account.auth_backends.AuthenticationBackend',
     'core.backends.ComsesObjectPermissionBackend',
     'guardian.backends.ObjectPermissionBackend'
@@ -352,7 +351,7 @@ ACCOUNT_AUTHENTICATION_METHOD = 'username_email'
 ACCOUNT_EMAIL_CONFIRMATION_EXPIRE_DAYS = 15
 ACCOUNT_EMAIL_REQUIRED = True
 ACCOUNT_EMAIL_VERIFICATION = "mandatory"
-ACCOUNT_SIGNUP_FORM_CLASS = 'home.forms.SignupForm'
+ACCOUNT_SIGNUP_FORM_CLASS = 'core.forms.SignupForm'
 ACCOUNT_TEMPLATE_EXTENSION = 'jinja'
 ACCOUNT_PRESERVE_USERNAME_CASING = False
 ACCOUNT_LOGIN_ON_PASSWORD_RESET = True
