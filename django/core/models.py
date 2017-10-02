@@ -2,6 +2,7 @@ import pathlib
 from enum import Enum
 
 from django import forms
+from django.conf import settings
 from django.contrib.auth.models import Group, User
 from django.contrib.postgres.fields import ArrayField, JSONField
 from django.db import models
@@ -42,6 +43,14 @@ class ComsesGroups(Enum):
         if _group is None:
             _group = self.group = Group.objects.get(name=self.value)
         return _group
+
+
+@register_setting
+class SiteSettings(BaseSetting):
+    maintenance_mode = models.BooleanField(default=False)
+
+    def is_production(self):
+        return settings.DEPLOY_ENVIRONMENT.is_production()
 
 
 @register_setting
