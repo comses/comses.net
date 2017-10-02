@@ -14,7 +14,7 @@
         <div class='form-group'>
             <div class='form-check'>
                 <label class='form-check-label'>
-                    <input name='{{ field.id__for_label }}' type='checkbox' class='form-check-input'>
+                    {{ field|add_field_css("form-check-input") }}
                     {{ field.label }}
                     {% if field.help_text %}
                         <small class='form-text text-muted'>{{ field.help_text }}</small>
