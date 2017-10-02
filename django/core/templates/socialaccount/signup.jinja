@@ -14,10 +14,6 @@
     </p>
     <form method="post" class='form-horizontal'>
         {% include "includes/form.jinja" %}
-        <div class='form-group row'>
-            <div class='offset-md-2 col-sm-8'>
-                <button type="submit" class='btn btn-primary'>{% trans %} Sign Up{% endtrans %}</button>
-            </div>
-        </div>
+        <button type="submit" class='btn btn-primary'>{% trans %} Sign Up{% endtrans %}</button>
     </form>
 {% endblock %}

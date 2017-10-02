@@ -94,11 +94,7 @@ There are two categories of membership in the network, <em>Basic</em> and <em>Fu
 </div>
 <form class="signup" id="signup_form" method="post">
     {% include "includes/form.jinja" %}
-    <div class='form-group row'>
-        <div class='offset-md-2 col-sm-8'>
-            <button type="submit" class='btn btn-primary'>{% trans %} Sign Up{% endtrans %}</button>
-        </div>
-    </div>
+    <button type="submit" class='btn btn-primary'>{% trans %} Sign Up{% endtrans %}</button>
 </form>
 
 {% endblock %}

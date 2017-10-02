@@ -11,24 +11,21 @@
 {% for field in form %}
     {% set error_class='has-errors' if field.errors else ''%}
     {% if field|is_checkbox %}
-        <div class='form-check row'>
-            <div class='offset-sm-2 col-sm-8'>
-                <label class='custom-control custom-checkbox'>
-                    <input name='{{ field.id__for_label }}' type='checkbox' class='custom-control-input'>
-                    <span class='custom-control-indicator'></span>
-                    <span class='custom-control-description'>
-                        {{ field.label }}
-                        {% if field.help_text %}
-                            <small class='form-text text-muted'>{{ field.help_text }}</small>
-                        {% endif %}
-                    </span>
+        <div class='form-group'>
+            <div class='form-check'>
+                <label class='form-check-label'>
+                    <input name='{{ field.id__for_label }}' type='checkbox' class='form-check-input'>
+                    {{ field.label }}
+                    {% if field.help_text %}
+                        <small class='form-text text-muted'>{{ field.help_text }}</small>
+                    {% endif %}
                 </label>
             </div>
         </div>
     {% else %}
-        <div class='form-group row {{ error_class }}'>
-            <label class='form-control-label col-sm-2' for='{{ field.id_for_label }}'>{{ field.label }}</label>
-            <div class='col-sm-8'>
+        <div class='form-row'>
+            <div class='form-group col-12 {{ error_class }}'>
+                <label class='col-form-label' for='{{ field.id_for_label }}'>{{ field.label }}</label>
                 {{ field|add_field_css("form-control") }}
                 {% if field.errors %}
                     <small class='form-text has-errors'>{{ field.errors }}</small>
