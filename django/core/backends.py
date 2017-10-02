@@ -1,6 +1,5 @@
 import logging
 
-from django.contrib.auth.backends import ModelBackend
 from django.contrib.auth.models import User
 from django.core.exceptions import PermissionDenied
 from django.db.models import FieldDoesNotExist
@@ -115,19 +114,6 @@ def get_viewable_objects_for_user(user, queryset):
         queryset &= has_object_permission_queryset | is_live_queryset | is_submitter_queryset
 
     return queryset
-
-
-class EmailAuthenticationBackend(ModelBackend):
-    def authenticate(self, request, username=None, password=None, **kwargs):
-        l_username = username.lower().strip()
-        try:
-            user = User.objects.get(email=l_username)
-            if user.check_password(password):
-                return user
-            return None
-        except User.DoesNotExist:
-            return super(EmailAuthenticationBackend, self).authenticate(request=request, username=username,
-                                                                        password=password, **kwargs)
 
 
 class ComsesObjectPermissionBackend:
