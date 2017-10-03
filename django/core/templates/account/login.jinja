@@ -18,16 +18,20 @@
     <div class="col">
         <h3>Welcome back</h3>
         <p>Sign in with your CoMSES Net Account</p>
-        {{ form.non_field_errors() }}
         {% set has_errors=form.non_field_errors() %}
+        {% if has_errors %}
+            <div class='alert alert-danger'>
+                The username/email and password combination you supplied is not correct
+            </div>
+        {% endif %}
         <form id='signin-form' role="form" class="form-horizontal" method="post">
             {% csrf_token %}
-            <div id='username' class='form-group {{ 'has-danger' if has_errors }}'>
-                <input name='login' type='text' class='form-control' placeholder='Username or email'>
+            <div id='login' class='form-group'>
+                <input name='login' type='text' class='form-control {{ 'is-invalid' if has_errors }}' placeholder='Username or email'>
                 <small class='form-text text-muted'>Enter the username or email address you used to register with this site.</small>
             </div>
-            <div id='password' class='form-group {{ 'has-danger' if has_errors }}'>
-                <input name='password' type='password' class='form-control' placeholder='Password'>
+            <div id='password' class='form-group'>
+                <input name='password' type='password' class='form-control {{ 'is-invalid' if has_errors }}' placeholder='Password'>
             </div>
             <button type="submit" class="btn btn-primary">
                 <i class='fa fa-sign-in'></i> Sign In

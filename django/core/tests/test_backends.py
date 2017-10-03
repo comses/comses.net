@@ -19,7 +19,7 @@ class EmailAuthenticationBackendTestCase(TestCase):
     def credentials(self, user, password=None):
         if not password:
             password = self.password
-        return {'username': user.username, 'password': password}
+        return {'login': user.username, 'password': password}
 
     def login(self, user, password):
         return self.client.post(path=reverse('account_login'),
@@ -34,7 +34,7 @@ class EmailAuthenticationBackendTestCase(TestCase):
         self.assertFalse(authorized)
 
     def check_authentication_succeeded(self, user):
-        authorized = self.client.login(**self.credentials(user))
+        authorized = self.client.login(username=user.username, password=self.password)
         self.assertTrue(authorized)
 
     def _check_response_status_code(self, user, password, status_code):
@@ -53,11 +53,11 @@ class EmailAuthenticationBackendTestCase(TestCase):
 
     def test_email_authentication(self):
         deactivated_user = self.user_factory.create(is_active=False)
-        self.check_response_200(deactivated_user)
+        self.check_response_302(deactivated_user)
         self.check_authentication_succeeded(deactivated_user)
 
         deactivated_superuser = self.user_factory.create(is_superuser=True, is_active=False)
-        self.check_response_200(deactivated_superuser)
+        self.check_response_302(deactivated_superuser)
         self.check_authentication_succeeded(deactivated_superuser)
 
         user = self.user_factory.create()
