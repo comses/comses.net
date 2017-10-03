@@ -206,18 +206,37 @@ class ViewSetTestCase(hypothesis_django.TestCase):
 
 
 class UserFactory:
-    def __init__(self):
+    def __init__(self, **defaults):
         self.id = 0
+        self.password = defaults.get('password')
+        self.defaults = {}
+        username = defaults.get('username')
+        if username:
+            self.defaults.update({'username': username})
+        email = defaults.get('email')
+        if email:
+            self.defaults.update({'email': email})
 
-    def get_username(self):
-        return 'submitter{}'.format(self.id)
+    def extract_password(self, overrides):
+        if overrides.get('password'):
+            return overrides.pop('password')
+        else:
+            return self.password
 
     def get_default_data(self):
-        default_data = {'username': self.get_username(), 'email': '{}@gmail.com'.format(self.get_username())}
+        defaults = self.defaults.copy()
+        defaults['username'] = defaults.get('username', 'submitter{}'.format(self.id))
         self.id += 1
-        return default_data
+        return defaults
 
     def create(self, **overrides):
+        password = self.extract_password(overrides)
         kwargs = self.get_default_data()
         kwargs.update(overrides)
-        return User.objects.create(**kwargs)
+        if not kwargs.get('email'):
+            kwargs['email'] = '{}@gmail.com'.format(kwargs['username'])
+        user = User(**kwargs)
+        if password:
+            user.set_password(password)
+        user.save()
+        return user

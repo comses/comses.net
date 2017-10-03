@@ -1,23 +1,86 @@
 import logging
 
-from hypothesis import given, settings
-
-from .base import HypothesisTestCase, generate_user, MAX_EXAMPLES
+from core.tests.base import UserFactory
+from django.core.exceptions import PermissionDenied
+from rest_framework.status import HTTP_302_FOUND, HTTP_200_OK
+from django.urls import reverse
+from django.test import TestCase
 
 logger = logging.getLogger(__name__)
 
 
-class EmailAuthenticationBackendTestCase(HypothesisTestCase):
+class EmailAuthenticationBackendTestCase(TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.password = 'test'
+        cls.wrong_password = 'bar'
+        cls.user_factory = UserFactory(password=cls.password)
 
-    @settings(max_examples=MAX_EXAMPLES)
-    @given(generate_user(username='roman', password='berlioz'))
-    def test_email_authentication(self, user):
-        response = self.post(view_name='account_login', post_data={'username': user.email, 'password': 'testing'})
-        self.assertEquals(response.status_code, 200)
-        response = self.post(view_name='account_login', post_data={'username': user.email, 'password': 'berlioz'})
-        self.assertEquals(response.status_code, 200)
-        # FIXME: validate response for successful authentication?
-        self.assertFalse(self.client.login(username=user.email, password='testing'))
-        self.assertFalse(self.client.login(username=user.email, password='testing'))
-        self.assertTrue(self.client.login(username=user.username, password='berlioz'))
-        # self.assertTrue(self.client.login(username=user.email, password='berlioz'))
+    def credentials(self, user, password=None):
+        if not password:
+            password = self.password
+        return {'username': user.username, 'password': password}
+
+    def login(self, user, password):
+        return self.client.post(path=reverse('account_login'),
+                                data=self.credentials(user, password))
+
+    def login_with_email(self, user, password):
+        return self.client.post(path=reverse('account_login'),
+                                data=self.credentials(user, password))
+
+    def check_authentication_failed(self, user, password):
+        authorized = self.client.login(username=user.username, password=password)
+        self.assertFalse(authorized)
+
+    def check_authentication_succeeded(self, user):
+        authorized = self.client.login(**self.credentials(user))
+        self.assertTrue(authorized)
+
+    def _check_response_status_code(self, user, password, status_code):
+        self.client.get(reverse('account_login'))
+        response = self.login(user, password)
+        self.assertEqual(response.status_code, status_code)
+        self.client.logout()
+        response_with_email = self.login_with_email(user, password)
+        self.assertEqual(response_with_email.status_code, status_code)
+
+    def check_response_200(self, user, password=None):
+        self._check_response_status_code(user, password, HTTP_200_OK)
+
+    def check_response_302(self, user, password=None):
+        self._check_response_status_code(user, password, HTTP_302_FOUND)
+
+    def test_email_authentication(self):
+        deactivated_user = self.user_factory.create(is_active=False)
+        self.check_response_200(deactivated_user)
+        self.check_authentication_succeeded(deactivated_user)
+
+        deactivated_superuser = self.user_factory.create(is_superuser=True, is_active=False)
+        self.check_response_200(deactivated_superuser)
+        self.check_authentication_succeeded(deactivated_superuser)
+
+        user = self.user_factory.create()
+        self.check_response_302(user)
+        self.check_authentication_succeeded(user)
+
+        superuser = self.user_factory.create(is_superuser=True)
+        self.check_response_302(superuser)
+        self.check_authentication_succeeded(superuser)
+
+    def test_wrong_password(self):
+        deactivated_user = self.user_factory.create(is_active=False)
+        self.check_response_200(deactivated_user, password=self.wrong_password)
+        self.check_authentication_failed(deactivated_user, password=self.wrong_password)
+
+        deactivated_superuser = self.user_factory.create(is_superuser=True, is_active=False)
+        self.check_response_200(deactivated_superuser, password=self.wrong_password)
+        self.check_authentication_failed(deactivated_superuser, password=self.wrong_password)
+
+        user = self.user_factory.create()
+        self.check_response_200(user, password=self.wrong_password)
+        self.check_authentication_failed(user, password=self.wrong_password)
+
+        superuser = self.user_factory.create(is_superuser=True)
+        self.check_response_200(superuser, password=self.wrong_password)
+        self.check_authentication_failed(user, password=self.wrong_password)

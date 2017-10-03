@@ -1,0 +1,33 @@
+{% extends "base.jinja" %}
+{% block title %}CoMSES Net Sign In{% endblock %}
+
+{% block introduction %}
+    <h1>Sign In</h1>
+{% endblock %}
+
+{% block content %}
+<div class='row' style='padding-top: 20px;'>
+    <div class='col'>
+        <div class="alert alert-info">
+            Forgot your password? <a href="{{ url('account_reset_password') }}">Request a new password</a> or
+            <a href="{{ url('account_signup') }}">sign up for a free CoMSES Net account</a>.
+        </div>
+    </div>
+</div>
+<div class="row">
+    <div class="col">
+        <h3>User Account Deactivated</h3>
+        <p>You attempted to sign in with a deactivated account. Try <a href="{{ url('account_login') }}">signing in</a> with an active CoMSES Net Account</p>
+    </div>
+    <div class='col'>
+        <h3>External Sign In</h3>
+        <p>Sign in / register using an ORCID or GitHub account</p>
+        <div class='btn-group-vertical'>
+            <a class='btn btn-lg btn-secondary btn-social btn-github' href="{{ provider_login_url(request, 'github') }}"><i class='fa fa-github-square'></i> GitHub Sign In</a>
+            <a class='btn btn-lg btn-secondary btn-social' href="{{ provider_login_url(request, 'orcid') }}">
+                <img src='//orcid.org/sites/default/files/images/orcid_24x24.png'> Create or Connect your ORCID ID
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock content %}
