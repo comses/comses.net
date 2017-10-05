@@ -10,7 +10,7 @@ from rest_framework.decorators import detail_route
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.response import Response
 
-from core.view_helpers import get_search_queryset
+from core.view_helpers import get_search_queryset, add_change_delete_perms
 from core.views import FormViewSetMixin, FormUpdateView, FormCreateView
 from home.views import SmallResultSetPagination
 from .models import Codebase, CodebaseRelease, Contributor
@@ -42,6 +42,7 @@ class CodebaseViewSet(FormViewSetMixin, viewsets.ModelViewSet):
     def retrieve(self, request, *args, **kwargs):
         instance = self.get_object()
         current_version = None
+
         if 'version_number' in kwargs:
             version_number = kwargs['version_number']
             try:
@@ -51,7 +52,16 @@ class CodebaseViewSet(FormViewSetMixin, viewsets.ModelViewSet):
 
         if current_version is None:
             current_version = instance.latest_version
-        return redirect(current_version)
+
+        # check content negotiation to see if we should redirect to the latest release detail page or if this is an API
+        # request for a JSON serialization of this Codebase.
+        # FIXME: this should go away if/when we segregate DRF API calls under /api/v1/codebases/
+        if request.accepted_media_type == 'text/html':
+            return redirect(current_version)
+        else:
+            serializer = self.get_serializer(instance)
+            data = add_change_delete_perms(instance, serializer.data, request.user)
+            return Response(data)
 
 
 class CodebaseFormCreateView(FormCreateView):
