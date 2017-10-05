@@ -10,8 +10,15 @@ class BaseControl extends Vue {
     @Prop
     name;
 
+    @Prop
+    customId;
+
     @Prop({ default: () => [] })
     errorMsgs: Array<string>;
+
+    get controlId() {
+        return _.isUndefined(this.customId) ? _.uniqueId(this.name) : this.customId;
+    }
 
     get isInvalid() {
         return this.errorMsgs.length > 0;
