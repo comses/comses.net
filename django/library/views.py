@@ -1,19 +1,17 @@
 import logging
+import os
 
 from django.core.files import File
 from django.http import FileResponse
-from django.shortcuts import get_object_or_404
+from django.shortcuts import get_object_or_404, redirect
 from django.urls import resolve
-
-import mimetypes
-import os
 from rest_framework import viewsets, generics, parsers, renderers, status
 from rest_framework.decorators import detail_route
-from rest_framework.response import Response
 from rest_framework.exceptions import PermissionDenied
+from rest_framework.response import Response
 
+from core.view_helpers import get_search_queryset
 from core.views import FormViewSetMixin, FormUpdateView, FormCreateView
-from core.view_helpers import get_search_queryset, add_change_delete_perms
 from home.views import SmallResultSetPagination
 from .models import Codebase, CodebaseRelease, Contributor
 from .serializers import (CodebaseSerializer, RelatedCodebaseSerializer, CodebaseReleaseSerializer,
@@ -43,13 +41,17 @@ class CodebaseViewSet(FormViewSetMixin, viewsets.ModelViewSet):
 
     def retrieve(self, request, *args, **kwargs):
         instance = self.get_object()
+        current_version = None
         if 'version_number' in kwargs:
-            instance.current_version = instance.releases.get(version_number=kwargs['version_number'])
-        else:
-            instance.current_version = instance.latest_version
-        serializer = self.get_serializer(instance)
-        data = add_change_delete_perms(instance, serializer.data, request.user)
-        return Response(data)
+            version_number = kwargs['version_number']
+            try:
+                current_version = instance.releases.get(version_number=version_number)
+            except:
+                logger.warning("Could not find codebase release version [%s] for codebase %s", version_number, instance)
+
+        if current_version is None:
+            current_version = instance.latest_version
+        return redirect(current_version)
 
 
 class CodebaseFormCreateView(FormCreateView):
