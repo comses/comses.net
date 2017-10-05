@@ -35,15 +35,13 @@ export const schema = yup.object().shape({
         </c-input>
         <c-markdown v-model="description" :errorMsgs="errors.description" name="description" rows="3" label="Description">
         </c-markdown>
-        <c-checkbox v-model="live" name="live" :errorMsgs="errors.live" label="Published?"
-            help="Published models are visible to everyone. Unpublished models are visible only to you">
-        </c-checkbox>
-        <c-checkbox v-model="is_replication" :errorMsgs="errors.is_replication" name="replication" label="Is a replication?">
+        <c-checkbox v-model="is_replication" :errorMsgs="errors.is_replication" name="replication" label="Replication"
+        help="Is this model a replication of a prior computational model?">
         </c-checkbox>
         <c-tagger v-model="tags" name="tags" :errorMsgs="errors.tags" label="Tags">
         </c-tagger>
         <c-input v-model="repository_url" :errorMsgs="errors.repository_url" name="repository_url" label="Repository URL"
-            help="A link to the source repository (on GitHub, BitBucket etcetera). A source repository makes it easier for others collaberate with you on model development.">
+            help="URL to a version control source code repository (e.g., GitHub or BitBucket)">
         </c-input>
         <c-message-display :messages="statusMessages"></c-message-display>
         <button class="btn btn-primary" type="button" @click="save()">Save</button>
