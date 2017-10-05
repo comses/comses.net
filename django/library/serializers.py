@@ -155,6 +155,8 @@ class CodebaseSerializer(serializers.ModelSerializer, FeaturedImageMixin):
     summarized_description = serializers.CharField(read_only=True)
     identifier = serializers.ReadOnlyField()
     tags = TagSerializer(many=True)
+    # FIXME: output should be raw markdown, not rendered
+    # description = serializers.CharField(source='description.raw')
 
     def create(self, validated_data):
         serialized_tags = TagSerializer(many=True, data=validated_data.pop('tags'))

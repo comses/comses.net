@@ -585,7 +585,7 @@ class DownloadCountExtractor:
     SELECT id as nid, timestamp as date_created, download_count.uid, ip_address, referrer, node.type
     FROM openabm.download_count as download_count
     INNER JOIN openabm.node as node on node.nid = download_count.id
-    INTO OUTFILE '/var/backups/DownloadCountAll.csv'
+    INTO OUTFILE '/var/backups/DownloadCount.csv'
     FIELDS TERMINATED BY ','
         OPTIONALLY ENCLOSED BY '"'
     LINES TERMINATED BY '\n';

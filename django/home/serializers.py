@@ -80,6 +80,7 @@ class FeaturedContentItemSerializer(serializers.ModelSerializer):
 
 
 class MemberProfileSerializer(serializers.ModelSerializer):
+    # FIXME: move to core to live with core.models.MemberProfile
     # User fields
     date_joined = serializers.DateTimeField(source='user.date_joined', read_only=True, format='%c')
     family_name = serializers.CharField(source='user.last_name')
@@ -112,7 +113,7 @@ class MemberProfileSerializer(serializers.ModelSerializer):
 
     def get_codebases(self, instance):
         # FIXME: use django-filter for sort order
-        codebases = Codebase.objects.accessible(instance.user).order_by('-last_published_on')
+        codebases = Codebase.objects.contributed_by(instance.user).order_by('-last_published_on')
         return RelatedCodebaseSerializer(codebases, read_only=True, many=True).data
 
     def get_full_name(self, instance):

@@ -15,6 +15,7 @@ from django.urls import reverse
 from django.utils import timezone
 from django.utils._os import safe_join
 from django.utils.translation import ugettext_lazy as _
+from guardian.shortcuts import get_objects_for_user
 from model_utils import Choices
 from modelcluster.contrib.taggit import ClusterTaggableManager
 from modelcluster.fields import ParentalKey
@@ -132,12 +133,17 @@ class CodebaseReleaseDownload(models.Model):
 
 
 class CodebaseQuerySet(models.QuerySet):
-    def accessible(self, user, **kwargs):
-        return self.filter(
-            pk__in=ReleaseContributor.objects.filter(contributor__user=user).values_list('release__codebase',
-                                                                                         flat=True),
-            **kwargs
-        )
+    def accessible(self, user, perms=None, **kwargs):
+        if perms is None:
+            perms = 'library.view_codebase'
+        return get_objects_for_user(user, perms)
+
+    def contributed_by(self, user, **kwargs):
+        contributed_codebases = ReleaseContributor.objects.filter(contributor__user=user).values_list('release__codebase',
+                                                                                                      flat=True)
+        # FIXME: consider replacing submitter with ReleaseContributor, see
+        # https://github.com/comses/core.comses.net/issues/129 for more details
+        return self.filter(models.Q(pk__in=contributed_codebases) | models.Q(submitter=user))
 
     def public(self, **kwargs):
         return self.filter(live=True, **kwargs)
@@ -249,7 +255,16 @@ class Codebase(index.Indexed, ClusterableModel):
 
     @property
     def summarized_description(self):
-        return self.summary if self.summary else shorten(self.description, width=500)
+        if self.summary:
+            return self.summary
+        lines = self.description.raw.splitlines()
+        max_lines = 6
+        if len(lines) > max_lines:
+            # FIXME: add a "more.." link, is this type of summarization more appropriate in JS?
+            return "{0} \n...".format(
+                "\n".join(lines[:max_lines])
+            )
+        return self.description.raw
 
     @property
     def base_library_dir(self):

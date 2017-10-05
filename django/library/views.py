@@ -107,6 +107,12 @@ class CodebaseReleaseViewSet(FormViewSetMixin, viewsets.ModelViewSet):
         elif request.method == 'GET':
             return self._list_uploads(codebase_release, upload_type, url)
 
+    def retrieve(self, request, *args, **kwargs):
+        instance = self.get_object()
+        serializer = self.get_serializer(instance)
+        data = add_change_delete_perms(instance, serializer.data, request.user)
+        return Response(data)
+
     @detail_route(methods=['get'],
                   renderer_classes=(renderers.JSONRenderer,))
     def download(self, request, **kwargs):
