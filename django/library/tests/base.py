@@ -1,5 +1,7 @@
 from django.contrib.auth.models import User
 from django.test import TestCase
+
+from library.serializers import CodebaseSerializer
 from ..models import Codebase, CodebaseRelease, ReleaseContributor, Contributor
 from uuid import UUID
 import random
@@ -14,8 +16,9 @@ class BaseModelTestCase(TestCase):
 
 
 class CodebaseFactory:
-    def __init__(self):
+    def __init__(self, submitter):
         self.id = 0
+        self.submitter = submitter
 
     def get_default_data(self):
         uuid = UUID(int=random.getrandbits(128))
@@ -23,13 +26,26 @@ class CodebaseFactory:
             'title': 'Wolf Sheep Predation',
             'description': 'Wolf sheep predation model in NetLogo with grass',
             'uuid': uuid,
-            'identifier': str(uuid)
+            'identifier': str(uuid),
+            'submitter': self.submitter
         }
 
-    def create(self, submitter, **overrides):
+    def create(self, **overrides):
+        codebase = self.create_unsaved(**overrides)
+        codebase.save()
+        return codebase
+
+    def create_unsaved(self, **overrides):
         kwargs = self.get_default_data()
         kwargs.update(overrides)
-        return Codebase.objects.create(submitter=submitter, **kwargs)
+        return Codebase(**kwargs)
+
+    def data_for_create_request(self, **overrides):
+        codebase = self.create_unsaved(**overrides)
+        codebase.id = 0
+        serialized = CodebaseSerializer(codebase).data
+        del serialized['id']
+        return serialized
 
 
 class ContributorFactory:

@@ -2,7 +2,7 @@ import logging
 import os
 
 from django.core.files import File
-from django.http import FileResponse
+from django.http import FileResponse, Http404
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import resolve
 from rest_framework import viewsets, generics, parsers, renderers, status
@@ -32,7 +32,7 @@ class CodebaseViewSet(FormViewSetMixin, viewsets.ModelViewSet):
     # filter_backends = (filters.DjangoObjectPermissionsFilter,)
 
     def get_queryset(self):
-        return get_search_queryset(self)
+        return self.queryset.accessible(user=self.request.user)
 
     def get_serializer_class(self):
         if self.action == 'list':
@@ -41,22 +41,14 @@ class CodebaseViewSet(FormViewSetMixin, viewsets.ModelViewSet):
 
     def retrieve(self, request, *args, **kwargs):
         instance = self.get_object()
-        current_version = None
-
-        if 'version_number' in kwargs:
-            version_number = kwargs['version_number']
-            try:
-                current_version = instance.releases.get(version_number=version_number)
-            except:
-                logger.warning("Could not find codebase release version [%s] for codebase %s", version_number, instance)
-
-        if current_version is None:
-            current_version = instance.latest_version
 
         # check content negotiation to see if we should redirect to the latest release detail page or if this is an API
         # request for a JSON serialization of this Codebase.
         # FIXME: this should go away if/when we segregate DRF API calls under /api/v1/codebases/
         if request.accepted_media_type == 'text/html':
+            current_version = instance.latest_version
+            if not current_version:
+                raise Http404
             return redirect(current_version)
         else:
             serializer = self.get_serializer(instance)

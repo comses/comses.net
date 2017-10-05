@@ -25,6 +25,7 @@ from wagtail.wagtailimages.models import Image
 from wagtail.wagtailsearch import index
 
 from core import fs
+from core.backends import get_viewable_objects_for_user
 from core.fields import MarkdownField
 
 logger = logging.getLogger(__name__)
@@ -132,17 +133,15 @@ class CodebaseReleaseDownload(models.Model):
 
 
 class CodebaseQuerySet(models.QuerySet):
-    def accessible(self, user, perms=None, **kwargs):
-        if perms is None:
-            perms = 'library.view_codebase'
-        return get_objects_for_user(user, perms)
+    def accessible(self, user):
+        return get_viewable_objects_for_user(user=user, queryset=self)
 
-    def contributed_by(self, user, **kwargs):
+    def contributed_by(self, user):
         contributed_codebases = ReleaseContributor.objects.filter(contributor__user=user).values_list('release__codebase',
                                                                                                       flat=True)
         # FIXME: consider replacing submitter with ReleaseContributor, see
         # https://github.com/comses/core.comses.net/issues/129 for more details
-        return self.filter(models.Q(pk__in=contributed_codebases) | models.Q(submitter=user))
+        return self.accessible(user=user).filter(models.Q(pk__in=contributed_codebases) | models.Q(submitter=user))
 
     def public(self, **kwargs):
         return self.filter(live=True, **kwargs)
@@ -288,6 +287,10 @@ class Codebase(index.Indexed, ClusterableModel):
     def download_count(self):
         return CodebaseReleaseDownload.objects.filter(release__codebase__id=self.pk).aggregate(
             count=models.Count('id'))['count']
+
+    @classmethod
+    def get_list_url(cls):
+        return reverse('library:codebase-list')
 
     def get_absolute_url(self):
         return reverse('library:codebase-detail', kwargs={'identifier': self.identifier})

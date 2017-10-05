@@ -10,7 +10,7 @@ from django.shortcuts import render
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework.views import exception_handler
-from rest_framework.exceptions import PermissionDenied as DrfPermissionDenied
+from rest_framework.exceptions import PermissionDenied as DrfPermissionDenied, NotAuthenticated
 
 from .permissions import ComsesPermissions
 from . import summarization
@@ -123,24 +123,17 @@ class FormCreateView(PermissionRequiredByHttpMethodMixin, TemplateView):
     method = 'POST'
 
 
-def log_request_failure(exc, request):
-    logger.info(
-        'Request on url {url} by user "{username}" with content_type {content_type} failed with exception {exception}'
-        .format(url=request.path, username=request.user.username, content_type=request.accepted_media_type,
-                exception=str(exc)))
-
-
 def rest_exception_handler(exc, context):
     request = context.get('request')
+    logger.exception(exc)
     if request and request.accepted_media_type == 'text/html':
         if isinstance(exc, Http404):
             return page_not_found(request, context=context)
-        elif isinstance(exc, (PermissionDenied, DrfPermissionDenied)):
+        elif isinstance(exc, (PermissionDenied, DrfPermissionDenied, NotAuthenticated)):
             return permission_denied(request, context=context)
         else:
             return server_error(request, context=context)
     else:
-        log_request_failure(exc, request)
         return exception_handler(exc, context)
 
 

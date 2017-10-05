@@ -12,6 +12,7 @@ logger = logging.getLogger(__name__)
 class EmailAuthenticationBackendTestCase(TestCase):
     @classmethod
     def setUpClass(cls):
+        super().setUpClass()
         cls.password = 'test'
         cls.wrong_password = 'bar'
         cls.user_factory = UserFactory(password=cls.password)

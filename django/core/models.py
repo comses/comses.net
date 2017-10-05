@@ -285,6 +285,10 @@ class Event(index.Indexed, ClusterableModel):
     def get_absolute_url(self):
         return reverse('home:event-detail', kwargs={'pk': self.pk})
 
+    @classmethod
+    def get_list_url(cls):
+        return reverse('home:event-list')
+
     def __str__(self):
         return "{} posted by {} on {}".format(repr(self.title), repr(self.submitter.username),
                                               str(self.date_created))
@@ -326,6 +330,10 @@ class Job(index.Indexed, ClusterableModel):
 
     def get_absolute_url(self):
         return reverse('home:job-detail', kwargs={'pk': self.pk})
+
+    @classmethod
+    def get_list_url(cls):
+        return reverse('home:job-list')
 
     def __str__(self):
         return "{0} posted by {1} on {2}".format(
