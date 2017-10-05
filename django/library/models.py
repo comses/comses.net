@@ -164,7 +164,7 @@ class Codebase(index.Indexed, ClusterableModel):
 
     date_created = models.DateTimeField(default=timezone.now)
     last_modified = models.DateTimeField(auto_now=True)
-    is_replication = models.BooleanField(default=False)
+    is_replication = models.BooleanField(default=False, help_text=_("Is this model a replication of another model?"))
     # FIXME: should this be a rollup of peer reviewed CodebaseReleases?
     peer_reviewed = models.BooleanField(default=False)
 
@@ -239,9 +239,6 @@ class Codebase(index.Indexed, ClusterableModel):
 
     def subpath(self, *args):
         return pathlib.Path(self.base_library_dir, *args)
-
-    def media_dir(self):
-        return settings.MEDIA_ROOT
 
     @property
     def upload_path(self):
