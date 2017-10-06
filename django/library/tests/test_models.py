@@ -22,10 +22,10 @@ class CodebaseTest(BaseModelTestCase):
         self.assertEquals(self.c1.base_library_dir, pathlib.Path(settings.LIBRARY_ROOT, str(self.c1.uuid)))
         self.assertEquals(self.c1.base_git_dir, pathlib.Path(settings.REPOSITORY_ROOT, str(self.c1.uuid)))
 
-    def test_make_release(self):
+    def test_import_release(self):
         content = ContentFile('Bunches of test content')
         content.name = 'foo.txt'
-        release = self.c1.make_release(submitted_package=content)
+        release = self.c1.import_release(submitted_package=content)
         release.submitted_package.delete(save=True)
         self.assertEquals(self.c1.latest_version, release)
         self.assertEquals(CodebaseRelease.objects.get(codebase=self.c1, version_number=release.version_number), release)

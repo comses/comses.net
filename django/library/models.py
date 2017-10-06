@@ -4,7 +4,7 @@ import pathlib
 import shutil
 import uuid
 from enum import Enum
-from textwrap import shorten
+from zipfile import ZipFile
 
 import semver
 from django.conf import settings
@@ -23,7 +23,6 @@ from modelcluster.models import ClusterableModel
 from taggit.models import TaggedItemBase
 from wagtail.wagtailimages.models import Image
 from wagtail.wagtailsearch import index
-from zipfile import ZipFile
 
 from core import fs
 from core.fields import MarkdownField
@@ -296,29 +295,25 @@ class Codebase(index.Indexed, ClusterableModel):
     def media_url(self, name):
         return '{0}/media/{1}'.format(self.get_absolute_url(), name)
 
-    def next_version_number(self, version_number=None, version_bump=None):
+    def next_version_number(self, version_number=None, version_bump=SemanticVersionBump.MINOR):
         if version_number is None:
             # start off at v1.0.0
             version_number = '1.0.0'
             # check for the latest version and reinitialize if it exists
             if self.latest_version is not None:
-                version_number = self.latest_version.version_number
-                if version_bump is None:
-                    logger.debug("using default minor release version bump for %s",
-                                 version_number)
-                    version_bump = SemanticVersionBump.MINOR
-                version_number = version_bump(version_number)
+                version_number = version_bump(self.latest_version.version_number)
         return version_number
 
-    def make_release(self, submitter=None, submitter_id=None, version_number=None, version_bump=None,
-                     submitted_package=None, **kwargs):
+    def import_release(self, submitter=None, submitter_id=None, version_number=None, submitted_package=None, **kwargs):
         if submitter_id is None:
             if submitter is None:
                 submitter = User.objects.first()
                 logger.warning("No submitter or submitter_id specified when creating release, using first user %s",
                                submitter)
             submitter_id = submitter.pk
-        version_number = self.next_version_number(version_number, version_bump)
+        if version_number is None:
+            version_number = self.next_version_number()
+
         identifier = kwargs.pop('identifier', None)
         release = CodebaseRelease(
             submitter_id=submitter_id,
@@ -326,7 +321,6 @@ class Codebase(index.Indexed, ClusterableModel):
             identifier=identifier,
             codebase=self,
             **kwargs)
-        release.save_draft()
         if submitted_package:
             release.submitted_package.save(submitted_package.name, submitted_package, save=False)
         self.latest_version = release
@@ -365,7 +359,7 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
 
     live = models.BooleanField(default=False, help_text=_("Signifies that this release is public."))
     # there should only be one draft CodebaseRelease ever
-    draft = models.BooleanField(default=False, help_text=_("Signifies that this release is currently being revised."))
+    draft = models.BooleanField(default=False, help_text=_("Signifies that this release is currently being edited."))
     has_unpublished_changes = models.BooleanField(default=False)
     first_published_at = models.DateTimeField(null=True, blank=True)
     last_published_on = models.DateTimeField(null=True, blank=True)

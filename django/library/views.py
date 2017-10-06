@@ -187,18 +187,3 @@ class ContributorList(generics.ListAPIView):
              'type': self.request.query_params.get('type')}
         q = {k: v for k, v in q.items() if v}
         return self.queryset.filter(**q).order_by('family_name')
-
-
-class CodebaseReleaseUploadView(generics.CreateAPIView):
-    queryset = CodebaseRelease.objects.all()
-    serializer_class = CodebaseReleaseSerializer
-    parser_classes = (parsers.MultiPartParser, parsers.JSONParser,)
-    renderer = renderers.JSONRenderer()
-
-    def create(self, request, *args, **kwargs):
-        file_obj = File(request.data['file'])
-        codebase_identifier = kwargs.get('identifier')
-        codebase = Codebase.objects.get(identifier=codebase_identifier)
-        codebase_release = codebase.make_release(submitter=request.user, submitted_package=file_obj)
-        data = CodebaseReleaseSerializer(instance=codebase_release).data
-        return Response(data=data, status=200)

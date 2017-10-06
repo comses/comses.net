@@ -12,7 +12,6 @@ urlpatterns = [
     url(r'^contributors/$', views.ContributorList.as_view()),
     # FIXME: consider /release/upload instead
     url(r'^codebases/add/$', views.CodebaseFormCreateView.as_view(), name='codebase-add'),
-    url(r'^codebases/(?P<identifier>[\w\-.]+)/update/create_release/$', views.CodebaseReleaseUploadView.as_view()),
     url(r'^codebases/(?P<identifier>[\w\-.]+)/edit/$', views.CodebaseFormUpdateView.as_view(), name='codebase-edit'),
     url(r'^codebases/(?P<identifier>[\w\-.]+)/releases/(?P<version_number>\d+\.\d+\.\d+)/edit/$',
         views.CodebaseReleaseFormUpdateView.as_view(), name='codebaserelease-edit'),

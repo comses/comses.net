@@ -521,7 +521,7 @@ class ModelVersionExtractor(Extractor):
             # FIXME: extract runconditions
             with suppress_auto_now([Codebase, CodebaseRelease], 'last_modified'):
                 last_changed = to_datetime(raw_model_version['changed'])
-                codebase_release = codebase.make_release(
+                codebase_release = codebase.import_release(
                     description=self.sanitize_text(description),
                     date_created=to_datetime(raw_model_version['created']),
                     first_published_at=to_datetime(raw_model_version['created']),
@@ -533,7 +533,7 @@ class ModelVersionExtractor(Extractor):
                     identifier=raw_model_version['vid'],
                     dependencies=dependencies,
                     submitter_id=codebase.submitter_id,
-                    version_number="1.{0}.0".format(version_number - 1),
+                    version_number="1.{}.0".format(version_number - 1),
                 )
                 # FIXME: if these do not exist in the DB, add them to the list of tags
                 codebase_release.programming_languages.add(language)

@@ -166,7 +166,6 @@ class CodebaseSerializer(serializers.ModelSerializer, FeaturedImageMixin):
         codebase.identifier = codebase.uuid
         codebase.save()
         save_tags(codebase, serialized_tags)
-        codebase.make_release(submitter=user)
         return codebase
 
     def update(self, instance, validated_data):
