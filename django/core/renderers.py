@@ -1,5 +1,4 @@
-from rest_framework.renderers import TemplateHTMLRenderer
-from rest_framework.compat import template_render
+from rest_framework.renderers import TemplateHTMLRenderer, template_render
 
 
 class RootContextHTMLRenderer(TemplateHTMLRenderer):
