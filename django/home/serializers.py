@@ -1,7 +1,9 @@
 import logging
+from datetime import datetime, timezone
 
 from django.utils.translation import ugettext_lazy as _
 from rest_framework import serializers
+from rest_framework.exceptions import ValidationError
 
 from core.models import Institution, MemberProfile, Event, Job
 from core.serializers import (PUBLISH_DATE_FORMAT, LinkedUserSerializer, TagSerializer, create, update)
@@ -26,6 +28,40 @@ class EventSerializer(serializers.ModelSerializer):
 
     def update(self, instance, validated_data):
         return update(super().update, instance, validated_data)
+
+    def validate(self, attrs):
+        date_created = attrs.get('date_created', datetime.now(timezone.utc))
+        early_registration_deadline = attrs.get('early_registration_deadline')
+        submission_deadline = attrs.get('submission_deadline')
+        start_date = attrs['start_date']
+        end_date = attrs.get('end_date')
+
+        dates = [date_created]
+        if early_registration_deadline:
+            dates.append(early_registration_deadline)
+        if submission_deadline:
+            dates.append(submission_deadline)
+        dates.append(start_date)
+        if end_date:
+            dates.append(end_date)
+
+        msgs = []
+        if early_registration_deadline and date_created > early_registration_deadline:
+            msgs.append('early registration deadline must be after time event is registered')
+
+        if early_registration_deadline and submission_deadline and early_registration_deadline >= submission_deadline:
+            msgs.append('early registration deadline must be strictly before submission deadline')
+
+        if submission_deadline and submission_deadline > start_date:
+            msgs.append('submission deadline must be before start date')
+
+        if end_date and start_date >= end_date:
+            msgs.append('start date must be strictly before end date')
+
+        if msgs:
+            raise ValidationError('.'.join(s.capitalize() for s in msgs))
+
+        return attrs
 
     class Meta:
         model = Event
