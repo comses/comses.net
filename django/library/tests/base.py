@@ -92,7 +92,7 @@ class CodebaseReleaseFactory:
     def create(self, codebase: Codebase, submitter=None, **defaults):
         if submitter is None:
             submitter = codebase.submitter
-        codebase_release = codebase.make_release(submitter=submitter)
+        codebase_release = codebase.import_release(submitter=submitter)
         kwargs = self.get_default_data()
         kwargs.update(defaults)
         for k, v in kwargs.items():

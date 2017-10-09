@@ -318,7 +318,7 @@ class Codebase(index.Indexed, ClusterableModel):
             version_number = self.next_version_number()
 
         identifier = kwargs.pop('identifier', None)
-        release = CodebaseRelease(
+        release = CodebaseRelease.objects.create(
             submitter_id=submitter_id,
             version_number=version_number,
             identifier=identifier,

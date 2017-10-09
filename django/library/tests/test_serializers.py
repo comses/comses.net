@@ -48,7 +48,7 @@ class SerializerTestCase(BaseModelTestCase):
                                            description='Test codebase description',
                                            identifier='1',
                                            submitter=self.user)
-        codebase_release = codebase.make_release(submitter=self.user)
+        codebase_release = codebase.import_release(submitter=self.user)
 
         raw_release_contributor = self.create_raw_release_contributor(index=0)
         release_contributor_serializer = ReleaseContributorSerializer(data=raw_release_contributor,
@@ -62,7 +62,7 @@ class SerializerTestCase(BaseModelTestCase):
                                            description='Test codebase description',
                                            identifier='1',
                                            submitter=self.user)
-        codebase_release = codebase.make_release(submitter=self.user)
+        codebase_release = codebase.import_release(submitter=self.user)
 
         raw_release_contributors = [self.create_raw_release_contributor(index=1),
                                     self.create_raw_release_contributor(index=None)]
