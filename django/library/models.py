@@ -516,7 +516,7 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
     UPLOAD_TYPE_TO_FOLDERNAME = {'data': 'data', 'documentation': 'doc', 'sources': 'code', 'images': 'images'}
 
     def get_absolute_upload_retrieve_url(self, upload_type: str, relpath: str):
-        return reverse('library:codebaserelease-download',
+        return reverse('library:codebaserelease-download-unpublished',
                        kwargs={'identifier': self.codebase.identifier, 'version_number': self.version_number,
                                'upload_type': upload_type, 'path': relpath})
 
