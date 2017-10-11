@@ -1,4 +1,4 @@
-from rest_framework.renderers import TemplateHTMLRenderer, template_render
+from rest_framework.renderers import TemplateHTMLRenderer
 
 
 class RootContextHTMLRenderer(TemplateHTMLRenderer):
@@ -22,6 +22,5 @@ class RootContextHTMLRenderer(TemplateHTMLRenderer):
             context = self.resolve_context(data, request, response)
         else:
             context = self.get_template_context(data, renderer_context)
-
         context['__all__'] = data
-        return template_render(template, context, request=request)
+        return template.render(context, request=request)
