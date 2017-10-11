@@ -15,11 +15,11 @@ from django.urls import reverse
 from django.utils import timezone
 from django.utils._os import safe_join
 from django.utils.translation import ugettext_lazy as _
-from guardian.shortcuts import get_objects_for_user
 from model_utils import Choices
 from modelcluster.contrib.taggit import ClusterTaggableManager
 from modelcluster.fields import ParentalKey
 from modelcluster.models import ClusterableModel
+from rest_framework.exceptions import ValidationError
 from taggit.models import TaggedItemBase
 from wagtail.wagtailimages.models import Image
 from wagtail.wagtailsearch import index
@@ -591,6 +591,10 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
             self.id = release.id
         self.save()
 
+    def publish(self):
+        publisher = CodebaseReleasePublisher(self)
+        publisher.publish()
+
     def __str__(self):
         return '{0} {1} v{2} {3}'.format(self.codebase, self.submitter.username, self.version_number,
                                          self.submitted_package_path())
@@ -598,6 +602,34 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
     class Meta:
         unique_together = ('codebase', 'version_number')
         permissions = (('view_codebase_release', 'Can view codebase release'),)
+
+
+class CodebaseReleasePublisher:
+    def __init__(self, codebase_release: CodebaseRelease):
+        self.codebase_release = codebase_release
+
+    def is_publishable(self):
+        if self.codebase_release.contributors.count() < 1:
+            raise ValidationError('Must have at least one contributor to publish a release')
+        path = self.codebase_release.workdir_path.joinpath('code')
+        if path.exists():
+            files = os.listdir(str(path))
+        else:
+            files = []
+        if not files:
+            raise ValidationError('Must have at least one source file')
+
+    def copy_workdir_to_sip(self):
+        shutil.copytree(str(self.codebase_release.workdir_path), str(self.codebase_release.submitted_package_path()))
+
+    def publish(self):
+        self.is_publishable()
+        self.copy_workdir_to_sip()
+        if not self.codebase_release.codebase.live:
+            self.codebase_release.codebase.live = True
+            self.codebase_release.codebase.save()
+        self.codebase_release.live = True
+        self.codebase_release.save()
 
 
 class ReleaseContributor(models.Model):

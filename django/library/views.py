@@ -150,6 +150,12 @@ class CodebaseReleaseViewSet(FormViewSetMixin, viewsets.ModelViewSet):
         crs.save()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
+    @detail_route(methods=['post'])
+    def publish(self, request, **kwargs):
+        codebase_release = self.get_object()
+        codebase_release.publish()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
 
 class CodebaseReleaseFormCreateView(FormCreateView):
     namespace = 'codebases/releases'

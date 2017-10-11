@@ -30,7 +30,7 @@ class CodebaseFactory:
             'submitter': self.submitter
         }
 
-    def create(self, **overrides):
+    def create(self, **overrides) -> Codebase:
         codebase = self.create_unsaved(**overrides)
         codebase.save()
         return codebase
@@ -49,7 +49,12 @@ class CodebaseFactory:
 
 
 class ContributorFactory:
+    def __init__(self, user):
+        self.user = user
+
     def get_default_data(self, user):
+        if user is None:
+            user = self.user
         return {
             'given_name': user.first_name,
             'family_name': user.last_name,
@@ -58,8 +63,8 @@ class ContributorFactory:
             'user': user
         }
 
-    def create(self, user, **overrides):
-        kwargs = self.get_default_data(user)
+    def create(self, **overrides) -> Contributor:
+        kwargs = self.get_default_data(overrides.get('user'))
         kwargs.update(overrides)
         return Contributor.objects.create(**kwargs)
 
@@ -84,17 +89,27 @@ class ReleaseContributorFactory:
 
 
 class CodebaseReleaseFactory:
+    def __init__(self, codebase, submitter = None):
+        if submitter is None:
+            submitter = codebase.submitter
+        self.submitter = submitter
+        self.codebase = codebase
+
     def get_default_data(self):
         return {
             'description': 'Added rational utility decision making to wolves',
+            'submitter': self.submitter,
+            'codebase': self.codebase
         }
 
-    def create(self, codebase: Codebase, submitter=None, **defaults):
-        if submitter is None:
-            submitter = codebase.submitter
-        codebase_release = codebase.import_release(submitter=submitter)
+    def create(self, **defaults) -> CodebaseRelease:
         kwargs = self.get_default_data()
         kwargs.update(defaults)
+
+        codebase = kwargs.pop('codebase')
+        submitter = kwargs.pop('submitter')
+
+        codebase_release = codebase.import_release(submitter=submitter)
         for k, v in kwargs.items():
             if hasattr(codebase_release, k):
                 setattr(codebase_release, k, v)

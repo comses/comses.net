@@ -213,6 +213,7 @@ class CodebaseReleaseSerializer(serializers.ModelSerializer):
     first_published_at = serializers.DateTimeField(format=PUBLISH_DATE_FORMAT, read_only=True)
     last_published_on = serializers.DateTimeField(format=PUBLISH_DATE_FORMAT, read_only=True)
     license = LicenseSerializer()
+    live = serializers.ReadOnlyField()
     os_display = serializers.CharField(read_only=True, source='get_os_display')
     platforms = TagSerializer(many=True, source='platform_tags')
     programming_languages = TagSerializer(many=True)
@@ -229,10 +230,6 @@ class CodebaseReleaseSerializer(serializers.ModelSerializer):
 
         save_tags(instance, programming_languages, 'programming_languages')
         save_tags(instance, platform_tags, 'platform_tags')
-
-        # can only change live status if instance is not already live
-        if instance.live:
-            validated_data.pop('live')
 
         instance = super().update(instance, validated_data)
 
