@@ -50,7 +50,7 @@ const component = {
     </div>`,
     router: new VueRouter({
         routes: [
-            {path: '/', redirect: {name: 'code_upload'}},
+            {path: '/', redirect: {name: 'contributors'}},
             {
                 path: '/code_upload/', component: Upload, name: 'code_upload',
                 props: {

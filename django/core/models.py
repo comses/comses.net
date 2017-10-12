@@ -57,8 +57,10 @@ class SiteSettings(BaseSetting):
 class SocialMediaSettings(BaseSetting):
     facebook_url = models.URLField(help_text=_('Facebook URL'), blank=True)
     youtube_url = models.URLField(help_text=_('CoMSES Net YouTube Channel'), blank=True)
-    twitter_account = models.CharField(max_length=128, default='comses', help_text=_('CoMSES Net official Twitter account'), blank=True)
-    github_account = models.CharField(max_length=128, default='comses', help_text=_('CoMSES Net official GitHub account'), blank=True)
+    twitter_account = models.CharField(max_length=128, default='comses',
+                                       help_text=_('CoMSES Net official Twitter account'), blank=True)
+    github_account = models.CharField(max_length=128, default='comses',
+                                      help_text=_('CoMSES Net official GitHub account'), blank=True)
     mailing_list_url = models.URLField(help_text=_('Mailing List Signup URL, i.e., MailChimp signup form'), blank=True)
     contact_form_recipients = ArrayField(
         models.EmailField(),
@@ -95,6 +97,11 @@ class FollowUser(models.Model):
         return '{0} following {1}'.format(self.source, self.target)
 
 
+class MemberProfileQuerySet(models.QuerySet):
+    def with_institution(self):
+        return self.select_related('institution')
+
+
 @register_snippet
 class MemberProfile(index.Indexed, ClusterableModel):
     """
@@ -118,9 +125,12 @@ class MemberProfile(index.Indexed, ClusterableModel):
     professional_url = models.URLField(blank=True)
     research_interests = models.TextField(blank=True)
 
+    objects = MemberProfileQuerySet.as_manager()
+
     """
     Returns the ORCID profile URL associated with this member profile if it exists, or None
     """
+
     @property
     def orcid_url(self):
         return self.get_social_account_profile_url('orcid')
@@ -128,6 +138,7 @@ class MemberProfile(index.Indexed, ClusterableModel):
     """
     Returns the github profile URL associated with this member profile if it exists, or None
     """
+
     @property
     def github_url(self):
         return self.get_social_account_profile_url('github')
@@ -140,6 +151,14 @@ class MemberProfile(index.Indexed, ClusterableModel):
 
     def get_social_account(self, provider_name):
         return self.user.socialaccount_set.filter(provider=provider_name).first()
+
+    @property
+    def institution_name(self):
+        return self.institution.name if self.institution else None
+
+    @property
+    def institution_url(self):
+        return self.institution.url if self.institution else None
 
     @property
     def submitter(self):

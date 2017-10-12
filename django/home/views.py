@@ -252,7 +252,7 @@ class ProfileViewSet(FormViewSetMixin, viewsets.ModelViewSet):
     lookup_url_kwarg = 'username'
     lookup_value_regex = '[\w\.\-@]+'
     serializer_class = MemberProfileSerializer
-    queryset = MemberProfile.objects.all()
+    queryset = MemberProfile.objects.with_institution()
     pagination_class = SmallResultSetPagination
 
     def get_queryset(self):

@@ -131,8 +131,8 @@ class MemberProfileSerializer(serializers.ModelSerializer):
     codebases = serializers.SerializerMethodField()
 
     # Institution
-    institution_name = serializers.SerializerMethodField(source='institution.name')
-    institution_url = serializers.SerializerMethodField(source='institution.url')
+    institution_name = serializers.CharField()
+    institution_url = serializers.URLField()
 
     # MemberProfile
     avatar = serializers.SerializerMethodField()  # needed to materialize the FK relationship for wagtailimages
@@ -157,12 +157,6 @@ class MemberProfileSerializer(serializers.ModelSerializer):
         if not full_name:
             full_name = instance.user.username
         return full_name
-
-    def get_institution_name(self, instance):
-        return instance.institution.name if instance.institution else None
-
-    def get_institution_url(self, instance):
-        return instance.institution.url if instance.institution else None
 
     def update(self, instance, validated_data):
         raw_tags = TagSerializer(many=True, data=validated_data.pop('keywords'))

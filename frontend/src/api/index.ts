@@ -65,8 +65,8 @@ export const profileAPI = {
     retrieve(username) {
         return api.get(this.detailUrl(username));
     },
-    update(username, profile) {
-        return api.put(this.detailUrl(username), profile);
+    update(username, profile_component) {
+        return api.put(this.detailUrl(username), profile_component);
     },
     uploadProfilePicture({username}, file) {
         const formData = new FormData();
