@@ -197,15 +197,13 @@ class LandingPage(Page):
                     submitter = User.objects.get(username=last_poster_username)
                 except User.DoesNotExist:
                     pass
-            date_created = topic['last_posted_at']
-            if date_created:
-                date_created = datetime.strptime(topic['last_posted_at'], "%Y-%m-%dT%H:%M:%S.%fZ")
             recent_forum_activity.append(
                 {
                     'title': topic_title,
                     'submitter_name': submitter.username,
                     'submitter_url': submitter_url,
-                    'date_created': date_created,
+                    # FIXME: handle created_at=None gracefully, via default date?
+                    'date_created': datetime.strptime(topic.get('created_at'), "%Y-%m-%dT%H:%M:%S.%fZ"),
                     'url': topic_url,
                 }
             )

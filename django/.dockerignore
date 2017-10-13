@@ -3,7 +3,7 @@
 *.pyc
 *.log
 *.pid
-incoming
+*/incoming
 logs
 tags
 __pycache__
