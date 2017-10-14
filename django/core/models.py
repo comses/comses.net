@@ -23,6 +23,8 @@ from wagtail.wagtailimages.models import Image
 from wagtail.wagtailsearch import index
 from wagtail.wagtailsnippets.models import register_snippet
 
+from core.backends import get_viewable_objects_for_user
+from library.models import Codebase
 from .fields import MarkdownField
 
 
@@ -100,6 +102,21 @@ class FollowUser(models.Model):
 class MemberProfileQuerySet(models.QuerySet):
     def with_institution(self):
         return self.select_related('institution')
+
+    def with_codebases(self, user):
+        return self.prefetch_related(
+            models.Prefetch('user__codebases',
+                            get_viewable_objects_for_user(queryset=Codebase.objects.with_liveness(),
+                                                          user=user))) \
+            .filter(user__is_active=True) \
+            .exclude(user__username__in=('AnonymousUser', 'openabm'))
+
+    def public(self):
+        return self.prefetch_related(
+            models.Prefetch('user__codebases',
+                            Codebase.objects.public())) \
+            .filter(user__is_active=True) \
+            .exclude(user__username__in=('AnonymousUser', 'openabm'))
 
 
 @register_snippet
@@ -262,7 +279,10 @@ class EventTag(TaggedItemBase):
 
 class EventQuerySet(models.QuerySet):
     def upcoming(self):
-        return self.filter(start_date__gte=timezone.now())
+        return self.public().filter(start_date__gte=timezone.now())
+
+    def public(self):
+        return self
 
 
 class Event(index.Indexed, ClusterableModel):
@@ -320,6 +340,11 @@ class JobTag(TaggedItemBase):
     content_object = ParentalKey('core.Job', related_name='tagged_jobs')
 
 
+class JobQuerySet(models.QuerySet):
+    def public(self):
+        return self
+
+
 class Job(index.Indexed, ClusterableModel):
     title = models.CharField(max_length=300, help_text=_('Job title'))
     date_created = models.DateTimeField(default=timezone.now)
@@ -329,6 +354,8 @@ class Job(index.Indexed, ClusterableModel):
     tags = ClusterTaggableManager(through=JobTag, blank=True)
 
     submitter = models.ForeignKey(User, related_name='jobs')
+
+    objects = JobQuerySet.as_manager()
 
     search_fields = [
         index.SearchField('title', partial_match=True, boost=10),

@@ -189,6 +189,10 @@ class RelatedCodebaseSerializer(serializers.ModelSerializer, FeaturedImageMixin)
     version_number = serializers.ReadOnlyField(source='latest_version.version_number')
     last_published_on = serializers.DateTimeField(read_only=True, format=PUBLISH_DATE_FORMAT)
     summarized_description = serializers.CharField(read_only=True)
+    live = serializers.SerializerMethodField()
+
+    def get_live(self, instance):
+        return instance.live
 
     def create(self, validated_data):
         return create(self.Meta.model, validated_data, self.context)

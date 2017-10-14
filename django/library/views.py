@@ -32,7 +32,11 @@ class CodebaseViewSet(FormViewSetMixin, viewsets.ModelViewSet):
     # filter_backends = (filters.DjangoObjectPermissionsFilter,)
 
     def get_queryset(self):
-        return self.queryset.accessible(user=self.request.user)
+        if self.action == 'list':
+            return self.queryset.public()
+        else:
+            # On detail pages we want to see unpublished releases
+            return self.queryset.accessible(user=self.request.user)
 
     def get_serializer_class(self):
         if self.action == 'list':

@@ -9,8 +9,10 @@ from zipfile import ZipFile
 import semver
 from django.conf import settings
 from django.contrib.auth.models import User
+from django.contrib.postgres.aggregates import BoolOr
 from django.contrib.postgres.fields import JSONField, ArrayField
 from django.db import models
+from django.db.models.functions import Coalesce
 from django.urls import reverse
 from django.utils import timezone
 from django.utils._os import safe_join
@@ -133,21 +135,36 @@ class CodebaseReleaseDownload(models.Model):
 
 
 class CodebaseQuerySet(models.QuerySet):
+    def with_liveness(self):
+        """Add a live property to a codebase.
+
+        A codebase is live if any of its releases are live. It is not live by default"""
+        return self.annotate(live=Coalesce(BoolOr('releases__live'), False))
+
+    def with_viewable_releases(self, user):
+        return self.prefetch_related(
+            models.Prefetch('releases',
+                            get_viewable_objects_for_user(user=user,
+                                                          queryset=CodebaseRelease.objects.all())))
+
     def accessible(self, user):
-        return get_viewable_objects_for_user(user=user, queryset=self)
+        return get_viewable_objects_for_user(user=user, queryset=self.with_viewable_releases(user=user).with_liveness())
 
     def contributed_by(self, user):
-        contributed_codebases = ReleaseContributor.objects.filter(contributor__user=user).values_list('release__codebase',
-                                                                                                      flat=True)
+        contributed_codebases = ReleaseContributor.objects.filter(contributor__user=user) \
+            .values_list('release__codebase', flat=True)
         # FIXME: consider replacing submitter with ReleaseContributor, see
         # https://github.com/comses/core.comses.net/issues/129 for more details
-        return self.accessible(user=user).filter(models.Q(pk__in=contributed_codebases) | models.Q(submitter=user))
+        return self.filter(
+            models.Q(pk__in=contributed_codebases) | models.Q(submitter=user))
 
-    def public(self, **kwargs):
-        return self.filter(live=True, **kwargs)
+    def public(self):
+        """Returns a queryset of all live codebases and their live releases"""
+        return self.with_liveness().filter(live=True).prefetch_related(
+            models.Prefetch('releases', queryset=CodebaseRelease.objects.filter(live=True)))
 
-    def peer_reviewed(self, **kwargs):
-        return self.public(**kwargs).filter(peer_reviewed=True)
+    def peer_reviewed(self):
+        return self.public().filter(peer_reviewed=True)
 
 
 class Codebase(index.Indexed, ClusterableModel):
@@ -161,7 +178,6 @@ class Codebase(index.Indexed, ClusterableModel):
 
     featured = models.BooleanField(default=False)
 
-    live = models.BooleanField(default=False)
     has_unpublished_changes = models.BooleanField(default=False)
     first_published_at = models.DateTimeField(null=True, blank=True)
     last_published_on = models.DateTimeField(null=True, blank=True)
@@ -213,6 +229,8 @@ class Codebase(index.Indexed, ClusterableModel):
             index.SearchField('name'),
         ]),
     ]
+
+    HAS_PUBLISHED_KEY = True
 
     @property
     def deletable(self):
@@ -331,8 +349,9 @@ class Codebase(index.Indexed, ClusterableModel):
         return release
 
     def __str__(self):
+        live = repr(self.live) if hasattr(self, 'live') else 'Unknown'
         return "{0} {1} identifier={2} live={3}".format(self.title, self.date_created, repr(self.identifier),
-                                                        repr(self.live))
+                                                        live)
 
     class Meta:
         permissions = (('view_codebase', 'Can view codebase'),)
@@ -343,6 +362,11 @@ class CodebasePublication(models.Model):
     publication = models.ForeignKey('citation.Publication', on_delete=models.CASCADE)
     is_primary = models.BooleanField(default=False)
     index = models.PositiveIntegerField(default=1)
+
+
+class CodebaseReleaseQuerySet(models.QuerySet):
+    def public(self):
+        return self.filter(live=True)
 
 
 class CodebaseRelease(index.Indexed, ClusterableModel):
@@ -409,6 +433,8 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
     references = models.ManyToManyField('citation.Publication',
                                         related_name='codebase_references',
                                         help_text=_('Related publications'))
+
+    objects = CodebaseReleaseQuerySet.as_manager()
 
     def get_library_path(self, *args):
         """
@@ -601,7 +627,7 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
 
     class Meta:
         unique_together = ('codebase', 'version_number')
-        permissions = (('view_codebase_release', 'Can view codebase release'),)
+        permissions = (('view_codebaserelease', 'Can view codebase release'),)
 
 
 class CodebaseReleasePublisher:
@@ -623,13 +649,11 @@ class CodebaseReleasePublisher:
         shutil.copytree(str(self.codebase_release.workdir_path), str(self.codebase_release.submitted_package_path()))
 
     def publish(self):
-        self.is_publishable()
-        self.copy_workdir_to_sip()
-        if not self.codebase_release.codebase.live:
-            self.codebase_release.codebase.live = True
-            self.codebase_release.codebase.save()
-        self.codebase_release.live = True
-        self.codebase_release.save()
+        if not self.codebase_release.live:
+            self.is_publishable()
+            self.copy_workdir_to_sip()
+            self.codebase_release.live = True
+            self.codebase_release.save()
 
 
 class ReleaseContributor(models.Model):

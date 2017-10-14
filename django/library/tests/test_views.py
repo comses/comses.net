@@ -6,11 +6,12 @@ from django.conf import settings
 from django.contrib.auth.models import AnonymousUser
 from django.test import TestCase, TransactionTestCase
 from django.urls import reverse
+from guardian.shortcuts import assign_perm
 from rest_framework import status
 from rest_framework.exceptions import ValidationError
 
 from core.tests.base import UserFactory
-from core.tests.permissions_base import BaseViewSetTestCase
+from core.tests.permissions_base import BaseViewSetTestCase, create_perm_str
 from library.models import CodebaseReleasePublisher
 from .base import CodebaseFactory, CodebaseReleaseFactory, ContributorFactory, ReleaseContributorFactory
 from ..views import CodebaseViewSet, CodebaseReleaseViewSet
@@ -33,6 +34,7 @@ class CodebaseViewSetTestCase(BaseViewSetTestCase):
         self.representative_users = self.create_representative_users(submitter)
         self.instance_factory = CodebaseFactory(submitter=submitter)
         self.instance = self.instance_factory.create()
+        self.instance.live = False
 
     def test_retrieve(self):
         self.action = 'retrieve'

@@ -450,7 +450,6 @@ class ModelExtractor(Extractor):
                     max_length=500
                 ),
                 date_created=to_datetime(raw_model['created']),
-                live=self.int_to_bool(raw_model['status']),
                 first_published_at=to_datetime(raw_model['created']),
                 last_published_on=last_changed,
                 last_modified=last_changed,
@@ -464,6 +463,8 @@ class ModelExtractor(Extractor):
                 featured=featured,
                 peer_reviewed=peer_reviewed
             )
+            # Tack on publication status so that
+            code._live = self.int_to_bool(raw_model['status']),
 
             code.author_ids = author_ids
             code.keyword_tids = get_field_attributes(raw_model, 'taxonomy_vocabulary_6', attribute_name='tid')
@@ -498,7 +499,7 @@ class ModelVersionExtractor(Extractor):
 
     OS_LIST = [os[0] for os in OPERATING_SYSTEMS]
 
-    def _extract(self, raw_model_version, model_id_map: Dict[str, int]):
+    def _extract(self, raw_model_version, model_id_map: Dict[str, Codebase]):
         model_nid = get_first_field(raw_model_version, 'field_modelversion_model', attribute_name='nid')
         platform_id = int(get_first_field(raw_model_version, 'field_modelversion_platform', default=0))
         license_id = int(get_first_field(raw_model_version, 'field_modelversion_license', default=0))
@@ -519,13 +520,16 @@ class ModelVersionExtractor(Extractor):
                 }
             }
             # FIXME: extract runconditions
+            codebase_live = codebase._live[0]
             with suppress_auto_now([Codebase, CodebaseRelease], 'last_modified'):
                 last_changed = to_datetime(raw_model_version['changed'])
                 codebase_release = codebase.import_release(
                     description=self.sanitize_text(description),
                     date_created=to_datetime(raw_model_version['created']),
                     first_published_at=to_datetime(raw_model_version['created']),
-                    live=self.int_to_bool(raw_model_version['status']),
+                    # codebase releases do not have correct liveness values in the db dump so if containing codebase
+                    # is private assume the release is as well
+                    live=self.int_to_bool(raw_model_version['status']) and codebase_live,
                     last_modified=last_changed,
                     last_published_on=last_changed,
                     os=self.OS_LIST[int(get_first_field(raw_model_version, 'field_modelversion_os', default=0))],
@@ -563,7 +567,7 @@ class ModelVersionExtractor(Extractor):
             logger.warning("Unable to locate parent model nid %s for version %s", model_nid, raw_model_version['vid'])
             return None
 
-    def extract_all(self, model_id_map: Dict[str, int]):
+    def extract_all(self, model_id_map: Dict[str, Codebase]):
         model_version_id_map = {}
         for raw_model_version in self.data:
             result = self._extract(raw_model_version, model_id_map)

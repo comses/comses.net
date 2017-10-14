@@ -16,6 +16,9 @@
                 <div class="title">
                     <h1>
                         <a href="{{ latest_release_url }}">{{ item.title }}</a>
+                        {% if not item.live %}
+                            <span class="badge badge-danger">Unpublished</span>
+                        {% endif %}
                     </h1>
                     <small>
                         {% for codebase_contributor in item.all_contributors %}

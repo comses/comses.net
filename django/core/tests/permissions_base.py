@@ -79,7 +79,8 @@ class BaseViewSetTestCase(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
     def assertResponseOk(self, response):
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.status_code, status.HTTP_200_OK,
+                         msg='Response not OK for user {}'.format(response.wsgi_request.user))
 
     def assertResponseDeleted(self, response):
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
@@ -138,19 +139,13 @@ class BaseViewSetTestCase(APITestCase):
         else:
             self.assertResponsePermissionDenied(response)
 
-    def check_list_permissions(self, user, instance, password):
-        user = self.login(user, password)
+    def check_list_permissions(self, instance):
+        """A user has list view permissions on an instance if the instance is public"""
         list_response = self.client.get(instance.get_list_url(), HTTP_ACCEPT='application/json', format='json')
-        has_perm = user.has_perm(create_perm_str(instance, 'view'))
-        if has_perm:
-            self.assertResponseOk(list_response)
-            is_visible_in_list = len(list_response.data['results']) > 0
-        else:
-            self.assertResponsePermissionDenied(list_response)
-            is_visible_in_list = False
-
-        has_instance_perm = user.has_perm(create_perm_str(instance, 'view'), instance)
-        self.assertEqual(is_visible_in_list, has_instance_perm)
+        self.assertResponseOk(list_response)
+        is_visible_in_list = len(list_response.data['results']) > 0
+        is_instance_public = instance._meta.model.objects.public().filter(pk=instance.pk).exists()
+        self.assertEqual(is_visible_in_list, is_instance_public)
 
     def check_retrieve(self):
         for user in self.representative_users:
@@ -179,6 +174,6 @@ class BaseViewSetTestCase(APITestCase):
 
     def check_list(self):
         for user in self.representative_users:
-            self.check_list_permissions(user, self.instance, self.user_factory.password)
+            self.check_list_permissions(self.instance)
             assign_perm(create_perm_str(self.instance, 'view'), user_or_group=user, obj=self.instance)
-            self.check_list_permissions(user, self.instance, self.user_factory.password)
+            self.check_list_permissions(self.instance)

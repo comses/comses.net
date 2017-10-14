@@ -259,8 +259,8 @@ class ProfileViewSet(FormViewSetMixin, viewsets.ModelViewSet):
         # make sort order parameterizable. Start with ID or last_name? Lots of spam users visible with
         # last_name / username
         query = self.request.query_params.get('query')
-        queryset = self.queryset.prefetch_related('user__codebases') \
-            .filter(user__is_active=True).exclude(user__username__in=('AnonymousUser', 'openabm')).order_by('id')
+        queryset = self.queryset.public()
+        queryset = queryset.order_by('id')
         if query:
             return queryset.filter(user__username__startswith=query)
         return queryset

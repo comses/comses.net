@@ -149,7 +149,11 @@ class MemberProfileSerializer(serializers.ModelSerializer):
 
     def get_codebases(self, instance):
         # FIXME: use django-filter for sort order
-        codebases = Codebase.objects.contributed_by(instance.user).order_by('-last_published_on')
+        request = self.context.get('request')
+
+        # This suffers from the n + 1 query problem
+        codebases = Codebase.objects.contributed_by(user=instance.user).accessible(user=request.user)\
+            .order_by('-last_published_on')
         return RelatedCodebaseSerializer(codebases, read_only=True, many=True).data
 
     def get_full_name(self, instance):
