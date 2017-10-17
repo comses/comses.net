@@ -14,7 +14,7 @@ from django.db.models.query_utils import Q
 from django.http import QueryDict, HttpResponseBadRequest, HttpResponseRedirect
 from django.shortcuts import get_object_or_404
 from django.utils.decorators import method_decorator
-from rest_framework import viewsets, generics, parsers, status
+from rest_framework import viewsets, generics, parsers, status, mixins
 from rest_framework.decorators import detail_route, list_route
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAuthenticated
@@ -247,7 +247,8 @@ class TagViewSet(viewsets.ModelViewSet):
         return queryset.order_by('name')
 
 
-class ProfileViewSet(FormViewSetMixin, viewsets.ModelViewSet):
+class ProfileViewSet(FormViewSetMixin, mixins.RetrieveModelMixin, mixins.ListModelMixin,
+                     mixins.UpdateModelMixin, viewsets.GenericViewSet):
     lookup_field = 'user__username'
     lookup_url_kwarg = 'username'
     lookup_value_regex = '[\w\.\-@]+'
@@ -284,11 +285,6 @@ class ProfileViewSet(FormViewSetMixin, viewsets.ModelViewSet):
         queryset = self.get_queryset()
         serializer = RelatedMemberProfileSerializer(queryset, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
-
-    def destroy(self, request, *args, **kwargs):
-        request.user.is_active = False
-        request.user.save()
-        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class MemberProfileImageUploadView(generics.CreateAPIView):
