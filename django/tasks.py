@@ -115,6 +115,10 @@ def create_pgpass_file(ctx, force=False):
         pgpass.write('db:*:*:{db_user}:{db_password}\n'.format(db_password=db_password, **env))
         ctx.run('chmod 0600 ~/.pgpass')
 
+@task
+def deny_robots(ctx):
+    dj(ctx, 'setup_robots_txt --no-allow')
+
 
 @task
 def backup(ctx, path='/backups/postgres'):

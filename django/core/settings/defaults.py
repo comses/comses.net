@@ -70,6 +70,7 @@ DJANGO_APPS = [
     'django.contrib.messages',
     'django.contrib.sessions',
     'django.contrib.sites',
+    'django.contrib.sitemaps',
     'django.contrib.staticfiles',
 ]
 
@@ -81,6 +82,7 @@ THIRD_PARTY_APPS = [
     'rest_framework_swagger',
     'timezone_field',
     'webpack_loader',
+    'robots',
     # django-allauth setup
     'allauth',
     'allauth.account',
