@@ -7,19 +7,93 @@ import Contributors from './contributors'
 import Upload from './upload'
 import CodebaseReleaseMetadata from './detail'
 import {store} from './store'
+import {CreateOrUpdateHandler} from "api/handler";
+import {codebaseReleaseAPI} from "api";
+import $ from 'jquery';
+import * as _ from 'lodash';
 
 Vue.use(Vuex);
 Vue.use(VueRouter);
 
-const component = {
-    template: '<div>TODO</div>'
-};
+@Component({
+    name: 'c-publish-modal',
+    template: `<div class="modal fade" id="publishCodebaseReleaseModal">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Publish Codebase Release {{ version_number }}</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <p>
+                        Publishing a codebase result release makes possible for anyone to view and download it. 
+                        Published releases must have code and documentation files and at least one contributor. Once a
+                        release is published files associated with release cannot be added, modified or deleted.
+                    </p>
+                    <p>
+                        Publishing a release cannot be undone. Do you want to continue?
+                    </p>
+                </div>
+                <div class=""></div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" @click="publish">Publish</button>
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                </div>
+            </div>
+        </div>
+    </div>`
+})
+class PublishModal extends Vue implements CreateOrUpdateHandler {
+    @Prop()
+    identifier: string;
+
+    @Prop()
+    version_number: number;
+
+    errorMessages: Array<string> = [];
+
+    clear() {
+        this.errorMessages = [];
+    }
+
+    handleOtherError(response_or_network_error) {
+        this.errorMessages = ['Network error'];
+    }
+
+    handleServerValidationError(responseError) {
+        const response = responseError.response;
+        _.forEach(_.toPairs(response.data), (k, v) => this.errorMessages.push(`${k}: ${v}`));
+    }
+
+    handleSuccessWithoutDataResponse(response) {
+        this.clear();
+        $('#publishCodebaseReleaseModal').hide();
+    }
+
+    handleSuccessWithDataResponse(response) {
+        this.clear();
+        $('#publishCodebaseReleaseModal').hide();
+    }
+
+    publish() {
+        this.clear();
+        return codebaseReleaseAPI.publish({identifier: this.identifier, version_number: this.version_number}, this);
+    }
+}
 
 @Component(<any>{
     store: new Vuex.Store(store),
+    components: {
+        PublishModal
+    },
     template: `<div>
         <div v-if="isInitialized">
-            <h1>{{ $store.state.release.codebase.title }} <i>v{{ $store.state.release.version_number }}</i> <span class="badge badge-secondary" v-if="isPublished">Published</span></h1>
+            <h1>{{ $store.state.release.codebase.title }} <i>v{{ $store.state.release.version_number }}</i> 
+                <span class="badge badge-secondary" v-if="isPublished">Published</span>
+                <span class="badge badge-danger" data-target="publishCodebaseReleaseModal" v-else>Unpublished</span>
+            </h1>
             <ul class="nav">
                 <li class="nav-item" v-if="!isPublished">
                     <router-link :to="{ name: 'code_upload'}" class="nav-link" active-class="disabled">Upload Code</router-link>
@@ -43,6 +117,7 @@ const component = {
                 </li>
             </ul>
             <router-view :initialData="initialData"></router-view>
+            <c-publish-modal :version_number="version_number" :identifier="identifier"></c-publish-modal>
         </div>
         <div v-else>
             <h1>Loading codebase release metadata...</h1>

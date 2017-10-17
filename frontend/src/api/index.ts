@@ -109,6 +109,9 @@ export const codebaseReleaseAPI = {
     updateContributorUrl({identifier, version_number}) {
         return `${this.detailUrl({identifier, version_number})}contributors/`;
     },
+    publish({identifier, version_number}, publish_component) {
+        return api.post(`${this.detailUrl({identifier, version_number})}publish/`, publish_component);
+    },
     retrieve({identifier, version_number}) {
         return api.get(this.detailUrl({identifier, version_number}));
     },

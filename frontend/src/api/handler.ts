@@ -13,8 +13,6 @@ function changePage(url: string) {
 }
 
 export interface CreateOrUpdateHandler {
-    state
-
     handleSuccessWithDataResponse(response: AxiosResponse): void
 
     handleSuccessWithoutDataResponse(response: AxiosResponse): void
