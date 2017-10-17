@@ -42,6 +42,8 @@ module.exports = createConfig([
                 'node_modules'
             ],
             alias: {
+                'Marked': 'marked',
+                'SimpleMDE': 'simplemde',
                 'vue$': 'vue/dist/vue.common.js',
                 'api': path.resolve(__dirname, 'src/api'),
                 'pages': path.resolve(__dirname, 'src/pages'),

@@ -9,6 +9,8 @@
     "vue"
   ],
   "moduleNameMapper": {
+    "^Marked$": "marked",
+    "^SimpleMDE$": "simplemde",
     "^vue$": "vue/dist/vue.js",
     "^api(.*)$": "<rootDir>/src/api$1",
     "^components(.*)$": "<rootDir>/src/components$1",
