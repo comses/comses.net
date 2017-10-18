@@ -5,11 +5,14 @@ from django.core.files import File
 from django.http import FileResponse, Http404
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import resolve
-from rest_framework import viewsets, generics, parsers, renderers, status
-from rest_framework.decorators import detail_route
+from django.views.generic import RedirectView
+from rest_framework import viewsets, generics, parsers, renderers, status, permissions, exceptions, mixins
+from rest_framework.decorators import detail_route, list_route
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.response import Response
+from rest_framework.response import Response
 
+from core.permissions import ComsesPermissions
 from core.view_helpers import get_search_queryset, add_change_delete_perms
 from core.views import FormViewSetMixin, FormUpdateView, FormCreateView
 from home.views import SmallResultSetPagination
@@ -60,6 +63,19 @@ class CodebaseViewSet(FormViewSetMixin, viewsets.ModelViewSet):
             return Response(data)
 
 
+class CodebaseDraftRedirectView(RedirectView):
+    pattern_name = 'codebaserelease-detail'
+
+    def get_redirect_url(self, *args, **kwargs):
+        identifier = kwargs['identifier']
+        codebase = get_object_or_404(Codebase, identifier=kwargs['identifier'])
+        codebase_release = codebase.releases.filter(draft=True).first()
+        if not codebase_release:
+            raise Http404
+        version_number = codebase_release.version_number
+        return super().get_redirect_url(identifier=identifier, version_number=version_number)
+
+
 class CodebaseFormCreateView(FormCreateView):
     model = Codebase
 
@@ -70,6 +86,22 @@ class CodebaseFormUpdateView(FormUpdateView):
     slug_url_kwarg = 'identifier'
 
 
+class NestedCodebaseReleasePermission(permissions.BasePermission):
+    codebase_perms_map = {
+        'POST': ['library.change_codebase'],
+        'DELETE': ['library.change_codebase'],
+    }
+
+    def has_permission(self, request, view):
+        user = request.user
+        codebase = get_object_or_404(Codebase, identifier=view.kwargs['identifier'])
+        required_perms = self.codebase_perms_map.get(request.method, [])
+
+        if user.has_perms(required_perms, obj=codebase):
+            return True
+        raise exceptions.PermissionDenied()
+
+
 class CodebaseReleaseViewSet(FormViewSetMixin, viewsets.ModelViewSet):
     namespace = 'library/codebases/releases/'
     lookup_field = 'version_number'
@@ -78,6 +110,7 @@ class CodebaseReleaseViewSet(FormViewSetMixin, viewsets.ModelViewSet):
     queryset = CodebaseRelease.objects.all()
     serializer_class = CodebaseReleaseSerializer
     pagination_class = SmallResultSetPagination
+    permission_classes = (NestedCodebaseReleasePermission, ComsesPermissions,)
 
     @property
     def template_name(self):
@@ -86,7 +119,11 @@ class CodebaseReleaseViewSet(FormViewSetMixin, viewsets.ModelViewSet):
     def get_queryset(self):
         resolved = resolve(self.request.path)
         identifier = resolved.kwargs['identifier']
-        return self.queryset.filter(codebase__identifier=identifier)
+        queryset = self.queryset.filter(codebase__identifier=identifier)
+        if self.action == 'list':
+            return queryset.public()
+        else:
+            return queryset.accessible(user=self.request.user)
 
     def _list_uploads(self, codebase_release, upload_type, url):
         return Response(data={
@@ -102,6 +139,15 @@ class CodebaseReleaseViewSet(FormViewSetMixin, viewsets.ModelViewSet):
             return Response(status=204)
         elif request.method == 'GET':
             return self._list_uploads(codebase_release, upload_type, url)
+
+    def create(self, request, *args, **kwargs):
+        identifier = kwargs['identifier']
+        codebase = get_object_or_404(Codebase, identifier=identifier)
+        codebase_release = codebase.get_or_create_draft()
+        codebase_release_serializer = self.get_serializer_class()
+        serializer = codebase_release_serializer(codebase_release)
+        headers = self.get_success_headers(serializer.data)
+        return Response(status=status.HTTP_201_CREATED, data=serializer.data, headers=headers)
 
     def retrieve(self, request, *args, **kwargs):
         instance = self.get_object()

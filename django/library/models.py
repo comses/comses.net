@@ -139,7 +139,8 @@ class CodebaseQuerySet(models.QuerySet):
         """Add a live property to a codebase.
 
         A codebase is live if any of its releases are live. It is not live by default"""
-        return self.annotate(live=Coalesce(BoolOr('releases__live'), False))
+        return self.annotate(live=Coalesce(BoolOr('releases__live'), False)) \
+            .annotate(draft=Coalesce(BoolOr('releases__draft'), True))
 
     def with_viewable_releases(self, user):
         return self.prefetch_related(
@@ -160,8 +161,8 @@ class CodebaseQuerySet(models.QuerySet):
 
     def public(self):
         """Returns a queryset of all live codebases and their live releases"""
-        return self.with_liveness().filter(live=True).prefetch_related(
-            models.Prefetch('releases', queryset=CodebaseRelease.objects.filter(live=True)))
+        return self.with_liveness().filter(live=True).filter(draft=False).prefetch_related(
+            models.Prefetch('releases', queryset=CodebaseRelease.objects.public()))
 
     def peer_reviewed(self):
         return self.public().filter(peer_reviewed=True)
@@ -348,6 +349,26 @@ class Codebase(index.Indexed, ClusterableModel):
         self.save()
         return release
 
+    def get_or_create_draft(self):
+        draft = self.releases.filter(draft=True).first()
+        if not draft:
+            draft = self.create_release()
+        return draft
+
+    def create_release(self, **overrides):
+        submitter = self.submitter
+        version_number = self.next_version_number()
+        kwargs = dict(submitter=submitter,
+                      version_number=version_number,
+                      identifier=None,
+                      codebase=self,
+                      draft=True)
+        kwargs.update(overrides)
+        release = CodebaseRelease.objects.create(**kwargs)
+        self.latest_version = release
+        self.save()
+        return release
+
     def __str__(self):
         live = repr(self.live) if hasattr(self, 'live') else 'Unknown'
         return "{0} {1} identifier={2} live={3}".format(self.title, self.date_created, repr(self.identifier),
@@ -366,7 +387,10 @@ class CodebasePublication(models.Model):
 
 class CodebaseReleaseQuerySet(models.QuerySet):
     def public(self):
-        return self.filter(live=True)
+        return self.filter(live=True).filter(draft=False)
+
+    def accessible(self, user):
+        return get_viewable_objects_for_user(user, self)
 
 
 class CodebaseRelease(index.Indexed, ClusterableModel):
@@ -443,6 +467,13 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
         :return: full pathlib.Path to this codebase release with args subpaths
         """
         return self.codebase.subpath('releases', 'v{0}'.format(self.version_number), *map(str, args))
+
+    def get_edit_url(self):
+        return reverse('library:codebaserelease-edit', kwargs={'identifier': self.codebase.identifier,
+                                                               'version_number': self.version_number})
+
+    def get_list_url(self):
+        return reverse('library:codebaserelease-list', kwargs={'identifier': self.codebase.identifier})
 
     def get_absolute_url(self):
         return reverse('library:codebaserelease-detail',

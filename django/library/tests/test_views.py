@@ -3,23 +3,20 @@ import io
 import shutil
 
 from django.conf import settings
-from django.contrib.auth.models import AnonymousUser
-from django.test import TestCase, TransactionTestCase
+from django.test import TestCase
 from django.urls import reverse
 from guardian.shortcuts import assign_perm
-from rest_framework import status
 from rest_framework.exceptions import ValidationError
 
 from core.tests.base import UserFactory
 from core.tests.permissions_base import BaseViewSetTestCase, create_perm_str
-from library.models import CodebaseReleasePublisher
+from library.models import Codebase
 from .base import CodebaseFactory, CodebaseReleaseFactory, ContributorFactory, ReleaseContributorFactory
 from ..views import CodebaseViewSet, CodebaseReleaseViewSet
 
 
 class CodebaseViewSetTestCase(BaseViewSetTestCase):
     _view = CodebaseViewSet
-    _retrieve_error_code = status.HTTP_404_NOT_FOUND
 
     @property
     def serializer_class(self):
@@ -29,12 +26,50 @@ class CodebaseViewSetTestCase(BaseViewSetTestCase):
 
     def setUp(self):
         self.user_factory = UserFactory()
-        self.user_factory = UserFactory()
         submitter = self.user_factory.create()
-        self.representative_users = self.create_representative_users(submitter)
+        self.create_representative_users(submitter)
         self.instance_factory = CodebaseFactory(submitter=submitter)
         self.instance = self.instance_factory.create()
-        self.instance.live = False
+        self.release_factory = CodebaseReleaseFactory(submitter=submitter, codebase=self.instance)
+        self.release_factory.create(live=True)
+
+    def assertResponseNoPermission(self, instance, response):
+        if instance.live:
+            self.assertResponsePermissionDenied(response)
+        else:
+            self.assertResponseNotFound(response)
+
+    def check_destroy(self):
+        for user in self.users_able_to_login:
+            codebase = self.instance_factory.create()
+            self.release_factory.create(codebase=codebase)
+            codebase = Codebase.objects.with_liveness().get(id=codebase.id)
+            self.with_logged_in(user, codebase, self.check_destroy_permissions)
+
+            other_codebase = self.instance_factory.create()
+            self.release_factory.create(codebase=other_codebase)
+            other_codebase = Codebase.objects.with_liveness().get(id=other_codebase.id)
+            assign_perm(create_perm_str(other_codebase, 'delete'), user_or_group=user, obj=other_codebase)
+            self.with_logged_in(user, other_codebase, self.check_destroy_permissions)
+
+        codebase = self.instance_factory.create()
+        self.release_factory.create(codebase=codebase)
+        codebase = Codebase.objects.with_liveness().get(id=codebase.id)
+        self.check_destroy_permissions(self.anonymous_user, codebase)
+
+    def check_update(self):
+        for user in self.users_able_to_login:
+            codebase = self.instance_factory.create()
+            self.release_factory.create(codebase=codebase)
+            codebase = Codebase.objects.with_liveness().get(id=codebase.id)
+            self.with_logged_in(user, codebase, self.check_update_permissions)
+            assign_perm(create_perm_str(self.instance, 'change'), user_or_group=user, obj=codebase)
+            self.with_logged_in(user, codebase, self.check_update_permissions)
+
+        codebase = self.instance_factory.create()
+        self.release_factory.create(codebase=codebase)
+        codebase = Codebase.objects.with_liveness().get(id=codebase.id)
+        self.check_update_permissions(self.anonymous_user, codebase)
 
     def test_retrieve(self):
         self.action = 'retrieve'
@@ -62,8 +97,24 @@ class CodebaseReleaseViewSetTestCase(BaseViewSetTestCase):
 
     def setUp(self):
         self.user_factory = UserFactory()
-        submitter = self.user_factory.create()
-        self.representative_users = self.create_representative_users(submitter)
+        self.submitter = self.user_factory.create(username='submitter')
+        self.other_user = self.user_factory.create(username='other_user')
+        codebase_factory = CodebaseFactory(submitter=self.submitter)
+        self.codebase = codebase_factory.create()
+        self.codebase_release = self.codebase.create_release(draft=False)
+        self.path = self.codebase_release.get_list_url()
+
+    def test_release_creation_only_if_codebase_change_permission(self):
+        response = self.client.post(path=self.path, format='json')
+        self.assertResponsePermissionDenied(response)
+
+        self.login(self.other_user, self.user_factory.password)
+        response_other_user = self.client.post(path=self.path, data=None, HTTP_ACCEPT='application/json', format='json')
+        self.assertResponsePermissionDenied(response_other_user)
+
+        self.login(self.submitter, self.user_factory.password)
+        response_submitter = self.client.post(path=self.path, HTTP_ACCEPT='application/json', format='json')
+        self.assertResponseCreated(response_submitter)
 
 
 class CodebaseReleasePublishTestCase(TestCase):
@@ -79,7 +130,7 @@ class CodebaseReleasePublishTestCase(TestCase):
         codebase_factory = CodebaseFactory(submitter=self.submitter)
         self.codebase = codebase_factory.create()
         codebase_release_factory = CodebaseReleaseFactory(submitter=self.submitter, codebase=self.codebase)
-        self.codebase_release = codebase_release_factory.create()
+        self.codebase_release = codebase_release_factory.create(live=False)
         contributor_factory = ContributorFactory(user=self.submitter)
         self.contributor = contributor_factory.create()
         self.release_contributor_factory = ReleaseContributorFactory(codebase_release=self.codebase_release)

@@ -71,6 +71,8 @@ class HypothesisTestCase(hypothesis_django.TestCase):
 
 class UserFactory:
     def __init__(self, **defaults):
+        if not defaults.get('password'):
+            defaults['password'] = 'test'
         self.id = 0
         self.password = defaults.get('password')
         self.defaults = {}

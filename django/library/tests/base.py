@@ -99,7 +99,8 @@ class CodebaseReleaseFactory:
         return {
             'description': 'Added rational utility decision making to wolves',
             'submitter': self.submitter,
-            'codebase': self.codebase
+            'codebase': self.codebase,
+            'live': True
         }
 
     def create(self, **defaults) -> CodebaseRelease:

@@ -18,9 +18,9 @@ class JobViewSetTestCase(BaseViewSetTestCase):
 
     def setUp(self):
         self.user_factory = UserFactory()
-        submitter = self.user_factory.create()
+        submitter = self.user_factory.create(username='submitter')
         self.instance_factory = JobFactory(submitter=submitter)
-        self.representative_users = self.create_representative_users(submitter)
+        self.create_representative_users(submitter)
         self.instance = self.instance_factory.create()
 
     def test_retrieve(self):
@@ -44,9 +44,9 @@ class EventViewSetTestCase(BaseViewSetTestCase):
 
     def setUp(self):
         self.user_factory = UserFactory()
-        submitter = self.user_factory.create()
+        submitter = self.user_factory.create(username='submitter')
         self.instance_factory = EventFactory(submitter=submitter)
-        self.representative_users = self.create_representative_users(submitter)
+        self.create_representative_users(submitter)
         self.instance = self.instance_factory.create()
 
     def test_retrieve(self):
@@ -70,7 +70,7 @@ class JobPageRenderTestCase(TestCase):
 
     def setUp(self):
         user_factory = UserFactory()
-        self.submitter = user_factory.create()
+        self.submitter = user_factory.create(username='submitter')
         job_factory = JobFactory(submitter=self.submitter)
         self.job = job_factory.create()
 
@@ -88,7 +88,7 @@ class EventPageRenderTestCase(TestCase):
 
     def setUp(self):
         user_factory = UserFactory()
-        self.submitter = user_factory.create()
+        self.submitter = user_factory.create(username='submitter')
         event_factory = EventFactory(submitter=self.submitter)
         self.event = event_factory.create()
 
