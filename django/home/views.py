@@ -153,6 +153,8 @@ class EventFilter(filters.BaseFilterBackend):
 
         if q:
             queryset = get_search_queryset(q, queryset)
+        else:
+            queryset = queryset.order_by('-date_created')
 
         return queryset
 
@@ -257,6 +259,8 @@ class JobFilter(filters.BaseFilterBackend):
 
         if q:
             queryset = get_search_queryset(q, queryset)
+        else:
+            queryset = queryset.order_by('-date_created')
 
         return queryset
 
