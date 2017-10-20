@@ -3,7 +3,7 @@ import hashlib
 import hmac
 import logging
 from urllib import parse
-from dateutil.parser import parse as datetime_parse
+from dateutil.parser import parse as parse_datetime
 from dateutil import tz
 
 from django.conf import settings
@@ -14,7 +14,7 @@ from django.db.models.query_utils import Q
 from django.http import QueryDict, HttpResponseBadRequest, HttpResponseRedirect
 from django.shortcuts import get_object_or_404
 from django.utils.decorators import method_decorator
-from rest_framework import viewsets, generics, parsers, status, mixins
+from rest_framework import viewsets, generics, parsers, status, mixins, filters
 from rest_framework.decorators import detail_route, list_route
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAuthenticated
@@ -134,13 +134,40 @@ class ToggleFollowUser(APIView):
         return Response({'following': created})
 
 
+class EventFilter(filters.BaseFilterBackend):
+    def filter_queryset(self, request, queryset, view):
+        if view.action != 'list':
+            return queryset
+
+        tzinfo = tz.gettz(settings.TIME_ZONE)
+        q = request.query_params.get('query')
+        submission_deadline__gte = parse_datetime(request.query_params.get('submission_deadline__gte'))
+        submission_deadline__gte = submission_deadline__gte.replace(tzinfo=tzinfo)
+        event_start_date__gte = parse_datetime(request.query_params.get('event_state_date__gte'))
+        event_start_date__gte = event_start_date__gte.replace(tzinfo=tzinfo)
+        tags = request.query_params.get('tags', [])
+
+        if submission_deadline__gte:
+            queryset = queryset.filter(submission_deadline__gte=submission_deadline__gte)
+        if event_start_date__gte:
+            queryset = queryset.filter(event_start_date__gte=event_start_date__gte)
+        for tag in tags:
+            queryset = queryset.filter(tags__name=tag)
+
+        if q:
+            queryset = get_search_queryset(q, queryset)
+
+        return queryset
+
+
 class EventViewSet(FormViewSetMixin, viewsets.ModelViewSet):
     serializer_class = EventSerializer
     queryset = Event.objects.all()
     pagination_class = SmallResultSetPagination
+    filter_backends = (EventFilter,)
 
     def get_queryset(self):
-        return get_search_queryset(self)
+        return self.queryset
 
     def retrieve(self, request, *args, **kwargs):
         return retrieve_with_perms(self, request, *args, **kwargs)
@@ -153,9 +180,9 @@ class EventCalendarList(generics.ListAPIView):
 
     def get_list_queryset(self):
         tzinfo = tz.gettz(settings.TIME_ZONE)
-        start = datetime_parse(self.request.query_params['start'])
+        start = parse_datetime(self.request.query_params['start'])
         start = start.replace(tzinfo=tzinfo)
-        end = datetime_parse(self.request.query_params['end'])
+        end = parse_datetime(self.request.query_params['end'])
         end = end.replace(tzinfo=tzinfo)
 
         # push this into EventQuerySet
@@ -218,13 +245,39 @@ class EventCalendarList(generics.ListAPIView):
         return Response(data=calendar_events)
 
 
+class JobFilter(filters.BaseFilterBackend):
+    def filter_queryset(self, request, queryset, view):
+        if view.action != 'list':
+            return queryset
+        tzinfo = tz.gettz(settings.TIME_ZONE)
+        q = request.query_params.get('query')
+        date_created__gte = parse_datetime(request.query_params.get('date_created__gte'))
+        date_created__gte = date_created__gte.replace(tzinfo=tzinfo)
+        last_modified__gte = parse_datetime(request.query_params.get('last_modified__gte'))
+        last_modified__gte.replace(tzinfo=tzinfo)
+        tags = request.query_params.get('tags', [])
+
+        if date_created__gte:
+            queryset = queryset.filter(date_created__gte=date_created__gte)
+        if last_modified__gte:
+            queryset = queryset.filter(last_modified__gte=last_modified__gte)
+        for tag in tags:
+            queryset = queryset.filter(tags__name=tag)
+
+        if q:
+            queryset = get_search_queryset(q, queryset)
+
+        return queryset
+
+
 class JobViewSet(FormViewSetMixin, viewsets.ModelViewSet):
     serializer_class = JobSerializer
     pagination_class = SmallResultSetPagination
     queryset = Job.objects.all()
+    filter_backends = (JobFilter,)
 
     def get_queryset(self):
-        return get_search_queryset(self)
+        return self.queryset
 
     def retrieve(self, request, *args, **kwargs):
         return retrieve_with_perms(self, request, *args, **kwargs)
