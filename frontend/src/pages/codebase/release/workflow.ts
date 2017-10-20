@@ -16,7 +16,7 @@ Vue.use(Vuex);
 Vue.use(VueRouter);
 
 @Component({
-    name: 'c-publish-modal',
+    // name: 'c-publish-modal',
     template: `<div class="modal fade" id="publishCodebaseReleaseModal">
         <div class="modal-dialog" role="document">
             <div class="modal-content">
@@ -30,13 +30,13 @@ Vue.use(VueRouter);
                     <p>
                         Publishing a codebase result release makes possible for anyone to view and download it. 
                         Published releases must have code and documentation files and at least one contributor. Once a
-                        release is published files associated with release cannot be added, modified or deleted.
+                        release is published files associated with the release cannot be added, modified or deleted.
                     </p>
                     <p>
                         Publishing a release cannot be undone. Do you want to continue?
                     </p>
                 </div>
-                <div class=""></div>
+                <div class="alert alert-danger" v-for="error in errorMessages">{{ error }}</div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-primary" @click="publish">Publish</button>
                     <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
@@ -64,7 +64,7 @@ class PublishModal extends Vue implements CreateOrUpdateHandler {
 
     handleServerValidationError(responseError) {
         const response = responseError.response;
-        _.forEach(_.toPairs(response.data), (k, v) => this.errorMessages.push(`${k}: ${v}`));
+        _.forEach(response.data, msg => this.errorMessages.push(msg));
     }
 
     handleSuccessWithoutDataResponse(response) {
@@ -86,13 +86,15 @@ class PublishModal extends Vue implements CreateOrUpdateHandler {
 @Component(<any>{
     store: new Vuex.Store(store),
     components: {
-        PublishModal
+        'c-publish-modal': PublishModal
     },
     template: `<div>
         <div v-if="isInitialized">
             <h1>{{ $store.state.release.codebase.title }} <i>v{{ $store.state.release.version_number }}</i> 
                 <span class="badge badge-secondary" v-if="isPublished">Published</span>
-                <span class="badge badge-danger" data-target="publishCodebaseReleaseModal" v-else>Unpublished</span>
+                <span class="badge badge-danger" data-target="#publishCodebaseReleaseModal" data-toggle="modal" v-else>
+                    Unpublished
+                </span>
             </h1>
             <ul class="nav">
                 <li class="nav-item" v-if="!isPublished">
