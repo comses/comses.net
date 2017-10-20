@@ -159,6 +159,7 @@
                         <th>First published</th>
                         <th>Last modified</th>
                         {% if has_change_perm %}
+                            <th>Status</th>
                             <th>Edit</th>
                         {% endif %}
                     </tr>
@@ -172,7 +173,17 @@
                             <td>{{ release.last_published_on }}</td>
                             {% if has_change_perm %}
                                 <td>
-                                    <a href="{{ url('library:codebaserelease-edit', identifier=codebase.identifier,
+                                    {% if release.draft %}
+                                        <span class="badge badge-danger">Draft</span>
+                                    {% elif not release.live %}
+                                        <span class="badge badge-warning">Unpublished</span>
+                                    {% else %}
+                                        <span class="badge badge-secondary">Published</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <a href="{{ url('library:codebaserelease-edit',
+                                        identifier=codebase.identifier,
                                         version_number=release.version_number) }}">
                                         <span class="fa fa-edit"></span>
                                     </a>
@@ -186,7 +197,7 @@
                 {% csrf_token %}
                 <button class="btn btn-primary" formmethod="post"
                         formaction="{{ url('library:codebaserelease-draft', identifier=codebase.identifier) }}">
-                    Draft a new release
+                    Draft release
                 </button>
             </form>
         </div>

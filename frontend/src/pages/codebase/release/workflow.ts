@@ -92,7 +92,7 @@ class PublishModal extends Vue implements CreateOrUpdateHandler {
         <div v-if="isInitialized">
             <h1>{{ $store.state.release.codebase.title }} <i>v{{ $store.state.release.version_number }}</i> 
                 <span class="badge badge-secondary" v-if="isPublished">Published</span>
-                <span class="badge badge-danger" data-target="#publishCodebaseReleaseModal" data-toggle="modal" v-else>
+                <span class="badge badge-warning" data-target="#publishCodebaseReleaseModal" data-toggle="modal" v-else>
                     Unpublished
                 </span>
             </h1>

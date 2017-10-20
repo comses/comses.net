@@ -142,11 +142,11 @@ class CodebaseQuerySet(models.QuerySet):
         return self.annotate(live=Coalesce(BoolOr('releases__live'), False)) \
             .annotate(draft=Coalesce(BoolOr('releases__draft'), True))
 
-    def with_viewable_releases(self, user):
+    def with_viewable_releases(self, user, **filters):
+        queryset = get_viewable_objects_for_user(user=user,
+                                                 queryset=CodebaseRelease.objects.filters(**filters))
         return self.prefetch_related(
-            models.Prefetch('releases',
-                            get_viewable_objects_for_user(user=user,
-                                                          queryset=CodebaseRelease.objects.all())))
+            models.Prefetch('releases', queryset=queryset))
 
     def accessible(self, user):
         return get_viewable_objects_for_user(user=user, queryset=self.with_viewable_releases(user=user).with_liveness())

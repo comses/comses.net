@@ -139,7 +139,7 @@ class RelatedCodebaseReleaseSerializer(serializers.ModelSerializer):
     class Meta:
         model = CodebaseRelease
         fields = ('absolute_url', 'release_contributors', 'submitter', 'first_published_at', 'last_published_on',
-                  'version_number')
+                  'version_number', 'live', 'draft', )
 
 
 class CodebaseSerializer(serializers.ModelSerializer, FeaturedImageMixin):
