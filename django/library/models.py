@@ -314,6 +314,9 @@ class Codebase(index.Indexed, ClusterableModel):
     def get_absolute_url(self):
         return reverse('library:codebase-detail', kwargs={'identifier': self.identifier})
 
+    def get_draft_url(self):
+        return reverse('library:codebaserelease-draft', kwargs={'identifier': self.identifier})
+
     def media_url(self, name):
         return '{0}/media/{1}'.format(self.get_absolute_url(), name)
 

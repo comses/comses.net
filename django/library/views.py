@@ -1,19 +1,19 @@
 import logging
 import os
 
-from django.core.files import File
+from django.contrib.auth.mixins import PermissionRequiredMixin
+from django.core.exceptions import PermissionDenied
 from django.http import FileResponse, Http404
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import resolve
-from django.views.generic import RedirectView
-from rest_framework import viewsets, generics, parsers, renderers, status, permissions, exceptions, mixins
-from rest_framework.decorators import detail_route, list_route
-from rest_framework.exceptions import PermissionDenied
-from rest_framework.response import Response
+from django.views import View
+from rest_framework import viewsets, generics, parsers, renderers, status, permissions
+from rest_framework.decorators import detail_route
+from rest_framework.exceptions import PermissionDenied as DrfPermissionDenied
 from rest_framework.response import Response
 
 from core.permissions import ComsesPermissions
-from core.view_helpers import get_search_queryset, add_change_delete_perms
+from core.view_helpers import add_change_delete_perms
 from core.views import FormViewSetMixin, FormUpdateView, FormCreateView
 from home.views import SmallResultSetPagination
 from .models import Codebase, CodebaseRelease, Contributor
@@ -21,6 +21,19 @@ from .serializers import (CodebaseSerializer, RelatedCodebaseSerializer, Codebas
                           ContributorSerializer, ReleaseContributorSerializer)
 
 logger = logging.getLogger(__name__)
+
+
+def has_permission_to_create_release(request, view, exception_class):
+    user = request.user
+    codebase = get_object_or_404(Codebase, identifier=view.kwargs['identifier'])
+    if request.method == 'POST':
+        required_perms = ['library.change_codebase']
+    else:
+        required_perms = []
+
+    if user.has_perms(required_perms, obj=codebase):
+        return True
+    raise exception_class
 
 
 class CodebaseViewSet(FormViewSetMixin, viewsets.ModelViewSet):
@@ -63,17 +76,18 @@ class CodebaseViewSet(FormViewSetMixin, viewsets.ModelViewSet):
             return Response(data)
 
 
-class CodebaseDraftRedirectView(RedirectView):
-    pattern_name = 'codebaserelease-detail'
+class CodebaseReleaseDraftView(PermissionRequiredMixin, View):
+    def has_permission(self):
+        return has_permission_to_create_release(view=self, request=self.request, exception_class=PermissionDenied)
 
-    def get_redirect_url(self, *args, **kwargs):
+    def post(self, *args, **kwargs):
         identifier = kwargs['identifier']
         codebase = get_object_or_404(Codebase, identifier=kwargs['identifier'])
         codebase_release = codebase.releases.filter(draft=True).first()
         if not codebase_release:
-            raise Http404
+            codebase_release = codebase.create_release()
         version_number = codebase_release.version_number
-        return super().get_redirect_url(identifier=identifier, version_number=version_number)
+        return redirect('library:codebaserelease-edit', identifier=identifier, version_number=version_number)
 
 
 class CodebaseFormCreateView(FormCreateView):
@@ -87,19 +101,8 @@ class CodebaseFormUpdateView(FormUpdateView):
 
 
 class NestedCodebaseReleasePermission(permissions.BasePermission):
-    codebase_perms_map = {
-        'POST': ['library.change_codebase'],
-        'DELETE': ['library.change_codebase'],
-    }
-
     def has_permission(self, request, view):
-        user = request.user
-        codebase = get_object_or_404(Codebase, identifier=view.kwargs['identifier'])
-        required_perms = self.codebase_perms_map.get(request.method, [])
-
-        if user.has_perms(required_perms, obj=codebase):
-            return True
-        raise exceptions.PermissionDenied()
+        return has_permission_to_create_release(request=request, view=view, exception_class=DrfPermissionDenied)
 
 
 class CodebaseReleaseViewSet(FormViewSetMixin, viewsets.ModelViewSet):
@@ -134,7 +137,7 @@ class CodebaseReleaseViewSet(FormViewSetMixin, viewsets.ModelViewSet):
         codebase_release = self.get_object()  # type: CodebaseRelease
         if request.method == 'POST':
             if codebase_release.live:
-                raise PermissionDenied(detail='files cannot be added on published releases')
+                raise DrfPermissionDenied(detail='files cannot be added on published releases')
             codebase_release.add_upload(upload_type, request.data['file'])
             return Response(status=204)
         elif request.method == 'GET':
@@ -182,7 +185,7 @@ class CodebaseReleaseViewSet(FormViewSetMixin, viewsets.ModelViewSet):
         codebase_release = self.get_object()
         if request.method == 'DELETE':
             if codebase_release.live:
-                raise PermissionDenied(detail='files cannot be deleted from published releases')
+                raise DrfPermissionDenied(detail='files cannot be deleted from published releases')
             codebase_release.delete_upload(upload_type, path)
             return self._list_uploads(codebase_release, upload_type, request.path)
         elif request.method == 'GET':

@@ -9,7 +9,7 @@ from guardian.shortcuts import assign_perm
 from rest_framework.exceptions import ValidationError
 
 from core.tests.base import UserFactory
-from core.tests.permissions_base import BaseViewSetTestCase, create_perm_str
+from core.tests.permissions_base import BaseViewSetTestCase, create_perm_str, ResponseStatusCodesMixin, ApiAccountMixin
 from library.models import Codebase
 from .base import CodebaseFactory, CodebaseReleaseFactory, ContributorFactory, ReleaseContributorFactory
 from ..views import CodebaseViewSet, CodebaseReleaseViewSet
@@ -38,6 +38,14 @@ class CodebaseViewSetTestCase(BaseViewSetTestCase):
             self.assertResponsePermissionDenied(response)
         else:
             self.assertResponseNotFound(response)
+
+    def check_retrieve_permissions(self, user, instance):
+        response = self.client.get(instance.get_absolute_url(), HTTP_ACCEPT='application/json', format='json')
+        has_perm = user.has_perm(create_perm_str(self.model_class(), 'view'), obj=instance)
+        if has_perm:
+            self.assertResponseOk(response)
+        else:
+            self.assertResponseNoPermission(instance, response)
 
     def check_destroy(self):
         for user in self.users_able_to_login:
@@ -115,6 +123,29 @@ class CodebaseReleaseViewSetTestCase(BaseViewSetTestCase):
         self.login(self.submitter, self.user_factory.password)
         response_submitter = self.client.post(path=self.path, HTTP_ACCEPT='application/json', format='json')
         self.assertResponseCreated(response_submitter)
+
+
+class CodebaseReleaseDraftViewTestCase(ApiAccountMixin, ResponseStatusCodesMixin, TestCase):
+    def setUp(self):
+        self.user_factory = UserFactory()
+        self.submitter = self.user_factory.create(username='submitter')
+        self.other_user = self.user_factory.create(username='other_user')
+        codebase_factory = CodebaseFactory(submitter=self.submitter)
+        self.codebase = codebase_factory.create()
+        self.codebase_release = self.codebase.create_release(draft=False)
+        self.path = self.codebase.get_draft_url()
+
+    def test_release_creation_only_if_codebase_change_permission(self):
+        response = self.client.post(path=self.path)
+        self.assertResponsePermissionDenied(response)
+
+        self.login(self.other_user, self.user_factory.password)
+        response_other_user = self.client.post(path=self.path)
+        self.assertResponsePermissionDenied(response_other_user)
+
+        self.login(self.submitter, self.user_factory.password)
+        response_submitter = self.client.post(path=self.path)
+        self.assertResponseFound(response_submitter)
 
 
 class CodebaseReleasePublishTestCase(TestCase):

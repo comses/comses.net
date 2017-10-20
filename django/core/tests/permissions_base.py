@@ -52,33 +52,31 @@ class DoesNotHavePermission(Exception): pass
 class LoginFailure(Exception): pass
 
 
-class BaseViewSetTestCase(APITestCase):
-    _view = None
-    _error_code = status.HTTP_403_FORBIDDEN
-
-    @property
-    def view_class(self):
-        return self._view
-
-    @property
-    def serializer_class(self):
-        return self.view_class().get_serializer_class()
-
-    @property
-    def model_class(self):
-        return self.serializer_class().Meta.model
-
-    def create_representative_users(self, submitter):
-            # Inactive users cannot login so are not included
-            self.regular_user = self.user_factory.create(username='regular')
-            self.superuser = self.user_factory.create(username='superuser', is_superuser=True)
-            self.anonymous_user = AnonymousUser()
-            self.submitter = submitter
+class ApiAccountMixin:
+    def create_representative_users(self, submitter, user_factory=None):
+        # Inactive users cannot login so are not included
+        if not user_factory:
+            user_factory = self.user_factory
+        self.regular_user = user_factory.create(username='regular')
+        self.superuser = user_factory.create(username='superuser', is_superuser=True)
+        self.anonymous_user = AnonymousUser()
+        self.submitter = submitter
 
     @property
     def users_able_to_login(self):
         return [self.regular_user, self.superuser, self.submitter]
 
+    def login(self, user, password):
+        if not user.is_active:
+            return user, False
+        logged_in = self.client.login(username=user.username, password=password)
+        if not logged_in:
+            if user.is_active:
+                raise LoginFailure()
+        return user, logged_in
+
+
+class ResponseStatusCodesMixin:
     def responseErrorMessage(self, response, name):
         user = response.wsgi_request.user
         user_msg = '<{} is_superuser={} is_active={} is_anonymous={}>'.format(
@@ -97,6 +95,10 @@ class BaseViewSetTestCase(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED,
                          msg=self.responseErrorMessage(response, 'ACCEPTED'))
 
+    def assertResponseFound(self, response):
+        self.assertEqual(response.status_code, status.HTTP_302_FOUND,
+                         msg=self.responseErrorMessage(response, 'FOUND'))
+
     def assertResponseDeleted(self, response):
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT,
                          msg=self.responseErrorMessage(response, 'NO_CONTENT'))
@@ -109,17 +111,22 @@ class BaseViewSetTestCase(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND,
                          msg=self.responseErrorMessage(response, 'NOT FOUND'))
 
-    def assertResponseNoPermission(self, instance, response):
-        return self.assertResponsePermissionDenied(response)
 
-    def login(self, user, password):
-        if not user.is_active:
-            return user, False
-        logged_in = self.client.login(username=user.username, password=password)
-        if not logged_in:
-            if user.is_active:
-                raise LoginFailure()
-        return user, logged_in
+
+class BaseViewSetTestCase(ApiAccountMixin, ResponseStatusCodesMixin, APITestCase):
+    _view = None
+
+    @property
+    def view_class(self):
+        return self._view
+
+    @property
+    def serializer_class(self):
+        return self.view_class().get_serializer_class()
+
+    @property
+    def model_class(self):
+        return self.serializer_class().Meta.model
 
     def check_retrieve_permissions(self, user, instance):
         """Validate view permissions against a user with no initial guardian permissions.
@@ -129,7 +136,7 @@ class BaseViewSetTestCase(APITestCase):
         if has_perm:
             self.assertResponseOk(response)
         else:
-            self.assertResponseNoPermission(instance, response)
+            self.assertResponsePermissionDenied(response)
 
     def check_create_permissions(self, user, create_data):
         response = self.client.post(self.model_class().get_list_url(), create_data, HTTP_ACCEPT='application/json',
@@ -148,7 +155,7 @@ class BaseViewSetTestCase(APITestCase):
         if has_perm:
             self.assertResponseOk(response)
         else:
-            self.assertResponseNoPermission(instance, response)
+            self.assertResponsePermissionDenied(response)
 
     def check_destroy_permissions(self, user, instance):
         response = self.client.delete(instance.get_absolute_url(), HTTP_ACCEPT='application/json', format='json')
@@ -156,7 +163,7 @@ class BaseViewSetTestCase(APITestCase):
         if has_perm:
             self.assertResponseDeleted(response)
         else:
-            self.assertResponseNoPermission(instance, response)
+            self.assertResponsePermissionDenied(response)
 
     def check_list_permissions(self, user, instance):
         """A user has list view permissions on an instance if the instance is public"""

@@ -182,6 +182,13 @@
                 {% endfor %}
                 </tbody>
             </table>
+            <form>
+                {% csrf_token %}
+                <button class="btn btn-primary" formmethod="post"
+                        formaction="{{ url('library:codebaserelease-draft', identifier=codebase.identifier) }}">
+                    Draft a new release
+                </button>
+            </form>
         </div>
     </div>
     <hr>
