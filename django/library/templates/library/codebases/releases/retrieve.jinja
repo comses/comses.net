@@ -19,7 +19,9 @@
     <div id='discourse-content'>
         {% if not live %}
             <div class="alert alert-danger mt-2">The release you are viewing is currently unpublished.
-                The latest version is <a href='{{ latest_version_url }}'>{{codebase.latest_version_number}}</a>
+                {% if version_number != codebase.latest_version_number %}
+                    The latest version is <a href='{{ latest_version_url }}'>{{codebase.latest_version_number}}</a>
+                {% endif %}
             </div>
         {% else %}
             {% if version_number != codebase.latest_version_number %}
@@ -62,9 +64,15 @@
     <div class='card-metadata'>
         <div class='card-body'>
             <h2 class='card-title'>Cite this Model</h2>
-            <p class='card-text'>
-                {{ citation_text|markdown }}
-            </p>
+            {% if live %}
+                <p class='card-text'>
+                    {{ citation_text|markdown }}
+                </p>
+            {% else %}
+                <p class='card-text'>
+                    Cannot cite an unpublished model
+                </p>
+            {% endif %}
         </div>
     </div>
     {% if references_text %}
