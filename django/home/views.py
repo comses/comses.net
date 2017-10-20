@@ -3,7 +3,6 @@ import hashlib
 import hmac
 import logging
 from urllib import parse
-from dateutil.parser import parse as parse_datetime
 from dateutil import tz
 
 from django.conf import settings
@@ -27,6 +26,7 @@ from wagtail.wagtailsearch.backends import get_search_backend
 
 from core.views import FormViewSetMixin, FormCreateView, FormUpdateView
 from core.view_helpers import get_search_queryset, retrieve_with_perms
+from core.utils import parse_datetime
 from .models import FeaturedContentItem, MemberProfile
 from core.models import FollowUser, Event, Job
 from .serializers import (EventSerializer, JobSerializer, TagSerializer, FeaturedContentItemSerializer,
@@ -139,12 +139,9 @@ class EventFilter(filters.BaseFilterBackend):
         if view.action != 'list':
             return queryset
 
-        tzinfo = tz.gettz(settings.TIME_ZONE)
         q = request.query_params.get('query')
-        submission_deadline__gte = parse_datetime(request.query_params.get('submission_deadline__gte'))
-        submission_deadline__gte = submission_deadline__gte.replace(tzinfo=tzinfo)
+        submission_deadline__gte = request.query_params.get('submission_deadline__gte')
         event_start_date__gte = parse_datetime(request.query_params.get('event_state_date__gte'))
-        event_start_date__gte = event_start_date__gte.replace(tzinfo=tzinfo)
         tags = request.query_params.get('tags', [])
 
         if submission_deadline__gte:
@@ -179,11 +176,8 @@ class EventCalendarList(generics.ListAPIView):
     template_name = 'core/events/calendar.jinja'
 
     def get_list_queryset(self):
-        tzinfo = tz.gettz(settings.TIME_ZONE)
         start = parse_datetime(self.request.query_params['start'])
-        start = start.replace(tzinfo=tzinfo)
         end = parse_datetime(self.request.query_params['end'])
-        end = end.replace(tzinfo=tzinfo)
 
         # push this into EventQuerySet
         early_registration_deadline_queryset = self.queryset.filter(
@@ -249,12 +243,9 @@ class JobFilter(filters.BaseFilterBackend):
     def filter_queryset(self, request, queryset, view):
         if view.action != 'list':
             return queryset
-        tzinfo = tz.gettz(settings.TIME_ZONE)
         q = request.query_params.get('query')
         date_created__gte = parse_datetime(request.query_params.get('date_created__gte'))
-        date_created__gte = date_created__gte.replace(tzinfo=tzinfo)
         last_modified__gte = parse_datetime(request.query_params.get('last_modified__gte'))
-        last_modified__gte.replace(tzinfo=tzinfo)
         tags = request.query_params.get('tags', [])
 
         if date_created__gte:

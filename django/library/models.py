@@ -144,7 +144,7 @@ class CodebaseQuerySet(models.QuerySet):
 
     def with_viewable_releases(self, user, **filters):
         queryset = get_viewable_objects_for_user(user=user,
-                                                 queryset=CodebaseRelease.objects.filters(**filters))
+                                                 queryset=CodebaseRelease.objects.filter(**filters))
         return self.prefetch_related(
             models.Prefetch('releases', queryset=queryset))
 
