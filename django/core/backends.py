@@ -105,11 +105,11 @@ def get_viewable_objects_for_user(user, queryset):
     # (models without PUBLISHED_ATTRIBUTE_KEY are assumed to be live so are always included in list results)
     if hasattr(model, 'HAS_PUBLISHED_KEY') or has_field(model, PUBLISHED_ATTRIBUTE_KEY):
         user = get_db_user(user)
-        is_live_queryset = model.objects.public()
-        is_submitter_queryset = model.objects.filter(submitter=user)
+        is_public_queryset = queryset.public()
+        is_submitter_queryset = queryset.filter(submitter=user)
         has_object_permission_queryset = sc.get_objects_for_user(user, perms=perms, any_perm=True,
-                                                                 accept_global_perms=False)
-        queryset &= has_object_permission_queryset | is_live_queryset | is_submitter_queryset
+                                                                 accept_global_perms=False, klass=queryset)
+        queryset &= has_object_permission_queryset | is_public_queryset | is_submitter_queryset
 
     return queryset
 

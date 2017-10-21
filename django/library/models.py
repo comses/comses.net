@@ -9,7 +9,7 @@ from zipfile import ZipFile
 import semver
 from django.conf import settings
 from django.contrib.auth.models import User
-from django.contrib.postgres.aggregates import BoolOr
+from django.contrib.postgres.aggregates import BoolOr, BoolAnd
 from django.contrib.postgres.fields import JSONField, ArrayField
 from django.db import models
 from django.db.models.functions import Coalesce
@@ -140,11 +140,11 @@ class CodebaseQuerySet(models.QuerySet):
 
         A codebase is live if any of its releases are live. It is not live by default"""
         return self.annotate(live=Coalesce(BoolOr('releases__live'), False)) \
-            .annotate(draft=Coalesce(BoolOr('releases__draft'), True))
+            .annotate(draft=Coalesce(BoolAnd('releases__draft'), True))
 
-    def with_viewable_releases(self, user, **filters):
+    def with_viewable_releases(self, user):
         queryset = get_viewable_objects_for_user(user=user,
-                                                 queryset=CodebaseRelease.objects.filter(**filters))
+                                                 queryset=CodebaseRelease.objects.all())
         return self.prefetch_related(
             models.Prefetch('releases', queryset=queryset))
 
@@ -389,11 +389,18 @@ class CodebasePublication(models.Model):
 
 
 class CodebaseReleaseQuerySet(models.QuerySet):
+    def with_codebase(self, user):
+        return self.prefetch_related(
+            models.Prefetch('codebase__releases', queryset=CodebaseRelease.objects.accessible_without_codebase(user)))
+
     def public(self):
-        return self.filter(live=True).filter(draft=False)
+        return self.filter(draft=False).filter(live=True)
+
+    def accessible_without_codebase(self, user):
+        return get_viewable_objects_for_user(user, queryset=self)
 
     def accessible(self, user):
-        return get_viewable_objects_for_user(user, self)
+        return get_viewable_objects_for_user(user, queryset=self).with_codebase(user=user)
 
 
 class CodebaseRelease(index.Indexed, ClusterableModel):
