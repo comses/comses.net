@@ -132,7 +132,7 @@ class MemberProfile(index.Indexed, ClusterableModel):
     timezone = TimeZoneField(blank=True)
 
     affiliations = JSONField(default=list, help_text=_("JSON-LD list of affiliated institutions"))
-    bio = models.TextField(max_length=500, blank=True, help_text=_('Brief bio'))
+    bio = MarkdownField(max_length=512, help_text=_('Brief bio'))
     degrees = ArrayField(models.CharField(max_length=255), blank=True, default=list)
     institution = models.ForeignKey(Institution, null=True)
     keywords = ClusterTaggableManager(through=MemberProfileTag, blank=True)
@@ -140,7 +140,7 @@ class MemberProfile(index.Indexed, ClusterableModel):
     personal_url = models.URLField(blank=True)
     picture = models.ForeignKey(Image, null=True, help_text=_('Profile picture'))
     professional_url = models.URLField(blank=True)
-    research_interests = models.TextField(blank=True)
+    research_interests = MarkdownField(max_length=512)
 
     objects = MemberProfileQuerySet.as_manager()
 
@@ -232,7 +232,7 @@ class PlatformTag(TaggedItemBase):
 class Platform(index.Indexed, ClusterableModel):
     name = models.CharField(max_length=255)
     active = models.BooleanField(default=True)
-    description = models.CharField(max_length=512, blank=True)
+    description = MarkdownField(max_length=512, blank=True)
     date_created = models.DateTimeField(default=timezone.now)
     last_modified = models.DateTimeField(auto_now=True)
     open_source = models.BooleanField(default=False)
@@ -254,7 +254,7 @@ class Platform(index.Indexed, ClusterableModel):
 
     search_fields = [
         index.SearchField('name'),
-        index.SearchField('description'),
+        index.SearchField('description', partial_match=True),
         index.SearchField('active'),
         index.RelatedFields('tags', [
             index.SearchField('name'),
@@ -305,7 +305,9 @@ class Event(index.Indexed, ClusterableModel):
     search_fields = [
         index.SearchField('title', partial_match=True, boost=10),
         index.SearchField('description', partial_match=True),
-        index.SearchField('start_date'),
+        index.FilterField('start_date'),
+        index.FilterField('submission_deadline'),
+        index.FilterField('early_registration_deadline'),
         index.SearchField('location'),
         index.RelatedFields('tags', [
             index.SearchField('name'),
