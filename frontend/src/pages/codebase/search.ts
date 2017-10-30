@@ -11,7 +11,7 @@ import * as _ from 'lodash'
 @Component({
     // language=Vue
     template: `
-        <c-search submitLabel="Create a model" searchLabel="Search" submitUrl="/codebases/add/" :searchUrl="query">
+        <c-search submitLabel="Archive a model" searchLabel="Search" submitUrl="/codebases/add/" :searchUrl="query">
             <div slot="searchForm">
                 <div class="card-metadata">
                     <div class="title">
