@@ -91,6 +91,19 @@ class Contributor(index.Indexed, ClusterableModel):
     email = models.EmailField(blank=True)
     user = models.ForeignKey(User, null=True)
 
+    search_fields = [
+        index.SearchField('given_name', partial_match=True, boost=10),
+        index.SearchField('family_name', partial_match=True, boost=10),
+        index.RelatedFields('affiliations', [
+            index.SearchField('name', partial_match=True)
+        ]),
+        index.SearchField('email', partial_match=True),
+        index.RelatedFields('user', [
+            index.SearchField('first_name', partial_match=True, boost=10),
+            index.SearchField('last_name', partial_match=True, boost=10),
+        ]),
+    ]
+
     @property
     def name(self):
         return self.get_full_name()

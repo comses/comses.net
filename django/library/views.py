@@ -7,13 +7,13 @@ from django.http import FileResponse, Http404
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import resolve
 from django.views import View
-from rest_framework import viewsets, generics, parsers, renderers, status, permissions
+from rest_framework import viewsets, generics, parsers, renderers, status, permissions, filters
 from rest_framework.decorators import detail_route
 from rest_framework.exceptions import PermissionDenied as DrfPermissionDenied
 from rest_framework.response import Response
 
 from core.permissions import ComsesPermissions
-from core.view_helpers import add_change_delete_perms
+from core.view_helpers import add_change_delete_perms, get_search_queryset
 from core.views import FormViewSetMixin, FormUpdateView, FormCreateView
 from home.views import SmallResultSetPagination
 from .models import Codebase, CodebaseRelease, Contributor
@@ -227,14 +227,15 @@ class CodebaseReleaseFormUpdateView(FormUpdateView):
                                  codebase__identifier=identifier)
 
 
+class ContributorFilter(filters.BaseFilterBackend):
+    def filter_queryset(self, request, queryset, view):
+        q = request.query_params.get('query')
+        queryset = get_search_queryset(q, queryset)
+        return queryset
+
+
 class ContributorList(generics.ListAPIView):
     queryset = Contributor.objects.all()
     serializer_class = ContributorSerializer
     pagination_class = SmallResultSetPagination
-
-    def get_queryset(self):
-        q = {'given_name__istartswith': self.request.query_params.get('given_name'),
-             'family_name__istartswith': self.request.query_params.get('family_name'),
-             'type': self.request.query_params.get('type')}
-        q = {k: v for k, v in q.items() if v}
-        return self.queryset.filter(**q).order_by('family_name')
+    filter_backends = (ContributorFilter,)

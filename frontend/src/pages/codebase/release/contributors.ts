@@ -235,7 +235,7 @@ class EditReleaseContributor extends createFormValidator(releaseContributorSchem
 
     fetchMatchingContributors(searchQuery: string) {
         listContributors.cancel();
-        listContributors({family_name: searchQuery}, this);
+        listContributors({query: searchQuery}, this);
     }
 
     cancel() {
