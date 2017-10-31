@@ -13,8 +13,8 @@ PUBLISHED_ATTRIBUTE_KEY = "live"
 DELETABLE_ATTRIBUTE_KEY = 'deletable'
 
 
-def is_managed_model(perm: str):
-    return 'home.' in perm or 'library.' in perm or 'core.' in perm
+def is_handled_perm(perm: str):
+    return 'add_' in perm or 'change_' in perm or 'delete_' in perm or 'view_' in perm
 
 
 def is_object_action(perm: str):
@@ -22,7 +22,7 @@ def is_object_action(perm: str):
     :param perm: string permission
     :return: Returns True if the permission makes sense on an object
     """
-    return 'add_' not in perm
+    return 'change_' in perm or 'delete_' in perm or 'view_' in perm
 
 
 def is_view_action(perm: str):
@@ -134,7 +134,7 @@ class ComsesObjectPermissionBackend:
         if not user.is_active and not user.is_anonymous:
             raise PermissionDenied
 
-        if is_managed_model(perm):
+        if is_handled_perm(perm):
             return has_authenticated_model_permission(user, perm, obj) or \
                    has_delete_permission(perm, obj) or \
                    has_view_permission(perm, user, obj) or \
