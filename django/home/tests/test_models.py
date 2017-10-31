@@ -18,7 +18,7 @@ class MemberProfileTestCase(HypothesisTestCase):
         # empty fields
         self.assertFalse(member_profile.personal_url)
         self.assertFalse(member_profile.professional_url)
-        self.assertFalse(member_profile.bio)
+        self.assertFalse(str(member_profile.bio))
         # nullable fields
         self.assertIsNone(member_profile.orcid_url)
         self.assertIsNone(member_profile.github_url)
