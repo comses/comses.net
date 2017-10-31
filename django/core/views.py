@@ -125,7 +125,7 @@ class FormCreateView(PermissionRequiredByHttpMethodMixin, TemplateView):
 
 def rest_exception_handler(exc, context):
     request = context.get('request')
-    logger.warning(exc)
+    logger.warning("DRF exception handler %s", exc, exc_info=True)
     if request and request.accepted_media_type == 'text/html':
         if isinstance(exc, Http404):
             return page_not_found(request, context=context)

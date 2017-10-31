@@ -59,6 +59,10 @@ class CodebaseViewSet(FormViewSetMixin, viewsets.ModelViewSet):
             return RelatedCodebaseSerializer
         return CodebaseSerializer
 
+    def perform_create(self, serializer):
+        codebase = serializer.save()
+        release = codebase.get_or_create_draft()
+
     def retrieve(self, request, *args, **kwargs):
         instance = self.get_object()
 
