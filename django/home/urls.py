@@ -9,7 +9,7 @@ from . import views
 add_edit_router = AddEditRouter()
 
 router = SimpleRouter()
-router.register(r'tags', views.TagViewSet, base_name='tag')
+router.register(r'tags', views.TagListView, base_name='tag')
 router.register(r'events', views.EventViewSet, base_name='event')
 router.register(r'jobs', views.JobViewSet, base_name='job')
 router.register(r'users', views.ProfileViewSet, base_name='profile')

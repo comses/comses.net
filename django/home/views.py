@@ -13,7 +13,7 @@ from django.db.models.query_utils import Q
 from django.http import QueryDict, HttpResponseBadRequest, HttpResponseRedirect
 from django.shortcuts import get_object_or_404
 from django.utils.decorators import method_decorator
-from rest_framework import viewsets, generics, parsers, status, mixins, filters
+from rest_framework import viewsets, generics, parsers, status, mixins, filters, renderers
 from rest_framework.decorators import detail_route, list_route
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAuthenticated
@@ -278,14 +278,11 @@ class JobViewSet(FormViewSetMixin, viewsets.ModelViewSet):
         return retrieve_with_perms(self, request, *args, **kwargs)
 
 
-class TagViewSet(viewsets.ModelViewSet):
+class TagListView(mixins.ListModelMixin, viewsets.GenericViewSet):
     serializer_class = TagSerializer
     queryset = Tag.objects.all()
     pagination_class = SmallResultSetPagination
-
-    @property
-    def template_name(self):
-        return 'home/tags/{}.jinja'.format(self.action)
+    renderer_classes = (renderers.JSONRenderer,)
 
     def get_queryset(self):
         query = self.request.query_params.get('query')
