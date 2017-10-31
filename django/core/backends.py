@@ -1,3 +1,12 @@
+"""
+Custom permission checking for models
+
+Only add, change, delete and view permissions are handled by this layer.
+Other permissions are handled by Django Guardian
+
+Permissions must be between the ModelPermission backend and the Guardian backend.
+"""
+
 import logging
 
 from django.contrib.auth.models import User
@@ -14,6 +23,7 @@ DELETABLE_ATTRIBUTE_KEY = 'deletable'
 
 
 def is_handled_perm(perm: str):
+    """Permission prefixes handled by this permissions backend"""
     return 'add_' in perm or 'change_' in perm or 'delete_' in perm or 'view_' in perm
 
 
@@ -140,4 +150,5 @@ class ComsesObjectPermissionBackend:
                    has_view_permission(perm, user, obj) or \
                    has_submitter_permission(user, obj)
         else:
+            # Unhandled permissions are handled by the next permissions backend
             return False
