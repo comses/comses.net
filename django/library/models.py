@@ -700,7 +700,7 @@ class CodebaseReleasePublisher:
             raise ValidationError('Must have at least one source file')
 
     def copy_workdir_to_sip(self):
-        shutil.rmtree(str(self.codebase_release.submitted_package_path()))
+        shutil.rmtree(str(self.codebase_release.submitted_package_path()), ignore_errors=True)
         shutil.copytree(str(self.codebase_release.workdir_path), str(self.codebase_release.submitted_package_path()))
 
     def publish(self):
