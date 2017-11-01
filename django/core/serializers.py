@@ -2,6 +2,7 @@ import logging
 
 from django.contrib.auth.models import User
 from django.utils.translation import ugettext_lazy as _
+from markupfield.fields import Markup
 from rest_framework import serializers
 from taggit.models import Tag
 
@@ -86,3 +87,13 @@ def save_tags(instance, related, attr: str = 'tags'):
     getattr(instance, attr).clear()
     getattr(instance, attr).add(*db_tags)
 
+
+class MarkdownField(serializers.Field):
+
+    def to_representation(self, obj):
+        if isinstance(obj, Markup):
+            return obj.raw
+        return obj
+
+    def to_internal_value(self, data):
+        return data

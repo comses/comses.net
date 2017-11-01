@@ -15,7 +15,7 @@ ALLOWED_TAGS = bleach.ALLOWED_TAGS + [
 ]
 
 ALLOWED_ATTRIBUTES = dict(bleach.ALLOWED_ATTRIBUTES,
-                          **{'*': ['name', 'id', 'class'], 'img': 'alt',})
+                          **{'*': ['name', 'id', 'class'], 'img': 'alt'})
 
 DEFAULT_MARKDOWN_EXTENSIONS = [
     'markdown.extensions.extra',
@@ -51,7 +51,6 @@ class MarkdownField(MarkupField):
         ('', lambda markup: markup),
     )
 
-
     def __init__(self, **kwargs):
         kwargs.update(
             default_markup_type='markdown',
@@ -59,7 +58,6 @@ class MarkdownField(MarkupField):
             blank=True,
         )
         super(MarkdownField, self).__init__(**kwargs)
-
 
     def get_searchable_content(self, value):
         return self.get_prep_value(value)
