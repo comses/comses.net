@@ -54,14 +54,8 @@ const schema = yup.object().shape({
         <c-tagger v-model="programming_languages" placeholder="Type to add programming languages" 
             label="Programming Languages" help="Programming languages used in this model" :errorMsgs="errors.programming_languages">
         </c-tagger>
-        <div class="form-group" v-if="!isPublished">
-            <c-checkbox name="live" v-model="live" label="Published?">
-                <small class="form-text text-muted" slot="help">Published models are visible to everyone. Unpublished models are visible only to you.
-                    Once a model has been published files associated with the release cannot be added, modified or deleted.
-                </small>
-            </c-checkbox>
-        </div>
         <div :class="['form-group', {'child-is-invalid': errors.license.length > 0}]">
+            <label class="form-control-label">License</label>
             <multiselect v-model="license" label="name" track-by="name" placeholder="Type to find license" :options="licenseOptions">
                 <template slot="option" scope="props">
                     <div>
