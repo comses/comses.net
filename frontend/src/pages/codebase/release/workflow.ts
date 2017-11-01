@@ -95,7 +95,7 @@ class PublishModal extends Vue implements CreateOrUpdateHandler {
                     Unpublished
                 </span>
             </h1>
-            <ul class="nav">
+            <ul class="nav nav-tabs justify-content-center">
                 <li class="nav-item" v-if="!isPublished">
                     <router-link :to="{ name: 'code_upload'}" class="nav-link" active-class="disabled">Upload Code</router-link>
                 </li>
