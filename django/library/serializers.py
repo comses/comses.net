@@ -6,9 +6,8 @@ from django.utils.translation import ugettext_lazy as _
 from rest_framework import serializers
 from wagtail.wagtailimages.models import SourceImageIOError
 
-from core.serializers import (YMD_DATETIME_FORMAT, PUBLISH_DATE_FORMAT, LinkedUserSerializer, create, update,
-                              save_tags,
-                              TagSerializer)
+from core.serializers import (YMD_DATETIME_FORMAT, PUBLISH_DATE_FORMAT, LinkedUserSerializer, create, update, save_tags,
+                              TagSerializer, MarkdownField)
 from .models import ReleaseContributor, Codebase, CodebaseRelease, Contributor, License
 from home.common_serializers import RelatedMemberProfileSerializer
 
@@ -156,7 +155,7 @@ class CodebaseSerializer(serializers.ModelSerializer, FeaturedImageMixin):
     identifier = serializers.ReadOnlyField()
     tags = TagSerializer(many=True)
     # FIXME: output should be raw markdown, not rendered
-    # description = serializers.CharField(source='description.raw')
+    description = MarkdownField()
 
     def create(self, validated_data):
         serialized_tags = TagSerializer(many=True, data=validated_data.pop('tags'))
@@ -218,11 +217,12 @@ class CodebaseReleaseSerializer(serializers.ModelSerializer):
     last_published_on = serializers.DateTimeField(format=PUBLISH_DATE_FORMAT, read_only=True)
     license = LicenseSerializer()
     live = serializers.ReadOnlyField()
-    os_display = serializers.CharField(read_only=True, source='get_os_display')
+    os_display = serializers.ReadOnlyField(source='get_os_display')
     platforms = TagSerializer(many=True, source='platform_tags')
     programming_languages = TagSerializer(many=True)
     submitter = LinkedUserSerializer(read_only=True, label='Submitter')
     version_number = serializers.ReadOnlyField()
+    description = MarkdownField()
 
     class Meta:
         model = CodebaseRelease
