@@ -156,6 +156,7 @@ interface AbstractCodebaseRelease extends UndefinedWithId {
     os: string
     peer_reviewed: boolean
     platforms: Array<{ name: string }>
+    possible_licenses: Array<{ name: string, url: string}>
     programming_languages: Array<{ name: string }>
     submitted_package: string
     submitter: User

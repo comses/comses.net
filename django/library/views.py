@@ -18,7 +18,7 @@ from core.views import FormViewSetMixin, FormUpdateView, FormCreateView
 from home.views import SmallResultSetPagination
 from .models import Codebase, CodebaseRelease, Contributor
 from .serializers import (CodebaseSerializer, RelatedCodebaseSerializer, CodebaseReleaseSerializer,
-                          ContributorSerializer, ReleaseContributorSerializer)
+                          ContributorSerializer, ReleaseContributorSerializer, CodebaseReleaseEditSerializer)
 
 logger = logging.getLogger(__name__)
 
@@ -115,9 +115,15 @@ class CodebaseReleaseViewSet(FormViewSetMixin, viewsets.ModelViewSet):
     lookup_value_regex = r'\d+\.\d+\.\d+'
 
     queryset = CodebaseRelease.objects.all()
-    serializer_class = CodebaseReleaseSerializer
     pagination_class = SmallResultSetPagination
     permission_classes = (NestedCodebaseReleasePermission, ComsesPermissions,)
+
+    def get_serializer_class(self):
+        edit = self.request.query_params.get('edit')
+        if edit is not None:
+            return CodebaseReleaseEditSerializer
+        else:
+            return CodebaseReleaseSerializer
 
     @property
     def template_name(self):

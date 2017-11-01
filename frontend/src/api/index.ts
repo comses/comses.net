@@ -103,6 +103,9 @@ export const codebaseReleaseAPI = {
     detailUrl({identifier, version_number}) {
         return `/codebases/${identifier}/releases/${version_number}/`;
     },
+    detailEditUrl({identifier, version_number}) {
+        return `${this.detailUrl({identifier, version_number})}?edit`
+    },
     listFileUrl({identifier, version_number, upload_type}) {
         return `${this.detailUrl({identifier, version_number})}files/${upload_type}/`;
     },
@@ -113,7 +116,7 @@ export const codebaseReleaseAPI = {
         return api.post(`${this.detailUrl({identifier, version_number})}publish/`, publish_component);
     },
     retrieve({identifier, version_number}) {
-        return api.get(this.detailUrl({identifier, version_number}));
+        return api.get(this.detailEditUrl({identifier, version_number}));
     },
     listFiles({identifier, version_number, upload_type}) {
         return api.get(this.listFileUrl({identifier, version_number, upload_type}));
@@ -128,7 +131,7 @@ export const codebaseReleaseAPI = {
     },
     updateDetail({identifier, version_number}, detail) {
         return api.put(
-            this.detailUrl({identifier, version_number}), detail)
+            this.detailEditUrl({identifier, version_number}), detail)
     },
     updateContributors({identifier, version_number}, contributors) {
         return api.put(this.updateContributorUrl({identifier, version_number}), contributors)

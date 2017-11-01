@@ -224,20 +224,35 @@ class CodebaseReleaseSerializer(serializers.ModelSerializer):
     submitter = LinkedUserSerializer(read_only=True, label='Submitter')
     version_number = serializers.ReadOnlyField()
 
+    class Meta:
+        model = CodebaseRelease
+        fields = ('absolute_url', 'citation_text', 'release_contributors', 'date_created', 'dependencies',
+                  'description', 'documentation', 'doi', 'download_count', 'embargo_end_date', 'first_published_at',
+                  'last_modified', 'last_published_on', 'license', 'live', 'os', 'os_display', 'peer_reviewed',
+                  'platforms', 'programming_languages', 'submitted_package', 'submitter', 'codebase', 'version_number',
+                  'id',)
+
+
+class CodebaseReleaseEditSerializer(CodebaseReleaseSerializer):
+    possible_licenses = serializers.SerializerMethodField()
+
+    def get_possible_licenses(self, instance):
+        serialized = LicenseSerializer(License.objects.all(), many=True)
+        return serialized.data
+
     def update(self, instance, validated_data):
         programming_languages = TagSerializer(many=True, data=validated_data.pop('programming_languages'))
         platform_tags = TagSerializer(many=True, data=validated_data.pop('platform_tags'))
 
-        license_serializer = LicenseSerializer(data=validated_data.pop('license'))
-        license_serializer.is_valid(raise_exception=True)
-        license = license_serializer.save()
+        raw_license = validated_data.pop('license')
+        existing_license = License.objects.get(name=raw_license['name'])
 
         save_tags(instance, programming_languages, 'programming_languages')
         save_tags(instance, platform_tags, 'platform_tags')
 
         instance = super().update(instance, validated_data)
 
-        instance.license = license
+        instance.license = existing_license
         instance.save()
 
         return instance
@@ -253,8 +268,4 @@ class CodebaseReleaseSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = CodebaseRelease
-        fields = ('absolute_url', 'citation_text', 'release_contributors', 'date_created', 'dependencies',
-                  'description', 'documentation', 'doi', 'download_count', 'embargo_end_date', 'first_published_at',
-                  'last_modified', 'last_published_on', 'license', 'live', 'os', 'os_display', 'peer_reviewed',
-                  'platforms', 'programming_languages', 'submitted_package', 'submitter', 'codebase', 'version_number',
-                  'id',)
+        fields = CodebaseReleaseSerializer.Meta.fields + ('possible_licenses',)

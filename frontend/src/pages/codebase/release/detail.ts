@@ -99,15 +99,9 @@ export default class Description extends createFormValidator(schema) {
 
     message: string = '';
 
-    licenseOptions: Array<{ name: string, url: string }> = [
-        { name: 'Library GPL', url: 'https://www.gnu.org/licenses/lgpl.html' },
-        { name: 'GPL V2', url: 'https://www.gnu.org/licenses/gpl-2.0.en.html' },
-        { name: 'GPL V3', url: 'https://www.gnu.org/licenses/gpl-3.0.en.html' },
-        { name: 'MIT', url: 'https://opensource.org/licenses/MIT' },
-        { name: 'Apache 2.0', url: 'https://opensource.org/licenses/Apache-2.0' },
-        { name: 'BSD 3-Clause', url: 'https://opensource.org/licenses/BSD-3-Clause' },
-        { name: 'BSD 2-Clause', url: 'https://opensource.org/licenses/BSD-2-Clause' }
-    ];
+    get licenseOptions() {
+        return this.$store.state.release.possible_licenses
+    }
 
     osOptions = [
         { name: 'other', display: 'Other' },
@@ -147,7 +141,7 @@ export default class Description extends createFormValidator(schema) {
     }
 
     async save() {
-        const { identifier, version_number } = this.identity;
+        const {identifier, version_number} = this.identity;
         const self: any = this;
         await self.validate();
         const response = await codebaseReleaseAPI.updateDetail({

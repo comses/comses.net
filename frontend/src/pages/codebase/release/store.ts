@@ -51,6 +51,7 @@ const initialState: CodebaseReleaseStore = {
         os: '',
         peer_reviewed: false,
         platforms: [],
+        possible_licenses: [],
         programming_languages: [],
         submitted_package: '',
         submitter: {
