@@ -144,6 +144,7 @@ export interface Dependency {
 
 // codebase_contributors, dependencies, description, documentation, doi, download_count, enbargo_end_date, license, os, peer_reviewed, platforms, programming_languages, submitted_package, submitter, version_number
 interface AbstractCodebaseRelease extends UndefinedWithId {
+    absolute_url: string;
     release_contributors: Array<CodebaseContributor>
     dependencies: Array<Dependency>
     description: string

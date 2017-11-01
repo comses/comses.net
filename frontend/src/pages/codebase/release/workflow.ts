@@ -9,14 +9,12 @@ import CodebaseReleaseMetadata from './detail'
 import {store} from './store'
 import {CreateOrUpdateHandler} from "api/handler";
 import {codebaseReleaseAPI} from "api";
-import $ from 'jquery';
 import * as _ from 'lodash';
 
 Vue.use(Vuex);
 Vue.use(VueRouter);
 
 @Component({
-    // name: 'c-publish-modal',
     template: `<div class="modal fade" id="publishCodebaseReleaseModal">
         <div class="modal-dialog" role="document">
             <div class="modal-content">
@@ -52,6 +50,9 @@ class PublishModal extends Vue implements CreateOrUpdateHandler {
     @Prop()
     version_number: number;
 
+    @Prop()
+    absolute_url: string;
+
     errorMessages: Array<string> = [];
 
     clear() {
@@ -68,13 +69,11 @@ class PublishModal extends Vue implements CreateOrUpdateHandler {
     }
 
     handleSuccessWithoutDataResponse(response) {
-        this.clear();
-        $('#publishCodebaseReleaseModal').hide();
+        window.location.pathname = this.absolute_url;
     }
 
     handleSuccessWithDataResponse(response) {
-        this.clear();
-        $('#publishCodebaseReleaseModal').hide();
+        window.location.pathname = this.absolute_url;
     }
 
     publish() {
@@ -90,7 +89,7 @@ class PublishModal extends Vue implements CreateOrUpdateHandler {
     },
     template: `<div>
         <div v-if="isInitialized">
-            <h1>{{ $store.state.release.codebase.title }} <i>v{{ $store.state.release.version_number }}</i> 
+            <h1><a :href="absolute_url">{{ $store.state.release.codebase.title }} <i>v{{ $store.state.release.version_number }}</i></a> 
                 <span class="badge badge-secondary" v-if="isPublished">Published</span>
                 <span class="badge badge-warning" data-target="#publishCodebaseReleaseModal" data-toggle="modal" v-else>
                     Unpublished
@@ -119,7 +118,7 @@ class PublishModal extends Vue implements CreateOrUpdateHandler {
                 </li>
             </ul>
             <router-view :initialData="initialData"></router-view>
-            <c-publish-modal :version_number="version_number" :identifier="identifier"></c-publish-modal>
+            <c-publish-modal :version_number="version_number" :identifier="identifier" :absolute_url="absolute_url"></c-publish-modal>
         </div>
         <div v-else>
             <h1>Loading codebase release metadata...</h1>
@@ -170,6 +169,10 @@ class Workflow extends Vue {
     version_number: string;
 
     isInitialized: boolean = false;
+
+    get absolute_url() {
+        return this.$store.state.release.absolute_url;
+    }
 
     get isPublished() {
         return this.$store.state.release.live;

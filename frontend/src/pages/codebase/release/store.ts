@@ -39,6 +39,7 @@ const initialState: CodebaseReleaseStore = {
             tags: [],
             title: ''
         },
+        absolute_url: '',
         release_contributors: [],
         dependencies: [],
         description: '',
