@@ -23,8 +23,8 @@ from wagtail.wagtailimages.models import Image
 from wagtail.wagtailsearch import index
 from wagtail.wagtailsnippets.models import register_snippet
 
-from core.backends import get_viewable_objects_for_user
 from library.models import Codebase
+from .backends import get_viewable_objects_for_user
 from .fields import MarkdownField
 
 

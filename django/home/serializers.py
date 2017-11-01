@@ -6,7 +6,7 @@ from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 
 from core.models import Institution, MemberProfile, Event, Job
-from core.serializers import (PUBLISH_DATE_FORMAT, LinkedUserSerializer, TagSerializer, create, update)
+from core.serializers import (PUBLISH_DATE_FORMAT, LinkedUserSerializer, TagSerializer, create, update, MarkdownField)
 from library.models import Codebase
 from library.serializers import RelatedCodebaseSerializer
 from .models import (FeaturedContentItem, UserMessage)
@@ -20,6 +20,7 @@ class EventSerializer(serializers.ModelSerializer):
                                         read_only=True, help_text=_('URL to the detail page of the event'))
     date_created = serializers.DateTimeField(format=PUBLISH_DATE_FORMAT, read_only=True)
     last_modified = serializers.DateTimeField(format=PUBLISH_DATE_FORMAT, read_only=True)
+    description = MarkdownField()
 
     tags = TagSerializer(many=True, label='Tags')
 
@@ -92,6 +93,7 @@ class JobSerializer(serializers.ModelSerializer):
         help_text=_('URL to the detail page of the job'))
 
     date_created = serializers.DateTimeField(format=PUBLISH_DATE_FORMAT, read_only=True)
+    description = MarkdownField()
     last_modified = serializers.DateTimeField(format=PUBLISH_DATE_FORMAT, read_only=True)
     tags = TagSerializer(many=True, label='Tags')
 
@@ -140,6 +142,8 @@ class MemberProfileSerializer(serializers.ModelSerializer):
     github_url = serializers.ReadOnlyField()
     keywords = TagSerializer(many=True)
     profile_url = serializers.URLField(source='get_absolute_url', read_only=True)
+    bio = MarkdownField()
+    research_interests = MarkdownField()
 
     def get_avatar(self, instance):
         request = self.context.get('request')
