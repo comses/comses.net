@@ -14,7 +14,7 @@ class RelatedMemberProfileSerializer(serializers.ModelSerializer):
     institution_name = serializers.CharField(source='member_profile.institution.name', read_only=True)
     institution_url = serializers.URLField(source='member_profile.institution.url', read_only=True)
     profile_url = serializers.URLField(source='member_profile.get_absolute_url', read_only=True)
-    username = serializers.CharField(read_only=True)
+    username = serializers.CharField()
 
     def get_full_name(self, instance):
         full_name = instance.get_full_name()

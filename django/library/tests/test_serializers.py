@@ -1,3 +1,5 @@
+from django.contrib.auth.models import User
+
 from .base import BaseModelTestCase
 from ..models import Codebase
 from ..serializers import ContributorSerializer, ReleaseContributorSerializer
@@ -5,10 +7,12 @@ from ..serializers import ContributorSerializer, ReleaseContributorSerializer
 
 class SerializerTestCase(BaseModelTestCase):
     def create_raw_user(self):
+        username = 'foo.bar'
+        User.objects.get_or_create(username=username)
         return {
             'institution_name': 'SHESC',
             'institution_url': 'http://shesc.asu.edu',
-            'username': 'foo.bar'
+            'username': username
         }
 
     def create_raw_contributor(self):

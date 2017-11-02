@@ -41,7 +41,7 @@ class ContributorSerializer(serializers.ModelSerializer):
         affiliations_serializer = TagSerializer(many=True, data=validated_data.pop('affiliations'))
         raw_user = validated_data.pop('user')
         if raw_user:
-            user = User.objects.get(username=validated_data.pop('user')['username'])
+            user = User.objects.get(username=raw_user['username'])
         else:
             user = None
         validated_data['user_id'] = user.id if user else None
@@ -138,7 +138,7 @@ class RelatedCodebaseReleaseSerializer(serializers.ModelSerializer):
     class Meta:
         model = CodebaseRelease
         fields = ('absolute_url', 'release_contributors', 'submitter', 'first_published_at', 'last_published_on',
-                  'version_number', 'live', 'draft', )
+                  'version_number', 'live', 'draft',)
 
 
 class CodebaseSerializer(serializers.ModelSerializer, FeaturedImageMixin):
@@ -154,6 +154,7 @@ class CodebaseSerializer(serializers.ModelSerializer, FeaturedImageMixin):
     summarized_description = serializers.CharField(read_only=True)
     identifier = serializers.ReadOnlyField()
     tags = TagSerializer(many=True)
+
     # FIXME: output should be raw markdown, not rendered
     description = MarkdownField()
 
@@ -253,6 +254,7 @@ class CodebaseReleaseEditSerializer(CodebaseReleaseSerializer):
         instance = super().update(instance, validated_data)
 
         instance.license = existing_license
+        instance.draft = False
         instance.save()
 
         return instance

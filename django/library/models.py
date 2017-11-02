@@ -3,6 +3,7 @@ import os
 import pathlib
 import shutil
 import uuid
+from datetime import datetime
 from enum import Enum
 from zipfile import ZipFile
 
@@ -664,13 +665,6 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
     def get_or_create_sip_bag(self):
         return fs.make_bag(str(self.submitted_package_path()), self.bagit_info)
 
-    def save_draft(self):
-        self.draft = False
-        release = CodebaseRelease.objects.filter(codebase__identifier=self.codebase.identifier, draft=True).first()
-        if release:
-            self.id = release.id
-        self.save()
-
     def publish(self):
         publisher = CodebaseReleasePublisher(self)
         publisher.publish()
@@ -707,6 +701,9 @@ class CodebaseReleasePublisher:
         if not self.codebase_release.live:
             self.is_publishable()
             self.copy_workdir_to_sip()
+            now = datetime.utcnow()
+            self.codebase_release.first_published_at = now
+            self.codebase_release.last_published_on = now
             self.codebase_release.live = True
             self.codebase_release.save()
 

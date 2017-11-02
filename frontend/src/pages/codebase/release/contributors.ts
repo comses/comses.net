@@ -92,10 +92,10 @@ enum FormContributorState {
                     </c-input>
                     <c-input name="family_name" v-model="family_name" label="Family Name" :errorMsgs="errors.family_name">
                     </c-input>
-                    <c-edit-affiliations :value="affiliations"
-                        @create="affiliations.push($event)"
-                        @remove="affiliations.splice($event, 1)"
-                        @modify="affiliations.splice($event.index, 1, $event.value)"
+                    <c-edit-affiliations :value="affiliations.map(x => x.name)"
+                        @create="affiliations.push({ 'name': $event})"
+                        @remove="affiliations.splice({ 'name': $event}, 1)"
+                        @modify="affiliations.splice($event.index, 1, { 'name': $event.value })"
                         name="affiliations" placeholder="Add affiliation"
                         :errorMsgs="errors.affiliations"
                         label="Affiliations"
