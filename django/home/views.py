@@ -141,13 +141,13 @@ class EventFilter(filters.BaseFilterBackend):
 
         q = request.query_params.get('query')
         submission_deadline__gte = request.query_params.get('submission_deadline__gte')
-        event_start_date__gte = parse_datetime(request.query_params.get('event_state_date__gte'))
+        start_date__gte = parse_datetime(request.query_params.get('state_date__gte'))
         tags = request.query_params.get('tags', [])
 
         if submission_deadline__gte:
             queryset = queryset.filter(submission_deadline__gte=submission_deadline__gte)
-        if event_start_date__gte:
-            queryset = queryset.filter(event_start_date__gte=event_start_date__gte)
+        if start_date__gte:
+            queryset = queryset.filter(start_date__gte=start_date__gte)
         for tag in tags:
             queryset = queryset.filter(tags__name=tag)
 

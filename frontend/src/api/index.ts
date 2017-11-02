@@ -4,12 +4,12 @@ import {api} from 'api/connection'
 import {CreateOrUpdateHandler} from "api/handler";
 
 export const eventAPI = {
-    baseUrl: '/jobs/',
+    baseUrl: '/events/',
     detailUrl(id: number) {
-        return `/events/${id}/`;
+        return `${this.baseUrl}${id}/`;
     },
     createUrl() {
-        return `/events/`;
+        return this.baseUrl;
     },
     delete(id: number) {
         return api.delete(this.detailUrl(id));

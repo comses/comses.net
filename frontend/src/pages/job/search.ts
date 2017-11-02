@@ -6,6 +6,7 @@ import Input from 'components/forms/input'
 import Tagger from 'components/tagger'
 import * as queryString from 'query-string'
 import * as _ from 'lodash'
+import {jobAPI} from 'api';
 
 
 @Component({
@@ -50,8 +51,8 @@ import * as _ from 'lodash'
 export class SearchJobs extends Vue {
     fullTextSearch: string = '';
 
-    initialPostingDate = (new Date()).toISOString();
-    lastModifiedDate = (new Date()).toISOString();
+    initialPostingDate = null;
+    lastModifiedDate = null;
 
     tags: Array<{name: string}> = [];
     contributors = [];
@@ -59,8 +60,8 @@ export class SearchJobs extends Vue {
     get query() {
         const queryObject = {
             query: this.fullTextSearch,
-            date_created__gt: this.initialPostingDate,
-            last_modified__gt: this.lastModifiedDate,
+            date_created__gte: this.initialPostingDate,
+            last_modified__gte: this.lastModifiedDate,
             tags: this.tags.map(tag => tag.name)
         };
         Object.keys(queryObject).forEach(key => {
@@ -69,6 +70,6 @@ export class SearchJobs extends Vue {
            }
         });
         const qs = queryString.stringify(queryObject);
-        return `/search/${ qs ? `?${qs}`: ''}`;
+        return `${jobAPI.baseUrl}${ qs ? `?${qs}`: ''}`;
     }
 }

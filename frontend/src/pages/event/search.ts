@@ -6,6 +6,7 @@ import Input from 'components/forms/input'
 import Tagger from 'components/tagger'
 import * as queryString from 'query-string'
 import * as _ from 'lodash'
+import {eventAPI} from 'api'
 
 
 @Component({
@@ -27,8 +28,6 @@ import * as _ from 'lodash'
                         <c-date-picker v-model="startDate" name="startDate" :clearButton="true">
                             <label class="form-control-label" slot="label">Event Start Date</label>
                         </c-date-picker>
-                        <c-input v-model="location" name="location" label="Location of Event">
-                        </c-input>
                     </div>
                 </div>
                 <div class="card-metadata">
@@ -52,9 +51,8 @@ import * as _ from 'lodash'
 export class SearchEvents extends Vue {
     fullTextSearch: string = '';
 
-    submissionDeadline = (new Date()).toISOString();
-    startDate = (new Date()).toISOString();
-    location: string = '';
+    submissionDeadline = null;
+    startDate = null;
 
     tags: Array<{name: string}> = [];
     contributors = [];
@@ -62,9 +60,8 @@ export class SearchEvents extends Vue {
     get query() {
         const queryObject = {
             query: this.fullTextSearch,
-            start_date__gt: this.startDate,
-            submission_deadline__th: this.submissionDeadline,
-            location: this.location,
+            start_date__gte: this.startDate,
+            submission_deadline__gte: this.submissionDeadline,
             tags: this.tags.map(tag => tag.name)
         };
         Object.keys(queryObject).forEach(key => {
@@ -73,6 +70,6 @@ export class SearchEvents extends Vue {
            }
         });
         const qs = queryString.stringify(queryObject);
-        return `/search/${ qs ? `?${qs}`: ''}`;
+        return `${eventAPI.baseUrl}${ qs ? `?${qs}`: ''}`;
     }
 }
