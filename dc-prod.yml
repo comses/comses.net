@@ -104,6 +104,7 @@ services:
       - ./deploy/conf/config.ini:/secrets/config.ini
       - ./deploy/elasticsearch.conf.d:/etc/elasticsearch
       - ./django/deploy/prod.sh:/etc/service/django/run
+      - ./docker/shared/backups:/shared/backups
       - ./docker/shared/input:/shared/input
       - ./docker/shared/logs/cms:/shared/logs
       - ./docker/shared/library:/shared/library
