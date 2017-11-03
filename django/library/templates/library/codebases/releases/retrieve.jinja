@@ -182,11 +182,15 @@
                                     {% endif %}
                                 </td>
                                 <td>
-                                    <a href="{{ url('library:codebaserelease-edit',
-                                        identifier=codebase.identifier,
-                                        version_number=release.version_number) }}">
-                                        <span class="fa fa-edit"></span>
-                                    </a>
+                                    {% if not release.live %}
+                                        <a href="{{ url('library:codebaserelease-edit',
+                                            identifier=codebase.identifier,
+                                            version_number=release.version_number) }}">
+                                            <span class="fa fa-edit"></span>
+                                        </a>
+                                    {% else %}
+                                        <span class="fa fa-minus-circle"></span>
+                                    {% endif %}
                                 </td>
                             {% endif %}
                         </tr>

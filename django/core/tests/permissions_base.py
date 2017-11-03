@@ -81,7 +81,11 @@ class ResponseStatusCodesMixin:
         user = response.wsgi_request.user
         user_msg = '<{} is_superuser={} is_active={} is_anonymous={}>'.format(
             user.username, user.is_superuser, user.is_active, user.is_anonymous)
-        return 'Response not {} for user {}'.format(name, user_msg)
+        data = getattr(response, 'data', None)
+        msg = 'Response not {} for user {}'.format(name, user_msg)
+        if data is not None:
+            msg += '. Got {}'.format(data)
+        return msg
 
     def assertResponseOk(self, response):
         self.assertEqual(response.status_code, status.HTTP_200_OK,
@@ -110,7 +114,6 @@ class ResponseStatusCodesMixin:
     def assertResponseNotFound(self, response):
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND,
                          msg=self.responseErrorMessage(response, 'NOT FOUND'))
-
 
 
 class BaseViewSetTestCase(ApiAccountMixin, ResponseStatusCodesMixin, APITestCase):

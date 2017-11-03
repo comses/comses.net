@@ -229,7 +229,7 @@ export const store = {
         initialize(context, { identifier, version_number }) {
             return context.dispatch('getCodebaseRelease', { identifier, version_number })
                 .then(r => Promise.all([context.dispatch('getFiles', 'data'),
-                    context.dispatch('getFiles', 'documentation'), context.dispatch('getFiles', 'sources'), context.dispatch('getFiles', 'images')]));
+                    context.dispatch('getFiles', 'docs'), context.dispatch('getFiles', 'code'), context.dispatch('getFiles', 'media')]));
         }
     }
 };

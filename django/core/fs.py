@@ -5,10 +5,19 @@ import os
 import shutil
 
 import bagit
+import pathlib
 import rarfile
 from PIL import Image
+from django.core.exceptions import SuspiciousFileOperation
 
 logger = logging.getLogger(__name__)
+
+
+def is_subpath(basepath: pathlib.Path, path: pathlib.Path):
+    if basepath not in path.parents:
+        raise SuspiciousFileOperation(
+            'The joined path ({}) is located outside of the base path '
+            'component ({})'.format(str(path), str(basepath)))
 
 
 def is_archive(path: str):

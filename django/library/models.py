@@ -503,6 +503,10 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
         return reverse('library:codebaserelease-detail',
                        kwargs={'identifier': self.codebase.identifier, 'version_number': self.version_number})
 
+    @property
+    def library_path(self):
+        return self.codebase.subpath('releases', 'v{}'.format(self.version_number))
+
     # FIXME: lift magic constants
     @property
     def handle_url(self):
@@ -567,74 +571,9 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
     def archive_path(self):
         return self.get_library_path('archive.zip')
 
-    def save_file(self, file_obj):
-        """Extract the archive, inspect it's contents and if it's valid store with other releases"""
-        pass
-
     @property
     def index_ordered_release_contributors(self):
         return self.codebase_contributors.order_by('index')
-
-    def _add_file(self, fileobj, destination_folder: str):
-        path = safe_join(str(self.workdir_path), destination_folder, fileobj.name)
-        logger.debug('add file path %s', path)
-        os.makedirs(os.path.dirname(path), exist_ok=True)
-        with open(path, 'wb') as source_file:
-            shutil.copyfileobj(fileobj, source_file)
-
-    def _add_archive_file(self, fileobj, destination_folder: str):
-        base_path = str(self.workdir_path)
-        archive_path = safe_join(base_path, fileobj.name)
-        path = safe_join(base_path, destination_folder)
-
-        os.makedirs(os.path.dirname(archive_path), exist_ok=True)
-        os.makedirs(path, exist_ok=True)
-
-        with open(archive_path, 'wb') as archive:
-            shutil.copyfileobj(fileobj, archive)
-        shutil.unpack_archive(archive_path, path)
-
-    UPLOAD_TYPE_TO_FOLDERNAME = {'data': 'data', 'documentation': 'doc', 'sources': 'code', 'images': 'images'}
-
-    def get_absolute_upload_retrieve_url(self, upload_type: str, relpath: str):
-        return reverse('library:codebaserelease-download-unpublished',
-                       kwargs={'identifier': self.codebase.identifier, 'version_number': self.version_number,
-                               'upload_type': upload_type, 'path': relpath})
-
-    def add_upload(self, upload_type: str, fileobj):
-        foldername = self.UPLOAD_TYPE_TO_FOLDERNAME[upload_type]
-        name = os.path.basename(fileobj.name)
-        if fs.is_archive(name):
-            self._add_archive_file(fileobj, foldername)
-        else:
-            self._add_file(fileobj, foldername)
-
-    def list_uploads(self, upload_type: str):
-        foldername = self.UPLOAD_TYPE_TO_FOLDERNAME[upload_type]
-        rootdir = safe_join(str(self.workdir_path), foldername)
-        paths = []
-        for dirpath, dirnames, filenames in os.walk(rootdir):
-            for filename in filenames:
-                relpath = os.path.relpath(os.path.join(dirpath, filename), rootdir)
-                paths.append(
-                    dict(path=relpath, url=self.get_absolute_upload_retrieve_url(upload_type, relpath)))
-        return paths
-
-    def delete_upload(self, upload_type: str, relpath: str):
-        foldername = self.UPLOAD_TYPE_TO_FOLDERNAME[upload_type]
-        path = safe_join(str(self.workdir_path), foldername, relpath)
-        if os.path.isdir(path):
-            shutil.rmtree(path)
-        else:
-            os.unlink(path)
-
-    def retrieve_upload(self, upload_type: str, relpath: str):
-        foldername = self.UPLOAD_TYPE_TO_FOLDERNAME[upload_type]
-        path = safe_join(str(self.workdir_path), foldername, relpath)
-        if os.path.isfile(path):
-            return open(path, 'rb')
-        else:
-            raise FileNotFoundError('File "{}" does not exist'.format(relpath))
 
     def retrieve_archive(self):
         if not self.archive_path.exists():
@@ -685,7 +624,7 @@ class CodebaseReleasePublisher:
     def is_publishable(self):
         if self.codebase_release.contributors.count() < 1:
             raise ValidationError('Must have at least one contributor to publish a release')
-        path = self.codebase_release.workdir_path.joinpath('code')
+        path = self.codebase_release.submitted_package_path('data').joinpath('code')
         if path.exists():
             files = os.listdir(str(path))
         else:
@@ -693,14 +632,9 @@ class CodebaseReleasePublisher:
         if not files:
             raise ValidationError('Must have at least one source file')
 
-    def copy_workdir_to_sip(self):
-        shutil.rmtree(str(self.codebase_release.submitted_package_path()), ignore_errors=True)
-        shutil.copytree(str(self.codebase_release.workdir_path), str(self.codebase_release.submitted_package_path()))
-
     def publish(self):
         if not self.codebase_release.live:
             self.is_publishable()
-            self.copy_workdir_to_sip()
             now = datetime.utcnow()
             self.codebase_release.first_published_at = now
             self.codebase_release.last_published_on = now
