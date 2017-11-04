@@ -29,7 +29,9 @@ WAGTAILSEARCH_BACKENDS = {
         'BACKEND': 'wagtail.wagtailsearch.backends.elasticsearch5',
         'URLS': ['http://elasticsearch:9200'],
         'INDEX': 'wagtail',
-        'ATOMIC_REBUILD': True,
+        # FIXME: ATOMIC_REBUILD still generates elasticsearch errors as of ES 5.6.3 and Wagtail 1.13:
+        # http://docs.wagtail.io/en/v1.13/topics/search/backends.html#atomic-rebuild
+        # 'ATOMIC_REBUILD': True,
         'AUTO_UPDATE': True,
         'TIMEOUT': 10,
         'OPTIONS': {
