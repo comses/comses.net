@@ -12,7 +12,7 @@ from rest_framework.exceptions import ValidationError
 
 from core.tests.base import UserFactory
 from core.tests.permissions_base import BaseViewSetTestCase, create_perm_str, ResponseStatusCodesMixin, ApiAccountMixin
-from library.fs import CodebaseReleaseFsApi, PossibleDirectories, ListLogger
+from library.fs import CodebaseReleaseFsApi, FileCategoryDirectories, StagingDirectories
 from library.models import Codebase
 from .base import CodebaseFactory, CodebaseReleaseFactory, ContributorFactory, ReleaseContributorFactory
 from ..views import CodebaseViewSet, CodebaseReleaseViewSet
@@ -33,8 +33,7 @@ class CodebaseViewSetTestCase(BaseViewSetTestCase):
         self.create_representative_users(submitter)
         self.instance_factory = CodebaseFactory(submitter=submitter)
         self.instance = self.instance_factory.create()
-        self.release_factory = CodebaseReleaseFactory(submitter=submitter, codebase=self.instance)
-        self.release_factory.create(live=True)
+        self.instance.create_release(live=True, initialize=False)
 
     def assertResponseNoPermission(self, instance, response):
         if instance.live:
@@ -53,32 +52,32 @@ class CodebaseViewSetTestCase(BaseViewSetTestCase):
     def check_destroy(self):
         for user in self.users_able_to_login:
             codebase = self.instance_factory.create()
-            self.release_factory.create(codebase=codebase)
+            self.instance.create_release(initialize=False)
             codebase = Codebase.objects.with_liveness().get(id=codebase.id)
             self.with_logged_in(user, codebase, self.check_destroy_permissions)
 
             other_codebase = self.instance_factory.create()
-            self.release_factory.create(codebase=other_codebase)
+            other_codebase.create_release(initialize=False)
             other_codebase = Codebase.objects.with_liveness().get(id=other_codebase.id)
             assign_perm(create_perm_str(other_codebase, 'delete'), user_or_group=user, obj=other_codebase)
             self.with_logged_in(user, other_codebase, self.check_destroy_permissions)
 
         codebase = self.instance_factory.create()
-        self.release_factory.create(codebase=codebase)
+        codebase.create_release(initialize=False)
         codebase = Codebase.objects.with_liveness().get(id=codebase.id)
         self.check_destroy_permissions(self.anonymous_user, codebase)
 
     def check_update(self):
         for user in self.users_able_to_login:
             codebase = self.instance_factory.create()
-            self.release_factory.create(codebase=codebase)
+            codebase.create_release(initialize=False)
             codebase = Codebase.objects.with_liveness().get(id=codebase.id)
             self.with_logged_in(user, codebase, self.check_update_permissions)
             assign_perm(create_perm_str(self.instance, 'change'), user_or_group=user, obj=codebase)
             self.with_logged_in(user, codebase, self.check_update_permissions)
 
         codebase = self.instance_factory.create()
-        self.release_factory.create(codebase=codebase)
+        codebase.create_release(initialize=False)
         codebase = Codebase.objects.with_liveness().get(id=codebase.id)
         self.check_update_permissions(self.anonymous_user, codebase)
 
@@ -112,7 +111,7 @@ class CodebaseReleaseViewSetTestCase(BaseViewSetTestCase):
         self.other_user = self.user_factory.create(username='other_user')
         codebase_factory = CodebaseFactory(submitter=self.submitter)
         self.codebase = codebase_factory.create()
-        self.codebase_release = self.codebase.create_release(draft=False)
+        self.codebase_release = self.codebase.create_release(draft=False, initialize=False)
         self.path = self.codebase_release.get_list_url()
 
     def test_release_creation_only_if_codebase_change_permission(self):
@@ -139,19 +138,19 @@ class CodebaseReleaseUnpublishedFilesTestCase(ApiAccountMixin, ResponseStatusCod
         self.other_user = self.user_factory.create(username='other_user')
         codebase_factory = CodebaseFactory(submitter=self.submitter)
         self.codebase = codebase_factory.create()
-        self.codebase_release = self.codebase.create_release(draft=False)
+        self.codebase_release = self.codebase.create_release(draft=False, initialize=False)
 
     def test_upload_file(self):
-        api = CodebaseReleaseFsApi(self.codebase_release)
+        api = self.codebase_release.get_fs_api()
 
         # Unpublished codebase release permissions
-        response = self.client.post(api.get_list_url(PossibleDirectories.code))
+        response = self.client.post(api.get_originals_list_url(category=FileCategoryDirectories.code))
         self.assertResponsePermissionDenied(response)
         for user, expected_status_code in [(self.submitter, status.HTTP_400_BAD_REQUEST),
                                            (self.superuser, status.HTTP_400_BAD_REQUEST),
                                            (self.other_user, status.HTTP_404_NOT_FOUND)]:
             self.login(user, self.user_factory.password)
-            response = self.client.post(api.get_list_url(PossibleDirectories.code),
+            response = self.client.post(api.get_originals_list_url(category=FileCategoryDirectories.code),
                                         HTTP_ACCEPT='application/json')
             self.assertEqual(response.status_code, expected_status_code, msg='{} {}'.format(repr(user), response.data))
 
@@ -161,27 +160,30 @@ class CodebaseReleaseUnpublishedFilesTestCase(ApiAccountMixin, ResponseStatusCod
 
         # Published codebase release permissions
         self.client.logout()
-        response = self.client.post(api.get_list_url(PossibleDirectories.code))
+        response = self.client.post(
+            api.get_originals_list_url(category=FileCategoryDirectories.code))
         self.assertResponsePermissionDenied(response)
         for user, expected_status_code in [(self.submitter, status.HTTP_403_FORBIDDEN),
                                            (self.superuser, status.HTTP_403_FORBIDDEN),
                                            (self.other_user, status.HTTP_403_FORBIDDEN)]:
             self.login(user, self.user_factory.password)
-            response = self.client.post(api.get_list_url(PossibleDirectories.code),
-                                        HTTP_ACCEPT='application/json')
+            response = self.client.post(
+                api.get_originals_list_url(category=FileCategoryDirectories.code),
+                HTTP_ACCEPT='application/json')
             self.assertEqual(response.status_code, expected_status_code, msg='{} {}'.format(repr(user), response.data))
 
     def test_list_files(self):
-        api = CodebaseReleaseFsApi(self.codebase_release)
+        api = self.codebase_release.get_fs_api()
 
         # Unpublished codebase release permissions
-        response = self.client.get(api.get_list_url(PossibleDirectories.code))
+        response = self.client.get(
+            api.get_originals_list_url(category=FileCategoryDirectories.code))
         self.assertResponseNotFound(response)
         for user, expected_status_code in [(self.submitter, status.HTTP_200_OK),
                                            (self.superuser, status.HTTP_200_OK),
                                            (self.other_user, status.HTTP_404_NOT_FOUND)]:
             self.login(user, self.user_factory.password)
-            response = self.client.get(api.get_list_url(PossibleDirectories.code),
+            response = self.client.get(api.get_originals_list_url(FileCategoryDirectories.code),
                                        HTTP_ACCEPT='application/json')
             self.assertEqual(response.status_code, expected_status_code, msg='{} {}'.format(repr(user), response.data))
 
@@ -191,29 +193,33 @@ class CodebaseReleaseUnpublishedFilesTestCase(ApiAccountMixin, ResponseStatusCod
         self.client.logout()
 
         # Published codebase release permissions
-        response = self.client.get(api.get_list_url(PossibleDirectories.code))
+        response = self.client.get(api.get_originals_list_url(FileCategoryDirectories.code))
         self.assertResponsePermissionDenied(response)
         for user, expected_status_code in [(self.submitter, status.HTTP_403_FORBIDDEN),
                                            (self.superuser, status.HTTP_403_FORBIDDEN),
                                            (self.other_user, status.HTTP_403_FORBIDDEN)]:
             self.login(user, self.user_factory.password)
-            response = self.client.get(api.get_list_url(PossibleDirectories.code),
+            response = self.client.get(api.get_originals_list_url(FileCategoryDirectories.code),
                                        HTTP_ACCEPT='application/json')
             self.assertEqual(response.status_code, expected_status_code, msg='{} {}'.format(repr(user), response.data))
 
     def test_delete_file(self):
         path_to_foo = pathlib.Path('foo.txt')
-        api = CodebaseReleaseFsApi(self.codebase_release)
+        api = self.codebase_release.get_fs_api()
 
         # Unpublished codebase release permissions
-        response = self.client.delete(api.get_absolute_url(PossibleDirectories.code, path_to_foo))
+        response = self.client.delete(
+            api.get_absolute_url(category=FileCategoryDirectories.code,
+                                 relpath=path_to_foo))
         self.assertResponsePermissionDenied(response)
         for user, expected_status_code in [(self.submitter, status.HTTP_400_BAD_REQUEST),
                                            (self.superuser, status.HTTP_400_BAD_REQUEST),
                                            (self.other_user, status.HTTP_404_NOT_FOUND)]:
             self.login(user, self.user_factory.password)
-            response = self.client.delete(api.get_absolute_url(PossibleDirectories.code, path_to_foo),
-                                          HTTP_ACCEPT='application/json')
+            response = self.client.delete(
+                api.get_absolute_url(category=FileCategoryDirectories.code,
+                                     relpath=path_to_foo),
+                HTTP_ACCEPT='application/json')
             self.assertEqual(response.status_code, expected_status_code, msg=repr(user))
 
         self.codebase_release.live = True
@@ -222,13 +228,15 @@ class CodebaseReleaseUnpublishedFilesTestCase(ApiAccountMixin, ResponseStatusCod
         self.client.logout()
 
         # Published codebase release permissions
-        response = self.client.delete(api.get_absolute_url(PossibleDirectories.code, path_to_foo))
+        response = self.client.delete(
+            api.get_absolute_url(category=FileCategoryDirectories.code,
+                                 relpath=path_to_foo))
         self.assertResponsePermissionDenied(response)
         for user, expected_status_code in [(self.submitter, status.HTTP_403_FORBIDDEN),
                                            (self.superuser, status.HTTP_403_FORBIDDEN),
                                            (self.other_user, status.HTTP_403_FORBIDDEN)]:
             self.login(user, self.user_factory.password)
-            response = self.client.delete(api.get_absolute_url(PossibleDirectories.code, path_to_foo),
+            response = self.client.delete(api.get_absolute_url(FileCategoryDirectories.code, path_to_foo),
                                           HTTP_ACCEPT='application/json')
             self.assertEqual(response.status_code, expected_status_code, msg=repr(user))
 
@@ -240,7 +248,7 @@ class CodebaseReleaseDraftViewTestCase(ApiAccountMixin, ResponseStatusCodesMixin
         self.other_user = self.user_factory.create(username='other_user')
         codebase_factory = CodebaseFactory(submitter=self.submitter)
         self.codebase = codebase_factory.create()
-        self.codebase_release = self.codebase.create_release(draft=False, live=False)
+        self.codebase_release = self.codebase.create_release(draft=False, live=False, initialize=False)
         self.path = self.codebase.get_draft_url()
 
     def test_release_creation_only_if_codebase_change_permission(self):
@@ -258,9 +266,9 @@ class CodebaseReleaseDraftViewTestCase(ApiAccountMixin, ResponseStatusCodesMixin
 
 class ViewUrlRegexTestCase(TestCase):
     def test_download_unpublished(self):
-        reverse('library:codebaserelease-unpublished-files-detail',
+        reverse('library:codebaserelease-original-files-detail',
                 kwargs={'version_number': '1.0.0', 'identifier': 'a822d39c-3e62-45a4-bf87-3340f524910c',
-                        'relpath': 'converted/206/3-4/round3.17.save-bot-data.csv', 'foldername': 'code'})
+                        'relpath': 'converted/206/3-4/round3.17.save-bot-data.csv', 'category': 'code'})
 
 
 class CodebaseReleasePublishTestCase(TestCase):
@@ -275,8 +283,7 @@ class CodebaseReleasePublishTestCase(TestCase):
         self.submitter = user_factory.create()
         codebase_factory = CodebaseFactory(submitter=self.submitter)
         self.codebase = codebase_factory.create()
-        codebase_release_factory = CodebaseReleaseFactory(submitter=self.submitter, codebase=self.codebase)
-        self.codebase_release = codebase_release_factory.create(live=False)
+        self.codebase_release = self.codebase.create_release()
         contributor_factory = ContributorFactory(user=self.submitter)
         self.contributor = contributor_factory.create()
         self.release_contributor_factory = ReleaseContributorFactory(codebase_release=self.codebase_release)
@@ -291,9 +298,8 @@ class CodebaseReleasePublishTestCase(TestCase):
 
         fileobj = io.BytesIO(bytes('Hello world!', 'utf8'))
         fileobj.name = 'test.nlogo'
-        logger = ListLogger.create_bound_list_logger()
-        api = CodebaseReleaseFsApi(self.codebase_release, logger=logger)
-        api.add(fileobj=fileobj, dest_folder=PossibleDirectories.code)
+        api = self.codebase_release.get_fs_api()
+        api.add(content=fileobj, category=FileCategoryDirectories.code)
         self.codebase_release.publish()
 
     @classmethod
@@ -322,8 +328,7 @@ class CodebaseReleaseRenderPageTestCase(TestCase):
         contributor = contributor_factory.create(user=self.submitter)
 
         self.codebase = codebase_factory.create(submitter=self.submitter)
-        codebase_release_factory = CodebaseReleaseFactory(submitter=self.submitter, codebase=self.codebase)
-        self.codebase_release = codebase_release_factory.create()
+        self.codebase_release = self.codebase.create_release(initialize=False)
         release_contributor_factory = ReleaseContributorFactory(codebase_release=self.codebase_release)
         release_contributor_factory.create(contributor=contributor)
 

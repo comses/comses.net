@@ -6,8 +6,10 @@ from . import views
 router = AddEditRouter()
 router.register(r'codebases', views.CodebaseViewSet)
 router.register(r'codebases/(?P<identifier>[\w\-.]+)/releases', views.CodebaseReleaseViewSet)
-router.register(r'codebases/(?P<identifier>[\w\-.]+)/releases/(?P<version_number>\d+\.\d+\.\d+)/unpublished/(?P<foldername>\w+)',
-                views.CodebaseReleaseUnpublishedFilesViewSet, base_name='codebaserelease-unpublished-files')
+router.register(views.CodebaseReleaseFilesSipViewSet.get_url_matcher(),
+                views.CodebaseReleaseFilesSipViewSet, base_name='codebaserelease-sip-files')
+router.register(views.CodebaseReleaseFilesOriginalsViewSet.get_url_matcher(),
+                views.CodebaseReleaseFilesOriginalsViewSet, base_name='codebaserelease-original-files')
 # router.register(r'contributors', ContributorList)
 
 urlpatterns = [

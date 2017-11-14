@@ -1,38 +1,45 @@
+import logging
 import mimetypes
 import tarfile
 import zipfile
 from enum import Enum
+from functools import total_ordering
 from pathlib import Path
 
-import io
 import os
 
 import shutil
 
+import bagit
 import rarfile
 import re
-import structlog
 from tempfile import TemporaryDirectory
-from typing import List, Union
+from typing import List, Union, Optional
 
 from django.conf import settings
+from django.core.files.storage import FileSystemStorage
+from django.core.files.uploadedfile import TemporaryUploadedFile, InMemoryUploadedFile, File
 from django.urls import reverse
-from rest_framework import serializers
+from rest_framework.exceptions import ValidationError
 
 from core import fs
-from library.models import CodebaseRelease
+
+logger = logging.getLogger(__name__)
 
 
-class FsError(Exception): pass
+class FsLogError(Exception): pass
 
 
-class FsFileOrDirectoryNotFound(FsError): pass
+class StagingDirectories(Enum):
+    # Directory containing original files uploaded (such as zip files)
+    originals = 1
+    # Directory containing submission information package files
+    sip = 2
+    # Directory containing archive information package files
+    aip = 3
 
 
-class FsFileOverwrite(FsError): pass
-
-
-class PossibleDirectories(Enum):
+class FileCategoryDirectories(Enum):
     code = 1
     data = 2
     docs = 3
@@ -41,295 +48,505 @@ class PossibleDirectories(Enum):
     results = 6
 
 
+@total_ordering
+class MessageLevels(Enum):
+    info = 0
+    error = 1
+    critical = 2
+
+    def __lt__(self, other):
+        if self.__class__ is other.__class__:
+            return self.value < other.value
+        return NotImplemented
+
+
 mimetypes.add_type('text/x-rst', '.rst')
 mimetypes.add_type('text/x-netlogo', '.nls')
 mimetypes.add_type('text/x-netlogo', '.nlogo')
 mimetypes.add_type('text/markdown', '.md')
 
+MIMETYPE_MATCHER = {
+    FileCategoryDirectories.code: re.compile(r'.*'),
+    FileCategoryDirectories.data: re.compile(r'.*'),
+    FileCategoryDirectories.docs: re.compile(r'text/markdown|application/pdf|text/plain|text/x-rtf'),
+    FileCategoryDirectories.media: re.compile(r'image/.*|video/.*'),
+    FileCategoryDirectories.originals: re.compile(r'.*'),
+    FileCategoryDirectories.results: re.compile(r'.*')
+}
 
-class ListLogger:
-    """Saves events to a list"""
 
+def get_category(name) -> FileCategoryDirectories:
+    category_name = Path(name).parts[0]
+    try:
+        return FileCategoryDirectories[category_name]
+    except KeyError:
+        raise ValidationError('Target folder name {} invalid. Must be one of {}'.format(category_name, list(
+            d.name for d in FileCategoryDirectories)))
+
+
+def get_mimetype_matcher(name):
+    category = get_category(name)
+    return MIMETYPE_MATCHER[category]
+
+
+def files_in_dir(path):
+    for dirpath, dirnames, filenames in os.walk(path):
+        for filename in filenames:
+            relpath = os.path.join(dirpath, filename)
+            fullpath = os.path.join(path, relpath)
+            if os.path.isfile(fullpath):
+                yield relpath
+
+
+class MessageGroup:
     def __init__(self):
-        self.events = []
+        self.msgs = []
+        self.level = MessageLevels.info
 
-    @classmethod
-    def create_bound_list_logger(cls, processors=None):
-        if processors is None:
-            processors = [
-                structlog.processors.TimeStamper(fmt='iso'),
-                structlog.stdlib.add_log_level,
-            ]
-        return structlog.wrap_logger(cls(), processors=processors)
+    def __bool__(self):
+        return len(self.msgs) > 0
 
-    def msg(self, *args, **kwargs):
-        self.events.append((args, kwargs))
+    def __repr__(self):
+        return '<MessageGroup {0}>'.format(repr(self.msgs))
 
-    log = debug = info = warn = warning = msg
-    failure = err = error = critical = exception = msg
+    def append(self, msg: Optional):
+        if msg is not None and msg:
+            if isinstance(msg, MessageGroup):
+                self.msgs += msg.msgs
+            else:
+                self.msgs.append(msg)
+            self.level = max(self.level, msg.level)
+
+    def serialize(self):
+        """Return a list of message along with message level"""
+        logs = []
+        for msg in self.msgs:
+            logs.append(msg.serialize())
+        return logs, self.level
 
 
-class ActivityLogger:
-    def __init__(self, print_logger, list_logger):
-        self.print_logger = print_logger
-        self.list_logger = list_logger
+class Message:
+    level = MessageLevels.critical
 
-    @classmethod
-    def from_fileobj(cls, fileobj):
-        print_logger = structlog.wrap_logger(structlog.PrintLogger(fileobj), processors=[
-            structlog.processors.TimeStamper(fmt='iso'),
-            structlog.stdlib.add_log_level,
-            structlog.processors.JSONRenderer(sort_keys=True)
-        ])
-        return cls(print_logger=print_logger, list_logger=ListLogger.create_bound_list_logger())
+    def __init__(self, msg, level: MessageLevels = MessageLevels.info):
+        self.level = level
+        self.msg = msg
 
-    def bind(self, **new_values):
-        list_logger = self.list_logger.bind(**new_values)
-        print_logger = self.print_logger.bind(**new_values)
-        return self.__class__(print_logger=print_logger, list_logger=list_logger)
+    def __repr__(self):
+        return repr(self.serialize())
 
-    def unbind(self, *keys):
-        list_logger = self.list_logger.unbind(*keys)
-        print_logger = self.print_logger.unbind(*keys)
-        return self.__class__(print_logger=print_logger, list_logger=list_logger)
+    def serialize(self):
+        return {'level': self.level.name, 'msg': self.msg}
 
-    def new(self, **new_values):
-        list_logger = self.list_logger.new(**new_values)
-        print_logger = self.print_logger.new(**new_values)
-        return self.__class__(print_logger=print_logger, list_logger=list_logger)
 
-    def getvalue(self):
-        return self.list_logger.getvalue()
+class CodebaseReleaseStorage(FileSystemStorage):
+    stage = None
 
-    def msg(self, *args, **kwargs):
-        self.list_logger.msg(*args, **kwargs)
-        self.print_logger.msg(*args, **kwargs)
+    def __init__(self, raise_exception_level, location=None, base_url=None, file_permissions_mode=None,
+                 directory_permissions_mode=None):
+        super().__init__(location=location, base_url=base_url,
+                         file_permissions_mode=file_permissions_mode,
+                         directory_permissions_mode=directory_permissions_mode)
+        self._raise_exception_level = raise_exception_level
 
-    log = debug = info = warn = warning = msg
-    failure = err = error = critical = exception = msg
+    def validate_file(self, name, content) -> Optional:
+        msgs = MessageGroup()
+        if fs.has_macosx_dir(name):
+            msgs.append(self.error("'{}' has a mac os x system directory".format(name)))
+        if fs.is_system_file(name):
+            msgs.append(self.error("'{}' is a system file".format(name)))
+        return msgs
+
+    def validate(self):
+        """Construct an audit report of a releases files"""
+        msgs = MessageGroup()
+        for filename in self.list():
+            with self.open(filename) as content:
+                msgs.append(self.validate_file(filename, content))
+        return msgs
+
+    def list(self, category: Optional[FileCategoryDirectories] = None):
+        path = Path(self.location)
+        if category is not None:
+            path = path.joinpath(category.name)
+        for p in path.rglob('*'):
+            if p.is_file():
+                yield p.relative_to(path)
+
+    def get_available_name(self, name, max_length=None):
+        if self.exists(name):
+            raise ValueError(
+                'Storage filename "%s" already taken' % name
+            )
+        return name
+
+    def create_msg(self):
+        return MessageGroup()
+
+    def info(self, msg):
+        return Message({'detail': str(msg), 'stage': self.stage.name}, level=MessageLevels.info)
+
+    def error(self, msg):
+        return Message({'detail': str(msg), 'stage': self.stage.name}, level=MessageLevels.error)
+
+    def critical(self, msg):
+        return Message({'detail': str(msg), 'stage': self.stage.name}, level=MessageLevels.critical)
+
+    def log_save(self, name, content):
+        if name is None:
+            name = content.name
+        msgs = self.validate_file(name, content)
+        if msgs.level >= self._raise_exception_level:
+            return msgs
+
+        try:
+            self.save(name, content)
+        except IOError as e:
+            msgs.append(self.critical(e))
+        except ValueError as e:
+            msgs.append(self.critical(e))
+        return msgs
+
+    def clear_category(self, category: FileCategoryDirectories):
+        shutil.rmtree(os.path.join(self.location, category.name), ignore_errors=True)
+
+    def clear(self):
+        shutil.rmtree(self.location, ignore_errors=True)
+
+    def log_delete(self, name):
+        try:
+            self.delete(name)
+        except IOError as e:
+            return self.critical(e)
+        return None
+
+
+class CodebaseReleaseOriginalStorage(CodebaseReleaseStorage):
+    stage = StagingDirectories.originals
+
+    def validate_mimetype(self, name):
+        mimetype_matcher = get_mimetype_matcher(name)
+        mimetype = mimetypes.guess_type(name)[0]
+        if not mimetype_matcher.match(mimetype):
+            return self.error('File type mismatch for file {}'.format(name))
+        return None
+
+    def get_existing_archive_name(self, category: FileCategoryDirectories):
+        for p in self.list(category):
+            if p.is_file() and fs.is_archive(p):
+                return str(p)
+        return None
+
+    def is_archive_directory(self, category):
+        for p in self.list(category):
+            if p.is_file() and fs.is_archive(str(p)):
+                return True
+        return False
+
+    def has_existing_files(self, category):
+        path = os.path.join(self.location, category.name)
+        os.makedirs(path, exist_ok=True)
+        return os.listdir(path)
+
+    def validate_file(self, name, content):
+        msgs = super().validate_file(name, content)
+        if msgs.level >= self._raise_exception_level:
+            return msgs
+        category = get_category(name)
+        if fs.is_archive(name) and self.has_existing_files(category):
+            msgs.append(
+                self.critical('Archive can only added to empty category. Please clear category and try again.'))
+            return msgs
+
+        msgs.append(self.validate_mimetype(name))
+        return msgs
+
+
+class CodebaseReleaseSipStorage(CodebaseReleaseStorage):
+    """Places files from the uploaded folder into the sip (submission information package)
+
+    Archives from the uploads folder get expanded when placed in the sip folder"""
+
+    stage = StagingDirectories.sip
+
+    def validate_mimetype(self, name):
+        get_category(name)
+        mimetype_matcher = get_mimetype_matcher(name)
+        mimetype = mimetypes.guess_type(name)[0]
+        if not mimetype_matcher.match(mimetype):
+            return self.error('File type mismatch for file {}'.format(name))
+        return None
+
+    def validate_file(self, name, content):
+        msgs = super().validate_file(name, content)
+        if msgs.level >= self._raise_exception_level:
+            return msgs
+        msgs.append(self.validate_mimetype(name))
+        return msgs
+
+    def make_bag(self, metadata):
+        return fs.make_bag(self.location, metadata)
+
+
+class CodebaseReleaseAipStorage(CodebaseReleaseStorage):
+    """Places files from the sip folder into aip"""
+
+    def import_sip(self, sip_storage: CodebaseReleaseSipStorage):
+        shutil.copytree(sip_storage.location, self.location)
 
 
 class CodebaseReleaseFsApi:
-    def __init__(self, codebase_release: CodebaseRelease, logger=None):
-        self.codebase_release = codebase_release
-        self.identifier = codebase_release.codebase.identifier
-        self.version_number = codebase_release.version_number
-        self.sip_rootdir = codebase_release.library_path.joinpath('sip').absolute()
-        self.aipdir = codebase_release.library_path.joinpath('aip').absolute()
-        self.logger = logger
+    """
+    Interface to maintain files associated with a codebase
 
-    @staticmethod
-    def logfilename(codebase_release: CodebaseRelease):
-        return codebase_release.library_path.joinpath('audit.log')
+    This is not currently protected against concurrent file access. However, since only
+    the submitter can edit files associated with a codebase release there is little
+    """
+
+    def __init__(self, uuid, identifier, version_number, raise_exception_level):
+        self.uuid = uuid
+        self.identifier = identifier
+        self.version_number = version_number
+        self._raise_exception_level = raise_exception_level
+
+    def logfilename(self):
+        return self.rootdir.joinpath('audit.log')
+
+    @property
+    def lockfilename(self):
+        return self.rootdir.joinpath('lock')
+
+    @property
+    def archivepath(self):
+        return self.rootdir.joinpath('archive.zip')
 
     @property
     def rootdir(self):
-        return self.codebase_release.codebase.subpath(
-            'releases', 'v{}'.format(self.codebase_release.version_number)).absolute()
+        return Path(settings.LIBRARY_ROOT, str(self.uuid),
+                    'releases', 'v{}'.format(self.version_number)).absolute()
+
+    @property
+    def aip_dir(self):
+        return self.rootdir.joinpath('aip')
 
     @property
     def aip_contents_dir(self):
-        return self.rootdir.join('aip', 'data')
+        return self.aip_dir.joinpath('data')
 
     @property
-    def sip_originals_dir(self):
-        return self.rootdir.joinpath('sip', 'originals')
+    def originals_dir(self):
+        return self.rootdir.joinpath('originals')
+
+    @property
+    def sip_dir(self):
+        return self.rootdir.joinpath('sip')
 
     @property
     def sip_contents_dir(self):
-        return self.rootdir.joinpath('sip', 'data')
+        return self.sip_dir.joinpath('data')
 
-    def bind(self, **new_values):
-        logger = self.logger.bind(**new_values)
-        return self.__class__(self.codebase_release, logger)
+    def get_originals_storage(self, originals_dir=None):
+        if originals_dir is None:
+            originals_dir = self.originals_dir
+        return CodebaseReleaseOriginalStorage(raise_exception_level=self._raise_exception_level,
+                                              location=str(originals_dir))
 
-    MIMETYPE_MATCHER = {
-        # Remove code / data /originals
-        PossibleDirectories.code: re.compile(r'text/.*|application/json'),
-        PossibleDirectories.data: re.compile(r'text/.*'),
-        PossibleDirectories.docs: re.compile(r'text/markdown|application/pdf|text/plain|text/x-rtf'),
-        PossibleDirectories.media: re.compile(r'image/.*|video/.*'),
-        PossibleDirectories.originals: re.compile(r'text/.*|image/.*|video/.*'),
-    }
+    def get_sip_storage(self):
+        return CodebaseReleaseSipStorage(raise_exception_level=self._raise_exception_level,
+                                         location=str(self.sip_contents_dir))
 
-    def mimetype_matcher(self, dest_folder: PossibleDirectories):
-        return self.MIMETYPE_MATCHER[dest_folder]
+    def get_aip_storage(self):
+        return CodebaseReleaseAipStorage(raise_exception_level=self._raise_exception_level,
+                                         location=str(self.aip_contents_dir))
 
-    def get_absolute_url(self, folder: PossibleDirectories, relpath: Path):
-        return reverse('library:codebaserelease-unpublished-files-detail',
-                       kwargs={'identifier': self.identifier, 'version_number': self.version_number,
-                               'foldername': folder.name, 'relpath': str(relpath)})
-
-    def get_list_url(self, folder: PossibleDirectories):
-        return reverse('library:codebaserelease-unpublished-files-list',
-                       kwargs={'identifier': self.identifier, 'version_number': self.version_number,
-                               'foldername': folder.name})
-
-    def get_paths(self, folder: PossibleDirectories, relpath: Path):
-        basepath = self.sip_contents_dir.joinpath(folder.name)
-        # Python 3.5 does not support resolving paths that do not (completely) exist on the fs.
-        # When we upgrade 3.6 we could use basepath.joinpath(relpath).resolve(strict=False)
-        path = Path(os.path.realpath(str(basepath.joinpath(relpath))))
-        fs.is_subpath(basepath, path)
-        return basepath, path
-
-    def is_correct_mimetype(self, path: Path, dest_folder: PossibleDirectories):
-        mimetype = mimetypes.guess_type(str(path))[0] or ''
-        mimetype_matcher = self.mimetype_matcher(dest_folder=dest_folder)
-        if not mimetype_matcher.match(mimetype):
-            self.logger.error('Wrong mimetype', filename=str(path), mimetype=mimetype)
-            return False
-        return True
-
-    def list(self, folder: PossibleDirectories):
-        """List contents of """
-        for path in self.sip_contents_dir.joinpath(folder.name).rglob('*'):
-            relpath = path.relative_to(self.sip_contents_dir)
-            yield dict(path=str(relpath), url=self.get_absolute_url(folder, relpath))
-
-    def retrieve(self, folder: PossibleDirectories, relpath: Path):
-        path = self.sip_rootdir.joinpath(folder, relpath).resolve()
-        assert path in self.sip_rootdir
-
-        if path.is_file():
-            return path.open('rb')
+    def get_stage_storage(self, stage: StagingDirectories):
+        if stage == StagingDirectories.originals:
+            return self.get_originals_storage()
+        elif stage == StagingDirectories.sip:
+            return self.get_sip_storage()
+        elif stage == StagingDirectories.aip:
+            return self.get_aip_storage()
         else:
-            p = Path(folder.name).joinpath(relpath)
-            raise serializers.ValidationError('File "{}" does not exist'.format(str(p)))
+            raise ValueError('StageDirectories values {} not valid'.format(stage))
 
-    def delete(self, folder: PossibleDirectories, relpath: Path):
-        assert self.logger is not None
-        basepath, path = self.get_paths(folder, relpath)
+    def get_sip_list_url(self, category: FileCategoryDirectories):
+        return reverse('library:codebaserelease-sip-files-list',
+                       kwargs={'identifier': str(self.identifier), 'version_number': self.version_number,
+                               'category': category.name})
 
-        p = str(path.relative_to(basepath))
-        if path.is_file():
-            self.logger.info('Deleting file', filename=p)
-            os.unlink(str(path))
-        elif path.is_dir():
-            self.logger.info('Deleting folder', filename=p)
-            shutil.rmtree(str(path))
+    def get_originals_list_url(self, category: FileCategoryDirectories):
+        return reverse('library:codebaserelease-original-files-list',
+                       kwargs={'identifier': str(self.identifier), 'version_number': self.version_number,
+                               'category': category.name})
+
+    def get_absolute_url(self, category: FileCategoryDirectories, relpath: Path):
+        return reverse('library:codebaserelease-original-files-detail',
+                       kwargs={'identifier': str(self.identifier), 'version_number': self.version_number,
+                               'category': category.name, 'relpath': str(relpath)})
+
+    def _create_msg_group(self):
+        return MessageGroup()
+
+    def initialize(self):
+        os.makedirs(str(self.sip_dir), exist_ok=True)
+        fs.make_bag(str(self.sip_dir), {})
+
+    def retrieve_archive(self):
+        self.build_archive()
+        return File(self.archivepath.open('rb'))
+
+    def clear_category(self, category: FileCategoryDirectories):
+        originals_storage = self.get_originals_storage()
+        originals_storage.clear_category(category)
+        sip_storage = self.get_sip_storage()
+        sip_storage.clear_category(category)
+
+    def list(self, stage: StagingDirectories, category: Optional[FileCategoryDirectories]):
+        stage_storage = self.get_stage_storage(stage)
+        return [str(p) for p in stage_storage.list(category)]
+
+    def retrieve(self, stage: StagingDirectories, category: FileCategoryDirectories, relpath: Path):
+        stage_storage = self.get_stage_storage(stage)
+        relpath = Path(category.name, relpath)
+        return stage_storage.open(str(relpath))
+
+    def delete(self, category: FileCategoryDirectories, relpath: Path):
+        originals_storage = self.get_originals_storage()
+        sip_storage = self.get_sip_storage()
+        relpath = Path(category.name, relpath)
+        logs = MessageGroup()
+        if originals_storage.is_archive_directory(category):
+            self.clear_category(category)
         else:
-            raise serializers.ValidationError('File or directory "{}" does not exist'.format(p))
+            logs.append(sip_storage.log_delete(str(relpath)))
+            logs.append(originals_storage.log_delete(str(relpath)))
+        return logs
 
-    def has(self, folder: PossibleDirectories, path: Path):
-        return self.sip_rootdir.joinpath(folder.name, path).exists()
-
-    def add(self, fileobj, dest_folder: PossibleDirectories):
-        assert self.logger is not None
-        relpath = Path(fileobj.name)
-        basepath, dest_originals = self.get_paths(PossibleDirectories.originals,
-                                                  Path(dest_folder.name).joinpath(relpath))
-        if fs.is_archive(str(dest_originals)):
-            with dest_originals.open('wb') as f:
-                self.logger.info('Adding archive', filename=str(dest_originals.relative_to(self.sip_contents_dir)))
-                f.write(fileobj)
-            archive_extractor = ArchiveExtractor(self, dest_folder)
-            archive_extractor.process(str(dest_originals))
+    def _add_to_sip(self, name, content, category: FileCategoryDirectories, sip_storage):
+        filename = self.originals_dir.joinpath(name)
+        if fs.is_archive(name):
+            archive_extractor = ArchiveExtractor(sip_storage)
+            return archive_extractor.process(category=category, filename=str(filename))
         else:
-            if self.is_correct_mimetype(dest_folder=dest_folder, path=relpath):
-                os.makedirs(str(dest_originals.parent), exist_ok=True)
-                if dest_originals.exists():
-                    self.logger.warn('Overwriting file', filename=str(relpath))
-                with dest_originals.open('wb') as f:
-                    self.logger.info('Adding file', filename=str(dest_originals.relative_to(self.sip_contents_dir)))
-                    f.write(fileobj.read())
-                self.copy(dest_originals, dest_folder)
+            return sip_storage.log_save(name=name, content=content)
 
-    def move(self, src: Path, dest_folder: PossibleDirectories):
-        assert self.logger is not None
-        if self.is_correct_mimetype(src, dest_folder):
-            dest = self.sip_contents_dir.joinpath(dest_folder.name, src.name)
-            os.makedirs(str(dest.parent), exist_ok=True)
-            self.logger.info('Moving file', original_filename=str(src),
-                             filename=str(dest.relative_to(self.sip_contents_dir)))
-            shutil.move(str(src), str(dest))
-            return dest
-        return None
+    def add_category(self, category: FileCategoryDirectories, src):
+        logger.info("adding category {}".format(category.name))
+        originals_storage = self.get_originals_storage()
+        msgs = self._create_msg_group()
+        for dirpath, dirnames, filenames in os.walk(src):
+            for filename in filenames:
+                filename = os.path.join(dirpath, filename)
+                name = os.path.join(category.name, str(Path(filename).relative_to(src)))
+                logger.debug("adding file {}".format(name))
+                with open(filename, 'rb') as content:
+                    msgs.append(originals_storage.log_save(name, content))
+        return msgs
 
-    def copy(self, src: Path, dest_folder: PossibleDirectories):
-        """Copy a file from the originals folder to the destination folder"""
-        dest = self.sip_contents_dir.joinpath(dest_folder.name, src.name)
-        self.logger.info('Copying file', original_filename=str(src.relative_to(self.sip_contents_dir)),
-                         filename=str(dest.relative_to(self.sip_contents_dir)))
-        os.makedirs(str(dest.parent), exist_ok=True)
-        shutil.copy(str(src), str(dest))
-        return dest
+    def add(self, category: FileCategoryDirectories, content, name=None):
+        if name is None:
+            name = os.path.join(category.name, content.name)
+        else:
+            name = os.path.join(category.name, name)
 
+        originals_storage = self.get_originals_storage()
+        sip_storage = self.get_sip_storage()
 
-class CodebaseReleaseFsApiWithActivityLog:
-    """File API for a codebase release with an activity log for logging
+        msgs = originals_storage.log_save(name, content)
+        if msgs.level >= self._raise_exception_level:
+            return msgs
+        msgs.append(self._add_to_sip(name=name, content=content, category=category, sip_storage=sip_storage))
 
-    This class is for creating the codebase release api without having to manually open and close the log file"""
+        return msgs
 
-    def __init__(self, codebase_release):
-        self.codebase_release = codebase_release
+    def get_or_create_sip_bag(self, bagit_info):
+        logger.info("creating bagit metadata")
+        bag = bagit.Bag(str(self.sip_dir))
+        for k, v in bagit_info.items():
+            bag.info[k] = v
+        return bag.save(manifests=True)
 
-    def __enter__(self):
-        logfile_path = CodebaseReleaseFsApi.logfilename(self.codebase_release)
-        os.makedirs(str(logfile_path.parent), exist_ok=True)
-        self.logfile = logfile_path.open('a')
-        logger = ActivityLogger.from_fileobj(self.logfile)
-        self.codebase_release_fs_api = CodebaseReleaseFsApi(self.codebase_release, logger=logger)
-        return self.codebase_release_fs_api
+    def build_sip(self, originals_dir: Optional[str] = None):
+        logger.info("building sip")
+        if originals_dir is None:
+            originals_dir = self.originals_dir
+        originals_storage = self.get_originals_storage(originals_dir)
+        sip_storage = self.get_sip_storage()
+        sip_storage.clear()
 
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        self.logfile.close()
+        msgs = self._create_msg_group()
+        for name in originals_storage.list():
+            path = self.originals_dir.joinpath(name)
+            logger.debug("adding file: {}".format(path.relative_to(self.originals_dir)))
+            category = get_category(Path(name).parts[0])
+            with File(path.open('rb')) as f:
+                msgs.append(self._add_to_sip(name=str(name), content=f, category=category, sip_storage=sip_storage))
+
+        return msgs
+
+    def build_aip(self, sip_dir: Optional[str] = None):
+        logger.info("building aip")
+        if sip_dir is None:
+            sip_dir = str(self.sip_dir)
+        shutil.rmtree(str(self.aip_dir), ignore_errors=True)
+        shutil.copytree(sip_dir, str(self.aip_dir))
+
+    def build_archive(self):
+        if not self.archivepath.exists():
+            logger.info("building archive")
+            if self.aip_contents_dir.exists():
+                with zipfile.ZipFile(str(self.archivepath), 'w') as archive:
+                    for root_path, dirs, file_paths in os.walk(str(self.aip_contents_dir)):
+                        for file_path in file_paths:
+                            path = Path(root_path, file_path)
+                            archive.write(str(path), arcname=str(path.relative_to(self.aip_contents_dir)))
+                logger.info("building archive succeeded")
+            else:
+                logger.error("building archive failed - no aip directory")
 
 
 class ArchiveExtractor:
-    def __init__(self, codebase_release_fs_api: CodebaseReleaseFsApi, dest_folder: PossibleDirectories):
-        self.codebase_release_fs_api = codebase_release_fs_api
-        self.dest_folder = dest_folder
+    def __init__(self, sip_storage: CodebaseReleaseSipStorage):
+        self.sip_storage = sip_storage
 
-    @classmethod
-    def from_codebase_release(cls, codebase_release: CodebaseRelease, dest_folder: PossibleDirectories, logger):
-        codebase_release_fs_api = CodebaseReleaseFsApi(codebase_release, logger)
-        return cls(codebase_release_fs_api=codebase_release_fs_api, dest_folder=dest_folder)
-
-    def archivename(self, fileobj):
-        return self.codebase_release_fs_api.sip_rootdir.joinpath(PossibleDirectories.originals.name, fileobj.name)
-
-    def get_filename(self, filename_or_fileobj):
-        if hasattr(filename_or_fileobj, 'name'):
-            return filename_or_fileobj.name
-        elif isinstance(filename_or_fileobj, str):
-            return str(filename_or_fileobj)
-        else:
-            raise TypeError(filename_or_fileobj)
-
-    def add(self, fileobj, log):
-        log.debug('Adding archive to originals folder')
-        with open(str(self.archivename(fileobj)), 'w') as f:
-            fileobj.write(f)
-        log.info('Added archive to originals folder')
-
-    def extractall(self, path, filename_or_fileobj):
-        filename = self.get_filename(filename_or_fileobj)
+    def extractall(self, unpack_destination, filename):
         mimetype = mimetypes.guess_type(filename)[0]
         if mimetype == 'application/zip':
-            with zipfile.ZipFile(filename_or_fileobj, 'r') as z:
-                z.extractall(path=path)
+            with zipfile.ZipFile(filename, 'r') as z:
+                z.extractall(path=unpack_destination)
 
         elif mimetype == 'application/x-tar':
-            with tarfile.TarFile(filename_or_fileobj, 'r') as t:
-                t.extractall(path=path)
+            with tarfile.TarFile(filename, 'r') as t:
+                t.extractall(path=unpack_destination)
 
         elif mimetype == 'application/rar':
-            if hasattr(filename_or_fileobj, 'name'):
+            if hasattr(filename, 'name'):
                 raise TypeError('RAR archives cannot be extracted from file objects. Requires string filename')
 
-            with rarfile.RarFile(filename_or_fileobj, 'r') as r:
-                r.extractall(path=path)
+            with rarfile.RarFile(filename, 'r') as r:
+                r.extractall(path=unpack_destination)
 
         else:
-            raise ValueError('Archive {} is unsupported'.format(filename))
+            return Message('Archive {} is unsupported'.format(filename))
 
-    def process(self, filename_or_fileobj: Union[str, io.TextIOWrapper, io.BytesIO]):
-        api = self.codebase_release_fs_api.bind(archive_filename=self.get_filename(filename_or_fileobj))
-        api.logger.debug('Extracting archive')
-        with TemporaryDirectory() as d:
-            self.extractall(path=d, filename_or_fileobj=filename_or_fileobj)
-            for file_path in Path(d).rglob('*'):
-                if file_path.is_file():
-                    self.codebase_release_fs_api.move(file_path, self.dest_folder)
-        api.logger.info('Extracted archive')
+    def find_root_directory(self, basedir):
+        for dirpath, dirnames, filenames in os.walk(basedir):
+            if len(dirnames) != 1 or len(filenames) != 0:
+                return dirpath
+
+    def process(self, category: FileCategoryDirectories, filename: str):
+        msgs = MessageGroup()
+        try:
+            with TemporaryDirectory() as d:
+                msg = self.extractall(unpack_destination=d, filename=filename)
+                if msg is not None:
+                    return msg
+                rootdir = self.find_root_directory(d)
+                for unpacked_file in Path(rootdir).rglob('*'):
+                    if unpacked_file.is_file():
+                        with File(unpacked_file.open('rb')) as unpacked_fileobj:
+                            relpath = Path(category.name, unpacked_file.relative_to(rootdir))
+                            msgs.append(self.sip_storage.log_save(name=str(relpath), content=unpacked_fileobj))
+        except FsLogError as e:
+            msgs.append(e.args[0])
+        return msgs

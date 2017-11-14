@@ -43,7 +43,7 @@ class CodebaseReleaseTest(BaseModelTestCase):
         self.submitter = self.user_factory.create()
         codebase_factory = CodebaseFactory(submitter=self.submitter)
         self.codebase = codebase_factory.create()
-        self.codebase_release = self.codebase.create_release()
+        self.codebase_release = self.codebase.create_release(initialize=False)
 
     def test_anonymous_user_perms(self):
         anonymous_user = AnonymousUser()

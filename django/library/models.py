@@ -30,6 +30,7 @@ from wagtail.wagtailsearch import index
 from core import fs
 from core.backends import get_viewable_objects_for_user
 from core.fields import MarkdownField
+from library.fs import CodebaseReleaseFsApi, StagingDirectories, FileCategoryDirectories, MessageLevels
 
 logger = logging.getLogger(__name__)
 
@@ -372,7 +373,7 @@ class Codebase(index.Indexed, ClusterableModel):
             draft = self.create_release()
         return draft
 
-    def create_release(self, **overrides):
+    def create_release(self, initialize=True, **overrides):
         submitter = self.submitter
         version_number = self.next_version_number()
         kwargs = dict(submitter=submitter,
@@ -382,6 +383,9 @@ class Codebase(index.Indexed, ClusterableModel):
                       draft=True)
         kwargs.update(overrides)
         release = CodebaseRelease.objects.create(**kwargs)
+        if initialize:
+            fs_api = release.get_fs_api()
+            fs_api.initialize()
         self.latest_version = release
         self.save()
         return release
@@ -484,14 +488,6 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
 
     objects = CodebaseReleaseQuerySet.as_manager()
 
-    def get_library_path(self, *args):
-        """
-        Currently <codebase.path>/releases/<version_number>/arg0/arg1/arg2/.../argn
-        :param args: args are joined as subpaths of
-        :return: full pathlib.Path to this codebase release with args subpaths
-        """
-        return self.codebase.subpath('releases', 'v{0}'.format(self.version_number), *map(str, args))
-
     def get_edit_url(self):
         return reverse('library:codebaserelease-edit', kwargs={'identifier': self.codebase.identifier,
                                                                'version_number': self.version_number})
@@ -502,10 +498,6 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
     def get_absolute_url(self):
         return reverse('library:codebaserelease-detail',
                        kwargs={'identifier': self.codebase.identifier, 'version_number': self.version_number})
-
-    @property
-    def library_path(self):
-        return self.codebase.subpath('releases', 'v{}'.format(self.version_number))
 
     # FIXME: lift magic constants
     @property
@@ -548,46 +540,8 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
                 self.codebase_contributors.order_by('index')]
 
     @property
-    def bagit_path(self):
-        return self.get_library_path('bagit')
-
-    @property
-    def git_path(self):
-        return self.codebase.base_git_dir
-
-    @property
-    def workdir_path(self):
-        ''' a working directory scratch space path'''
-        return self.get_library_path('workdir')
-
-    def submitted_package_path(self, *args):
-        return self.get_library_path('sip', *args)
-
-    @property
-    def archival_information_package_path(self):
-        return self.bagit_path
-
-    @property
-    def archive_path(self):
-        return self.get_library_path('archive.zip')
-
-    @property
     def index_ordered_release_contributors(self):
         return self.codebase_contributors.order_by('index')
-
-    def retrieve_archive(self):
-        if not self.archive_path.exists():
-            sip_path = self.submitted_package_path()
-            if sip_path.exists():
-                with ZipFile(str(self.archive_path), 'w') as archive:
-                    for root_path, dirs, file_paths in os.walk(str(sip_path)):
-                        for file_path in file_paths:
-                            path = pathlib.Path(root_path, file_path)
-                            archive.write(str(path), arcname=str(path.relative_to(sip_path)))
-            else:
-                raise FileNotFoundError(
-                    'submission package for release {} {} not found'.format(self.codebase.title, self.version_number))
-        return open(str(self.archive_path), 'rb')
 
     @property
     def bagit_info(self):
@@ -601,16 +555,16 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
             # FIXME: check codemeta for additional metadata
         }
 
-    def get_or_create_sip_bag(self):
-        return fs.make_bag(str(self.submitted_package_path()), self.bagit_info)
+    def get_fs_api(self, raise_exception_level=MessageLevels.error) -> CodebaseReleaseFsApi:
+        return CodebaseReleaseFsApi(uuid=self.codebase.uuid, identifier=self.codebase.identifier,
+                                    version_number=self.version_number, raise_exception_level=raise_exception_level)
 
     def publish(self):
         publisher = CodebaseReleasePublisher(self)
         publisher.publish()
 
     def __str__(self):
-        return '{0} {1} v{2} {3}'.format(self.codebase, self.submitter.username, self.version_number,
-                                         self.submitted_package_path())
+        return '{0} {1} v{2}'.format(self.codebase, self.submitter.username, self.version_number)
 
     class Meta:
         unique_together = ('codebase', 'version_number')
@@ -622,11 +576,13 @@ class CodebaseReleasePublisher:
         self.codebase_release = codebase_release
 
     def is_publishable(self):
-        if self.codebase_release.contributors.count() < 1:
-            raise ValidationError('Must have at least one contributor to publish a release')
-        path = self.codebase_release.submitted_package_path('data').joinpath('code')
-        if path.exists():
-            files = os.listdir(str(path))
+        if not self.codebase_release.contributors.filter(user=self.codebase_release.submitter).exists():
+            raise ValidationError('Submitter must be in the contributor list')
+        fs_api = self.codebase_release.get_fs_api()
+        storage = fs_api.get_stage_storage(StagingDirectories.sip)
+        category = FileCategoryDirectories.code
+        if storage.exists(category.name):
+            files = list(storage.list(category))
         else:
             files = []
         if not files:
@@ -639,6 +595,9 @@ class CodebaseReleasePublisher:
             self.codebase_release.first_published_at = now
             self.codebase_release.last_published_on = now
             self.codebase_release.live = True
+            fs_api = self.codebase_release.get_fs_api()
+            fs_api.get_or_create_sip_bag(self.codebase_release.bagit_info)
+            fs_api.build_aip()
             self.codebase_release.save()
 
 

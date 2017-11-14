@@ -1,7 +1,7 @@
 import logging
-import os
 
 import pathlib
+
 from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.core.exceptions import PermissionDenied
 from django.http import FileResponse, Http404
@@ -9,15 +9,15 @@ from django.shortcuts import get_object_or_404, redirect
 from django.urls import resolve
 from django.views import View
 from rest_framework import viewsets, generics, parsers, renderers, status, permissions, filters, mixins
-from rest_framework.decorators import detail_route
-from rest_framework.exceptions import PermissionDenied as DrfPermissionDenied, ValidationError
+from rest_framework.decorators import detail_route, list_route
+from rest_framework.exceptions import PermissionDenied as DrfPermissionDenied, ValidationError, NotFound
 from rest_framework.response import Response
 
 from core.permissions import ComsesPermissions
 from core.view_helpers import add_change_delete_perms, get_search_queryset
 from core.views import FormViewSetMixin, FormUpdateView, FormCreateView
 from home.views import SmallResultSetPagination
-from library.fs import CodebaseReleaseFsApi, PossibleDirectories, CodebaseReleaseFsApiWithActivityLog
+from library.fs import FileCategoryDirectories, StagingDirectories, MessageLevels
 from library.permissions import CodebaseReleaseUnpublishedFilePermissions
 from .models import Codebase, CodebaseRelease, Contributor
 from .serializers import (CodebaseSerializer, RelatedCodebaseSerializer, CodebaseReleaseSerializer,
@@ -191,7 +191,7 @@ class CodebaseReleaseViewSet(FormViewSetMixin, viewsets.ModelViewSet):
         return response
 
 
-class CodebaseReleaseUnpublishedFilesViewSet(viewsets.GenericViewSet):
+class BaseCodebaseReleaseFilesViewSet(viewsets.GenericViewSet):
     lookup_field = 'relpath'
     lookup_value_regex = r'.*'
 
@@ -200,19 +200,40 @@ class CodebaseReleaseUnpublishedFilesViewSet(viewsets.GenericViewSet):
     permission_classes = (NestedCodebaseReleaseUnpublishedFilesPermission, CodebaseReleaseUnpublishedFilePermissions,)
     renderer_classes = (renderers.JSONRenderer,)
 
+    stage = None
+
+    @classmethod
+    def get_url_matcher(cls):
+        return ''.join([r'codebases/(?P<identifier>[\w\-.]+)',
+                        r'/releases/(?P<version_number>\d+\.\d+\.\d+)',
+                        r'/files/{}/(?P<category>{})'.format(
+                            cls.stage.name,
+                            '|'.join(c.name for c in FileCategoryDirectories))])
+
     def get_queryset(self):
         resolved = resolve(self.request.path)
         identifier = resolved.kwargs['identifier']
         queryset = self.queryset.filter(codebase__identifier=identifier)
         return queryset.accessible(user=self.request.user)
 
-    def get_folder(self) -> PossibleDirectories:
-        foldername = self.get_parser_context(self.request)['kwargs']['foldername']
+    def get_category(self) -> FileCategoryDirectories:
+        category = self.get_parser_context(self.request)['kwargs']['category']
         try:
-            return PossibleDirectories[foldername]
+            return FileCategoryDirectories[category]
         except KeyError:
-            raise ValidationError('Target folder name {} invalid. Must be one of {}'.format(foldername, list(
-                d.name for d in PossibleDirectories)))
+            raise ValidationError('Target folder name {} invalid. Must be one of {}'.format(category, list(
+                d.name for d in FileCategoryDirectories)))
+
+    def get_list_url(self, api):
+        raise NotImplemented()
+
+    def list(self, request, *args, **kwargs):
+        codebase_release = self.get_object()
+        api = codebase_release.get_fs_api()
+        category = self.get_category()
+        return Response(data={
+            'files': api.list(stage=self.stage, category=category),
+            'upload_url': self.get_list_url(api)(category=category)}, status=status.HTTP_200_OK)
 
     def get_object(self):
         queryset = self.filter_queryset(self.get_queryset())
@@ -229,31 +250,51 @@ class CodebaseReleaseUnpublishedFilesViewSet(viewsets.GenericViewSet):
 
         return obj
 
-    def list(self, request, identifier, version_number, foldername, **kwargs):
-        codebase_release = self.get_object()
-        api = CodebaseReleaseFsApi(codebase_release)
-        folder = self.get_folder()
-        return Response(data={
-            'files': list(api.list(folder)),
-            'upload_url': api.get_list_url(folder=folder)}, status=status.HTTP_200_OK)
 
-    def create(self, request, identifier, version_number, foldername, **kwargs):
+class CodebaseReleaseFilesSipViewSet(BaseCodebaseReleaseFilesViewSet):
+    stage = StagingDirectories.sip
+
+    def get_list_url(self, api):
+        return api.get_sip_list_url
+
+
+class CodebaseReleaseFilesOriginalsViewSet(BaseCodebaseReleaseFilesViewSet):
+    renderer_classes = (renderers.JSONRenderer,)
+
+    stage = StagingDirectories.originals
+
+    def get_list_url(self, api):
+        return api.get_originals_list_url
+
+    def create(self, request, *args, **kwargs):
         codebase_release = self.get_object()
-        dest_folder = self.get_folder()
+        fs_api = codebase_release.get_fs_api()
+        category = self.get_category()
         fileobj = request.data.get('file')
         if fileobj is None:
             raise ValidationError({'file': ['This field is required']})
-        with CodebaseReleaseFsApiWithActivityLog(codebase_release) as api:
-            api.add(fileobj=fileobj, dest_folder=dest_folder)
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        msgs = fs_api.add(content=fileobj, category=category)
+        logs, level = msgs.serialize()
+        status_code = status.HTTP_400_BAD_REQUEST if level > MessageLevels.info else status.HTTP_202_ACCEPTED
+        return Response(status=status_code, data=logs)
 
     def destroy(self, request, *args, **kwargs):
         relpath = kwargs['relpath']
         codebase_release = self.get_object()
-        folder = self.get_folder()
-        with CodebaseReleaseFsApiWithActivityLog(codebase_release) as api:
-            api.delete(folder, pathlib.Path(relpath))
-        return Response(status=status.HTTP_202_ACCEPTED)
+        fs_api = codebase_release.get_fs_api()
+        category = self.get_category()
+        msgs = fs_api.delete(category=category, relpath=pathlib.Path(relpath))
+        logs, level = msgs.serialize()
+        status_code = status.HTTP_400_BAD_REQUEST if level > MessageLevels.info else status.HTTP_202_ACCEPTED
+        return Response(status=status_code, data=logs)
+
+    @list_route(methods=['DELETE'])
+    def clear_category(self, request, **kwargs):
+        codebase_release = self.get_object()
+        fs_api = codebase_release.get_fs_api()
+        category = self.get_category()
+        fs_api.clear_category(category)
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class CodebaseReleaseFormCreateView(FormCreateView):

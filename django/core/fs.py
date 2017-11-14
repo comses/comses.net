@@ -59,6 +59,11 @@ def is_media(path: str):
 SYSTEM_FILES = ('__MACOSX', '.DS_Store', '.svn', '.git', '.hg')
 
 
+def has_macosx_dir(filename: str) -> bool:
+    path = pathlib.Path(filename)
+    return '__MACOSX' in path.parts
+
+
 def is_system_file(filename: str) -> bool:
     """
     :param filename: candidate filename to test
@@ -96,3 +101,11 @@ def make_bag(path, info: dict):
         return bagit.Bag(path)
     except bagit.BagError as e:
         return bagit.make_bag(path, info)
+
+
+def clean_directory(path):
+    for fs in os.scandir(path):
+        if fs.is_dir():
+            shutil.rmtree(os.path.join(path, fs.name), ignore_errors=True)
+        elif fs.is_file():
+            os.remove(os.path.join(path, fs.name))
