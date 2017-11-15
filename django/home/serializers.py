@@ -1,6 +1,6 @@
 import logging
-from datetime import datetime, timezone
 
+from django.utils import timezone
 from django.utils.translation import ugettext_lazy as _
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
@@ -31,7 +31,7 @@ class EventSerializer(serializers.ModelSerializer):
         return update(super().update, instance, validated_data)
 
     def validate(self, attrs):
-        date_created = attrs.get('date_created', datetime.now(timezone.utc))
+        date_created = attrs.get('date_created', timezone.now())
         early_registration_deadline = attrs.get('early_registration_deadline')
         submission_deadline = attrs.get('submission_deadline')
         start_date = attrs['start_date']
