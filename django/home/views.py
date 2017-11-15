@@ -98,6 +98,8 @@ def discourse_sso(request):
     qs = parse.parse_qs(decoded)
     user = request.user
     # FIXME: create a sync endpoint to sync up admins and groups (e.g., CoMSES full member Discourse group)
+    # See https://meta.discourse.org/t/official-single-sign-on-for-discourse-sso/13045
+    # for full description of params that can be added
     params = {
         'nonce': qs['nonce'][0],
         'email': user.email,
@@ -106,6 +108,7 @@ def discourse_sso(request):
         'require_activation': 'false',
         'name': user.get_full_name(),
     }
+    # add an avatar_url to the params if the user has one
     avatar_url = user.member_profile.avatar_url
     if avatar_url:
         params.update(avatar_url=request.build_absolute_uri(avatar_url))
