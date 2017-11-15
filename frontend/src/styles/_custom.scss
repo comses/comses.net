@@ -16,6 +16,10 @@ $font-family-base: 'Open Sans', Roboto, 'Helvetica Neue', sans-serif;
   }
 }
 
+[v-cloak] {
+  display: none;
+}
+
 $fa-font-path: '~font-awesome/fonts/';
 @import '~font-awesome/scss/font-awesome';
 

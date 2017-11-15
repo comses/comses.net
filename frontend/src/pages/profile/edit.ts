@@ -18,7 +18,7 @@ export const schema = yup.object().shape({
     given_name: yup.string().required(),
     family_name: yup.string().required(),
     research_interests: yup.string(),
-    orcid: yup.string(),
+    orcid_url: yup.string(),
     personal_url: yup.string().url(),
     professional_url: yup.string().url(),
     institution_name: yup.string(),
@@ -29,33 +29,42 @@ export const schema = yup.object().shape({
 });
 
 @Component(<any>{
-    template: `<form>
+    template: `<form v-cloak>
+        <div class="form-group">
+            <label class="form-control-label">Profile Picture</label>
+            <input type="file" class="form-control-file" @change="uploadImage">
+            <img class='mt-3 d-block rounded-circle img-fluid img-thumbnail' alt='Profile Image' v-if="state.avatar" :src="state.avatar">
+            <img class='mt-3 d-block rounded-circle img-fluid img-thumbnail' src='holder.js/150x150' v-else>
+        </div>
+
+        <div class='form-group' v-if='orcid_url'>
+        <a target='_blank' href='https://orcid.org/'>ORCID <span class='ai ai-orcid'></span></a> | <a target='_blank' :href='orcid_url'>{{ orcid_url }}</a>
+        </div>
+        <div class='form-group' v-else>
+        <span class='fa fa-link'></span> <a title='orcid' href='/accounts/orcid/login/?process=connect'>Connect your ORCID account</a>
+        <span class='ai ai-orcid'></span>
+        </div>
+
+
         <c-input v-model="given_name" name="given_name" :errorMsgs="errors.given_name" label="Given Name">
         </c-input>
         <c-input v-model="family_name" name="family_name" :errorMsgs="errors.family_name" label="Family Name">
         </c-input>
-        <c-textarea v-model="research_interests" name="research_interests" :errorMsgs="errors.research_interests" label="Research Interests">
-        </c-textarea>
-        <div class="form-group">
-            <label class="form-control-label">Profile Picture Upload</label>
-            <input type="file" class="form-control-file" @change="uploadImage">
-            <img v-if="avatar" :src="avatar">
-        </div>
-        </dropzone>
-        <c-input type="url" v-model="orcid" name="orcid" :errorMsgs="errors.orcid" label="ORCID" help="Your ORCID">
-        </c-input>
+        <c-markdown v-model="bio" name="bio" :errorMsgs="errors.bio" label="Bio">
+        </c-markdown>
+        <c-markdown v-model="research_interests" name="research_interests" :errorMsgs="errors.research_interests" label="Research Interests">
+        </c-markdown>
+
         <c-input type="url" v-model="personal_url" name="personal_url" :errorMsgs="errors.personal_url" label="Personal URL" help="A link to your personal modeling related website">
         </c-input>
         <c-input type="url" v-model="professional_url" name="professional_url" :errorMsgs="errors.professional_url" 
-                 label="Professional URL" help="A link to your profile at the your place of work">
+                 label="Professional URL" help="A link to your institutional or professional profile page.">
         </c-input>
         <c-input v-model="institution_name" name="institution_name" :errorMsgs="errors.institution_name"
             label="Institution" help="The primary place you are currently working at">
         </c-input>
         <c-input v-model="institution_url" name="institution_url" :errorMsgs="errors.institution_url" label="Institution URL">
         </c-input>
-        <c-textarea v-model="bio" name="bio" :errorMsgs="errors.bio" label="Biography">
-        </c-textarea>
         <c-edit-degrees :value="degrees" @create="degrees.push($event)" @remove="degrees.splice($event, 1)" @modify="degrees.splice($event.index, 1, $event.value)" name="degrees" :errorMsgs="errors.degrees">
             <label class="form-control-label" slot="label">Degrees</label>
             <small class="form-text text-muted" slot="help">The institution and name of the degrees you recieved</small>
@@ -64,7 +73,7 @@ export const schema = yup.object().shape({
         </c-tagger>
         <c-message-display :messages="statusMessages">
         </c-message-display>
-        <button type="button" class="mt-3 btn btn-primary" @click="createOrUpdate">Submit</button>
+        <button type="button" class="mt-3 btn btn-primary" @click="createOrUpdate">Save</button>
     </form>`,
     components: {
         'c-markdown': Markdown,
