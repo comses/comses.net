@@ -138,8 +138,8 @@ def initialize_database_schema(ctx, clean=False):
     dj(ctx, 'migrate --noinput')
 
 
-@task(aliases=['rdb', 'resetdb'])
-def reset_database(ctx):
+@task(aliases=['ddb', 'dropdb'])
+def drop_database(ctx, create=False):
     create_pgpass_file(ctx)
     ctx.run('psql -h {db_host} -c "alter database {db_name} connection limit 1;" -w {db_name} {db_user}'.format(**env),
             echo=True, warn=True)
@@ -148,5 +148,11 @@ def reset_database(ctx):
             **env),
         echo=True, warn=True)
     ctx.run('dropdb -w --if-exists -e {db_name} -U {db_user} -h {db_host}'.format(**env), echo=True, warn=True)
-    ctx.run('createdb -w {db_name} -U {db_user} -h {db_host}'.format(**env), echo=True, warn=True)
+    if create:
+        ctx.run('createdb -w {db_name} -U {db_user} -h {db_host}'.format(**env), echo=True, warn=True)
+
+
+@task(aliases=['rdb', 'resetdb'])
+def reset_database(ctx):
+    drop_database(ctx, create=True)
     initialize_database_schema(ctx, False)
