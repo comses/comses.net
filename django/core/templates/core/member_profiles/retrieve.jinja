@@ -24,12 +24,12 @@
 {% block content %}
     <div class='row'>
         <div class='col-3'>
-            <div class='d-block mt-4'>
+            <div class='mt-5'>
                 {% if avatar is none %}
                     <img src="holder.js/150x150?text=No picture available"
                          class="img-fluid mx-auto d-block rounded-circle">
                 {% else %}
-                    {{ image(avatar, "fill-150x150", class="img-fluid img-thumbnail mx-auto d-block rounded-circle") }}
+                    {{ image(avatar, "fill-150x150", width=150, height=150, class="img-fluid img-thumbnail mx-auto d-block rounded-circle") }}
                 {% endif %}
             </div>
         </div>
@@ -52,7 +52,7 @@
                             {% if institution %}
                                 {{ institution_href(institution) }}
                             {% else %}
-                                No institution entered.
+                                None
                             {% endif %}
                         </dd>
                         <dt class='col-sm-3'><u>Personal URL: </u></dt>
@@ -60,7 +60,7 @@
                             {% if personal_url %}
                                 <a href='{{ personal_url }}' target='_blank'>{{ personal_url }}</a>
                             {% else %}
-                                No personal URL entered.
+                                None
                             {% endif %}
                         </dd>
 
@@ -69,7 +69,7 @@
                             {% if professional_url %}
                                 <a href='{{ professional_url }}' target='_blank'>{{ professional_url }}</a>
                             {% else %}
-                                No professional URL entered.
+                                None
                             {% endif %}
                         </dd>
 
