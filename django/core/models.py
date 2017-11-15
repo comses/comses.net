@@ -152,6 +152,12 @@ class MemberProfile(index.Indexed, ClusterableModel):
     def orcid_url(self):
         return self.get_social_account_profile_url('orcid')
 
+    @property
+    def avatar_url(self):
+        if self.picture:
+            return self.picture.get_rendition('fill-150x150').url
+        return None
+
     """
     Returns the github profile URL associated with this member profile if it exists, or None
     """

@@ -38,7 +38,7 @@ export const schema = yup.object().shape({
         </div>
 
         <div class='form-group' v-if='orcid_url'>
-        <a target='_blank' href='https://orcid.org/'>ORCID <span class='ai ai-orcid'></span></a> | <a target='_blank' :href='orcid_url'>{{ orcid_url }}</a>
+        ORCID <a target='_blank' href='https://orcid.org/'><span class='ai ai-orcid'></span></a> | <a target='_blank' :href='orcid_url'>{{ orcid_url }}</a>
         </div>
         <div class='form-group' v-else>
         <span class='fa fa-link'></span> <a title='orcid' href='/accounts/orcid/login/?process=connect'>Connect your ORCID account</a>

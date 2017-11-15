@@ -3,7 +3,6 @@ import hashlib
 import hmac
 import logging
 from urllib import parse
-from dateutil import tz
 
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
@@ -24,14 +23,14 @@ from taggit.models import Tag
 from wagtail.wagtailimages.models import Image
 from wagtail.wagtailsearch.backends import get_search_backend
 
-from core.views import FormViewSetMixin, FormCreateView, FormUpdateView
-from core.view_helpers import get_search_queryset, retrieve_with_perms
-from core.utils import parse_datetime
-from .models import FeaturedContentItem, MemberProfile
 from core.models import FollowUser, Event, Job
+from core.utils import parse_datetime
+from core.view_helpers import get_search_queryset, retrieve_with_perms
+from core.views import FormViewSetMixin, FormCreateView, FormUpdateView
+from .common_serializers import RelatedMemberProfileSerializer
+from .models import FeaturedContentItem, MemberProfile
 from .serializers import (EventSerializer, JobSerializer, TagSerializer, FeaturedContentItemSerializer,
                           MemberProfileSerializer, UserMessageSerializer)
-from .common_serializers import RelatedMemberProfileSerializer
 
 logger = logging.getLogger(__name__)
 
@@ -107,6 +106,9 @@ def discourse_sso(request):
         'require_activation': 'false',
         'name': user.get_full_name(),
     }
+    avatar_url = user.member_profile.avatar_url
+    if avatar_url:
+        params.update(avatar_url=request.build_absolute_uri(avatar_url))
 
     return_payload = base64.encodebytes(bytes(parse.urlencode(params), 'utf-8'))
     h = hmac.new(key, return_payload, digestmod=hashlib.sha256)
