@@ -1,10 +1,8 @@
-from dateutil.parser import parse as _parse_datetime, tz
-
-from django.conf import settings
-from django.core.files.images import ImageFile
-
 import pathlib
 
+from django.utils import timezone
+from dateutil import parser
+from django.core.files.images import ImageFile
 from wagtail.wagtailimages.models import Image
 
 
@@ -20,10 +18,15 @@ def get_canonical_image(title, path, user):
     return _image
 
 
-def parse_datetime(timestr: str):
-    tzinfo = tz.gettz(settings.TIME_ZONE)
-    if timestr:
-        dt = _parse_datetime(timestr)
-        dt.replace(tzinfo=tzinfo)
+def parse_datetime(datetime_str: str):
+    """
+    Parses a datetime string with optional timezone encoding and returns a timezone aware datetime.
+    If an empty string is passed in, returns None. If an invalid datetime string is given a ValueError will be raised
+    http://dateutil.readthedocs.io/en/stable/parser.html
+    """
+    if datetime_str:
+        dt = parser.parse(datetime_str)
+        if dt.tzinfo is None:
+            return timezone.make_aware(dt)
         return dt
     return None
