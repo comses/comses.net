@@ -7,7 +7,7 @@ import Datepicker from 'components/forms/datepicker';
 import TextArea from 'components/forms/textarea'
 import MessageDisplay from 'components/message_display'
 import EditItems from 'components/edit_items'
-import {profileAPI} from 'api'
+import {ProfileAPI} from 'api'
 import * as _ from 'lodash'
 import * as Dropzone from 'vue2-dropzone'
 import {createFormValidator} from 'pages/form'
@@ -87,12 +87,13 @@ export const schema = yup.object().shape({
     }
 })
 export default class EditProfile extends createFormValidator(schema) {
+    private api = new ProfileAPI();
     @Prop
     _username: string | null;
 
     detailPageUrl(state) {
         this.state.username = state.username;
-        return profileAPI.detailUrl(this.state.username);
+        return this.api.detailUrl(this.state.username);
     }
 
     detailUrlParams(state) {
@@ -110,16 +111,16 @@ export default class EditProfile extends createFormValidator(schema) {
     }
 
     createOrUpdate() {
-        return profileAPI.update(this.state.username, new HandlerWithRedirect(this));
+        return this.api.update(this.state.username, new HandlerWithRedirect(this));
     }
 
     retrieve(username: string) {
-        return profileAPI.retrieve(username).then(r => this.state = r.data);
+        return this.api.retrieve(username).then(r => this.state = r.data);
     }
 
     async uploadImage(event) {
         const file = event.target.files[0];
-        const response = await profileAPI.uploadProfilePicture({username: this.state.username}, file);
+        const response = await this.api.uploadProfilePicture({username: this.state.username}, file);
         this.state.avatar = response.data;
     }
 

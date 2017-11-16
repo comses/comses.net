@@ -4,8 +4,7 @@ import * as Vue from 'vue'
 import DatePicker from 'components/forms/datepicker'
 import Input from 'components/forms/input'
 import Tagger from 'components/tagger'
-import * as queryString from 'query-string'
-import * as _ from 'lodash'
+import {CodebaseAPI} from 'api';
 
 
 @Component({
@@ -27,14 +26,7 @@ import * as _ from 'lodash'
                         <c-date-picker v-model="endDate" name="endDate" :errorMsgs="[]" :clearButton="true">
                             <label class="form-control-label" slot="label">Published End Date</label>
                         </c-date-picker>
-                    </div>
-                </div>
-                <div class="card-metadata">
-                    <div class="title">
-                        Tags
-                    </div>
-                    <div class="card-body">
-                        <c-tagger v-model="tags" placeholder="Type to add tags" label="Find Tags">
+                        <c-tagger v-model="tags" placeholder="Type to add tags" label="Tags">
                         </c-tagger>
                     </div>
                 </div>
@@ -48,6 +40,7 @@ import * as _ from 'lodash'
     }
 })
 export class SearchCodebases extends Vue {
+    private api = new CodebaseAPI();
     fullTextSearch: string = '';
 
     startDate: string | null = null;
@@ -63,12 +56,6 @@ export class SearchCodebases extends Vue {
             end_date: this.endDate,
             tags: this.tags.map(tag => tag.name)
         };
-        Object.keys(queryObject).forEach(key => {
-           if (_.isEmpty(queryObject[key]) || _.isNull(queryObject[key])) {
-               delete queryObject[key];
-           }
-        });
-        const qs = queryString.stringify(queryObject);
-        return `/search/${ qs ? `?${qs}`: ''}`;
+        return this.api.searchUrl(queryObject);
     }
 }

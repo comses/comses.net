@@ -1,11 +1,8 @@
 import BaseControl from './forms/base'
 import {Component, Prop} from 'vue-property-decorator'
 import * as _ from 'lodash'
-
-import * as queryString from 'query-string'
-import {tagAPI} from 'api'
-
 import Multiselect from 'vue-multiselect'
+import {TagAPI} from 'api'
 
 @Component({
     template: `<div :class="['form-group', {'child-is-invalid': isInvalid }]">
@@ -59,9 +56,13 @@ export default class Tagger extends BaseControl {
         this.updateValue(_.concat(this.value, [{ name}]));
     }
 
+    list(query) {
+        return TagAPI.list({query});
+    }
+
     async fetchMatchingTags(query) {
         this.isLoading = true;
-        const response = await tagAPI.list({query, page: 1});
+        const response = await this.list(query);
         this.matchingTags = response.data.results;
         this.isLoading = false;
     }
@@ -71,4 +72,35 @@ export default class Tagger extends BaseControl {
         this.$emit('input', value);
         this.$emit('clear', this.name);
     }
+}
+
+export class EventTagger extends Tagger {
+
+    list(query) {
+        return TagAPI.listEventTags({query});
+    }
+
+}
+
+export class JobTagger extends Tagger {
+
+    list(query) {
+        return TagAPI.listJobTags({query}); }
+
+}
+
+export class CodebaseTagger extends Tagger {
+
+    list(query) {
+        return TagAPI.listCodebaseTags({query});
+    }
+
+}
+
+export class ProfileTagger extends Tagger {
+
+    list(query) {
+        return TagAPI.listProfileTags({query});
+    }
+
 }

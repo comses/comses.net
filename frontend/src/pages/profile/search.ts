@@ -3,9 +3,10 @@ import {Search} from 'components/search'
 import * as Vue from 'vue'
 import DatePicker from 'components/forms/datepicker'
 import Input from 'components/forms/input'
-import Tagger from 'components/tagger'
+import ProfileTagger from 'components/tagger'
 import * as queryString from 'query-string'
 import * as _ from 'lodash'
+import {ProfileAPI} from 'api'
 
 
 @Component({
@@ -19,16 +20,9 @@ import * as _ from 'lodash'
                     </div>
                     <div class="card-body">
                         <c-input type="text" v-model="fullTextSearch" name="fullTextSearch">
-                            <label class="form-control-label" slot="label">Universal Search</label>
+                            <label class="form-control-label" slot="label">Full Text Search</label>
                         </c-input>
-                    </div>
-                </div>
-                <div class="card-metadata">
-                    <div class="title">
-                        Tags
-                    </div>
-                    <div class="card-body">
-                        <c-tagger v-model="keywords" placeholder="Type to add tags" label="Find Keywords">
+                        <c-tagger v-model="keywords" placeholder="Type to add tags" label="Tags">
                         </c-tagger>
                     </div>
                 </div>
@@ -37,11 +31,12 @@ import * as _ from 'lodash'
     components: {
         'c-date-picker': DatePicker,
         'c-input': Input,
-        'c-tagger': Tagger,
+        'c-tagger': ProfileTagger,
         'c-search': Search,
     }
 })
 export class SearchProfiles extends Vue {
+    private api = new ProfileAPI();
     fullTextSearch: string = '';
 
     keywords: Array<{name: string}> = [];
@@ -51,12 +46,6 @@ export class SearchProfiles extends Vue {
             query: this.fullTextSearch,
             keywords: this.keywords.map(keyword => keyword.name)
         };
-        Object.keys(queryObject).forEach(key => {
-           if (_.isEmpty(queryObject[key]) || _.isNull(queryObject[key])) {
-               delete queryObject[key];
-           }
-        });
-        const qs = queryString.stringify(queryObject);
-        return `/search/${ qs ? `?${qs}`: ''}`;
+        return this.api.searchUrl(queryObject);
     }
 }

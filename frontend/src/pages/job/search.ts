@@ -6,7 +6,7 @@ import Input from 'components/forms/input'
 import Tagger from 'components/tagger'
 import * as queryString from 'query-string'
 import * as _ from 'lodash'
-import {jobAPI} from 'api';
+import {JobAPI} from 'api';
 
 
 @Component({
@@ -28,14 +28,7 @@ import {jobAPI} from 'api';
                         <c-date-picker v-model="lastModifiedDate" name="lastModifiedDate" :clearButton="true">
                             <label class="form-control-label" slot="label">Last Modified Date</label>
                         </c-date-picker>
-                    </div>
-                </div>
-                <div class="card-metadata">
-                    <div class="title">
-                        Tags
-                    </div>
-                    <div class="card-body">
-                        <c-tagger v-model="tags" placeholder="Type to add tags" label="Find Tags">
+                        <c-tagger v-model="tags" placeholder="Type to add tags" label="Tags">
                         </c-tagger>
                     </div>
                 </div>
@@ -49,6 +42,7 @@ import {jobAPI} from 'api';
     }
 })
 export class SearchJobs extends Vue {
+    readonly api = new JobAPI();
     fullTextSearch: string = '';
 
     initialPostingDate = null;
@@ -64,12 +58,6 @@ export class SearchJobs extends Vue {
             last_modified__gte: this.lastModifiedDate,
             tags: this.tags.map(tag => tag.name)
         };
-        Object.keys(queryObject).forEach(key => {
-           if (_.isEmpty(queryObject[key]) || _.isNull(queryObject[key])) {
-               delete queryObject[key];
-           }
-        });
-        const qs = queryString.stringify(queryObject);
-        return `${jobAPI.baseUrl}${ qs ? `?${qs}`: ''}`;
+        return this.api.searchUrl(queryObject);
     }
 }

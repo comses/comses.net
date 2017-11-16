@@ -4,9 +4,7 @@ import * as Vue from 'vue'
 import DatePicker from 'components/forms/datepicker'
 import Input from 'components/forms/input'
 import Tagger from 'components/tagger'
-import * as queryString from 'query-string'
-import * as _ from 'lodash'
-import {eventAPI} from 'api'
+import {EventAPI} from 'api'
 
 
 @Component({
@@ -28,14 +26,7 @@ import {eventAPI} from 'api'
                         <c-date-picker v-model="startDate" name="startDate" :clearButton="true">
                             <label class="form-control-label" slot="label">Event Start Date</label>
                         </c-date-picker>
-                    </div>
-                </div>
-                <div class="card-metadata">
-                    <div class="title">
-                        Tags
-                    </div>
-                    <div class="card-body">
-                        <c-tagger v-model="tags" placeholder="Type to add tags" label="Find Tags">
+                        <c-tagger v-model="tags" placeholder="Type to add tags" label="Tags">
                         </c-tagger>
                     </div>
                 </div>
@@ -49,11 +40,10 @@ import {eventAPI} from 'api'
     }
 })
 export class SearchEvents extends Vue {
+    private api = new EventAPI();
     fullTextSearch: string = '';
-
     submissionDeadline = null;
     startDate = null;
-
     tags: Array<{name: string}> = [];
     contributors = [];
 
@@ -64,12 +54,6 @@ export class SearchEvents extends Vue {
             submission_deadline__gte: this.submissionDeadline,
             tags: this.tags.map(tag => tag.name)
         };
-        Object.keys(queryObject).forEach(key => {
-           if (_.isEmpty(queryObject[key]) || _.isNull(queryObject[key])) {
-               delete queryObject[key];
-           }
-        });
-        const qs = queryString.stringify(queryObject);
-        return `${eventAPI.baseUrl}${ qs ? `?${qs}`: ''}`;
+        return this.api.searchUrl(queryObject);
     }
 }

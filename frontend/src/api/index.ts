@@ -1,161 +1,183 @@
 import {AxiosRequestConfig, AxiosResponse} from 'axios'
 import * as queryString from 'query-string'
 import {api} from 'api/connection'
-import {CreateOrUpdateHandler} from "api/handler";
+import {CreateOrUpdateHandler} from "api/handler"
+import {pickBy, isEmpty} from 'lodash'
 
-export const eventAPI = {
-    baseUrl: '/events/',
-    detailUrl(id: number) {
-        return `${this.baseUrl}${id}/`;
-    },
-    createUrl() {
-        return this.baseUrl;
-    },
-    delete(id: number) {
-        return api.delete(this.detailUrl(id));
-    },
-    retrieve(id: number) {
-        return api.get(this.detailUrl(id));
-    },
-    update(id: number, event: CreateOrUpdateHandler) {
-        return api.put(this.detailUrl(id), event);
-    },
-    create(event_component: CreateOrUpdateHandler) {
-        return api.post(this.createUrl(), event_component);
+abstract class BaseAPI {
+
+    abstract baseUrl();
+
+    detailUrl(id: string | number) {
+        return `${this.baseUrl()}${id}/`;
     }
-};
-
-export const jobAPI = {
-    baseUrl: '/jobs/',
-    detailUrl(id: number) {
-        return `/jobs/${id}/`;
-    },
     createUrl() {
-        return `/jobs/`;
-    },
-    retrieve(id: number) {
-        return api.get(this.detailUrl(id));
-    },
-    delete(id: number) {
-        return api.delete(this.detailUrl(id));
-    },
-    update(id: number, job_component: CreateOrUpdateHandler) {
-        return api.put(this.detailUrl(id), job_component);
-    },
-    create(job_component: CreateOrUpdateHandler) {
-        return api.post(this.createUrl(), job_component);
+        return this.baseUrl();
     }
-};
+    delete(id: string | number) {
+        return api.delete(this.detailUrl(id));
+    }
+    retrieve(id: string | number) {
+        return api.get(this.detailUrl(id));
+    }
+    update(id: string | number, handler: CreateOrUpdateHandler) {
+        return api.put(this.detailUrl(id), handler);
+    }
+    create(handler: CreateOrUpdateHandler) {
+        return api.post(this.createUrl(), handler);
+    }
+    searchUrl(queryObject) {
+        let filteredObject = pickBy(queryObject);
+        const qs = queryString.stringify(filteredObject);
+        if (isEmpty(qs)) {
+            return this.baseUrl();
+        }
+        return `${this.baseUrl()}?${qs}`
+    }
 
-export const profileAPI = {
-    baseUrl: '/users/',
+}
+
+export class EventAPI extends BaseAPI {
+    baseUrl() {
+        return '/events/';
+    }
+}
+
+export class JobAPI extends BaseAPI {
+    baseUrl() {
+        return '/jobs/';
+    }
+}
+
+export class ProfileAPI extends BaseAPI {
+
+    baseUrl() {
+        return '/users/';
+    }
+
     listUrl(q: { query?: string, page: number }) {
         const qs = queryString.stringify(q);
-        return `/users/${qs ? `?${qs}` : ''}`;
-    },
-    detailUrl(username: string) {
-        return `/users/${username}/`;
-    },
+        return `${this.baseUrl()}${qs ? `?${qs}` : ''}`;
+    }
+
     uploadPictureUrl(username: string) {
         return `${this.detailUrl(username)}upload_picture/`
-    },
+    }
+
     list(q: { query?: string, page: number }) {
         return api.get(this.listUrl(q));
-    },
-    retrieve(username) {
-        return api.get(this.detailUrl(username));
-    },
-    update(username, profile_component) {
-        return api.put(this.detailUrl(username), profile_component);
-    },
+    }
+
     uploadProfilePicture({username}, file) {
         const formData = new FormData();
         formData.append('file', file);
         return api.postForm(this.uploadPictureUrl(username), formData,
             {headers: {'Content-Type': 'multipart/form-data'}})
     }
-};
 
-export const codebaseAPI = {
-    baseUrl: '/codebases/',
-    listUrl() {
-        return this.baseUrl;
-    },
-    detailUrl(identifier) {
-        return `/codebases/${identifier}/`;
-    },
-    create(codebase) {
-        return api.post(this.listUrl(), codebase);
-    },
-    delete(identifier) {
-        return api.delete(this.detailUrl(identifier));
-    },
-    update(identifier, codebase_component: CreateOrUpdateHandler) {
-        return api.put(this.detailUrl(identifier), codebase_component);
-    },
-    retrieve(identifier) {
-        return api.get(this.detailUrl(identifier));
+}
+
+export class CodebaseAPI extends BaseAPI {
+    baseUrl() {
+        return '/codebases/';
     }
-};
+}
 
-export const codebaseReleaseAPI = {
-    baseUrl: '/codebases/',
+export class CodebaseReleaseAPI {
+
+    baseUrl() {
+        return "/codebases/";
+    }
+
     detailUrl({identifier, version_number}) {
-        return `/codebases/${identifier}/releases/${version_number}/`;
-    },
+        return `${this.baseUrl()}${identifier}/releases/${version_number}/`;
+    }
+
     detailEditUrl({identifier, version_number}) {
         return `${this.detailUrl({identifier, version_number})}?edit`
-    },
+    }
+
     listFileUrl({identifier, version_number, upload_type}) {
         return `${this.detailUrl({identifier, version_number})}files/${upload_type}/`;
-    },
+    }
+
     updateContributorUrl({identifier, version_number}) {
         return `${this.detailUrl({identifier, version_number})}contributors/`;
-    },
+    }
+
     publish({identifier, version_number}, publish_component) {
         return api.post(`${this.detailUrl({identifier, version_number})}publish/`, publish_component);
-    },
+    }
+
     retrieve({identifier, version_number}) {
         return api.get(this.detailEditUrl({identifier, version_number}));
-    },
+    }
+
     listFiles({identifier, version_number, upload_type}) {
         return api.get(this.listFileUrl({identifier, version_number, upload_type}));
-    },
+    }
+
     uploadFile({path}, file, onUploadProgress) {
         const formData = new FormData();
         formData.append('file', file);
         return api.postForm(path, formData, {headers: {'Content-Type': 'multipart/form-data'}, onUploadProgress});
-    },
+    }
+
     deleteFile({path}) {
         return api.delete(path);
-    },
+    }
+
     updateDetail({identifier, version_number}, detail) {
         return api.put(
             this.detailEditUrl({identifier, version_number}), detail)
-    },
+    }
+
     updateContributors({identifier, version_number}, contributors) {
         return api.put(this.updateContributorUrl({identifier, version_number}), contributors)
     }
-};
+}
 
-export const tagAPI = {
-    listUrl({query, page}) {
-        let filters: object = {page};
-        if (query) {
-            filters['query'] = query;
-        }
-        return `/tags/?${queryString.stringify(filters)}`;
-    },
-    list({query, page = 1}) {
-        return api.get(this.listUrl({query, page}));
+interface TagQueryParameters {
+    query: string;
+    type: string;
+    page: number;
+}
+
+export class TagAPI {
+
+    static listUrl(params: TagQueryParameters) {
+        return `/tags/?${queryString.stringify(params)}`;
     }
-};
 
-export const contributorAPI = {
-    listUrl(filters: { query?: string, page: number }) {
+    static list({query, type="", page = 1}) {
+        return api.get(TagAPI.listUrl({query, type, page}));
+    }
+
+    static listEventTags({query, page=1}) {
+        return TagAPI.list({query, type: "Event", page});
+    }
+
+    static listJobTags({query, page=1}) {
+        return TagAPI.list({query, type: "Job", page});
+    }
+
+    static listCodebaseTags({query, page=1}) {
+        return TagAPI.list({query, type: "Codebase", page});
+    }
+
+    static listProfileTags({query, page=1}) {
+        return TagAPI.list({query, type: "Profile", page});
+    }
+
+}
+
+export class ContributorAPI {
+
+    static listUrl(filters: { query?: string, page: number }) {
         return `/contributors/?${queryString.stringify(filters)}`
-    },
-    list({query, page = 1}) {
-        return api.get(this.listUrl({query, page}));
     }
-};
+
+    static list({query, page = 1}) {
+        return api.get(ContributorAPI.listUrl({query, page}));
+    }
+}
