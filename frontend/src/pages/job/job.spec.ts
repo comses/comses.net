@@ -1,6 +1,6 @@
 import EditJob, {schema} from './edit'
 import {createDefaultValue} from "pages/form"
-import {jobAPI} from "api"
+import {JobAPI} from "api"
 import * as _ from 'lodash'
 
 const title = 'Postdoc on ABM';
@@ -15,6 +15,7 @@ async function createJob() {
 }
 
 describe('jobs editing', () => {
+    let api = new JobAPI();
     it('should allow updating and retrieving of jobs', async () => {
         try {
             const _id = await createJob();
@@ -27,7 +28,7 @@ describe('jobs editing', () => {
             await vm.initializeForm();
             expect((<any>vm).title).toBe('foo');
 
-            await jobAPI.delete(_id);
+            await api.delete(_id);
 
         } catch (e) {
             if (e.response) {

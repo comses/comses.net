@@ -1,6 +1,6 @@
 import * as Vue from 'vue'
 import {CalendarEvent} from 'store/common'
-import {eventAPI} from 'api'
+import {EventAPI} from 'api'
 import Markdown from 'components/forms/markdown'
 import Tagger from 'components/tagger'
 import Input from 'components/forms/input'
@@ -114,13 +114,15 @@ class EditEvent extends createFormValidator(schema) {
     // determine whether you are creating or updating based on wat route you are on
     // update -> grab the appropriate state from the store
     // create -> use the default store state
+    //
+    private api = new EventAPI();
 
     @Prop
     _id: number | null;
 
     detailPageUrl(state) {
         this.state.id = state.id;
-        return eventAPI.detailUrl(this.state.id);
+        return this.api.detailUrl(this.state.id);
     }
 
     initializeForm() {
@@ -144,14 +146,14 @@ class EditEvent extends createFormValidator(schema) {
 
     createOrUpdate() {
         if (_.isNil(this.state.id)) {
-            return eventAPI.create(new HandlerWithRedirect(this));
+            return this.api.create(new HandlerWithRedirect(this));
         } else {
-            return eventAPI.update(this.state.id, new HandlerWithRedirect(this));
+            return this.api.update(this.state.id, new HandlerWithRedirect(this));
         }
     }
 
     retrieve(id: number) {
-        return eventAPI.retrieve(id).then(r => this.state = r.data);
+        return this.api.retrieve(id).then(r => this.state = r.data);
     }
 }
 

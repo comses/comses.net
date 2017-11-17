@@ -3,7 +3,7 @@ import Markdown from 'components/forms/markdown'
 import Tagger from 'components/tagger'
 import Input from 'components/forms/input'
 import MessageDisplay from 'components/message_display'
-import {jobAPI} from 'api/index'
+import {JobAPI} from 'api/index'
 import * as _ from 'lodash'
 import * as yup from 'yup'
 import {Job} from 'store/common'
@@ -58,13 +58,14 @@ class EditJob extends createFormValidator(schema) {
     // determine whether you are creating or updating based on what route you are on
     // update -> grab the appropriate state from the store
     // create -> use the default store state
+    private api = new JobAPI();
 
     @Prop()
     _id: number | null;
 
     detailPageUrl(state) {
         this.state.id = state.id;
-        return jobAPI.detailUrl(this.state.id);
+        return this.api.detailUrl(this.state.id);
     }
 
     initializeForm() {
@@ -88,14 +89,14 @@ class EditJob extends createFormValidator(schema) {
 
     async createOrUpdate() {
         if (_.isNil(this.state.id)) {
-            return jobAPI.create(new HandlerWithRedirect(this))
+            return this.api.create(new HandlerWithRedirect(this))
         } else {
-            return jobAPI.update(this.state.id, new HandlerWithRedirect(this));
+            return this.api.update(this.state.id, new HandlerWithRedirect(this));
         }
     }
 
     retrieve(id: number) {
-        return jobAPI.retrieve(id).then(r => {
+        return this.api.retrieve(id).then(r => {
             this.state = r.data;
             return r;
         });

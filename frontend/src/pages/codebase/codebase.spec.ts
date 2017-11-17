@@ -1,7 +1,8 @@
 import EditCodebase, {schema} from './edit'
 import {createDefaultValue} from 'pages/form'
-import {codebaseAPI} from 'api'
+import {CodebaseAPI} from 'api'
 import * as _ from 'lodash'
+
 
 async function createCodebase() {
     const codebase = _.merge(createDefaultValue(schema), {
@@ -17,6 +18,7 @@ async function createCodebase() {
 }
 
 describe('codebase editing', () => {
+    let api = new CodebaseAPI();
     it('should allow updating and retrieving of codebases', async () => {
         const _identifier = await createCodebase();
         try {
@@ -30,7 +32,7 @@ describe('codebase editing', () => {
             await vm.initializeForm();
             expect((<any>vm).title).toBe('Codebase Model');
 
-            await codebaseAPI.delete(_identifier);
+            await api.delete(_identifier);
         } catch (e) {
             if (e.response) {
                 console.log(e)

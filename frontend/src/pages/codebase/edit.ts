@@ -1,6 +1,6 @@
 import * as Vue from 'vue'
 import {Component, Prop} from 'vue-property-decorator'
-import {codebaseAPI} from "api/index";
+import {CodebaseAPI} from "api/index";
 import Checkbox from 'components/forms/checkbox'
 import Input from 'components/forms/input'
 import Tagger from 'components/tagger'
@@ -23,8 +23,8 @@ export const schema = yup.object().shape({
 @Component(<any>{
     template: `<div>
         <p>
-        Archiving the software that your research depends on can be tricky. We'll walk you through a submission workflow that
-        guides you through the steps needed to generate a citable software archive that broadly follows recommended practices
+        Archiving the software that your research depends on will help others (including your future self!) build on and reuse your own hard work down the road. 
+        Let's walk through the steps needed to generate a citable software archive that broadly follows recommended practices
         for <a href='https://www.force11.org/software-citation-principles'>software citation</a>.
         </p>
         <p>
@@ -55,17 +55,18 @@ export const schema = yup.object().shape({
     }
 })
 export default class Description extends createFormValidator(schema) {
+    private api = new CodebaseAPI();
     @Prop({default: null})
     _identifier: string;
 
     detailPageUrl(state) {
         this.state.identifier = state.identifier;
-        return codebaseAPI.detailUrl(this.state.identifier);
+        return this.api.detailUrl(this.state.identifier);
     }
 
     async initializeForm() {
         if (this._identifier) {
-            const response = await codebaseAPI.retrieve(this._identifier);
+            const response = await this.api.retrieve(this._identifier);
             this.state = response.data;
         }
     }
@@ -76,9 +77,9 @@ export default class Description extends createFormValidator(schema) {
 
     async createOrUpdate() {
         if (_.isNil(this.state.identifier)) {
-            return codebaseAPI.create(new HandlerWithRedirect(this));
+            return this.api.create(new HandlerWithRedirect(this));
         } else {
-            return codebaseAPI.update(this.state.identifier, new HandlerWithRedirect(this));
+            return this.api.update(this.state.identifier, new HandlerWithRedirect(this));
         }
     }
 

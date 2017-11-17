@@ -1,6 +1,6 @@
 import EditEvent, {schema} from './edit'
 import {createDefaultValue} from "pages/form"
-import {eventAPI} from "api"
+import {EventAPI} from "api"
 import * as _ from 'lodash'
 import axios from 'axios'
 
@@ -20,6 +20,7 @@ async function createEvent() {
 }
 
 describe('event editing', () => {
+    let api = new EventAPI();
     it('should allow updating and retrieving of events', async () => {
         try {
             const _id = await createEvent();
@@ -32,7 +33,7 @@ describe('event editing', () => {
             await vm.initializeForm();
             expect((<any>vm).title).toBe('foo');
 
-            await eventAPI.delete(_id);
+            await api.delete(_id);
 
         } catch (e) {
             if (e.response) {
