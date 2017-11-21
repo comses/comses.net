@@ -49,15 +49,11 @@
     {'text': 'List View', 'url': url('home:event-list'), 'active': True},
     ]) 
     }}
+    {{ paginator('home:event-list', __all__) }}
 {% endblock %}
 
 {% block content %}
     {{ list_page(__all__, render_event, 'home:event-detail') }}
-    <div class='row'>
-        <div class="col">
-            {{ paginator('home:event-list', __all__) }}
-        </div>
-    </div>
 {% endblock %}
 
 {% block sidebar %}
