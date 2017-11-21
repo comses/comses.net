@@ -9,7 +9,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.core.files.images import ImageFile
 from django.db.models.query_utils import Q
-from django.http import QueryDict, HttpResponseBadRequest, HttpResponseRedirect
+from django.http import HttpResponseBadRequest, HttpResponseRedirect
 from django.shortcuts import get_object_or_404
 from django.utils.decorators import method_decorator
 from rest_framework import viewsets, generics, parsers, status, mixins, filters, renderers
@@ -42,31 +42,29 @@ class SmallResultSetPagination(PageNumberPagination):
     page_size_query_param = 'page_size'
     max_page_size = 200
 
-    def get_paginated_response(self, data, **kwargs):
-        query_params = QueryDict('', mutable=True)
-
-        query = self.request.query_params.get('query')
-        if query:
-            query_params['query'] = query
-        tags = self.request.query_params.getlist('tags')
-        if tags:
-            query_params['tags'] = tags
-        order_by = self.request.query_params.getlist('order_by')
-        if order_by:
-            query_params['order_by'] = order_by
-
+    def get_paginated_response(self, data):
+        query_params = self.request.query_params.copy()
+        page = query_params.pop('page', [1])[0]
         count = self.page.paginator.count
-        n_pages = count // self.page_size + 1
-        page = int(self.request.query_params.get('page', 1))
+        num_pages = count // self.page_size + 1
+
+        try:
+            current_page_number = int(page)
+        except:
+            current_page_number = 1
+        page_range = list(range(max(2, current_page_number - 3), min(num_pages, current_page_number + 4)))
         return Response({
-            'current_page': page,
+            'is_first_page': current_page_number == 1,
+            'is_last_page': current_page_number == num_pages,
+            'current_page': current_page_number,
+            'page_size': self.page_size,
             'count': count,
-            'query': self.request.query_params.get('query'),
+            'query': query_params.get('query'),
             'query_params': query_params.urlencode(),
-            'range': list(range(max(1, page - 4), min(n_pages + 1, page + 5))),
-            'n_pages': n_pages,
+            'range': page_range,
+            'num_pages': num_pages,
             'results': data
-        }, **kwargs)
+        })
 
 
 @login_required

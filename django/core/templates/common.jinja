@@ -70,37 +70,54 @@
 </div>
 {% endmacro %}
 
+{% macro build_paginator_url_params(page_number, query_params) %}
+{%- if query_params %}{{ query_params }}&amp;{%endif -%}page={{page_number}}
+{% endmacro %}
+
 {% macro paginator(url_name, list_state) %}
-    <nav aria-label="Paginator">
+    <nav aria-label="Page navigation">
         {% if list_state.count %}
-            <ul class="pagination">
+            <ul class="pt-3 pagination">
+                <li class='page-item {{ "disabled" if list_state.is_first_page }}'>
+                    <a class='page-link' href='{{ url(url_name) }}?{{ build_paginator_url_params(list_state.current_page - 1, list_state.query_params) }}'
+                        aria-label='Previous'>
+                        <span aria-hidden='true'>&laquo;</span>
+                        <span class='sr-only'>Previous</span>
+                    </a>
+                </li>
+                <li class="page-item {{ "active" if list_state.is_first_page }}">
+                    <a class='page-link' href="{{ url(url_name) }}?{{ build_paginator_url_params(1, list_state.query_params) }}">1</a>
+                </li>
                 {% for page in list_state.range %}
-                    {% if loop.first and page != 1 %}
-                        <li class="page-item{% if page == list_state.current_page %} active{% endif %}">
-                            <a href="{{ url(url_name) }}?{{ list_state.query_params }}&page=1#query"
-                               class="page-link">1</a>
-                        </li>
-                        <li class="page-item">
-                            <span class="page-link">...</span>
+                    {% if loop.first and page > 2 %}
+                        <li class='page-item disabled'>
+                            <span class='page-link'>&hellip;</span>
                         </li>
                     {% endif %}
-                    <li class="page-item{% if page == list_state.current_page %} active{% endif %}">
-                        <a href="{{ url(url_name) }}?{{ list_state.query_params }}&page={{ page }}#query"
+                    <li class="page-item {{ "active" if page == list_state.current_page }}">
+                        <a href="{{ url(url_name) }}?{{ build_paginator_url_params(page, list_state.query_params) }}"
                            class="page-link">{{ page }}</a>
                     </li>
-                    {% if loop.last and page != list_state.n_pages %}
-                        <li class="page-item">
-                            <span class="page-link">...</span>
-                        </li>
-                        <li class="page-item{% if page == list_state.current_page %} active{% endif %}">
-                            <a href="{{ url(url_name) }}?{{ list_state.query_params }}&page={{ list_state.n_pages }}#query"
-                               class="page-link">{{ list_state.n_pages }}</a>
+                    {% if loop.last and page < list_state.num_pages - 1 %}
+                        <li class="page-item disabled">
+                            <span class='page-link'>&hellip;<span>
                         </li>
                     {% endif %}
                 {% endfor %}
+                <li class="page-item {{ "active" if list_state.is_last_page }}">
+                    <a href="{{ url(url_name) }}?{{ build_paginator_url_params(list_state.num_pages, list_state.query_params) }}" 
+                    class="page-link">{{ list_state.num_pages }}</a>
+                </li>
+                <li class='page-item {{ "disabled" if list_state.is_last_page }}'>
+                    <a class='page-link' href='{{ url(url_name) }}?{{ build_paginator_url_params(list_state.current_page + 1, list_state.query_params) }}'
+                        aria-label='Previous'>
+                        <span aria-hidden='true'>&raquo;</span>
+                        <span class='sr-only'>Next</span>
+                    </a>
+                </li>
             </ul>
         {% endif %}
-        <span>{{ list_state.count }} results found.</span>
+        <span>Displaying {{ list_state.page_size }} of <strong>{{ list_state.count }}</strong></span>
     </nav>
 {% endmacro %}
 

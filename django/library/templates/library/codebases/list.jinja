@@ -8,6 +8,9 @@
 
 {% block top %}
     {{ breadcrumb([{'text': 'Computational Model Library'}]) }}
+    <div>
+        {{ paginator('library:codebase-list', __all__) }}
+    </div>
     <div class='py-3'>
         <b class='title'>Sort By:</b>
         <select class='custom-select'>
@@ -25,9 +28,6 @@
 {% endblock %}
 
 {% block bottom %}
-    <div class="col">
-        {{ paginator('library:codebase-list', __all__) }}
-    </div>
 {% endblock %}
 
 {% block sidebar %}

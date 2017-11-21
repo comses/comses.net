@@ -7,7 +7,7 @@ from wagtail.wagtailsearch.backends import get_search_backend
 
 logger = logging.getLogger(__name__)
 
-search = get_search_backend()
+search_backend = get_search_backend()
 
 VALID_ORDER_BY_PARAMS = ['date_created', 'last_modified']
 
@@ -21,12 +21,11 @@ def clean_order_by(order_by_params):
 
 
 def get_search_queryset(query, queryset, order_by_relevance=True):
-    model = queryset.model
-    queryset = search.search(query, queryset, order_by_relevance=order_by_relevance)
+    qs = search_backend.search(query, queryset, order_by_relevance=order_by_relevance)
     # Need get_queryset method to work on DRF viewsets
     # DRF viewsets have permissions which require get_queryset to return something that has a model property
-    queryset.model = model
-    return queryset
+    qs.model = queryset.model
+    return qs
 
 
 def retrieve_with_perms(self, request, *args, **kwargs):
