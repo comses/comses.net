@@ -8,8 +8,10 @@ import Upload from './upload'
 import CodebaseReleaseMetadata from './detail'
 import {store} from './store'
 import {CreateOrUpdateHandler} from "api/handler";
-import {codebaseReleaseAPI} from "api";
+import {CodebaseReleaseAPI} from "api";
 import * as _ from 'lodash';
+
+const codebaseReleaseAPI = new CodebaseReleaseAPI();
 
 Vue.use(Vuex);
 Vue.use(VueRouter);

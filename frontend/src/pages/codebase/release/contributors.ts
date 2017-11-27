@@ -4,7 +4,7 @@ import {
     CalendarEvent, CodebaseContributor, Contributor, emptyContributor, emptyReleaseContributor,
     User
 } from 'store/common'
-import {codebaseReleaseAPI, contributorAPI} from 'api'
+import {CodebaseReleaseAPI, ContributorAPI} from 'api'
 import {store} from './store'
 import Checkbox from 'components/forms/checkbox'
 import Datepicker from 'components/forms/datepicker'
@@ -20,6 +20,9 @@ import * as yup from 'yup'
 import {createDefaultValue, createFormValidator} from 'pages/form'
 import * as $ from 'jquery'
 import {HandlerShowSuccessMessage} from "api/handler";
+
+const codebaseReleaseAPI = new CodebaseReleaseAPI();
+const contributorAPI = new ContributorAPI();
 
 const listContributors = _.debounce(async (state, self) => {
     self.isLoading = true;

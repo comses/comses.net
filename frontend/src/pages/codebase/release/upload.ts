@@ -3,7 +3,9 @@ import * as Vue from 'vue'
 import Vuex from 'vuex'
 import { exposeComputed } from './store'
 import * as _ from 'lodash'
-import {codebaseReleaseAPI} from "api/index";
+import {CodebaseReleaseAPI} from "api/index";
+
+const codebaseReleaseAPI = new CodebaseReleaseAPI();
 
 Vue.use(Vuex);
 
@@ -28,6 +30,8 @@ type UploadInfo = UploadSuccess | UploadProgress | UploadFailure;
 @Component(<any>{
     template: `<div>
         <slot name="label"></slot>
+        <div class="form-group">
+        </div>
         <div class="form-group">
             <input class="form-control-file" id="upload" type="file" @change="handleFiles($event)">
             <small class="form-text text-muted" v-if="instructions">{{ instructions }}</small>

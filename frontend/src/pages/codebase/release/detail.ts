@@ -1,6 +1,6 @@
 import * as Vue from 'vue'
 import * as _ from 'lodash'
-import {codebaseReleaseAPI} from "api/index";
+import {CodebaseReleaseAPI} from "api/index";
 import {Component, Prop, Watch} from 'vue-property-decorator'
 import Checkbox from 'components/forms/checkbox'
 import Datepicker from 'components/forms/datepicker'
@@ -13,6 +13,8 @@ import Tagger from 'components/tagger'
 import * as yup from 'yup'
 import {createFormValidator} from 'pages/form'
 import {HandlerShowSuccessMessage} from 'api/handler'
+
+const codebaseReleaseAPI = new CodebaseReleaseAPI();
 
 const schema = yup.object().shape({
     description: yup.string().required().label('this'),
@@ -98,16 +100,16 @@ export default class Description extends createFormValidator(schema) {
     }
 
     osOptions = [
-        { name: 'other', display: 'Other' },
-        { name: 'linux', display: 'Unix/Linux' },
-        { name: 'macos', display: 'Mac OS' },
-        { name: 'windows', display: 'Windows' },
-        { name: 'platform_independent', display: 'Platform Independent' },
+        {name: 'other', display: 'Other'},
+        {name: 'linux', display: 'Unix/Linux'},
+        {name: 'macos', display: 'Mac OS'},
+        {name: 'windows', display: 'Windows'},
+        {name: 'platform_independent', display: 'Platform Independent'},
     ];
     matchingPlatforms = [];
     isLoadingPlatforms = false;
 
-    matchingProgrammingLanguages = [{ name: 'NetLogo' }, { name: 'Python'}];
+    matchingProgrammingLanguages = [{name: 'NetLogo'}, {name: 'Python'}];
     isLoadingProgrammingLanguages = false;
 
     get isPublished() {

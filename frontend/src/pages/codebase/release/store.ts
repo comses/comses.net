@@ -1,9 +1,11 @@
 import * as Vue from 'vue'
 import Vuex from 'vuex'
 import { CodebaseReleaseStore, CodebaseContributor } from 'store/common'
-import { codebaseReleaseAPI } from 'api'
+import { CodebaseReleaseAPI } from 'api'
 import * as _ from 'lodash'
 import * as yup from 'yup'
+
+const codebaseReleaseAPI = new CodebaseReleaseAPI();
 
 const initialState: CodebaseReleaseStore = {
     files: {
