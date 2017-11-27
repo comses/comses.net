@@ -33,7 +33,7 @@ class CodebaseViewSetTestCase(BaseViewSetTestCase):
         self.create_representative_users(submitter)
         self.instance_factory = CodebaseFactory(submitter=submitter)
         self.instance = self.instance_factory.create()
-        self.instance.create_release(live=True, initialize=False)
+        self.instance.create_release(live=True, draft=False, initialize=False)
 
     def assertResponseNoPermission(self, instance, response):
         if instance.live:
@@ -48,6 +48,34 @@ class CodebaseViewSetTestCase(BaseViewSetTestCase):
             self.assertResponseOk(response)
         else:
             self.assertResponseNoPermission(instance, response)
+
+    def check_destroy_permissions(self, user, instance):
+        response = self.client.delete(instance.get_absolute_url(), HTTP_ACCEPT='application/json', format='json')
+        has_perm = user.has_perm(create_perm_str(instance, 'delete'), obj=instance)
+        if user.is_anonymous:
+            self.assertResponsePermissionDenied(response)
+            return
+        if has_perm:
+            self.assertResponseDeleted(response)
+        elif instance.live:
+            self.assertResponsePermissionDenied(response)
+        else:
+            self.assertResponseNotFound(response)
+
+    def check_update_permissions(self, user, instance):
+        serialized = self.serializer_class(instance)
+        response = self.client.put(instance.get_absolute_url(), serialized.data, HTTP_ACCEPT='application/json',
+                                   format='json')
+        has_perm = user.has_perm(create_perm_str(instance, 'change'), obj=instance)
+        if user.is_anonymous:
+            self.assertResponsePermissionDenied(response)
+            return
+        if has_perm:
+            self.assertResponseOk(response)
+        elif instance.live:
+            self.assertResponsePermissionDenied(response)
+        else:
+            self.assertResponseNotFound(response)
 
     def check_destroy(self):
         for user in self.users_able_to_login:

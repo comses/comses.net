@@ -35,3 +35,12 @@ class ArchiveExtractorTestCase(TestCase):
                          set())
         self.assertEqual(set(fs_api.list(StagingDirectories.sip, FileCategoryDirectories.code)),
                          set())
+
+    def test_invalid_zipfile_saving(self):
+        archive_name = 'library/tests/archives/invalid.zip'
+        fs_api = self.codebase_release.get_fs_api()
+        with open(archive_name, 'rb') as f:
+            msgs = fs_api.add(FileCategoryDirectories.code, content=f, name="invalid.zip")
+        logs, level = msgs.serialize()
+        self.assertEquals(level, MessageLevels.error)
+        self.assertEquals(len(logs), 1)

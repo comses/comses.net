@@ -139,6 +139,10 @@ class Message:
         return {'level': self.level.name, 'msg': self.msg}
 
 
+def create_fs_message(detail, stage: StagingDirectories, level: MessageLevels):
+    return Message({'detail': str(detail), 'stage': stage.name}, level=level)
+
+
 class CodebaseReleaseStorage(FileSystemStorage):
     stage = None
 
@@ -184,13 +188,13 @@ class CodebaseReleaseStorage(FileSystemStorage):
         return MessageGroup()
 
     def info(self, msg):
-        return Message({'detail': str(msg), 'stage': self.stage.name}, level=MessageLevels.info)
+        return create_fs_message(msg, self.stage, MessageLevels.info)
 
     def error(self, msg):
-        return Message({'detail': str(msg), 'stage': self.stage.name}, level=MessageLevels.error)
+        return create_fs_message(msg, self.stage, MessageLevels.error)
 
     def critical(self, msg):
-        return Message({'detail': str(msg), 'stage': self.stage.name}, level=MessageLevels.critical)
+        return create_fs_message(msg, self.stage, MessageLevels.critical)
 
     def log_save(self, name, content):
         if name is None:
@@ -418,6 +422,10 @@ class CodebaseReleaseFsApi:
         if originals_storage.is_archive_directory(category):
             self.clear_category(category)
         else:
+            if not originals_storage.exists(str(relpath)):
+                logs.append(create_fs_message('No file at path {} to delete'.format(str(relpath)),
+                                              StagingDirectories.originals, MessageLevels.error))
+                return logs
             logs.append(sip_storage.log_delete(str(relpath)))
             logs.append(originals_storage.log_delete(str(relpath)))
         return logs
@@ -538,7 +546,16 @@ class ArchiveExtractor:
         msgs = MessageGroup()
         try:
             with TemporaryDirectory() as d:
-                msg = self.extractall(unpack_destination=d, filename=filename)
+                try:
+                    msg = self.extractall(unpack_destination=d, filename=filename)
+                except zipfile.BadZipFile as e:
+                    msg = create_fs_message(e, StagingDirectories.sip, MessageLevels.error)
+                except tarfile.TarError as e:
+                    msg = create_fs_message(e, StagingDirectories.sip, MessageLevels.error)
+                except Exception as e:
+                    logger.exception("Error unpacking archive")
+                    msg = create_fs_message(e, StagingDirectories.sip, MessageLevels.error)
+
                 if msg is not None:
                     return msg
                 rootdir = self.find_root_directory(d)
