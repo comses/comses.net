@@ -1,8 +1,8 @@
-bagit==1.5.4
+bagit==1.6.2
 django-allauth==0.34.0
-django-extensions==1.9.6
+django-extensions==1.9.7
 django-guardian==1.4.9
-django-jinja==2.4.0
+django-jinja==2.4.1
 django-location-field==2.0.3
 django-markupfield==1.4.3
 django-model-utils==3.0.0
@@ -19,11 +19,11 @@ djangorestframework-jwt==1.11.0
 elasticsearch-dsl>=5.0.0,<6.0.0
 elasticsearch>=5.0.0,<6.0.0
 html2text>=2016.9.19
-psycopg2==2.7.3.1
+psycopg2==2.7.3.2
 pygit2==0.24.2
 semver==2.7.9
-wagtail==1.13
-wagtailmenus==2.5.1
+wagtail==1.13.1
+wagtailmenus==2.5.2
 # deployment and management dependencies
 beautifulsoup4==4.6.0
 dealer==2.0.5
