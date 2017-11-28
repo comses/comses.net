@@ -97,8 +97,12 @@ export class CodebaseReleaseAPI {
         return `${this.detailUrl({identifier, version_number})}?edit`
     }
 
-    listFileUrl({identifier, version_number, upload_type}) {
-        return `${this.detailUrl({identifier, version_number})}files/${upload_type}/`;
+    listOriginalsFileUrl({identifier, version_number, category}) {
+        return `${this.detailUrl({identifier, version_number})}files/originals/${category}/`;
+    }
+
+    listSipFileUrl({identifier, version_number, category}) {
+        return `${this.detailUrl({identifier, version_number})}files/sip/${category}/`;
     }
 
     updateContributorUrl({identifier, version_number}) {
@@ -113,14 +117,19 @@ export class CodebaseReleaseAPI {
         return api.get(this.detailEditUrl({identifier, version_number}));
     }
 
-    listFiles({identifier, version_number, upload_type}) {
-        return api.get(this.listFileUrl({identifier, version_number, upload_type}));
+    listOriginalFiles({identifier, version_number, category}) {
+        return api.get(this.listOriginalsFileUrl({identifier, version_number, category}));
     }
 
-    uploadFile({path}, file, onUploadProgress) {
+    listSipFiles({identifier, version_number, category}) {
+        return api.get(this.listSipFileUrl({identifier, version_number, category}));
+    }
+
+    uploadFile({identifier, version_number, category}, file, onUploadProgress) {
         const formData = new FormData();
         formData.append('file', file);
-        return api.postForm(path, formData, {headers: {'Content-Type': 'multipart/form-data'}, onUploadProgress});
+        return api.postForm(this.listOriginalsFileUrl({identifier, version_number, category}),
+            formData, {headers: {'Content-Type': 'multipart/form-data'}, onUploadProgress});
     }
 
     deleteFile({path}) {

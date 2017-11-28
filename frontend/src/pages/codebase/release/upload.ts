@@ -1,7 +1,7 @@
-import { Component, Prop } from 'vue-property-decorator'
+import {Component, Prop} from 'vue-property-decorator'
 import * as Vue from 'vue'
 import Vuex from 'vuex'
-import { exposeComputed } from './store'
+import {exposeComputed} from './store'
 import * as _ from 'lodash'
 import {CodebaseReleaseAPI} from "api/index";
 
@@ -49,60 +49,84 @@ type UploadInfo = UploadSuccess | UploadProgress | UploadFailure;
                 </span>
             </div>
         </div>
-        <div class="container">
-            <div class="row" v-for="file in file_metadata.files">
-                <div class="col-9"><a :href="file.url">{{ file.path }}</a></div>
-                <div class="col-3"><button class="btn btn-sm btn-danger pull-right" @click="deleteFile(file.url)"><span class="fa fa-remove"></span></button></div>
+        <small class="form-text text-muted">
+            Files you uploaded. Deleted a file here will also delete it from expanded files
+        </small>
+        <div class="list-group">
+            <div class="list-group-item d-flex justify-content-between align-items-center" v-for="file in originals">
+                {{ file.path }}
+                <button class="btn btn-sm btn-danger pull-right" @click="deleteFile(file.url)">
+                    <span class="fa fa-remove"></span>
+                </button>
             </div>
         </div>
-    </div>`,
-    computed: exposeComputed(['codebase.identifier', 'version_number'])
+        <small class="form-text text-muted">
+            Expanded files you uploaded. When an archive (zip, tar, rar) file is uploaded it gets expanded here.
+        </small>
+        <div class="list-group">
+            <div class="list-group-item" v-for="path in sip">
+                {{ path }}
+            </div>
+        </div>
+    </div>`
 })
 export default class Upload extends Vue {
     @Prop
     uploadType: string;
 
-    fileUploadMsgs: { [name: string]: UploadInfo} = {};
+    fileUploadMsgs: { [name: string]: UploadInfo } = {};
 
     fileUploadAlertClass(uploadInfo: UploadInfo) {
-        switch(uploadInfo.kind) {
-            case 'success': return 'alert alert-success';
-            case 'progress': return 'alert alert-secondary';
-            case 'failure': return 'alert alert-danger';
+        switch (uploadInfo.kind) {
+            case 'success':
+                return 'alert alert-success';
+            case 'progress':
+                return 'alert alert-secondary';
+            case 'failure':
+                return 'alert alert-danger';
         }
     }
 
-    get uploadUrl() {
-        return this.$store.state.files[this.uploadType].upload_url;
-    }
-
-    @Prop({ default: '' })
+    @Prop({default: ''})
     instructions: string;
 
-    @Prop({ default: '' })
+    @Prop({default: ''})
     acceptedFileTypes: string;
 
     async handleFiles(event) {
         const file = event.target.files[0];
         const onUploadProgress = (progressEvent) => {
-            const percentCompleted = Math.round((progressEvent.loaded * 100)/progressEvent.total);
-            this.$set(this.fileUploadMsgs, file.name, { kind: 'progress', percentCompleted, size: file.size});
+            const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+            this.$set(this.fileUploadMsgs, file.name, {kind: 'progress', percentCompleted, size: file.size});
         };
-        const response = await codebaseReleaseAPI.uploadFile({ path: this.uploadUrl}, file, onUploadProgress);
+        const response = await codebaseReleaseAPI.uploadFile(
+            {identifier: this.identifier, version_number: this.version_number, category: this.uploadType},
+            file, onUploadProgress);
         _.delay(() => this.$delete(this.fileUploadMsgs, file.name), 3000);
-        await this.$store.dispatch('getFiles', this.uploadType);
+        await Promise.all([
+            this.$store.dispatch('getOriginalFiles', this.uploadType),
+            this.$store.dispatch('getSipFiles', this.uploadType)
+        ]);
         event.target.value = null;
     }
 
-    get file_metadata() {
-        return this.$store.state.files[this.uploadType];
+    get version_number() {
+        return this.$store.state.release.version_number;
     }
 
-    set file_metadata(value) {
-        this.$store.commit('setFiles', {upload_type: this.uploadType, value});
+    get identifier() {
+        return this.$store.state.release.codebase.identifier;
+    }
+
+    get originals() {
+        return this.$store.state.files.originals[this.uploadType];
+    }
+
+    get sip() {
+        return this.$store.state.files.sip[this.uploadType];
     }
 
     deleteFile(path: string) {
-        this.$store.dispatch('deleteFile', {upload_type: this.uploadType, path});
+        this.$store.dispatch('deleteFile', {category: this.uploadType, path});
     }
 }

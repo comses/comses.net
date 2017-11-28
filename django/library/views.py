@@ -184,10 +184,15 @@ class CodebaseReleaseViewSet(FormViewSetMixin, viewsets.ModelViewSet):
     @detail_route(methods=['get'])
     def download(self, request, **kwargs):
         codebase_release = self.get_object()
-        response = FileResponse(codebase_release.retrieve_archive())
-        response['Content-Disposition'] = 'attachment; filename={}'.format(
-            '{}_v{}.zip'.format(codebase_release.codebase.title.lower().replace(' ', '_'),
-                                codebase_release.version_number))
+        fs_api = codebase_release.get_fs_api()
+        try:
+            f, mimetype = fs_api.retrieve_archive()
+            response = FileResponse(f, content_type=mimetype)
+            response['Content-Disposition'] = 'attachment; filename={}'.format(
+                '{}_v{}.zip'.format(codebase_release.codebase.title.lower().replace(' ', '_'),
+                                    codebase_release.version_number))
+        except FileNotFoundError:
+            raise Http404()
         return response
 
 
@@ -231,9 +236,11 @@ class BaseCodebaseReleaseFilesViewSet(viewsets.GenericViewSet):
         codebase_release = self.get_object()
         api = codebase_release.get_fs_api()
         category = self.get_category()
-        return Response(data={
-            'files': api.list(stage=self.stage, category=category),
-            'upload_url': self.get_list_url(api)(category=category)}, status=status.HTTP_200_OK)
+        data = api.list(stage=self.stage, category=category)
+        if self.stage == StagingDirectories.originals:
+            data = [{'path': path, 'url': api.get_absolute_url(category=category, relpath=path)}
+                     for path in data]
+        return Response(data=data, status=status.HTTP_200_OK)
 
     def get_object(self):
         queryset = self.filter_queryset(self.get_queryset())

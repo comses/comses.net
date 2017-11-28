@@ -132,7 +132,8 @@ export interface Codebase extends AbstractCodebase {
     releases: Array<CodebaseRelease>
 }
 
-export interface CodebaseEdit extends AbstractCodebase { }
+export interface CodebaseEdit extends AbstractCodebase {
+}
 
 export interface Dependency {
     identifier: string,
@@ -157,7 +158,7 @@ interface AbstractCodebaseRelease extends UndefinedWithId {
     os: string
     peer_reviewed: boolean
     platforms: Array<{ name: string }>
-    possible_licenses: Array<{ name: string, url: string}>
+    possible_licenses: Array<{ name: string, url: string }>
     programming_languages: Array<{ name: string }>
     submitted_package: string
     submitter: User
@@ -172,12 +173,19 @@ export interface CodebaseReleaseEdit extends AbstractCodebaseRelease {
     codebase: CodebaseEdit
 }
 
+type FileInfo = { path: string, url: string }
+
+interface CodebaseReleaseFileLayout<T> {
+    data: Array<T>
+    docs: Array<T>
+    media: Array<T>
+    code: Array<T>
+}
+
 export interface CodebaseReleaseStore {
     files: {
-        data: { upload_url: string, files: Array<string> }
-        documentation: { upload_url: string, files: Array<string> }
-        images: { upload_url: string, files: Array<string> }
-        sources: { upload_url: string, files: Array<string> }
+        originals: CodebaseReleaseFileLayout<FileInfo>,
+        sip: CodebaseReleaseFileLayout<string>
     }
     release: CodebaseReleaseEdit
 }

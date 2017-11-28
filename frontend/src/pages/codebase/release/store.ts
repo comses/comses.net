@@ -1,7 +1,7 @@
 import * as Vue from 'vue'
 import Vuex from 'vuex'
-import { CodebaseReleaseStore, CodebaseContributor } from 'store/common'
-import { CodebaseReleaseAPI } from 'api'
+import {CodebaseReleaseStore, CodebaseContributor} from 'store/common'
+import {CodebaseReleaseAPI} from 'api'
 import * as _ from 'lodash'
 import * as yup from 'yup'
 
@@ -9,10 +9,18 @@ const codebaseReleaseAPI = new CodebaseReleaseAPI();
 
 const initialState: CodebaseReleaseStore = {
     files: {
-        sources: { upload_url: '', files: [] },
-        data: { upload_url: '', files: [] },
-        documentation: { upload_url: '', files: [] },
-        images: { upload_url: '', files: [] },
+        originals: {
+            code: [],
+            data: [],
+            docs: [],
+            media: [],
+        },
+        sip: {
+            code: [],
+            data: [],
+            docs: [],
+            media: [],
+        }
     },
     release: {
         codebase: {
@@ -66,7 +74,7 @@ const initialState: CodebaseReleaseStore = {
     }
 };
 
- export const contributorSchema = yup.object().shape({
+export const contributorSchema = yup.object().shape({
     user: yup.object().shape({
         full_name: yup.string(),
         insitution_name: yup.string(),
@@ -115,7 +123,7 @@ export function exposeComputed(paths: Array<string>): object {
                 return _.get(this.$store.state.release, path);
             },
             set: function (value) {
-                this.$store.dispatch('setAtPath', { path, value });
+                this.$store.dispatch('setAtPath', {path, value});
             }
         };
         computed[error_name] = {
@@ -128,6 +136,22 @@ export function exposeComputed(paths: Array<string>): object {
     return computed;
 }
 
+function getFiles(context, stage, category) {
+    switch (stage) {
+        case 'originals':
+            return codebaseReleaseAPI.listOriginalFiles({
+                identifier: context.state.release.codebase.identifier,
+                version_number: context.state.release.version_number, category
+            }).then(response => context.commit('setFiles', {stage, category, value: response.data}));
+        case 'sip':
+            return codebaseReleaseAPI.listSipFiles({
+                identifier: context.state.release.codebase.identifier,
+                version_number: context.state.release.version_number, category
+            }).then(response => context.commit('setFiles', {stage, category, value: response.data}));
+
+    }
+}
+
 interface CodebaseReleaseDetail {
     description: string
     documentation: string
@@ -135,12 +159,12 @@ interface CodebaseReleaseDetail {
     os: string
     license: string
     live: boolean
-    platforms: Array<{name: string}>
-    programming_languages: Array<{name: string}>
+    platforms: Array<{ name: string }>
+    programming_languages: Array<{ name: string }>
 }
 
 export const store = {
-    state: { ...initialState },
+    state: {...initialState},
     getters: {
         detail(state: CodebaseReleaseStore): CodebaseReleaseDetail {
             return {
@@ -169,17 +193,17 @@ export const store = {
         setReleaseContributors(state, release_contributors) {
             state.release.release_contributors = release_contributors;
         },
-        setCodebaseReleaseAtPath(state, { path, value }) {
+        setCodebaseReleaseAtPath(state, {path, value}) {
             _.set(state.release, path, value);
         },
-        setValidationErrorAtPath(state, { path, value }) {
+        setValidationErrorAtPath(state, {path, value}) {
             _.set(state.validation_errors, path, value);
         },
         unsetValidationErrorAtPath(state, path) {
             _.set(state.validation_errors, path, []);
         },
-        setFiles(state, { upload_type, value }) {
-            state.files[upload_type] = value;
+        setFiles(state, {stage, category, value}) {
+            state.files[stage][category] = value;
         },
         setValidationErrors(state, validation_errors) {
             console.log(validation_errors);
@@ -200,38 +224,54 @@ export const store = {
         }
     },
     actions: {
-        getCodebaseRelease(context, { identifier, version_number }) {
+        getCodebaseRelease(context, {identifier, version_number}) {
             return codebaseReleaseAPI.retrieve({identifier, version_number}).then(
                 response => context.commit('setCodebaseRelease', response.data));
         },
 
-        setAtPath(context, { path, value }) {
-            context.commit('setCodebaseReleaseAtPath', { path, value });
+        setAtPath(context, {path, value}) {
+            context.commit('setCodebaseReleaseAtPath', {path, value});
             const schema_path = path.replace('.', '.fields.');
             const subSchema = _.get(schema.fields, schema_path);
-            context.dispatch('setErrorsAtPath', { schema: subSchema, path, value });
+            context.dispatch('setErrorsAtPath', {schema: subSchema, path, value});
         },
 
         // Calculate any validation errors after 1s wait
-        setErrorsAtPath: _.debounce((context, { schema, path, value }) => schema.validate(value).then(
+        setErrorsAtPath: _.debounce((context, {schema, path, value}) => schema.validate(value).then(
             value => context.commit('unsetValidationErrorAtPath', path),
-            validation_error => context.commit('setValidationErrorAtPath', { path, value: validation_error.errors })), 800),
+            validation_error => context.commit('setValidationErrorAtPath', {
+                path,
+                value: validation_error.errors
+            })), 800),
 
-        getFiles(context, upload_type) {
-            return codebaseReleaseAPI.listFiles({
-                identifier: context.state.release.codebase.identifier,
-                version_number: context.state.release.version_number, upload_type}).then(
-                response => context.commit('setFiles', { upload_type, value: response.data }));
+        getOriginalFiles(context, category) {
+            return getFiles(context, 'originals', category);
         },
 
-        deleteFile(context, { upload_type, path }: { upload_type: string, path: string }) {
-            codebaseReleaseAPI.deleteFile({path}).then(response => context.commit('setFiles', { upload_type, value: response.data }));
+        getSipFiles(context, category) {
+            return getFiles(context, 'sip', category);
         },
 
-        initialize(context, { identifier, version_number }) {
-            return context.dispatch('getCodebaseRelease', { identifier, version_number })
-                .then(r => Promise.all([context.dispatch('getFiles', 'data'),
-                    context.dispatch('getFiles', 'docs'), context.dispatch('getFiles', 'code'), context.dispatch('getFiles', 'media')]));
+        deleteFile(context, {category, path}: { category: string, path: string }) {
+            codebaseReleaseAPI.deleteFile({path})
+                .then(response => Promise.all([
+                    context.dispatch('getOriginalFiles', category),
+                    context.dispatch('getSipFiles', category)
+                ]));
+        },
+
+        initialize(context, {identifier, version_number}) {
+            return context.dispatch('getCodebaseRelease', {identifier, version_number})
+                .then(r => Promise.all([
+                    context.dispatch('getOriginalFiles', 'data'),
+                    context.dispatch('getOriginalFiles', 'docs'),
+                    context.dispatch('getOriginalFiles', 'code'),
+                    context.dispatch('getOriginalFiles', 'media'),
+                    context.dispatch('getSipFiles', 'data'),
+                    context.dispatch('getSipFiles', 'docs'),
+                    context.dispatch('getSipFiles', 'code'),
+                    context.dispatch('getSipFiles', 'media')
+                ]));
         }
     }
 };
