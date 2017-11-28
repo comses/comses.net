@@ -62,6 +62,7 @@ mimetypes.add_type('text/x-rst', '.rst')
 mimetypes.add_type('text/x-netlogo', '.nls')
 mimetypes.add_type('text/x-netlogo', '.nlogo')
 mimetypes.add_type('text/markdown', '.md')
+mimetypes.add_type('text/x-r-source', '.r')
 
 MIMETYPE_MATCHER = {
     FileCategoryDirectories.code: re.compile(r'.*'),
@@ -229,7 +230,7 @@ class CodebaseReleaseOriginalStorage(CodebaseReleaseStorage):
     def validate_mimetype(self, name):
         mimetype_matcher = get_mimetype_matcher(name)
         mimetype = mimetypes.guess_type(name)[0]
-        if not mimetype_matcher.match(mimetype):
+        if mimetype is None or not mimetype_matcher.match(mimetype):
             return self.error('File type mismatch for file {}'.format(name))
         return None
 
@@ -245,19 +246,26 @@ class CodebaseReleaseOriginalStorage(CodebaseReleaseStorage):
                 return True
         return False
 
-    def has_existing_files(self, category):
-        path = os.path.join(self.location, category.name)
-        os.makedirs(path, exist_ok=True)
-        return os.listdir(path)
+    def has_existing_archive(self, category):
+        path = Path(self.location, category.name)
+        os.makedirs(str(path), exist_ok=True)
+        for subpath in path.glob('*'):
+            if subpath.is_file() and fs.is_archive(str(subpath)):
+                return True
+        return False
 
     def validate_file(self, name, content):
         msgs = super().validate_file(name, content)
         if msgs.level >= self._raise_exception_level:
             return msgs
         category = get_category(name)
-        if fs.is_archive(name) and self.has_existing_files(category):
+        if self.has_existing_archive(category):
             msgs.append(
-                self.critical('Archive can only added to empty category. Please clear category and try again.'))
+                self.error('File cannot be added to directory with archive in it. Please clear category and try again.'))
+            return msgs
+        if os.listdir(os.path.join(self.location, category.name)) and fs.is_archive(name):
+            msgs.append(self.error('Archive cannot be added to a directory that already has files in it. '
+                                   'Please clear category and try again'))
             return msgs
 
         msgs.append(self.validate_mimetype(name))
@@ -275,7 +283,7 @@ class CodebaseReleaseSipStorage(CodebaseReleaseStorage):
         get_category(name)
         mimetype_matcher = get_mimetype_matcher(name)
         mimetype = mimetypes.guess_type(name)[0]
-        if not mimetype_matcher.match(mimetype):
+        if mimetype is None or not mimetype_matcher.match(mimetype):
             return self.error('File type mismatch for file {}'.format(name))
         return None
 
@@ -424,8 +432,7 @@ class CodebaseReleaseFsApi:
         return True
 
     def retrieve_archive(self):
-        self.build_archive()
-        return File(self.archivepath.open('rb'))
+        return (File(self.archivepath.open('rb')), 'application/zip')
 
     def clear_category(self, category: FileCategoryDirectories):
         originals_storage = self.get_originals_storage()
