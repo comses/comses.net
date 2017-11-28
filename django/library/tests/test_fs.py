@@ -1,72 +1,46 @@
-import io
-import os
-import shutil
-import tarfile
-import zipfile
-
-from django.conf import settings
-from django.contrib.auth.models import User
 from django.test import TestCase
-from ..models import CodebaseRelease, Codebase
+
+from core.tests.base import UserFactory
+from library.fs import FileCategoryDirectories, ArchiveExtractor, StagingDirectories, MessageLevels
+from library.tests.base import CodebaseFactory
 
 import logging
 
 logger = logging.getLogger(__name__)
 
 
-class FsTestCase(TestCase):
-    @classmethod
-    def setUpClass(cls):
-        cls.src_content = 'print("hello")'
-        cls.data_content = 'town,pop\nfoo,2000'
-
+class ArchiveExtractorTestCase(TestCase):
     def setUp(self):
-        submitter = User.objects.first()
-        self.codebase = Codebase.objects.create(title='codebase', submitter=submitter, identifier='1')
-        self.codebase_release = CodebaseRelease.objects.create(
-            identifier='0.0.0',
-            version_number='0.0.0',
-            submitter=submitter,
-            codebase=self.codebase)
+        self.user_factory = UserFactory()
+        self.submitter = self.user_factory.create()
+        self.codebase_factory = CodebaseFactory(submitter=self.submitter)
+        self.codebase = self.codebase_factory.create()
+        self.codebase_release = self.codebase.create_release()
 
     def test_zipfile_saving(self):
-        zip_file = io.BytesIO()
-        with zipfile.ZipFile(zip_file, 'a') as z:
-            z.writestr('main.py', self.src_content)
+        archive_name = 'library/tests/archives/nestedcode.zip'
+        fs_api = self.codebase_release.get_fs_api()
+        with open(archive_name, 'rb') as f:
+            msgs = fs_api.add(FileCategoryDirectories.code, content=f, name="nestedcode.zip")
+        logs, level = msgs.serialize()
+        self.assertEquals(level, MessageLevels.info)
+        self.assertEquals(len(logs), 0)
+        self.assertEqual(set(fs_api.list(StagingDirectories.originals, FileCategoryDirectories.code)),
+                         {'nestedcode.zip'})
+        self.assertEqual(set(fs_api.list(StagingDirectories.sip, FileCategoryDirectories.code)),
+                         {'src/ex.py', 'README.md'})
+        fs_api.get_or_create_sip_bag(self.codebase_release.bagit_info)
+        fs_api.clear_category(FileCategoryDirectories.code)
+        self.assertEqual(set(fs_api.list(StagingDirectories.originals, FileCategoryDirectories.code)),
+                         set())
+        self.assertEqual(set(fs_api.list(StagingDirectories.sip, FileCategoryDirectories.code)),
+                         set())
 
-        archive_name = 'zip.zip'
-        zip_file.name = archive_name
-        zip_file.seek(0)
-        self.codebase_release.add_upload('sources', zip_file)
-
-        with open(str(self.codebase_release.get_library_path('workdir', 'code', 'main.py')), 'r') as f:
-            self.assertEqual(f.read(), self.src_content)
-
-    def test_tarfile_saving(self):
-        tar_file = io.BytesIO()
-        with tarfile.TarFile(fileobj=tar_file, mode='w') as t:
-            main_file_content = bytes(self.src_content, 'utf8')
-            info = tarfile.TarInfo('main.txt')
-            info.size = len(main_file_content)
-            t.addfile(info, io.BytesIO(main_file_content))
-
-        archive_name = 'tar.tar'
-        tar_file.name = archive_name
-        tar_file.seek(0)
-        self.codebase_release.add_upload('data', tar_file)
-
-        with open(str(self.codebase_release.get_library_path('workdir', 'data', 'main.txt')), 'r') as f:
-            self.assertEqual(f.read(), self.src_content)
-
-    def test_file_saving(self):
-        fileobj = io.BytesIO(bytes(self.src_content, 'utf8'))
-        fileobj.name = 'main.md'
-        fileobj.seek(0)
-        self.codebase_release.add_upload('documentation', fileobj)
-
-        with open(str(self.codebase_release.get_library_path('workdir', 'doc', 'main.md'))) as f:
-            self.assertEqual(f.read(), self.src_content)
-
-    @classmethod
-    def tearDownClass(cls):
-        shutil.rmtree(settings.LIBRARY_ROOT, ignore_errors=True)
+    def test_invalid_zipfile_saving(self):
+        archive_name = 'library/tests/archives/invalid.zip'
+        fs_api = self.codebase_release.get_fs_api()
+        with open(archive_name, 'rb') as f:
+            msgs = fs_api.add(FileCategoryDirectories.code, content=f, name="invalid.zip")
+        logs, level = msgs.serialize()
+        self.assertEquals(level, MessageLevels.error)
+        self.assertEquals(len(logs), 1)

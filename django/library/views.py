@@ -1,5 +1,6 @@
 import logging
-import os
+
+import pathlib
 
 from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.core.exceptions import PermissionDenied
@@ -7,15 +8,17 @@ from django.http import FileResponse, Http404
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import resolve
 from django.views import View
-from rest_framework import viewsets, generics, parsers, renderers, status, permissions, filters
-from rest_framework.decorators import detail_route
-from rest_framework.exceptions import PermissionDenied as DrfPermissionDenied
+from rest_framework import viewsets, generics, parsers, renderers, status, permissions, filters, mixins
+from rest_framework.decorators import detail_route, list_route
+from rest_framework.exceptions import PermissionDenied as DrfPermissionDenied, ValidationError, NotFound
 from rest_framework.response import Response
 
 from core.permissions import ComsesPermissions
 from core.view_helpers import add_change_delete_perms, get_search_queryset
 from core.views import FormViewSetMixin, FormUpdateView, FormCreateView
 from home.views import SmallResultSetPagination
+from library.fs import FileCategoryDirectories, StagingDirectories, MessageLevels
+from library.permissions import CodebaseReleaseUnpublishedFilePermissions
 from .models import Codebase, CodebaseRelease, Contributor
 from .serializers import (CodebaseSerializer, RelatedCodebaseSerializer, CodebaseReleaseSerializer,
                           ContributorSerializer, ReleaseContributorSerializer, CodebaseReleaseEditSerializer)
@@ -109,6 +112,15 @@ class NestedCodebaseReleasePermission(permissions.BasePermission):
         return has_permission_to_create_release(request=request, view=view, exception_class=DrfPermissionDenied)
 
 
+class NestedCodebaseReleaseUnpublishedFilesPermission(permissions.BasePermission):
+    def has_object_permission(self, request, view, obj):
+        if obj.live:
+            raise DrfPermissionDenied('Cannot access unpublished files of published release')
+        if request.method == 'GET' and not request.user.has_perm('library.change_codebaserelease', obj=obj):
+            raise DrfPermissionDenied('Must have change permission to view release')
+        return True
+
+
 class CodebaseReleaseViewSet(FormViewSetMixin, viewsets.ModelViewSet):
     namespace = 'library/codebases/releases/'
     lookup_field = 'version_number'
@@ -129,30 +141,6 @@ class CodebaseReleaseViewSet(FormViewSetMixin, viewsets.ModelViewSet):
     def template_name(self):
         return 'library/codebases/releases/{}.jinja'.format(self.action)
 
-    def get_queryset(self):
-        resolved = resolve(self.request.path)
-        identifier = resolved.kwargs['identifier']
-        queryset = self.queryset.filter(codebase__identifier=identifier)
-        if self.action == 'list':
-            return queryset.public()
-        else:
-            return queryset.accessible(user=self.request.user)
-
-    def _list_uploads(self, codebase_release, upload_type, url):
-        return Response(data={
-            'files': codebase_release.list_uploads(upload_type),
-            'upload_url': url}, status=200)
-
-    def _file_upload_operations(self, request, upload_type: str, url):
-        codebase_release = self.get_object()  # type: CodebaseRelease
-        if request.method == 'POST':
-            if codebase_release.live:
-                raise DrfPermissionDenied(detail='files cannot be added on published releases')
-            codebase_release.add_upload(upload_type, request.data['file'])
-            return Response(status=204)
-        elif request.method == 'GET':
-            return self._list_uploads(codebase_release, upload_type, url)
-
     def create(self, request, *args, **kwargs):
         identifier = kwargs['identifier']
         codebase = get_object_or_404(Codebase, identifier=identifier)
@@ -168,41 +156,14 @@ class CodebaseReleaseViewSet(FormViewSetMixin, viewsets.ModelViewSet):
         data = add_change_delete_perms(instance, serializer.data, request.user)
         return Response(data)
 
-    @detail_route(methods=['get'],
-                  renderer_classes=(renderers.JSONRenderer,))
-    def download(self, request, **kwargs):
-        codebase_release = self.get_object()
-        response = FileResponse(codebase_release.retrieve_archive())
-        response['Content-Disposition'] = 'attachment; filename={}'.format(
-            '{}_v{}.zip'.format(codebase_release.codebase.title.lower().replace(' ', '_'),
-                                codebase_release.version_number))
-        return response
-
-    @detail_route(methods=['get', 'post'],
-                  parser_classes=(parsers.FormParser, parsers.MultiPartParser,),
-                  renderer_classes=(renderers.JSONRenderer,),
-                  url_name='files',
-                  url_path='files/(?P<upload_type>[\.\w]+)')
-    def files(self, request, identifier, version_number, upload_type):
-        url = request.path
-        return self._file_upload_operations(request, upload_type, url)
-
-    @detail_route(methods=['delete', 'get'],
-                  parser_classes=(parsers.JSONParser,),
-                  url_name='download_unpublished',
-                  url_path='files/(?P<upload_type>[\.\w]+)/(?P<path>([\.\w ]+/)*[\.\w\- ]+)')
-    def download_unpublished(self, request, identifier, version_number, upload_type, path):
-        codebase_release = self.get_object()
-        if request.method == 'DELETE':
-            if codebase_release.live:
-                raise DrfPermissionDenied(detail='files cannot be deleted from published releases')
-            codebase_release.delete_upload(upload_type, path)
-            return self._list_uploads(codebase_release, upload_type, request.path)
-        elif request.method == 'GET':
-            filename = os.path.basename(path)
-            response = FileResponse(codebase_release.retrieve_upload(upload_type, path))
-            response['Content-Disposition'] = 'attachment; filename={}'.format(filename)
-            return response
+    def get_queryset(self):
+        resolved = resolve(self.request.path)
+        identifier = resolved.kwargs['identifier']
+        queryset = self.queryset.filter(codebase__identifier=identifier)
+        if self.action == 'list':
+            return queryset.public()
+        else:
+            return queryset.accessible(user=self.request.user)
 
     @detail_route(methods=['put'])
     def contributors(self, request, **kwargs):
@@ -218,6 +179,121 @@ class CodebaseReleaseViewSet(FormViewSetMixin, viewsets.ModelViewSet):
     def publish(self, request, **kwargs):
         codebase_release = self.get_object()
         codebase_release.publish()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+    @detail_route(methods=['get'])
+    def download(self, request, **kwargs):
+        codebase_release = self.get_object()
+        response = FileResponse(codebase_release.retrieve_archive())
+        response['Content-Disposition'] = 'attachment; filename={}'.format(
+            '{}_v{}.zip'.format(codebase_release.codebase.title.lower().replace(' ', '_'),
+                                codebase_release.version_number))
+        return response
+
+
+class BaseCodebaseReleaseFilesViewSet(viewsets.GenericViewSet):
+    lookup_field = 'relpath'
+    lookup_value_regex = r'.*'
+
+    queryset = CodebaseRelease.objects.all()
+    pagination_class = SmallResultSetPagination
+    permission_classes = (NestedCodebaseReleaseUnpublishedFilesPermission, CodebaseReleaseUnpublishedFilePermissions,)
+    renderer_classes = (renderers.JSONRenderer,)
+
+    stage = None
+
+    @classmethod
+    def get_url_matcher(cls):
+        return ''.join([r'codebases/(?P<identifier>[\w\-.]+)',
+                        r'/releases/(?P<version_number>\d+\.\d+\.\d+)',
+                        r'/files/{}/(?P<category>{})'.format(
+                            cls.stage.name,
+                            '|'.join(c.name for c in FileCategoryDirectories))])
+
+    def get_queryset(self):
+        resolved = resolve(self.request.path)
+        identifier = resolved.kwargs['identifier']
+        queryset = self.queryset.filter(codebase__identifier=identifier)
+        return queryset.accessible(user=self.request.user)
+
+    def get_category(self) -> FileCategoryDirectories:
+        category = self.get_parser_context(self.request)['kwargs']['category']
+        try:
+            return FileCategoryDirectories[category]
+        except KeyError:
+            raise ValidationError('Target folder name {} invalid. Must be one of {}'.format(category, list(
+                d.name for d in FileCategoryDirectories)))
+
+    def get_list_url(self, api):
+        raise NotImplemented()
+
+    def list(self, request, *args, **kwargs):
+        codebase_release = self.get_object()
+        api = codebase_release.get_fs_api()
+        category = self.get_category()
+        return Response(data={
+            'files': api.list(stage=self.stage, category=category),
+            'upload_url': self.get_list_url(api)(category=category)}, status=status.HTTP_200_OK)
+
+    def get_object(self):
+        queryset = self.filter_queryset(self.get_queryset())
+
+        parser_context = self.get_parser_context(self.request)
+        kwargs = parser_context['kwargs']
+        identifier = kwargs['identifier']
+        version_number = kwargs['version_number']
+        obj = get_object_or_404(queryset, codebase__identifier=identifier,
+                                version_number=version_number)
+
+        # May raise a permission denied
+        self.check_object_permissions(self.request, obj)
+
+        return obj
+
+
+class CodebaseReleaseFilesSipViewSet(BaseCodebaseReleaseFilesViewSet):
+    stage = StagingDirectories.sip
+
+    def get_list_url(self, api):
+        return api.get_sip_list_url
+
+
+class CodebaseReleaseFilesOriginalsViewSet(BaseCodebaseReleaseFilesViewSet):
+    renderer_classes = (renderers.JSONRenderer,)
+
+    stage = StagingDirectories.originals
+
+    def get_list_url(self, api):
+        return api.get_originals_list_url
+
+    def create(self, request, *args, **kwargs):
+        codebase_release = self.get_object()
+        fs_api = codebase_release.get_fs_api()
+        category = self.get_category()
+        fileobj = request.data.get('file')
+        if fileobj is None:
+            raise ValidationError({'file': ['This field is required']})
+        msgs = fs_api.add(content=fileobj, category=category)
+        logs, level = msgs.serialize()
+        status_code = status.HTTP_400_BAD_REQUEST if level > MessageLevels.info else status.HTTP_202_ACCEPTED
+        return Response(status=status_code, data=logs)
+
+    def destroy(self, request, *args, **kwargs):
+        relpath = kwargs['relpath']
+        codebase_release = self.get_object()
+        fs_api = codebase_release.get_fs_api()
+        category = self.get_category()
+        msgs = fs_api.delete(category=category, relpath=pathlib.Path(relpath))
+        logs, level = msgs.serialize()
+        status_code = status.HTTP_400_BAD_REQUEST if level > MessageLevels.info else status.HTTP_202_ACCEPTED
+        return Response(status=status_code, data=logs)
+
+    @list_route(methods=['DELETE'])
+    def clear_category(self, request, **kwargs):
+        codebase_release = self.get_object()
+        fs_api = codebase_release.get_fs_api()
+        category = self.get_category()
+        fs_api.clear_category(category)
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 

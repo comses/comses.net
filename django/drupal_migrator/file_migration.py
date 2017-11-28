@@ -10,20 +10,24 @@ import shutil
 import pathlib
 import pygit2
 from django.contrib.auth.models import User
+from django.conf import settings
 from django.core.files.images import ImageFile
 from wagtail.wagtailimages.models import Image
 
 from core import fs
+from library import fs as library_fs
+from library.fs import MessageLevels
 from library.models import Codebase, CodebaseRelease
 
 logger = logging.getLogger(__name__)
 
 
 class ModelVersionFileset:
-
     OPENABM_VERSIONDIRS_MAP = {
-        'dataset': 'data',
-        'sensitivity': 'results'
+        'code': library_fs.FileCategoryDirectories.code,
+        'dataset': library_fs.FileCategoryDirectories.data,
+        'doc': library_fs.FileCategoryDirectories.docs,
+        'sensitivity': library_fs.FileCategoryDirectories.results
         # one to one mappings for doc and code
     }
 
@@ -31,44 +35,44 @@ class ModelVersionFileset:
         self.basedir = basedir
         self.semver = '1.{0}.0'.format(version_number - 1)
 
-    def migrate(self, release: CodebaseRelease):
-        logger.debug("migrating %s with %s", self.semver, release)
-        working_directory_path = str(release.workdir_path)
-        submitted_package_path = str(release.submitted_package_path())
-        # copy basedirs over verbatim into the working directory
-        shutil.copytree(self.basedir, working_directory_path)
-        for codebase_version_dir in os.scandir(working_directory_path):
-            # codebase version directory = code/ doc/ dataset/ sensitivity/ directories
-            for f in os.scandir(codebase_version_dir.path):
-                destination_dir = self.OPENABM_VERSIONDIRS_MAP.get(codebase_version_dir.name,
-                                                                   codebase_version_dir.name)
-                destination_path = str(release.submitted_package_path(destination_dir))
-                if fs.is_archive(f.name):
-                    logger.debug("unpacking archive %s to %s", f.path, destination_path)
-                    os.makedirs(destination_path, exist_ok=True)
-                    shutil.unpack_archive(f.path, destination_path)
-                else:
-                    os.makedirs(destination_path, exist_ok=True)
-                    shutil.copy(f.path, destination_path)
+    def model_version_has_files(self):
+        for p in pathlib.Path(self.basedir).rglob('*'):
+            if p.is_file():
+                return True
+        return False
 
-        # clean up garbage / system metadata files
-        for root, dirs, files in os.walk(submitted_package_path, topdown=True):
-            if root == '__MACOSX':
-                # special case for parent __MACOSX system files, skip
-                logger.debug("deleting mac os x system directory")
-                shutil.rmtree(root)
+    def log_msgs(self, msgs):
+        if msgs:
+            logs, level = msgs.serialize()
+            for log in logs:
+                getattr(logger, log['level'])(log['msg']['detail'])
+
+    def migrate(self, release: CodebaseRelease):
+        logger.debug("Migrating %s (v%s)", release, self.semver)
+        fs_api = release.get_fs_api(raise_exception_level=MessageLevels.critical)
+        fs_api.initialize()
+        if not self.model_version_has_files():
+            logger.warning("no files found for release")
+            return
+        for src_dirname in os.scandir(self.basedir):
+            src = os.path.join(self.basedir, src_dirname.name)
+            category = self.OPENABM_VERSIONDIRS_MAP.get(src_dirname.name)
+            if category is None:
+                logger.error("Bad directory name {} for release {} {}. Skipping".format(
+                    src_dirname.name, release.codebase.title, release.version_number))
             else:
-                # otherwise, scan and remove any system files
-                removed_files = fs.rm_system_files(root, dirs, files)
-                if removed_files:
-                    logger.warning("Deleted system files: %s", removed_files)
-        # create bagit bags on the sips
-        release.get_or_create_sip_bag()
-        # FIXME: clean up working_directory_path
+                logger.debug("migrating category %s" % category.name)
+                msgs = fs_api.add_category(category, src)
+                self.log_msgs(msgs)
+
+        msgs = fs_api.build_sip()
+        self.log_msgs(msgs)
+        fs_api.get_or_create_sip_bag(release.bagit_info)
+        fs_api.build_aip()
+        fs_api.build_archive()
 
 
 class ModelFileset:
-
     VERSION_REGEX = re.compile('\d+')
 
     def __init__(self, model_id: int, dir_entry):
@@ -87,13 +91,14 @@ class ModelFileset:
 
     @staticmethod
     def is_version_dir(candidate):
-        return candidate.is_dir() and candidate.name.startswith('v') and ModelFileset.VERSION_REGEX.search(candidate.name)
+        return candidate.is_dir() and candidate.name.startswith('v') and ModelFileset.VERSION_REGEX.search(
+            candidate.name)
 
     def migrate(self):
         codebase = Codebase.objects.get(identifier=self._model_id)
+        logger.debug("Migrating %s with %s versions", codebase, len(self._versions))
         codebase.media = []
         for version in self._versions:
-            logger.debug("Migrating codebase %s v%s", codebase.title, version.semver)
             release = codebase.releases.get(version_number=version.semver)
             version.migrate(release)
         # FIXME: in 3.6, os.makedirs will accept media_dir as a path-like object
@@ -124,6 +129,8 @@ class ModelFileset:
 
 def load(src_dir: str):
     logger.debug("MIGRATING %s", src_dir)
+    # FIXME: use a mandatory argument to force deleting of release data. Don't want to delete data by accident
+    fs.clean_directory(settings.LIBRARY_ROOT)
     shutil.register_unpack_format('rar', ['.rar'], fs.unrar)
     for dir_entry in os.scandir(src_dir):
         if dir_entry.is_dir():
@@ -138,44 +145,3 @@ def load(src_dir: str):
 
 def sanitize_name(name: str) -> str:
     return re.sub(r"\W+", "_", name)
-
-
-def get_or_create_repo(full_path: str) -> pygit2.Repository:
-    if not os.path.exists(full_path):
-        os.makedirs(full_path, exist_ok=True)
-        repo = pygit2.init_repository(full_path, bare=True)
-    else:
-        repo = pygit2.discover_repository(full_path)
-    return repo
-
-
-def create_signature(creator: User):
-    return pygit2.Signature(creator.get_full_name(), creator.email)
-
-
-def move_content(repo, model_version):
-    pass
-
-
-def commit(repo: pygit2.Repository, message, creator: User):
-    signature = create_signature(creator)
-
-    index = repo.index
-    index.read()
-    index.add_all()
-
-    index.write()
-    tree = index.write_tree()
-
-    today = datetime.date.today().strftime("%B %d, %Y")
-
-    parents = [repo.head.get_object().hex]
-
-    sha = repo.create_commit('refs/head/master',
-                             signature,
-                             signature,
-                             message,
-                             tree,
-                             parents)
-
-    return sha

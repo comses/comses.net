@@ -224,6 +224,11 @@ LOGGING = {
         },
     },
     'loggers': {
+        'bagit': {
+            'level': 'WARNING',
+            'handlers': ['console', 'rollingfile'],
+            'propagate': False
+        },
         'django': {
             'level': 'WARNING',
             'handlers': ['djangofile'],
@@ -238,6 +243,11 @@ LOGGING = {
             'level': 'DEBUG',
             'handlers': ['console', 'rollingfile'],
             'propagate': False,
+        },
+        'library.fs': {
+            'level': 'INFO',
+            'handlers': ['console', 'rollingfile'],
+            'propagate': False
         },
         'core': {
             'level': 'DEBUG',

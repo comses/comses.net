@@ -2,13 +2,22 @@ import imghdr
 import logging
 import mimetypes
 import os
+import pathlib
 import shutil
 
 import bagit
 import rarfile
 from PIL import Image
+from django.core.exceptions import SuspiciousFileOperation
 
 logger = logging.getLogger(__name__)
+
+
+def is_subpath(basepath: pathlib.Path, path: pathlib.Path):
+    if basepath not in path.parents:
+        raise SuspiciousFileOperation(
+            'The joined path ({}) is located outside of the base path '
+            'component ({})'.format(str(path), str(basepath)))
 
 
 def is_archive(path: str):
@@ -50,12 +59,16 @@ def is_media(path: str):
 SYSTEM_FILES = ('__MACOSX', '.DS_Store', '.svn', '.git', '.hg')
 
 
+def has_system_files(path: str) -> bool:
+    return set(SYSTEM_FILES).intersection(set(pathlib.Path(path).parts))
+
+
 def is_system_file(filename: str) -> bool:
     """
     :param filename: candidate filename to test
     :return: True if filename is a osx system file or appears to be a backup file
     """
-    return filename in ('__MACOSX', '.DS_Store') or filename.startswith('~') or filename.endswith('~')
+    return filename in SYSTEM_FILES or filename.startswith('~') or filename.endswith('~')
 
 
 def rm_system_files(base_dir, dirs, files):
@@ -87,3 +100,11 @@ def make_bag(path, info: dict):
         return bagit.Bag(path)
     except bagit.BagError as e:
         return bagit.make_bag(path, info)
+
+
+def clean_directory(path):
+    for fs in os.scandir(path):
+        if fs.is_dir():
+            shutil.rmtree(os.path.join(path, fs.name), ignore_errors=True)
+        elif fs.is_file():
+            os.remove(os.path.join(path, fs.name))

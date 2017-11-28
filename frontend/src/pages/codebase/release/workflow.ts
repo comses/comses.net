@@ -130,7 +130,7 @@ class PublishModal extends Vue implements CreateOrUpdateHandler {
             {
                 path: '/code_upload/', component: Upload, name: 'code_upload',
                 props: {
-                    uploadType: 'sources',
+                    uploadType: 'code',
                     acceptedFileTypes: 'text/plain',
                     instructions: 'Upload code associated with a project here. If an archive (zip or tar file) is uploaded it is extracted first. Files with the same name will result in overwrites.'
                 }
@@ -145,14 +145,14 @@ class PublishModal extends Vue implements CreateOrUpdateHandler {
             {
                 path: '/documentation_upload/', component: Upload, name: 'documentation_upload',
                 props: {
-                    uploadType: 'documentation',
+                    uploadType: 'docs',
                     instructions: 'Upload documentation associated with a project here. If an archive (zip or tar file) is uploaded it is extracted first. Files with the same name will result in overwrites.'
                 }
             },
             {
                 path: '/image_upload/', component: Upload, name: 'image_upload',
                 props: {
-                    uploadType: 'images',
+                    uploadType: 'media',
                     instructions: 'Upload images associated with a project here. If an archive (zip or tar file) is uploaded it is extracted first. Files with the same name will result in overwrites.'
                 }
             },
