@@ -1,11 +1,8 @@
 import logging
-import os
 import pathlib
-import shutil
 import uuid
 from datetime import datetime
 from enum import Enum
-from zipfile import ZipFile
 
 import semver
 from django.conf import settings
@@ -16,7 +13,6 @@ from django.db import models
 from django.db.models.functions import Coalesce
 from django.urls import reverse
 from django.utils import timezone
-from django.utils._os import safe_join
 from django.utils.translation import ugettext_lazy as _
 from model_utils import Choices
 from modelcluster.contrib.taggit import ClusterTaggableManager
@@ -27,7 +23,6 @@ from taggit.models import TaggedItemBase
 from wagtail.wagtailimages.models import Image
 from wagtail.wagtailsearch import index
 
-from core import fs
 from core.backends import get_viewable_objects_for_user
 from core.fields import MarkdownField
 from library.fs import CodebaseReleaseFsApi, StagingDirectories, FileCategoryDirectories, MessageLevels
@@ -319,8 +314,7 @@ class Codebase(index.Indexed, ClusterableModel):
         return contributor_list
 
     def download_count(self):
-        return CodebaseReleaseDownload.objects.filter(release__codebase__id=self.pk).aggregate(
-            count=models.Count('id'))['count']
+        return CodebaseReleaseDownload.objects.filter(release__codebase__id=self.pk).count()
 
     @classmethod
     def get_list_url(cls):
