@@ -1,24 +1,22 @@
+import json
 import logging
 import mimetypes
+import os
+import re
+import shutil
 import tarfile
 import zipfile
 from enum import Enum
 from functools import total_ordering
 from pathlib import Path
-
-import os
-
-import shutil
+from tempfile import TemporaryDirectory
+from typing import Optional
 
 import bagit
 import rarfile
-import re
-from tempfile import TemporaryDirectory
-from typing import List, Union, Optional
-
 from django.conf import settings
 from django.core.files.storage import FileSystemStorage
-from django.core.files.uploadedfile import TemporaryUploadedFile, InMemoryUploadedFile, File
+from django.core.files.uploadedfile import File
 from django.urls import reverse
 from rest_framework.exceptions import ValidationError
 
@@ -155,7 +153,7 @@ class CodebaseReleaseStorage(FileSystemStorage):
 
     def validate_file(self, name, content) -> Optional:
         msgs = MessageGroup()
-        if fs.has_macosx_dir(name):
+        if fs.has_system_files(name):
             msgs.append(self.error("'{}' has a mac os x system directory".format(name)))
         if fs.is_system_file(name):
             msgs.append(self.error("'{}' is a system file".format(name)))
@@ -300,12 +298,24 @@ class CodebaseReleaseAipStorage(CodebaseReleaseStorage):
 
 
 class CodebaseReleaseFsApi:
+
     """
     Interface to maintain files associated with a codebase
 
     This is not currently protected against concurrent file access. However, since only
     the submitter can edit files associated with a codebase release there is little
     """
+
+    DEFAULT_CODEMETA_DATA = {
+        "@context": ["https://doi.org/doi:10.5063/schema/codemeta-2.0", "http://schema.org"],
+        "@type": "SoftwareSourceCode",
+        "provider": {
+            "@id": "https://www.comses.net",
+            "@type": "Organization",
+            "name": "CoMSES Network (CoMSES)",
+            "url": "https://www.comses.net"
+        },
+    }
 
     def __init__(self, uuid, identifier, version_number, raise_exception_level):
         self.uuid = uuid
@@ -392,8 +402,26 @@ class CodebaseReleaseFsApi:
         return MessageGroup()
 
     def initialize(self):
-        os.makedirs(str(self.sip_dir), exist_ok=True)
-        fs.make_bag(str(self.sip_dir), {})
+        sip_dir = self.sip_dir
+        os.makedirs(str(sip_dir), exist_ok=True)
+        # touch a codemeta.json file in the sip_dir so make_bag has something to
+        self.initialize_codemeta(sip_dir.joinpath('codemeta.json'))
+        fs.make_bag(str(sip_dir), {})
+
+    def initialize_codemeta(self, path=None):
+        """
+        Returns True if a fresh codemeta.json file was created, False otherwise
+        :param path: an optional path to the codemeta file. If no path is passed in, it tries to create a new
+        codemeta.json file in the sip_dir bound to the CodebaseRelease associated with this FS API
+        :return:
+        """
+        if path is None:
+            path = self.sip_dir.joinpath('codemeta.json')
+        if path.exists():
+            return False
+        with path.open('w') as codemeta_out:
+            json.dump(self.DEFAULT_CODEMETA_DATA, codemeta_out)
+        return True
 
     def retrieve_archive(self):
         self.build_archive()

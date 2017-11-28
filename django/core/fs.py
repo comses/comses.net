@@ -2,10 +2,10 @@ import imghdr
 import logging
 import mimetypes
 import os
+import pathlib
 import shutil
 
 import bagit
-import pathlib
 import rarfile
 from PIL import Image
 from django.core.exceptions import SuspiciousFileOperation
@@ -59,9 +59,8 @@ def is_media(path: str):
 SYSTEM_FILES = ('__MACOSX', '.DS_Store', '.svn', '.git', '.hg')
 
 
-def has_macosx_dir(filename: str) -> bool:
-    path = pathlib.Path(filename)
-    return '__MACOSX' in path.parts
+def has_system_files(path: str) -> bool:
+    return set(SYSTEM_FILES).intersection(set(pathlib.Path(path).parts))
 
 
 def is_system_file(filename: str) -> bool:
@@ -69,7 +68,7 @@ def is_system_file(filename: str) -> bool:
     :param filename: candidate filename to test
     :return: True if filename is a osx system file or appears to be a backup file
     """
-    return filename in ('__MACOSX', '.DS_Store') or filename.startswith('~') or filename.endswith('~')
+    return filename in SYSTEM_FILES or filename.startswith('~') or filename.endswith('~')
 
 
 def rm_system_files(base_dir, dirs, files):
