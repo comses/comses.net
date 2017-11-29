@@ -47,6 +47,13 @@ class ContributorSerializer(serializers.ModelSerializer):
         validated_data['user_id'] = user.id if user else None
         return affiliations_serializer, user
 
+    def update(self, instance, validated_data):
+        affiliations_serializer = TagSerializer(many=True, data=validated_data.pop('affiliations'))
+        instance = super().update(instance, validated_data)
+        save_tags(instance, affiliations_serializer, 'affiliations')
+        instance.save()
+        return instance
+
     def create(self, validated_data):
         affiliations_list_serializer, user = self._create_or_update(validated_data)
         instance = super().create(validated_data)
@@ -107,8 +114,16 @@ class ReleaseContributorSerializer(serializers.ModelSerializer):
     def create_unsaved(context, validated_data):
         contributor_serializer = ContributorSerializer()
         contributor_serializer._errors = {}
-        contributor_serializer._validated_data = validated_data.pop('contributor')
-        contributor = contributor_serializer.save()
+        raw_contributor = validated_data.pop('contributor')
+        kwargs = {'given_name': raw_contributor['given_name'], 'family_name': raw_contributor['family_name']}
+        if raw_contributor.get('user'):
+            kwargs = {'user__username': raw_contributor['user']['username'] }
+        contributor = Contributor.objects.filter(**kwargs).first()
+        if contributor:
+            raw_contributor.pop('user')
+            contributor = contributor_serializer.update(instance=contributor, validated_data=raw_contributor)
+        else:
+            contributor = contributor_serializer.create(raw_contributor)
 
         validated_data['release_id'] = context['release_id']
         validated_data['contributor_id'] = contributor.id
