@@ -22,12 +22,11 @@ import * as $ from 'jquery'
 import {HandlerShowSuccessMessage} from "api/handler";
 
 const codebaseReleaseAPI = new CodebaseReleaseAPI();
-const contributorAPI = new ContributorAPI();
 
 const listContributors = _.debounce(async (state, self) => {
     self.isLoading = true;
     try {
-        const response = await contributorAPI.list(state);
+        const response = await ContributorAPI.list(state);
         self.matchingContributors = response.data.results;
         self.isLoading = false;
     } catch (e) {

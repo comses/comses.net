@@ -46,7 +46,7 @@ type UploadInfo = UploadSuccess | UploadProgress | UploadFailure;
                 </span>
                 <span v-else-if="info.kind == 'failure'">
                     <div v-for="msg in info.msgs">
-                        {{ msg.msg.detail }} <b>{{ msg.msg.stage }}</b>
+                        <b>{{ msg.msg.stage }}</b>: {{ msg.msg.detail }}
                     </div>
                 </span>
             </div>

@@ -592,6 +592,7 @@ class CodebaseReleasePublisher:
             fs_api = self.codebase_release.get_fs_api()
             fs_api.get_or_create_sip_bag(self.codebase_release.bagit_info)
             fs_api.build_aip()
+            fs_api.build_archive()
             self.codebase_release.save()
 
 
