@@ -260,6 +260,14 @@ export const store = {
                 ]));
         },
 
+        clearCategory(context, {identifier, version_number, category}) {
+            codebaseReleaseAPI.clearCategory({identifier, version_number, category})
+                .then(response => Promise.all([
+                    context.dispatch('getOriginalFiles', category),
+                    context.dispatch('getSipFiles', category)
+                ]));
+        },
+
         initialize(context, {identifier, version_number}) {
             return context.dispatch('getCodebaseRelease', {identifier, version_number})
                 .then(r => Promise.all([

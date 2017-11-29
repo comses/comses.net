@@ -108,7 +108,7 @@ class PublishModal extends Vue implements CreateOrUpdateHandler {
                     <router-link :to="{ name: 'documentation_upload'}" class="nav-link" active-class="disabled">Upload Documentation</router-link>
                 </li>
                 <li class="nav-item" v-if="!isPublished">
-                    <router-link :to="{ name: 'image_upload'}" class="nav-link" active-class="disabled">Upload Images</router-link>
+                    <router-link :to="{ name: 'image_upload'}" class="nav-link" active-class="disabled">Upload Media</router-link>
                 </li>
                 <li class="nav-item">
                     <router-link :to="{ name: 'contributors' }" class="nav-link" active-class="disabled">Contributors</router-link>
@@ -134,28 +134,32 @@ class PublishModal extends Vue implements CreateOrUpdateHandler {
                 props: {
                     uploadType: 'code',
                     acceptedFileTypes: 'text/plain',
-                    instructions: 'Upload code associated with a project here. If an archive (zip or tar file) is uploaded it is extracted first. Files with the same name will result in overwrites.'
+                    instructions: 'Upload code associated with a project here. If an archive (zip or tar file) is uploaded it is extracted first.',
+                    originalInstructions: 'The original files uploaded show here. It is possible to have one archive or many non archive files. Files should be code but all files are accepted'
                 }
             },
             {
                 path: '/data_upload/', component: Upload, name: 'data_upload',
                 props: {
                     uploadType: 'data',
-                    instructions: 'Upload data associated with a project here. If an archive (zip or tar file) is uploaded it is extracted first. Files with the same name will result in overwrites.'
+                    instructions: 'Upload data associated with a project here. If an archive (zip or tar file) is uploaded it is extracted first.',
+                    originalInstructions: 'The original files uploaded show here. It is possible to have one archive or many non archive files. Files should be data but all files are accepted'
                 }
             },
             {
                 path: '/documentation_upload/', component: Upload, name: 'documentation_upload',
                 props: {
                     uploadType: 'docs',
-                    instructions: 'Upload documentation associated with a project here. If an archive (zip or tar file) is uploaded it is extracted first. Files with the same name will result in overwrites.'
+                    instructions: 'Upload documentation associated with a project here. If an archive (zip or tar file) is uploaded it is extracted first.',
+                    originalInstructions: 'The original files uploaded show here. It is possible to have one archive or many non archive files. Files should be docs and only PDF, MarkDown, text and ReStructured text are accepted'
                 }
             },
             {
                 path: '/image_upload/', component: Upload, name: 'image_upload',
                 props: {
                     uploadType: 'media',
-                    instructions: 'Upload images associated with a project here. If an archive (zip or tar file) is uploaded it is extracted first. Files with the same name will result in overwrites.'
+                    instructions: 'Upload media associated with a project here. If an archive (zip or tar file) is uploaded it is extracted first.',
+                    originalInstructions: 'The original files uploaded show here. It is possible to have one archive or many non archive files. Only media files are supported.'
                 }
             },
             {path: '/contributors/', component: Contributors, name: 'contributors'},

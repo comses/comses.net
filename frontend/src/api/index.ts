@@ -97,6 +97,10 @@ export class CodebaseReleaseAPI {
         return `${this.detailUrl({identifier, version_number})}?edit`
     }
 
+    clearCategoryUrl({identifier, version_number, category}) {
+        return `${this.listOriginalsFileUrl({identifier, version_number, category})}clear_category/`
+    }
+
     listOriginalsFileUrl({identifier, version_number, category}) {
         return `${this.detailUrl({identifier, version_number})}files/originals/${category}/`;
     }
@@ -134,6 +138,10 @@ export class CodebaseReleaseAPI {
 
     deleteFile({path}) {
         return api.delete(path);
+    }
+
+    clearCategory({identifier, version_number, category}) {
+        return api.delete(this.clearCategoryUrl({identifier, version_number, category}))
     }
 
     updateDetail({identifier, version_number}, detail) {

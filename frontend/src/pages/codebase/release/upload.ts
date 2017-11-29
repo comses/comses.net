@@ -30,11 +30,15 @@ type UploadInfo = UploadSuccess | UploadProgress | UploadFailure;
 @Component(<any>{
     template: `<div>
         <slot name="label"></slot>
-        <div class="form-group">
-        </div>
-        <div class="form-group">
-            <input class="form-control-file" id="upload" type="file" @change="handleFiles($event)">
-            <small class="form-text text-muted" v-if="instructions">{{ instructions }}</small>
+        <small class="form-text text-muted" v-if="instructions">{{ instructions }}</small>
+        <div class="d-flex justify-content-between">
+            <div>
+                <label for="upload"><div class="btn btn-primary">Upload a file</div></label>
+                <input class="invisible" id="upload" type="file" @change="handleFiles($event)">
+            </div>
+            <div>
+                <button class="btn btn-outline-warning" @click="clear">Remove all files</button>
+            </div>
         </div>
         <div>
             <div :class="fileUploadAlertClass(info)" v-for="(info, name) in fileUploadMsgs">
@@ -52,9 +56,9 @@ type UploadInfo = UploadSuccess | UploadProgress | UploadFailure;
             </div>
         </div>
         <small class="form-text text-muted">
-            Files you uploaded. Deleted a file here will also delete it from expanded files
+            {{ originalInstructions }}
         </small>
-        <div class="list-group">
+        <div class="list-group" v-if="originals.length > 0">
             <div class="list-group-item d-flex justify-content-between align-items-center" v-for="file in originals">
                 {{ file.path }}
                 <button class="btn btn-sm btn-danger pull-right" @click="deleteFile(file.url)">
@@ -62,14 +66,20 @@ type UploadInfo = UploadSuccess | UploadProgress | UploadFailure;
                 </button>
             </div>
         </div>
+        <p v-else>
+            No files uploaded
+        </p>
         <small class="form-text text-muted">
             Expanded files you uploaded. When an archive (zip, tar, rar) file is uploaded it gets expanded here.
         </small>
-        <div class="list-group">
+        <div class="list-group" v-if="sip.length > 0">
             <div class="list-group-item" v-for="path in sip">
                 {{ path }}
             </div>
         </div>
+        <p v-else>
+            No derived files
+        </p>
     </div>`
 })
 export default class Upload extends Vue {
@@ -94,6 +104,9 @@ export default class Upload extends Vue {
 
     @Prop({default: ''})
     acceptedFileTypes: string;
+
+    @Prop({default: ''})
+    originalInstructions: string;
 
     async handleFiles(event) {
         const file = event.target.files[0];
@@ -136,5 +149,10 @@ export default class Upload extends Vue {
 
     deleteFile(path: string) {
         this.$store.dispatch('deleteFile', {category: this.uploadType, path});
+    }
+
+    clear() {
+        this.$store.dispatch('clearCategory', {identifier: this.identifier, version_number: this.version_number,
+            category: this.uploadType});
     }
 }
