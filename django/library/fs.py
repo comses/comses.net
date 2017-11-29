@@ -168,13 +168,16 @@ class CodebaseReleaseStorage(FileSystemStorage):
                 msgs.append(self.validate_file(filename, content))
         return msgs
 
-    def list(self, category: Optional[FileCategoryDirectories] = None):
+    def list(self, category: Optional[FileCategoryDirectories] = None, absolute=False):
         path = Path(self.location)
         if category is not None:
             path = path.joinpath(category.name)
         for p in path.rglob('*'):
             if p.is_file():
-                yield p.relative_to(path)
+                if absolute:
+                    yield p
+                else:
+                    yield p.relative_to(path)
 
     def get_available_name(self, name, max_length=None):
         if self.exists(name):
@@ -241,7 +244,7 @@ class CodebaseReleaseOriginalStorage(CodebaseReleaseStorage):
         return None
 
     def is_archive_directory(self, category):
-        for p in self.list(category):
+        for p in self.list(category, absolute=True):
             if p.is_file() and fs.is_archive(str(p)):
                 return True
         return False
