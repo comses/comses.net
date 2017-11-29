@@ -22,7 +22,7 @@ interface UploadProgress {
 
 interface UploadFailure {
     kind: 'failure'
-    msg: string
+    msgs: Array<{ level: string, msg: {detail: string, stage: string}}>
 }
 
 type UploadInfo = UploadSuccess | UploadProgress | UploadFailure;
@@ -44,8 +44,10 @@ type UploadInfo = UploadSuccess | UploadProgress | UploadFailure;
                 <span v-else-if="info.kind === 'progress'">
                     File upload {{ name }} is <b>{{ info.percentCompleted }}%</b> complete
                 </span>
-                <span v-else>
-                    File upload failed
+                <span v-else-if="info.kind == 'failure'">
+                    <div v-for="msg in info.msgs">
+                        {{ msg.msg.detail }} <b>{{ msg.msg.stage }}</b>
+                    </div>
                 </span>
             </div>
         </div>
@@ -99,9 +101,15 @@ export default class Upload extends Vue {
             const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
             this.$set(this.fileUploadMsgs, file.name, {kind: 'progress', percentCompleted, size: file.size});
         };
-        const response = await codebaseReleaseAPI.uploadFile(
-            {identifier: this.identifier, version_number: this.version_number, category: this.uploadType},
-            file, onUploadProgress);
+        try {
+            await codebaseReleaseAPI.uploadFile(
+                {identifier: this.identifier, version_number: this.version_number, category: this.uploadType},
+                file, onUploadProgress);
+        } catch(error) {
+            if (error.response) {
+                this.$set(this.fileUploadMsgs, file.name, {kind: 'failure', msgs: error.response.data})
+            }
+        }
         _.delay(() => this.$delete(this.fileUploadMsgs, file.name), 3000);
         await Promise.all([
             this.$store.dispatch('getOriginalFiles', this.uploadType),
