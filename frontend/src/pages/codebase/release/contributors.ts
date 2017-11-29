@@ -366,7 +366,7 @@ class EditContributors extends Vue {
         if (ind !== -1) {
             this.state[ind] = _.merge({}, release_contributor);
         } else {
-            this.state.push(_.merge({}, release_contributor));
+            this.state.push(_.merge({'_id': _.uniqueId()}, release_contributor));
         }
     }
 
