@@ -49,8 +49,9 @@ class FileCategoryDirectories(Enum):
 @total_ordering
 class MessageLevels(Enum):
     info = 0
-    error = 1
-    critical = 2
+    warning = 1
+    error = 2
+    critical = 3
 
     def __lt__(self, other):
         if self.__class__ is other.__class__:
@@ -155,9 +156,9 @@ class CodebaseReleaseStorage(FileSystemStorage):
     def validate_file(self, name, content) -> Optional:
         msgs = MessageGroup()
         if fs.has_system_files(name):
-            msgs.append(self.error("'{}' has a mac os x system directory".format(name)))
+            msgs.append(self.warning("'{}' has a mac os x system directory".format(name)))
         if fs.is_system_file(name):
-            msgs.append(self.error("'{}' is a system file".format(name)))
+            msgs.append(self.warning("'{}' is a system file".format(name)))
         return msgs
 
     def validate(self):
@@ -192,6 +193,9 @@ class CodebaseReleaseStorage(FileSystemStorage):
     def info(self, msg):
         return create_fs_message(msg, self.stage, MessageLevels.info)
 
+    def warning(self, msg):
+        return create_fs_message(msg, self.stage, MessageLevels.warning)
+
     def error(self, msg):
         return create_fs_message(msg, self.stage, MessageLevels.error)
 
@@ -208,9 +212,9 @@ class CodebaseReleaseStorage(FileSystemStorage):
         try:
             self.save(name, content)
         except IOError as e:
-            msgs.append(self.critical(e))
+            msgs.append(self.error(e))
         except ValueError as e:
-            msgs.append(self.critical(e))
+            msgs.append(self.error(e))
         return msgs
 
     def clear_category(self, category: FileCategoryDirectories):
@@ -223,7 +227,7 @@ class CodebaseReleaseStorage(FileSystemStorage):
         try:
             self.delete(name)
         except IOError as e:
-            return self.critical(e)
+            return self.error(e)
         return None
 
 
@@ -234,7 +238,7 @@ class CodebaseReleaseOriginalStorage(CodebaseReleaseStorage):
         mimetype_matcher = get_mimetype_matcher(name)
         mimetype = mimetypes.guess_type(name)[0]
         if mimetype is None or not mimetype_matcher.match(mimetype):
-            return self.error('File type mismatch for file {}'.format(name))
+            return self.warning('File type mismatch for file {}'.format(name))
         return None
 
     def get_existing_archive_name(self, category: FileCategoryDirectories):
@@ -287,7 +291,7 @@ class CodebaseReleaseSipStorage(CodebaseReleaseStorage):
         mimetype_matcher = get_mimetype_matcher(name)
         mimetype = mimetypes.guess_type(name)[0]
         if mimetype is None or not mimetype_matcher.match(mimetype):
-            return self.error('File type mismatch for file {}'.format(name))
+            return self.warning('File type mismatch for file {}'.format(name))
         return None
 
     def validate_file(self, name, content):

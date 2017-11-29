@@ -549,7 +549,7 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
             # FIXME: check codemeta for additional metadata
         }
 
-    def get_fs_api(self, raise_exception_level=MessageLevels.error) -> CodebaseReleaseFsApi:
+    def get_fs_api(self, raise_exception_level=MessageLevels.warning) -> CodebaseReleaseFsApi:
         return CodebaseReleaseFsApi(uuid=self.codebase.uuid, identifier=self.codebase.identifier,
                                     version_number=self.version_number, raise_exception_level=raise_exception_level)
 
