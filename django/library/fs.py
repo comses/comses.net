@@ -435,6 +435,7 @@ class CodebaseReleaseFsApi:
         if path.exists():
             return False
         with path.open('w') as codemeta_out:
+            logger.debug('writing codemeta')
             json.dump(self.DEFAULT_CODEMETA_DATA, codemeta_out)
         return True
 
@@ -511,10 +512,19 @@ class CodebaseReleaseFsApi:
 
     def get_or_create_sip_bag(self, bagit_info):
         logger.info("creating bagit metadata")
-        bag = bagit.Bag(str(self.sip_dir))
-        for k, v in bagit_info.items():
-            bag.info[k] = v
-        return bag.save(manifests=True)
+        try:
+            bag = bagit.Bag(str(self.sip_dir))
+            for k, v in bagit_info.items():
+                bag.info[k] = v
+            bag.save(manifests=True)
+        except RuntimeError as e:
+            # Temporary hack to get araound a bagit error that changes
+            # the working directory
+            logger.exception(e)
+            logger.info("creating bagit metadata failed. moving on")
+            logger.info("moved to wrong directory: %s", os.getcwd())
+            os.chdir('/code')
+            logger.info("reset working directory to: %s", os.getcwd())
 
     def build_sip(self, originals_dir: Optional[str] = None):
         logger.info("building sip")
