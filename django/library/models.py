@@ -333,9 +333,11 @@ class Codebase(index.Indexed, ClusterableModel):
         if version_number is None:
             # start off at v1.0.0
             version_number = '1.0.0'
-            # check for the latest version and reinitialize if it exists
-            if self.latest_version is not None:
-                version_number = version_bump(self.latest_version.version_number)
+            # get the latest release's version_number
+            # (can't use latest release because it is for published releases only)
+            last_release = self.releases.last()
+            if last_release is not None:
+                version_number = version_bump(last_release.version_number)
         return version_number
 
     def import_release(self, submitter=None, submitter_id=None, version_number=None, submitted_package=None, **kwargs):
@@ -370,13 +372,25 @@ class Codebase(index.Indexed, ClusterableModel):
     def create_release(self, initialize=True, **overrides):
         submitter = self.submitter
         version_number = self.next_version_number()
+        previous_release = self.releases.last()
         kwargs = dict(submitter=submitter,
                       version_number=version_number,
                       identifier=None,
-                      codebase=self,
+                      live=False,
                       draft=True)
-        kwargs.update(overrides)
-        release = CodebaseRelease.objects.create(**kwargs)
+        if previous_release is not None:
+            previous_release_contributors = ReleaseContributor.objects.filter(release_id=previous_release.id)
+            previous_release.id = None
+            release = previous_release
+            for k, v in kwargs.items():
+                setattr(release, k, v)
+            release.save()
+            previous_release_contributors.copy_to(release)
+        else:
+            kwargs['codebase'] = self
+            kwargs.update(overrides)
+            release = CodebaseRelease.objects.create(**kwargs)
+
         if initialize:
             fs_api = release.get_fs_api()
             fs_api.initialize()
@@ -596,6 +610,16 @@ class CodebaseReleasePublisher:
             self.codebase_release.save()
 
 
+class ReleaseContributorQuerySet(models.QuerySet):
+    def copy_to(self, release: CodebaseRelease):
+        release_contributors = list(self)
+        for release_contributor in release_contributors:
+            release_contributor.id = None
+            release_contributor.release = release
+
+        return self.bulk_create(release_contributors)
+
+
 class ReleaseContributor(models.Model):
     release = models.ForeignKey(CodebaseRelease, on_delete=models.CASCADE, related_name='codebase_contributors')
     contributor = models.ForeignKey(Contributor, on_delete=models.CASCADE, related_name='codebase_contributors')
@@ -607,6 +631,8 @@ class ReleaseContributor(models.Model):
         )
     ), default=list)
     index = models.PositiveSmallIntegerField(help_text=_('Ordering field for codebase contributors'))
+
+    objects = ReleaseContributorQuerySet.as_manager()
 
     def __str__(self):
         return "{0} contributor {1}".format(self.release, self.contributor)
