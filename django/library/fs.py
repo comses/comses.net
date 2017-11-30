@@ -237,7 +237,8 @@ class CodebaseReleaseOriginalStorage(CodebaseReleaseStorage):
     def validate_mimetype(self, name):
         mimetype_matcher = get_mimetype_matcher(name)
         mimetype = mimetypes.guess_type(name)[0]
-        if mimetype is None or not mimetype_matcher.match(mimetype):
+        mimetype = mimetype if mimetype else '*/*'
+        if not mimetype_matcher.match(mimetype):
             return self.warning('File type mismatch for file {}'.format(name))
         return None
 
@@ -290,7 +291,8 @@ class CodebaseReleaseSipStorage(CodebaseReleaseStorage):
         get_category(name)
         mimetype_matcher = get_mimetype_matcher(name)
         mimetype = mimetypes.guess_type(name)[0]
-        if mimetype is None or not mimetype_matcher.match(mimetype):
+        mimetype = mimetype if mimetype else '*/*'
+        if not mimetype_matcher.match(mimetype):
             return self.warning('File type mismatch for file {}'.format(name))
         return None
 
