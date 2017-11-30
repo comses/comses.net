@@ -43,7 +43,7 @@ class CodebaseViewSet(FormViewSetMixin, viewsets.ModelViewSet):
     lookup_field = 'identifier'
     lookup_value_regex = r'[\w\-\.]+'
     pagination_class = SmallResultSetPagination
-    queryset = Codebase.objects.all()
+    queryset = Codebase.objects.order_by('-date_created')
 
     # FIXME: should we use filter_backends
     # (http://www.django-rest-framework.org/api-guide/filtering/#djangoobjectpermissionsfilter)

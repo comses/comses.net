@@ -9,6 +9,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+
 class RelatedMemberProfileSerializer(serializers.ModelSerializer):
     full_name = serializers.SerializerMethodField()
     institution_name = serializers.CharField(source='member_profile.institution.name', read_only=True)

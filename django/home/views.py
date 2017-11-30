@@ -311,7 +311,11 @@ class ProfileViewSet(FormViewSetMixin, mixins.RetrieveModelMixin, mixins.ListMod
         queryset = self.queryset.public()
         queryset = queryset.order_by('id')
         if query:
-            return queryset.filter(user__username__startswith=query)
+            return queryset.filter(Q(user__username__istartswith=query) |
+                                   Q(user__last_name__istartswith=query) |
+                                   Q(user__first_name__istartswith=query) |
+                                   Q(user__contributor__given_name__istartswith=query) |
+                                   Q(user__contributor__family_name__istartswith=query))
         return queryset
 
     def retrieve(self, request, *args, **kwargs):
@@ -330,9 +334,10 @@ class ProfileViewSet(FormViewSetMixin, mixins.RetrieveModelMixin, mixins.ListMod
 
     @list_route(methods=['get'])
     def search(self, request, *args, **kwargs):
-        queryset = self.get_queryset()
-        serializer = RelatedMemberProfileSerializer(queryset, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        queryset = User.objects.filter(member_profile__in=self.get_queryset()).order_by('last_name')
+        page = self.paginate_queryset(queryset)
+        serializer = RelatedMemberProfileSerializer(page, many=True)
+        return self.get_paginated_response(serializer.data)
 
 
 class MemberProfileImageUploadView(generics.CreateAPIView):

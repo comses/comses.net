@@ -128,7 +128,7 @@ class EditContributor extends createFormValidator(contributorSchema) {
 
     @Watch('contributor')
     setFormState(contributor: Contributor | null) {
-        if (!_.isNull(contributor)) {
+        if (!_.isEmpty(contributor)) {
             (<any>this).replace(contributor);
         } else {
             (<any>this).replace(createDefaultValue(contributorSchema));
@@ -407,12 +407,13 @@ class EditContributors extends Vue {
         this.formState = FormContributorState.editReleaseContributor;
     }
 
-    saveContributor() {
+    saveContributor(contributor: Contributor) {
         this.formState = FormContributorState.editReleaseContributor;
         $('#createContributorForm').modal('hide');
-        if (!_.isNull(this.releaseContributor)) {
-            this.releaseContributor.contributor = _.merge({}, (<any>this).contributor);
+        if (_.isNull(this.releaseContributor)) {
+            this.releaseContributor = createDefaultValue(releaseContributorSchema);
         }
+        (<any>this).releaseContributor.contributor = _.merge({}, contributor);
     }
 
 }

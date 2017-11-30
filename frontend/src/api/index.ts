@@ -60,12 +60,21 @@ export class ProfileAPI extends BaseAPI {
         return `${this.baseUrl()}${qs ? `?${qs}` : ''}`;
     }
 
+    searchUrl(q: {query?: string, page: number}) {
+        const qs = queryString.stringify(q);
+        return `${this.baseUrl()}search/${qs ? `?${qs}` : ''}`;
+    }
+
     uploadPictureUrl(username: string) {
         return `${this.detailUrl(username)}upload_picture/`
     }
 
     list(q: { query?: string, page: number }) {
         return api.get(this.listUrl(q));
+    }
+
+    search(q: {query?: string, page: number}) {
+        return api.get(this.searchUrl(q));
     }
 
     uploadProfilePicture({username}, file) {

@@ -4,13 +4,15 @@ import {Component, Prop} from 'vue-property-decorator'
 
 import * as queryString from 'query-string'
 import * as _ from 'lodash'
-import {profileAPI} from 'api'
+import {ProfileAPI} from 'api'
 
 import Multiselect from 'vue-multiselect'
 
+const profileAPI = new ProfileAPI();
+
 const debounceFetchMatchingUsers = _.debounce((self: UsernameSearch, query: string) => {
     self.isLoading = true;
-    profileAPI.list({query, page: 1})
+    profileAPI.search({query, page: 1})
             .then(response => {
                 self.matchingUsers = response.data.results;
                 self.isLoading = false;
@@ -19,7 +21,7 @@ const debounceFetchMatchingUsers = _.debounce((self: UsernameSearch, query: stri
                 self.localErrors = 'Error fetching tags';
                 self.isLoading = false;
             });
-}, 800);
+}, 600);
 
 @Component({
     template: `<div :class="['form-group', {'child-is-invalid': isInvalid }]">
@@ -65,7 +67,11 @@ export default class UsernameSearch extends BaseControl {
     localErrors: string = '';
 
     displayInfo(userInfo) {
-        return `${userInfo.full_name}${userInfo.institution_name ? `, ${userInfo.institution_name}` : ''}`;
+        let displayName: string = userInfo.full_name;
+        if (userInfo.full_name !== userInfo.username) {
+            displayName = `${userInfo.full_name} (${userInfo.username})`;
+        }
+        return `${displayName}${userInfo.institution_name ? `, ${userInfo.institution_name}` : ''}`;
     }
 
     fetchMatchingUsers(query) {
