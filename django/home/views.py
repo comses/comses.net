@@ -8,7 +8,7 @@ from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.core.files.images import ImageFile
-from django.db.models.query_utils import Q
+from django.db.models import Q
 from django.http import HttpResponseBadRequest, HttpResponseRedirect
 from django.shortcuts import get_object_or_404
 from django.utils.decorators import method_decorator
@@ -308,14 +308,9 @@ class ProfileViewSet(FormViewSetMixin, mixins.RetrieveModelMixin, mixins.ListMod
         # make sort order parameterizable. Start with ID or last_name? Lots of spam users visible with
         # last_name / username
         query = self.request.query_params.get('query')
-        queryset = self.queryset.public()
-        queryset = queryset.order_by('id')
+        queryset = self.queryset.public().order_by('id')
         if query:
-            return queryset.filter(Q(user__username__istartswith=query) |
-                                   Q(user__last_name__istartswith=query) |
-                                   Q(user__first_name__istartswith=query) |
-                                   Q(user__contributor__given_name__istartswith=query) |
-                                   Q(user__contributor__family_name__istartswith=query))
+            return queryset.find_by_name(query)
         return queryset
 
     def retrieve(self, request, *args, **kwargs):

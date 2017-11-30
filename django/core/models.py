@@ -100,6 +100,14 @@ class FollowUser(models.Model):
 
 
 class MemberProfileQuerySet(models.QuerySet):
+
+    def find_by_name(self, query):
+        return self.filter(models.Q(user__username__icontains=query) |
+                           models.Q(user__last_name__icontains=query) |
+                           models.Q(user__first_name__icontains=query) |
+                           models.Q(user__contributor__given_name__icontains=query) |
+                           models.Q(user__contributor__family_name__icontains=query))
+
     def with_institution(self):
         return self.select_related('institution')
 
@@ -112,9 +120,7 @@ class MemberProfileQuerySet(models.QuerySet):
             .exclude(user__username__in=('AnonymousUser', 'openabm'))
 
     def public(self):
-        return self.prefetch_related(
-            models.Prefetch('user__codebases',
-                            Codebase.objects.public())) \
+        return self.prefetch_related(models.Prefetch('user__codebases', Codebase.objects.public())) \
             .filter(user__is_active=True) \
             .exclude(user__username__in=('AnonymousUser', 'openabm'))
 
