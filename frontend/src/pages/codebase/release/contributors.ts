@@ -254,7 +254,7 @@ class EditReleaseContributor extends createFormValidator(releaseContributorSchem
     // language=Vue
     template: `<div>
         <label class="form-control-label">Current Release Contributors</label>
-        <draggable v-model="state">
+        <draggable v-model="state" v-if="state.length > 0">
             <ul v-for="releaseContributor in state" :key="releaseContributor._id" class="list-group">
                 <li class="list-group-item d-flex justify-content-between">
                     <div>
@@ -272,6 +272,7 @@ class EditReleaseContributor extends createFormValidator(releaseContributorSchem
                 </li>
             </ul>
         </draggable>
+        <div class="alert alert-primary" role="alert" v-else>No contributors</div>
         <div class="row">
             <div class="col-11">
                 <small class="text-muted">
