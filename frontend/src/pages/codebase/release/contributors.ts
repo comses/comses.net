@@ -257,7 +257,10 @@ class EditReleaseContributor extends createFormValidator(releaseContributorSchem
         <draggable v-model="state">
             <ul v-for="releaseContributor in state" :key="releaseContributor._id" class="list-group">
                 <li class="list-group-item d-flex justify-content-between">
-                    {{ releaseContributorLabel(releaseContributor) }}
+                    <div>
+                        <span class="fa fa-minus-square-o has-pointer-cursor"></span>
+                        {{ releaseContributorLabel(releaseContributor) }}
+                    </div>
                     <div v-show="matchesState(['list'])">
                         <span class="badge badge-default badge-pill" @click="editReleaseContributor(releaseContributor)">
                             <span class="fa fa-edit"></span>
