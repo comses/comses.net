@@ -156,6 +156,7 @@ class EditContributor extends createFormValidator(contributorSchema) {
                 <div class="row">
                     <div class="col-11">
                         <multiselect
+                            ref="releaseContributorSelect"
                             v-model="contributor"
                             :custom-label="contributorLabel"
                             label="family_name"
@@ -193,7 +194,7 @@ class EditContributor extends createFormValidator(contributorSchema) {
                     {{ errors.roles.join(', ') }}
                 </div>
             </div>
-            <button type="button" class="btn btn-primary" @click="save">Save</button>
+            <button type="button" class="btn btn-primary" @click="save">Add</button>
             <button type="button" class="btn btn-primary" @click="cancel">Cancel</button>
         </div>
     </div>`,
@@ -233,8 +234,7 @@ class EditReleaseContributor extends createFormValidator(releaseContributorSchem
     roleLabel(value: string) {
         return roleLookup[value] || value;
     }
-
-
+    
     fetchMatchingContributors(searchQuery: string) {
         listContributors.cancel();
         listContributors({query: searchQuery}, this);
@@ -242,11 +242,16 @@ class EditReleaseContributor extends createFormValidator(releaseContributorSchem
 
     cancel() {
         this.$emit('cancel');
+        this.replace(createDefaultValue(releaseContributorSchema));
+        (<Vue>this.$refs.releaseContributorSelect).$el.focus();
     }
 
     async save() {
         await this.validate();
-        this.$emit('save', this.state);
+        const msg = _.cloneDeep(this.state);
+        this.replace(createDefaultValue(releaseContributorSchema));
+        (<Vue>this.$refs.releaseContributorSelect).$el.focus();
+        this.$emit('save', msg);
     }
 }
 
@@ -258,7 +263,7 @@ class EditReleaseContributor extends createFormValidator(releaseContributorSchem
             <ul v-for="releaseContributor in state" :key="releaseContributor._id" class="list-group">
                 <li class="list-group-item d-flex justify-content-between">
                     <div>
-                        <span class="fa fa-minus-square-o has-pointer-cursor"></span>
+                        <span class="text-muted fa fa-minus-square-o has-pointer-cursor"></span>
                         {{ releaseContributorLabel(releaseContributor) }}
                     </div>
                     <div v-show="matchesState(['list'])">
@@ -273,22 +278,15 @@ class EditReleaseContributor extends createFormValidator(releaseContributorSchem
             </ul>
         </draggable>
         <div class="alert alert-primary" role="alert" v-else>No contributors</div>
-        <div class="row">
-            <div class="col-11">
-                <small class="text-muted">
-                    Click on a release contributor edit and delete buttons to . Drag and drop release contributors to change the order in which they appear. 
-                    Main release contributors at the top. Create a new contributor by clicking the add button below.
-                </small>
-            </div>
-            <div class="col-1">
-                <button class="btn btn-primary pull-right" type="button" @click="editReleaseContributor()">
-                    <span class="fa fa-plus"></span>
-                </button>
-            </div>
+        <div>
+            <small class="text-muted">
+                Click on a release contributor edit and delete buttons to . Drag and drop release contributors to change the order in which they appear. 
+                Main release contributors at the top. Create a new contributor by clicking the add button below.
+            </small>
         </div>
         <c-edit-release-contributor :releaseContributor="releaseContributor"
                 @save="saveReleaseContributor" @cancel="cancelReleaseContributor" ref="releaseContributor"
-                @editContributor="editContributor" v-show="matchesState(['editReleaseContributor'])">
+                @editContributor="editContributor">
         </c-edit-release-contributor>
         <c-message-display :messages="statusMessages" />
         <button type="button" class="btn btn-primary" @click="save">Save</button>
