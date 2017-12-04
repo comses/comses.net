@@ -7,7 +7,7 @@ import {TagAPI} from 'api'
 @Component({
     template: `<div :class="['form-group', {'child-is-invalid': isInvalid }]">
         <slot name="label" :label="label">
-            <label class="form-control-label">{{ label }}</label>
+            <label :class="['form-control-label', requiredClass]">{{ label }}</label>
         </slot>
         <multiselect
                 :value="value"

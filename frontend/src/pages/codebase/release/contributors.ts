@@ -234,7 +234,7 @@ class EditReleaseContributor extends createFormValidator(releaseContributorSchem
     roleLabel(value: string) {
         return roleLookup[value] || value;
     }
-    
+
     fetchMatchingContributors(searchQuery: string) {
         listContributors.cancel();
         listContributors({query: searchQuery}, this);
@@ -258,7 +258,7 @@ class EditReleaseContributor extends createFormValidator(releaseContributorSchem
 @Component(<any>{
     // language=Vue
     template: `<div>
-        <label class="form-control-label">Current Release Contributors</label>
+        <label class="form-control-label required">Current Release Contributors</label>
         <draggable v-model="state" v-if="state.length > 0">
             <ul v-for="releaseContributor in state" :key="releaseContributor._id" class="list-group">
                 <li class="list-group-item d-flex justify-content-between">

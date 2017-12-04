@@ -99,7 +99,7 @@ class PublishModal extends Vue implements CreateOrUpdateHandler {
             </h1>
             <ul class="nav nav-tabs justify-content-center">
                 <li class="nav-item" v-if="!isPublished">
-                    <router-link :to="{ name: 'code_upload'}" class="nav-link" active-class="disabled">Upload Code</router-link>
+                    <router-link :to="{ name: 'code_upload'}" class="nav-link required" active-class="disabled">Upload Code</router-link>
                 </li>
                 <li class="nav-item" v-if="!isPublished">
                     <router-link :to="{ name: 'data_upload'}" class="nav-link" active-class="disabled">Upload Data</router-link>
@@ -111,10 +111,10 @@ class PublishModal extends Vue implements CreateOrUpdateHandler {
                     <router-link :to="{ name: 'image_upload'}" class="nav-link" active-class="disabled">Upload Media</router-link>
                 </li>
                 <li class="nav-item">
-                    <router-link :to="{ name: 'contributors' }" class="nav-link" active-class="disabled">Contributors</router-link>
+                    <router-link :to="{ name: 'contributors' }" class="nav-link required" active-class="disabled">Contributors</router-link>
                 </li>
                 <li class="nav-item">
-                    <router-link :to="{ name: 'detail' }" class="nav-link" active-class="disabled">
+                    <router-link :to="{ name: 'detail' }" class="nav-link required" active-class="disabled">
                         Detail<span class="badge badge-pill badge-danger" v-if="detailPageErrors !== 0">{{ detailPageErrors }} errors</span>
                     </router-link>
                 </li>

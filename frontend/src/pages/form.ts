@@ -41,6 +41,24 @@ export function createDefaultValue(schema) {
     }
 }
 
+function createFormControlConfig(schema) {
+    const config = {};
+    for (const field_name in schema.fields) {
+        const field = schema.fields[field_name];
+        config[field_name] = false;
+        for (const test of field.tests) {
+            if (test.TEST_NAME === 'is-not-null') {
+                break;
+            }
+            if (test.TEST_NAME === 'required') {
+                config[field_name] = true;
+                break;
+            }
+        }
+    }
+    return config;
+}
+
 function createComputed(key: string, validate: (self, value) => Promise<any>) {
     const debouncedValidator = _.debounce((self, value) => validate(self, value)
         .catch(() => {
@@ -114,6 +132,8 @@ export function createFormValidator(schema) {
     const defaultValue = createDefaultValue(schema);
     const keys = Object.keys(schema.fields);
     const defaultErrors = createDefaultErrors(keys);
+    const formControlConfig = createFormControlConfig(schema);
+
     const computed = {};
     const $validators = _.transform(keys, (validators, key) => {
         const validator = createFieldValidator(schema, key);
@@ -129,6 +149,7 @@ export function createFormValidator(schema) {
         statusMessages: Array<{ classNames: string, message: string }> = [];
         state = defaultValue;
         errors = defaultErrors;
+        config = formControlConfig;
 
         async validate() {
             try {

@@ -25,7 +25,7 @@ function dateAfterConstraint(before_name: string, after_name: string) {
 
 export const schema = yup.object().shape({
     description: yup.string().required(),
-    summary: yup.string(),
+    summary: yup.string().required(),
     title: yup.string().required(),
     tags: yup.array().of(yup.object().shape({name: yup.string().required()})),
     location: yup.string().required(),
@@ -40,36 +40,31 @@ export const schema = yup.object().shape({
 
 @Component(<any>{
     template: `<form>
-        <c-input v-model="title" name="title" :errorMsgs="errors.title">
-            <label class="form-control-label" slot="label">Title</label>
-            <small class="form-text text-muted" slot="help">A short title describing the event</small>
+        <c-input v-model="title" name="title" :errorMsgs="errors.title" :required="config.title"
+            label="Title" help="A short  title describing the event">
         </c-input>
-        <c-input v-model="location" name="location" :errorMsgs="errors.location">
-            <label class="form-control-label" slot="label">Location</label>
-            <small class="form-text text-muted" slot="help">The address of where the event takes place</small>
+        <c-input v-model="location" name="location" :errorMsgs="errors.location" :required="config.location"
+            label="Location" help="The address of where the event takes place">
         </c-input>
         <div class="row">
             <div class="col-6">
-                <c-datepicker v-model="start_date" name="start_date" :errorMsgs="errors.start_date">
-                    <label class="form-control-label" slot="label">Start Date</label>
-                    <small class="form-text text-muted" slot="help">The date the event begins at</small>
+                <c-datepicker v-model="start_date" name="start_date" :errorMsgs="errors.start_date" 
+                    :required="config.start_date" label="Start Date" help="The date the event begins at">
                 </c-datepicker>
             </div>
             <div class="col-6">
-                <c-datepicker v-model="end_date" name="end_date" :errorMsgs="errors.end_date" :clearButton="true">
-                    <label class="form-control-label" slot="label">End Date</label>
-                    <small class="form-text text-muted" slot="help">The date the event ends at</small>
+                <c-datepicker v-model="end_date" name="end_date" :errorMsgs="errors.end_date" :clearButton="true"
+                    :required="config.end_date" label="End Date" help="The date the event ends at">
                 </c-datepicker>
             </div>
         </div>
         <div class="row">
             <div class="col-6 d-inline">
                 <c-datepicker v-model="early_registration_deadline" name="early_registration_deadline"
-                                :errorMsgs="errors.early_registration_deadline" :clearButton="true">
-                    <label class="form-control-label" slot="label">Early Registration Deadline</label>
-                    <small class="form-text text-muted" slot="help">The last day for early registration of the event
-                        (inclusive)
-                    </small>
+                                :errorMsgs="errors.early_registration_deadline" :clearButton="true" 
+                                :required="config.early_registration_deadline"
+                                label="Early Registration Deadline"
+                                help="The last day for early registration of the event (inclusive)">
                 </c-datepicker>
             </div>
             <div class="col-6 d-inline">
@@ -81,11 +76,11 @@ export const schema = yup.object().shape({
                 </c-datepicker>
             </div>
         </div>
-        <c-markdown v-model="description" name="description" :errorMsgs="errors.description"
+        <c-markdown v-model="description" name="description" :errorMsgs="errors.description" :required="config.description"
                     minHeight="20em" label="Description" help="Detailed information about the event">
         </c-markdown>
-        <c-markdown v-model="summary" name="summary" :errorMsgs="errors.summary">
-            <label slot="label">Summary</label>
+        <c-markdown v-model="summary" name="summary" :errorMsgs="errors.summary" :required="config.summary"
+            label="Summary">
             <div slot="help"><button class="btn btn-secondary btn-sm" type="button" @click="createSummaryFromDescription">
                     Summarize
                 </button>

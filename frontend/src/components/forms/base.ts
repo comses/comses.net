@@ -1,9 +1,12 @@
 import * as Vue from 'vue'
-import { Component, Prop } from 'vue-property-decorator'
+import {Component, Prop} from 'vue-property-decorator'
 import * as _ from 'lodash'
 
 @Component
 class BaseControl extends Vue {
+    @Prop({ default: true})
+    required;
+
     @Prop
     value;
 
@@ -15,6 +18,10 @@ class BaseControl extends Vue {
 
     @Prop({ default: () => [] })
     errorMsgs: Array<string>;
+
+    get requiredClass() {
+        return {'required': this.required};
+    }
 
     get controlId() {
         return _.isUndefined(this.customId) ? _.uniqueId(this.name) : this.customId;

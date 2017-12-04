@@ -4,7 +4,7 @@ import BaseControl from './base'
 @Component({
     template: `<div class="form-group">
         <slot name="label" :label="label">
-            <label :for='controlId' class="form-control-label">{{ label }}</label>
+            <label :for='controlId' :class="['form-control-label', requiredClass]">{{ label }}</label>
         </slot>
         <input :id='controlId' :type="type" :name="name" :class="['form-control', {'is-invalid': isInvalid}]" :value="value"
                 @input="updateValue($event.target.value)">

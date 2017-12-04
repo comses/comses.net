@@ -4,7 +4,7 @@ import BaseControl from './base'
 @Component({
     template: `<div class="form-check">
         <label :for='controlId' class="form-check-label">
-            <input :id='controlId' type="checkbox" :name="name" :class="['form-check-input', {'is-invalid': isInvalid}]" :value="value" :checked="value === true"
+            <input :id='controlId' type="checkbox" :name="name" :class="['form-check-input', {'is-invalid': isInvalid}, requiredClass]" :value="value" :checked="value === true"
                     @change="toggle($event.target.value)">
             <slot name="label" :label="label">{{ label }}</slot>
         </label>

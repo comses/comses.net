@@ -5,7 +5,7 @@ import * as draggable from 'vuedraggable'
 @Component({
     template: `<div class="form-group">
         <slot name="label" :label="label">
-            <label class="form-control-label">{{ label }}</label>
+            <label :class="['form-control-label', requiredClass]">{{ label }}</label>
         </slot>
         <input :class="['form-control', {'is-invalid': isInvalid}]" v-model="potential_item" @keyup.enter="create" :placeholder="placeholder">
         <draggable :list="value" @start="drag=true" @end="drag=false">

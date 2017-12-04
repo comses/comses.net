@@ -38,38 +38,47 @@ export const schema = yup.object().shape({
         </div>
 
         <div class='form-group' v-if='orcid_url'>
-        ORCID <a target='_blank' href='https://orcid.org/'><span class='ai ai-orcid'></span></a> | <a target='_blank' :href='orcid_url'>{{ orcid_url }}</a>
+            ORCID 
+            <a target='_blank' href='https://orcid.org/'><span class='ai ai-orcid'></span></a> | 
+            <a target='_blank' :href='orcid_url'>{{ orcid_url }}</a>
         </div>
         <div class='form-group' v-else>
-        <span class='fa fa-link'></span> <a title='orcid' href='/accounts/orcid/login/?process=connect'>Connect your ORCID account</a>
-        <span class='ai ai-orcid'></span>
+            <span class='fa fa-link'></span> <a title='orcid' href='/accounts/orcid/login/?process=connect'>Connect your ORCID account</a>
+            <span class='ai ai-orcid'></span>
         </div>
 
-
-        <c-input v-model="given_name" name="given_name" :errorMsgs="errors.given_name" label="Given Name">
+        <c-input v-model="given_name" name="given_name" :errorMsgs="errors.given_name" label="Given Name" 
+            :required="config.given_name">
         </c-input>
-        <c-input v-model="family_name" name="family_name" :errorMsgs="errors.family_name" label="Family Name">
+        <c-input v-model="family_name" name="family_name" :errorMsgs="errors.family_name" label="Family Name" 
+            :required="config.family_name">
         </c-input>
-        <c-markdown v-model="bio" name="bio" :errorMsgs="errors.bio" label="Bio">
+        <c-markdown v-model="bio" name="bio" :errorMsgs="errors.bio" label="Bio" :required="config.bio">
         </c-markdown>
-        <c-markdown v-model="research_interests" name="research_interests" :errorMsgs="errors.research_interests" label="Research Interests">
+        <c-markdown v-model="research_interests" name="research_interests" :errorMsgs="errors.research_interests" 
+            label="Research Interests" :required="config.research_interests">
         </c-markdown>
 
-        <c-input type="url" v-model="personal_url" name="personal_url" :errorMsgs="errors.personal_url" label="Personal URL" help="A link to your personal modeling related website">
+        <c-input type="url" v-model="personal_url" name="personal_url" :errorMsgs="errors.personal_url" 
+            label="Personal URL" help="A link to your personal modeling related website" :required="config.personal_url">
         </c-input>
         <c-input type="url" v-model="professional_url" name="professional_url" :errorMsgs="errors.professional_url" 
-                 label="Professional URL" help="A link to your institutional or professional profile page.">
+                 label="Professional URL" help="A link to your institutional or professional profile page."
+                 :required="config.professional_url">
         </c-input>
         <c-input v-model="institution_name" name="institution_name" :errorMsgs="errors.institution_name"
-            label="Institution" help="The primary place you are currently working at">
+            label="Institution" help="The primary place you are currently working at" 
+            :required="config.institution_name">
         </c-input>
-        <c-input v-model="institution_url" name="institution_url" :errorMsgs="errors.institution_url" label="Institution URL">
+        <c-input v-model="institution_url" name="institution_url" :errorMsgs="errors.institution_url" 
+            label="Institution URL" :required="config.institution_url">
         </c-input>
-        <c-edit-degrees :value="degrees" @create="degrees.push($event)" @remove="degrees.splice($event, 1)" @modify="degrees.splice($event.index, 1, $event.value)" name="degrees" :errorMsgs="errors.degrees">
-            <label class="form-control-label" slot="label">Degrees</label>
-            <small class="form-text text-muted" slot="help">The institution and name of the degrees you recieved</small>
+        <c-edit-degrees :value="degrees" @create="degrees.push($event)" @remove="degrees.splice($event, 1)" 
+            @modify="degrees.splice($event.index, 1, $event.value)" name="degrees" :errorMsgs="errors.degrees"
+            label="Degrees" help="The institution and name of the degrees you recieved" :required="config.degrees">
         </c-edit-degrees>
-        <c-tagger v-model="keywords" name="keywords" :errorMsgs="errors.keywords" label="Keywords">
+        <c-tagger v-model="keywords" name="keywords" :errorMsgs="errors.keywords" label="Keywords" 
+            :required="config.keywords">
         </c-tagger>
         <c-message-display :messages="statusMessages">
         </c-message-display>

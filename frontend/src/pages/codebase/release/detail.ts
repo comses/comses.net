@@ -20,25 +20,26 @@ const schema = yup.object().shape({
     description: yup.string().required().label('this'),
     embargo_end_date: yup.date().nullable().label('this'),
     os: yup.string().required().label('this'),
-    platforms: yup.array().of(yup.object().shape({name: yup.string()})).min(1).label('this'),
-    programming_languages: yup.array().of(yup.object().shape({name: yup.string()})).min(1).label('this'),
+    platforms: yup.array().of(yup.object().shape({name: yup.string()})).min(1).required().label('this'),
+    programming_languages: yup.array().of(yup.object().shape({name: yup.string()})).min(1).required().label('this'),
     live: yup.bool().label('this'),
     license: yup.object().shape({
         name: yup.string().required(),
         url: yup.string().url().required()
-    }).label('this')
+    }).required().label('this')
 });
 
 @Component(<any>{
     template: `<div>
         <c-markdown v-model="description" :errorMsgs="errors.description" name="description" rows="3" label="Description">
         </c-markdown>
-        <c-datepicker v-model="embargo_end_date" :errorMsgs="errors.embargo_end_date" name="embargoEndDate" :clearButton="true">
-            <label class="form-control-label" slot="label">Embargo End Date</label>
-            <small class="form-text text-muted" slot="help">The date your release is automatically published</small>
+        <c-datepicker v-model="embargo_end_date" :errorMsgs="errors.embargo_end_date" name="embargoEndDate" :clearButton="true"
+            :required="config.embargo_end_date"
+            label="Embargo End Date"
+            help="The date your release is automatically published">
         </c-datepicker>
         <div :class="['form-group', {'child-is-invalid': errors.os.length > 0}]">
-            <label class="form-control-label">Operating System</label>
+            <label :class="['form-control-label', {'required': config.os}]">Operating System</label>
             <multiselect 
                 :value="osOption"
                 @input="updateOs"
@@ -50,14 +51,14 @@ const schema = yup.object().shape({
             </multiselect>
             <div v-if="errors.os.length > 0" class="invalid-feedback">{{ errors.os.join(', ') }}</div>
         </div>
-        <c-tagger v-model="platforms" placeholder="Type to add platforms" 
+        <c-tagger v-model="platforms" placeholder="Type to add platforms" :required="config.platforms"
             label="Platforms" help="Platforms used in this model" :errorMsgs="errors.platforms">
         </c-tagger>
-        <c-tagger v-model="programming_languages" placeholder="Type to add programming languages" 
+        <c-tagger v-model="programming_languages" placeholder="Type to add programming languages" :required="config.programming_languages"
             label="Programming Languages" help="Programming languages used in this model" :errorMsgs="errors.programming_languages">
         </c-tagger>
         <div :class="['form-group', {'child-is-invalid': errors.license.length > 0}]">
-            <label class="form-control-label">License</label>
+            <label :class="['form-control-label', {'required': config.license }]">License</label>
             <multiselect v-model="license" label="name" track-by="name" placeholder="Type to find license" :options="licenseOptions">
                 <template slot="option" scope="props">
                     <div>
@@ -66,7 +67,9 @@ const schema = yup.object().shape({
                 </template>
             </multiselect>
             <div v-if="errors.license.length > 0" class="invalid-feedback">a license must be selected</div>
-            <small class="form-text text-muted">A software licence is a document governing use and redistribution of your model</small>
+            <small class="form-text text-muted">A software licence is a document governing use and redistribution of your model. 
+                See <a href="https://choosealicense.org">here</a> to compare licenses
+            </small>
         </div>
         <c-message-display :messages="statusMessages"/>
         <button type="button" v-show="!isDirty" class="btn btn-primary" @click="save">Save</button>

@@ -21,16 +21,14 @@ export const schema = yup.object().shape({
 
 @Component(<any>{
     template: `<form>
-        <c-input v-model="title" name="title" :errorMsgs="errors.title">
-            <label class="form-control-label" slot="label">Title</label>
-            <small class="form-text text-muted" slot="help">A short title describing the job</small>
+        <c-input v-model="title" name="title" :errorMsgs="errors.title" label="Title" :required="config.title" 
+            help="A short title describing the job">
         </c-input>
-        <c-markdown v-model="description" name="description" :errorMsgs="errors.description">
-            <label class="form-control-label" slot="label">Description</label>
-            <small slot="help" class="form-text text-muted">Detailed information about the job</small>
+        <c-markdown v-model="description" name="description" :errorMsgs="errors.description" label="Description"
+            help="Detailed information about the job" :required="config.description">
         </c-markdown>
-        <c-markdown v-model="summary" name="summary" :errorMsgs="errors.summary">
-            <label slot="label">Summary</label>
+        <c-markdown v-model="summary" name="summary" :errorMsgs="errors.summary" label="Summary"
+            :required="config.summary">
             <div slot="help">
                 <button class="btn btn-secondary btn-sm" type="button" @click="createSummaryFromDescription">Summarize
                 </button>
@@ -39,7 +37,7 @@ export const schema = yup.object().shape({
                 </small>
             </div>
         </c-markdown>
-        <c-tagger v-model="tags" name="tags" :errorsMsgs="errors.tags">
+        <c-tagger v-model="tags" name="tags" :errorsMsgs="errors.tags" :required="config.tags">
         </c-tagger>
         <small class="form-text text-muted">A list of tags to associate with a job. Tags help people search for jobs.
         </small>
