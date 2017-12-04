@@ -454,3 +454,8 @@ html {
 .has-pointer-cursor {
   cursor: pointer;
 }
+
+.required::after {
+  content:  "*";
+  color: red;
+}
