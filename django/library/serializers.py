@@ -231,6 +231,7 @@ class CodebaseReleaseSerializer(serializers.ModelSerializer):
     date_created = serializers.DateTimeField(format=YMD_DATETIME_FORMAT, read_only=True)
     first_published_at = serializers.DateTimeField(format=PUBLISH_DATE_FORMAT, read_only=True)
     last_published_on = serializers.DateTimeField(format=PUBLISH_DATE_FORMAT, read_only=True)
+    embargo_end_date = serializers.DateTimeField(format=YMD_DATETIME_FORMAT)
     license = LicenseSerializer()
     live = serializers.ReadOnlyField()
     os_display = serializers.ReadOnlyField(source='get_os_display')

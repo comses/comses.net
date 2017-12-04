@@ -461,7 +461,7 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
     description = MarkdownField(blank=True, help_text=_('Markdown formattable text, e.g., run conditions'))
     summary = models.CharField(max_length=500, blank=True)
     documentation = models.FileField(null=True, help_text=_('Fulltext documentation file (PDF/PDFA)'))
-    embargo_end_date = models.DateField(null=True, blank=True)
+    embargo_end_date = models.DateTimeField(null=True, blank=True)
     version_number = models.CharField(max_length=32,
                                       help_text=_('semver string, e.g., 1.0.5, see semver.org'))
 
@@ -603,6 +603,7 @@ class CodebaseReleasePublisher:
             self.codebase_release.first_published_at = now
             self.codebase_release.last_published_on = now
             self.codebase_release.live = True
+            self.codebase_release.draft = False
             fs_api = self.codebase_release.get_fs_api()
             fs_api.get_or_create_sip_bag(self.codebase_release.bagit_info)
             fs_api.build_aip()
