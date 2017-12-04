@@ -17,7 +17,7 @@ import {HandlerShowSuccessMessage} from 'api/handler'
 const codebaseReleaseAPI = new CodebaseReleaseAPI();
 
 const schema = yup.object().shape({
-    description: yup.string().required().label('this'),
+    release_notes: yup.string().required().label('this'),
     embargo_end_date: yup.date().nullable().label('this'),
     os: yup.string().required().label('this'),
     platforms: yup.array().of(yup.object().shape({name: yup.string()})).min(1).required().label('this'),
@@ -31,7 +31,8 @@ const schema = yup.object().shape({
 
 @Component(<any>{
     template: `<div>
-        <c-markdown v-model="description" :errorMsgs="errors.description" name="description" rows="3" label="Description">
+        <c-markdown v-model="release_notes" :errorMsgs="errors.release_notes" name="releaseNotes" rows="3" 
+            label="Release Notes" :required="config.release_notes">
         </c-markdown>
         <c-datepicker v-model="embargo_end_date" :errorMsgs="errors.embargo_end_date" name="embargoEndDate" :clearButton="true"
             :required="config.embargo_end_date"
@@ -85,7 +86,7 @@ const schema = yup.object().shape({
         Multiselect,
     },
 })
-export default class Description extends createFormValidator(schema) {
+export default class Detail extends createFormValidator(schema) {
     created() {
         (<any>this).state = this.$store.getters.detail;
     }
@@ -124,7 +125,7 @@ export default class Description extends createFormValidator(schema) {
     }
 
     applyTextEdit(ev) {
-        (<any>this).description = ev.event.target.innerHTML;
+        (<any>this).release_notes = ev.event.target.innerHTML;
     }
 
     updateOs(value) {

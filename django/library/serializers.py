@@ -231,7 +231,6 @@ class CodebaseReleaseSerializer(serializers.ModelSerializer):
     date_created = serializers.DateTimeField(format=YMD_DATETIME_FORMAT, read_only=True)
     first_published_at = serializers.DateTimeField(format=PUBLISH_DATE_FORMAT, read_only=True)
     last_published_on = serializers.DateTimeField(format=PUBLISH_DATE_FORMAT, read_only=True)
-    embargo_end_date = serializers.DateTimeField(allow_null=True, format=YMD_DATETIME_FORMAT)
     license = LicenseSerializer()
     live = serializers.ReadOnlyField()
     os_display = serializers.ReadOnlyField(source='get_os_display')
@@ -239,12 +238,12 @@ class CodebaseReleaseSerializer(serializers.ModelSerializer):
     programming_languages = TagSerializer(many=True)
     submitter = LinkedUserSerializer(read_only=True, label='Submitter')
     version_number = serializers.ReadOnlyField()
-    description = MarkdownField()
+    release_notes = MarkdownField()
 
     class Meta:
         model = CodebaseRelease
         fields = ('absolute_url', 'citation_text', 'release_contributors', 'date_created', 'dependencies',
-                  'description', 'documentation', 'doi', 'download_count', 'embargo_end_date', 'first_published_at',
+                  'release_notes', 'documentation', 'doi', 'download_count', 'embargo_end_date', 'first_published_at',
                   'last_modified', 'last_published_on', 'license', 'live', 'os', 'os_display', 'peer_reviewed',
                   'platforms', 'programming_languages', 'submitted_package', 'submitter', 'codebase', 'version_number',
                   'id',)

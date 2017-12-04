@@ -52,7 +52,6 @@ const initialState: CodebaseReleaseStore = {
         absolute_url: '',
         release_contributors: [],
         dependencies: [],
-        description: '',
         documentation: '',
         doi: null,
         embargo_end_date: null,
@@ -64,6 +63,7 @@ const initialState: CodebaseReleaseStore = {
         platforms: [],
         possible_licenses: [],
         programming_languages: [],
+        release_notes: '',
         submitted_package: '',
         submitter: {
             family_name: '',
@@ -98,7 +98,7 @@ export const schema = yup.object().shape({
         repository_url: yup.string().url(`Not a valid url. URLs must start with http or https`)
     }).required(),
     contributors: yup.array().of(contributorSchema),
-    description: yup.string().required(),
+    release_notes: yup.string().required(),
     embargo_end_date: yup.date().nullable().label('embargo end date'),
     os: yup.string().required(),
     platforms: yup.array().of(yup.string()),
@@ -166,16 +166,16 @@ interface CodebaseReleaseDetail {
 export const store = {
     state: {...initialState},
     getters: {
-        detail(state: CodebaseReleaseStore): CodebaseReleaseDetail {
+        detail(state: CodebaseReleaseStore) {
             return {
-                description: state.release.description,
                 documentation: state.release.documentation,
                 embargo_end_date: state.release.embargo_end_date,
                 os: state.release.os,
                 license: state.release.license,
                 live: state.release.live,
                 platforms: state.release.platforms,
-                programming_languages: state.release.programming_languages
+                programming_languages: state.release.programming_languages,
+                release_notes: state.release.release_notes,
             }
         },
 

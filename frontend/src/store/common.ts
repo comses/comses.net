@@ -148,7 +148,6 @@ interface AbstractCodebaseRelease extends UndefinedWithId {
     absolute_url: string;
     release_contributors: Array<CodebaseContributor>
     dependencies: Array<Dependency>
-    description: string
     documentation: string
     doi: string | null
     embargo_end_date: string | null
@@ -160,6 +159,7 @@ interface AbstractCodebaseRelease extends UndefinedWithId {
     platforms: Array<{ name: string }>
     possible_licenses: Array<{ name: string, url: string }>
     programming_languages: Array<{ name: string }>
+    release_notes: string
     submitted_package: string
     submitter: User
     version_number: string
