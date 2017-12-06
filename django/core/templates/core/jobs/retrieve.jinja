@@ -33,16 +33,16 @@
             </div>
         </div>
     </div>
-    <div class="card-metadata">
-        <div class="card-body">
-            {% if has_change_perm %}
-                <a class="col-12 my-1 btn btn-primary" href="{{ url('home:job-edit', pk=id) }}">Edit</a>
-            {% endif %}
-            {% if has_delete_perm %}
-                <button type="button" class="col-12 my-1 btn btn-danger" href="{{ url('home:job-detail', pk=id) }}">Delete</button>
-            {% endif %}
-        </div>
-    </div>
+    {% if has_change_perm %}
+        <a href="{{ url('home:job-edit', pk=id) }}">
+            <div class="btn btn-primary my-1 w-100">Edit</div>
+        </a>
+    {% endif %}
+    {% if has_delete_perm %}
+        <button type="button" class="btn btn-danger my-1 w-100" href="{{ url('home:job-detail', pk=id) }}">
+            Delete
+        </button>
+    {% endif %}
     {{ share_card(absolute_url) }}
 {% endblock %}
 
