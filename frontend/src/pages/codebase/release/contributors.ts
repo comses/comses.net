@@ -45,10 +45,11 @@ const userSchema = yup.object().shape({
 
 const contributorSchema = yup.object().shape({
     user: yup.mixed().test('is-not-null', '${path} must have a value', value => !_.isNull(value)).label('this'),
+    email: yup.string().email().required(),
     given_name: yup.string().required(),
     family_name: yup.string().required(),
     middle_name: yup.string(),
-    affiliations: yup.array().of(yup.string()).min(1),
+    affiliations: yup.array().of(yup.string()).min(1).required(),
     type: yup.mixed().oneOf(['person', 'organization'])
 });
 
@@ -88,11 +89,17 @@ enum FormContributorState {
                         :errorMsgs="errors.user"
                         label="User Name" help="Find a matching user here">
                     </c-username>
-                    <c-input name="given_name" v-model="given_name" label="Given Name" :errorMsgs="errors.given_name">
+                    <c-input name="given_name" v-model="given_name" label="Given Name" :errorMsgs="errors.given_name"
+                        :required="config.given_name">
                     </c-input>
-                    <c-input name="middle_name" v-model="middle_name" label="Middle Name" :errorMsgs="errors.middle_name">
+                    <c-input name="middle_name" v-model="middle_name" label="Middle Name" :errorMsgs="errors.middle_name" 
+                        :required="config.middle_name">
                     </c-input>
-                    <c-input name="family_name" v-model="family_name" label="Family Name" :errorMsgs="errors.family_name">
+                    <c-input name="family_name" v-model="family_name" label="Family Name" :errorMsgs="errors.family_name"
+                        :required="config.family_name">
+                    </c-input>
+                    <c-input name="email" v-model="email" label="Email Address" :errorMsgs="errors.email"
+                        :required="config.email">
                     </c-input>
                     <c-edit-affiliations :value="affiliations.map(x => x.name)"
                         @create="affiliations.push({ 'name': $event})"
@@ -100,10 +107,12 @@ enum FormContributorState {
                         @modify="affiliations.splice($event.index, 1, { 'name': $event.value })"
                         name="affiliations" placeholder="Add affiliation"
                         :errorMsgs="errors.affiliations"
+                        :required="config.affiliations"
                         label="Affiliations"
                         help="The institution(s) and other groups you are affiliated with. Press enter to add.">
                     </c-edit-affiliations>
-                    <c-input type="select" name="type" v-model="type" label="Contributor Type" :errorMsgs="errors.type">
+                    <c-input type="select" name="type" v-model="type" label="Contributor Type" :errorMsgs="errors.type"
+                        :required="config.type">
                     </c-input>
                 </div>
                 <div class="modal-footer">
