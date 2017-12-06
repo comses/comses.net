@@ -199,10 +199,12 @@
             </table>
             <form>
                 {% csrf_token %}
-                <button class="btn btn-primary" formmethod="post"
-                        formaction="{{ url('library:codebaserelease-draft', identifier=codebase.identifier) }}">
-                    Draft release
-                </button>
+                {% if has_change_perm %}
+                    <button class="btn btn-primary" formmethod="post"
+                            formaction="{{ url('library:codebaserelease-draft', identifier=codebase.identifier) }}">
+                        Draft release
+                    </button>
+                {% endif %}
             </form>
         </div>
     </div>
