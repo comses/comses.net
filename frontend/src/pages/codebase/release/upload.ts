@@ -44,9 +44,12 @@ type UploadInfo = UploadSuccess | UploadProgress | UploadFailure;
             <div class="alert alert-secondary" v-for="(info, name) in fileUploadProgressMsgs">
                 File upload {{ name }} is <b>{{ info.percentCompleted }}%</b> complete
             </div>
-            <div class="alert alert-danger" v-for="(error, name) in fileUploadErrorMsgs">
-                <div v-for="msg in info.msgs">
-                    <b>{{ msg.msg.stage }}</b>: {{ msg.msg.detail }}
+            <div class="alert alert-danger alert-dismissable" v-if="hasErrors">
+                <button class="close" aria-label="Close" @click="clearUploadErrors">
+                    <span aria-hidden="true"><span class="fa fa-close"></span></span>
+                </button>
+                <div v-for="(error, name) in fileUploadErrorMsgs">
+                    <div v-for="msg in error.msgs"><b>{{ msg.msg.stage }}</b>: {{ msg.msg.detail }}</div>
                 </div>
             </div>
         </div>
@@ -84,16 +87,6 @@ export default class Upload extends Vue {
     fileUploadErrorMsgs: { [name: string]: UploadInfo } = {};
     fileUploadProgressMsgs: { [name: string]: UploadProgress } = {};
 
-    fileUploadAlertClass(uploadInfo: UploadInfo) {
-        switch (uploadInfo.kind) {
-            case 'success':
-                return 'alert alert-success';
-            case 'progress':
-                return 'alert alert-secondary';
-            case 'failure':
-                return 'alert alert-danger';
-        }
-    }
 
     @Prop({default: ''})
     instructions: string;
@@ -125,6 +118,14 @@ export default class Upload extends Vue {
             this.$store.dispatch('getSipFiles', this.uploadType)
         ]);
         event.target.value = null;
+    }
+
+    clearUploadErrors() {
+        this.fileUploadErrorMsgs = {};
+    }
+
+    get hasErrors() {
+        return !_.isEmpty(this.fileUploadErrorMsgs);
     }
 
     get version_number() {
