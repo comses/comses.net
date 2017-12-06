@@ -1,7 +1,5 @@
 import * as _ from 'lodash';
 import * as yup from 'yup';
-import {AxiosResponse} from "axios";
-import {isAxiosResponse} from "api/index";
 import * as Vue from 'vue'
 import {Component} from 'vue-property-decorator'
 
