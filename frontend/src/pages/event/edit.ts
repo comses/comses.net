@@ -29,11 +29,13 @@ export const schema = yup.object().shape({
     title: yup.string().required(),
     tags: yup.array().of(yup.object().shape({name: yup.string().required()})),
     location: yup.string().required(),
-    early_registration_deadline: yup.date().nullable(),
-    submission_deadline: yup.date().nullable()
-        .when('early_registration_deadline', dateAfterConstraint('early registration deadline', 'submission deadline')),
+    early_registration_deadline: yup.date().nullable().label('early registration deadline'),
+    submission_deadline: yup.date().nullable().label('submission deadline')
+        .when('early_registration_deadline', dateAfterConstraint('early registration deadline', 'submission deadline'))
+        .label('submission deadline'),
     start_date: yup.date().required()
-        .when('submission_deadline', dateAfterConstraint('submission deadline', 'start date')),
+        .when('submission_deadline', dateAfterConstraint('submission deadline', 'start date'))
+        .label('submission deadline'),
     end_date: yup.date().nullable()
         .when('start_date', dateAfterConstraint('start date', 'end date')),
     external_url: yup.string().url().nullable()

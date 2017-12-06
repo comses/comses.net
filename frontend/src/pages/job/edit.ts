@@ -17,7 +17,7 @@ export const schema = yup.object().shape({
     description: yup.string().required(),
     summary: yup.string().required(),
     tags: yup.array().of(yup.object().shape({name: yup.string().required()})).min(1),
-    external_url: yup.string().url().nullable(),
+    external_url: yup.string().url().nullable().label('external url'),
 });
 
 @Component(<any>{
