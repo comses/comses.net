@@ -106,7 +106,7 @@ class JobSerializer(serializers.ModelSerializer):
     class Meta:
         model = Job
         fields = ('id', 'title', 'submitter', 'date_created', 'last_modified',
-                  'description', 'summary', 'absolute_url', 'tags')
+                  'description', 'summary', 'absolute_url', 'tags', 'external_url',)
 
 
 class FeaturedContentItemSerializer(serializers.ModelSerializer):

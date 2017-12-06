@@ -35,7 +35,8 @@ export const schema = yup.object().shape({
     start_date: yup.date().required()
         .when('submission_deadline', dateAfterConstraint('submission deadline', 'start date')),
     end_date: yup.date().nullable()
-        .when('start_date', dateAfterConstraint('start date', 'end date'))
+        .when('start_date', dateAfterConstraint('start date', 'end date')),
+    external_url: yup.string().url().nullable()
 });
 
 @Component(<any>{
@@ -89,12 +90,15 @@ export const schema = yup.object().shape({
                 </small>
             </div>
         </c-markdown>
+        <c-input v-model="external_url" name="external_url" :errorMsgs="errors.external_url" :required="config.external_url"
+            label="Link to event website" help="A direct link to the event on an external website">    
+        </c-input>
         <c-tagger v-model="tags" name="tags" :errorMsgs="errors.tags" label="Tags">
         </c-tagger>
         <small class="form-text text-muted">A list of tags to associate with a job. Tags help people search for
             jobs.
         </small>
-        <c-message-display :messages="statusMessages"></c-message-display>
+        <c-message-display :messages="statusMessages" @clear="statusMessages = []"></c-message-display>
         <button type="button" class="mt-3 btn btn-primary" @click="createOrUpdateIfValid">Submit</button>
     </form>`,
     components: {

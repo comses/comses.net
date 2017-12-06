@@ -309,6 +309,7 @@ class Event(index.Indexed, ClusterableModel):
     end_date = models.DateTimeField(null=True, blank=True)
     location = models.CharField(max_length=300)
     tags = ClusterTaggableManager(through=EventTag, blank=True)
+    external_url = models.URLField(null=True, blank=True)
 
     objects = EventQuerySet.as_manager()
 
@@ -366,6 +367,7 @@ class Job(index.Indexed, ClusterableModel):
     summary = models.CharField(max_length=500, blank=True)
     description = MarkdownField()
     tags = ClusterTaggableManager(through=JobTag, blank=True)
+    external_url = models.URLField(null=True, blank=True)
 
     submitter = models.ForeignKey(User, related_name='jobs')
 

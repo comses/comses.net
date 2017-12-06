@@ -41,18 +41,13 @@ type UploadInfo = UploadSuccess | UploadProgress | UploadFailure;
             </div>
         </div>
         <div>
-            <div :class="fileUploadAlertClass(info)" v-for="(info, name) in fileUploadMsgs">
-                <span v-if="info.kind === 'success'">
-                    File {{ name }} uploaded sucessfully!
-                </span>
-                <span v-else-if="info.kind === 'progress'">
-                    File upload {{ name }} is <b>{{ info.percentCompleted }}%</b> complete
-                </span>
-                <span v-else-if="info.kind == 'failure'">
-                    <div v-for="msg in info.msgs">
-                        <b>{{ msg.msg.stage }}</b>: {{ msg.msg.detail }}
-                    </div>
-                </span>
+            <div class="alert alert-secondary" v-for="(info, name) in fileUploadProgressMsgs">
+                File upload {{ name }} is <b>{{ info.percentCompleted }}%</b> complete
+            </div>
+            <div class="alert alert-danger" v-for="(error, name) in fileUploadErrorMsgs">
+                <div v-for="msg in info.msgs">
+                    <b>{{ msg.msg.stage }}</b>: {{ msg.msg.detail }}
+                </div>
             </div>
         </div>
         <small class="form-text text-muted">
@@ -86,7 +81,8 @@ export default class Upload extends Vue {
     @Prop
     uploadType: string;
 
-    fileUploadMsgs: { [name: string]: UploadInfo } = {};
+    fileUploadErrorMsgs: { [name: string]: UploadInfo } = {};
+    fileUploadProgressMsgs: { [name: string]: UploadProgress } = {};
 
     fileUploadAlertClass(uploadInfo: UploadInfo) {
         switch (uploadInfo.kind) {
@@ -112,18 +108,18 @@ export default class Upload extends Vue {
         const file = event.target.files[0];
         const onUploadProgress = (progressEvent) => {
             const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
-            this.$set(this.fileUploadMsgs, file.name, {kind: 'progress', percentCompleted, size: file.size});
+            this.$set(this.fileUploadProgressMsgs, file.name, {kind: 'progress', percentCompleted, size: file.size});
         };
+        _.delay(() => this.$delete(this.fileUploadProgressMsgs, file.name), 3000);
         try {
             await codebaseReleaseAPI.uploadFile(
                 {identifier: this.identifier, version_number: this.version_number, category: this.uploadType},
                 file, onUploadProgress);
         } catch(error) {
             if (error.response) {
-                this.$set(this.fileUploadMsgs, file.name, {kind: 'failure', msgs: error.response.data})
+                this.$set(this.fileUploadErrorMsgs, file.name, {kind: 'failure', msgs: error.response.data})
             }
         }
-        _.delay(() => this.$delete(this.fileUploadMsgs, file.name), 3000);
         await Promise.all([
             this.$store.dispatch('getOriginalFiles', this.uploadType),
             this.$store.dispatch('getSipFiles', this.uploadType)

@@ -16,7 +16,8 @@ export const schema = yup.object().shape({
     title: yup.string().required(),
     description: yup.string().required(),
     summary: yup.string().required(),
-    tags: yup.array().of(yup.object().shape({name: yup.string().required()})).min(1)
+    tags: yup.array().of(yup.object().shape({name: yup.string().required()})).min(1),
+    external_url: yup.string().url().nullable(),
 });
 
 @Component(<any>{
@@ -37,6 +38,9 @@ export const schema = yup.object().shape({
                 </small>
             </div>
         </c-markdown>
+        <c-input v-model="external_url" name="external_url" :errorMsgs="errors.external_url" :required="config.external_url"
+            label="Link to event website" help="A direct link to the event on an external website">    
+        </c-input>
         <c-tagger v-model="tags" name="tags" :errorsMsgs="errors.tags" :required="config.tags">
         </c-tagger>
         <small class="form-text text-muted">A list of tags to associate with a job. Tags help people search for jobs.

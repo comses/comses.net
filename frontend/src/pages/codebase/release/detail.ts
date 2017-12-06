@@ -72,7 +72,7 @@ const schema = yup.object().shape({
                 See <a href="https://choosealicense.org">here</a> to compare licenses
             </small>
         </div>
-        <c-message-display :messages="statusMessages"/>
+        <c-message-display :messages="statusMessages" @clear="statusMessages = []"/>
         <button type="button" v-show="!isDirty" class="btn btn-primary" @click="save">Save</button>
     </div>`,
     components: {

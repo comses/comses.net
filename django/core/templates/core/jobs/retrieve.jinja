@@ -15,7 +15,9 @@
 
 {% block content %}
     <div id="discourse-content">
-        <h1>{{ title }}</h1>
+        <h1>{{ title }}{% if external_url %}
+            <a href="{{ external_url }}" target="_blank"><span class="fa fa-external-link"></span></a>{% endif %}
+        </h1>
         {{ description|markdown }}
     </div>
 {% endblock %}
