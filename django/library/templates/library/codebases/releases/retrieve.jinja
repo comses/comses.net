@@ -1,8 +1,6 @@
 {% extends "sidebar_layout.jinja" %}
 {% from "common.jinja" import breadcrumb, embed_discourse_comments, member_profile_href, share_card, search_tag_href %}
 
-{% set latest_version_url = url('library:codebaserelease-detail', identifier=codebase.identifier, version_number=codebase.latest_version_number) %}
-
 {% block title %}{{ codebase.title }}{% endblock %}
 
 {% block introduction %}<h1>Computational Model Library</h1>{% endblock %}
@@ -15,12 +13,18 @@
     ]) }}
 {% endblock %}
 
+{# Unpublished codebases have a null latest version number (which so we need to create release url)
+    so we need to check to make sure it has one first#}
+{% if codebase.latest_version_number %}
+    {% set latest_version_url = url('library:codebaserelease-detail', identifier=codebase.identifier, version_number=codebase.latest_version_number) %}
+{% endif %}
+
 {% block content %}
     <div id={{ 'discourse-content' if live else 'content' }}>
         {% if not live %}
             <div class="alert alert-danger mt-2">The release you are viewing is currently unpublished.
-                {% if version_number != codebase.latest_version_number %}
-                    The latest version is <a href='{{ latest_version_url }}'>{{codebase.latest_version_number}}</a>
+                {% if codebase.latest_version_number and version_number != codebase.latest_version_number %}
+                    The latest published version is <a href='{{ latest_version_url }}'>{{codebase.latest_version_number}}</a>
                 {% endif %}
             </div>
         {% else %}

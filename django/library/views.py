@@ -73,7 +73,8 @@ class CodebaseViewSet(FormViewSetMixin, viewsets.ModelViewSet):
         # request for a JSON serialization of this Codebase.
         # FIXME: this should go away if/when we segregate DRF API calls under /api/v1/codebases/
         if request.accepted_media_type == 'text/html':
-            current_version = instance.latest_version
+            current_version = CodebaseRelease.objects.accessible(request.user).filter(codebase=instance)\
+                .order_by('-date_created').first()
             if not current_version:
                 raise Http404
             return redirect(current_version)

@@ -351,6 +351,10 @@ class Codebase(index.Indexed, ClusterableModel):
             version_number = self.next_version_number()
 
         identifier = kwargs.pop('identifier', None)
+        if 'draft' not in kwargs:
+            kwargs['draft'] = False
+        if 'live' not in kwargs:
+            kwargs['live'] = True
         release = CodebaseRelease.objects.create(
             submitter_id=submitter_id,
             version_number=version_number,
@@ -359,8 +363,9 @@ class Codebase(index.Indexed, ClusterableModel):
             **kwargs)
         if submitted_package:
             release.submitted_package.save(submitted_package.name, submitted_package, save=False)
-        self.latest_version = release
-        self.save()
+        if release.is_published:
+            self.latest_version = release
+            self.save()
         return release
 
     def get_or_create_draft(self):
@@ -394,8 +399,9 @@ class Codebase(index.Indexed, ClusterableModel):
         if initialize:
             fs_api = release.get_fs_api()
             fs_api.initialize()
-        self.latest_version = release
-        self.save()
+        if release.is_published:
+            self.latest_version = release
+            self.save()
         return release
 
     def __str__(self):
@@ -563,6 +569,10 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
             # FIXME: check codemeta for additional metadata
         }
 
+    @property
+    def is_published(self):
+        return self.live and not self.draft
+
     def get_fs_api(self, raise_exception_level=MessageLevels.warning) -> CodebaseReleaseFsApi:
         return CodebaseReleaseFsApi(uuid=self.codebase.uuid, identifier=self.codebase.identifier,
                                     version_number=self.version_number, raise_exception_level=raise_exception_level)
@@ -609,6 +619,9 @@ class CodebaseReleasePublisher:
             fs_api.build_aip()
             fs_api.build_archive()
             self.codebase_release.save()
+
+            self.codebase_release.codebase.latest_version = self.codebase_release
+            self.codebase_release.codebase.save()
 
 
 class ReleaseContributorQuerySet(models.QuerySet):
