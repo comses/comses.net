@@ -425,7 +425,7 @@ class CodebaseReleaseFsApi:
         self.initialize_codemeta(sip_dir.joinpath('codemeta.json'))
         fs.make_bag(str(sip_dir), {})
 
-    def initialize_codemeta(self, path=None):
+    def initialize_codemeta(self, path=None, metadata=None):
         """
         Returns True if a fresh codemeta.json file was created, False otherwise
         :param path: an optional path to the codemeta file. If no path is passed in, it tries to create a new
@@ -436,9 +436,10 @@ class CodebaseReleaseFsApi:
             path = self.sip_dir.joinpath('codemeta.json')
         if path.exists():
             return False
-        with path.open('w') as codemeta_out:
-            logger.debug('writing codemeta')
-            json.dump(self.DEFAULT_CODEMETA_DATA, codemeta_out)
+        if metadata is None or not isinstance(metadata, dict):
+            metadata = self.DEFAULT_CODEMETA_DATA
+        with path.open(mode='w', encoding='utf-8') as codemeta_out:
+            json.dump(metadata, codemeta_out)
         return True
 
     def retrieve_archive(self):
