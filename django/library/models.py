@@ -395,6 +395,16 @@ class Codebase(index.Indexed, ClusterableModel):
             kwargs['codebase'] = self
             kwargs.update(overrides)
             release = CodebaseRelease.objects.create(**kwargs)
+            contributor = self.submitter.contributor_set.get_or_create(defaults={
+                'given_name': self.submitter.first_name,
+                'family_name': self.submitter.last_name,
+                'affiliations': [self.submitter.member_profile.institution.name] if hasattr(self.submitter.member_profile.institution, 'name') else [],
+                'email': self.submitter.email
+            })[0]
+            ReleaseContributor.objects.create(release=release,
+                                              contributor=contributor,
+                                              roles=['author'],
+                                              index=0)
 
         if initialize:
             fs_api = release.get_fs_api()
