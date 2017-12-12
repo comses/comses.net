@@ -9,7 +9,8 @@ import MessageDisplay from 'components/message_display'
 import {createFormValidator} from "pages/form"
 import * as yup from 'yup'
 import * as _ from 'lodash'
-import {HandlerWithRedirect} from "api/handler"
+import {HandlerWithRedirect, HandlerShowSuccessMessage} from "api/handler"
+import Upload from "./release/upload";
 
 export const schema = yup.object().shape({
     title: yup.string().required(),
@@ -46,7 +47,8 @@ export const schema = yup.object().shape({
             help="URL to a version control source code repository (e.g., GitHub or BitBucket)"
             :required="config.repository_url">
         </c-input>
-        <c-message-display :messages="statusMessages"></c-message-display>
+        <c-message-display :messages="statusMessages" @clear="statusMessages = []"></c-message-display>
+        <!-- Media Uploads go here -->
         <button class="btn btn-primary" type="button" @click="save()">Save</button>
     </div>`,
     components: {
@@ -55,12 +57,16 @@ export const schema = yup.object().shape({
         'c-markdown': MarkdownEditor,
         'c-message-display': MessageDisplay,
         'c-tagger': Tagger,
+        'c-uploads': Upload
     }
 })
 export default class Description extends createFormValidator(schema) {
     private api = new CodebaseAPI();
     @Prop({default: null})
     _identifier: string;
+
+    @Prop({default: true})
+    redirect: boolean;
 
     detailPageUrl(state) {
         this.state.identifier = state.identifier;
@@ -79,10 +85,11 @@ export default class Description extends createFormValidator(schema) {
     }
 
     async createOrUpdate() {
+        const handler = this.redirect ? HandlerWithRedirect : HandlerShowSuccessMessage;
         if (_.isNil(this.state.identifier)) {
-            return this.api.create(new HandlerWithRedirect(this));
+            return this.api.create(new handler(this));
         } else {
-            return this.api.update(this.state.identifier, new HandlerWithRedirect(this));
+            return this.api.update(this.state.identifier, new handler(this));
         }
     }
 

@@ -189,3 +189,9 @@ export interface CodebaseReleaseStore {
     }
     release: CodebaseReleaseEdit
 }
+
+export interface StatusMessages {
+    errors: Array<string>
+    warnings: Array<string>
+    successes: Array<string>
+}

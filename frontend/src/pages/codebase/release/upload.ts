@@ -1,7 +1,7 @@
 import {Component, Prop} from 'vue-property-decorator'
+import {createDecorator} from 'vue-class-component';
 import * as Vue from 'vue'
 import Vuex from 'vuex'
-import {exposeComputed} from './store'
 import * as _ from 'lodash'
 import {CodebaseReleaseAPI} from "api/index";
 
@@ -22,22 +22,23 @@ interface UploadProgress {
 
 interface UploadFailure {
     kind: 'failure'
-    msgs: Array<{ level: string, msg: {detail: string, stage: string}}>
+    msgs: Array<{ level: string, msg: { detail: string, stage: string } }>
 }
 
 type UploadInfo = UploadSuccess | UploadProgress | UploadFailure;
 
 @Component(<any>{
     template: `<div>
+        <h1 class="mt-4">{{ title }}</h1>
         <slot name="label"></slot>
         <small class="form-text text-muted" v-if="instructions">{{ instructions }}</small>
         <div class="d-flex justify-content-between">
             <div>
-                <label for="upload"><div class="btn btn-primary">Upload a file</div></label>
-                <input class="invisible" id="upload" type="file" @change="handleFiles($event)">
+                <label :for="upload_id"><div class="btn btn-primary">Upload a file</div></label>
+                <input class="invisible" :id="upload_id" type="file" @change="handleFiles($event)">
             </div>
             <div>
-                <button class="btn btn-outline-warning" @click="clear">Remove all files</button>
+                <button class="btn btn-outline-warning" @click="clear">Remove all {{ uploadType }} files</button>
             </div>
         </div>
         <div>
@@ -87,6 +88,8 @@ export default class Upload extends Vue {
     fileUploadErrorMsgs: { [name: string]: UploadInfo } = {};
     fileUploadProgressMsgs: { [name: string]: UploadProgress } = {};
 
+    @Prop()
+    title: string;
 
     @Prop({default: ''})
     instructions: string;
@@ -96,6 +99,22 @@ export default class Upload extends Vue {
 
     @Prop({default: ''})
     originalInstructions: string;
+
+    @Prop()
+    identifier: string;
+
+    @Prop()
+    version_number: string;
+
+    @Prop()
+    originals: Array<any>;
+
+    @Prop()
+    sip: Array<any>;
+
+    get upload_id() {
+        return `${this.uploadType}_id`;
+    }
 
     async handleFiles(event) {
         const file = event.target.files[0];
@@ -108,7 +127,7 @@ export default class Upload extends Vue {
             await codebaseReleaseAPI.uploadFile(
                 {identifier: this.identifier, version_number: this.version_number, category: this.uploadType},
                 file, onUploadProgress);
-        } catch(error) {
+        } catch (error) {
             if (error.response) {
                 this.$set(this.fileUploadErrorMsgs, file.name, {kind: 'failure', msgs: error.response.data})
             }
@@ -128,6 +147,57 @@ export default class Upload extends Vue {
         return !_.isEmpty(this.fileUploadErrorMsgs);
     }
 
+    deleteFile(path: string) {
+        this.$store.dispatch('deleteFile', {category: this.uploadType, path});
+    }
+
+    clear() {
+        this.$store.dispatch('clearCategory', {
+            identifier: this.identifier, version_number: this.version_number,
+            category: this.uploadType
+        });
+    }
+}
+
+
+@Component(<any>{
+    template: `<div>
+            <c-upload :path="config.path" :uploadType="config.uploadType" :acceptedFileTypes="config.acceptedFileTypes"
+                :instructions="config.instructions" :originalInstructions="config.originalInstructions" 
+                :version_number="version_number" :identifier="identifier" :originals="originals(config.uploadType)"
+                :sip="sip(config.uploadType)" :title="config.title" v-for="config in configs" :key="config.uploadType">    
+            </c-upload>
+        </div>`,
+    components: {
+        'c-upload': Upload
+    }
+})
+export class UploadPage extends Vue {
+    configs = [
+        {
+            path: '/code_upload/',
+            uploadType: 'code',
+            acceptedFileTypes: 'text/plain',
+            title: 'Upload Code',
+            instructions: 'Upload code associated with a project here. If an archive (zip or tar file) is uploaded it is extracted first.',
+            originalInstructions: 'The original files uploaded show here. It is possible to have one archive or many non archive files. Files should be code but all files are accepted'
+        },
+        {
+            path: '/data_upload/',
+            uploadType: 'data',
+            title: 'Upload Data',
+            instructions: 'Upload data associated with a project here. If an archive (zip or tar file) is uploaded it is extracted first.',
+            originalInstructions: 'The original files uploaded show here. It is possible to have one archive or many non archive files. Files should be data but all files are accepted'
+        },
+        {
+            path: '/documentation_upload/',
+            uploadType: 'docs',
+            title: 'Upload Documentation',
+            instructions: 'Upload documentation associated with a project here. If an archive (zip or tar file) is uploaded it is extracted first.',
+            originalInstructions: 'The original files uploaded show here. It is possible to have one archive or many non archive files. Files should be docs and only PDF, MarkDown, text and ReStructured text are accepted'
+        },
+    ];
+
     get version_number() {
         return this.$store.state.release.version_number;
     }
@@ -136,20 +206,11 @@ export default class Upload extends Vue {
         return this.$store.state.release.codebase.identifier;
     }
 
-    get originals() {
-        return this.$store.state.files.originals[this.uploadType];
+    originals(uploadType: string) {
+        return this.$store.state.files.originals[uploadType];
     }
 
-    get sip() {
-        return this.$store.state.files.sip[this.uploadType];
-    }
-
-    deleteFile(path: string) {
-        this.$store.dispatch('deleteFile', {category: this.uploadType, path});
-    }
-
-    clear() {
-        this.$store.dispatch('clearCategory', {identifier: this.identifier, version_number: this.version_number,
-            category: this.uploadType});
+    sip(uploadType: string) {
+        return this.$store.state.files.sip[uploadType];
     }
 }

@@ -4,8 +4,9 @@ import Vuex from 'vuex'
 import VueRouter from 'vue-router'
 
 import Contributors from './contributors'
-import Upload from './upload'
+import Upload, {UploadPage} from './upload'
 import CodebaseReleaseMetadata from './detail'
+import CodebaseEditForm from '../edit'
 import {store} from './store'
 import {CreateOrUpdateHandler} from "api/handler";
 import {CodebaseReleaseAPI} from "api";
@@ -15,6 +16,34 @@ const codebaseReleaseAPI = new CodebaseReleaseAPI();
 
 Vue.use(Vuex);
 Vue.use(VueRouter);
+
+@Component({
+    template: `<div class="modal fade" id="editCodebaseModal">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Edit Codebase</h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <codebase-edit-form :_identifier="identifier" :redirect="redirect"></codebase-edit-form>
+                    </div>
+                </div>
+            </div>
+        </div>`,
+    components: {
+        'codebase-edit-form': CodebaseEditForm
+    }
+})
+class CodebaseEditFormPopup extends Vue {
+    @Prop()
+    identifier: string;
+
+    @Prop()
+    redirect: boolean;
+}
 
 @Component({
     template: `<div class="modal fade" id="publishCodebaseReleaseModal">
@@ -87,28 +116,21 @@ class PublishModal extends Vue implements CreateOrUpdateHandler {
 @Component(<any>{
     store: new Vuex.Store(store),
     components: {
-        'c-publish-modal': PublishModal
+        'c-publish-modal': PublishModal,
+        'c-codebase-edit-form-popup': CodebaseEditFormPopup,
     },
     template: `<div>
         <div v-if="isInitialized">
             <h1><a :href="absolute_url">{{ $store.state.release.codebase.title }} <i>v{{ $store.state.release.version_number }}</i></a> 
+                <span class="fa fa-edit has-pointer-cursor" data-target="#editCodebaseModal" data-toggle="modal"></span>
                 <span class="badge badge-secondary" v-if="isPublished">Published</span>
-                <span class="badge badge-warning" data-target="#publishCodebaseReleaseModal" data-toggle="modal" v-else>
+                <span class="badge badge-warning has-pointer-cursor" data-target="#publishCodebaseReleaseModal" data-toggle="modal" v-else>
                     Unpublished
                 </span>
             </h1>
             <ul class="nav nav-tabs justify-content-center">
                 <li class="nav-item" v-if="!isPublished">
-                    <router-link :to="{ name: 'code_upload'}" class="nav-link required" active-class="disabled">Upload Code</router-link>
-                </li>
-                <li class="nav-item" v-if="!isPublished">
-                    <router-link :to="{ name: 'data_upload'}" class="nav-link" active-class="disabled">Upload Data</router-link>
-                </li>
-                <li class="nav-item" v-if="!isPublished">
-                    <router-link :to="{ name: 'documentation_upload'}" class="nav-link" active-class="disabled">Upload Documentation</router-link>
-                </li>
-                <li class="nav-item" v-if="!isPublished">
-                    <router-link :to="{ name: 'image_upload'}" class="nav-link" active-class="disabled">Upload Media</router-link>
+                    <router-link :to="{ name: 'upload'}" class="nav-link required" active-class="disabled">Upload</router-link>
                 </li>
                 <li class="nav-item">
                     <router-link :to="{ name: 'contributors' }" class="nav-link required" active-class="disabled">Contributors</router-link>
@@ -120,6 +142,7 @@ class PublishModal extends Vue implements CreateOrUpdateHandler {
                 </li>
             </ul>
             <router-view :initialData="initialData"></router-view>
+            <c-codebase-edit-form-popup :identifier="identifier" :redirect="false"></c-codebase-edit-form-popup>
             <c-publish-modal :version_number="version_number" :identifier="identifier" :absolute_url="absolute_url"></c-publish-modal>
         </div>
         <div v-else>
@@ -129,41 +152,9 @@ class PublishModal extends Vue implements CreateOrUpdateHandler {
     router: new VueRouter({
         routes: [
             {path: '/', redirect: {name: 'contributors'}},
-            {
-                path: '/code_upload/', component: Upload, name: 'code_upload',
-                props: {
-                    uploadType: 'code',
-                    acceptedFileTypes: 'text/plain',
-                    instructions: 'Upload code associated with a project here. If an archive (zip or tar file) is uploaded it is extracted first.',
-                    originalInstructions: 'The original files uploaded show here. It is possible to have one archive or many non archive files. Files should be code but all files are accepted'
-                }
-            },
-            {
-                path: '/data_upload/', component: Upload, name: 'data_upload',
-                props: {
-                    uploadType: 'data',
-                    instructions: 'Upload data associated with a project here. If an archive (zip or tar file) is uploaded it is extracted first.',
-                    originalInstructions: 'The original files uploaded show here. It is possible to have one archive or many non archive files. Files should be data but all files are accepted'
-                }
-            },
-            {
-                path: '/documentation_upload/', component: Upload, name: 'documentation_upload',
-                props: {
-                    uploadType: 'docs',
-                    instructions: 'Upload documentation associated with a project here. If an archive (zip or tar file) is uploaded it is extracted first.',
-                    originalInstructions: 'The original files uploaded show here. It is possible to have one archive or many non archive files. Files should be docs and only PDF, MarkDown, text and ReStructured text are accepted'
-                }
-            },
-            {
-                path: '/image_upload/', component: Upload, name: 'image_upload',
-                props: {
-                    uploadType: 'media',
-                    instructions: 'Upload media associated with a project here. If an archive (zip or tar file) is uploaded it is extracted first.',
-                    originalInstructions: 'The original files uploaded show here. It is possible to have one archive or many non archive files. Only media files are supported.'
-                }
-            },
+            {path: '/upload', component: UploadPage, name: 'upload'},
             {path: '/contributors/', component: Contributors, name: 'contributors'},
-            {path: '/detail/', component: CodebaseReleaseMetadata, name: 'detail'},
+            {path: '/detail/', component: CodebaseReleaseMetadata, name: 'detail'}
         ]
     })
 })
