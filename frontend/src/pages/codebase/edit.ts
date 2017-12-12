@@ -48,7 +48,9 @@ export const schema = yup.object().shape({
             :required="config.repository_url">
         </c-input>
         <c-message-display :messages="statusMessages" @clear="statusMessages = []"></c-message-display>
-        <!-- Media Uploads go here -->
+        <c-upload :identifier="_identifier">
+        
+        </c-upload>
         <button class="btn btn-primary" type="button" @click="save()">Save</button>
     </div>`,
     components: {
@@ -57,7 +59,7 @@ export const schema = yup.object().shape({
         'c-markdown': MarkdownEditor,
         'c-message-display': MessageDisplay,
         'c-tagger': Tagger,
-        'c-uploads': Upload
+        'c-upload': Upload
     }
 })
 export default class Description extends createFormValidator(schema) {

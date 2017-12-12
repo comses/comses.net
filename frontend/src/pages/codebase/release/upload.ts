@@ -34,8 +34,8 @@ type UploadInfo = UploadSuccess | UploadProgress | UploadFailure;
         <small class="form-text text-muted" v-if="instructions">{{ instructions }}</small>
         <div class="d-flex justify-content-between">
             <div>
-                <label :for="upload_id"><div class="btn btn-primary">Upload a file</div></label>
-                <input class="invisible" :id="upload_id" type="file" @change="handleFiles($event)">
+                <label :for="uploadId"><div class="btn btn-primary">Upload a file</div></label>
+                <input class="invisible" :id="uploadId" type="file" @change="handleFiles($event)">
             </div>
             <div>
                 <button class="btn btn-outline-warning" @click="clear">Remove all {{ uploadType }} files</button>
@@ -68,17 +68,6 @@ type UploadInfo = UploadSuccess | UploadProgress | UploadFailure;
         <p v-else>
             No files uploaded
         </p>
-        <small class="form-text text-muted">
-            Expanded files you uploaded. When an archive (zip, tar, rar) file is uploaded it gets expanded here.
-        </small>
-        <div class="list-group" v-if="sip.length > 0">
-            <div class="list-group-item" v-for="path in sip">
-                {{ path }}
-            </div>
-        </div>
-        <p v-else>
-            No derived files
-        </p>
     </div>`
 })
 export default class Upload extends Vue {
@@ -109,10 +98,7 @@ export default class Upload extends Vue {
     @Prop()
     originals: Array<any>;
 
-    @Prop()
-    sip: Array<any>;
-
-    get upload_id() {
+    get uploadId() {
         return `${this.uploadType}_id`;
     }
 
@@ -165,7 +151,7 @@ export default class Upload extends Vue {
             <c-upload :path="config.path" :uploadType="config.uploadType" :acceptedFileTypes="config.acceptedFileTypes"
                 :instructions="config.instructions" :originalInstructions="config.originalInstructions" 
                 :version_number="version_number" :identifier="identifier" :originals="originals(config.uploadType)"
-                :sip="sip(config.uploadType)" :title="config.title" v-for="config in configs" :key="config.uploadType">    
+                :title="config.title" v-for="config in configs" :key="config.uploadType">    
             </c-upload>
         </div>`,
     components: {
@@ -208,9 +194,5 @@ export class UploadPage extends Vue {
 
     originals(uploadType: string) {
         return this.$store.state.files.originals[uploadType];
-    }
-
-    sip(uploadType: string) {
-        return this.$store.state.files.sip[uploadType];
     }
 }
