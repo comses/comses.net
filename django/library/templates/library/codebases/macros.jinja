@@ -1,6 +1,6 @@
 {% from "common.jinja" import search_tag_href %}
 {% macro render_codebase_result(item, detail_url_name) %}
-{% with latest_release_url=url(detail_url_name, identifier=item.identifier, version_number=item.version_number) %}
+{% with latest_release_url=url(detail_url_name, identifier=item.identifier) %}
     <div class="search-result">
         <div class="row">
             <div class="col-md-12 col-lg-3">
