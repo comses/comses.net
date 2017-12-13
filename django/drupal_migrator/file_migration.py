@@ -105,25 +105,9 @@ class ModelFileset:
         media_dir = str(codebase.upload_path)
         os.makedirs(media_dir, exist_ok=True)
         for media_dir_entry in self._media:
+            with open(media_dir_entry.path, 'r') as file_entry:
+                codebase.import_media(file_entry)
             shutil.copy(media_dir_entry.path, media_dir)
-            image_metadata = {
-                'name': media_dir_entry.name,
-                'path': media_dir,
-                'mimetype': mimetypes.guess_type(media_dir_entry.path),
-                'url': codebase.media_url(media_dir_entry.name),
-                'featured': fs.is_image(media_dir_entry.path),
-            }
-
-            if image_metadata['featured']:
-                filename = image_metadata['name']
-                path = pathlib.Path(image_metadata['path'], filename)
-                image = Image(title=codebase.title,
-                              file=ImageFile(path.open('rb')),
-                              uploaded_by_user=codebase.submitter)
-                image.save()
-                codebase.featured_images.add(image)
-
-            codebase.media.append(image_metadata)
         codebase.save()
 
 

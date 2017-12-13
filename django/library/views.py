@@ -83,6 +83,16 @@ class CodebaseViewSet(FormViewSetMixin, viewsets.ModelViewSet):
             data = add_change_delete_perms(instance, serializer.data, request.user)
             return Response(data)
 
+    @detail_route(methods=['put'])
+    def upload_media(self, request, **kwargs):
+        codebase = self.get_object()
+        fileobj = request.data.get('file')
+        if fileobj is None:
+            raise ValidationError({'file': ['This field is required']})
+        codebase.import_media(fileobj)
+        codebase.save()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
 
 class CodebaseReleaseDraftView(PermissionRequiredMixin, View):
     def has_permission(self):

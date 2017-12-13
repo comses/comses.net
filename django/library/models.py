@@ -1,14 +1,18 @@
 import logging
+import mimetypes
 import pathlib
 import uuid
 from datetime import datetime
 from enum import Enum
 
+import os
 import semver
+import shutil
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.contrib.postgres.aggregates import BoolOr, BoolAnd
 from django.contrib.postgres.fields import JSONField, ArrayField
+from django.core.files.images import ImageFile
 from django.db import models
 from django.db.models.functions import Coalesce
 from django.urls import reverse
@@ -23,6 +27,7 @@ from taggit.models import TaggedItemBase
 from wagtail.wagtailimages.models import Image
 from wagtail.wagtailsearch import index
 
+from core import fs
 from core.backends import get_viewable_objects_for_user
 from core.fields import MarkdownField
 from library.fs import CodebaseReleaseFsApi, StagingDirectories, FileCategoryDirectories, MessageLevels
@@ -367,6 +372,35 @@ class Codebase(index.Indexed, ClusterableModel):
             self.latest_version = release
             self.save()
         return release
+
+    def import_media(self, fileobj, media=None):
+        if media is None:
+            media = self.media
+        name = os.path.basename(fileobj.name)
+        path = self.media_dir(name)
+        os.makedirs(str(path.parent), exist_ok=True)
+        with path.open('wb') as f:
+            f.write(fileobj.read())
+
+        image_metadata = {
+            'name': name,
+            'path': str(self.media_dir()),
+            'mimetype': mimetypes.guess_type(str(path)),
+            'url': self.media_url(name),
+            'featured': fs.is_image(str(path)),
+        }
+
+        if image_metadata['featured']:
+            filename = image_metadata['name']
+            path = pathlib.Path(image_metadata['path'], filename)
+            image = Image(title=self.title,
+                          file=ImageFile(path.open('rb')),
+                          uploaded_by_user=self.submitter)
+            image.save()
+            self.featured_images.add(image)
+
+        media.append(image_metadata)
+        self.media = media
 
     def get_or_create_draft(self):
         draft = self.releases.filter(draft=True).first()
