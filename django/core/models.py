@@ -3,6 +3,7 @@ from enum import Enum
 
 from django import forms
 from django.conf import settings
+from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group, User
 from django.contrib.postgres.fields import ArrayField, JSONField
 from django.db import models
@@ -45,6 +46,10 @@ class ComsesGroups(Enum):
         if _group is None:
             _group = self.group = Group.objects.get(name=self.value)
         return _group
+
+
+def get_sentinel_user():
+    return get_user_model().objects.get_or_create(username='openabm')[0]
 
 
 @register_setting
@@ -92,8 +97,8 @@ class MemberProfileTag(TaggedItemBase):
 
 
 class FollowUser(models.Model):
-    target = models.ForeignKey(User, related_name='followers')
-    source = models.ForeignKey(User, related_name='following')
+    target = models.ForeignKey(User, related_name='followers', on_delete=models.CASCADE)
+    source = models.ForeignKey(User, related_name='following', on_delete=models.CASCADE)
 
     def __str__(self):
         return '{0} following {1}'.format(self.source, self.target)
@@ -140,11 +145,11 @@ class MemberProfile(index.Indexed, ClusterableModel):
     affiliations = JSONField(default=list, help_text=_("JSON-LD list of affiliated institutions"))
     bio = MarkdownField(max_length=512, help_text=_('Brief bio'))
     degrees = ArrayField(models.CharField(max_length=255), blank=True, default=list)
-    institution = models.ForeignKey(Institution, null=True)
+    institution = models.ForeignKey(Institution, null=True, on_delete=models.SET_NULL)
     keywords = ClusterTaggableManager(through=MemberProfileTag, blank=True)
 
     personal_url = models.URLField(blank=True)
-    picture = models.ForeignKey(Image, null=True, help_text=_('Profile picture'))
+    picture = models.ForeignKey(Image, null=True, help_text=_('Profile picture'), on_delete=models.SET_NULL)
     professional_url = models.URLField(blank=True)
     research_interests = MarkdownField(max_length=512)
 
@@ -278,7 +283,7 @@ class Platform(index.Indexed, ClusterableModel):
 
 
 class PlatformRelease(models.Model):
-    platform = models.ForeignKey(Platform)
+    platform = models.ForeignKey(Platform, on_delete=models.CASCADE)
     version = models.CharField(max_length=100)
     url = models.URLField(blank=True)
     notes = models.TextField(blank=True)
@@ -313,7 +318,7 @@ class Event(index.Indexed, ClusterableModel):
 
     objects = EventQuerySet.as_manager()
 
-    submitter = models.ForeignKey(User)
+    submitter = models.ForeignKey(User, on_delete=models.SET(get_sentinel_user))
 
     search_fields = [
         index.SearchField('title', partial_match=True, boost=10),
@@ -369,7 +374,7 @@ class Job(index.Indexed, ClusterableModel):
     tags = ClusterTaggableManager(through=JobTag, blank=True)
     external_url = models.URLField(blank=True)
 
-    submitter = models.ForeignKey(User, related_name='jobs')
+    submitter = models.ForeignKey(User, related_name='jobs', on_delete=models.SET(get_sentinel_user))
 
     objects = JobQuerySet.as_manager()
 
