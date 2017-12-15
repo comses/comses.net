@@ -190,6 +190,9 @@ export const store = {
         }
     },
     mutations: {
+        setCodebase(state, codebase) {
+            state.release.codebase = _.cloneDeep(codebase);
+        },
         setReleaseContributors(state, release_contributors) {
             state.release.release_contributors = release_contributors;
         },

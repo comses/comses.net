@@ -1,5 +1,6 @@
 import {AxiosResponse} from 'axios'
 import * as _ from 'lodash'
+import * as $ from 'jquery'
 
 enum StatusMessageCode {
     danger,
@@ -27,6 +28,7 @@ export interface FormComponent {
 
     state: object
     statusMessages: Array<{ classNames: string, message: string }>
+    $emit: (...x: Array<any>) => void
 }
 
 export interface FormRedirectComponent extends FormComponent {
@@ -75,7 +77,7 @@ export class HandlerWithRedirect implements CreateOrUpdateHandler {
 }
 
 export class HandlerShowSuccessMessage implements CreateOrUpdateHandler {
-    constructor(public component: FormComponent) {
+    constructor(public component: FormComponent, public modelId?: string) {
     }
 
     get state() {
@@ -105,9 +107,18 @@ export class HandlerShowSuccessMessage implements CreateOrUpdateHandler {
     handleSuccessWithDataResponse(response: AxiosResponse) {
         this.component.state = response.data;
         this.component.statusMessages = [{classNames: 'alert alert-success', message: 'Successfully saved'}];
+        this.dismissModal();
     }
 
     handleSuccessWithoutDataResponse(response: AxiosResponse) {
         this.component.statusMessages = [{classNames: 'alert alert-success', message: 'Successfully saved'}];
+        this.dismissModal();
+    }
+
+    dismissModal() {
+        if (!_.isUndefined(this.modelId)) {
+            $(this.modelId).modal('hide');
+            this.component.$emit('updated', this.state);
+        }
     }
 }

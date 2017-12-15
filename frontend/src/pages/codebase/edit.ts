@@ -67,8 +67,8 @@ export default class Description extends createFormValidator(schema) {
     @Prop({default: null})
     _identifier: string;
 
-    @Prop({default: true})
-    redirect: boolean;
+    @Prop({default: null})
+    redirect: string | null;
 
     detailPageUrl(state) {
         this.state.identifier = state.identifier;
@@ -87,11 +87,17 @@ export default class Description extends createFormValidator(schema) {
     }
 
     async createOrUpdate() {
-        const handler = this.redirect ? HandlerWithRedirect : HandlerShowSuccessMessage;
-        if (_.isNil(this.state.identifier)) {
-            return this.api.create(new handler(this));
+        this.$emit('createOrUpdate');
+        let handler;
+        if (_.isNull(this.redirect)) {
+            handler = new HandlerWithRedirect(this);
         } else {
-            return this.api.update(this.state.identifier, new handler(this));
+            handler = new HandlerShowSuccessMessage(this, this.redirect);
+        }
+        if (_.isNil(this.state.identifier)) {
+            return this.api.create(handler);
+        } else {
+            return this.api.update(this.state.identifier, handler);
         }
     }
 

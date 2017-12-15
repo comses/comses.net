@@ -507,7 +507,7 @@ class ModelVersionExtractor(Extractor):
         platform = Platform.objects.get(pk=platform_id)
         codebase = model_id_map.get(model_nid)
         if codebase:
-            description = get_first_field(raw_model_version, 'body')
+            release_notes = get_first_field(raw_model_version, 'body')
             language = ModelVersionExtractor.PROGRAMMING_LANGUAGES[int(
                 get_first_field(raw_model_version, 'field_modelversion_language', default=0))
             ]
@@ -524,7 +524,7 @@ class ModelVersionExtractor(Extractor):
             with suppress_auto_now([Codebase, CodebaseRelease], 'last_modified'):
                 last_changed = to_datetime(raw_model_version['changed'])
                 codebase_release = codebase.import_release(
-                    description=self.sanitize_text(description),
+                    release_notes=self.sanitize_text(release_notes),
                     date_created=to_datetime(raw_model_version['created']),
                     first_published_at=to_datetime(raw_model_version['created']),
                     # codebase releases do not have correct liveness values in the db dump so if containing codebase

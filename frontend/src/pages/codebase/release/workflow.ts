@@ -28,7 +28,7 @@ Vue.use(VueRouter);
                         </button>
                     </div>
                     <div class="modal-body">
-                        <codebase-edit-form :_identifier="identifier" :redirect="redirect"></codebase-edit-form>
+                        <codebase-edit-form :_identifier="identifier" redirect="#editCodebaseModal" @updated="$emit('updated', $event)"></codebase-edit-form>
                     </div>
                 </div>
             </div>
@@ -142,7 +142,7 @@ class PublishModal extends Vue implements CreateOrUpdateHandler {
                 </li>
             </ul>
             <router-view :initialData="initialData"></router-view>
-            <c-codebase-edit-form-popup :identifier="identifier" :redirect="false"></c-codebase-edit-form-popup>
+            <c-codebase-edit-form-popup :identifier="identifier" :redirect="false" @updated="setCodebase"></c-codebase-edit-form-popup>
             <c-publish-modal :version_number="version_number" :identifier="identifier" :absolute_url="absolute_url"></c-publish-modal>
         </div>
         <div v-else>
@@ -199,6 +199,10 @@ class Workflow extends Vue {
         } else {
             this.isInitialized = true;
         }
+    }
+
+    setCodebase(codebase) {
+        this.$store.commit('setCodebase', codebase);
     }
 }
 

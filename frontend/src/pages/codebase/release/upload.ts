@@ -4,6 +4,7 @@ import * as Vue from 'vue'
 import Vuex from 'vuex'
 import * as _ from 'lodash'
 import {CodebaseReleaseAPI} from "api/index";
+import {api} from "api/connection";
 
 const codebaseReleaseAPI = new CodebaseReleaseAPI();
 
@@ -38,7 +39,7 @@ type UploadInfo = UploadSuccess | UploadProgress | UploadFailure;
                 <input class="invisible" :id="uploadId" type="file" @change="handleFiles($event)">
             </div>
             <div>
-                <button class="btn btn-outline-warning" @click="clear">Remove all {{ uploadType }} files</button>
+                <button class="btn btn-outline-warning" @click="clear">Remove all files</button>
             </div>
         </div>
         <div>
@@ -71,8 +72,8 @@ type UploadInfo = UploadSuccess | UploadProgress | UploadFailure;
     </div>`
 })
 export default class Upload extends Vue {
-    @Prop
-    uploadType: string;
+    @Prop()
+    uploadUrl: string;
 
     fileUploadErrorMsgs: { [name: string]: UploadInfo } = {};
     fileUploadProgressMsgs: { [name: string]: UploadProgress } = {};
@@ -90,39 +91,32 @@ export default class Upload extends Vue {
     originalInstructions: string;
 
     @Prop()
-    identifier: string;
-
-    @Prop()
-    version_number: string;
-
-    @Prop()
     originals: Array<any>;
 
     get uploadId() {
-        return `${this.uploadType}_id`;
+        return `upload_${_.uniqueId()}`;
     }
 
     async handleFiles(event) {
         const file = event.target.files[0];
+        const formData = new FormData();
+        formData.append('file', file);
+
         const onUploadProgress = (progressEvent) => {
             const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
             this.$set(this.fileUploadProgressMsgs, file.name, {kind: 'progress', percentCompleted, size: file.size});
         };
         _.delay(() => this.$delete(this.fileUploadProgressMsgs, file.name), 3000);
         try {
-            await codebaseReleaseAPI.uploadFile(
-                {identifier: this.identifier, version_number: this.version_number, category: this.uploadType},
-                file, onUploadProgress);
+            await api.postForm(this.uploadUrl, formData,
+                {headers: {'Content-Type': 'multipart/form-data'}, onUploadProgress})
         } catch (error) {
             if (error.response) {
                 this.$set(this.fileUploadErrorMsgs, file.name, {kind: 'failure', msgs: error.response.data})
             }
         }
-        await Promise.all([
-            this.$store.dispatch('getOriginalFiles', this.uploadType),
-            this.$store.dispatch('getSipFiles', this.uploadType)
-        ]);
         event.target.value = null;
+        this.$emit('doneUpload');
     }
 
     clearUploadErrors() {
@@ -134,14 +128,11 @@ export default class Upload extends Vue {
     }
 
     deleteFile(path: string) {
-        this.$store.dispatch('deleteFile', {category: this.uploadType, path});
+        this.$emit('deleteFile', path);
     }
 
     clear() {
-        this.$store.dispatch('clearCategory', {
-            identifier: this.identifier, version_number: this.version_number,
-            category: this.uploadType
-        });
+        this.$emit('clear');
     }
 }
 
@@ -150,8 +141,10 @@ export default class Upload extends Vue {
     template: `<div>
             <c-upload :path="config.path" :uploadType="config.uploadType" :acceptedFileTypes="config.acceptedFileTypes"
                 :instructions="config.instructions" :originalInstructions="config.originalInstructions" 
-                :version_number="version_number" :identifier="identifier" :originals="originals(config.uploadType)"
-                :title="config.title" v-for="config in configs" :key="config.uploadType">    
+                :originals="originals(config.uploadType)" :uploadUrl="uploadUrl(config.uploadType)"
+                :title="config.title" v-for="config in configs" :key="config.uploadType"
+                @deleteFile="deleteFile(config.uploadType, $event)" @clear="clear(config.uploadType)"
+                @doneUpload="doneUpload(config.uploadType)">    
             </c-upload>
         </div>`,
     components: {
@@ -194,5 +187,28 @@ export class UploadPage extends Vue {
 
     originals(uploadType: string) {
         return this.$store.state.files.originals[uploadType];
+    }
+
+    uploadUrl(category) {
+        return codebaseReleaseAPI.listOriginalsFileUrl({identifier: this.identifier,
+            version_number: this.version_number, category})
+    }
+
+    doneUpload(uploadType: string) {
+        return Promise.all([
+            this.$store.dispatch('getOriginalFiles', uploadType),
+            this.$store.dispatch('getSipFiles', uploadType)
+        ]);
+    }
+
+    deleteFile(uploadType: string, path: string) {
+        this.$store.dispatch('deleteFile', {category: uploadType, path});
+    }
+
+    clear(uploadType: string) {
+        this.$store.dispatch('clearCategory', {
+            identifier: this.identifier, version_number: this.version_number,
+            category: uploadType
+        });
     }
 }
