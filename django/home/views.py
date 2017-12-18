@@ -57,7 +57,7 @@ class SmallResultSetPagination(PageNumberPagination):
             'is_first_page': current_page_number == 1,
             'is_last_page': current_page_number == num_pages,
             'current_page': current_page_number,
-            'page_size': self.page_size,
+            'page_size': min(self.page_size, count),
             'count': count,
             'query': query_params.get('query'),
             'query_params': query_params.urlencode(),

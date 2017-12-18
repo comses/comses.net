@@ -1,21 +1,19 @@
+import logging
 import os
 
-from django.views.generic import DetailView, TemplateView
-from django.contrib.auth.views import redirect_to_login
-from django.http import Http404
 from django.conf import settings
+from django.contrib.auth.views import redirect_to_login
 from django.core.exceptions import PermissionDenied
+from django.http import Http404
 from django.shortcuts import render
-
+from django.views.generic import DetailView, TemplateView
 from rest_framework.decorators import api_view, permission_classes
+from rest_framework.exceptions import PermissionDenied as DrfPermissionDenied, NotAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import exception_handler
-from rest_framework.exceptions import PermissionDenied as DrfPermissionDenied, NotAuthenticated
 
-from .permissions import ComsesPermissions
 from . import summarization
-
-import logging
+from .permissions import ComsesPermissions
 
 logger = logging.getLogger(__name__)
 
