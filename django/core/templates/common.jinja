@@ -104,10 +104,12 @@
                         </li>
                     {% endif %}
                 {% endfor %}
-                <li class="page-item {{ "active" if list_state.is_last_page }}">
-                    <a href="{{ url(url_name) }}?{{ build_paginator_url_params(list_state.num_pages, list_state.query_params) }}" 
-                    class="page-link">{{ list_state.num_pages }}</a>
-                </li>
+                {% if list_state.num_pages > 1 %}
+                    <li class="page-item {{ "active" if list_state.is_last_page }}">
+                        <a href="{{ url(url_name) }}?{{ build_paginator_url_params(list_state.num_pages, list_state.query_params) }}" 
+                        class="page-link">{{ list_state.num_pages }}</a>
+                    </li>
+                {% endif %}
                 <li class='page-item {{ "disabled" if list_state.is_last_page }}'>
                     <a class='page-link' href='{{ url(url_name) }}?{{ build_paginator_url_params(list_state.current_page + 1, list_state.query_params) }}'
                         aria-label='Previous'>
@@ -117,7 +119,10 @@
                 </li>
             </ul>
         {% endif %}
-        <span>Displaying {{ list_state.page_size }} of <strong>{{ list_state.count }}</strong></span>
+        <div class='tag-list'>
+        Searching on <span class='tag'>{{ list_state.query }}</span>, displaying <em>{{ list_state.page_size }}</em>
+        of <strong>{{ list_state.count }}</strong> results
+        </div>
     </nav>
 {% endmacro %}
 
