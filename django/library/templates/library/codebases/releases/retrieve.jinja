@@ -16,7 +16,7 @@
 {% endblock %}
 
 {% block content %}
-    <div id='discourse-content'>
+    <div id={{ 'discourse-content' if live else 'content' }}>
         {% if not live %}
             <div class="alert alert-danger mt-2">The release you are viewing is currently unpublished.
                 {% if version_number != codebase.latest_version_number %}
@@ -51,26 +51,31 @@
             {% endfor %}
         </div>
         <div class='pt-4'>
-            <h5>General Description</h5>
-            {{ codebase.description|markdown }}
-            <h5>Release Notes</h5>
-            {% if description %}
-                {{ description|markdown }}
+            <div class='lead'>
+                {{ codebase.description|markdown }}
+            </div>
+            <h3>Release Notes</h3>
+            <div class='lead'>
+            {% if release_notes %}
+                {{ release_notes|markdown }}
             {% else %}
-                None
+                There aren't any release notes associated with this release yet. Should we require them of all
+                submissions? (Yes | No)
             {% endif %}
+            </div>
         </div>
     </div>
     <div class='card-metadata'>
         <div class='card-body'>
             <h2 class='card-title'>Cite this Model</h2>
             {% if live %}
-                <p class='card-text'>
+                <div class='card-text'>
                     {{ citation_text|markdown }}
-                </p>
+                </div>
             {% else %}
                 <p class='card-text'>
-                    Cannot cite an unpublished model
+                Hold on! This model is unpublished.
+                Perhaps the authors are not ready for it to be cited.
                 </p>
             {% endif %}
         </div>
