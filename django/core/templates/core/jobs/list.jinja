@@ -4,8 +4,10 @@
 {% macro render_job(item, detail_url_name) %}
     <div class="search-result">
         <div class="date-info">
-            <small class="text-muted">Last Updated: {{ item.last_modified }}</small>
-            <small class="text-muted pull-right">Created on: {{ item.date_created }}</small>
+            {% if item.application_deadline %}
+                <small class="text-bold">Application deadline: {{ item.application_deadline }}</small>
+            {% endif %}
+            <small class="text-muted pull-right">Last updated: {{ item.last_modified }}</small>
         </div>
         <div class="title">
             <h1><a href="{{ url(detail_url_name, pk=item.id) }}">{{ item.title }}</a></h1>
@@ -50,6 +52,11 @@
 
 {% block content %}
     {{ list_page(__all__, render_job, 'home:job-detail') }}
+    {% if count == 0 %}
+        <div class='mt-3 alert alert-primary'>
+            Sorry, there's nothing to see here. The robots have taken all our jobs.
+        </div>
+    {% endif %}
 {% endblock %}
 
 {% block sidebar %}

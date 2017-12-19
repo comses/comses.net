@@ -18,7 +18,10 @@
         <h1>{{ title }}{% if external_url %}
             <a href="{{ external_url }}" target="_blank"><span class="fa fa-external-link"></span></a>{% endif %}
         </h1>
+        <hr>
+        <div class='lead'>
         {{ description|markdown }}
+        </div>
     </div>
 {% endblock %}
 
@@ -28,6 +31,10 @@
             <div class='section'>
                 <b class="card-title">Submitter</b>
                 <p class='card-text'> {{ member_profile_href(submitter) }}</p>
+                {% if application_deadline %}
+                    <b class="card-title">Application Deadline</b>
+                    <p class="card-text">{{ application_deadline }}</p>
+                {% endif %}
                 <b class="card-title">Last Updated</b>
                 <p class="card-text">{{ last_modified }}</p>
             </div>
