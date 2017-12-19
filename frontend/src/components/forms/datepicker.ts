@@ -9,7 +9,7 @@ import * as _ from 'lodash';
         <slot name="label">
             <label :class="['form-control-label', requiredClass]" slot="label">{{ label }}</label>
         </slot>
-        <datepicker :value="dateValue" @input="updateDate" wrapper-class="input-group"
+        <datepicker :value="dateValue" @input="updateDate" wrapper-class="input-group" :format="format"
                     :input-class="datepickerInputClass" :clear-button="clearButton" @cleared="cleared">
         </datepicker>
         <div v-if="isInvalid" class="invalid-feedback-always">{{ errorMessage }}</div>
@@ -28,8 +28,15 @@ export default class InputDatepicker extends BaseControl {
     @Prop()
     help: string;
 
+    @Prop()
+    formatString: string;
+
     @Prop({default: false})
     clearButton: boolean;
+
+    get format() {
+        return _.isEmpty(this.formatString) ? "yyyy-MM-dd" : this.formatString;
+    }
 
     get datepickerInputClass() {
         return this.isInvalid ? 'form-control is-invalid' : 'form-control';

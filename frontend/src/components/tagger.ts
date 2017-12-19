@@ -85,7 +85,8 @@ export class EventTagger extends Tagger {
 export class JobTagger extends Tagger {
 
     list(query) {
-        return TagAPI.listJobTags({query}); }
+        return TagAPI.listJobTags({query}); 
+    }
 
 }
 
