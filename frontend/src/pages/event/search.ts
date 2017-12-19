@@ -10,7 +10,7 @@ import {EventAPI} from 'api'
 @Component({
     // language=Vue
     template: `
-        <c-search submitLabel="Create an event" searchLabel="Search" submitUrl="/events/add/" :searchUrl="query">
+        <c-search submitLabel="Submit an event" searchLabel="Search" submitUrl="/events/add/" :searchUrl="query">
             <div slot="searchForm">
                 <div class="card-metadata">
                     <div class="title">

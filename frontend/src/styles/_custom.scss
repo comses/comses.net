@@ -70,6 +70,13 @@ $fa-font-path: '~font-awesome/fonts/';
   }
 }
 
+.discourse-content {
+  h1 {
+    color: $text-color;
+    font-size: 1.3rem;
+  }
+}
+
 h2.people {
   font-weight: 700;
   font-size: 2rem;
