@@ -120,8 +120,10 @@
             </ul>
         {% endif %}
         <div class='tag-list'>
-        Searching on <span class='tag'>{{ list_state.query }}</span>, displaying <em>{{ list_state.page_size }}</em>
-        of <strong>{{ list_state.count }}</strong> results
+            {% if list_state.query %}
+                Searching on <span class='tag'>{{ list_state.query }}</span>,
+            {% endif %}
+            displaying {{ list_state.page_size }} of <strong>{{ list_state.count }}</strong> results
         </div>
     </nav>
 {% endmacro %}
