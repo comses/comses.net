@@ -12,23 +12,22 @@ import {JobAPI} from 'api';
 @Component({
     // language=Vue
     template: `
-        <c-search submitLabel="Create an job" searchLabel="Search" submitUrl="/jobs/add/" :searchUrl="query">
+        <c-search submitLabel="Post a job" searchLabel="Search" submitUrl="/jobs/add/" :searchUrl="query">
             <div slot="searchForm">
                 <div class="card-metadata">
                     <div class="title">
                         Search
                     </div>
                     <div class="card-body">
-                        <c-input type="text" v-model="fullTextSearch" name="fullTextSearch">
-                            <label class="form-control-label" slot="label">Keywords</label>
+                        <c-input type="text" v-model="fullTextSearch" name="fullTextSearch" :required="false" label="Keywords">
                         </c-input>
-                        <c-date-picker v-model="initialPostingDate" name="initialPostingDate" :clearButton="true">
-                            <label class="form-control-label" slot="label">Initial Posting Date</label>
+                        <c-date-picker v-model="initialPostingDate" name="initialPostingDate" :clearButton="true"
+                            :required="false" label='Initial post date'>
                         </c-date-picker>
-                        <c-date-picker v-model="lastModifiedDate" name="lastModifiedDate" :clearButton="true">
-                            <label class="form-control-label" slot="label">Last Modified Date</label>
+                        <c-date-picker v-model="applicationDeadline" name="applicationDeadline" :clearButton="true"
+                            :required="false" label='Application deadline'>
                         </c-date-picker>
-                        <c-tagger v-model="tags" placeholder="Type to add tags" label="Tags">
+                        <c-tagger v-model="tags" :required="false" placeholder="Type to add tags" label="Tags">
                         </c-tagger>
                     </div>
                 </div>
@@ -46,7 +45,7 @@ export class SearchJobs extends Vue {
     fullTextSearch: string = '';
 
     initialPostingDate = null;
-    lastModifiedDate = null;
+    applicationDeadline = null;
 
     tags: Array<{name: string}> = [];
     contributors = [];
@@ -55,7 +54,7 @@ export class SearchJobs extends Vue {
         const queryObject = {
             query: this.fullTextSearch,
             date_created__gte: this.initialPostingDate,
-            last_modified__gte: this.lastModifiedDate,
+            application_deadline__gte: this.applicationDeadline,
             tags: this.tags.map(tag => tag.name)
         };
         return this.api.searchUrl(queryObject);

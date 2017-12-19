@@ -3,6 +3,7 @@ import Markdown from 'components/forms/markdown'
 import Tagger from 'components/tagger'
 import Input from 'components/forms/input'
 import MessageDisplay from 'components/message_display'
+import DatePicker from 'components/forms/datepicker'
 import {JobAPI} from 'api/index'
 import * as _ from 'lodash'
 import * as yup from 'yup'
@@ -15,6 +16,7 @@ import {HandlerWithRedirect} from "api/handler";
 export const schema = yup.object().shape({
     title: yup.string().required(),
     description: yup.string().required(),
+    application_deadline: yup.date().nullable(),
     summary: yup.string().required(),
     tags: yup.array().of(yup.object().shape({name: yup.string().required()})).min(1),
     external_url: yup.string().url().nullable().label('external url'),
@@ -22,7 +24,7 @@ export const schema = yup.object().shape({
 
 @Component(<any>{
     template: `<form>
-        <c-input v-model="title" name="title" :errorMsgs="errors.title" label="Title" :required="config.title" 
+        <c-input v-model="title" name="title" :errorMsgs="errors.title" label="Title" :required="config.title"
             help="A short title describing the job">
         </c-input>
         <c-markdown v-model="description" name="description" :errorMsgs="errors.description" label="Description"
@@ -39,8 +41,11 @@ export const schema = yup.object().shape({
             </div>
         </c-markdown>
         <c-input v-model="external_url" name="external_url" :errorMsgs="errors.external_url" :required="config.external_url"
-            label="Link to event website" help="A direct link to the event on an external website">    
+            label="External Job URL" help="URL for this job on an external website">
         </c-input>
+        <c-date-picker v-model="application_deadline" name="application_deadline" :clearButton="true"
+            :required="false" label='Application deadline'>
+        </c-date-picker>
         <c-tagger v-model="tags" name="tags" :errorsMsgs="errors.tags" :required="config.tags">
         </c-tagger>
         <small class="form-text text-muted">A list of tags to associate with a job. Tags help people search for jobs.
@@ -51,6 +56,7 @@ export const schema = yup.object().shape({
     </form>`,
     components: {
         'c-markdown': Markdown,
+        'c-date-picker': DatePicker,
         'c-tagger': Tagger,
         'c-input': Input,
         'c-message-display': MessageDisplay,

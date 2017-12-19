@@ -95,7 +95,9 @@ class JobSerializer(serializers.ModelSerializer):
     date_created = serializers.DateTimeField(format=PUBLISH_DATE_FORMAT, read_only=True)
     description = MarkdownField()
     last_modified = serializers.DateTimeField(format=PUBLISH_DATE_FORMAT, read_only=True)
-    application_deadline = serializers.DateField(allow_null=True, format=PUBLISH_DATE_FORMAT, input_formats=['%Y-%m-%dT%H:%M:%S.%fZ', 'iso-8601'])
+    application_deadline = serializers.DateField(allow_null=True, input_formats=['%Y-%m-%dT%H:%M:%S.%fZ', 'iso-8601'])
+    formatted_application_deadline = serializers.DateField(source='application_deadline', read_only=True,
+                                                           format=PUBLISH_DATE_FORMAT)
     tags = TagSerializer(many=True, label='Tags')
 
     def create(self, validated_data):
@@ -106,8 +108,8 @@ class JobSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Job
-        fields = ('id', 'title', 'submitter', 'date_created', 'last_modified', 'application_deadline', 'description',
-                  'summary', 'absolute_url', 'tags', 'external_url',)
+        fields = ('id', 'title', 'submitter', 'date_created', 'last_modified', 'application_deadline',
+                  'formatted_application_deadline', 'description', 'summary', 'absolute_url', 'tags', 'external_url',)
 
 
 class FeaturedContentItemSerializer(serializers.ModelSerializer):
