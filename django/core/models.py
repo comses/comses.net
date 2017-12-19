@@ -59,6 +59,9 @@ class SiteSettings(BaseSetting):
     def is_production(self):
         return settings.DEPLOY_ENVIRONMENT.is_production()
 
+    def deploy_environment(self):
+        return settings.DEPLOY_ENVIRONMENT
+
 
 @register_setting
 class SocialMediaSettings(BaseSetting):
@@ -366,10 +369,11 @@ class JobQuerySet(models.QuerySet):
 
 
 class Job(index.Indexed, ClusterableModel):
-    title = models.CharField(max_length=300, help_text=_('Job title'))
+    title = models.CharField(max_length=300, help_text=_('Job posting title'))
     date_created = models.DateTimeField(default=timezone.now)
+    application_deadline = models.DateField(blank=True, null=True, help_text=_('Optional deadline for applications'))
     last_modified = models.DateTimeField(auto_now=True)
-    summary = models.CharField(max_length=500, blank=True)
+    summary = models.CharField(max_length=500, blank=True, help_text=_('Brief summary of job posting.'))
     description = MarkdownField()
     tags = ClusterTaggableManager(through=JobTag, blank=True)
     external_url = models.URLField(blank=True)
