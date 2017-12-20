@@ -19,7 +19,7 @@ export const schema = yup.object().shape({
     application_deadline: yup.date().nullable(),
     summary: yup.string().required(),
     tags: yup.array().of(yup.object().shape({name: yup.string().required()})).min(1),
-    external_url: yup.string().url().nullable().label('external url'),
+    external_url: yup.string().url('Please enter a valid URL').nullable(),
 });
 
 @Component(<any>{
@@ -36,7 +36,7 @@ export const schema = yup.object().shape({
                 <button class="btn btn-secondary btn-sm" type="button" @click="createSummaryFromDescription">Summarize
                 </button>
                 <small class="form-text text-muted">A short summary of the job for display in search results.
-                    This field can be created from the description by pressing the summarize button.
+                    You can auto-create one from the description by clicking the Summarize button.
                 </small>
             </div>
         </c-markdown>
@@ -52,7 +52,7 @@ export const schema = yup.object().shape({
         </small>
         <c-message-display :messages="statusMessages">
         </c-message-display>
-        <button type="button" class="mt-3 btn btn-primary" @click="createOrUpdate">Submit</button>
+        <button type="button" class="mt-3 btn btn-primary" @click="createOrUpdateIfValid">Submit</button>
     </form>`,
     components: {
         'c-markdown': Markdown,
