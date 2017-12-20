@@ -1,11 +1,12 @@
 import * as Vue from 'vue'
 import Vuex from 'vuex'
 import {CodebaseReleaseStore, CodebaseContributor} from 'store/common'
-import {CodebaseReleaseAPI} from 'api'
+import {CodebaseReleaseAPI, CodebaseAPI} from 'api'
 import * as _ from 'lodash'
 import * as yup from 'yup'
 
 const codebaseReleaseAPI = new CodebaseReleaseAPI();
+const codebaseAPI = new CodebaseAPI();
 
 const initialState: CodebaseReleaseStore = {
     files: {
@@ -13,14 +14,13 @@ const initialState: CodebaseReleaseStore = {
             code: [],
             data: [],
             docs: [],
-            media: [],
         },
         sip: {
             code: [],
             data: [],
             docs: [],
-            media: [],
-        }
+        },
+        media: []
     },
     release: {
         codebase: {
@@ -193,6 +193,9 @@ export const store = {
         setCodebase(state, codebase) {
             state.release.codebase = _.cloneDeep(codebase);
         },
+        setMediaFiles(state, files) {
+            state.files.media = files;
+        },
         setReleaseContributors(state, release_contributors) {
             state.release.release_contributors = release_contributors;
         },
@@ -255,6 +258,11 @@ export const store = {
             return getFiles(context, 'sip', category);
         },
 
+        async getMediaFiles(context) {
+            const response = await codebaseAPI.mediaList(context.state.release.codebase.identifier);
+            context.commit('setMediaFiles', response.data.results);
+        },
+
         deleteFile(context, {category, path}: { category: string, path: string }) {
             codebaseReleaseAPI.deleteFile({path})
                 .then(response => Promise.all([
@@ -281,7 +289,8 @@ export const store = {
                     context.dispatch('getSipFiles', 'data'),
                     context.dispatch('getSipFiles', 'docs'),
                     context.dispatch('getSipFiles', 'code'),
-                    context.dispatch('getSipFiles', 'media')
+                    context.dispatch('getSipFiles', 'media'),
+                    context.dispatch('getMediaFiles'),
                 ]));
         }
     }

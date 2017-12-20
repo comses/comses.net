@@ -4,18 +4,22 @@ import Vuex from 'vuex'
 import VueRouter from 'vue-router'
 
 import Contributors from './contributors'
-import Upload, {UploadPage} from './upload'
+import {Upload} from "components/upload";
+import {UploadPage} from './upload'
 import CodebaseReleaseMetadata from './detail'
 import CodebaseEditForm from '../edit'
 import {store} from './store'
 import {CreateOrUpdateHandler} from "api/handler";
-import {CodebaseReleaseAPI} from "api";
+import {CodebaseReleaseAPI, CodebaseAPI} from "api";
 import * as _ from 'lodash';
 
 const codebaseReleaseAPI = new CodebaseReleaseAPI();
+const codebaseAPI = new CodebaseAPI();
 
 Vue.use(Vuex);
 Vue.use(VueRouter);
+
+type CodebaseTabs = 'metadata' | 'media';
 
 @Component({
     template: `<div class="modal fade" id="editCodebaseModal">
@@ -28,13 +32,34 @@ Vue.use(VueRouter);
                         </button>
                     </div>
                     <div class="modal-body">
-                        <codebase-edit-form :_identifier="identifier" redirect="#editCodebaseModal" @updated="$emit('updated', $event)"></codebase-edit-form>
+                        <ul class="nav nav-tabs">
+                            <li class="nav-item">
+                                <a :class="['nav-link', tabClass('metadata')]" @click="setActive('metadata')">Metadata</a>
+                            </li>
+                            <li class="nav-item">
+                                <a :class="['nav-link', tabClass('media')]" @click="setActive('media')">Media</a>
+                            </li>
+                        </ul>
+                        <div class="tab-content">
+                            <div :class="['tab-pane fade', contentClass('metadata')]">
+                                <codebase-edit-form :_identifier="identifier" redirect="#editCodebaseModal" 
+                                    @updated="$emit('updated', $event)">
+                                </codebase-edit-form>
+                            </div>
+                            <div :class="['tab-pane fade', contentClass('media')]">
+                                <c-upload :uploadUrl="uploadUrl" title="Upload Media" instructions="Upload featured media files here"
+                                    originalInstructions="Current media files" :originals="files" @doneUpload="getMediaFiles" 
+                                    @deleteFile="deleteFile" @clear="clear">
+                                </c-upload>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>`,
     components: {
-        'codebase-edit-form': CodebaseEditForm
+        'codebase-edit-form': CodebaseEditForm,
+        'c-upload': Upload
     }
 })
 class CodebaseEditFormPopup extends Vue {
@@ -43,6 +68,53 @@ class CodebaseEditFormPopup extends Vue {
 
     @Prop()
     redirect: boolean;
+
+    @Prop()
+    files: Array<{ name: string, identifier: any }>;
+
+    get uploadUrl() {
+        return codebaseAPI.mediaListUrl(this.identifier);
+    }
+
+    active: CodebaseTabs = 'metadata';
+
+    isActive(name: CodebaseTabs) {
+        return name == this.active;
+    }
+
+    setActive(name: CodebaseTabs) {
+        this.active = name;
+    }
+
+    tabClass(name: CodebaseTabs) {
+        if (name === this.active) {
+            return 'active';
+        } else {
+            return '';
+        }
+    }
+
+    contentClass(name: CodebaseTabs) {
+        if (name === this.active) {
+            return 'show active';
+        } else {
+            return ''
+        }
+    }
+
+    getMediaFiles() {
+        this.$store.dispatch('getMediaFiles');
+    }
+
+    async deleteFile(image_id) {
+        await codebaseAPI.mediaDelete(this.identifier, image_id);
+        this.getMediaFiles();
+    }
+
+    async clear() {
+        await codebaseAPI.mediaClear(this.identifier);
+        this.getMediaFiles();
+    }
 }
 
 @Component({
@@ -142,7 +214,7 @@ class PublishModal extends Vue implements CreateOrUpdateHandler {
                 </li>
             </ul>
             <router-view :initialData="initialData"></router-view>
-            <c-codebase-edit-form-popup :identifier="identifier" :redirect="false" @updated="setCodebase"></c-codebase-edit-form-popup>
+            <c-codebase-edit-form-popup :identifier="identifier" :redirect="false" :files="$store.state.files.media" @updated="setCodebase"></c-codebase-edit-form-popup>
             <c-publish-modal :version_number="version_number" :identifier="identifier" :absolute_url="absolute_url"></c-publish-modal>
         </div>
         <div v-else>

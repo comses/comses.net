@@ -90,6 +90,26 @@ export class CodebaseAPI extends BaseAPI {
     baseUrl() {
         return '/codebases/';
     }
+
+    mediaListUrl(identifier) {
+        return `${this.baseUrl()}${identifier}/media/`;
+    }
+
+    mediaList(identifier) {
+        return api.get(this.mediaListUrl(identifier));
+    }
+
+    mediaDetailUrl(identifier, image_id) {
+        return `${this.baseUrl()}${identifier}/media/${image_id}`;
+    }
+
+    mediaDelete(identifier, image_id) {
+        return api.delete(this.mediaDetailUrl(identifier, image_id));
+    }
+
+    mediaClear(identifier) {
+        return api.delete(`${this.mediaListUrl(identifier)}clear/`);
+    }
 }
 
 export class CodebaseReleaseAPI {

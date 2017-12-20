@@ -173,12 +173,11 @@ export interface CodebaseReleaseEdit extends AbstractCodebaseRelease {
     codebase: CodebaseEdit
 }
 
-type FileInfo = { path: string, url: string }
+type FileInfo = { name: string, identifier: string }
 
 interface CodebaseReleaseFileLayout<T> {
     data: Array<T>
     docs: Array<T>
-    media: Array<T>
     code: Array<T>
 }
 
@@ -186,6 +185,7 @@ export interface CodebaseReleaseStore {
     files: {
         originals: CodebaseReleaseFileLayout<FileInfo>,
         sip: CodebaseReleaseFileLayout<string>
+        media: Array<FileInfo>
     }
     release: CodebaseReleaseEdit
 }

@@ -10,7 +10,7 @@ import {createFormValidator} from "pages/form"
 import * as yup from 'yup'
 import * as _ from 'lodash'
 import {HandlerWithRedirect, HandlerShowSuccessMessage} from "api/handler"
-import Upload from "./release/upload";
+import {Upload} from "components/upload";
 
 export const schema = yup.object().shape({
     title: yup.string().required(),
@@ -48,9 +48,6 @@ export const schema = yup.object().shape({
             :required="config.repository_url">
         </c-input>
         <c-message-display :messages="statusMessages" @clear="statusMessages = []"></c-message-display>
-        <c-upload :identifier="_identifier">
-        
-        </c-upload>
         <button class="btn btn-primary" type="button" @click="save()">Save</button>
     </div>`,
     components: {
