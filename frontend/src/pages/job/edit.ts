@@ -16,9 +16,9 @@ import {HandlerWithRedirect} from "api/handler";
 export const schema = yup.object().shape({
     title: yup.string().required(),
     description: yup.string().required(),
-    application_deadline: yup.date().nullable(),
+    application_deadline: yup.date().min(new Date(), "Please enter a valid date after today's date."),
     summary: yup.string().required(),
-    tags: yup.array().of(yup.object().shape({name: yup.string().required()})).min(1),
+    tags: yup.array().of(yup.object().shape({name: yup.string().required()})).min(0),
     external_url: yup.string().url('Please enter a valid URL').nullable(),
 });
 
@@ -43,8 +43,8 @@ export const schema = yup.object().shape({
         <c-input v-model="external_url" name="external_url" :errorMsgs="errors.external_url" :required="config.external_url"
             label="External Job URL" help="URL for this job on an external website">
         </c-input>
-        <c-date-picker v-model="application_deadline" name="application_deadline" :clearButton="true"
-            :required="false" label='Application deadline'>
+        <c-date-picker v-model="application_deadline" name="application_deadline" :clearButton="true" 
+            :errorMsgs="errors.application_deadline" :required="false" label='Application deadline'>
         </c-date-picker>
         <c-tagger v-model="tags" name="tags" :errorsMsgs="errors.tags" :required="config.tags">
         </c-tagger>
