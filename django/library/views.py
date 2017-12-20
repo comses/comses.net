@@ -116,7 +116,7 @@ class CodebaseFilesViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
             raise ValidationError({'file': ['This field is required']})
         image = codebase.import_media(fileobj)
         if image is None:
-            raise ValidationError('file is not an image')
+            raise ValidationError([{'msg': {'detail': 'file is not an image', 'stage': 'media'}}])
         codebase.save()
         return Response(status=status.HTTP_201_CREATED)
 
