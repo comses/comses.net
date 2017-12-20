@@ -13,6 +13,7 @@ from django.contrib.auth.models import User
 from django.contrib.postgres.aggregates import BoolOr, BoolAnd
 from django.contrib.postgres.fields import JSONField, ArrayField
 from django.core.files.images import ImageFile
+from django.core.files.storage import FileSystemStorage
 from django.db import models
 from django.db.models.functions import Coalesce
 from django.urls import reverse
@@ -24,7 +25,8 @@ from modelcluster.fields import ParentalKey
 from modelcluster.models import ClusterableModel
 from rest_framework.exceptions import ValidationError
 from taggit.models import TaggedItemBase
-from wagtail.wagtailimages.models import Image
+from unidecode import unidecode
+from wagtail.wagtailimages.models import Image, AbstractImage, AbstractRendition, get_upload_to
 from wagtail.wagtailsearch import index
 
 from core import fs
@@ -229,8 +231,6 @@ class Codebase(index.Indexed, ClusterableModel):
     media = JSONField(default=list,
                       help_text=_("JSON metadata dict of media associated with this Codebase"))
 
-    featured_images = models.ManyToManyField(Image)
-
     submitter = models.ForeignKey(User, related_name='codebases')
 
     objects = CodebaseQuerySet.as_manager()
@@ -283,7 +283,7 @@ class Codebase(index.Indexed, ClusterableModel):
         return self.media_dir('uploads')
 
     def media_dir(self, *args):
-        return pathlib.Path(settings.MEDIA_ROOT, str(self.uuid), *args)
+        return pathlib.Path(settings.LIBRARY_ROOT, str(self.uuid), 'media', *args)
 
     @property
     def summarized_description(self):
@@ -373,7 +373,7 @@ class Codebase(index.Indexed, ClusterableModel):
             self.save()
         return release
 
-    def import_media(self, fileobj, media=None):
+    def import_media(self, fileobj, title=None, media=None):
         if media is None:
             media = self.media
         name = os.path.basename(fileobj.name)
@@ -390,17 +390,22 @@ class Codebase(index.Indexed, ClusterableModel):
             'featured': fs.is_image(str(path)),
         }
 
+        logger.info('featured image: %s', image_metadata['name'])
         if image_metadata['featured']:
             filename = image_metadata['name']
             path = pathlib.Path(image_metadata['path'], filename)
-            image = Image(title=self.title,
-                          file=ImageFile(path.open('rb')),
-                          uploaded_by_user=self.submitter)
+            image = CodebaseImage(codebase=self,
+                                  title=title or name or self.title,
+                                  file=ImageFile(path.open('rb')),
+                                  uploaded_by_user=self.submitter)
             image.save()
             self.featured_images.add(image)
+            logger.info('added featured image')
+            return image
 
         media.append(image_metadata)
         self.media = media
+        return None
 
     def get_or_create_draft(self):
         draft = self.releases.filter(draft=True).first()
@@ -432,7 +437,8 @@ class Codebase(index.Indexed, ClusterableModel):
             contributor = self.submitter.contributor_set.get_or_create(defaults={
                 'given_name': self.submitter.first_name,
                 'family_name': self.submitter.last_name,
-                'affiliations': [self.submitter.member_profile.institution.name] if hasattr(self.submitter.member_profile.institution, 'name') else [],
+                'affiliations': [self.submitter.member_profile.institution.name] if hasattr(
+                    self.submitter.member_profile.institution, 'name') else [],
                 'email': self.submitter.email
             })[0]
             ReleaseContributor.objects.create(release=release,
@@ -455,6 +461,45 @@ class Codebase(index.Indexed, ClusterableModel):
 
     class Meta:
         permissions = (('view_codebase', 'Can view codebase'),)
+
+
+class CodebaseImage(AbstractImage):
+    codebase = models.ForeignKey(Codebase, related_name='featured_images')
+    file = models.ImageField(
+        verbose_name=_('file'), upload_to=get_upload_to, width_field='width', height_field='height',
+        storage=FileSystemStorage(location=settings.LIBRARY_ROOT)
+    )
+
+    admin_form_fields = Image.admin_form_fields + ('codebase',)
+
+    def get_upload_to(self, filename):
+        # adapted from wagtailimages/models
+        folder_name = str(self.codebase.media_dir())
+        filename = self.file.field.storage.get_valid_name(filename)
+
+        # do a unidecode in the filename and then
+        # replace non-ascii characters in filename with _ , to sidestep issues with filesystem encoding
+        filename = "".join((i if ord(i) < 128 else '_') for i in unidecode(filename))
+
+        # Truncate filename so it fits in the 100 character limit
+        # https://code.djangoproject.com/ticket/9893
+        full_path = os.path.join(folder_name, filename)
+        if len(full_path) >= 95:
+            chars_to_trim = len(full_path) - 94
+            prefix, extension = os.path.splitext(filename)
+            filename = prefix[:-chars_to_trim] + extension
+            full_path = os.path.join(folder_name, filename)
+
+        return full_path
+
+
+class CodebaseRendition(AbstractRendition):
+    image = models.ForeignKey(CodebaseImage, related_name='renditions', on_delete=models.CASCADE)
+
+    class Meta:
+        unique_together = (
+            ('image', 'filter_spec', 'focal_point_key'),
+        )
 
 
 class CodebasePublication(models.Model):

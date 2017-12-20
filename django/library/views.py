@@ -19,9 +19,10 @@ from core.views import FormViewSetMixin, FormUpdateView, FormCreateView
 from home.views import SmallResultSetPagination
 from library.fs import FileCategoryDirectories, StagingDirectories, MessageLevels
 from library.permissions import CodebaseReleaseUnpublishedFilePermissions
-from .models import Codebase, CodebaseRelease, Contributor
+from .models import Codebase, CodebaseRelease, Contributor, CodebaseImage
 from .serializers import (CodebaseSerializer, RelatedCodebaseSerializer, CodebaseReleaseSerializer,
-                          ContributorSerializer, ReleaseContributorSerializer, CodebaseReleaseEditSerializer)
+                          ContributorSerializer, ReleaseContributorSerializer, CodebaseReleaseEditSerializer,
+                          CodebaseImageSerializer)
 
 logger = logging.getLogger(__name__)
 
@@ -73,7 +74,7 @@ class CodebaseViewSet(FormViewSetMixin, viewsets.ModelViewSet):
         # request for a JSON serialization of this Codebase.
         # FIXME: this should go away if/when we segregate DRF API calls under /api/v1/codebases/
         if request.accepted_media_type == 'text/html':
-            current_version = CodebaseRelease.objects.accessible(request.user).filter(codebase=instance)\
+            current_version = CodebaseRelease.objects.accessible(request.user).filter(codebase=instance) \
                 .order_by('-date_created').first()
             if not current_version:
                 raise Http404
@@ -83,14 +84,55 @@ class CodebaseViewSet(FormViewSetMixin, viewsets.ModelViewSet):
             data = add_change_delete_perms(instance, serializer.data, request.user)
             return Response(data)
 
-    @detail_route(methods=['put'])
-    def upload_media(self, request, **kwargs):
-        codebase = self.get_object()
+
+class CodebaseFilesViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
+    lookup_field = 'codebaseimage_id'
+    lookup_value_regex = r'\d+'
+    queryset = CodebaseImage.objects.all()
+    serializer_class = CodebaseImageSerializer
+    renderer_classes = (renderers.JSONRenderer,)
+
+    def get_queryset(self):
+        resolved = resolve(self.request.path)
+        identifier = resolved.kwargs['identifier']
+        codebase = Codebase.objects.accessible(user=self.request.user).get(identifier=identifier)
+        queryset = self.queryset.filter(codebase=codebase)
+        return queryset
+
+    def get_object(self):
+        queryset = self.filter_queryset(self.get_queryset())
+
+        parser_context = self.get_parser_context(self.request)
+        kwargs = parser_context['kwargs']
+        codebaseimage_id = kwargs['codebaseimage_id']
+        obj = get_object_or_404(queryset, id=codebaseimage_id)
+
+        return obj
+
+    def create(self, request, *args, **kwargs):
+        codebase = Codebase.objects.get(identifier=kwargs['identifier'])
         fileobj = request.data.get('file')
         if fileobj is None:
             raise ValidationError({'file': ['This field is required']})
-        codebase.import_media(fileobj)
+        image = codebase.import_media(fileobj)
+        if image is None:
+            raise ValidationError('file is not an image')
         codebase.save()
+        return Response(status=status.HTTP_201_CREATED)
+
+    def destroy(self, request, *args, **kwargs):
+        codebaseimage = self.get_object()
+        codebaseimage.file.storage.delete(codebaseimage.file.path)
+        codebaseimage.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+    @list_route(methods=['delete'])
+    def clear(self, request, *args, **kwargs):
+        codebase = Codebase.objects.get(identifier=kwargs['identifier'])
+        codebaseimages = codebase.featured_images.all()
+        for codebaseimage in codebaseimages:
+            codebaseimage.file.storage.delete(codebaseimage.file.path)
+            codebaseimage.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
@@ -249,8 +291,8 @@ class BaseCodebaseReleaseFilesViewSet(viewsets.GenericViewSet):
         category = self.get_category()
         data = api.list(stage=self.stage, category=category)
         if self.stage == StagingDirectories.originals:
-            data = [{'path': path, 'url': api.get_absolute_url(category=category, relpath=path)}
-                     for path in data]
+            data = [{'name': path, 'identifier': api.get_absolute_url(category=category, relpath=path)}
+                    for path in data]
         return Response(data=data, status=status.HTTP_200_OK)
 
     def get_object(self):

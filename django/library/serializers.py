@@ -8,7 +8,7 @@ from wagtail.wagtailimages.models import SourceImageIOError
 
 from core.serializers import (YMD_DATETIME_FORMAT, PUBLISH_DATE_FORMAT, LinkedUserSerializer, create, update, save_tags,
                               TagSerializer, MarkdownField)
-from .models import ReleaseContributor, Codebase, CodebaseRelease, Contributor, License
+from .models import ReleaseContributor, Codebase, CodebaseRelease, Contributor, License, CodebaseImage
 from home.common_serializers import RelatedMemberProfileSerializer
 
 logger = logging.getLogger(__name__)
@@ -219,6 +219,21 @@ class RelatedCodebaseSerializer(serializers.ModelSerializer, FeaturedImageMixin)
         model = Codebase
         fields = ('all_contributors', 'tags', 'title', 'last_published_on', 'identifier', 'version_number',
                   'featured_image', 'summarized_description', 'description', 'live', 'repository_url',)
+
+
+class CodebaseImageSerializer(serializers.ModelSerializer):
+    identifier = serializers.IntegerField(source='id')
+    name = serializers.CharField(source='title')
+
+    def get_url(self, instance):
+        return instance.get_rendition('max-200x200').url
+
+    class Meta:
+        model = CodebaseImage
+        fields = ('identifier', 'name', 'file')
+        extra_kwargs = {
+            'file': {'write_only': True}
+        }
 
 
 class CodebaseReleaseSerializer(serializers.ModelSerializer):
