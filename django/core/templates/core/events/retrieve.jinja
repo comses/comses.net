@@ -1,5 +1,5 @@
 {% extends "sidebar_layout.jinja" %}
-{% from "common.jinja" import breadcrumb, embed_discourse_comments, share_card, member_profile_href %}
+{% from "common.jinja" import breadcrumb, embed_discourse_comments, share_card, member_profile_href, search_tag_href %}
 
 {% block title %}{{ title }}{% endblock %}
 
@@ -14,9 +14,14 @@
 
 {% block content %}
     <div id='discourse-content'>
-        <h1>{{ title }}{% if external_url %}
-            <a href="{{ external_url }}" target="_blank"><span class="fa fa-external-link"></span></a>{% endif %}
-        </h1>
+        <h1>{{ title }}</h1>
+        {% if tags %}
+            <div class='tag-list'>
+            {% for tag in tags %}
+                {{ search_tag_href(tag, category='events') }}
+            {% endfor %}
+            </div>
+        {% endif %}
         <hr>
         <div class='lead'>
         {{ description|markdown }}
@@ -30,18 +35,22 @@
             <div class='section'>
                 <b class="card-title">Submitter</b>
                 <p class="card-text">{{ member_profile_href(submitter) }}</p>
-                <b class="card-title">Last Updated</b>
+                <b class="card-title">Last updated</b>
                 <p class="card-text">{{ last_modified }}</p>
-                <b class="card-title">Location</b>
-                <p class='card-text'>{{ location|default("None specified") }}</p>
-                <b class="card-title">Early Registration Deadline</b>
+                <b class="card-title">When</b>
+                <p class="card-text">{{ start_date|truncate_midnight }} to {{ end_date|truncate_midnight }}</p>
+                <b class="card-title">Where</b>
+                <p class='card-text'>{{ location|default("No location specified") }}</p>
+                {% if external_url %}
+                    <b class='card-title'>More information</b>
+                    <p class='card-text'>
+                    <a href="{{ external_url }}" target="_blank">{{ external_url }} <span class="fa fa-external-link"></span></a>
+                    </p>
+                {% endif %}
+                <b class="card-title">Early registration deadline</b>
                 <p class="card-text">{{ early_registration_deadline|truncate_midnight }}</p>
-                <b class="card-title">Submission Deadline</b>
+                <b class="card-title">Submission deadline</b>
                 <p class="card-text">{{ submission_deadline|truncate_midnight }}</p>
-                <b class="card-title">Start Date</b>
-                <p class="card-text">{{ start_date|truncate_midnight }}</p>
-                <b class="card-title">End Date</b>
-                <p class="card-text">{{ end_date|truncate_midnight }}</p>
             </div>
         </div>
     </div>

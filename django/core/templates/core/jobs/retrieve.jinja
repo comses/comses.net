@@ -1,5 +1,5 @@
 {% extends "sidebar_layout.jinja" %}
-{% from "common.jinja" import permission_button_group, breadcrumb, embed_discourse_comments, share_card, member_profile_href %}
+{% from "common.jinja" import permission_button_group, breadcrumb, embed_discourse_comments, share_card, member_profile_href, search_tag_href %}
 
 {% block title %}{{ title }}{% endblock %}
 
@@ -15,9 +15,14 @@
 
 {% block content %}
     <div id="discourse-content">
-        <h1>{{ title }}{% if external_url %}
-            <a href="{{ external_url }}" target="_blank"><span class="fa fa-external-link"></span></a>{% endif %}
-        </h1>
+        <h1>{{ title }}</h1>
+        {% if tags %}
+            <div class='tag-list'>
+            {% for tag in tags %}
+                {{ search_tag_href(tag, category='jobs') }}
+            {% endfor %}
+            </div>
+        {% endif %}
         <hr>
         <div class='lead'>
         {{ description|markdown }}
@@ -32,10 +37,19 @@
                 <b class="card-title">Submitter</b>
                 <p class='card-text'> {{ member_profile_href(submitter) }}</p>
                 {% if application_deadline %}
-                    <b class="card-title">Application Deadline</b>
+                    <b class="card-title">Application deadline</b>
                     <p class="card-text">{{ formatted_application_deadline }}</p>
                 {% endif %}
-                <b class="card-title">Last Updated</b>
+                {% if external_url %}
+                    <b class='card-title'>More information</b>
+                    <p class='card-text'>
+                    <a href="{{ external_url }}" target="_blank">
+                        {{ external_url }}
+                        <span class="fa fa-external-link"></span>
+                    </a>
+                    </p>
+                {% endif %}
+                <b class="card-title">Last updated</b>
                 <p class="card-text">{{ last_modified }}</p>
             </div>
         </div>

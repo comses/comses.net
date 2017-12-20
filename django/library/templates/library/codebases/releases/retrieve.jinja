@@ -39,19 +39,19 @@
             <b>Submitted by:</b> {{ member_profile_href(submitter) }}
             <b class='pl-2'>Platform:</b>
             {% for p in platform_tags %}
-                {{ search_tag_href(p) }}
+                {{ search_tag_href(p, category='codebases') }}
             {% else %}
                 None
             {% endfor %}
             <b class='pl-2'>Version: </b> {{ version_number }}
             <b class='pl-2'>Language:</b>
             {% for pl in programming_languages %}
-                {{ search_tag_href(pl) }}
+                {{ search_tag_href(pl, category='codebases') }}
             {% endfor %}
         </div>
         <div class='tag-list'>
             {% for tag in codebase.tags %}
-                {{ search_tag_href(tag) }}
+                {{ search_tag_href(tag, category='codebases') }}
             {% endfor %}
         </div>
         <div class='pt-4'>
@@ -150,7 +150,7 @@
                     <div class='section'>
                         <b class='card-title'>Programming Language:</b>
                         {% for pl in programming_languages %}
-                            {{ search_tag_href(pl) }}
+                            {{ search_tag_href(pl, category='codebases') }}
                         {% endfor %}
                     </div>
                     <div class='section'>
