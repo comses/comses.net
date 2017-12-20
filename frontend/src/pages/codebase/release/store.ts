@@ -14,11 +14,13 @@ const initialState: CodebaseReleaseStore = {
             code: [],
             data: [],
             docs: [],
+            results: [],
         },
         sip: {
             code: [],
             data: [],
             docs: [],
+            results: [],
         },
         media: []
     },

@@ -47,7 +47,8 @@ type CodebaseTabs = 'metadata' | 'media';
                                 </codebase-edit-form>
                             </div>
                             <div :class="['tab-pane fade', contentClass('media')]">
-                                <c-upload :uploadUrl="uploadUrl" title="Upload Media" instructions="Upload featured media files here"
+                                <c-upload :uploadUrl="uploadUrl" title="Upload Media" 
+                                    instructions="Upload featured media files here. Images are displayed on the release detail page of every release"
                                     originalInstructions="Current media files" :originals="files" @doneUpload="getMediaFiles" 
                                     @deleteFile="deleteFile" @clear="clear">
                                 </c-upload>

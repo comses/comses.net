@@ -28,23 +28,32 @@ export class UploadPage extends Vue {
     configs = [
         {
             uploadType: 'code',
-            acceptedFileTypes: 'text/plain',
+            acceptedFileTypes: '*/*',
             title: 'Upload Code',
             instructions: 'Upload code associated with a project here. If an archive (zip or tar file) is uploaded it is extracted first.',
             originalInstructions: 'The original files uploaded show here. It is possible to have one archive or many non archive files. Files should be code but all files are accepted'
         },
         {
             uploadType: 'data',
+            acceptedFileTypes: '*/*',
             title: 'Upload Data',
             instructions: 'Upload data associated with a project here. If an archive (zip or tar file) is uploaded it is extracted first.',
             originalInstructions: 'The original files uploaded show here. It is possible to have one archive or many non archive files. Files should be data but all files are accepted'
         },
         {
             uploadType: 'docs',
+            acceptedFileTypes: '*/*',
             title: 'Upload Documentation',
             instructions: 'Upload documentation associated with a project here. If an archive (zip or tar file) is uploaded it is extracted first.',
             originalInstructions: 'The original files uploaded show here. It is possible to have one archive or many non archive files. Files should be docs and only PDF, MarkDown, text and ReStructured text are accepted'
         },
+        {
+            uploadType: 'results',
+            acceptedFileTypes: '*/*',
+            title: 'Upload Simulation Outputs',
+            instructions: 'Upload simulation outputs associated with a project here. If an archive (zip or tar file) is uploaded it is extracted first.',
+            originalInstructions: 'The original files uploaded show here. It is possible to have one archive or many non archive files. Files should be results but all files are accepted'
+        }
     ];
 
     get version_number() {

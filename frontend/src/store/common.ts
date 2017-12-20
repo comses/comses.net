@@ -179,6 +179,7 @@ interface CodebaseReleaseFileLayout<T> {
     data: Array<T>
     docs: Array<T>
     code: Array<T>
+    results: Array<T>
 }
 
 export interface CodebaseReleaseStore {
