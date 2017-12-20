@@ -105,7 +105,8 @@ class ModelFileset:
         media_dir = str(codebase.upload_path)
         os.makedirs(media_dir, exist_ok=True)
         for media_dir_entry in self._media:
-            with open(media_dir_entry.path, 'r') as file_entry:
+            with open(media_dir_entry.path, 'rb') as file_entry:
+                logger.info('importing media file: %s', file_entry.name)
                 codebase.import_media(file_entry)
             shutil.copy(media_dir_entry.path, media_dir)
         codebase.save()
