@@ -268,7 +268,7 @@
             </div>
         </div>
     </div>
-    {% if has_change_perm %}
+    {% if has_change_perm and not live %}
         <a href="{{ url('library:codebaserelease-edit', identifier=codebase.identifier, version_number=version_number) }}">
             <div class="btn btn-primary my-1 w-100">Edit</div>
         </a>
