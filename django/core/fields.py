@@ -52,10 +52,10 @@ class MarkdownField(MarkupField):
     )
 
     def __init__(self, **kwargs):
+        kwargs.setdefault('blank', True)
         kwargs.update(
             default_markup_type='markdown',
             markup_choices=MarkdownField.CUSTOM_RENDERERS,
-            blank=True,
         )
         super(MarkdownField, self).__init__(**kwargs)
 
