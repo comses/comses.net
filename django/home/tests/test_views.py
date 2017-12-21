@@ -10,7 +10,7 @@ from django.test import TestCase
 
 from core.tests.base import UserFactory
 from core.tests.permissions_base import BaseViewSetTestCase
-from home.views import JobViewSet, EventViewSet
+from core.views import EventViewSet, JobViewSet
 from .base import JobFactory, EventFactory
 
 logger = logging.getLogger(__name__)

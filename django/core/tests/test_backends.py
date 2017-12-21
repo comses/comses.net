@@ -1,6 +1,6 @@
 import logging
 
-from core.tests.base import UserFactory
+from .base import UserFactory
 from django.core.exceptions import PermissionDenied
 from rest_framework.status import HTTP_302_FOUND, HTTP_200_OK
 from django.urls import reverse

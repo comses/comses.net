@@ -15,8 +15,7 @@ from rest_framework.response import Response
 
 from core.permissions import ComsesPermissions
 from core.view_helpers import add_change_delete_perms, get_search_queryset
-from core.views import FormViewSetMixin, FormUpdateView, FormCreateView
-from home.views import SmallResultSetPagination
+from core.views import FormViewSetMixin, FormUpdateView, FormCreateView, SmallResultSetPagination
 from library.fs import FileCategoryDirectories, StagingDirectories, MessageLevels
 from library.permissions import CodebaseReleaseUnpublishedFilePermissions
 from .models import Codebase, CodebaseRelease, Contributor, CodebaseImage

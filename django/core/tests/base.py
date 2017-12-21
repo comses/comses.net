@@ -69,6 +69,11 @@ class HypothesisTestCase(hypothesis_django.TestCase):
         return self.client.put(url, put_data, *args)
 
 
+def make_user(username='test_user', password='default.testing.password', email='comses.test@mailinator.com'):
+    factory = UserFactory()
+    return factory.create(username=username, password=password, email=email), factory
+
+
 class UserFactory:
     def __init__(self, **defaults):
         if not defaults.get('password'):

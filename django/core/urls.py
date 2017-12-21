@@ -24,7 +24,7 @@ urlpatterns = [
     url(r'^accounts/', include('allauth.urls')),
     url(r'^', include(home_urls, namespace='home')),
     url(r'^', include(library_urls, namespace='library')),
-    url(r'^summarize/$', views.summarize_text, name='summarize'),
+    url(r'^discourse/sso$', views.discourse_sso, name='discourse-sso'),
     url(r'^wagtail/admin/', include(wagtailadmin_urls)),
     url(r'^django/admin/', include(admin.site.urls)),
     url(r'^', include(wagtail_urls)),

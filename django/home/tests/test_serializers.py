@@ -4,7 +4,7 @@ from unittest import TestCase
 from rest_framework.exceptions import ValidationError
 
 from core.tests.base import UserFactory
-from home.serializers import EventSerializer
+from core.serializers import EventSerializer
 from home.tests.base import EventFactory
 
 

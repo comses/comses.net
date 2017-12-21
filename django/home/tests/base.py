@@ -1,7 +1,7 @@
 from core.models import Job, Event
 from datetime import datetime, timedelta
 
-from home.serializers import EventSerializer, JobSerializer
+from core.serializers import EventSerializer, JobSerializer
 
 
 class JobFactory:

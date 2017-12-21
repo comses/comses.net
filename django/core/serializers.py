@@ -1,15 +1,20 @@
 import logging
 
 from django.contrib.auth.models import User
+from django.utils import timezone
 from django.utils.translation import ugettext_lazy as _
 from markupfield.fields import Markup
 from rest_framework import serializers
+from rest_framework.exceptions import ValidationError
 from taggit.models import Tag
+
+from .models import Event, Job, Institution
 
 logger = logging.getLogger(__name__)
 
 YMD_DATETIME_FORMAT = '%Y-%m-%d'
 PUBLISH_DATE_FORMAT = '%b %d, %Y'
+
 
 class TagListSerializer(serializers.ListSerializer):
     """
@@ -97,3 +102,101 @@ class MarkdownField(serializers.Field):
 
     def to_internal_value(self, data):
         return data
+
+
+class EventSerializer(serializers.ModelSerializer):
+    submitter = LinkedUserSerializer(read_only=True, help_text=_('User that created the event'), label='Submitter')
+    absolute_url = serializers.URLField(source='get_absolute_url',
+                                        read_only=True, help_text=_('URL to the detail page of the event'))
+    date_created = serializers.DateTimeField(format=PUBLISH_DATE_FORMAT, read_only=True)
+    last_modified = serializers.DateTimeField(format=PUBLISH_DATE_FORMAT, read_only=True)
+    description = MarkdownField()
+
+    tags = TagSerializer(many=True, label='Tags')
+
+    def create(self, validated_data):
+        return create(self.Meta.model, validated_data, self.context)
+
+    def update(self, instance, validated_data):
+        return update(super().update, instance, validated_data)
+
+    def validate(self, attrs):
+        date_created = attrs.get('date_created', timezone.now())
+        early_registration_deadline = attrs.get('early_registration_deadline')
+        submission_deadline = attrs.get('submission_deadline')
+        start_date = attrs['start_date']
+        end_date = attrs.get('end_date')
+
+        dates = [date_created]
+        if early_registration_deadline:
+            dates.append(early_registration_deadline)
+        if submission_deadline:
+            dates.append(submission_deadline)
+        dates.append(start_date)
+        if end_date:
+            dates.append(end_date)
+
+        msgs = []
+        if early_registration_deadline and date_created > early_registration_deadline:
+            msgs.append('early registration deadline must be after time event is registered')
+
+        if early_registration_deadline and submission_deadline and early_registration_deadline >= submission_deadline:
+            msgs.append('early registration deadline must be strictly before submission deadline')
+
+        if submission_deadline and submission_deadline > start_date:
+            msgs.append('submission deadline must be before start date')
+
+        if end_date and start_date >= end_date:
+            msgs.append('start date must be strictly before end date')
+
+        if msgs:
+            raise ValidationError('.'.join(s.capitalize() for s in msgs))
+
+        return attrs
+
+    class Meta:
+        model = Event
+        fields = '__all__'
+
+
+class EventCalendarSerializer(serializers.ModelSerializer):
+    start = serializers.DateTimeField(source='start_date')
+    end = serializers.DateTimeField(source='end_date')
+
+    class Meta:
+        model = Event
+        fields = ('title', 'start', 'end',)
+
+
+class JobSerializer(serializers.ModelSerializer):
+    submitter = LinkedUserSerializer(read_only=True, help_text=_('User that created the job description'),
+                                     label='Submitter')
+    absolute_url = serializers.URLField(
+        source='get_absolute_url',
+        read_only=True,
+        help_text=_('URL to the detail page of the job'))
+
+    date_created = serializers.DateTimeField(format=PUBLISH_DATE_FORMAT, read_only=True)
+    description = MarkdownField()
+    last_modified = serializers.DateTimeField(format=PUBLISH_DATE_FORMAT, read_only=True)
+    application_deadline = serializers.DateField(allow_null=True, input_formats=['%Y-%m-%dT%H:%M:%S.%fZ', 'iso-8601'])
+    formatted_application_deadline = serializers.DateField(source='application_deadline', read_only=True,
+                                                           format=PUBLISH_DATE_FORMAT)
+    tags = TagSerializer(many=True, label='Tags')
+
+    def create(self, validated_data):
+        return create(self.Meta.model, validated_data, self.context)
+
+    def update(self, instance, validated_data):
+        return update(super().update, instance, validated_data)
+
+    class Meta:
+        model = Job
+        fields = ('id', 'title', 'submitter', 'date_created', 'last_modified', 'application_deadline',
+                  'formatted_application_deadline', 'description', 'summary', 'absolute_url', 'tags', 'external_url',)
+
+
+class InstitutionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Institution
+        fields = ('url', 'name',)
