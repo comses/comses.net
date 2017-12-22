@@ -298,6 +298,24 @@ class EventTag(TaggedItemBase):
 
 
 class EventQuerySet(models.QuerySet):
+
+    def find_by_interval(self, start, end):
+        """
+        Returns all Events whose early registration deadline or submission deadline falls within the interval and whose
+        start date and end date do not intersect with the interval
+        :param start:
+        :param end:
+        :return:
+        """
+        return self.filter(
+            # early registration deadline falls between the interval
+            (models.Q(early_registration_deadline__gte=start) & models.Q(early_registration_deadline__lte=end))
+            |
+            # or submission deadline falls between the interval
+            (models.Q(submission_deadline__gte=start) & models.Q(submission_deadline__lte=end))
+            # exclude any whose start date is after the interval end and whose end date is before the interval start
+        ).exclude(models.Q(start_date__gte=end)).exclude(models.Q(end_date__lte=start))
+
     def upcoming(self):
         return self.public().filter(start_date__gte=timezone.now())
 

@@ -21,7 +21,8 @@ def clean_order_by(order_by_params):
 
 
 def get_search_queryset(query, queryset, order_by_relevance=True):
-    qs = search_backend.search(query, queryset, order_by_relevance=order_by_relevance)
+    operator = "or" if order_by_relevance else "and"
+    qs = search_backend.search(query, queryset, operator=operator, order_by_relevance=order_by_relevance)
     # Need get_queryset method to work on DRF viewsets
     # DRF viewsets have permissions which require get_queryset to return something that has a model property
     qs.model = queryset.model

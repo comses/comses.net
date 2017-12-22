@@ -295,16 +295,7 @@ class EventCalendarList(generics.ListAPIView):
     def get_list_queryset(self):
         start = parse_datetime(self.request.query_params['start'])
         end = parse_datetime(self.request.query_params['end'])
-
-        # push this into EventQuerySet
-        early_registration_deadline_queryset = self.queryset.filter(
-            Q(early_registration_deadline__gte=start) & Q(early_registration_deadline__lte=end))
-        submission_deadline_queryset = self.queryset.filter(
-            Q(submission_deadline__gte=start) & Q(submission_deadline__lte=end))
-        queryset = self.queryset.exclude(Q(start_date__gte=end)).exclude(
-            Q(end_date__lte=start))
-        queryset = queryset | early_registration_deadline_queryset | submission_deadline_queryset
-        return queryset, start, end
+        return self.queryset.find_by_interval(start, end), start, end
 
     @staticmethod
     def to_calendar_early_registration_deadline_event(event):
