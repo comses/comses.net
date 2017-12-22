@@ -1,5 +1,4 @@
 import logging
-
 import pathlib
 
 from django.contrib.auth.mixins import PermissionRequiredMixin
@@ -8,17 +7,17 @@ from django.http import FileResponse, Http404
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import resolve
 from django.views import View
-from rest_framework import viewsets, generics, parsers, renderers, status, permissions, filters, mixins
+from rest_framework import viewsets, generics, renderers, status, permissions, filters, mixins
 from rest_framework.decorators import detail_route, list_route
-from rest_framework.exceptions import PermissionDenied as DrfPermissionDenied, ValidationError, NotFound
+from rest_framework.exceptions import PermissionDenied as DrfPermissionDenied, ValidationError
 from rest_framework.response import Response
 
 from core.permissions import ComsesPermissions
 from core.view_helpers import add_change_delete_perms, get_search_queryset
 from core.views import FormViewSetMixin, FormUpdateView, FormCreateView, SmallResultSetPagination
-from library.fs import FileCategoryDirectories, StagingDirectories, MessageLevels
-from library.permissions import CodebaseReleaseUnpublishedFilePermissions
+from .fs import FileCategoryDirectories, StagingDirectories, MessageLevels
 from .models import Codebase, CodebaseRelease, Contributor, CodebaseImage
+from .permissions import CodebaseReleaseUnpublishedFilePermissions
 from .serializers import (CodebaseSerializer, RelatedCodebaseSerializer, CodebaseReleaseSerializer,
                           ContributorSerializer, ReleaseContributorSerializer, CodebaseReleaseEditSerializer,
                           CodebaseImageSerializer)
@@ -68,7 +67,6 @@ class CodebaseViewSet(FormViewSetMixin, viewsets.ModelViewSet):
 
     def retrieve(self, request, *args, **kwargs):
         instance = self.get_object()
-
         # check content negotiation to see if we should redirect to the latest release detail page or if this is an API
         # request for a JSON serialization of this Codebase.
         # FIXME: this should go away if/when we segregate DRF API calls under /api/v1/codebases/
@@ -94,22 +92,17 @@ class CodebaseFilesViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
     def get_queryset(self):
         resolved = resolve(self.request.path)
         identifier = resolved.kwargs['identifier']
-        codebase = Codebase.objects.accessible(user=self.request.user).get(identifier=identifier)
-        queryset = self.queryset.filter(codebase=codebase)
-        return queryset
+        return self.queryset.accessible(user=self.request.user).filter(codebase__identifier=identifier)
 
     def get_object(self):
         queryset = self.filter_queryset(self.get_queryset())
-
         parser_context = self.get_parser_context(self.request)
         kwargs = parser_context['kwargs']
-        codebaseimage_id = kwargs['codebaseimage_id']
-        obj = get_object_or_404(queryset, id=codebaseimage_id)
-
-        return obj
+        codebase_image_id = kwargs['codebaseimage_id']
+        return get_object_or_404(queryset, id=codebase_image_id)
 
     def create(self, request, *args, **kwargs):
-        codebase = Codebase.objects.get(identifier=kwargs['identifier'])
+        codebase = get_object_or_404(Codebase, identifier=kwargs['identifier'])
         fileobj = request.data.get('file')
         if fileobj is None:
             raise ValidationError({'file': ['This field is required']})
@@ -127,11 +120,10 @@ class CodebaseFilesViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
 
     @list_route(methods=['delete'])
     def clear(self, request, *args, **kwargs):
-        codebase = Codebase.objects.get(identifier=kwargs['identifier'])
-        codebaseimages = codebase.featured_images.all()
-        for codebaseimage in codebaseimages:
-            codebaseimage.file.storage.delete(codebaseimage.file.path)
-            codebaseimage.delete()
+        codebase = get_object_or_404(Codebase, identifier=kwargs['identifier'])
+        for codebase_image in codebase.featured_images.all():
+            codebase_image.file.storage.delete(codebase_image.file.path)
+            codebase_image.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
@@ -141,7 +133,7 @@ class CodebaseReleaseDraftView(PermissionRequiredMixin, View):
 
     def post(self, *args, **kwargs):
         identifier = kwargs['identifier']
-        codebase = get_object_or_404(Codebase, identifier=kwargs['identifier'])
+        codebase = get_object_or_404(Codebase, identifier=identifier)
         codebase_release = codebase.releases.filter(draft=True).first()
         if not codebase_release:
             codebase_release = codebase.create_release()
@@ -296,7 +288,6 @@ class BaseCodebaseReleaseFilesViewSet(viewsets.GenericViewSet):
 
     def get_object(self):
         queryset = self.filter_queryset(self.get_queryset())
-
         parser_context = self.get_parser_context(self.request)
         kwargs = parser_context['kwargs']
         identifier = kwargs['identifier']
