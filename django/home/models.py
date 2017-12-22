@@ -97,18 +97,31 @@ class CarouselItem(LinkFields):
                               blank=True,
                               on_delete=models.SET_NULL,
                               related_name='+')
+    codebase_image = models.ForeignKey('library.CodebaseImage',
+                                       null=True,
+                                       blank=True,
+                                       on_delete=models.SET_NULL,
+                                       related_name='+')
     embed_url = models.URLField("Embed URL", blank=True)
     caption = models.CharField(max_length=255)
     summary = models.TextField(max_length=600, blank=True)
     title = models.CharField(max_length=255)
-
     panels = [
         ImageChooserPanel('image'),
+        ImageChooserPanel('codebase_image'),
         FieldPanel('embed_url'),
         FieldPanel('caption'),
         FieldPanel('title'),
         MultiFieldPanel(LinkFields.panels, "Link"),
     ]
+
+    @property
+    def featured_image(self):
+        if self.image:
+            return self.image
+        elif self.codebase_image:
+            return self.codebase_image
+        return None
 
     class Meta:
         abstract = True

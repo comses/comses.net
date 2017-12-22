@@ -2,12 +2,9 @@ import logging
 import mimetypes
 import pathlib
 import uuid
-from datetime import datetime
-from enum import Enum
 
 import os
 import semver
-import shutil
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.contrib.postgres.aggregates import BoolOr, BoolAnd
@@ -19,6 +16,7 @@ from django.db.models.functions import Coalesce
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.translation import ugettext_lazy as _
+from enum import Enum
 from model_utils import Choices
 from modelcluster.contrib.taggit import ClusterTaggableManager
 from modelcluster.fields import ParentalKey
@@ -266,7 +264,7 @@ class Codebase(index.Indexed, ClusterableModel):
         return dict(
             title=self.title,
             summary=self.summarized_description,
-            image=self.get_featured_image(),
+            codebase_image=self.get_featured_image(),
             link_codebase=self,
         )
 
@@ -698,7 +696,7 @@ class CodebaseReleasePublisher:
     def publish(self):
         if not self.codebase_release.live:
             self.is_publishable()
-            now = datetime.utcnow()
+            now = timezone.now()
             self.codebase_release.first_published_at = now
             self.codebase_release.last_published_on = now
             self.codebase_release.live = True

@@ -545,7 +545,7 @@ class Command(BaseCommand):
         for codebase in Codebase.objects.peer_reviewed():
             # if there are multiple images, just pull the first
             fc_dict = codebase.as_featured_content_dict()
-            if fc_dict['image']:
+            if fc_dict.get('codebase_image'):
                 landing_page.featured_content_queue.add(FeaturedContentItem(**fc_dict))
         # refresh from DB before adding more nodes so treebeard can clean up its internals
         # https://django-treebeard.readthedocs.io/en/latest/caveats.html
