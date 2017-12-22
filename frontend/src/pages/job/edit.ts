@@ -16,7 +16,7 @@ import {HandlerWithRedirect} from "api/handler";
 export const schema = yup.object().shape({
     title: yup.string().required(),
     description: yup.string().required(),
-    application_deadline: yup.date().min(new Date(), "Please enter a valid date after today's date."),
+    application_deadline: yup.date().min(new Date(), "Please enter a valid date after today's date.").nullable(),
     summary: yup.string().required(),
     tags: yup.array().of(yup.object().shape({name: yup.string().required()})).min(0),
     external_url: yup.string().url('Please enter a valid URL').nullable(),
