@@ -34,55 +34,40 @@
             </div>
         </div>
         <div class='col-9'>
-            <div class='profile-details'>
+            <div class='card profile-details'>
                 <div class='card-body'>
                     <h4 class='card-title'>{{ full_name }}</h4>
                     {% for degree in degrees %}
                         <p class='card-text'>{{ degree }}</p>
-                    {% else %}
-                        <p class='card-text'>No degrees listed.</p>
                     {% endfor %}
                     {% for affiliation in affiliations %}
                         <p class='card-text'>{{ affiliation }}</p>
                     {% endfor %}
-                    <p class='card-text'>{{ bio }}</p>
-                    <dl class='row card-text'>
-                        <dt class='col-sm-3'><u>Institution URL: </u></dt>
-                        <dd class='col-sm-9'>
-                            {% if institution %}
-                                {{ institution_href(institution) }}
-                            {% else %}
-                                None
-                            {% endif %}
-                        </dd>
-                        <dt class='col-sm-3'><u>Personal URL: </u></dt>
-                        <dd class='col-sm-9'>
-                            {% if personal_url %}
-                                <a href='{{ personal_url }}' target='_blank'>{{ personal_url }}</a>
-                            {% else %}
-                                None
-                            {% endif %}
-                        </dd>
-
-                        <dt class='col-sm-3'><u>Professional URL: </u></dt>
-                        <dd class='col-sm-9'>
-                            {% if professional_url %}
-                                <a href='{{ professional_url }}' target='_blank'>{{ professional_url }}</a>
-                            {% else %}
-                                None
-                            {% endif %}
-                        </dd>
-
-                        <dt class='col-sm-3'><u>ORCID: </u><sup><a target='_blank' href='https://orcid.org'>?</a></sup></dt>
-                        <dd class='col-sm-9'>
-                            {{ render_social_profile_url('orcid', orcid_url, connect=request.user.username == username) }}
-                        </dd>
-
-                        <dt class='col-sm-3'><u>GitHub: </u><sup><a target='_blank' href='https://github.com'>?</a></sup></dt>
-                        <dd class='col-sm-9'>
-                            {{ render_social_profile_url('github', github_url, connect=request.user.username == username) }}
-                        </dd>
-                    </dl>
+                    {% if institution %}
+                        <b class='card-title'>Institution</b>
+                        <p class='card-text'>
+                        {{ institution_href(institution) }}
+                        </p>
+                    {% endif %}
+                    {% if personal_url %}
+                        <b class='card-title'>Personal homepage</b>
+                        <p class='card-text'>
+                        <a href='{{ personal_url }}' target='_blank'>{{ personal_url }}</a>
+                        </p>
+                    {% endif %}
+                    {% if professional_url %}
+                        <b class='card-title'>Professional homepage</b>
+                        <p class='card-text'>
+                        <a href='{{ professional_url }}' target='_blank'>{{ professional_url }}</a>
+                        </p>
+                    {% endif %}
+                    <b class='card-title'>ORCID <sup><a target='_blank' href='https://orcid.org'>?</a></sup></b>
+                    <p class='card-text'>
+                    {{ render_social_profile_url('orcid', orcid_url, connect=request.user.username == username) }}
+                    </p>
+                    <b class='card-title'>GitHub<sup><a target='_blank' href='https://github.com'>?</a></sup></b>
+                    <p class='card-text'>{{ render_social_profile_url('github', github_url, connect=request.user.username == username) }}
+                    </p>
                 </div>
             </div>
         </div>
@@ -138,7 +123,7 @@
 {% endblock %}
 
 {% block sidebar %}
-    {# FIXME: set up Vue logic for message / follow #}
+    {# FIXME: set up JS logic for message / follow #}
     <div class='card-metadata'>
         <div class='card-body'>
             {% if has_change_perm %}
@@ -174,12 +159,12 @@
     </div>
     <div class='card-metadata'>
         <div class='card-body'>
-            <h2 class='card-title'>Areas of Interest</h2>
+            <h2 class='card-title'>Research Interests</h2>
             <p class='card-text tag-list'>
                 {% for keyword in keywords %}
-                    <small>{{ search_tag_btn(keyword) }}</small>
+                    <small>{{ search_tag_btn(keyword, category='users') }}</small>
                 {% else %}
-                    none entered
+                    none selected
                 {% endfor %}
             </p>
         </div>
