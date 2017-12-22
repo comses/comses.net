@@ -309,8 +309,7 @@ class EventQuerySet(models.QuerySet):
         """
         return self.filter(
             # early registration deadline falls between the interval
-            (models.Q(early_registration_deadline__gte=start) & models.Q(early_registration_deadline__lte=end))
-            |
+            (models.Q(early_registration_deadline__gte=start) & models.Q(early_registration_deadline__lte=end)) |
             # or submission deadline falls between the interval
             (models.Q(submission_deadline__gte=start) & models.Q(submission_deadline__lte=end))
             # exclude any whose start date is after the interval end and whose end date is before the interval start
@@ -403,7 +402,8 @@ class Job(index.Indexed, ClusterableModel):
     search_fields = [
         index.SearchField('title', partial_match=True, boost=10),
         index.SearchField('description', partial_match=True),
-        index.SearchField('date_created'),
+        index.FilterField('date_created'),
+        index.FilterField('application_deadline'),
         index.RelatedFields('tags', [
             index.SearchField('name'),
         ]),
@@ -437,3 +437,4 @@ class Job(index.Indexed, ClusterableModel):
 
     class Meta:
         permissions = (('view_job', 'Can view job'),)
+        ordering = ['-last_modified']

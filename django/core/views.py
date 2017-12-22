@@ -9,7 +9,6 @@ from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.views import redirect_to_login
 from django.core.exceptions import PermissionDenied
-from django.db.models import Q
 from django.http import Http404, HttpResponseBadRequest, HttpResponseRedirect
 from django.shortcuts import render
 from django.views.generic import DetailView, TemplateView
@@ -351,24 +350,26 @@ class JobFilter(filters.BaseFilterBackend):
     def filter_queryset(self, request, queryset, view):
         if view.action != 'list':
             return queryset
-        q = request.query_params.get('query')
-        date_created__gte = parse_datetime(request.query_params.get('date_created__gte'))
-        last_modified__gte = parse_datetime(request.query_params.get('last_modified__gte'))
+        qs = request.query_params.get('query')
+        date_created = parse_datetime(request.query_params.get('date_created__gte'))
+        application_deadline = parse_datetime(request.query_params.get('application_deadline__gte'))
         tags = request.query_params.get('tags', [])
+        if not isinstance(tags, (list, tuple)):
+            tags = [tags]
 
-        if date_created__gte:
-            queryset = queryset.filter(date_created__gte=date_created__gte)
-        if last_modified__gte:
-            queryset = queryset.filter(last_modified__gte=last_modified__gte)
-        for tag in tags:
-            queryset = queryset.filter(tags__name=tag)
-
-        if q:
-            queryset = get_search_queryset(q, queryset)
+        criteria = {}
+        if date_created:
+            criteria.update(date_created__gte=date_created)
+        if application_deadline:
+            criteria.update(application_deadline__gte=application_deadline)
+        if qs:
+            if tags:
+                qs = '{0} {1}'.format(qs, ' '.join(tags))
+            return get_search_queryset(qs, queryset)
         else:
-            queryset = queryset.order_by('-date_created')
-
-        return queryset
+            if tags:
+                criteria.update(tags__name__in=tags)
+            return queryset.filter(**criteria)
 
 
 class JobViewSet(FormViewSetMixin, viewsets.ModelViewSet):
