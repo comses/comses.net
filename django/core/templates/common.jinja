@@ -121,7 +121,7 @@
         {% endif %}
         <div class='tag-list'>
             {% if list_state.query %}
-                Searching on <span class='tag'>{{ list_state.query }}</span>,
+                Searching on {% for term in list_state.search_terms %} <span class='tag'>{{ term }}</span>{% endfor %},
             {% endif %}
             displaying {{ list_state.page_size }} of <strong>{{ list_state.count }}</strong> results
         </div>

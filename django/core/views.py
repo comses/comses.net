@@ -188,6 +188,7 @@ class SmallResultSetPagination(PageNumberPagination):
             'page_size': min(self.page_size, count),
             'count': count,
             'query': query_params.get('query'),
+            'search_terms': query_params.values(),
             'query_params': query_params.urlencode(),
             'range': page_range,
             'num_pages': num_pages,
