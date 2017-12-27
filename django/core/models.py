@@ -374,6 +374,7 @@ class Event(index.Indexed, ClusterableModel):
 
     class Meta:
         permissions = (('view_event', 'Can view events'),)
+        ordering = ['-start_date']
 
 
 class JobTag(TaggedItemBase):

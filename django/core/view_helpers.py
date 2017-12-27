@@ -20,13 +20,30 @@ def clean_order_by(order_by_params):
     return order_by_params
 
 
-def get_search_queryset(query, queryset, order_by_relevance=True):
-    operator = "or" if order_by_relevance else "and"
-    qs = search_backend.search(query, queryset, operator=operator, order_by_relevance=order_by_relevance)
-    # Need get_queryset method to work on DRF viewsets
-    # DRF viewsets have permissions which require get_queryset to return something that has a model property
-    qs.model = queryset.model
-    return qs
+def get_search_queryset(query, queryset, operator="or", fields=None, tags=None, criteria=None):
+    if criteria is None:
+        criteria = {}
+    if query:
+        # deal with elastic search
+        if criteria:
+            queryset = queryset.filter(**criteria)
+        if tags:
+            # handle tags and built-up criteria object
+            query = '{0} {1}'.format(query, ' '.join(tags))
+            operator = 'and'
+        results = search_backend.search(query, queryset, operator=operator, fields=fields)
+        # Need get_queryset method to work on DRF viewsets
+        # DRF viewsets have permissions which require get_queryset to return something that has a model property
+        results.model = queryset.model
+        return results
+    else:
+        # ignore ElasticSearch, filter directly, with tags if available
+        if tags:
+            criteria.update(tags__name__in=tags)
+        if criteria:
+            return queryset.filter(**criteria)
+        else:
+            return queryset
 
 
 def retrieve_with_perms(self, request, *args, **kwargs):

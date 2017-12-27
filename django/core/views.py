@@ -270,23 +270,18 @@ class EventFilter(filters.BaseFilterBackend):
         if view.action != 'list':
             return queryset
 
-        q = request.query_params.get('query')
+        qs = request.query_params.get('query')
         submission_deadline__gte = request.query_params.get('submission_deadline__gte')
         start_date__gte = parse_datetime(request.query_params.get('state_date__gte'))
-        tags = request.query_params.get('tags', [])
+        tags = request.query_params.getlist('tags')
+
+        criteria = {}
 
         if submission_deadline__gte:
-            queryset = queryset.filter(submission_deadline__gte=submission_deadline__gte)
+            criteria.update(submission_deadline__gte=submission_deadline__gte)
         if start_date__gte:
-            queryset = queryset.filter(start_date__gte=start_date__gte)
-        for tag in tags:
-            queryset = queryset.filter(tags__name=tag)
-        if q:
-            queryset = get_search_queryset(q, queryset)
-        else:
-            queryset = queryset.order_by('-date_created')
-
-        return queryset
+            criteria.update(start_date__gte=start_date__gte)
+        return get_search_queryset(qs, queryset, tags=tags, criteria=criteria)
 
 
 class EventViewSet(CommonViewSetMixin, viewsets.ModelViewSet):
@@ -369,23 +364,13 @@ class JobFilter(filters.BaseFilterBackend):
         qs = request.query_params.get('query')
         date_created = parse_datetime(request.query_params.get('date_created__gte'))
         application_deadline = parse_datetime(request.query_params.get('application_deadline__gte'))
-        tags = request.query_params.get('tags', [])
-        if not isinstance(tags, (list, tuple)):
-            tags = [tags]
-
+        tags = request.query_params.getlist('tags')
         criteria = {}
         if date_created:
             criteria.update(date_created__gte=date_created)
         if application_deadline:
             criteria.update(application_deadline__gte=application_deadline)
-        if qs:
-            if tags:
-                qs = '{0} {1}'.format(qs, ' '.join(tags))
-            return get_search_queryset(qs, queryset)
-        else:
-            if tags:
-                criteria.update(tags__name__in=tags)
-            return queryset.filter(**criteria)
+        return get_search_queryset(qs, queryset, tags=tags, criteria=criteria)
 
 
 class JobViewSet(CommonViewSetMixin, viewsets.ModelViewSet):
