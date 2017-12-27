@@ -4,7 +4,6 @@ from urllib import parse
 import base64
 import hashlib
 import hmac
-import os
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.views import redirect_to_login
@@ -27,57 +26,75 @@ from .view_helpers import get_search_queryset, retrieve_with_perms
 logger = logging.getLogger(__name__)
 
 
-class FormViewSetMixin:
+def _common_namespace_path(model):
+    meta = model._meta
+    app_label = meta.app_label
+    return '{0}/{1}'.format(app_label, meta.verbose_name_plural.replace(' ', '_'))
+
+
+class CommonViewSetMixin:
     """
-    Provide routing and template discovery conventions for ViewSets that need to render forms. These could also just be
-    explicit in urls.py but this helps to keep them in one place.
+    Provide conventions for list, retrieve, and delete URL routes + template paths for
+    ViewSets.
 
+    List => <namespace>/list.<ext>
+    Retrieve => <namespace>/retrieve.<ext>
+    Delete => <namespace>/delete.<ext>
 
-    Override 'namespace' property to set the namespace directly, e.g.,
+    Override 'namespace' property to set the namespace directly,
 
     namespace = 'library/codebases'
 
     By default the namespace will be set to <app-label>/<model-name> which is typically not pluralized. This namespace
     is used for the URL namespace as well as the template filesystem namespace, where the template files are discovered.
+
+    Override 'ext' property to set the file extension, default is 'jinja'
+
+
     """
 
-    ACTIONS = ('list', 'retrieve', 'delete')
+    ALLOWED_ACTIONS = ('list', 'retrieve', 'delete')
+    namespace = None
+    ext = 'jinja'
+    templates = {}
 
     def _get_namespace(self):
-        namespace = getattr(self, 'namespace', None)
-        if namespace is None:
-            meta = self.get_queryset().model._meta
-            app_label = meta.app_label
-            namespace = '{0}/{1}'.format(app_label, meta.verbose_name_plural.replace(' ', '_'))
-            self.namespace = namespace
-        return namespace
+        if self.namespace is None:
+            # FIXME: assumes everything mixing this in will have a model attribute
+            self.namespace = _common_namespace_path(self.queryset.model)
+        return self.namespace
 
     def get_template_names(self):
-        # default to the lowercased model name
         namespace = self._get_namespace()
-        file_ext = getattr(self, 'ext', 'jinja')
-        templates = {}
-        for action in self.ACTIONS:
-            # by convention, templates will be named <action>.<file-ext> and discovered in the template filesystem under
-            # `django/<app-name>/templates/<namespace>/<action>.<file-ext>`
-            template_name = '{0}.{1}'.format(action, file_ext)
-            templates[action] = ['{0}/{1}'.format(namespace, template_name), template_name]
-        if self.action in templates.keys():
-            return templates[self.action]
-        # FIXME: is this an appropriate default or should we return a 404?
-        return ['rest_framework/api.html']
+        file_ext = self.ext
+        ts = self.templates
+        if not ts:
+            for action in self.ALLOWED_ACTIONS:
+                # by convention, templates should be named <action>.<file-ext> and discovered in TEMPLATE_DIRS under
+                # `django/<app-name>/templates/<namespace>/<action>.<file_ext>`.
+                ts[action] = ['{0}/{1}.{2}'.format(namespace, action, file_ext)]
+        if self.action in ts:
+            return ts[self.action]
+        logger.warning("Unhandled action %s, we only support list / retrieve / delete. Returning list template",
+                       self.action)
+        return ts['list']
 
 
 class PermissionRequiredByHttpMethodMixin:
+    """
+    Classes using this mixin must override model and optionally namespace.
+    """
     namespace = None
+    model = None
 
     def get_template_names(self):
+        # NB: assumes everything mixing this in will have a model attribute and that edit pages are always
+        # edit.jinja
         if self.namespace is None:
-            namespace = self.model._meta.verbose_name_plural.replace(' ', '_')
+            namespace = _common_namespace_path(self.model)
         else:
             namespace = self.namespace
-
-        return [os.path.join(self.model._meta.app_label, namespace, 'edit.jinja')]
+        return ['{0}/{1}'.format(namespace, 'edit.jinja')]
 
     def get_required_permissions(self, request=None):
         model = self.model
@@ -112,8 +129,7 @@ class PermissionRequiredByHttpMethodMixin:
         response = self.check_permissions()
         if response:
             return response
-        return super().dispatch(request, *args,
-                                **kwargs)
+        return super().dispatch(request, *args, **kwargs)
 
 
 class FormUpdateView(PermissionRequiredByHttpMethodMixin, DetailView):
@@ -265,7 +281,6 @@ class EventFilter(filters.BaseFilterBackend):
             queryset = queryset.filter(start_date__gte=start_date__gte)
         for tag in tags:
             queryset = queryset.filter(tags__name=tag)
-
         if q:
             queryset = get_search_queryset(q, queryset)
         else:
@@ -274,7 +289,7 @@ class EventFilter(filters.BaseFilterBackend):
         return queryset
 
 
-class EventViewSet(FormViewSetMixin, viewsets.ModelViewSet):
+class EventViewSet(CommonViewSetMixin, viewsets.ModelViewSet):
     serializer_class = EventSerializer
     queryset = Event.objects.all()
     pagination_class = SmallResultSetPagination
@@ -373,7 +388,7 @@ class JobFilter(filters.BaseFilterBackend):
             return queryset.filter(**criteria)
 
 
-class JobViewSet(FormViewSetMixin, viewsets.ModelViewSet):
+class JobViewSet(CommonViewSetMixin, viewsets.ModelViewSet):
     serializer_class = JobSerializer
     pagination_class = SmallResultSetPagination
     queryset = Job.objects.all()

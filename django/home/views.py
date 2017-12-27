@@ -18,7 +18,7 @@ from wagtail.wagtailsearch.backends import get_search_backend
 from core.models import FollowUser, Event, Job
 from core.serializers import TagSerializer
 from core.view_helpers import retrieve_with_perms
-from core.views import FormViewSetMixin, FormCreateView, FormUpdateView, SmallResultSetPagination
+from core.views import CommonViewSetMixin, FormCreateView, FormUpdateView, SmallResultSetPagination
 from .common_serializers import RelatedMemberProfileSerializer
 from .models import FeaturedContentItem, MemberProfile
 from .serializers import (FeaturedContentItemSerializer, UserMessageSerializer, MemberProfileSerializer)
@@ -64,7 +64,7 @@ class TagListView(mixins.ListModelMixin, viewsets.GenericViewSet):
         return queryset.order_by('name')
 
 
-class ProfileViewSet(FormViewSetMixin, mixins.RetrieveModelMixin, mixins.ListModelMixin,
+class ProfileViewSet(CommonViewSetMixin, mixins.RetrieveModelMixin, mixins.ListModelMixin,
                      mixins.UpdateModelMixin, viewsets.GenericViewSet):
     lookup_field = 'user__username'
     lookup_url_kwarg = 'username'

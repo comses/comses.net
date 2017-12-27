@@ -14,7 +14,7 @@ from rest_framework.response import Response
 
 from core.permissions import ComsesPermissions
 from core.view_helpers import add_change_delete_perms, get_search_queryset
-from core.views import FormViewSetMixin, FormUpdateView, FormCreateView, SmallResultSetPagination
+from core.views import CommonViewSetMixin, FormUpdateView, FormCreateView, SmallResultSetPagination
 from .fs import FileCategoryDirectories, StagingDirectories, MessageLevels
 from .models import Codebase, CodebaseRelease, Contributor, CodebaseImage
 from .permissions import CodebaseReleaseUnpublishedFilePermissions
@@ -38,7 +38,7 @@ def has_permission_to_create_release(request, view, exception_class):
     raise exception_class
 
 
-class CodebaseViewSet(FormViewSetMixin, viewsets.ModelViewSet):
+class CodebaseViewSet(CommonViewSetMixin, viewsets.ModelViewSet):
     lookup_field = 'identifier'
     lookup_value_regex = r'[\w\-\.]+'
     pagination_class = SmallResultSetPagination
@@ -165,7 +165,7 @@ class NestedCodebaseReleaseUnpublishedFilesPermission(permissions.BasePermission
         return True
 
 
-class CodebaseReleaseViewSet(FormViewSetMixin, viewsets.ModelViewSet):
+class CodebaseReleaseViewSet(CommonViewSetMixin, viewsets.ModelViewSet):
     namespace = 'library/codebases/releases/'
     lookup_field = 'version_number'
     lookup_value_regex = r'\d+\.\d+\.\d+'
