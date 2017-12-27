@@ -38,11 +38,29 @@ def has_permission_to_create_release(request, view, exception_class):
     raise exception_class
 
 
+class CodebaseFilter(filters.BaseFilterBackend):
+
+    def filter_queryset(self, request, queryset, view):
+        if view.action != 'list':
+            return queryset
+        query_params = request.query_params
+        qs = query_params.get('query')
+        published_start_date = query_params.get('published_start_date')
+        platform = query_params.get('platform')
+        programming_language = query_params.get('programming_language')
+        tags = query_params.getlist('tags')
+        criteria = {}
+        if published_start_date:
+            criteria.update(first_published_on__gte=published_start_date)
+        return get_search_queryset(qs, queryset, tags=tags, criteria=criteria)
+
+
 class CodebaseViewSet(CommonViewSetMixin, viewsets.ModelViewSet):
     lookup_field = 'identifier'
     lookup_value_regex = r'[\w\-\.]+'
     pagination_class = SmallResultSetPagination
     queryset = Codebase.objects.order_by('-date_created')
+    filter_backends = (CodebaseFilter,)
 
     # FIXME: should we use filter_backends
     # (http://www.django-rest-framework.org/api-guide/filtering/#djangoobjectpermissionsfilter)
@@ -51,9 +69,9 @@ class CodebaseViewSet(CommonViewSetMixin, viewsets.ModelViewSet):
 
     def get_queryset(self):
         if self.action == 'list':
+            # On detail pages we want to see unpublished releases
             return self.queryset.public()
         else:
-            # On detail pages we want to see unpublished releases
             return self.queryset.accessible(user=self.request.user)
 
     def get_serializer_class(self):
@@ -71,8 +89,7 @@ class CodebaseViewSet(CommonViewSetMixin, viewsets.ModelViewSet):
         # request for a JSON serialization of this Codebase.
         # FIXME: this should go away if/when we segregate DRF API calls under /api/v1/codebases/
         if request.accepted_media_type == 'text/html':
-            current_version = CodebaseRelease.objects.accessible(request.user).filter(codebase=instance) \
-                .order_by('-date_created').first()
+            current_version = CodebaseRelease.objects.accessible(request.user).filter(codebase=instance).order_by('-date_created').first()
             if not current_version:
                 raise Http404
             return redirect(current_version)
@@ -174,16 +191,17 @@ class CodebaseReleaseViewSet(CommonViewSetMixin, viewsets.ModelViewSet):
     pagination_class = SmallResultSetPagination
     permission_classes = (NestedCodebaseReleasePermission, ComsesPermissions,)
 
+    @property
+    def template_name(self):
+        # FIXME: figure out why this is needed, CommonViewSetMixin is *supposed* to obviate the need for this
+        return 'library/codebases/releases/{}.jinja'.format(self.action)
+
     def get_serializer_class(self):
         edit = self.request.query_params.get('edit')
         if edit is not None:
             return CodebaseReleaseEditSerializer
         else:
             return CodebaseReleaseSerializer
-
-    @property
-    def template_name(self):
-        return 'library/codebases/releases/{}.jinja'.format(self.action)
 
     def create(self, request, *args, **kwargs):
         identifier = kwargs['identifier']

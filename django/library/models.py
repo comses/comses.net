@@ -150,9 +150,9 @@ class CodebaseReleaseDownload(models.Model):
 
 
 class CodebaseQuerySet(models.QuerySet):
+
     def with_liveness(self):
         """Add a live property to a codebase.
-
         A codebase is live if any of its releases are live. It is not live by default"""
         return self.annotate(live=Coalesce(BoolOr('releases__live'), False)) \
             .annotate(draft=Coalesce(BoolAnd('releases__draft'), True))
@@ -164,7 +164,7 @@ class CodebaseQuerySet(models.QuerySet):
             models.Prefetch('releases', queryset=queryset))
 
     def accessible(self, user):
-        return get_viewable_objects_for_user(user=user, queryset=self.with_viewable_releases(user=user).with_liveness())
+        return get_viewable_objects_for_user(user=user, queryset=self.with_viewable_releases(user=user))
 
     def contributed_by(self, user):
         contributed_codebases = ReleaseContributor.objects.filter(contributor__user=user) \
@@ -176,7 +176,7 @@ class CodebaseQuerySet(models.QuerySet):
 
     def public(self):
         """Returns a queryset of all live codebases and their live releases"""
-        return self.with_liveness().filter(live=True).filter(draft=False).prefetch_related(
+        return self.filter(live=True).prefetch_related(
             models.Prefetch('releases', queryset=CodebaseRelease.objects.public()))
 
     def peer_reviewed(self):
@@ -194,6 +194,8 @@ class Codebase(index.Indexed, ClusterableModel):
 
     featured = models.BooleanField(default=False)
 
+    live = models.BooleanField(default=False)
+    # has_draft_release = models.BooleanField(default=False)
     has_unpublished_changes = models.BooleanField(default=False)
     first_published_at = models.DateTimeField(null=True, blank=True)
     last_published_on = models.DateTimeField(null=True, blank=True)
@@ -236,9 +238,10 @@ class Codebase(index.Indexed, ClusterableModel):
     search_fields = [
         index.SearchField('title', partial_match=True, boost=10),
         index.SearchField('description', partial_match=True),
-        index.SearchField('featured'),
-        index.SearchField('first_published_at'),
-        index.SearchField('last_published_on'),
+        index.FilterField('featured'),
+        index.FilterField('live'),
+        index.FilterField('first_published_at'),
+        index.FilterField('last_published_on'),
         index.RelatedFields('tags', [
             index.SearchField('name'),
         ]),
