@@ -1,10 +1,11 @@
+from uuid import UUID
+
+import random
 from django.contrib.auth.models import User
 from django.test import TestCase
 
+from library.models import Codebase, CodebaseRelease, ReleaseContributor, Contributor
 from library.serializers import CodebaseSerializer
-from ..models import Codebase, CodebaseRelease, ReleaseContributor, Contributor
-from uuid import UUID
-import random
 
 
 class BaseModelTestCase(TestCase):

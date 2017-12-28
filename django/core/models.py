@@ -25,7 +25,6 @@ from wagtail.wagtailsearch import index
 from wagtail.wagtailsnippets.models import register_snippet
 
 from library.models import Codebase
-from .backends import get_viewable_objects_for_user
 from .fields import MarkdownField
 
 
@@ -121,11 +120,7 @@ class MemberProfileQuerySet(models.QuerySet):
 
     def with_codebases(self, user):
         return self.prefetch_related(
-            models.Prefetch('user__codebases',
-                            get_viewable_objects_for_user(queryset=Codebase.objects.with_liveness(),
-                                                          user=user))) \
-            .filter(user__is_active=True) \
-            .exclude(user__username__in=('AnonymousUser', 'openabm'))
+            models.Prefetch('user__codebases', Codebase.objects.accessible(user)))
 
     def public(self):
         return self.prefetch_related(models.Prefetch('user__codebases', Codebase.objects.public())) \

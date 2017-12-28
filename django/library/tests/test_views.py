@@ -1,8 +1,7 @@
-import io
-
-import shutil
-
 import pathlib
+
+import io
+import shutil
 from django.conf import settings
 from django.test import TestCase
 from django.urls import reverse
@@ -12,9 +11,9 @@ from rest_framework.exceptions import ValidationError
 
 from core.tests.base import UserFactory
 from core.tests.permissions_base import BaseViewSetTestCase, create_perm_str, ResponseStatusCodesMixin, ApiAccountMixin
-from library.fs import CodebaseReleaseFsApi, FileCategoryDirectories, StagingDirectories
+from library.fs import FileCategoryDirectories
 from library.models import Codebase
-from .base import CodebaseFactory, CodebaseReleaseFactory, ContributorFactory, ReleaseContributorFactory
+from .base import CodebaseFactory, ContributorFactory, ReleaseContributorFactory
 from ..views import CodebaseViewSet, CodebaseReleaseViewSet
 
 
@@ -81,32 +80,32 @@ class CodebaseViewSetTestCase(BaseViewSetTestCase):
         for user in self.users_able_to_login:
             codebase = self.instance_factory.create()
             self.instance.create_release(initialize=False)
-            codebase = Codebase.objects.with_liveness().get(id=codebase.id)
+            codebase = Codebase.objects.get(pk=codebase.id)
             self.with_logged_in(user, codebase, self.check_destroy_permissions)
 
             other_codebase = self.instance_factory.create()
             other_codebase.create_release(initialize=False)
-            other_codebase = Codebase.objects.with_liveness().get(id=other_codebase.id)
+            other_codebase = Codebase.objects.get(pk=other_codebase.id)
             assign_perm(create_perm_str(other_codebase, 'delete'), user_or_group=user, obj=other_codebase)
             self.with_logged_in(user, other_codebase, self.check_destroy_permissions)
 
         codebase = self.instance_factory.create()
         codebase.create_release(initialize=False)
-        codebase = Codebase.objects.with_liveness().get(id=codebase.id)
+        codebase = Codebase.objects.get(pk=codebase.id)
         self.check_destroy_permissions(self.anonymous_user, codebase)
 
     def check_update(self):
         for user in self.users_able_to_login:
             codebase = self.instance_factory.create()
             codebase.create_release(initialize=False)
-            codebase = Codebase.objects.with_liveness().get(id=codebase.id)
+            codebase = Codebase.objects.get(pk=codebase.id)
             self.with_logged_in(user, codebase, self.check_update_permissions)
             assign_perm(create_perm_str(self.instance, 'change'), user_or_group=user, obj=codebase)
             self.with_logged_in(user, codebase, self.check_update_permissions)
 
         codebase = self.instance_factory.create()
         codebase.create_release(initialize=False)
-        codebase = Codebase.objects.with_liveness().get(id=codebase.id)
+        codebase = Codebase.objects.get(pk=codebase.id)
         self.check_update_permissions(self.anonymous_user, codebase)
 
     def test_retrieve(self):
