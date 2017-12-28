@@ -56,7 +56,10 @@ class CommonViewSetMixin:
     ALLOWED_ACTIONS = ('list', 'retrieve', 'delete')
     namespace = None
     ext = 'jinja'
-    templates = {}
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.templates = {}
 
     def _get_namespace(self):
         if self.namespace is None:
