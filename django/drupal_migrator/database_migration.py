@@ -263,7 +263,7 @@ class UserExtractor(Extractor):
         user, created = User.objects.get_or_create(
             username=username,
             email=email,
-            is_active=self.int_to_bool(status),
+            is_active=Extractor.int_to_bool(status),
             defaults={
                 "date_joined": to_datetime(raw_user['created']),
                 "last_login": to_datetime(raw_user['login']),
@@ -440,9 +440,9 @@ class ModelExtractor(Extractor):
         with suppress_auto_now(Codebase, 'last_modified'):
             last_changed = to_datetime(raw_model['changed'])
             handle = get_first_field(raw_model, 'field_model_handle', default=None)
-            peer_reviewed = self.int_to_bool(get_first_field(raw_model, 'field_model_certified', default=0))
+            peer_reviewed = Extractor.int_to_bool(get_first_field(raw_model, 'field_model_certified', default=0))
             # set peer reviewed codebases as featured
-            featured = self.int_to_bool(get_first_field(raw_model, 'field_model_featured', default=0)) or peer_reviewed
+            featured = Extractor.int_to_bool(get_first_field(raw_model, 'field_model_featured', default=0)) or peer_reviewed
             code = Codebase.objects.create(
                 title=raw_model['title'].strip(),
                 description=self.sanitize_text(get_first_field(raw_model, field_name='body', default='')),
@@ -463,7 +463,7 @@ class ModelExtractor(Extractor):
                 submitter_id=submitter_id,
                 featured=featured,
                 peer_reviewed=peer_reviewed,
-                live=self.int_to_bool(raw_model['status']),
+                live=Extractor.int_to_bool(raw_model['status']),
             )
             code.author_ids = author_ids
             code.keyword_tids = get_field_attributes(raw_model, 'taxonomy_vocabulary_6', attribute_name='tid')
@@ -526,9 +526,9 @@ class ModelVersionExtractor(Extractor):
                     release_notes=self.sanitize_text(release_notes),
                     date_created=to_datetime(raw_model_version['created']),
                     first_published_at=to_datetime(raw_model_version['created']),
-                    # codebase releases do not have correct liveness values in the db dump so if containing codebase
-                    # is private assume the release is as well
-                    live=self.int_to_bool(raw_model_version['status']) and codebase_live,
+                    # XXX: codebase releases do not have correct liveness values in the db dump so if containing
+                    # codebase is private assume the release is as well
+                    live=Extractor.int_to_bool(raw_model_version['status']) and codebase_live,
                     last_modified=last_changed,
                     last_published_on=last_changed,
                     os=self.OS_LIST[int(get_first_field(raw_model_version, 'field_modelversion_os', default=0))],
