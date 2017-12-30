@@ -519,7 +519,6 @@ class ModelVersionExtractor(Extractor):
                 }
             }
             # FIXME: extract runconditions
-            codebase_live = codebase._live[0]
             with suppress_auto_now([Codebase, CodebaseRelease], 'last_modified'):
                 last_changed = to_datetime(raw_model_version['changed'])
                 codebase_release = codebase.import_release(
@@ -528,7 +527,7 @@ class ModelVersionExtractor(Extractor):
                     first_published_at=to_datetime(raw_model_version['created']),
                     # XXX: codebase releases do not have correct liveness values in the db dump so if containing
                     # codebase is private assume the release is as well
-                    live=Extractor.int_to_bool(raw_model_version['status']) and codebase_live,
+                    live=Extractor.int_to_bool(raw_model_version['status']) and codebase.live,
                     last_modified=last_changed,
                     last_published_on=last_changed,
                     os=self.OS_LIST[int(get_first_field(raw_model_version, 'field_modelversion_os', default=0))],
