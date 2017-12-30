@@ -263,6 +263,7 @@ class UserExtractor(Extractor):
         user, created = User.objects.get_or_create(
             username=username,
             email=email,
+            is_active=self.int_to_bool(status),
             defaults={
                 "date_joined": to_datetime(raw_user['created']),
                 "last_login": to_datetime(raw_user['login']),
@@ -461,11 +462,9 @@ class ModelExtractor(Extractor):
                 identifier=raw_model['nid'],
                 submitter_id=submitter_id,
                 featured=featured,
-                peer_reviewed=peer_reviewed
+                peer_reviewed=peer_reviewed,
+                live=self.int_to_bool(raw_model['status']),
             )
-            # Tack on publication status so that
-            code._live = self.int_to_bool(raw_model['status']),
-
             code.author_ids = author_ids
             code.keyword_tids = get_field_attributes(raw_model, 'taxonomy_vocabulary_6', attribute_name='tid')
         return code
