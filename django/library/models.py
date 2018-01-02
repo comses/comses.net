@@ -111,16 +111,28 @@ class Contributor(index.Indexed, ClusterableModel):
         return self.get_full_name()
 
     def get_full_name(self, family_name_first=False):
+        full_name = ''
+        # Bah. Horrid name logic
         if self.type == 'person':
-            # Bah
             if family_name_first:
-                return '{0}, {1} {2}'.format(self.family_name, self.given_name, self.middle_name).strip()
+                full_name = '{0}, {1} {2}'.format(self.family_name, self.given_name, self.middle_name)
             elif self.middle_name:
-                return '{0} {1} {2}'.format(self.given_name, self.middle_name, self.family_name)
+                full_name = '{0} {1} {2}'.format(self.given_name, self.middle_name, self.family_name)
+            elif self.given_name:
+                if self.family_name:
+                    full_name = '{0} {1}'.format(self.given_name, self.family_name)
+                else:
+                    full_name = self.given_name
+            elif self.user:
+                full_name = self.user.get_full_name()
+                if not full_name:
+                    full_name = self.user.username
             else:
-                return '{0} {1}'.format(self.given_name, self.family_name)
+                logger.warning("No usable name found for contributor %s", self.pk)
+                return 'No name'
         else:
-            return self.given_name
+            full_name = self.given_name
+        return full_name.strip()
 
     @property
     def formatted_affiliations(self):
