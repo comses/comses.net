@@ -26,7 +26,7 @@ import {EventAPI} from 'api'
                         <c-date-picker v-model="startDate" name="startDate" :clearButton="true">
                             <label class="form-control-label" slot="label">Event Start Date</label>
                         </c-date-picker>
-                        <c-tagger v-model="tags" placeholder="Type to add tags" label="Tags">
+                        <c-tagger v-model="tags" :required="false" placeholder="Type to add tags" label="Tags">
                         </c-tagger>
                     </div>
                 </div>

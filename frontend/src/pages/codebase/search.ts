@@ -26,7 +26,7 @@ import {CodebaseAPI} from 'api';
                         <c-date-picker v-model="endDate" name="endDate" :errorMsgs="[]" :clearButton="true">
                             <label class="form-control-label" slot="label">Published End Date</label>
                         </c-date-picker>
-                        <c-tagger v-model="tags" placeholder="Type to add tags" label="Tags">
+                        <c-tagger v-model="tags" :required="false" placeholder="Type to add tags" label="Tags">
                         </c-tagger>
                     </div>
                 </div>
