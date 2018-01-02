@@ -120,10 +120,11 @@
             </ul>
         {% endif %}
         <div class='tag-list'>
-            {% if list_state.query %}
-                Searching on {% for term in list_state.search_terms %} <span class='tag'>{{ term }}</span>{% endfor %},
+            {% if list_state.search_terms %}
+                Searching on {% for term in list_state.search_terms %} <span class='tag'>{{ term }}</span>{% endfor %}
+                <a class='text-danger' href='{{url(url_name)}}'><span class='fa fa-times'></span> clear</a>,
             {% endif %}
-            displaying {{ list_state.page_size }} of <strong>{{ list_state.count }}</strong> results
+            displaying {{ list_state.num_results }} of <strong>{{ list_state.count }}</strong> results
         </div>
     </nav>
 {% endmacro %}

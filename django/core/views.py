@@ -193,6 +193,7 @@ class SmallResultSetPagination(PageNumberPagination):
         query_params = self.request.query_params.copy()
         page = query_params.pop('page', [1])[0]
         count = self.page.paginator.count
+        num_results = len(self.page.object_list)
         num_pages = count // self.page_size + 1
 
         try:
@@ -204,10 +205,10 @@ class SmallResultSetPagination(PageNumberPagination):
             'is_first_page': current_page_number == 1,
             'is_last_page': current_page_number == num_pages,
             'current_page': current_page_number,
-            'page_size': min(self.page_size, count),
+            'num_results': num_results,
             'count': count,
             'query': query_params.get('query'),
-            'search_terms': query_params.values(),
+            'search_terms': list(query_params.values()),
             'query_params': query_params.urlencode(),
             'range': page_range,
             'num_pages': num_pages,
