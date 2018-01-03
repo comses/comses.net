@@ -189,13 +189,16 @@ class SmallResultSetPagination(PageNumberPagination):
     page_size_query_param = 'page_size'
     max_page_size = 200
 
+    @staticmethod
+    def _to_search_terms(query_params):
+        return [v if k == 'query' else '{0}: {1}'.format(k, v) for k, v in query_params.items()]
+
     def get_paginated_response(self, data):
         query_params = self.request.query_params.copy()
         page = query_params.pop('page', [1])[0]
         count = self.page.paginator.count
         num_results = len(self.page.object_list)
         num_pages = count // self.page_size + 1
-
         try:
             current_page_number = int(page)
         except:
@@ -208,7 +211,7 @@ class SmallResultSetPagination(PageNumberPagination):
             'num_results': num_results,
             'count': count,
             'query': query_params.get('query'),
-            'search_terms': list(query_params.values()),
+            'search_terms': self._to_search_terms(query_params),
             'query_params': query_params.urlencode(),
             'range': page_range,
             'num_pages': num_pages,

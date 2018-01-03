@@ -45,13 +45,22 @@ class CodebaseFilter(filters.BaseFilterBackend):
             return queryset
         query_params = request.query_params
         qs = query_params.get('query')
-        published_start_date = query_params.get('published_start_date')
+        published_start_date = query_params.get('published_after')
+        published_end_date = query_params.get('published_before')
         platform = query_params.get('platform')
         programming_language = query_params.get('programming_language')
         tags = query_params.getlist('tags')
         criteria = {}
-        if published_start_date:
-            criteria.update(first_published_on__gte=published_start_date)
+        if published_start_date and published_end_date:
+            if published_start_date < published_end_date:
+                criteria.update(first_published_at__range=[published_start_date, published_end_date])
+            else:
+                logger.warning("invalid date range: %s, %s", published_start_date, published_end_date)
+        elif published_start_date:
+            criteria.update(first_published_at__gte=published_start_date)
+        elif published_end_date:
+            criteria.update(first_published_at__lte=published_end_date)
+        logger.warning("Checking for criteria: %s", criteria)
         return get_search_queryset(qs, queryset, tags=tags, criteria=criteria)
 
 

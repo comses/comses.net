@@ -21,10 +21,10 @@ import {CodebaseAPI} from 'api';
                             <label class="form-control-label" slot="label">Keywords</label>
                         </c-input>
                         <c-date-picker v-model="startDate" name="startDate" :errorMsgs="[]" :clearButton="true">
-                            <label class="form-control-label" slot="label">Published Start Date</label>
+                            <label class="form-control-label" slot="label">Published After</label>
                         </c-date-picker>
                         <c-date-picker v-model="endDate" name="endDate" :errorMsgs="[]" :clearButton="true">
-                            <label class="form-control-label" slot="label">Published End Date</label>
+                            <label class="form-control-label" slot="label">Published Before</label>
                         </c-date-picker>
                         <c-tagger v-model="tags" :required="false" placeholder="Type to add tags" label="Tags">
                         </c-tagger>
@@ -52,8 +52,8 @@ export class SearchCodebases extends Vue {
     get query() {
         const queryObject = {
             query: this.fullTextSearch,
-            start_date: this.startDate,
-            end_date: this.endDate,
+            published_after: this.startDate,
+            published_before: this.endDate,
             tags: this.tags.map(tag => tag.name)
         };
         return this.api.searchUrl(queryObject);

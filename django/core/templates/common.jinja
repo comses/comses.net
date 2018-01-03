@@ -132,6 +132,10 @@
 {% macro list_page(list_state, item_component, detail_url_name) %}
     {% for item in list_state.results %}
         {{ item_component(item, detail_url_name) }}
+    {% else %}
+        <p class='lead pt-3'>
+            No matching results found.
+        </p>
     {% endfor %}
 {% endmacro %}
 
