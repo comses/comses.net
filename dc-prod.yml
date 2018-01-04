@@ -74,6 +74,7 @@ services:
     # command: "npm run build"
     build: ./frontend
     image: comses/cmsjs:latest
+    command: ['npm', 'run', 'build']
     volumes:
       - ./frontend:/code
       - ./docker/shared/webpack:/shared/webpack
