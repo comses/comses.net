@@ -9,7 +9,6 @@ import MessageDisplay from 'components/message_display'
 import EditItems from 'components/edit_items'
 import {ProfileAPI} from 'api'
 import * as _ from 'lodash'
-import * as Dropzone from 'vue2-dropzone'
 import {createFormValidator} from 'pages/form'
 import {HandlerWithRedirect} from "api/handler";
 import * as yup from 'yup'
@@ -92,7 +91,6 @@ export const schema = yup.object().shape({
         'c-textarea': TextArea,
         'c-input': Input,
         'c-edit-degrees': EditItems,
-        'dropzone': Dropzone,
     }
 })
 export default class EditProfile extends createFormValidator(schema) {
