@@ -43,10 +43,10 @@ export default class Tagger extends BaseControl {
     @Prop({default: 'Type to find matching tags'})
     placeholder: string;
 
-    @Prop
+    @Prop()
     label: string;
 
-    @Prop
+    @Prop()
     help: string;
 
     isLoading = false;

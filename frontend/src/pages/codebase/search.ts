@@ -17,15 +17,13 @@ import {CodebaseAPI} from 'api';
                         Search
                     </div>
                     <div class="card-body">
-                        <c-input type="text" v-model="fullTextSearch" name="fullTextSearch" :errorMsgs="[]">
-                            <label class="form-control-label" slot="label">Keywords</label>
+                        <c-input :required="false"
+                        label="Keywords" type="text" v-model="fullTextSearch" name="fullTextSearch" :errorMsgs="[]">
                         </c-input>
-                        <c-date-picker v-model="startDate" name="startDate" :errorMsgs="[]" :clearButton="true">
-                            <label class="form-control-label" slot="label">Published After</label>
-                        </c-date-picker>
-                        <c-date-picker v-model="endDate" name="endDate" :errorMsgs="[]" :clearButton="true">
-                            <label class="form-control-label" slot="label">Published Before</label>
-                        </c-date-picker>
+                        <c-datepicker v-model="startDate" :required="false" name="startDate" :errorMsgs="[]" :clearButton="true" label="Published After">
+                        </c-datepicker>
+                        <c-datepicker v-model="endDate" :required="false" name="endDate" :errorMsgs="[]" :clearButton="true" label="Published Before">
+                        </c-datepicker>
                         <c-tagger v-model="tags" :required="false" placeholder="Type to add tags" label="Tags">
                         </c-tagger>
                     </div>
@@ -33,7 +31,7 @@ import {CodebaseAPI} from 'api';
             </div>
         </c-search>`,
     components: {
-        'c-date-picker': DatePicker,
+        'c-datepicker': DatePicker,
         'c-input': Input,
         'c-tagger': Tagger,
         'c-search': Search,

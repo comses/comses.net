@@ -8,7 +8,6 @@ enum StatusMessageCode {
     success
 }
 
-
 function changePage(url: string) {
     window.location.href = url;
 }

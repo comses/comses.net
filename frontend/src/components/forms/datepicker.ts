@@ -1,4 +1,3 @@
-
 import {Component, Prop} from 'vue-property-decorator'
 import BaseControl from './base'
 import * as Datepicker from 'vuejs-datepicker'
@@ -7,14 +6,14 @@ import * as _ from 'lodash';
 @Component({
     template: `<div class="form-group">
         <slot name="label">
-            <label :class="['form-control-label', requiredClass]" slot="label">{{ label }}</label>
+            <label :class="['form-control-label', requiredClass]">{{ label }}</label>
         </slot>
-        <datepicker :value="dateValue" @input="updateDate" wrapper-class="input-group" :format="format"
-                    :input-class="datepickerInputClass" :clear-button="clearButton" @cleared="cleared">
+        <datepicker :bootstrapStyling="true" :value="dateValue" @input="updateDate" wrapper-class="input-group"
+        :format="format" :input-class="datepickerInputClass" :clear-button="clearButton" @cleared="cleared">
         </datepicker>
         <div v-if="isInvalid" class="invalid-feedback-always">{{ errorMessage }}</div>
         <slot name="help">
-            <small class="form-text text-muted" slot="help">{{ help }}</small>
+            <small class="form-text text-muted">{{ help }}</small>
         </slot>
     </div>`,
     components: {
@@ -44,7 +43,7 @@ export default class InputDatepicker extends BaseControl {
 
     get dateValue() {
         // Otherwise displayed date is off by one https://github.com/charliekassel/vuejs-datepicker/issues/158
-        if (_.isNull(this.value)) {
+        if (_.isEmpty(this.value)) {
             return null;
         }
         const [yearStr, monthStr, dayStr] = this.value.split('-');

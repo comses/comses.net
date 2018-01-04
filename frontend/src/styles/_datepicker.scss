@@ -1,16 +1,8 @@
-.datepicker {
+.vdp-datepicker {
   .form-control {
     z-index: 0;
   }
   .form-control[readonly] {
     background-color: $white;
   }
-}
-
-.datepicker-clear-button {
-  @extend .input-group-addon;
-}
-
-.datepicker-clear-button:hover {
-  color: red;
 }

@@ -7,13 +7,13 @@ class BaseControl extends Vue {
     @Prop({ default: true})
     required;
 
-    @Prop
+    @Prop()
     value;
 
-    @Prop
-    name;
+    @Prop()
+    name: string;
 
-    @Prop
+    @Prop()
     customId;
 
     @Prop({ default: () => [] })

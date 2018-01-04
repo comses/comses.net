@@ -3,7 +3,7 @@ import BaseControl from './base'
 
 @Component({
     template: `<div class="form-group">
-        <slot name="label" :label="label">
+        <slot name="label">
             <label :for='controlId' :class="['form-control-label', requiredClass]">{{ label }}</label>
         </slot>
         <input :id='controlId' :type="type" :name="name" :class="['form-control', {'is-invalid': isInvalid}]" :value="value"
@@ -11,7 +11,7 @@ import BaseControl from './base'
         <div class="invalid-feedback">
             {{ errorMessage }}
         </div>
-        <slot name="help" :help="help">
+        <slot name="help">
             <small :aria-describedby='controlId' class="form-text text-muted">{{ help }}</small>
         </slot>
     </div>`
