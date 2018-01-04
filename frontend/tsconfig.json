@@ -2,10 +2,10 @@
   "compilerOptions": {
     "allowSyntheticDefaultImports": true,
     "experimentalDecorators": true,
-    "strictNullChecks": true,
+    "strictNullChecks": false,
     "target": "es5",
     "sourceMap": true,
-    "lib": ["es5", "es2015.core", "es2015.promise", "es2015.collection", "dom"],
+    "lib": ["es5", "es2015.core", "es2015.promise", "es2015.collection", "es2015.iterable", "dom"],
     "typeRoots": [
       "./node_modules/@types/"
     ],
