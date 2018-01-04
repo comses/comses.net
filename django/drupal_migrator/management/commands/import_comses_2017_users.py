@@ -27,18 +27,15 @@ class Command(BaseCommand):
         path = pathlib.Path(infile)
         if not path.exists():
             raise ValueError("Please enter a valid input file")
-
         with path.open('r') as data:
             for deserialized_object in serializers.deserialize("json", data):
                 obj = deserialized_object.object
                 if isinstance(obj, User):
                     user_queryset = User.objects.filter(models.Q(username=obj.username) | models.Q(email=obj.email))
-                    logger.debug("deserialized object %s", obj)
                     user = None
                     if user_queryset.exists():
                         assert user_queryset.count() == 1
                         user = user_queryset.first()
-                        logger.debug("deserialized password: %s", obj.password)
                         user.password = obj.password
                         for attr in ('email', 'username', 'password', 'first_name', 'last_name'):
                             existing_attr = getattr(user, attr)
@@ -52,24 +49,28 @@ class Command(BaseCommand):
                         obj.pk = None
                         deserialized_object.save()
                         user = User.objects.get(username=obj.username)
-                    # create EmailAddress for this user..
-                    email_address, created = EmailAddress.objects.get_or_create(user=user, email=user.email, verified=True, primary=True)
+                    # create verified EmailAddress for the given user if needed
+                    email_address, created = EmailAddress.objects.get_or_create(
+                        user=user, email=user.email, verified=True, primary=True)
                     if created:
                         logger.debug("created new email address for user %s", user)
                 elif isinstance(obj, SocialAccount):
                     user = User.objects.get(username=obj.user.username)
+                    # skip if this social account already exists
                     if not SocialAccount.objects.filter(user=user).exists():
-                        # skip if this social account already exists
                         obj.pk = None
                         obj.user = user
                         deserialized_object.save()
-                        logger.debug("migrated %s", obj)
+                        logger.debug("added social account %s", obj)
                 elif isinstance(obj, MemberProfile):
                     user = User.objects.get(username=obj.user.username)
-                    if MemberProfile.objects.filter(user=user).exists():
+                    mpqs = MemberProfile.objects.filter(user=user)
+                    if mpqs.exists():
                         # update all memberprofile fields
-                        member_profile = MemberProfile.objects.get(user=user)
-                        for attr in ('bio', 'degrees', 'institution', 'personal_url', 'professional_url', 'research_interests'):
+                        assert mpqs.count() == 1
+                        member_profile = mpqs.first()
+                        for attr in ('bio', 'degrees', 'institution', 'keywords', 'personal_url', 'professional_url',
+                                     'research_interests'):
                             existing_attr = getattr(member_profile, attr)
                             incoming_attr = getattr(obj, attr)
                             if incoming_attr and existing_attr != incoming_attr:
