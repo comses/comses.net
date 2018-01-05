@@ -118,7 +118,7 @@ class EditEvent extends createFormValidator(schema) {
     //
     private api = new EventAPI();
 
-    @Prop
+    @Prop()
     _id: number | null;
 
     detailPageUrl(state) {

@@ -16,7 +16,7 @@ import {StatusMessages} from "store/common";
     </div>`
 })
 export default class MessageDisplay extends Vue {
-    @Prop
+    @Prop()
     messages?: Array<{classNames: string, message: string}>;
 
     clear() {

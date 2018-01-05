@@ -316,7 +316,7 @@ class EditReleaseContributor extends createFormValidator(releaseContributorSchem
     }
 })
 class EditContributors extends Vue {
-    @Prop
+    @Prop()
     initialData: object;
 
     initialize() {

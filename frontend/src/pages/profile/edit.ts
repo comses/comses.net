@@ -95,7 +95,7 @@ export const schema = yup.object().shape({
 })
 export default class EditProfile extends createFormValidator(schema) {
     private api = new ProfileAPI();
-    @Prop
+    @Prop()
     _username: string | null;
 
     detailPageUrl(state) {
