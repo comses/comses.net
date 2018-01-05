@@ -20,7 +20,7 @@ class Checkbox extends BaseControl {
     @Prop({ default: ''})
     validate: string;
 
-    @Prop
+    @Prop()
     label: string;
 
     @Prop({ default: ''})
