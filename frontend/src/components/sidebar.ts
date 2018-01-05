@@ -1,9 +1,11 @@
 
-import * as Vue from 'vue'
+import Vue from 'vue'
 import {Component, Prop} from 'vue-property-decorator'
 
 import Input from 'components/forms/input'
 import Datepicker from 'components/forms/datepicker';
+import {VueClass} from "vue-class-component/lib/declarations";
+
 
 @Component({
     template: `<div>
@@ -84,4 +86,4 @@ export default class Sidebar extends Vue {
             {name: 'Michael C. Barton', selected: false, count: 43}
         ]
     };
-}
+};

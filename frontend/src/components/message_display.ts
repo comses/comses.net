@@ -1,5 +1,5 @@
 import {Component, Prop} from 'vue-property-decorator'
-import * as Vue from 'vue'
+import Vue from 'vue'
 import * as _ from 'lodash'
 import {StatusMessages} from "store/common";
 

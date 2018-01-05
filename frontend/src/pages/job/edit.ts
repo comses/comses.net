@@ -1,4 +1,4 @@
-import * as Vue from 'vue'
+import Vue from 'vue'
 import Markdown from 'components/forms/markdown'
 import Tagger from 'components/tagger'
 import Input from 'components/forms/input'

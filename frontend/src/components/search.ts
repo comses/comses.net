@@ -1,5 +1,5 @@
 import {Component, Prop} from 'vue-property-decorator'
-import * as Vue from 'vue'
+import Vue from 'vue'
 
 @Component({
     // language=Vue

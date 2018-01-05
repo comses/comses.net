@@ -1,5 +1,5 @@
 import {Component} from 'vue-property-decorator'
-import * as Vue from 'vue'
+import Vue from 'vue'
 import Vuex from 'vuex'
 import {CodebaseReleaseAPI} from "api/index";
 import {Upload} from "components/upload";

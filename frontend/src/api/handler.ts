@@ -1,6 +1,8 @@
 import {AxiosResponse} from 'axios'
 import * as _ from 'lodash'
-import * as $ from 'jquery'
+import * as _$ from 'jquery'
+
+const $: any = _$;
 
 enum StatusMessageCode {
     danger,

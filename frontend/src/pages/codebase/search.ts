@@ -1,13 +1,14 @@
 import {Component, Prop} from 'vue-property-decorator'
 import {Search} from 'components/search'
-import * as Vue from 'vue'
+import Vue from 'vue'
 import DatePicker from 'components/forms/datepicker'
 import Input from 'components/forms/input'
 import Tagger from 'components/tagger'
 import {CodebaseAPI} from 'api';
 
+const api = new CodebaseAPI();
 
-@Component({
+@Component(<any>{
     // language=Vue
     template: `
         <c-search submitLabel="Archive a model" searchLabel="Search" submitUrl="/codebases/add/" :searchUrl="query">
@@ -38,7 +39,6 @@ import {CodebaseAPI} from 'api';
     }
 })
 export class SearchCodebases extends Vue {
-    private api = new CodebaseAPI();
     fullTextSearch: string = '';
 
     startDate: string | null = null;
@@ -54,6 +54,6 @@ export class SearchCodebases extends Vue {
             published_before: this.endDate,
             tags: this.tags.map(tag => tag.name)
         };
-        return this.api.searchUrl(queryObject);
+        return api.searchUrl(queryObject);
     }
 }

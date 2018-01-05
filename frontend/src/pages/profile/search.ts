@@ -1,6 +1,6 @@
 import {Component, Prop} from 'vue-property-decorator'
 import {Search} from 'components/search'
-import * as Vue from 'vue'
+import Vue from 'vue'
 import DatePicker from 'components/forms/datepicker'
 import Input from 'components/forms/input'
 import ProfileTagger from 'components/tagger'
@@ -9,7 +9,7 @@ import * as _ from 'lodash'
 import {ProfileAPI} from 'api'
 
 
-@Component({
+@Component(<any>{
     // language=Vue
     template: `
         <c-search submitLabel="Become a member" searchLabel="Search" submitUrl="/accounts/signup/" :searchUrl="query">
@@ -44,7 +44,8 @@ export class SearchProfiles extends Vue {
     get query() {
         const queryObject = {
             query: this.fullTextSearch,
-            keywords: this.keywords.map(keyword => keyword.name)
+            keywords: this.keywords.map(keyword => keyword.name),
+            page: 1,
         };
         return this.api.searchUrl(queryObject);
     }

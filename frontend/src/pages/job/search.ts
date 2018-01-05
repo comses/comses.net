@@ -1,6 +1,6 @@
 import {Component, Prop} from 'vue-property-decorator'
 import {Search} from 'components/search'
-import * as Vue from 'vue'
+import Vue from 'vue'
 import DatePicker from 'components/forms/datepicker'
 import Input from 'components/forms/input'
 import Tagger from 'components/tagger'

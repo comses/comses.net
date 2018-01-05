@@ -1,6 +1,6 @@
 import {Component, Prop} from 'vue-property-decorator'
 import {api} from "api/connection";
-import * as Vue from 'vue'
+import Vue from 'vue'
 import * as _ from 'lodash'
 
 interface UploadSuccess {

@@ -1,4 +1,4 @@
-import * as Vue from 'vue'
+import Vue from 'vue'
 import {Component, Prop} from 'vue-property-decorator'
 import {CodebaseAPI} from "api/index";
 import Checkbox from 'components/forms/checkbox'

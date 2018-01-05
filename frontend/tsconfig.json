@@ -9,6 +9,11 @@
     "typeRoots": [
       "./node_modules/@types/"
     ],
+    "exclude": [
+      "node_modules/fullcalendar/**/*.d.ts"
+    ],
+    "module": "es2015",
+    "moduleResolution": "node",
     "baseUrl": "./src",
     "paths": {
       "components/*": ["components/*"],

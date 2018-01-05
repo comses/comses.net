@@ -1,5 +1,5 @@
 import {Component, Prop} from 'vue-property-decorator'
-import * as Vue from 'vue'
+import Vue from 'vue'
 import Vuex from 'vuex'
 import VueRouter from 'vue-router'
 
@@ -158,6 +158,10 @@ class PublishModal extends Vue implements CreateOrUpdateHandler {
     absolute_url: string;
 
     errorMessages: Array<string> = [];
+
+    get state() {
+        return null;
+    }
 
     clear() {
         this.errorMessages = [];

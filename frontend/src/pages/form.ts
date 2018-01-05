@@ -1,6 +1,7 @@
 import * as _ from 'lodash';
 import * as yup from 'yup';
-import * as Vue from 'vue'
+import Vue from 'vue'
+import {VueClass} from 'vue-class-component/lib/declarations'
 import {Component} from 'vue-property-decorator'
 
 export function createDefaultValue(schema) {

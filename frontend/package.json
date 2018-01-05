@@ -36,6 +36,7 @@
   },
   "devDependencies": {
     "@types/jest": "^20.0.7",
+    "@types/jquery": "^3.2.17",
     "@types/lodash": "^4.14.72",
     "autoprefixer": "^7.1.2",
     "chalk": "^1.1.3",

@@ -1,5 +1,5 @@
 import {Prop, Component, Watch} from 'vue-property-decorator'
-import * as Vue from 'vue'
+import Vue from 'vue'
 import {
     CalendarEvent, CodebaseContributor, Contributor, emptyContributor, emptyReleaseContributor,
     User
@@ -18,8 +18,10 @@ import * as draggable from 'vuedraggable'
 import * as _ from 'lodash'
 import * as yup from 'yup'
 import {createDefaultValue, createFormValidator} from 'pages/form'
-import * as $ from 'jquery'
+import * as _$ from 'jquery'
 import {HandlerShowSuccessMessage} from "api/handler";
+
+const $: any = _$;
 
 const codebaseReleaseAPI = new CodebaseReleaseAPI();
 
@@ -358,6 +360,10 @@ class EditContributors extends Vue {
             }
         }
         return false;
+    }
+
+    validate() {
+        return Promise.resolve(true);
     }
 
     async save() {

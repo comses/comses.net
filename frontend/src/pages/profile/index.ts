@@ -5,7 +5,7 @@ function matchUpdateUrl(pathname: string): string | null {
     if (match !== null) {
         return match[1];
     }
-    return match
+    return null;
 }
 
 const _username = matchUpdateUrl(window.location.pathname);
