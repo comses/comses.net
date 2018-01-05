@@ -204,12 +204,7 @@ class MemberProfile(index.Indexed, ClusterableModel):
         return reverse('home:profile-detail', kwargs={'username': self.user.username})
 
     def __str__(self):
-        if self.submitter:
-            return "submitter={} is_superuser={} is_active={}".format(self.user.username,
-                                                                      self.user.is_superuser,
-                                                                      self.user.is_active)
-        else:
-            return "id={}".format(self.id)
+        return str(self.user)
 
     panels = [
         FieldPanel('bio', widget=forms.Textarea),
@@ -364,8 +359,9 @@ class Event(index.Indexed, ClusterableModel):
         return reverse('home:event-list')
 
     def __str__(self):
-        return "{} posted by {} on {}".format(repr(self.title), repr(self.submitter.username),
-                                              str(self.date_created))
+        return "{0} posted by {1} on {2}".format(
+            self.title, self.submitter.username, self.date_created.strftime('%c')
+        )
 
     class Meta:
         permissions = (('view_event', 'Can view events'),)
@@ -422,9 +418,7 @@ class Job(index.Indexed, ClusterableModel):
 
     def __str__(self):
         return "{0} posted by {1} on {2}".format(
-            self.title,
-            self.submitter.username,
-            self.date_created.strftime('%c')
+            self.title, self.submitter.username, self.date_created.strftime('%c')
         )
 
     @property

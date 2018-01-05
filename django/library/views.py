@@ -60,7 +60,6 @@ class CodebaseFilter(filters.BaseFilterBackend):
             criteria.update(first_published_at__gte=published_start_date)
         elif published_end_date:
             criteria.update(first_published_at__lte=published_end_date)
-        logger.warning("Checking for criteria: %s", criteria)
         return get_search_queryset(qs, queryset, tags=tags, criteria=criteria)
 
 
