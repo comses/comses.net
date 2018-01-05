@@ -1,6 +1,7 @@
 import logging
 
 from django.contrib.auth.models import User
+from django.utils import timezone
 from django.utils.http import urlencode
 from django.utils.translation import ugettext_lazy as _
 from rest_framework import serializers
@@ -117,7 +118,7 @@ class ReleaseContributorSerializer(serializers.ModelSerializer):
         raw_contributor = validated_data.pop('contributor')
         kwargs = {'given_name': raw_contributor['given_name'], 'family_name': raw_contributor['family_name']}
         if raw_contributor.get('user'):
-            kwargs = {'user__username': raw_contributor['user']['username'] }
+            kwargs = {'user__username': raw_contributor['user']['username']}
         contributor = Contributor.objects.filter(**kwargs).first()
         if contributor:
             raw_contributor.pop('user')
@@ -159,13 +160,15 @@ class RelatedCodebaseReleaseSerializer(serializers.ModelSerializer):
 class CodebaseSerializer(serializers.ModelSerializer, FeaturedImageMixin):
     absolute_url = serializers.URLField(source='get_absolute_url', read_only=True)
     all_contributors = ReleaseContributorSerializer(many=True, read_only=True)
-    date_created = serializers.DateTimeField(read_only=True)
+    date_created = serializers.DateTimeField(read_only=True,
+                                             default=serializers.CreateOnlyDefault(timezone.now))
     download_count = serializers.IntegerField(read_only=True)
     first_published_at = serializers.DateTimeField(format=PUBLISH_DATE_FORMAT, read_only=True)
     last_published_on = serializers.DateTimeField(format=PUBLISH_DATE_FORMAT, read_only=True)
     latest_version_number = serializers.ReadOnlyField(source='latest_version.version_number')
     releases = RelatedCodebaseReleaseSerializer(read_only=True, many=True)
-    submitter = LinkedUserSerializer(read_only=True)
+    submitter = LinkedUserSerializer(read_only=True,
+                                     default=serializers.CurrentUserDefault())
     summarized_description = serializers.CharField(read_only=True)
     identifier = serializers.ReadOnlyField()
     tags = TagSerializer(many=True)
@@ -174,12 +177,11 @@ class CodebaseSerializer(serializers.ModelSerializer, FeaturedImageMixin):
     description = MarkdownField()
 
     def create(self, validated_data):
-        serialized_tags = TagSerializer(many=True, data=validated_data.pop('tags'))
-        user = self.context['request'].user
-        validated_data['submitter_id'] = user.id
+        validated_data['submitter_id'] = self.submitter.id
         codebase = self.Meta.model(**validated_data)
         codebase.identifier = codebase.uuid
         codebase.save()
+        serialized_tags = TagSerializer(many=True, data=validated_data.pop('tags'))
         save_tags(codebase, serialized_tags)
         return codebase
 

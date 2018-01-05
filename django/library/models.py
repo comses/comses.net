@@ -7,12 +7,10 @@ import os
 import semver
 from django.conf import settings
 from django.contrib.auth.models import User
-from django.contrib.postgres.aggregates import BoolOr, BoolAnd
 from django.contrib.postgres.fields import JSONField, ArrayField
 from django.core.files.images import ImageFile
 from django.core.files.storage import FileSystemStorage
-from django.db import models
-from django.db.models.functions import Coalesce
+from django.db import models, transaction
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.translation import ugettext_lazy as _
@@ -106,6 +104,17 @@ class Contributor(index.Indexed, ClusterableModel):
         ]),
     ]
 
+    @staticmethod
+    def from_user(user):
+        return Contributor.objects.get_or_create(
+            user=user,
+            defaults={
+                'given_name': user.first_name,
+                'family_name': user.last_name,
+                'email': user.email
+            }
+        )
+
     @property
     def name(self):
         return self.get_full_name()
@@ -163,15 +172,8 @@ class CodebaseReleaseDownload(models.Model):
 
 class CodebaseQuerySet(models.QuerySet):
 
-    def with_liveness(self):
-        """Add a live property to a codebase.
-        A codebase is live if any of its releases are live. It is not live by default"""
-        return self.annotate(live=Coalesce(BoolOr('releases__live'), False)) \
-            .annotate(draft=Coalesce(BoolAnd('releases__draft'), True))
-
     def with_viewable_releases(self, user):
-        queryset = get_viewable_objects_for_user(user=user,
-                                                 queryset=CodebaseRelease.objects.all())
+        queryset = get_viewable_objects_for_user(user=user, queryset=CodebaseRelease.objects.all())
         return self.prefetch_related(
             models.Prefetch('releases', queryset=queryset))
 
@@ -179,12 +181,9 @@ class CodebaseQuerySet(models.QuerySet):
         return get_viewable_objects_for_user(user=user, queryset=self.with_viewable_releases(user=user))
 
     def contributed_by(self, user):
-        contributed_codebases = ReleaseContributor.objects.filter(contributor__user=user) \
-            .values_list('release__codebase', flat=True)
-        # FIXME: consider replacing submitter with ReleaseContributor, see
-        # https://github.com/comses/core.comses.net/issues/129 for more details
-        return self.filter(
-            models.Q(pk__in=contributed_codebases) | models.Q(submitter=user))
+        contributed_codebases = ReleaseContributor.objects.filter(
+            contributor__user=user).values_list('release__codebase', flat=True)
+        return self.filter(pk__in=contributed_codebases)
 
     def public(self):
         """Returns a queryset of all live codebases and their live releases"""
@@ -420,6 +419,7 @@ class Codebase(index.Indexed, ClusterableModel):
         self.media = media
         return None
 
+    @transaction.atomic
     def get_or_create_draft(self):
         draft = self.releases.filter(draft=True).first()
         if not draft:
@@ -430,34 +430,28 @@ class Codebase(index.Indexed, ClusterableModel):
         submitter = self.submitter
         version_number = self.next_version_number()
         previous_release = self.releases.last()
-        kwargs = dict(submitter=submitter,
-                      version_number=version_number,
-                      identifier=None,
-                      live=False,
-                      draft=True)
-        if previous_release is not None:
+        release_metadata = dict(
+            submitter=submitter,
+            version_number=version_number,
+            identifier=None,
+            live=False,
+            draft=True)
+        if previous_release is None:
+            release_metadata['codebase'] = self
+            release_metadata.update(overrides)
+            release = CodebaseRelease.objects.create(**release_metadata)
+            # add submitter as a release contributor automatically
+            # https://github.com/comses/core.comses.net/issues/129
+            release.add_contributor(self.submitter)
+        else:
+            # copy previous release metadata
             previous_release_contributors = ReleaseContributor.objects.filter(release_id=previous_release.id)
             previous_release.id = None
             release = previous_release
-            for k, v in kwargs.items():
+            for k, v in release_metadata.items():
                 setattr(release, k, v)
             release.save()
             previous_release_contributors.copy_to(release)
-        else:
-            kwargs['codebase'] = self
-            kwargs.update(overrides)
-            release = CodebaseRelease.objects.create(**kwargs)
-            contributor = self.submitter.contributor_set.get_or_create(defaults={
-                'given_name': self.submitter.first_name,
-                'family_name': self.submitter.last_name,
-                'affiliations': [self.submitter.member_profile.institution.name] if hasattr(
-                    self.submitter.member_profile.institution, 'name') else [],
-                'email': self.submitter.email
-            })[0]
-            ReleaseContributor.objects.create(release=release,
-                                              contributor=contributor,
-                                              roles=['author'],
-                                              index=0)
 
         if initialize:
             fs_api = release.get_fs_api()
@@ -679,6 +673,10 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
         return CodebaseReleaseFsApi(uuid=self.codebase.uuid, identifier=self.codebase.identifier,
                                     version_number=self.version_number, raise_exception_level=raise_exception_level)
 
+    def add_contributor(self, submitter):
+        contributor, created = Contributor.from_user(submitter)
+        self.codebase_contributors.create(contributor=contributor, roles=[ROLES.author], index=0)
+
     def publish(self):
         publisher = CodebaseReleasePublisher(self)
         publisher.publish()
@@ -727,12 +725,12 @@ class CodebaseReleasePublisher:
 
 
 class ReleaseContributorQuerySet(models.QuerySet):
+
     def copy_to(self, release: CodebaseRelease):
         release_contributors = list(self)
         for release_contributor in release_contributors:
-            release_contributor.id = None
+            release_contributor.pk = None
             release_contributor.release = release
-
         return self.bulk_create(release_contributors)
 
 

@@ -1,11 +1,12 @@
-from wagtail.contrib.modeladmin.options import ModelAdmin, modeladmin_register
+from wagtail.contrib.modeladmin.options import (ModelAdmin, modeladmin_register)
 
-from library import models
+from .models import CodebaseImage
 
 
 class CodebaseImageAdmin(ModelAdmin):
-    model = models.CodebaseImage
+    model = CodebaseImage
     list_display = ('title', 'file',)
     search_fields = ('title',)
+
 
 modeladmin_register(CodebaseImageAdmin)
