@@ -204,6 +204,7 @@ class RelatedCodebaseSerializer(serializers.ModelSerializer, FeaturedImageMixin)
     all_contributors = ReleaseContributorSerializer(many=True, read_only=True)
     tags = TagSerializer(many=True)
     version_number = serializers.ReadOnlyField(source='latest_version.version_number')
+    first_published_at = serializers.DateTimeField(read_only=True, format=PUBLISH_DATE_FORMAT)
     last_published_on = serializers.DateTimeField(read_only=True, format=PUBLISH_DATE_FORMAT)
     summarized_description = serializers.CharField(read_only=True)
     live = serializers.SerializerMethodField()
@@ -219,8 +220,9 @@ class RelatedCodebaseSerializer(serializers.ModelSerializer, FeaturedImageMixin)
 
     class Meta:
         model = Codebase
-        fields = ('all_contributors', 'tags', 'title', 'last_published_on', 'identifier', 'version_number',
-                  'featured_image', 'summarized_description', 'description', 'live', 'repository_url',)
+        fields = ('all_contributors', 'tags', 'title', 'first_published_at', 'last_published_on', 'identifier',
+                  'version_number', 'featured_image', 'summarized_description', 'description', 'live',
+                  'repository_url',)
 
 
 class CodebaseImageSerializer(serializers.ModelSerializer):
