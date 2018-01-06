@@ -8,7 +8,7 @@ import * as _ from 'lodash';
         <slot name="label">
             <label :class="['form-control-label', requiredClass]">{{ label }}</label>
         </slot>
-        <datepicker :bootstrapStyling="true" :value="dateValue" @input="updateDate" wrapper-class="input-group"
+        <datepicker :bootstrapStyling="true" :value="dateValue" @input="updateDate" wrapper-class="comses-datepicker"
         :format="format" :input-class="datepickerInputClass" :clear-button="clearButton" @cleared="cleared">
         </datepicker>
         <div v-if="isInvalid" class="invalid-feedback-always">{{ errorMessage }}</div>

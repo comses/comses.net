@@ -1,14 +1,8 @@
-%datepicker-shared {
-  .form-control {
-    z-index: 0;
-  }
-  .form-control[readonly] {
-    background-color: $white;
-  }
-}
-.datepicker {
-    @extend %datepicker-shared;
-}
-.vdp-datepicker {
-    @extend %datepicker-shared;
+.comses-datepicker {
+    .form-control {
+        z-index: 0;
+    }
+    .form-control[readonly] {
+        background-color: $white;
+    }
 }
