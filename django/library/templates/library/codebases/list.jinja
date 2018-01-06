@@ -11,29 +11,16 @@
     <div>
         {{ paginator('library:codebase-list', __all__) }}
     </div>
-    <div class='py-3'>
-        <b class='title'>Sort By:</b>
-        <select class='custom-select'>
-            <option value='last_published_on' selected>Most Recent</option>
-            <option value='title'>Title</option>
-            <option value='author'>Author</option>
-            <option value='platform'>Platform</option>
-            <option value='language'>Language</option>
-        </select>
-    </div>
+    <div id='sortby'></div>
 {% endblock %}
 
 {% block content %}
     {{ list_page(__all__, render_codebase_result, 'library:codebase-detail') }}
 {% endblock %}
 
-{% block bottom %}
-{% endblock %}
-
 {% block sidebar %}
     <div id="sidebar"></div>
 {% endblock %}
-
 
 {% block js %}
     {{ render_bundle('codebase_list') }}

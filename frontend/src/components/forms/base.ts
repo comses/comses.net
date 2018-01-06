@@ -3,7 +3,7 @@ import {Component, Prop} from 'vue-property-decorator'
 import * as _ from 'lodash'
 
 @Component
-class BaseControl extends Vue {
+export default class BaseControl extends Vue {
     @Prop({ default: true})
     required;
 
@@ -39,5 +39,3 @@ class BaseControl extends Vue {
         this.$emit('input', value);
     }
 }
-
-export default BaseControl;

@@ -68,7 +68,9 @@ class CodebaseViewSet(CommonViewSetMixin, viewsets.ModelViewSet):
     lookup_value_regex = r'[\w\-\.]+'
     pagination_class = SmallResultSetPagination
     queryset = Codebase.objects.order_by('-date_created')
-    filter_backends = (CodebaseFilter,)
+    filter_backends = (filters.OrderingFilter, CodebaseFilter)
+    ordering_fields = ('first_published_at', 'title', 'last_modified', 'peer_reviewed',)
+    ordering = ('last_modified', 'first_published_at')
 
     # FIXME: should we use filter_backends
     # (http://www.django-rest-framework.org/api-guide/filtering/#djangoobjectpermissionsfilter)
