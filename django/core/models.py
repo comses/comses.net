@@ -1,5 +1,4 @@
 import pathlib
-from enum import Enum
 
 from django import forms
 from django.conf import settings
@@ -10,10 +9,10 @@ from django.db import models
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.translation import ugettext_lazy as _
+from enum import Enum
 from modelcluster.contrib.taggit import ClusterTaggableManager
 from modelcluster.fields import ParentalKey
 from modelcluster.models import ClusterableModel
-from taggit.managers import TaggableManager
 from taggit.models import TaggedItemBase
 from timezone_field import TimeZoneField
 from wagtail.contrib.settings.models import BaseSetting
@@ -24,7 +23,6 @@ from wagtail.wagtailimages.models import Image
 from wagtail.wagtailsearch import index
 from wagtail.wagtailsnippets.models import register_snippet
 
-from library.models import Codebase
 from .fields import MarkdownField
 
 
@@ -118,6 +116,7 @@ class MemberProfileQuerySet(models.QuerySet):
     def with_institution(self):
         return self.select_related('institution')
 
+    """
     def with_codebases(self, user):
         return self.prefetch_related(
             models.Prefetch('user__codebases', Codebase.objects.accessible(user)))
@@ -126,6 +125,7 @@ class MemberProfileQuerySet(models.QuerySet):
         return self.prefetch_related(models.Prefetch('user__codebases', Codebase.objects.public())) \
             .filter(user__is_active=True) \
             .exclude(user__username__in=('AnonymousUser', 'openabm'))
+    """
 
 
 @register_snippet
@@ -248,7 +248,7 @@ class Platform(index.Indexed, ClusterableModel):
     open_source = models.BooleanField(default=False)
     featured = models.BooleanField(default=False)
     url = models.URLField(blank=True)
-    tags = TaggableManager(through=PlatformTag, blank=True)
+    tags = ClusterTaggableManager(through=PlatformTag, blank=True)
 
     @staticmethod
     def _upload_path(instance, filename):
@@ -262,10 +262,14 @@ class Platform(index.Indexed, ClusterableModel):
         FieldPanel('tags'),
     ]
 
+    def get_all_tags(self):
+        return ','.join(self.tags.all().values_list('name', flat=True))
+
     search_fields = [
         index.SearchField('name'),
         index.SearchField('description', partial_match=True),
-        index.SearchField('active'),
+        index.FilterField('active'),
+        index.FilterField('open_source'),
         index.RelatedFields('tags', [
             index.SearchField('name'),
         ]),
