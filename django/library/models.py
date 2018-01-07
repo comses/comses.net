@@ -28,6 +28,7 @@ from wagtail.wagtailsearch import index
 from core import fs
 from core.backends import get_viewable_objects_for_user
 from core.fields import MarkdownField
+from core.models import Platform
 from library.fs import CodebaseReleaseFsApi, StagingDirectories, FileCategoryDirectories, MessageLevels
 
 logger = logging.getLogger(__name__)
@@ -99,8 +100,10 @@ class Contributor(index.Indexed, ClusterableModel):
         ]),
         index.SearchField('email', partial_match=True),
         index.RelatedFields('user', [
-            index.SearchField('first_name', partial_match=True, boost=10),
-            index.SearchField('last_name', partial_match=True, boost=10),
+            index.SearchField('first_name'),
+            index.SearchField('last_name'),
+            index.SearchField('email'),
+            index.SearchField('username'),
         ]),
     ]
 
@@ -118,6 +121,15 @@ class Contributor(index.Indexed, ClusterableModel):
     @property
     def name(self):
         return self.get_full_name()
+
+    def get_aggregated_search_fields(self):
+        return ' '.join([self.given_name, self.family_name, self.email] + self._get_user_fields())
+
+    def _get_user_fields(self):
+        if self.user:
+            user = self.user
+            return [user.first_name, user.last_name, user.username, user.email]
+        return []
 
     def get_full_name(self, family_name_first=False):
         full_name = ''
@@ -249,13 +261,17 @@ class Codebase(index.Indexed, ClusterableModel):
     search_fields = [
         index.SearchField('title', partial_match=True, boost=10),
         index.SearchField('description', partial_match=True),
+        index.FilterField('peer_reviewed'),
         index.FilterField('featured'),
+        index.FilterField('is_replication'),
         index.FilterField('live'),
         index.FilterField('first_published_at'),
         index.FilterField('last_published_on'),
         index.RelatedFields('tags', [
             index.SearchField('name'),
         ]),
+        index.SearchField('get_all_contributors_search_fields'),
+        # index.SearchField('release_metadata'),
     ]
 
     HAS_PUBLISHED_KEY = True
@@ -329,6 +345,9 @@ class Codebase(index.Indexed, ClusterableModel):
         contributor_list = [c.contributor.get_full_name(family_name_first=True) for c in
                             self.all_contributors]
         return contributor_list
+
+    def get_all_contributors_search_fields(self):
+        return ' '.join([c.contributor.get_aggregated_search_fields() for c in self.all_contributors])
 
     def download_count(self):
         return CodebaseReleaseDownload.objects.filter(release__codebase__id=self.pk).count()
@@ -578,7 +597,7 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
     '''
     platform_tags = ClusterTaggableManager(through=CodebaseReleasePlatformTag,
                                            related_name='platform_codebase_releases')
-    platforms = models.ManyToManyField('core.Platform')
+    platforms = models.ManyToManyField(Platform)
     programming_languages = ClusterTaggableManager(through=ProgrammingLanguage,
                                                    related_name='pl_codebase_releases')
     codebase = models.ForeignKey(Codebase, related_name='releases')
@@ -597,6 +616,24 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
                                         help_text=_('Related publications'))
 
     objects = CodebaseReleaseQuerySet.as_manager()
+
+    search_fields = [
+        index.SearchField('release_notes'),
+        index.SearchField('summary'),
+        index.FilterField('os'),
+        index.FilterField('first_published_at'),
+        index.FilterField('last_published_on'),
+        index.FilterField('last_modified'),
+        index.FilterField('peer_reviewed'),
+        index.FilterField('flagged'),
+        index.RelatedFields('platforms', [
+            index.SearchField('name'),
+            index.SearchField('get_all_tags'),
+        ]),
+        index.RelatedFields('contributors', [
+            index.SearchField('get_aggregated_search_fields'),
+        ]),
+    ]
 
     def get_edit_url(self):
         return reverse('library:codebaserelease-edit', kwargs={'identifier': self.codebase.identifier,
