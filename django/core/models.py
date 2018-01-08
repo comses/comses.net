@@ -244,6 +244,7 @@ class Platform(index.Indexed, ClusterableModel):
     active = models.BooleanField(default=True)
     description = MarkdownField(max_length=512, blank=True)
     date_created = models.DateTimeField(default=timezone.now)
+    # last_updated = models.DateField(blank=True, null=True, help_text=_("Date of last update for the ABM platform itself."))
     last_modified = models.DateTimeField(auto_now=True)
     open_source = models.BooleanField(default=False)
     featured = models.BooleanField(default=False)

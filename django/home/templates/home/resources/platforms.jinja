@@ -19,11 +19,11 @@
         <hr />
         <a target='_blank' href='{{ p.platform.url }}'>{{ p.platform.name }}</a>
         {% if p.platform.active %}
-            <span class='text-success'><i class='fa fa-check-circle-o'></i></span>
+            <span class='text-success'> active </span>
         {% else %}
-            <span class='text-danger'><i class='fa fa-flag'></i></span>
+            <span class='text-warning'> inactive</span>
         {% endif %}
-        <div class='description'>{{ p.platform.description|markdown }}</div>
+        <div class='description'>{% autoescape off %}{{ p.platform.description.rendered }}{% endautoescape %}</div>
         <div class='tag-list'>
             {% for tag in p.platform.tags.all() %}
                 {{ search_tag_href(tag) }}
