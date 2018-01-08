@@ -57,7 +57,7 @@ class ResourceSection(AbstractSection):
             summary=('CoMSES Net is dedicated to fostering open and reproducible computational modeling through '
                      'cyberinfrastructure and community development. We maintain these community curated resources '
                      'to help new and experienced computational modelers improve the discoverability, reuse, and '
-                     'reproducibility of their computational models. Please [contact us](/contact/) with '
+                     'reproducibility of their computational models. Please [contact us](/about/contact/) with '
                      'feedback or additional resources - your contributions are appreciated!'
                      '\n'
                      '### Other Web Resources\n'
@@ -139,7 +139,7 @@ class ResourceSection(AbstractSection):
             title='Computational Modeling Platforms',
             slug='modeling-platforms',
             description=("Computational modeling platforms provide a wide range of modeling strategies, scaffolding, "
-                         "and support for developers of agent-based models. Please [let us know](/contact/) if you "
+                         "and support for developers of agent-based models. Please [let us know](/about/contact/) if you "
                          "have any corrections or would like to submit a new platform.")
         )
         platforms_index_page.add_breadcrumbs(self.SUBNAVIGATION_LINKS[:2])
@@ -156,7 +156,7 @@ class ResourceSection(AbstractSection):
             title='Computational Modeling Journals',
             description=('A list of scholarly journals that address theoretical and methodological concerns for '
                          'agent-based modeling and related computational modeling sciences. To submit any corrections '
-                         'or add a new journal, please [contact us](/contact/).'
+                         'or add a new journal, please [contact us](/about/contact/).'
                          ),
         )
         # FIXME: arcane step value slice to pick out Resources -> Journals
