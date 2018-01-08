@@ -11,7 +11,9 @@
     <div class='jumbotron'>
         <h1 class='display-5'>{{ page.title }}</h1>
         <div class='pt-4 lead'>
-            {{ page.description|markdown }}
+            {% autoescape false %}
+                {{ page.description|markdown }}
+            {% endautoescape %}
         </div>
     </div>
     {% for category, group_list in page.people_entry_placements.all()|sort(attribute='category')|groupby('category') %}
@@ -39,8 +41,10 @@
                             </div>
                         </div>
                         <div class='col-9'>
-                            {{ placement.member_profile.bio|markdown }}
-                            {{ placement.member_profile.research_interests|markdown }}
+                            {% autoescape false %}
+                                {{ placement.member_profile.bio.rendered }}
+                                {{ placement.member_profile.research_interests.rendered }}
+                            {% endautoescape %}
                         </div>
                     </div>
                 </div>
