@@ -1,6 +1,7 @@
 import logging
 
 from django.contrib.auth.models import User
+from django.urls import reverse
 from django.utils import timezone
 from django.utils.http import urlencode
 from django.utils.translation import ugettext_lazy as _
@@ -108,8 +109,7 @@ class ReleaseContributorSerializer(serializers.ModelSerializer):
         if user:
             return user.member_profile.get_absolute_url()
         else:
-            # FIXME: replace with reverse('core:search', ...)
-            return '/search?{0}'.format(urlencode({'person': instance.contributor.name}))
+            return "{0}?{1}".format(reverse('home:profile-list'), urlencode({'query': instance.contributor.name}))
 
     @staticmethod
     def create_unsaved(context, validated_data):

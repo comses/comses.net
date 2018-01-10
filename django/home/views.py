@@ -5,8 +5,8 @@ from django.contrib.auth.models import User
 from django.core.files.images import ImageFile
 from django.shortcuts import get_object_or_404
 from django.utils.decorators import method_decorator
-from rest_framework import viewsets, generics, parsers, status, mixins, renderers
-from rest_framework.decorators import detail_route, list_route
+from rest_framework import viewsets, generics, parsers, status, mixins, renderers, filters
+from rest_framework.decorators import detail_route
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.renderers import JSONRenderer, TemplateHTMLRenderer
 from rest_framework.response import Response
@@ -17,9 +17,8 @@ from wagtail.wagtailsearch.backends import get_search_backend
 
 from core.models import FollowUser, Event, Job
 from core.serializers import TagSerializer
-from core.view_helpers import retrieve_with_perms
+from core.view_helpers import retrieve_with_perms, get_search_queryset
 from core.views import CommonViewSetMixin, FormCreateView, FormUpdateView, SmallResultSetPagination
-from .common_serializers import RelatedMemberProfileSerializer
 from .models import FeaturedContentItem, MemberProfile
 from .serializers import (FeaturedContentItemSerializer, UserMessageSerializer, MemberProfileSerializer)
 
@@ -64,23 +63,26 @@ class TagListView(mixins.ListModelMixin, viewsets.GenericViewSet):
         return queryset.order_by('name')
 
 
-class ProfileViewSet(CommonViewSetMixin, mixins.RetrieveModelMixin, mixins.ListModelMixin,
-                     mixins.UpdateModelMixin, viewsets.GenericViewSet):
+class MemberProfileFilter(filters.BaseFilterBackend):
+
+    def filter_queryset(self, request, queryset, view):
+        if view.action != 'list':
+            return queryset
+        query_params = request.query_params
+        qs = query_params.get('query')
+        tags = query_params.getlist('tags')
+        return get_search_queryset(qs, queryset, tags=tags)
+
+
+class ProfileViewSet(CommonViewSetMixin, viewsets.ModelViewSet):
     lookup_field = 'user__username'
     lookup_url_kwarg = 'username'
     lookup_value_regex = '[\w\.\-@]+'
     serializer_class = MemberProfileSerializer
-    queryset = MemberProfile.objects.with_institution()
+    queryset = MemberProfile.objects.public().with_institution().order_by('id')
     pagination_class = SmallResultSetPagination
-
-    def get_queryset(self):
-        # make sort order parameterizable. Start with ID or last_name? Lots of spam users visible with
-        # last_name / username
-        query = self.request.query_params.get('query')
-        queryset = self.queryset.public().order_by('id')
-        if query:
-            return queryset.find_by_name(query)
-        return queryset
+    filter_backends = (filters.OrderingFilter, MemberProfileFilter)
+    ordering_fields = ('user__username', 'user__last_name', 'user__email',)
 
     def retrieve(self, request, *args, **kwargs):
         return retrieve_with_perms(self, request, *args, **kwargs)
@@ -95,13 +97,6 @@ class ProfileViewSet(CommonViewSetMixin, mixins.RetrieveModelMixin, mixins.ListM
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-    @list_route(methods=['get'])
-    def search(self, request, *args, **kwargs):
-        queryset = User.objects.filter(member_profile__in=self.get_queryset()).order_by('last_name')
-        page = self.paginate_queryset(queryset)
-        serializer = RelatedMemberProfileSerializer(page, many=True)
-        return self.get_paginated_response(serializer.data)
 
 
 class MemberProfileImageUploadView(generics.CreateAPIView):

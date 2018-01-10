@@ -191,6 +191,26 @@ class MemberProfile(index.Indexed, ClusterableModel):
         return self.user
 
     @property
+    def is_active(self):
+        return self.user.is_active
+
+    @property
+    def username(self):
+        return self.user.username
+
+    @property
+    def name(self):
+        return self.user.get_full_name()
+
+    def get_user_search_data(self):
+        user = self.user
+        return ' '.join([user.get_full_name(), user.email, user.username])
+
+    @property
+    def email(self):
+        return self.user.email
+
+    @property
     def full_member(self):
         return self.user.groups.filter(name=ComsesGroups.FULL_MEMBER.value).exists()
 
@@ -214,16 +234,14 @@ class MemberProfile(index.Indexed, ClusterableModel):
     search_fields = [
         index.SearchField('bio', partial_match=True, boost=10),
         index.SearchField('research_interests', partial_match=True),
+        index.FilterField('is_active'),
+        index.FilterField('username'),
+        index.SearchField('get_user_search_data'),
         index.RelatedFields('institution', [
             index.SearchField('name'),
         ]),
         index.RelatedFields('keywords', [
             index.SearchField('name'),
-        ]),
-        index.RelatedFields('user', [
-            index.SearchField('username'),
-            index.SearchField('email'),
-            index.SearchField('get_full_name'),
         ]),
     ]
 

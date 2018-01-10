@@ -20,12 +20,12 @@ import {EventAPI} from 'api'
                         <c-input type="text" v-model="fullTextSearch" name="fullTextSearch">
                             <label class="form-control-label" slot="label">Keywords</label>
                         </c-input>
-                        <c-date-picker v-model="submissionDeadline" name="submissionDeadline" :clearButton="true">
+                        <c-datepicker v-model="submissionDeadline" name="submissionDeadline" :clearButton="true">
                             <label class="form-control-label" slot="label">Submission Deadline</label>
-                        </c-date-picker>
-                        <c-date-picker v-model="startDate" name="startDate" :clearButton="true">
+                        </c-datepicker>
+                        <c-datepicker v-model="startDate" name="startDate" :clearButton="true">
                             <label class="form-control-label" slot="label">Event Start Date</label>
-                        </c-date-picker>
+                        </c-datepicker>
                         <c-tagger v-model="tags" :required="false" placeholder="Type to add tags" label="Tags">
                         </c-tagger>
                     </div>
@@ -33,7 +33,7 @@ import {EventAPI} from 'api'
             </div>
         </c-search>`,
     components: {
-        'c-date-picker': DatePicker,
+        'c-datepicker': DatePicker,
         'c-input': Input,
         'c-tagger': Tagger,
         'c-search': Search,

@@ -20,9 +20,9 @@ import {ProfileAPI} from 'api'
                     </div>
                     <div class="card-body">
                         <c-input type="text" v-model="fullTextSearch" name="fullTextSearch">
-                            <label class="form-control-label" slot="label">Full Text Search</label>
+                            <label class="form-control-label" slot="label">By name</label>
                         </c-input>
-                        <c-tagger v-model="keywords" placeholder="Type to add tags" label="Tags">
+                        <c-tagger v-model="keywords" :required="false" placeholder="Type to add tags" label="Keywords">
                         </c-tagger>
                     </div>
                 </div>
