@@ -45,7 +45,6 @@ services:
     image: comses/cmsjs_dev:latest
     volumes:
       - ./frontend/src:/code/src
-      - ./frontend/deploy:/code/deploy
       - ./docker/shared/webpack:/shared/webpack
   cms:
     build: django
