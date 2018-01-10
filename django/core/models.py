@@ -202,10 +202,6 @@ class MemberProfile(index.Indexed, ClusterableModel):
     def name(self):
         return self.user.get_full_name()
 
-    def get_user_search_data(self):
-        user = self.user
-        return ' '.join([user.get_full_name(), user.email, user.username])
-
     @property
     def email(self):
         return self.user.email
@@ -216,6 +212,9 @@ class MemberProfile(index.Indexed, ClusterableModel):
 
     def get_absolute_url(self):
         return reverse('home:profile-detail', kwargs={'username': self.user.username})
+
+    def get_degrees_for_indexing(self):
+        return ' '.join(self.degrees)
 
     def __str__(self):
         return str(self.user)
@@ -232,16 +231,21 @@ class MemberProfile(index.Indexed, ClusterableModel):
     ]
 
     search_fields = [
-        index.SearchField('bio', partial_match=True, boost=10),
-        index.SearchField('research_interests', partial_match=True),
+        index.SearchField('bio', partial_match=True, boost=5),
+        index.SearchField('research_interests', partial_match=True, boost=5),
         index.FilterField('is_active'),
         index.FilterField('username'),
-        index.SearchField('get_user_search_data'),
+        index.SearchField('get_degrees_for_indexing', partial_match=True),
         index.RelatedFields('institution', [
-            index.SearchField('name'),
+            index.SearchField('name', partial_match=True),
         ]),
         index.RelatedFields('keywords', [
-            index.SearchField('name'),
+            index.SearchField('name', partial_match=True),
+        ]),
+        index.RelatedFields('user', [
+            index.SearchField('first_name', partial_match=True),
+            index.SearchField('last_name', partial_match=True, boost=3),
+            index.SearchField('email', partial_match=True, boost=3),
         ]),
     ]
 

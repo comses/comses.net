@@ -198,7 +198,9 @@ class SmallResultSetPagination(PageNumberPagination):
         page = query_params.pop('page', [1])[0]
         count = self.page.paginator.count
         num_results = len(self.page.object_list)
-        num_pages = count // self.page_size + 1
+        num_pages, remainder = divmod(count, self.page_size)
+        if remainder > 0:
+            num_pages += 1
         try:
             current_page_number = int(page)
         except:
