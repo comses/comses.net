@@ -1,9 +1,10 @@
 {
   "compilerOptions": {
-    "allowSyntheticDefaultImports": true,
-    "experimentalDecorators": true,
-    "strictNullChecks": false,
     "target": "es5",
+    "noImplicitReturns": true,
+    "module": "es2015",
+    "moduleResolution": "node",
+    "experimentalDecorators": true,
     "sourceMap": true,
     "lib": ["es5", "es2015.core", "es2015.promise", "es2015.collection", "es2015.iterable", "dom"],
     "typeRoots": [
@@ -12,11 +13,10 @@
     "exclude": [
       "node_modules/fullcalendar/**/*.d.ts"
     ],
-    "module": "es2015",
-    "moduleResolution": "node",
     "baseUrl": "./src",
     "paths": {
       "components/*": ["components/*"],
+      "jquery": ["../node_modules/jquery/dist/jquery"],
       "pages/*": ["pages/*"],
       "api/*": ["api/*"],
       "store/*": ["store/*"],
