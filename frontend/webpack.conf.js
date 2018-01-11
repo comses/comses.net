@@ -1,5 +1,5 @@
 const path = require('path');
-const stringify = require('stringify-object')
+const stringify = require('stringify-object');
 
 const webpack = require('webpack');
 const {
@@ -104,8 +104,8 @@ module.exports = createConfig([
     ]),
     sourceMaps('source-map'),
     defineConstants({
-        'process.env.NODE_ENV': process.env.NODE_ENV,
-        '__BASE_URL__': process.env.BASE_URL
+        'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV),
+        'window.__BASE_URL__': JSON.stringify(process.env.BASE_URL)
     }),
     env('development', [
 

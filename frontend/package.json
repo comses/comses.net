@@ -9,7 +9,8 @@
     "build": "NODE_ENV=production BASE_URL='' webpack --config webpack.conf.js",
     "test": "jest --config jest.json",
     "test-ci": "jest --config jest.json --coverage",
-    "webpack": "webpack"
+    "webpack": "webpack",
+    "karma": "NODE_ENV=development BASE_URL='http://localhost:8000' karma"
   },
   "dependencies": {
     "axios": "~0",
@@ -52,7 +53,14 @@
     "file-loader": "~0",
     "friendly-errors-webpack-plugin": "^1.6.1",
     "function-bind": "^1.0.2",
+    "jasmine": "^2.8.0",
     "jest": "^20.0.4",
+    "karma": "^2.0.0",
+    "karma-chrome-launcher": "^2.2.0",
+    "karma-firefox-launcher": "^1.1.0",
+    "karma-jasmine": "^1.1.1",
+    "karma-sourcemap-loader": "^0.3.7",
+    "karma-webpack": "^2.0.9",
     "node-sass": "^4.5.0",
     "sass-loader": "^6.0.6",
     "stringify-object": "^3.2.0",

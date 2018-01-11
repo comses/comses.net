@@ -10,9 +10,6 @@
     "typeRoots": [
       "./node_modules/@types/"
     ],
-    "exclude": [
-      "node_modules/fullcalendar/**/*.d.ts"
-    ],
     "baseUrl": "./src",
     "paths": {
       "components/*": ["components/*"],
@@ -22,5 +19,8 @@
       "store/*": ["store/*"],
       "util/*": ["util/*"]
     }
-  }
+  },
+  "exclude": [
+      "node_modules/fullcalendar/**/*.d.ts"
+  ]
 }

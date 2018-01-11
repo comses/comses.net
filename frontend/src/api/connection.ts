@@ -26,7 +26,7 @@ export class Api {
         if (_.isUndefined(config)) {
             config = {
                 headers: {'Content-Type': 'application/json'},
-                baseURL: __BASE_URL__
+                baseURL: (<any>window).__BASE_URL__
             };
         }
         this.axios = axios.create(config);
