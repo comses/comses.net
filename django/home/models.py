@@ -26,6 +26,7 @@ from wagtail.wagtailsearch import index
 from wagtail.wagtailsnippets.edit_handlers import SnippetChooserPanel
 from wagtail.wagtailsnippets.models import register_snippet
 
+from core.fields import MarkdownField
 from core.models import MemberProfile, Platform, Event, Job
 from core.utils import get_canonical_image
 from home.forms import ContactForm
@@ -371,8 +372,11 @@ class MarkdownPage(NavigationMixin, Page):
     template = models.CharField(max_length=128, default='home/markdown_page.jinja')
     heading = models.CharField(max_length=128, blank=True)
     date = models.DateField("Post date", default=timezone.now)
-    description = models.CharField(max_length=512, blank=True)
-    body = models.TextField(blank=True)
+    description = MarkdownField(max_length=512, blank=True)
+    body = MarkdownField(blank=True)
+    jumbotron = models.BooleanField(
+        default=True,
+        help_text=_("True if this page should display its title and description in a jumbotron"))
 
     content_panels = Page.content_panels + [
         FieldPanel('heading'),
