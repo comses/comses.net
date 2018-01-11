@@ -280,10 +280,10 @@ class Platform(index.Indexed, ClusterableModel):
     ]
 
     def get_all_tags(self):
-        return ','.join(self.tags.all().values_list('name', flat=True))
+        return ' '.join(self.tags.all().values_list('name', flat=True))
 
     search_fields = [
-        index.SearchField('name'),
+        index.SearchField('name', partial_match=True),
         index.SearchField('description', partial_match=True),
         index.FilterField('active'),
         index.FilterField('open_source'),
@@ -357,14 +357,14 @@ class Event(index.Indexed, ClusterableModel):
         index.FilterField('start_date'),
         index.FilterField('submission_deadline'),
         index.FilterField('early_registration_deadline'),
-        index.SearchField('location'),
+        index.SearchField('location', partial_match=True),
         index.RelatedFields('tags', [
             index.SearchField('name'),
         ]),
         index.RelatedFields('submitter', [
             index.SearchField('username'),
-            index.SearchField('email'),
-            index.SearchField('get_full_name'),
+            index.SearchField('email', partial_match=True),
+            index.SearchField('get_full_name', partial_match=True),
         ]),
     ]
 
@@ -422,7 +422,8 @@ class Job(index.Indexed, ClusterableModel):
         ]),
         index.RelatedFields('submitter', [
             index.SearchField('username'),
-            index.SearchField('get_full_name'),
+            index.SearchField('email', partial_match=True),
+            index.SearchField('get_full_name', partial_match=True),
         ]),
     ]
 
