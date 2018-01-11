@@ -4,7 +4,7 @@ import * as _ from 'lodash'
 
 @Component
 export default class BaseControl extends Vue {
-    @Prop({ default: true})
+    @Prop({default: true})
     required;
 
     @Prop()
@@ -16,7 +16,7 @@ export default class BaseControl extends Vue {
     @Prop()
     customId;
 
-    @Prop({ default: () => [] })
+    @Prop({default: () => []})
     errorMsgs: Array<string>;
 
     get requiredClass() {

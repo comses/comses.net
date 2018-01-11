@@ -11,16 +11,17 @@ const api = new CodebaseAPI();
 @Component(<any>{
     // language=Vue
     template: `
-        <c-search submitLabel="Archive a model" searchLabel="Search" submitUrl="/codebases/add/" :searchUrl="query">
+        <c-search ref="search" submitLabel="Archive a model" searchLabel="Search" submitUrl="/codebases/add/" :searchUrl="query">
             <div slot="searchForm">
                 <div class="card-metadata">
                     <div class="title">
                         Search
                     </div>
                     <div class="card-body">
-                        <c-input :required="false"
-                        label="Keywords" type="text" v-model="fullTextSearch" name="fullTextSearch" :errorMsgs="[]">
-                        </c-input>
+                        <span @keyup.enter="search">
+                            <c-input :required="false" label="Keywords" type="text" v-model="fullTextSearch" name="fullTextSearch" :errorMsgs="[]">
+                            </c-input>
+                        </span>
                         <c-datepicker v-model="startDate" :required="false" name="startDate" :errorMsgs="[]" :clearButton="true" label="Published After">
                         </c-datepicker>
                         <c-datepicker v-model="endDate" :required="false" name="endDate" :errorMsgs="[]" :clearButton="true" label="Published Before">
@@ -55,5 +56,9 @@ export class SearchCodebases extends Vue {
             tags: this.tags.map(tag => tag.name)
         };
         return api.searchUrl(queryObject);
+    }
+
+    search() {
+        window.location.href = (this.$refs.search as any).searchUrl;
     }
 }
