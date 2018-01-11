@@ -53,13 +53,7 @@ services:
       - ./django:/code
       - ./deploy/conf/config.ini:/secrets/config.ini
       - ./deploy/elasticsearch.conf.d:/etc/elasticsearch
-      - ./docker/shared/logs:/shared/logs
-      - ./docker/shared/library:/shared/library
-      - ./docker/shared/media:/shared/media
-      - ./docker/shared/repository:/shared/repository
-      - ./docker/shared/webpack:/shared/webpack
-      - ./docker/shared/static:/shared/static
-      - ./docker/shared/redis:/shared/redis
+      - ./docker/shared:/shared
     environment:
       DJANGO_SETTINGS_MODULE: "core.settings.dev"
       DB_USER: ${DB_USER}

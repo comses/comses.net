@@ -255,6 +255,9 @@ class CategoryIndexItem(Orderable, models.Model):
     title = models.CharField(max_length=255)
     caption = models.CharField(max_length=600)
 
+    def __str__(self):
+        return "{0} {1}".format(self.title, self.url)
+
 
 class SubnavigationMenu():
     pass
@@ -320,7 +323,7 @@ class CategoryIndexPage(NavigationMixin, Page):
     def add_callout(self, image_path, title, caption, sort_order=None, user=None, url=''):
         if user is None:
             user = User.objects.get(username='alee')
-        _image = get_canonical_image(path=image_path, title=title, user=user)
+        _image = get_canonical_image(title=title, path=image_path, user=user)
         self.callouts.add(
             CategoryIndexItem(
                 title=title,
