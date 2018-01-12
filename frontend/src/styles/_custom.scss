@@ -423,8 +423,11 @@ footer.footer {
 }
 
 blockquote {
-  @extend .blockquote;
-  font-size: 1rem;
+  font-size: 1.1rem;
+  border-width: .2rem;
+  border: solid #f7f7f9;
+  padding: 1rem;
+  color: $text-color;
 }
 
 // Responsive Typography
