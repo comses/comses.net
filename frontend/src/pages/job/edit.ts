@@ -11,7 +11,9 @@ import {Job} from 'store/common'
 import {createFormValidator} from "pages/form"
 import {Component, Prop} from "vue-property-decorator";
 import {Mixin} from "util/vue-mixin";
-import {HandlerWithRedirect} from "api/handler";
+import {HandlerWithRedirect} from "handler";
+
+const api = new JobAPI();
 
 export const schema = yup.object().shape({
     title: yup.string().required(),
@@ -66,14 +68,13 @@ class EditJob extends createFormValidator(schema) {
     // determine whether you are creating or updating based on what route you are on
     // update -> grab the appropriate state from the store
     // create -> use the default store state
-    private api = new JobAPI();
 
     @Prop()
     _id: number | null;
 
     detailPageUrl(state) {
         this.state.id = state.id;
-        return this.api.detailUrl(this.state.id);
+        return api.detailUrl(this.state.id);
     }
 
     initializeForm() {
@@ -97,14 +98,14 @@ class EditJob extends createFormValidator(schema) {
 
     async createOrUpdate() {
         if (_.isNil(this.state.id)) {
-            return this.api.create(new HandlerWithRedirect(this))
+            return api.create(new HandlerWithRedirect(this))
         } else {
-            return this.api.update(this.state.id, new HandlerWithRedirect(this));
+            return api.update(this.state.id, new HandlerWithRedirect(this));
         }
     }
 
     retrieve(id: number) {
-        return this.api.retrieve(id).then(r => {
+        return api.retrieve(id).then(r => {
             this.state = r.data;
             return r;
         });

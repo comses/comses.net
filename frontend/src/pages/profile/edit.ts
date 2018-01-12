@@ -10,7 +10,7 @@ import EditItems from 'components/edit_items'
 import {ProfileAPI} from 'api'
 import * as _ from 'lodash'
 import {createFormValidator} from 'pages/form'
-import {HandlerWithRedirect} from "api/handler";
+import {HandlerWithRedirect} from "handler";
 import * as yup from 'yup'
 
 export const schema = yup.object().shape({
@@ -26,6 +26,8 @@ export const schema = yup.object().shape({
     degrees: yup.array().of(yup.string().required()),
     keywords: yup.array().of(yup.object().shape({name: yup.string().required()}))
 });
+
+const api = new ProfileAPI();
 
 @Component(<any>{
     template: `<form v-cloak>
@@ -94,13 +96,12 @@ export const schema = yup.object().shape({
     }
 })
 export default class EditProfile extends createFormValidator(schema) {
-    private api = new ProfileAPI();
     @Prop()
     _username: string | null;
 
     detailPageUrl(state) {
         this.state.username = state.username;
-        return this.api.detailUrl(this.state.username);
+        return api.detailUrl(this.state.username);
     }
 
     detailUrlParams(state) {
@@ -118,16 +119,16 @@ export default class EditProfile extends createFormValidator(schema) {
     }
 
     createOrUpdate() {
-        return this.api.update(this.state.username, new HandlerWithRedirect(this));
+        return api.update(this.state.username, new HandlerWithRedirect(this));
     }
 
     retrieve(username: string) {
-        return this.api.retrieve(username).then(r => this.state = r.data);
+        return api.retrieve(username).then(r => this.state = r.data);
     }
 
     async uploadImage(event) {
         const file = event.target.files[0];
-        const response = await this.api.uploadProfilePicture({username: this.state.username}, file);
+        const response = await api.uploadProfilePicture({username: this.state.username}, file);
         this.state.avatar = response.data;
     }
 

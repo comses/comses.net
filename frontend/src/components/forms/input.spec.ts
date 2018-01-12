@@ -1,5 +1,6 @@
 import Vue from 'vue'
 import Input from './input'
+import { expect } from 'chai'
 
 describe('input.ts', () => {
    it('should initialize correctly', () => {
@@ -8,7 +9,7 @@ describe('input.ts', () => {
            el: document.createElement('div'),
            render: (h) => h(Input, { props: { value: 'foo', label }})
        });
-       expect((<HTMLElement>vm.$el.querySelector('div label')).textContent).toBe(label);
-       expect((<HTMLInputElement>vm.$el.querySelector('div input')).value).toBe('foo');
+       expect((<HTMLElement>vm.$el.querySelector('div label')).textContent).to.equal(label);
+       expect((<HTMLInputElement>vm.$el.querySelector('div input')).value).to.equal('foo');
    })
 });

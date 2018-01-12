@@ -1,11 +1,10 @@
 import EditEvent, {schema} from './edit'
 import {createDefaultValue} from "pages/form"
-import {EventAPI} from "api"
 import * as _ from 'lodash'
-import axios from 'axios'
+import { expect } from 'chai'
 
 import * as stringify from 'stringify-object'
-
+import {EventAPI} from "api/index";
 
 async function createEvent() {
     const event = _.merge(createDefaultValue(schema), {
@@ -26,12 +25,12 @@ describe('event editing', () => {
             const _id = await createEvent();
             const vm = new EditEvent({ propsData: {_id}});
             await vm.initializeForm();
-            expect((<any>vm).title).toBe('ESSA 2007');
+            expect((<any>vm).title).to.equal('ESSA 2007');
 
             (<any>vm).title = 'foo';
             await vm.createOrUpdate();
             await vm.initializeForm();
-            expect((<any>vm).title).toBe('foo');
+            expect((<any>vm).title).to.equal('foo');
 
             await api.delete(_id);
 

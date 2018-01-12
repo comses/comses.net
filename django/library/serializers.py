@@ -177,11 +177,10 @@ class CodebaseSerializer(serializers.ModelSerializer, FeaturedImageMixin):
     description = MarkdownField()
 
     def create(self, validated_data):
-        validated_data['submitter_id'] = self.submitter.id
+        serialized_tags = TagSerializer(many=True, data=validated_data.pop('tags'))
         codebase = self.Meta.model(**validated_data)
         codebase.identifier = codebase.uuid
         codebase.save()
-        serialized_tags = TagSerializer(many=True, data=validated_data.pop('tags'))
         save_tags(codebase, serialized_tags)
         return codebase
 

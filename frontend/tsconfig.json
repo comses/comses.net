@@ -17,7 +17,9 @@
       "pages/*": ["pages/*"],
       "api/*": ["api/*"],
       "store/*": ["store/*"],
-      "util/*": ["util/*"]
+      "util/*": ["util/*"],
+      "connection": ["api/connection"],
+      "handler": ["api/handler"]
     }
   },
   "exclude": [

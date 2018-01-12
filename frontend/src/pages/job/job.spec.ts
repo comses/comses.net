@@ -2,6 +2,7 @@ import EditJob, {schema} from './edit'
 import {createDefaultValue} from "pages/form"
 import {JobAPI} from "api"
 import * as _ from 'lodash'
+import { expect } from 'chai'
 
 const title = 'Postdoc on ABM';
 const description = 'Postdoc on ABM at ASU for 2018';
@@ -21,12 +22,12 @@ describe('jobs editing', () => {
             const _id = await createJob();
             const vm = new EditJob({ propsData: {_id}});
             await vm.initializeForm();
-            expect((<any>vm).title).toBe(title);
+            expect((<any>vm).title).to.equal(title);
 
             (<any>vm).title = 'foo';
             await vm.createOrUpdate();
             await vm.initializeForm();
-            expect((<any>vm).title).toBe('foo');
+            expect((<any>vm).title).to.equal('foo');
 
             await api.delete(_id);
 

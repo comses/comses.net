@@ -14,6 +14,29 @@ const BundleTracker = require('webpack-bundle-tracker');
 const CompressionWebpackPlugin = require('compression-webpack-plugin');
 const { TsConfigPathsPlugin } = require('awesome-typescript-loader');
 
+function aliases(connectionFileName, handlerFileName) {
+    return customConfig({
+        resolve: {
+            modules: [
+                'src',
+                'node_modules'
+            ],
+            alias: {
+                'Marked': 'marked',
+                'SimpleMDE': 'simplemde',
+                'connection$': path.resolve(__dirname, 'src/api/' + connectionFileName),
+                'handler$': path.resolve(__dirname, 'src/api/' + handlerFileName),
+                'vue$': 'vue/dist/vue.common.js',
+                'api': path.resolve(__dirname, 'src/api'),
+                'pages': path.resolve(__dirname, 'src/pages'),
+                'assets': path.resolve(__dirname, 'src/assets'),
+                'store': path.resolve(__dirname, 'src/store'),
+                'components': path.resolve(__dirname, 'src/components'),
+                'util': path.resolve(__dirname, 'src/util'),
+            }
+        }
+    })
+}
 
 module.exports = createConfig([
     entryPoint({
@@ -35,26 +58,11 @@ module.exports = createConfig([
         filename: 'js/[name].[chunkhash].js',
         publicPath: '/static/'
     }),
-    customConfig({
-        resolve: {
-            modules: [
-                'src',
-                'node_modules'
-            ],
-            alias: {
-                'Marked': 'marked',
-                'SimpleMDE': 'simplemde',
-                'vue$': 'vue/dist/vue.common.js',
-                'api': path.resolve(__dirname, 'src/api'),
-                'pages': path.resolve(__dirname, 'src/pages'),
-                'assets': path.resolve(__dirname, 'src/assets'),
-                'store': path.resolve(__dirname, 'src/store'),
-                'components': path.resolve(__dirname, 'src/components'),
-                'util': path.resolve(__dirname, 'src/util'),
-            }
-        }
+    /* TODO: revisit babel requirement */
+    typescript({
+        useBabel: true,
+        babelCore: "@babel/core"
     }),
-    typescript(),
     match('*.scss', { exclude: path.resolve('node_modules') }, [
         sass(),
         extractText('[name]-[contenthash:8].css')
@@ -104,13 +112,14 @@ module.exports = createConfig([
     ]),
     sourceMaps('source-map'),
     defineConstants({
-        'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV),
-        'window.__BASE_URL__': JSON.stringify(process.env.BASE_URL)
+        'process.env.NODE_ENV': process.env.NODE_ENV,
+        'window.__BASE_URL__': process.env.BASE_URL
     }),
     env('development', [
-
+        aliases('connection.ts', 'handler.ts')
     ]),
     env('production', [
+        aliases('connection.ts', 'handler.ts'),
         addPlugins([
             new webpack.optimize.UglifyJsPlugin({
                 compress: {
@@ -131,6 +140,9 @@ module.exports = createConfig([
                 minRatio: 0.8
             })
         ])
+    ]),
+    env('testing',  [
+        aliases('mock_connection.ts', 'mock_handler.ts')
     ])
 ]);
 

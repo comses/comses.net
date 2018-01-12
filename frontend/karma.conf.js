@@ -7,24 +7,29 @@ webpackConfig['resolve'] = externalWebpackConfig['resolve'];
 webpackConfig['plugins'] = externalWebpackConfig['plugins'].filter(plugin =>
     plugin instanceof webpack.DefinePlugin || plugin instanceof webpack.ProvidePlugin);
 webpackConfig['devtool'] = 'inline-source-map';
-console.log(webpackConfig.plugins);
 
 module.exports = function(config) {
     config.set({
         files: [
            {pattern: 'src/**/*.spec.ts', watched: false}
         ],
-        frameworks: ['jasmine'],
+        frameworks: ['mocha', 'chai', 'sinon'],
         preprocessors: {
            'src/**/*.spec.ts': ['webpack', 'sourcemap']
+        },
+        proxies: {
+            '': {
+                'target': 'http://cms:8000/',
+                'changeOrigin': true
+            }
         },
         webpack: webpackConfig,
         client: {
            captureConsole: false
         },
-        reporters: ['mocha'],
+        reporters: ['mocha', 'coverage'],
         browsers: ['ChromeCustom'],
-        singleRun: true,
+        //singleRun: true,
 
         port: 9876,
         colors: true,
@@ -38,6 +43,7 @@ module.exports = function(config) {
     	},
         mime: {
             'text/x-typescript': ['ts', 'tsx']
-        }
+        },
+	    crossOriginAttribute: false
     });
 };

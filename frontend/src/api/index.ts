@@ -1,6 +1,6 @@
 import {AxiosRequestConfig, AxiosResponse} from 'axios'
 import * as queryString from 'query-string'
-import {api} from 'api/connection'
+import {api} from 'connection'
 import {CreateOrUpdateHandler} from "api/handler"
 import {pickBy, isEmpty} from 'lodash'
 
