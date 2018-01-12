@@ -24,7 +24,7 @@ export const schema = yup.object().shape({
     institution_url: yup.string().url(),
     bio: yup.string(),
     degrees: yup.array().of(yup.string().required()),
-    keywords: yup.array().of(yup.object().shape({name: yup.string().required()}))
+    tags: yup.array().of(yup.object().shape({name: yup.string().required()}))
 });
 
 @Component(<any>{
@@ -76,8 +76,8 @@ export const schema = yup.object().shape({
             @modify="degrees.splice($event.index, 1, $event.value)" name="degrees" :errorMsgs="errors.degrees"
             label="Degrees" help="The institution and name of the degrees you recieved" :required="config.degrees">
         </c-edit-degrees>
-        <c-tagger v-model="keywords" name="keywords" :errorMsgs="errors.keywords" label="Keywords" 
-            :required="config.keywords">
+        <c-tagger v-model="tags" name="tags" :errorMsgs="errors.tags" label="Keywords" 
+            :required="config.tags">
         </c-tagger>
         <c-message-display :messages="statusMessages">
         </c-message-display>

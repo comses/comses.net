@@ -69,7 +69,7 @@ class Command(BaseCommand):
                         # update all memberprofile fields
                         assert mpqs.count() == 1
                         member_profile = mpqs.first()
-                        for attr in ('bio', 'degrees', 'institution', 'keywords', 'personal_url', 'professional_url',
+                        for attr in ('bio', 'degrees', 'institution', 'tags', 'personal_url', 'professional_url',
                                      'research_interests'):
                             existing_attr = getattr(member_profile, attr)
                             incoming_attr = getattr(obj, attr)

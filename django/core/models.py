@@ -138,7 +138,7 @@ class MemberProfile(index.Indexed, ClusterableModel):
     bio = MarkdownField(max_length=512, help_text=_('Brief bio'))
     degrees = ArrayField(models.CharField(max_length=255), blank=True, default=list)
     institution = models.ForeignKey(Institution, null=True, on_delete=models.SET_NULL)
-    keywords = ClusterTaggableManager(through=MemberProfileTag, blank=True)
+    tags = ClusterTaggableManager(through=MemberProfileTag, blank=True)
 
     personal_url = models.URLField(blank=True)
     picture = models.ForeignKey(Image, null=True, help_text=_('Profile picture'), on_delete=models.SET_NULL)
@@ -239,7 +239,7 @@ class MemberProfile(index.Indexed, ClusterableModel):
         index.RelatedFields('institution', [
             index.SearchField('name', partial_match=True),
         ]),
-        index.RelatedFields('keywords', [
+        index.RelatedFields('tags', [
             index.SearchField('name', partial_match=True),
         ]),
         index.RelatedFields('user', [

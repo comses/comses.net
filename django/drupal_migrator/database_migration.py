@@ -361,7 +361,7 @@ class ProfileExtractor(Extractor):
             tags = flatten([tag_id_map[tid] for tid in
                             get_field_attributes(raw_profile, 'taxonomy_vocabulary_6', attribute_name='tid') if
                             tid in tag_id_map])
-            member_profile.keywords.add(*tags)
+            member_profile.tags.add(*tags)
             member_profile.save()
             user.save()
             if all([user.first_name, user.last_name]):
