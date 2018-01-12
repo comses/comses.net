@@ -47,7 +47,7 @@ class ResourceSection(AbstractSection):
         ('Modeling Platforms', '/resources/modeling-platforms/'),
         ('Journals', '/resources/journals/'),
         ('Standards', '/resources/standards/'),
-        ('Education', '/resources/education'),
+        ('Education', '/resources/education/'),
 
     )
 
@@ -207,10 +207,9 @@ class ResourceSection(AbstractSection):
 
     def build_education_page(self, parent):
         education_page = MarkdownPage(
-            heading='Educational Materials',
+            heading='Resources',
             slug='education',
             title='Educational Materials',
-            jumbotron=False,
             description=(
                 'A curated set of tutorials, classroom / course materials, and educational content for '
                 'agent based modeling. '
@@ -266,6 +265,7 @@ class ResourceSection(AbstractSection):
                   )
         )
         education_page.add_breadcrumbs(self.SUBNAVIGATION_LINKS[0:5:4])
+        education_page.add_navigation_links(self.SUBNAVIGATION_LINKS)
         parent.add_child(instance=education_page)
 
     def build(self):
