@@ -16,14 +16,17 @@
         </div>
     </div>
     {% for p in platforms %}
-        <hr />
-        <a target='_blank' href='{{ p.platform.url }}'>{{ p.platform.name }}</a>
-        {% if p.platform.active %}
-            <span class='text-success'> active </span>
-        {% else %}
-            <span class='text-warning'> inactive</span>
-        {% endif %}
-        <div class='description'>{% autoescape off %}{{ p.platform.description.rendered }}{% endautoescape %}</div>
+        <h3><a target='_blank' href='{{ p.platform.url }}'>{{ p.platform.name }}</a>
+            {% if p.platform.active %}
+                <span class='float-right text-success'> active </span>
+            {% else %}
+                    <span class='float-right text-warning'> inactive</span>
+            {% endif %}
+        </h3>
+        <div class='description'>
+            <blockquote class='blockquote'>{% autoescape off %}{{ p.platform.description.rendered }}{% endautoescape %}
+            </blockquote>
+        </div>
         <div class='tag-list'>
             {% for tag in p.platform.tags.all() %}
                 {{ search_tag_href(tag) }}
