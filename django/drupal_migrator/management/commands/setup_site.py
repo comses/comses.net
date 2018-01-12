@@ -47,6 +47,8 @@ class ResourceSection(AbstractSection):
         ('Modeling Platforms', '/resources/modeling-platforms/'),
         ('Journals', '/resources/journals/'),
         ('Standards', '/resources/standards/'),
+        ('Education', '/resources/education'),
+
     )
 
     def build_resource_index(self):
@@ -59,11 +61,6 @@ class ResourceSection(AbstractSection):
                      'to help new and experienced computational modelers improve the discoverability, reuse, and '
                      'reproducibility of their computational models. Please [contact us](/about/contact/) with '
                      'feedback or additional resources - your contributions are appreciated!'
-                     '\n'
-                     '### Other Web Resources\n'
-                     '[Leigh Tesfatsion](http://www2.econ.iastate.edu/tesfatsi/) also maintains an '
-                     '[online guide for newcomers to agent-based modeling in the social sciences]'
-                     '(http://www2.econ.iastate.edu/tesfatsi/abmread.htm) with many useful links.'
                      )
         )
         # FIXME: replace with wagtailmenus FlatMenu creation and associated with the resources_index
@@ -106,8 +103,8 @@ class ResourceSection(AbstractSection):
         )
         resources_index.add_callout(
             image_path='core/static/images/icons/educational-materials.png',
-            title='Educational Materials',
-            url='educational-materials/',
+            title='Education',
+            url='education/',
             caption=('Tutorials, websites, books, and classroom / course materials on agent-based modeling that cover '
                      'various modeling platforms (e.g., RePast, NetLogo, Mason, FLAME).'),
             user=self.default_user,
@@ -208,11 +205,75 @@ class ResourceSection(AbstractSection):
         standards_page.add_navigation_links(self.SUBNAVIGATION_LINKS)
         parent.add_child(instance=standards_page)
 
+    def build_education_page(self, parent):
+        education_page = MarkdownPage(
+            heading='Educational Materials',
+            slug='education',
+            title='Educational Materials',
+            jumbotron=False,
+            description=(
+                'A curated set of tutorials, classroom / course materials, and educational content for '
+                'agent based modeling. '
+            ),
+            body=('## Books and other resources\n\n'
+                  '* [Agent-based and Individual-based Modeling: *A Practical Introduction* by Steven F. Railsback and Volker Grimm]'
+                  '(http://www.railsback-grimm-abm-book.com/) - A textbook on applying agent-based models to study complex systems, '
+                  'intended for upper-level undergraduates, graduate students, or self-instruction. \n'
+                  '* [Introduction to Agent-Based Modeling by Marco Janssen](https://www.gitbook.com/book/cbie/introduction-to-agent-based-modeling)'
+                  ' - An introductory undergraduate course on agent based modeling.\n'
+                  '* [Guide for Newcomers to Agent-Based Modeling in the Social Sciences by Robert Axelrod and Leigh Tesfatsion]'
+                  '(http://www2.econ.iastate.edu/tesfatsi/abmread.htm)\n'
+                  '* [CSDMS Educational Repository](http://csdms.colorado.edu/wiki/Education_portal) - the [Community '
+                  'Surface Dynamics Modeling System (CSDMS)](http://csdms.colorado.edu/wiki/About_CSDMS) is a diverse community of '
+                  'experts promoting good practices for the modeling of earth surface processes and surface dynamics models.\n'
+                  '* [Software and Data Carpentry](https://carpentries.org/) - the Software and Data Carpentries teach researchers '
+                  'foundational computational and data science skills through short, impactful workshops.\n'
+                  '* [CoMSES Net Frequently Asked Questions on Agent Based Modeling](/about/faq/)\n\n'
+                  '## Classroom materials \n\n'
+                  '* Dawn Parker - "Spatial Agent-based Models of Human-Environment Interactions" \n'
+                  '* Bruce Edmonds - "Introduction to Agent-Based Modelling in NetLogo - A 2-Day Course" \n'
+                  '* Michael Barton - "Introduccion al Modelar de Agentes para la Arqueología" \n\n'
+                  '## [NetLogo](http://ccl.northwestern.edu/netlogo/)\n\n'
+                  'NetLogo is a free multi-agent programmable modeling environment originally authored by Uri Wilensky and developed at the '
+                  '[Center for Connected Learning and Computer-Based Modeling](http://ccl.northwestern.edu/).\n\n'
+                  '* [Official documentation: http://ccl.northwestern.edu/netlogo/docs/](http://ccl.northwestern.edu/netlogo/docs/)\n'
+                  '* [NetLogo Development Team Tutorial: Models](http://ccl.northwestern.edu/netlogo/docs/tutorial1.html)\n'
+                  '* [NetLogo Development Team Tutorial: Commands](http://ccl.northwestern.edu/netlogo/docs/tutorial2.html)\n'
+                  '* [NetLogo Development Team Tutorial: Procedures](http://ccl.northwestern.edu/netlogo/docs/tutorial3.html)\n'
+                  '* [NetLogo 6.0 Quick Guide by Luis Izquierdo](http://luis.izqui.org/resources/NetLogo-6-0-QuickGuide.pdf) - a printable reference sheet\n'
+                  '* [Introduction to NetLogo by René Doursat](http://doursat.free.fr/docs/CS790R_S05/CS790R_S05_Lecture_4_NetLogo.pdf)\n'
+                  '* [Additional Resources](http://ccl.northwestern.edu/netlogo/resources.shtml) - a collection of links from the NetLogo development team\n'
+                  '* [Manual de NetLogo en español](http://sites.google.com/site/manualnetlogo/) - Un manual de Netlogo en español que te permitirá '
+                  'familiarizarte con este lenguaje de programación de una forma muy sencilla, a través de pequeños programas-ejemplo.\n\n'
+                  '## [RePast](https://repast.github.io/index.html)\n\n'
+                  'The Repast Suite is a family of advanced, free, and open source agent-based modeling and simulation platforms that have collectively '
+                  'been under continuous development for over 15 years.\n\n'
+                  '* [Official documentation: https://repast.github.io/docs.html](https://repast.github.io/docs.html)\n'
+                  '* [Repast 3 tutorials](http://repast.sourceforge.net/repast_3/tutorials.html)\n'
+                  '* [RepastHPC Tutorial](https://repast.github.io/hpc_tutorial/TOC.html)\n\n'
+                  '## [MASON](https://cs.gmu.edu/~eclab/projects/mason/)\n\n'
+                  'MASON is a fast discrete-event multiagent simulation library core in Java, designed to be the foundation for large custom-purpose '
+                  'Java simulations, and also to provide more than enough functionality for many lightweight simulation needs. MASON contains both a '
+                  'model library and an optional suite of visualization tools in 2D and 3D.\n\n'
+                  '* [Online docs](https://cs.gmu.edu/~eclab/projects/mason/docs/)\n'
+                  '* [PDF Manual](https://cs.gmu.edu/~eclab/projects/mason/manual.pdf)\n\n'
+                  '## [Cormas](http://cormas.cirad.fr/en/outil/outil.htm)\n\n'
+                  'Cormas is a simulation platform based on the VisualWorks programming environment and SmallTalk.\n\n'
+                  '* [Cormas tutorials](http://cormas.cirad.fr/en/outil/classroom/)\n\n'
+                  '## Videos\n\n'
+                  '* [CoMSES Net YouTube video channel](https://www.youtube.com/user/CoMSESNet) contains videos created / curated by CoMSES members.'
+                  ' Let us know if you have anything to add to this list!\n'
+                  )
+        )
+        education_page.add_breadcrumbs(self.SUBNAVIGATION_LINKS[0:5:4])
+        parent.add_child(instance=education_page)
+
     def build(self):
         resources_index = self.build_resource_index()
         self.build_platforms_index(resources_index)
         self.build_journal_page(resources_index)
         self.build_standards_page(resources_index)
+        self.build_education_page(resources_index)
 
 
 class CommunitySection(AbstractSection):
@@ -338,7 +399,7 @@ class AboutSection(AbstractSection):
                               usernames=directorate,
                               offset=offset)
         offset += len(directorate)
-        board = ('fstonedahl', 'mzellner', 'clepage', 'wrand', 'mariam.kiran', 'garypolhill', 'abell')
+        board = ('fstonedahl', 'mzellner', 'mariam.kiran', 'garypolhill', 'abell')
         people_page.add_users(category=PeopleEntryPlacement.CATEGORIES.board,
                               usernames=board,
                               offset=offset)
@@ -353,7 +414,7 @@ class AboutSection(AbstractSection):
                               offset=offset)
         offset += len(staff)
 
-        alumni = ('volker.grimm@ufz.de', 'bruceedmonds')
+        alumni = ('volker.grimm@ufz.de', 'bruceedmonds', 'clepage', 'wrand', 'volker.grimm@ufz.de', 'bruceedmonds')
         people_page.add_users(category=PeopleEntryPlacement.CATEGORIES.alumni,
                               usernames=alumni,
                               offset=offset)
