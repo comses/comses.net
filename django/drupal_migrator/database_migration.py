@@ -19,7 +19,6 @@ from wagtail.wagtailimages.models import Image
 
 from core.fs import is_image
 from core.models import ComsesGroups, Institution, Platform, Event, Job
-from core.summarization import summarize_to_text
 from home.models import Journal, FaqEntry
 from library.models import (Contributor, Codebase, CodebaseRelease, CodebaseTag, License,
                             ReleaseContributor, OPERATING_SYSTEMS, CodebaseReleaseDownload)
@@ -228,7 +227,7 @@ class EventExtractor(Extractor):
 class JobExtractor(Extractor):
     def _extract(self, raw_job: Dict, user_id_map: Dict[str, int]):
         description = self.sanitize_text(get_first_field(raw_job, 'body'))
-        summary = summarize_to_text(description, sentences_count=2)
+        summary = shorten(description, 500)
         return Job(
             title=raw_job['title'].strip(),
             date_created=to_datetime(raw_job['created']),
