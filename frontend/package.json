@@ -7,8 +7,6 @@
   "scripts": {
     "dev": "NODE_ENV=development BASE_URL='' webpack --config webpack.conf.js --watch",
     "build": "NODE_ENV=production BASE_URL='' webpack --config webpack.conf.js",
-    "test": "jest --config jest.json",
-    "test-ci": "jest --config jest.json --coverage",
     "webpack": "webpack",
     "karma": "NODE_ENV=testing BASE_URL='' karma"
   },
