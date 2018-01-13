@@ -29,11 +29,11 @@ module.exports = function(config) {
         },
         reporters: ['mocha', 'coverage'],
         browsers: ['ChromeCustom'],
-        //singleRun: true,
+        singleRun: true,
 
         port: 9876,
         colors: true,
-        logLevel: config.LOG_DEBUG,
+        logLevel: config.LOG_INFO,
 
     	customLaunchers: {
                 ChromeCustom: {
