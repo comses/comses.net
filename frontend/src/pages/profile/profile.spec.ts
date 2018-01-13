@@ -1,5 +1,5 @@
 import EditProfile, {schema} from './edit'
-import {__BASIC_AUTH_USERNAME__} from "../../__jest__/common"
+import {__BASIC_AUTH_USERNAME__} from "../../__config__/common"
 import { expect } from 'chai'
 
 describe('profile editing', () => {
