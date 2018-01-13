@@ -140,6 +140,7 @@
 {% endmacro %}
 
 {% macro subnav(items) %}
+{% if items %}
 <ul class='nav nav-tabs justify-content-center'>
     {% for item in items %}
         <li class='nav-item'>
@@ -147,6 +148,7 @@
         </li>
     {% endfor %}
 </ul>
+{% endif %}
 {% endmacro %}
 
 {% macro breadcrumb(items) %}

@@ -19,7 +19,6 @@ from wagtail.wagtailimages.models import Image
 
 from core.fs import is_image
 from core.models import ComsesGroups, Institution, Platform, Event, Job
-from core.summarization import summarize_to_text
 from home.models import Journal, FaqEntry
 from library.models import (Contributor, Codebase, CodebaseRelease, CodebaseTag, License,
                             ReleaseContributor, OPERATING_SYSTEMS, CodebaseReleaseDownload)
@@ -111,7 +110,8 @@ PLATFORMS = """id,active,name,url,description
     25,t,JAS-mine,http://www.jas-mine.net/,"JAS-mine is a Java platform that aims at providing a unique simulation tool for discrete-event simulations, including agent-based and microsimulation models."
     26,t,Jason,https://github.com/jason-lang/jason,"Jason is an interpreter for an extended version of AgentSpeak. It implements the operational semantics of that language, and provides a platform for the development of multi-agent systems, with many user-customisable features. Jason is available as Open Source, and is distributed under GNU LGPL."
     27,t,MADeM,http://www.uv.es/grimo/jmadem/,"The MADeM (Multi-modal Agent Decision Making) model provides agents with a general mechanism to make socially acceptable decisions. In this kind of decisions, the members of an organization are required to express their preferences with regard to the different solutions for a specific decision problem. The whole model is based on the MARA (Multi-Agent Resource Allocation) theory, therefore, it represents each one of these solutions as a set of resource allocations."
-    28,t,MATSim,http://www.matsim.org/,\"MATSim is an open-source framework to implement large-scale agent-based transport simulations.\""""
+    28,t,Mesa,https://github.com/projectmesa/mesa,"Mesa is an open source ABM framework in Python. It allows users to quickly create agent-based models using built-in core components (such as spatial grids and agent schedulers) or customized implementations; visualize them using a browser-based interface; and analyze their results using Python's data analysis tools. Its goal is to be the Python 3-based alternative to NetLogo, Repast, or MASON."
+    29,t,MATSim,http://www.matsim.org/,\"MATSim is an open-source framework to implement large-scale agent-based transport simulations.\""""
 
 
 def flatten(ls):
@@ -228,7 +228,7 @@ class EventExtractor(Extractor):
 class JobExtractor(Extractor):
     def _extract(self, raw_job: Dict, user_id_map: Dict[str, int]):
         description = self.sanitize_text(get_first_field(raw_job, 'body'))
-        summary = summarize_to_text(description, sentences_count=2)
+        summary = shorten(description, 500)
         return Job(
             title=raw_job['title'].strip(),
             date_created=to_datetime(raw_job['created']),
@@ -362,7 +362,7 @@ class ProfileExtractor(Extractor):
             tags = flatten([tag_id_map[tid] for tid in
                             get_field_attributes(raw_profile, 'taxonomy_vocabulary_6', attribute_name='tid') if
                             tid in tag_id_map])
-            member_profile.keywords.add(*tags)
+            member_profile.tags.add(*tags)
             member_profile.save()
             user.save()
             if all([user.first_name, user.last_name]):
@@ -637,8 +637,8 @@ class DownloadCountExtractor:
             try:
                 user_id = self._get_user_id(raw_download, user_id_map)
                 """
-                Some download counts in Drupal are at the Codebase level but now they are always at the CodebaseRelease 
-                level. In order to match the new database structure assume that all codebase level downloads occurred 
+                Some download counts in Drupal are at the Codebase level but now they are always at the CodebaseRelease
+                level. In order to match the new database structure assume that all codebase level downloads occurred
                 at the first release of the codebase
                 """
                 if raw_download['type'] == 'model':

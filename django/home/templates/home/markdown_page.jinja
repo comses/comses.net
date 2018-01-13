@@ -3,16 +3,28 @@
 
 {% block introduction %}<h1>{{ page.heading }}</h1>{% endblock %}
 
+{% macro description() %}
+<div class='pt-3 lead'>
+    {% autoescape false %}
+        {{ page.description.rendered }}
+    {% endautoescape %}
+</div>
+{% endmacro %}
+
 {% block content %}
     {{ breadcrumb(page.get_breadcrumbs()) }}
     {{ subnav(page.get_navigation_links()) }}
-    <div class='jumbotron'>
-        <h1 class='display-5'>{{ page.title }}</h1>
-        <div class='pt-4 lead'>
-            {{ page.description|markdown }}
+    {% if page.jumbotron %}
+        <div class='jumbotron'>
+            <h1 class='display-5'>{{ page.title }}</h1>
+            {{ description() }}
         </div>
-    </div>
+    {% else %}
+        {{ description() }}
+    {% endif %}
     <div class='section'>
-        {{ page.body|markdown }}
+        {% autoescape false %}
+            {{ page.body.rendered }}
+        {% endautoescape %}
     </div>
 {% endblock %}

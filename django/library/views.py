@@ -394,9 +394,8 @@ class CodebaseReleaseFormUpdateView(FormUpdateView):
 
 class ContributorFilter(filters.BaseFilterBackend):
     def filter_queryset(self, request, queryset, view):
-        q = request.query_params.get('query')
-        queryset = get_search_queryset(q, queryset)
-        return queryset
+        qs = request.query_params.get('query')
+        return get_search_queryset(qs, queryset)
 
 
 class ContributorList(generics.ListAPIView):

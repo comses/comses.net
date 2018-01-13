@@ -83,12 +83,12 @@ def setup_site(ctx, site_name='CoMSES Net',
 
 
 @task(aliases=['idd'])
-def import_drupal_data(ctx, directory='incoming'):
+def import_drupal_data(ctx, directory='/shared/incoming'):
     dj(ctx, 'import_drupal_data -d {0}'.format(directory))
 
 
 @task(aliases=['icf'])
-def import_codebase_files(ctx, directory='incoming/models'):
+def import_codebase_files(ctx, directory='/shared/incoming/models'):
     dj(ctx, 'import_codebase_files -d {0}'.format(directory))
 
 

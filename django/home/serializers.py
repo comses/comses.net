@@ -51,7 +51,7 @@ class MemberProfileSerializer(serializers.ModelSerializer):
     avatar = serializers.SerializerMethodField()  # needed to materialize the FK relationship for wagtailimages
     orcid_url = serializers.ReadOnlyField()
     github_url = serializers.ReadOnlyField()
-    keywords = TagSerializer(many=True)
+    tags = TagSerializer(many=True)
     profile_url = serializers.URLField(source='get_absolute_url', read_only=True)
     bio = MarkdownField()
     research_interests = MarkdownField()
@@ -77,7 +77,7 @@ class MemberProfileSerializer(serializers.ModelSerializer):
         return full_name
 
     def update(self, instance, validated_data):
-        raw_tags = TagSerializer(many=True, data=validated_data.pop('keywords'))
+        raw_tags = TagSerializer(many=True, data=validated_data.pop('tags'))
         user = instance.user
         raw_user = validated_data.pop('user')
         user.first_name = raw_user['first_name']
@@ -96,16 +96,16 @@ class MemberProfileSerializer(serializers.ModelSerializer):
 
         user.save()
         obj = super().update(instance, validated_data)
-        self.save_keywords(instance, raw_tags)
+        self.save_tags(instance, raw_tags)
         return obj
 
     @staticmethod
-    def save_keywords(instance, tags):
+    def save_tags(instance, tags):
         if not tags.is_valid():
             raise serializers.ValidationError(tags.errors)
         db_tags = tags.save()
-        instance.keywords.clear()
-        instance.keywords.add(*db_tags)
+        instance.tags.clear()
+        instance.tags.add(*db_tags)
         instance.save()
 
     class Meta:
@@ -120,5 +120,5 @@ class MemberProfileSerializer(serializers.ModelSerializer):
             # institution
             'institution_name', 'institution_url',
             # MemberProfile
-            'avatar', 'bio', 'degrees', 'bio', 'degrees', 'full_member', 'keywords', 'orcid_url', 'github_url',
+            'avatar', 'bio', 'degrees', 'bio', 'degrees', 'full_member', 'tags', 'orcid_url', 'github_url',
             'personal_url', 'professional_url', 'profile_url', 'research_interests')

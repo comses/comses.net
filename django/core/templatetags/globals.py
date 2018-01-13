@@ -12,7 +12,6 @@ from jinja2 import Markup
 from webpack_loader.templatetags import webpack_loader as wl
 
 from core.serializers import PUBLISH_DATE_FORMAT
-from core.summarization import summarize
 from core.fields import render_sanitized_markdown
 
 
@@ -54,11 +53,6 @@ def is_production():
 def provider_login_url(request, provider_id, **kwargs):
     provider = providers.registry.by_id(provider_id, request)
     return provider.get_login_url(request, **kwargs)
-
-
-@library.global_function
-def summarize_markdown(md):
-    return summarize(md, 2)
 
 
 @library.global_function

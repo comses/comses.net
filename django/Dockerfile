@@ -2,7 +2,6 @@ FROM comses/base:1.0.1
 
 ARG REQUIREMENTS_FILE=requirements-dev.txt
 ARG RUN_SCRIPT=./deploy/dev.sh
-ENV NLTK_DATA_ZIP_URL=https://dev.commons.asu.edu/nltk_data/data.zip
 ENV UBUNTU_MIRROR=mirror.math.princeton.edu/pub
 
 RUN sed -i "s|archive.ubuntu.com|${UBUNTU_MIRROR}|" /etc/apt/sources.list && \
@@ -31,18 +30,12 @@ RUN sed -i "s|archive.ubuntu.com|${UBUNTU_MIRROR}|" /etc/apt/sources.list && \
         && mkdir -p /etc/service/django \
         && touch /etc/service/django/run \
         && chmod a+x /etc/service/django/run \
-        && pip3 install nltk \
-        && curl -O ${NLTK_DATA_ZIP_URL} \
-        && unzip -q -o data.zip -d /tmp \
-        && mkdir -p /usr/share/nltk_data \
-        && mv /tmp/nltk_data-gh-pages/packages/* /usr/share/nltk_data/ \
-        && find /usr/share/nltk_data -name '*.zip' -execdir unzip -q -o {} \;
+        && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 COPY ${REQUIREMENTS_FILE} requirements.txt /tmp/
 COPY ./deploy/db/autopostgresqlbackup.conf /etc/default/autopostgresqlbackup
 COPY ${RUN_SCRIPT} /etc/service/django/run
-RUN pip3 install -r /tmp/${REQUIREMENTS_FILE} \
-    && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+RUN pip3 install -r /tmp/${REQUIREMENTS_FILE} --no-cache-dir
 WORKDIR /code
 COPY . /code
 CMD ["/sbin/my_init"]

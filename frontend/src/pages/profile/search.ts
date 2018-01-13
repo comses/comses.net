@@ -22,7 +22,7 @@ import {ProfileAPI} from 'api'
                         <c-input type="text" v-model="fullTextSearch" name="fullTextSearch">
                             <label class="form-control-label" slot="label">By name</label>
                         </c-input>
-                        <c-tagger v-model="keywords" :required="false" placeholder="Type to add tags" label="Keywords">
+                        <c-tagger v-model="tags" :required="false" placeholder="Type to add tags" label="Keywords">
                         </c-tagger>
                     </div>
                 </div>
@@ -39,12 +39,12 @@ export class SearchProfiles extends Vue {
     private api = new ProfileAPI();
     fullTextSearch: string = '';
 
-    keywords: Array<{name: string}> = [];
+    tags: Array<{name: string}> = [];
 
     get query() {
         const queryObject = {
             query: this.fullTextSearch,
-            keywords: this.keywords.map(keyword => keyword.name),
+            tags: this.tags.map(keyword => keyword.name),
             page: 1,
         };
         return this.api.searchUrl(queryObject);
