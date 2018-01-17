@@ -13,7 +13,7 @@ enum ViewMode {
         <slot name="label" :label="label">
             <label :class="['form-control-label', requiredClass]">{{ label }}</label>
         </slot>
-        <markdown-editor :value="value" @input="updateValue"></markdown-editor>
+        <markdown-editor :value="value" @input="updateValue" ref="editor"></markdown-editor>
         <div v-if="isInvalid" class="invalid-feedback">{{ errorMessage }}</div>
         <slot name="help" :help="help">
             <small class="form-text text-muted">{{ help }}</small>
@@ -32,6 +32,15 @@ class MarkDown extends BaseControl {
 
     @Prop()
     help: string;
+
+    get simplemde() {
+        return (<any>this.$refs.editor).simplemde;
+    }
+
+    mounted() {
+        this.simplemde.codemirror.options.extraKeys['Tab'] = false;
+        this.simplemde.codemirror.options.extraKeys['Shift-Tab'] = false;
+    }
 }
 
 export default MarkDown;
