@@ -22,7 +22,7 @@ from modelcluster.models import ClusterableModel
 from rest_framework.exceptions import ValidationError
 from taggit.models import TaggedItemBase
 from unidecode import unidecode
-from wagtail.wagtailimages.models import Image, AbstractImage, AbstractRendition, get_upload_to
+from wagtail.wagtailimages.models import Image, AbstractImage, AbstractRendition, get_upload_to, ImageQuerySet
 from wagtail.wagtailsearch import index
 
 from core import fs
@@ -489,6 +489,11 @@ class Codebase(index.Indexed, ClusterableModel):
         permissions = (('view_codebase', 'Can view codebase'),)
 
 
+class CodebaseImageQuerySet(ImageQuerySet):
+    def accessible(self, user):
+        return self.filter(uploaded_by_user=user)
+
+
 class CodebaseImage(AbstractImage):
     codebase = models.ForeignKey(Codebase, related_name='featured_images')
     file = models.ImageField(
@@ -497,6 +502,8 @@ class CodebaseImage(AbstractImage):
     )
 
     admin_form_fields = Image.admin_form_fields + ('codebase',)
+
+    objects = CodebaseImageQuerySet.as_manager()
 
     def get_upload_to(self, filename):
         # adapted from wagtailimages/models

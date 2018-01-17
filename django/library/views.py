@@ -376,12 +376,12 @@ class CodebaseReleaseFilesOriginalsViewSet(BaseCodebaseReleaseFilesViewSet):
 
 
 class CodebaseReleaseFormCreateView(FormCreateView):
-    namespace = 'codebases/releases'
+    namespace = 'library/codebases/releases'
     model = CodebaseRelease
 
 
 class CodebaseReleaseFormUpdateView(FormUpdateView):
-    namespace = 'codebases/releases'
+    namespace = 'library/codebases/releases'
     model = CodebaseRelease
 
     def get_object(self, queryset=None):
