@@ -58,11 +58,7 @@ module.exports = createConfig([
         filename: 'js/[name].[chunkhash].js',
         publicPath: '/static/'
     }),
-    /* TODO: revisit babel requirement */
-    typescript({
-        useBabel: true,
-        babelCore: "@babel/core"
-    }),
+    typescript(),
     match('*.scss', { exclude: path.resolve('node_modules') }, [
         sass(),
         extractText('[name]-[contenthash:8].css')
