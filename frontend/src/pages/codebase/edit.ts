@@ -1,6 +1,6 @@
 import Vue from 'vue'
 import {Component, Prop} from 'vue-property-decorator'
-import {CodebaseAPI} from "api/index";
+import {CodebaseAPI, CodebaseReleaseAPI} from "api/index";
 import Checkbox from 'components/forms/checkbox'
 import Input from 'components/forms/input'
 import Tagger from 'components/tagger'
@@ -15,11 +15,15 @@ import {Upload} from "components/upload";
 export const schema = yup.object().shape({
     title: yup.string().required(),
     description: yup.string().required(),
+    latest_version_number: yup.string(),
     live: yup.bool(),
     is_replication: yup.bool(),
     tags: yup.array().of(yup.object().shape({name: yup.string().required()})).min(1).required(),
     repository_url: yup.string().url()
 });
+
+const api = new CodebaseAPI();
+const releaseApi = new CodebaseReleaseAPI();
 
 @Component(<any>{
     template: `<div>
@@ -60,7 +64,6 @@ export const schema = yup.object().shape({
     }
 })
 export default class Description extends createFormValidator(schema) {
-    private api = new CodebaseAPI();
     @Prop({default: null})
     _identifier: string;
 
@@ -69,12 +72,17 @@ export default class Description extends createFormValidator(schema) {
 
     detailPageUrl(state) {
         this.state.identifier = state.identifier;
-        return this.api.detailUrl(this.state.identifier);
+        const version_number = this.state.latest_version_number || '1.0.0';
+        if (_.isNull(this._identifier)) {
+            return releaseApi.editUrl({identifier: this.state.identifier, version_number});
+        } else {
+            return api.detailUrl(this.state.identifier);
+        }
     }
 
     async initializeForm() {
         if (this._identifier) {
-            const response = await this.api.retrieve(this._identifier);
+            const response = await api.retrieve(this._identifier);
             this.state = response.data;
         }
     }
@@ -92,9 +100,9 @@ export default class Description extends createFormValidator(schema) {
             handler = new HandlerShowSuccessMessage(this, this.redirect);
         }
         if (_.isNil(this.state.identifier)) {
-            return this.api.create(handler);
+            return api.create(handler);
         } else {
-            return this.api.update(this.state.identifier, handler);
+            return api.update(this.state.identifier, handler);
         }
     }
 

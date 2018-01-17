@@ -113,6 +113,10 @@ export class CodebaseReleaseAPI {
         return "/codebases/";
     }
 
+    editUrl({identifier, version_number}) {
+        return `${this.detailUrl({identifier, version_number})}edit/`;
+    }
+
     detailUrl({identifier, version_number}) {
         return `${this.baseUrl()}${identifier}/releases/${version_number}/`;
     }
