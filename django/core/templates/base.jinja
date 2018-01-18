@@ -188,6 +188,23 @@ function focusSearch() {
         {% block extra_css %}
             {# Override this in templates to add extra stylesheets #}
         {% endblock %}
+
+        {# https://stackoverflow.com/questions/3221561/eliminate-flash-of-unstyled-content #}
+        <style type="text/css">
+            .hide { display:none; }
+        </style>
+        <script type="text/javascript">
+            try {
+                var elm=document.getElementsByTagName("html")[0];
+                var old=elm.class || "";
+                elm.class=old+" hide";
+                document.addEventListener("DOMContentLoaded",function(event) {
+                    elm.class=old;
+                    });
+                }
+            catch(thr) {
+                }
+        </script>
     </head>
 
     <body class="{% block body_class %}{% endblock %}">
