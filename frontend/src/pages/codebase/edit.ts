@@ -9,7 +9,7 @@ import MessageDisplay from 'components/message_display'
 import {createFormValidator} from "pages/form"
 import * as yup from 'yup'
 import * as _ from 'lodash'
-import {HandlerWithRedirect, HandlerShowSuccessMessage} from "handler"
+import {HandlerWithRedirect, HandlerShowSuccessMessage, DismissOnSuccessHandler} from "handler"
 import {Upload} from "components/upload";
 
 export const schema = yup.object().shape({
@@ -97,7 +97,7 @@ export default class Description extends createFormValidator(schema) {
         if (_.isNull(this.redirect)) {
             handler = new HandlerWithRedirect(this);
         } else {
-            handler = new HandlerShowSuccessMessage(this, this.redirect);
+            handler = new DismissOnSuccessHandler(this, this.redirect);
         }
         if (_.isNil(this.state.identifier)) {
             return api.create(handler);

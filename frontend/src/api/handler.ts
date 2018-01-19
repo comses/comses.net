@@ -57,6 +57,37 @@ export interface FormRedirectComponent extends FormComponent {
     detailPageUrl(state): string
 }
 
+function baseHandleOtherError(response_or_network_error): string {
+    let msg: string;
+    if (!_.isUndefined(response_or_network_error.response)) {
+        switch (response_or_network_error.response.status) {
+            case 403: msg = 'Server Forbidden Error (tried to read, create or modify something you do not have permission to)'; break;
+            case 404: msg = 'Server Resource Not Found Error (tried to read, create or modify something that does not exist)'; break;
+            case 500: msg = 'Internal Server Error (server has a bug)'; break;
+            default: msg = `HTTP Error (${response_or_network_error.response.status})`; break;
+        }
+    } else {
+        msg = 'Network Error. Request never got a response from server.'
+    }
+    return msg;
+}
+
+function baseHandleValidationError(responseError, component: FormRedirectComponent) {
+    const response = responseError.response;
+    component.statusMessages = [{classNames: 'alert alert-danger', message: 'Server side validation failed'}];
+    const non_field_errors = response.data.non_field_errors;
+    for (const field of _.keys(response.data)) {
+        if (!_.isUndefined(component.errors[field])) {
+            component.errors[field] = response.data[field];
+        } else {
+            component.statusMessages.push({
+                classNames: 'alert alert-danger',
+                message: `${field}: '${response.data[field]}'`
+            })
+        }
+    }
+}
+
 export class HandlerWithRedirect implements CreateOrUpdateHandler {
     // Requires state and detailPageUrl properties to be present on component
 
@@ -68,23 +99,13 @@ export class HandlerWithRedirect implements CreateOrUpdateHandler {
     }
 
     handleOtherError(response_or_network_error) {
-        this.component.statusMessages = [{classNames: 'alert alert-danger', message: 'Network error'}];
+        const msg = baseHandleOtherError(response_or_network_error);
+        this.component.statusMessages = [{classNames: 'alert alert-danger', message: msg}];
     }
 
+
     handleServerValidationError(responseError) {
-        const response = responseError.response;
-        this.component.statusMessages = [{classNames: 'alert alert-danger', message: 'Server side validation failed'}];
-        const non_field_errors = response.data.non_field_errors;
-        for (const field of _.keys(response.data)) {
-            if (!_.isUndefined(this.component.errors[field])) {
-                this.component.errors[field] = response.data[field];
-            } else {
-                this.component.statusMessages.push({
-                    classNames: 'alert alert-danger',
-                    message: `${field}: '${response.data[field]}'`
-                })
-            }
-        }
+        baseHandleValidationError(responseError, this.component);
     }
 
     handleSuccessWithDataResponse(response: AxiosResponse) {
@@ -97,7 +118,36 @@ export class HandlerWithRedirect implements CreateOrUpdateHandler {
 }
 
 export class HandlerShowSuccessMessage implements CreateOrUpdateHandler {
-    constructor(public component: FormComponent, public modelId?: string) {
+    constructor(public component: FormComponent) {
+    }
+
+    get state() {
+        return this.component.state;
+    }
+
+    handleOtherError(response_or_network_error) {
+        const msg = baseHandleOtherError(response_or_network_error);
+        this.component.statusMessages = [{classNames: 'alert alert-danger', message: msg}];
+    }
+
+    handleServerValidationError(response: AxiosResponse) {
+        this.component.statusMessages = [{classNames: 'alert alert-danger', message: 'Server side validation failed'}];
+    }
+
+    handleSuccessWithDataResponse(response: AxiosResponse) {
+        this.component.state = response.data;
+        this.component.statusMessages = [{classNames: 'alert alert-success', message: 'Successfully saved'}];
+    }
+
+    handleSuccessWithoutDataResponse(response: AxiosResponse) {
+        this.component.statusMessages = [{classNames: 'alert alert-success', message: 'Successfully saved'}];
+    }
+
+
+}
+
+export class DismissOnSuccessHandler implements CreateOrUpdateHandler {
+    constructor(public component: FormComponent, public modalId: string) {
     }
 
     get state() {
@@ -126,20 +176,18 @@ export class HandlerShowSuccessMessage implements CreateOrUpdateHandler {
 
     handleSuccessWithDataResponse(response: AxiosResponse) {
         this.component.state = response.data;
-        this.component.statusMessages = [{classNames: 'alert alert-success', message: 'Successfully saved'}];
+        this.component.statusMessages = [];
         this.dismissModal();
     }
 
     handleSuccessWithoutDataResponse(response: AxiosResponse) {
-        this.component.statusMessages = [{classNames: 'alert alert-success', message: 'Successfully saved'}];
+        this.component.statusMessages = [];
         this.dismissModal();
     }
 
     dismissModal() {
-        if (!_.isUndefined(this.modelId)) {
-            $(this.modelId).modal('hide');
-            this.component.$emit('updated', this.state);
-        }
+        $(this.modalId).modal('hide');
+        this.component.$emit('updated', this.state);
     }
 }
 
