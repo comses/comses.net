@@ -1,18 +1,18 @@
 {% extends "sidebar_layout.jinja" %}
-{% from "common.jinja" import item_component, list_page, paginator, breadcrumb, subnav, member_profile_href %}
+{% from "common.jinja" import item_component, list_page, paginator, breadcrumb, subnav, member_profile_href, search_tag_href %}
 
 {% macro render_user(member_profile, detail_url_name) %}
     <div class="search-result">
-        <div class="date-info">
-            <small class="text-muted pull-right">Joined on: {{ member_profile.date_joined }}</small>
-        </div>
         <div class="title">
-            <h1>{{ member_profile_href(member_profile) }}</h1>
+            <h1>{{ member_profile_href(member_profile) }}<small class="text-muted pull-right">Joined on: {{ member_profile.date_joined }}</small></h1>
+            {% if member_profile.avatar is not none %}
+                {{ image(member_profile.avatar, "fill-50x50", width=50, height=50, class="img-fluid img-thumbnail d-block rounded-circle") }}
+            {% endif %}
         </div>
         {% if member_profile.tags %}
             <div class="tag-list">
                 {% for tag in member_profile.tags %}
-                    <span class="badge badge-primary p-1">{{ tag.name }}</span>
+                    {{ search_tag_href(tag, category='users') }}
                 {% endfor %}
             </div>
         {% endif %}
