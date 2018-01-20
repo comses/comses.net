@@ -8,9 +8,11 @@ from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.views import redirect_to_login
 from django.core.exceptions import PermissionDenied
+from django.db.models.functions import Lower
 from django.http import Http404, HttpResponseBadRequest, HttpResponseRedirect
 from django.shortcuts import render
 from django.views.generic import DetailView, TemplateView
+from itertools import chain
 from rest_framework import filters, viewsets, generics
 from rest_framework.exceptions import PermissionDenied as DrfPermissionDenied, NotAuthenticated
 from rest_framework.pagination import PageNumberPagination
@@ -24,6 +26,28 @@ from .utils import parse_datetime
 from .view_helpers import get_search_queryset, retrieve_with_perms
 
 logger = logging.getLogger(__name__)
+
+
+class CaseInsensitiveOrderingFilter(filters.OrderingFilter):
+
+    STRING_ORDERING_FIELDS = chain.from_iterable([
+        (f, '-' + f) for f in ('user__username', 'user__email', 'user__last_name', 'title')
+    ])
+
+    def filter_queryset(self, request, queryset, view):
+        ordering = self.get_ordering(request, queryset, view)
+        if ordering:
+            case_insensitive_ordering = []
+            for field in ordering:
+                if field not in self.STRING_ORDERING_FIELDS:
+                    continue
+                if field.startswith('-'):
+                    case_insensitive_ordering.append(Lower(field[1:]).desc())
+                else:
+                    case_insensitive_ordering.append(Lower(field).asc())
+            queryset = queryset.order_by(*case_insensitive_ordering)
+
+        return queryset
 
 
 def _common_namespace_path(model):
@@ -297,7 +321,7 @@ class EventViewSet(CommonViewSetMixin, viewsets.ModelViewSet):
     serializer_class = EventSerializer
     queryset = Event.objects.all()
     pagination_class = SmallResultSetPagination
-    filter_backends = (EventFilter,)
+    filter_backends = (CaseInsensitiveOrderingFilter, EventFilter)
 
     def get_queryset(self):
         return self.queryset
@@ -386,7 +410,7 @@ class JobViewSet(CommonViewSetMixin, viewsets.ModelViewSet):
     serializer_class = JobSerializer
     pagination_class = SmallResultSetPagination
     queryset = Job.objects.all()
-    filter_backends = (JobFilter,)
+    filter_backends = (CaseInsensitiveOrderingFilter, JobFilter)
 
     def get_queryset(self):
         return self.queryset

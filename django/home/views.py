@@ -18,7 +18,8 @@ from wagtail.wagtailsearch.backends import get_search_backend
 from core.models import FollowUser, Event, Job
 from core.serializers import TagSerializer
 from core.view_helpers import retrieve_with_perms, get_search_queryset
-from core.views import CommonViewSetMixin, FormCreateView, FormUpdateView, SmallResultSetPagination
+from core.views import (CaseInsensitiveOrderingFilter, CommonViewSetMixin, FormCreateView, FormUpdateView,
+                        SmallResultSetPagination)
 from .models import FeaturedContentItem, MemberProfile
 from .serializers import (FeaturedContentItemSerializer, UserMessageSerializer, MemberProfileSerializer)
 
@@ -81,7 +82,7 @@ class ProfileViewSet(CommonViewSetMixin, viewsets.ModelViewSet):
     serializer_class = MemberProfileSerializer
     queryset = MemberProfile.objects.public().with_institution().order_by('id')
     pagination_class = SmallResultSetPagination
-    filter_backends = (filters.OrderingFilter, MemberProfileFilter)
+    filter_backends = (CaseInsensitiveOrderingFilter, MemberProfileFilter)
     ordering_fields = ('user__username', 'user__last_name', 'user__email',)
 
     def retrieve(self, request, *args, **kwargs):

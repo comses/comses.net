@@ -14,7 +14,8 @@ from rest_framework.response import Response
 
 from core.permissions import ComsesPermissions
 from core.view_helpers import add_change_delete_perms, get_search_queryset
-from core.views import CommonViewSetMixin, FormUpdateView, FormCreateView, SmallResultSetPagination
+from core.views import (CommonViewSetMixin, FormUpdateView, FormCreateView, SmallResultSetPagination,
+                        CaseInsensitiveOrderingFilter)
 from .fs import FileCategoryDirectories, StagingDirectories, MessageLevels
 from .models import Codebase, CodebaseRelease, Contributor, CodebaseImage
 from .permissions import CodebaseReleaseUnpublishedFilePermissions
@@ -68,7 +69,7 @@ class CodebaseViewSet(CommonViewSetMixin, viewsets.ModelViewSet):
     lookup_value_regex = r'[\w\-\.]+'
     pagination_class = SmallResultSetPagination
     queryset = Codebase.objects.order_by('-date_created')
-    filter_backends = (filters.OrderingFilter, CodebaseFilter)
+    filter_backends = (CaseInsensitiveOrderingFilter, CodebaseFilter)
     ordering_fields = ('first_published_at', 'title', 'last_modified', 'peer_reviewed',)
     ordering = ('last_modified', 'first_published_at')
 
