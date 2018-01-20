@@ -4,7 +4,7 @@
     <h1><i class='fa fa-cloud-upload'></i> Archive your software</h1>
 {% endblock %}
 {% block content %}
-    <div id="app"></div>
+    <div id="app" data-version-number="{{ object.version_number }}" data-identifier="{{ object.codebase.identifier }}"></div>
 {% endblock %}
 
 {% block js %}

@@ -81,7 +81,7 @@ function createDefaultErrors(keys) {
     return errors;
 }
 
-function populateErrorsFromValidationError(self, ve) {
+export function populateErrorsFromValidationError(self, ve) {
     const errors = ve.inner;
     if (!_.isNil(ve.path)) {
         self.errors[ve.path] = [];

@@ -12,6 +12,7 @@ import {store} from './store'
 import {CreateOrUpdateHandler} from "api/handler";
 import {CodebaseReleaseAPI, CodebaseAPI} from "api";
 import * as _ from 'lodash';
+import {Progress} from "pages/codebase/release/progress";
 
 const codebaseReleaseAPI = new CodebaseReleaseAPI();
 const codebaseAPI = new CodebaseAPI();
@@ -195,6 +196,7 @@ class PublishModal extends Vue implements CreateOrUpdateHandler {
     components: {
         'c-publish-modal': PublishModal,
         'c-codebase-edit-form-popup': CodebaseEditFormPopup,
+        'c-progress': Progress
     },
     template: `<div>
         <div v-if="isInitialized">
@@ -205,8 +207,9 @@ class PublishModal extends Vue implements CreateOrUpdateHandler {
                     Unpublished
                 </span>
             </h1>
+            <c-progress></c-progress>
             <ul class="nav nav-tabs justify-content-center">
-                <li class="nav-item" v-if="!isPublished">
+                <li class="nav-item" v-if="!isPublished" data-toggle="tooltip" data-placement="bottom" title="">
                     <router-link :to="{ name: 'upload'}" class="nav-link required" active-class="disabled">Upload</router-link>
                 </li>
                 <li class="nav-item">

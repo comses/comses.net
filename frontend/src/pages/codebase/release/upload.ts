@@ -12,13 +12,20 @@ Vue.use(Vuex);
 
 @Component(<any>{
     template: `<div>
-            <c-upload :uploadType="config.uploadType" :acceptedFileTypes="config.acceptedFileTypes"
-                :instructions="config.instructions" :originalInstructions="config.originalInstructions" 
-                :originals="originals(config.uploadType)" :uploadUrl="uploadUrl(config.uploadType)"
-                :title="config.title" v-for="config in configs" :key="config.uploadType"
-                @deleteFile="deleteFile(config.uploadType, $event)" @clear="clear(config.uploadType)"
-                @doneUpload="doneUpload(config.uploadType)">    
-            </c-upload>
+            <p>
+                Releases should include any code, documentation, input data and simulation results that would help
+                someone else to understand the model. At least one code file is required.
+            </p>
+            <div v-for="config in configs">
+                <c-upload :uploadType="config.uploadType" :acceptedFileTypes="config.acceptedFileTypes"
+                    :instructions="config.instructions" :originalInstructions="config.originalInstructions" 
+                    :originals="originals(config.uploadType)" :uploadUrl="uploadUrl(config.uploadType)"
+                    :title="config.title" :key="config.uploadType"
+                    @deleteFile="deleteFile(config.uploadType, $event)" @clear="clear(config.uploadType)"
+                    @doneUpload="doneUpload(config.uploadType)">    
+                </c-upload>
+                <p v-if="config.description">{{ config.description }}</p>
+            </div>
         </div>`,
     components: {
         'c-upload': Upload
@@ -31,7 +38,9 @@ export class UploadPage extends Vue {
             acceptedFileTypes: '*/*',
             title: 'Upload Code',
             instructions: 'Upload code associated with a project here. If an archive (zip or tar file) is uploaded it is extracted first.',
-            originalInstructions: 'The original files uploaded show here. It is possible to have one archive or many non archive files. Files should be code but all files are accepted'
+            originalInstructions: 'The original files uploaded show here. It is possible to have one archive or many non archive files. Files should be codebase related but all files are accepted',
+            description: `Code associated with a release goes here. If you have your project in version control a 
+                snapshot of the whole project should go in this folder as an archive.`
         },
         {
             uploadType: 'data',

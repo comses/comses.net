@@ -262,6 +262,7 @@ class EditReleaseContributor extends createFormValidator(releaseContributorSchem
         const msg = _.cloneDeep(this.state);
         this.replace(createDefaultValue(releaseContributorSchema));
         (<Vue>this.$refs.releaseContributorSelect).$el.focus();
+        msg.edited = true;
         this.$emit('save', msg);
     }
 }
@@ -269,10 +270,16 @@ class EditReleaseContributor extends createFormValidator(releaseContributorSchem
 @Component(<any>{
     // language=Vue
     template: `<div>
+        <p>
+            Please list the contributors who worked on the project here. You (the submitter) must be included in the
+            list of release contributors. A correct listing of contributors ensures that the model displays in their 
+            user profile on CoMSES (assuming they have a user account) and makes the model discoverable by searching for
+            the contributor's name.
+        </p>
         <label class="form-control-label required">Current Release Contributors</label>
         <draggable v-model="state" v-if="state.length > 0">
             <ul v-for="releaseContributor in state" :key="releaseContributor._id" class="list-group">
-                <li class="list-group-item d-flex justify-content-between">
+                <li :class="['list-group-item d-flex justify-content-between', { 'list-group-item-warning': releaseContributor.edited}]">
                     <div>
                         <span class="text-muted fa fa-minus-square-o has-pointer-cursor"></span>
                         {{ releaseContributorLabel(releaseContributor) }}
@@ -289,18 +296,19 @@ class EditReleaseContributor extends createFormValidator(releaseContributorSchem
             </ul>
         </draggable>
         <div class="alert alert-primary" role="alert" v-else>No contributors</div>
+        <button type="button" class="btn btn-primary" @click="save">Save</button>
+        <c-message-display :messages="statusMessages" @clear="statusMessages = []" />
         <div>
             <small class="text-muted">
-                Click on a release contributor edit and delete buttons to . Drag and drop release contributors to change the order in which they appear. 
-                Main release contributors at the top. Create a new contributor by clicking the add button below.
+                Click on a release contributor edit and delete buttons to edit or delete them. Drag and drop release 
+                contributors to change the order in which they appear. Main release contributors at the top. Create a 
+                new contributor by clicking the add button below. Unsaved release contributors display in yellow.
             </small>
         </div>
         <c-edit-release-contributor :releaseContributor="releaseContributor"
                 @save="saveReleaseContributor" @cancel="cancelReleaseContributor" ref="releaseContributor"
                 @editContributor="editContributor">
         </c-edit-release-contributor>
-        <c-message-display :messages="statusMessages" />
-        <button type="button" class="btn btn-primary" @click="save">Save</button>
         <c-edit-contributor :contributor="contributor" ref="contributor"
                             @save="saveContributor" @cancel="cancelContributor">
         </c-edit-contributor>
@@ -409,6 +417,7 @@ class EditContributors extends Vue {
     deleteReleaseContributor(_id: string) {
         const index = _.findIndex(this.state, rc => rc._id === _id);
         this.state.splice(index, 1);
+        this.statusMessages = [{classNames: 'alert alert-warning', message: 'You have unsaved contributor deletions'}]
     }
 
     // Contributor

@@ -16,7 +16,7 @@ import {HandlerShowSuccessMessage} from 'api/handler'
 
 const codebaseReleaseAPI = new CodebaseReleaseAPI();
 
-const schema = yup.object().shape({
+export const schema = yup.object().shape({
     release_notes: yup.string().required().label('this'),
     embargo_end_date: yup.date().nullable().label('this'),
     os: yup.string().required().label('this'),
@@ -31,6 +31,10 @@ const schema = yup.object().shape({
 
 @Component(<any>{
     template: `<div>
+        <p>
+            Detailed metadata for a release. Metadata makes the release more discoverable and helps potential users 
+            quickly determine if the model is about an issue useful to them.
+        </p>
         <c-markdown v-model="release_notes" :errorMsgs="errors.release_notes" name="releaseNotes" rows="3" 
             label="Release Notes" :required="config.release_notes">
         </c-markdown>
@@ -73,7 +77,7 @@ const schema = yup.object().shape({
             </small>
         </div>
         <c-message-display :messages="statusMessages" @clear="statusMessages = []"/>
-        <button type="button" v-show="!isDirty" class="btn btn-primary" @click="save">Save</button>
+        <button type="button" class="btn btn-primary" @click="save">Save</button>
     </div>`,
     components: {
         'c-checkbox': Checkbox,
@@ -94,8 +98,6 @@ export default class Detail extends createFormValidator(schema) {
     get identity() {
         return this.$store.getters.identity;
     }
-
-    isDirty = false;
 
     message: string = '';
 
@@ -141,13 +143,19 @@ export default class Detail extends createFormValidator(schema) {
     }
 
     async save() {
-        const {identifier, version_number} = this.identity;
-        const self: any = this;
-        await self.validate();
-        const response = await codebaseReleaseAPI.updateDetail({
-            identifier,
-            version_number
-        }, new HandlerShowSuccessMessage(this));
-        await this.$store.dispatch('getCodebaseRelease', {identifier, version_number});
+        try {
+            const {identifier, version_number} = this.identity;
+            const self: any = this;
+            await self.validate();
+            const response = await codebaseReleaseAPI.updateDetail({
+                identifier,
+                version_number
+            }, new HandlerShowSuccessMessage(this));
+            await this.$store.dispatch('getCodebaseRelease', {identifier, version_number});
+        } catch (e) {
+            if (!(e instanceof yup.ValidationError)) {
+                throw e;
+            }
+        }
     }
 }

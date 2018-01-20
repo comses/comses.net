@@ -40,7 +40,7 @@ export interface CreateOrUpdateHandler {
 
     handleOtherError(network_error): void
 
-    handleServerValidationError(response: AxiosResponse): void
+    handleServerValidationError(response: { response: AxiosResponse }): void
 }
 
 export interface FormComponent {
@@ -130,8 +130,12 @@ export class HandlerShowSuccessMessage implements CreateOrUpdateHandler {
         this.component.statusMessages = [{classNames: 'alert alert-danger', message: msg}];
     }
 
-    handleServerValidationError(response: AxiosResponse) {
-        this.component.statusMessages = [{classNames: 'alert alert-danger', message: 'Server side validation failed'}];
+    handleServerValidationError(response: { response: AxiosResponse}) {
+        const message = response.response.data.non_field_errors;
+        this.component.statusMessages = [{
+            classNames: 'alert alert-danger',
+            message: message ? `Server side validation failed: ${message}` : 'Server side validation failed'
+        }];
     }
 
     handleSuccessWithDataResponse(response: AxiosResponse) {
@@ -170,7 +174,7 @@ export class DismissOnSuccessHandler implements CreateOrUpdateHandler {
         this.component.statusMessages = [{classNames: 'alert alert-danger', message: msg}];
     }
 
-    handleServerValidationError(response: AxiosResponse) {
+    handleServerValidationError(response: { response: AxiosResponse }) {
         this.component.statusMessages = [{classNames: 'alert alert-danger', message: 'Server side validation failed'}];
     }
 
