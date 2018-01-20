@@ -37,7 +37,7 @@ def should_enable_discourse(is_public: bool):
     Codebase/CodebaseRelease/Event/Job) is public. If there is no 'live' attribute, default to True as it is public by
     default.
     """
-    return is_public and not settings.DEBUG
+    return is_public and is_production()
 
 @library.global_function
 def is_debug():
@@ -46,7 +46,7 @@ def is_debug():
 
 @library.global_function
 def is_production():
-    return settings.DEPLOY_ENVIRONMENT.is_production()
+    return settings.DEPLOY_ENVIRONMENT.is_production() and not settings.DEBUG
 
 
 @library.global_function
