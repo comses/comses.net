@@ -239,12 +239,12 @@ class Codebase(index.Indexed, ClusterableModel):
 
     repository_url = models.URLField(blank=True,
                                      help_text=_('URL to code repository, e.g., https://github.com/comses/wolf-sheep'))
-    # FIXME: original Drupal data was stored inline like this
-    # after catalog integration remove these / replace with M2M relationships
+    replication_text = models.TextField(blank=True, help_text=_('URL / DOI / citation for the original model being replicated'))
+    # FIXME: original Drupal data was stored as text fields -
+    # after catalog integration remove these / replace with M2M relationships to Publication entities
     # publication metadata
-    # We should also allow a model to have multiple references
-    references_text = models.TextField(blank=True)
-    associated_publication_text = models.TextField(blank=True)
+    references_text = models.TextField(blank=True, help_text=_("Reference DOI / Citations"))
+    associated_publication_text = models.TextField(blank=True, help_text=_("DOI / URL / citation to publication associated with this codebase."))
     tags = ClusterTaggableManager(through=CodebaseTag)
     # evaluate this JSONField as an add-anything way to record relationships between this Codebase and other entities
     # with URLs / resolvable identifiers
@@ -271,7 +271,8 @@ class Codebase(index.Indexed, ClusterableModel):
             index.SearchField('name'),
         ]),
         index.SearchField('get_all_contributors_search_fields'),
-        # index.SearchField('release_metadata'),
+        index.SearchField('references_text', partial_match=True),
+        index.SearchField('associated_publication_text', partial_match=True),
     ]
 
     HAS_PUBLISHED_KEY = True

@@ -63,8 +63,7 @@
             {% if release_notes %}
                 {{ release_notes|markdown }}
             {% else %}
-                There aren't any release notes associated with this release yet. Should we require them of all
-                submissions? (Yes | No)
+                There aren't any release notes associated with this release yet. 
             {% endif %}
             </div>
         </div>
@@ -84,18 +83,22 @@
             {% endif %}
         </div>
     </div>
-    {% if references_text %}
+    {% if codebase.replication %}
         <div class='card-metadata'>
             <div class='card-body'>
-                <h2 class='card-title'>
-                    {% if codebase.replication %}
-                        This is a replication of a previously published model:
-                    {% else %}
-                        References:
-                    {% endif %}
-                </h2>
+                <h2 class='card-title'>Replication of a previously published model</h2>
                 <p class='card-text'>
-                {{ references_text|markdown }}
+                {{ replication_text }}
+                </p>
+            </div>
+        </div>
+    {% endif %}
+    {% if codebase.references_text %}
+        <div class='card-metadata'>
+            <div class='card-body'>
+                <h2 class='card-title'>References</h2>
+                <p class='card-text'>
+                {{ codebase.references_text }}
                 </p>
             </div>
         </div>
@@ -105,7 +108,7 @@
             <div class='card-body'>
                 <h2 class='card-title'>Associated Publication</h2>
                 <p class='card-text'>
-                {{ codebase.associated_publication_text|markdown }}
+                {{ codebase.associated_publication_text }}
                 </p>
             </div>
         </div>

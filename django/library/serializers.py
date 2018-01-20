@@ -178,7 +178,7 @@ class CodebaseSerializer(serializers.ModelSerializer, FeaturedImageMixin):
 
     def create(self, validated_data):
         serialized_tags = TagSerializer(many=True, data=validated_data.pop('tags'))
-        codebase = self.Meta.model(**validated_data)
+        codebase = Codebase(**validated_data)
         codebase.identifier = codebase.uuid
         codebase.save()
         save_tags(codebase, serialized_tags)
@@ -193,7 +193,7 @@ class CodebaseSerializer(serializers.ModelSerializer, FeaturedImageMixin):
         fields = ('absolute_url', 'all_contributors', 'date_created', 'download_count', 'featured_image',
                   'repository_url', 'first_published_at', 'last_published_on', 'latest_version_number',
                   'releases', 'submitter', 'summarized_description', 'tags', 'description', 'title',
-                  'doi', 'identifier', 'id',)
+                  'doi', 'identifier', 'id', 'references_text', 'associated_publication_text', 'replication_text')
 
 
 class RelatedCodebaseSerializer(serializers.ModelSerializer, FeaturedImageMixin):
