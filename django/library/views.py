@@ -72,7 +72,7 @@ class CodebaseViewSet(CommonViewSetMixin, viewsets.ModelViewSet):
     filter_backends = (CaseInsensitiveOrderingFilter, CodebaseFilter)
     ordering_fields = ('first_published_at', 'title', 'last_modified', 'peer_reviewed', 'submitter__last_name',
                        'submitter__username')
-    ordering = ('last_modified', 'first_published_at')
+    ordering = ('-first_published_at', 'title')
 
     # FIXME: should we use filter_backends
     # (http://www.django-rest-framework.org/api-guide/filtering/#djangoobjectpermissionsfilter)

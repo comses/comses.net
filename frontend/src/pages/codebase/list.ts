@@ -8,11 +8,10 @@ new SortBy({
     propsData: {
         sortOptions: [
             {label: 'Publish date', value: 'first_published_at'},
-            {label: 'Last modified', value: 'last_modified'},
-            {label: 'Peer reviewed', value: 'peer_reviewed'},
             {label: 'Title', value: 'title'},
-            {label: 'Author Family Name', value: 'submitter__last_name'},
-            {label: 'Author Username', value: 'submitter__username'},
+            {label: 'Author: family name', value: 'submitter__last_name'},
+            {label: 'Author: username', value: 'submitter__username'},
+            {label: 'Peer reviewed', value: 'peer_reviewed'},
         ],
     },
 }).$mount('#sortby');
