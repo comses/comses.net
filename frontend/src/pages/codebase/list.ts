@@ -11,7 +11,8 @@ new SortBy({
             {label: 'Last modified', value: 'last_modified'},
             {label: 'Peer reviewed', value: 'peer_reviewed'},
             {label: 'Title', value: 'title'},
-            {label: 'Author', value: 'author'},
+            {label: 'Author Family Name', value: 'submitter__last_name'},
+            {label: 'Author Username', value: 'submitter__username'},
         ],
     },
 }).$mount('#sortby');

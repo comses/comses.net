@@ -30,9 +30,10 @@ logger = logging.getLogger(__name__)
 
 class CaseInsensitiveOrderingFilter(filters.OrderingFilter):
 
-    STRING_ORDERING_FIELDS = chain.from_iterable([
-        (f, '-' + f) for f in ('user__username', 'user__email', 'user__last_name', 'title')
-    ])
+    STRING_ORDERING_FIELDS = list(chain.from_iterable([
+        (f, '-' + f) for f in ('title', 'user__username', 'user__email', 'user__last_name',
+                               'submitter__username', 'submitter__last_name', 'submitter__email',)
+    ]))
 
     def filter_queryset(self, request, queryset, view):
         ordering = self.get_ordering(request, queryset, view)
@@ -40,8 +41,8 @@ class CaseInsensitiveOrderingFilter(filters.OrderingFilter):
             case_insensitive_ordering = []
             for field in ordering:
                 if field not in self.STRING_ORDERING_FIELDS:
-                    continue
-                if field.startswith('-'):
+                    case_insensitive_ordering.append(field)
+                elif field.startswith('-'):
                     case_insensitive_ordering.append(Lower(field[1:]).desc())
                 else:
                     case_insensitive_ordering.append(Lower(field).asc())

@@ -70,7 +70,8 @@ class CodebaseViewSet(CommonViewSetMixin, viewsets.ModelViewSet):
     pagination_class = SmallResultSetPagination
     queryset = Codebase.objects.order_by('-date_created')
     filter_backends = (CaseInsensitiveOrderingFilter, CodebaseFilter)
-    ordering_fields = ('first_published_at', 'title', 'last_modified', 'peer_reviewed',)
+    ordering_fields = ('first_published_at', 'title', 'last_modified', 'peer_reviewed', 'submitter__last_name',
+                       'submitter__username')
     ordering = ('last_modified', 'first_published_at')
 
     # FIXME: should we use filter_backends
