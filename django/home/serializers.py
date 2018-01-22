@@ -36,6 +36,7 @@ class MemberProfileSerializer(serializers.ModelSerializer):
     full_name = serializers.SerializerMethodField(source='user.full_name')
     given_name = serializers.CharField(source='user.first_name')
     username = serializers.CharField(source='user.username', read_only=True)
+    email = serializers.CharField(source='user.email')
 
     # Followers
     follower_count = serializers.ReadOnlyField(source='user.following.count')
@@ -113,12 +114,12 @@ class MemberProfileSerializer(serializers.ModelSerializer):
         fields = (
             # User
             'date_joined', 'family_name', 'full_name', 'given_name', 'profile_url',
-            'username',
+            'username', 'email',
             # Follower
             'follower_count', 'following_count',
             'codebases',
             # institution
             'institution_name', 'institution_url',
             # MemberProfile
-            'avatar', 'bio', 'degrees', 'bio', 'degrees', 'full_member', 'tags', 'orcid_url', 'github_url',
+            'avatar', 'bio', 'degrees', 'full_member', 'tags', 'orcid_url', 'github_url',
             'personal_url', 'professional_url', 'profile_url', 'research_interests')

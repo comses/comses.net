@@ -52,7 +52,7 @@ const contributorSchema = yup.object().shape({
     family_name: yup.string().required(),
     middle_name: yup.string(),
     affiliations: yup.array().of(yup.string()).min(1).required(),
-    type: yup.mixed().oneOf(['person', 'organization'])
+    type: yup.string().oneOf(['person', 'organization']).default('person')
 });
 
 export const releaseContributorSchema = yup.object().shape({
@@ -87,7 +87,7 @@ enum FormContributorState {
                     <h5 class="modal-title">Create a contributor</h5>
                 </div>
                 <div class="modal-body">
-                    <c-username name="username" v-model="user"
+                    <c-username name="username" v-model="user" @input="setUserDefaults"
                         :errorMsgs="errors.user"
                         label="User Name" help="Find a matching user here">
                     </c-username>
@@ -113,9 +113,14 @@ enum FormContributorState {
                         label="Affiliations"
                         help="The institution(s) and other groups you are affiliated with. Press enter to add.">
                     </c-edit-affiliations>
-                    <c-input type="select" name="type" v-model="type" label="Contributor Type" :errorMsgs="errors.type"
-                        :required="config.type">
-                    </c-input>
+                    <label for="contributorType" class="form-control-label">
+                        Contributor Type
+                    </label>
+                    <select name="type" v-model="type" class="form-control" id="contributorType">
+                        <option>person</option>
+                        <option>organization</option>
+                    </select>
+                    <div v-if="errors.type.length > 0" class="invalid-feedback-always">{{ errors.type.join(', ') }}</div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-primary" @click="save">Save</button>
@@ -149,6 +154,16 @@ class EditContributor extends createFormValidator(contributorSchema) {
     async save() {
         await this.validate();
         this.$emit('save', this.state);
+    }
+
+    setUserDefaults(user) {
+        this.state.given_name = this.state.given_name || user.given_name;
+        this.state.family_name = this.state.family_name || user.family_name;
+        this.state.email = this.state.email || user.email;
+        this.state.type = this.state.type || user.type;
+        if (_.isEmpty(this.state.affiliations) && user.institution_name) {
+            this.state.affiliations = [{ name: user.institution_name }];
+        }
     }
 
     cancel() {
@@ -221,12 +236,13 @@ class EditReleaseContributor extends createFormValidator(releaseContributorSchem
     matchingContributors: Array<Contributor> = [];
     roleOptions: Array<string> = Object.keys(roleLookup);
 
-    @Watch('releaseContributor')
+    @Watch('releaseContributor', { immediate: true, deep: true })
     setFormState(releaseContributor: CodebaseContributor | null) {
         if (!_.isNull(releaseContributor)) {
             (<any>this).replace(releaseContributor);
         } else {
             (<any>this).replace(createDefaultValue(releaseContributorSchema));
+            (<any>this).state.contributor = createDefaultValue(contributorSchema);
         }
     }
 

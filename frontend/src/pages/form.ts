@@ -5,6 +5,9 @@ import {VueClass} from 'vue-class-component/lib/declarations'
 import {Component} from 'vue-property-decorator'
 
 export function createDefaultValue(schema) {
+    if (schema._default !== undefined) {
+        return schema._default;
+    }
     switch (schema.constructor.name) {
         case 'ObjectSchema': {
             let default_value: object = {};
