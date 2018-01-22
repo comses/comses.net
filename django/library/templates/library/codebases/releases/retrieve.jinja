@@ -36,7 +36,7 @@
         {% endif %}
         <h1 class='codebase-title pb-4'>{{ codebase.title }}</h1>
         <div class='metadata'>
-            <b>Submitted by:</b> {{ member_profile_href(submitter) }}
+            <b>Submitted by:</b> {{ member_profile_href(codebase.submitter) }}
             <b class='pl-2'>Platform:</b>
             {% for p in platform_tags %}
                 {{ search_tag_href(p, category='codebases') }}
@@ -259,8 +259,8 @@
             <div class='section'>
                 <b class="card-title">Status</b>
                 <p class="card-text">
-                {% if peer_reviewed %}
-                    <img src="{{ static("images/icons/peer-reviewed.png") }}" alt="Arizona State University">
+                {% if codebase.peer_reviewed %}
+                    <img src="{{ static("images/icons/peer-reviewed.png") }}" alt="Peer Reviewed">
                 {% elif user == submitter %}
                     {# FIXME: check if user has permissions to request review, currently naive submitter check #}
                     <a class='btn btn-primary'>Request Review</a>
