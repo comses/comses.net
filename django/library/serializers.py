@@ -193,7 +193,8 @@ class CodebaseSerializer(serializers.ModelSerializer, FeaturedImageMixin):
         fields = ('absolute_url', 'all_contributors', 'date_created', 'download_count', 'featured_image',
                   'repository_url', 'first_published_at', 'last_published_on', 'latest_version_number',
                   'releases', 'submitter', 'summarized_description', 'tags', 'description', 'title',
-                  'doi', 'identifier', 'id', 'references_text', 'associated_publication_text', 'replication_text')
+                  'doi', 'identifier', 'id', 'references_text', 'associated_publication_text', 'replication_text',
+                  'peer_reviewed',)
 
 
 class RelatedCodebaseSerializer(serializers.ModelSerializer, FeaturedImageMixin):
