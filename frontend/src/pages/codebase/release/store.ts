@@ -285,7 +285,9 @@ export const store = {
             return context.dispatch('getCodebaseRelease', {identifier, version_number})
                 .then(r => {
                     if (context.state.release.live) {
-                        return Promise.resolve();
+                        return Promise.all([
+                            context.dispatch('getMediaFiles'),
+                        ]);
                     } else {
                         return Promise.all([
                             context.dispatch('getOriginalFiles', 'data'),
