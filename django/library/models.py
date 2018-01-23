@@ -766,6 +766,7 @@ class CodebaseReleasePublisher:
             self.codebase_release.save()
 
             self.codebase_release.codebase.latest_version = self.codebase_release
+            self.codebase_release.codebase.live = True
             self.codebase_release.codebase.save()
 
 
