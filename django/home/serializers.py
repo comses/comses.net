@@ -1,6 +1,9 @@
 import logging
 
+from django.core.exceptions import ValidationError
+from django.core.validators import validate_email
 from rest_framework import serializers
+from rest_framework.exceptions import ValidationError as DrfValidationError
 
 from core.models import Institution, MemberProfile
 from core.serializers import TagSerializer, MarkdownField
@@ -36,7 +39,7 @@ class MemberProfileSerializer(serializers.ModelSerializer):
     full_name = serializers.SerializerMethodField(source='user.full_name')
     given_name = serializers.CharField(source='user.first_name')
     username = serializers.CharField(source='user.username', read_only=True)
-    email = serializers.CharField(source='user.email')
+    email = serializers.SerializerMethodField()
 
     # Followers
     follower_count = serializers.ReadOnlyField(source='user.following.count')
@@ -56,6 +59,13 @@ class MemberProfileSerializer(serializers.ModelSerializer):
     profile_url = serializers.URLField(source='get_absolute_url', read_only=True)
     bio = MarkdownField()
     research_interests = MarkdownField()
+
+    def get_email(self, instance):
+        request = self.context.get('request')
+        if not request.user.is_anonymous():
+            return instance.email
+        else:
+            return None
 
     def get_avatar(self, instance):
         request = self.context.get('request')
@@ -83,6 +93,11 @@ class MemberProfileSerializer(serializers.ModelSerializer):
         raw_user = validated_data.pop('user')
         user.first_name = raw_user['first_name']
         user.last_name = raw_user['last_name']
+        user.email = self.context['request'].data['email']
+        try:
+            validate_email(user.email)
+        except ValidationError as e:
+            raise DrfValidationError({'email': e.messages})
 
         raw_institution = {'name': validated_data.pop('institution_name'),
                            'url': validated_data.pop('institution_url')}

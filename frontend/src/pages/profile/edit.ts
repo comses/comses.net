@@ -18,7 +18,7 @@ export const schema = yup.object().shape({
     family_name: yup.string().required(),
     email: yup.string().email().required(),
     research_interests: yup.string(),
-    orcid_url: yup.string(),
+    orcid_url: yup.string().nullable(),
     personal_url: yup.string().url(),
     professional_url: yup.string().url(),
     institution_name: yup.string(),
@@ -86,7 +86,7 @@ const api = new ProfileAPI();
         </c-tagger>
         <c-message-display :messages="statusMessages">
         </c-message-display>
-        <button type="button" class="mt-3 btn btn-primary" @click="createOrUpdate">Save</button>
+        <button type="button" class="mt-3 btn btn-primary" @click="createOrUpdateIfValid">Save</button>
     </form>`,
     components: {
         'c-markdown': Markdown,
@@ -123,6 +123,11 @@ export default class EditProfile extends createFormValidator(schema) {
 
     createOrUpdate() {
         return api.update(this.state.username, new HandlerWithRedirect(this));
+    }
+
+    async createOrUpdateIfValid() {
+        await this.validate();
+        return this.createOrUpdate();
     }
 
     retrieve(username: string) {
