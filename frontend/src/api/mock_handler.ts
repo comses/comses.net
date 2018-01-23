@@ -10,11 +10,11 @@ export class HandlerWithRedirect implements CreateOrUpdateHandler {
     }
 
     handleOtherError(response_or_network_error) {
-        console.error(response_or_network_error);
+        throw response_or_network_error;
     }
 
     handleServerValidationError(responseError) {
-        console.error(responseError);
+        throw responseError.response.data;
     }
 
     handleSuccessWithDataResponse(response: AxiosResponse) {

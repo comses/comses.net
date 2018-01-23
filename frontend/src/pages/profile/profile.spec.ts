@@ -8,6 +8,7 @@ describe('profile editing', () => {
             const vm = new EditProfile({ propsData: { _username: __BASIC_AUTH_USERNAME__}});
             await vm.initializeForm();
             expect((<any>vm).given_name).to.equal('Test');
+            expect((<any>vm).email).to.equal('a@b.com');
 
             (<any>vm).given_name = 'foo';
             await vm.createOrUpdate();

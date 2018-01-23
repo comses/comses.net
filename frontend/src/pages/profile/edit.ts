@@ -16,6 +16,7 @@ import * as yup from 'yup'
 export const schema = yup.object().shape({
     given_name: yup.string().required(),
     family_name: yup.string().required(),
+    email: yup.string().email().required(),
     research_interests: yup.string(),
     orcid_url: yup.string(),
     personal_url: yup.string().url(),
@@ -53,6 +54,8 @@ const api = new ProfileAPI();
         </c-input>
         <c-input v-model="family_name" name="family_name" :errorMsgs="errors.family_name" label="Family Name" 
             :required="config.family_name">
+        </c-input>
+        <c-input v-model="email" name="email" :errorMsgs="errors.email" label="Email" :required="config.email">
         </c-input>
         <c-markdown v-model="bio" name="bio" :errorMsgs="errors.bio" label="Bio" :required="config.bio">
         </c-markdown>

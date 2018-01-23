@@ -17,7 +17,7 @@ class Command(BaseCommand):
         mp = MemberProfile.objects.get(user=user)
         mp.institution = Institution.objects.get_or_create(name='ASU', url='https://www.asu.edu')[0]
         mp.save()
-        ea, created = EmailAddress.objects.get_or_create(user=user)
+        ea, created = EmailAddress.objects.get_or_create(user=user, email=user.email)
         ea.verified = True
         ea.set_as_primary(conditional=True)
         ea.save()

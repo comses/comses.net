@@ -69,7 +69,7 @@ class MemberProfileSerializer(serializers.ModelSerializer):
         # FIXME: suffers from n + 1 queries
         codebases = Codebase.objects.contributed_by(user=instance.user).accessible(user=request.user)\
             .order_by('-last_published_on')
-        return RelatedCodebaseSerializer(codebases, read_only=True, many=True).data
+        return RelatedCodebaseSerializer(codebases, read_only=True, many=True, context=self.context).data
 
     def get_full_name(self, instance):
         full_name = instance.user.get_full_name()
