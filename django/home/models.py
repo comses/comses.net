@@ -8,6 +8,7 @@ from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.cache import cache
 from django.db import models
+from django.shortcuts import redirect, render
 from django.utils import timezone
 from django.utils.translation import ugettext_lazy as _
 from model_utils import Choices
@@ -396,10 +397,19 @@ class ContactPage(NavigationMixin, Page):
     template = 'home/about/contact.jinja'
     description = models.CharField(max_length=512, blank=True)
 
-    def get_context(self, request, *args, **kwargs):
-        context = super().get_context(request, *args, **kwargs)
-        context['form'] = ContactForm(request=request)
-        return context
+    def serve(self, request):
+        if request.method == 'POST':
+            form = ContactForm(request=request, data=request.POST)
+            if form.is_valid():
+                form.save()
+                return redirect('home:contact-sent')
+        else:
+            form = ContactForm(request)
+
+        return render(request, self.template, {
+            'page': self,
+            'form': form,
+        })
 
     content_panels = Page.content_panels + [
         FieldPanel('description')

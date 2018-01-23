@@ -5,6 +5,7 @@ from django.contrib.auth.models import User
 from django.core.files.images import ImageFile
 from django.shortcuts import get_object_or_404
 from django.utils.decorators import method_decorator
+from django.views.generic import TemplateView
 from rest_framework import viewsets, generics, parsers, status, mixins, renderers, filters
 from rest_framework.decorators import detail_route
 from rest_framework.permissions import IsAuthenticated
@@ -20,7 +21,7 @@ from core.serializers import TagSerializer
 from core.view_helpers import retrieve_with_perms, get_search_queryset
 from core.views import (CaseInsensitiveOrderingFilter, CommonViewSetMixin, FormCreateView, FormUpdateView,
                         SmallResultSetPagination)
-from .models import FeaturedContentItem, MemberProfile
+from .models import FeaturedContentItem, MemberProfile, ContactPage
 from .serializers import (FeaturedContentItemSerializer, UserMessageSerializer, MemberProfileSerializer)
 
 logger = logging.getLogger(__name__)
@@ -113,6 +114,15 @@ class MemberProfileImageUploadView(generics.CreateAPIView):
         member_profile.picture = image
         member_profile.save()
         return Response(data=image.get_rendition('fill-150x150').url, status=200)
+
+
+class ContactSentView(TemplateView):
+    template_name = 'home/about/contact-sent.jinja'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['page'] = ContactPage.objects.first()
+        return context
 
 
 class FeaturedContentListAPIView(generics.ListAPIView):

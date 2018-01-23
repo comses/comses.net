@@ -116,7 +116,7 @@
         </div>
         <div class='tab-pane' id='publications' role='tabpanel'>
             <p class='lead p-5'>
-                Under construction, check back later!
+                Coming soon.
             </p>
         </div>
     </div>
@@ -136,12 +136,14 @@
                 <p class='card-text'>
                     <a href='#' onclick='sendMessage()' class='btn btn-primary w-100'>Send Message</a>
                 </p>
+                {#
                 <p class='card-text'>
                     <a href='#' onclick='toggleFollow()' class='btn btn-primary w-100'>Follow</a>
                 </p>
+                #}
             {% endif %}
+            {#
             <div class='row'>
-                {# FIXME: hardcoded values for now #}
                 <div class='col text-center'>
                     <div><b>{{ following_count }}</b></div>
                     <div>
@@ -155,6 +157,7 @@
                     </div>
                 </div>
             </div>
+            #}
         </div>
     </div>
     <div class='card-metadata'>

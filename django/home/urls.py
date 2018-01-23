@@ -1,9 +1,7 @@
 from django.conf.urls import url
 from rest_framework.routers import SimpleRouter
-from django.views.generic import TemplateView
 
 import core.views
-from core.models import Event, Job, MemberProfile
 from core.routers import AddEditRouter
 from . import views
 
@@ -22,6 +20,7 @@ urlpatterns = [
     url(r'^events/add/$', views.EventCreateView.as_view(), name='event-add'),
     url(r'^jobs/(?P<pk>\d+)/edit/$', views.JobUpdateView.as_view(), name='job-edit'),
     url(r'^jobs/add/$', views.JobCreateView.as_view(), name='job-add'),
+    url(r'^about/contact/sent/$', views.ContactSentView.as_view(template_name='home/about/contact-sent.jinja'), name='contact-sent'),
     url(r'^users/(?P<username>[\w\.\-@]+)/edit/$', views.ProfileUpdateView.as_view(), name='profile-edit'),
 ]
 
