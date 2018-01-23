@@ -23,7 +23,7 @@ export class Check extends Vue {
 @Component({
     template: `<div class="container-fluid px-0">
         <div class="row">
-            <div class="col-sm-12 col-md-6 col-lg-4">
+            <div class="col-sm-12 col-md-6 col-lg-4" v-if="!published">
                 <div class="card">
                     <div class="card-header">
                         Upload
@@ -38,7 +38,7 @@ export class Check extends Vue {
                     </div>
                 </div>
             </div>
-            <div class="col-sm-12 col-md-6 col-lg-4">
+            <div :class="cardClass">
                 <div class="card">
                     <div class="card-header">
                         Contributors
@@ -48,7 +48,7 @@ export class Check extends Vue {
                     </div>
                 </div>
             </div>
-            <div class="col-sm-12 col-md-6 col-lg-4">
+            <div :class="cardClass">
                 <div class="card">
                     <div class="card-header">
                         Detail
@@ -69,6 +69,15 @@ export class Check extends Vue {
     }
 })
 export class Progress extends Vue {
+    get cardClass() {
+        // Published releases stretch contributor and detail cards to take up whole row
+        return ['col-sm-12 col-md-6', { 'col-lg-4': !this.published }]
+    }
+
+    get published() {
+        return this.$store.state.release.live;
+    }
+
     get detail() {
         return this.$store.getters.detail;
     }

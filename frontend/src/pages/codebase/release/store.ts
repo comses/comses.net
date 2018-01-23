@@ -283,17 +283,23 @@ export const store = {
 
         initialize(context, {identifier, version_number}) {
             return context.dispatch('getCodebaseRelease', {identifier, version_number})
-                .then(r => Promise.all([
-                    context.dispatch('getOriginalFiles', 'data'),
-                    context.dispatch('getOriginalFiles', 'docs'),
-                    context.dispatch('getOriginalFiles', 'code'),
-                    context.dispatch('getOriginalFiles', 'media'),
-                    context.dispatch('getSipFiles', 'data'),
-                    context.dispatch('getSipFiles', 'docs'),
-                    context.dispatch('getSipFiles', 'code'),
-                    context.dispatch('getSipFiles', 'media'),
-                    context.dispatch('getMediaFiles'),
-                ]));
+                .then(r => {
+                    if (context.state.release.live) {
+                        return Promise.resolve();
+                    } else {
+                        return Promise.all([
+                            context.dispatch('getOriginalFiles', 'data'),
+                            context.dispatch('getOriginalFiles', 'docs'),
+                            context.dispatch('getOriginalFiles', 'code'),
+                            context.dispatch('getOriginalFiles', 'media'),
+                            context.dispatch('getSipFiles', 'data'),
+                            context.dispatch('getSipFiles', 'docs'),
+                            context.dispatch('getSipFiles', 'code'),
+                            context.dispatch('getSipFiles', 'media'),
+                            context.dispatch('getMediaFiles'),
+                        ])
+                    }
+                });
         }
     }
 };

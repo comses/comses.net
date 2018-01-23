@@ -194,15 +194,11 @@
                                     {% endif %}
                                 </td>
                                 <td>
-                                    {% if not release.live %}
-                                        <a href="{{ url('library:codebaserelease-edit',
-                                            identifier=codebase.identifier,
-                                            version_number=release.version_number) }}">
-                                            <span class="fa fa-edit"></span>
-                                        </a>
-                                    {% else %}
-                                        <span class="fa fa-minus-circle"></span>
-                                    {% endif %}
+                                    <a href="{{ url('library:codebaserelease-edit',
+                                        identifier=codebase.identifier,
+                                        version_number=release.version_number) }}">
+                                        <span class="fa fa-edit"></span>
+                                    </a>
                                 </td>
                             {% endif %}
                         </tr>
@@ -271,7 +267,7 @@
             </div>
         </div>
     </div>
-    {% if has_change_perm and not live %}
+    {% if has_change_perm %}
         <a href="{{ url('library:codebaserelease-edit', identifier=codebase.identifier, version_number=version_number) }}">
             <div class="btn btn-primary my-1 w-100">Edit</div>
         </a>
