@@ -1,5 +1,6 @@
 import {CreateOrUpdateHandler, FormRedirectComponent} from "./handler";
 import {AxiosResponse} from "axios";
+export {DismissOnSuccessHandler} from "./handler"
 
 export class HandlerWithRedirect implements CreateOrUpdateHandler {
         constructor(public component: FormRedirectComponent, public modelId?: string) {
