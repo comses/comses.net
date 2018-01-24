@@ -269,6 +269,13 @@ class CodebaseReleaseViewSet(CommonViewSetMixin, viewsets.ModelViewSet):
             raise Http404()
         return response
 
+    @detail_route(methods=['get'], renderer_classes=(renderers.JSONRenderer,))
+    def download_preview(self, request, **kwargs):
+        codebase_release = self.get_object()
+        fs_api = codebase_release.get_fs_api()
+        contents = fs_api.list_sip_contents()
+        return Response(data=contents, status=status.HTTP_200_OK)
+
 
 class BaseCodebaseReleaseFilesViewSet(viewsets.GenericViewSet):
     lookup_field = 'relpath'

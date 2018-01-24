@@ -133,8 +133,8 @@ export class CodebaseReleaseAPI {
         return `${this.detailUrl({identifier, version_number})}files/originals/${category}/`;
     }
 
-    listSipFileUrl({identifier, version_number, category}) {
-        return `${this.detailUrl({identifier, version_number})}files/sip/${category}/`;
+    downloadPreviewUrl({identifier, version_number}) {
+        return `${this.detailUrl({identifier, version_number})}download_preview/`;
     }
 
     updateContributorUrl({identifier, version_number}) {
@@ -153,8 +153,8 @@ export class CodebaseReleaseAPI {
         return api.get(this.listOriginalsFileUrl({identifier, version_number, category}));
     }
 
-    listSipFiles({identifier, version_number, category}) {
-        return api.get(this.listSipFileUrl({identifier, version_number, category}));
+    downloadPreview({identifier, version_number}) {
+        return api.get(this.downloadPreviewUrl({identifier, version_number}));
     }
 
     uploadFile({identifier, version_number, category}, file, onUploadProgress) {

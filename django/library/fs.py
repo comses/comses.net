@@ -455,6 +455,20 @@ class CodebaseReleaseFsApi:
         stage_storage = self.get_stage_storage(stage)
         return [str(p) for p in stage_storage.list(category)]
 
+    def list_sip_contents(self, path=None):
+        if path is None:
+            path = self.sip_contents_dir
+            name = 'archive'
+        else:
+            name = path.name
+        contents = {'label': name, 'contents': []}
+        for p in path.iterdir():
+            if p.is_dir():
+                contents['contents'].append(self.list_sip_contents(p))
+            else:
+                contents['contents'].append({'label': p.name})
+        return contents
+
     def retrieve(self, stage: StagingDirectories, category: FileCategoryDirectories, relpath: Path):
         stage_storage = self.get_stage_storage(stage)
         relpath = Path(category.name, relpath)

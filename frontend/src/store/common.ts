@@ -185,7 +185,6 @@ interface CodebaseReleaseFileLayout<T> {
 export interface CodebaseReleaseStore {
     files: {
         originals: CodebaseReleaseFileLayout<FileInfo>,
-        sip: CodebaseReleaseFileLayout<string>
         media: Array<FileInfo>
     }
     release: CodebaseReleaseEdit

@@ -16,12 +16,6 @@ const initialState: CodebaseReleaseStore = {
             docs: [],
             results: [],
         },
-        sip: {
-            code: [],
-            data: [],
-            docs: [],
-            results: [],
-        },
         media: []
     },
     release: {
@@ -145,12 +139,6 @@ function getFiles(context, stage, category) {
                 identifier: context.state.release.codebase.identifier,
                 version_number: context.state.release.version_number, category
             }).then(response => context.commit('setFiles', {stage, category, value: response.data}));
-        case 'sip':
-            return codebaseReleaseAPI.listSipFiles({
-                identifier: context.state.release.codebase.identifier,
-                version_number: context.state.release.version_number, category
-            }).then(response => context.commit('setFiles', {stage, category, value: response.data}));
-
     }
 }
 
@@ -256,10 +244,6 @@ export const store = {
             return getFiles(context, 'originals', category);
         },
 
-        getSipFiles(context, category) {
-            return getFiles(context, 'sip', category);
-        },
-
         async getMediaFiles(context) {
             const response = await codebaseAPI.mediaList(context.state.release.codebase.identifier);
             context.commit('setMediaFiles', response.data.results);
@@ -269,7 +253,6 @@ export const store = {
             codebaseReleaseAPI.deleteFile({path})
                 .then(response => Promise.all([
                     context.dispatch('getOriginalFiles', category),
-                    context.dispatch('getSipFiles', category)
                 ]));
         },
 
@@ -277,7 +260,6 @@ export const store = {
             codebaseReleaseAPI.clearCategory({identifier, version_number, category})
                 .then(response => Promise.all([
                     context.dispatch('getOriginalFiles', category),
-                    context.dispatch('getSipFiles', category)
                 ]));
         },
 
@@ -294,10 +276,6 @@ export const store = {
                             context.dispatch('getOriginalFiles', 'docs'),
                             context.dispatch('getOriginalFiles', 'code'),
                             context.dispatch('getOriginalFiles', 'media'),
-                            context.dispatch('getSipFiles', 'data'),
-                            context.dispatch('getSipFiles', 'docs'),
-                            context.dispatch('getSipFiles', 'code'),
-                            context.dispatch('getSipFiles', 'media'),
                             context.dispatch('getMediaFiles'),
                         ])
                     }

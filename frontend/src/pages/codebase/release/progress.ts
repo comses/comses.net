@@ -83,7 +83,7 @@ export class Progress extends Vue {
     }
 
     get upload() {
-        return this.$store.state.files.sip;
+        return this.$store.state.files.originals;
     }
 
     get contributors() {
