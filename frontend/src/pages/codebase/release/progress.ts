@@ -98,7 +98,7 @@ export class Progress extends Vue {
         return {
             code: this.upload.code.length > 0,
             data: this.upload.data.length > 0,
-            docs: this.upload.data.length > 0,
+            docs: this.upload.docs.length > 0,
             results: this.upload.results.length > 0
         };
     }
