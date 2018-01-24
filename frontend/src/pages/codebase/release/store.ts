@@ -103,43 +103,11 @@ export const schema = yup.object().shape({
     license: yup.string().required()
 });
 
-function pathToCamelCase(path: string): string {
-    return _.camelCase(path);
-}
-
-const pathToComputedName = pathToCamelCase;
-
-export function exposeComputed(paths: Array<string>): object {
-    let computed = {};
-    paths.forEach(function (path) {
-        let computed_name = pathToComputedName(path);
-        let error_name = `${computed_name}Errors`;
-        computed[computed_name] = {
-            get: function () {
-                return _.get(this.$store.state.release, path);
-            },
-            set: function (value) {
-                this.$store.dispatch('setAtPath', {path, value});
-            }
-        };
-        computed[error_name] = {
-            get: function () {
-                const errorMsg = _.get(this.$store.state.validation_errors, path);
-                return errorMsg ? errorMsg : []
-            }
-        }
-    });
-    return computed;
-}
-
-function getFiles(context, stage, category) {
-    switch (stage) {
-        case 'originals':
-            return codebaseReleaseAPI.listOriginalFiles({
-                identifier: context.state.release.codebase.identifier,
-                version_number: context.state.release.version_number, category
-            }).then(response => context.commit('setFiles', {stage, category, value: response.data}));
-    }
+function getFiles(context, category) {
+        return codebaseReleaseAPI.listOriginalFiles({
+            identifier: context.state.release.codebase.identifier,
+            version_number: context.state.release.version_number, category
+        }).then(response => context.commit('setFiles', {category, value: response.data}));
 }
 
 interface CodebaseReleaseDetail {
@@ -198,8 +166,8 @@ export const store = {
         unsetValidationErrorAtPath(state, path) {
             _.set(state.validation_errors, path, []);
         },
-        setFiles(state, {stage, category, value}) {
-            state.files[stage][category] = value;
+        setFiles(state, {category, value}) {
+            state.files.originals[category] = value;
         },
         setValidationErrors(state, validation_errors) {
             console.log(validation_errors);
@@ -241,7 +209,7 @@ export const store = {
             })), 800),
 
         getOriginalFiles(context, category) {
-            return getFiles(context, 'originals', category);
+            return getFiles(context, category);
         },
 
         async getMediaFiles(context) {
