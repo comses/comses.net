@@ -323,10 +323,15 @@ class CodebaseReleasePublishTestCase(TestCase):
         with self.assertRaises(ValidationError):
             self.codebase_release.publish()
 
-        fileobj = io.BytesIO(bytes('Hello world!', 'utf8'))
-        fileobj.name = 'test.nlogo'
+        code_file = io.BytesIO(bytes('Hello world!', 'utf8'))
+        code_file.name = 'test.nlogo'
+
+        docs_file = io.BytesIO(bytes('A new model', 'utf8'))
+        docs_file.name = 'README.md'
+        
         api = self.codebase_release.get_fs_api()
-        api.add(content=fileobj, category=FileCategoryDirectories.code)
+        api.add(content=code_file, category=FileCategoryDirectories.code)
+        api.add(content=docs_file, category=FileCategoryDirectories.docs)
         self.codebase_release.publish()
 
     @classmethod

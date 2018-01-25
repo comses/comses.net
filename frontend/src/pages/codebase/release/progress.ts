@@ -31,8 +31,8 @@ export class Check extends Vue {
                     <div class="card-body">
                         <p class="card-text">
                             <c-check label="At least one code file" :check="uploadProgress.code"></c-check>
-                            <c-check label="At least one doc file (optional)" :check="uploadProgress.docs"></c-check>
                             <c-check label="At least one data file (optional)" :check="uploadProgress.data"></c-check>
+                            <c-check label="At least one doc file" :check="uploadProgress.docs"></c-check>
                             <c-check label="At least one result file (optional)" :check="uploadProgress.results"></c-check>
                         </p>
                     </div>

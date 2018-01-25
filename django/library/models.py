@@ -754,13 +754,21 @@ class CodebaseReleasePublisher:
             raise ValidationError('Submitter must be in the contributor list')
         fs_api = self.codebase_release.get_fs_api()
         storage = fs_api.get_stage_storage(StagingDirectories.sip)
-        category = FileCategoryDirectories.code
+        code_msg = self.has_files(storage, FileCategoryDirectories.code)
+        docs_msg = self.has_files(storage, FileCategoryDirectories.docs)
+        msg = ' '.join(m for m in [code_msg, docs_msg] if m)
+        if msg:
+            raise ValidationError(msg)
+
+    def has_files(self, storage, category: FileCategoryDirectories):
         if storage.exists(category.name):
-            files = list(storage.list(category))
+            code_files = list(storage.list(category))
         else:
-            files = []
-        if not files:
-            raise ValidationError('Must have at least one source file')
+            code_files = []
+        if not code_files:
+            return 'Must have at least one {} file.'.format(category.name)
+        else:
+            return ''
 
     def publish(self):
         if not self.codebase_release.live:
