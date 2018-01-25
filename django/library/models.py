@@ -13,6 +13,7 @@ from django.core.files.storage import FileSystemStorage
 from django.db import models, transaction
 from django.urls import reverse
 from django.utils import timezone
+from django.utils.text import slugify
 from django.utils.translation import ugettext_lazy as _
 from enum import Enum
 from model_utils import Choices
@@ -688,6 +689,10 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
 
     def download_count(self):
         return self.downloads.count()
+
+    @property
+    def archive_filename(self):
+        return '{0}_v{1}.zip'.format(slugify(self.codebase.title), self.version_number)
 
     @property
     def contributor_list(self):

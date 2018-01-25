@@ -262,10 +262,10 @@ class CodebaseReleaseViewSet(CommonViewSetMixin, viewsets.ModelViewSet):
         try:
             f, mimetype = fs_api.retrieve_archive()
             response = FileResponse(f, content_type=mimetype)
-            response['Content-Disposition'] = 'attachment; filename={}'.format(
-                '{}_v{}.zip'.format(codebase_release.codebase.title.lower().replace(' ', '_'),
-                                    codebase_release.version_number))
+            response['Content-Disposition'] = 'attachment; filename={}'.format(codebase_release.archive_filename)
         except FileNotFoundError:
+            logger.error("Unable to find archive for codebase release %s (%s)", codebase_release.pk,
+                         codebase_release.get_absolute_url())
             raise Http404()
         return response
 
