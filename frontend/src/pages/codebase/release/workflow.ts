@@ -221,7 +221,9 @@ class PublishModal extends Vue implements CreateOrUpdateHandler {
                     </router-link>
                 </li>
             </ul>
-            <router-view :initialData="initialData"></router-view>
+            <keep-alive>
+                <router-view :initialData="initialData"></router-view>
+            </keep-alive>
             <c-codebase-edit-form-popup :identifier="identifier" :redirect="false" :files="$store.state.files.media" @updated="setCodebase"></c-codebase-edit-form-popup>
             <c-publish-modal :version_number="version_number" :identifier="identifier" :absolute_url="absolute_url"></c-publish-modal>
         </div>
