@@ -182,7 +182,6 @@ class EditContributor extends createFormValidator(contributorSchema) {
                 <div class="row">
                     <div class="col-11">
                         <multiselect
-                            ref="releaseContributorSelect"
                             v-model="contributor"
                             :custom-label="contributorLabel"
                             label="family_name"
@@ -270,14 +269,12 @@ class EditReleaseContributor extends createFormValidator(releaseContributorSchem
     cancel() {
         this.$emit('cancel');
         this.replace(createDefaultValue(releaseContributorSchema));
-        (<Vue>this.$refs.releaseContributorSelect).$el.focus();
     }
 
     async save() {
         await this.validate();
         const msg = _.cloneDeep(this.state);
         this.replace(createDefaultValue(releaseContributorSchema));
-        (<Vue>this.$refs.releaseContributorSelect).$el.focus();
         msg.edited = true;
         this.$emit('save', msg);
     }
@@ -293,7 +290,7 @@ class EditReleaseContributor extends createFormValidator(releaseContributorSchem
             the contributor's name.
         </p>
         <label class="form-control-label required">Current Release Contributors</label>
-        <draggable v-model="state" v-if="state.length > 0">
+        <draggable v-model="state" v-if="state.length > 0" @end="refreshStatusMessage">
             <ul v-for="releaseContributor in state" :key="releaseContributor._id" class="list-group">
                 <li :class="['list-group-item d-flex justify-content-between', { 'list-group-item-warning': releaseContributor.edited}]">
                     <div>
@@ -312,7 +309,7 @@ class EditReleaseContributor extends createFormValidator(releaseContributorSchem
             </ul>
         </draggable>
         <div class="alert alert-primary" role="alert" v-else>No contributors</div>
-        <button type="button" class="btn btn-primary" @click="save">Save</button>
+        <button type="button" class="btn btn-primary" ref="saveReleaseContributorsBtn" @click="save">Save</button>
         <c-message-display :messages="statusMessages" @clear="statusMessages = []" />
         <div>
             <small class="text-muted">
@@ -346,7 +343,8 @@ class EditContributors extends Vue {
     initialData: object;
 
     initialize() {
-        this.state = this.$store.state.release.release_contributors.map(rc => _.extend({}, rc));
+        this.initialState = this.$store.state.release.release_contributors.map(rc => _.extend({}, rc))
+        this.state = _.cloneDeep(this.initialState);
     }
 
     created() {
@@ -356,6 +354,7 @@ class EditContributors extends Vue {
     formState: FormContributorState = FormContributorState.list;
 
     statusMessages: Array<{ classNames: string, message}> = [];
+    initialState: Array<CodebaseContributor> = [];
     state: Array<CodebaseContributor> = [];
     releaseContributor: CodebaseContributor | null = null;
     contributor: Contributor | null = null;
@@ -400,6 +399,16 @@ class EditContributors extends Vue {
         this.initialize();
     }
 
+    refreshStatusMessage() {
+        if (!_.isEqual(this.state, this.initialState)) {
+            this.statusMessages = [
+                {classNames: 'alert alert-warning', message: 'You have unsaved contributor modifications'}
+            ];
+        } else {
+            this.statusMessages = [];
+        }
+    }
+
     // Release Contributor
 
     createOrReplaceReleaseContributor(release_contributor: CodebaseContributor) {
@@ -409,6 +418,7 @@ class EditContributors extends Vue {
         } else {
             this.state.push(_.merge({'_id': _.uniqueId()}, release_contributor));
         }
+        this.refreshStatusMessage();
     }
 
     editReleaseContributor(releaseContributor?: CodebaseContributor) {
@@ -422,18 +432,24 @@ class EditContributors extends Vue {
 
     cancelReleaseContributor() {
         this.formState = FormContributorState.list;
+        (<any>this.$refs.saveReleaseContributorsBtn).focus();
     }
 
     saveReleaseContributor(releaseContributor) {
         this.createOrReplaceReleaseContributor(releaseContributor);
         this.releaseContributor = null;
         this.formState = FormContributorState.list;
+        (<any>this.$refs.saveReleaseContributorsBtn).focus();
+    }
+
+    isExistingReleaseContributor(releaseContributor) {
+        return !_.isUndefined(releaseContributor.index);
     }
 
     deleteReleaseContributor(_id: string) {
         const index = _.findIndex(this.state, rc => rc._id === _id);
         this.state.splice(index, 1);
-        this.statusMessages = [{classNames: 'alert alert-warning', message: 'You have unsaved contributor deletions'}]
+        this.refreshStatusMessage();
     }
 
     // Contributor
