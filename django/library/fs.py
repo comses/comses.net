@@ -524,6 +524,8 @@ class CodebaseReleaseFsApi:
         if msgs.level >= self._raise_exception_level:
             return msgs
         msgs.append(self._add_to_sip(name=name, content=content, category=category, sip_storage=sip_storage))
+        if msgs.level >= self._raise_exception_level:
+            self.delete(category, Path(content.name))
 
         return msgs
 
