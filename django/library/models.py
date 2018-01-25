@@ -16,6 +16,7 @@ from django.utils import timezone
 from django.utils.text import slugify
 from django.utils.translation import ugettext_lazy as _
 from enum import Enum
+from ipware import get_client_ip
 from model_utils import Choices
 from modelcluster.contrib.taggit import ClusterTaggableManager
 from modelcluster.fields import ParentalKey
@@ -175,7 +176,7 @@ class SemanticVersionBump(Enum):
 class CodebaseReleaseDownload(models.Model):
     date_created = models.DateTimeField(default=timezone.now)
     user = models.ForeignKey(User, null=True)
-    ip_address = models.GenericIPAddressField()
+    ip_address = models.GenericIPAddressField(blank=True, null=True)
     referrer = models.URLField(max_length=500)
     release = models.ForeignKey('library.CodebaseRelease', related_name='downloads')
 
@@ -689,6 +690,11 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
 
     def download_count(self):
         return self.downloads.count()
+
+    def record_download(self, request):
+        referrer = request.META['HTTP_REFERER']
+        client_ip, is_routable = get_client_ip(request)
+        self.downloads.create(user=request.user, referrer=referrer, ip_address=client_ip)
 
     @property
     def archive_filename(self):

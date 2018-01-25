@@ -3,6 +3,7 @@ import pathlib
 
 from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.core.exceptions import PermissionDenied
+from django.db import transaction
 from django.http import FileResponse, Http404
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import resolve
@@ -240,9 +241,9 @@ class CodebaseReleaseViewSet(CommonViewSetMixin, viewsets.ModelViewSet):
             return queryset.accessible(user=self.request.user)
 
     @detail_route(methods=['put'])
+    @transaction.atomic
     def contributors(self, request, **kwargs):
         codebase_release = self.get_object()
-
         crs = ReleaseContributorSerializer(many=True, data=request.data, context={'release_id': codebase_release.id},
                                            allow_empty=False)
         crs.is_valid(raise_exception=True)
@@ -250,12 +251,14 @@ class CodebaseReleaseViewSet(CommonViewSetMixin, viewsets.ModelViewSet):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
     @detail_route(methods=['post'])
+    @transaction.atomic
     def publish(self, request, **kwargs):
         codebase_release = self.get_object()
         codebase_release.publish()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
     @detail_route(methods=['get'])
+    @transaction.atomic
     def download(self, request, **kwargs):
         codebase_release = self.get_object()
         fs_api = codebase_release.get_fs_api()
@@ -263,10 +266,12 @@ class CodebaseReleaseViewSet(CommonViewSetMixin, viewsets.ModelViewSet):
             f, mimetype = fs_api.retrieve_archive()
             response = FileResponse(f, content_type=mimetype)
             response['Content-Disposition'] = 'attachment; filename={}'.format(codebase_release.archive_filename)
+            codebase_release.record_download(request)
         except FileNotFoundError:
             logger.error("Unable to find archive for codebase release %s (%s)", codebase_release.pk,
                          codebase_release.get_absolute_url())
             raise Http404()
+
         return response
 
     @detail_route(methods=['get'], renderer_classes=(renderers.JSONRenderer,))
