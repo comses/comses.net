@@ -125,7 +125,7 @@ class CodebaseEditFormPopup extends Vue {
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title">Publish Codebase Release {{ version_number }}</h5>
-                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <button type="button" class="close" @click="close" aria-label="Close">
                         <span aria-hidden="true">&times;</span>
                     </button>
                 </div>
@@ -142,7 +142,7 @@ class CodebaseEditFormPopup extends Vue {
                 <div class="alert alert-danger" v-for="error in errorMessages">{{ error }}</div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-primary" @click="publish">Publish</button>
-                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-secondary" @click="close">Cancel</button>
                 </div>
             </div>
         </div>
@@ -166,6 +166,11 @@ class PublishModal extends Vue implements CreateOrUpdateHandler {
 
     clear() {
         this.errorMessages = [];
+    }
+
+    close() {
+        (<any>$('#publishCodebaseReleaseModal')).modal('hide')
+        this.clear();
     }
 
     handleOtherError(response_or_network_error) {
