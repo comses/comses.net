@@ -27,18 +27,10 @@ const releaseApi = new CodebaseReleaseAPI();
 
 @Component(<any>{
     template: `<div>
-        <p>
-        Archiving the software that your research depends on will help others (including your future self!) build on and reuse your own hard work down the road. 
-        Let's walk through the steps needed to generate a citable software archive that broadly follows recommended practices
-        for <a href='https://www.force11.org/software-citation-principles'>software citation</a>.
-        </p>
-        <p>
-        First, let's figure out what you'd like to call this thing.
-        </p>
         <c-input v-model="title" name="title" :errorMsgs="errors.title" :required="config.title" label="Title"
             help="A short title describing the codebase">
         </c-input>
-        <c-markdown v-model="description" :errorMsgs="errors.description" :required="config.description" 
+        <c-markdown v-model="description" :errorMsgs="errors.description" :required="config.description"
             name="description" rows="3" label="Description">
         </c-markdown>
         <c-checkbox v-model="is_replication" :errorMsgs="errors.is_replication" name="replication" label="Replication"
