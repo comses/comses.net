@@ -318,6 +318,7 @@ class UserExtractor(Extractor):
 
 
 class ProfileExtractor(Extractor):
+
     def extract_all(self, user_id_map, tag_id_map):
         for raw_profile in self.data:
             drupal_uid = raw_profile['uid']
@@ -412,7 +413,6 @@ class AuthorExtractor(Extractor):
                     # no associated Users, grab first Contributor with an email
                     contributor = contributors.exclude(email='').first()
                 else:
-                    #
                     logger.warning("XXX: There are multiple users and contributors with this name. Picking first one.")
                 contributor.middle_name = middle_name
                 contributor.save()
@@ -613,9 +613,12 @@ class DownloadCountExtractor:
 
     @classmethod
     def _get_user_id(cls, raw_download, user_id_map):
+        if 'uid' not in raw_download:
+            logger.warning('No uid found in raw download %s', raw_download)
+            return None
         user = user_id_map.get(raw_download['uid'])
         if not user:
-            logger.info("Unable to locate user with Drupal UID %s. Setting user NULL", raw_download['uid'])
+            logger.info("Unable to locate user with Drupal UID %s. Setting user to None", raw_download['uid'])
         return user
 
     @classmethod

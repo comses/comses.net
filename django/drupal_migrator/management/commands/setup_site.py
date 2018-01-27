@@ -547,9 +547,9 @@ class Command(BaseCommand):
         if options['reload_faq']:
             load_faq_entries()
 
-        self.create_landing_page()
+        landing_page = self.create_landing_page()
         # argparse converts dashes to underscores
-        self.create_site(site_name=options['site_name'], hostname=options['site_domain'])
+        self.create_site(site_name=options['site_name'], hostname=options['site_domain'], root_page=landing_page)
         self.create_social_apps()
         # create community, about, resources pages
         for section in (CommunitySection, ResourceSection, AboutSection):
@@ -574,12 +574,14 @@ class Command(BaseCommand):
             )
             github_app.sites.add(site)
 
-    def create_site(self, site_name, hostname):
+    def create_site(self, site_name, hostname, root_page=None):
+        if root_page is None:
+            root_page = self.landing_page
         site = Site.objects.first() if Site.objects.count() > 0 else Site()
         site.site_name = site_name
         site.hostname = hostname
         site.is_default_site = True
-        site.root_page = self.landing_page
+        site.root_page = root_page
         site.save()
         sms = SocialMediaSettings.for_site(site)
         sms.youtube_url = 'https://www.youtube.com/user/CoMSESNet/'
@@ -613,3 +615,4 @@ class Command(BaseCommand):
         root_page.refresh_from_db()
         root_page.add_child(instance=landing_page)
         self.landing_page = landing_page
+        return landing_page
