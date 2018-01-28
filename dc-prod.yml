@@ -68,7 +68,6 @@ services:
       POSTGRES_PASSWORD: "${DB_PASSWORD}"
       POSTGRES_DB: "${DB_NAME}"
   js:
-    # TODO: build assets into /shared/webpack directly and terminate
     # FIXME: currently needs a second Django `./manage.py collectstatic` to move generated assets from Django into
     # static directory, seems we should be able to skip that step
     # command: "npm run build"
@@ -76,7 +75,8 @@ services:
     image: comses/cmsjs:latest
     command: ['yarn', 'run', 'build']
     volumes:
-      - ./frontend:/code
+      - ./frontend/src:/code/src
+      - ./frontend/deploy:/code/deploy
       - ./docker/shared/webpack:/shared/webpack
   nginx:
     image: nginx:latest
