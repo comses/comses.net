@@ -594,13 +594,15 @@ class DownloadCountExtractor:
     ```
     """
 
+    FIELD_NAMES = ('nid', 'date_created', 'uid', 'ip_address', 'referrer', 'type')
+
     def __init__(self, data):
         self.data = data
 
     @classmethod
     def from_file(cls, file_path: str):
         with open(file_path, 'r') as f:
-            return cls(list(csv.DictReader(f)))
+            return cls(list(csv.DictReader(f, fieldnames=cls.FIELD_NAMES)))
 
     @staticmethod
     def _get_instance(raw_download, instance_id_map, field_name: str, message: str):
@@ -661,6 +663,8 @@ class DownloadCountExtractor:
                 )
             except ValidationError as e:
                 logger.exception(e)
+            except KeyError as e:
+                logger.exception("Invalid raw download: %s", raw_download)
 
         CodebaseReleaseDownload.objects.bulk_create(downloads)
 
