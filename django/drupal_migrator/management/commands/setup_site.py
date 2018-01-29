@@ -1,6 +1,6 @@
 """
 Initializes Wagtail Page Models and other canned data.
-FIXME: refactor when this gets too bigly
+FIXME: refactor, this is getting too bigly
 """
 
 import logging
@@ -44,7 +44,7 @@ class ResourceSection(AbstractSection):
 
     SUBNAVIGATION_LINKS = (
         ('Resources', '/resources/'),
-        ('Modeling Platforms', '/resources/modeling-platforms/'),
+        ('Platforms', '/resources/modeling-platforms/'),
         ('Journals', '/resources/journals/'),
         ('Standards', '/resources/standards/'),
         ('Education', '/resources/education/'),
@@ -115,7 +115,8 @@ class ResourceSection(AbstractSection):
             title='Guides to Good Practice',
             url='guides-to-good-practice/',
             caption=('Good practices for agent-based modeling as inspired by '
-                     '[this Software Carpentry paper](https://swcarpentry.github.io/good-enough-practices-in-scientific-computing/)'),
+                     '[the Software and Data Carpentry organizations](http://carpentries.org/) and '
+                     '[this paper](https://swcarpentry.github.io/good-enough-practices-in-scientific-computing/).'),
             user=self.default_user,
             sort_order=4,
         )
@@ -268,12 +269,49 @@ class ResourceSection(AbstractSection):
         education_page.add_navigation_links(self.SUBNAVIGATION_LINKS)
         parent.add_child(instance=education_page)
 
+    def build_good_practice_page(self, parent):
+        page = MarkdownPage(
+            heading='Resources',
+            slug='guides-to-good-practice',
+            title='Guides to Good Practice',
+            description=(
+                'CoMSES Net, in partnership with the [Software and Data Carpentry organizations](http://carpentries.org/), '
+                'is dedicated to promoting good practices for developing and disseminating open and reproducible computational '
+                'models. Computational modeling is rarely a primary skill for most researchers and instead a tool with '
+                'which to better understand the emergent phenomena that arise from the complex adaptive systems in which '
+                'we are all embedded. '),
+            body=(
+                'Many of these practices have been culled from this [Carpentries paper](https://swcarpentry.github.io/good-enough-practices-in-scientific-computing/). It is defintiely worth a read if you would like to explore these topics in more detail! \n'
+                '### Code management \n\n'
+                '* Use a version control system\n'
+                '* Document all external dependencies\n'
+                '* Strive for clean, well-commented / self-documenting code with meaningful variable names\n'
+                '* Adopt or develop community documentation standards (e.g., '
+                '[ODD](https://doi.org/10.1016/j.ecolmodel.2010.08.019))\n'
+                '* Adopt a consistent, self-describing '
+                '[directory structure](https://swcarpentry.github.io/good-enough-practices-in-scientific-computing/#project-organization) '
+                'for your code, data, documentation, and results\n'
+                '* Archive your codebase in a DOI-issuing repository that provides citable URLs for specific '
+                'versions of your codebase\n'
+                '* Provide example test cases and expected outputs\n\n\n'
+                '### Data management \n\n'
+                '* Preserve raw and intermediate forms of data\n'
+                '* Document all data cleaning and processing steps\n'
+                '* Script your data analysis as opposed to manually munging an Excel sheet\n'
+                '* Archive your data in a DOI-issuing repository that provides citable URLs for specific versions of your dataset\n'
+                '* Create [tidy, analysis-friendly data](https://swcarpentry.github.io/good-enough-practices-in-scientific-computing/#data-management)\n'
+            ),
+        )
+        page.add_breadcrumbs([('Resources', '/resources/'), ('Guides to Good Practice', 'good-practices')])
+        parent.add_child(instance=page)
+
     def build(self):
         resources_index = self.build_resource_index()
         self.build_platforms_index(resources_index)
         self.build_journal_page(resources_index)
         self.build_standards_page(resources_index)
         self.build_education_page(resources_index)
+        self.build_good_practice_page(resources_index)
 
 
 class CommunitySection(AbstractSection):
