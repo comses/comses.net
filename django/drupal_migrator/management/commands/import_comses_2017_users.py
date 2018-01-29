@@ -57,7 +57,7 @@ class Command(BaseCommand):
                 elif isinstance(obj, SocialAccount):
                     user = User.objects.get(username=obj.user.username)
                     # skip if this social account already exists
-                    if not SocialAccount.objects.filter(user=user).exists():
+                    if not SocialAccount.objects.filter(user=user, provider=obj.provider).exists():
                         obj.pk = None
                         obj.user = user
                         deserialized_object.save()
