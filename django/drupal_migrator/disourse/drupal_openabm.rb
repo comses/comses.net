@@ -27,17 +27,18 @@ class ImportScripts::Drupal < ImportScripts::Base
   end
 
   def execute
-    create_users(@client.query("SELECT uid id, name, mail email, created FROM users WHERE name <> 'alee';")) do |row|
+    existing_users = User.pluck(:username).select{|n| n != ''}.map{|n| "'#{n}'"}.join(', ')
+    create_users(@client.query("SELECT uid id, name, mail email, created FROM users WHERE name NOT IN (#{existing_users})")) do |row|
       {id: row['id'], username: row['name'], email: row['email'], created_at: Time.zone.at(row['created'])}
     end
 
-    begin
-      create_admin(email: 'allen.lee@asu.edu', username: UserNameSuggester.suggest('alee'))
-    rescue => e
-      puts '', "Failed to create admin user"
-      puts e.message
+    # Need to add existing users to openabm user id to discourse id mapping
+    @client.query("SELECT uid id, name FROM users WHERE name IN (#{existing_users})", :symbolize_keys => true).each do |row|
+      u = User.find_by_username(row[:name])
+      puts "Mapping existing user: #{u.username} (#{u.id}) to OpenABM ID #{row[:id]}"
+      add_user(row[:id].to_s, u)
     end
- 
+
     # You'll need to edit the following query for your Drupal install:
     #
     #   * Drupal allows duplicate category names, so you may need to exclude some categories or rename them here.
@@ -46,8 +47,6 @@ class ImportScripts::Drupal < ImportScripts::Base
     create_categories(categories_query) do |c|
       {id: c['tid'], name: c['name'], description: c['description']}
     end
-
-    create_forum_categories
 
     # "Nodes" in Drupal are divided into types. Here we import two types,
     # and will later import all the comments/replies for each node.
@@ -92,23 +91,6 @@ class ImportScripts::Drupal < ImportScripts::Base
         title: row['title'].try(:strip),
         custom_fields: {import_id: "nid:#{row['nid']}"}
       }
-    end
-  end
-
-  def create_forum_categories
-    puts '', "creating forum categories"
-
-    admin = User.where(:username => "alee").first
-    categories = [
-        { name: 'Jobs', user_id: admin.id, description: 'Comment on posted jobs here',
-          color: 'FF0000', read_restricted: false },
-        { name: 'Events', user_id: admin.id, description: 'Comment on posted events here',
-          color: '00FF00', read_restricted: false },
-        { name: 'Codebases', user_id: admin.id, description: 'Comment on posted code bases here',
-          color: '0000FF', read_restricted: false }
-    ]
-    categories.each do |category|
-        create_category(category, nil)
     end
   end
 
