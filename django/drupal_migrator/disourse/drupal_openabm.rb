@@ -29,13 +29,16 @@ class ImportScripts::Drupal < ImportScripts::Base
   def execute
     existing_users = User.pluck(:username).select{|n| n != ''}.map{|n| "'#{n}'"}.join(', ')
     create_users(@client.query("SELECT uid id, name, mail email, created FROM users WHERE name NOT IN (#{existing_users})")) do |row|
-      {id: row['id'], username: row['name'], email: row['email'], created_at: Time.zone.at(row['created'])}
+      # Sanitize username so that username will match username on comses
+      username = row['name']
+      username = username.gsub(' ', '').downcase if username != nil
+      {id: row['id'], username: username, email: row['email'], created_at: Time.zone.at(row['created'])}
     end
 
     # Need to add existing users to openabm user id to discourse id mapping
     @client.query("SELECT uid id, name FROM users WHERE name IN (#{existing_users})", :symbolize_keys => true).each do |row|
       u = User.find_by_username(row[:name])
-      puts "Mapping existing user: #{u.username} (#{u.id}) to OpenABM ID #{row[:id]}"
+      puts "Adding OpenABM ID #{row[:id]}, existing user: #{u.username} (#{u.id}) correspondence to lookup cache"
       add_user(row[:id].to_s, u)
     end
 
