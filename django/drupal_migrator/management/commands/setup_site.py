@@ -114,9 +114,10 @@ class ResourceSection(AbstractSection):
             image_path='core/static/images/icons/guides-to-good-practice.png',
             title='Guides to Good Practice',
             url='guides-to-good-practice/',
-            caption=('Good practices for agent-based modeling as inspired by '
+            caption=('Good practices for agent-based modeling and software development ala '
                      '[the Software and Data Carpentry organizations](http://carpentries.org/) and '
-                     '[this paper](https://swcarpentry.github.io/good-enough-practices-in-scientific-computing/).'),
+                     '[*Good Enough Practices in Scientific Computing*]'
+                     '(https://swcarpentry.github.io/good-enough-practices-in-scientific-computing/).'),
             user=self.default_user,
             sort_order=4,
         )
@@ -275,24 +276,34 @@ class ResourceSection(AbstractSection):
             slug='guides-to-good-practice',
             title='Guides to Good Practice',
             description=(
-                'CoMSES Net, in partnership with the [Software and Data Carpentry organizations](http://carpentries.org/), '
-                'is dedicated to promoting good practices for developing and disseminating open and reproducible computational '
-                'models. Computational modeling is rarely a primary skill for most researchers and instead a tool with '
-                'which to better understand the emergent phenomena that arise from the complex adaptive systems in which '
-                'we are all embedded. '),
+                'We strive to foster and support good practices for developing and disseminating open and reproducible '
+                'computational models. Computational modeling is not a primary skill for most practitioners but instead a '
+                'tool that we can use to better understand the emergent phenomena that arise from the complex adaptive '
+                'systems that we engage in every day. If you are interested in improving foundational computational and '
+                'data science skills, check out [the Software and Data Carpentries organizations](http://carpentries.org) '
+                'and look for an [upcoming workshop](https://software-carpentry.org/workshops/) near you.'
+            ),
             body=(
-                'Many of these practices have been culled from this [Carpentries paper](https://swcarpentry.github.io/good-enough-practices-in-scientific-computing/). It is defintiely worth a read if you would like to explore these topics in more detail! \n'
+                '### Agent-based model development \n\n'
+                '* Keep your models simple\n'
+                '* Document your models using ODD or equivalent documentation protocol\n'
+                '* Perform sensitivity analysis on your model variables\n\n\n'
+                'Some of the code and data management practices listed below are also described in greater detail in '
+                '[*Good Enough Practices in Scientific Computing* by Wilson et al]'
+                '(https://swcarpentry.github.io/good-enough-practices-in-scientific-computing/).'
+                ' It is definitely worth a read if you would like to further explore these topics. \n'
                 '### Code management \n\n'
                 '* Use a version control system\n'
-                '* Document all external dependencies\n'
-                '* Strive for clean, well-commented / self-documenting code with meaningful variable names\n'
+                '* Document all external dependencies (e.g., Docker, pip, packrat)\n'
+                '* Strive for simple, well-commented, self-documenting code with meaningful variable names\n'
                 '* Adopt or develop community documentation standards (e.g., '
                 '[ODD](https://doi.org/10.1016/j.ecolmodel.2010.08.019))\n'
                 '* Adopt a consistent, self-describing '
                 '[directory structure](https://swcarpentry.github.io/good-enough-practices-in-scientific-computing/#project-organization) '
                 'for your code, data, documentation, and results\n'
                 '* Archive your codebase in a DOI-issuing repository that provides citable URLs for specific '
-                'versions of your codebase\n'
+                'versions of your codebase [(Force11 software citation principles)]'
+                '(https://www.force11.org/software-citation-principles) \n'
                 '* Provide example test cases and expected outputs\n\n\n'
                 '### Data management \n\n'
                 '* Preserve raw and intermediate forms of data\n'
@@ -387,10 +398,12 @@ class AboutSection(AbstractSection):
                      'the way we develop, share, use, and re-use agent based and computational models for the study of '
                      'social and ecological systems. We develop and maintain the [OpenABM Computational Model Library]('
                      '/codebases/), a digital repository that supports discovery and good practices for '
-                     'software citation, digital preservation, reproducibility, and reuse. We encourage you to '
-                     'register and [add your models to the archive](/codebases/create/).\n\n'
+                     '[software citation](https://www.force11.org/software-citation-principles), digital preservation, '
+                     'reproducibility, and reuse. We encourage you to [join CoMSES Net](/accounts/signup) and '
+                     '[add your models to the archive](/codebases/create/).\n\n'
                      'We are governed by an international executive board, ex-officio members '
-                     '(PIs on projects that fund CoMSES Net) and adhere to [community drafted by-laws](/about/by-laws/).'
+                     '(PIs on projects that fund CoMSES Net) and adhere to '
+                     '[these community drafted by-laws](/about/by-laws/).'
                      ),
         )
         about_index.add_breadcrumbs(self.SUBNAVIGATION_MENU[:1])
