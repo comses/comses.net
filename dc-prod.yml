@@ -94,7 +94,7 @@ services:
     links:
       - cms
   cms:
-    build: 
+    build:
       context: ./django
       args:
         REQUIREMENTS_FILE: requirements-prod.txt

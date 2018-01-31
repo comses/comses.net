@@ -26,7 +26,7 @@ from .utils import get_first_field, get_field, get_field_attributes, to_datetime
 
 logger = logging.getLogger(__name__)
 
-PROFILE_PICTURES_PATH = 'incoming/pictures'
+PROFILE_PICTURES_PATH = '/shared/incoming/pictures'
 
 FAQ_ENTRIES = """id,category,question,answer
     0,abm,"What are agent-based models (ABMs)?","Agent-based models are (computational) models of a heterogeneous population of agents and their interactions. The result of the micro-level interactions can be interesting macro-level behavior like cooperation, segregation, fashion, culture, etc. ABMs are also known as multi-agent systems, agent-based systems etc., and is an important field in computer science where agent-based models are developed to do tasks, like searching for information on the internet. Within social science we are interested in agent-behavior that is based on our understanding of human decision making. Agents can represent individuals, households, firms, nations, depending on the application. The heterogeneity of agents is an important aspect of ABM. Heterogeneity can originate from differences is location, knowledge, wealth, social connections, cognitive processes, experience, motivations, preferences, etc. Agents can interact in various ways such as changing the shared environment by harvesting or pollution, exchange of information and resources, and by imitation."

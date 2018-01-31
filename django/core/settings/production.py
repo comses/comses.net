@@ -17,11 +17,6 @@ EMAIL_USE_TLS = True
 
 ALLOWED_HOSTS = ['.comses.net']
 
-# TODO: refactor root paths, repository / library / etc
-MEDIA_ROOT = '/shared/media'
-
-STATIC_ROOT = '/shared/static'
-
 WSGI_APPLICATION = 'core.wsgi.application'
 
 WAGTAILSEARCH_BACKENDS = {
