@@ -221,7 +221,7 @@ class RelatedCodebaseSerializer(serializers.ModelSerializer, FeaturedImageMixin)
     class Meta:
         model = Codebase
         fields = ('all_contributors', 'tags', 'title', 'first_published_at', 'last_published_on', 'identifier',
-                  'version_number', 'featured_image', 'summarized_description', 'description', 'live',
+                  'version_number', 'featured_image', 'summarized_description', 'description', 'live', 'peer_reviewed',
                   'repository_url',)
 
 

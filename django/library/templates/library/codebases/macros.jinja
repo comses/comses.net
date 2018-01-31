@@ -15,6 +15,9 @@
             <div class="col-md-12 col-lg-9">
                 <div class="title">
                     <h1>
+                        {% if item.peer_reviewed %}
+                            <span class='badge badge-primary'>Peer reviewed</span>
+                        {% endif %}
                         <a href="{{ latest_release_url }}">{{ item.title }}</a>
                         {% if not item.live %}
                             <span class="badge badge-danger">Unpublished</span>
