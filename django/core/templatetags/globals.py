@@ -50,6 +50,11 @@ def is_production():
 
 
 @library.global_function
+def sentry_public_dsn():
+    return settings.RAVEN_CONFIG.get('public_dsn')
+
+
+@library.global_function
 def provider_login_url(request, provider_id, **kwargs):
     provider = providers.registry.by_id(provider_id, request)
     return provider.get_login_url(request, **kwargs)
