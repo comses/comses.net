@@ -118,6 +118,7 @@ module.exports = createConfig([
         aliases('connection.ts', 'handler.ts'),
         addPlugins([
             new webpack.optimize.UglifyJsPlugin({
+                sourceMap: true,
                 compress: {
                     warnings: false
                 }

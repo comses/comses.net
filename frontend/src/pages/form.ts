@@ -1,45 +1,49 @@
 import * as _ from 'lodash';
-import * as yup from 'yup';
+import yup from 'yup';
 import Vue from 'vue'
 import {VueClass} from 'vue-class-component/lib/declarations'
 import {Component} from 'vue-property-decorator'
 
+const yupDefaultFormDispatch = {
+    [yup.object().constructor]: (schema) => {
+        let default_value: object = {};
+        for (const field_name in schema.fields) {
+            const subSchema = schema.fields[field_name];
+            default_value[field_name] = createDefaultValue(subSchema);
+        }
+        return default_value;
+    },
+    [yup.string().constructor]: (schema) => '',
+    [yup.boolean().constructor]: (schema) => false,
+    [yup.date().constructor]: (schema) => {
+        if (schema._nullable === true) {
+            return null;
+        } else {
+            return (new Date()).toISOString();
+        }
+    },
+    [yup.array().constructor]: (schema) => [],
+    [yup.mixed().constructor]: (schema) => {
+        const whitelist_values = schema._whitelist._map;
+        if (!_.isEmpty(whitelist_values)) {
+            return whitelist_values[Object.keys(whitelist_values)[0]];
+        } else {
+            return null;
+        }
+    }
+};
+
 export function createDefaultValue(schema) {
+    /**
+     * convert a yup schema into a plain js default value for Vue
+     */
     if (schema._default !== undefined) {
         return schema._default;
     }
-    switch (schema.constructor.name) {
-        case 'ObjectSchema': {
-            let default_value: object = {};
-            for (const field_name in schema.fields) {
-                const subSchema = schema.fields[field_name];
-                default_value[field_name] = createDefaultValue(subSchema);
-            }
-            return default_value;
-        }
-        case 'StringSchema':
-            return '';
-        case 'BooleanSchema':
-            return false;
-        case 'DateSchema': {
-            if (schema._nullable === true) {
-                return null;
-            } else {
-                return (new Date()).toISOString();
-            }
-        }
-        case 'ArraySchema':
-            return [];
-        case 'SchemaType': {
-            const whitelist_values = schema._whitelist._map;
-            if (!_.isEmpty(whitelist_values)) {
-                return whitelist_values[Object.keys(whitelist_values)[0]];
-            } else {
-                return null;
-            }
-        }
-        default:
-            throw new Error(`invalid schema type: ${schema.constructor.name}`)
+    if (schema.constructor in yupDefaultFormDispatch) {
+        return yupDefaultFormDispatch[schema.constructor](schema);
+    } else {
+        throw new Error(`invalid schema type: ${schema.constructor.name}`)
     }
 }
 
