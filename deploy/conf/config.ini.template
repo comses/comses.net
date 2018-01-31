@@ -20,8 +20,8 @@ EMAIL_SUBJECT_PREFIX="[comses.net]"
 
 [logging]
 LOG_DIRECTORY=/shared/logs
-SENTRY_DSN='https://none:none@sentry.example.com/1'
-
+SENTRY_DSN=https://none:none@sentry.example.com/1
+SENTRY_PUBLIC_DSN=https://none@sentry.example.com/1
 
 [secrets]
 DISCOURSE_SSO_SECRET=${DISCOURSE_SSO_SECRET:-changeme}

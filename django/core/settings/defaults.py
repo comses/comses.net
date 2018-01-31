@@ -145,19 +145,26 @@ WAGTAILSEARCH_BACKENDS = {
 TAGGIT_CASE_INSENSITIVE = True
 
 config = configparser.ConfigParser()
+IS_IN_DOCKER = os.path.exists('/secrets/config.ini')
+# FIXME: set up better shared paths
+if IS_IN_DOCKER:
+    config.read('/secrets/config.ini')
+else:
+    config.read('../deploy/conf/config.ini.debug')
 
 # default from email for various automated emails sent by Django
 DEFAULT_FROM_EMAIL = config.get('email', 'DEFAULT_FROM_EMAIL', fallback='info@comses.net')
 # email address used for errors emails sent to ADMINS and MANAGERS
 SERVER_EMAIL = config.get('email', 'SERVER_EMAIL', fallback='admin@comses.net')
 
-IS_IN_DOCKER = os.path.exists('/secrets/config.ini')
+RAVEN_CONFIG = {
+    'dsn': config.get('logging', 'SENTRY_DSN', fallback=''),
+    'public_dsn': config.get('logging', 'SENTRY_PUBLIC_DSN', fallback=''),
+    # If you are using git, you can also automatically configure the
+    # release based on the git info.
+    # 'release': raven.fetch_git_sha(BASE_DIR),
+}
 
-# FIXME: set up better shared paths
-if IS_IN_DOCKER:
-    config.read('/secrets/config.ini')
-else:
-    config.read('../deploy/conf/config.ini.debug')
 
 SECRET_KEY = config.get('secrets', 'SECRET_KEY')
 

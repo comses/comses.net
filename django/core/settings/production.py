@@ -46,13 +46,6 @@ INSTALLED_APPS += [
     'drupal_migrator',
 ]
 
-RAVEN_CONFIG = {
-    'dsn': config.get('logging', 'SENTRY_DSN', fallback=''),
-    # If you are using git, you can also automatically configure the
-    # release based on the git info.
-    # 'release': raven.fetch_git_sha(BASE_DIR),
-}
-
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': True,
