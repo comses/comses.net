@@ -385,8 +385,13 @@ class EventCalendarList(generics.ListAPIView):
             if event.submission_deadline and start <= event.submission_deadline <= end:
                 calendar_events.append(self.to_calendar_submission_deadline_event(event))
 
-            if event.start_date and not (event.start_date > end or event.end_date < start):
-                calendar_events.append(self.to_calendar_event(event))
+            if event.start_date:
+                min_date = max(start, event.start_date)
+                if event.end_date is None:
+                    event.end_date = event.start_date
+                max_date = min(end, event.end_date)
+                if min_date <= max_date:
+                    calendar_events.append(self.to_calendar_event(event))
 
         return Response(data=calendar_events)
 

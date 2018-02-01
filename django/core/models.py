@@ -4,8 +4,9 @@ from django import forms
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group, User
-from django.contrib.postgres.fields import ArrayField, JSONField
+from django.contrib.postgres.fields import ArrayField, JSONField, DateTimeRangeField
 from django.db import models
+from django.db.models.functions import Coalesce
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.translation import ugettext_lazy as _
@@ -308,6 +309,19 @@ class EventTag(TaggedItemBase):
     content_object = ParentalKey('core.Event', related_name='tagged_events')
 
 
+class TsTZRange(models.Func):
+    """Construct timestamp with time zone data in postgres"""
+    function = 'tstzrange'
+    template = "%(function)s(%(expressions)s, '%(bounds)s')"
+    output_field = DateTimeRangeField()
+
+    def __init__(self, lb, ub, bounds='[]', **extra):
+        assert bounds in ['()', '(]', '[)', '[]']
+        expressions = [lb, ub]
+        extra['bounds'] = bounds
+        super().__init__(*expressions, **extra)
+
+
 class EventQuerySet(models.QuerySet):
 
     def find_by_interval(self, start, end):
@@ -318,13 +332,17 @@ class EventQuerySet(models.QuerySet):
         :param end:
         :return:
         """
-        return self.filter(
-            # early registration deadline falls between the interval
-            (models.Q(early_registration_deadline__gte=start) & models.Q(early_registration_deadline__lte=end)) |
-            # or submission deadline falls between the interval
-            (models.Q(submission_deadline__gte=start) & models.Q(submission_deadline__lte=end))
-            # exclude any whose start date is after the interval end and whose end date is before the interval start
-        ).exclude(models.Q(start_date__gte=end)).exclude(models.Q(end_date__lte=start))
+        return self.annotate(date_range_wanted=TsTZRange(start, end)) \
+            .annotate(notnull_end_date=Coalesce(models.F('end_date'), models.F('start_date')))\
+            .annotate(date_range=TsTZRange(models.F('start_date'), models.F('notnull_end_date'))) \
+            .filter(
+                # early registration deadline falls between the interval
+                models.Q(date_range_wanted__contains=models.F('early_registration_deadline')) |
+                # or submission deadline falls between the interval
+                models.Q(date_range_wanted__contains=models.F('submission_deadline')) |
+                # exclude any whose start date is after the interval end and whose end date is before the interval start
+                models.Q(date_range_wanted__overlap=models.F('date_range'))
+            )
 
     def upcoming(self):
         return self.public().filter(start_date__gte=timezone.now())
