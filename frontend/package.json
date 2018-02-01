@@ -55,6 +55,7 @@
     "file-loader": "~0",
     "friendly-errors-webpack-plugin": "^1.6.1",
     "function-bind": "^1.0.2",
+    "image-webpack-loader": "^4.0.0",
     "karma": "^2.0.0",
     "karma-chai": "^0.1.0",
     "karma-chrome-launcher": "^2.2.0",

@@ -6,7 +6,7 @@ const {
     createConfig, match, entryPoint, setOutput, addPlugins,
     customConfig, defineConstants, env, sourceMaps
 } = require('webpack-blocks');
-const { url } = require('@webpack-blocks/assets');
+const { url, file } = require('@webpack-blocks/assets');
 const typescript = require('@webpack-blocks/typescript');
 const sass = require('@webpack-blocks/sass');
 const extractText = require('@webpack-blocks/extract-text');
@@ -38,6 +38,31 @@ function aliases(connectionFileName, handlerFileName) {
     })
 }
 
+function image(options) {
+    return (context, {addLoader}) => {
+        return addLoader({
+            ...context.match,
+            use: [
+                {
+                    loader: 'image-webpack-loader',
+                    options: {
+                        optipng: {
+                            optimizationLevel: 5,
+                        },
+                        pngquant: {
+                            quality: '100',
+                        },
+                        mozjpeg: {
+                            quality: 100,
+                        },
+                        ...options,
+                    }
+                }
+            ]
+        })
+    };
+}
+
 module.exports = createConfig([
     entryPoint({
         codebases: './src/pages/codebase',
@@ -64,10 +89,10 @@ module.exports = createConfig([
         extractText('[name]-[contenthash:8].css')
     ]),
     match(/\.(png|jpe?g|gif|svg)(\?.*)?$/, [
-        url({
-            limit: 10000,
+        file({
             name: 'img/[name].[hash:7].[ext]'
-        })
+        }),
+        image()
     ]),
     match(/\.(woff2?|eot|ttf|otf)(\?.*)?$/, [
         url({
