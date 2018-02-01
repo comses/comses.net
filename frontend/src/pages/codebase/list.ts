@@ -7,6 +7,7 @@ new SearchCodebases().$mount('#sidebar');
 new SortBy({
     propsData: {
         sortOptions: [
+            {label: 'Relevance', value: ''},
             {label: 'Publish date', value: 'first_published_at'},
             {label: 'Title', value: 'title'},
             {label: 'Author: family name', value: 'submitter__last_name'},
