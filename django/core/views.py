@@ -323,6 +323,8 @@ class EventViewSet(CommonViewSetMixin, viewsets.ModelViewSet):
     queryset = Event.objects.all()
     pagination_class = SmallResultSetPagination
     filter_backends = (CaseInsensitiveOrderingFilter, EventFilter)
+    ordering_fields = ('date_created', 'last_modified', 'title',
+                       'submitter__last_name', 'submitter__username',)
 
     def get_queryset(self):
         return self.queryset
@@ -412,6 +414,8 @@ class JobViewSet(CommonViewSetMixin, viewsets.ModelViewSet):
     pagination_class = SmallResultSetPagination
     queryset = Job.objects.all()
     filter_backends = (CaseInsensitiveOrderingFilter, JobFilter)
+    ordering_fields = ('date_created', 'last_modified', 'title',
+                       'submitter__last_name', 'submitter__username',)
 
     def get_queryset(self):
         return self.queryset
