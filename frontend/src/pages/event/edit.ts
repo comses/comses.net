@@ -99,8 +99,8 @@ export const schema = yup.object().shape({
         </c-input>
         <c-tagger v-model="tags" name="tags" :errorMsgs="errors.tags" label="Tags">
         </c-tagger>
-        <small class="form-text text-muted">A list of tags to associate with a job. Tags help people search for
-            jobs.
+        <small class="form-text text-muted">A list of tags to associate with an event. Tags help people search for
+            events.
         </small>
         <c-message-display :messages="statusMessages" @clear="statusMessages = []"></c-message-display>
         <button type="button" class="mt-3 btn btn-primary" @click="createOrUpdateIfValid">Submit</button>
