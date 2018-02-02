@@ -1,11 +1,13 @@
 import logging
 
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.models import User
 from django.core.files.images import ImageFile
 from django.shortcuts import get_object_or_404
+from django.urls import reverse
 from django.utils.decorators import method_decorator
-from django.views.generic import TemplateView
+from django.views.generic import TemplateView, RedirectView
 from rest_framework import viewsets, generics, parsers, status, mixins, renderers, filters
 from rest_framework.decorators import detail_route
 from rest_framework.permissions import IsAuthenticated
@@ -32,6 +34,13 @@ search = get_search_backend()
 """
 Contains wagtail related views
 """
+
+class ProfileRedirectView(LoginRequiredMixin, RedirectView):
+    permanent = False
+    query_string = False
+
+    def get_redirect_url(self, *args, **kwargs):
+        return reverse('home:profile-detail', kwargs={'username': self.request.user.username})
 
 
 class ToggleFollowUser(APIView):

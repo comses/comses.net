@@ -30,6 +30,7 @@ logger = logging.getLogger(__name__)
 
 class CaseInsensitiveOrderingFilter(filters.OrderingFilter):
 
+    # a whitelist of acceptable ordering fields with ascending and descending forms (e.g., 'title', and '-title')
     STRING_ORDERING_FIELDS = list(chain.from_iterable([
         (f, '-' + f) for f in ('title', 'user__username', 'user__email', 'user__last_name',
                                'submitter__username', 'submitter__last_name', 'submitter__email',)
@@ -88,7 +89,7 @@ class CommonViewSetMixin:
 
     def _get_namespace(self):
         if self.namespace is None:
-            # FIXME: assumes everything mixing this in will have a model attribute
+            # FIXME: assumes everything mixing this in will have a queryset property
             self.namespace = _common_namespace_path(self.queryset.model)
         return self.namespace
 

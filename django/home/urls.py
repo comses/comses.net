@@ -22,6 +22,7 @@ urlpatterns = [
     url(r'^jobs/add/$', views.JobCreateView.as_view(), name='job-add'),
     url(r'^about/contact/sent/$', views.ContactSentView.as_view(template_name='home/about/contact-sent.jinja'), name='contact-sent'),
     url(r'^users/(?P<username>[\w\.\-@]+)/edit/$', views.ProfileUpdateView.as_view(), name='profile-edit'),
+    url(r'^accounts/profile/$', views.ProfileRedirectView.as_view(), name='account-profile'),
 ]
 
 urlpatterns.append(url(r'users/(?P<username>(\w+))/upload_picture/$', views.MemberProfileImageUploadView.as_view()))
