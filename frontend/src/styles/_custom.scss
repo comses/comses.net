@@ -16,6 +16,10 @@ $font-family-base: 'Open Sans', Roboto, 'Helvetica Neue', sans-serif;
   }
 }
 
+.text-gray {
+  color: $text-color;
+}
+
 [v-cloak] {
   display: none;
 }

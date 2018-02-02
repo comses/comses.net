@@ -6,24 +6,35 @@
 {% endblock %}
 
 {% block content %}
-<div class='row' style='padding-top: 20px;'>
-    <div class='col'>
-        <div class="alert alert-info">
-            Forgot your password? <a href="{{ url('account_reset_password') }}">Request a new password</a> or
-            <a href="{{ url('account_signup') }}">sign up for a free CoMSES Net account</a>.
-        </div>
+{% set has_errors=form.non_field_errors() %}
+{% if has_errors %}
+    <div class='alert alert-danger'>
+        The username/email and password combination you entered didn't match our records.
+        <a href="{{ url('account_reset_password') }}">Reset your password?</a>
+    </div>
+{% endif %}
+<p class='lead'>
+Sign in / sign up with an existing <a href='https://github.com'>GitHub</a> or <a href='https://orcid.org'>ORCID</a>
+account. If you'd like to link an existing CoMSES Net account, please sign in first and then access 
+<a href='{{url("home:account-profile")}}'>your account</a>.
+</p>
+<div class="row">
+    <div class='col-6'>
+        <a class='text-left btn btn-lg btn-outline-primary' href="{{ provider_login_url(request, 'github') }}"><i class='fa fa-github text-gray'></i> Sign in with GitHub</a>
+        <p><small>GitHub is a web-based hosting service for the Git version control system that offers unlimited
+            public repositories and collaborators. Sign up at <a href='https://github.com/join'>GitHub</a></small></p>
+    </div>
+    <div class='col-6'>
+        <a class='text-left btn btn-lg btn-outline-primary' href="{{ provider_login_url(request, 'orcid') }}">
+            <i class='ai ai-orcid text-orcid'></i> Create or connect your ORCID iD
+        </a>
+        <p><small>ORCID provides a persistent digital identifier that distinguishes you from other researchers. Learn
+            more at <a href='//orcid.org'>orcid.org</a></small></p>
     </div>
 </div>
-<div class="row">
+<div class='row'>
     <div class="col">
-        <h3>Welcome back</h3>
-        <p>Sign in with your CoMSES Net Account</p>
-        {% set has_errors=form.non_field_errors() %}
-        {% if has_errors %}
-            <div class='alert alert-danger'>
-                The username/email and password combination you supplied is not correct
-            </div>
-        {% endif %}
+        <h3>Sign in with your CoMSES Net Account</h3>
         <form id='signin-form' role="form" class="form-horizontal" method="post">
             {% csrf_token %}
             <div id='login' class='form-group'>
@@ -32,21 +43,12 @@
             </div>
             <div id='password' class='form-group'>
                 <input name='password' type='password' class='form-control {{ 'is-invalid' if has_errors }}' placeholder='Password'>
+                <small><a href="{{ url('account_reset_password') }}">Forgot your password?</a></small>
             </div>
             <button type="submit" class="btn btn-primary">
                 <i class='fa fa-sign-in'></i> Sign In
             </button>
         </form>
-    </div>
-    <div class='col'>
-        <h3>External Sign In</h3>
-        <p>Sign in / register using an ORCID or GitHub account</p>
-        <div class='btn-group-vertical'>
-            <a class='btn btn-lg btn-secondary btn-social btn-github' href="{{ provider_login_url(request, 'github') }}"><i class='fa fa-github-square'></i> GitHub Sign In</a>
-            <a class='btn btn-lg btn-secondary btn-social' href="{{ provider_login_url(request, 'orcid') }}">
-                <img src='//orcid.org/sites/default/files/images/orcid_24x24.png'> Create or Connect your ORCID ID
-            </a>
-        </div>
     </div>
 </div>
 {% endblock content %}
