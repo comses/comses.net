@@ -2,6 +2,7 @@
 # dev requirements
 Sphinx
 django-debug-toolbar
+django-debug-toolbar-request-history
 coverage
 coveralls
 hypothesis[datetime,django]
