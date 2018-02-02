@@ -321,7 +321,7 @@ class EventFilter(filters.BaseFilterBackend):
 
 class EventViewSet(CommonViewSetMixin, viewsets.ModelViewSet):
     serializer_class = EventSerializer
-    queryset = Event.objects.all()
+    queryset = Event.objects.order_by('-date_created', 'title')
     pagination_class = SmallResultSetPagination
     filter_backends = (CaseInsensitiveOrderingFilter, EventFilter)
     ordering_fields = ('date_created', 'last_modified', 'title',
@@ -418,7 +418,7 @@ class JobFilter(filters.BaseFilterBackend):
 class JobViewSet(CommonViewSetMixin, viewsets.ModelViewSet):
     serializer_class = JobSerializer
     pagination_class = SmallResultSetPagination
-    queryset = Job.objects.all()
+    queryset = Job.objects.order_by('-date_created')
     filter_backends = (CaseInsensitiveOrderingFilter, JobFilter)
     ordering_fields = ('date_created', 'last_modified', 'title',
                        'submitter__last_name', 'submitter__username',)
