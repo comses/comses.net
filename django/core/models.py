@@ -118,6 +118,12 @@ class MemberProfileQuerySet(models.QuerySet):
     def with_institution(self):
         return self.select_related('institution')
 
+    def with_user(self):
+        return self.select_related('user')
+
+    def with_tags(self):
+        return self.prefetch_related('tagged_members__tag')
+
     def public(self, **kwargs):
         return self.filter(user__is_active=True, **kwargs).exclude(user__username__in=self.EXCLUDED_USERS)
 
@@ -327,6 +333,12 @@ class EventQuerySet(models.QuerySet):
             # exclude any whose start date is after the interval end and whose end date is before the interval start
         ).exclude(models.Q(start_date__gte=end) | models.Q(end_date__lte=start))
 
+    def with_submitter(self):
+        return self.select_related('submitter')
+
+    def with_tags(self):
+        return self.prefetch_related('tagged_events__tag')
+
     def upcoming(self):
         return self.public().filter(start_date__gte=timezone.now())
 
@@ -394,6 +406,12 @@ class JobTag(TaggedItemBase):
 
 
 class JobQuerySet(models.QuerySet):
+    def with_submitter(self):
+        return self.select_related('submitter')
+
+    def with_tags(self):
+        return self.prefetch_related('tagged_jobs__tag')
+
     def public(self):
         return self
 

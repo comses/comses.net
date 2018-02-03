@@ -24,7 +24,8 @@ from core.view_helpers import retrieve_with_perms, get_search_queryset
 from core.views import (CaseInsensitiveOrderingFilter, CommonViewSetMixin, FormCreateView, FormUpdateView,
                         SmallResultSetPagination)
 from .models import FeaturedContentItem, MemberProfile, ContactPage
-from .serializers import (FeaturedContentItemSerializer, UserMessageSerializer, MemberProfileSerializer)
+from .serializers import (FeaturedContentItemSerializer, UserMessageSerializer, MemberProfileSerializer,
+                          MemberProfileListSerializer)
 
 logger = logging.getLogger(__name__)
 
@@ -89,11 +90,20 @@ class ProfileViewSet(CommonViewSetMixin, viewsets.ModelViewSet):
     lookup_field = 'user__username'
     lookup_url_kwarg = 'username'
     lookup_value_regex = '[\w\.\-@]+'
-    serializer_class = MemberProfileSerializer
-    queryset = MemberProfile.objects.public().with_institution().order_by('id')
+    queryset = MemberProfile.objects.public().with_institution().with_tags().with_user().order_by('id')
     pagination_class = SmallResultSetPagination
     filter_backends = (CaseInsensitiveOrderingFilter, MemberProfileFilter)
     ordering_fields = ('user__username', 'user__last_name', 'user__email',)
+
+    def get_serializer_class(self):
+        if self.action == 'list':
+            return MemberProfileListSerializer
+        return MemberProfileSerializer
+
+    def get_queryset(self):
+        if self.action == 'list':
+            return self.queryset
+        return self.queryset
 
     def retrieve(self, request, *args, **kwargs):
         return retrieve_with_perms(self, request, *args, **kwargs)

@@ -321,14 +321,11 @@ class EventFilter(filters.BaseFilterBackend):
 
 class EventViewSet(CommonViewSetMixin, viewsets.ModelViewSet):
     serializer_class = EventSerializer
-    queryset = Event.objects.order_by('-date_created', 'title')
+    queryset = Event.objects.with_tags().with_submitter().order_by('-date_created', 'title')
     pagination_class = SmallResultSetPagination
     filter_backends = (CaseInsensitiveOrderingFilter, EventFilter)
     ordering_fields = ('date_created', 'last_modified', 'title',
                        'submitter__last_name', 'submitter__username',)
-
-    def get_queryset(self):
-        return self.queryset
 
     def retrieve(self, request, *args, **kwargs):
         return retrieve_with_perms(self, request, *args, **kwargs)
@@ -418,13 +415,10 @@ class JobFilter(filters.BaseFilterBackend):
 class JobViewSet(CommonViewSetMixin, viewsets.ModelViewSet):
     serializer_class = JobSerializer
     pagination_class = SmallResultSetPagination
-    queryset = Job.objects.order_by('-date_created')
+    queryset = Job.objects.with_tags().with_submitter().order_by('-date_created')
     filter_backends = (CaseInsensitiveOrderingFilter, JobFilter)
     ordering_fields = ('date_created', 'last_modified', 'title',
                        'submitter__last_name', 'submitter__username',)
-
-    def get_queryset(self):
-        return self.queryset
 
     def retrieve(self, request, *args, **kwargs):
         return retrieve_with_perms(self, request, *args, **kwargs)

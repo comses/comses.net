@@ -69,7 +69,7 @@ class CodebaseViewSet(CommonViewSetMixin, viewsets.ModelViewSet):
     lookup_field = 'identifier'
     lookup_value_regex = r'[\w\-\.]+'
     pagination_class = SmallResultSetPagination
-    queryset = Codebase.objects.order_by('-first_published_at', 'title')
+    queryset = Codebase.objects.with_tags().with_featured_images().order_by('-first_published_at', 'title')
     filter_backends = (CaseInsensitiveOrderingFilter, CodebaseFilter)
     ordering_fields = ('first_published_at', 'title', 'last_modified', 'peer_reviewed', 'submitter__last_name',
                        'submitter__username')

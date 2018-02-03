@@ -191,6 +191,15 @@ class CodebaseQuerySet(models.QuerySet):
         return self.prefetch_related(
             models.Prefetch('releases', queryset=queryset))
 
+    def with_tags(self):
+        return self.prefetch_related('tagged_codebases__tag')
+
+    def with_featured_images(self):
+        return self.prefetch_related('featured_images')
+
+    def with_submitter(self):
+        return self.select_related('submitter')
+
     def accessible(self, user):
         return get_viewable_objects_for_user(user=user, queryset=self.with_viewable_releases(user=user))
 

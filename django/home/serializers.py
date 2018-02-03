@@ -26,7 +26,25 @@ class FeaturedContentItemSerializer(serializers.ModelSerializer):
 class UserMessageSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserMessage
-        field = ('message', 'user')
+        fields = ('message', 'user')
+
+
+class MemberProfileListSerializer(serializers.ModelSerializer):
+    date_joined = serializers.DateTimeField(source='user.date_joined', read_only=True, format='%c')
+    full_name = serializers.SerializerMethodField()
+    username = serializers.CharField(source='user.username')
+    profile_url = serializers.URLField(source='get_absolute_url', read_only=True)
+    tags = TagSerializer(many=True)
+
+    def get_full_name(self, instance):
+        full_name = instance.user.get_full_name()
+        if not full_name:
+            full_name = instance.user.username
+        return full_name
+
+    class Meta:
+        model = MemberProfile
+        fields = ('date_joined', 'full_name', 'profile_url', 'tags', 'username',)
 
 
 class MemberProfileSerializer(serializers.ModelSerializer):
@@ -76,9 +94,9 @@ class MemberProfileSerializer(serializers.ModelSerializer):
     def get_codebases(self, instance):
         # FIXME: use django-filter for sort order
         request = self.context.get('request')
-        # FIXME: suffers from n + 1 queries
+        # FIXME: suffers from n + 1 queries on all_contributors
         codebases = Codebase.objects.contributed_by(user=instance.user).accessible(user=request.user)\
-            .order_by('-last_published_on')
+            .with_tags().with_featured_images().order_by('-last_published_on')
         return RelatedCodebaseSerializer(codebases, read_only=True, many=True, context=self.context).data
 
     def get_full_name(self, instance):
