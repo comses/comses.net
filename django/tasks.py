@@ -45,6 +45,11 @@ def clean(ctx, revert=False):
         clean_update(ctx)
 
 
+@task(aliases=['cs'])
+def collect_static(ctx):
+    dj(ctx, 'collectstatic -c --noinput', pty=True)
+
+
 @task
 def sh(ctx):
     dj(ctx, 'shell_plus --ipython', pty=True)
