@@ -1,6 +1,7 @@
 {% set login_url = url("account_login") %}
 {% set logout_url = url("account_logout") %}
 {% set signup_url = url("account_signup") %}
+{% set contact_url = '/about/contact/' %}
 
 {% macro navbar() %}
 <nav class='navbar navbar-expand-md navbar-light fixed-top'>
@@ -163,7 +164,9 @@ function focusSearch() {
             </div>
         </div>
     </div>
-    <p class="copyright text-center">&copy; 2007 - {{ now('Y') }} CoMSES Net</p>
+    <p class="copyright text-center">&copy; 2007 - {{ now('Y') }} CoMSES Net |
+    <a class='footer' href='{{ contact_url }}'>Contact us</a>
+    </p>
 </footer>
 {% endmacro %}
 

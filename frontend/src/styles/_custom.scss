@@ -314,6 +314,11 @@ footer.footer {
   }
 }
 
+a.footer {
+  color: $white;
+  text-decoration: underline;
+}
+
 .content-block {
   padding: 20px 0;
 }
