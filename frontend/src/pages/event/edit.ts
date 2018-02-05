@@ -89,7 +89,7 @@ export const schema = yup.object().shape({
             <div slot="help"><button class="btn btn-secondary btn-sm" type="button" @click="createSummaryFromDescription">
                     Summarize
                 </button>
-                <small class="form-text text-muted">A short summary of the job for display in search results.
+                <small class="form-text text-muted">A short summary of the event for display in search results.
                     This field can be created from the description by pressing the summarize button.
                 </small>
             </div>
