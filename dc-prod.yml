@@ -108,6 +108,7 @@ services:
       - sockets:/shared/sockets
     environment:
       DJANGO_SETTINGS_MODULE: "core.settings.production"
+      UBUNTU_MIRROR: "nova.clouds.archive.ubuntu.com"
       DB_USER: ${DB_USER}
       DB_HOST: ${DB_HOST}
       DB_NAME: ${DB_NAME}
