@@ -145,21 +145,24 @@ class LandingPage(Page):
     def get_featured_content(self):
         return self.featured_content_queue.all()[:self.FEATURED_CONTENT_COUNT]
 
+    def get_canned_forum_activity(self):
+        random_submitters = User.objects.filter(pk__in=(3, 5, 7, 11, 13, 17))
+        return [
+            {
+                'title': "Generated Forum Topic {}".format(i),
+                'submitter_name': random_submitters[i].member_profile.name,
+                'submitter_url': random_submitters[i].member_profile.get_absolute_url(),
+                'date_created': datetime.now(),
+                'url': "https://forum.example.com/topic/{}".format(i),
+            }
+            for i in range(self.RECENT_FORUM_ACTIVITY_COUNT)
+        ]
+
     def get_recent_forum_activity(self):
         # FIXME: move to dedicated discourse module / api as we integrate more tightly with discourse
         # Discourse API endpoint documented at http://docs.discourse.org/#tag/Topics%2Fpaths%2F~1latest.json%2Fget
-        if settings.DEBUG:
-            random_submitters = User.objects.filter(pk__in=(3, 5, 7, 11, 13, 17))
-            return [
-                {
-                    'title': "Generated Forum Topic {}".format(i),
-                    'submitter': random_submitters[i],
-                    'date_created': datetime.now(),
-                    'url': "https://forum.example.com/topic/{}".format(i),
-                }
-                for i in range(self.RECENT_FORUM_ACTIVITY_COUNT)
-            ]
-
+        if not settings.DEPLOY_ENVIRONMENT.is_production():
+            return self.get_canned_forum_activity()
         # FIXME: refactor and clean up logic, extract to a sensible discourse api
         r = requests.get('{0}/{1}'.format(settings.DISCOURSE_BASE_URL, 'latest.json'),
                          params={'order': 'created', 'sort': 'asc'})
@@ -188,7 +191,12 @@ class LandingPage(Page):
             last_poster_username = topic['last_poster_username']
             submitter = None
             submitter_url = None
-            if last_poster_username == 'comses':
+            if last_poster_username != 'comses':
+                try:
+                    submitter = User.objects.get(username=last_poster_username)
+                except User.DoesNotExist:
+                    pass
+            if submitter is None:
                 category_id = topic['category_id']
                 logger.debug("category id: %s, topic title: %s, topic: %s", category_id, topic_title, topic)
                 # special case lookup for real submitter
@@ -207,11 +215,7 @@ class LandingPage(Page):
                     submitter_url = submitter.member_profile.get_absolute_url()
                 else:
                     submitter = User.objects.get(username='AnonymousUser')
-            else:
-                try:
-                    submitter = User.objects.get(username=last_poster_username)
-                except User.DoesNotExist:
-                    pass
+
             recent_forum_activity.append(
                 {
                     'title': topic_title,

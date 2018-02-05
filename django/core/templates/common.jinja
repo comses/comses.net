@@ -188,6 +188,9 @@
     <script>
         DiscourseEmbed = {
             discourseUrl: "{{ DISCOURSE_BASE_URL }}/",
+            {% if submitter %}
+                discourseUserName: "{{ submitter.username }}",
+            {% endif %}
             discourseEmbedUrl: window.location.href
         };
         (function () {
