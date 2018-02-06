@@ -230,10 +230,9 @@ class MemberProfile(index.Indexed, ClusterableModel):
         FieldPanel('research_interests', widget=forms.Textarea),
         FieldPanel('personal_url'),
         FieldPanel('professional_url'),
-        FieldPanel('orcid'),
         FieldPanel('institution'),
         ImageChooserPanel('picture'),
-        InlinePanel('tagged_members'),
+        FieldPanel('tags'),
     ]
 
     search_fields = [
@@ -279,9 +278,12 @@ class Platform(index.Indexed, ClusterableModel):
         return pathlib.Path('platforms', instance.platform.name, filename)
 
     panels = [
-        FieldPanel('title'),
+        FieldPanel('name'),
         FieldPanel('url'),
         FieldPanel('description'),
+        FieldPanel('active'),
+        FieldPanel('open_source'),
+        FieldPanel('featured'),
         FieldPanel('tags'),
     ]
 

@@ -469,7 +469,7 @@ class Journal(index.Indexed, ClusterableModel):
     tags = TaggableManager(through=JournalTag, blank=True)
 
     panels = [
-        FieldPanel('title'),
+        FieldPanel('name'),
         FieldPanel('url'),
         FieldPanel('issn'),
         FieldPanel('description', widget=forms.Textarea),
@@ -484,6 +484,9 @@ class Journal(index.Indexed, ClusterableModel):
             index.SearchField('name'),
         ]),
     ]
+
+    def __str__(self):
+        return "{0} {1} {2}".format(self.name, self.url, self.issn)
 
 
 class JournalSnippetPlacement(Orderable, models.Model):
