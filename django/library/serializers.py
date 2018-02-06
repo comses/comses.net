@@ -38,13 +38,14 @@ class ContributorSerializer(serializers.ModelSerializer):
     id = serializers.IntegerField(read_only=True)
     user = RelatedMemberProfileSerializer(required=False, allow_null=True)
     affiliations = TagSerializer(many=True)
+    profile_url = serializers.SerializerMethodField()
 
     def get_profile_url(self, instance):
         user = instance.user
         if user:
             return user.member_profile.get_absolute_url()
         else:
-            return "{0}?{1}".format(reverse('home:profile-list'), urlencode({'query': instance.contributor.name}))
+            return "{0}?{1}".format(reverse('home:profile-list'), urlencode({'query': instance.name}))
 
     def _create_or_update(self, validated_data):
         affiliations_serializer = TagSerializer(many=True, data=validated_data.pop('affiliations'))
@@ -72,7 +73,7 @@ class ContributorSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Contributor
-        fields = ('id', 'given_name', 'middle_name', 'family_name', 'name', 'email', 'user', 'type', 'affiliations')
+        fields = ('id', 'given_name', 'middle_name', 'family_name', 'name', 'email', 'user', 'type', 'affiliations', 'profile_url')
 
 
 class ListReleaseContributorSerializer(serializers.ListSerializer):

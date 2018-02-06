@@ -606,7 +606,7 @@ class CodebaseReleaseQuerySet(models.QuerySet):
     def with_programming_languages(self):
         return self.prefetch_related('tagged_release_languages__tag')
 
-    def with_codebase(self, user):
+    def with_codebase(self):
         return self.prefetch_related(
             models.Prefetch('codebase', Codebase.objects.with_tags().with_featured_images()))
 
@@ -617,7 +617,7 @@ class CodebaseReleaseQuerySet(models.QuerySet):
         return get_viewable_objects_for_user(user, queryset=self)
 
     def accessible(self, user):
-        return get_viewable_objects_for_user(user, queryset=self.with_release_contributors().with_codebase(user=user))
+        return get_viewable_objects_for_user(user, queryset=self.with_codebase())
 
 
 class CodebaseRelease(index.Indexed, ClusterableModel):
