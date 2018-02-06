@@ -4,6 +4,7 @@ import pathlib
 from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.core.exceptions import PermissionDenied
 from django.db import transaction
+from django.db.models import Prefetch
 from django.http import FileResponse, Http404
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import resolve
@@ -18,7 +19,7 @@ from core.view_helpers import add_change_delete_perms, get_search_queryset
 from core.views import (CommonViewSetMixin, FormUpdateView, FormCreateView, SmallResultSetPagination,
                         CaseInsensitiveOrderingFilter)
 from .fs import FileCategoryDirectories, StagingDirectories, MessageLevels
-from .models import Codebase, CodebaseRelease, Contributor, CodebaseImage
+from .models import Codebase, CodebaseRelease, Contributor, CodebaseImage, CodebaseQuerySet
 from .permissions import CodebaseReleaseUnpublishedFilePermissions
 from .serializers import (CodebaseSerializer, RelatedCodebaseSerializer, CodebaseReleaseSerializer,
                           ContributorSerializer, ReleaseContributorSerializer, CodebaseReleaseEditSerializer,
@@ -199,7 +200,7 @@ class CodebaseReleaseViewSet(CommonViewSetMixin, viewsets.ModelViewSet):
     lookup_field = 'version_number'
     lookup_value_regex = r'\d+\.\d+\.\d+'
 
-    queryset = CodebaseRelease.objects.all()
+    queryset = CodebaseRelease.objects.with_platforms().with_programming_languages()
     pagination_class = SmallResultSetPagination
     permission_classes = (NestedCodebaseReleasePermission, ComsesPermissions,)
 

@@ -63,7 +63,7 @@ class MemberProfileSerializer(serializers.ModelSerializer):
     follower_count = serializers.ReadOnlyField(source='user.following.count')
     following_count = serializers.ReadOnlyField(source='user.followers.count')
 
-    codebases = serializers.SerializerMethodField()
+    codebases = RelatedCodebaseSerializer(source='user.codebases', many=True)
 
     # Institution
     institution_name = serializers.CharField()
@@ -90,14 +90,6 @@ class MemberProfileSerializer(serializers.ModelSerializer):
         if request and request.accepted_media_type != 'text/html':
             return instance.picture.get_rendition('fill-150x150').url if instance.picture else None
         return instance.picture
-
-    def get_codebases(self, instance):
-        # FIXME: use django-filter for sort order
-        request = self.context.get('request')
-        # FIXME: suffers from n + 1 queries on all_contributors
-        codebases = Codebase.objects.contributed_by(user=instance.user).accessible(user=request.user)\
-            .with_tags().with_featured_images().order_by('-last_published_on')
-        return RelatedCodebaseSerializer(codebases, read_only=True, many=True, context=self.context).data
 
     def get_full_name(self, instance):
         full_name = instance.user.get_full_name()

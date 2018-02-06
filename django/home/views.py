@@ -4,6 +4,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.models import User
 from django.core.files.images import ImageFile
+from django.db.models import Prefetch
 from django.shortcuts import get_object_or_404
 from django.urls import reverse
 from django.utils.decorators import method_decorator
@@ -23,6 +24,7 @@ from core.serializers import TagSerializer
 from core.view_helpers import retrieve_with_perms, get_search_queryset
 from core.views import (CaseInsensitiveOrderingFilter, CommonViewSetMixin, FormCreateView, FormUpdateView,
                         SmallResultSetPagination)
+from library.models import Codebase
 from .models import FeaturedContentItem, MemberProfile, ContactPage
 from .serializers import (FeaturedContentItemSerializer, UserMessageSerializer, MemberProfileSerializer,
                           MemberProfileListSerializer)
@@ -90,7 +92,7 @@ class ProfileViewSet(CommonViewSetMixin, viewsets.ModelViewSet):
     lookup_field = 'user__username'
     lookup_url_kwarg = 'username'
     lookup_value_regex = '[\w\.\-@]+'
-    queryset = MemberProfile.objects.public().with_institution().with_tags().with_user().order_by('id')
+    queryset = MemberProfile.objects.public().with_tags().order_by('id')
     pagination_class = SmallResultSetPagination
     filter_backends = (CaseInsensitiveOrderingFilter, MemberProfileFilter)
     ordering_fields = ('user__username', 'user__last_name', 'user__email',)
@@ -101,9 +103,11 @@ class ProfileViewSet(CommonViewSetMixin, viewsets.ModelViewSet):
         return MemberProfileSerializer
 
     def get_queryset(self):
-        if self.action == 'list':
-            return self.queryset
-        return self.queryset
+        if self.action == 'retrieve':
+            return self.queryset.prefetch_related('institution').prefetch_related(
+                Prefetch('user', User.objects.prefetch_related(
+                    Prefetch('codebases', Codebase.objects.with_tags().with_featured_images().with_contributors()))))
+        return self.queryset.with_institution().with_user()
 
     def retrieve(self, request, *args, **kwargs):
         return retrieve_with_perms(self, request, *args, **kwargs)

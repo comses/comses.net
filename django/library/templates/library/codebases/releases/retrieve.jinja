@@ -228,10 +228,10 @@
                 <b class="card-title">Authors</b>
                 <p class='card-text'>
                 {% for c in codebase.all_contributors %}
-                    {% set badge_class='badge-success' if c.contributor.user else 'badge-default' %}
+                    {% set badge_class='badge-success' if c.user else 'badge-default' %}
                     <a href='{{c.profile_url}}'>
                         <span class='badge {{badge_class}}'>
-                            {{ c.contributor.name }}
+                            {{ c.name }}
                         </span>
                     </a>
                 {% endfor %}

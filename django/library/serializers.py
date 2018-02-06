@@ -39,6 +39,13 @@ class ContributorSerializer(serializers.ModelSerializer):
     user = RelatedMemberProfileSerializer(required=False, allow_null=True)
     affiliations = TagSerializer(many=True)
 
+    def get_profile_url(self, instance):
+        user = instance.user
+        if user:
+            return user.member_profile.get_absolute_url()
+        else:
+            return "{0}?{1}".format(reverse('home:profile-list'), urlencode({'query': instance.contributor.name}))
+
     def _create_or_update(self, validated_data):
         affiliations_serializer = TagSerializer(many=True, data=validated_data.pop('affiliations'))
         raw_user = validated_data.pop('user')
@@ -68,7 +75,7 @@ class ContributorSerializer(serializers.ModelSerializer):
         fields = ('id', 'given_name', 'middle_name', 'family_name', 'name', 'email', 'user', 'type', 'affiliations')
 
 
-class ListReleasContributorSerializer(serializers.ListSerializer):
+class ListReleaseContributorSerializer(serializers.ListSerializer):
     def create(self, validated_data):
         ReleaseContributor.objects.filter(release_id=self.context['release_id']).delete()
         release_contributors = []
@@ -131,13 +138,24 @@ class ReleaseContributorSerializer(serializers.ModelSerializer):
         instance = ReleaseContributor(**validated_data)
         return instance
 
+    def update_codebase_contributor_cache(self, contributor):
+        Codebase.objects.cache_contributors(
+            Codebase.objects.with_contributors().filter(
+                releases__codebase_contributors__contributor=contributor))
+
     def create(self, validated_data):
         release_contributor = self.create_unsaved(self.context, validated_data)
         release_contributor.save()
+        self.update_codebase_contributor_cache(release_contributor.contributor)
+        return release_contributor
+
+    def update(self, instance, validated_data):
+        release_contributor = super().update(instance, validated_data)
+        self.update_codebase_contributor_cache(release_contributor.contributor)
         return release_contributor
 
     class Meta:
-        list_serializer_class = ListReleasContributorSerializer
+        list_serializer_class = ListReleaseContributorSerializer
         model = ReleaseContributor
         fields = ('contributor', 'profile_url', 'include_in_citation', 'roles', 'index',)
 
@@ -159,7 +177,7 @@ class RelatedCodebaseReleaseSerializer(serializers.ModelSerializer):
 
 class CodebaseSerializer(serializers.ModelSerializer, FeaturedImageMixin):
     absolute_url = serializers.URLField(source='get_absolute_url', read_only=True)
-    all_contributors = ReleaseContributorSerializer(many=True, read_only=True)
+    all_contributors = ContributorSerializer(many=True, read_only=True)
     date_created = serializers.DateTimeField(read_only=True,
                                              default=serializers.CreateOnlyDefault(timezone.now))
     download_count = serializers.IntegerField(read_only=True)
@@ -201,7 +219,7 @@ class RelatedCodebaseSerializer(serializers.ModelSerializer, FeaturedImageMixin)
     """
     Sparse codebase serializer
     """
-    all_contributors = ReleaseContributorSerializer(many=True, read_only=True)
+    all_contributors = ContributorSerializer(many=True, read_only=True)
     tags = TagSerializer(many=True)
     version_number = serializers.ReadOnlyField(source='latest_version.version_number')
     first_published_at = serializers.DateTimeField(read_only=True, format=PUBLISH_DATE_FORMAT)

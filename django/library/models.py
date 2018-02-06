@@ -1,16 +1,20 @@
 import logging
 import mimetypes
 import pathlib
+import pickle
 import uuid
 
+import io
 import os
 import semver
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.contrib.postgres.fields import JSONField, ArrayField
+from django.core.cache import cache
 from django.core.files.images import ImageFile
 from django.core.files.storage import FileSystemStorage
 from django.db import models, transaction
+from django.db.models import Prefetch
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.text import slugify
@@ -73,7 +77,7 @@ class CodebaseReleasePlatformTag(TaggedItemBase):
 
 
 class ContributorAffiliation(TaggedItemBase):
-    content_object = ParentalKey('library.Contributor')
+    content_object = ParentalKey('library.Contributor', related_name='tagged_contributors')
 
 
 class License(models.Model):
@@ -188,8 +192,7 @@ class CodebaseQuerySet(models.QuerySet):
 
     def with_viewable_releases(self, user):
         queryset = get_viewable_objects_for_user(user=user, queryset=CodebaseRelease.objects.all())
-        return self.prefetch_related(
-            models.Prefetch('releases', queryset=queryset))
+        return self.prefetch_related(Prefetch('releases', queryset=queryset))
 
     def with_tags(self):
         return self.prefetch_related('tagged_codebases__tag')
@@ -203,15 +206,25 @@ class CodebaseQuerySet(models.QuerySet):
     def accessible(self, user):
         return get_viewable_objects_for_user(user=user, queryset=self.with_viewable_releases(user=user))
 
-    def contributed_by(self, user):
-        contributed_codebases = ReleaseContributor.objects.filter(
-            contributor__user=user).values_list('release__codebase', flat=True)
-        return self.filter(pk__in=contributed_codebases)
+    def with_contributors(self, release_qs=None, release_contributor_qs=None):
+        if release_qs is None:
+            release_qs = CodebaseRelease.objects.only('id', 'codebase_id') # type: CodebaseReleaseQuerySet
+        return self.prefetch_related(Prefetch('releases', release_qs.with_release_contributors(release_contributor_qs)))
+
+    @staticmethod
+    def cache_contributors(iter):
+        """Add all_contributors property to all codebases in queryset.
+
+        Returns a list so that it is impossible to call queryset methods on the result and destroy the
+        all_contributors property. Should be called after with_contributors for query efficiency. `with_contributors`
+        is a seperate function """
+
+        for codebase in iter:
+            codebase.compute_contributors(force=True)
 
     def public(self):
         """Returns a queryset of all live codebases and their live releases"""
-        return self.filter(live=True).prefetch_related(
-            models.Prefetch('releases', queryset=CodebaseRelease.objects.public()))
+        return self.with_contributors().filter(live=True)
 
     def peer_reviewed(self):
         return self.public().filter(peer_reviewed=True)
@@ -348,18 +361,40 @@ class Codebase(index.Indexed, ClusterableModel):
         return pathlib.Path(settings.REPOSITORY_ROOT, str(self.uuid))
 
     @property
+    def codebase_contributors_redis_key(self):
+        return 'codebase_contributors:{}'.format(self.identifier)
+
+    def compute_contributors(self, force=False):
+        codebase_contributors = cache.get(self.codebase_contributors_redis_key) if not force else None
+
+        if codebase_contributors is None:
+            codebase_contributors = set()
+            for release in self.releases.all():
+                for release_contributor in release.codebase_contributors.all():
+                    contributor = release_contributor.contributor
+                    codebase_contributors.add(contributor)
+            cache.set(self.codebase_contributors_redis_key, codebase_contributors)
+        return codebase_contributors
+
+    @property
     def all_contributors(self):
-        return ReleaseContributor.objects.select_related('release', 'contributor').filter(
-            release__codebase__id=self.pk).distinct('contributor')
+        """Get all the contributors associated with this codebase. A contributor is associated
+        with a codebase if any release associated with that codebase is also associated with the
+        same contributor.
+
+        Caching contributors on _all_contributors makes it possible to ask for
+        codebase_contributors in bulk"""
+        if not hasattr(self, '_all_contributors'):
+            self._all_contributors = self.compute_contributors()
+        return self._all_contributors
 
     @property
     def contributor_list(self):
-        contributor_list = [c.contributor.get_full_name(family_name_first=True) for c in
-                            self.all_contributors]
+        contributor_list = [c.get_full_name(family_name_first=True) for c in self.all_contributors]
         return contributor_list
 
     def get_all_contributors_search_fields(self):
-        return ' '.join([c.contributor.get_aggregated_search_fields() for c in self.all_contributors])
+        return ' '.join([c.get_aggregated_search_fields() for c in self.all_contributors])
 
     def download_count(self):
         return CodebaseReleaseDownload.objects.filter(release__codebase__id=self.pk).count()
@@ -555,9 +590,25 @@ class CodebasePublication(models.Model):
 
 
 class CodebaseReleaseQuerySet(models.QuerySet):
+    def with_release_contributors(self, release_contributor_qs=None):
+        if release_contributor_qs is None:
+            release_contributor_qs = ReleaseContributor.objects.only('id', 'contributor_id', 'release_id')
+
+        contributor_qs = Contributor.objects.prefetch_related('user').prefetch_related('tagged_contributors__tag')
+        release_contributor_qs = release_contributor_qs.prefetch_related(
+            Prefetch('contributor', contributor_qs))
+
+        return self.prefetch_related(Prefetch('codebase_contributors', release_contributor_qs))
+
+    def with_platforms(self):
+        return self.prefetch_related('tagged_release_platforms__tag')
+
+    def with_programming_languages(self):
+        return self.prefetch_related('tagged_release_languages__tag')
+
     def with_codebase(self, user):
         return self.prefetch_related(
-            models.Prefetch('codebase__releases', queryset=CodebaseRelease.objects.accessible_without_codebase(user)))
+            models.Prefetch('codebase', Codebase.objects.with_tags().with_featured_images()))
 
     def public(self):
         return self.filter(draft=False).filter(live=True)
@@ -566,7 +617,7 @@ class CodebaseReleaseQuerySet(models.QuerySet):
         return get_viewable_objects_for_user(user, queryset=self)
 
     def accessible(self, user):
-        return get_viewable_objects_for_user(user, queryset=self).with_codebase(user=user)
+        return get_viewable_objects_for_user(user, queryset=self.with_release_contributors().with_codebase(user=user))
 
 
 class CodebaseRelease(index.Indexed, ClusterableModel):
