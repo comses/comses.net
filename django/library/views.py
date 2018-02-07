@@ -9,6 +9,7 @@ from django.http import FileResponse, Http404
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import resolve
 from django.views import View
+from django.views.generic.base import RedirectView
 from rest_framework import viewsets, generics, renderers, status, permissions, filters, mixins
 from rest_framework.decorators import detail_route, list_route
 from rest_framework.exceptions import PermissionDenied as DrfPermissionDenied, ValidationError
@@ -110,6 +111,22 @@ class CodebaseViewSet(CommonViewSetMixin, viewsets.ModelViewSet):
             serializer = self.get_serializer(instance)
             data = add_change_delete_perms(instance, serializer.data, request.user)
             return Response(data)
+
+
+class CodebaseVersionRedirectView(RedirectView):
+    """
+    Provides simple redirection from legacy openabm.org model library incremental version numbers (e.g., 1, 2, 3, 4, 5)
+    to semver versioning where 1 -> 1.0.0, 2 -> 1.1.0, 3 -> 1.2.0 etc.
+    """
+    permanent = True
+    pattern_name = 'library:codebaserelease-detail'
+
+    def get_redirect_url(self, *args, **kwargs):
+        identifier = kwargs['identifier']
+        simple_version_number = min(1, int(kwargs['version_number']))
+        semver_number = '1.{0}.0'.format(simple_version_number - 1)
+        kwargs.update(version_number=semver_number)
+        return super().get_redirect_url(*args, **kwargs)
 
 
 class CodebaseFilesViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
