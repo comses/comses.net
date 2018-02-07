@@ -56,11 +56,14 @@ def is_media(path: str):
     return None
 
 
-SYSTEM_FILES = ('__MACOSX', '.DS_Store', '.svn', '.git', '.hg')
+SYSTEM_FILES = ('__macosx', '.ds_store', '.svn', '.git', '.hg', 'thumbs.db', 'cvs', '.trashes')
 
 
 def has_system_files(path: str) -> bool:
-    return set(SYSTEM_FILES).intersection(set(pathlib.Path(path).parts))
+    for part in set(pathlib.Path(path).parts):
+        if is_system_file(part):
+            return True
+    return False
 
 
 def is_system_file(filename: str) -> bool:
@@ -68,25 +71,29 @@ def is_system_file(filename: str) -> bool:
     :param filename: candidate filename to test
     :return: True if filename is a osx system file or appears to be a backup file
     """
-    return filename in SYSTEM_FILES or filename.startswith('~') or filename.endswith('~')
+    if filename:
+        return filename.lower() in SYSTEM_FILES or filename.startswith('~') or filename.endswith('~') or filename.startswith('._')
+    logger.warning("tried to check if an empty string is a system file")
+    return False
 
 
-def rm_system_files(base_dir, dirs, files):
+def rm_system_files(base_dir):
     """
     Removes all files that appear to be system or backup files from the base directory passed in as root.
     :param base_dir: base directory for all candidate filenames
-    :param candidates: list of candidate filenames
     :return: a list of removed system files, if any
     """
     removed_files = []
-    for candidate in dirs + files:
-        if is_system_file(candidate):
-            full_path = os.path.join(base_dir, candidate)
-            removed_files.append(full_path)
-            if candidate in dirs:
-                shutil.rmtree(full_path)
-            else:
-                os.remove(full_path)
+    for root, dirs, files in os.walk(base_dir, topdown=True):
+        for candidate in dirs + files:
+            if is_system_file(candidate):
+                full_path = os.path.join(base_dir, candidate)
+                removed_files.append(full_path)
+                if candidate in dirs:
+                    shutil.rmtree(full_path)
+                    dirs.remove(candidate)
+                else:
+                    os.remove(full_path)
     return removed_files
 
 
