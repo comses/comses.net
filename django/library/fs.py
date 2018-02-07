@@ -25,9 +25,6 @@ from core import fs
 logger = logging.getLogger(__name__)
 
 
-class FsLogError(Exception): pass
-
-
 class StagingDirectories(Enum):
     # Directory containing original files uploaded (such as zip files)
     originals = 1
@@ -56,7 +53,7 @@ class MessageLevels(Enum):
     def __lt__(self, other):
         if self.__class__ is other.__class__:
             return self.value < other.value
-        return NotImplemented
+        raise NotImplemented
 
 
 mimetypes.add_type('text/x-rst', '.rst')
@@ -65,13 +62,15 @@ mimetypes.add_type('text/x-netlogo', '.nlogo')
 mimetypes.add_type('text/markdown', '.md')
 mimetypes.add_type('text/x-r-source', '.r')
 
+ACCEPT_ALL_REGEX = re.compile(r'.*')
+
 MIMETYPE_MATCHER = {
-    FileCategoryDirectories.code: re.compile(r'.*'),
-    FileCategoryDirectories.data: re.compile(r'.*'),
+    FileCategoryDirectories.code: ACCEPT_ALL_REGEX,
+    FileCategoryDirectories.data: ACCEPT_ALL_REGEX,
     FileCategoryDirectories.docs: re.compile(r'text/markdown|application/pdf|text/plain|text/x-rtf'),
     FileCategoryDirectories.media: re.compile(r'image/.*|video/.*'),
-    FileCategoryDirectories.originals: re.compile(r'.*'),
-    FileCategoryDirectories.results: re.compile(r'.*')
+    FileCategoryDirectories.originals: ACCEPT_ALL_REGEX,
+    FileCategoryDirectories.results: ACCEPT_ALL_REGEX
 }
 
 
@@ -155,10 +154,9 @@ class CodebaseReleaseStorage(FileSystemStorage):
 
     def validate_file(self, name, content) -> Optional:
         msgs = MessageGroup()
+        # FIXME: do we expect validate_file being run on full paths?
         if fs.has_system_files(name):
-            msgs.append(self.warning("'{}' has a mac os x system directory".format(name)))
-        if fs.is_system_file(name):
-            msgs.append(self.warning("'{}' is a system file".format(name)))
+            msgs.append(self.warning("system file: '{}'".format(name)))
         return msgs
 
     def validate(self):
@@ -186,9 +184,6 @@ class CodebaseReleaseStorage(FileSystemStorage):
                 'Storage filename "%s" already taken' % name
             )
         return name
-
-    def create_msg(self):
-        return MessageGroup()
 
     def info(self, msg):
         return create_fs_message(msg, self.stage, MessageLevels.info)
@@ -319,8 +314,8 @@ class CodebaseReleaseFsApi:
     """
     Interface to maintain files associated with a codebase
 
-    This is not currently protected against concurrent file access. However, since only
-    the submitter can edit files associated with a codebase release there is little
+    FIXME: This is not currently protected against concurrent file access but only the submitter can edit files
+    associated with a codebase release at the moment, implement file locks if this assumption turns out badly
     """
 
     DEFAULT_CODEMETA_DATA = {
@@ -635,6 +630,6 @@ class ArchiveExtractor:
                         with File(unpacked_file.open('rb')) as unpacked_fileobj:
                             relpath = Path(category.name, unpacked_file.relative_to(rootdir))
                             msgs.append(self.sip_storage.log_save(name=str(relpath), content=unpacked_fileobj))
-        except FsLogError as e:
-            msgs.append(e.args[0])
+        except Exception as e:
+            msgs.append(str(e))
         return msgs
