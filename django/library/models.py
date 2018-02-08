@@ -790,9 +790,11 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
     def is_published(self):
         return self.live and not self.draft
 
-    def get_fs_api(self, raise_exception_level=MessageLevels.warning) -> CodebaseReleaseFsApi:
+    def get_fs_api(self, mimetype_mismatch_message_level=MessageLevels.error,
+                   system_file_presence_message_level=MessageLevels.error) -> CodebaseReleaseFsApi:
         return CodebaseReleaseFsApi(uuid=self.codebase.uuid, identifier=self.codebase.identifier,
-                                    version_number=self.version_number, raise_exception_level=raise_exception_level)
+                                    version_number=self.version_number,
+                                    mimetype_mismatch_message_level=mimetype_mismatch_message_level)
 
     def add_contributor(self, submitter):
         contributor, created = Contributor.from_user(submitter)

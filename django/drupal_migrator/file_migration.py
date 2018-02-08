@@ -43,13 +43,15 @@ class ModelVersionFileset:
 
     def log_msgs(self, msgs):
         if msgs:
+            msgs.downgrade()
             logs, level = msgs.serialize()
             for log in logs:
                 getattr(logger, log['level'])(log['msg']['detail'])
 
     def migrate(self, release: CodebaseRelease):
         logger.debug("Migrating %s (v%s)", release, self.semver)
-        fs_api = release.get_fs_api(raise_exception_level=MessageLevels.critical)
+        fs_api = release.get_fs_api(system_file_presence_message_level=MessageLevels.error,
+                                    mimetype_mismatch_message_level=MessageLevels.debug)
         fs_api.initialize()
         if not self.model_version_has_files():
             logger.warning("no files found for release")

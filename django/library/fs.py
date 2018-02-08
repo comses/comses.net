@@ -45,15 +45,19 @@ class FileCategoryDirectories(Enum):
 
 @total_ordering
 class MessageLevels(Enum):
-    info = 0
-    warning = 1
-    error = 2
-    critical = 3
+    debug = 0
+    info = 1
+    warning = 2
+    error = 3
+    critical = 4
 
     def __lt__(self, other):
         if self.__class__ is other.__class__:
             return self.value < other.value
         raise NotImplemented
+
+    def downgrade(self, minimum=0):
+        return MessageLevels(max(self.value - 1, minimum))
 
 
 mimetypes.add_type('text/x-rst', '.rst')
@@ -98,9 +102,13 @@ def files_in_dir(path):
 
 
 class MessageGroup:
-    def __init__(self):
+    def __init__(self, msgs=None):
         self.msgs = []
-        self.level = MessageLevels.info
+        self.level = MessageLevels.debug
+
+        if msgs is not None:
+            for msg in msgs:
+                self.append(msg)
 
     def __bool__(self):
         return len(self.msgs) > 0
@@ -116,6 +124,15 @@ class MessageGroup:
                 self.msgs.append(msg)
             self.level = max(self.level, msg.level)
 
+    def downgrade(self):
+        self.level = self.level.downgrade()
+        for msg in self.msgs:
+            msg.level = msg.level.downgrade()
+
+    @property
+    def has_errors(self):
+        return self.level >= MessageLevels.error
+
     def serialize(self):
         """Return a list of message along with message level"""
         logs = []
@@ -125,8 +142,6 @@ class MessageGroup:
 
 
 class Message:
-    level = MessageLevels.critical
-
     def __init__(self, msg, level: MessageLevels = MessageLevels.info):
         self.level = level
         self.msg = msg
@@ -137,6 +152,10 @@ class Message:
     def serialize(self):
         return {'level': self.level.name, 'msg': self.msg}
 
+    @property
+    def has_errors(self):
+        return self.level >= MessageLevels.error
+
 
 def create_fs_message(detail, stage: StagingDirectories, level: MessageLevels):
     return Message({'detail': str(detail), 'stage': stage.name}, level=level)
@@ -145,18 +164,33 @@ def create_fs_message(detail, stage: StagingDirectories, level: MessageLevels):
 class CodebaseReleaseStorage(FileSystemStorage):
     stage = None
 
-    def __init__(self, raise_exception_level, location=None, base_url=None, file_permissions_mode=None,
+    def __init__(self, mimetype_mismatch_message_level,
+                 location=None, base_url=None, file_permissions_mode=None,
                  directory_permissions_mode=None):
         super().__init__(location=location, base_url=base_url,
                          file_permissions_mode=file_permissions_mode,
                          directory_permissions_mode=directory_permissions_mode)
-        self._raise_exception_level = raise_exception_level
+        self.mimetype_mismatch_message_level = mimetype_mismatch_message_level
 
-    def validate_file(self, name, content) -> Optional:
-        msgs = MessageGroup()
+    def validate_system_file(self, name, content) -> Optional[Message]:
         # FIXME: do we expect validate_file being run on full paths?
         if fs.has_system_files(name):
-            msgs.append(self.warning("system file: '{}'".format(name)))
+            return self.error("system file: '{}'".format(name))
+        return None
+
+    def validate_mimetype(self, name):
+        mimetype_matcher = get_mimetype_matcher(name)
+        mimetype = mimetypes.guess_type(name)[0]
+        mimetype = mimetype if mimetype else '*/*'
+        if not mimetype_matcher.match(mimetype):
+            return create_fs_message('File type mismatch for file {}'.format(name), self.stage,
+                                     self.mimetype_mismatch_message_level)
+        return None
+
+    def validate_file(self, name, content):
+        msgs = MessageGroup()
+        msgs.append(self.validate_system_file(name, content))
+        msgs.append(self.validate_mimetype(name))
         return msgs
 
     def validate(self):
@@ -201,7 +235,7 @@ class CodebaseReleaseStorage(FileSystemStorage):
         if name is None:
             name = content.name
         msgs = self.validate_file(name, content)
-        if msgs.level >= self._raise_exception_level:
+        if msgs.has_errors:
             return msgs
 
         try:
@@ -229,14 +263,6 @@ class CodebaseReleaseStorage(FileSystemStorage):
 class CodebaseReleaseOriginalStorage(CodebaseReleaseStorage):
     stage = StagingDirectories.originals
 
-    def validate_mimetype(self, name):
-        mimetype_matcher = get_mimetype_matcher(name)
-        mimetype = mimetypes.guess_type(name)[0]
-        mimetype = mimetype if mimetype else '*/*'
-        if not mimetype_matcher.match(mimetype):
-            return self.warning('File type mismatch for file {}'.format(name))
-        return None
-
     def get_existing_archive_name(self, category: FileCategoryDirectories):
         for p in self.list(category):
             if p.is_file() and fs.is_archive(p):
@@ -259,19 +285,13 @@ class CodebaseReleaseOriginalStorage(CodebaseReleaseStorage):
 
     def validate_file(self, name, content):
         msgs = super().validate_file(name, content)
-        if msgs.level >= self._raise_exception_level:
-            return msgs
         category = get_category(name)
         if self.has_existing_archive(category):
-            msgs.append(
-                self.error('File cannot be added to directory with archive in it. Please clear category and try again.'))
-            return msgs
+            msgs.append(self.error(
+                'File cannot be added to directory with archive in it. Please clear category and try again.'))
         if os.listdir(os.path.join(self.location, category.name)) and fs.is_archive(name):
-            msgs.append(self.error('Archive cannot be added to a directory that already has files in it. '
-                                   'Please clear category and try again'))
-            return msgs
-
-        msgs.append(self.validate_mimetype(name))
+            msgs.append([self.error('Archive cannot be added to a directory that already has files in it. '
+                                    'Please clear category and try again')])
         return msgs
 
 
@@ -281,22 +301,6 @@ class CodebaseReleaseSipStorage(CodebaseReleaseStorage):
     Archives from the uploads folder get expanded when placed in the sip folder"""
 
     stage = StagingDirectories.sip
-
-    def validate_mimetype(self, name):
-        get_category(name)
-        mimetype_matcher = get_mimetype_matcher(name)
-        mimetype = mimetypes.guess_type(name)[0]
-        mimetype = mimetype if mimetype else '*/*'
-        if not mimetype_matcher.match(mimetype):
-            return self.warning('File type mismatch for file {}'.format(name))
-        return None
-
-    def validate_file(self, name, content):
-        msgs = super().validate_file(name, content)
-        if msgs.level >= self._raise_exception_level:
-            return msgs
-        msgs.append(self.validate_mimetype(name))
-        return msgs
 
     def make_bag(self, metadata):
         return fs.make_bag(self.location, metadata)
@@ -310,7 +314,6 @@ class CodebaseReleaseAipStorage(CodebaseReleaseStorage):
 
 
 class CodebaseReleaseFsApi:
-
     """
     Interface to maintain files associated with a codebase
 
@@ -329,11 +332,13 @@ class CodebaseReleaseFsApi:
         },
     }
 
-    def __init__(self, uuid, identifier, version_number, raise_exception_level):
+    def __init__(self, uuid, identifier, version_number,
+                 system_file_presence_message_level=MessageLevels.error,
+                 mimetype_mismatch_message_level=MessageLevels.error):
         self.uuid = uuid
         self.identifier = identifier
         self.version_number = version_number
-        self._raise_exception_level = raise_exception_level
+        self.mimetype_mismatch_message_level = mimetype_mismatch_message_level
 
     def logfilename(self):
         return self.rootdir.joinpath('audit.log')
@@ -374,15 +379,18 @@ class CodebaseReleaseFsApi:
     def get_originals_storage(self, originals_dir=None):
         if originals_dir is None:
             originals_dir = self.originals_dir
-        return CodebaseReleaseOriginalStorage(raise_exception_level=self._raise_exception_level,
-                                              location=str(originals_dir))
+        return CodebaseReleaseOriginalStorage(
+            mimetype_mismatch_message_level=self.mimetype_mismatch_message_level,
+            location=str(originals_dir))
 
-    def get_sip_storage(self):
-        return CodebaseReleaseSipStorage(raise_exception_level=self._raise_exception_level,
+    def get_sip_storage(self, mimetype_mismatch_message_level=None):
+        if mimetype_mismatch_message_level is None:
+            mimetype_mismatch_message_level = self.mimetype_mismatch_message_level
+        return CodebaseReleaseSipStorage(mimetype_mismatch_message_level=mimetype_mismatch_message_level,
                                          location=str(self.sip_contents_dir))
 
     def get_aip_storage(self):
-        return CodebaseReleaseAipStorage(raise_exception_level=self._raise_exception_level,
+        return CodebaseReleaseAipStorage(mimetype_mismatch_message_level=self.mimetype_mismatch_message_level,
                                          location=str(self.aip_contents_dir))
 
     def get_stage_storage(self, stage: StagingDirectories):
@@ -485,7 +493,8 @@ class CodebaseReleaseFsApi:
             logs.append(originals_storage.log_delete(str(relpath)))
         return logs
 
-    def _add_to_sip(self, name, content, category: FileCategoryDirectories, sip_storage):
+    def _add_to_sip(self, name, content, category: FileCategoryDirectories):
+        sip_storage = self.get_sip_storage()
         filename = self.originals_dir.joinpath(name)
         if fs.is_archive(name):
             archive_extractor = ArchiveExtractor(sip_storage)
@@ -513,13 +522,12 @@ class CodebaseReleaseFsApi:
             name = os.path.join(category.name, name)
 
         originals_storage = self.get_originals_storage()
-        sip_storage = self.get_sip_storage()
 
         msgs = originals_storage.log_save(name, content)
-        if msgs.level >= self._raise_exception_level:
+        if msgs.has_errors:
             return msgs
-        msgs.append(self._add_to_sip(name=name, content=content, category=category, sip_storage=sip_storage))
-        if msgs.level >= self._raise_exception_level:
+        msgs.append(self._add_to_sip(name=name, content=content, category=category))
+        if msgs.has_errors:
             self.delete(category, Path(content.name))
 
         return msgs
@@ -624,12 +632,14 @@ class ArchiveExtractor:
 
                 if msg is not None:
                     return msg
+
                 rootdir = self.find_root_directory(d)
                 for unpacked_file in Path(rootdir).rglob('*'):
                     if unpacked_file.is_file():
                         with File(unpacked_file.open('rb')) as unpacked_fileobj:
                             relpath = Path(category.name, unpacked_file.relative_to(rootdir))
                             msgs.append(self.sip_storage.log_save(name=str(relpath), content=unpacked_fileobj))
+                msgs.downgrade()
         except Exception as e:
-            msgs.append(str(e))
+            msgs.append(create_fs_message(str(e), StagingDirectories.sip, MessageLevels.error))
         return msgs

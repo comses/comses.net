@@ -14,10 +14,11 @@ logger = logging.getLogger(__name__)
 
 class CodebaseTest(BaseModelTestCase):
     def setUp(self):
+        super().setUp()
         self.c1 = Codebase.objects.create(title='Test codebase',
                                           description='Test codebase description',
                                           identifier='c1',
-                                          submitter=self.create_user()
+                                          submitter=self.user
                                           )
 
     def test_base_dir(self):

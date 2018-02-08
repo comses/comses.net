@@ -12,7 +12,8 @@ class BaseModelTestCase(TestCase):
     def setUp(self):
         self.user = self.create_user()
 
-    def create_user(self, username='test_user', password='test', email='testuser@mailinator.com', **kwargs):
+    def create_user(self, username='test_user', password='test', **kwargs):
+        kwargs.setdefault('email', 'testuser@mailinator.com')
         return User.objects.create_user(username=username, password=password, **kwargs)
 
 

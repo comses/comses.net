@@ -1,3 +1,6 @@
+import shutil
+
+import os
 from django.test import TestCase
 
 from core.tests.base import UserFactory
@@ -10,6 +13,8 @@ logger = logging.getLogger(__name__)
 
 
 class ArchiveExtractorTestCase(TestCase):
+    nestedcode_folder_name = 'library/tests/archives/nestedcode'
+
     def setUp(self):
         self.user_factory = UserFactory()
         self.submitter = self.user_factory.create()
@@ -18,15 +23,17 @@ class ArchiveExtractorTestCase(TestCase):
         self.codebase_release = self.codebase.create_release()
 
     def test_zipfile_saving(self):
-        archive_name = 'library/tests/archives/nestedcode.zip'
+        archive_name = '{}.zip'.format(self.nestedcode_folder_name)
+        shutil.make_archive(self.nestedcode_folder_name, 'zip', self.nestedcode_folder_name)
         fs_api = self.codebase_release.get_fs_api()
         with open(archive_name, 'rb') as f:
             msgs = fs_api.add(FileCategoryDirectories.code, content=f, name="nestedcode.zip")
         logs, level = msgs.serialize()
-        self.assertEquals(level, MessageLevels.info)
-        self.assertEquals(len(logs), 0)
+        self.assertEquals(level, MessageLevels.warning)
+        self.assertEquals(len(logs), 2)
         self.assertEqual(set(fs_api.list(StagingDirectories.originals, FileCategoryDirectories.code)),
                          {'nestedcode.zip'})
+        # Notice that .DS_Store and .svn folder file are eliminated
         self.assertEqual(set(fs_api.list(StagingDirectories.sip, FileCategoryDirectories.code)),
                          {'src/ex.py', 'README.md'})
         fs_api.get_or_create_sip_bag(self.codebase_release.bagit_info)
@@ -44,3 +51,9 @@ class ArchiveExtractorTestCase(TestCase):
         logs, level = msgs.serialize()
         self.assertEquals(level, MessageLevels.error)
         self.assertEquals(len(logs), 1)
+
+    @classmethod
+    def tearDownClass(cls):
+        super().tearDownClass()
+        if os.path.exists(cls.nestedcode_folder_name):
+            os.remove("{}.zip".format(cls.nestedcode_folder_name))
