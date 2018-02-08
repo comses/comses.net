@@ -85,8 +85,8 @@ services:
       - ./deploy/nginx/nginx-haproxy.conf:/etc/nginx/nginx.conf
       - ./deploy/nginx/uwsgi_params:/etc/nginx/uwsgi_params
       - ./docker/shared/logs/nginx:/var/log/nginx
-      - ./docker/shared/static:/shared/static
-      - ./docker/shared/media:/shared/media
+      - ./docker/shared/static:/srv/static
+      - ./docker/shared/media:/srv/media
       - sockets:/shared/sockets
     command: ["nginx", "-g", "daemon off;"]
     ports:
