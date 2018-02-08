@@ -9,7 +9,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.views import redirect_to_login
 from django.core.exceptions import PermissionDenied
 from django.db.models.functions import Lower
-from django.http import Http404, HttpResponseBadRequest, HttpResponseRedirect
+from django.http import Http404, HttpResponseBadRequest, HttpResponseRedirect, QueryDict
 from django.shortcuts import render
 from django.views.generic import DetailView, TemplateView
 from itertools import chain
@@ -19,6 +19,7 @@ from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 from rest_framework.views import exception_handler
 
+from core.search import GeneralSearch
 from .models import Event, Job
 from .permissions import ComsesPermissions
 from .serializers import EventSerializer, JobSerializer
@@ -29,7 +30,6 @@ logger = logging.getLogger(__name__)
 
 
 class CaseInsensitiveOrderingFilter(filters.OrderingFilter):
-
     # a whitelist of acceptable ordering fields with ascending and descending forms (e.g., 'title', and '-title')
     STRING_ORDERING_FIELDS = list(chain.from_iterable([
         (f, '-' + f) for f in ('title', 'user__username', 'user__email', 'user__last_name',
@@ -221,30 +221,38 @@ class SmallResultSetPagination(PageNumberPagination):
 
     def get_paginated_response(self, data):
         query_params = self.request.query_params.copy()
+        query = query_params.get('query')
         page = query_params.pop('page', [1])[0]
         count = self.page.paginator.count
-        num_results = len(self.page.object_list)
-        num_pages, remainder = divmod(count, self.page_size)
-        if remainder > 0:
-            num_pages += 1
         try:
             current_page_number = int(page)
         except:
             current_page_number = 1
+        return Response(self.create_paginated_context_data(query=query,
+                                                           data=data,
+                                                           current_page_number=current_page_number,
+                                                           count=count,
+                                                           query_params=query_params))
+
+    @classmethod
+    def create_paginated_context_data(cls, query, data, current_page_number, count, query_params, size=None):
+        if size is None:
+            size = cls.page_size
+        num_pages = -(-count // size)
         page_range = list(range(max(2, current_page_number - 3), min(num_pages, current_page_number + 4)))
-        return Response({
+        return {
             'is_first_page': current_page_number == 1,
             'is_last_page': current_page_number == num_pages,
             'current_page': current_page_number,
-            'num_results': num_results,
+            'num_results': min(size, count - (current_page_number - 1) * size),
             'count': count,
-            'query': query_params.get('query'),
-            'search_terms': self._to_search_terms(query_params),
+            'query': query,
+            'search_terms': cls._to_search_terms(query_params),
             'query_params': query_params.urlencode(),
             'range': page_range,
             'num_pages': num_pages,
             'results': data
-        })
+        }
 
 
 @login_required
@@ -422,3 +430,33 @@ class JobViewSet(CommonViewSetMixin, viewsets.ModelViewSet):
 
     def retrieve(self, request, *args, **kwargs):
         return retrieve_with_perms(self, request, *args, **kwargs)
+
+
+class SearchView(TemplateView):
+    template_name = 'core/search.jinja'
+
+    def get_context_data(self, **kwargs):
+        search = GeneralSearch()
+        context = super().get_context_data(**kwargs)
+
+        query = self.request.GET.get('query')
+        page = self.request.GET.get('page', 1)
+        try:
+            page = int(page)
+        except ValueError:
+            page = 1
+        if query is not None:
+            results, total = search.search(query, start=(page - 1) * 10)
+        else:
+            results, total = [], 0
+
+        pagination_context = SmallResultSetPagination.create_paginated_context_data(
+            query=query,
+            data=results,
+            current_page_number=page,
+            count=total,
+            query_params=QueryDict(query_string='query={}'.format(query)))
+        context['__all__'] = pagination_context
+        context.update(pagination_context)
+        # ceiling division https://stackoverflow.com/questions/14822184/is-there-a-ceiling-equivalent-of-operator-in-python
+        return context

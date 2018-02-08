@@ -51,8 +51,8 @@ def collect_static(ctx):
 
 
 @task
-def sh(ctx):
-    dj(ctx, 'shell_plus --ipython', pty=True)
+def sh(ctx, print_sql=False):
+    dj(ctx, 'shell_plus --ipython{}'.format(' --print-sql' if print_sql else ''), pty=True)
 
 
 @task

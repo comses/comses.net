@@ -7,6 +7,7 @@ import uuid
 import io
 import os
 import semver
+from django.apps import apps
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.contrib.postgres.fields import JSONField, ArrayField
@@ -30,6 +31,7 @@ from taggit.models import TaggedItemBase
 from unidecode import unidecode
 from wagtail.wagtailimages.models import Image, AbstractImage, AbstractRendition, get_upload_to, ImageQuerySet
 from wagtail.wagtailsearch import index
+from wagtail.wagtailsearch.backends import get_search_backend
 
 from core import fs
 from core.backends import get_viewable_objects_for_user
@@ -610,6 +612,9 @@ class CodebaseReleaseQuerySet(models.QuerySet):
         return self.prefetch_related(
             models.Prefetch('codebase', Codebase.objects.with_tags().with_featured_images()))
 
+    def with_submitter(self):
+        return self.prefetch_related('submitter')
+
     def public(self):
         return self.filter(draft=False).filter(live=True)
 
@@ -617,7 +622,7 @@ class CodebaseReleaseQuerySet(models.QuerySet):
         return get_viewable_objects_for_user(user, queryset=self)
 
     def accessible(self, user):
-        return get_viewable_objects_for_user(user, queryset=self.with_codebase())
+        return get_viewable_objects_for_user(user, queryset=self)
 
 
 class CodebaseRelease(index.Indexed, ClusterableModel):

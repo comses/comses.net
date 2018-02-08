@@ -255,7 +255,7 @@ class CodebaseReleaseViewSet(CommonViewSetMixin, viewsets.ModelViewSet):
         if self.action == 'list':
             return queryset.public()
         else:
-            return queryset.accessible(user=self.request.user)
+            return queryset.accessible(user=self.request.user).with_submitter().with_codebase()
 
     @detail_route(methods=['put'])
     @transaction.atomic

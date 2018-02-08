@@ -73,9 +73,8 @@
                         <i class='fa fa-search'></i>
                     </a>
                     <div id='header-search-form' class='p-2 dropdown-menu' aria-labelledby='search-button'>
-                        <form>
-                            {% csrf_token %}
-                            <input id='header-search-input' type='text' class='p-2 form-control' placeholder='search entire site' autofocus>
+                        <form method="get" action="/search/">
+                            <input id='header-search-input' type='text' name="query" class='p-2 form-control' placeholder='search entire site' autofocus>
                             <div class='float-right'>
                                 <small><a href='/search'>options</a></small>
                             </div>

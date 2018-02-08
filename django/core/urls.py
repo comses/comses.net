@@ -21,6 +21,7 @@ Primary URLConf entry point into the comses.net website
 """
 
 urlpatterns = [
+    url(r'^search/$', views.SearchView.as_view(), name='search'),
     url(r'^accounts/', include('allauth.urls')),
     url(r'^', include(home_urls, namespace='home')),
     url(r'^', include(library_urls, namespace='library')),
@@ -30,7 +31,6 @@ urlpatterns = [
     url(r'^', include(wagtail_urls)),
     url(r'^api/schema/$', schema_view),
     url(r'^api/token/', obtain_jwt_token),
-    url(r'^api/search/$', search_views.search, name='search'),
     url(r'^api-auth/', include('rest_framework.urls')),
     # configure sitemaps and robots.txt, see https://django-robots.readthedocs.io/en/latest/
     url('sitemap.xml', sitemap, {'sitemaps': sitemaps}, name='django.contrib.sitemaps.views.sitemap'),
