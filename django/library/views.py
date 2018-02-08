@@ -4,7 +4,6 @@ import pathlib
 from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.core.exceptions import PermissionDenied
 from django.db import transaction
-from django.db.models import Prefetch
 from django.http import FileResponse, Http404
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import resolve
@@ -20,7 +19,7 @@ from core.view_helpers import add_change_delete_perms, get_search_queryset
 from core.views import (CommonViewSetMixin, FormUpdateView, FormCreateView, SmallResultSetPagination,
                         CaseInsensitiveOrderingFilter)
 from .fs import FileCategoryDirectories, StagingDirectories, MessageLevels
-from .models import Codebase, CodebaseRelease, Contributor, CodebaseImage, CodebaseQuerySet
+from .models import Codebase, CodebaseRelease, Contributor, CodebaseImage
 from .permissions import CodebaseReleaseUnpublishedFilePermissions
 from .serializers import (CodebaseSerializer, RelatedCodebaseSerializer, CodebaseReleaseSerializer,
                           ContributorSerializer, ReleaseContributorSerializer, CodebaseReleaseEditSerializer,
@@ -51,8 +50,8 @@ class CodebaseFilter(filters.BaseFilterBackend):
         qs = query_params.get('query')
         published_start_date = query_params.get('published_after')
         published_end_date = query_params.get('published_before')
-        platform = query_params.get('platform')
-        programming_language = query_params.get('programming_language')
+        # platform = query_params.get('platform')
+        # programming_language = query_params.get('programming_language')
         tags = query_params.getlist('tags')
         criteria = {}
         if published_start_date and published_end_date:
@@ -95,7 +94,7 @@ class CodebaseViewSet(CommonViewSetMixin, viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         codebase = serializer.save()
-        release = codebase.get_or_create_draft()
+        return codebase.get_or_create_draft()
 
     def retrieve(self, request, *args, **kwargs):
         instance = self.get_object()
@@ -122,8 +121,7 @@ class CodebaseVersionRedirectView(RedirectView):
     pattern_name = 'library:codebaserelease-detail'
 
     def get_redirect_url(self, *args, **kwargs):
-        identifier = kwargs['identifier']
-        simple_version_number = min(1, int(kwargs['version_number']))
+        simple_version_number = max(1, int(kwargs['version_number']))
         semver_number = '1.{0}.0'.format(simple_version_number - 1)
         kwargs.update(version_number=semver_number)
         return super().get_redirect_url(*args, **kwargs)
