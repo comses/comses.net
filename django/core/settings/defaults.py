@@ -75,6 +75,7 @@ DJANGO_APPS = [
 ]
 
 THIRD_PARTY_APPS = [
+    'captcha',
     'django_extensions',
     'django_jinja',
     'guardian',
@@ -156,6 +157,10 @@ else:
 DEFAULT_FROM_EMAIL = config.get('email', 'DEFAULT_FROM_EMAIL', fallback='info@comses.net')
 # email address used for errors emails sent to ADMINS and MANAGERS
 SERVER_EMAIL = config.get('email', 'SERVER_EMAIL', fallback='admin@comses.net')
+
+RECAPTCHA_PUBLIC_KEY = config.get('captcha', 'RECAPTCHA_PUBLIC_KEY', fallback='')
+RECAPTCHA_PRIVATE_KEY = config.get('captcha', 'RECAPTCHA_PRIVATE_KEY', fallback='')
+NOCAPTCHA = True
 
 RAVEN_CONFIG = {
     'dsn': config.get('logging', 'SENTRY_DSN', fallback=''),

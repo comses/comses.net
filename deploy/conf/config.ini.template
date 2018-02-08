@@ -8,6 +8,10 @@ DB_HOST=${DB_HOST}
 DB_PORT=${DB_PORT}
 DB_PASSWORD=${DB_PASSWORD}
 
+[captcha]
+RECAPTCHA_PUBLIC_KEY=
+RECAPTCHA_PRIVATE_KEY=
+
 [discourse]
 DISCOURSE_BASE_URL=https://forum.comses.net
 
