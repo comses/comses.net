@@ -1,5 +1,6 @@
 import logging
 
+from captcha.fields import ReCaptchaField
 from django import forms
 from django.utils.translation import ugettext_lazy as _
 
@@ -21,6 +22,7 @@ class SignupForm(forms.Form):
     full_member = forms.BooleanField(
         required=False,
         help_text=_("By checking this box, I agree to the rights and responsibilities of CoMSES Net full membership"))
+    captcha = ReCaptchaField()
 
     def signup(self, request, user):
         data = self.cleaned_data

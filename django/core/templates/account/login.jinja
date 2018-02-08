@@ -14,9 +14,9 @@
     </div>
 {% endif %}
 <p class='lead'>
-Sign in / sign up with an existing <a href='https://github.com'>GitHub</a> or <a href='https://orcid.org'>ORCID</a>
-account. If you'd like to link an existing CoMSES Net account, please sign in first and then access 
-<a href='{{url("home:account-profile")}}'>your account</a>.
+Sign in or sign up with an existing <a href='https://github.com'>GitHub</a> or <a href='https://orcid.org'>ORCID</a>
+account. If you have an existing CoMSES Net account, sign into your account first using your username / password below
+and then visit <a href='{{url("home:account-profile")}}#local-signin'>your account profile page</a> to link your accounts. 
 </p>
 <div class="row">
     <div class='col-6'>
@@ -32,9 +32,14 @@ account. If you'd like to link an existing CoMSES Net account, please sign in fi
             more at <a href='//orcid.org'>orcid.org</a></small></p>
     </div>
 </div>
+<hr>
 <div class='row'>
     <div class="col">
-        <h3>Sign in with your CoMSES Net Account</h3>
+        <h3><a class='anchor' id='local-signin'></a>Sign in with your CoMSES Net Account</h3>
+        <p>
+        New user? You can sign up using the social auth buttons above or 
+        <a href='/accounts/signup/'>create a new CoMSES Net account</a>.
+        </p>
         <form id='signin-form' role="form" class="form-horizontal" method="post">
             {% csrf_token %}
             <div id='login' class='form-group'>
