@@ -1,20 +1,14 @@
 """ migrate Drupal filesystem data into the new library structure """
 
-import datetime
 import logging
-import mimetypes
 import os
 import re
 import shutil
 
-import pathlib
-import pygit2
-from django.contrib.auth.models import User
 from django.conf import settings
-from django.core.files.images import ImageFile
-from wagtail.wagtailimages.models import Image
 
 from core import fs
+from drupal_migrator.utils import model_version_has_files, is_version_dir
 from library import fs as library_fs
 from library.fs import MessageLevels
 from library.models import Codebase, CodebaseRelease
@@ -36,10 +30,7 @@ class ModelVersionFileset:
         self.semver = '1.{0}.0'.format(version_number - 1)
 
     def model_version_has_files(self):
-        for p in pathlib.Path(self.basedir).rglob('*'):
-            if p.is_file():
-                return True
-        return False
+        return model_version_has_files(self.basedir)
 
     def log_msgs(self, msgs):
         if msgs:
@@ -50,12 +41,12 @@ class ModelVersionFileset:
 
     def migrate(self, release: CodebaseRelease):
         logger.debug("Migrating %s (v%s)", release, self.semver)
-        fs_api = release.get_fs_api(system_file_presence_message_level=MessageLevels.error,
-                                    mimetype_mismatch_message_level=MessageLevels.debug)
-        fs_api.initialize()
         if not self.model_version_has_files():
             logger.warning("no files found for release")
             return
+        fs_api = release.get_fs_api(system_file_presence_message_level=MessageLevels.error,
+                                    mimetype_mismatch_message_level=MessageLevels.debug)
+        fs_api.initialize()
         for src_dirname in os.scandir(self.basedir):
             src = os.path.join(self.basedir, src_dirname.name)
             category = self.OPENABM_VERSIONDIRS_MAP.get(src_dirname.name)
@@ -75,8 +66,6 @@ class ModelVersionFileset:
 
 
 class ModelFileset:
-    VERSION_REGEX = re.compile('\d+')
-
     def __init__(self, model_id: int, dir_entry):
         self._model_id = model_id
         self._dir_entry = dir_entry
@@ -93,24 +82,28 @@ class ModelFileset:
 
     @staticmethod
     def is_version_dir(candidate):
-        return candidate.is_dir() and candidate.name.startswith('v') and ModelFileset.VERSION_REGEX.search(
-            candidate.name)
+        return is_version_dir(candidate)
 
     def migrate(self):
         codebase = Codebase.objects.get(identifier=self._model_id)
         logger.debug("Migrating %s with %s versions", codebase, len(self._versions))
         codebase.media = []
         for version in self._versions:
-            release = codebase.releases.get(version_number=version.semver)
+            try:
+                release = codebase.releases.get(version_number=version.semver)
+            except CodebaseRelease.DoesNotExist:
+                logger.exception('CodebaseRelease does not exist {}'.format(self._dir_entry))
+                continue
             version.migrate(release)
         # FIXME: in 3.6, os.makedirs will accept media_dir as a path-like object
         media_dir = str(codebase.upload_path)
-        os.makedirs(media_dir, exist_ok=True)
-        for media_dir_entry in self._media:
-            with open(media_dir_entry.path, 'rb') as file_entry:
-                logger.info('importing media file: %s', file_entry.name)
-                codebase.import_media(file_entry)
-            shutil.copy(media_dir_entry.path, media_dir)
+        if self._media:
+            os.makedirs(media_dir, exist_ok=True)
+            for media_dir_entry in self._media:
+                with open(media_dir_entry.path, 'rb') as file_entry:
+                    logger.info('importing media file: %s', file_entry.name)
+                    codebase.import_media(file_entry)
+                shutil.copy(media_dir_entry.path, media_dir)
         codebase.save()
 
 

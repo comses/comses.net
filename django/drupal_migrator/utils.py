@@ -1,5 +1,7 @@
 import logging
+import re
 from datetime import datetime
+from pathlib import Path
 
 import pytz
 
@@ -45,3 +47,16 @@ def to_datetime(drupal_datetime_string: str, tz=pytz.UTC):
             logger.exception("Expecting a datetime string or a float / unix timestamp but received: %s ", drupal_datetime_string)
         # give up, fall through and return None
     return None
+
+MODELVERSION_REGEX = re.compile('\d+')
+
+def model_version_has_files(model_path):
+    for p in Path(model_path).rglob('*'):
+        if p.is_file():
+            return True
+    return False
+
+
+def is_version_dir(candidate: Path):
+    return candidate.is_dir() and candidate.name.startswith('v') and MODELVERSION_REGEX.search(
+        candidate.name)

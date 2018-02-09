@@ -257,7 +257,7 @@ LOGGING = {
             'propagate': False,
         },
         'library.fs': {
-            'level': 'INFO',
+            'level': 'DEBUG',
             'handlers': ['console', 'rollingfile'],
             'propagate': False
         },

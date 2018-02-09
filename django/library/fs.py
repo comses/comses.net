@@ -250,7 +250,9 @@ class CodebaseReleaseStorage(FileSystemStorage):
         shutil.rmtree(os.path.join(self.location, category.name), ignore_errors=True)
 
     def clear(self):
-        shutil.rmtree(self.location, ignore_errors=True)
+        for p in Path(self.location).iterdir():
+            if p.is_dir():
+                shutil.rmtree(str(p), ignore_errors=True)
 
     def log_delete(self, name):
         try:
@@ -562,7 +564,7 @@ class CodebaseReleaseFsApi:
             logger.debug("adding file: {}".format(path.relative_to(self.originals_dir)))
             category = get_category(Path(name).parts[0])
             with File(path.open('rb')) as f:
-                msgs.append(self._add_to_sip(name=str(name), content=f, category=category, sip_storage=sip_storage))
+                msgs.append(self._add_to_sip(name=str(name), content=f, category=category))
 
         return msgs
 

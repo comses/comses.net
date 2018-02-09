@@ -50,6 +50,11 @@ def collect_static(ctx):
     dj(ctx, 'collectstatic -c --noinput', pty=True)
 
 
+@task(aliases=['qc'])
+def quality_check_openabm_files_with_db(ctx):
+    dj(ctx, 'quality_check_openabm_files_with_db', pty=True)
+
+
 @task
 def sh(ctx, print_sql=False):
     dj(ctx, 'shell_plus --ipython{}'.format(' --print-sql' if print_sql else ''), pty=True)
