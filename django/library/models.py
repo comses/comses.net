@@ -1,13 +1,10 @@
 import logging
 import mimetypes
 import pathlib
-import pickle
 import uuid
 
-import io
 import os
 import semver
-from django.apps import apps
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.contrib.postgres.fields import JSONField, ArrayField
@@ -31,7 +28,6 @@ from taggit.models import TaggedItemBase
 from unidecode import unidecode
 from wagtail.wagtailimages.models import Image, AbstractImage, AbstractRendition, get_upload_to, ImageQuerySet
 from wagtail.wagtailsearch import index
-from wagtail.wagtailsearch.backends import get_search_backend
 
 from core import fs
 from core.backends import get_viewable_objects_for_user
@@ -130,14 +126,31 @@ class Contributor(index.Indexed, ClusterableModel):
     def name(self):
         return self.get_full_name()
 
+    @property
+    def orcid_url(self):
+        if self.user:
+            return self.user.member_profile.orcid_url
+        return None
+
+    def to_codemeta(self):
+        codemeta = {
+            '@type': self.type.capitalize(),
+            'givenName': self.given_name,
+            'familyName': self.family_name,
+            'email': self.email,
+        }
+        if self.orcid_url:
+            codemeta['@id'] = self.orcid_url
+        return codemeta
+
     def get_aggregated_search_fields(self):
-        return ' '.join([self.given_name, self.family_name, self.email] + self._get_user_fields())
+        return ' '.join({self.given_name, self.family_name, self.email} | self._get_user_fields())
 
     def _get_user_fields(self):
         if self.user:
             user = self.user
-            return [user.first_name, user.last_name, user.username, user.email]
-        return []
+            return {user.first_name, user.last_name, user.username, user.email}
+        return {}
 
     def get_full_name(self, family_name_first=False):
         full_name = ''
@@ -210,7 +223,8 @@ class CodebaseQuerySet(models.QuerySet):
 
     def with_contributors(self, release_qs=None, release_contributor_qs=None):
         if release_qs is None:
-            release_qs = CodebaseRelease.objects.only('id', 'codebase_id') # type: CodebaseReleaseQuerySet
+            release_qs = CodebaseRelease.objects.only('id', 'codebase_id')
+            # type: CodebaseReleaseQuerySet
         return self.prefetch_related(Prefetch('releases', release_qs.with_release_contributors(release_contributor_qs)))
 
     @staticmethod
@@ -759,7 +773,8 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
     def record_download(self, request):
         referrer = request.META['HTTP_REFERER']
         client_ip, is_routable = get_client_ip(request)
-        self.downloads.create(user=request.user, referrer=referrer, ip_address=client_ip)
+        user = request.user if request.user.is_authenticated else None
+        self.downloads.create(user=user, referrer=referrer, ip_address=client_ip)
 
     @property
     def archive_filename(self):
@@ -785,6 +800,26 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
             'DOI': str(self.doi),
             # FIXME: check codemeta for additional metadata
         }
+
+    def codemeta_authors(self):
+        return [author.contributor.to_codemeta() for author in ReleaseContributor.objects.authors(self)]
+
+    def codemeta_programming_languages(self):
+        return [{'@type': 'ComputerLanguage', 'name': pl.name} for pl in self.programming_languages.all()]
+
+    @property
+    def codemeta(self):
+        # FIXME: probably DEFAULT_CODEMETA_DATA belongs here instead and fs_api should refer to it
+        metadata = self.get_fs_api().DEFAULT_CODEMETA_DATA.copy()
+        metadata.update(
+            identifier=str(self.codebase.uuid),
+            license=self.license.url,
+            description=self.codebase.description.raw,
+            version=self.version_number,
+            programmingLanguage=self.codemeta_programming_languages(),
+            author=self.codemeta_authors(),
+        )
+        return metadata
 
     @property
     def is_published(self):
@@ -864,6 +899,12 @@ class ReleaseContributorQuerySet(models.QuerySet):
             release_contributor.pk = None
             release_contributor.release = release
         return self.bulk_create(release_contributors)
+
+    def authors(self, release):
+        qs = self.select_related('contributor').filter(
+            release=release, include_in_citation=True, roles__contains='{author}'
+        )
+        return qs.order_by('index')
 
 
 class ReleaseContributor(models.Model):
