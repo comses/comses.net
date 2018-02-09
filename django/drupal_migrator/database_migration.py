@@ -553,11 +553,14 @@ class ModelVersionExtractor(Extractor):
                 # re-create new CodebaseContributors for each model version
                 # do not modify codebase.contributors in place or it will overwrite previous version contributors
                 for contributor in codebase.cached_contributors:
-                    release_contributors.append(ReleaseContributor(
-                        index=contributor.index,
-                        contributor_id=contributor.contributor_id,
-                        release_id=codebase_release.pk
-                    ))
+                    release_contributors.append(
+                        ReleaseContributor(
+                            index=contributor.index,
+                            contributor_id=contributor.contributor_id,
+                            roles=['author', 'pointOfContact'],
+                            release_id=codebase_release.pk
+                        )
+                    )
                 ReleaseContributor.objects.bulk_create(release_contributors)
                 codebase_release.save()
                 return raw_model_version['nid'], codebase_release.id
