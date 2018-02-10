@@ -150,7 +150,7 @@ class Contributor(index.Indexed, ClusterableModel):
         if self.user:
             user = self.user
             return {user.first_name, user.last_name, user.username, user.email}
-        return {}
+        return set()
 
     def get_full_name(self, family_name_first=False):
         full_name = ''
