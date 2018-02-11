@@ -5,7 +5,6 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.models import User
 from django.core.files.images import ImageFile
 from django.db.models import Prefetch
-from django.shortcuts import get_object_or_404
 from django.urls import reverse
 from django.utils.decorators import method_decorator
 from django.views.generic import TemplateView, RedirectView
@@ -44,7 +43,7 @@ class ProfileRedirectView(LoginRequiredMixin, RedirectView):
     query_string = False
 
     def get_redirect_url(self, *args, **kwargs):
-        return reverse('home:profile-detail', kwargs={'username': self.request.user.username})
+        return reverse('home:profile-detail', kwargs={'pk': self.request.user.pk})
 
 
 class ToggleFollowUser(APIView):
@@ -90,8 +89,8 @@ class MemberProfileFilter(filters.BaseFilterBackend):
 
 
 class ProfileViewSet(CommonViewSetMixin, viewsets.ModelViewSet):
-    lookup_field = 'user__username'
-    lookup_url_kwarg = 'username'
+    lookup_field = 'user__pk'
+    lookup_url_kwarg = 'pk'
     lookup_value_regex = '[\w\.\-@]+'
     queryset = MemberProfile.objects.public().with_tags().order_by('id')
     pagination_class = SmallResultSetPagination
@@ -131,8 +130,7 @@ class MemberProfileImageUploadView(generics.CreateAPIView):
 
     def create(self, request, *args, **kwargs):
         file_obj = request.data['file']
-        username = request.user.username
-        member_profile = get_object_or_404(MemberProfile, user__username=username)
+        member_profile = request.user.member_profile
         image = Image(title=file_obj.name, file=ImageFile(file_obj), uploaded_by_user=request.user)
         image.save()
         member_profile.picture = image
@@ -144,9 +142,9 @@ class ContactSentView(TemplateView):
     template_name = 'home/about/contact-sent.jinja'
 
     def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['page'] = ContactPage.objects.first()
-        return context
+        context_data = super().get_context_data(**kwargs)
+        context_data['page'] = ContactPage.objects.first()
+        return context_data
 
 
 class FeaturedContentListAPIView(generics.ListAPIView):
@@ -173,8 +171,8 @@ class JobUpdateView(FormUpdateView):
 
 class ProfileUpdateView(FormUpdateView):
     model = MemberProfile
-    slug_field = 'user__username'
-    slug_url_kwarg = 'username'
+    slug_field = 'user__pk'
+    slug_url_kwarg = 'pk'
 
 
 class EventFilter(filters.BaseFilterBackend):

@@ -3,7 +3,7 @@
 {% block introduction %}<h1>Edit Profile</h1>{% endblock %}
 
 {% block content %}
-<div id="app"></div>
+    <div id="app" data-user-pk='{{ request.user.pk }}'></div>
 {% endblock %}
 
 {% block js %}

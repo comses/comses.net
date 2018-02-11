@@ -217,7 +217,7 @@ class MemberProfile(index.Indexed, ClusterableModel):
         return self.user.groups.filter(name=ComsesGroups.FULL_MEMBER.value).exists()
 
     def get_absolute_url(self):
-        return reverse('home:profile-detail', kwargs={'username': self.user.username})
+        return reverse('home:profile-detail', kwargs={'pk': self.user.pk})
 
     def get_degrees_for_indexing(self):
         return ' '.join(self.degrees)

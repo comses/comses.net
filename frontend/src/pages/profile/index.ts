@@ -1,13 +1,9 @@
 import EditProfile from './edit'
 
-function matchUpdateUrl(pathname: string): string | null {
-    let match = pathname.match(/\/users\/([0-9a-z\_\-]+)\/edit\//);
-    if (match !== null) {
-        return match[1];
-    }
-    return null;
+function extractParams() {
+    const el = document.getElementById('app');
+    const pk = el.getAttribute('data-user-pk');
+    console.debug("returning " + pk);
+    return {pk}
 }
-
-const _username = matchUpdateUrl(window.location.pathname);
-
-new EditProfile({ propsData: {_username}}).$mount('#app');
+new EditProfile({ propsData: extractParams()}).$mount('#app');

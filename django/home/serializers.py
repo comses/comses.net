@@ -7,7 +7,6 @@ from rest_framework.exceptions import ValidationError as DrfValidationError
 
 from core.models import Institution, MemberProfile
 from core.serializers import TagSerializer, MarkdownField
-from library.models import Codebase
 from library.serializers import RelatedCodebaseSerializer
 
 from .models import (FeaturedContentItem, UserMessage)
@@ -57,6 +56,7 @@ class MemberProfileSerializer(serializers.ModelSerializer):
     full_name = serializers.SerializerMethodField(source='user.full_name')
     given_name = serializers.CharField(source='user.first_name')
     username = serializers.CharField(source='user.username', read_only=True)
+    user_pk = serializers.IntegerField(source='user.pk', read_only=True)
     email = serializers.SerializerMethodField()
 
     # Followers
@@ -139,7 +139,7 @@ class MemberProfileSerializer(serializers.ModelSerializer):
         fields = (
             # User
             'date_joined', 'family_name', 'full_name', 'given_name', 'profile_url',
-            'username', 'email',
+            'username', 'email', 'user_pk',
             # Follower
             'follower_count', 'following_count',
             'codebases',

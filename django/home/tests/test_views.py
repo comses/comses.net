@@ -119,7 +119,7 @@ class ProfilePageRenderTestCase(TestCase):
         self.profile.save()
 
     def test_detail(self):
-        response = self.client.get(reverse('home:profile-detail', kwargs={'username': self.submitter.username}))
+        response = self.client.get(reverse('home:profile-detail', kwargs={'pk': self.submitter.pk}))
         self.assertEqual(response.status_code, 200)
 
     def test_list(self):

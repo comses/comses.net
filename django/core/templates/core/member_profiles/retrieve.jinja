@@ -100,7 +100,7 @@
             {% if research_interests %}
                 <h3 class='m-0 py-3 title'>Research Interests</h3>
                 <p>
-                    {{ research_interests }}
+                    {{ research_interests|markdown }}
                 </p>
             {% endif %}
             {% if not bio and not research_interests %}
@@ -134,8 +134,8 @@
         <div class='card-body'>
             {% if has_change_perm %}
                 <p class='card-text'>
-                    <a href="{{ url('home:profile-edit', username=username) }}" class='btn btn-primary w-100'>Edit
-                        Profile</a>
+                <a href="{{ url('home:profile-edit', pk=user_pk) }}" class='btn btn-primary w-100'>
+                    Edit Profile</a>
                 </p>
             {% endif %}
             {% if request.user.username != username %}

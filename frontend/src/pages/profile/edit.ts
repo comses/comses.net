@@ -40,8 +40,8 @@ const api = new ProfileAPI();
         </div>
 
         <div class='form-group' v-if='orcid_url'>
-            ORCID 
-            <a target='_blank' href='https://orcid.org/'><span class='ai ai-orcid'></span></a> | 
+            ORCID
+            <a target='_blank' href='https://orcid.org/'><span class='text-orcid ai ai-orcid'></span></a> |
             <a target='_blank' :href='orcid_url'>{{ orcid_url }}</a>
         </div>
         <div class='form-group' v-else>
@@ -49,39 +49,39 @@ const api = new ProfileAPI();
             <span class='ai ai-orcid'></span>
         </div>
 
-        <c-input v-model="given_name" name="given_name" :errorMsgs="errors.given_name" label="Given Name" 
+        <c-input v-model="given_name" name="given_name" :errorMsgs="errors.given_name" label="Given Name"
             :required="config.given_name">
         </c-input>
-        <c-input v-model="family_name" name="family_name" :errorMsgs="errors.family_name" label="Family Name" 
+        <c-input v-model="family_name" name="family_name" :errorMsgs="errors.family_name" label="Family Name"
             :required="config.family_name">
         </c-input>
         <c-input v-model="email" name="email" :errorMsgs="errors.email" label="Email" :required="config.email">
         </c-input>
         <c-markdown v-model="bio" name="bio" :errorMsgs="errors.bio" label="Bio" :required="config.bio">
         </c-markdown>
-        <c-markdown v-model="research_interests" name="research_interests" :errorMsgs="errors.research_interests" 
+        <c-markdown v-model="research_interests" name="research_interests" :errorMsgs="errors.research_interests"
             label="Research Interests" :required="config.research_interests">
         </c-markdown>
 
-        <c-input type="url" v-model="personal_url" name="personal_url" :errorMsgs="errors.personal_url" 
+        <c-input type="url" v-model="personal_url" name="personal_url" :errorMsgs="errors.personal_url"
             label="Personal URL" help="A link to your personal modeling related website" :required="config.personal_url">
         </c-input>
-        <c-input type="url" v-model="professional_url" name="professional_url" :errorMsgs="errors.professional_url" 
+        <c-input type="url" v-model="professional_url" name="professional_url" :errorMsgs="errors.professional_url"
                  label="Professional URL" help="A link to your institutional or professional profile page."
                  :required="config.professional_url">
         </c-input>
         <c-input v-model="institution_name" name="institution_name" :errorMsgs="errors.institution_name"
-            label="Institution" help="The primary place you are currently working at" 
+            label="Institution" help="The primary place you are currently working at"
             :required="config.institution_name">
         </c-input>
-        <c-input v-model="institution_url" name="institution_url" :errorMsgs="errors.institution_url" 
+        <c-input v-model="institution_url" name="institution_url" :errorMsgs="errors.institution_url"
             label="Institution URL" :required="config.institution_url">
         </c-input>
-        <c-edit-degrees :value="degrees" @create="degrees.push($event)" @remove="degrees.splice($event, 1)" 
+        <c-edit-degrees :value="degrees" @create="degrees.push($event)" @remove="degrees.splice($event, 1)"
             @modify="degrees.splice($event.index, 1, $event.value)" name="degrees" :errorMsgs="errors.degrees"
             label="Degrees" help="The institution and name of the degrees you recieved" :required="config.degrees">
         </c-edit-degrees>
-        <c-tagger v-model="tags" name="tags" :errorMsgs="errors.tags" label="Keywords" 
+        <c-tagger v-model="tags" name="tags" :errorMsgs="errors.tags" label="Keywords"
             :required="config.tags">
         </c-tagger>
         <c-message-display :messages="statusMessages">
@@ -100,20 +100,20 @@ const api = new ProfileAPI();
 })
 export default class EditProfile extends createFormValidator(schema) {
     @Prop()
-    _username: string | null;
+    pk: number | null;
 
     detailPageUrl(state) {
-        this.state.username = state.username;
-        return api.detailUrl(this.state.username);
+        this.state.pk = state.pk;
+        return api.detailUrl(this.state.pk);
     }
 
     detailUrlParams(state) {
-        return state.username;
+        return state.pk;
     }
 
     initializeForm() {
-        if (this._username !== null) {
-            return this.retrieve(this._username)
+        if (this.pk !== null) {
+            return this.retrieve(this.pk)
         }
     }
 
@@ -122,7 +122,7 @@ export default class EditProfile extends createFormValidator(schema) {
     }
 
     createOrUpdate() {
-        return api.update(this.state.username, new HandlerWithRedirect(this));
+        return api.update(this.state.pk, new HandlerWithRedirect(this));
     }
 
     async createOrUpdateIfValid() {
@@ -130,13 +130,13 @@ export default class EditProfile extends createFormValidator(schema) {
         return this.createOrUpdate();
     }
 
-    retrieve(username: string) {
-        return api.retrieve(username).then(r => this.state = r.data);
+    retrieve(pk: number) {
+        return api.retrieve(pk).then(r => this.state = r.data);
     }
 
     async uploadImage(event) {
         const file = event.target.files[0];
-        const response = await api.uploadProfilePicture({username: this.state.username}, file);
+        const response = await api.uploadProfilePicture({pk: this.pk}, file);
         this.state.avatar = response.data;
     }
 

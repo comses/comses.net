@@ -2,6 +2,7 @@
 {% set logout_url = url("account_logout") %}
 {% set signup_url = url("account_signup") %}
 {% set contact_url = '/about/contact/' %}
+{% set profile_url = url('home:profile-detail', pk=user.pk) if user.is_authenticated else signup_url %}
 
 {% macro navbar() %}
 <nav class='navbar navbar-expand-md navbar-light fixed-top'>
@@ -22,7 +23,7 @@
                             <span class="fa fa-user-o"></span> {{ user.username }}
                         </a>
                         <div class="dropdown-menu" aria-labelledby='userDropdownMenuLink'>
-                            <a class="dropdown-item" href="{{ url('home:profile-detail', username=user.username) }}"><i class='fa fa-user-o'></i> Your Account</a>
+                            <a class="dropdown-item" href="{{ profile_url }}"><i class='fa fa-user-o'></i> Your Account</a>
                             {# POST logouts, see http://django-allauth.readthedocs.io/en/latest/views.html#logout-account-logout #}
                             <form id='logoutForm' method='post' action='{{ logout_url }}'>
                                 {% csrf_token %}
@@ -104,8 +105,7 @@ function focusSearch() {
                 <div class='col'>
                 </div>
                 <div class='col text-center'>
-                    {% set member_url = url('home:profile-detail', username=user.username) if user.is_authenticated else signup_url %}
-                    <a class='btn btn-primary' href='{{ member_url }}'>Become a member</a>
+                    <a class='btn btn-primary' href='{{ profile_url }}'>Become a member</a>
                 </div>
                 <div class='col'>
                 </div>

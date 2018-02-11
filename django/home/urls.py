@@ -15,10 +15,9 @@ urlpatterns = [
     url(r'^events/add/$', views.EventCreateView.as_view(), name='event-add'),
     url(r'^jobs/(?P<pk>\d+)/edit/$', views.JobUpdateView.as_view(), name='job-edit'),
     url(r'^jobs/add/$', views.JobCreateView.as_view(), name='job-add'),
-    url(r'^about/contact/sent/$', views.ContactSentView.as_view(template_name='home/about/contact-sent.jinja'), name='contact-sent'),
-    url(r'^users/(?P<username>[\w\.\-@]+)/edit/$', views.ProfileUpdateView.as_view(), name='profile-edit'),
+    url(r'^about/contact/sent/$', views.ContactSentView.as_view(), name='contact-sent'),
+    url(r'^users/(?P<pk>\d+)/edit/$', views.ProfileUpdateView.as_view(), name='profile-edit'),
     url(r'^accounts/profile/$', views.ProfileRedirectView.as_view(), name='account-profile'),
-    url(r'users/(?P<username>(\w+))/upload_picture/$', views.MemberProfileImageUploadView.as_view(),
+    url(r'users/(?P<pk>\d+)/upload_picture/$', views.MemberProfileImageUploadView.as_view(),
         name='profile-avatar-upload'),
 ] + router.urls
-

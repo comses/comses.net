@@ -60,8 +60,8 @@ export class ProfileAPI extends BaseAPI {
         return `${this.baseUrl()}${qs ? `?${qs}` : ''}`;
     }
 
-    uploadPictureUrl(username: string) {
-        return `${this.detailUrl(username)}upload_picture/`
+    uploadPictureUrl(pk: number) {
+        return `${this.detailUrl(pk)}upload_picture/`
     }
 
     list(q: { query?: string, page: number }) {
@@ -72,10 +72,10 @@ export class ProfileAPI extends BaseAPI {
         return api.get(this.searchUrl(q));
     }
 
-    uploadProfilePicture({username}, file) {
+    uploadProfilePicture({pk}, file) {
         const formData = new FormData();
         formData.append('file', file);
-        return api.postForm(this.uploadPictureUrl(username), formData,
+        return api.postForm(this.uploadPictureUrl(pk), formData,
             {headers: {'Content-Type': 'multipart/form-data'}})
     }
 

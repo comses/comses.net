@@ -5,7 +5,8 @@ import { expect } from 'chai'
 describe('profile editing', () => {
     it('should allow updates', async () => {
         try {
-            const vm = new EditProfile({ propsData: { _username: __BASIC_AUTH_USERNAME__}});
+            // FIXME: figure out how to refactor this without username from __config__/common.ts
+            const vm = new EditProfile({ propsData: { _pk: 2}}); 
             await vm.initializeForm();
             expect((<any>vm).given_name).to.equal('Test');
             expect((<any>vm).email).to.equal('a@b.com');
