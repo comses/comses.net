@@ -13,18 +13,14 @@ from django.http import Http404, HttpResponseBadRequest, HttpResponseRedirect, Q
 from django.shortcuts import render
 from django.views.generic import DetailView, TemplateView
 from itertools import chain
-from rest_framework import filters, viewsets, generics
+from rest_framework import filters
 from rest_framework.exceptions import PermissionDenied as DrfPermissionDenied, NotAuthenticated
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 from rest_framework.views import exception_handler
 
 from core.search import GeneralSearch
-from .models import Event, Job
 from .permissions import ComsesPermissions
-from .serializers import EventSerializer, JobSerializer
-from .utils import parse_datetime
-from .view_helpers import get_search_queryset, retrieve_with_perms
 
 logger = logging.getLogger(__name__)
 
@@ -306,130 +302,6 @@ def discourse_sso(request):
     # Redirect back to Discourse
     discourse_sso_url = '{0}/session/sso_login?{1}'.format(settings.DISCOURSE_BASE_URL, query_string)
     return HttpResponseRedirect(discourse_sso_url)
-
-
-class EventFilter(filters.BaseFilterBackend):
-    def filter_queryset(self, request, queryset, view):
-        if view.action != 'list':
-            return queryset
-
-        qs = request.query_params.get('query')
-        submission_deadline__gte = request.query_params.get('submission_deadline__gte')
-        start_date__gte = parse_datetime(request.query_params.get('state_date__gte'))
-        tags = request.query_params.getlist('tags')
-
-        criteria = {}
-
-        if submission_deadline__gte:
-            criteria.update(submission_deadline__gte=submission_deadline__gte)
-        if start_date__gte:
-            criteria.update(start_date__gte=start_date__gte)
-        return get_search_queryset(qs, queryset, tags=tags, criteria=criteria)
-
-
-class EventViewSet(CommonViewSetMixin, viewsets.ModelViewSet):
-    serializer_class = EventSerializer
-    queryset = Event.objects.with_tags().with_submitter().order_by('-date_created', 'title')
-    pagination_class = SmallResultSetPagination
-    filter_backends = (CaseInsensitiveOrderingFilter, EventFilter)
-    ordering_fields = ('date_created', 'last_modified', 'title',
-                       'submitter__last_name', 'submitter__username',)
-
-    def retrieve(self, request, *args, **kwargs):
-        return retrieve_with_perms(self, request, *args, **kwargs)
-
-
-class EventCalendarList(generics.ListAPIView):
-    queryset = Event.objects.all()
-    # FIXME: refactor this and other apps, https://github.com/comses/core.comses.net/issues/118
-    template_name = 'core/events/calendar.jinja'
-
-    def get_list_queryset(self):
-        start = parse_datetime(self.request.query_params['start'])
-        end = parse_datetime(self.request.query_params['end'])
-        return self.queryset.find_by_interval(start, end), start, end
-
-    @staticmethod
-    def to_calendar_early_registration_deadline_event(event):
-        return {
-            'title': 'Early Registration Deadline: ' + event.title,
-            'start': event.early_registration_deadline.isoformat(),
-            'url': event.get_absolute_url(),
-            'color': '#aaa',
-        }
-
-    @staticmethod
-    def to_calendar_submission_deadline_event(event):
-        return {
-            'title': 'Submission Deadline: ' + event.title,
-            'start': event.submission_deadline.isoformat(),
-            'url': event.get_absolute_url(),
-            'color': '#ccc',
-        }
-
-    @staticmethod
-    def to_calendar_event(event):
-        return {
-            'title': event.title,
-            'start': event.start_date.isoformat(),
-            'end': event.end_date.isoformat(),
-            'url': event.get_absolute_url(),
-            'color': '#92c02e',
-        }
-
-    def list(self, request, *args, **kwargs):
-        """Arrange events so that early registration deadline, registration deadline and the actual event
-        are events to be rendered in the calendar"""
-
-        if not request.query_params:
-            return Response(data={})
-
-        queryset, start, end = self.get_list_queryset()
-        calendar_events = []
-        for event in list(queryset):
-            if event.early_registration_deadline and start <= event.early_registration_deadline <= end:
-                calendar_events.append(self.to_calendar_early_registration_deadline_event(event))
-
-            if event.submission_deadline and start <= event.submission_deadline <= end:
-                calendar_events.append(self.to_calendar_submission_deadline_event(event))
-
-            if event.start_date:
-                min_date = max(start, event.start_date)
-                if event.end_date is None:
-                    event.end_date = event.start_date
-                max_date = min(end, event.end_date)
-                if min_date <= max_date:
-                    calendar_events.append(self.to_calendar_event(event))
-
-        return Response(data=calendar_events)
-
-
-class JobFilter(filters.BaseFilterBackend):
-    def filter_queryset(self, request, queryset, view):
-        if view.action != 'list':
-            return queryset
-        qs = request.query_params.get('query')
-        date_created = parse_datetime(request.query_params.get('date_created__gte'))
-        application_deadline = parse_datetime(request.query_params.get('application_deadline__gte'))
-        tags = request.query_params.getlist('tags')
-        criteria = {}
-        if date_created:
-            criteria.update(date_created__gte=date_created)
-        if application_deadline:
-            criteria.update(application_deadline__gte=application_deadline)
-        return get_search_queryset(qs, queryset, tags=tags, criteria=criteria)
-
-
-class JobViewSet(CommonViewSetMixin, viewsets.ModelViewSet):
-    serializer_class = JobSerializer
-    pagination_class = SmallResultSetPagination
-    queryset = Job.objects.with_tags().with_submitter().order_by('-date_created')
-    filter_backends = (CaseInsensitiveOrderingFilter, JobFilter)
-    ordering_fields = ('date_created', 'last_modified', 'title',
-                       'submitter__last_name', 'submitter__username',)
-
-    def retrieve(self, request, *args, **kwargs):
-        return retrieve_with_perms(self, request, *args, **kwargs)
 
 
 class SearchView(TemplateView):
