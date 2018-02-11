@@ -562,14 +562,18 @@ class AboutSection(AbstractSection):
 
     def build_orcid_page(self, parent):
         orcid_page = MarkdownPage(
-            heading='About ORCID',
-            title='CoMSES Net + ORCID integration',
-            description='[ORCID](https://orcid.org) provides a persistent digital identifier that distinguishes you from other researchers',
+            heading='CoMSES Net & ORCID',
+            title='CoMSES Net & ORCID',
+            description=(
+                '<span class="float-right">![orcid logo](/static/images/logo-orcid-member-170px.png)</span>\n'
+                '<i class="ai ai-orcid text-orcid"></i>[ORCID](https://orcid.org) provides a persistent digital identifier that distinguishes you '
+                'from other researchers.'
+            ),
             slug='orcid',
             body=(
                 '## What is ORCID?\n\n'
-                'ORCID provides researchers with a unique identifier (an ORCID iD) plus a mechanism for linking their '
-                'research outputs and activities to their ORCID iD.\n\n'
+                'ORCID provides researchers with a unique identifier (an ORCID iD <i class="ai ai-orcid text-orcid"></i>) '
+                'plus a mechanism for linking their research outputs and activities to their ORCID iD.\n\n'
                 'ORCID is integrated into many systems used by publishers, funders, institutions, and other '
                 'research-related services.\n\n'
                 'To learn more about ORCID, watch the [Why ORCID? video](https://vimeo.com/237730655) or visit their '
@@ -586,10 +590,9 @@ class AboutSection(AbstractSection):
                 '* improves recognition and discoverability for you and your research outputs\n'
                 '* is interoperable (works with many institutions, funders, and publishers)\n'
                 '* is persistent (enduring)\n'
-                '* will enable us to (eventually) include your published computational models in your ORCID record\n\n'
+                '* will allow us to integrate your publications, computational models, and research interests with your ORCID record\n\n'
                 'An ORCID iD is also a requirement of many journal manuscript submission systems and grant application forms.\n\n\n'
                 '--- Content adapted from [ORCID Communications Toolkit v4](https://doi.org/10.23640/07243.5493064.v4)\n\n\n'
-                '![orcid logo](/static/images/logo-orcid-member-170px.png)'
             ),
         )
         parent.add_child(instance=orcid_page)
