@@ -560,12 +560,47 @@ class AboutSection(AbstractSection):
         )
         parent.add_child(instance=bylaws_page)
 
+    def build_orcid_page(self, parent):
+        orcid_page = MarkdownPage(
+            heading='About ORCID',
+            title='CoMSES Net + ORCID integration',
+            description='[ORCID](https://orcid.org) provides a persistent digital identifier that distinguishes you from other researchers',
+            slug='orcid',
+            body=(
+                '## What is ORCID?\n\n'
+                'ORCID provides researchers with a unique identifier (an ORCID iD) plus a mechanism for linking their '
+                'research outputs and activities to their ORCID iD.\n\n'
+                'ORCID is integrated into many systems used by publishers, funders, institutions, and other '
+                'research-related services.\n\n'
+                'To learn more about ORCID, watch the [Why ORCID? video](https://vimeo.com/237730655) or visit their '
+                '[website](https://orcid.org/content/help).\n\n'
+                '## Connect your ORCID iD with your CoMSES Net account\n\n'
+                'CoMSES Net would like to collect your ORCID iD for use in our systems. You can connect your CoMSES'
+                ' Net account with ORCID and authorize the collection and use of your ORCID iD in our systems at your '
+                '[account profile](/accounts/profile/) page or when you first sign up as a CoMSES Net member.\n\n\n'
+                '## Why register your ORCID iD?\n\n'
+                'Your ORCID iD:\n\n'
+                '* distinguishes you and ensures your research outputs and activities are correctly attributed to you\n'
+                '* reliably and easily connects you with your contributions and affiliations\n'
+                '* reduces form-filling (enter data once, re-use it often)\n'
+                '* improves recognition and discoverability for you and your research outputs\n'
+                '* is interoperable (works with many institutions, funders, and publishers)\n'
+                '* is persistent (enduring)\n'
+                '* will enable us to (eventually) include your published computational models in your ORCID record\n\n'
+                'An ORCID iD is also a requirement of many journal manuscript submission systems and grant application forms.\n\n\n'
+                '--- Content adapted from [ORCID Communications Toolkit v4](https://doi.org/10.23640/07243.5493064.v4)\n\n\n'
+                '![orcid logo](/static/images/orcid-member-web-170px.png)'
+            ),
+        )
+        parent.add_child(instance=orcid_page)
+
     def build(self):
         about_index = self.build_about_section()
         self.build_people_page(about_index)
         self.build_faq_page(about_index)
         self.build_contact_page(about_index)
         self.build_bylaws_page(about_index)
+        self.build_orcid_page(about_index)
 
 
 class Command(BaseCommand):
@@ -609,21 +644,22 @@ class Command(BaseCommand):
     @staticmethod
     def create_social_apps():
         site = DjangoSite.objects.first()
-        if SocialApp.objects.count() == 0:
-            orcid_app, created = SocialApp.objects.get_or_create(
-                provider='orcid',
-                name='ORCID',
-                client_id=settings.ORCID_CLIENT_ID,
-                secret=settings.ORCID_CLIENT_SECRET,
-            )
-            orcid_app.sites.add(site)
-            github_app, created = SocialApp.objects.get_or_create(
-                provider='github',
-                name='GitHub',
-                client_id=settings.GITHUB_CLIENT_ID,
-                secret=settings.GITHUB_CLIENT_SECRET,
-            )
-            github_app.sites.add(site)
+        # set up orcid app social auth keys
+        orcid_app, created = SocialApp.objects.get_or_create(
+            provider='orcid',
+            name='ORCID',
+        )
+        orcid_app.client_id = settings.ORCID_CLIENT_ID
+        orcid_app.secret = settings.ORCID_CLIENT_SECRET
+        orcid_app.sites.add(site)
+        # set up github app social auth keys
+        github_app, created = SocialApp.objects.get_or_create(
+            provider='github',
+            name='GitHub'
+        )
+        github_app.client_id = settings.GITHUB_CLIENT_ID
+        github_app.secret = settings.GITHUB_CLIENT_SECRET
+        github_app.sites.add(site)
 
     def create_site(self, site_name, hostname, root_page=None):
         if root_page is None:
