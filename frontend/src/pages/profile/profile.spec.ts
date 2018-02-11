@@ -6,7 +6,7 @@ describe('profile editing', () => {
     it('should allow updates', async () => {
         try {
             // FIXME: figure out how to refactor this without username from __config__/common.ts
-            const vm = new EditProfile({ propsData: { _pk: 2}}); 
+            const vm = new EditProfile({ propsData: { pk: 3}}); 
             await vm.initializeForm();
             expect((<any>vm).given_name).to.equal('Test');
             expect((<any>vm).email).to.equal('a@b.com');
