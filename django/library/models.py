@@ -839,6 +839,37 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
         publisher = CodebaseReleasePublisher(self)
         publisher.publish()
 
+    @staticmethod
+    def possible_next_versions(version_number):
+        major, minor, bugfix = [int(v) for v in version_number.split('.')]
+        next_major = '{}.0.0'.format(major + 1)
+        next_minor = '{}.{}.0'.format(major, minor + 1)
+        next_bugfix = '{}.{}.{}'.format(major, minor, bugfix + 1)
+        return {next_major, next_minor, next_bugfix}
+
+    def get_allowed_version_numbers(self):
+        codebase = Codebase.objects.prefetch_related(
+            Prefetch('releases', CodebaseRelease.objects.exclude(id=self.id))) \
+                .get(id=self.codebase_id)
+        if codebase.releases.all():
+            possible_version_numbers = set()
+            for release in codebase.releases.all():
+                possible_version_numbers.update(self.possible_next_versions(release.version_number))
+            for release in codebase.releases.all():
+                possible_version_numbers.discard(release.version_number)
+            return possible_version_numbers
+        else:
+            return set(['1.0.0'])
+
+    def set_version_number(self, version_number):
+        allowed_version_numbers = self.get_allowed_version_numbers()
+        if version_number == '1.0.0':
+            raise ValidationError("Cannot change initial release version number")
+        if version_number not in allowed_version_numbers:
+            raise ValidationError("Not valid version number value. Must be one of {}"
+                    .format(', '.join(sorted(list(allowed_version_numbers)))))
+        self.version_number = version_number
+
     def __str__(self):
         return '{0} {1} v{2}'.format(self.codebase, self.submitter.username, self.version_number)
 

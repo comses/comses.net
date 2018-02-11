@@ -4,6 +4,7 @@ import pathlib
 from django.conf import settings
 from django.contrib.auth.models import AnonymousUser
 from django.core.files.base import ContentFile
+from rest_framework.exceptions import ValidationError
 
 from core.tests.base import UserFactory
 from .base import BaseModelTestCase, CodebaseFactory
@@ -78,3 +79,16 @@ class CodebaseReleaseTest(BaseModelTestCase):
         self.codebase_release.live = True
         self.codebase_release.save()
         self.assertTrue(regular_user.has_perm(self.get_perm_str('view'), obj=self.codebase_release))
+
+    def test_version_number_mutation(self):
+        other_codebase_release = self.codebase.create_release(initialize=False)
+        version_numbers = other_codebase_release.get_allowed_version_numbers()
+        self.assertEqual(version_numbers, set(['1.0.1', '1.1.0', '2.0.0']))
+        with self.assertRaises(ValidationError):
+            self.codebase_release.set_version_number('0.9.0')
+
+        with self.assertRaises(ValidationError):
+            other_codebase_release.set_version_number('1.2.0')
+
+        other_codebase_release.set_version_number('1.0.1')
+        self.assertEqual(other_codebase_release.version_number,'1.0.1')
