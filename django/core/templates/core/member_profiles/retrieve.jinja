@@ -49,12 +49,6 @@
                         {{ institution_href(institution) }}
                         </p>
                     {% endif %}
-                    {% if email %}
-                        <b class="card-title">Email</b>
-                        <p class="card-text">
-                            <a href="mailto:{{ email }}">{{ email }}</a>
-                        </p>
-                    {% endif %}
                     {% if personal_url %}
                         <b class='card-title'>Personal homepage</b>
                         <p class='card-text'>
@@ -138,9 +132,9 @@
                     Edit Profile</a>
                 </p>
             {% endif %}
-            {% if request.user.username != username %}
+            {% if email and request.user.username != username %}
                 <p class='card-text'>
-                    <a href='#' onclick='sendMessage()' class='btn btn-primary w-100'>Send Message</a>
+                    <a class='btn btn-primary w-100' href="mailto:{{ email }}">Send Message</a>
                 </p>
                 {#
                 <p class='card-text'>
@@ -164,10 +158,6 @@
                 </div>
             </div>
             #}
-        </div>
-    </div>
-    <div class='card-metadata'>
-        <div class='card-body'>
             <h2 class='card-title'>Research Interests</h2>
             <p class='card-text tag-list'>
                 {% for keyword in tags %}

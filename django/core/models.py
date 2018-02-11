@@ -17,7 +17,7 @@ from taggit.models import TaggedItemBase
 from timezone_field import TimeZoneField
 from wagtail.contrib.settings.models import BaseSetting
 from wagtail.contrib.settings.registry import register_setting
-from wagtail.wagtailadmin.edit_handlers import FieldPanel, InlinePanel
+from wagtail.wagtailadmin.edit_handlers import FieldPanel
 from wagtail.wagtailimages.edit_handlers import ImageChooserPanel
 from wagtail.wagtailimages.models import Image
 from wagtail.wagtailsearch import index
@@ -206,7 +206,7 @@ class MemberProfile(index.Indexed, ClusterableModel):
 
     @property
     def name(self):
-        return self.user.get_full_name() or self.user.username
+        return self.user.get_full_name() or 'User {0}'.format(self.user.pk)
 
     @property
     def email(self):

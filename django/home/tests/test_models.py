@@ -13,7 +13,7 @@ class MemberProfileTestCase(HypothesisTestCase):
     @given(generate_user())
     def test_member_profile_creation(self, user):
         member_profile = user.member_profile
-        self.assertTrue(user.pk in member_profile.get_absolute_url())
+        self.assertTrue(str(user.pk) in member_profile.get_absolute_url())
         self.assertFalse(member_profile.full_member)
         # empty fields
         self.assertFalse(member_profile.personal_url)

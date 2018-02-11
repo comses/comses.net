@@ -30,16 +30,10 @@ class UserMessageSerializer(serializers.ModelSerializer):
 
 class MemberProfileListSerializer(serializers.ModelSerializer):
     date_joined = serializers.DateTimeField(source='user.date_joined', read_only=True, format='%c')
-    full_name = serializers.SerializerMethodField()
+    full_name = serializers.CharField(source='name')
     username = serializers.CharField(source='user.username')
     profile_url = serializers.URLField(source='get_absolute_url', read_only=True)
     tags = TagSerializer(many=True)
-
-    def get_full_name(self, instance):
-        full_name = instance.user.get_full_name()
-        if not full_name:
-            full_name = instance.user.username
-        return full_name
 
     class Meta:
         model = MemberProfile
@@ -53,7 +47,7 @@ class MemberProfileSerializer(serializers.ModelSerializer):
     # User fields
     date_joined = serializers.DateTimeField(source='user.date_joined', read_only=True, format='%c')
     family_name = serializers.CharField(source='user.last_name')
-    full_name = serializers.SerializerMethodField(source='user.full_name')
+    full_name = serializers.CharField(source='name')
     given_name = serializers.CharField(source='user.first_name')
     username = serializers.CharField(source='user.username', read_only=True)
     user_pk = serializers.IntegerField(source='user.pk', read_only=True)
@@ -80,22 +74,16 @@ class MemberProfileSerializer(serializers.ModelSerializer):
 
     def get_email(self, instance):
         request = self.context.get('request')
-        if not request.user.is_anonymous():
-            return instance.email
-        else:
+        if request.user.is_anonymous():
             return None
+        else:
+            return instance.email
 
     def get_avatar(self, instance):
         request = self.context.get('request')
         if request and request.accepted_media_type != 'text/html':
             return instance.picture.get_rendition('fill-150x150').url if instance.picture else None
         return instance.picture
-
-    def get_full_name(self, instance):
-        full_name = instance.user.get_full_name()
-        if not full_name:
-            full_name = instance.user.username
-        return full_name
 
     def update(self, instance, validated_data):
         raw_tags = TagSerializer(many=True, data=validated_data.pop('tags'))
@@ -146,5 +134,5 @@ class MemberProfileSerializer(serializers.ModelSerializer):
             # institution
             'institution_name', 'institution_url',
             # MemberProfile
-            'avatar', 'bio', 'degrees', 'full_member', 'tags', 'orcid_url', 'github_url',
-            'personal_url', 'professional_url', 'profile_url', 'research_interests')
+            'avatar', 'bio', 'name', 'degrees', 'full_member', 'tags', 'orcid_url', 'github_url', 'personal_url',
+            'professional_url', 'profile_url', 'research_interests',)
