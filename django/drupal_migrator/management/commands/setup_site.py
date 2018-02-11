@@ -589,7 +589,7 @@ class AboutSection(AbstractSection):
                 '* will enable us to (eventually) include your published computational models in your ORCID record\n\n'
                 'An ORCID iD is also a requirement of many journal manuscript submission systems and grant application forms.\n\n\n'
                 '--- Content adapted from [ORCID Communications Toolkit v4](https://doi.org/10.23640/07243.5493064.v4)\n\n\n'
-                '![orcid logo](/static/images/orcid-member-web-170px.png)'
+                '![orcid logo](/static/images/logo-orcid-member-170px.png)'
             ),
         )
         parent.add_child(instance=orcid_page)
