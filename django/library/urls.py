@@ -1,9 +1,9 @@
 from django.conf.urls import url
+from rest_framework.routers import SimpleRouter
 
-from core.routers import AddEditRouter
 from . import views
 
-router = AddEditRouter()
+router = SimpleRouter()
 router.register(r'codebases', views.CodebaseViewSet)
 router.register(r'codebases/(?P<identifier>[\w\-.]+)/media', views.CodebaseFilesViewSet)
 router.register(r'codebases/(?P<identifier>[\w\-.]+)/releases', views.CodebaseReleaseViewSet)
