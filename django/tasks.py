@@ -87,9 +87,10 @@ def server(ctx, ip="0.0.0.0", port=8000):
 
 
 @task(aliases=['ss'])
-def setup_site(ctx, site_name='CoMSES Net',
-               site_domain='localhost'):
+def setup_site(ctx, site_name='CoRe @ CoMSES Net', site_domain='www.comses.net'):
     dj(ctx, 'setup_site --site-name="{0}" --site-domain="{1}"'.format(site_name, site_domain))
+    if not settings.DEPLOY_ENVIRONMENT.is_production():
+        deny_robots(ctx)
 
 
 @task(aliases=['idd'])
@@ -125,7 +126,7 @@ def create_pgpass_file(ctx, force=False):
         pgpass.write('db:*:*:{db_user}:{db_password}\n'.format(db_password=db_password, **env))
         ctx.run('chmod 0600 ~/.pgpass')
 
-@task
+@task(aliases=['dr'])
 def deny_robots(ctx):
     dj(ctx, 'setup_robots_txt --no-allow')
 

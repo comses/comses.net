@@ -31,7 +31,7 @@ urlpatterns = [
     url(r'^api-auth/', include('rest_framework.urls')),
     # configure sitemaps and robots.txt, see https://django-robots.readthedocs.io/en/latest/
     url('sitemap.xml', sitemap, {'sitemaps': sitemaps}, name='django.contrib.sitemaps.views.sitemap'),
-    url(r'^robots\.txt$', include('robots.urls')),
+    url(r'^robots\.txt', include('robots.urls')),
     # NB: wagtail_urls are the catchall, must be last
     url(r'^', include(wagtail_urls)),
 ]

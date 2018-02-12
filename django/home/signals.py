@@ -11,32 +11,20 @@ from core.models import MemberProfile
 logger = logging.getLogger(__name__)
 
 
-@receiver(post_save, sender=User, dispatch_uid='member_profile_creator')
-def create_member_profile(sender, instance: User, created, **kwargs):
+@receiver(post_save, sender=User, dispatch_uid='member_profile_sync')
+def sync_user_member_profiles(sender, instance: User, created, **kwargs):
     """
-    Ensures every created User has an associated MemberProfile as well
-    :param sender: 
-    :param instance: 
-    :param created: 
-    :param kwargs: 
-    :return: 
+    Ensure every created User has an associated MemberProfile
     """
-    if created:
-        if instance.username in ('AnonymousUser',):
-            # ignore anonymous user and
-            return
+    if created and instance.username not in ('AnonymousUser',):
+        # ignore anonymous user
         MemberProfile.objects.get_or_create(user=instance)
 
 
 @receiver(post_save, sender=WagtailSite, dispatch_uid='wagtail_site_sync')
-def sync_wagtail_sites(sender, instance: WagtailSite, created : bool, **kwargs):
+def sync_wagtail_django_sites(sender, instance: WagtailSite, created: bool, **kwargs):
     """
-    Keeps default django.contrib.sites.models.Site in sync with the  richer wagtail.wagtailcore.models.Site instance.
-    :param sender: 
-    :param instance: 
-    :param created: 
-    :param kwargs: 
-    :return: 
+    Keep default django.contrib.sites.models.Site in sync with the wagtail.wagtailcore.models.Site instance.
     """
     if instance.is_default_site and all([instance.site_name, instance.hostname]):
         site = Site.objects.first()

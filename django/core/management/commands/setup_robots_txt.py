@@ -1,6 +1,11 @@
 from django.core.management.base import BaseCommand
 
+from django.contrib.sites.models import Site
 from robots.models import Rule, Url
+
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class Command(BaseCommand):
@@ -27,3 +32,4 @@ class Command(BaseCommand):
         else:
             rule.disallowed.clear()
             rule.disallowed.add(Url.objects.create(pattern='/'))
+        rule.sites.add(Site.objects.first())
