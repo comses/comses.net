@@ -175,7 +175,7 @@ class CodebaseReleaseStorage(FileSystemStorage):
     def validate_system_file(self, name, content) -> Optional[Message]:
         # FIXME: do we expect validate_file being run on full paths?
         if fs.has_system_files(name):
-            return self.error("system file: '{}'".format(name))
+            return self.error("Ignored system file '{}'".format(name))
         return None
 
     def validate_mimetype(self, name):
@@ -183,7 +183,7 @@ class CodebaseReleaseStorage(FileSystemStorage):
         mimetype = mimetypes.guess_type(name)[0]
         mimetype = mimetype if mimetype else '*/*'
         if not mimetype_matcher.match(mimetype):
-            return create_fs_message('File type mismatch for file {}'.format(name), self.stage,
+            return create_fs_message("Ignored file '{}'. File type mismatch.".format(name), self.stage,
                                      self.mimetype_mismatch_message_level)
         return None
 
@@ -357,7 +357,7 @@ class CodebaseReleaseFsApi:
     @property
     def rootdir(self):
         return Path(settings.LIBRARY_ROOT, str(self.uuid),
-                    'releases', 'id-{}'.format(self.release_id)).absolute()
+                    'releases', str(self.release_id)).absolute()
 
     @property
     def aip_dir(self):
