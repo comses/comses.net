@@ -428,15 +428,24 @@ class Codebase(index.Indexed, ClusterableModel):
     def media_url(self, name):
         return '{0}/media/{1}'.format(self.get_absolute_url(), name)
 
+    def get_all_next_possible_version_numbers(self, minor_only=False):
+        if self.releases.all():
+            possible_version_numbers = set()
+            for release in self.releases.all():
+                possible_version_numbers.update(release.possible_next_versions(minor_only))
+            for release in self.releases.all():
+                possible_version_numbers.discard(release.version_number)
+            return possible_version_numbers
+        else:
+            return {'1.0.0',}
+
     def next_version_number(self, version_number=None, version_bump=SemanticVersionBump.MINOR):
         if version_number is None:
-            # start off at v1.0.0
-            version_number = '1.0.0'
-            # get the latest release's version_number
-            # (can't use latest release because it is for published releases only)
-            last_release = self.releases.last()
-            if last_release is not None:
-                version_number = version_bump(last_release.version_number)
+            possible_version_numbers = self.get_all_next_possible_version_numbers(minor_only=True)
+            max_version_number = '1.0.0'
+            for version_number in possible_version_numbers:
+                max_version_number = semver.max_ver(max_version_number, version_number)
+            version_number = max_version_number
         return version_number
 
     def import_release(self, submitter=None, submitter_id=None, version_number=None, submitted_package=None, **kwargs):
@@ -828,7 +837,7 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
     def get_fs_api(self, mimetype_mismatch_message_level=MessageLevels.error,
                    system_file_presence_message_level=MessageLevels.error) -> CodebaseReleaseFsApi:
         return CodebaseReleaseFsApi(uuid=self.codebase.uuid, identifier=self.codebase.identifier,
-                                    version_number=self.version_number,
+                                    version_number=self.version_number, release_id=self.id,
                                     mimetype_mismatch_message_level=mimetype_mismatch_message_level)
 
     def add_contributor(self, submitter):
@@ -839,35 +848,30 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
         publisher = CodebaseReleasePublisher(self)
         publisher.publish()
 
-    @staticmethod
-    def possible_next_versions(version_number):
-        major, minor, bugfix = [int(v) for v in version_number.split('.')]
-        next_major = '{}.0.0'.format(major + 1)
+    def possible_next_versions(self, minor_only=False):
+        major, minor, patch = [int(v) for v in self.version_number.split('.')]
         next_minor = '{}.{}.0'.format(major, minor + 1)
-        next_bugfix = '{}.{}.{}'.format(major, minor, bugfix + 1)
+        if minor_only:
+            return {next_minor,}
+        next_major = '{}.0.0'.format(major + 1)
+        next_bugfix = '{}.{}.{}'.format(major, minor, patch + 1)
         return {next_major, next_minor, next_bugfix}
 
     def get_allowed_version_numbers(self):
         codebase = Codebase.objects.prefetch_related(
             Prefetch('releases', CodebaseRelease.objects.exclude(id=self.id))) \
                 .get(id=self.codebase_id)
-        if codebase.releases.all():
-            possible_version_numbers = set()
-            for release in codebase.releases.all():
-                possible_version_numbers.update(self.possible_next_versions(release.version_number))
-            for release in codebase.releases.all():
-                possible_version_numbers.discard(release.version_number)
-            return possible_version_numbers
-        else:
-            return set(['1.0.0'])
+        return codebase.get_all_next_possible_version_numbers()
 
     def set_version_number(self, version_number):
+        if self.is_published:
+            raise ValidationError({'non_field_errors': ['Cannot set version number on published release']})
         allowed_version_numbers = self.get_allowed_version_numbers()
         if version_number == '1.0.0':
-            raise ValidationError("Cannot change initial release version number")
+            raise ValidationError({'version_number': ["Cannot change initial release version number"]})
         if version_number not in allowed_version_numbers:
-            raise ValidationError("Not valid version number value. Must be one of {}"
-                    .format(', '.join(sorted(list(allowed_version_numbers)))))
+            raise ValidationError({'version_number': ["Not valid version number value for this release. Must be one of {}"
+                    .format(', '.join(sorted(list(allowed_version_numbers))))]})
         self.version_number = version_number
 
     def __str__(self):

@@ -334,12 +334,13 @@ class CodebaseReleaseFsApi:
         },
     }
 
-    def __init__(self, uuid, identifier, version_number,
+    def __init__(self, uuid, identifier, version_number, release_id,
                  system_file_presence_message_level=MessageLevels.error,
                  mimetype_mismatch_message_level=MessageLevels.error):
         self.uuid = uuid
         self.identifier = identifier
         self.version_number = version_number
+        self.release_id =  release_id
         self.mimetype_mismatch_message_level = mimetype_mismatch_message_level
 
     def logfilename(self):
@@ -356,7 +357,7 @@ class CodebaseReleaseFsApi:
     @property
     def rootdir(self):
         return Path(settings.LIBRARY_ROOT, str(self.uuid),
-                    'releases', 'v{}'.format(self.version_number)).absolute()
+                    'releases', 'id-{}'.format(self.release_id)).absolute()
 
     @property
     def aip_dir(self):

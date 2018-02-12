@@ -1,4 +1,4 @@
-import {Component, Prop} from 'vue-property-decorator'
+import {Component, Prop, Watch} from 'vue-property-decorator'
 import Vue from 'vue'
 import Vuex from 'vuex'
 import VueRouter from 'vue-router'
@@ -12,7 +12,12 @@ import {store} from './store'
 import {CreateOrUpdateHandler} from "api/handler";
 import {CodebaseReleaseAPI, CodebaseAPI} from "api";
 import * as _ from 'lodash';
+import yup from'yup';
 import {Progress} from "pages/codebase/release/progress";
+import {createFormValidator} from "pages/form";
+import {HandlerWithRedirect} from "handler";
+import Input from "components/forms/input";
+import MessageDisplay from "components/message_display";
 
 const codebaseReleaseAPI = new CodebaseReleaseAPI();
 const codebaseAPI = new CodebaseAPI();
@@ -119,17 +124,34 @@ class CodebaseEditFormPopup extends Vue {
     }
 }
 
+export const publishSchema = yup.object().shape({
+   version_number: yup.string().required().matches(/\d+\.\d+\.\d+/, 'Not a valid semantic version string. Must be in MAJOR.MINOR.PATCH format.')
+});
+
 @Component({
     template: `<div class="modal fade" id="publishCodebaseReleaseModal">
         <div class="modal-dialog" role="document">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">Publish Codebase Release {{ version_number }}</h5>
+                    <h5 class="modal-title">Publish Codebase Release {{ _version_number }}</h5>
+
                     <button type="button" class="close" @click="close" aria-label="Close">
                         <span aria-hidden="true">&times;</span>
                     </button>
                 </div>
                 <div class="modal-body">
+                    <p>Before publishing a release you must pick a semantic version to associate it with. In semantic 
+                    versioning a version is composed of major, minor and patch parts. A new major version should be 
+                    set if your new release is backwards incompatible with the previous release. A new release should 
+                    bump the minor number is the release introduced new features but remains backwards compatible. A
+                    new release should bump the patch number if the new release has bug fix release changes only.</p>
+                    <c-input v-model="version_number" name="version_number" :errorMsgs="errors.version_number"
+                        label="Version Number">
+                        <div class="form-text text-muted" slot="help">
+                            Change the semantic version before release. Please see here for more information on 
+                            <a href="https://semver.org/">semantic versioning</a>
+                        </div>
+                    </c-input>
                     <p>
                         Publishing a codebase result release makes possible for anyone to view and download it. 
                         Published releases must have code and documentation files and at least one contributor. Once a
@@ -139,60 +161,52 @@ class CodebaseEditFormPopup extends Vue {
                         Publishing a release cannot be undone. Do you want to continue?
                     </p>
                 </div>
-                <div class="alert alert-danger" v-for="error in errorMessages">{{ error }}</div>
+                <c-message-display :messages="statusMessages" @clear="clear">
+                </c-message-display>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-primary" @click="publish">Publish</button>
                     <button type="button" class="btn btn-secondary" @click="close">Cancel</button>
                 </div>
             </div>
         </div>
-    </div>`
+    </div>`,
+    components: {
+        'c-input': Input,
+        'c-message-display': MessageDisplay
+    }
 })
-class PublishModal extends Vue implements CreateOrUpdateHandler {
+class PublishModal extends createFormValidator(publishSchema) {
     @Prop()
     identifier: string;
 
     @Prop()
-    version_number: number;
+    _version_number: number;
 
     @Prop()
     absolute_url: string;
 
-    errorMessages: Array<string> = [];
-
-    get state() {
-        return null;
+    @Watch('_version_number', {immediate: true})
+    setVersionNumber() {
+        (<any>this).version_number = _.clone(this._version_number);
     }
 
     clear() {
-        this.errorMessages = [];
+        this.statusMessages = [];
     }
 
     close() {
-        (<any>$('#publishCodebaseReleaseModal')).modal('hide')
+        (<any>$('#publishCodebaseReleaseModal')).modal('hide');
         this.clear();
     }
 
-    handleOtherError(response_or_network_error) {
-        this.errorMessages = ['Network error'];
-    }
-
-    handleServerValidationError(responseError) {
-        const response = responseError.response;
-        _.forEach(response.data, msg => this.errorMessages.push(msg));
-    }
-
-    handleSuccessWithoutDataResponse(response) {
-        window.location.pathname = this.absolute_url;
-    }
-
-    handleSuccessWithDataResponse(response) {
-        window.location.pathname = this.absolute_url;
+    detailPageUrl(version_number) {
+        return codebaseReleaseAPI.detailUrl({identifier: this.identifier, version_number});
     }
 
     publish() {
         this.clear();
-        return codebaseReleaseAPI.publish({identifier: this.identifier, version_number: this.version_number}, this);
+        return codebaseReleaseAPI.publish({identifier: this.identifier, version_number: this._version_number},
+            new HandlerWithRedirect(this));
     }
 }
 
@@ -230,7 +244,7 @@ class PublishModal extends Vue implements CreateOrUpdateHandler {
                 <router-view :initialData="initialData"></router-view>
             </keep-alive>
             <c-codebase-edit-form-popup :identifier="identifier" :redirect="false" :files="$store.state.files.media" @updated="setCodebase"></c-codebase-edit-form-popup>
-            <c-publish-modal :version_number="version_number" :identifier="identifier" :absolute_url="absolute_url"></c-publish-modal>
+            <c-publish-modal :_version_number="version_number" :identifier="identifier" :absolute_url="absolute_url"></c-publish-modal>
         </div>
         <div v-else>
             <h1>Loading codebase release metadata...</h1>

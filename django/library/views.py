@@ -268,9 +268,11 @@ class CodebaseReleaseViewSet(CommonViewSetMixin, viewsets.ModelViewSet):
     @detail_route(methods=['post'])
     @transaction.atomic
     def publish(self, request, **kwargs):
+        version_number = request.data['version_number']
         codebase_release = self.get_object()
+        codebase_release.set_version_number(version_number)
         codebase_release.publish()
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        return Response(data=codebase_release.version_number, status=status.HTTP_200_OK)
 
     @detail_route(methods=['get'])
     @transaction.atomic

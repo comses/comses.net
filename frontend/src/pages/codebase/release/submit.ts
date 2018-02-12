@@ -1,4 +1,4 @@
-import { Component, Watch } from 'vue-property-decorator'
+import { Component, Prop, Watch } from 'vue-property-decorator'
 import Vue from 'vue'
 import Checkbox from 'components/forms/checkbox'
 import Multiselect from 'vue-multiselect'
