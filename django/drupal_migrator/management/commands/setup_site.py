@@ -437,11 +437,9 @@ class AboutSection(AbstractSection):
         people_page = PeoplePage(
             title='People',
             heading='About',
-            description=("The CoMSES Net Directorate is led by [Michael Barton](/users/cmbarton/), "
-                         "[Marco Janssen](/users/marcojanssen/), [Lilian Na'ia Alessa](/users/lil.alessa/), "
-                         "[Allen Lee](/users/alee/), and Ken Buetow in consultation with an executive board elected by "
-                         "full CoMSES Net members and a dedicated support staff with expertise in digital curation and "
-                         "community cyberinfrastructure development."
+            description=("CoMSES Net is led by [Michael Barton](/users/cmbarton/), [Marco Janssen](/users/marcojanssen/),"
+                         "[Lilian Na'ia Alessa](/users/lil.alessa/), [Allen Lee](/users/alee/), and Ken Buetow in "
+                         "consultation with an executive board elected by CoMSES Net members."
                          ),
         )
         directorate = ('cmbarton', 'marcojanssen', 'lil.alessa', 'alee')
@@ -450,7 +448,7 @@ class AboutSection(AbstractSection):
                               usernames=directorate,
                               offset=offset)
         offset += len(directorate)
-        board = ('fstonedahl', 'mzellner', 'mariam.kiran', 'garypolhill', 'abell')
+        board = ('fstonedahl', 'mzellner', 'mariam.kiran', 'abell', 'kgrogers', 'wrand')
         people_page.add_users(category=PeopleEntryPlacement.CATEGORIES.board,
                               usernames=board,
                               offset=offset)
@@ -465,7 +463,7 @@ class AboutSection(AbstractSection):
                               offset=offset)
         offset += len(staff)
 
-        alumni = ('volker.grimm@ufz.de', 'bruceedmonds', 'clepage', 'wrand', 'volker.grimm@ufz.de', 'bruceedmonds')
+        alumni = ('volker.grimm@ufz.de', 'bruceedmonds', 'clepage', 'garypolhill', )
         people_page.add_users(category=PeopleEntryPlacement.CATEGORIES.alumni,
                               usernames=alumni,
                               offset=offset)
