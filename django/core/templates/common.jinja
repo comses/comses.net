@@ -165,17 +165,16 @@
 {% endmacro %}
 
 {% macro render_social_profile_url(provider_name, profile_url, connect=False) %}
-{% with provider_icon_class = "ai text-orcid ai-" ~ provider_name if provider_name == "orcid" else "text-gray fa fa-"~provider_name %}
+{# special case orcid icon #}
+{% with provider_icon_class="ai text-orcid ai-orcid" if provider_name == "orcid" else "text-gray fa fa-" ~ provider_name %}
     {% if profile_url %}
         <a target='_blank' href='{{ profile_url }}'>
-            <i class='{{ provider_icon_class }}'></i>{{ profile_url }}
+            <i class='{{ provider_icon_class }}'></i> {{ profile_url }}
         </a>
-        <span class='fa fa-check-circle-o text-success'></span>
     {% elif connect %}
         <a title="{{ provider_name }}" href="{{ provider_login_url(request, provider_name, process="connect") }}">
              <i class='{{ provider_icon_class }}'></i> Connect your {{ provider_name }} account
         </a>
-        <span class='fa fa-link text-warning'></span>
     {% else %}
         No associated {{ provider_name }} account.
     {% endif %}
