@@ -1,4 +1,7 @@
 {% extends "base.jinja" %}
+
+{% set password_reset_url=url('account_reset_password') %}
+
 {% block title %}CoMSES Net Sign In{% endblock %}
 
 {% block introduction %}
@@ -10,7 +13,7 @@
 {% if has_errors %}
     <div class='alert alert-danger'>
         The username/email and password combination you entered didn't match our records.
-        <a href="{{ url('account_reset_password') }}">Reset your password?</a>
+        <a href="{{ password_reset_url }}">Reset your password?</a>
     </div>
 {% endif %}
 <p class='lead'>
@@ -39,15 +42,24 @@ and then visit <a href='{{url("home:account-profile")}}#local-signin'>your accou
         New user? You can sign up using the social auth buttons above or 
         <a href='/accounts/signup/'>create a new CoMSES Net account</a>.
         </p>
+{# FIXME: temporary alert, remove after X days #}
+<div class='alert alert-info'>
+    <i class='fa fa-2x fa-exclamation-circle'></i> 
+    Existing openabm.org accounts have been migrated but you'll need to <a href='{{password_reset_url}}'>request a password reset</a> in order to login. Sorry for the inconvenience! 
+    <ul>
+        <li>Usernames have been converted to all lowercase for standardization.</li>
+        <li>You can use the email address you used to register at openabm.org to login.</li>
+        <li>If you still have trouble accessing your openabm.org account, please <a href='/about/contact/'>contact us</a>.</li>
+    </ul>
+</div>
         <form id='signin-form' role="form" class="form-horizontal" method="post">
             {% csrf_token %}
             <div id='login' class='form-group'>
-                <input name='login' type='text' class='form-control {{ 'is-invalid' if has_errors }}' placeholder='Username or email'>
-                <small class='form-text text-muted'>Enter the username or email address you used to register with this site.</small>
+                <input autofocus name='login' type='text' class='form-control {{ 'is-invalid' if has_errors }}' placeholder='Username or email'>
             </div>
             <div id='password' class='form-group'>
                 <input name='password' type='password' class='form-control {{ 'is-invalid' if has_errors }}' placeholder='Password'>
-                <small><a href="{{ url('account_reset_password') }}">Forgot your password?</a></small>
+                <small><a href="{{ password_reset_url }}">Forgot your password?</a></small>
             </div>
             <button type="submit" class="btn btn-primary">
                 <i class='fa fa-sign-in'></i> Sign In
