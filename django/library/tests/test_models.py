@@ -83,12 +83,16 @@ class CodebaseReleaseTest(BaseModelTestCase):
     def test_version_number_mutation(self):
         other_codebase_release = self.codebase.create_release(initialize=False)
         version_numbers = other_codebase_release.get_allowed_version_numbers()
-        self.assertEqual(version_numbers, set(['1.0.1', '1.1.0', '2.0.0']))
-        with self.assertRaises(ValidationError):
-            self.codebase_release.set_version_number('0.9.0')
+        self.assertEqual(version_numbers, {'1.0.1', '1.1.0', '2.0.0'})
 
         with self.assertRaises(ValidationError):
-            other_codebase_release.set_version_number('1.2.0')
+            other_codebase_release.set_version_number('1.0.0')
+
+        with self.assertRaises(ValidationError):
+            other_codebase_release.set_version_number('foo-1.0.0')
+
+        other_codebase_release.set_version_number('54.2.0')
+        self.assertEqual(other_codebase_release.version_number, '54.2.0')
 
         other_codebase_release.set_version_number('1.0.1')
         self.assertEqual(other_codebase_release.version_number,'1.0.1')

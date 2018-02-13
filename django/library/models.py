@@ -869,12 +869,14 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
     def set_version_number(self, version_number):
         if self.is_published:
             raise ValidationError({'non_field_errors': ['Cannot set version number on published release']})
-        allowed_version_numbers = self.get_allowed_version_numbers()
-        if version_number == '1.0.0':
-            raise ValidationError({'version_number': ["Cannot change initial release version number"]})
-        if version_number not in allowed_version_numbers:
-            raise ValidationError({'version_number': ["Not valid version number value for this release. Must be one of {}"
-                    .format(', '.join(sorted(list(allowed_version_numbers))))]})
+        try:
+            semver.parse(version_number)
+        except ValueError:
+            raise ValidationError({'version_number': ['Version number not a valid semantic version string']})
+        not_allowed_version_numbers = CodebaseRelease.objects.filter(codebase=self.codebase).exclude(id=self.id)\
+            .order_by('version_number').values_list('version_number', flat=True)
+        if version_number in not_allowed_version_numbers:
+            raise ValidationError({'version_number': ["Another release has version number. Please select another"]})
         self.version_number = version_number
 
     def __str__(self):
