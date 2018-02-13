@@ -44,7 +44,7 @@ type UploadInfo = UploadSuccess | UploadProgress | UploadFailure;
                     <span aria-hidden="true"><span class="fa fa-close"></span></span>
                 </button>
                 <div v-for="(error, name) in fileUploadErrorMsgs">
-                    <div v-for="msg in error.msgs"><b>{{ msg.msg.stage }}</b>: {{ msg.msg.detail }}</div>
+                    <div v-for="msg in error.msgs"><b>{{ displayStage(msg.msg.stage) }}</b>: {{ msg.msg.detail }}</div>
                 </div>
             </div>
         </div>
@@ -88,6 +88,14 @@ export class Upload extends Vue {
 
     get uploadId() {
         return `upload_${_.uniqueId()}`;
+    }
+
+    displayStage(stage) {
+        if (stage === 'sip') {
+            return 'During archive unpack'
+        } else {
+            return 'During upload'
+        }
     }
 
     async handleFiles(event) {
