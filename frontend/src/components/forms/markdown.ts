@@ -16,6 +16,7 @@ enum ViewMode {
         <markdown-editor :value="value" @input="updateValue" ref="editor"></markdown-editor>
         <div v-if="isInvalid" class="invalid-feedback">{{ errorMessage }}</div>
         <slot name="help" :help="help">
+            <small class="form-text"><a href="https://en.wikipedia.org/wiki/Markdown" target="_blank">Markdown</a> styling is supported</small>
             <small class="form-text text-muted">{{ help }}</small>
         </slot>
     </div>`,
