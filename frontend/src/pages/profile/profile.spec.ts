@@ -1,12 +1,11 @@
 import EditProfile, {schema} from './edit'
-import {__BASIC_AUTH_USERNAME__} from "../../__config__/common"
 import { expect } from 'chai'
+import {__TEST_USER_ID__} from "../../__config__/common";
 
 describe('profile editing', () => {
     it('should allow updates', async () => {
         try {
-            // FIXME: figure out how to refactor this without username from __config__/common.ts
-            const vm = new EditProfile({ propsData: { pk: 3}}); 
+            const vm = new EditProfile({ propsData: { _pk: __TEST_USER_ID__}});
             await vm.initializeForm();
             expect((<any>vm).given_name).to.equal('Test');
             expect((<any>vm).email).to.equal('a@b.com');

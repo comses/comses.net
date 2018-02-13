@@ -128,7 +128,7 @@
         <div class='card-body'>
             {% if has_change_perm %}
                 <p class='card-text'>
-                <a href="{{ url('home:profile-edit', pk=user_pk) }}" class='btn btn-primary w-100'>
+                <a href="{{ url('home:profile-edit', user__pk=user_pk) }}" class='btn btn-primary w-100'>
                     Edit Profile</a>
                 </p>
             {% endif %}

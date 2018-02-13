@@ -16,8 +16,8 @@ urlpatterns = [
     url(r'^jobs/(?P<pk>\d+)/edit/$', views.JobUpdateView.as_view(), name='job-edit'),
     url(r'^jobs/add/$', views.JobCreateView.as_view(), name='job-add'),
     url(r'^about/contact/sent/$', views.ContactSentView.as_view(), name='contact-sent'),
-    url(r'^users/(?P<pk>\d+)/edit/$', views.ProfileUpdateView.as_view(), name='profile-edit'),
+    url(r'^users/(?P<user__pk>\d+)/edit/$', views.ProfileUpdateView.as_view(), name='profile-edit'),
     url(r'^accounts/profile/$', views.ProfileRedirectView.as_view(), name='account-profile'),
-    url(r'users/(?P<pk>\d+)/upload_picture/$', views.MemberProfileImageUploadView.as_view(),
+    url(r'users/(?P<user__pk>\d+)/upload_picture/$', views.MemberProfileImageUploadView.as_view(),
         name='profile-avatar-upload'),
 ] + router.urls

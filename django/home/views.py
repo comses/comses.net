@@ -91,7 +91,6 @@ class MemberProfileFilter(filters.BaseFilterBackend):
 class ProfileViewSet(CommonViewSetMixin, viewsets.ModelViewSet):
     lookup_field = 'user__pk'
     lookup_url_kwarg = 'pk'
-    lookup_value_regex = '[\w\.\-@]+'
     queryset = MemberProfile.objects.public().with_tags().order_by('id')
     pagination_class = SmallResultSetPagination
     filter_backends = (CaseInsensitiveOrderingFilter, MemberProfileFilter)
@@ -106,7 +105,8 @@ class ProfileViewSet(CommonViewSetMixin, viewsets.ModelViewSet):
         if self.action == 'retrieve':
             return self.queryset.prefetch_related('institution').prefetch_related(
                 Prefetch('user', User.objects.prefetch_related(
-                    Prefetch('codebases', Codebase.objects.with_tags().with_featured_images().with_contributors()))))
+                    Prefetch('codebases', Codebase.objects.with_tags().with_featured_images()
+                             .with_contributors(user=self.request.user)))))
         return self.queryset.with_institution().with_user()
 
     def retrieve(self, request, *args, **kwargs):
@@ -172,7 +172,7 @@ class JobUpdateView(FormUpdateView):
 class ProfileUpdateView(FormUpdateView):
     model = MemberProfile
     slug_field = 'user__pk'
-    slug_url_kwarg = 'pk'
+    slug_url_kwarg = 'user__pk'
 
 
 class EventFilter(filters.BaseFilterBackend):

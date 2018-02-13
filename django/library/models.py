@@ -221,11 +221,14 @@ class CodebaseQuerySet(models.QuerySet):
     def accessible(self, user):
         return get_viewable_objects_for_user(user=user, queryset=self.with_viewable_releases(user=user))
 
-    def with_contributors(self, release_qs=None, release_contributor_qs=None):
-        if release_qs is None:
-            release_qs = CodebaseRelease.objects.only('id', 'codebase_id')
-            # type: CodebaseReleaseQuerySet
-        return self.prefetch_related(Prefetch('releases', release_qs.with_release_contributors(release_contributor_qs)))
+    def with_contributors(self, release_contributor_qs=None, user=None):
+        if user is not None:
+            release_qs = get_viewable_objects_for_user(user=user, queryset=CodebaseRelease.objects.all())
+            codebase_qs = get_viewable_objects_for_user(user=user, queryset=self)
+        else:
+            release_qs = CodebaseRelease.objects.public().only('id', 'codebase_id')
+            codebase_qs = self.filter(live=True)
+        return codebase_qs.prefetch_related(Prefetch('releases', release_qs.with_release_contributors(release_contributor_qs)))
 
     @staticmethod
     def cache_contributors(iter):
@@ -240,7 +243,7 @@ class CodebaseQuerySet(models.QuerySet):
 
     def public(self):
         """Returns a queryset of all live codebases and their live releases"""
-        return self.with_contributors().filter(live=True)
+        return self.with_contributors()
 
     def peer_reviewed(self):
         return self.public().filter(peer_reviewed=True)
@@ -615,7 +618,7 @@ class CodebasePublication(models.Model):
 
 
 class CodebaseReleaseQuerySet(models.QuerySet):
-    def with_release_contributors(self, release_contributor_qs=None):
+    def with_release_contributors(self, release_contributor_qs=None, user=None):
         if release_contributor_qs is None:
             release_contributor_qs = ReleaseContributor.objects.only('id', 'contributor_id', 'release_id')
 

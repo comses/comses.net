@@ -56,7 +56,7 @@ class MemberProfileSerializer(serializers.ModelSerializer):
     # User fields
     date_joined = serializers.DateTimeField(source='user.date_joined', read_only=True, format='%c')
     family_name = serializers.CharField(source='user.last_name')
-    full_name = serializers.CharField(source='name')
+    full_name = serializers.CharField(source='name', read_only=True)
     given_name = serializers.CharField(source='user.first_name')
     username = serializers.CharField(source='user.username', read_only=True)
     user_pk = serializers.IntegerField(source='user.pk', read_only=True)
@@ -66,7 +66,7 @@ class MemberProfileSerializer(serializers.ModelSerializer):
     follower_count = serializers.ReadOnlyField(source='user.following.count')
     following_count = serializers.ReadOnlyField(source='user.followers.count')
 
-    codebases = RelatedCodebaseSerializer(source='user.codebases', many=True)
+    codebases = RelatedCodebaseSerializer(source='user.codebases', many=True, read_only=True)
 
     # Institution
     institution_name = serializers.CharField()

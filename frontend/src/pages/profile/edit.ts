@@ -11,7 +11,7 @@ import {ProfileAPI} from 'api'
 import * as _ from 'lodash'
 import {createFormValidator} from 'pages/form'
 import {HandlerWithRedirect} from "handler";
-import * as yup from 'yup'
+import yup from 'yup'
 
 export const schema = yup.object().shape({
     given_name: yup.string().required(),
@@ -100,20 +100,19 @@ const api = new ProfileAPI();
 })
 export default class EditProfile extends createFormValidator(schema) {
     @Prop()
-    pk: number | null;
+    _pk: number | null;
 
     detailPageUrl(state) {
-        this.state.pk = state.pk;
-        return api.detailUrl(this.state.pk);
+        return api.detailUrl(state.user_pk);
     }
 
     detailUrlParams(state) {
-        return state.pk;
+        return state.user_pk;
     }
 
     initializeForm() {
-        if (this.pk !== null) {
-            return this.retrieve(this.pk)
+        if (this._pk !== null) {
+            return this.retrieve(this._pk)
         }
     }
 
@@ -122,7 +121,7 @@ export default class EditProfile extends createFormValidator(schema) {
     }
 
     createOrUpdate() {
-        return api.update(this.state.pk, new HandlerWithRedirect(this));
+        return api.update(this.state.user_pk, new HandlerWithRedirect(this));
     }
 
     async createOrUpdateIfValid() {
@@ -136,7 +135,7 @@ export default class EditProfile extends createFormValidator(schema) {
 
     async uploadImage(event) {
         const file = event.target.files[0];
-        const response = await api.uploadProfilePicture({pk: this.pk}, file);
+        const response = await api.uploadProfilePicture({pk: this._pk}, file);
         this.state.avatar = response.data;
     }
 
