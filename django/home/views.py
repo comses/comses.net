@@ -106,7 +106,7 @@ class ProfileViewSet(CommonViewSetMixin, viewsets.ModelViewSet):
             return self.queryset.prefetch_related('institution').prefetch_related(
                 Prefetch('user', User.objects.prefetch_related(
                     Prefetch('codebases', Codebase.objects.with_tags().with_featured_images()
-                             .with_contributors(user=self.request.user)))))
+                             .with_contributors(user=self.request.user).order_by('-date_created')))))
         return self.queryset.with_institution().with_user()
 
     def retrieve(self, request, *args, **kwargs):
