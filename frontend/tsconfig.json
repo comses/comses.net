@@ -23,6 +23,9 @@
     }
   },
   "exclude": [
-      "node_modules/fullcalendar/**/*.d.ts"
+    "src/__config__/common.ts",
+    "**/*.spec.ts",
+    "**/mock_*.ts",
+    "node_modules/fullcalendar/**/*.d.ts"
   ]
 }

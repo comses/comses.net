@@ -83,7 +83,6 @@ module.exports = createConfig([
         filename: 'js/[name].[chunkhash].js',
         publicPath: '/static/'
     }),
-    typescript(),
     match('*.scss', { exclude: path.resolve('node_modules') }, [
         sass(),
         extractText('[name]-[contenthash:8].css')
@@ -137,10 +136,12 @@ module.exports = createConfig([
         'window.__BASE_URL__': process.env.BASE_URL
     }),
     env('development', [
-        aliases('connection.ts', 'handler.ts')
+        aliases('connection.ts', 'handler.ts'),
+        typescript(),
     ]),
     env('production', [
         aliases('connection.ts', 'handler.ts'),
+        typescript(),
         addPlugins([
             new webpack.optimize.UglifyJsPlugin({
                 sourceMap: true,
@@ -164,7 +165,8 @@ module.exports = createConfig([
         ])
     ]),
     env('testing',  [
-        aliases('mock_connection.ts', 'mock_handler.ts')
+        aliases('mock_connection.ts', 'mock_handler.ts'),
+        typescript({configFileName: 'tsconfig_test.json'}),
     ])
 ]);
 
