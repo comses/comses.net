@@ -23,9 +23,13 @@
 {% endif %}
 {% endmacro %}
 
-{% macro member_profile_href(member_profile) %}
-<a href='{{ member_profile.profile_url }}'>{{ member_profile.full_name }}</a>
-{% endmacro %}
+{% macro member_profile_href(member_profile) -%}
+<a href='{{ member_profile.profile_url }}'>{{ member_profile.full_name }}
+    {% if caller -%}
+        {{ caller() }}
+    {%- endif %}
+</a>
+{%- endmacro %}
 
 {% macro share_card(url) %}
 {# FIXME: add detail_url to share links #}

@@ -34,10 +34,19 @@ class MemberProfileListSerializer(serializers.ModelSerializer):
     username = serializers.CharField(source='user.username')
     profile_url = serializers.URLField(source='get_absolute_url', read_only=True)
     tags = TagSerializer(many=True)
+    avatar = serializers.SerializerMethodField()  # needed to materialize the FK relationship for wagtailimages
+    bio = MarkdownField()
+    research_interests = MarkdownField()
+
+    def get_avatar(self, instance):
+        request = self.context.get('request')
+        if request and request.accepted_media_type != 'text/html':
+            return instance.picture.get_rendition('fill-150x150').url if instance.picture else None
+        return instance.picture
 
     class Meta:
         model = MemberProfile
-        fields = ('date_joined', 'full_name', 'profile_url', 'tags', 'username',)
+        fields = ('date_joined', 'full_name', 'profile_url', 'tags', 'username', 'avatar', 'bio', 'research_interests',)
 
 
 class MemberProfileSerializer(serializers.ModelSerializer):

@@ -206,7 +206,7 @@ class MemberProfile(index.Indexed, ClusterableModel):
 
     @property
     def name(self):
-        return self.user.get_full_name() or 'User {0}'.format(self.user.pk)
+        return self.user.get_full_name() or self.user.username
 
     @property
     def email(self):

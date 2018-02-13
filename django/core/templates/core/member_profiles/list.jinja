@@ -2,21 +2,33 @@
 {% from "common.jinja" import item_component, list_page, paginator, breadcrumb, subnav, member_profile_href, search_tag_href %}
 
 {% macro render_user(member_profile, detail_url_name) %}
-    <div class="search-result">
-        <div class="title">
-            <h1>{{ member_profile_href(member_profile) }}<small class="text-muted pull-right">Joined on: {{ member_profile.date_joined }}</small></h1>
+<div class="search-result">
+    <div class="title">
+        <h1>
+            {% call member_profile_href(member_profile) %}
             {% if member_profile.avatar is not none %}
-                {{ image(member_profile.avatar, "fill-50x50", width=50, height=50, class="img-fluid img-thumbnail d-block rounded-circle") }}
+                <span class='float-left'>
+                    {{ image(member_profile.avatar, "fill-50x50", width=50, height=50, class="img-fluid img-thumbnail d-block rounded-circle") }}
+                </span>
             {% endif %}
+            {% endcall %}
+            <small class="text-muted float-right">Member since: {{ member_profile.date_joined }}</small>
+        </h1>
+        <div class='bio'>
+            {{ member_profile.bio }}
         </div>
-        {% if member_profile.tags %}
-            <div class="tag-list">
-                {% for tag in member_profile.tags %}
-                    {{ search_tag_href(tag, category='users') }}
-                {% endfor %}
-            </div>
-        {% endif %}
+        <div class='research-interests'>
+            {{ member_profile.research_interests }}
+        </div>
     </div>
+    {% if member_profile.tags %}
+        <div class="tag-list">
+        {% for tag in member_profile.tags %}
+            {{ search_tag_href(tag, category='users') }}
+        {% endfor %}
+        </div>
+    {% endif %}
+</div>
 {% endmacro %}
 
 {% block title %}Welcome to the CoMSES Net Community{% endblock %}
