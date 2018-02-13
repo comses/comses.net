@@ -126,6 +126,7 @@
     {# FIXME: set up JS logic for message / follow #}
     <div class='card-metadata'>
         <div class='card-body'>
+
             {% if has_change_perm %}
                 <p class='card-text'>
                 <a href="{{ url('home:profile-edit', user__pk=user_pk) }}" class='btn btn-primary w-100'>
@@ -165,6 +166,16 @@
                 {% else %}
                     none selected
                 {% endfor %}
+            </p>
+            <h2 class='card-title'>
+                Membership Status
+            </h2>
+            <p class="card-text">
+                {% if full_member %}
+                    <b class="text-success">Full Member</b>
+                {% else %}
+                    <b class="text-danger">Basic Member</b>
+                {% endif %}
             </p>
         </div>
     </div>
