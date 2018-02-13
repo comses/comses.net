@@ -15,10 +15,10 @@
             <small class="text-muted float-right">Member since: {{ member_profile.date_joined }}</small>
         </h1>
         <div class='bio'>
-            {{ member_profile.bio }}
+            {{ member_profile.bio|markdown }}
         </div>
         <div class='research-interests'>
-            {{ member_profile.research_interests }}
+            {{ member_profile.research_interests|markdown }}
         </div>
     </div>
     {% if member_profile.tags %}

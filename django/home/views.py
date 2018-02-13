@@ -38,6 +38,7 @@ search = get_search_backend()
 Contains wagtail related views
 """
 
+
 class ProfileRedirectView(LoginRequiredMixin, RedirectView):
     permanent = False
     query_string = False
@@ -91,7 +92,7 @@ class MemberProfileFilter(filters.BaseFilterBackend):
 class ProfileViewSet(CommonViewSetMixin, viewsets.ModelViewSet):
     lookup_field = 'user__pk'
     lookup_url_kwarg = 'pk'
-    queryset = MemberProfile.objects.public().with_tags().order_by('id')
+    queryset = MemberProfile.objects.public().with_tags().order_by('-user__date_joined')
     pagination_class = SmallResultSetPagination
     filter_backends = (CaseInsensitiveOrderingFilter, MemberProfileFilter)
     ordering_fields = ('user__username', 'user__last_name', 'user__email',)
