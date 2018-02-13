@@ -437,8 +437,8 @@ class AboutSection(AbstractSection):
         people_page = PeoplePage(
             title='People',
             heading='About',
-            description=("CoMSES Net is led by [Michael Barton](/users/cmbarton/), [Marco Janssen](/users/marcojanssen/),"
-                         "[Lilian Na'ia Alessa](/users/lil.alessa/), [Allen Lee](/users/alee/), and Ken Buetow in "
+            description=("CoMSES Net is led by [Michael Barton](/users/5/), [Marco Janssen](/users/4/),"
+                         "[Lilian Na'ia Alessa](/users/7/), [Allen Lee](/users/3/), and Ken Buetow in "
                          "consultation with an executive board elected by CoMSES Net members."
                          ),
         )
