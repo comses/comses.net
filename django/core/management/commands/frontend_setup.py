@@ -10,7 +10,8 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         user, created = User.objects.get_or_create(
-            username='__test_user__',
+            id=settings.TEST_USER_ID,
+            username=settings.TEST_USERNAME,
             defaults=dict(first_name='Test', last_name='User', email='a@b.com'))
         user.set_password(settings.TEST_BASIC_AUTH_PASSWORD)
         user.save()

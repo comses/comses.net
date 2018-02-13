@@ -41,6 +41,8 @@ fi
 DB_PASSWORD=$(head /dev/urandom | tr -dc A-Za-z0-9 | head -c42)
 DJANGO_SECRET_KEY=$(head /dev/urandom | tr -dc A-Za-z0-9 | head -c42)
 TEST_BASIC_AUTH_PASSWORD=$(head /dev/urandom | tr -dc A-Za-z0-9 | head -c42)
+TEST_USER_ID=10000000
+TEST_USERNAME=__test_user__
 
 echo "Running env substitution for DB_PASSWORD ${DB_PASSWORD} and DJANGO_SECRET_KEY ${DJANGO_SECRET_KEY}"
 
