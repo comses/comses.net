@@ -2,12 +2,12 @@ import logging
 
 from django import forms
 from django.conf import settings
-from django.core.mail import send_mail
+from django.core.mail import EmailMessage
 from django.template import loader
 from django.utils.translation import ugettext_lazy as _
 from wagtail.wagtailcore.models import Site
 
-from core.models import ComsesGroups, SocialMediaSettings
+from core.models import SocialMediaSettings
 
 logger = logging.getLogger(__name__)
 
@@ -42,7 +42,10 @@ class ContactForm(forms.Form):
 
     @property
     def recipient_list(self):
-        return SocialMediaSettings.for_site(self.request.site).contact_form_recipients
+        recipients = SocialMediaSettings.for_site(self.request.site).contact_form_recipients
+        if not recipients:
+            recipients = ('editors@comses.net',)
+        return recipients
 
     @property
     def subject(self):
@@ -64,10 +67,10 @@ class ContactForm(forms.Form):
     def save(self, fail_silently=False):
         if not self.is_valid():
             raise ValueError("Can't send a message from invalid contact form")
-        message_dict = {
-            'from_email': self.cleaned_data.get('email') or self.from_email,
-            'recipient_list': self.recipient_list,
-            'subject': self.subject,
-            'message': self.message,
-        }
-        send_mail(fail_silently=fail_silently, **message_dict)
+        email = EmailMessage(
+            subject=self.subject,
+            body=self.message,
+            to=self.recipient_list,
+            reply_to=[self.cleaned_data.get('email') or self.from_email],
+        )
+        email.send(fail_silently=fail_silently)
