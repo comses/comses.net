@@ -2,7 +2,7 @@ from allauth.account.models import EmailAddress
 from django.conf import settings
 from django.core.management.base import BaseCommand
 
-from core.models import MemberProfile, User, Institution
+from core.models import MemberProfile, User, Institution, ComsesGroups
 
 
 class Command(BaseCommand):
@@ -13,6 +13,7 @@ class Command(BaseCommand):
             id=settings.TEST_USER_ID,
             username=settings.TEST_USERNAME,
             defaults=dict(first_name='Test', last_name='User', email='a@b.com'))
+        ComsesGroups.initialize()
         user.set_password(settings.TEST_BASIC_AUTH_PASSWORD)
         user.save()
         mp = MemberProfile.objects.get(user=user)
