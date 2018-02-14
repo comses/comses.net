@@ -56,7 +56,7 @@
 {% endblock %}
 
 {% block sidebar %}
-    <div id="sidebar"></div>
+    <div id="sidebar" data-is-a-member="{% if user.is_authenticated %}true{% else %}false{% endif %}"></div>
 {% endblock %}
 
 {% block bottom %}

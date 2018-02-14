@@ -12,8 +12,13 @@ import {ProfileAPI} from 'api'
 @Component(<any>{
     // language=Vue
     template: `
-        <c-search submitLabel="Become a member" searchLabel="Search" submitUrl="/accounts/signup/" :searchUrl="query">
-            <div slot="searchForm">
+        <div>
+            <a class="text-white" href="/accounts/signup/" v-if="!is_a_member">
+                <div class="btn btn-primary w-100" tabindex="0">
+                    Become a member
+                </div>
+            </a>
+            <div>
                 <div class="card-metadata">
                     <div class="title">
                         Search
@@ -27,6 +32,11 @@ import {ProfileAPI} from 'api'
                     </div>
                 </div>
             </div>
+            <a class="text-white" :href="query">
+                <div class="btn btn-primary w-100" tabindex="0">
+                    Search
+                </div>
+            </a>
         </c-search>`,
     components: {
         'c-date-picker': DatePicker,
@@ -36,6 +46,9 @@ import {ProfileAPI} from 'api'
     }
 })
 export class SearchProfiles extends Vue {
+    @Prop()
+    is_a_member: boolean;
+
     private api = new ProfileAPI();
     fullTextSearch: string = '';
 
