@@ -201,6 +201,10 @@ class MemberProfile(index.Indexed, ClusterableModel):
         return self.user.is_active
 
     @property
+    def is_reviewer(self):
+        return self.user.groups.filter(name=ComsesGroups.REVIEWER.value).exists()
+
+    @property
     def username(self):
         return self.user.username
 

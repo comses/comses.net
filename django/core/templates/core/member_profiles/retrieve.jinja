@@ -177,6 +177,11 @@
                     <i class="text-secondary">Basic Member</i>
                 {% endif %}
             </p>
+            <p class="card-text"></p>
+                {% if is_reviewer %}
+                    <i class="text-success">Reviewer</i>
+                {% endif %}
+            </p>
         </div>
     </div>
 {% endblock %}

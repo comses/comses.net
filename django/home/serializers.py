@@ -150,4 +150,4 @@ class MemberProfileSerializer(serializers.ModelSerializer):
             'institution_name', 'institution_url',
             # MemberProfile
             'avatar', 'bio', 'name', 'degrees', 'full_member', 'tags', 'orcid_url', 'github_url', 'personal_url',
-            'professional_url', 'profile_url', 'research_interests',)
+            'is_reviewer', 'professional_url', 'profile_url', 'research_interests',)
