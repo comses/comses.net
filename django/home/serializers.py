@@ -83,7 +83,7 @@ class MemberProfileSerializer(serializers.ModelSerializer):
 
     def get_email(self, instance):
         request = self.context.get('request')
-        if request.user.is_anonymous():
+        if request and request.user.is_anonymous():
             return None
         else:
             return instance.email
@@ -100,7 +100,7 @@ class MemberProfileSerializer(serializers.ModelSerializer):
         raw_user = validated_data.pop('user')
         user.first_name = raw_user['first_name']
         user.last_name = raw_user['last_name']
-        user.email = self.context['request'].data['email']
+        user.email = self.initial_data['email']
         try:
             validate_email(user.email)
         except ValidationError as e:
@@ -116,6 +116,12 @@ class MemberProfileSerializer(serializers.ModelSerializer):
         else:
             institution = Institution.objects.create(**raw_institution)
             instance.institution = institution
+
+        # Full members cannot downgrade their status
+        if instance.full_member:
+            validated_data['full_member'] = True
+        else:
+            validated_data['full_member'] = bool(self.initial_data['full_member'])
 
         user.save()
         obj = super().update(instance, validated_data)

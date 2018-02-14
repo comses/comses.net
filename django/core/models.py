@@ -216,6 +216,15 @@ class MemberProfile(index.Indexed, ClusterableModel):
     def full_member(self):
         return self.user.groups.filter(name=ComsesGroups.FULL_MEMBER.value).exists()
 
+    @full_member.setter
+    def full_member(self, value):
+        group = Group.objects.get(name=ComsesGroups.FULL_MEMBER.value)
+        if value:
+            self.user.groups.add(group)
+        else:
+            self.user.groups.remove(group)
+
+
     def get_absolute_url(self):
         return reverse('home:profile-detail', kwargs={'pk': self.user.pk})
 

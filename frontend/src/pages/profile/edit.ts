@@ -12,6 +12,7 @@ import * as _ from 'lodash'
 import {createFormValidator} from 'pages/form'
 import {HandlerWithRedirect} from "handler";
 import yup from 'yup'
+import Checkbox from "components/forms/checkbox";
 
 export const schema = yup.object().shape({
     given_name: yup.string().required(),
@@ -25,7 +26,8 @@ export const schema = yup.object().shape({
     institution_url: yup.string().url(),
     bio: yup.string(),
     degrees: yup.array().of(yup.string().required()),
-    tags: yup.array().of(yup.object().shape({name: yup.string().required()}))
+    tags: yup.array().of(yup.object().shape({name: yup.string().required()})),
+    full_member: yup.boolean().required(),
 });
 
 const api = new ProfileAPI();
@@ -84,11 +86,18 @@ const api = new ProfileAPI();
         <c-tagger v-model="tags" name="tags" :errorMsgs="errors.tags" label="Keywords"
             :required="config.tags">
         </c-tagger>
+        <c-checkbox v-if="!_full_member" v-model="full_member" name="full_member" :errorMsgs="errors.full_member"
+            label="Full Member">
+            <div class="form-text text-muted" slot="help">
+                By checking this box, I agree to <a href="#" data-toggle="modal" data-target="#rightsAndResponsibilities">rights and responsibilities</a> of CoMSES Net full membership
+            </div>
+        </c-checkbox>
         <c-message-display :messages="statusMessages">
         </c-message-display>
         <button type="button" class="mt-3 btn btn-primary" @click="createOrUpdateIfValid">Save</button>
     </form>`,
     components: {
+        'c-checkbox': Checkbox,
         'c-markdown': Markdown,
         'c-message-display': MessageDisplay,
         'c-datepicker': Datepicker,
@@ -101,6 +110,8 @@ const api = new ProfileAPI();
 export default class EditProfile extends createFormValidator(schema) {
     @Prop()
     _pk: number | null;
+
+    _full_member: boolean = true;
 
     detailPageUrl(state) {
         return api.detailUrl(state.user_pk);
@@ -130,7 +141,10 @@ export default class EditProfile extends createFormValidator(schema) {
     }
 
     retrieve(pk: number) {
-        return api.retrieve(pk).then(r => this.state = r.data);
+        return api.retrieve(pk).then(r => {
+            this.state = r.data;
+            this._full_member = this.state.full_member;
+        });
     }
 
     async uploadImage(event) {
