@@ -4,7 +4,7 @@ import {SortBy} from "components/sort-by";
 function extract_membership_status() {
     const is_a_member_tag = document.getElementById('sidebar');
     const is_a_member_value = is_a_member_tag.getAttribute('data-is-a-member');
-    const is_a_member = is_a_member_value === 'true';
+    return is_a_member_value === 'true';
 }
 const is_a_member = extract_membership_status();
 

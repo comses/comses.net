@@ -37,7 +37,7 @@ import {ProfileAPI} from 'api'
                     Search
                 </div>
             </a>
-        </c-search>`,
+        </div>`,
     components: {
         'c-date-picker': DatePicker,
         'c-input': Input,
