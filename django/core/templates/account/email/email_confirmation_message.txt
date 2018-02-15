@@ -1,0 +1,12 @@
+{% load account %}{% user_display user as user_display %}{% load i18n %}{% autoescape off %}{% blocktrans with site_name=current_site.name site_domain=current_site.domain %}Greetings from {{ site_domain }}!
+
+You're receiving this email because a user at comses.net, {{ user_display }}, has registered this email address with their account.
+
+To confirm this is correct, please visit {{ activate_url }}
+
+If this is incorrect, you can ignore this email. 
+
+{% endblocktrans %}{% endautoescape %}
+{% blocktrans with site_name=current_site.name site_domain=current_site.domain %}Best regards,
+The {{ site_domain }} development team
+{% endblocktrans %}
