@@ -86,7 +86,7 @@ const api = new ProfileAPI();
         <c-tagger v-model="tags" name="tags" :errorMsgs="errors.tags" label="Keywords"
             :required="config.tags">
         </c-tagger>
-        <c-checkbox v-if="!_full_member" v-model="full_member" name="full_member" :errorMsgs="errors.full_member"
+        <c-checkbox v-if="!initial_full_member" v-model="full_member" name="full_member" :errorMsgs="errors.full_member"
             label="Full Member">
             <div class="form-text text-muted" slot="help">
                 By checking this box, I agree to <a href="#" data-toggle="modal" data-target="#rightsAndResponsibilities">rights and responsibilities</a> of CoMSES Net full membership
@@ -111,7 +111,7 @@ export default class EditProfile extends createFormValidator(schema) {
     @Prop()
     _pk: number | null;
 
-    _full_member: boolean = true;
+    initial_full_member: boolean = true;
 
     detailPageUrl(state) {
         return api.detailUrl(state.user_pk);
@@ -143,7 +143,7 @@ export default class EditProfile extends createFormValidator(schema) {
     retrieve(pk: number) {
         return api.retrieve(pk).then(r => {
             this.state = r.data;
-            this._full_member = this.state.full_member;
+            this.initial_full_member = this.state.full_member;
         });
     }
 

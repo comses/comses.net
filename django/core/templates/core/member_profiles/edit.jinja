@@ -16,7 +16,7 @@
             </div>
         </div>
     </div>
-    <div id="app" data-user-pk='{{ request.user.pk }}'></div>
+    <div id="app" data-user-pk='{{ object.user.id }}'></div>
 {% endblock %}
 
 {% block js %}
