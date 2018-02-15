@@ -26,8 +26,8 @@ class SignupForm(forms.Form):
 
     def signup(self, request, user):
         data = self.cleaned_data
-        user.username = data['username']
-        user.email = data['email']
+        user.username = data['username'].lower()
+        user.email = data['email'].lower()
         user.first_name = data['first_name']
         user.last_name = data['last_name']
         password = data['password1']
