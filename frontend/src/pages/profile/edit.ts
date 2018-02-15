@@ -81,7 +81,7 @@ const api = new ProfileAPI();
         </c-input>
         <c-edit-degrees :value="degrees" @create="degrees.push($event)" @remove="degrees.splice($event, 1)"
             @modify="degrees.splice($event.index, 1, $event.value)" name="degrees" :errorMsgs="errors.degrees"
-            label="Degrees" help="List of degrees and the institution, e.g., PhD., CS, Arizona State University" :required="config.degrees">
+            label="Degrees" help="List of degrees and the institution, e.g., PhD., CS, Arizona State University. Type into the input box and press enter to add a degree." :required="config.degrees">
         </c-edit-degrees>
         <c-tagger v-model="tags" name="tags" :errorMsgs="errors.tags" label="Keywords"
             :required="config.tags">
