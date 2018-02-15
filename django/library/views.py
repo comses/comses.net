@@ -210,6 +210,21 @@ class NestedCodebaseReleaseUnpublishedFilesPermission(permissions.BasePermission
         return True
 
 
+class CodebaseReleaseShareView(generics.RetrieveAPIView):
+    queryset = CodebaseRelease.objects.with_platforms().with_programming_languages()
+    lookup_field = 'share_uuid'
+    serializer_class = CodebaseReleaseSerializer
+    permission_classes = (permissions.AllowAny,)
+
+    def retrieve(self, request, *args, **kwargs):
+        logger.debug("retrieving object: %s", self.get_object())
+        release = self.get_object()
+        if not release.share_uuid:
+            release.regenerate_share_uuid()
+        serializer = self.get_serializer(release)
+        return Response(serializer.data, template_name='library/codebases/releases/retrieve.jinja')
+
+
 class CodebaseReleaseViewSet(CommonViewSetMixin, viewsets.ModelViewSet):
     namespace = 'library/codebases/releases/'
     lookup_field = 'version_number'

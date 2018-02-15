@@ -440,7 +440,7 @@ class Codebase(index.Indexed, ClusterableModel):
                 possible_version_numbers.discard(release.version_number)
             return possible_version_numbers
         else:
-            return {'1.0.0',}
+            return {'1.0.0', }
 
     def next_version_number(self, version_number=None, version_bump=SemanticVersionBump.MINOR):
         if version_number is None:
@@ -675,7 +675,7 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
 
     peer_reviewed = models.BooleanField(default=False)
     flagged = models.BooleanField(default=False)
-
+    share_uuid = models.UUIDField(default=uuid.uuid4, blank=True, null=True)
     identifier = models.CharField(max_length=128, unique=True, null=True)
     doi = models.CharField(max_length=128, unique=True, null=True)
     license = models.ForeignKey(License, null=True)
@@ -736,6 +736,10 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
         ]),
     ]
 
+    def regenerate_share_uuid(self):
+        self.share_uuid = uuid.uuid4()
+        self.save()
+
     def get_edit_url(self):
         return reverse('library:codebaserelease-edit', kwargs={'identifier': self.codebase.identifier,
                                                                'version_number': self.version_number})
@@ -746,6 +750,12 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
     def get_absolute_url(self):
         return reverse('library:codebaserelease-detail',
                        kwargs={'identifier': self.codebase.identifier, 'version_number': self.version_number})
+
+    @property
+    def share_url(self):
+        if not self.share_uuid:
+            self.regenerate_share_uuid()
+        return reverse('library:codebaserelease-share', kwargs={'share_uuid': self.share_uuid})
 
     # FIXME: lift magic constants
     @property
@@ -765,7 +775,7 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
                 return self.handle_url
             else:
                 return self.doi_url
-        return 'https://www.comses.net{0}'.format(self.get_absolute_url())
+        return '{0}{1}'.format(settings.BASE_URL, self.get_absolute_url())
 
     @property
     def citation_text(self):
@@ -855,15 +865,15 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
         major, minor, patch = [int(v) for v in self.version_number.split('.')]
         next_minor = '{}.{}.0'.format(major, minor + 1)
         if minor_only:
-            return {next_minor,}
+            return {next_minor, }
         next_major = '{}.0.0'.format(major + 1)
         next_bugfix = '{}.{}.{}'.format(major, minor, patch + 1)
         return {next_major, next_minor, next_bugfix}
 
     def get_allowed_version_numbers(self):
         codebase = Codebase.objects.prefetch_related(
-            Prefetch('releases', CodebaseRelease.objects.exclude(id=self.id))) \
-                .get(id=self.codebase_id)
+            Prefetch('releases', CodebaseRelease.objects.exclude(id=self.id))
+        ).get(id=self.codebase_id)
         return codebase.get_all_next_possible_version_numbers()
 
     def set_version_number(self, version_number):

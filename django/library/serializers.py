@@ -284,7 +284,7 @@ class CodebaseReleaseSerializer(serializers.ModelSerializer):
                   'release_notes', 'documentation', 'doi', 'download_count', 'embargo_end_date', 'first_published_at',
                   'last_modified', 'last_published_on', 'license', 'live', 'os', 'os_display', 'peer_reviewed',
                   'platforms', 'programming_languages', 'submitted_package', 'submitter', 'codebase', 'version_number',
-                  'id',)
+                  'id', 'share_url', )
 
 
 class CodebaseReleaseEditSerializer(CodebaseReleaseSerializer):

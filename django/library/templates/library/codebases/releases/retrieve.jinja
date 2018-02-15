@@ -58,12 +58,12 @@
             <div class='lead'>
                 {{ codebase.description|markdown }}
             </div>
-            <h3>Release Notes</h3>
+            <h3><u>Release Notes</u></h3>
             <div class='lead'>
             {% if release_notes %}
                 {{ release_notes|markdown }}
             {% else %}
-                There aren't any release notes associated with this release yet. 
+                No release notes were entered with this release.
             {% endif %}
             </div>
         </div>
@@ -71,16 +71,33 @@
     <div class='card-metadata'>
         <div class='card-body'>
             <h2 class='card-title'>Cite this Model</h2>
-            {% if live %}
-                <div class='card-text'>
+            <div class='card-text'>
+                {% if live %}
                     {{ citation_text|markdown }}
-                </div>
-            {% else %}
-                <p class='card-text'>
-                Hold on! This model is unpublished.
-                Perhaps the authors are not ready for it to be cited.
-                </p>
-            {% endif %}
+                {% elif user == submitter or user.is_superuser %}
+                    This model is currently <b>unpublished</b>.
+                    <div class='input-group'>
+                        <div class='input-group-prepend'>
+                            <span class='input-group-text'>
+                                <i class='fa fa-retweet'></i>
+                            </span>
+                        </div>
+                        <input id='release-share-url' class='form-control' value='{{ request.build_absolute_uri(share_url) }}'>
+                        <div class='input-group-append'>
+                            <span class='btn btn-clipboard input-group-text' data-clipboard-target='#release-share-url'>
+                                <i class='fa fa-copy'></i>
+                                </button>
+                        </div>
+                    </div>
+                    <small class='text-muted'>
+                        Use this link to share this release privately with others. Anyone with this URL will be able to
+                        access this release.
+                    </small>
+                {% else %}
+                    Hold on! This model is unpublished.
+                    Perhaps the authors are not ready for it to be cited.
+                {% endif %}
+            </div>
         </div>
     </div>
     {% if codebase.replication %}
@@ -257,9 +274,10 @@
                 <p class="card-text">
                 {% if codebase.peer_reviewed %}
                     <img src="{{ static("images/icons/peer-reviewed.png") }}" alt="Peer Reviewed">
-                {% elif user == submitter %}
+                {% elif user == submitter or user.is_superuser %}
                     {# FIXME: check if user has permissions to request review, currently naive submitter check #}
-                    <a class='btn btn-primary'>Request Review</a>
+                    <a class='btn btn-primary'>Request Review</a><br>
+                    <i>coming soon</i>
                 {% else %}
                     Not reviewed
                 {% endif %}
@@ -273,8 +291,7 @@
         </a>
     {% endif %}
     {% if live %}
-        <a href="{{  url('library:codebaserelease-download',
-            identifier=codebase.identifier, version_number=version_number) }}">
+        <a href="{{ url('library:codebaserelease-download', identifier=codebase.identifier, version_number=version_number) }}">
             <button type="button" class="btn btn-primary my-1 w-100">Download</button>
         </a>
     {% endif %}
@@ -284,5 +301,10 @@
 {% endblock %}
 
 {% block js %}
+    {# FIXME: remove this if there's a better way to include npm dependencies manually in a page #}
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/1.7.1/clipboard.min.js"></script>
+    <script>
+        new Clipboard('.btn-clipboard');
+    </script>
     {{ embed_discourse_comments(live) }}
 {% endblock %}

@@ -28,4 +28,6 @@ urlpatterns = [
     url(r'^codebases/(?P<identifier>[\w\-.]+)/releases/add/$',
         views.CodebaseReleaseFormCreateView.as_view(),
         name='codebaserelease-add'),
+    url(r'^codebase-release/(?P<share_uuid>[\w\-.]+)/$', views.CodebaseReleaseShareView.as_view(),
+        name='codebaserelease-share'),
 ] + router.urls
