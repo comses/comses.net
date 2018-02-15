@@ -82,7 +82,7 @@
                                 <i class='fa fa-retweet'></i>
                             </span>
                         </div>
-                        <input id='release-share-url' class='form-control' value='{{ request.build_absolute_uri(share_url) }}'>
+                        <input id='release-share-url' readonly class='form-control normal-readonly' value='{{ request.build_absolute_uri(share_url) }}'>
                         <div class='input-group-append'>
                             <span class='btn btn-clipboard input-group-text' data-clipboard-target='#release-share-url'>
                                 <i class='fa fa-copy'></i>
@@ -276,7 +276,7 @@
                     <img src="{{ static("images/icons/peer-reviewed.png") }}" alt="Peer Reviewed">
                 {% elif user == submitter or user.is_superuser %}
                     {# FIXME: check if user has permissions to request review, currently naive submitter check #}
-                    <a class='btn btn-primary'>Request Review</a><br>
+                    <div class='btn btn-primary'>Request Review</div><br>
                     <i>coming soon</i>
                 {% else %}
                     Not reviewed
