@@ -1,7 +1,9 @@
 import logging
 
+from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 from django.core.validators import validate_email
+from django.db import transaction
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError as DrfValidationError
 
@@ -69,8 +71,8 @@ class MemberProfileSerializer(serializers.ModelSerializer):
     codebases = RelatedCodebaseSerializer(source='user.codebases', many=True, read_only=True)
 
     # Institution
-    institution_name = serializers.CharField()
-    institution_url = serializers.URLField()
+    institution_name = serializers.CharField(required=False)
+    institution_url = serializers.URLField(required=False)
 
     # MemberProfile
     avatar = serializers.SerializerMethodField()  # needed to materialize the FK relationship for wagtailimages
@@ -94,6 +96,7 @@ class MemberProfileSerializer(serializers.ModelSerializer):
             return instance.picture.get_rendition('fill-150x150').url if instance.picture else None
         return instance.picture
 
+    @transaction.atomic
     def update(self, instance, validated_data):
         raw_tags = TagSerializer(many=True, data=validated_data.pop('tags'))
         user = instance.user
@@ -102,7 +105,10 @@ class MemberProfileSerializer(serializers.ModelSerializer):
         user.last_name = raw_user['last_name']
         user.email = self.initial_data['email']
         try:
+            # FIXME: need to send email verification again via django-allauth
             validate_email(user.email)
+            if User.objects.filter(email=user.email).exclude(pk=user.pk).exists():
+                raise DrfValidationError({'email': "This email address is already taken"})
         except ValidationError as e:
             raise DrfValidationError({'email': e.messages})
 

@@ -22,8 +22,8 @@ export const schema = yup.object().shape({
     orcid_url: yup.string().nullable(),
     personal_url: yup.string().url(),
     professional_url: yup.string().url(),
-    institution_name: yup.string(),
-    institution_url: yup.string().url(),
+    institution_name: yup.string().nullable(),
+    institution_url: yup.string().url().nullable(),
     bio: yup.string(),
     degrees: yup.array().of(yup.string().required()),
     tags: yup.array().of(yup.object().shape({name: yup.string().required()})),
@@ -47,8 +47,8 @@ const api = new ProfileAPI();
             <a target='_blank' :href='orcid_url'>{{ orcid_url }}</a>
         </div>
         <div class='form-group' v-else>
-            <span class='fa fa-link'></span> <a title='orcid' href='/accounts/orcid/login/?process=connect'>Connect your ORCID account</a>
-            <span class='ai ai-orcid'></span>
+            <span class='text-orcid ai ai-orcid'></span>
+            <a title='orcid' href='/accounts/orcid/login/?process=connect'>Connect your ORCID account</a>
         </div>
 
         <c-input v-model="given_name" name="given_name" :errorMsgs="errors.given_name" label="Given Name"
@@ -66,14 +66,14 @@ const api = new ProfileAPI();
         </c-markdown>
 
         <c-input type="url" v-model="personal_url" name="personal_url" :errorMsgs="errors.personal_url"
-            label="Personal URL" help="A link to your personal modeling related website" :required="config.personal_url">
+            label="Personal URL" help="A link to your personal computational modeling related website" :required="config.personal_url">
         </c-input>
         <c-input type="url" v-model="professional_url" name="professional_url" :errorMsgs="errors.professional_url"
                  label="Professional URL" help="A link to your institutional or professional profile page."
                  :required="config.professional_url">
         </c-input>
         <c-input v-model="institution_name" name="institution_name" :errorMsgs="errors.institution_name"
-            label="Institution" help="The primary place you are currently working at"
+            label="Institution" help="Your primary institutional affiliation or place of work"
             :required="config.institution_name">
         </c-input>
         <c-input v-model="institution_url" name="institution_url" :errorMsgs="errors.institution_url"
@@ -81,7 +81,7 @@ const api = new ProfileAPI();
         </c-input>
         <c-edit-degrees :value="degrees" @create="degrees.push($event)" @remove="degrees.splice($event, 1)"
             @modify="degrees.splice($event.index, 1, $event.value)" name="degrees" :errorMsgs="errors.degrees"
-            label="Degrees" help="The institution and name of the degrees you recieved" :required="config.degrees">
+            label="Degrees" help="List of degrees and the institution, e.g., PhD., CS, Arizona State University" :required="config.degrees">
         </c-edit-degrees>
         <c-tagger v-model="tags" name="tags" :errorMsgs="errors.tags" label="Keywords"
             :required="config.tags">
