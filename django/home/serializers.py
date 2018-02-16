@@ -107,8 +107,12 @@ class MemberProfileSerializer(serializers.ModelSerializer):
         try:
             # FIXME: need to send email verification again via django-allauth
             validate_email(user.email)
-            if User.objects.filter(email=user.email).exclude(pk=user.pk).exists():
-                raise DrfValidationError({'email': "This email address is already taken"})
+            users_with_email = User.objects.filter(email=user.email).exclude(pk=user.pk)
+            if users_with_email.exists():
+                logger.warning("Unable to register email %s, already owned by [%s]",
+                               user.email,
+                               users_with_email.values_list('pk', flat=True))
+                raise DrfValidationError({'email': "This email address is already taken."})
         except ValidationError as e:
             raise DrfValidationError({'email': e.messages})
 
