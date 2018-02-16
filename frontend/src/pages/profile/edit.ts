@@ -19,7 +19,8 @@ export const schema = yup.object().shape({
     family_name: yup.string().required(),
     email: yup.string().email().required(),
     research_interests: yup.string(),
-    orcid_url: yup.string().nullable(),
+    orcid_url: yup.string().url().nullable(),
+    github_url: yup.string().url().nullable(),
     personal_url: yup.string().url(),
     professional_url: yup.string().url(),
     institution_name: yup.string().nullable(),
@@ -34,21 +35,39 @@ const api = new ProfileAPI();
 
 @Component(<any>{
     template: `<form v-cloak>
-        <div class="form-group">
-            <label class="form-control-label">Profile Picture</label>
-            <input type="file" class="form-control-file" @change="uploadImage">
-            <img class='mt-3 d-block rounded-circle img-fluid img-thumbnail' alt='Profile Image' v-if="state.avatar" :src="state.avatar">
-            <img class='mt-3 d-block rounded-circle img-fluid img-thumbnail' src='holder.js/150x150' v-else>
+        <div class='row'>
+        <div class="form-group col-6">
+            <h3>Profile image</h3>
+            <label style='cursor: pointer; margin-top: -20px;' for='profileUpload' class="form-control-label">
+            <img class='mt-3 d-block rounded img-fluid img-thumbnail' alt='Profile Image' v-if="state.avatar" :src="state.avatar">
+            <img class='mt-3 d-block rounded img-fluid img-thumbnail' src='holder.js/150x150?text=Click to edit' v-else>
+            </label>
+            <input id='profileUpload' type="file" class="d-none form-control-file" @change="uploadImage">
         </div>
 
-        <div class='form-group' v-if='orcid_url'>
-            ORCID
-            <a target='_blank' href='https://orcid.org/'><span class='text-orcid ai ai-orcid'></span></a> |
-            <a target='_blank' :href='orcid_url'>{{ orcid_url }}</a>
-        </div>
-        <div class='form-group' v-else>
-            <span class='text-orcid ai ai-orcid'></span>
+        <div class='form-group col-6'>
+        <h3>Social authentication</h3>
+        <ul class='list-group'>
+        <li class='list-group-item'>
+        <a target='_blank' href='https://orcid.org/'><span class='text-orcid ai ai-orcid'></span></a>
+        <span v-if='orcid_url'>
+            <a :href='orcid_url'>{{ orcid_url }}</a>
+        </span>
+        <span v-else>
             <a title='orcid' href='/accounts/orcid/login/?process=connect'>Connect your ORCID account</a>
+        </span>
+        </li>
+        <li class='list-group-item'>
+        <a target='_blank' href='https://github.com/'><span class='text-gray fa fa-github'></span></a>
+        <span v-if='github_url'>
+            <a :href='github_url'>{{ github_url }}</a>
+        </span>
+        <span v-else>
+            <a title='github' href='/accounts/github/login/?process=connect'>Connect your GitHub account</a>
+        </span>
+        </li>
+        </ul>
+        </div>
         </div>
 
         <c-input v-model="given_name" name="given_name" :errorMsgs="errors.given_name" label="Given Name"
@@ -89,7 +108,7 @@ const api = new ProfileAPI();
         <c-checkbox v-if="!initial_full_member" :required="false" v-model="full_member" name="full_member" :errorMsgs="errors.full_member"
             label="Full Member">
             <div class="form-text text-muted" slot="help">
-                By checking this box, I agree to <a href="#" data-toggle="modal" data-target="#rightsAndResponsibilities">rights and responsibilities</a> of CoMSES Net full membership
+                By checking this box, I agree to the <a href="#" data-toggle="modal" data-target="#rightsAndResponsibilities">rights and responsibilities</a> of CoMSES Net full membership.
             </div>
         </c-checkbox>
         <c-message-display :messages="statusMessages">
