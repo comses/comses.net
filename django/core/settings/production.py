@@ -17,6 +17,9 @@ EMAIL_USE_TLS = True
 
 ALLOWED_HOSTS = ['.comses.net']
 
+# http://django-allauth.readthedocs.io/en/latest/providers.html#orcid
+SOCIALACCOUNT_PROVIDERS.pop('orcid', None)
+
 WSGI_APPLICATION = 'core.wsgi.application'
 
 WAGTAILSEARCH_BACKENDS = {

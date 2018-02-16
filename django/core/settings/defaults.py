@@ -15,6 +15,7 @@ from enum import Enum
 # DEFAULT_EXTENSIONS defined at https://github.com/niwinz/django-jinja/blob/master/django_jinja/builtins/__init__.py
 from django_jinja.builtins import DEFAULT_EXTENSIONS
 
+
 class Environment(Enum):
     DEVELOPMENT = 0
     STAGING = 1
@@ -401,6 +402,7 @@ SOCIALACCOUNT_PROVIDERS = {
         ],
     },
     # http://django-allauth.readthedocs.io/en/latest/providers.html#orcid
+    # FIXME: must be deleted in production
     'orcid': {
         'BASE_DOMAIN': 'sandbox.orcid.org',
         'MEMBER_API': True,
