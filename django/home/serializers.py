@@ -108,27 +108,6 @@ class MemberProfileSerializer(serializers.ModelSerializer):
         user.save()
 
         new_email = self.initial_data['email']
-        try:
-            validate_email(new_email)
-            # Check if any user other the user currently being edited has an email account with the same address as the
-            # new email
-            existing_email_address = \
-                EmailAddress.objects.filter(email=new_email).exclude(user=user).values_list('email')\
-                .union(User.objects.filter(email=new_email).exclude(pk=user.pk).values_list('email'))
-            if existing_email_address.exists():
-                logger.warning("Unable to register email %s, already owned by [%s]",
-                               user.email,
-                               existing_email_address.values_list('user__pk', flat=True))
-                raise DrfValidationError({'email': ["This email address is already taken."]})
-        except ValidationError as e:
-            raise DrfValidationError({'email': e.messages})
-
-        if user.email != new_email:
-            if self.context.get('request'):
-                sender = self.context['request']
-            else:
-                sender = self
-            transaction.on_commit(lambda: EmailAddress.objects.add_email(sender, user, new_email, confirm=True))
 
         raw_institution = {'name': validated_data.pop('institution_name'),
                            'url': validated_data.pop('institution_url')}
@@ -149,6 +128,25 @@ class MemberProfileSerializer(serializers.ModelSerializer):
 
         obj = super().update(instance, validated_data)
         self.save_tags(instance, raw_tags)
+
+        if user.email != new_email:
+            try:
+                validate_email(new_email)
+                # Check if any user other the user currently being edited has an email account with the same address as the
+                # new email
+                existing_email_address = \
+                    EmailAddress.objects.filter(email=new_email).exclude(user=user).values_list('email')\
+                    .union(User.objects.filter(email=new_email).exclude(pk=user.pk).values_list('email'))
+                if existing_email_address.exists():
+                    logger.warning("Unable to register email %s, already owned by [%s]",
+                                   user.email,
+                                   existing_email_address.values_list('user__pk', flat=True))
+                    raise DrfValidationError({'email': ["This email address is already taken."]})
+            except ValidationError as e:
+                raise DrfValidationError({'email': e.messages})
+
+            sender = self.context.get('request')
+            EmailAddress.objects.add_email(sender, user, new_email, confirm=True)
 
         return obj
 
