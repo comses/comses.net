@@ -24,7 +24,7 @@ import * as draggable from 'vuedraggable'
     components: {draggable}
 })
 export default class EditTextList extends BaseControl {
-    @Prop({default: 'Add item'})
+    @Prop({default: 'Press enter to add item'})
     placeholder: string;
 
     @Prop()

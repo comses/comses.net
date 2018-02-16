@@ -1,6 +1,7 @@
 import logging
 import pathlib
 
+from allauth.account.views import EmailView
 from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.core.exceptions import PermissionDenied
 from django.db import transaction
