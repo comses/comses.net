@@ -1,10 +1,11 @@
 {% load account %}{% user_display user as user_display %}{% load i18n %}{% autoescape off %}{% blocktrans with site_name=current_site.name site_domain=current_site.domain %}Greetings from {{ site_domain }}!
 
-You're receiving this email because a user at comses.net, {{ user_display }}, has registered this email address with their account.
+You're receiving this email because a user at comses.net {{ user_display }} registered this email address with their account.
 
 To confirm this is correct, please visit {{ activate_url }}
 
-If this is incorrect, you can ignore this email. 
+If this is incorrect and you did not attempt to register this email with comses.net, you can safely ignore this email -
+{{ user_display }} probably entered the wrong email.
 
 {% endblocktrans %}{% endautoescape %}
 {% blocktrans with site_name=current_site.name site_domain=current_site.domain %}Best regards,
