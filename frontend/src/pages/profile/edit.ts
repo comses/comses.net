@@ -81,12 +81,12 @@ const api = new ProfileAPI();
         </c-input>
         <c-edit-degrees :value="degrees" @create="degrees.push($event)" @remove="degrees.splice($event, 1)"
             @modify="degrees.splice($event.index, 1, $event.value)" name="degrees" :errorMsgs="errors.degrees"
-            label="Degrees" help="List of degrees and the institution, e.g., PhD., CS, Arizona State University. Type into the input box and press enter to add a degree." :required="config.degrees">
+            label="Degrees" help="A list of degrees earned and their associated institutions, e.g., Ph.D., Anthropology, Arizona State University. Press enter after each degree to add them." :required="config.degrees">
         </c-edit-degrees>
         <c-tagger v-model="tags" name="tags" :errorMsgs="errors.tags" label="Keywords"
             :required="config.tags">
         </c-tagger>
-        <c-checkbox v-if="!initial_full_member" v-model="full_member" name="full_member" :errorMsgs="errors.full_member"
+        <c-checkbox v-if="!initial_full_member" :required="false" v-model="full_member" name="full_member" :errorMsgs="errors.full_member"
             label="Full Member">
             <div class="form-text text-muted" slot="help">
                 By checking this box, I agree to <a href="#" data-toggle="modal" data-target="#rightsAndResponsibilities">rights and responsibilities</a> of CoMSES Net full membership
