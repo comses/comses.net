@@ -26,10 +26,12 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         allow_all = options['allow']
         rule, created = Rule.objects.get_or_create(robot='*')
+        rule.allowed.clear()
+        rule.disallowed.clear()
         if allow_all:
             # consider using Sitemap for Rule creation later
-            pass
+            rule.disallowed.add(Url.objects.create(pattern='/api'))
+            rule.disallowed.add(Url.objects.create(pattern='/accounts'))
         else:
-            rule.disallowed.clear()
             rule.disallowed.add(Url.objects.create(pattern='/'))
         rule.sites.add(Site.objects.first())
