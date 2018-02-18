@@ -27,9 +27,9 @@
             <div class='mt-5'>
                 {% if avatar is none %}
                     <img src="holder.js/150x150?text=No picture available"
-                         class="img-fluid mx-auto d-block rounded-circle">
+                         class="img-fluid mx-auto d-block rounded">
                 {% else %}
-                    {{ image(avatar, "fill-150x150", width=150, height=150, class="img-fluid img-thumbnail mx-auto d-block rounded-circle") }}
+                    {{ image(avatar, "fill-150x150", width=150, height=150, class="img-fluid img-thumbnail mx-auto d-block rounded") }}
                 {% endif %}
             </div>
         </div>
