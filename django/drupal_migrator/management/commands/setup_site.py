@@ -198,7 +198,7 @@ class ResourceSection(AbstractSection):
                   'Input, and Submodels*. \n\n'
                   'In addition to the original 2006 publication, Grimm et al. have continued to publish updates '
                   'to the protocol with examples of its application to research projects.\n\n'
-                  '- [The ODD Protocol: a review and first update](http://dx.doi.org/10.1016/j.ecolmodel.2010.08.019)\n'
+                  '- [The ODD Protocol: a review and first update](https://doi.org/10.1016/j.ecolmodel.2010.08.019)\n'
                   '- [Using the ODD Protocol for Describing Three Agent-Based Social Simulation Models of '
                   'Land-Use Change](http://jasss.soc.surrey.ac.uk/11/2/3.html)'
                   )
