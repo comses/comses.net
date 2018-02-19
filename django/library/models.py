@@ -676,7 +676,7 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
 
     peer_reviewed = models.BooleanField(default=False)
     flagged = models.BooleanField(default=False)
-    share_uuid = models.UUIDField(default=uuid.uuid4, blank=True, null=True)
+    share_uuid = models.UUIDField(default=None, blank=True, null=True, unique=True)
     identifier = models.CharField(max_length=128, unique=True, null=True)
     doi = models.CharField(max_length=128, unique=True, null=True)
     license = models.ForeignKey(License, null=True)
@@ -753,10 +753,23 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
                        kwargs={'identifier': self.codebase.identifier, 'version_number': self.version_number})
 
     @property
+    def review_download_url(self):
+        if not self.share_uuid:
+            self.regenerate_share_uuid()
+        return reverse('library:codebaserelease-share-download', kwargs={'share_uuid': self.share_uuid})
+
+    @property
     def share_url(self):
         if not self.share_uuid:
             self.regenerate_share_uuid()
-        return reverse('library:codebaserelease-share', kwargs={'share_uuid': self.share_uuid})
+        return reverse('library:codebaserelease-share-detail', kwargs={'share_uuid': self.share_uuid})
+
+    @property
+    def regenerate_share_url(self):
+        if not self.share_uuid:
+            self.regenerate_share_uuid()
+        return reverse('library:codebaserelease-regenerate-share-uuid', kwargs={'identifier': self.codebase.identifier,
+                                                                                'version_number': self.version_number})
 
     # FIXME: lift magic constants
     @property

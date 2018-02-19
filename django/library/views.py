@@ -1,7 +1,6 @@
 import logging
 import pathlib
 
-from allauth.account.views import EmailView
 from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.core.exceptions import PermissionDenied
 from django.db import transaction
@@ -211,7 +210,8 @@ class NestedCodebaseReleaseUnpublishedFilesPermission(permissions.BasePermission
         return True
 
 
-class CodebaseReleaseShareView(generics.RetrieveAPIView):
+class CodebaseReleaseShareViewSet(CommonViewSetMixin, mixins.RetrieveModelMixin, viewsets.GenericViewSet):
+    namespace = 'library/codebases/releases/'
     queryset = CodebaseRelease.objects.with_platforms().with_programming_languages()
     lookup_field = 'share_uuid'
     serializer_class = CodebaseReleaseSerializer
@@ -220,10 +220,25 @@ class CodebaseReleaseShareView(generics.RetrieveAPIView):
     def retrieve(self, request, *args, **kwargs):
         logger.debug("retrieving object: %s", self.get_object())
         release = self.get_object()
-        if not release.share_uuid:
-            release.regenerate_share_uuid()
         serializer = self.get_serializer(release)
-        return Response(serializer.data, template_name='library/codebases/releases/retrieve.jinja')
+        return Response(serializer.data)
+
+    @detail_route(methods=['get'])
+    def download(self, request, *args, **kwargs):
+        codebase_release = self.get_object()
+        if codebase_release.live:
+            raise Http404('Cannot download review archive on published release')
+        fs_api = codebase_release.get_fs_api()
+        try:
+            f, mimetype = fs_api.retrieve_review_archive()
+            response = FileResponse(f, content_type=mimetype)
+            response['Content-Disposition'] = 'attachment; filename={}'.format(codebase_release.archive_filename)
+        except FileNotFoundError:
+            logger.error("Unable to find review archive for codebase release %s (%s)", codebase_release.pk,
+                         codebase_release.get_absolute_url())
+            raise Http404()
+
+        return response
 
 
 class CodebaseReleaseViewSet(CommonViewSetMixin, viewsets.ModelViewSet):
@@ -280,6 +295,14 @@ class CodebaseReleaseViewSet(CommonViewSetMixin, viewsets.ModelViewSet):
         crs.is_valid(raise_exception=True)
         crs.save()
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+    @detail_route(methods=['post'])
+    def regenerate_share_uuid(self, request, **kwargs):
+        codebase_release = self.get_object()
+        if codebase_release.live:
+            raise ValidationError({'non_field_errors': ['Cannot regenerate share uuid on published release']})
+        codebase_release.regenerate_share_uuid()
+        return Response(data=request.build_absolute_uri(codebase_release.share_url), status=status.HTTP_200_OK)
 
     @detail_route(methods=['post'])
     @transaction.atomic

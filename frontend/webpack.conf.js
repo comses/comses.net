@@ -70,6 +70,7 @@ module.exports = createConfig([
         jobs: './src/pages/job',
         profiles: './src/pages/profile',
         releases: './src/pages/codebase/release',
+        release_regenerate_share_uuid: './src/pages/codebase/release/regenerate_share_uuid.ts',
         codebase_list: './src/pages/codebase/list.ts',
         event_calendar: './src/pages/event/calendar.ts',
         event_list: './src/pages/event/list.ts',

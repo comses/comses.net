@@ -8,6 +8,7 @@ from django.urls import reverse
 from guardian.shortcuts import assign_perm
 from rest_framework import status
 from rest_framework.exceptions import ValidationError
+from rest_framework.test import APIClient
 
 from core.tests.base import UserFactory
 from core.tests.permissions_base import BaseViewSetTestCase, create_perm_str, ResponseStatusCodesMixin, ApiAccountMixin
@@ -299,6 +300,8 @@ class ViewUrlRegexTestCase(TestCase):
 
 
 class CodebaseReleasePublishTestCase(TestCase):
+    client_class = APIClient
+
     # Without this empty setupClass I get a django "InterfaceError: connection already closed" error
     # May be related to https://groups.google.com/forum/#!msg/django-users/MDRcg4Fur98/hCRe5nGvAwAJ
     @classmethod
@@ -306,8 +309,8 @@ class CodebaseReleasePublishTestCase(TestCase):
         pass
 
     def setUp(self):
-        user_factory = UserFactory()
-        self.submitter = user_factory.create()
+        self.user_factory = UserFactory()
+        self.submitter = self.user_factory.create()
         codebase_factory = CodebaseFactory(submitter=self.submitter)
         self.codebase = codebase_factory.create()
         self.codebase_release = self.codebase.create_release()
@@ -323,6 +326,10 @@ class CodebaseReleasePublishTestCase(TestCase):
         with self.assertRaises(ValidationError):
             self.codebase_release.publish()
 
+        self.client.login(username=self.submitter.username, password=self.user_factory.password)
+        response = self.client.post(self.codebase_release.regenerate_share_url, HTTP_ACCEPT='application/json')
+        self.assertEqual(response.status_code,  200)
+
         code_file = io.BytesIO(bytes('Hello world!', 'utf8'))
         code_file.name = 'test.nlogo'
 
@@ -333,6 +340,12 @@ class CodebaseReleasePublishTestCase(TestCase):
         api.add(content=code_file, category=FileCategoryDirectories.code)
         api.add(content=docs_file, category=FileCategoryDirectories.docs)
         self.codebase_release.publish()
+
+
+        download_response = self.client.get(self.codebase_release.review_download_url)
+        self.assertEqual(download_response.status_code, 404)
+        response = self.client.post(self.codebase_release.regenerate_share_url, HTTP_ACCEPT='application/json')
+        self.assertEqual(response.status_code,  400)
 
     @classmethod
     def tearDownClass(cls):

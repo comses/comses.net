@@ -76,22 +76,25 @@
                     {{ citation_text|markdown }}
                 {% elif user == submitter or user.is_superuser %}
                     This model is currently <b>unpublished</b>.
-                    <div class='input-group'>
+                    <div class='input-group' id="regenerate_share_uuid"
+                         data-absolute-url="{{ absolute_url }}"
+                         data-share-url="{{ request.build_absolute_uri(share_url) }}">
                         <div class='input-group-prepend'>
-                            <span class='input-group-text'>
-                                <i class='fa fa-retweet'></i>
+                            <span class='btn input-group-text'>
+                                <i class='fa fa-retweet' @click="regenerateShareUuid"></i>
                             </span>
                         </div>
-                        <input id='release-share-url' readonly class='form-control normal-readonly' value='{{ request.build_absolute_uri(share_url) }}'>
+                        <input id='release-share-url' readonly class='form-control normal-readonly' :value="share_url">
                         <div class='input-group-append'>
                             <span class='btn btn-clipboard input-group-text' data-clipboard-target='#release-share-url'>
                                 <i class='fa fa-copy'></i>
-                                </button>
-                        </div>
+                            </span>
+                    </div>
                     </div>
                     <small class='text-muted'>
                         Use this link to share this release privately with others. Anyone with this URL will be able to
-                        access this release.
+                        access this release. Replace the private link with a new link by pressing
+                        <span class="fa fa-retweet"></span>
                     </small>
                 {% else %}
                     Hold on! This model is unpublished.
@@ -301,6 +304,10 @@
         <a href="{{ url('library:codebaserelease-download', identifier=codebase.identifier, version_number=version_number) }}">
             <button type="button" class="btn btn-primary my-1 w-100">Download</button>
         </a>
+    {% else %}
+        <a href="{{ share_url }}download/">
+            <button type="button" class="btn btn-primary my-1 w-100">Download for Review</button>
+        </a>
     {% endif %}
     {# FIXME: disabled for now <button type="button" class="btn btn-primary my-1 w-100">Follow</button>
     {{ share_card(absolute_url) }}
@@ -313,5 +320,6 @@
     <script>
         new Clipboard('.btn-clipboard');
     </script>
+    {{ render_bundle('release_regenerate_share_uuid') }}
     {{ embed_discourse_comments(live) }}
 {% endblock %}
