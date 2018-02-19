@@ -196,7 +196,8 @@ class CodebaseReleaseDownload(models.Model):
     date_created = models.DateTimeField(default=timezone.now)
     user = models.ForeignKey(User, null=True)
     ip_address = models.GenericIPAddressField(blank=True, null=True)
-    referrer = models.URLField(max_length=500)
+    referrer = models.URLField(max_length=500, blank=True,
+                               help_text=_("captures the HTTP_REFERER if set"))
     release = models.ForeignKey('library.CodebaseRelease', related_name='downloads')
 
     def __str__(self):
@@ -793,7 +794,7 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
         return self.downloads.count()
 
     def record_download(self, request):
-        referrer = request.META['HTTP_REFERER']
+        referrer = request.META.get('HTTP_REFERER')
         client_ip, is_routable = get_client_ip(request)
         user = request.user if request.user.is_authenticated else None
         self.downloads.create(user=user, referrer=referrer, ip_address=client_ip)
