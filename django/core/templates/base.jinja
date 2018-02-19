@@ -178,8 +178,18 @@ function focusSearch() {
         <meta charset="utf-8"/>
         <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no"/>
         <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
-        <meta name="google-site-verification" content="MGJRrMB1QSuw2sVcNxZQSMIfZMyfd1h-9LFvhYkiqis" />
+        {% if is_production() -%}
+			<!-- Global site tag (gtag.js) - Google Analytics -->
+			<script async src="https://www.googletagmanager.com/gtag/js?id=UA-84928306-1"></script>
+			<script>
+  			window.dataLayer = window.dataLayer || [];
+  			function gtag(){dataLayer.push(arguments);}
+			gtag('js', new Date());
+			gtag('config', 'UA-84928306-1');
+			</script>
+        {% endif %}
         {% if not is_production() -%}
+        <meta name="google-site-verification" content="MGJRrMB1QSuw2sVcNxZQSMIfZMyfd1h-9LFvhYkiqis" />
         <meta name='robots' content='noindex,nofollow'>
         {% endif %}
         <title>
