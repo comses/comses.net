@@ -767,7 +767,7 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
 
     @property
     def doi_url(self):
-        return 'http://dx.doi.org/{0}'.format(self.doi)
+        return 'https://doi.org/{0}'.format(self.doi)
 
     @property
     def permanent_url(self):
