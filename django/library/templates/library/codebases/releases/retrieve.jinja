@@ -274,10 +274,6 @@
                 <p class="card-text">
                 {% if codebase.peer_reviewed %}
                     <img src="{{ static("images/icons/peer-reviewed.png") }}" alt="Peer Reviewed">
-                {% elif user == submitter or user.is_superuser %}
-                    {# FIXME: check if user has permissions to request review, currently naive submitter check #}
-                    <div class='btn btn-primary'>Request Review</div><br>
-                    <i>coming soon</i>
                 {% else %}
                     Not reviewed
                 {% endif %}
@@ -289,6 +285,17 @@
         <a href="{{ url('library:codebaserelease-edit', identifier=codebase.identifier, version_number=version_number) }}">
             <div class="btn btn-primary my-1 w-100">Edit</div>
         </a>
+        {% if user == submitter or user.is_superuser %}
+            {% set review_template_text -%}
+            Request to review {{ request.build_absolute_uri(absolute_url) }}
+            {%- endset %}
+            {# FIXME: check if user has permissions to request review, currently naive submitter check #}
+            <a href='mailto: editors@comses.net?subject=model review: {{codebase.title}}&body={{review_template_text}}'>
+                <div class='btn btn-primary my-1 w-100'>
+                    Request Review
+                </div>
+            </a>
+        {% endif %}
     {% endif %}
     {% if live %}
         <a href="{{ url('library:codebaserelease-download', identifier=codebase.identifier, version_number=version_number) }}">
