@@ -178,13 +178,14 @@ class ProfileUpdateView(FormUpdateView):
 
 
 class EventFilter(filters.BaseFilterBackend):
+
     def filter_queryset(self, request, queryset, view):
         if view.action != 'list':
             return queryset
-
-        qs = request.query_params.get('query')
-        submission_deadline__gte = request.query_params.get('submission_deadline__gte')
-        start_date__gte = parse_datetime(request.query_params.get('state_date__gte'))
+        query_string = request.query_params.get('query')
+        query_params = request.query_params
+        submission_deadline__gte = parse_datetime(query_params.get('submission_deadline__gte'))
+        start_date__gte = parse_datetime(query_params.get('start_date__gte') or query_params.get('start_date'))
         tags = request.query_params.getlist('tags')
 
         criteria = {}
@@ -193,7 +194,7 @@ class EventFilter(filters.BaseFilterBackend):
             criteria.update(submission_deadline__gte=submission_deadline__gte)
         if start_date__gte:
             criteria.update(start_date__gte=start_date__gte)
-        return get_search_queryset(qs, queryset, tags=tags, criteria=criteria)
+        return get_search_queryset(query_string, queryset, tags=tags, criteria=criteria)
 
 
 class EventViewSet(CommonViewSetMixin, viewsets.ModelViewSet):
