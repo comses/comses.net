@@ -1,8 +1,6 @@
 import logging
 
-import allauth.account.signals
 from allauth.account.models import EmailAddress
-from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 from django.core.validators import validate_email
 from django.db import transaction
@@ -12,7 +10,6 @@ from rest_framework.exceptions import ValidationError as DrfValidationError
 from core.models import Institution, MemberProfile
 from core.serializers import TagSerializer, MarkdownField
 from library.serializers import RelatedCodebaseSerializer
-
 from .models import (FeaturedContentItem, UserMessage)
 
 logger = logging.getLogger(__name__)
@@ -55,7 +52,7 @@ class MemberProfileListSerializer(serializers.ModelSerializer):
 
 class MemberProfileSerializer(serializers.ModelSerializer):
     """
-    FIXME: References library.Codebase so
+    FIXME: references library.Codebase, keeping in home for now to avoid circular dependencies in core
     """
     # User fields
     date_joined = serializers.DateTimeField(source='user.date_joined', read_only=True, format='%c')
@@ -104,20 +101,19 @@ class MemberProfileSerializer(serializers.ModelSerializer):
                 validate_email(new_email)
                 # Check if any user other the user currently being edited has an email account with the same address as the
                 # new email
-                existing_email_address = \
-                    EmailAddress.objects.filter(email=new_email).exclude(user=user).values_list('email')\
-                    .union(User.objects.filter(email=new_email).exclude(pk=user.pk).values_list('email'))
-                if existing_email_address.exists():
+                users_with_email = MemberProfile.objects.find_users_with_email(new_email, exclude_user=user)
+                if users_with_email.exists():
                     logger.warning("Unable to register email %s, already owned by [%s]",
                                    user.email,
-                                   existing_email_address.values_list('user__pk', flat=True))
+                                   users_with_email)
                     raise DrfValidationError({'email': ["This email address is already taken."]})
             except ValidationError as e:
                 raise DrfValidationError({'email': e.messages})
 
             sender = self.context.get('request')
             EmailAddress.objects.get(primary=True, user=user).change(sender, new_email, confirm=True)
-            logger.info('Changed email for user [{}] from {} to {}. Awaiting confirmation.'.format(user.id, user.email, new_email))
+            logger.warning('email change for user [pk: %s] %s -> %s, awaiting confirmation.',
+                           user.id, user.email, new_email)
 
     @transaction.atomic
     def update(self, instance, validated_data):
