@@ -5,6 +5,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.models import User
 from django.core.files.images import ImageFile
 from django.db.models import Prefetch
+from django.shortcuts import redirect
 from django.urls import reverse
 from django.utils.decorators import method_decorator
 from django.views.generic import TemplateView, RedirectView
@@ -245,22 +246,27 @@ class EventViewSet(CommonViewSetMixin, viewsets.ModelViewSet):
         are events to be rendered in the calendar"""
         calendar_events = {}
         if request.query_params:
-            calendar_events = []
-            queryset, start, end = self.get_calendar_queryset()
-            for event in list(queryset):
-                if event.early_registration_deadline and start <= event.early_registration_deadline <= end:
-                    calendar_events.append(self.to_calendar_early_registration_deadline_event(event))
+            if request.accepted_media_type == 'application/json':
+                calendar_events = []
+                queryset, start, end = self.get_calendar_queryset()
+                for event in list(queryset):
+                    if event.early_registration_deadline and start <= event.early_registration_deadline <= end:
+                        calendar_events.append(self.to_calendar_early_registration_deadline_event(event))
 
-                if event.submission_deadline and start <= event.submission_deadline <= end:
-                    calendar_events.append(self.to_calendar_submission_deadline_event(event))
+                    if event.submission_deadline and start <= event.submission_deadline <= end:
+                        calendar_events.append(self.to_calendar_submission_deadline_event(event))
 
-                if event.start_date:
-                    min_date = max(start, event.start_date)
-                    if event.end_date is None:
-                        event.end_date = event.start_date
-                    max_date = min(end, event.end_date)
-                    if min_date <= max_date:
-                        calendar_events.append(self.to_calendar_event(event))
+                    if event.start_date:
+                        min_date = max(start, event.start_date)
+                        if event.end_date is None:
+                            event.end_date = event.start_date
+                        max_date = min(end, event.end_date)
+                        if min_date <= max_date:
+                            calendar_events.append(self.to_calendar_event(event))
+            else:
+                # FIXME: revert if this turns out to be a terrible idea
+                return redirect(reverse('home:event-list') + '?{0}'.format(request.query_params.urlencode()))
+
         return Response(data=calendar_events, template_name='core/events/calendar.jinja')
 
 
