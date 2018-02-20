@@ -453,7 +453,7 @@ class CodebaseReleaseFsApi:
         return True
 
     def retrieve_review_archive(self):
-        shutil.make_archive(str(self.archivepath.parent.joinpath(self.archivepath.stem)),
+        shutil.make_archive(str(self.review_archivepath.parent.joinpath(self.review_archivepath.stem)),
                             format='zip', root_dir=str(self.sip_contents_dir))
         return File(self.review_archivepath.open('rb')), 'application/zip'
 
