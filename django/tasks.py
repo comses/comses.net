@@ -52,7 +52,7 @@ def collect_static(ctx):
 
 @task(aliases=['qc'])
 def quality_check_openabm_files_with_db(ctx):
-    dj(ctx, 'quality_check_openabm_files_with_db', pty=True)
+    dj(ctx, 'quality_check_files_with_db', pty=True)
 
 
 @task
