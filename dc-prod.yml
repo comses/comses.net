@@ -99,12 +99,12 @@ services:
       args:
         REQUIREMENTS_FILE: requirements-prod.txt
         UBUNTU_MIRROR: "nova.clouds.archive.ubuntu.com"
+        RUN_SCRIPT: "./deploy/prod.sh"
     image: comses/cms:latest
     restart: always
     volumes:
       - ./deploy/conf/config.ini:/secrets/config.ini
       - ./deploy/elasticsearch.conf.d:/etc/elasticsearch
-      - ./django/deploy/prod.sh:/etc/service/django/run
       - ./docker/shared:/shared
       - sockets:/shared/sockets
     environment:
