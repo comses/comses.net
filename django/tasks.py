@@ -132,9 +132,9 @@ def deny_robots(ctx):
 
 
 @task
-def backup(ctx, path='/backups/postgres'):
+def backup(ctx):
     create_pgpass_file(ctx)
-    ctx.run('/code/deploy/backup/autopgsqlbackup.sh -c /code/deploy/backup/autopgsqlbackup.conf')
+    ctx.run('/usr/sbin/autopostgresqlbackup')
 
 
 @task(aliases=['idb', 'initdb'])
