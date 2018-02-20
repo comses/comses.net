@@ -1,5 +1,7 @@
 import pathlib
+from enum import Enum
 
+from allauth.account.models import EmailAddress
 from django import forms
 from django.conf import settings
 from django.contrib.auth import get_user_model
@@ -9,7 +11,6 @@ from django.db import models
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.translation import ugettext_lazy as _
-from enum import Enum
 from modelcluster.contrib.taggit import ClusterTaggableManager
 from modelcluster.fields import ParentalKey
 from modelcluster.models import ClusterableModel
@@ -127,6 +128,15 @@ class MemberProfileQuerySet(models.QuerySet):
     def public(self, **kwargs):
         return self.filter(user__is_active=True, **kwargs).exclude(user__username__in=self.EXCLUDED_USERS)
 
+    def find_users_with_email(self, candidate_email, exclude_user=None):
+        """
+        Return a queryset of user pks with the given email
+        """
+        if exclude_user is None:
+            exclude_user = User.get_anonymous()
+        return EmailAddress.objects.filter(email=candidate_email).exclude(user=exclude_user).values_list('user').union(
+            User.objects.filter(email=candidate_email).exclude(pk=exclude_user.pk).values_list('pk'))
+
 
 @register_snippet
 class MemberProfile(index.Indexed, ClusterableModel):
@@ -227,7 +237,6 @@ class MemberProfile(index.Indexed, ClusterableModel):
             self.user.groups.add(group)
         else:
             self.user.groups.remove(group)
-
 
     def get_absolute_url(self):
         return reverse('home:profile-detail', kwargs={'pk': self.user.pk})

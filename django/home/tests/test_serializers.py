@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta
-from unittest import TestCase
+from django.test import TestCase, TransactionTestCase
 
+from allauth.account.models import EmailAddress
 from rest_framework.exceptions import ValidationError
 
 from core.models import MemberProfile, ComsesGroups, Institution
@@ -36,10 +37,44 @@ class EventSerializerTestCase(TestCase):
 class MemberProfileSerializerTestCase(TestCase):
     def setUp(self):
         self.user_factory = UserFactory()
-        self.user = self.user_factory.create(username='foo')
+        self.user = self.user_factory.create()
         self.user.first_name = 'Foo'
         self.user.last_name = 'Bar'
         ComsesGroups.initialize()
+
+    def test_email_address_update(self):
+        other_user = self.user_factory.create()
+        other_email = other_user.email
+
+        member_profile = self.user.member_profile
+        institution = Institution(url='https://foo.org', name='Foo Institute')
+        institution.save()
+        member_profile.institution = institution
+        member_profile.save()
+        email_address = EmailAddress.objects.create(user=self.user, email=self.user.email)
+        email_address.set_as_primary()
+
+        data = MemberProfileSerializer(member_profile).data
+
+        # no change to email address
+        serializer = MemberProfileSerializer(instance=member_profile, data=data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        self.assertEqual(EmailAddress.objects.count(), 1)
+
+        # acceptable address
+        data['email'] = 'foo2@email.com'
+        serializer = MemberProfileSerializer(instance=member_profile, data=data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        self.assertTrue(EmailAddress.objects.filter(email=data['email']).exists())
+
+        # conflicting address
+        data['email'] = other_email
+        serializer = MemberProfileSerializer(instance=member_profile, data=data)
+        serializer.is_valid(raise_exception=True)
+        with self.assertRaises(ValidationError):
+            serializer.save()
 
     def test_cannot_downgrade_membership(self):
         membership_profile = self.user.member_profile

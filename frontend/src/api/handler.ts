@@ -196,7 +196,7 @@ export class DismissOnSuccessHandler implements CreateOrUpdateHandler {
 }
 
 export class Api {
-    axios: any;
+    public axios: any;
 
     constructor(config?: AxiosRequestConfig) {
         if (_.isUndefined(config)) {

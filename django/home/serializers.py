@@ -1,8 +1,6 @@
 import logging
 
-import allauth.account.signals
 from allauth.account.models import EmailAddress
-from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 from django.core.validators import validate_email
 from django.db import transaction
@@ -12,7 +10,6 @@ from rest_framework.exceptions import ValidationError as DrfValidationError
 from core.models import Institution, MemberProfile
 from core.serializers import TagSerializer, MarkdownField
 from library.serializers import RelatedCodebaseSerializer
-
 from .models import (FeaturedContentItem, UserMessage)
 
 logger = logging.getLogger(__name__)
@@ -55,7 +52,7 @@ class MemberProfileListSerializer(serializers.ModelSerializer):
 
 class MemberProfileSerializer(serializers.ModelSerializer):
     """
-    FIXME: References library.Codebase so
+    FIXME: references library.Codebase, keeping in home for now to avoid circular dependencies in core
     """
     # User fields
     date_joined = serializers.DateTimeField(source='user.date_joined', read_only=True, format='%c')
@@ -98,6 +95,26 @@ class MemberProfileSerializer(serializers.ModelSerializer):
             return instance.picture.get_rendition('fill-150x150').url if instance.picture else None
         return instance.picture
 
+    def save_email(self, user, new_email):
+        if user.email != new_email:
+            try:
+                validate_email(new_email)
+                # Check if any user other the user currently being edited has an email account with the same address as the
+                # new email
+                users_with_email = MemberProfile.objects.find_users_with_email(new_email, exclude_user=user)
+                if users_with_email.exists():
+                    logger.warning("Unable to register email %s, already owned by [%s]",
+                                   user.email,
+                                   users_with_email)
+                    raise DrfValidationError({'email': ["This email address is already taken."]})
+            except ValidationError as e:
+                raise DrfValidationError({'email': e.messages})
+
+            sender = self.context.get('request')
+            EmailAddress.objects.get(primary=True, user=user).change(sender, new_email, confirm=True)
+            logger.warning('email change for user [pk: %s] %s -> %s, awaiting confirmation.',
+                           user.id, user.email, new_email)
+
     @transaction.atomic
     def update(self, instance, validated_data):
         raw_tags = TagSerializer(many=True, data=validated_data.pop('tags'))
@@ -108,27 +125,6 @@ class MemberProfileSerializer(serializers.ModelSerializer):
         user.save()
 
         new_email = self.initial_data['email']
-        try:
-            validate_email(new_email)
-            # Check if any user other the user currently being edited has an email account with the same address as the
-            # new email
-            existing_email_address = \
-                EmailAddress.objects.filter(email=new_email).exclude(user=user).values_list('email')\
-                .union(User.objects.filter(email=new_email).exclude(pk=user.pk).values_list('email'))
-            if existing_email_address.exists():
-                logger.warning("Unable to register email %s, already owned by [%s]",
-                               user.email,
-                               existing_email_address.values_list('user__pk', flat=True))
-                raise DrfValidationError({'email': ["This email address is already taken."]})
-        except ValidationError as e:
-            raise DrfValidationError({'email': e.messages})
-
-        if user.email != new_email:
-            if self.context.get('request'):
-                sender = self.context['request']
-            else:
-                sender = self
-            transaction.on_commit(lambda: EmailAddress.objects.add_email(sender, user, new_email, confirm=True))
 
         raw_institution = {'name': validated_data.pop('institution_name'),
                            'url': validated_data.pop('institution_url')}
@@ -149,7 +145,7 @@ class MemberProfileSerializer(serializers.ModelSerializer):
 
         obj = super().update(instance, validated_data)
         self.save_tags(instance, raw_tags)
-
+        self.save_email(user, new_email)
         return obj
 
     @staticmethod

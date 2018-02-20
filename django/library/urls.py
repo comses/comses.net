@@ -11,6 +11,7 @@ router.register(views.CodebaseReleaseFilesSipViewSet.get_url_matcher(),
                 views.CodebaseReleaseFilesSipViewSet, base_name='codebaserelease-sip-files')
 router.register(views.CodebaseReleaseFilesOriginalsViewSet.get_url_matcher(),
                 views.CodebaseReleaseFilesOriginalsViewSet, base_name='codebaserelease-original-files')
+router.register(r'codebase-release', views.CodebaseReleaseShareViewSet, base_name='codebaserelease-share')
 # router.register(r'contributors', ContributorList)
 
 urlpatterns = [
@@ -28,6 +29,6 @@ urlpatterns = [
     url(r'^codebases/(?P<identifier>[\w\-.]+)/releases/add/$',
         views.CodebaseReleaseFormCreateView.as_view(),
         name='codebaserelease-add'),
-    url(r'^codebase-release/(?P<share_uuid>[\w\-.]+)/$', views.CodebaseReleaseShareView.as_view(),
-        name='codebaserelease-share'),
+    # url(r'^codebase-release/(?P<share_uuid>[\w\-.]+)/$', views.CodebaseReleaseShareViewSet.as_view(),
+    #     name='codebaserelease-share'),
 ] + router.urls

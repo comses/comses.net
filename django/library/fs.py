@@ -355,6 +355,10 @@ class CodebaseReleaseFsApi:
         return self.rootdir.joinpath('archive.zip')
 
     @property
+    def review_archivepath(self):
+        return self.rootdir.joinpath('review_archive.zip')
+
+    @property
     def rootdir(self):
         return Path(settings.LIBRARY_ROOT, str(self.uuid),
                     'releases', str(self.release_id)).absolute()
@@ -448,8 +452,13 @@ class CodebaseReleaseFsApi:
             json.dump(metadata, codemeta_out)
         return True
 
+    def retrieve_review_archive(self):
+        shutil.make_archive(str(self.review_archivepath.parent.joinpath(self.review_archivepath.stem)),
+                            format='zip', root_dir=str(self.sip_contents_dir))
+        return File(self.review_archivepath.open('rb')), 'application/zip'
+
     def retrieve_archive(self):
-        return (File(self.archivepath.open('rb')), 'application/zip')
+        return File(self.archivepath.open('rb')), 'application/zip'
 
     def clear_category(self, category: FileCategoryDirectories):
         originals_storage = self.get_originals_storage()
