@@ -2,6 +2,7 @@ import shutil
 
 import os
 from django.test import TestCase
+from django.conf import settings
 
 from core.tests.base import UserFactory
 from library.fs import FileCategoryDirectories, ArchiveExtractor, StagingDirectories, MessageLevels
@@ -57,3 +58,7 @@ class ArchiveExtractorTestCase(TestCase):
         super().tearDownClass()
         if os.path.exists(cls.nestedcode_folder_name):
             os.remove("{}.zip".format(cls.nestedcode_folder_name))
+
+
+def tearDownModule():
+    shutil.rmtree(settings.LIBRARY_ROOT, ignore_errors=True)

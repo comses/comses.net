@@ -302,18 +302,13 @@ class ViewUrlRegexTestCase(TestCase):
 class CodebaseReleasePublishTestCase(TestCase):
     client_class = APIClient
 
-    # Without this empty setupClass I get a django "InterfaceError: connection already closed" error
-    # May be related to https://groups.google.com/forum/#!msg/django-users/MDRcg4Fur98/hCRe5nGvAwAJ
-    @classmethod
-    def setUpClass(cls):
-        pass
-
     def setUp(self):
         self.user_factory = UserFactory()
         self.submitter = self.user_factory.create()
         codebase_factory = CodebaseFactory(submitter=self.submitter)
         self.codebase = codebase_factory.create()
-        self.codebase_release = self.codebase.create_release()
+        # Want to test get_fs_api creates the file system even if file system is not initialized properly
+        self.codebase_release = self.codebase.create_release(initialize=False)
         contributor_factory = ContributorFactory(user=self.submitter)
         self.contributor = contributor_factory.create()
         self.release_contributor_factory = ReleaseContributorFactory(codebase_release=self.codebase_release)
@@ -341,15 +336,10 @@ class CodebaseReleasePublishTestCase(TestCase):
         api.add(content=docs_file, category=FileCategoryDirectories.docs)
         self.codebase_release.publish()
 
-
         download_response = self.client.get(self.codebase_release.review_download_url)
         self.assertEqual(download_response.status_code, 404)
         response = self.client.post(self.codebase_release.regenerate_share_url, HTTP_ACCEPT='application/json')
         self.assertEqual(response.status_code,  400)
-
-    @classmethod
-    def tearDownClass(cls):
-        shutil.rmtree(settings.LIBRARY_ROOT, ignore_errors=True)
 
 
 class CodebaseRenderPageTestCase(TestCase):
@@ -382,3 +372,7 @@ class CodebaseReleaseRenderPageTestCase(TestCase):
                                            kwargs={'identifier': self.codebase.identifier,
                                                    'version_number': self.codebase_release.version_number}))
         self.assertTrue(response.status_code, True)
+
+
+def tearDownModule():
+    shutil.rmtree(settings.LIBRARY_ROOT, ignore_errors=True)

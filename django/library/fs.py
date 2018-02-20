@@ -380,6 +380,10 @@ class CodebaseReleaseFsApi:
         return self.rootdir.joinpath('sip')
 
     @property
+    def sip_codemeta(self):
+        return self.sip_dir.joinpath('codemeta.json')
+
+    @property
     def sip_contents_dir(self):
         return self.sip_dir.joinpath('data')
 
@@ -430,20 +434,20 @@ class CodebaseReleaseFsApi:
 
     def initialize(self):
         sip_dir = self.sip_dir
-        os.makedirs(str(sip_dir), exist_ok=True)
-        # touch a codemeta.json file in the sip_dir so make_bag has something to
-        self.initialize_codemeta(sip_dir.joinpath('codemeta.json'))
-        fs.make_bag(str(sip_dir), {})
+        if not self.sip_codemeta.exists():
+            os.makedirs(str(sip_dir), exist_ok=True)
+            # touch a codemeta.json file in the sip_dir so make_bag has something to
+            self.initialize_codemeta()
+            fs.make_bag(str(sip_dir), {})
 
-    def initialize_codemeta(self, path=None, metadata=None):
+    def initialize_codemeta(self, metadata=None):
         """
         Returns True if a fresh codemeta.json file was created, False otherwise
         :param path: an optional path to the codemeta file. If no path is passed in, it tries to create a new
         codemeta.json file in the sip_dir bound to the CodebaseRelease associated with this FS API
         :return:
         """
-        if path is None:
-            path = self.sip_dir.joinpath('codemeta.json')
+        path = self.sip_codemeta
         if path.exists():
             return False
         if metadata is None or not isinstance(metadata, dict):

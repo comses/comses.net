@@ -229,7 +229,8 @@ class CodebaseQuerySet(models.QuerySet):
         else:
             release_qs = CodebaseRelease.objects.public().only('id', 'codebase_id')
             codebase_qs = self.filter(live=True)
-        return codebase_qs.prefetch_related(Prefetch('releases', release_qs.with_release_contributors(release_contributor_qs)))
+        return codebase_qs.prefetch_related(
+            Prefetch('releases', release_qs.with_release_contributors(release_contributor_qs)))
 
     @staticmethod
     def cache_contributors(iter):
@@ -283,12 +284,14 @@ class Codebase(index.Indexed, ClusterableModel):
 
     repository_url = models.URLField(blank=True,
                                      help_text=_('URL to code repository, e.g., https://github.com/comses/wolf-sheep'))
-    replication_text = models.TextField(blank=True, help_text=_('URL / DOI / citation for the original model being replicated'))
+    replication_text = models.TextField(blank=True,
+                                        help_text=_('URL / DOI / citation for the original model being replicated'))
     # FIXME: original Drupal data was stored as text fields -
     # after catalog integration remove these / replace with M2M relationships to Publication entities
     # publication metadata
     references_text = models.TextField(blank=True, help_text=_("Reference DOI / Citations"))
-    associated_publication_text = models.TextField(blank=True, help_text=_("DOI / URL / citation to publication associated with this codebase."))
+    associated_publication_text = models.TextField(blank=True, help_text=_(
+        "DOI / URL / citation to publication associated with this codebase."))
     tags = ClusterTaggableManager(through=CodebaseTag)
     # evaluate this JSONField as an add-anything way to record relationships between this Codebase and other entities
     # with URLs / resolvable identifiers
@@ -861,11 +864,12 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
     def is_published(self):
         return self.live and not self.draft
 
-    def get_fs_api(self, mimetype_mismatch_message_level=MessageLevels.error,
-                   system_file_presence_message_level=MessageLevels.error) -> CodebaseReleaseFsApi:
-        return CodebaseReleaseFsApi(uuid=self.codebase.uuid, identifier=self.codebase.identifier,
-                                    version_number=self.version_number, release_id=self.id,
-                                    mimetype_mismatch_message_level=mimetype_mismatch_message_level)
+    def get_fs_api(self, mimetype_mismatch_message_level=MessageLevels.error) -> CodebaseReleaseFsApi:
+        fs_api = CodebaseReleaseFsApi(uuid=self.codebase.uuid, identifier=self.codebase.identifier,
+                                      version_number=self.version_number, release_id=self.id,
+                                      mimetype_mismatch_message_level=mimetype_mismatch_message_level)
+        fs_api.initialize()
+        return fs_api
 
     def add_contributor(self, submitter):
         contributor, created = Contributor.from_user(submitter)
@@ -897,7 +901,7 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
             semver.parse(version_number)
         except ValueError:
             raise ValidationError({'version_number': ['Version number not a valid semantic version string']})
-        not_allowed_version_numbers = CodebaseRelease.objects.filter(codebase=self.codebase).exclude(id=self.id)\
+        not_allowed_version_numbers = CodebaseRelease.objects.filter(codebase=self.codebase).exclude(id=self.id) \
             .order_by('version_number').values_list('version_number', flat=True)
         if version_number in not_allowed_version_numbers:
             raise ValidationError({'version_number': ["Another release has version number. Please select another"]})
