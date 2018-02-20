@@ -8,8 +8,8 @@ import * as _ from 'lodash';
         <slot name="label">
             <label :class="['form-control-label', requiredClass]">{{ label }}</label>
         </slot>
-        <datepicker :bootstrapStyling="true" :value="dateValue" @input="updateDate" wrapper-class="comses-datepicker"
-        :format="format" :input-class="datepickerInputClass" :clear-button="clearButton" @cleared="cleared">
+        <datepicker :bootstrap-styling="true" :value="dateValue" @input="updateDate" wrapper-class="comses-datepicker"
+        :format="format" :input-class="datepickerInputClass" clear-button-icon='fa fa-times' :clear-button="clearButton" @cleared="cleared">
         </datepicker>
         <div v-if="isInvalid" class="invalid-feedback-always">{{ errorMessage }}</div>
         <slot name="help">
@@ -38,7 +38,7 @@ export default class InputDatepicker extends BaseControl {
     }
 
     get datepickerInputClass() {
-        return this.isInvalid ? 'form-control is-invalid' : 'form-control';
+        return this.isInvalid ? 'is-invalid' : '';
     }
 
     get dateValue() {
@@ -54,10 +54,15 @@ export default class InputDatepicker extends BaseControl {
     }
 
     updateDate(value) {
-        switch (value.constructor.name) {
-            case 'String': this.updateValue(value); break;
-            case 'Date': this.updateValue(value.toISOString()); break;
-            default: throw Error(`invalid type ${value.constructor.name} in date field`);
+        if (_.isNil(value)) {
+            this.updateValue(value);
+        }
+        else {
+            switch (value.constructor.name) {
+                case 'String': this.updateValue(value); break;
+                case 'Date': this.updateValue(value.toISOString()); break;
+                default: throw Error(`invalid type ${value.constructor.name} in date field`);
+            }
         }
     }
 
