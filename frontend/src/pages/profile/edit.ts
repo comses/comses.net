@@ -76,7 +76,8 @@ const api = new ProfileAPI();
         <c-input v-model="family_name" name="family_name" :errorMsgs="errors.family_name" label="Family Name"
             :required="config.family_name">
         </c-input>
-        <c-input v-model="email" name="email" :errorMsgs="errors.email" label="Email" :required="config.email">
+        <c-input v-model="email" name="email" :errorMsgs="errors.email" label="Email" :required="config.email"
+            help="Email address changes require verifying your new email address by acknowledging a confirmation email">
         </c-input>
         <c-markdown v-model="bio" name="bio" :errorMsgs="errors.bio" label="Bio" :required="config.bio">
         </c-markdown>

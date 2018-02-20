@@ -32,8 +32,3 @@ def sync_wagtail_django_sites(sender, instance: WagtailSite, created: bool, **kw
         site.name = instance.site_name
         site.domain = instance.hostname
         site.save()
-
-
-@receiver(email_confirmed)
-def update_user_email(sender, request, email_address, **kwargs):
-    email_address.set_as_primary()

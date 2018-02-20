@@ -51,6 +51,8 @@ class MemberProfileSerializerTestCase(TestCase):
         institution.save()
         member_profile.institution = institution
         member_profile.save()
+        email_address = EmailAddress.objects.create(user=self.user, email=self.user.email)
+        email_address.set_as_primary()
 
         data = MemberProfileSerializer(member_profile).data
 
@@ -58,7 +60,7 @@ class MemberProfileSerializerTestCase(TestCase):
         serializer = MemberProfileSerializer(instance=member_profile, data=data)
         serializer.is_valid(raise_exception=True)
         serializer.save()
-        self.assertEqual(EmailAddress.objects.count(), 0)
+        self.assertEqual(EmailAddress.objects.count(), 1)
 
         # acceptable address
         data['email'] = 'foo2@email.com'
