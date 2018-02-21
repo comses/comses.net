@@ -24,6 +24,10 @@
                         <a class="nav-link dropdown-toggle" id='userDropdownMenuLink'
                            data-toggle="dropdown" role="button" href="#" aria-haspopup="true" aria-expanded="false">
                             <span class="fa fa-user-o"></span> {{ user.username }}
+                            {% if user.emailaddress_set.filter(verified=False).exists() %}
+                                <span class="badge badge-warning">Email Unverified</span>
+                                <span class="sr-only">Email Unverified</span>
+                            {% endif %}
                         </a>
                         <div class="dropdown-menu" aria-labelledby='userDropdownMenuLink'>
                             <a class="dropdown-item" href="{{ profile_url }}"><i class='fa fa-user-o'></i> Your Account</a>
