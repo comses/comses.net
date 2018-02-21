@@ -29,8 +29,18 @@
                             <a class='badge {{badge_class}} contributor' href="{{ codebase_contributor.profile_url }}">
                                 {{ codebase_contributor.name }}
                             </a>
+                        {% else %}
+                            no contributors listed
                         {% endfor %}
-                        | Published {{ item.first_published_at }}
+                        |
+                        {% if item.live %}
+                            Published {{ item.first_published_at }}
+                            {% if item.first_published_at != item.last_published_on %}
+                                | Last modified {{ item.last_published_on }}
+                            {% endif %}
+                        {% else %}
+                            Unpublished
+                        {% endif %}
                     </small>
                 </div>
                 <div class="summary">

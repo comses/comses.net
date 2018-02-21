@@ -206,6 +206,20 @@ class CodebaseReleaseDownload(models.Model):
 
 class CodebaseQuerySet(models.QuerySet):
 
+    def update_publish_date(self):
+        for codebase in self.all():
+            if codebase.releases.exists():
+                first_release = codebase.releases.order_by('first_published_at').first()
+                last_release = codebase.releases.order_by('-last_published_on').first()
+                codebase.first_published_at = first_release.first_published_at
+                codebase.last_published_on = last_release.last_published_on
+                codebase.save()
+
+    def update_liveness(self):
+        for codebase in self.all():
+            codebase.live = codebase.releases.filter(live=True).exists()
+            codebase.save()
+
     def with_viewable_releases(self, user):
         queryset = get_viewable_objects_for_user(user=user, queryset=CodebaseRelease.objects.all())
         return self.prefetch_related(Prefetch('releases', queryset=queryset))
@@ -233,14 +247,14 @@ class CodebaseQuerySet(models.QuerySet):
             Prefetch('releases', release_qs.with_release_contributors(release_contributor_qs)))
 
     @staticmethod
-    def cache_contributors(iter):
+    def cache_contributors(codebases):
         """Add all_contributors property to all codebases in queryset.
 
         Returns a list so that it is impossible to call queryset methods on the result and destroy the
         all_contributors property. Should be called after with_contributors for query efficiency. `with_contributors`
         is a seperate function """
 
-        for codebase in iter:
+        for codebase in codebases:
             codebase.compute_contributors(force=True)
 
     def public(self):
@@ -262,9 +276,9 @@ class Codebase(index.Indexed, ClusterableModel):
 
     featured = models.BooleanField(default=False)
 
+    # db cached liveness dependent on live releases
     live = models.BooleanField(default=False)
     # has_draft_release = models.BooleanField(default=False)
-    has_unpublished_changes = models.BooleanField(default=False)
     first_published_at = models.DateTimeField(null=True, blank=True)
     last_published_on = models.DateTimeField(null=True, blank=True)
 
@@ -332,12 +346,6 @@ class Codebase(index.Indexed, ClusterableModel):
     def _release_upload_path(instance, filename):
         return str(pathlib.Path(instance.codebase.upload_path, filename))
 
-    @staticmethod
-    def assign_latest_release():
-        for codebase in Codebase.objects.all():
-            codebase.latest_version = codebase.releases.order_by('-version_number').first()
-            codebase.save()
-
     def as_featured_content_dict(self):
         return dict(
             title=self.title,
@@ -385,18 +393,19 @@ class Codebase(index.Indexed, ClusterableModel):
 
     @property
     def codebase_contributors_redis_key(self):
-        return 'codebase_contributors:{}'.format(self.identifier)
+        return 'codebase:contributors:{0}'.format(self.identifier)
 
     def compute_contributors(self, force=False):
-        codebase_contributors = cache.get(self.codebase_contributors_redis_key) if not force else None
+        redis_key = self.codebase_contributors_redis_key
+        codebase_contributors = cache.get(redis_key) if not force else None
 
         if codebase_contributors is None:
             codebase_contributors = set()
             for release in self.releases.all():
-                for release_contributor in release.codebase_contributors.all():
+                for release_contributor in release.codebase_contributors.select_related('contributor').all():
                     contributor = release_contributor.contributor
                     codebase_contributors.add(contributor)
-            cache.set(self.codebase_contributors_redis_key, codebase_contributors)
+            cache.set(redis_key, codebase_contributors)
         return codebase_contributors
 
     @property
@@ -673,7 +682,6 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
     live = models.BooleanField(default=False, help_text=_("Signifies that this release is public."))
     # there should only be one draft CodebaseRelease ever
     draft = models.BooleanField(default=False, help_text=_("Signifies that this release is currently being edited."))
-    has_unpublished_changes = models.BooleanField(default=False)
     first_published_at = models.DateTimeField(null=True, blank=True)
     last_published_on = models.DateTimeField(null=True, blank=True)
 
@@ -788,14 +796,14 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
     @property
     def permanent_url(self):
         if self.doi:
-            if '2286.0/oabm' in self.doi:
-                return self.handle_url
-            else:
-                return self.doi_url
+            return self.doi_url
         return '{0}{1}'.format(settings.BASE_URL, self.get_absolute_url())
 
     @property
     def citation_text(self):
+        if not self.last_published_on:
+            return 'This model must be published first in order to be citable.'
+
         authors = ', '.join(self.contributor_list)
         return '{authors} ({publish_date}). "{title}" (Version {version}). _{cml}_. Retrieved from: {purl}'.format(
             authors=authors,
@@ -803,8 +811,8 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
             title=self.codebase.title,
             version=self.version_number,
             cml='CoMSES Computational Model Library',
-            purl=self.permanent_url
-        ) if self.last_published_on else 'You must publish this model in order to cite it'
+                purl=self.permanent_url
+        ) 
 
     def download_count(self):
         return self.downloads.count()
@@ -875,9 +883,9 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
         contributor, created = Contributor.from_user(submitter)
         self.codebase_contributors.create(contributor=contributor, roles=[ROLES.author], index=0)
 
+    @transaction.atomic
     def publish(self):
-        publisher = CodebaseReleasePublisher(self)
-        publisher.publish()
+        CodebaseReleasePublisher(self).publish()
 
     def possible_next_versions(self, minor_only=False):
         major, minor, patch = [int(v) for v in self.version_number.split('.')]
@@ -954,9 +962,14 @@ class CodebaseReleasePublisher:
             fs_api.build_archive()
             self.codebase_release.save()
 
-            self.codebase_release.codebase.latest_version = self.codebase_release
-            self.codebase_release.codebase.live = True
-            self.codebase_release.codebase.save()
+            codebase = self.codebase_release.codebase
+
+            codebase.latest_version = self.codebase_release
+            codebase.live = True
+            codebase.last_published_on = now
+            if codebase.first_published_at is None:
+                codebase.first_published_at = now
+            codebase.save()
 
 
 class ReleaseContributorQuerySet(models.QuerySet):

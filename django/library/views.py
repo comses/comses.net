@@ -75,11 +75,6 @@ class CodebaseViewSet(CommonViewSetMixin, viewsets.ModelViewSet):
     ordering_fields = ('first_published_at', 'title', 'last_modified', 'peer_reviewed', 'submitter__last_name',
                        'submitter__username')
 
-    # FIXME: should we use filter_backends
-    # (http://www.django-rest-framework.org/api-guide/filtering/#djangoobjectpermissionsfilter)
-    # instead of get_search_queryset?
-    # filter_backends = (filters.DjangoObjectPermissionsFilter,)
-
     def get_queryset(self):
         if self.action == 'list':
             # On detail pages we want to see unpublished releases
