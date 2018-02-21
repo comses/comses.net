@@ -1,8 +1,11 @@
+from distutils.util import strtobool
+
 from invoke import task
 from invoke.tasks import call
 
 import logging
 import os
+import pathlib
 import sys
 
 # push current directory onto the path to access core.settings
@@ -126,6 +129,7 @@ def create_pgpass_file(ctx, force=False):
         pgpass.write('db:*:*:{db_user}:{db_password}\n'.format(db_password=db_password, **env))
         ctx.run('chmod 0600 ~/.pgpass')
 
+
 @task(aliases=['dr'])
 def deny_robots(ctx):
     dj(ctx, 'setup_robots_txt --no-allow')
@@ -138,7 +142,7 @@ def backup(ctx):
 
 
 @task(aliases=['idb', 'initdb'])
-def initialize_database_schema(ctx, clean=False):
+def run_migrations(ctx, clean=False, initial=False):
     apps = ('core', 'home', 'library')
     if clean:
         for app in apps:
@@ -146,7 +150,10 @@ def initialize_database_schema(ctx, clean=False):
             ctx.run('find {0} -name 00*.py -delete -print'.format(migration_dir))
     dj(ctx, 'makemigrations citation --noinput')
     dj(ctx, 'makemigrations {0} --noinput'.format(' '.join(apps)))
-    dj(ctx, 'migrate --noinput')
+    migrate_command = 'migrate --noinput'
+    if initial:
+        migrate_command += ' --fake-initial'
+    dj(ctx, migrate_command)
 
 
 @task(aliases=['ddb', 'dropdb'])
@@ -163,7 +170,31 @@ def drop_database(ctx, create=False):
         ctx.run('createdb -w {db_name} -U {db_user} -h {db_host}'.format(**env), echo=True, warn=True)
 
 
+@task(aliases=['rfd', 'restore'])
+def restore_from_dump(ctx, dumpfile='comsesnet.sql', migrate=True):
+    confirm("This will destroy the database and try to reload it from a dumpfile {0}. Continue? (y/n) ".format(
+        dumpfile))
+    dumpfile_path = pathlib.Path(dumpfile)
+    if dumpfile.endswith('.sql') and dumpfile_path.is_file():
+        drop_database(ctx, create=True)
+        ctx.run('psql -w -q -h db {db_name} {db_user} < {dumpfile}'.format(dumpfile=dumpfile, **env),
+                warn=True)
+    if migrate:
+        run_migrations(ctx, clean=True, initial=True)
+
+
+def confirm(prompt="Continue? (y/n) ", cancel_message="Aborted."):
+    response = input(prompt)
+    try:
+        response_as_bool = strtobool(response)
+    except ValueError:
+        logger.info("Invalid response %s. Please confirm with yes (y) or no (n).", response_as_bool)
+        confirm(prompt, cancel_message)
+    if not response_as_bool:
+        raise RuntimeError(cancel_message)
+
+
 @task(aliases=['rdb', 'resetdb'])
 def reset_database(ctx):
     drop_database(ctx, create=True)
-    initialize_database_schema(ctx, False)
+    run_migrations(ctx, False)
