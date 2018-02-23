@@ -1,18 +1,18 @@
 language: "python"
-sudo: required
 python:
   - "3.6"
+sudo: required
 notifications:
   email: comses-dev@googlegroups.com
 services:
   - docker
 env: 
-  - DOCKER_COMPOSE_VERSION=1.18.0
+  - DOCKER_COMPOSE_VERSION=1.19.0
 before_install:
   - sudo apt-get -qq update
   - sudo apt-get install -y docker-ce
   - curl -L https://github.com/docker/compose/releases/download/${DOCKER_COMPOSE_VERSION}/docker-compose-`uname -s`-`uname -m` > docker-compose
-  - chmod +x docker-compose
+  - chmod a+rx docker-compose
   - sudo mv docker-compose /usr/local/bin
   - sudo sysctl -w vm.max_map_count=262144
 install: 
@@ -24,7 +24,7 @@ script:
 after_success:
   - cd django && mv .coverage{,.123} && coverage combine --append && coveralls && cd -
   - cd frontend && cat ./coverage/lcov.info | ./node_modules/coveralls/bin/coveralls.js
-	- if [[ "$TRAVIS_BRANCH" == "master" ]]; then
+  - if [[ "$TRAVIS_BRANCH" == "master" ]]; then
       docker login -u $DOCKERHUB_USERNAME -p $DOCKERHUB_PASSWORD ;
       docker push comses/cms:dev;
       docker push comses/cmsjs:dev;
