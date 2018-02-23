@@ -72,7 +72,7 @@ services:
     # static directory, seems we should be able to skip that step
     # command: "npm run build"
     build: frontend
-    image: comses/cmsjs:latest
+    image: comses/cmsjs:${RELEASE_VERSION}
     command: ['yarn', 'run', 'build']
     volumes:
       - ./frontend/src:/code/src
@@ -100,7 +100,7 @@ services:
         REQUIREMENTS_FILE: requirements-prod.txt
         UBUNTU_MIRROR: "nova.clouds.archive.ubuntu.com"
         RUN_SCRIPT: "./deploy/prod.sh"
-    image: comses/cms:latest
+    image: comses/cms:{RELEASE_VERSION}
     restart: always
     volumes:
       - ./deploy/conf/config.ini:/secrets/config.ini

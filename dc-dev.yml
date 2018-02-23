@@ -42,14 +42,14 @@ services:
       POSTGRES_DB: "${DB_NAME}"
   js:
     build: frontend
-    image: comses/cmsjs_dev:latest
+    image: comses/cmsjs:dev
     volumes:
       - ./frontend/src:/code/src
       - ./frontend/deploy:/code/deploy
       - ./docker/shared/webpack:/shared/webpack
   cms:
     build: django
-    image: comses/cms_dev:latest
+    image: comses/cms:dev
     volumes:
       - ./django:/code
       - ./deploy/conf/config.ini:/secrets/config.ini
