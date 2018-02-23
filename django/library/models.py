@@ -818,7 +818,7 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
         return self.downloads.count()
 
     def record_download(self, request):
-        referrer = request.META.get('HTTP_REFERER')
+        referrer = request.META.get('HTTP_REFERER', '')
         client_ip, is_routable = get_client_ip(request)
         user = request.user if request.user.is_authenticated else None
         self.downloads.create(user=user, referrer=referrer, ip_address=client_ip)
