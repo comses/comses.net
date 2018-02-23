@@ -456,7 +456,7 @@ class PlatformIndexPage(NavigationMixin, Page):
 
     def get_platforms(self):
         # highlight featured platforms? allow the community to rank them.
-        return self.platform_placements.all()
+        return self.platform_placements.order_by('platform__name').all()
 
     def get_context(self, request):
         context = super().get_context(request)
