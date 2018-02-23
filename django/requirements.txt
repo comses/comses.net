@@ -25,6 +25,7 @@ elasticsearch-dsl>=5.0.0,<6.0.0
 elasticsearch>=5.0.0,<6.0.0
 html2text>=2016.9.19
 markdown==2.6.11
+nltk>=3.2.5,<4.0.0
 psycopg2==2.7.4
 pygit2==0.24.2
 raven==6.5.0

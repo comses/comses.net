@@ -96,6 +96,7 @@ THIRD_PARTY_APPS = [
 COMSES_APPS = [
     'core.apps.CoreConfig',
     'citation.apps.CitationConfig',
+    'curator.apps.CuratorConfig',
     'home.apps.HomeConfig',
     'library.apps.LibraryConfig',
 ]

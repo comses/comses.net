@@ -33,7 +33,9 @@ RUN sed -i "s|archive.ubuntu.com|${UBUNTU_MIRROR}|" /etc/apt/sources.list && \
         && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 COPY ${REQUIREMENTS_FILE} requirements.txt /tmp/
-RUN pip3 install -r /tmp/${REQUIREMENTS_FILE} --no-cache-dir
+RUN pip3 install -r /tmp/${REQUIREMENTS_FILE} --no-cache-dir \
+        && python -m nltk.downloader stopwords \
+        && python -m nltk.downloader punkt
 COPY ./deploy/db/autopostgresqlbackup.conf /etc/default/autopostgresqlbackup
 COPY ./deploy/db/postgresql-backup-pre /etc/
 COPY ${RUN_SCRIPT} /etc/service/django/run
