@@ -1,5 +1,0 @@
--r requirements.txt
-# prod requirements
-newrelic
-raven==6.4.0
-uwsgi==2.0.15

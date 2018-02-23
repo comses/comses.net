@@ -27,7 +27,9 @@ html2text>=2016.9.19
 markdown==2.6.11
 psycopg2==2.7.4
 pygit2==0.24.2
+raven==6.5.0
 semver==2.7.9
+uwsgi==2.0.15
 wagtail==1.13.1
 wagtailmenus==2.6
 # deployment and management command dependencies

@@ -100,7 +100,7 @@ services:
     build:
       context: ./django
       args:
-        REQUIREMENTS_FILE: requirements-prod.txt
+        REQUIREMENTS_FILE: requirements.txt
         UBUNTU_MIRROR: "nova.clouds.archive.ubuntu.com"
         RUN_SCRIPT: "./deploy/prod.sh"
     image: comses/cms:{RELEASE_VERSION}
