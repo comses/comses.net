@@ -143,7 +143,7 @@ def backup(ctx):
 
 @task(aliases=['idb', 'initdb'])
 def run_migrations(ctx, clean=False, initial=False):
-    apps = ('core', 'home', 'library')
+    apps = ('core', 'home', 'library', 'curator')
     if clean:
         for app in apps:
             migration_dir = os.path.join(app, 'migrations')
