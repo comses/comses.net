@@ -1,11 +1,11 @@
 import pathlib
 
 from django.core.management.base import BaseCommand
+from django.conf import settings
 
-import ast
 import logging
 
-from curator.models import PendingTagCleanup, CanonicalName
+from curator.models import PendingTagCleanup, CanonicalName, PENDING_TAG_CLEANUPS_FILENAME
 
 logger = logging.getLogger(__name__)
 
@@ -17,61 +17,63 @@ class Command(BaseCommand):
         parser.add_argument('--run', '-r',
                             action='store_true',
                             default=False)
-        parser.add_argument('--restore_directory',
-                            help='directory to import canonical name mappings and from',
-                            default=None)
-        parser.add_argument('--method', '-m',
+        parser.add_argument('--load', '-l',
                             action='store_true',
+                            default=False)
+        parser.add_argument('--method', '-m',
                             default=False)
         parser.add_argument('--view',
                             action='store_true',
                             default=False,
                             help='view the staged tag cleanups')
-        parser.add_argument('--dump',
+        parser.add_argument('--dump', '-d',
                             action='store_true',
                             default=False,
                             help='dump staged tag cleanups and canonical name mappings to yaml files')
-        parser.add_argument('--compact', '-c',
-                            help='compact the staged tag cleanups (tag cleanup that share a new name are merged)')
 
-    def handle_file(self, restore_directory):
-        with restore_directory.joinpath('tag_cleanups.yml') as f:
-            rows = ast.literal_eval(f.read())
-        tags_cleanups = []
-        for row in rows:
-            tags_cleanups.append(PendingTagCleanup(new_names=row[0], old_names=row[1]))
-        return tags_cleanups
+    def handle_load(self, restore_directory):
+        path = restore_directory.joinpath(PENDING_TAG_CLEANUPS_FILENAME)
+        print('Loading data from path {}'.format(str(path)))
+        tag_cleanups = PendingTagCleanup.load(path)
+        PendingTagCleanup.objects.bulk_create(tag_cleanups)
 
-    def handle_method(self):
-        return PendingTagCleanup.find_groups_by_porter_stemmer(save=True)
+    def handle_method(self, method):
+        if method == 'porter_stemmer':
+            tag_cleanups = PendingTagCleanup.find_groups_by_porter_stemmer()
+        elif method == 'programming_language':
+            tag_cleanups = PendingTagCleanup.find_groups_by_platform_and_language()
+        else:
+            raise Exception('invalid method name')
+        PendingTagCleanup.objects.bulk_create(tag_cleanups)
 
     def handle_run(self):
-        PendingTagCleanup.group_all()
+        PendingTagCleanup.objects.process()
 
     def handle_view(self):
-        if PendingTagCleanup.objects.count() > 0:
+        qs = PendingTagCleanup.objects.filter(is_active=True)
+        if qs.count() > 0:
             print('Tag Cleanups\n--------------------\n')
-            for tag_cleanup in PendingTagCleanup.objects.iterator():
+            for tag_cleanup in qs.iterator():
                 print(tag_cleanup)
         else:
             print('No Pending Tag Cleanups!')
 
     def handle(self, *args, **options):
         run = options['run']
-        restore_directory = pathlib.Path(options['restore_directory'] ) if options['restore_directory'] else None
-        method = options['method']
+        load_directory = pathlib.Path('/shared/incoming/curator/tags')
+        load = options['load']
+        method = options.get('method')
         view = options['view']
         dump = options['dump']
         if run:
             self.handle_run()
-        elif restore_directory is not None:
-            self.handle_file(restore_directory)
+        elif load:
+            self.handle_load(load_directory)
         elif method:
-            self.handle_method()
+            self.handle_method(method)
         elif dump:
-            print('Dumping tag curation data...')
-            # PendingTagCleanup.dumps('tag_cleaups.yml')
-            # CanonicalName.dumps('canonical_name_mapping.csv')
+            print('Dumping tag curation data to {}'.format(load_directory.joinpath(PENDING_TAG_CLEANUPS_FILENAME)))
+            PendingTagCleanup.objects.dump(load_directory.joinpath(PENDING_TAG_CLEANUPS_FILENAME))
         elif not view:
             raise Exception('restore directory, dump, method or view action must be specified')
         if view:
