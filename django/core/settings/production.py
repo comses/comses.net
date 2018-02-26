@@ -19,8 +19,8 @@ ALLOWED_HOSTS = ['.comses.net']
 
 # see https://docs.sentry.io/clients/python/integrations/django/
 # report 404s and add sentry error id middleware for better tracking
-MIDDLEWARE = ('raven.contrib.django.raven_compat.middleware.Sentry404CatchMiddleware',) + MIDDLEWARE + \
-('raven.contrib.django.raven_compat.middleware.SentryResponseErrorIdMiddleware',)
+MIDDLEWARE = ['raven.contrib.django.raven_compat.middleware.Sentry404CatchMiddleware',] + MIDDLEWARE + \
+['raven.contrib.django.raven_compat.middleware.SentryResponseErrorIdMiddleware',]
 
 # http://django-allauth.readthedocs.io/en/latest/providers.html#orcid
 SOCIALACCOUNT_PROVIDERS.pop('orcid', None)
