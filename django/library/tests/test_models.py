@@ -1,5 +1,6 @@
 import logging
 import pathlib
+import uuid
 
 from django.conf import settings
 from django.contrib.auth.models import AnonymousUser
@@ -96,3 +97,10 @@ class CodebaseReleaseTest(BaseModelTestCase):
 
         other_codebase_release.set_version_number('1.0.1')
         self.assertEqual(other_codebase_release.version_number,'1.0.1')
+
+    def test_create_codebase_release_share_uuid(self):
+        """Ensure we can create a second codebase release an it hasa different share uuid"""
+        self.codebase_release.share_uuid = uuid.uuid4()
+        self.codebase_release.save()
+        cr = self.codebase.create_release(initialize=False)
+        self.assertNotEqual(self.codebase_release.share_uuid, cr.share_uuid)

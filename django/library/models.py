@@ -542,7 +542,8 @@ class Codebase(index.Indexed, ClusterableModel):
             version_number=version_number,
             identifier=None,
             live=False,
-            draft=True)
+            draft=True,
+            share_uuid=uuid.uuid4())
         if previous_release is None:
             release_metadata['codebase'] = self
             release_metadata.update(overrides)
