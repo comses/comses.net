@@ -16,5 +16,4 @@ initdb() {
     fi
 }
 initdb
-/code/deploy/wait-for-it.sh elasticsearch:9200 -- /code/manage.py update_index
 nohup /code/manage.py runserver 0.0.0.0:8000
