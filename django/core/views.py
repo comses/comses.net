@@ -1,4 +1,5 @@
 import logging
+from itertools import chain
 from urllib import parse
 
 import base64
@@ -9,10 +10,9 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.views import redirect_to_login
 from django.core.exceptions import PermissionDenied
 from django.db.models.functions import Lower
-from django.http import Http404, HttpResponseBadRequest, HttpResponseRedirect, QueryDict
+from django.http import Http404, HttpResponseBadRequest, HttpResponseRedirect, QueryDict, HttpResponseServerError
 from django.shortcuts import render
 from django.views.generic import DetailView, TemplateView
-from itertools import chain
 from rest_framework import filters
 from rest_framework.exceptions import PermissionDenied as DrfPermissionDenied, NotAuthenticated
 from rest_framework.pagination import PageNumberPagination
@@ -46,6 +46,12 @@ class CaseInsensitiveOrderingFilter(filters.OrderingFilter):
             queryset = queryset.order_by(*case_insensitive_ordering)
 
         return queryset
+
+
+def make_error(request, should_raise=True):
+    if should_raise:
+        raise ValueError("This is an unhandled error")
+    return HttpResponseServerError('This is an unhandled server error response.')
 
 
 def _common_namespace_path(model):

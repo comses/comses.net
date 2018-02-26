@@ -18,6 +18,10 @@ schema_view = get_swagger_view(title='CoMSES.net API')
 Primary URLConf entry point into the comses.net website
 """
 
+handler403 = views.permission_denied
+handler404 = views.page_not_found
+handler500 = views.server_error
+
 urlpatterns = [
     url(r'^search/$', views.SearchView.as_view(), name='search'),
     url(r'^accounts/', include('allauth.urls')),
@@ -32,13 +36,7 @@ urlpatterns = [
     # configure sitemaps and robots.txt, see https://django-robots.readthedocs.io/en/latest/
     url('sitemap.xml', sitemap, {'sitemaps': sitemaps}, name='django.contrib.sitemaps.views.sitemap'),
     url(r'^robots\.txt', include('robots.urls')),
-    # NB: wagtail_urls are the catchall, must be last
-    url(r'^', include(wagtail_urls)),
 ]
-
-handler403 = views.permission_denied
-handler404 = views.page_not_found
-handler500 = views.server_error
 
 if settings.DEPLOY_ENVIRONMENT.is_development():
     from django.conf.urls.static import static
@@ -51,5 +49,11 @@ if settings.DEPLOY_ENVIRONMENT.is_development():
 if settings.DEBUG:
     import debug_toolbar
     urlpatterns = [
+        url(r'^argh/$', handler500, name='error'),
+        url(r'^make-error/$', views.make_error),
         url(r'^__debug__/', include(debug_toolbar.urls)),
     ] + urlpatterns
+
+# NB: wagtail_urls are the catchall, must be last
+urlpatterns += [url(r'^', include(wagtail_urls)),]
+
