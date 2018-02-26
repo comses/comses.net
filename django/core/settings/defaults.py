@@ -390,9 +390,9 @@ ORCID_CLIENT_SECRET = config.get('secrets', 'ORCID_CLIENT_SECRET', fallback='')
 GITHUB_CLIENT_ID = config.get('secrets', 'GITHUB_CLIENT_ID', fallback='')
 GITHUB_CLIENT_SECRET = config.get('secrets', 'GITHUB_CLIENT_SECRET', fallback='')
 
-TEST_BASIC_AUTH_PASSWORD = config.get('test', 'TEST_BASIC_AUTH_PASSWORD', fallback='')
-TEST_USER_ID = config.get('test', 'TEST_USER_ID', fallback='')
-TEST_USERNAME = config.get('test', 'TEST_USERNAME', fallback='')
+TEST_BASIC_AUTH_PASSWORD = config.get('test', 'TEST_BASIC_AUTH_PASSWORD', fallback='test password')
+TEST_USER_ID = config.get('test', 'TEST_USER_ID', fallback=1000000)
+TEST_USERNAME = config.get('test', 'TEST_USERNAME', fallback='__test_user__')
 
 SOCIALACCOUNT_PROVIDERS = {
     # https://developer.github.com/apps/building-integrations/setting-up-and-registering-oauth-apps/about-scopes-for-oauth-apps/
@@ -403,7 +403,7 @@ SOCIALACCOUNT_PROVIDERS = {
         ],
     },
     # http://django-allauth.readthedocs.io/en/latest/providers.html#orcid
-    # FIXME: must be deleted in production
+    # NOTE: must be deleted in production settings
     'orcid': {
         'BASE_DOMAIN': 'sandbox.orcid.org',
         'MEMBER_API': True,

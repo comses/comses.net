@@ -10,7 +10,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         user, created = User.objects.get_or_create(
-            id=settings.TEST_USER_ID,
+            pk=settings.TEST_USER_ID,
             username=settings.TEST_USERNAME,
             defaults=dict(first_name='Test', last_name='User', email='a@b.com'))
         ComsesGroups.initialize()
