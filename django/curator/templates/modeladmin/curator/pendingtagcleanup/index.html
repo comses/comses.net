@@ -1,0 +1,30 @@
+{% extends "modeladmin/index.html" %}
+{% load i18n modeladmin_tags %}
+
+
+{% block filters %}
+    <div class="changelist-filter col3">
+        <h2>{% trans 'Filter' %}</h2>
+        {% for spec in view.filter_specs %}{% admin_list_filter view spec %}{% endfor %}
+        <h2>Editing Actions</h2>
+        <div>
+            {% include 'modeladmin/curator/pendingtagcleanup/action_button.html' with button=view.button_helper.process_button %}
+        </div>
+        <div>
+            {% include 'modeladmin/curator/pendingtagcleanup/action_button.html' with button=view.button_helper.delete_active_button %}
+        </div>
+        <h2>Find Actions</h2>
+        <div>
+            {% include 'modeladmin/curator/pendingtagcleanup/action_button.html' with button=view.button_helper.find_groups_by_porter_stemmer_button %}
+        </div>
+        <div>
+            {% include 'modeladmin/curator/pendingtagcleanup/action_button.html' with button=view.button_helper.find_groups_by_platform_and_language_button %}
+        </div>
+    </div>
+{% endblock %}
+
+<div class="result-list col9">
+    {% block result_list %}
+        {{ block.super }}
+    {% endblock %}
+</div>

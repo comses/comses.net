@@ -11,6 +11,7 @@ import os
 from django.contrib.postgres.aggregates import ArrayAgg
 from django.contrib.postgres.fields import ArrayField
 from django.db import models, transaction
+from django.urls import reverse
 from django.utils.functional import cached_property
 from nltk.stem import PorterStemmer
 from nltk.tokenize import word_tokenize
@@ -101,6 +102,7 @@ class PendingTagGroupingQuerySet(models.QuerySet):
             json.dump(tag_cleanups, f, indent=4, sort_keys=True)
 
 
+
 # Should just use file system to find ground truth
 class Matcher:
     def __init__(self, name, regex):
@@ -148,7 +150,7 @@ class PendingTagCleanup(models.Model):
     is_active = models.BooleanField(default=True)
     new_name = models.CharField(max_length=300)
     old_name = models.CharField(max_length=300)
-    transaction_id = models.UUIDField(null=True)
+    transaction_id = models.UUIDField(null=True, blank=True)
 
     objects = PendingTagGroupingQuerySet.as_manager()
 
@@ -207,6 +209,15 @@ class PendingTagCleanup(models.Model):
         with filepath.open('r') as f:
             tag_cleanups = json.load(f, object_hook=cls.load_from_dict)
         return tag_cleanups
+
+    @classmethod
+    def process_url(cls):
+        return reverse('curator:process_pendingtagcleanups')
+
+    class Meta:
+        permissions = (
+            ('process', 'Able to process pending tag cleanups'),
+        )
 
 
 class TagMigrator:
