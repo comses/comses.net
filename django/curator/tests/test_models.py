@@ -39,17 +39,22 @@ class TagCleanupTestCase(TestCase):
             t.save()
         self.add_tags(old_tags)
         new_names = ['agent based model', 'python']
-        ptc = PendingTagCleanup.objects.create(new_names=new_names, old_names=[t.name for t in old_tags])
-        ptc.group()
+        for old_tag in old_tags:
+            for new_name in new_names:
+                PendingTagCleanup.objects.create(new_name=new_name, old_name=old_tag.name)
+        PendingTagCleanup.objects.process()
         self.check_tag_name_presence(Event, new_names)
         self.check_tag_name_presence(Job, new_names)
         self.check_tag_name_presence(Codebase, new_names)
 
-    def test_tag_split_on_comma(self):
-        pass
-
-    def test_tag_name_normalize(self):
-        pass
-
-    def test_tag_merge_on_similarity(self):
-        pass
+    def test_tag_delete(self):
+        tag = Tag.objects.get(name='a random tag')
+        self.add_tags([tag])
+        new_names = []
+        # Empty string new_value is a sentinel value for deletion
+        PendingTagCleanup.objects.create(old_name='a random tag', new_name='')
+        PendingTagCleanup.objects.process()
+        self.assertEqual(Tag.objects.count(), 0)
+        self.check_tag_name_presence(Event, new_names)
+        self.check_tag_name_presence(Job, new_names)
+        self.check_tag_name_presence(Codebase, new_names)

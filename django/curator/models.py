@@ -2,10 +2,13 @@ import ast
 import json
 import logging
 import re
+import uuid
 from collections import defaultdict
 
 import modelcluster.fields
 import os
+
+from django.contrib.postgres.aggregates import ArrayAgg
 from django.contrib.postgres.fields import ArrayField
 from django.db import models, transaction
 from django.utils.functional import cached_property
@@ -53,10 +56,11 @@ class TagProxyQuerySet(models.QuerySet):
     def ending_in_version_numbers(self):
         return self.filter(name__iregex=r'^(.* |)(se\\-|r)?[\d.v]+[ab]?$')
 
-    def to_tag_cleanup(self, names=None):
-        if names is None:
-            names = []
-        return PendingTagCleanup.objects.create(new_names=names, old_names=list(self.values_list('name', flat=True)))
+    def to_tag_cleanups(self, new_name=''):
+        tag_cleanups = []
+        for old_tag in self.iterator():
+            tag_cleanups.append(PendingTagCleanup(new_name=new_name, old_name=old_tag.name))
+        return tag_cleanups
 
 
 class TagProxy(Tag):
@@ -74,10 +78,12 @@ class CanonicalName(models.Model):
 class PendingTagGroupingQuerySet(models.QuerySet):
     @transaction.atomic
     def process(self):
-        tag_groupings = self.filter(is_active=True).select_for_update().order_by('id')
+        migrator = TagMigrator()
+        tag_cleanups = self.filter(is_active=True)
+        tag_groupings = tag_cleanups.values('old_name').annotate(new_names=ArrayAgg('new_name')).order_by('old_name')
         for tag_grouping in tag_groupings:
-            tag_grouping.group()
-        tag_groupings.update(is_active=False)
+            migrator.migrate(old_name=tag_grouping['old_name'], new_names=tag_grouping['new_names'])
+        tag_cleanups.filter(is_active=True).update(is_active=False, transaction_id=uuid.uuid4())
 
     def create_comma_split(self):
         tags = TagProxy.objects.with_comma()
@@ -140,34 +146,14 @@ VERSION_NUMBER_MATCHER = re.compile(r'^(?:[\d.x_()\s>=<\\/^]|version|update|buil
 
 class PendingTagCleanup(models.Model):
     is_active = models.BooleanField(default=True)
-    new_names = ArrayField(models.CharField(max_length=300))
-    old_names = ArrayField(models.CharField(max_length=300))
+    new_name = models.CharField(max_length=300)
+    old_name = models.CharField(max_length=300)
+    transaction_id = models.UUIDField(null=True)
 
     objects = PendingTagGroupingQuerySet.as_manager()
 
     def __str__(self):
-        return 'id={} new_names={}, old_names={}'.format(self.id, self.new_names, self.old_names)
-
-    def create_new_tags(self, new_names):
-        nonexisting_new_names = new_names.difference(
-            Tag.objects.filter(name__in=new_names).values_list('name', flat=True))
-        # Generating a unique slug without appending unique a id requires adding tags one by one
-        for name in nonexisting_new_names:
-            tag = Tag(name=name)
-            tag.save()
-
-    @staticmethod
-    def move_through_model_refs(m, new_tags, old_tags):
-        pks = list(m.objects.filter(tag__in=old_tags).values_list('content_object', flat=True).distinct())
-        through_instances = []
-        for pk in pks:
-            for new_tag in new_tags:
-                through_instances.append(m(tag=new_tag, content_object_id=pk))
-        m.objects.bulk_create(through_instances)
-
-    @cached_property
-    def THROUGH_TABLES(self):
-        return get_through_tables()
+        return 'id={} new_name={}, old_name={}'.format(self.id, repr(self.new_name), repr(self.old_name))
 
     @classmethod
     def find_groups_by_porter_stemmer(cls):
@@ -181,19 +167,21 @@ class PendingTagCleanup(models.Model):
             groups[tag[1]].append(tag[0])
 
         tag_cleanups = []
-        for k, names in groups.items():
-            if len(names) > 1:
-                min_name_len = min(len(name) for name in names)
-                smallest_names = sorted(name for name in names if len(name) == min_name_len)
-                new_names = [smallest_names[0]]
-                tag_cleanups.append(PendingTagCleanup(new_names=new_names, old_names=names))
+        for k, old_names in groups.items():
+            if len(old_names) > 1:
+                min_name_len = min(len(name) for name in old_names)
+                smallest_names = sorted(name for name in old_names if len(name) == min_name_len)
+                new_name = smallest_names[0]
+                old_names.remove(new_name)
+                for old_name in old_names:
+                    tag_cleanups.append(PendingTagCleanup(new_name=new_name, old_name=old_name))
 
         return tag_cleanups
 
     @classmethod
     def find_groups_by_platform_and_language(cls):
         tag_cleanups = []
-        for tag in TagProxy.objects.programming_languages().union(TagProxy.objects.platforms())\
+        for tag in TagProxy.objects.programming_languages().union(TagProxy.objects.platforms()) \
                 .order_by('name').iterator():
             new_names = []
             for matcher in PLATFORM_AND_LANGUAGE_MATCHERS:
@@ -203,38 +191,54 @@ class PendingTagCleanup(models.Model):
             if not new_names:
                 if not VERSION_NUMBER_MATCHER.search(tag.name):
                     continue
-            tag_cleanups.append(PendingTagCleanup(new_names=new_names, old_names=[tag.name]))
+            for new_name in new_names:
+                tag_cleanups.append(PendingTagCleanup(new_name=new_name, old_name=tag.name))
         return tag_cleanups
 
-    def group(self):
-        """Combine or split original taggit tags to form new tags"""
-        through_models = self.THROUGH_TABLES
-
-        new_names = set(self.new_names)
-        old_names = set(self.old_names)
-        old_names.difference_update(new_names)
-        canonicalized_tag_cleanup = PendingTagCleanup(old_names=old_names, new_names=new_names)
-        if not old_names:
-            logger.warning('Discarded %s', canonicalized_tag_cleanup)
-            return
-
-        logger.info('%s', canonicalized_tag_cleanup)
-        self.create_new_tags(new_names)
-        new_tags = Tag.objects.filter(name__in=list(new_names))
-        old_tags = Tag.objects.filter(name__in=list(old_names))
-        for m in through_models:
-            self.move_through_model_refs(m, new_tags, old_tags)
-        old_tags.delete()
-
     def to_dict(self):
-        return {'new_names': self.new_names, 'old_names': self.old_names}
+        return {'new_name': self.new_name, 'old_name': self.old_name}
 
     @staticmethod
     def load_from_dict(dct):
-        return PendingTagCleanup(new_names=dct['new_names'], old_names=dct['old_names'])
+        return PendingTagCleanup(new_name=dct['new_name'], old_name=dct['old_name'])
 
     @classmethod
     def load(cls, filepath):
         with filepath.open('r') as f:
             tag_cleanups = json.load(f, object_hook=cls.load_from_dict)
         return tag_cleanups
+
+
+class TagMigrator:
+    def __init__(self):
+        self.through_models = get_through_tables()
+
+    @classmethod
+    def create_new_tags(cls, new_names):
+        nonexisting_new_names = new_names.difference(
+            Tag.objects.filter(name__in=new_names).values_list('name', flat=True))
+        # Generating a unique slug without appending unique a id requires adding tags one by one
+        for name in nonexisting_new_names:
+            tag = Tag(name=name)
+            tag.save()
+
+    @staticmethod
+    def copy_through_model_refs(model, new_tags, old_tag):
+        pks = list(model.objects.filter(tag=old_tag).values_list('content_object', flat=True))
+        through_instances = []
+        for pk in pks:
+            for new_tag in new_tags:
+                through_instances.append(model(tag=new_tag, content_object_id=pk))
+        model.objects.bulk_create(through_instances)
+
+    def migrate(self, new_names, old_name):
+        through_models = self.through_models
+        new_names = set(new_names).difference(old_name).difference({''})
+        self.create_new_tags(new_names)
+        new_tags = Tag.objects.filter(name__in=new_names).order_by('name')
+        old_tag = Tag.objects.filter(name=old_name).first()
+        logger.info('Mapping %s -> %s', old_name, new_names)
+        if old_tag is not None:
+            for model in through_models:
+                self.copy_through_model_refs(model, new_tags=new_tags, old_tag=old_tag)
+            old_tag.delete()

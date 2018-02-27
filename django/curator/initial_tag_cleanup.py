@@ -13,14 +13,18 @@ acronyms = [
 @transaction.atomic
 def load_initial_data():
     for (r, l) in acronyms:
-        PendingTagCleanup.objects.create(new_names=[r], old_names=[l])
+        PendingTagCleanup.objects.create(new_name=r, old_name=l)
     PendingTagCleanup.objects.process()
 
     PendingTagCleanup.objects.bulk_create(PendingTagCleanup.find_groups_by_porter_stemmer())
-    # Keep system dynamics tag separate from dynamic systems
-    ptc = PendingTagCleanup.objects.get(new_names__contains=['dynamic systems'])
-    ptc.old_names = [name for name in ptc.old_names if name != 'system dynamics']
-    ptc.save()
+    bad_translations = [
+        ('dynamic systems', 'system dynamics'),
+        ('effect size', 'size effect'),
+        ('flood re', 'flooding'),
+        ('from', 'other')
+    ]
+    for bad_translation in bad_translations:
+        PendingTagCleanup.objects.get(new_name=bad_translation[0], old_name=bad_translation[1]).delete()
     PendingTagCleanup.objects.process()
 
     PendingTagCleanup.objects.bulk_create(PendingTagCleanup.find_groups_by_platform_and_language())
@@ -28,11 +32,11 @@ def load_initial_data():
 
     # Ad Hoc Deletions
     regexes = [r'^jdk', r'^(?:ms|microsoft v)', r'^\.net', r'^version', 'r^visual s', 'r^jbuilder', r'^\d+\.',
-               r'^length>']
+               r'^length>', r'^from$', r'^other$']
     for regex in regexes:
-        TagProxy.objects.filter(name__iregex=regex).to_tag_cleanup()
+        PendingTagCleanup.objects.bulk_create(TagProxy.objects.filter(name__iregex=regex).to_tag_cleanups())
 
     # Couldn't figure out what this abm platform is
-    PendingTagCleanup.objects.create(new_names=['LPL'], old_names=['LPL 5.55'])
+    PendingTagCleanup.objects.create(new_name='LPL', old_name='LPL 5.55')
 
     PendingTagCleanup.objects.process()
