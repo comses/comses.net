@@ -1,12 +1,11 @@
 from collections import defaultdict
-from typing import List
+from typing import Dict
 
 from wagtail.wagtailcore.models import Page
 from wagtail.wagtailsearch.backends import get_search_backend
 from django.apps import apps
 from .models import Event, Job, MemberProfile
 from library.models import Codebase
-from home.models import FaqPage, PeoplePage, NewsIndexPage
 import logging
 
 logger = logging.getLogger(__name__)
@@ -23,7 +22,7 @@ class BaseSearchResult:
         if description is not None and len(description) > 400:
             description = description[:397] + "..."
         self.description = description
-        self.pk = pk
+        self.pk = int(pk)
         self.score = score
         self.tags = tags
         self.title = title
@@ -57,6 +56,9 @@ class BaseSearchResult:
     @staticmethod
     def get_research_interests(result):
         return result['_source']['research_interests']
+
+    def __str__(self):
+        return 'pk={} type={} score={}'.format(self.pk, self.type, self.score)
 
 
 class EventSearchResult(BaseSearchResult):
@@ -157,32 +159,22 @@ class GeneralSearch:
         return self.process(results), total
 
     @classmethod
-    def set_codebase_urls(cls, results: List[CodebaseSearchResult]):
-        ids = [r.pk for r in results]
-        ids.sort()
-        codebases = Codebase.objects.filter(id__in=ids).only('identifier').order_by('id')
-        for r, codebase in zip(results, codebases):
-            r.url = codebase.get_absolute_url()
+    def set_codebase_urls(cls, results: Dict[int, CodebaseSearchResult]):
+        codebases = Codebase.objects.filter(id__in=results.keys()).only('identifier').in_bulk()
+        for id in results.keys():
+            results[id].url = codebases[id].get_absolute_url()
 
     @classmethod
-    def set_member_profile_urls(cls, results: List[MemberProfileSearchResult]):
-        try:
-            ids = [r.pk for r in results]
-        except Exception:
-            print(results)
-            raise
-        ids.sort()
-        member_profiles = MemberProfile.objects.filter(id__in=ids).only('user__username').order_by('id')
-        for r, member_profile in zip(results, member_profiles):
-            r.url = member_profile.get_absolute_url()
+    def set_member_profile_urls(cls, results: Dict[int, MemberProfileSearchResult]):
+        member_profiles = MemberProfile.objects.filter(id__in=results.keys()).only('user__username').in_bulk()
+        for id in results.keys():
+            results[id].url = member_profiles[id].get_absolute_url()
 
     @classmethod
-    def set_page_urls(cls, results: List[OtherSearchResult]):
-        ids = [r.pk for r in results]
-        ids.sort()
-        pages = Page.objects.filter(id__in=ids).order_by('id')
-        for r, page in zip(results, pages):
-            r.url = page.url
+    def set_page_urls(cls, results: Dict[int, OtherSearchResult]):
+        pages = Page.objects.filter(id__in=results.keys()).in_bulk()
+        for id in results.keys():
+            results[id].url = pages[id].url
 
     def process(self, results):
         data = []
@@ -202,7 +194,7 @@ class GeneralSearch:
         #  in the Elasticsearch index
         for model, ids in content_types.items():
             url_setter = URL_DISPATCH.get(model)
-            data_slice = [data[i] for i in ids]
+            data_slice = {data[i].pk: data[i] for i in ids}
             if url_setter:
                 url_setter(data_slice)
 
