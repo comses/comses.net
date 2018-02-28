@@ -38,7 +38,7 @@ def get_through_tables():
             isinstance(m, models.ManyToOneRel) and has_parental_object_content_field(m.related_model)]
 
 
-class TagProxyQuerySet(models.QuerySet):
+class TagCuratorProxyQuerySet(models.QuerySet):
     def with_comma(self):
         return self.filter(name__icontains=',')
 
@@ -60,37 +60,33 @@ class TagProxyQuerySet(models.QuerySet):
     def to_tag_cleanups(self, new_name=''):
         tag_cleanups = []
         for old_tag in self.iterator():
-            tag_cleanups.append(PendingTagCleanup(new_name=new_name, old_name=old_tag.name))
+            tag_cleanups.append(TagCleanup(new_name=new_name, old_name=old_tag.name))
         return tag_cleanups
 
 
-class TagProxy(Tag):
-    objects = TagProxyQuerySet.as_manager()
+class TagCuratorProxy(Tag):
+    objects = TagCuratorProxyQuerySet.as_manager()
 
     class Meta:
         proxy = True
 
 
-class CanonicalName(models.Model):
-    original = models.CharField(max_length=300)
-    canonical = models.CharField(max_length=300)
-
-
-class PendingTagGroupingQuerySet(models.QuerySet):
+class TagCleanupQuerySet(models.QuerySet):
     @transaction.atomic
     def process(self):
         migrator = TagMigrator()
-        tag_cleanups = self.filter(is_active=True)
+        tag_cleanups = self.filter(transaction_id__isnull=True)
         tag_groupings = tag_cleanups.values('old_name').annotate(new_names=ArrayAgg('new_name')).order_by('old_name')
         for tag_grouping in tag_groupings:
             migrator.migrate(old_name=tag_grouping['old_name'], new_names=tag_grouping['new_names'])
-        tag_cleanups.filter(is_active=True).update(is_active=False, transaction_id=uuid.uuid4())
+        tct = TagCleanupTransaction.objects.create()
+        tag_cleanups.update(transaction=tct)
 
     def create_comma_split(self):
-        tags = TagProxy.objects.with_comma()
+        tags = TagCuratorProxy.objects.with_comma()
         for tag in tags:
             new_names = [re.sub(r'!\w+', ' ', t.strip()) for t in tag.name.split(',')]
-            yield PendingTagCleanup(new_names=new_names, old_names=[tag.name])
+            yield TagCleanup(new_names=new_names, old_names=[tag.name])
 
     def dump(self, filepath):
         tag_cleanups = []
@@ -100,7 +96,6 @@ class PendingTagGroupingQuerySet(models.QuerySet):
         os.makedirs(str(filepath.parent), exist_ok=True)
         with filepath.open('w') as f:
             json.dump(tag_cleanups, f, indent=4, sort_keys=True)
-
 
 
 # Should just use file system to find ground truth
@@ -146,13 +141,19 @@ PLATFORM_AND_LANGUAGE_MATCHERS = [
 VERSION_NUMBER_MATCHER = re.compile(r'^(?:[\d.x_()\s>=<\\/^]|version|update|build|or|higher|beta|alpha|rc)+$')
 
 
-class PendingTagCleanup(models.Model):
-    is_active = models.BooleanField(default=True)
-    new_name = models.CharField(max_length=300)
-    old_name = models.CharField(max_length=300)
-    transaction_id = models.UUIDField(null=True, blank=True)
+class TagCleanupTransaction(models.Model):
+    date_created = models.DateTimeField(auto_now_add=True)
 
-    objects = PendingTagGroupingQuerySet.as_manager()
+    def __str__(self):
+        return "{}".format(self.date_created.strftime('%c'))
+
+
+class TagCleanup(models.Model):
+    new_name = models.CharField(max_length=300, blank=True)
+    old_name = models.CharField(max_length=300)
+    transaction = models.ForeignKey(TagCleanupTransaction, null=True, blank=True)
+
+    objects = TagCleanupQuerySet.as_manager()
 
     def __str__(self):
         return 'id={} new_name={}, old_name={}'.format(self.id, repr(self.new_name), repr(self.old_name))
@@ -176,14 +177,14 @@ class PendingTagCleanup(models.Model):
                 new_name = smallest_names[0]
                 old_names.remove(new_name)
                 for old_name in old_names:
-                    tag_cleanups.append(PendingTagCleanup(new_name=new_name, old_name=old_name))
+                    tag_cleanups.append(TagCleanup(new_name=new_name, old_name=old_name))
 
         return tag_cleanups
 
     @classmethod
     def find_groups_by_platform_and_language(cls):
         tag_cleanups = []
-        for tag in TagProxy.objects.programming_languages().union(TagProxy.objects.platforms()) \
+        for tag in TagCuratorProxy.objects.programming_languages().union(TagCuratorProxy.objects.platforms()) \
                 .order_by('name').iterator():
             new_names = []
             for matcher in PLATFORM_AND_LANGUAGE_MATCHERS:
@@ -194,7 +195,7 @@ class PendingTagCleanup(models.Model):
                 if not VERSION_NUMBER_MATCHER.search(tag.name):
                     continue
             for new_name in new_names:
-                tag_cleanups.append(PendingTagCleanup(new_name=new_name, old_name=tag.name))
+                tag_cleanups.append(TagCleanup(new_name=new_name, old_name=tag.name))
         return tag_cleanups
 
     def to_dict(self):
@@ -202,7 +203,7 @@ class PendingTagCleanup(models.Model):
 
     @staticmethod
     def load_from_dict(dct):
-        return PendingTagCleanup(new_name=dct['new_name'], old_name=dct['old_name'])
+        return TagCleanup(new_name=dct['new_name'], old_name=dct['old_name'])
 
     @classmethod
     def load(cls, filepath):
@@ -212,11 +213,11 @@ class PendingTagCleanup(models.Model):
 
     @classmethod
     def process_url(cls):
-        return reverse('curator:process_pendingtagcleanups')
+        return reverse('curator:process_tagcleanups')
 
     class Meta:
         permissions = (
-            ('process', 'Able to process pending tag cleanups'),
+            ('process', 'Able to process tag cleanups'),
         )
 
 

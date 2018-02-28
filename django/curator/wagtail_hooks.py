@@ -1,20 +1,29 @@
+from enum import Enum
+
 from django.urls import reverse
 from wagtail.contrib.modeladmin.helpers import ButtonHelper, PermissionHelper
 from wagtail.contrib.modeladmin.options import ModelAdmin, modeladmin_register
 from wagtail.contrib.modeladmin.views import IndexView
 
-from .models import PendingTagCleanup
+from .models import TagCleanup
 
 
-class PendingTagCleanupPermissionHelper(PermissionHelper):
+class TagCleanupPermissionHelper(PermissionHelper):
     def user_can_delete_obj(self, user, obj):
         """Don't allow deletion of inactive permission tag cleanup objs"""
-        if obj.is_active:
+        if obj.transaction_id is None:
             return super().user_can_delete_obj(user, obj)
         return False
 
 
-class PendingTagCleanupButtonHelper(ButtonHelper):
+class TagCleanupAction(Enum):
+    process = 'Migrate Pending Changes'
+    delete_all_active = 'Delete All Active Changes'
+    find_by_porter_stemmer = 'Porter Stemmer'
+    find_by_platform_and_language = 'Platform and Language'
+
+
+class TagCleanupButtonHelper(ButtonHelper):
     def _action_button(self, action, label, title, classnames_add, classnames_exclude):
         if classnames_add is None:
             classnames_add = []
@@ -23,57 +32,56 @@ class PendingTagCleanupButtonHelper(ButtonHelper):
         classnames = ['icon-play'] + classnames_add
         cn = self.finalise_classname(classnames, classnames_exclude)
         return {
-            'url': reverse('curator:process_pendingtagcleanups'),
+            'url': reverse('curator:process_tagcleanups'),
             'action': action,
             'label': label,
             'classname': cn,
             'title': title,
         }
 
-    DELETE_ALL_ACTIVE = 'delete_all_active'
 
     def process_button(self, classnames_add=None, classnames_exclude=None):
-        return self._action_button(action=PendingTagCleanup.objects.process.__name__,
-                                   label='Migrate Pending Changes',
-                                   title='Migrate Pending Changes',
+        return self._action_button(action=TagCleanupAction.process.name,
+                                   label=TagCleanupAction.process.value,
+                                   title=TagCleanupAction.process.value,
                                    classnames_add=classnames_add,
                                    classnames_exclude=classnames_exclude)
 
     def delete_active_button(self, classnames_add=None, classnames_exclude=None):
-        return self._action_button(action=self.DELETE_ALL_ACTIVE,
-                                   label='Delete All Active Changes',
-                                   title='Delete All Active Changes',
+        return self._action_button(action=TagCleanupAction.delete_all_active.name,
+                                   label=TagCleanupAction.delete_all_active.value,
+                                   title=TagCleanupAction.delete_all_active.value,
                                    classnames_add=classnames_add,
                                    classnames_exclude=classnames_exclude)
 
     def find_groups_by_porter_stemmer_button(self, classnames_add=None, classnames_exclude=None):
-        return self._action_button(action=PendingTagCleanup.find_groups_by_porter_stemmer.__name__,
-                                   label='Porter Stemmer',
-                                   title='Porter Stemmer',
+        return self._action_button(action=TagCleanupAction.find_by_porter_stemmer.name,
+                                   label=TagCleanupAction.find_by_porter_stemmer.value,
+                                   title=TagCleanupAction.find_by_porter_stemmer.value,
                                    classnames_add=classnames_add,
                                    classnames_exclude=classnames_exclude)
 
     def find_groups_by_platform_and_language_button(self, classnames_add=None, classnames_exclude=None):
-        return self._action_button(action=PendingTagCleanup.find_groups_by_porter_stemmer.__name__,
-                                   label='Platform and Language',
-                                   title='Platform and Language',
+        return self._action_button(action=TagCleanupAction.find_by_platform_and_language.name,
+                                   label=TagCleanupAction.find_by_platform_and_language.value,
+                                   title=TagCleanupAction.find_by_platform_and_language.value,
                                    classnames_add=classnames_add,
                                    classnames_exclude=classnames_exclude)
 
 
-class PendingTagCleanupIndexView(IndexView):
-    template_name = 'modeladmin/curator/pendingtagcleanup/index.html'
+class TagCleanupIndexView(IndexView):
+    template_name = 'modeladmin/curator/tagcleanup/index.html'
 
 
-class PendingTagCleanupAdmin(ModelAdmin):
-    model = PendingTagCleanup
-    button_helper_class = PendingTagCleanupButtonHelper
-    permission_helper_class = PendingTagCleanupPermissionHelper
-    index_view_class = PendingTagCleanupIndexView
-    list_display = ('old_name', 'new_name', 'transaction_id',)
-    list_filter = ('is_active',)
+class TagCleanupAdmin(ModelAdmin):
+    model = TagCleanup
+    button_helper_class = TagCleanupButtonHelper
+    permission_helper_class = TagCleanupPermissionHelper
+    index_view_class = TagCleanupIndexView
+    list_display = ('old_name', 'new_name', 'transaction',)
+    list_filter = ('transaction__date_created',)
     search_fields = ('old_name', 'new_name',)
     ordering = ('id',)
 
 
-modeladmin_register(PendingTagCleanupAdmin)
+modeladmin_register(TagCleanupAdmin)

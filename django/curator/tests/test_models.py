@@ -3,7 +3,7 @@ from taggit.models import Tag
 
 from core.models import Event, Job
 from core.tests.base import UserFactory
-from curator.models import PendingTagCleanup
+from curator.models import TagCleanup
 from home.tests.base import EventFactory, JobFactory
 from library.models import Codebase
 from library.tests.base import CodebaseFactory
@@ -41,8 +41,8 @@ class TagCleanupTestCase(TestCase):
         new_names = ['agent based model', 'python']
         for old_tag in old_tags:
             for new_name in new_names:
-                PendingTagCleanup.objects.create(new_name=new_name, old_name=old_tag.name)
-        PendingTagCleanup.objects.process()
+                TagCleanup.objects.create(new_name=new_name, old_name=old_tag.name)
+        TagCleanup.objects.process()
         self.check_tag_name_presence(Event, new_names)
         self.check_tag_name_presence(Job, new_names)
         self.check_tag_name_presence(Codebase, new_names)
@@ -52,8 +52,8 @@ class TagCleanupTestCase(TestCase):
         self.add_tags([tag])
         new_names = []
         # Empty string new_value is a sentinel value for deletion
-        PendingTagCleanup.objects.create(old_name='a random tag', new_name='')
-        PendingTagCleanup.objects.process()
+        TagCleanup.objects.create(old_name='a random tag', new_name='')
+        TagCleanup.objects.process()
         self.assertEqual(Tag.objects.count(), 0)
         self.check_tag_name_presence(Event, new_names)
         self.check_tag_name_presence(Job, new_names)

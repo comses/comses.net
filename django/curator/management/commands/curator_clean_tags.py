@@ -5,7 +5,7 @@ from django.conf import settings
 
 import logging
 
-from curator.models import PendingTagCleanup, CanonicalName, PENDING_TAG_CLEANUPS_FILENAME
+from curator.models import TagCleanup, CanonicalName, PENDING_TAG_CLEANUPS_FILENAME
 
 logger = logging.getLogger(__name__)
 
@@ -34,23 +34,23 @@ class Command(BaseCommand):
     def handle_load(self, restore_directory):
         path = restore_directory.joinpath(PENDING_TAG_CLEANUPS_FILENAME)
         print('Loading data from path {}'.format(str(path)))
-        tag_cleanups = PendingTagCleanup.load(path)
-        PendingTagCleanup.objects.bulk_create(tag_cleanups)
+        tag_cleanups = TagCleanup.load(path)
+        TagCleanup.objects.bulk_create(tag_cleanups)
 
     def handle_method(self, method):
         if method == 'porter_stemmer':
-            tag_cleanups = PendingTagCleanup.find_groups_by_porter_stemmer()
+            tag_cleanups = TagCleanup.find_groups_by_porter_stemmer()
         elif method == 'programming_language':
-            tag_cleanups = PendingTagCleanup.find_groups_by_platform_and_language()
+            tag_cleanups = TagCleanup.find_groups_by_platform_and_language()
         else:
             raise Exception('invalid method name')
-        PendingTagCleanup.objects.bulk_create(tag_cleanups)
+        TagCleanup.objects.bulk_create(tag_cleanups)
 
     def handle_run(self):
-        PendingTagCleanup.objects.process()
+        TagCleanup.objects.process()
 
     def handle_view(self):
-        qs = PendingTagCleanup.objects.filter(is_active=True)
+        qs = TagCleanup.objects.filter(is_active=True)
         if qs.count() > 0:
             print('Tag Cleanups\n--------------------\n')
             for tag_cleanup in qs.iterator():
@@ -73,7 +73,7 @@ class Command(BaseCommand):
             self.handle_method(method)
         elif dump:
             print('Dumping tag curation data to {}'.format(load_directory.joinpath(PENDING_TAG_CLEANUPS_FILENAME)))
-            PendingTagCleanup.objects.dump(load_directory.joinpath(PENDING_TAG_CLEANUPS_FILENAME))
+            TagCleanup.objects.dump(load_directory.joinpath(PENDING_TAG_CLEANUPS_FILENAME))
         elif not view:
             raise Exception('restore directory, dump, method or view action must be specified')
         if view:

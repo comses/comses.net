@@ -1,6 +1,6 @@
 from django.db import transaction
 
-from .models import PendingTagCleanup, TagProxy
+from .models import TagCleanup, TagCuratorProxy
 
 acronyms = [
     ('cellular automata', 'ca'),
@@ -13,10 +13,10 @@ acronyms = [
 @transaction.atomic
 def load_initial_data():
     for (r, l) in acronyms:
-        PendingTagCleanup.objects.create(new_name=r, old_name=l)
-    PendingTagCleanup.objects.process()
+        TagCleanup.objects.create(new_name=r, old_name=l)
+    TagCleanup.objects.process()
 
-    PendingTagCleanup.objects.bulk_create(PendingTagCleanup.find_groups_by_porter_stemmer())
+    TagCleanup.objects.bulk_create(TagCleanup.find_groups_by_porter_stemmer())
     bad_translations = [
         ('dynamic systems', 'system dynamics'),
         ('effect size', 'size effect'),
@@ -24,19 +24,19 @@ def load_initial_data():
         ('from', 'other')
     ]
     for bad_translation in bad_translations:
-        PendingTagCleanup.objects.get(new_name=bad_translation[0], old_name=bad_translation[1]).delete()
-    PendingTagCleanup.objects.process()
+        TagCleanup.objects.get(new_name=bad_translation[0], old_name=bad_translation[1]).delete()
+    TagCleanup.objects.process()
 
-    PendingTagCleanup.objects.bulk_create(PendingTagCleanup.find_groups_by_platform_and_language())
-    PendingTagCleanup.objects.process()
+    TagCleanup.objects.bulk_create(TagCleanup.find_groups_by_platform_and_language())
+    TagCleanup.objects.process()
 
     # Ad Hoc Deletions
     regexes = [r'^jdk', r'^(?:ms|microsoft v)', r'^\.net', r'^version', 'r^visual s', 'r^jbuilder', r'^\d+\.',
                r'^length>', r'^from$', r'^other$']
     for regex in regexes:
-        PendingTagCleanup.objects.bulk_create(TagProxy.objects.filter(name__iregex=regex).to_tag_cleanups())
+        TagCleanup.objects.bulk_create(TagCuratorProxy.objects.filter(name__iregex=regex).to_tag_cleanups())
 
     # Couldn't figure out what this abm platform is
-    PendingTagCleanup.objects.create(new_name='LPL', old_name='LPL 5.55')
+    TagCleanup.objects.create(new_name='LPL', old_name='LPL 5.55')
 
-    PendingTagCleanup.objects.process()
+    TagCleanup.objects.process()
