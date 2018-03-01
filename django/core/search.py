@@ -135,25 +135,48 @@ class GeneralSearch:
         if indexed_models is None:
             indexed_models = [Codebase, Event, Job, MemberProfile, Page]
         self._search = get_search_backend()
-        self._indexes = self.get_index_names(indexed_models)
+        self._models = indexed_models
+
+    def get_search_criteria_for_model(self, model, text):
+        if hasattr(model, 'elasticsearch_query'):
+            return model.elasticsearch_query(text)
+        else:
+            document_type = self._search.get_index_for_model(model).mapping_class(model).get_document_type()
+            return {
+                'bool': {
+                    'must': {
+                        'match': {
+                            '_all': text
+                        }
+                    },
+                    'filter': {
+                        'type': {
+                            'value': document_type
+                        }
+                    }
+                }
+            }
+
+    def get_search_criteria(self, models, text, start, size):
+        return {
+            'query': {
+                'bool': {
+                    'should': [self.get_search_criteria_for_model(model, text) for model in models]
+                }
+            },
+            'from': start,
+            'size': size
+        }
 
     def get_index_names(self, models):
         return [self._search.get_index_for_model(m).name for m in models]
 
     def search(self, text, models=None, start=0, size=10):
         if models is None:
-            indexes = self._indexes
-        else:
-            indexes = self.get_index_names(models)
-        response = self._search.es.search(indexes, body={
-            "query": {
-                "match": {
-                    "_all": text
-                }
-            },
-            "from": start,
-            "size": size
-        })
+            models = self._models
+
+        body = self.get_search_criteria(models, text, start, size)
+        response = self._search.es.search(self.get_index_names(models), body=body)
         total = response['hits']['total']
         results = response['hits']['hits']
         return self.process(results), total

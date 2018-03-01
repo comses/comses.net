@@ -28,6 +28,7 @@ from taggit.models import TaggedItemBase
 from unidecode import unidecode
 from wagtail.wagtailimages.models import Image, AbstractImage, AbstractRendition, get_upload_to, ImageQuerySet
 from wagtail.wagtailsearch import index
+from wagtail.wagtailsearch.backends import get_search_backend
 
 from core import fs
 from core.backends import get_viewable_objects_for_user
@@ -569,6 +570,37 @@ class Codebase(index.Indexed, ClusterableModel):
             self.save()
         return release
 
+    @classmethod
+    def elasticsearch_query(cls, text):
+        document_type = get_search_backend().get_index_for_model(cls).mapping_class(cls).get_document_type()
+        return {
+            "bool": {
+                "must": [
+                    {
+                        "match": {
+                            "_all": text
+                        }
+                    }
+                ],
+                "filter": {
+                    "bool": {
+                        "must": [
+                            {
+                                "term": {
+                                    "live_filter": True
+                                }
+                            },
+                            {
+                                "type": {
+                                    "value": document_type
+                                }
+                            }
+                        ]
+                    }
+                }
+            }
+        }
+
     def __str__(self):
         live = repr(self.live) if hasattr(self, 'live') else 'Unknown'
         return "{0} {1} identifier={2} live={3}".format(self.title, self.date_created, repr(self.identifier),
@@ -812,8 +844,8 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
             title=self.codebase.title,
             version=self.version_number,
             cml='CoMSES Computational Model Library',
-                purl=self.permanent_url
-        ) 
+            purl=self.permanent_url
+        )
 
     def download_count(self):
         return self.downloads.count()
