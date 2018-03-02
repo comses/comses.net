@@ -301,7 +301,7 @@
         {% endif %}
     {% endif %}
     {% if live %}
-        <a href="{{ url('library:codebaserelease-download', identifier=codebase.identifier, version_number=version_number) }}">
+        <a id="releaseDownload" data-name="download" href="{{ url('library:codebaserelease-download', identifier=codebase.identifier, version_number=version_number) }}">
             <button type="button" class="btn btn-primary my-1 w-100">Download</button>
         </a>
     {% else %}
