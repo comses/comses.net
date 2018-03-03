@@ -7,7 +7,7 @@ import * as queryString from 'query-string'
     template: `<form class='form-inline py-2 mx-1'>
         <div class='form-group'>
             <label for='ordering'><b class='title'>Sort By: </b></label>
-            <select v-model="selectedOptionValue" class='form-control form-control mx-2'>
+            <select v-model="selectedOptionValue" class='mx-3'>
                 <option v-for='sortOption in sortOptions' :value='sortOption.value' :selected="sortOption.value === selectedOptionValue">
                 {{ sortOption.label }}
                 </option>
