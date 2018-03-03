@@ -167,19 +167,14 @@
                     none selected
                 {% endfor %}
             </p>
-            <h2 class='card-title'>
-                Membership Status
-            </h2>
             <p class="card-text">
                 {% if full_member %}
-                    <i class="text-success">Full Member</i>
+                    <span class="badge badge-primary">Full Member</span>
                 {% else %}
-                    <i class="text-secondary">Basic Member</i>
+                    <span class="badge badge-secondary">Basic Member</span>
                 {% endif %}
-            </p>
-            <p class="card-text"></p>
                 {% if is_reviewer %}
-                    <i class="text-success">Reviewer</i>
+                    <span class="badge badge-primary">Reviewer</i>
                 {% endif %}
             </p>
         </div>
