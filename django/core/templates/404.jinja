@@ -7,6 +7,18 @@
 {% endblock %}
 
 {% block content %}
-    <h2>Sorry, this resource could not be found.
-        That means you either do not have view permission on this resource or it does not exist</h2>
+    <h2>Resource not found <span class='text-gray'>&#8253;&#8253;&#8253;</span></h2>
+    <p class='lead'>
+    Sorry, we were unable to resolve your request to anything we can display. This could happen because: 
+    </p>
+    <ol>
+        <li>You don't have view permissions on this resource</li>
+        <li>We lost something in the migration from openabm.org</li>
+        <li>We have a bug or broken link in our system</li>
+        <li>The resource you're trying to access really doesn't exist</li>
+    </ol>
+    <p>
+    If this is our fault, please <a href='/about/contact/'>let us know</a> so we can fix it. Thanks for being a part of
+    <a href='/'>comses.net</a>!
+    </p>
 {% endblock %}
