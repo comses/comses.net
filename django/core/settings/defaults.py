@@ -10,6 +10,7 @@ https://docs.djangoproject.com/en/1.11/ref/settings/
 
 import configparser
 import os
+import pathlib
 from enum import Enum
 
 # DEFAULT_EXTENSIONS defined at https://github.com/niwinz/django-jinja/blob/master/django_jinja/builtins/__init__.py
@@ -147,7 +148,17 @@ WAGTAILSEARCH_BACKENDS = {
 # make tags case insensitive
 TAGGIT_CASE_INSENSITIVE = True
 
+RELEASE_VERSION_FILE = "release-version.txt"
+
+release_version_file = pathlib.Path(RELEASE_VERSION_FILE)
+RELEASE_VERSION = "v1.0.3"
+
+if release_version_file.is_file():
+    with release_version_file.open('r') as infile:
+        RELEASE_VERSION = infile.read().strip()
+
 config = configparser.ConfigParser()
+# FIXME: switch to docker secrets instead
 IS_IN_DOCKER = os.path.exists('/secrets/config.ini')
 # FIXME: set up better shared paths
 if IS_IN_DOCKER:
