@@ -1,4 +1,5 @@
 import logging
+from collections import OrderedDict
 from itertools import chain
 from urllib import parse
 
@@ -14,7 +15,7 @@ from django.http import Http404, HttpResponseBadRequest, HttpResponseRedirect, Q
 from django.shortcuts import render
 from django.views.generic import DetailView, TemplateView
 from rest_framework import filters
-from rest_framework.exceptions import PermissionDenied as DrfPermissionDenied, NotAuthenticated
+from rest_framework.exceptions import PermissionDenied as DrfPermissionDenied, NotAuthenticated, NotFound
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 from rest_framework.views import exception_handler
@@ -175,7 +176,7 @@ def rest_exception_handler(exc, context):
     request = context.get('request')
     logger.warning("DRF exception handler %s", exc, exc_info=True)
     if request and request.accepted_media_type == 'text/html':
-        if isinstance(exc, Http404):
+        if isinstance(exc, (Http404, NotFound)):
             return page_not_found(request, context=context)
         elif isinstance(exc, (PermissionDenied, DrfPermissionDenied, NotAuthenticated)):
             return permission_denied(request, context=context)
@@ -227,22 +228,27 @@ class SmallResultSetPagination(PageNumberPagination):
         page = query_params.pop('page', [1])[0]
         count = self.page.paginator.count
         try:
-            current_page_number = int(page)
+            current_page_number = max(1, int(page))
         except:
             current_page_number = 1
-        return Response(self.create_paginated_context_data(query=query,
-                                                           data=data,
-                                                           current_page_number=current_page_number,
-                                                           count=count,
-                                                           query_params=query_params))
+        return Response(
+            self.create_paginated_context_data(
+                query=query,
+                data=data,
+                current_page_number=current_page_number,
+                count=count,
+                query_params=query_params
+            )
+        )
 
     @classmethod
     def create_paginated_context_data(cls, query, data, current_page_number, count, query_params, size=None):
         if size is None:
             size = cls.page_size
+        # ceiling division https://stackoverflow.com/questions/14822184/is-there-a-ceiling-equivalent-of-operator-in-python
         num_pages = -(-count // size)
         page_range = list(range(max(2, current_page_number - 3), min(num_pages, current_page_number + 4)))
-        return {
+        return OrderedDict({
             'is_first_page': current_page_number == 1,
             'is_last_page': current_page_number == num_pages,
             'current_page': current_page_number,
@@ -254,7 +260,7 @@ class SmallResultSetPagination(PageNumberPagination):
             'range': page_range,
             'num_pages': num_pages,
             'results': data
-        }
+        })
 
 
 @login_required
@@ -336,5 +342,4 @@ class SearchView(TemplateView):
             query_params=QueryDict(query_string='query={}'.format(query)))
         context['__all__'] = pagination_context
         context.update(pagination_context)
-        # ceiling division https://stackoverflow.com/questions/14822184/is-there-a-ceiling-equivalent-of-operator-in-python
         return context
