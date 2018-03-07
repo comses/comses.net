@@ -171,8 +171,10 @@ function focusSearch() {
         </div>
     </div>
     <p class="copyright text-center">&copy; 2007 - {{ now('Y') }} CoMSES Net |
-    <a class='footer' href='{{ contact_url }}'>Contact us</a>
+    <a class='footer' href='{{ contact_url }}'>Contact us</a><br>
+    <small>comses.net build: {{ release_version() }}</small>
     </p>
+
 </footer>
 {% endmacro %}
 

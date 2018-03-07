@@ -39,9 +39,15 @@ def should_enable_discourse(is_public: bool):
     """
     return is_public and is_production()
 
+
 @library.global_function
 def is_debug():
     return settings.DEBUG
+
+
+@library.global_function
+def release_version():
+    return settings.RELEASE_VERSION
 
 
 @library.global_function
