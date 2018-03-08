@@ -301,11 +301,11 @@
         {% endif %}
     {% endif %}
     {% if live %}
-        <a id="releaseDownload" data-name="download" href="{{ url('library:codebaserelease-download', identifier=codebase.identifier, version_number=version_number) }}">
+        <a id="releaseDownload" data-name="download" rel='nofollow' href="{{ url('library:codebaserelease-download', identifier=codebase.identifier, version_number=version_number) }}">
             <button type="button" class="btn btn-primary my-1 w-100">Download</button>
         </a>
     {% else %}
-        <a href="{{ share_url }}download/">
+        <a rel='nofollow' href="{{ share_url }}download/">
             <button type="button" class="btn btn-primary my-1 w-100">Download for Review</button>
         </a>
     {% endif %}
