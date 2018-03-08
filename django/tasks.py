@@ -37,20 +37,14 @@ def dj(ctx, command, **kwargs):
 
 
 @task
-def clean_update(ctx):
-    ctx.run("git fetch --all && git reset --hard origin/master")
-
-
-@task
 def clean(ctx, revert=False):
     ctx.run("find . -name '*.pyc' -o -name 'generated-*' -delete -print")
-    if revert:
-        clean_update(ctx)
 
 
 @task(aliases=['cs'])
 def collect_static(ctx):
     dj(ctx, 'collectstatic -c --noinput', pty=True)
+    ctx.run('touch ./core/wsgi.py')
 
 
 @task(aliases=['qc'])
