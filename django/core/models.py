@@ -351,12 +351,12 @@ class EventQuerySet(models.QuerySet):
         """
         return self.filter(
             # early registration deadline falls between the interval
-            (models.Q(early_registration_deadline__gte=start) & models.Q(early_registration_deadline__lte=end)) |
+            models.Q(early_registration_deadline__range=[start, end]) |
             # or submission deadline falls between the interval
-            (models.Q(submission_deadline__gte=start) & models.Q(submission_deadline__lte=end)) |
+            models.Q(submission_deadline__range=[start, end]) |
             models.Q(start_date__gte=start)
-            # exclude any whose start date is after the interval end and whose end date is before the interval start
-        ).exclude(models.Q(start_date__gte=end) | models.Q(end_date__lte=start))
+            # exclude events whose end date is before the interval start
+        ).exclude(models.Q(end_date__lte=start))
 
     def with_submitter(self):
         return self.select_related('submitter')
