@@ -132,6 +132,9 @@
                 <a href="{{ url('home:profile-edit', user__pk=user_pk) }}" class='btn btn-primary w-100'>
                     Edit Profile</a>
                 </p>
+                <a href="{{ url('library:codebase-add') }}" class="btn btn-primary w-100">
+                    Archive a model
+                </a>
             {% endif %}
             {% if email and request.user.username != username %}
                 <p class='card-text'>
