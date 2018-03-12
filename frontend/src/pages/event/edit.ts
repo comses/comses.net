@@ -59,7 +59,7 @@ export const schema = yup.object().shape({
             </div>
             <div class="col-6">
                 <c-datepicker v-model="end_date" name="end_date" :errorMsgs="errors.end_date" :clearButton="true"
-                    :required="config.end_date" label="End Date" help="The date the event ends at">
+                    :openDate="endDateOpenDate" :required="config.end_date" label="End Date" help="The date the event ends at">
                 </c-datepicker>
             </div>
         </div>
@@ -120,6 +120,10 @@ class EditEvent extends createFormValidator(schema) {
 
     @Prop()
     _id: number | null;
+
+    get endDateOpenDate() {
+        return this.state.end_date ? this.state.end_date : this.state.start_date;
+    }
 
     detailPageUrl(state) {
         this.state.id = state.id;
