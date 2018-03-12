@@ -185,7 +185,7 @@ class CodebaseSerializer(serializers.ModelSerializer, FeaturedImageMixin):
     first_published_at = serializers.DateTimeField(format=PUBLISH_DATE_FORMAT, read_only=True)
     last_published_on = serializers.DateTimeField(format=PUBLISH_DATE_FORMAT, read_only=True)
     latest_version_number = serializers.ReadOnlyField(source='latest_version.version_number')
-    releases = RelatedCodebaseReleaseSerializer(read_only=True, many=True)
+    releases = serializers.SerializerMethodField()
     submitter = LinkedUserSerializer(read_only=True,
                                      default=serializers.CurrentUserDefault())
     summarized_description = serializers.CharField(read_only=True)
@@ -194,6 +194,12 @@ class CodebaseSerializer(serializers.ModelSerializer, FeaturedImageMixin):
 
     # FIXME: output should be raw markdown, not rendered
     description = MarkdownField()
+
+    def get_releases(self, obj):
+        queryset = obj.releases.order_by('-version_number')
+        return RelatedCodebaseReleaseSerializer(
+            queryset, read_only=True, many=True, context=self.context
+        ).data
 
     def create(self, validated_data):
         serialized_tags = TagSerializer(many=True, data=validated_data.pop('tags'))
