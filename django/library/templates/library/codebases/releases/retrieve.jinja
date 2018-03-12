@@ -288,6 +288,13 @@
         <a href="{{ url('library:codebaserelease-edit', identifier=codebase.identifier, version_number=version_number) }}">
             <div class="btn btn-primary my-1 w-100">Edit</div>
         </a>
+        <form>
+            {% csrf_token %}
+            <button class="btn btn-primary my-1 w-100" formmethod="post"
+                    formaction="{{ url('library:codebaserelease-draft', identifier=codebase.identifier) }}">
+                Draft release
+            </button>
+        </form>
         {% if user == submitter or user.is_superuser %}
             {% set review_template_text -%}
             Request to review {{ request.build_absolute_uri(absolute_url) }}
