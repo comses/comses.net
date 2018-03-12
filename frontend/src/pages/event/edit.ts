@@ -49,7 +49,7 @@ export const schema = yup.object().shape({
             label="Title" help="A short  title describing the event">
         </c-input>
         <c-input v-model="location" name="location" :errorMsgs="errors.location" :required="config.location"
-            label="Location" help="The address of where the event takes place">
+            label="Location" help="The city and country where the event takes place">
         </c-input>
         <div class="row">
             <div class="col-6">
