@@ -204,6 +204,11 @@ class CodebaseReleaseDownload(models.Model):
     def __str__(self):
         return "{0}: downloaded {1}".format(self.ip_address, self.release)
 
+    class Meta:
+        indexes = [
+            models.Index(fields=['date_created'])
+        ]
+
 
 class CodebaseQuerySet(models.QuerySet):
 
