@@ -76,7 +76,7 @@ class Command(BaseCommand):
                 fieldnames = ['url', 'title', 'date']
                 writer = csv.DictWriter(f, fieldnames=fieldnames)
                 writer.writeheader()
-                for codebase in qs.distinct().iterator():
+                for codebase in qs.iterator():
                     writer.writerow({'url': codebase.get_absolute_url(),
                                      'title': codebase.title,
                                      'date': max_dates_bulk[codebase.id]})
