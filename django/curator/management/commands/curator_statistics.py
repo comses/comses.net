@@ -1,5 +1,6 @@
 import csv
 
+import os
 from django.core.management.base import BaseCommand
 
 from dateutil.parser import parse as date_parse
@@ -19,8 +20,9 @@ class Command(BaseCommand):
     def add_arguments(self, parser):
         parser.add_argument('--from', '-f', help='isoformat from date')
         parser.add_argument('--to', '-t', help='isoformat to date', default=None)
-        parser.add_argument('--dest', '-d', default=None)
-        parser.add_argument('--level', '-l', default='release', help='aggregation level - either codebase or release')
+        parser.add_argument('--directory', '-d', help='directory to store statistics in', default='/shared/statistics')
+        parser.add_argument('--aggregations', '-a', default='release,codebase,ip',
+                            help='aggregations - comma separated list of release, codebase, ip')
 
     def export_release_download_statistics(self, downloads, dest):
         releases = CodebaseRelease.objects.filter(id__in=downloads.values_list('release_id', flat=True))\
@@ -47,31 +49,44 @@ class Command(BaseCommand):
                                  'count': result['count'],
                                  'title': codebase.title})
 
+    def export_ip_download_statistics(self, downloads, dest):
+        results = downloads.values('ip_address').annotate(count=Count('*'))
+        with open(dest, 'w', newline='') as f:
+            fieldnames = ['ip_address', 'count']
+            writer = csv.DictWriter(f, fieldnames=fieldnames)
+            writer.writeheader()
+            for result in results.iterator():
+                writer.writerow(result)
+
     def handle(self, *args, **options):
         """
         Examples
 
         ```
-        # Extract codebase download aggregate information
-        ./manage.py curator_statistics --from 2017-01-01 --level codebase
+        # Extract codebase download aggregate information from 2017-01-01 to 2018-01-05
+        ./manage.py curator_statistics --from 2017-01-01 --to 2018-01-05 -a codebase
 
-        # Extract release download aggregate information
-        ./manage.py curator_statistics --from 2016-05-06 --dest release_download_statistics.csv
+        # Extract all download aggregate information from 2016-05-06 to present
+        ./manage.py curator_statistics --from 2016-05-06
         ```
         """
         from_date = date_parse(options['from']).replace(tzinfo=pytz.UTC)
         to_date = date_parse(options['to']).replace(tzinfo=pytz.UTC) if options['to'] else None
-        level = options['level']
-        assert level in ['codebase', 'release']
+        aggregations = options['aggregations'].split(',')
         if to_date:
             filters = dict(date_created__range=[from_date, to_date])
         else:
             filters = dict(date_created__gte=from_date)
-        dest = options['dest']
-        dest = dest if dest else 'download_statistics.csv'
+        directory = options['directory']
 
+        os.makedirs(directory, exist_ok=True)
         downloads = CodebaseReleaseDownload.objects.filter(**filters)
-        if level == 'codebase':
-            self.export_codebase_download_statistics(downloads, dest)
-        else:
-            self.export_release_download_statistics(downloads, dest)
+        if 'codebase' in aggregations:
+            self.export_codebase_download_statistics(downloads,
+                                                     dest=os.path.join(directory, 'codebase_download_counts.csv'))
+        if 'release' in aggregations:
+            self.export_release_download_statistics(downloads,
+                                                    dest=os.path.join(directory, 'release_download_counts.csv'))
+        if 'ip' in aggregations:
+            self.export_ip_download_statistics(downloads,
+                                               dest=os.path.join(directory, 'ip_download_counts.csv'))
