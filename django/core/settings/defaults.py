@@ -203,6 +203,10 @@ DATABASES = {
 LOG_DIRECTORY = config.get('logging', 'LOG_DIRECTORY', fallback=os.path.join(BASE_DIR, 'logs'))
 LIBRARY_ROOT = config.get('storage', 'LIBRARY_ROOT', fallback=os.path.join(BASE_DIR, 'library'))
 REPOSITORY_ROOT = config.get('storage', 'REPOSITORY_ROOT', fallback=os.path.join(BASE_DIR, 'repository'))
+BORG_ROOT = '/shared/backups/repo'
+BACKUP_ROOT = '/shared/backups'
+EXTRACT_ROOT = '/shared/extract'
+
 
 for d in (LOG_DIRECTORY, LIBRARY_ROOT, REPOSITORY_ROOT):
     try:

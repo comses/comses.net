@@ -1,3 +1,4 @@
+import shutil
 from distutils.util import strtobool
 
 from invoke import task
@@ -173,8 +174,64 @@ def restore_from_dump(ctx, dumpfile='comsesnet.sql', migrate=True):
         drop_database(ctx, create=True)
         ctx.run('psql -w -q -h db {db_name} {db_user} < {dumpfile}'.format(dumpfile=dumpfile, **env),
                 warn=True)
+    elif dumpfile.endswith('.sql.gz') and dumpfile_path.is_file():
+        drop_database(ctx, create=True)
+        ctx.run('zcat {dumpfile} | psql -w -q -h db {db_name} {db_user}'.format(dumpfile=dumpfile, **env),
+                warn=True)
     if migrate:
         run_migrations(ctx, clean=True, initial=True)
+
+
+@task
+def move_old_library_and_media_to_latest(ctx):
+    # move old library and media folders to archive location in case restore goes awry
+    print('Moving library and media folders to archive')
+    archive_path = pathlib.Path('/shared/.latest')
+
+    print('Deleting old library and media copy')
+    shutil.rmtree(str(archive_path), ignore_errors=True)
+    os.makedirs(str(archive_path.joinpath('shared')), exist_ok=True)
+    print('Moving Library')
+    shutil.move(settings.LIBRARY_ROOT, str(archive_path.joinpath(settings.LIBRARY_ROOT.strip('/'))))
+    print('Moving Media')
+    shutil.move(settings.MEDIA_ROOT, str(archive_path.joinpath(settings.MEDIA_ROOT.strip('/'))))
+    print('Finished moving library and media to archive')
+
+
+@task
+def extract_from_borg_repo(ctx, repo=settings.BORG_ROOT, archive=None):
+    # to keep the restore process fast we need to extract the borg archive in the same mount as the
+    # actual archive
+    if archive is None:
+        archive = ctx.run('borg list --first 1 --short {repo}'.format(repo=settings.BORG_ROOT),
+                          hide=True).stdout.strip()
+    if not pathlib.Path(settings.EXTRACT_ROOT).exists():
+        os.makedirs(settings.EXTRACT_ROOT, exist_ok=True)
+        confirm('Are you sure you want to extract {}? (y/n)'.format(archive))
+        ctx.run('cd {extract_dest} && borg extract --progress {repo}::"{archive}"'.format(
+            repo=repo, archive=archive, extract_dest=settings.EXTRACT_ROOT, echo=True))
+
+
+@task
+def full_restore(ctx):
+    extracted_comsesnet_backup = list(pathlib.Path(settings.EXTRACT_ROOT, 'shared/backups/latest')
+                                      .glob('comsesnet*'))[0]
+    extracted_library = os.path.join(settings.EXTRACT_ROOT, settings.LIBRARY_ROOT.strip('/'))
+    extracted_media = os.path.join(settings.EXTRACT_ROOT, settings.MEDIA_ROOT.strip('/'))
+    print('Restoring files and db')
+    restore_from_dump(ctx, dumpfile=str(extracted_comsesnet_backup), migrate=False)
+    shutil.rmtree(settings.LIBRARY_ROOT, ignore_errors=True)
+    shutil.rmtree(settings.MEDIA_ROOT, ignore_errors=True)
+    shutil.move(extracted_library, '/shared')
+    shutil.move(extracted_media, '/shared')
+
+
+@task(aliases=['er'])
+def extract_and_restore(ctx, repo=settings.BORG_ROOT, archive=None):
+    move_old_library_and_media_to_latest(ctx)
+    extract_from_borg_repo(ctx, repo, archive)
+    full_restore(ctx)
+    shutil.rmtree(settings.EXTRACT_ROOT)
 
 
 def confirm(prompt="Continue? (y/n) ", cancel_message="Aborted."):

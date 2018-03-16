@@ -4,10 +4,13 @@ ARG REQUIREMENTS_FILE=requirements-dev.txt
 ARG RUN_SCRIPT=./deploy/dev.sh
 ARG UBUNTU_MIRROR=mirror.math.princeton.edu/pub
 
-RUN sed -i "s|archive.ubuntu.com|${UBUNTU_MIRROR}|" /etc/apt/sources.list && \
-        apt-get update && apt-get install -y \
+RUN sed -i "s|archive.ubuntu.com|${UBUNTU_MIRROR}|" /etc/apt/sources.list \
+        && apt-get update \
+        && add-apt-repository -y ppa:costamagnagianfranco/borgbackup \
+        && apt-get install -y \
         autopostgresqlbackup \
         binutils \
+        borgbackup \
         curl \
         gdal-bin \
         git \
