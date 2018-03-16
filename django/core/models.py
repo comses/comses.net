@@ -241,8 +241,6 @@ class MemberProfile(index.Indexed, ClusterableModel):
     def get_absolute_url(self):
         return reverse('home:profile-detail', kwargs={'pk': self.user.pk})
 
-    def get_degrees_for_indexing(self):
-        return ' '.join(self.degrees)
 
     def __str__(self):
         return str(self.user)
@@ -262,7 +260,7 @@ class MemberProfile(index.Indexed, ClusterableModel):
         index.SearchField('research_interests', partial_match=True, boost=5),
         index.FilterField('is_active'),
         index.FilterField('username'),
-        index.SearchField('get_degrees_for_indexing', partial_match=True),
+        index.SearchField('degrees', partial_match=True),
         index.SearchField('name', partial_match=True, boost=5),
         index.RelatedFields('institution', [
             index.SearchField('name', partial_match=True),

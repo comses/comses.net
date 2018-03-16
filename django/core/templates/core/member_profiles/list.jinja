@@ -22,12 +22,21 @@
                 {% endif %}
             </small>
         </h1>
-        <div class='bio'>
-            {{ member_profile.bio|markdown }}
-        </div>
-        <div class='research-interests'>
-            {{ member_profile.research_interests|markdown }}
-        </div>
+        {% if member_profile.degrees %}
+            <div style='margin-top: -10px;' class='degrees mb-1'>
+                <small>{{ member_profile.degrees|join(", ") }}</small>
+            </div>
+        {% endif %}
+        {% if member_profile.bio %}
+            <div class='bio'>
+                {{ member_profile.bio|markdown }}
+            </div>
+        {%endif %}
+        {% if member_profile.research_interests %}
+            <div class='research-interests'>
+                {{ member_profile.research_interests|markdown }}
+            </div>
+        {% endif %}
     </div>
     {% if member_profile.tags %}
         <div class="tag-list">

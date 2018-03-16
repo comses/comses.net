@@ -48,7 +48,7 @@ class MemberProfileListSerializer(serializers.ModelSerializer):
     class Meta:
         model = MemberProfile
         fields = ('date_joined', 'full_name', 'profile_url', 'tags', 'username', 'avatar', 'bio', 'research_interests',
-                  'full_member', 'is_reviewer',)
+                  'full_member', 'is_reviewer', 'degrees',)
 
 
 class MemberProfileSerializer(serializers.ModelSerializer):
