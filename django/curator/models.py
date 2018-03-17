@@ -1,22 +1,17 @@
-import ast
 import json
 import logging
-import re
-import uuid
 from collections import defaultdict
 
 import modelcluster.fields
 import os
-
+import re
 from django.contrib.postgres.aggregates import ArrayAgg
-from django.contrib.postgres.fields import ArrayField
 from django.db import models, transaction
 from django.urls import reverse
-from django.utils.functional import cached_property
+from nltk.corpus import stopwords
 from nltk.stem import PorterStemmer
 from nltk.tokenize import word_tokenize
-from nltk.corpus import stopwords
-from taggit.models import Tag, TaggedItemBase
+from taggit.models import Tag
 
 from library.models import ProgrammingLanguage, CodebaseReleasePlatformTag
 
@@ -151,7 +146,7 @@ class TagCleanupTransaction(models.Model):
 class TagCleanup(models.Model):
     new_name = models.CharField(max_length=300, blank=True)
     old_name = models.CharField(max_length=300)
-    transaction = models.ForeignKey(TagCleanupTransaction, null=True, blank=True)
+    transaction = models.ForeignKey(TagCleanupTransaction, null=True, blank=True, on_delete=models.SET_NULL)
 
     objects = TagCleanupQuerySet.as_manager()
 

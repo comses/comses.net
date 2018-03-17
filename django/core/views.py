@@ -21,8 +21,8 @@ from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 from rest_framework.views import exception_handler
 
-from core.search import GeneralSearch
 from .permissions import ComsesPermissions
+from .search import GeneralSearch
 
 logger = logging.getLogger(__name__)
 

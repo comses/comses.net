@@ -1,11 +1,10 @@
 import logging
 
-from allauth.account.signals import email_confirmed
 from django.contrib.auth.models import User
 from django.contrib.sites.models import Site
 from django.db.models.signals import post_save
 from django.dispatch import receiver
-from wagtail.wagtailcore.models import Site as WagtailSite
+from wagtail.core.models import Site as WagtailSite
 
 from core.models import MemberProfile
 

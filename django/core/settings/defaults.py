@@ -2,10 +2,10 @@
 Django settings for core.comses.net
 
 For more information on this file, see
-https://docs.djangoproject.com/en/1.11/topics/settings/
+https://docs.djangoproject.com/en/2.0/topics/settings/
 
 For the full list of settings and their values, see
-https://docs.djangoproject.com/en/1.11/ref/settings/
+https://docs.djangoproject.com/en/2.0/ref/settings/
 """
 
 import configparser
@@ -42,24 +42,23 @@ BASE_DIR = os.path.dirname(PROJECT_DIR)
 DEBUG = True
 
 # Quick-start development settings - unsuitable for production
-# See https://docs.djangoproject.com/en/1.11/howto/deployment/checklist/
+# See https://docs.djangoproject.com/en/2.0/howto/deployment/checklist/
 
 # Application definition
 WAGTAIL_APPS = [
-    'wagtail.wagtailforms',
-    'wagtail.wagtailredirects',
-    'wagtail.wagtailembeds',
-    'wagtail.wagtailsites',
-    'wagtail.wagtailusers',
-    'wagtail.wagtailsnippets',
-    'wagtail.wagtaildocs',
-    'wagtail.wagtailimages',
-    'wagtail.wagtailsearch',
-    'wagtail.wagtailadmin',
-    'wagtail.wagtailcore',
+    'wagtail.contrib.forms',
+    'wagtail.contrib.redirects',
+    'wagtail.embeds',
+    'wagtail.sites',
+    'wagtail.users',
+    'wagtail.snippets',
+    'wagtail.documents',
+    'wagtail.images',
+    'wagtail.search',
+    'wagtail.admin',
+    'wagtail.core',
     'wagtail.contrib.modeladmin',
     'wagtail.contrib.settings',
-    'wagtailmenus',
     'taggit',
     'modelcluster',
     'search',
@@ -108,13 +107,12 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
-    'django.contrib.auth.middleware.SessionAuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'django.middleware.security.SecurityMiddleware',
 
-    'wagtail.wagtailcore.middleware.SiteMiddleware',
-    'wagtail.wagtailredirects.middleware.RedirectMiddleware',
+    'wagtail.core.middleware.SiteMiddleware',
+    'wagtail.contrib.redirects.middleware.RedirectMiddleware',
 ]
 
 AUTHENTICATION_BACKENDS = (
@@ -131,7 +129,7 @@ ROOT_URLCONF = 'core.urls'
 # configure elasticsearch 5 wagtail backend
 WAGTAILSEARCH_BACKENDS = {
     'default': {
-        'BACKEND': 'wagtail.wagtailsearch.backends.elasticsearch5',
+        'BACKEND': 'wagtail.search.backends.elasticsearch5',
         'URLS': ['http://elasticsearch:9200'],
         'INDEX': 'wagtail',
         # 'ATOMIC_REBUILD': True,
@@ -186,7 +184,7 @@ RAVEN_CONFIG = {
 SECRET_KEY = config.get('secrets', 'SECRET_KEY')
 
 # Database configuration
-# https://docs.djangoproject.com/en/1.11/ref/settings/#databases
+# https://docs.djangoproject.com/en/2.0/ref/settings/#databases
 
 DATABASES = {
     'default': {
@@ -298,7 +296,7 @@ LOGGING = {
 }
 
 # Internationalization
-# https://docs.djangoproject.com/en/1.11/topics/i18n/
+# https://docs.djangoproject.com/en/2.0/topics/i18n/
 
 LANGUAGE_CODE = 'en-us'
 
@@ -311,7 +309,7 @@ USE_L10N = True
 USE_TZ = True
 
 # Static files (CSS, JavaScript, Images)
-# https://docs.djangoproject.com/en/1.11/howto/static-files/
+# https://docs.djangoproject.com/en/2.0/howto/static-files/
 
 STATICFILES_FINDERS = [
     'django.contrib.staticfiles.finders.FileSystemFinder',
@@ -332,7 +330,7 @@ MEDIA_URL = '/media/'
 
 # Wagtail settings
 
-WAGTAIL_SITE_NAME = "CoMSES Network"
+WAGTAIL_SITE_NAME = "Network for Computational Modeling in Social and Ecological Systems"
 APPEND_SLASH = True
 WAGTAIL_APPEND_SLASH = True
 
@@ -346,8 +344,6 @@ WEBPACK_LOADER = {
 # Base URL to use when referring to full URLs within the Wagtail admin backend -
 # e.g. in notification emails. Don't include '/admin' or a trailing slash
 BASE_URL = 'https://www.comses.net'
-
-WAGTAILMENUS_DEFAULT_MAIN_MENU_TEMPLATE = 'home/includes/menu.html'
 
 # authentication settings
 LOGIN_REDIRECT_URL = '/'
@@ -435,9 +431,9 @@ TEMPLATES = [
             "extensions": DEFAULT_EXTENSIONS + [
                 "django_jinja.builtins.extensions.DjangoExtraFiltersExtension",
                 'wagtail.contrib.settings.jinja2tags.settings',
-                'wagtail.wagtailcore.jinja2tags.core',
-                'wagtail.wagtailadmin.jinja2tags.userbar',
-                'wagtail.wagtailimages.jinja2tags.images',
+                'wagtail.core.jinja2tags.core',
+                'wagtail.admin.jinja2tags.userbar',
+                'wagtail.images.jinja2tags.images',
             ],
             'constants': {
                 'DISCOURSE_BASE_URL': DISCOURSE_BASE_URL
@@ -450,7 +446,6 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
-                'wagtailmenus.context_processors.wagtailmenus',
             ],
             'autoescape': True,
         }
@@ -466,7 +461,6 @@ TEMPLATES = [
                 'django.contrib.messages.context_processors.messages',
 
                 'wagtail.contrib.settings.context_processors.settings',
-                'wagtailmenus.context_processors.wagtailmenus',
             ],
         },
     },

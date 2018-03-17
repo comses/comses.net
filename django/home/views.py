@@ -1,6 +1,6 @@
 import logging
-import requests
 
+import requests
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.models import User
@@ -18,8 +18,8 @@ from rest_framework.renderers import JSONRenderer, TemplateHTMLRenderer
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from taggit.models import Tag
-from wagtail.wagtailimages.models import Image
-from wagtail.wagtailsearch.backends import get_search_backend
+from wagtail.images.models import Image
+from wagtail.search.backends import get_search_backend
 
 from core.models import FollowUser, Event, Job
 from core.serializers import TagSerializer, EventSerializer, JobSerializer

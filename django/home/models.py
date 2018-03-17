@@ -16,21 +16,21 @@ from modelcluster.fields import ParentalKey
 from modelcluster.models import ClusterableModel
 from taggit.managers import TaggableManager
 from taggit.models import TaggedItemBase
-from wagtail.wagtailadmin.edit_handlers import (FieldPanel, InlinePanel, PageChooserPanel, MultiFieldPanel,
-                                                StreamFieldPanel)
-from wagtail.wagtailcore import blocks
-from wagtail.wagtailcore.fields import RichTextField, StreamField
-from wagtail.wagtailcore.models import Page, Orderable
-from wagtail.wagtailimages.blocks import ImageChooserBlock
-from wagtail.wagtailimages.edit_handlers import ImageChooserPanel
-from wagtail.wagtailsearch import index
-from wagtail.wagtailsnippets.edit_handlers import SnippetChooserPanel
-from wagtail.wagtailsnippets.models import register_snippet
+from wagtail.admin.edit_handlers import (FieldPanel, InlinePanel, PageChooserPanel, MultiFieldPanel,
+                                         StreamFieldPanel)
+from wagtail.core import blocks
+from wagtail.core.fields import RichTextField, StreamField
+from wagtail.core.models import Page, Orderable
+from wagtail.images.blocks import ImageChooserBlock
+from wagtail.images.edit_handlers import ImageChooserPanel
+from wagtail.search import index
+from wagtail.snippets.edit_handlers import SnippetChooserPanel
+from wagtail.snippets.models import register_snippet
 
 from core.fields import MarkdownField
 from core.models import MemberProfile, Platform, Event, Job
 from core.utils import get_canonical_image
-from home.forms import ContactForm
+from .forms import ContactForm
 from library.models import Codebase
 
 logger = logging.getLogger(__name__)
@@ -45,8 +45,8 @@ class UserMessage(models.Model):
     """
     FIXME: consider removing this class, use email for messaging.
     """
-    user = models.ForeignKey(User, related_name='inbox')
-    sender = models.ForeignKey(User, related_name='outbox')
+    user = models.ForeignKey(User, related_name='inbox', on_delete=models.CASCADE)
+    sender = models.ForeignKey(User, related_name='outbox', on_delete=models.CASCADE)
     message = models.CharField(max_length=512)
     date_created = models.DateTimeField(auto_now_add=True)
     read_on = models.DateTimeField(null=True, blank=True)
@@ -64,13 +64,15 @@ class LinkFields(models.Model):
         Page,
         null=True,
         blank=True,
-        related_name='+'
+        related_name='+',
+        on_delete=models.SET_NULL
     )
     link_codebase = models.ForeignKey(
         'library.Codebase',
         null=True,
         blank=True,
-        related_name='+'
+        related_name='+',
+        on_delete=models.SET_NULL
     )
 
     @property
@@ -431,7 +433,7 @@ class ContactPage(NavigationMixin, Page):
 
 class PlatformSnippetPlacement(Orderable, models.Model):
     page = ParentalKey('home.PlatformIndexPage', related_name='platform_placements')
-    platform = models.ForeignKey(Platform, related_name='+')
+    platform = models.ForeignKey(Platform, related_name='+', on_delete=models.CASCADE)
 
     class Meta:
         verbose_name = 'platform placement'
@@ -500,7 +502,7 @@ class Journal(index.Indexed, ClusterableModel):
 
 class JournalSnippetPlacement(Orderable, models.Model):
     page = ParentalKey('home.JournalIndexPage', related_name='journal_placements')
-    journal = models.ForeignKey(Journal, related_name='+')
+    journal = models.ForeignKey(Journal, related_name='+', on_delete=models.CASCADE)
 
     class Meta:
         verbose_name = 'journal placement'
@@ -529,7 +531,7 @@ class FaqEntry(index.Indexed, models.Model):
     answer = models.TextField(help_text=_("Markdown formatted answer"))
     date_created = models.DateTimeField(auto_now=True)
     last_modified = models.DateTimeField(auto_now_add=True)
-    submitter = models.ForeignKey(User, blank=True, null=True)
+    submitter = models.ForeignKey(User, blank=True, null=True, on_delete=models.SET_NULL)
 
     def __str__(self):
         return "[{0}] {1} {2}".format(self.category, self.question, shorten(self.answer, 140))
@@ -537,7 +539,7 @@ class FaqEntry(index.Indexed, models.Model):
 
 class FaqEntryPlacement(Orderable, models.Model):
     page = ParentalKey('home.FaqPage', related_name='faq_entry_placements')
-    faq_entry = models.ForeignKey(FaqEntry, related_name='+')
+    faq_entry = models.ForeignKey(FaqEntry, related_name='+', on_delete=models.CASCADE)
 
     class Meta:
         verbose_name = 'faq placement'
@@ -575,7 +577,7 @@ class PeopleEntryPlacement(Orderable, models.Model):
         (5, 'alumni', _('Executive Board Alumni')),
     )
     page = ParentalKey('home.PeoplePage', related_name='people_entry_placements')
-    member_profile = models.ForeignKey('core.MemberProfile', related_name='+')
+    member_profile = models.ForeignKey('core.MemberProfile', related_name='+', on_delete=models.CASCADE)
     category = models.PositiveIntegerField(choices=CATEGORIES, default=CATEGORIES.board)
 
     def __str__(self):

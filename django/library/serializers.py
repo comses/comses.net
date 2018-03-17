@@ -6,12 +6,12 @@ from django.utils import timezone
 from django.utils.http import urlencode
 from django.utils.translation import ugettext_lazy as _
 from rest_framework import serializers
-from wagtail.wagtailimages.models import SourceImageIOError
+from wagtail.images.models import SourceImageIOError
 
 from core.serializers import (YMD_DATETIME_FORMAT, PUBLISH_DATE_FORMAT, LinkedUserSerializer, create, update, save_tags,
                               TagSerializer, MarkdownField)
-from .models import ReleaseContributor, Codebase, CodebaseRelease, Contributor, License, CodebaseImage
 from home.common_serializers import RelatedMemberProfileSerializer
+from .models import ReleaseContributor, Codebase, CodebaseRelease, Contributor, License, CodebaseImage
 
 logger = logging.getLogger(__name__)
 

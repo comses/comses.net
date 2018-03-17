@@ -1,12 +1,13 @@
+import logging
 from collections import defaultdict
 from typing import Dict
 
-from wagtail.wagtailcore.models import Page
-from wagtail.wagtailsearch.backends import get_search_backend
 from django.apps import apps
-from .models import Event, Job, MemberProfile
+from wagtail.core.models import Page
+from wagtail.search.backends import get_search_backend
+
 from library.models import Codebase
-import logging
+from .models import Event, Job, MemberProfile
 
 logger = logging.getLogger(__name__)
 

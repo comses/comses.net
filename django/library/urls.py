@@ -3,6 +3,8 @@ from rest_framework.routers import SimpleRouter
 
 from . import views
 
+app_name = 'library'
+
 router = SimpleRouter()
 router.register(r'codebases', views.CodebaseViewSet)
 router.register(r'codebases/(?P<identifier>[\w\-.]+)/media', views.CodebaseFilesViewSet)

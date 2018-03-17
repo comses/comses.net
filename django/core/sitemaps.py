@@ -1,6 +1,8 @@
 from django.contrib.sitemaps import Sitemap
 
 from .models import Event, Job
+
+
 # set up sitemap ala https://docs.djangoproject.com/en/1.11/ref/contrib/sitemaps/
 
 class BaseSitemap(Sitemap):

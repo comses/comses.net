@@ -5,7 +5,7 @@ from django.conf import settings
 from django.core.mail import EmailMessage
 from django.template import loader
 from django.utils.translation import ugettext_lazy as _
-from wagtail.wagtailcore.models import Site
+from wagtail.core.models import Site
 
 from core.models import SocialMediaSettings
 

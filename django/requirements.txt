@@ -1,10 +1,9 @@
-bagit==1.6.3
+bagit==1.6.4
 bleach==2.1.2
 dealer==2.0.5
-django>=1.11.0,<2.0.0
 -e git+https://github.com/pennersr/django-allauth.git#egg=django-allauth
 # django-allauth==0.36.0
-django-extensions==1.9.9
+django-extensions==2.0.6
 django-guardian==1.4.9
 django-ipware==2.0.1
 django-jinja==2.4.1
@@ -16,10 +15,11 @@ django-redis==4.9.0
 django-rest-auth==0.9.3
 django-rest-swagger==2.1.2
 django-reversion==2.0.13
-django-robots==3.0
+# for django 2.0 compat
+-e git+https://github.com/jazzband/django-robots.git@3.1.0#egg=robots
 django-timezone-field==2.0
 django-webpack-loader
-djangorestframework==3.7.7
+djangorestframework==3.8
 djangorestframework-jsonapi==2.4.0
 djangorestframework-jwt==1.11.0
 elasticsearch-dsl>=5.0.0,<6.0.0
@@ -32,8 +32,7 @@ pygit2==0.24.2
 raven==6.5.0
 semver==2.7.9
 uwsgi==2.0.17
-wagtail==1.13.1
-wagtailmenus==2.6
+wagtail==2.0
 # deployment and management command dependencies
 beautifulsoup4==4.6.0
 dealer==2.0.5

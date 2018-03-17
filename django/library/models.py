@@ -26,9 +26,9 @@ from modelcluster.models import ClusterableModel
 from rest_framework.exceptions import ValidationError
 from taggit.models import TaggedItemBase
 from unidecode import unidecode
-from wagtail.wagtailimages.models import Image, AbstractImage, AbstractRendition, get_upload_to, ImageQuerySet
-from wagtail.wagtailsearch import index
-from wagtail.wagtailsearch.backends import get_search_backend
+from wagtail.images.models import Image, AbstractImage, AbstractRendition, get_upload_to, ImageQuerySet
+from wagtail.search import index
+from wagtail.search.backends import get_search_backend
 
 from core import fs
 from core.backends import get_viewable_objects_for_user
@@ -95,7 +95,7 @@ class Contributor(index.Indexed, ClusterableModel):
                             default='person',
                             help_text=_('organizations only use given_name'))
     email = models.EmailField(blank=True)
-    user = models.ForeignKey(User, null=True)
+    user = models.ForeignKey(User, null=True, on_delete=models.SET_NULL)
 
     search_fields = [
         index.SearchField('given_name', partial_match=True, boost=10),
@@ -195,11 +195,11 @@ class SemanticVersionBump(Enum):
 
 class CodebaseReleaseDownload(models.Model):
     date_created = models.DateTimeField(default=timezone.now)
-    user = models.ForeignKey(User, null=True)
+    user = models.ForeignKey(User, null=True, on_delete=models.SET_NULL)
     ip_address = models.GenericIPAddressField(blank=True, null=True)
     referrer = models.URLField(max_length=500, blank=True,
                                help_text=_("captures the HTTP_REFERER if set"))
-    release = models.ForeignKey('library.CodebaseRelease', related_name='downloads')
+    release = models.ForeignKey('library.CodebaseRelease', related_name='downloads', on_delete=models.CASCADE)
 
     def __str__(self):
         return "{0}: downloaded {1}".format(self.ip_address, self.release)
@@ -300,7 +300,8 @@ class Codebase(index.Indexed, ClusterableModel):
     doi = models.CharField(max_length=128, unique=True, null=True)
     uuid = models.UUIDField(unique=True, default=uuid.uuid4, editable=False)
 
-    latest_version = models.ForeignKey('CodebaseRelease', null=True, related_name='latest_version')
+    latest_version = models.ForeignKey('CodebaseRelease', null=True, related_name='latest_version',
+                                       on_delete=models.SET_NULL)
 
     repository_url = models.URLField(blank=True,
                                      help_text=_('URL to code repository, e.g., https://github.com/comses/wolf-sheep'))
@@ -321,7 +322,7 @@ class Codebase(index.Indexed, ClusterableModel):
     media = JSONField(default=list,
                       help_text=_("JSON metadata dict of media associated with this Codebase"))
 
-    submitter = models.ForeignKey(User, related_name='codebases')
+    submitter = models.ForeignKey(User, related_name='codebases', on_delete=models.PROTECT)
 
     objects = CodebaseQuerySet.as_manager()
 
@@ -461,7 +462,7 @@ class Codebase(index.Indexed, ClusterableModel):
         else:
             return {'1.0.0', }
 
-    def next_version_number(self, version_number=None, version_bump=SemanticVersionBump.MINOR):
+    def next_version_number(self, version_number=None):
         if version_number is None:
             possible_version_numbers = self.get_all_next_possible_version_numbers(minor_only=True)
             max_version_number = '1.0.0'
@@ -621,7 +622,7 @@ class CodebaseImageQuerySet(ImageQuerySet):
 
 
 class CodebaseImage(AbstractImage):
-    codebase = models.ForeignKey(Codebase, related_name='featured_images')
+    codebase = models.ForeignKey(Codebase, related_name='featured_images', on_delete=models.CASCADE)
     file = models.ImageField(
         verbose_name=_('file'), upload_to=get_upload_to, width_field='width', height_field='height',
         storage=FileSystemStorage(location=settings.LIBRARY_ROOT)
@@ -738,7 +739,7 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
     share_uuid = models.UUIDField(default=None, blank=True, null=True, unique=True)
     identifier = models.CharField(max_length=128, unique=True, null=True)
     doi = models.CharField(max_length=128, unique=True, null=True)
-    license = models.ForeignKey(License, null=True)
+    license = models.ForeignKey(License, null=True, on_delete=models.SET_NULL)
     # FIXME: replace with or append/prepend README.md
     release_notes = MarkdownField(blank=True, help_text=_('Markdown formattable text, e.g., run conditions'))
     summary = models.CharField(max_length=500, blank=True)
@@ -761,8 +762,8 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
     platforms = models.ManyToManyField(Platform)
     programming_languages = ClusterTaggableManager(through=ProgrammingLanguage,
                                                    related_name='pl_codebase_releases')
-    codebase = models.ForeignKey(Codebase, related_name='releases')
-    submitter = models.ForeignKey(User)
+    codebase = models.ForeignKey(Codebase, related_name='releases', on_delete=models.PROTECT)
+    submitter = models.ForeignKey(User, on_delete=models.PROTECT)
     contributors = models.ManyToManyField(Contributor, through='ReleaseContributor')
     submitted_package = models.FileField(upload_to=Codebase._release_upload_path, max_length=1000, null=True,
                                          storage=FileSystemStorage(location=settings.LIBRARY_ROOT))
@@ -939,6 +940,7 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
     def publish(self):
         CodebaseReleasePublisher(self).publish()
 
+# FIXME: use semver.bump_version instead of this handrolled logic
     def possible_next_versions(self, minor_only=False):
         major, minor, patch = [int(v) for v in self.version_number.split('.')]
         next_minor = '{}.{}.0'.format(major, minor + 1)
