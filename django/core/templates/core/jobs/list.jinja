@@ -1,33 +1,39 @@
 {% extends "sidebar_layout.jinja" %}
-{% from "common.jinja" import list_page, paginator, breadcrumb, subnav %}
+{% from "common.jinja" import list_page, paginator, breadcrumb, subnav, member_profile_href, search_tag_href %}
 
 {% macro render_job(item, detail_url_name) %}
-    <div class="search-result">
-        <div class="date-info">
-            {% if item.application_deadline %}
-                <small class="text-bold">Application deadline: {{ item.application_deadline }}</small>
-            {% endif %}
-            <small class="text-muted pull-right">Last updated: {{ item.last_modified }}</small>
-        </div>
-        <div class="title">
-            <h1><a href="{{ url(detail_url_name, pk=item.id) }}">{{ item.title }}</a></h1>
-            <small>Submitted by:
-                <a href="{{ item.submitter.profile_url }}">{{ item.submitter.full_name }}</a>
-            </small>
+<div class="card">
+    <div class='card-body'>
+        <div class='row'>
+            <div class='col-8'>
+                <h3 class='title mb-0'><a href="{{ url(detail_url_name, pk=item.id) }}">{{ item.title }}</a></h3>
+                {% if item.application_deadline %}
+                    <b class='title'>Application deadline</b> {{ item.application_deadline }}
+                {% endif %}
+            </div>
+            <div class='col-4'>
+                <small class="float-right">Last updated {{ item.last_modified }}</small>
+                <br>
+                <small class='float-right'>Submitted by {{ member_profile_href(item.submitter) }}
+                </small>
+            </div>
         </div>
         {% if item.summary %}
-            <div class="summary">
-                {{ item.summary|markdown }}
+            <div class='row mt-2'>
+                <div class='col'>
+                    {{ item.summary|markdown }}
+                </div>
             </div>
         {% endif %}
         {% if item.tags %}
             <div class="tag-list">
                 {% for tag in item.tags %}
-                    <span class="badge badge-primary p-1">{{ tag.name }}</span>
+                    {{ search_tag_href(tag, category='jobs') }}
                 {% endfor %}
             </div>
         {% endif %}
     </div>
+</div>
 {% endmacro %}
 
 {% block title %}Jobs and Appointments {% endblock %}

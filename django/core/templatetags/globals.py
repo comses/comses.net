@@ -11,7 +11,7 @@ from django_jinja import library
 from jinja2 import Markup
 from webpack_loader.templatetags import webpack_loader as wl
 
-from core.serializers import PUBLISH_DATE_FORMAT
+from core.serializers import FULL_DATE_FORMAT
 from core.fields import render_sanitized_markdown
 
 
@@ -102,15 +102,11 @@ def add_field_css(field, *args):
 
 
 @library.filter
-def truncate_midnight(text: Optional[str]):
+def format_datetime(text: Optional[str], format_string=FULL_DATE_FORMAT):
     if text is None:
         return None
-
     d = parse_datetime(text)
-    if d.minute == 0 and d.second == 0 and d.hour == 0:
-        return d.strftime(PUBLISH_DATE_FORMAT)
-    else:
-        return text
+    return d.strftime(format_string)
 
 # # http://stackoverflow.com/questions/6453652/how-to-add-the-current-query-string-to-an-url-in-a-django-template
 # @register.simple_tag

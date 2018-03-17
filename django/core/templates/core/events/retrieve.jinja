@@ -38,7 +38,7 @@
                 <b class="card-title">Last updated</b>
                 <p class="card-text">{{ last_modified }}</p>
                 <b class="card-title">When</b>
-                <p class="card-text">{{ start_date|truncate_midnight }} to {{ end_date|truncate_midnight }}</p>
+                <p class="card-text">{{ start_date|format_datetime }} - {{ end_date|format_datetime }}</p>
                 <b class="card-title">Where</b>
                 <p class='card-text'>{{ location|default("No location specified") }}</p>
                 {% if external_url %}
@@ -48,9 +48,9 @@
                     </p>
                 {% endif %}
                 <b class="card-title">Early registration deadline</b>
-                <p class="card-text">{{ early_registration_deadline|truncate_midnight }}</p>
+                <p class="card-text">{{ early_registration_deadline|format_datetime }}</p>
                 <b class="card-title">Submission deadline</b>
-                <p class="card-text">{{ submission_deadline|truncate_midnight }}</p>
+                <p class="card-text">{{ submission_deadline|format_datetime }}</p>
             </div>
         </div>
     </div>

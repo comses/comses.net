@@ -1,39 +1,63 @@
 {% extends "sidebar_layout.jinja" %}
-{% from "common.jinja" import list_page, paginator, breadcrumb, subnav %}
+{% from "common.jinja" import list_page, paginator, breadcrumb, subnav, member_profile_href, search_tag_href %}
 
 {% macro render_event(item, detail_url_name) %}
-    <div class="search-result">
-        <div class="date-info">
-            <small class="text-muted">Last Updated: {{ item.last_modified }}</small>
-            <small class="text-muted pull-right">Created on: {{ item.date_created }}</small>
+<div class="card">
+    <div class='card-body'>
+        <div class='row'>
+            <div class='col-8'>
+                <h3 class='title mb-0'><a href="{{ url(detail_url_name, pk=item.id) }}">{{ item.title }}</a></h3>
+                <b class='title'>
+                    {{ item.start_date|format_datetime }}
+                    {% if item.end_date %}
+                        - {{ item.end_date|format_datetime }}
+                    {% endif %}
+                </b>
+            </div>
+            <div class='col-4'>
+                <small class='float-right'>Last updated {{ item.last_modified }}</small>
+                <br>
+                <small class='float-right'>
+                    Submitted by {{ member_profile_href(item.submitter) }}
+                </small>
+            </div>
         </div>
-        <div class="title">
-            <h1><a href="{{ url(detail_url_name, pk=item.id) }}">{{ item.title }}</a></h1>
-            <small>Submitted by:
-                <a href="{{ item.submitter.profile_url }}">{{ item.submitter.full_name }}</a>
-            </small>
+        <div class='row mt-3'>
+            <div class='col-4'>
+                <dl>
+                    <dt>Early Registration Deadline</dt>
+                    <dd>{{ item.early_registration_deadline|format_datetime }}</dd>
+                </dl>
+            </div>
+            <div class='col-4'>
+                <dl>
+                    <dt>Submission Deadline</dt>
+                    <dd>{{ item.submission_deadline|format_datetime }}</dd>
+                </dl>
+            </div>
+            <div class='col-4'>
+                <dl>
+                    <dt>Location</dt>
+                    <dd>{{ item.location }}</dd>
+                </dl>
+            </div>
         </div>
         {% if item.summary %}
-            <div class="summary">
-                {{ item.summary|markdown }}
+            <div class='row'>
+                <div class='col'>
+                    {{ item.summary|markdown }}
+                </div>
             </div>
         {% endif %}
         {% if item.tags %}
             <div class="tag-list">
                 {% for tag in item.tags %}
-                    <span class="badge badge-primary p-1">{{ tag.name }}</span>
+                    {{ search_tag_href(tag, category='events') }}
                 {% endfor %}
             </div>
         {% endif %}
-        <div class="date-info mb-0">
-            Early Registration Deadline: {{ item.early_registration_deadline|truncate_midnight }}
-            <span class="pull-right">Submission Deadline: {{ item.submission_deadline|truncate_midnight }}</span>
-        </div>
-        <div class="date-info mb-0">
-            Start Date: {{ item.start_date|truncate_midnight }}
-            <span class="pull-right">End Date: {{ item.end_date|truncate_midnight }}</span>
-        </div>
     </div>
+</div>
 {% endmacro %}
 
 {% block title %}Community Events{% endblock %}
