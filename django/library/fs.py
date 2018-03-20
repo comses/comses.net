@@ -659,3 +659,13 @@ class ArchiveExtractor:
         except Exception as e:
             msgs.append(create_fs_message(str(e), StagingDirectories.sip, MessageLevels.error))
         return msgs
+
+
+def import_archive(codebase_release, nestedcode_folder_name, fs_api=None):
+    if fs_api is None:
+        fs_api = codebase_release.get_fs_api()
+    archive_name = '{}.zip'.format(nestedcode_folder_name)
+    shutil.make_archive(nestedcode_folder_name, 'zip', nestedcode_folder_name)
+    with open(archive_name, 'rb') as f:
+        msgs = fs_api.add(FileCategoryDirectories.code, content=f, name="nestedcode.zip")
+    return msgs
