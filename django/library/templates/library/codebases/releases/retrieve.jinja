@@ -74,7 +74,7 @@
             <div class='card-text'>
                 {% if live %}
                     {{ citation_text|markdown }}
-                {% elif user == submitter or user.is_superuser %}
+                {% elif has_change_perm %}
                     This model is currently <b>unpublished</b>.
                     <div class='input-group' id="regenerate_share_uuid"
                          data-absolute-url="{{ absolute_url }}"
@@ -294,17 +294,15 @@
         <a href="{{ url('library:codebaserelease-edit', identifier=codebase.identifier, version_number=version_number) }}">
             <div class="btn btn-secondary my-1 w-100">Edit metadata</div>
         </a>
-        {% if user == submitter or user.is_superuser %}
-            {% set review_template_text -%}
-            Request to review {{ request.build_absolute_uri(absolute_url) }}
-            {%- endset %}
-            {# FIXME: check if user has permissions to request review, currently naive submitter check #}
-            <a href='mailto: editors@comses.net?subject=model review: {{codebase.title}}&body={{review_template_text}}'>
-                <div class='btn btn-secondary my-1 w-100'>
-                    Request peer review
-                </div>
-            </a>
-        {% endif %}
+        {% set review_template_text -%}
+        Request to review {{ request.build_absolute_uri(absolute_url) }}
+        {%- endset %}
+        {# FIXME: see https://github.com/comses/core.comses.net/issues/43 #}
+        <a href='mailto: editors@comses.net?subject=model review: {{codebase.title}}&body={{review_template_text}}'>
+            <div class='btn btn-secondary my-1 w-100'>
+                Request peer review
+            </div>
+        </a>
     {% endif %}
     {% if live %}
         <a id="releaseDownload" data-name="download" rel='nofollow' href="{{ url('library:codebaserelease-download', identifier=codebase.identifier, version_number=version_number) }}">
