@@ -64,6 +64,7 @@
             Sorry, there's nothing to see here. The robots have taken all our jobs.
         </div>
     {% endif %}
+    {{ paginator('home:job-list', __all__) }}
 {% endblock %}
 
 {% block sidebar %}

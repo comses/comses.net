@@ -8,14 +8,13 @@
 
 {% block top %}
     {{ breadcrumb([{'text': 'Computational Model Library'}]) }}
-    <div>
-        {{ paginator('library:codebase-list', __all__) }}
-    </div>
+    {{ paginator('library:codebase-list', __all__) }}
     <div id='sortby'></div>
 {% endblock %}
 
 {% block content %}
     {{ list_page(__all__, render_codebase_result, 'library:codebase-detail') }}
+    {{ paginator('library:codebase-list', __all__) }}
 {% endblock %}
 
 {% block sidebar %}

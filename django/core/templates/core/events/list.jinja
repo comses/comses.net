@@ -77,6 +77,7 @@
 
 {% block content %}
     {{ list_page(__all__, render_event, 'home:event-detail') }}
+    {{ paginator('home:event-list', __all__) }}
 {% endblock %}
 
 {% block sidebar %}

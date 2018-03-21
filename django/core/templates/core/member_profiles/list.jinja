@@ -65,6 +65,7 @@
     { 'url': url("home:job-list"), 'text': 'Jobs' },
     ])
     }}
+    {{ paginator('home:profile-list', __all__) }}
     <div id="sortby"></div>
 {% endblock %}
 
