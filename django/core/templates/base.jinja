@@ -247,8 +247,8 @@ function focusSearch() {
         {% block js %}
             {# Override this in templates to add extra javascript #}
         {% endblock %}
-        {% with RAVEN_VERSION='3.22.1' %}
-            <script src='https://cdn.ravenjs.com/{{RAVEN_VERSION}}/vue/raven.min.js' crossorigin='anonymous'></script>
+        {% with RAVENJS_VERSION='3.23.3' %}
+            <script src='https://cdn.ravenjs.com/{{RAVENJS_VERSION}}/vue/raven.min.js' crossorigin='anonymous'></script>
             <script>Raven.config('{{ sentry_public_dsn() }}').install()</script>
         {% endwith %}
     </body>
