@@ -50,6 +50,7 @@
     {'url': DISCOURSE_BASE_URL, 'text': 'Forum'},
     {'url': url("home:profile-list"), 'text': 'Users'},
     {'url': url("home:job-list"), 'text': 'Jobs', 'active': true},
+    {'url': url("home:digest"), 'text': 'Newsletter'},
     ])
     }}
     {{ paginator('home:job-list', __all__) }}

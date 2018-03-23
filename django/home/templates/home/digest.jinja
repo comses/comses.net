@@ -1,0 +1,49 @@
+{% extends "base.jinja" %}
+{% from "common.jinja" import breadcrumb, subnav %}
+
+{% block extra_css %}
+    {{ super() }}
+    <style type="text/css">
+{# FIXME: consider moving to frontend css #}
+<!--
+.display_archive {font-family: arial,verdana; font-size: 1.2em;}
+.campaign {line-height: 125%; margin: .3em;}
+//-->
+    </style>
+{% endblock %}
+
+{% block title %}CoMSES Digests{% endblock %}
+
+{% block introduction %}<h1>CoMSES Digest</h1>{% endblock %}
+
+{% block content %}
+    {{ breadcrumb([
+    {'url': '/community/', 'text': 'Community'},
+    {'text': 'CoMSES Digest Newsletter' }
+    ])
+    }}
+    {{ subnav([
+    {'url': '/community/', 'text': 'Community'},
+    {'url': DISCOURSE_BASE_URL, 'text': 'Forum'},
+    {'url': url("home:profile-list"), 'text': 'Users'},
+    {'url': url("home:job-list"), 'text': 'Jobs'},
+    {'url': url("home:digest"), 'text': 'Newsletter', 'active': true},
+    ])
+    }}
+    <div class='jumbotron'>
+        <h1 class='display-5'>CoMSES Digest Newsletter</h1>
+        <p class='pt-4 lead'>
+        The CoMSES Digest is a quarterly newsletter (current editor: <a href='/users/642/'>John Murphy</a>) with relevant
+            comses.net community news. Current and past issues are archived below - if you'd like to receive it in your
+            inbox, please <a href='http://eepurl.com/b8GCUv'>join our mailing list</a>.
+        </p>
+    </div>
+    <div class='content'>
+        <h2>Issues</h2>
+        {% with num_digests=20 -%}
+            <script language="javascript"
+                    src="//openabm.us7.list-manage.com/generate-js/?u=35f29299716fcb07509229c1c&fid=21449&show={{num_digests}}"
+                    type="text/javascript"></script>
+        {%- endwith %}
+    </div>
+{% endblock content %}

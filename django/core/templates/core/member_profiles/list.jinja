@@ -59,10 +59,11 @@
     ])
     }}
     {{ subnav([
-    { 'url': '/community/', 'text': 'Community' },
-    { 'url': DISCOURSE_BASE_URL, 'text': 'Forum' },
-    { 'url': url("home:profile-list"), 'text': 'Users', 'active': True },
-    { 'url': url("home:job-list"), 'text': 'Jobs' },
+    {'url': '/community/', 'text': 'Community' },
+    {'url': DISCOURSE_BASE_URL, 'text': 'Forum' },
+    {'url': url("home:profile-list"), 'text': 'Users', 'active': True },
+    {'url': url("home:job-list"), 'text': 'Jobs' },
+    {'url': url("home:digest"), 'text': 'Newsletter'},
     ])
     }}
     {{ paginator('home:profile-list', __all__) }}
