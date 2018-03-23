@@ -11,7 +11,7 @@ from invoke import Context
 
 from core.models import Event, Job
 from core.tests.base import UserFactory, initialize_test_shared_folders, destroy_test_shared_folders
-from curator.invoke_tasks import execute as task_execute, create_pgpass_file, _restore as restore_archive, \
+from curator.invoke_tasks import create_pgpass_file, _restore as restore_archive, \
     create_archive
 from home.tests.base import EventFactory, JobFactory
 from library.fs import import_archive
@@ -79,6 +79,9 @@ class DumpRestoreTestCase(TestCase):
         self.assertEqual(Codebase.objects.using('dump_restore').first(), self.codebase)
         self.assertEqual(Event.objects.using('dump_restore').first(), self.event)
         self.assertEqual(Job.objects.using('dump_restore').first(), self.job)
+        fs_api = self.release.get_fs_api()
+        contents = fs_api.list_sip_contents()
+        self.assertTrue(contents['contents'])
 
     def tearDown(self):
         self.user.delete()
