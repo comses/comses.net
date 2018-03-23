@@ -1,13 +1,25 @@
+import shlex
+import subprocess
+
+import logging
+import os
+from django.conf import settings
 from django.contrib.auth.models import User
 from django.db import connections
-from django.test import TestCase
+from unittest import TestCase
+from invoke import Context
 
-from core.models import Job
-from core.tests.base import UserFactory
+from core.models import Event, Job
+from core.tests.base import UserFactory, initialize_test_shared_folders, destroy_test_shared_folders
+from curator.invoke_tasks import execute as task_execute, create_pgpass_file, _restore as restore_archive, \
+    create_archive
 from home.tests.base import EventFactory, JobFactory
 from library.fs import import_archive
 from library.models import Codebase
 from library.tests.base import CodebaseFactory
+
+
+logger = logging.getLogger(__name__)
 
 
 def dictfetchall(cursor):
@@ -19,10 +31,58 @@ def dictfetchall(cursor):
     ]
 
 
+def setUpModule():
+    initialize_test_shared_folders()
+
+
 class DumpRestoreTestCase(TestCase):
+    def setUp(self):
+        user_factory = UserFactory()
+        self.user = user_factory.create()
+
+        event_factory = EventFactory(submitter=self.user)
+        self.event = event_factory.create()
+
+        job_factory = JobFactory(submitter=self.user)
+        self.job = job_factory.create()
+
+        codebase_factory = CodebaseFactory(submitter=self.user)
+        self.codebase = codebase_factory.create()
+        self.release = self.codebase.create_release()
+        fs_api = self.release.get_fs_api()
+        import_archive(codebase_release=self.release,
+                       nestedcode_folder_name='library/tests/archives/nestedcode',
+                       fs_api=fs_api)
+
+        os.makedirs(os.path.join(settings.BACKUP_ROOT, 'latest'), exist_ok=True)
+        self.database_dump_path = os.path.join(settings.BACKUP_ROOT, 'latest', 'comsesnet_latest.sql')
 
     def test_dump_and_restore(self):
-        with connections['dump_restore'].cursor() as c:
-            c.execute("select * from information_schema.tables where table_schema = 'public'")
-            results = dictfetchall(c)
-            self.assertEqual(results[0]['table_name'], 'django_migrations')
+        # Backup the test files and the test database
+        ctx = Context()
+        create_pgpass_file(ctx)
+        dump_result = subprocess.run(shlex.split('pg_dump -h {HOST} -d {NAME} -U {USER} -f {dest}'
+                                   .format(**settings.DATABASES['default'],
+                                           dest=self.database_dump_path)), stderr=subprocess.PIPE,
+                                     universal_newlines=True)
+        if dump_result.returncode != 0:
+            raise Exception(dump_result.stderr)
+
+        create_archive(ctx, library=None, media=None, database=None, repo=settings.BORG_ROOT)
+
+        # Restore the files to their original location and the test database dump to the dump_restore database
+        extractor_dir = os.path.join(settings.SHARE_DIR, 'extraction')
+        os.makedirs(extractor_dir, exist_ok=True)
+        restore_archive(ctx, repo=settings.BORG_ROOT, archive=None, working_directory=extractor_dir, target_database='dump_restore')
+
+        connections._connections.dump_restore.close()
+        self.assertEqual(Codebase.objects.using('dump_restore').first(), self.codebase)
+        self.assertEqual(Event.objects.using('dump_restore').first(), self.event)
+        self.assertEqual(Job.objects.using('dump_restore').first(), self.job)
+
+    def tearDown(self):
+        self.user.delete()
+
+
+def tearDownModule():
+    destroy_test_shared_folders()

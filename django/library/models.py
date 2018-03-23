@@ -754,7 +754,8 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
     codebase = models.ForeignKey(Codebase, related_name='releases')
     submitter = models.ForeignKey(User)
     contributors = models.ManyToManyField(Contributor, through='ReleaseContributor')
-    submitted_package = models.FileField(upload_to=Codebase._release_upload_path, null=True)
+    submitted_package = models.FileField(upload_to=Codebase._release_upload_path, max_length=1000, null=True,
+                                         storage=FileSystemStorage(location=settings.LIBRARY_ROOT))
     # M2M relationships for publications
     publications = models.ManyToManyField(
         'citation.Publication',

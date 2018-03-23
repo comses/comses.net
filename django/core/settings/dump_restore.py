@@ -1,4 +1,16 @@
+import os
+
 from .test import *
+
+SHARE_DIR = os.path.realpath('library/tests/tmp')
+# LOG_DIRECTORY = os.path.join(SHARE_DIR, 'log')
+LIBRARY_ROOT = os.path.join(SHARE_DIR, 'library')
+LIBRARY_PREVIOUS_ROOT = os.path.join(SHARE_DIR, '.latest')
+REPOSITORY_ROOT = os.path.join(BASE_DIR, 'repository')
+BACKUP_ROOT = os.path.join(SHARE_DIR, 'backups')
+BORG_ROOT = os.path.join(BACKUP_ROOT, 'repo')
+EXTRACT_ROOT = os.path.join(SHARE_DIR, 'extract')
+MEDIA_ROOT = os.path.join(SHARE_DIR, 'media')
 
 DATABASES['dump_restore'] = {
     'ENGINE': 'django.db.backends.postgresql',
