@@ -1,8 +1,10 @@
 import logging
+import requests
 
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.models import User
+from django.core.cache import cache
 from django.core.files.images import ImageFile
 from django.db.models import Prefetch
 from django.shortcuts import redirect
@@ -297,3 +299,32 @@ class JobViewSet(CommonViewSetMixin, viewsets.ModelViewSet):
 
     def retrieve(self, request, *args, **kwargs):
         return retrieve_with_perms(self, request, *args, **kwargs)
+
+
+class DigestView(TemplateView):
+    template_name = 'home/digest.jinja'
+    NUMBER_OF_POSTS = 20
+    ARCHIVE_URL = 'http://openabm.us7.list-manage.com/generate-js/?u=35f29299716fcb07509229c1c&fid=21449&show={0}'
+
+    @property
+    def mailchimp_archive_url(self):
+        return self.ARCHIVE_URL.format(self.NUMBER_OF_POSTS)
+
+    @property
+    def _error_msg(self):
+        return 'Unable to contact mailchimp archive url {0}'.format(self.mailchimp_archive_url)
+
+    def get_context_data(self, **kwargs):
+        context_data = super().get_context_data(**kwargs)
+        context_data.setdefault('mailchimp_archives_js', 'document.write({})'.format(self._error_msg))
+        try:
+            cache_key = 'digest:js'
+            mailchimp_archives_js = cache.get(cache_key)
+            if not mailchimp_archives_js:
+                response = requests.get(self.mailchimp_archive_url)
+                mailchimp_archives_js = response.content  # a pile of document.writes
+                cache.set(cache_key, mailchimp_archives_js, 86400)
+            context_data['mailchimp_archives_js'] = mailchimp_archives_js
+        except requests.exceptions.RequestException as e:
+            logger.exception(e)
+        return context_data

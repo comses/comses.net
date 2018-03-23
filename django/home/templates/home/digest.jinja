@@ -40,10 +40,8 @@
     </div>
     <div class='content'>
         <h2>Issues</h2>
-        {% with num_digests=20 -%}
-            <script language="javascript"
-                    src="//openabm.us7.list-manage.com/generate-js/?u=35f29299716fcb07509229c1c&fid=21449&show={{num_digests}}"
-                    type="text/javascript"></script>
-        {%- endwith %}
+        <script>
+        {{ mailchimp_archives_js }}
+        </script>
     </div>
 {% endblock content %}
