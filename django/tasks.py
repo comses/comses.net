@@ -10,15 +10,7 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "core.settings.dev")
 
 from django.conf import settings
-from curator.invoke_tasks import dj, create_pgpass_file, run_migrations, drop_database, restore_from_dump, restore, create_archive
-env = {
-    'python': 'python3',
-    'project_name': 'cms',
-    'db_key': 'default',
-    'project_conf': os.environ.get('DJANGO_SETTINGS_MODULE'),
-    'coverage_omit_patterns': ('test', 'settings', 'migrations', 'wsgi', 'management', 'tasks', 'apps.py'),
-    'coverage_src_patterns': ('home', 'library', 'core',),
-}
+from curator.invoke_tasks import dj, create_pgpass_file, run_migrations, drop_database, restore_from_dump, restore, create_archive, env
 
 logger = logging.getLogger(__name__)
 

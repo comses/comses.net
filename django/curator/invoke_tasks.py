@@ -15,7 +15,6 @@ _DEFAULT_DATABASE = 'default'
 env = {
     'python': 'python3',
     'project_name': 'cms',
-    'db_key': 'default',
     'project_conf': os.environ.get('DJANGO_SETTINGS_MODULE'),
     'coverage_omit_patterns': ('test', 'settings', 'migrations', 'wsgi', 'management', 'tasks', 'apps.py'),
     'coverage_src_patterns': ('home', 'library', 'core',),
