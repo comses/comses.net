@@ -1,4 +1,4 @@
-from invoke import task
+from invoke import task, Collection
 from invoke.tasks import call
 
 import logging
@@ -10,7 +10,7 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "core.settings.dev")
 
 from django.conf import settings
-from curator.invoke_tasks import dj, create_pgpass_file, run_migrations, drop_database, restore_from_dump, restore, create_archive, env
+from curator.invoke_tasks import dj, create_pgpass_file, run_migrations, backup_database, drop_database, restore_from_dump, env, BORG_NAMESPACE
 
 logger = logging.getLogger(__name__)
 
@@ -103,6 +103,24 @@ def reset_database(ctx):
     run_migrations(ctx, False)
 
 
-@task(iterable=['my_list'])
-def mytask(ctx, my_list):
-    print(my_list)
+DRUPAL_NAMESPACE = Collection('drupal', import_all, import_codebase_files, import_drupal_data)
+
+
+ns = Collection()
+ns.add_task(backup_database)
+ns.add_task(clean)
+ns.add_task(collect_static)
+ns.add_task(coverage)
+ns.add_task(deny_robots)
+ns.add_task(drop_database)
+ns.add_task(quality_check_openabm_files_with_db)
+ns.add_task(create_pgpass_file)
+ns.add_task(reset_database)
+ns.add_task(restore_from_dump)
+ns.add_task(run_migrations)
+ns.add_task(server)
+ns.add_task(sh)
+ns.add_task(test)
+ns.add_task(update_elasticsearch_license)
+ns.add_collection(BORG_NAMESPACE)
+ns.add_collection(DRUPAL_NAMESPACE)

@@ -29,11 +29,23 @@ def dj(ctx, command, **kwargs):
             **kwargs)
 
 
-# @task
-# def backup(ctx):
-#     create_pgpass_file(ctx)
-#     ctx.run('/usr/sbin/autopostgresqlbackup')
-#
+@task(aliases=['init'])
+def initialize_repo(ctx):
+    if not os.path.exists(settings.BORG_ROOT):
+        ctx.run('borg init --encryption=none {}'.format(settings.BORG_ROOT), echo=True)
+
+
+@task
+def backup_database(ctx):
+    create_pgpass_file(ctx)
+    ctx.run('autopostgresqlbackup')
+
+
+@task
+def backup(ctx):
+    create_pgpass_file(ctx)
+    dj(ctx, 'dump')
+
 
 @task(aliases=['pgpass'])
 def create_pgpass_file(ctx, db_key=_DEFAULT_DATABASE, force=False):
@@ -55,17 +67,6 @@ def get_database_settings(db_key):
     )
 
 
-@task
-def create_borg_archive(ctx, backup_paths):
-    ctx.run('borg create --progress --compression lz4 {backup_repo}::{archive_name} {library_path} '
-            '{media_path} {backup_paths}'.format(
-        backup_repo=settings.BORG_ROOT,
-        archive_name='{now}',
-        library_path=settings.LIBRARY_ROOT,
-        media_path=settings.MEDIA_ROOT,
-        backup_paths=backup_paths), echo=True)
-
-
 @task(aliases=['idb', 'initdb'])
 def run_migrations(ctx, clean=False, initial=False):
     apps = ('core', 'home', 'library', 'curator')
@@ -85,30 +86,37 @@ def run_migrations(ctx, clean=False, initial=False):
 def drop_database(ctx, database=_DEFAULT_DATABASE, create=False):
     db_config = get_database_settings(database)
     create_pgpass_file(ctx)
-    ctx.run('psql -h {db_host} -c "alter database {db_name} connection limit 1;" -w {db_name} {db_user}'.format(
-        **db_config),
-        echo=True, warn=True)
-    ctx.run(
-        'psql -h {db_host} -c "select pg_terminate_backend(pid) from pg_stat_activity where datname=\'{db_name}\'" -w {db_name} {db_user}'.format(
-            **db_config),
-        echo=True, warn=True)
-    ctx.run('dropdb -w --if-exists -e {db_name} -U {db_user} -h {db_host}'.format(**db_config), echo=True, warn=True)
+    set_connection_limit = 'psql -h {db_host} -c "alter database {db_name} connection limit 1;" -w {db_name} {db_user}'.format(
+        **db_config)
+    terminate_backend = 'psql -h {db_host} -c "select pg_terminate_backend(pid) from pg_stat_activity where pid <> pg_backend_pid() and datname=\'{db_name}\'" -w {db_name} {db_user}'.format(
+        **db_config)
+    dropdb = 'dropdb -w --if-exists -e {db_name} -U {db_user} -h {db_host}'.format(**db_config)
+    check_if_database_exists = 'psql template1 -tA -U {db_user} -h {db_host} -c "select 1 from pg_database where datname=\'{db_name}\'"'.format(
+        **db_config)
+    if ctx.run(check_if_database_exists, echo=True).stdout.strip():
+        ctx.run(set_connection_limit, echo=True, warn=True)
+        ctx.run(terminate_backend, echo=True, warn=True)
+        ctx.run(dropdb, echo=True)
+
     if create:
-        ctx.run('createdb -w {db_name} -U {db_user} -h {db_host}'.format(**db_config), echo=True, warn=True)
+        ctx.run('createdb -w {db_name} -U {db_user} -h {db_host}'.format(**db_config), echo=True)
 
 
 @task(aliases=['rfd'])
 def restore_from_dump(ctx, target_database=_DEFAULT_DATABASE, dumpfile='comsesnet.sql', force=False, migrate=True):
     db_config = get_database_settings(target_database)
-    if not force:
-        confirm("This will destroy the database and try to reload it from a dumpfile {0}. Continue? (y/n) ".format(
-            dumpfile))
     dumpfile_path = pathlib.Path(dumpfile)
     if dumpfile.endswith('.sql') and dumpfile_path.is_file():
+        if not force:
+            confirm("This will destroy the database and try to reload it from a dumpfile {0}. Continue? (y/n) ".format(
+                dumpfile))
         drop_database(ctx, database=target_database, create=True)
         ctx.run('psql -w -q -h db {db_name} {db_user} < {dumpfile}'.format(dumpfile=dumpfile, **db_config),
                 warn=True)
     elif dumpfile.endswith('.sql.gz') and dumpfile_path.is_file():
+        if not force:
+            confirm("This will destroy the database and try to reload it from a dumpfile {0}. Continue? (y/n) ".format(
+                dumpfile))
         drop_database(ctx, database=target_database, create=True)
         ctx.run('zcat {dumpfile} | psql -w -q -h db {db_name} {db_user}'.format(dumpfile=dumpfile, **db_config),
                 warn=True)
@@ -141,12 +149,22 @@ def create_archive(ctx, library=None, media=None, database=None, share=settings.
         media = os.path.relpath(settings.MEDIA_ROOT, share)
     if not database:
         database = os.path.relpath(os.path.join(settings.BACKUP_ROOT, 'latest'), share)
+
     with ChDir(share) as c:
-        ctx.run('borg create {repo}::"{archive}" {library} {media} {database}'.format(
-            repo=repo, archive=archive, library=library, media=media, database=database))
+
+        error_msgs = []
+        for p in [library, media, database]:
+            if not os.path.exists(p):
+                error_msgs.append('Path {} does not exist.'.format(p))
+        if error_msgs:
+            raise IOError('Create archive failed. {}'.format(' '.join(error_msgs)))
+
+        ctx.run('{} borg create --progress --compression lz4 {repo}::"{archive}" {library} {media} {database}'.format(
+            borg_environment_variables(), repo=repo, archive=archive, library=library, media=media, database=database), echo=True)
 
 
 def rotate_library_and_media_files(src_library, src_media):
+    logger.info('rotating library and media files')
     latest_dest_library = os.path.join(settings.PREVIOUS_SHARE_ROOT, src_library)
     latest_dest_media = os.path.join(settings.PREVIOUS_SHARE_ROOT, src_media)
 
@@ -163,9 +181,14 @@ def rotate_library_and_media_files(src_library, src_media):
     shutil.move(src_media, settings.SHARE_DIR)
 
 
-def _restore(ctx, repo, archive, working_directory, target_database):
+def borg_environment_variables():
+    return "BORG_UNKNOWN_UNENCRYPTED_REPO_ACCESS_IS_OK=yes BORG_RELOCATED_REPO_ACCESS_IS_OK=yes"
+
+
+def _restore(ctx, repo, archive, working_directory, target_database, progress=True):
     if archive is None:
-        archive = ctx.run('borg list --first 1 --short {repo}'.format(repo=settings.BORG_ROOT),
+        archive = ctx.run('{} borg list --first 1 --short {repo}'.format(borg_environment_variables(),
+                                                                         repo=settings.BORG_ROOT),
                           hide=True).stdout.strip()
         if not archive:
             raise Exception('no borg archives found')
@@ -174,7 +197,9 @@ def _restore(ctx, repo, archive, working_directory, target_database):
                         .glob('comsesnet*'))[0])
     with ChDir(working_directory) as c:
         logger.info('Restore (pwd: %s)', os.getcwd())
-        ctx.run('borg extract {repo}::"{archive}"'.format(repo=repo, archive=archive), echo=True)
+        extract_cmd = '{} borg extract{progress}{repo}::"{archive}"'.format(
+            borg_environment_variables(), repo=repo, archive=archive, progress=' --progress ' if progress else ' ')
+        ctx.run(extract_cmd, echo=True)
 
         src_library = os.path.basename(settings.LIBRARY_ROOT)
         src_media = os.path.basename(settings.MEDIA_ROOT)
@@ -184,7 +209,7 @@ def _restore(ctx, repo, archive, working_directory, target_database):
 
 
 @task
-def restore(ctx, repo, archive=None, target_database=_DEFAULT_DATABASE):
+def restore(ctx, repo=settings.BORG_ROOT, archive=None, target_database=_DEFAULT_DATABASE):
     with tempfile.TemporaryDirectory(dir=settings.SHARE_DIR) as working_directory:
         _restore(ctx, repo, archive=archive, working_directory=working_directory, target_database=target_database)
 
@@ -200,11 +225,4 @@ def confirm(prompt="Continue? (y/n) ", cancel_message="Aborted."):
         raise RuntimeError(cancel_message)
 
 
-_TASK_NAMESPACE = Collection(create_borg_archive)
-
-
-def execute(command, context=None, **kwargs):
-    if context is None:
-        context = Context()
-    results = Executor(_TASK_NAMESPACE, config=context.config).execute((command.__name__, kwargs))
-    return results[command]
+BORG_NAMESPACE = Collection('borg', initialize_repo, backup, create_archive, restore)
