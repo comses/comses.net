@@ -6,7 +6,7 @@ import tempfile
 
 from invoke import task, Collection
 from django.conf import settings
-from .util import dj, ChDir
+from .util import dj, ChDir, confirm
 from .database import create_pgpass_file, _DEFAULT_DATABASE, restore_from_dump
 
 logger = logging.getLogger(__name__)
@@ -22,7 +22,9 @@ def initialize_repo(ctx):
 def backup(ctx):
     share = settings.SHARE_DIR
     repo = settings.BORG_ROOT
-    archive = '{now}'
+    # Borg recognizes {now} as the current timestamp
+    #  http://borgbackup.readthedocs.io/en/stable/usage/help.html#borg-help-placeholders
+    archive = '{utcnow}'
     library = os.path.relpath(settings.LIBRARY_ROOT, share)
     media = os.path.relpath(settings.MEDIA_ROOT, share)
     database = os.path.relpath(os.path.join(settings.BACKUP_ROOT, 'latest'), share)
@@ -67,6 +69,8 @@ def environment():
 
 
 def _restore(ctx, repo, archive, working_directory, target_database, progress=True):
+    # Note that working directory is passed as argument. This makes it simpler to use either
+    # a persistent directory (for testing and debugging) or a temporary directory
     if archive is None:
         archive = ctx.run('{} borg list --first 1 --short {repo}'.format(environment(),
                                                                          repo=settings.BORG_ROOT),
@@ -94,5 +98,6 @@ def restore(ctx, repo=settings.BORG_ROOT, archive=None, target_database=_DEFAULT
     """Restore the library files, media files and database to the state given in the borg repo at path REPO
     using archive ARCHIVE. The target_database argument is for testing so a different database can be used to
     make sure the database is getting restored properly"""
+    confirm("Are you sure you want to restore the database and all file content? (y/n)")
     with tempfile.TemporaryDirectory(dir=settings.SHARE_DIR) as working_directory:
         _restore(ctx, repo, archive=archive, working_directory=working_directory, target_database=target_database)
