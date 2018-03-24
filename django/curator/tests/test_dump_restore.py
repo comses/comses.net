@@ -11,8 +11,8 @@ from invoke import Context
 
 from core.models import Event, Job
 from core.tests.base import UserFactory, initialize_test_shared_folders, destroy_test_shared_folders
-from curator.invoke_tasks import create_pgpass_file, _restore as restore_archive, \
-    create_archive
+from curator.invoke_tasks.database import create_pgpass_file
+from curator.invoke_tasks.borg import _restore as restore_archive, backup
 from home.tests.base import EventFactory, JobFactory
 from library.fs import import_archive
 from library.models import Codebase
@@ -68,7 +68,7 @@ class DumpRestoreTestCase(TestCase):
         if dump_result.returncode != 0:
             raise Exception(dump_result.stderr)
 
-        create_archive(ctx, library=None, media=None, database=None, repo=settings.BORG_ROOT)
+        backup(ctx)
 
         # Restore the files to their original location and the test database dump to the dump_restore database
         extractor_dir = os.path.join(settings.SHARE_DIR, 'extraction')
