@@ -123,18 +123,6 @@ class UserFactory:
         return user
 
 
-class ChDir:
-    def __init__(self, new_dir):
-        self.original_dir = os.getcwd()
-        self.new_dir = new_dir
-
-    def __enter__(self):
-        os.chdir(self.new_dir)
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        os.chdir(self.original_dir)
-
-
 def initialize_test_shared_folders():
     for d in [settings.LIBRARY_ROOT, settings.REPOSITORY_ROOT, settings.BACKUP_ROOT, settings.MEDIA_ROOT]:
         os.makedirs(d, exist_ok=True)

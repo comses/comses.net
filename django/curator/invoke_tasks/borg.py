@@ -6,7 +6,7 @@ import tempfile
 
 from invoke import task, Collection
 from django.conf import settings
-from .util import dj, ChDir, confirm
+from .util import dj, confirm
 from .database import create_pgpass_file, _DEFAULT_DATABASE, restore_from_dump
 
 logger = logging.getLogger(__name__)
@@ -29,20 +29,20 @@ def backup(ctx):
     media = os.path.relpath(settings.MEDIA_ROOT, share)
     database = os.path.relpath(os.path.join(settings.BACKUP_ROOT, 'latest'), share)
 
-    with ChDir(share) as c:
-        error_msgs = []
-        for p in [library, media, database]:
-            if not os.path.exists(p):
-                error_msgs.append('Path {} does not exist.'.format(p))
-        if error_msgs:
-            raise IOError('Create archive failed. {}'.format(' '.join(error_msgs)))
+    error_msgs = []
+    for p in [settings.LIBRARY_ROOT, settings.MEDIA_ROOT, os.path.join(settings.BACKUP_ROOT, 'latest')]:
+        if not os.path.exists(p):
+            error_msgs.append('Path {} does not exist.'.format(p))
+    if error_msgs:
+        raise IOError('Create archive failed. {}'.format(' '.join(error_msgs)))
 
+    with ctx.cd(share):
         create_pgpass_file(ctx)
         ctx.run('{} borg create --progress --compression lz4 {repo}::"{archive}" {library} {media} {database}'.format(
             environment(), repo=repo, archive=archive, library=library, media=media, database=database), echo=True)
 
 
-def rotate_library_and_media_files(src_library, src_media):
+def rotate_library_and_media_files(working_directory, src_library, src_media):
     """Rotate the current library and media files
 
     Current library and media files are moved to the '.latest' folder in case of problems during the restore process.
@@ -60,8 +60,8 @@ def rotate_library_and_media_files(src_library, src_media):
     if os.path.exists(settings.MEDIA_ROOT):
         shutil.move(settings.MEDIA_ROOT, settings.PREVIOUS_SHARE_ROOT)
 
-    shutil.move(src_library, settings.SHARE_DIR)
-    shutil.move(src_media, settings.SHARE_DIR)
+    shutil.move(os.path.join(working_directory, src_library), settings.SHARE_DIR)
+    shutil.move(os.path.join(working_directory, src_media), settings.SHARE_DIR)
 
 
 def environment():
@@ -80,15 +80,14 @@ def _restore(ctx, repo, archive, working_directory, target_database, progress=Tr
 
     dumpfile = str(list(pathlib.Path(os.path.join(settings.BACKUP_ROOT, 'latest'))
                         .glob('comsesnet*'))[0])
-    with ChDir(working_directory) as c:
-        logger.info('Restore (pwd: %s)', os.getcwd())
+    with ctx.cd(working_directory):
         extract_cmd = '{} borg extract{progress}{repo}::"{archive}"'.format(
             environment(), repo=repo, archive=archive, progress=' --progress ' if progress else ' ')
         ctx.run(extract_cmd, echo=True)
 
         src_library = os.path.basename(settings.LIBRARY_ROOT)
         src_media = os.path.basename(settings.MEDIA_ROOT)
-        rotate_library_and_media_files(src_library=src_library, src_media=src_media)
+        rotate_library_and_media_files(working_directory, src_library=src_library, src_media=src_media)
 
         restore_from_dump(ctx, target_database=target_database, dumpfile=dumpfile, force=True, migrate=False)
 

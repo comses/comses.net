@@ -6,19 +6,6 @@ from distutils.util import strtobool
 logger = logging.getLogger(__name__)
 
 
-class ChDir:
-    def __init__(self, path):
-        self.new_path = path
-        self.old_path = os.getcwd()
-
-    def __enter__(self):
-        os.chdir(self.new_path)
-        return self
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        os.chdir(self.old_path)
-
-
 env = {
     'python': 'python3',
     'project_name': 'cms',
