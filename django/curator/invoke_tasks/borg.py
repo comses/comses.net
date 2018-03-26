@@ -72,7 +72,7 @@ def _restore(ctx, repo, archive, working_directory, target_database, progress=Tr
     # Note that working directory is passed as argument. This makes it simpler to use either
     # a persistent directory (for testing and debugging) or a temporary directory
     if archive is None:
-        archive = ctx.run('{} borg list --first 1 --short {repo}'.format(environment(),
+        archive = ctx.run('{} borg list --short {repo} | head -n 1'.format(environment(),
                                                                          repo=settings.BORG_ROOT),
                           hide=True).stdout.strip()
         if not archive:
@@ -81,8 +81,8 @@ def _restore(ctx, repo, archive, working_directory, target_database, progress=Tr
     dumpfile = str(list(pathlib.Path(os.path.join(settings.BACKUP_ROOT, 'latest'))
                         .glob('comsesnet*'))[0])
     with ctx.cd(working_directory):
-        extract_cmd = '{} borg extract{progress}{repo}::"{archive}"'.format(
-            environment(), repo=repo, archive=archive, progress=' --progress ' if progress else ' ')
+        extract_cmd = '{} borg extract {repo}::"{archive}"'.format(
+            environment(), repo=repo, archive=archive)
         ctx.run(extract_cmd, echo=True)
 
         src_library = os.path.basename(settings.LIBRARY_ROOT)
