@@ -4,13 +4,17 @@ import os
 from django.test import TestCase
 from django.conf import settings
 
-from core.tests.base import UserFactory
-from library.fs import FileCategoryDirectories, ArchiveExtractor, StagingDirectories, MessageLevels
+from core.tests.base import UserFactory, destroy_test_shared_folders, initialize_test_shared_folders
+from library.fs import FileCategoryDirectories, ArchiveExtractor, StagingDirectories, MessageLevels, import_archive
 from library.tests.base import CodebaseFactory
 
 import logging
 
 logger = logging.getLogger(__name__)
+
+
+def setUpModule():
+    initialize_test_shared_folders()
 
 
 class ArchiveExtractorTestCase(TestCase):
@@ -24,11 +28,10 @@ class ArchiveExtractorTestCase(TestCase):
         self.codebase_release = self.codebase.create_release()
 
     def test_zipfile_saving(self):
-        archive_name = '{}.zip'.format(self.nestedcode_folder_name)
-        shutil.make_archive(self.nestedcode_folder_name, 'zip', self.nestedcode_folder_name)
         fs_api = self.codebase_release.get_fs_api()
-        with open(archive_name, 'rb') as f:
-            msgs = fs_api.add(FileCategoryDirectories.code, content=f, name="nestedcode.zip")
+        msgs = import_archive(codebase_release=self.codebase_release,
+                              nestedcode_folder_name=self.nestedcode_folder_name,
+                              fs_api=fs_api)
         logs, level = msgs.serialize()
         self.assertEquals(level, MessageLevels.warning)
         self.assertEquals(len(logs), 2)
@@ -61,4 +64,4 @@ class ArchiveExtractorTestCase(TestCase):
 
 
 def tearDownModule():
-    shutil.rmtree(settings.LIBRARY_ROOT, ignore_errors=True)
+    destroy_test_shared_folders()

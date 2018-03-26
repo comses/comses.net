@@ -1,6 +1,12 @@
 import logging
 from urllib.parse import urlencode
 
+import os
+import shlex
+import subprocess
+
+import shutil
+from django.conf import settings
 from django.contrib.auth.models import User, AnonymousUser
 from django.urls import reverse
 from guardian.shortcuts import assign_perm
@@ -115,3 +121,13 @@ class UserFactory:
         if password:
             user.set_password(password)
         return user
+
+
+def initialize_test_shared_folders():
+    for d in [settings.LIBRARY_ROOT, settings.REPOSITORY_ROOT, settings.BACKUP_ROOT, settings.MEDIA_ROOT]:
+        os.makedirs(d, exist_ok=True)
+
+    subprocess.run(shlex.split('borg init --encryption=none {}'.format(settings.BORG_ROOT)), check=True)
+
+def destroy_test_shared_folders():
+    shutil.rmtree(settings.SHARE_DIR, ignore_errors=True)

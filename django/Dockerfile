@@ -4,10 +4,12 @@ ARG REQUIREMENTS_FILE=requirements-dev.txt
 ARG RUN_SCRIPT=./deploy/dev.sh
 ARG UBUNTU_MIRROR=mirror.math.princeton.edu/pub
 
-RUN sed -i "s|archive.ubuntu.com|${UBUNTU_MIRROR}|" /etc/apt/sources.list && \
-        apt-get update && apt-get install -y \
+RUN sed -i "s|archive.ubuntu.com|${UBUNTU_MIRROR}|" /etc/apt/sources.list \
+        && apt-get update \
+        && apt-get install -y \
         autopostgresqlbackup \
         binutils \
+        borgbackup \
         curl \
         gdal-bin \
         git \
@@ -36,6 +38,7 @@ COPY ${REQUIREMENTS_FILE} requirements.txt /tmp/
 RUN pip3 install -r /tmp/${REQUIREMENTS_FILE} --no-cache-dir \
         && python -m nltk.downloader stopwords \
         && python -m nltk.downloader punkt
+COPY ./deploy/db/autopostgresqlbackup /etc/cron.daily/autopostgresqlbackup
 COPY ./deploy/db/autopostgresqlbackup.conf /etc/default/autopostgresqlbackup
 COPY ./deploy/db/postgresql-backup-pre /etc/
 COPY ${RUN_SCRIPT} /etc/service/django/run
