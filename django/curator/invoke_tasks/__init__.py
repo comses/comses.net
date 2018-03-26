@@ -1,9 +1,6 @@
 from invoke import Collection
 
-from . import borg
-from . import database
-from . import elasticsearch
-from . import drupal
+from . import borg, database, elasticsearch, drupal
 from .base import clean, collect_static, coverage, deny_robots, quality_check_openabm_files_with_db, sh, test, server, setup_site
 
 
