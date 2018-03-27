@@ -10,6 +10,7 @@ from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.views import redirect_to_login
 from django.core.exceptions import PermissionDenied
+from django.db.models import F
 from django.db.models.functions import Lower
 from django.http import Http404, HttpResponseBadRequest, HttpResponseRedirect, QueryDict, HttpResponseServerError
 from django.shortcuts import render
@@ -35,15 +36,21 @@ class CaseInsensitiveOrderingFilter(filters.OrderingFilter):
 
     def filter_queryset(self, request, queryset, view):
         ordering = self.get_ordering(request, queryset, view)
+
         if ordering:
             case_insensitive_ordering = []
             for field in ordering:
+                asc = not field.startswith('-')
+                field_name = field if asc else field[1:]
                 if field not in self.STRING_ORDERING_FIELDS:
-                    case_insensitive_ordering.append(field)
-                elif field.startswith('-'):
-                    case_insensitive_ordering.append(Lower(field[1:]).desc())
+                    order_by_expr = F(field_name)
                 else:
-                    case_insensitive_ordering.append(Lower(field).asc())
+                    order_by_expr = Lower(field_name)
+                if asc:
+                    order_by_expr = order_by_expr.asc(nulls_last=True)
+                else:
+                    order_by_expr = order_by_expr.desc(nulls_last=True)
+                case_insensitive_ordering.append(order_by_expr)
             queryset = queryset.order_by(*case_insensitive_ordering)
 
         return queryset

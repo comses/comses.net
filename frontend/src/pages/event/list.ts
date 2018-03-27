@@ -8,9 +8,9 @@ new SortBy({
             {label: 'Relevance', value: ''},
             {label: 'Publish date', value: 'date_created'},
             {label: 'Last modified date', value: 'last_modified'},
-            {label: 'Title', value: 'title'},
-            {label: 'Submitter: family name', value: 'submitter__last_name'},
-            {label: 'Submitter: username', value: 'submitter__username'},
+            {label: 'Early registration deadline', value: 'early_registration_deadline'},
+            {label: 'Submission deadline', value: 'submission_deadline'},
+            {label: 'Start date', value: 'start_date'},
         ],
     },
 }).$mount('#sortby');

@@ -204,8 +204,8 @@ class EventViewSet(CommonViewSetMixin, viewsets.ModelViewSet):
     queryset = Event.objects.with_tags().with_submitter().order_by('-date_created', 'title')
     pagination_class = SmallResultSetPagination
     filter_backends = (CaseInsensitiveOrderingFilter, EventFilter)
-    ordering_fields = ('date_created', 'last_modified', 'title',
-                       'submitter__last_name', 'submitter__username',)
+    ordering_fields = ('date_created', 'last_modified',
+                       'early_registration_deadline', 'submission_deadline', 'start_date',)
 
     def retrieve(self, request, *args, **kwargs):
         return retrieve_with_perms(self, request, *args, **kwargs)
@@ -294,8 +294,7 @@ class JobViewSet(CommonViewSetMixin, viewsets.ModelViewSet):
     pagination_class = SmallResultSetPagination
     queryset = Job.objects.with_tags().with_submitter().order_by('-date_created')
     filter_backends = (CaseInsensitiveOrderingFilter, JobFilter)
-    ordering_fields = ('date_created', 'last_modified', 'title',
-                       'submitter__last_name', 'submitter__username',)
+    ordering_fields = ('application_deadline', 'date_created', 'last_modified', )
 
     def retrieve(self, request, *args, **kwargs):
         return retrieve_with_perms(self, request, *args, **kwargs)
