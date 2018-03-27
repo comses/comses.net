@@ -7,13 +7,9 @@
         <div class='row'>
             <div class='col-8'>
                 <h3 class='title mb-0'><a href="{{ url(detail_url_name, pk=item.id) }}">{{ item.title }}</a></h3>
-                {% if item.application_deadline %}
-                    <b class='title'>Application deadline</b> {{ item.application_deadline }}
-                {% endif %}
+                <b class='title'>Application deadline</b> {{ item.application_deadline }}
             </div>
             <div class='col-4'>
-                <small class='float-right'>Application deadline {{ item.application_deadline }}</small>
-                <br>
                 <small class="float-right">Last updated {{ item.last_modified }}</small>
                 <br>
                 <small class='float-right'>Submitted by {{ member_profile_href(item.submitter) }}
