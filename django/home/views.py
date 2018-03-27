@@ -221,7 +221,7 @@ class EventViewSet(CommonViewSetMixin, viewsets.ModelViewSet):
             'title': 'Early Registration Deadline: ' + event.title,
             'start': event.early_registration_deadline.isoformat(),
             'url': event.get_absolute_url(),
-            'color': '#aaa',
+            'color': '#D9230F',
         }
 
     @staticmethod
@@ -230,7 +230,7 @@ class EventViewSet(CommonViewSetMixin, viewsets.ModelViewSet):
             'title': 'Submission Deadline: ' + event.title,
             'start': event.submission_deadline.isoformat(),
             'url': event.get_absolute_url(),
-            'color': '#ccc',
+            'color': '#D9230F',
         }
 
     @staticmethod
@@ -240,7 +240,7 @@ class EventViewSet(CommonViewSetMixin, viewsets.ModelViewSet):
             'start': event.start_date.isoformat(),
             'end': event.end_date.isoformat(),
             'url': event.get_absolute_url(),
-            'color': '#92c02e',
+            'color': '#3a87ad',
         }
 
     @list_route()

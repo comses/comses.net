@@ -1,10 +1,10 @@
 {% extends "base.jinja" %}
 {% from "common.jinja" import item_component, list_page, paginator, breadcrumb, subnav %}
 
-{% set FULLCALENDAR_VERSION="3.4.0" %}
-
 {% block extra_css %}
-    <link rel='stylesheet' href="//cdnjs.cloudflare.com/ajax/libs/fullcalendar/{{FULLCALENDAR_VERSION}}/fullcalendar.min.css">
+    {% with FULLCALENDAR_VERSION="3.9.0" %}
+        <link rel='stylesheet' href="//cdnjs.cloudflare.com/ajax/libs/fullcalendar/{{FULLCALENDAR_VERSION}}/fullcalendar.min.css">
+    {% endwith %}
 {% endblock %}
 
 {% block title %}Community Events{% endblock %}
@@ -20,16 +20,9 @@
     {'text': 'List View', 'url': url('home:event-list'), },
     ])
     }}
-    <div class='pt-3 pb-2 row'>
-        <div class='col'>
-            <a class='btn btn-primary' href='{{ url("home:event-add") }}'>Submit an event</a>
-        </div>
-    </div>
-
-    <div id="calendar"></div>
+    <div class='my-3' id="calendar"></div>
 {% endblock %}
 
 {% block js %}
-    {{ super() }}
     {{ render_bundle('event_calendar') }}
 {% endblock %}

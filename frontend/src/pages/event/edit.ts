@@ -54,12 +54,12 @@ export const schema = yup.object().shape({
         <div class="row">
             <div class="col-6">
                 <c-datepicker v-model="start_date" name="start_date" :errorMsgs="errors.start_date" 
-                    :required="config.start_date" label="Start Date" help="The date the event begins at">
+                    :required="config.start_date" label="Start Date" help="The date the event begins">
                 </c-datepicker>
             </div>
             <div class="col-6">
                 <c-datepicker v-model="end_date" name="end_date" :errorMsgs="errors.end_date" :clearButton="true"
-                    :openDate="endDateOpenDate" :required="config.end_date" label="End Date" help="The date the event ends at">
+                    :openDate="endDateOpenDate" :required="config.end_date" label="End Date" help="The date the event ends">
                 </c-datepicker>
             </div>
         </div>
@@ -95,9 +95,9 @@ export const schema = yup.object().shape({
             </div>
         </c-markdown>
         <c-input v-model="external_url" name="external_url" :errorMsgs="errors.external_url" :required="config.external_url"
-            label="Link to event website" help="A direct link to the event on an external website">    
+            label="Link to event website" help="Link to a more detailed website for this event">    
         </c-input>
-        <c-tagger v-model="tags" name="tags" :errorMsgs="errors.tags" label="Tags">
+        <c-tagger v-model="tags" name="tags" :errorMsgs="errors.tags" label="Tags" :required="false">
         </c-tagger>
         <small class="form-text text-muted">A list of tags to associate with an event. Tags help people search for
             events.
