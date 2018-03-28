@@ -1,0 +1,50 @@
+<section class="panel nice-padding">
+    <h2>Recent Activity ({{ start_date }} UTC to Present)</h2>
+    <h3>New Accounts ({{ new_accounts_count }} Total)</h3>
+    {% if new_accounts %}
+        <ul>
+            {% for new_account in new_accounts %}
+                <li><a href="{% url 'home:profile-detail' new_account.id %}">{{ new_account.get_full_name }}
+                    (Joined: {{ new_account.date_joined }})</a></li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p>No new accounts</p>
+    {% endif %}
+
+    <h3>Release Changes ({{ modified_releases_count }} Total)</h3>
+    {% if modified_releases %}
+        <ul>
+            {% for release in modified_releases %}
+                <li><a href="{% url 'library:codebaserelease-detail' identifier=release.codebase.identifier version_number=release.version_number %}">{{ release.codebase.title }} v{{ release.version_number }} (Modified {{ release.last_modified }})</a>. {% include 'curator/home/submitted_by.html' with obj=release %}</li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p>No modified releases</p>
+    {% endif %}
+
+    <h3>Event Changes ({{ modified_events_count }} Total)</h3>
+    {% if modified_events %}
+        <ul>
+            {% for event in modified_events %}
+                <li><a href="{% url 'home:event-detail' event.id %}">{{ event.title }}
+                    (Modified {{ event.last_modified }})</a>. {% include 'curator/home/submitted_by.html' with obj=event %}</li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p>Not modified events</p>
+    {% endif %}
+
+    <h3>Job Changes ({{ modified_jobs_count }} Total)</h3>
+    {% if modified_jobs %}
+        <ul>
+            {% for job in modified_jobs %}
+                <li><a href="{% url 'home:job-detail' job.id %}">{{ job.title }}
+                    (Modified {{ job.last_modified }})</a>. {% include 'curator/home/submitted_by.html' with obj=job %}</li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p>No modified jobs</p>
+    {% endif %}
+
+</section>

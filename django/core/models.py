@@ -143,6 +143,7 @@ class MemberProfile(index.Indexed, ClusterableModel):
     """
     Contains additional comses.net information, possibly linked to a CoMSES Member / site account
     """
+
     user = models.OneToOneField(User, null=True, on_delete=models.SET_NULL, related_name='member_profile')
 
     # FIXME: add location field eventually, with postgis
