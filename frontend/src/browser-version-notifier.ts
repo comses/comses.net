@@ -6,7 +6,7 @@ import {Component, Prop} from 'vue-property-decorator';
     template: `<ul class="navbar-nav ml-auto">
         <li class="nav-item" v-if="!supported">
             <div class="alert alert-warning mb-0">
-                Your browser {{ browser_full_name }} is unsupported. Some site functionality not work.
+                Your browser {{ browser_full_name }} is unsupported. Some site functionality may not work.
             </div>
         </li>
     </li>`
@@ -26,6 +26,8 @@ export class BrowserDetect extends Vue {
         if (this.browser) {
             const version = parseInt(this.browser.version.split('.')[0]);
             if (this.browser.name === 'ie' && version <= 11) {
+                return false;
+            } else if (this.browser.name === 'chrome' && version <= 58) {
                 return false;
             }
         }
