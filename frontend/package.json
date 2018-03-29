@@ -14,6 +14,7 @@
     "axios": "~0",
     "bootstrap": "^4.0.0",
     "clipboard": "^1.7.1",
+    "detect-browser": "^2.2.0",
     "font-awesome": "^4.7.0",
     "fullcalendar": "^3.9.0",
     "jquery": "^3.2.1",

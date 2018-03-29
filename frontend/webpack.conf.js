@@ -65,6 +65,7 @@ function image(options) {
 
 module.exports = createConfig([
     entryPoint({
+        browser_version_notifier: './src/browser-version-notifier.ts',
         codebases: './src/pages/codebase',
         events: './src/pages/event',
         jobs: './src/pages/job',

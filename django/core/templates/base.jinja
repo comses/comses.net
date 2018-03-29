@@ -90,6 +90,7 @@
                     </div>
                 </li>
             </ul>
+            <ul id="browser-message"></ul>
         </div>
     </div>
 </nav>
@@ -202,6 +203,8 @@ function focusSearch() {
         {% block extra_css %}
             {# Override this in templates to add extra stylesheets #}
         {% endblock %}
+
+
     </head>
 
     <body class="{% block body_class %}{% endblock %}">
@@ -242,6 +245,7 @@ function focusSearch() {
 
         {{ render_bundle('manifest') }}
         {{ render_bundle('vendors') }}
+        {{ render_bundle('browser_version_notifier') }}
 
         <script src="//cdn.rawgit.com/imsky/holder/master/holder.js"></script>
         {% block js %}
