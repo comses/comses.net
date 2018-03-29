@@ -321,7 +321,7 @@ class DigestView(TemplateView):
             mailchimp_archives_js = cache.get(cache_key)
             if not mailchimp_archives_js:
                 response = requests.get(self.mailchimp_archive_url)
-                mailchimp_archives_js = response.content  # a pile of document.writes
+                mailchimp_archives_js = response.text  # a pile of document.writes
                 cache.set(cache_key, mailchimp_archives_js, 86400)
             context_data['mailchimp_archives_js'] = mailchimp_archives_js
         except requests.exceptions.RequestException as e:
