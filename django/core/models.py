@@ -242,7 +242,6 @@ class MemberProfile(index.Indexed, ClusterableModel):
     def get_absolute_url(self):
         return reverse('home:profile-detail', kwargs={'pk': self.user.pk})
 
-
     def __str__(self):
         return str(self.user)
 
@@ -365,6 +364,9 @@ class EventQuerySet(models.QuerySet):
 
     def upcoming(self):
         return self.public().filter(start_date__gte=timezone.now())
+
+    def latest(self, number=10):
+        return self.order_by('-last_modified')[:number]
 
     def public(self):
         return self
