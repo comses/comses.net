@@ -2,32 +2,36 @@ import {detect} from 'detect-browser'
 import Vue from 'vue'
 import {Component, Prop} from 'vue-property-decorator';
 
+const MIN_CHROME_VERSION = 58;
+
 @Component({
     template: `<ul class="navbar-nav ml-auto">
         <li class="nav-item" v-if="!supported">
-            <div class="alert alert-warning mb-0">
-                Your browser {{ browser_full_name }} is unsupported. Some site functionality may not work.
+            <div class="alert alert-warning mb-0" v-if="browser">
+                {{ browser_warnings[browser.name] }}
+            </div>
+            <div class="alert alert-warning mb-0" v-else>
+                Browser is unsupported. Some site functionality may not work.
             </div>
         </li>
-    </li>`
+    </ul>`
 })
+
 export class BrowserDetect extends Vue {
+    browser_warnings = {
+        'ie': 'All versions of Internet Explorer are unsupported. Some site functionality may not work.',
+        'chrome': `Chrome versions before ${MIN_CHROME_VERSION} are unsupported. Some site functionality may not work.`
+    };
+
     @Prop()
     browser: any;
-
-    get browser_full_name() {
-        if (this.browser && this.browser.name && this.browser.version) {
-            return `${this.browser.name} ${this.browser.version}`;
-        }
-        return 'Unknown'
-    }
 
     get supported() {
         if (this.browser) {
             const version = parseInt(this.browser.version.split('.')[0]);
-            if (this.browser.name === 'ie' && version <= 11) {
+            if (this.browser.name === 'ie') {
                 return false;
-            } else if (this.browser.name === 'chrome' && version <= 58) {
+            } else if (this.browser.name === 'chrome' && version <= MIN_CHROME_VERSION) {
                 return false;
             }
         }
