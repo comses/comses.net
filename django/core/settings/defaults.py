@@ -169,7 +169,7 @@ else:
 # default from email for various automated emails sent by Django
 DEFAULT_FROM_EMAIL = config.get('email', 'DEFAULT_FROM_EMAIL', fallback='info@comses.net')
 # email address used for errors emails sent to ADMINS and MANAGERS
-SERVER_EMAIL = config.get('email', 'SERVER_EMAIL', fallback='admin@comses.net')
+SERVER_EMAIL = config.get('email', 'SERVER_EMAIL', fallback='editors@comses.net')
 
 RECAPTCHA_PUBLIC_KEY = config.get('captcha', 'RECAPTCHA_PUBLIC_KEY', fallback='')
 RECAPTCHA_PRIVATE_KEY = config.get('captcha', 'RECAPTCHA_PRIVATE_KEY', fallback='')
