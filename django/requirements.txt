@@ -2,7 +2,8 @@ bagit==1.6.3
 bleach==2.1.2
 dealer==2.0.5
 django>=1.11.0,<2.0.0
-django-allauth==0.35.0
+-e git+https://github.com/pennersr/django-allauth.git#egg=django-allauth
+# django-allauth==0.36.0
 django-extensions==1.9.9
 django-guardian==1.4.9
 django-ipware==2.0.1
