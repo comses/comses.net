@@ -7,6 +7,7 @@ from rest_framework_swagger.views import get_swagger_view
 from wagtail.wagtailadmin import urls as wagtailadmin_urls
 from wagtail.wagtailcore import urls as wagtail_urls
 
+from core import feeds
 from home import urls as home_urls
 from library import urls as library_urls
 from curator import urls as curator_urls
@@ -41,6 +42,8 @@ urlpatterns = [
     # configure sitemaps and robots.txt, see https://django-robots.readthedocs.io/en/latest/
     url('sitemap.xml', sitemap, {'sitemaps': sitemaps}, name='django.contrib.sitemaps.views.sitemap'),
     url(r'^robots\.txt', include('robots.urls')),
+    url(r'^{}$'.format(feeds.RssSiteNewsFeed.feed_url.lstrip('/')), feeds.RssSiteNewsFeed(), name='rss'),
+    url(r'^{}$'.format(feeds.AtomSiteNewsFeed.feed_url.lstrip('/')), feeds.AtomSiteNewsFeed(), name='atom'),
 ]
 
 if settings.DEPLOY_ENVIRONMENT.is_development():

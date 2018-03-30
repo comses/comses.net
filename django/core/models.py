@@ -106,7 +106,6 @@ class FollowUser(models.Model):
 
 
 class MemberProfileQuerySet(models.QuerySet):
-
     EXCLUDED_USERS = ('AnonymousUser', 'openabm')
 
     def find_by_name(self, query):

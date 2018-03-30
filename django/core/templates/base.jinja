@@ -19,6 +19,16 @@
         </a>
         <div class='collapse navbar-collapse flex-md-column my-auto justify-content-end' id='navbar-content'>
             <ul class='navbar-nav ml-auto small'>
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" id="subscribeDropdownLink"
+                       data-toggle="dropdown" role="button" href="#" aria-haspopup="true" aria-expanded="false">
+                        <span class="fa fa-rss"></span> Subscribe
+                    </a>
+                    <div class="dropdown-menu" aria-labelledby="subscribeDropdownLink">
+                        <a class="dropdown-item" href="{{ url('rss') }}">RSS</a>
+                        <a class="dropdown-item" href="{{ url('atom') }}">Atom</a>
+                    </div>
+                </li>
                 {% if user.is_authenticated %}
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" id='userDropdownMenuLink'
