@@ -364,8 +364,8 @@ class EventQuerySet(models.QuerySet):
     def upcoming(self):
         return self.public().filter(start_date__gte=timezone.now())
 
-    def latest(self, number=10):
-        return self.order_by('-last_modified')[:number]
+    def latest_for_feed(self, number=10):
+        return self.select_related('submitter__member_profile').order_by('-date_created')[:number]
 
     def public(self):
         return self
@@ -440,6 +440,8 @@ class JobQuerySet(models.QuerySet):
     def public(self):
         return self
 
+    def latest_for_feed(self, number=10):
+        return self.select_related('submitter__member_profile').order_by('-date_created')[:number]
 
 class Job(index.Indexed, ClusterableModel):
     title = models.CharField(max_length=300, help_text=_('Job posting title'))

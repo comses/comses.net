@@ -1,16 +1,18 @@
-from datetime import datetime, timedelta, timezone
-from operator import attrgetter
-
-from django.contrib.syndication.views import Feed
-from django.db.models import F, Value
-from django.db.models.functions import Concat
-from django.urls import reverse_lazy
-from django.utils.feedgenerator import Atom1Feed, Rss201rev2Feed
-
-from core.models import Event, Job
+from datetime import timedelta
 from itertools import chain
 
+from django.contrib.syndication.views import Feed
+from django.urls import reverse_lazy
+from django.utils import timezone
+from django.utils.feedgenerator import Atom1Feed, Rss201rev2Feed
+from operator import attrgetter
+
+from core.models import Event, Job
 from library.models import CodebaseRelease
+
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class RssSiteNewsFeed(Feed):
@@ -21,21 +23,10 @@ class RssSiteNewsFeed(Feed):
     feed_url = '/sitenews/rss/'
 
     def items(self):
-        start_date = datetime.now(timezone.utc) - timedelta(days=120)
-        releases = CodebaseRelease.objects \
-            .public() \
-            .select_related('codebase') \
-            .select_related('submitter__member_profile') \
-            .annotate(description=F('codebase__description')).annotate(title=Concat(F('codebase__title'), Value(' '), F('version_number'))) \
-            .filter(last_modified__gt=start_date)
-        jobs = Job.objects \
-            .public() \
-            .select_related('submitter__member_profile') \
-            .filter(last_modified__gt=start_date)
-        events = Event.objects \
-            .public() \
-            .select_related('submitter__member_profile') \
-            .filter(last_modified__gt=start_date)
+        start_date = timezone.now() - timedelta(days=120)
+        releases = CodebaseRelease.objects.latest_for_feed()
+        jobs = Job.objects.latest_for_feed()
+        events = Event.objects.latest_for_feed()
         return sorted(chain(releases, jobs, events), key=attrgetter('date_created'), reverse=True)
 
     def item_title(self, item):
@@ -68,3 +59,4 @@ class AtomSiteNewsFeed(RssSiteNewsFeed):
     feed_url = '/sitenews/atom/'
     link = reverse_lazy('atom')
     subtitle = RssSiteNewsFeed.description
+

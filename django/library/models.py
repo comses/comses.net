@@ -34,7 +34,7 @@ from core import fs
 from core.backends import get_viewable_objects_for_user
 from core.fields import MarkdownField
 from core.models import Platform
-from library.fs import CodebaseReleaseFsApi, StagingDirectories, FileCategoryDirectories, MessageLevels
+from .fs import CodebaseReleaseFsApi, StagingDirectories, FileCategoryDirectories, MessageLevels
 
 logger = logging.getLogger(__name__)
 
@@ -700,6 +700,14 @@ class CodebaseReleaseQuerySet(models.QuerySet):
 
     def accessible(self, user):
         return get_viewable_objects_for_user(user, queryset=self)
+
+    def latest_for_feed(self, number=10):
+        return self.public().select_related('codebase', 'submitter__member_profile').annotate(
+            description=models.F('codebase__description'),
+            title=models.functions.Concat(models.F('codebase__title'),
+                                          models.Value(' '),
+                                          models.F('version_number'))
+        ).order_by('-date_created')[:number]
 
 
 class CodebaseRelease(index.Indexed, ClusterableModel):
