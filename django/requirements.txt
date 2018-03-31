@@ -12,7 +12,7 @@ django-location-field==2.0.3
 django-markupfield==1.4.3
 django-model-utils==3.1.1
 django-recaptcha==1.4.0
-django-redis==4.8.0
+django-redis==4.9.0
 django-rest-auth==0.9.3
 django-rest-swagger==2.1.2
 django-reversion==2.0.13
@@ -31,7 +31,7 @@ psycopg2==2.7.4
 pygit2==0.24.2
 raven==6.5.0
 semver==2.7.9
-uwsgi==2.0.15
+uwsgi==2.0.17
 wagtail==1.13.1
 wagtailmenus==2.6
 # deployment and management command dependencies
