@@ -1,7 +1,6 @@
 import logging
 
 from .base import UserFactory
-from django.core.exceptions import PermissionDenied
 from rest_framework.status import HTTP_302_FOUND, HTTP_200_OK
 from django.urls import reverse
 from django.test import TestCase
@@ -34,9 +33,9 @@ class EmailAuthenticationBackendTestCase(TestCase):
         authorized = self.client.login(username=user.username, password=password)
         self.assertFalse(authorized)
 
-    def check_authentication_succeeded(self, user):
-        authorized = self.client.login(username=user.username, password=self.password)
-        self.assertTrue(authorized)
+    def check_authentication_succeeded(self, user, expected=True):
+        authenticated = self.client.login(username=user.username, password=self.password)
+        self.assertEqual(authenticated, expected)
 
     def _check_response_status_code(self, user, password, status_code):
         self.client.get(reverse('account_login'))
@@ -55,11 +54,11 @@ class EmailAuthenticationBackendTestCase(TestCase):
     def test_email_authentication(self):
         deactivated_user = self.user_factory.create(is_active=False)
         self.check_response_302(deactivated_user)
-        self.check_authentication_succeeded(deactivated_user)
+        self.check_authentication_succeeded(deactivated_user, False)
 
         deactivated_superuser = self.user_factory.create(is_superuser=True, is_active=False)
         self.check_response_302(deactivated_superuser)
-        self.check_authentication_succeeded(deactivated_superuser)
+        self.check_authentication_succeeded(deactivated_superuser, False)
 
         user = self.user_factory.create()
         self.check_response_302(user)
