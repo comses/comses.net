@@ -279,21 +279,21 @@ def discourse_sso(request):
     signature = request.GET.get('sig')
 
     if None in [payload, signature]:
-        return HttpResponseBadRequest('No SSO payload or signature. Please contact support if this problem persists.')
+        return HttpResponseBadRequest('No SSO payload or signature. Please contact us if this problem persists.')
 
     # Validate the payload
 
     payload = bytes(parse.unquote(payload), encoding='utf-8')
     decoded = base64.decodebytes(payload).decode('utf-8')
     if len(payload) == 0 or 'nonce' not in decoded:
-        return HttpResponseBadRequest('Invalid payload. Please contact support if this problem persists.')
+        return HttpResponseBadRequest('Invalid payload. Please contact us if this problem persists.')
 
     key = bytes(settings.DISCOURSE_SSO_SECRET, encoding='utf-8')  # must not be unicode
     h = hmac.new(key, payload, digestmod=hashlib.sha256)
     this_signature = h.hexdigest()
 
-    if this_signature != signature:
-        return HttpResponseBadRequest('Invalid payload. Please contact support if this problem persists.')
+    if not hmac.compare_digest(this_signature, signature):
+        return HttpResponseBadRequest('Invalid payload. Please contact us if this problem persists.')
 
     # Build the return payload
     qs = parse.parse_qs(decoded)
