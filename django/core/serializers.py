@@ -147,9 +147,6 @@ class EventSerializer(serializers.ModelSerializer):
         if early_registration_deadline and date_created > early_registration_deadline:
             msgs.append('early registration deadline must be after time event is registered')
 
-        if early_registration_deadline and submission_deadline and early_registration_deadline >= submission_deadline:
-            msgs.append('early registration deadline must be strictly before submission deadline')
-
         if submission_deadline and submission_deadline > start_date:
             msgs.append('submission deadline must be before start date')
 

@@ -32,9 +32,7 @@ export const schema = yup.object().shape({
     tags: yup.array().of(yup.object().shape({name: yup.string().required()})),
     location: yup.string().required(),
     early_registration_deadline: yup.date().nullable().label('early registration deadline'),
-    submission_deadline: yup.date().nullable().label('submission deadline')
-        .when('early_registration_deadline', dateAfterConstraint('early registration deadline', 'submission deadline'))
-        .label('submission deadline'),
+    submission_deadline: yup.date().nullable().label('submission deadline'),
     start_date: yup.date().required()
         .when('submission_deadline', dateAfterConstraint('submission deadline', 'start date'))
         .label('submission deadline'),
@@ -76,7 +74,7 @@ export const schema = yup.object().shape({
                 <c-datepicker v-model="submission_deadline" name="submission_deadline"
                     :errorMsgs="errors.submission_deadline" :clearButton="true">
                     <label class="form-control-label" slot="label">Submission Deadline</label>
-                    <small class="form-text text-muted" slot="help">The last day to register for the event (inclusive)
+                    <small class="form-text text-muted" slot="help">The last day to make a submission for the event (inclusive)
                     </small>
                 </c-datepicker>
             </div>
