@@ -1,9 +1,7 @@
-from datetime import timedelta
 from itertools import chain
 
 from django.contrib.syndication.views import Feed
-from django.urls import reverse_lazy
-from django.utils import timezone
+from django.conf.urls import url
 from django.utils.feedgenerator import Atom1Feed, Rss201rev2Feed
 from operator import attrgetter
 
@@ -17,13 +15,12 @@ logger = logging.getLogger(__name__)
 
 class RssSiteNewsFeed(Feed):
     title = 'CoMSES jobs, events and codebase releases'
-    link = reverse_lazy('rss')
+    link = 'https://www.comses.net'
     description = 'New jobs, events and codebase releases (last 120 days)'
     feed_type = Rss201rev2Feed
-    feed_url = '/sitenews/rss/'
+    feed_url = '/feeds/rss/'
 
     def items(self):
-        start_date = timezone.now() - timedelta(days=120)
         releases = CodebaseRelease.objects.latest_for_feed()
         jobs = Job.objects.latest_for_feed()
         events = Event.objects.latest_for_feed()
@@ -56,7 +53,12 @@ class RssSiteNewsFeed(Feed):
 
 class AtomSiteNewsFeed(RssSiteNewsFeed):
     feed_type = Atom1Feed
-    feed_url = '/sitenews/atom/'
-    link = reverse_lazy('atom')
+    feed_url = '/feeds/atom/'
     subtitle = RssSiteNewsFeed.description
 
+
+def urlpatterns():
+    return [
+        url(r'^feeds/rss/$', RssSiteNewsFeed(), name='rss'),
+        url(r'^feeds/atom/$', AtomSiteNewsFeed(), name='atom'),
+    ]

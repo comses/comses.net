@@ -7,12 +7,10 @@ from rest_framework_swagger.views import get_swagger_view
 from wagtail.wagtailadmin import urls as wagtailadmin_urls
 from wagtail.wagtailcore import urls as wagtail_urls
 
-from core import feeds
 from home import urls as home_urls
 from library import urls as library_urls
-from curator import urls as curator_urls
-from curator import wagtail_hooks
-from . import views
+from curator import wagtail_hooks, urls as curator_urls
+from . import feeds, views
 from .sitemaps import sitemaps
 
 schema_view = get_swagger_view(title='CoMSES.net API')
@@ -42,9 +40,9 @@ urlpatterns = [
     # configure sitemaps and robots.txt, see https://django-robots.readthedocs.io/en/latest/
     url('sitemap.xml', sitemap, {'sitemaps': sitemaps}, name='django.contrib.sitemaps.views.sitemap'),
     url(r'^robots\.txt', include('robots.urls')),
-    url(r'^{}$'.format(feeds.RssSiteNewsFeed.feed_url.lstrip('/')), feeds.RssSiteNewsFeed(), name='rss'),
-    url(r'^{}$'.format(feeds.AtomSiteNewsFeed.feed_url.lstrip('/')), feeds.AtomSiteNewsFeed(), name='atom'),
 ]
+
+urlpatterns += feeds.urlpatterns()
 
 if settings.DEPLOY_ENVIRONMENT.is_development():
     from django.conf.urls.static import static
@@ -63,5 +61,4 @@ if settings.DEBUG:
     ] + urlpatterns
 
 # NB: wagtail_urls are the catchall, must be last
-urlpatterns += [url(r'^', include(wagtail_urls)),]
-
+urlpatterns.append(url(r'^', include(wagtail_urls)))
