@@ -84,14 +84,12 @@ def restore_from_dump(ctx, target_database=_DEFAULT_DATABASE, dumpfile='comsesne
             confirm("This will destroy the database and try to reload it from a dumpfile {0}. Continue? (y/n) ".format(
                 dumpfile))
         drop(ctx, database=target_database, create=True)
-        ctx.run('psql -w -q -h db {db_name} {db_user} < {dumpfile}'.format(dumpfile=dumpfile, **db_config),
-                warn=True)
+        ctx.run('psql -w -q -h db {db_name} {db_user} < {dumpfile}'.format(dumpfile=dumpfile, **db_config), echo=True)
     elif dumpfile.endswith('.sql.gz') and dumpfile_path.is_file():
         if not force:
             confirm("This will destroy the database and try to reload it from a dumpfile {0}. Continue? (y/n) ".format(
                 dumpfile))
         drop(ctx, database=target_database, create=True)
-        ctx.run('zcat {dumpfile} | psql -w -q -h db {db_name} {db_user}'.format(dumpfile=dumpfile, **db_config),
-                warn=True)
+        ctx.run('zcat {dumpfile} | psql -w -q -h db {db_name} {db_user}'.format(dumpfile=dumpfile, **db_config), echo=True)
     if migrate:
         run_migrations(ctx, clean=True, initial=True)

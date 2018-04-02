@@ -78,13 +78,16 @@ def _restore(ctx, repo, archive, working_directory, target_database, progress=Tr
         if not archive:
             raise Exception('no borg archives found')
 
-    dumpfile = str(list(pathlib.Path(os.path.join(settings.BACKUP_ROOT, 'latest'))
-                        .glob('comsesnet*'))[0])
     with ctx.cd(working_directory):
         extract_cmd = '{} borg extract {repo}::"{archive}"'.format(
             environment(), repo=repo, archive=archive)
         ctx.run(extract_cmd, echo=True)
 
+        dumpfile_dir = pathlib.Path(os.path.join(working_directory, os.path.basename(settings.BACKUP_ROOT), 'latest'))
+        if not dumpfile_dir.exists():
+            raise IOError('dumpfile_dir {} not found'.format(dumpfile_dir))
+
+        dumpfile = str(list(dumpfile_dir.glob('comsesnet*'))[0])
         src_library = os.path.basename(settings.LIBRARY_ROOT)
         src_media = os.path.basename(settings.MEDIA_ROOT)
         rotate_library_and_media_files(working_directory, src_library=src_library, src_media=src_media)
