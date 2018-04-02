@@ -1,24 +1,24 @@
 import json
 import logging
 import mimetypes
-import os
-import re
-import shutil
-import tarfile
 import zipfile
-from enum import Enum
-from functools import total_ordering
 from pathlib import Path
-from tempfile import TemporaryDirectory
 from typing import Optional
 
 import bagit
+import os
 import rarfile
+import re
+import shutil
+import tarfile
 from django.conf import settings
 from django.core.files.storage import FileSystemStorage
 from django.core.files.uploadedfile import File
 from django.urls import reverse
+from enum import Enum
+from functools import total_ordering
 from rest_framework.exceptions import ValidationError
+from tempfile import TemporaryDirectory
 
 from core import fs
 
@@ -54,7 +54,7 @@ class MessageLevels(Enum):
     def __lt__(self, other):
         if self.__class__ is other.__class__:
             return self.value < other.value
-        raise NotImplemented
+        return NotImplemented
 
     def downgrade(self, minimum=0):
         return MessageLevels(max(self.value - 1, minimum))
@@ -340,7 +340,7 @@ class CodebaseReleaseFsApi:
         self.uuid = uuid
         self.identifier = identifier
         self.version_number = version_number
-        self.release_id =  release_id
+        self.release_id = release_id
         self.mimetype_mismatch_message_level = mimetype_mismatch_message_level
 
     def logfilename(self):
@@ -607,7 +607,6 @@ class CodebaseReleaseFsApi:
         self.build_aip()
         self.build_archive(force=True)
         return msgs
-
 
 
 class ArchiveExtractor:

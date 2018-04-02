@@ -367,7 +367,7 @@ class BaseCodebaseReleaseFilesViewSet(viewsets.GenericViewSet):
                 d.name for d in FileCategoryDirectories)))
 
     def get_list_url(self, api):
-        raise NotImplemented()
+        raise NotImplementedError
 
     def list(self, request, *args, **kwargs):
         codebase_release = self.get_object()
