@@ -56,7 +56,7 @@ class MemberProfileSerializer(serializers.ModelSerializer):
     FIXME: references library.Codebase, keeping in home for now to avoid circular dependencies in core
     """
     # User fields
-    date_joined = serializers.DateTimeField(source='user.date_joined', read_only=True, format='%c')
+    date_joined = serializers.DateTimeField(source='user.date_joined', read_only=True, format='%B %d %Y')
     family_name = serializers.CharField(source='user.last_name')
     full_name = serializers.CharField(source='name', read_only=True)
     given_name = serializers.CharField(source='user.first_name')
