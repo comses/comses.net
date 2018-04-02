@@ -661,11 +661,13 @@ class CodebaseRendition(AbstractRendition):
         )
 
 
+"""
 class CodebasePublication(models.Model):
     release = models.ForeignKey('library.CodebaseRelease', on_delete=models.CASCADE)
     publication = models.ForeignKey('citation.Publication', on_delete=models.CASCADE)
     is_primary = models.BooleanField(default=False)
     index = models.PositiveIntegerField(default=1)
+"""
 
 
 class CodebaseReleaseQuerySet(models.QuerySet):
@@ -764,7 +766,9 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
     contributors = models.ManyToManyField(Contributor, through='ReleaseContributor')
     submitted_package = models.FileField(upload_to=Codebase._release_upload_path, max_length=1000, null=True,
                                          storage=FileSystemStorage(location=settings.LIBRARY_ROOT))
-    # M2M relationships for publications
+    # M2M relationships for publications, disabled until citation migrates to django 2.0
+    # https://github.com/comses/citation/issues/20
+    """
     publications = models.ManyToManyField(
         'citation.Publication',
         through=CodebasePublication,
@@ -774,6 +778,7 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
     references = models.ManyToManyField('citation.Publication',
                                         related_name='codebase_references',
                                         help_text=_('Related publications'))
+    """
 
     objects = CodebaseReleaseQuerySet.as_manager()
 

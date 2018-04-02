@@ -28,7 +28,6 @@ class Migration(migrations.Migration):
         ('taggit', '0002_auto_20150616_2121'),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
         ('core', '0001_initial'),
-        ('citation', '0014_add_url_status_logs_model'),
         ('wagtailcore', '0040_page_draft_title'),
     ]
 

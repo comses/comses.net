@@ -40,6 +40,5 @@ dealer==2.0.5
 invoke
 ipython
 rarfile
-# CoMSES citation app
--e git+https://github.com/comses/citation.git#egg=citation
-# NLP dependencies (disabled for the interim)
+# CoMSES citation app - disabled until migration to django 2.0 https://github.com/comses/citation/issues/20
+# -e git+https://github.com/comses/citation.git#egg=citation
