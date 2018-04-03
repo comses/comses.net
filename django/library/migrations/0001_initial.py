@@ -89,15 +89,6 @@ class Migration(migrations.Migration):
             bases=(wagtail.wagtailsearch.index.Indexed, models.Model),
         ),
         migrations.CreateModel(
-            name='CodebasePublication',
-            fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('is_primary', models.BooleanField(default=False)),
-                ('index', models.PositiveIntegerField(default=1)),
-                ('publication', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='citation.Publication')),
-            ],
-        ),
-        migrations.CreateModel(
             name='CodebaseRelease',
             fields=[
                 ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
@@ -267,23 +258,8 @@ class Migration(migrations.Migration):
         ),
         migrations.AddField(
             model_name='codebaserelease',
-            name='publications',
-            field=models.ManyToManyField(help_text='Publications on this work', related_name='releases', through='library.CodebasePublication', to='citation.Publication'),
-        ),
-        migrations.AddField(
-            model_name='codebaserelease',
-            name='references',
-            field=models.ManyToManyField(help_text='Related publications', related_name='codebase_references', to='citation.Publication'),
-        ),
-        migrations.AddField(
-            model_name='codebaserelease',
             name='submitter',
             field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to=settings.AUTH_USER_MODEL),
-        ),
-        migrations.AddField(
-            model_name='codebasepublication',
-            name='release',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='library.CodebaseRelease'),
         ),
         migrations.AddField(
             model_name='codebase',

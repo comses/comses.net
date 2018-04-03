@@ -661,7 +661,7 @@ class CodebaseRendition(AbstractRendition):
         )
 
 
-"""
+""" FIXME: disabled until citation migrates to django 2.0
 class CodebasePublication(models.Model):
     release = models.ForeignKey('library.CodebaseRelease', on_delete=models.CASCADE)
     publication = models.ForeignKey('citation.Publication', on_delete=models.CASCADE)
