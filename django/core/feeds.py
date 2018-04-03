@@ -1,15 +1,20 @@
 import logging
+import re
 from itertools import chain
+from operator import attrgetter
 
 from django.conf.urls import url
 from django.contrib.syndication.views import Feed
 from django.utils.feedgenerator import Atom1Feed, Rss201rev2Feed
-from operator import attrgetter
 
 from library.models import CodebaseRelease
 from .models import Event, Job
 
 logger = logging.getLogger(__name__)
+
+# Match invalid xml characters such as form feed
+# https://lethain.com/stripping-illegal-characters-from-xml-in-python/
+XML_CONTROL_CHARACTERS = re.compile('[\x00-\x08\x0b-\x0c\x0e-\x1f\x7f]')
 
 
 class RssSiteNewsFeed(Feed):
@@ -26,10 +31,10 @@ class RssSiteNewsFeed(Feed):
         return sorted(chain(releases, jobs, events), key=attrgetter('date_created'), reverse=True)
 
     def item_title(self, item):
-        return item.title
+        return re.sub(XML_CONTROL_CHARACTERS, '', item.title)
 
     def item_description(self, item):
-        return item.description
+        return re.sub(XML_CONTROL_CHARACTERS, '', str(item.description))
 
     def item_link(self, item):
         return item.get_absolute_url()
