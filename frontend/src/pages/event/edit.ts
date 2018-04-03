@@ -32,10 +32,14 @@ export const schema = yup.object().shape({
     tags: yup.array().of(yup.object().shape({name: yup.string().required()})),
     location: yup.string().required(),
     early_registration_deadline: yup.date().nullable().label('early registration deadline'),
+    registration_deadline: yup.date().label('registration deadline')
+        .when('early_registration_deadline', (value, schema) => _.isNull(value) ? schema.nullable(): schema.typeError('Registration deadline must have a value if early registration deadline has a value'))
+        .when('early_registration_deadline', dateAfterConstraint('early registration deadline', 'registration deadline')),
     submission_deadline: yup.date().nullable().label('submission deadline'),
     start_date: yup.date().required()
+        .when('registration_deadline', dateAfterConstraint('registration deadline', 'start date'))
         .when('submission_deadline', dateAfterConstraint('submission deadline', 'start date'))
-        .label('submission deadline'),
+        .label('start date'),
     end_date: yup.date().nullable()
         .when('start_date', dateAfterConstraint('start date', 'end date')),
     external_url: yup.string().url().nullable()
@@ -71,6 +75,16 @@ export const schema = yup.object().shape({
                 </c-datepicker>
             </div>
             <div class="col-6 d-inline">
+                <c-datepicker v-model="registration_deadline" name="registration_deadline"
+                                :errorMsgs="errors.registration_deadline" :clearButton="true"
+                                :required="config.registration_deadline"
+                                label="Registration Deadline"
+                                help="The last day to register for the event (inclusive)">
+                </c-datepicker>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-12 d-inline">
                 <c-datepicker v-model="submission_deadline" name="submission_deadline"
                     :errorMsgs="errors.submission_deadline" :clearButton="true">
                     <label class="form-control-label" slot="label">Submission Deadline</label>

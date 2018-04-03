@@ -378,6 +378,7 @@ class Event(index.Indexed, ClusterableModel):
     summary = models.CharField(max_length=500, blank=True)
     description = MarkdownField()
     early_registration_deadline = models.DateTimeField(null=True, blank=True)
+    registration_deadline = models.DateTimeField(null=True, blank=True)
     submission_deadline = models.DateTimeField(null=True, blank=True)
     start_date = models.DateTimeField()
     end_date = models.DateTimeField(null=True, blank=True)
@@ -395,6 +396,7 @@ class Event(index.Indexed, ClusterableModel):
         index.FilterField('start_date'),
         index.FilterField('submission_deadline'),
         index.FilterField('early_registration_deadline'),
+        index.FilterField('registration_deadline'),
         index.SearchField('location', partial_match=True),
         index.RelatedFields('tags', [
             index.SearchField('name'),
@@ -442,6 +444,7 @@ class JobQuerySet(models.QuerySet):
 
     def latest_for_feed(self, number=10):
         return self.select_related('submitter__member_profile').order_by('-date_created')[:number]
+
 
 class Job(index.Indexed, ClusterableModel):
     title = models.CharField(max_length=300, help_text=_('Job posting title'))
