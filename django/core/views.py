@@ -184,37 +184,37 @@ def rest_exception_handler(exc, context):
     logger.warning("DRF exception handler %s", exc, exc_info=True)
     if request and request.accepted_media_type == 'text/html':
         if isinstance(exc, (Http404, NotFound)):
-            return page_not_found(request, context=context)
+            return page_not_found(request, exc, context=context)
         elif isinstance(exc, (PermissionDenied, DrfPermissionDenied, NotAuthenticated)):
-            return permission_denied(request, context=context)
+            return permission_denied(request, exc, context=context)
         else:
             return server_error(request, context=context)
     else:
         return exception_handler(exc, context)
 
 
-def permission_denied(request, context=None):
+def permission_denied(request, exception, template_name='403.jinja', context=None):
     response = render(
         request=request,
-        template_name='403.jinja',
+        template_name=template_name,
         context=context,
         status=403)
     return response
 
 
-def page_not_found(request, context=None):
+def page_not_found(request, exception, template_name='404.jinja', context=None):
     response = render(
         request=request,
-        template_name='404.jinja',
+        template_name=template_name,
         context=context,
         status=404)
     return response
 
 
-def server_error(request, context=None):
+def server_error(request, template_name='500.jinja', context=None):
     response = render(
         request=request,
-        template_name='500.jinja',
+        template_name=template_name,
         context=context,
         status=500)
     return response

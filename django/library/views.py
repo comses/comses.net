@@ -168,7 +168,7 @@ class CodebaseReleaseDraftView(PermissionRequiredMixin, View):
     def has_permission(self):
         if has_permission_to_create_release(view=self, request=self.request):
             return True
-        raise PermissionDenied()
+        raise PermissionDenied
 
     def post(self, *args, **kwargs):
         identifier = kwargs['identifier']
@@ -194,7 +194,7 @@ class NestedCodebaseReleasePermission(permissions.BasePermission):
     def has_permission(self, request, view):
         if has_permission_to_create_release(request=request, view=view):
             return True
-        raise DrfPermissionDenied()
+        raise DrfPermissionDenied
 
 
 class NestedCodebaseReleaseUnpublishedFilesPermission(permissions.BasePermission):
