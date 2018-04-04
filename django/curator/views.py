@@ -1,12 +1,10 @@
-from django.conf import settings
 from django.contrib.auth.decorators import permission_required
 from django.http import HttpResponseRedirect, HttpResponseBadRequest
 from django.views.decorators.http import require_POST
-
 from wagtail.contrib.modeladmin.helpers import AdminURLHelper
 
 from curator.models import TagCleanup
-from curator.wagtail_hooks import TagCleanupButtonHelper, TagCleanupAction
+from curator.wagtail_hooks import TagCleanupAction
 
 
 class Http400(Exception): pass

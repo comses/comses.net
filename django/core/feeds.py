@@ -1,14 +1,13 @@
+import logging
 from itertools import chain
 
-from django.contrib.syndication.views import Feed
 from django.conf.urls import url
+from django.contrib.syndication.views import Feed
 from django.utils.feedgenerator import Atom1Feed, Rss201rev2Feed
 from operator import attrgetter
 
-from core.models import Event, Job
 from library.models import CodebaseRelease
-
-import logging
+from .models import Event, Job
 
 logger = logging.getLogger(__name__)
 

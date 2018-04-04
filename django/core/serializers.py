@@ -1,4 +1,5 @@
 import logging
+from datetime import datetime
 
 from django.contrib.auth.models import User
 from django.utils import timezone
@@ -148,11 +149,12 @@ class EventSerializer(serializers.ModelSerializer):
             dates.append(end_date)
 
         msgs = []
+        current_date = datetime.now(timezone.utc)
         for field_value, field_name in [(early_registration_deadline, early_registration_deadline_name),
                                         (registration_deadline, registration_deadline_name),
                                         (submission_deadline, submission_deadline_name)]:
-            if field_value and date_created > field_value:
-                msgs.append('{} must be after time event is registered'.format(field_name.replace('_', ' ')))
+            if field_value and current_date and current_date < field_value:
+                msgs.append('{} must be after time event is created'.format(field_name.replace('_', ' ')))
 
         if early_registration_deadline and not registration_deadline:
             msgs.append('events with an early registration deadline must have a registration deadline')

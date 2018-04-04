@@ -1,11 +1,9 @@
 # This module exists to avoid circular imports between home and library files
 
-from django.contrib.auth.models import User
-from .models import MemberProfile
-from core.models import Institution
-from rest_framework import serializers
-
 import logging
+
+from django.contrib.auth.models import User
+from rest_framework import serializers
 
 logger = logging.getLogger(__name__)
 

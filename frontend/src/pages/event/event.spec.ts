@@ -6,11 +6,26 @@ import { expect } from 'chai'
 import * as stringify from 'stringify-object'
 import {EventAPI} from "api/index";
 
+function addDaysToDate(date: Date, days: number): Date {
+    const newDate = new Date(date.valueOf());
+    newDate.setDate(newDate.getDate() + days);
+    return newDate;
+}
+
 async function createEvent() {
+    const seed_date = new Date();
+    const early_registration_date = addDaysToDate(new Date(Date.UTC(
+        seed_date.getFullYear(), seed_date.getMonth(),
+        seed_date.getDay(), seed_date.getHours())), 1);
+    const registration_date = addDaysToDate(early_registration_date, 1);
+    const start_date = addDaysToDate(registration_date, 1);
     const event = _.merge(createDefaultValue(schema), {
         title: 'ESSA 2007',
         location: 'Boulder, CO',
-        description: 'Conference'
+        description: 'Conference',
+        early_registration_date: early_registration_date.toISOString(),
+        registration_date: registration_date.toISOString(),
+        start_date: start_date.toISOString()
     });
     const vm = new EditEvent();
     vm.state = event;

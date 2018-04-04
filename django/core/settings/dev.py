@@ -7,7 +7,7 @@ EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
 MIDDLEWARE += ['debug_toolbar.middleware.DebugToolbarMiddleware']
 
-INSTALLED_APPS += ['drupal_migrator', 'debug_toolbar']
+INSTALLED_APPS += ['debug_toolbar']
 
 ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'dev.comses.asu.edu', 'cms']
 
@@ -30,4 +30,3 @@ DEBUG_TOOLBAR_PANELS = [
     'debug_toolbar.panels.profiling.ProfilingPanel',
     'ddt_request_history.panels.request_history.RequestHistoryPanel',
 ]
-

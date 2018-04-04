@@ -1,3 +1,11 @@
+import logging
+
+from django.contrib.auth.models import User
+from django.core.exceptions import PermissionDenied
+from django.db.models import FieldDoesNotExist
+from guardian import shortcuts as sc
+from guardian.shortcuts import get_perms
+
 """
 Custom permission checking for models
 
@@ -6,14 +14,6 @@ Other permissions are handled by Django Guardian
 
 Permissions must be between the ModelPermission backend and the Guardian backend.
 """
-
-import logging
-
-from django.contrib.auth.models import User
-from django.core.exceptions import PermissionDenied
-from django.db.models import FieldDoesNotExist
-from guardian import shortcuts as sc
-from guardian.shortcuts import get_perms
 
 logger = logging.getLogger(__name__)
 

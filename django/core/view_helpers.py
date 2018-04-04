@@ -1,9 +1,9 @@
 import logging
-import re
 
+import re
 from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
-from wagtail.wagtailsearch.backends import get_search_backend
+from wagtail.search.backends import get_search_backend
 
 logger = logging.getLogger(__name__)
 

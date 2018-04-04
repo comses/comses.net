@@ -1,5 +1,4 @@
 import pathlib
-from enum import Enum
 
 from allauth.account.models import EmailAddress
 from django import forms
@@ -11,18 +10,19 @@ from django.db import models
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.translation import ugettext_lazy as _
+from enum import Enum
 from modelcluster.contrib.taggit import ClusterTaggableManager
 from modelcluster.fields import ParentalKey
 from modelcluster.models import ClusterableModel
 from taggit.models import TaggedItemBase
 from timezone_field import TimeZoneField
+from wagtail.admin.edit_handlers import FieldPanel
 from wagtail.contrib.settings.models import BaseSetting
 from wagtail.contrib.settings.registry import register_setting
-from wagtail.wagtailadmin.edit_handlers import FieldPanel
-from wagtail.wagtailimages.edit_handlers import ImageChooserPanel
-from wagtail.wagtailimages.models import Image
-from wagtail.wagtailsearch import index
-from wagtail.wagtailsnippets.models import register_snippet
+from wagtail.images.edit_handlers import ImageChooserPanel
+from wagtail.images.models import Image
+from wagtail.search import index
+from wagtail.snippets.models import register_snippet
 
 from .fields import MarkdownField
 

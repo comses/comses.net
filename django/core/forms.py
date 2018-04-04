@@ -4,7 +4,7 @@ from captcha.fields import ReCaptchaField
 from django import forms
 from django.utils.translation import ugettext_lazy as _
 
-from core.models import ComsesGroups
+from .models import ComsesGroups
 
 logger = logging.getLogger(__name__)
 

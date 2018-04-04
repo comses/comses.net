@@ -1,5 +1,4 @@
 from datetime import datetime, timedelta, timezone
-from enum import Enum
 
 from django.conf import settings
 from django.conf.urls import url
@@ -8,14 +7,15 @@ from django.contrib.auth.models import Permission, User
 from django.template.loader import render_to_string
 from django.urls import reverse
 from django.views.generic import TemplateView
+from enum import Enum
+from wagtail.admin.menu import MenuItem
+from wagtail.admin.navigation import get_explorable_root_page
+from wagtail.admin.site_summary import SiteSummaryPanel
+from wagtail.admin.views.home import UpgradeNotificationPanel, PagesForModerationPanel, RecentEditsPanel
 from wagtail.contrib.modeladmin.helpers import ButtonHelper, PermissionHelper
 from wagtail.contrib.modeladmin.options import ModelAdmin, modeladmin_register, WagtailRegisterable
 from wagtail.contrib.modeladmin.views import IndexView
-from wagtail.wagtailadmin.menu import MenuItem
-from wagtail.wagtailadmin.navigation import get_explorable_root_page
-from wagtail.wagtailadmin.site_summary import SiteSummaryPanel
-from wagtail.wagtailadmin.views.home import UpgradeNotificationPanel, PagesForModerationPanel, RecentEditsPanel
-from wagtail.wagtailcore import hooks
+from wagtail.core import hooks
 
 from core.models import Event, Job
 from library.models import CodebaseRelease

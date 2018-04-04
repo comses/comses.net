@@ -1,9 +1,9 @@
 import pathlib
 
-from django.utils import timezone
 from dateutil import parser
 from django.core.files.images import ImageFile
-from wagtail.wagtailimages.models import Image
+from django.utils import timezone
+from wagtail.images.models import Image
 
 
 def get_canonical_image(title, path, user):

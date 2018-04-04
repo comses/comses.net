@@ -50,8 +50,14 @@ class CodebaseViewSetTestCase(BaseViewSetTestCase):
             self.assertResponseNoPermission(instance, response)
 
     def check_destroy_permissions(self, user, instance):
-        response = self.client.delete(instance.get_absolute_url(), HTTP_ACCEPT='application/json', format='json')
         has_perm = user.has_perm(create_perm_str(instance, 'delete'), obj=instance)
+        if has_perm:
+            # delete all dependent codebases first
+            for codebase in user.codebases.all():
+                codebase.releases.all().delete()
+                codebase.delete()
+
+        response = self.client.delete(instance.get_absolute_url(), HTTP_ACCEPT='application/json', format='json')
         if user.is_anonymous:
             self.assertResponsePermissionDenied(response)
             return
@@ -323,14 +329,14 @@ class CodebaseReleasePublishTestCase(TestCase):
 
         self.client.login(username=self.submitter.username, password=self.user_factory.password)
         response = self.client.post(self.codebase_release.regenerate_share_url, HTTP_ACCEPT='application/json')
-        self.assertEqual(response.status_code,  200)
+        self.assertEqual(response.status_code, 200)
 
         code_file = io.BytesIO(bytes('Hello world!', 'utf8'))
         code_file.name = 'test.nlogo'
 
         docs_file = io.BytesIO(bytes('A new model', 'utf8'))
         docs_file.name = 'README.md'
-        
+
         api = self.codebase_release.get_fs_api()
         api.add(content=code_file, category=FileCategoryDirectories.code)
         api.add(content=docs_file, category=FileCategoryDirectories.docs)
@@ -339,7 +345,7 @@ class CodebaseReleasePublishTestCase(TestCase):
         download_response = self.client.get(self.codebase_release.review_download_url)
         self.assertEqual(download_response.status_code, 404)
         response = self.client.post(self.codebase_release.regenerate_share_url, HTTP_ACCEPT='application/json')
-        self.assertEqual(response.status_code,  400)
+        self.assertEqual(response.status_code, 400)
 
 
 class CodebaseRenderPageTestCase(TestCase):

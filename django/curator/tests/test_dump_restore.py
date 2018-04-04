@@ -1,23 +1,21 @@
-import shlex
-import subprocess
-
 import logging
 import os
-from django.conf import settings
-from django.contrib.auth.models import User
-from django.db import connections
+import shlex
+import subprocess
 from unittest import TestCase
+
+from django.conf import settings
+from django.db import connections
 from invoke import Context
 
 from core.models import Event, Job
 from core.tests.base import UserFactory, initialize_test_shared_folders, destroy_test_shared_folders
-from curator.invoke_tasks.database import create_pgpass_file
 from curator.invoke_tasks.borg import _restore as restore_archive, backup
+from curator.invoke_tasks.database import create_pgpass_file
 from home.tests.base import EventFactory, JobFactory
 from library.fs import import_archive
 from library.models import Codebase
 from library.tests.base import CodebaseFactory
-
 
 logger = logging.getLogger(__name__)
 
@@ -61,10 +59,15 @@ class DumpRestoreTestCase(TestCase):
         # Backup the test files and the test database
         ctx = Context()
         create_pgpass_file(ctx)
-        dump_result = subprocess.run(shlex.split('pg_dump -h {HOST} -d {NAME} -U {USER} -f {dest}'
-                                   .format(**settings.DATABASES['default'],
-                                           dest=self.database_dump_path)), stderr=subprocess.PIPE,
-                                     universal_newlines=True)
+        dump_result = subprocess.run(
+            shlex.split(
+                'pg_dump -h {HOST} -d {NAME} -U {USER} -f {dest}'.format(
+                    **settings.DATABASES['default'],
+                    dest=self.database_dump_path)
+            ),
+            stderr=subprocess.PIPE,
+            universal_newlines=True
+        )
         if dump_result.returncode != 0:
             raise Exception(dump_result.stderr)
 
@@ -84,6 +87,9 @@ class DumpRestoreTestCase(TestCase):
         self.assertTrue(contents['contents'])
 
     def tearDown(self):
+        for c in self.user.codebases.all():
+            c.releases.all().delete()
+            c.delete()
         self.user.delete()
 
 

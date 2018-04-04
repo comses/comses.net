@@ -28,17 +28,14 @@ from .serializers import (CodebaseSerializer, RelatedCodebaseSerializer, Codebas
 logger = logging.getLogger(__name__)
 
 
-def has_permission_to_create_release(request, view, exception_class):
+def has_permission_to_create_release(request, view):
     user = request.user
     codebase = get_object_or_404(Codebase, identifier=view.kwargs['identifier'])
     if request.method == 'POST':
         required_perms = ['library.change_codebase']
     else:
         required_perms = []
-
-    if user.has_perms(required_perms, obj=codebase):
-        return True
-    raise exception_class
+    return user.has_perms(required_perms, obj=codebase)
 
 
 class CodebaseFilter(filters.BaseFilterBackend):
@@ -169,7 +166,9 @@ class CodebaseFilesViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
 
 class CodebaseReleaseDraftView(PermissionRequiredMixin, View):
     def has_permission(self):
-        return has_permission_to_create_release(view=self, request=self.request, exception_class=PermissionDenied)
+        if has_permission_to_create_release(view=self, request=self.request):
+            return True
+        raise PermissionDenied
 
     def post(self, *args, **kwargs):
         identifier = kwargs['identifier']
@@ -193,7 +192,9 @@ class CodebaseFormUpdateView(FormUpdateView):
 
 class NestedCodebaseReleasePermission(permissions.BasePermission):
     def has_permission(self, request, view):
-        return has_permission_to_create_release(request=request, view=view, exception_class=DrfPermissionDenied)
+        if has_permission_to_create_release(request=request, view=view):
+            return True
+        raise DrfPermissionDenied
 
 
 class NestedCodebaseReleaseUnpublishedFilesPermission(permissions.BasePermission):
