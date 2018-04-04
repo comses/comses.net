@@ -139,7 +139,7 @@ def restore_files(ctx, repo=settings.BORG_ROOT, archive=None):
 
 @task(aliases=['rdb'])
 def restore_database(ctx, repo=settings.BORG_ROOT, archive=None, target_database=db._DEFAULT_DATABASE):
-    confirm("Are you sure you want to restore the database? (y/n)")
+    confirm("Are you sure you want to restore the database? (y/n) ")
     if archive is None:
         archive = get_latest_bock_backup_archive_name(ctx)
 

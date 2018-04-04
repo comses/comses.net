@@ -67,6 +67,7 @@ def update(serializer_update, instance, validated_data):
 class LinkedUserSerializer(serializers.ModelSerializer):
     profile_url = serializers.URLField(source='member_profile.get_absolute_url', read_only=True)
     full_name = serializers.SerializerMethodField()
+    username = serializers.ReadOnlyField()
 
     def get_full_name(self, user):
         full_name = user.get_full_name()
@@ -76,7 +77,7 @@ class LinkedUserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ('full_name', 'profile_url')
+        fields = ('full_name', 'profile_url', 'username')
 
 
 class EditableSerializerMixin(serializers.Serializer):
