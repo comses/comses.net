@@ -147,7 +147,7 @@ class PermissionRequiredByHttpMethodMixin:
         user = self.request.user
         # Because user.has_perms hasn't been called yet django-guardian
         # hasn't replaced the AnonymousUser with an actual user object
-        if user.is_anonymous():
+        if user.is_anonymous:
             return redirect_to_login(self.request.get_full_path(),
                                      settings.LOGIN_URL,
                                      'next')

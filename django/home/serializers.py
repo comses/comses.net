@@ -85,7 +85,7 @@ class MemberProfileSerializer(serializers.ModelSerializer):
 
     def get_email(self, instance):
         request = self.context.get('request')
-        if request and request.user.is_anonymous():
+        if request and request.user.is_anonymous:
             return None
         else:
             return instance.email

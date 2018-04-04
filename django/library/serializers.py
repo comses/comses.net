@@ -204,6 +204,7 @@ class CodebaseSerializer(serializers.ModelSerializer, FeaturedImageMixin):
     def create(self, validated_data):
         serialized_tags = TagSerializer(many=True, data=validated_data.pop('tags'))
         codebase = Codebase(**validated_data)
+        codebase.submitter = self.context['request'].user
         codebase.identifier = codebase.uuid
         codebase.save()
         save_tags(codebase, serialized_tags)
