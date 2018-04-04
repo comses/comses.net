@@ -10,7 +10,7 @@ from django.urls import resolve
 from django.views import View
 from django.views.generic.base import RedirectView
 from rest_framework import viewsets, generics, renderers, status, permissions, filters, mixins
-from rest_framework.decorators import detail_route, list_route
+from rest_framework.decorators import action
 from rest_framework.exceptions import PermissionDenied as DrfPermissionDenied, ValidationError
 from rest_framework.response import Response
 
@@ -155,7 +155,7 @@ class CodebaseFilesViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
         codebaseimage.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
-    @list_route(methods=['delete'])
+    @action(detail=False, methods=['delete'])
     def clear(self, request, *args, **kwargs):
         codebase = get_object_or_404(Codebase, identifier=kwargs['identifier'])
         for codebase_image in codebase.featured_images.all():
@@ -219,7 +219,7 @@ class CodebaseReleaseShareViewSet(CommonViewSetMixin, mixins.RetrieveModelMixin,
         serializer = self.get_serializer(release)
         return Response(serializer.data)
 
-    @detail_route(methods=['get'])
+    @action(detail=True, methods=['get'])
     def download(self, request, *args, **kwargs):
         codebase_release = self.get_object()
         if codebase_release.live:
@@ -237,7 +237,7 @@ class CodebaseReleaseShareViewSet(CommonViewSetMixin, mixins.RetrieveModelMixin,
         return response
 
 
-class CodebaseReleaseViewSet(CommonViewSetMixin, viewsets.ModelViewSet):
+class CodebaseReleaseViewSet(CommonViewSetMixin, viewsets.GenericViewSet):
     namespace = 'library/codebases/releases/'
     lookup_field = 'version_number'
     lookup_value_regex = r'\d+\.\d+\.\d+'
@@ -282,7 +282,7 @@ class CodebaseReleaseViewSet(CommonViewSetMixin, viewsets.ModelViewSet):
         else:
             return queryset.accessible(user=self.request.user).with_submitter().with_codebase()
 
-    @detail_route(methods=['put'])
+    @action(detail=True, methods=['put'])
     @transaction.atomic
     def contributors(self, request, **kwargs):
         codebase_release = self.get_object()
@@ -292,7 +292,7 @@ class CodebaseReleaseViewSet(CommonViewSetMixin, viewsets.ModelViewSet):
         crs.save()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
-    @detail_route(methods=['post'])
+    @action(detail=True, methods=['post'])
     def regenerate_share_uuid(self, request, **kwargs):
         codebase_release = self.get_object()
         if codebase_release.live:
@@ -300,7 +300,7 @@ class CodebaseReleaseViewSet(CommonViewSetMixin, viewsets.ModelViewSet):
         codebase_release.regenerate_share_uuid()
         return Response(data=request.build_absolute_uri(codebase_release.share_url), status=status.HTTP_200_OK)
 
-    @detail_route(methods=['post'])
+    @action(detail=True, methods=['post'])
     @transaction.atomic
     def publish(self, request, **kwargs):
         version_number = request.data['version_number']
@@ -309,7 +309,7 @@ class CodebaseReleaseViewSet(CommonViewSetMixin, viewsets.ModelViewSet):
         codebase_release.publish()
         return Response(data=codebase_release.version_number, status=status.HTTP_200_OK)
 
-    @detail_route(methods=['get'])
+    @action(detail=True, methods=['get'])
     @transaction.atomic
     def download(self, request, **kwargs):
         codebase_release = self.get_object()
@@ -326,7 +326,7 @@ class CodebaseReleaseViewSet(CommonViewSetMixin, viewsets.ModelViewSet):
 
         return response
 
-    @detail_route(methods=['get'], renderer_classes=(renderers.JSONRenderer,))
+    @action(detail=True, methods=['get'], renderer_classes=(renderers.JSONRenderer,))
     def download_preview(self, request, **kwargs):
         codebase_release = self.get_object()
         fs_api = codebase_release.get_fs_api()
@@ -432,7 +432,7 @@ class CodebaseReleaseFilesOriginalsViewSet(BaseCodebaseReleaseFilesViewSet):
         status_code = status.HTTP_400_BAD_REQUEST if level > MessageLevels.info else status.HTTP_202_ACCEPTED
         return Response(status=status_code, data=logs)
 
-    @list_route(methods=['DELETE'])
+    @action(detail=False, methods=['DELETE'])
     def clear_category(self, request, **kwargs):
         codebase_release = self.get_object()
         fs_api = codebase_release.get_fs_api()

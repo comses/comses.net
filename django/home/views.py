@@ -12,7 +12,7 @@ from django.urls import reverse
 from django.utils.decorators import method_decorator
 from django.views.generic import TemplateView, RedirectView
 from rest_framework import viewsets, generics, parsers, status, mixins, renderers, filters
-from rest_framework.decorators import detail_route, list_route
+from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.renderers import JSONRenderer, TemplateHTMLRenderer
 from rest_framework.response import Response
@@ -116,7 +116,7 @@ class ProfileViewSet(CommonViewSetMixin, viewsets.ModelViewSet):
     def retrieve(self, request, *args, **kwargs):
         return retrieve_with_perms(self, request, *args, **kwargs)
 
-    @detail_route(methods=['post'])
+    @action(detail=True, methods=['post'])
     @method_decorator(login_required)
     def message(self, request, *args, **kwargs):
         logger.debug("POST with request data: %s", request.data)
@@ -243,7 +243,7 @@ class EventViewSet(CommonViewSetMixin, viewsets.ModelViewSet):
             'color': '#3a87ad',
         }
 
-    @list_route()
+    @action(detail=False)
     def calendar(self, request, *args, **kwargs):
         """Arrange events so that early registration deadline, registration deadline and the actual event
         are events to be rendered in the calendar"""
