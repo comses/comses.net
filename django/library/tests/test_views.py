@@ -53,10 +53,7 @@ class CodebaseViewSetTestCase(BaseViewSetTestCase):
         has_perm = user.has_perm(create_perm_str(instance, 'delete'), obj=instance)
         if has_perm:
             # delete all dependent codebases first
-            for codebase in user.codebases.all():
-                codebase.releases.all().delete()
-                codebase.delete()
-
+            instance.releases.all().delete()
         response = self.client.delete(instance.get_absolute_url(), HTTP_ACCEPT='application/json', format='json')
         if user.is_anonymous:
             self.assertResponsePermissionDenied(response)
