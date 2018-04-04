@@ -237,7 +237,7 @@ class CodebaseReleaseShareViewSet(CommonViewSetMixin, mixins.RetrieveModelMixin,
         return response
 
 
-class CodebaseReleaseViewSet(CommonViewSetMixin, viewsets.GenericViewSet):
+class CodebaseReleaseViewSet(CommonViewSetMixin, viewsets.ModelViewSet):
     namespace = 'library/codebases/releases/'
     lookup_field = 'version_number'
     lookup_value_regex = r'\d+\.\d+\.\d+'
