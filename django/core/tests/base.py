@@ -1,20 +1,16 @@
 import logging
-from urllib.parse import urlencode
-
 import os
 import shlex
-import subprocess
-
 import shutil
+import subprocess
+from urllib.parse import urlencode
+
 from django.conf import settings
-from django.contrib.auth.models import User, AnonymousUser
+from django.contrib.auth.models import User
 from django.urls import reverse
-from guardian.shortcuts import assign_perm
 from hypothesis import strategies as st
 from hypothesis.extra import django as hypothesis_django
 from hypothesis.extra.django.models import models, add_default_field_mapping
-from rest_framework import status
-from rest_framework.test import APIRequestFactory, force_authenticate
 
 from core.fields import MarkdownField
 
@@ -128,6 +124,7 @@ def initialize_test_shared_folders():
         os.makedirs(d, exist_ok=True)
 
     subprocess.run(shlex.split('borg init --encryption=none {}'.format(settings.BORG_ROOT)), check=True)
+
 
 def destroy_test_shared_folders():
     shutil.rmtree(settings.SHARE_DIR, ignore_errors=True)

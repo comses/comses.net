@@ -330,7 +330,7 @@ class CodebaseReleasePublishTestCase(TestCase):
 
         docs_file = io.BytesIO(bytes('A new model', 'utf8'))
         docs_file.name = 'README.md'
-        
+
         api = self.codebase_release.get_fs_api()
         api.add(content=code_file, category=FileCategoryDirectories.code)
         api.add(content=docs_file, category=FileCategoryDirectories.docs)
