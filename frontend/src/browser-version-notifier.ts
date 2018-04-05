@@ -2,21 +2,20 @@ import {detect} from 'detect-browser'
 import Vue from 'vue'
 import {Component, Prop} from 'vue-property-decorator';
 
-const MIN_CHROME_VERSION = 58;
+const MIN_CHROME_VERSION = 59;
 
 @Component({
     template: `<ul class="navbar-nav ml-auto">
         <li class="nav-item" v-if="!supported">
-            <div class="alert alert-warning mb-0" v-if="browser">
-                {{ browser_warnings[browser.name] }}
+            <div class="alert alert-danger mb-0" v-if="browser">
+                <span class='fa fa-warning'></span> {{ browser_warnings[browser.name] }}
             </div>
-            <div class="alert alert-warning mb-0" v-else>
-                Browser is unsupported. Some site functionality may not work.
+            <div class="alert alert-danger mb-0" v-else>
+                <span class='fa fa-warning'></span> Browser is unsupported. Some site functionality may not work.
             </div>
         </li>
     </ul>`
 })
-
 export class BrowserDetect extends Vue {
     browser_warnings = {
         'ie': 'All versions of Internet Explorer are unsupported. Some site functionality may not work.',
