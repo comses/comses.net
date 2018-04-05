@@ -16,7 +16,8 @@ from django.http import Http404, HttpResponseBadRequest, HttpResponseRedirect, Q
 from django.shortcuts import render
 from django.views.generic import DetailView, TemplateView
 from rest_framework import filters
-from rest_framework.exceptions import PermissionDenied as DrfPermissionDenied, NotAuthenticated, NotFound
+from rest_framework.exceptions import PermissionDenied as DrfPermissionDenied, NotAuthenticated, NotFound, \
+    MethodNotAllowed, APIException
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 from rest_framework.views import exception_handler
@@ -187,6 +188,8 @@ def rest_exception_handler(exc, context):
             return page_not_found(request, exc, context=context)
         elif isinstance(exc, (PermissionDenied, DrfPermissionDenied, NotAuthenticated)):
             return permission_denied(request, exc, context=context)
+        elif isinstance(exc, APIException) and 400 <= exc.status_code <= 500:
+            return other_400_error(request, exc, context=context)
         else:
             return server_error(request, context=context)
     else:
@@ -208,6 +211,17 @@ def page_not_found(request, exception, template_name='404.jinja', context=None):
         template_name=template_name,
         context=context,
         status=404)
+    return response
+
+
+def other_400_error(request, exception, template_name='other_400.jinja', context=None):
+    request._description = 'Method Not Allowed' if exception.status_code == 405 else 'Other error'
+    request._status = exception.status_code
+    response = render(
+        request=request,
+        template_name=template_name,
+        context=context,
+        status=exception.status_code)
     return response
 
 

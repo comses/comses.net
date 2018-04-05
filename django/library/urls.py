@@ -1,6 +1,8 @@
+from django.conf import settings
 from django.urls import path, re_path
 from rest_framework.routers import SimpleRouter
 
+from core.settings.defaults import Environment
 from . import views
 
 app_name = 'library'
@@ -14,7 +16,9 @@ router.register(views.CodebaseReleaseFilesSipViewSet.get_url_matcher(),
 router.register(views.CodebaseReleaseFilesOriginalsViewSet.get_url_matcher(),
                 views.CodebaseReleaseFilesOriginalsViewSet, base_name='codebaserelease-original-files')
 router.register(r'codebase-release', views.CodebaseReleaseShareViewSet, base_name='codebaserelease-share')
-# router.register(r'contributors', ContributorList)
+
+if settings.DEPLOY_ENVIRONMENT == Environment.DEVELOPMENT:
+    router.register(r'test_codebases', views.DevelopmentCodebaseDeleteView, base_name='test_codebases')
 
 urlpatterns = [
     path('contributors/', views.ContributorList.as_view()),

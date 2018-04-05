@@ -115,6 +115,10 @@ class ResponseStatusCodesMixin:
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND,
                          msg=self.responseErrorMessage(response, 'NOT FOUND'))
 
+    def assertResponseMethodNotAllowed(self, response):
+        self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED,
+                         msg=self.responseErrorMessage(response, 'METHOD NOT ALLOWED'))
+
 
 class BaseViewSetTestCase(ApiAccountMixin, ResponseStatusCodesMixin, APITestCase):
     _view = None

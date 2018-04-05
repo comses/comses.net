@@ -1,0 +1,17 @@
+{% extends "base.jinja" %}
+
+{% block body_class %}template-404{% endblock %}
+
+{% block introduction %}
+    <h1>Something Bad Happened in our code</h1>
+{% endblock %}
+
+{% set sentry_id=request.sentry.id if request.sentry else ''%}
+{% block content %}
+    <h1><i class='text-gray fa fa-fire-extinguisher fa-3x'></i>{{ request._description }} {{ request._status }}<i class='text-danger fa fa-bug fa-3x'></i></h1>
+
+    <p>If you're curious about what the status code {{ request._status }} means please see <a href="https://en.wikipedia.org/wiki/List_of_HTTP_status_codes">Wikipedia</a></p>
+    <p>
+    Thanks for being a part of <a href='/'>comses.net</a>, and apologies for the inconvenience!
+    </p>
+{% endblock %}

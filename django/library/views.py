@@ -63,7 +63,9 @@ class CodebaseFilter(filters.BaseFilterBackend):
         return get_search_queryset(qs, queryset, tags=tags, criteria=criteria)
 
 
-class CodebaseViewSet(CommonViewSetMixin, viewsets.ModelViewSet):
+class CodebaseViewSet(CommonViewSetMixin,
+                      mixins.CreateModelMixin, mixins.ListModelMixin, mixins.RetrieveModelMixin, mixins.UpdateModelMixin,
+                      viewsets.GenericViewSet):
     lookup_field = 'identifier'
     lookup_value_regex = r'[\w\-\.]+'
     pagination_class = SmallResultSetPagination
@@ -94,7 +96,8 @@ class CodebaseViewSet(CommonViewSetMixin, viewsets.ModelViewSet):
         # request for a JSON serialization of this Codebase.
         # FIXME: this should go away if/when we segregate DRF API calls under /api/v1/codebases/
         if request.accepted_media_type == 'text/html':
-            current_version = CodebaseRelease.objects.accessible(request.user).filter(codebase=instance).order_by('-date_created').first()
+            current_version = CodebaseRelease.objects.accessible(request.user).filter(codebase=instance).order_by(
+                '-date_created').first()
             if not current_version:
                 raise Http404
             return redirect(current_version)
@@ -102,6 +105,27 @@ class CodebaseViewSet(CommonViewSetMixin, viewsets.ModelViewSet):
             serializer = self.get_serializer(instance)
             data = add_change_delete_perms(instance, serializer.data, request.user)
             return Response(data)
+
+
+class DevelopmentCodebaseDeleteView(mixins.DestroyModelMixin, viewsets.GenericViewSet):
+    lookup_field = 'identifier'
+    lookup_value_regex = r'[\w\-\.]+'
+    pagination_class = SmallResultSetPagination
+    queryset = Codebase.objects.with_tags().with_featured_images().order_by('-first_published_at', 'title')
+    filter_backends = (CaseInsensitiveOrderingFilter, CodebaseFilter)
+    ordering_fields = ('first_published_at', 'title', 'last_modified', 'peer_reviewed', 'submitter__last_name',
+                       'submitter__username')
+
+    def get_queryset(self):
+        if self.action == 'list':
+            # On detail pages we want to see unpublished releases
+            return self.queryset.public()
+        else:
+            return self.queryset.accessible(user=self.request.user)
+
+    def perform_destroy(self, instance):
+        instance.releases.all().delete()
+        instance.delete()
 
 
 class CodebaseVersionRedirectView(RedirectView):
@@ -237,7 +261,9 @@ class CodebaseReleaseShareViewSet(CommonViewSetMixin, mixins.RetrieveModelMixin,
         return response
 
 
-class CodebaseReleaseViewSet(CommonViewSetMixin, viewsets.ModelViewSet):
+class CodebaseReleaseViewSet(CommonViewSetMixin,
+                             mixins.CreateModelMixin, mixins.ListModelMixin, mixins.RetrieveModelMixin, mixins.UpdateModelMixin,
+                             viewsets.GenericViewSet):
     namespace = 'library/codebases/releases/'
     lookup_field = 'version_number'
     lookup_value_regex = r'\d+\.\d+\.\d+'

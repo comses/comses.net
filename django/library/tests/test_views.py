@@ -49,21 +49,9 @@ class CodebaseViewSetTestCase(BaseViewSetTestCase):
         else:
             self.assertResponseNoPermission(instance, response)
 
-    def check_destroy_permissions(self, user, instance):
-        has_perm = user.has_perm(create_perm_str(instance, 'delete'), obj=instance)
-        if has_perm:
-            # delete all dependent codebases first
-            instance.releases.all().delete()
+    def check_destroy_method_not_allowed(self, user, instance):
         response = self.client.delete(instance.get_absolute_url(), HTTP_ACCEPT='application/json', format='json')
-        if user.is_anonymous:
-            self.assertResponsePermissionDenied(response)
-            return
-        if has_perm:
-            self.assertResponseDeleted(response)
-        elif instance.live:
-            self.assertResponsePermissionDenied(response)
-        else:
-            self.assertResponseNotFound(response)
+        self.assertResponseMethodNotAllowed(response)
 
     def check_update_permissions(self, user, instance):
         serialized = self.serializer_class(instance)
@@ -85,18 +73,19 @@ class CodebaseViewSetTestCase(BaseViewSetTestCase):
             codebase = self.instance_factory.create()
             self.instance.create_release(initialize=False)
             codebase = Codebase.objects.get(pk=codebase.id)
-            self.with_logged_in(user, codebase, self.check_destroy_permissions)
+            self.with_logged_in(user, codebase, self.check_destroy_method_not_allowed)
 
             other_codebase = self.instance_factory.create()
             other_codebase.create_release(initialize=False)
             other_codebase = Codebase.objects.get(pk=other_codebase.id)
             assign_perm(create_perm_str(other_codebase, 'delete'), user_or_group=user, obj=other_codebase)
-            self.with_logged_in(user, other_codebase, self.check_destroy_permissions)
+            self.with_logged_in(user, other_codebase, self.check_destroy_method_not_allowed)
 
         codebase = self.instance_factory.create()
         codebase.create_release(initialize=False)
         codebase = Codebase.objects.get(pk=codebase.id)
-        self.check_destroy_permissions(self.anonymous_user, codebase)
+        response = self.client.delete(codebase.get_absolute_url())
+        self.assertResponsePermissionDenied(response)
 
     def check_update(self):
         for user in self.users_able_to_login:
@@ -156,6 +145,20 @@ class CodebaseReleaseViewSetTestCase(BaseViewSetTestCase):
         self.login(self.submitter, self.user_factory.password)
         response_submitter = self.client.post(path=self.path, HTTP_ACCEPT='application/json', format='json')
         self.assertResponseCreated(response_submitter)
+
+    def test_destroy_method_not_allowed(self):
+        path = self.codebase_release.get_absolute_url()
+
+        response = self.client.delete(path=path)
+        self.assertResponsePermissionDenied(response)
+
+        self.client.login(username=self.other_user.username, password=self.user_factory.password)
+        response = self.client.delete(path=path, HTTP_ACCEPT='application/json')
+        self.assertResponseMethodNotAllowed(response)
+
+        self.client.login(username=self.submitter.username, password=self.user_factory.password)
+        response = self.client.delete(path=path, HTTP_ACCEPT='application/json')
+        self.assertResponseMethodNotAllowed(response)
 
 
 class CodebaseReleaseUnpublishedFilesTestCase(ApiAccountMixin, ResponseStatusCodesMixin, TestCase):

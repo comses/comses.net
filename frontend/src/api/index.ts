@@ -86,6 +86,10 @@ export class CodebaseAPI extends BaseAPI {
         return '/codebases/';
     }
 
+    delete(id: string | number) {
+        return api.delete(`/test_codebases/${id}/`);
+    }
+
     mediaListUrl(identifier) {
         return `${this.baseUrl()}${identifier}/media/`;
     }
