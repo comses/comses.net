@@ -215,8 +215,10 @@ def page_not_found(request, exception, template_name='404.jinja', context=None):
 
 
 def other_400_error(request, exception, template_name='other_400.jinja', context=None):
-    request._description = 'Method Not Allowed' if exception.status_code == 405 else 'Other error'
-    request._status = exception.status_code
+    if context is None:
+        context = {}
+    context['description'] = 'Method Not Allowed' if exception.status_code == 405 else 'Other error'
+    context['status'] = exception.status_code
     response = render(
         request=request,
         template_name=template_name,
