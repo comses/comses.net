@@ -72,6 +72,7 @@
     "karma-webpack": "^2.0.9",
     "mocha": "^4.1.0",
     "node-sass": "^4.5.0",
+    "puppeteer": "^1.2.0",
     "sass-loader": "^6.0.6",
     "sinon": "^4.1.4",
     "stringify-object": "^3.2.0",
