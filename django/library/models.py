@@ -704,13 +704,16 @@ class CodebaseReleaseQuerySet(models.QuerySet):
     def accessible(self, user):
         return get_viewable_objects_for_user(user, queryset=self)
 
-    def latest_for_feed(self, number=10):
-        return self.public().select_related('codebase', 'submitter__member_profile').annotate(
+    def latest_for_feed(self, number=10, include_all=False):
+        qs = self.public().select_related('codebase', 'submitter__member_profile').annotate(
             description=models.F('codebase__description'),
             title=models.functions.Concat(models.F('codebase__title'),
                                           models.Value(' '),
                                           models.F('version_number'))
-        ).order_by('-date_created')[:number]
+        ).order_by('-date_created')
+        if include_all:
+            return qs
+        return qs[:number]
 
 
 class CodebaseRelease(index.Indexed, ClusterableModel):
