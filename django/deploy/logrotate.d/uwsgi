@@ -1,0 +1,10 @@
+/shared/logs/uwsgi.log {
+    rotate 8
+    weekly
+    notifempty
+    delaycompress
+    compress
+    postrotate
+        touch /code/core/wsgi.py
+    endscript
+}
