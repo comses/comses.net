@@ -5,6 +5,7 @@ import markdown
 from django.utils.html import linebreaks, escape
 from jinja2.utils import urlize
 from markupfield.fields import MarkupField
+from .widgets import MarkdownTextarea
 
 logger = logging.getLogger(__name__)
 
@@ -61,3 +62,8 @@ class MarkdownField(MarkupField):
 
     def get_searchable_content(self, value):
         return self.get_prep_value(value)
+
+    def formfield(self, **kwargs):
+        defaults = {'widget': MarkdownTextarea}
+        defaults.update(kwargs)
+        return super(MarkupField, self).formfield(**defaults)

@@ -22,6 +22,7 @@ django-webpack-loader
 djangorestframework==3.8
 djangorestframework-jsonapi==2.4.0
 djangorestframework-jwt==1.11.0
+wagtail-markdown>=0.5a3
 elasticsearch-dsl>=5.0.0,<6.0.0
 elasticsearch>=5.0.0,<6.0.0
 html2text>=2016.9.19
