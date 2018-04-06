@@ -476,7 +476,7 @@ class Journal(index.Indexed, ClusterableModel):
     name = models.CharField(max_length=255)
     url = models.URLField()
     issn = models.CharField(max_length=16, blank=True, help_text=_("Linking ISSN-L for this Journal"))
-    description = models.CharField(max_length=1000)
+    description = MarkdownField(max_length=1000)
     tags = TaggableManager(through=JournalTag, blank=True)
 
     panels = [

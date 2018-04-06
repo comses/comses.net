@@ -15,8 +15,12 @@
         </div>
     </div>
     {% for journal_placement in page.journal_placements.all() %}
-        <a target='_blank' href='{{ journal_placement.journal.url }}'>{{ journal_placement.journal.name }}</a>
-        <div class='description'>{{ journal_placement.journal.description|markdown }}</div>
+        <h3><a target='_blank' href='{{ journal_placement.journal.url }}'>{{ journal_placement.journal.name }}</a></h3>
+        <div class='description'>
+            {% autoescape off %}
+                {{ journal_placement.journal.description }}
+            {% endautoescape %}
+        </div>
         <div class='tag-list'>
             {% for tag in journal_placement.journal.tags.all() %}
                 {{ search_tag_href(tag) }}
