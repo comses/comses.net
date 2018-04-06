@@ -431,13 +431,9 @@ class ContactPage(NavigationMixin, Page):
     ]
 
 
-class PlatformSnippetPlacement(Orderable, models.Model):
+class PlatformSnippetPlacement(models.Model):
     page = ParentalKey('home.PlatformIndexPage', related_name='platform_placements')
     platform = models.ForeignKey(Platform, related_name='+', on_delete=models.CASCADE)
-
-    class Meta:
-        verbose_name = 'platform placement'
-        verbose_name_plural = 'platform placements'
 
     panels = [
         SnippetChooserPanel('platform'),
@@ -445,6 +441,11 @@ class PlatformSnippetPlacement(Orderable, models.Model):
 
     def __str__(self):
         return "Snippet placement for {0}".format(self.platform.name)
+
+    class Meta:
+        verbose_name = 'platform placement'
+        verbose_name_plural = 'platform placements'
+        ordering = ('platform__name',)
 
 
 class PlatformIndexPage(NavigationMixin, Page):
@@ -500,7 +501,7 @@ class Journal(index.Indexed, ClusterableModel):
         return "{0} {1} {2}".format(self.name, self.url, self.issn)
 
 
-class JournalSnippetPlacement(Orderable, models.Model):
+class JournalSnippetPlacement(models.Model):
     page = ParentalKey('home.JournalIndexPage', related_name='journal_placements')
     journal = models.ForeignKey(Journal, related_name='+', on_delete=models.CASCADE)
 
@@ -511,6 +512,7 @@ class JournalSnippetPlacement(Orderable, models.Model):
     class Meta:
         verbose_name = 'journal placement'
         verbose_name_plural = 'journal placements'
+        ordering = ('journal__name',)
 
 
 class JournalIndexPage(NavigationMixin, Page):
@@ -541,7 +543,7 @@ class FaqEntry(index.Indexed, models.Model):
         return "[{0}] {1} {2}".format(self.category, self.question, shorten(self.answer, 140))
 
 
-class FaqEntryPlacement(Orderable, models.Model):
+class FaqEntryPlacement(models.Model):
     page = ParentalKey('home.FaqPage', related_name='faq_entry_placements')
     faq_entry = models.ForeignKey(FaqEntry, related_name='+', on_delete=models.CASCADE)
 
