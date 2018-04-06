@@ -504,6 +504,10 @@ class JournalSnippetPlacement(Orderable, models.Model):
     page = ParentalKey('home.JournalIndexPage', related_name='journal_placements')
     journal = models.ForeignKey(Journal, related_name='+', on_delete=models.CASCADE)
 
+    panels = [
+        SnippetChooserPanel('journal'),
+    ]
+
     class Meta:
         verbose_name = 'journal placement'
         verbose_name_plural = 'journal placements'
@@ -540,6 +544,10 @@ class FaqEntry(index.Indexed, models.Model):
 class FaqEntryPlacement(Orderable, models.Model):
     page = ParentalKey('home.FaqPage', related_name='faq_entry_placements')
     faq_entry = models.ForeignKey(FaqEntry, related_name='+', on_delete=models.CASCADE)
+
+    panels = [
+        SnippetChooserPanel('faq_entry'),
+    ]
 
     class Meta:
         verbose_name = 'faq placement'
