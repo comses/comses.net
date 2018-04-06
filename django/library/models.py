@@ -1,9 +1,10 @@
 import logging
 import mimetypes
+import os
 import pathlib
 import uuid
+from enum import Enum
 
-import os
 import semver
 from django.conf import settings
 from django.contrib.auth.models import User
@@ -17,7 +18,6 @@ from django.urls import reverse
 from django.utils import timezone
 from django.utils.text import slugify
 from django.utils.translation import ugettext_lazy as _
-from enum import Enum
 from ipware import get_client_ip
 from model_utils import Choices
 from modelcluster.contrib.taggit import ClusterTaggableManager
@@ -1061,3 +1061,81 @@ class ReleaseContributor(models.Model):
 
     def __str__(self):
         return "{0} contributor {1}".format(self.release, self.contributor)
+
+
+class PeerReview(models.Model):
+    REVIEWER_RECOMMENDATION = Choices(
+        ('accept', _('This computational model meets CoMSES Net peer review requirements.')),
+        ('deny', _('This computational model does not meet CoMSES Net peer review requirements.')),
+        ('revise', _('This computational model should be revised to meet CoMSES Net peer review requirements.')),
+    )
+    EDITOR_RECOMMENDATION = [('editor_' + c[0], c[1]) for c in REVIEWER_RECOMMENDATION]
+    REVIEW_STATUS = Choices(
+        ('requested', _('Author requested review')),
+        ('reviewer_invited', _('Reviewer invited')),
+        ('reviewer_declined', _('Reviewer declined')),
+        ('reviewer_accepted', _('Reviewer accepted')),
+        ('reviewer_completed', _('Review has been completed and recommendations made'))
+    ) + EDITOR_RECOMMENDATION
+
+    date_created = models.DateTimeField(auto_now_add=True)
+    last_modified = models.DateTimeField(auto_now=True)
+    status = models.CharField(choices=REVIEW_STATUS, default=REVIEW_STATUS.requested,
+                              help_text=_("The current status of this review."),
+                              max_length=32)
+    reviewer_recommendation = models.CharField(choices=REVIEWER_RECOMMENDATION, default='',
+                                      blank=True, max_length=16)
+    codebase_release = models.ForeignKey(CodebaseRelease, on_delete=models.PROTECT)
+    submitter = models.ForeignKey(User, on_delete=models.PROTECT)
+    private_reviewer_notes = MarkdownField(help_text=_('Private notes from the reviewer to the editor.'))
+    private_editor_notes = MarkdownField(help_text=_('Private notes from the editor'))
+    notes_to_author = MarkdownField(help_text=_("Notes to be sent to the model author"))
+
+
+class PeerReviewInvitation(models.Model):
+    date_created = models.DateTimeField(auto_now_add=True)
+    review = models.ForeignKey(PeerReview, related_name='invitations', on_delete=models.CASCADE)
+    editor = models.ForeignKey(User, related_name='+', on_delete=models.PROTECT)
+    candidate_reviewer = models.ForeignKey(User, related_name='+',
+                                           null=True, blank=True,
+                                           on_delete=models.CASCADE)
+    candidate_email = models.EmailField(blank=True, help_text=_("Contact email for candidate non-member reviewer"))
+    optional_message = MarkdownField(help_text=_("Optional markdown text to be added to the email"))
+
+
+class PeerReviewAction(models.Model):
+    date_created = models.DateTimeField(auto_now_add=True)
+    review = models.ForeignKey(PeerReview, related_name='actions', on_delete=models.CASCADE)
+    action = models.CharField(choices=PeerReview.REVIEW_STATUS, help_text=_("status action requested."),
+                              max_length=32)
+
+
+class PeerReviewerFeedback(models.Model):
+    date_created = models.DateTimeField(auto_now_add=True)
+    review = models.ForeignKey(PeerReview, related_name='feedback_set', on_delete=models.CASCADE)
+    recommendation = models.CharField(choices=PeerReview.REVIEWER_RECOMMENDATION, max_length=16)
+    reviewer = models.ForeignKey(User, on_delete=models.PROTECT)
+    has_narrative_documentation = models.BooleanField(
+        default=False,
+        help_text=_('Is there sufficiently detailed accompanying narrative documentation?')
+    )
+    narrative_documentation_comments = models.TextField(
+        help_text=_('Comments on the narrative documentation')
+    )
+
+    has_clean_code = models.BooleanField(
+        default=False,
+        help_text=_('Is the code clean, well-written, and well-commented with consistent formatting?')
+    )
+    clean_code_comments = models.TextField(
+        help_text=_('Comments on code cleanliness')
+    )
+
+    is_runnable = models.BooleanField(
+        default=False,
+        help_text=_('Were you able to run the model with the provided instructions?')
+    )
+    runnable_comments = models.TextField(
+        help_text=_('Comments on running the model with the provided instructions')
+    )
+
