@@ -32,9 +32,9 @@ urlpatterns = [
     path('', include(library_urls, namespace='library')),
     path('', include(curator_urls, namespace='curator')),
     path('discourse/sso', views.discourse_sso, name='discourse-sso'),
-    # Replace the default wagtail admin home page
-    path('wagtail/dashboard/', view=wagtail_hooks.DashboardView.as_view(), name='wagtailadmin_home'),
     path('django/admin/', admin.site.urls),
+    # Replace the default wagtail admin home page
+    path('wagtail/admin/', view=wagtail_hooks.DashboardView.as_view(), name='wagtailadmin_home'),
     path('wagtail/admin/', include(wagtailadmin_urls)),
     path('api/schema/', schema_view),
     path('api/token/', obtain_jwt_token),

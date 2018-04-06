@@ -32,7 +32,7 @@ pygit2==0.24.2
 raven==6.5.0
 semver==2.7.9
 uwsgi==2.0.17
-wagtail==2.0
+wagtail==2.0.1
 # deployment and management command dependencies
 beautifulsoup4==4.6.0
 dealer==2.0.5
