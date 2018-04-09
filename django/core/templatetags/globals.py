@@ -1,3 +1,4 @@
+import logging
 from datetime import datetime
 from typing import Optional
 
@@ -11,8 +12,10 @@ from django_jinja import library
 from jinja2 import Markup
 from webpack_loader.templatetags import webpack_loader as wl
 
-from core.serializers import FULL_DATE_FORMAT
 from core.fields import render_sanitized_markdown
+from core.serializers import FULL_DATE_FORMAT
+
+logger = logging.getLogger(__name__)
 
 
 @library.global_function
@@ -63,6 +66,9 @@ def sentry_public_dsn():
 @library.global_function
 def provider_login_url(request, provider_id, **kwargs):
     provider = providers.registry.by_id(provider_id, request)
+    next_url = request.GET.get('next', None)
+    if next_url:
+        kwargs['next'] = next_url
     return provider.get_login_url(request, **kwargs)
 
 
