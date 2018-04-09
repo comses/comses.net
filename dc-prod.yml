@@ -76,7 +76,7 @@ services:
     # command: "npm run build"
     build: frontend
     image: comses/cmsjs:${RELEASE_VERSION}
-    command: ['yarn', 'run', 'build']
+    command: ['yarn', 'build']
     volumes:
       - ./frontend/src:/code/src
       - ./frontend/deploy:/code/deploy

@@ -146,6 +146,7 @@ module.exports = createConfig([
         typescript(),
         addPlugins([
             new webpack.optimize.UglifyJsPlugin({
+                parallel: true,
                 sourceMap: true,
                 compress: {
                     warnings: false

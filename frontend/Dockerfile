@@ -8,5 +8,6 @@ RUN apt-get update && apt-get install -y google-chrome-stable realpath
 WORKDIR /code
 COPY package.json /code
 RUN yarn install
+# Separating to ensure that changes to the below files won't cause dependency reinstall
 COPY karma.conf.js tsconfig.json tsconfig_test.json webpack.conf.js .babelrc /code/
-CMD ["yarn", "run", "dev"]
+CMD ["yarn", "dev"]
