@@ -82,7 +82,7 @@ services:
       - ./frontend/deploy:/code/deploy
       - ./docker/shared/webpack:/shared/webpack
   nginx:
-    image: nginx:latest
+    image: nginx:1.13
     restart: always
     volumes:
       - ./deploy/nginx/nginx-haproxy.conf:/etc/nginx/nginx.conf
