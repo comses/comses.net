@@ -32,9 +32,10 @@ export const schema = yup.object().shape({
     tags: yup.array().of(yup.object().shape({name: yup.string().required()})),
     location: yup.string().required(),
     early_registration_deadline: yup.date().nullable().label('early registration deadline'),
-    registration_deadline: yup.date().label('registration deadline')
-        .when('early_registration_deadline', (value, schema) => _.isNull(value) ? schema.nullable(): schema.typeError('Registration deadline must have a value if early registration deadline has a value'))
-        .when('early_registration_deadline', dateAfterConstraint('early registration deadline', 'registration deadline')),
+    registration_deadline: yup.date().label('registration deadline').when(
+        'early_registration_deadline',
+        dateAfterConstraint('early registration deadline', 'registration deadline')
+    ),
     submission_deadline: yup.date().nullable().label('submission deadline'),
     start_date: yup.date().required()
         .when('registration_deadline', dateAfterConstraint('registration deadline', 'start date'))
