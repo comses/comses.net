@@ -101,10 +101,10 @@ def _extract(ctx, repo, archive, paths=None):
     ctx.run(extract_cmd, echo=True)
 
 
-def get_latest_bock_backup_archive_name(ctx):
+def get_latest_bock_backup_archive_name(ctx, repo):
     # borg 1.0 sorts ascending by default so taking the tail will get the most recent backup
     archive = ctx.run('{} borg list --short {repo} | tail -n 1'.format(environment(),
-                                                                       repo=settings.BORG_ROOT),
+                                                                       repo=repo),
                       echo=True).stdout.strip()
     if not archive:
         raise Exception('no borg archives found')
@@ -115,7 +115,7 @@ def _restore(ctx, repo, archive, working_directory, target_database, progress=Tr
     # Note that working directory is passed as argument. This makes it simpler to use either
     # a persistent directory (for testing and debugging) or a temporary directory
     if archive is None:
-        archive = get_latest_bock_backup_archive_name(ctx)
+        archive = get_latest_bock_backup_archive_name(ctx, repo=repo)
 
     with ctx.cd(working_directory):
         delete_latest_uncompressed_backup()
@@ -128,7 +128,7 @@ def _restore(ctx, repo, archive, working_directory, target_database, progress=Tr
 def restore_files(ctx, repo=settings.BORG_ROOT, archive=None):
     confirm("Are you sure you want to restore all file content? (y/n)")
     if archive is None:
-        archive = get_latest_bock_backup_archive_name(ctx)
+        archive = get_latest_bock_backup_archive_name(ctx, repo=repo)
 
     with tempfile.TemporaryDirectory(dir=settings.SHARE_DIR) as working_directory:
         with ctx.cd(working_directory):
@@ -141,7 +141,7 @@ def restore_files(ctx, repo=settings.BORG_ROOT, archive=None):
 def restore_database(ctx, repo=settings.BORG_ROOT, archive=None, target_database=db._DEFAULT_DATABASE):
     confirm("Are you sure you want to restore the database? (y/n) ")
     if archive is None:
-        archive = get_latest_bock_backup_archive_name(ctx)
+        archive = get_latest_bock_backup_archive_name(ctx, repo=repo)
 
     with tempfile.TemporaryDirectory(dir=settings.SHARE_DIR) as working_directory:
         with ctx.cd(working_directory):
