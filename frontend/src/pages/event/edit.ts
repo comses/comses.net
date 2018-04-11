@@ -32,7 +32,7 @@ export const schema = yup.object().shape({
     tags: yup.array().of(yup.object().shape({name: yup.string().required()})),
     location: yup.string().required(),
     early_registration_deadline: yup.date().nullable().label('early registration deadline'),
-    registration_deadline: yup.date().label('registration deadline').when(
+    registration_deadline: yup.date().nullable().label('registration deadline').when(
         'early_registration_deadline',
         dateAfterConstraint('early registration deadline', 'registration deadline')
     ),
