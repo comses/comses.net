@@ -56,8 +56,8 @@ class CodebaseReleaseFileConsistencyChecker:
         if self.release.is_published:
             with TemporaryDirectory() as d:
                 new_archive_path = os.path.join(d, 'archive.zip')
-                success = self.fs_api.build_archive_at_dest(new_archive_path)
-                if not success:
+                aip_exists = self.fs_api.build_archive_at_dest(new_archive_path)
+                if not aip_exists:
                     raise IOError('AIP directory does not exist')
                 new_archive_hash = hash_file(new_archive_path)
                 old_archive_hash = hash_file(str(self.fs_api.archivepath))
