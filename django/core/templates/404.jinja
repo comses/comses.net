@@ -7,18 +7,19 @@
 {% endblock %}
 
 {% block content %}
-    <h2>Resource not found <span class='text-gray'>&#8253;&#8253;&#8253;</span></h2>
+    <h2><span class='text-warning'>&#8253;</span> 404 not found fnuh <span class='text-warning'>&#8253;</span></h2>
     <p class='lead'>
     Sorry, we were unable to resolve your request to anything we can display. This could happen because: 
     </p>
     <ol>
-        <li>You don't have view permissions on this resource</li>
         <li>We lost something in the migration from openabm.org</li>
         <li>We have a bug or broken link in our system</li>
-        <li>The resource you're trying to access really doesn't exist</li>
+        <li>You don't have permission to view this resource</li>
+        <li>The resource you're trying to access actually doesn't exist</li>
     </ol>
     <p>
-    If this is our fault, please <a href='/about/contact/'>let us know</a> so we can fix it. Thanks for being a part of
-    <a href='/'>comses.net</a>!
+    If this is our fault, please <a href='/about/contact/'>let us know</a> so we can fix it. Please be sure to include
+    the URL you were trying to access and any relevant details. Thank you for being a part of the
+    <a href='/'>comses.net</a> community!
     </p>
 {% endblock %}
