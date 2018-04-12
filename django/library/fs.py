@@ -589,18 +589,23 @@ class CodebaseReleaseFsApi:
         shutil.rmtree(str(self.aip_dir), ignore_errors=True)
         shutil.copytree(sip_dir, str(self.aip_dir))
 
+    def build_archive_at_dest(self, dest):
+        logger.info("building archive")
+        if self.aip_contents_dir.exists():
+            with zipfile.ZipFile(dest, 'w') as archive:
+                for root_path, dirs, file_paths in os.walk(str(self.aip_contents_dir)):
+                    for file_path in file_paths:
+                        path = Path(root_path, file_path)
+                        archive.write(str(path), arcname=str(path.relative_to(self.aip_contents_dir)))
+            logger.info("building archive succeeded")
+            return True
+        else:
+            logger.error("building archive failed - no aip directory")
+            return False
+
     def build_archive(self, force=False):
         if not self.archivepath.exists() or force:
-            logger.info("building archive")
-            if self.aip_contents_dir.exists():
-                with zipfile.ZipFile(str(self.archivepath), 'w') as archive:
-                    for root_path, dirs, file_paths in os.walk(str(self.aip_contents_dir)):
-                        for file_path in file_paths:
-                            path = Path(root_path, file_path)
-                            archive.write(str(path), arcname=str(path.relative_to(self.aip_contents_dir)))
-                logger.info("building archive succeeded")
-            else:
-                logger.error("building archive failed - no aip directory")
+            self.build_archive_at_dest(dest=str(self.archivepath))
 
     def rebuild(self):
         msgs = self.build_sip()
