@@ -25,7 +25,7 @@ after_success:
   - cd django && mv .coverage{,.123} && coverage combine --append && coveralls && cd -
   - cd frontend && cat ./coverage/lcov.info | ./node_modules/coveralls/bin/coveralls.js
   - if [[ "$TRAVIS_BRANCH" == "master" ]]; then
-      docker login -u $DOCKERHUB_USERNAME -p $DOCKERHUB_PASSWORD ;
+      echo $DOCKERHUB_PASSWORD | docker login -u $DOCKERHUB_USERNAME --password-stdin;
       docker push comses/cms:dev;
       docker push comses/cmsjs:dev;
     fi
