@@ -14,11 +14,9 @@ function addDaysToDate(date: Date, days: number): Date {
 
 async function createEvent() {
     const seed_date = new Date();
-    const early_registration_date = addDaysToDate(new Date(Date.UTC(
-        seed_date.getFullYear(), seed_date.getMonth(),
-        seed_date.getDay(), seed_date.getHours())), 1);
-    const registration_date = addDaysToDate(early_registration_date, 1);
-    const start_date = addDaysToDate(registration_date, 1);
+    const early_registration_date = addDaysToDate(seed_date, 1);
+    const registration_date = addDaysToDate(early_registration_date, 2);
+    const start_date = addDaysToDate(registration_date, 3);
     const event = _.merge(createDefaultValue(schema), {
         title: 'ESSA 2007',
         location: 'Boulder, CO',
