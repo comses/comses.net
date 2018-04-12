@@ -196,7 +196,10 @@ class CodebaseSerializer(serializers.ModelSerializer, FeaturedImageMixin):
     description = MarkdownField()
 
     def get_releases(self, obj):
-        queryset = obj.releases.order_by('-version_number')
+        request = self.context.get('request')
+        user = request.user if request else User.get_anonymous()
+        queryset = CodebaseRelease.objects.filter(codebase_id=obj.pk).accessible(user).order_by('-version_number')
+        # queryset = obj.releases.order_by('-version_number')
         return RelatedCodebaseReleaseSerializer(
             queryset, read_only=True, many=True, context=self.context
         ).data
