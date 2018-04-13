@@ -20,6 +20,7 @@ install:
   - pip3 install python-coveralls coverage
 script:
   - docker-compose run --rm cms /code/deploy/test.sh
+  - docker-compose run --rm cms /code/deploy/build_docs.sh
   - docker-compose up -d && docker-compose exec cms ./manage.py frontend_setup && docker-compose exec js /code/deploy/test.sh
 after_success:
   - cd django && mv .coverage{,.123} && coverage combine --append && coveralls && cd -
@@ -29,3 +30,11 @@ after_success:
       docker push comses/cms:dev;
       docker push comses/cmsjs:dev;
     fi
+deploy:
+  provider: pages
+  skip-cleanup: true
+  github-token: $GITHUB_TOKEN
+  keep-history: false
+  on:
+    branch: master
+  local-dir: docs/build/html

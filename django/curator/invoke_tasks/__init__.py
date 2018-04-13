@@ -1,6 +1,6 @@
 from invoke import Collection
 
-from . import borg, database, elasticsearch, drupal
+from . import borg, database, docs, elasticsearch, drupal
 from .base import clean, collect_static, coverage, deny_robots, quality_check_openabm_files_with_db, sh, test, server, setup_site
 
 
@@ -16,5 +16,6 @@ ns.add_task(server)
 ns.add_task(setup_site)
 ns.add_collection(borg)
 ns.add_collection(Collection.from_module(database, 'db'))
+ns.add_collection(docs)
 ns.add_collection(Collection.from_module(elasticsearch, 'es'))
 ns.add_collection(drupal)
