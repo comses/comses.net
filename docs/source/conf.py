@@ -14,7 +14,6 @@
 #
 import os
 import sys
-import django
 if os.path.exists('/docs'):
     sys.path.insert(0, os.path.abspath('/code'))
 else:
