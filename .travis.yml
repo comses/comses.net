@@ -21,6 +21,7 @@ install:
 script:
   - docker-compose run --rm cms /code/deploy/test.sh
   - docker-compose run --rm cms /code/deploy/build_docs.sh
+  - touch docs/build/html/.nojekyll && echo docs.comses.net > docs/build/html/CNAME
   - docker-compose up -d && docker-compose exec cms ./manage.py frontend_setup && docker-compose exec js /code/deploy/test.sh
 after_success:
   - cd django && mv .coverage{,.123} && coverage combine --append && coveralls && cd -
