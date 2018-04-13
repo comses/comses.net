@@ -21,8 +21,11 @@ if settings.DEPLOY_ENVIRONMENT == Environment.DEVELOPMENT:
     router.register(r'test_codebases', views.DevelopmentCodebaseDeleteView, base_name='test_codebases')
 
 urlpatterns = [
+    path('review/<uuid:uuid>/', views.PeerReviewView.as_view(), name='peer-review-detail'),
+    path('review/<uuid:uuid>/invite/', views.SendPeerReviewInvitation.as_view(), name='peer-review-invite'),
+    path('review/<uuid:uuid>/edit/', views.PeerReviewEditorView.as_view(), name='peer-review-edit'),
+    path('review/<uuid:review_uuid>/feedback/', views.PeerReviewerFeedbackView.as_view(), name='reviewer-feedback'),
     path('contributors/', views.ContributorList.as_view()),
-    # FIXME: consider /release/upload instead
     path('codebases/add/', views.CodebaseFormCreateView.as_view(), name='codebase-add'),
     path('codebases/<slug:identifier>/edit/', views.CodebaseFormUpdateView.as_view(),
          name='codebase-edit'),

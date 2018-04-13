@@ -6,9 +6,11 @@ from django.core.exceptions import PermissionDenied
 from django.db import transaction
 from django.http import FileResponse, Http404
 from django.shortcuts import get_object_or_404, redirect
-from django.urls import resolve
+from django.urls import resolve, reverse_lazy
 from django.views import View
 from django.views.generic.base import RedirectView
+from django.views.generic.detail import DetailView
+from django.views.generic.edit import UpdateView
 from rest_framework import viewsets, generics, renderers, status, permissions, filters, mixins
 from rest_framework.decorators import action
 from rest_framework.exceptions import PermissionDenied as DrfPermissionDenied, ValidationError
@@ -18,8 +20,9 @@ from core.permissions import ComsesPermissions
 from core.view_helpers import add_change_delete_perms, get_search_queryset
 from core.views import (CommonViewSetMixin, FormUpdateView, FormCreateView, SmallResultSetPagination,
                         CaseInsensitiveOrderingFilter)
+from .forms import PeerReviewEditorForm
 from .fs import FileCategoryDirectories, StagingDirectories, MessageLevels
-from .models import Codebase, CodebaseRelease, Contributor, CodebaseImage
+from .models import (Codebase, CodebaseRelease, Contributor, CodebaseImage, PeerReview)
 from .permissions import CodebaseReleaseUnpublishedFilePermissions
 from .serializers import (CodebaseSerializer, RelatedCodebaseSerializer, CodebaseReleaseSerializer,
                           ContributorSerializer, ReleaseContributorSerializer, CodebaseReleaseEditSerializer,
@@ -37,6 +40,26 @@ def has_permission_to_create_release(request, view):
         required_perms = []
     return user.has_perms(required_perms, obj=codebase)
 
+
+class PeerReviewView(DetailView):
+    template_name = 'library/review/detail.jinja'
+    model = PeerReview
+    slug_field = 'uuid'
+
+
+class PeerReviewEditorView(PermissionRequiredMixin, UpdateView):
+    template_name = 'library/review/editor.jinja'
+    form_class = PeerReviewEditorForm
+    success_url = reverse_lazy('library:editor-review-queue')
+    model = PeerReview
+
+    def has_permission(self):
+        # FIXME: change to group membership later
+        return self.request.user.is_superuser
+
+
+class SendPeerReviewInvitation(PermissionRequiredMixin, View):
+    pass
 
 class CodebaseFilter(filters.BaseFilterBackend):
 
@@ -238,7 +261,6 @@ class CodebaseReleaseShareViewSet(CommonViewSetMixin, mixins.RetrieveModelMixin,
     permission_classes = (permissions.AllowAny,)
 
     def retrieve(self, request, *args, **kwargs):
-        logger.debug("retrieving object: %s", self.get_object())
         release = self.get_object()
         serializer = self.get_serializer(release)
         return Response(serializer.data)
@@ -326,6 +348,18 @@ class CodebaseReleaseViewSet(CommonViewSetMixin,
             raise ValidationError({'non_field_errors': ['Cannot regenerate share uuid on published release']})
         codebase_release.regenerate_share_uuid()
         return Response(data=request.build_absolute_uri(codebase_release.share_url), status=status.HTTP_200_OK)
+
+    @action(detail=True, methods=['post'])
+    @transaction.atomic
+    def request_peer_review(self, request, **kwargs):
+        codebase_release = self.get_object()
+        review, created = PeerReview.objects.get_or_create(
+            codebase_release=codebase_release,
+            defaults={
+                'submitter': request.user
+            }
+        )
+        return Response(data={'created': created}, status=status.HTTP_201_CREATED)
 
     @action(detail=True, methods=['post'])
     @transaction.atomic

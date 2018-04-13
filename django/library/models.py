@@ -833,10 +833,9 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
 
     @property
     def regenerate_share_url(self):
-        if not self.share_uuid:
-            self.regenerate_share_uuid()
-        return reverse('library:codebaserelease-regenerate-share-uuid', kwargs={'identifier': self.codebase.identifier,
-                                                                                'version_number': self.version_number})
+        return reverse('library:codebaserelease-regenerate-share-uuid',
+                       kwargs={'identifier': self.codebase.identifier,
+                               'version_number': self.version_number})
 
     # FIXME: lift magic constants
     @property
@@ -1066,8 +1065,7 @@ class ReleaseContributor(models.Model):
 class PeerReview(models.Model):
     REVIEWER_RECOMMENDATION = Choices(
         ('accept', _('This computational model meets CoMSES Net peer review requirements.')),
-        ('deny', _('This computational model does not meet CoMSES Net peer review requirements.')),
-        ('revise', _('This computational model should be revised to meet CoMSES Net peer review requirements.')),
+        ('revise', _('This computational model must be revised to meet CoMSES Net peer review requirements.')),
     )
     EDITOR_RECOMMENDATION = [('editor_' + c[0], c[1]) for c in REVIEWER_RECOMMENDATION]
     REVIEW_STATUS = Choices(
@@ -1075,7 +1073,7 @@ class PeerReview(models.Model):
         ('reviewer_invited', _('Reviewer invited')),
         ('reviewer_declined', _('Reviewer declined')),
         ('reviewer_accepted', _('Reviewer accepted')),
-        ('reviewer_completed', _('Review has been completed and recommendations made'))
+        ('reviewer_completed', _('Review has been completed and reviewer has made a recommendation'))
     ) + EDITOR_RECOMMENDATION
 
     date_created = models.DateTimeField(auto_now_add=True)
@@ -1085,11 +1083,15 @@ class PeerReview(models.Model):
                               max_length=32)
     reviewer_recommendation = models.CharField(choices=REVIEWER_RECOMMENDATION, default='',
                                       blank=True, max_length=16)
-    codebase_release = models.ForeignKey(CodebaseRelease, on_delete=models.PROTECT)
-    submitter = models.ForeignKey(User, on_delete=models.PROTECT)
+    codebase_release = models.OneToOneField(CodebaseRelease, related_name='review', on_delete=models.PROTECT)
+    submitter = models.ForeignKey(User, related_name='+', on_delete=models.PROTECT)
     private_reviewer_notes = MarkdownField(help_text=_('Private notes from the reviewer to the editor.'))
     private_editor_notes = MarkdownField(help_text=_('Private notes from the editor'))
     notes_to_author = MarkdownField(help_text=_("Notes to be sent to the model author"))
+    uuid = models.UUIDField(default=uuid.uuid4, unique=True, null=True)
+
+    def get_absolute_url(self):
+        return reverse('library:peer-review-detail', kwargs={'uuid': self.uuid})
 
 
 class PeerReviewInvitation(models.Model):
@@ -1138,4 +1140,7 @@ class PeerReviewerFeedback(models.Model):
     runnable_comments = models.TextField(
         help_text=_('Comments on running the model with the provided instructions')
     )
+
+    def get_absolute_url(self):
+        return reverse('library:reviewer-feedback', kwargs={'review_uuid': self.review.uuid})
 
