@@ -185,13 +185,13 @@
 {% endwith %}
 {% endmacro %}
 
-{% macro embed_discourse_comments(is_public) %}
+{% macro embed_discourse_comments(is_public, submitter_username) %}
     {# See https://meta.discourse.org/t/embedding-discourse-comments-via-javascript/31963 for details #}
     {% if should_enable_discourse(is_public) %}
     <script>
         DiscourseEmbed = {
             discourseUrl: "{{ DISCOURSE_BASE_URL }}/",
-            discourseUserName: "{{ submitter.username }}",
+            discourseUserName: "{{ submitter_username }}",
             discourseEmbedUrl: window.location.href
         };
         (function () {

@@ -16,8 +16,8 @@ from django.http import Http404, HttpResponseBadRequest, HttpResponseRedirect, Q
 from django.shortcuts import render
 from django.views.generic import DetailView, TemplateView
 from rest_framework import filters
-from rest_framework.exceptions import PermissionDenied as DrfPermissionDenied, NotAuthenticated, NotFound, \
-    MethodNotAllowed, APIException
+from rest_framework.exceptions import (PermissionDenied as DrfPermissionDenied, NotAuthenticated, NotFound,
+                                       APIException)
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 from rest_framework.views import exception_handler

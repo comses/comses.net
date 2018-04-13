@@ -190,11 +190,10 @@ class LandingPage(Page):
         return submitter, submitter_url
 
     def get_recent_forum_activity(self):
-        # FIXME: move to dedicated discourse module / api as we integrate more tightly with discourse
+        # FIXME: refactor and clean up logic to form a more sensible discourse api
         # Discourse API endpoint documented at http://docs.discourse.org/#tag/Topics%2Fpaths%2F~1latest.json%2Fget
-        if not settings.DEPLOY_ENVIRONMENT.is_production():
+        if settings.DEPLOY_ENVIRONMENT.is_development():
             return self.get_canned_forum_activity()
-        # FIXME: refactor and clean up logic, extract to a sensible discourse api
         recent_forum_activity = cache.get('recent_forum_activity')
         if recent_forum_activity:
             return recent_forum_activity

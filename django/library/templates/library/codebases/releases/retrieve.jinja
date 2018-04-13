@@ -325,5 +325,5 @@
         new Clipboard('.btn-clipboard');
     </script>
     {{ render_bundle('release_regenerate_share_uuid') }}
-    {{ embed_discourse_comments(live) }}
+    {{ embed_discourse_comments(live, submitter.username) }}
 {% endblock %}

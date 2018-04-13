@@ -82,5 +82,5 @@
 {% endblock %}
 
 {% block js %}
-    {{ embed_discourse_comments(true) }}
+    {{ embed_discourse_comments(true, submitter.username) }}
 {% endblock %}

@@ -89,5 +89,25 @@ LOGGING = {
             'handlers': ['console'],
             'propagate': False,
         },
+        'home': {
+            'level': 'DEBUG',
+            'handlers': ['console', 'rollingfile'],
+            'propagate': False,
+        },
+        'library': {
+            'level': 'DEBUG',
+            'handlers': ['console', 'rollingfile'],
+            'propagate': False,
+        },
+        'library.fs': {
+            'level': 'DEBUG',
+            'handlers': ['console', 'rollingfile'],
+            'propagate': False
+        },
+        'core': {
+            'level': 'DEBUG',
+            'handlers': ['console', 'rollingfile'],
+            'propagate': False,
+        },
     }
 }
