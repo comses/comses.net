@@ -1,15 +1,17 @@
-.. CoMSES.net documentation master file, created by
-   sphinx-quickstart on Thu Nov 10 15:14:36 2016.
+.. comsesnet documentation master file, created by
+   sphinx-quickstart on Thu Apr 12 22:31:50 2018.
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to CoMSES.net's documentation!
-======================================
+Welcome to comsesnet's documentation!
+=====================================
 
 .. toctree::
-   :maxdepth: 5
+   :maxdepth: 2
+   :caption: Contents:
 
-   home
+   admin
+
 
 
 Indices and tables
@@ -18,4 +20,3 @@ Indices and tables
 * :ref:`genindex`
 * :ref:`modindex`
 * :ref:`search`
-

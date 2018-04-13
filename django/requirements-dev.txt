@@ -7,3 +7,5 @@ coverage
 coveralls
 hypothesis[datetime,django]
 pgcli
+Sphinx
+sphinx_rtd_theme

@@ -52,6 +52,7 @@ services:
     image: comses/cms:dev
     volumes:
       - ./django:/code
+      - ./docs:/docs
       - ./deploy/conf/config.ini:/secrets/config.ini
       - ./deploy/elasticsearch.conf.d:/etc/elasticsearch
       - ./docker/shared:/shared

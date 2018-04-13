@@ -262,7 +262,8 @@ class CodebaseReleaseShareViewSet(CommonViewSetMixin, mixins.RetrieveModelMixin,
 
 
 class CodebaseReleaseViewSet(CommonViewSetMixin,
-                             mixins.CreateModelMixin, mixins.ListModelMixin, mixins.RetrieveModelMixin, mixins.UpdateModelMixin,
+                             mixins.CreateModelMixin, mixins.ListModelMixin, mixins.RetrieveModelMixin,
+                             mixins.UpdateModelMixin,
                              viewsets.GenericViewSet):
     namespace = 'library/codebases/releases/'
     lookup_field = 'version_number'
