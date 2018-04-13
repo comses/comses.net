@@ -1,6 +1,8 @@
+========================
 Administering CoMSES.net
 ========================
 
+-----------
 Editor Role
 -----------
 
@@ -8,7 +10,7 @@ Editors are users capable of modifying the content of pages on CoMSES.net
 
 
 Assigning Editor Permissions
-----------------------------
+============================
 
 1. Click on the editor group at /wagtail/admin/groups/
 
@@ -21,7 +23,7 @@ Assigning Editor Permissions
 
 
 Giving a User Editor Permission
--------------------------------
+===============================
 
 1. Find the user you wish to assign the editor role to at /wagtail/admin/users/
 2. Click edit on that user (should be at /wagtail/admin/users/:id)

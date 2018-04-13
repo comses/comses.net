@@ -11,6 +11,9 @@ Welcome to comsesnet's documentation!
    :caption: Contents:
 
    admin
+   codebase_review
+   discourse
+   deployment
 
 
 
