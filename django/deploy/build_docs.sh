@@ -16,4 +16,4 @@ touch build/html/.nojekyll
 
 # setup CNAME for DNS https://stackoverflow.com/questions/9082499/custom-domain-for-github-project-pages
 echo "Adding CNAME"
-echo docs.comses.net > build/html/CNAME
+echo docs.comses.net > docs/build/html/CNAME
