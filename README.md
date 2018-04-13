@@ -13,5 +13,11 @@ Run `bash build.sh` to build the Docker image, generate secrets, and a symlinked
 
 A debug setup exists in the `deploy/debug` folder. Files in the debug will need to be brough to this directory to work and the settings file will have to switched to the debug settings file.
 
+## Documentation (for developers and editors)
+
+See [here](http://comsesnet.readthedocs.io/en/latest/)
+
+
+
 ## Import metadata and codebases
 Extract JSON data files from https://github.com/comses/docker-openabm and place them in a directory accessible to the `cms` container along with a `models/` directory pulled from the `openabm-files` root. Then run `docker-compose exec cms bash` to enter the `cms` container and run `invoke import_all` to migrate the Drupal data into Django and copy the model library filesystem data into the new archival repository format.
