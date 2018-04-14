@@ -303,7 +303,7 @@ class JobViewSet(CommonViewSetMixin, viewsets.ModelViewSet):
 class DigestView(TemplateView):
     template_name = 'home/digest.jinja'
     NUMBER_OF_POSTS = 20
-    ARCHIVE_URL = 'http://openabm.us7.list-manage.com/generate-js/?u=35f29299716fcb07509229c1c&fid=21449&show={0}'
+    ARCHIVE_URL = 'http://comses.us7.list-manage.com/generate-js/?u=35f29299716fcb07509229c1c&fid=21449&show={0}'
 
     @property
     def mailchimp_archive_url(self):
