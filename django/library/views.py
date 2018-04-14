@@ -10,7 +10,7 @@ from django.urls import resolve, reverse_lazy
 from django.views import View
 from django.views.generic.base import RedirectView
 from django.views.generic.detail import DetailView
-from django.views.generic.edit import UpdateView
+from django.views.generic.edit import UpdateView, FormView
 from rest_framework import viewsets, generics, renderers, status, permissions, filters, mixins
 from rest_framework.decorators import action
 from rest_framework.exceptions import PermissionDenied as DrfPermissionDenied, ValidationError
@@ -20,9 +20,9 @@ from core.permissions import ComsesPermissions
 from core.view_helpers import add_change_delete_perms, get_search_queryset
 from core.views import (CommonViewSetMixin, FormUpdateView, FormCreateView, SmallResultSetPagination,
                         CaseInsensitiveOrderingFilter)
-from .forms import PeerReviewEditorForm
+from .forms import PeerReviewEditorForm, PeerReviewInvitationForm
 from .fs import FileCategoryDirectories, StagingDirectories, MessageLevels
-from .models import (Codebase, CodebaseRelease, Contributor, CodebaseImage, PeerReview)
+from .models import (Codebase, CodebaseRelease, Contributor, CodebaseImage, PeerReview, PeerReviewerFeedback)
 from .permissions import CodebaseReleaseUnpublishedFilePermissions
 from .serializers import (CodebaseSerializer, RelatedCodebaseSerializer, CodebaseReleaseSerializer,
                           ContributorSerializer, ReleaseContributorSerializer, CodebaseReleaseEditSerializer,
@@ -58,8 +58,19 @@ class PeerReviewEditorView(PermissionRequiredMixin, UpdateView):
         return self.request.user.is_superuser
 
 
-class SendPeerReviewInvitation(PermissionRequiredMixin, View):
-    pass
+class SendPeerReviewInvitation(PermissionRequiredMixin, FormView):
+    form_class = PeerReviewInvitationForm
+    success_url = reverse_lazy('library:editor-review-queue')
+
+    def form_valid(self, form):
+        form.send_email()
+        return super().form_valid(form)
+
+
+class PeerReviewerFeedbackView(UpdateView):
+    template_name = 'library/review/feedback.jinja'
+    model = PeerReviewerFeedback
+
 
 class CodebaseFilter(filters.BaseFilterBackend):
 

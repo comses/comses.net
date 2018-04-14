@@ -7,7 +7,7 @@ notifications:
 services:
   - docker
 env: 
-  - DOCKER_COMPOSE_VERSION=1.19.0
+  - DOCKER_COMPOSE_VERSION=1.21.0
 before_install:
   - sudo apt-get -qq update
   - sudo apt-get install -y docker-ce

@@ -1081,8 +1081,9 @@ class PeerReview(models.Model):
     status = models.CharField(choices=REVIEW_STATUS, default=REVIEW_STATUS.requested,
                               help_text=_("The current status of this review."),
                               max_length=32)
-    reviewer_recommendation = models.CharField(choices=REVIEWER_RECOMMENDATION, default='',
-                                      blank=True, max_length=16)
+    reviewer_recommendation = models.CharField(
+        choices=REVIEWER_RECOMMENDATION, default='',
+        blank=True, max_length=16)
     codebase_release = models.OneToOneField(CodebaseRelease, related_name='review', on_delete=models.PROTECT)
     submitter = models.ForeignKey(User, related_name='+', on_delete=models.PROTECT)
     private_reviewer_notes = MarkdownField(help_text=_('Private notes from the reviewer to the editor.'))
@@ -1091,6 +1092,9 @@ class PeerReview(models.Model):
     uuid = models.UUIDField(default=uuid.uuid4, unique=True, null=True)
 
     def get_absolute_url(self):
+        if not self.uuid:
+            self.uuid = uuid.uuid4()
+            self.save()
         return reverse('library:peer-review-detail', kwargs={'uuid': self.uuid})
 
 
@@ -1110,6 +1114,7 @@ class PeerReviewAction(models.Model):
     review = models.ForeignKey(PeerReview, related_name='actions', on_delete=models.CASCADE)
     action = models.CharField(choices=PeerReview.REVIEW_STATUS, help_text=_("status action requested."),
                               max_length=32)
+    message = models.CharField(blank=True, max_length=500)
 
 
 class PeerReviewerFeedback(models.Model):
@@ -1124,7 +1129,6 @@ class PeerReviewerFeedback(models.Model):
     narrative_documentation_comments = models.TextField(
         help_text=_('Comments on the narrative documentation')
     )
-
     has_clean_code = models.BooleanField(
         default=False,
         help_text=_('Is the code clean, well-written, and well-commented with consistent formatting?')
@@ -1132,7 +1136,6 @@ class PeerReviewerFeedback(models.Model):
     clean_code_comments = models.TextField(
         help_text=_('Comments on code cleanliness')
     )
-
     is_runnable = models.BooleanField(
         default=False,
         help_text=_('Were you able to run the model with the provided instructions?')
@@ -1143,4 +1146,3 @@ class PeerReviewerFeedback(models.Model):
 
     def get_absolute_url(self):
         return reverse('library:reviewer-feedback', kwargs={'review_uuid': self.review.uuid})
-
