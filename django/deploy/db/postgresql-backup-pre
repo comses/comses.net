@@ -1,4 +1,4 @@
 #!/bin/sh
 
 cd /code;
-invoke pgpass;
+invoke db.pgpass;

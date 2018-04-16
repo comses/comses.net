@@ -1,8 +1,7 @@
 #!/bin/sh
 
 if [ -x /usr/sbin/autopostgresqlbackup ]; then
-	/usr/sbin/autopostgresqlbackup && \
 	cd /code && \
-	inv borg.backup
+	inv db.backup borg.backup
 fi
 

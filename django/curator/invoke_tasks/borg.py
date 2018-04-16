@@ -4,12 +4,16 @@ import pathlib
 import shutil
 import tempfile
 
-from invoke import task, Collection
 from django.conf import settings
-from .util import dj, confirm
+from invoke import task
+
 from . import database as db
+from .util import confirm
 
 logger = logging.getLogger(__name__)
+
+DEFAULT_LIBRARY_BASENAME = os.path.basename(settings.LIBRARY_ROOT)
+DEFAULT_MEDIA_BASENAME = os.path.basename(settings.MEDIA_ROOT)
 
 
 @task(aliases=['init'])
@@ -37,13 +41,8 @@ def backup(ctx):
         raise IOError('Create archive failed. {}'.format(' '.join(error_msgs)))
 
     with ctx.cd(share):
-        db.create_pgpass_file(ctx)
         ctx.run('{} borg create --progress --compression lz4 {repo}::"{archive}" {library} {media} {database}'.format(
             environment(), repo=repo, archive=archive, library=library, media=media, database=database), echo=True)
-
-
-DEFAULT_LIBRARY_BASENAME = os.path.basename(settings.LIBRARY_ROOT)
-DEFAULT_MEDIA_BASENAME = os.path.basename(settings.MEDIA_ROOT)
 
 
 def delete_latest_uncompressed_backup(src_library=DEFAULT_LIBRARY_BASENAME, src_media=DEFAULT_MEDIA_BASENAME):
