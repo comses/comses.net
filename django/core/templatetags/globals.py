@@ -6,6 +6,7 @@ from allauth.socialaccount import providers
 from django.conf import settings
 from django.forms.widgets import CheckboxInput
 from django.template import defaultfilters
+from django.template.loader import render_to_string
 from django.utils.dateparse import parse_datetime
 from django.utils.timezone import get_current_timezone
 from django_jinja import library
@@ -21,6 +22,13 @@ logger = logging.getLogger(__name__)
 @library.global_function
 def render_bundle(bundle_name, extension=None, config='DEFAULT', attrs=''):
     return wl.render_bundle(bundle_name, extension, config, attrs)
+
+
+@library.global_function
+def cookielaw(request):
+    if request.COOKIES.get('cookielaw_accepted', False):
+        return ''
+    return render_to_string('cookielaw/cookielaw.jinja', request=request)
 
 
 @library.global_function

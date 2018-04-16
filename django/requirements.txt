@@ -3,6 +3,7 @@ bleach==2.1.2
 dealer==2.0.5
 -e git+https://github.com/pennersr/django-allauth.git#egg=django-allauth
 # django-allauth==0.36.0
+django-cookie-law==2.0.1
 django-extensions==2.0.6
 django-guardian==1.4.9
 django-ipware==2.0.1

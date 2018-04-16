@@ -106,6 +106,7 @@
         </div>
     </div>
 </nav>
+
 <script>
 function submitLogout() {
     document.getElementById('logoutForm').submit();
@@ -118,6 +119,7 @@ function focusSearch() {
 {% endmacro %}
 
 {% macro footer() %}
+{{ cookielaw(request) }}
 <footer class="footer">
     <div class="container">
         {% if not user.is_authenticated or not user.member_profile.full_member %}
@@ -204,6 +206,7 @@ function focusSearch() {
         <link rel="mask-icon" href="{{ static('favicon/safari-pinned-tab.svg') }}" color="#5bbad5">
 		<meta name="msapplication-TileColor" content="#da532c">
 		<meta name="theme-color" content="#ffffff">
+        <script type="application/javascript" src="{{ static('cookielaw/js/cookielaw.js') }}"></script>
         <!-- Google Tag Manager -->
         <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
         new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
@@ -264,7 +267,7 @@ function focusSearch() {
 
         {{ render_bundle('manifest') }}
         {{ render_bundle('vendors') }}
-        {{ render_bundle('browser_version_notifier') }}
+        {{ render_bundle('common') }}
 
         <script src="//cdn.rawgit.com/imsky/holder/master/holder.js"></script>
         {% block js %}

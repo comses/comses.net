@@ -86,7 +86,7 @@ THIRD_PARTY_APPS = [
     'timezone_field',
     'webpack_loader',
     'robots',
-    # django-allauth setup
+    'cookielaw',
     'allauth',
     'allauth.account',
     'allauth.socialaccount',
