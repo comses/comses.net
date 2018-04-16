@@ -24,9 +24,10 @@ import {ProfileAPI} from 'api'
                         Search
                     </div>
                     <div class="card-body">
-                        <c-input type="text" v-model="fullTextSearch" name="fullTextSearch">
-                            <label class="form-control-label" slot="label">By name</label>
-                        </c-input>
+                        <span @keyup.enter="search">
+                            <c-input type="text" v-model="fullTextSearch" name="fullTextSearch" label="By Name" :required="false">
+                            </c-input>
+                        </span>
                         <c-tagger v-model="tags" :required="false" placeholder="Type to add tags" label="Keywords">
                         </c-tagger>
                     </div>
@@ -61,5 +62,9 @@ export class SearchProfiles extends Vue {
             page: 1,
         };
         return this.api.searchUrl(queryObject);
+    }
+
+    search() {
+        window.location.href = this.query;
     }
 }

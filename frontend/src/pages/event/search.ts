@@ -17,9 +17,10 @@ import {EventAPI} from 'api'
                         Search
                     </div>
                     <div class="card-body">
-                        <c-input type="text" v-model="fullTextSearch" name="fullTextSearch">
-                            <label class="form-control-label" slot="label">Keywords</label>
-                        </c-input>
+                        <span @keyup.enter="search">
+                            <c-input type="text" v-model="fullTextSearch" name="fullTextSearch" label="Keywords" :required="false">
+                            </c-input>
+                        </span>
                         <c-datepicker v-model="submissionDeadline" name="submissionDeadline" :clearButton="true">
                             <label class="form-control-label" slot="label">Submission Deadline</label>
                         </c-datepicker>
@@ -55,5 +56,9 @@ export class SearchEvents extends Vue {
             tags: this.tags.map(tag => tag.name)
         };
         return this.api.searchUrl(queryObject);
+    }
+
+    search() {
+        window.location.href = this.query;
     }
 }

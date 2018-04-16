@@ -11,7 +11,7 @@ const api = new CodebaseAPI();
 @Component(<any>{
     // language=Vue
     template: `
-        <c-search ref="search" submitLabel="Archive a model" searchLabel="Search" submitUrl="/codebases/add/" :searchUrl="query">
+        <c-search submitLabel="Archive a model" searchLabel="Search" submitUrl="/codebases/add/" :searchUrl="query">
             <div slot="searchForm">
                 <div class="card-metadata">
                     <div class="title">
@@ -59,6 +59,6 @@ export class SearchCodebases extends Vue {
     }
 
     search() {
-        window.location.href = (this.$refs.search as any).searchUrl;
+        window.location.href = this.query;
     }
 }

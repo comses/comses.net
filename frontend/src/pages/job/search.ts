@@ -19,8 +19,10 @@ import {JobAPI} from 'api';
                         Search
                     </div>
                     <div class="card-body">
-                        <c-input type="text" v-model="fullTextSearch" name="fullTextSearch" :required="false" label="Keywords">
-                        </c-input>
+                        <span @keyup.enter="search">
+                            <c-input type="text" v-model="fullTextSearch" name="fullTextSearch" label="Keywords" :required="false">
+                            </c-input>
+                        </span>
                         <c-date-picker v-model="initialPostingDate" name="initialPostingDate" :clearButton="true"
                             :required="false" label='Initial post date'>
                         </c-date-picker>
@@ -58,5 +60,9 @@ export class SearchJobs extends Vue {
             tags: this.tags.map(tag => tag.name)
         };
         return this.api.searchUrl(queryObject);
+    }
+
+    search() {
+        window.location.href = this.query;
     }
 }
