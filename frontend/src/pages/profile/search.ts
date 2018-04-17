@@ -13,24 +13,20 @@ import {ProfileAPI} from 'api'
     // language=Vue
     template: `
         <div>
-            <a class="text-white" href="/accounts/signup/" v-if="!is_a_member">
+            <a class="text-white" href="/accounts/signup/" v-if="!is_authenticated">
                 <div class="btn btn-primary w-100" tabindex="0">
                     Become a member
                 </div>
             </a>
-            <div>
-                <div class="card-metadata">
-                    <div class="title">
-                        Search
-                    </div>
-                    <div class="card-body">
-                        <span @keyup.enter="search">
-                            <c-input type="text" v-model="fullTextSearch" name="fullTextSearch" label="By Name" :required="false">
-                            </c-input>
-                        </span>
-                        <c-tagger v-model="tags" :required="false" placeholder="Type to add tags" label="Keywords">
-                        </c-tagger>
-                    </div>
+            <div class="card-metadata">
+                <h1 class="title">Search</h1>
+                <div class="card-body">
+                    <span @keyup.enter="search">
+                        <c-input type="text" v-model="fullTextSearch" name="fullTextSearch" label="By Name" :required="false">
+                        </c-input>
+                    </span>
+                    <c-tagger v-model="tags" :required="false" placeholder="Type to add tags" label="Keywords">
+                    </c-tagger>
                 </div>
             </div>
             <a class="text-white" :href="query">
@@ -48,7 +44,7 @@ import {ProfileAPI} from 'api'
 })
 export class SearchProfiles extends Vue {
     @Prop()
-    is_a_member: boolean;
+    is_authenticated: boolean;
 
     private api = new ProfileAPI();
     fullTextSearch: string = '';

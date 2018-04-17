@@ -75,7 +75,8 @@
 {% endblock %}
 
 {% block sidebar %}
-    <div id="sidebar" data-is-a-member="{% if user.is_authenticated %}true{% else %}false{% endif %}"></div>
+    {# FIXME: look into better ways to pass data from Django -> Vue. may also need to check full member status #}
+    <div id="sidebar" data-is-authenticated="{{ user.is_authenticated }}"></div>
 {% endblock %}
 
 {% block bottom %}
