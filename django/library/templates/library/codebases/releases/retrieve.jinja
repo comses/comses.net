@@ -207,16 +207,14 @@
                                 <td>
                                     {% if release.draft %}
                                         <span class="badge badge-danger">Draft</span>
-                                    {% elif not release.live %}
-                                        <span class="badge badge-warning">Unpublished</span>
+                                    {% elif release.live %}
+                                        <span class="badge badge-success">Published</span>
                                     {% else %}
-                                        <span class="badge badge-secondary">Published</span>
+                                        <span class="badge badge-warning">Unpublished</span>
                                     {% endif %}
                                 </td>
                                 <td>
-                                    <a href="{{ url('library:codebaserelease-edit',
-                                        identifier=codebase.identifier,
-                                        version_number=release.version_number) }}">
+                                    <a href="{{ url('library:codebaserelease-edit', identifier=codebase.identifier, version_number=release.version_number) }}">
                                         <span class="fa fa-edit"></span>
                                     </a>
                                 </td>

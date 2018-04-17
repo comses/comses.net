@@ -220,11 +220,11 @@ class PublishModal extends createFormValidator(publishSchema) {
     template: `<div>
         <div v-if="isInitialized">
             <h1>{{ $store.state.release.codebase.title }} <i>v{{ $store.state.release.version_number }}</i>
-                <span class="badge badge-secondary" v-if="isPublished">Published</span>
+                <span class="has-pointer-cursor btn btn-sm btn-secondary" data-target="#editCodebaseModal" data-toggle="modal">Edit Common Metadata | Add Images/Media</span>
+                <span class="badge badge-success" v-if="isPublished">Published</span>
                 <span v-else>
                     <span class="badge badge-warning">Unpublished</span> <span class="btn btn-sm btn-secondary" data-target="#publishCodebaseReleaseModal" data-toggle="modal">Publish</span>
                 </span>
-                <span class="has-pointer-cursor btn btn-sm btn-secondary" data-target="#editCodebaseModal" data-toggle="modal">Edit Common Metadata</span>
             </h1>
             <c-progress></c-progress>
             <ul class="nav nav-tabs justify-content-center">
