@@ -1,5 +1,6 @@
 /shared/logs/uwsgi.log {
     rotate 8
+    maxsize 50M
     weekly
     notifempty
     delaycompress
