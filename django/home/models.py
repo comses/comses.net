@@ -360,7 +360,7 @@ class CategoryIndexPage(NavigationMixin, Page):
     ]
 
     search_fields = Page.search_fields + [
-        index.SearchField('summary')
+        index.SearchField('summary', partial_match=True)
     ]
 
 
@@ -384,26 +384,38 @@ class StreamPage(Page, NavigationMixin):
 
 
 class MarkdownPage(NavigationMixin, Page):
-    template = models.CharField(max_length=128, default='home/markdown_page.jinja')
-    heading = models.CharField(max_length=128, blank=True)
+    heading = models.CharField(max_length=128, blank=True, help_text=_('Large heading text placed on the blue background introduction header'))
+    template = models.CharField(
+        max_length=128,
+        help_text=_('Relative filesystem path to the template file to be used for this page '
+                    '(advanced usage only - the template must exist on the filesystem). If you change '
+                    'this, help text suggestions on placement of elements may no longer apply.'),
+        default='home/markdown_page.jinja'
+    )
     date = models.DateField("Post date", default=timezone.now)
-    description = MarkdownField(max_length=512, blank=True)
-    body = MarkdownField(blank=True)
+    description = MarkdownField(max_length=512, blank=True,
+                                help_text=_('Markdown-enabled summary text placed below the heading and title.'))
+    body = MarkdownField(blank=True, help_text=_('Markdown-enabled main content pane for this page.'))
     jumbotron = models.BooleanField(
         default=True,
-        help_text=_("True if this page should display its title and description in a jumbotron"))
+        help_text=_("Mark as true if this page should display its title and description in a jumbotron")
+    )
 
     content_panels = Page.content_panels + [
-        FieldPanel('heading'),
+        FieldPanel('slug'),
         FieldPanel('date'),
+        FieldPanel('jumbotron'),
+        FieldPanel('heading'),
         FieldPanel('description'),
         FieldPanel('body'),
+        FieldPanel('template'),
     ]
 
     search_fields = Page.search_fields + [
-        index.SearchField('date'),
-        index.SearchField('description'),
-        index.SearchField('body')
+        index.FilterField('date'),
+        index.SearchField('description', partial_match=True),
+        index.SearchField('body', partial_match=True),
+        index.SearchField('heading', partial_match=True),
     ]
 
 
@@ -488,11 +500,11 @@ class Journal(index.Indexed, ClusterableModel):
     ]
 
     search_fields = [
-        index.SearchField('name'),
-        index.SearchField('description'),
+        index.SearchField('name', partial_match=True),
+        index.SearchField('description', partial_match=True),
         index.SearchField('issn'),
         index.RelatedFields('tags', [
-            index.SearchField('name'),
+            index.SearchField('name', partial_match=True),
         ]),
     ]
 
@@ -572,7 +584,7 @@ class FaqPage(Page, NavigationMixin):
 
     search_fields = Page.search_fields + [
         index.RelatedFields('faq_entry_placements', [
-            index.SearchField('faq_entry')
+            index.SearchField('faq_entry', partial_match=True)
         ])
     ]
 
@@ -642,8 +654,8 @@ class NewsPage(Page):
     )
 
     search_fields = Page.search_fields + [
-        index.SearchField('body'),
-        index.FilterField('date')
+        index.FilterField('date'),
+        index.SearchField('body', partial_match=True),
     ]
 
     # Editor panels configuration
