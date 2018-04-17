@@ -168,7 +168,7 @@
 </ol>
 {% endmacro %}
 
-{% macro render_social_profile_url(provider_name, profile_url, connect=False) %}
+{% macro render_social_profile_url(request, provider_name, profile_url, connect=False) %}
 {# special case orcid icon #}
 {% with provider_icon_class="ai text-orcid ai-orcid" if provider_name == "orcid" else "text-gray fa fa-" ~ provider_name %}
     {% if profile_url %}

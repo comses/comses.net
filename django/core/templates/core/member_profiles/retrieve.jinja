@@ -61,13 +61,15 @@
                         <a href='{{ professional_url }}' target='_blank'>{{ professional_url }}</a>
                         </p>
                     {% endif %}
-                    <b class='card-title'>ORCID <sup><a target='_blank' href='https://orcid.org'>?</a></sup></b>
-                    <p class='card-text'>
-                    {{ render_social_profile_url('orcid', orcid_url, connect=request.user.username == username) }}
-                    </p>
-                    <b class='card-title'>GitHub<sup><a target='_blank' href='https://github.com'>?</a></sup></b>
-                    <p class='card-text'>{{ render_social_profile_url('github', github_url, connect=request.user.username == username) }}
-                    </p>
+                    <b class='card-title'>ORCID<sup><a href='/about/orcid/'>?</a></sup></b>
+                    {% with social_connect=request.user.username == username %}
+                        <p class='card-text'>
+                        {{ render_social_profile_url(request, 'orcid', orcid_url, connect=social_connect) }}
+                        </p>
+                        <b class='card-title'>GitHub<sup><a target='_blank' href='https://education.github.com'>?</a></sup></b>
+                        <p class='card-text'>{{ render_social_profile_url(request, 'github', github_url, connect=social_connect) }}
+                        </p>
+                    {% endwith %}
                 </div>
             </div>
         </div>
