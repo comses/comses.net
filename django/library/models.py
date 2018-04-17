@@ -1082,8 +1082,18 @@ class PeerReview(models.Model):
                               help_text=_("The current status of this review."),
                               max_length=32)
     codebase_release = models.OneToOneField(CodebaseRelease, related_name='review', on_delete=models.PROTECT)
+    assigned_reviewer = models.ForeignKey(User, null=True, blank=True, related_name='+',
+                                          on_delete=models.SET_NULL,
+                                          help_text=_('User assigned to perform this review'))
+    assigned_reviewer_email = models.EmailField(blank=True,
+                                                help_text=_('Assigned reviewer email'))
     submitter = models.ForeignKey(User, related_name='+', on_delete=models.PROTECT)
     uuid = models.UUIDField(default=uuid.uuid4, unique=True, null=True)
+
+    def get_assigned_reviewer_email(self):
+        if self.assigned_reviewer:
+            return self.assigned_reviewer.email
+        return self.assigned_reviewer_email
 
     def get_absolute_url(self):
         if not self.uuid:
@@ -1108,6 +1118,8 @@ class PeerReviewAction(models.Model):
     review = models.ForeignKey(PeerReview, related_name='actions', on_delete=models.CASCADE)
     action = models.CharField(choices=PeerReview.REVIEW_STATUS, help_text=_("status action requested."),
                               max_length=32)
+    author = models.ForeignKey(User, related_name='+', on_delete=models.CASCADE,
+                               help_text=_('User originating this action'))
     message = models.CharField(blank=True, max_length=500)
 
 
