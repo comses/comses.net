@@ -7,7 +7,7 @@ class PeerReviewEditorForm(forms.ModelForm):
 
     class Meta:
         model = PeerReview
-        fields = ['status', 'codebase_release', 'private_editor_notes', 'notes_to_author']
+        fields = ['status', 'codebase_release',]
 
 
 class PeerReviewInvitationForm(forms.Form):
