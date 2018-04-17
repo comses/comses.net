@@ -1081,14 +1081,8 @@ class PeerReview(models.Model):
     status = models.CharField(choices=REVIEW_STATUS, default=REVIEW_STATUS.requested,
                               help_text=_("The current status of this review."),
                               max_length=32)
-    reviewer_recommendation = models.CharField(
-        choices=REVIEWER_RECOMMENDATION, default='',
-        blank=True, max_length=16)
     codebase_release = models.OneToOneField(CodebaseRelease, related_name='review', on_delete=models.PROTECT)
     submitter = models.ForeignKey(User, related_name='+', on_delete=models.PROTECT)
-    private_reviewer_notes = MarkdownField(help_text=_('Private notes from the reviewer to the editor.'))
-    private_editor_notes = MarkdownField(help_text=_('Private notes from the editor'))
-    notes_to_author = MarkdownField(help_text=_("Notes to be sent to the model author"))
     uuid = models.UUIDField(default=uuid.uuid4, unique=True, null=True)
 
     def get_absolute_url(self):
@@ -1122,26 +1116,29 @@ class PeerReviewerFeedback(models.Model):
     review = models.ForeignKey(PeerReview, related_name='feedback_set', on_delete=models.CASCADE)
     recommendation = models.CharField(choices=PeerReview.REVIEWER_RECOMMENDATION, max_length=16)
     reviewer = models.ForeignKey(User, on_delete=models.PROTECT)
+    private_reviewer_notes = MarkdownField(help_text=_('Private reviewer notes to the editor.'))
+    private_editor_notes = MarkdownField(help_text=_('Private editor notes regarding this peer review'))
+    notes_to_author = MarkdownField(help_text=_("Notes to be sent to the model author"))
     has_narrative_documentation = models.BooleanField(
         default=False,
         help_text=_('Is there sufficiently detailed accompanying narrative documentation?')
     )
     narrative_documentation_comments = models.TextField(
-        help_text=_('Comments on the narrative documentation')
+        help_text=_('Reviewer comments on the narrative documentation')
     )
     has_clean_code = models.BooleanField(
         default=False,
         help_text=_('Is the code clean, well-written, and well-commented with consistent formatting?')
     )
     clean_code_comments = models.TextField(
-        help_text=_('Comments on code cleanliness')
+        help_text=_('Reviewer comments on code cleanliness')
     )
     is_runnable = models.BooleanField(
         default=False,
         help_text=_('Were you able to run the model with the provided instructions?')
     )
     runnable_comments = models.TextField(
-        help_text=_('Comments on running the model with the provided instructions')
+        help_text=_('Reviewer comments on running the model with the provided instructions')
     )
 
     def get_absolute_url(self):
