@@ -5,7 +5,6 @@ django-debug-toolbar
 django-debug-toolbar-request-history
 coverage
 coveralls
-hypothesis[datetime,django]
 pgcli
 Sphinx
 sphinx_rtd_theme
