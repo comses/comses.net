@@ -16,6 +16,8 @@ class Command(BaseCommand):
         # these errors should about the email or username already existing or the username being too long
         if not data.get('success', False):
             print('skipping {} {}'.format(user, data.get('errors')))
+        else:
+            print('added user {}'.format(user))
 
     def handle(self, *args, **options):
         # getting a list of all users in discourse api is difficult so try to add each one
