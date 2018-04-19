@@ -92,7 +92,9 @@ class MemberProfileFilter(filters.BaseFilterBackend):
         return get_search_queryset(qs, queryset, tags=tags)
 
 
-class ProfileViewSet(CommonViewSetMixin, viewsets.ModelViewSet):
+class ProfileViewSet(CommonViewSetMixin,
+                     mixins.CreateModelMixin, mixins.ListModelMixin, mixins.RetrieveModelMixin, mixins.UpdateModelMixin,
+                     viewsets.GenericViewSet):
     lookup_field = 'user__pk'
     lookup_url_kwarg = 'pk'
     queryset = MemberProfile.objects.public().with_tags().order_by('-user__date_joined')
