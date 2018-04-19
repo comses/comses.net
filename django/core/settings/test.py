@@ -1,5 +1,6 @@
 from .dev import *
 
+DEPLOY_ENVIRONMENT = Environment.TEST
 LOGGING['loggers']['core.views'] = {
     'level': 'ERROR',
     'handlers': ['console'],

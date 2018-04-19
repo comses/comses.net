@@ -21,6 +21,7 @@ class Environment(Enum):
     DEVELOPMENT = 0
     STAGING = 1
     PRODUCTION = 2
+    TEST = 3
 
     def is_production(self):
         return self == Environment.PRODUCTION
@@ -30,6 +31,9 @@ class Environment(Enum):
 
     def is_development(self):
         return self == Environment.DEVELOPMENT
+
+    def is_test(self):
+        return self == Environment.TEST
 
 
 DEPLOY_ENVIRONMENT = Environment.DEVELOPMENT
@@ -420,6 +424,8 @@ SOCIALACCOUNT_PROVIDERS = {
 
 DISCOURSE_BASE_URL = config.get('discourse', 'DISCOURSE_BASE_URL', fallback='https://forum.comses.net')
 DISCOURSE_SSO_SECRET = config.get('secrets', 'DISCOURSE_SSO_SECRET')
+DISCOURSE_API_KEY = config.get('secrets', 'DISCOURSE_API_KEY')
+DISCOURSE_API_USERNAME = config.get('discourse', 'DISCOURSE_API_USERNAME')
 
 TEMPLATES = [
     {

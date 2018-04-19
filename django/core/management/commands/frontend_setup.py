@@ -16,7 +16,7 @@ class Command(BaseCommand):
         ComsesGroups.initialize()
         user.set_password(settings.TEST_BASIC_AUTH_PASSWORD)
         user.save()
-        mp = MemberProfile.objects.get(user=user)
+        mp, created = MemberProfile.objects.get_or_create(user=user)
         mp.institution = Institution.objects.get_or_create(name='ASU', url='https://www.asu.edu')[0]
         mp.save()
         ea, created = EmailAddress.objects.get_or_create(user=user, email=user.email)

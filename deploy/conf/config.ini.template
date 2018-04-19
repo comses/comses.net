@@ -14,6 +14,7 @@ RECAPTCHA_PRIVATE_KEY=
 
 [discourse]
 DISCOURSE_BASE_URL=https://forum.comses.net
+DISCOURSE_API_USERNAME=
 
 [email]
 EMAIL_HOST=smtp.sparkpostmail.com
@@ -29,6 +30,7 @@ SENTRY_PUBLIC_DSN=https://none@sentry.example.com/1
 
 [secrets]
 DISCOURSE_SSO_SECRET=${DISCOURSE_SSO_SECRET:-changeme}
+DISCOURSE_API_KEY=
 
 SECRET_KEY=${DJANGO_SECRET_KEY}
 
