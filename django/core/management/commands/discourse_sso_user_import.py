@@ -27,17 +27,19 @@ class Command(BaseCommand):
             .filter(is_active=True).order_by('username')
         added_users = []
         for user in users:
+            # hack to avoid 429 response from discourse
+            time.sleep(1)
+            
             print('\nsyncing user {}'.format(user))
             response = create_discourse_user(user)
             if not (200 <= response.status_code < 300):
                 print('bad reponse for user {} {}'.format(user, response.status_code))
                 print(response.content)
+
                 continue
             user = self.check_discourse_user_response(response, user)
             if user:
                 added_users.append(user)
-            # hack to avoid 429 response from discourse
-            time.sleep(1)
 
         print('\nAdded Users')
         for added_user in added_users:
