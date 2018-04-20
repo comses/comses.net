@@ -1,18 +1,18 @@
 {% extends "base.jinja" %}
 
-{% block body_class %}template-404{% endblock %}
+{% block body_class %}template-500{% endblock %}
 
 {% block introduction %}
-    <h1>Something Bad Happened in our code</h1>
+    <h1>Something Bad happened in our code</h1>
 {% endblock %}
 
 {% set sentry_id=request.sentry.id if request.sentry else ''%}
 {% block content %}
-    <h1><i class='text-gray fa fa-fire-extinguisher fa-3x'></i> Unexpected server error <i class='text-danger fa fa-bug fa-3x'></i></h1>
+    <h1 class='title'><i class='fa fa-fire-extinguisher fa-2x'></i> Unexpected server error <i class='fa fa-bug fa-2x'></i></h1>
     <p class='lead'>
-    A thousand pardons! Our server encountered an unexpected error while trying to handle your request. Details of this
-    error have been automatically logged and sent to us but if you'd like to follow up please feel free to
-    <a href='mailto: bugs@comses.net?subject=server error {{sentry_id }}'>send us additional information</a>. 
+    A thousand pardons! Our web application encountered an unexpected error while trying to handle your request. Details
+    of this error have been automatically logged and sent to our development team but if you'd like to follow up please
+    feel free to <a href='mailto: bugs@comses.net?subject=server error {{sentry_id }}'>send us additional information</a>. 
     </p>
 
     <p>

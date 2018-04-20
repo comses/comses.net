@@ -3,9 +3,13 @@
 {% block body_class %}template-403{% endblock %}
 
 {% block introduction %}
-    <h1>Access denied</h1>
+    <h1>403 Forbidden</h1>
 {% endblock %}
 
 {% block content %}
-    <h2>Sorry, you do not have access to this resource. Please <a href='{{ slugurl('contact') }}'>contact us</a> if this is an error.</h2>
+    <h2 class='title'><i class='fa fa-lock'></i> Access denied <i class='fa fa-meh'></i></h2>
+    <p class='lead'>
+    You don't currently have the correct permissions to access this resource. Please 
+    <a href='{{ slugurl('contact') }}'>let us know</a> if this is an error on our end.
+    </p>
 {% endblock %}
