@@ -24,6 +24,7 @@ def confirm(prompt="Continue? (y/n) ", cancel_message="Aborted."):
         confirm(prompt, cancel_message)
     if not response_as_bool:
         raise RuntimeError(cancel_message)
+    return True
 
 
 def dj(ctx, command, **kwargs):
