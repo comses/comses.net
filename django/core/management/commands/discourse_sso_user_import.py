@@ -37,7 +37,7 @@ class Command(BaseCommand):
             if user:
                 added_users.append(user)
             # hack to avoid 429 response from discourse
-            time.sleep(0.6)
+            time.sleep(1)
 
         print('\nAdded Users')
         for added_user in added_users:
