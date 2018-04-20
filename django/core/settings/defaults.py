@@ -153,7 +153,7 @@ TAGGIT_CASE_INSENSITIVE = True
 RELEASE_VERSION_FILE = "release-version.txt"
 
 release_version_file = pathlib.Path(RELEASE_VERSION_FILE)
-RELEASE_VERSION = "v1.0.3"
+RELEASE_VERSION = "v1.0.6"
 
 if release_version_file.is_file():
     with release_version_file.open('r') as infile:
@@ -424,8 +424,8 @@ SOCIALACCOUNT_PROVIDERS = {
 
 DISCOURSE_BASE_URL = config.get('discourse', 'DISCOURSE_BASE_URL', fallback='https://forum.comses.net')
 DISCOURSE_SSO_SECRET = config.get('secrets', 'DISCOURSE_SSO_SECRET')
-DISCOURSE_API_KEY = config.get('secrets', 'DISCOURSE_API_KEY')
-DISCOURSE_API_USERNAME = config.get('discourse', 'DISCOURSE_API_USERNAME')
+DISCOURSE_API_KEY = config.get('secrets', 'DISCOURSE_API_KEY', fallback='unconfigured')
+DISCOURSE_API_USERNAME = config.get('discourse', 'DISCOURSE_API_USERNAME', fallback='unconfigured')
 
 TEMPLATES = [
     {
