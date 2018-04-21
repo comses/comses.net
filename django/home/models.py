@@ -402,7 +402,6 @@ class MarkdownPage(NavigationMixin, Page):
     )
 
     content_panels = Page.content_panels + [
-        FieldPanel('slug'),
         FieldPanel('date'),
         FieldPanel('jumbotron'),
         FieldPanel('heading'),
