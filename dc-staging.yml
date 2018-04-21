@@ -1,0 +1,131 @@
+version: '3'
+services:
+  redis:
+    image: redis:4-alpine
+    restart: always
+    command: ["redis-server", "/usr/local/etc/redis/redis.conf"]
+    volumes:
+      - ./deploy/conf/redis.conf:/usr/local/etc/redis/redis.conf
+      - ./docker/shared/redis:/data
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:${ES_VERSION}
+    restart: always
+    ports:
+      - "127.0.0.1:9200:9200"
+    environment:
+      - cluster.name=docker-cluster
+      - bootstrap.memory_lock=true
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65536
+        hard: 65536
+    deploy:
+      resources:
+        limits:
+          memory: 1g
+    cap_add:
+      - IPC_LOCK
+    volumes:
+      - ./deploy/elasticsearch.conf.d/log4j2.properties:/usr/share/elasticsearch/config/log4j2.properties
+      - ./deploy/elasticsearch.conf.d/elasticsearch-dev.yml:/usr/share/elasticsearch/config/elasticsearch.yml
+      - esdata1:/usr/share/elasticsearch/data
+# FIXME: duplication bad
+  elasticsearch2:
+    image: docker.elastic.co/elasticsearch/elasticsearch:${ES_VERSION}
+    restart: always
+    environment:
+      - cluster.name=docker-cluster
+      - bootstrap.memory_lock=true
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+      - "discovery.zen.ping.unicast.hosts=elasticsearch"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65536
+        hard: 65536
+    deploy:
+      resources:
+        limits:
+          memory: 1g
+    cap_add:
+      - IPC_LOCK
+    volumes:
+      - ./deploy/elasticsearch.conf.d/elasticsearch-dev.yml:/usr/share/elasticsearch/config/elasticsearch.yml
+      - ./deploy/elasticsearch.conf.d/log4j2.properties:/usr/share/elasticsearch/config/log4j2.properties
+      - esdata2:/usr/share/elasticsearch/data
+  ${DB_HOST}:
+    image: comses/postgis:9.5
+    restart: always
+    volumes:
+      - ./docker/shared/pgdata:/var/lib/postgresql/data
+    environment:
+      # autofilled by ./build.sh envsubst
+      # FIXME: replace with init sql script, see https://github.com/docker/docker/issues/13490
+      POSTGRES_USER: "${DB_USER}"
+      POSTGRES_PASSWORD: "${DB_PASSWORD}"
+      POSTGRES_DB: "${DB_NAME}"
+  js:
+    # FIXME: currently needs a second Django `./manage.py collectstatic` to move generated assets from Django into
+    # static directory, seems we should be able to skip that step
+    # command: "npm run build"
+    build: frontend
+    image: comses/cmsjs:${RELEASE_VERSION}
+    command: ['yarn', 'build']
+    volumes:
+      - ./frontend/src:/code/src
+      - ./frontend/deploy:/code/deploy
+      - ./docker/shared/webpack:/shared/webpack
+  nginx:
+    image: nginx:1.13
+    restart: always
+    volumes:
+      - ./deploy/nginx/nginx-staging.conf:/etc/nginx/nginx.conf
+      - ./deploy/nginx/uwsgi_params:/etc/nginx/uwsgi_params
+      - ./docker/shared/logs/nginx:/var/log/nginx
+      - ./docker/shared/static:/srv/static
+      - ./docker/shared/media:/srv/media
+      - sockets:/shared/sockets
+    command: ["nginx", "-g", "daemon off;"]
+    ports:
+      - "127.0.0.1:8880:80"
+    links:
+      - cms
+  cms:
+    build:
+      context: ./django
+      args:
+        REQUIREMENTS_FILE: requirements.txt
+        UBUNTU_MIRROR: "nova.clouds.archive.ubuntu.com"
+        RUN_SCRIPT: "./deploy/prod.sh"
+    image: comses/cms:{RELEASE_VERSION}
+    restart: always
+    volumes:
+      - ./deploy/conf/config.ini:/secrets/config.ini
+      - ./deploy/elasticsearch.conf.d:/etc/elasticsearch
+      - ./docker/shared:/shared
+      - sockets:/shared/sockets
+    environment:
+      DJANGO_SETTINGS_MODULE: "core.settings.production"
+      DB_USER: ${DB_USER}
+      DB_HOST: ${DB_HOST}
+      DB_NAME: ${DB_NAME}
+      DB_PORT: ${DB_PORT}
+    ports:
+      - "127.0.0.1:9191:9191" # uWSGI stats server
+    links:
+      - ${DB_HOST}
+      - elasticsearch
+      - redis
+volumes:
+  sockets:
+    driver: local
+  esdata1:
+    driver: local
+  esdata2:
+    driver: local

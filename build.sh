@@ -16,7 +16,7 @@ function clean()
     sudo rm -rf ./docker/shared;
 }
 
-DEPLOY=${DEPLOY:-"dev"} # allowed values: (dev | prod)
+DEPLOY=${DEPLOY:-"dev"} # allowed values: (dev | staging | prod)
 DEFAULT_COMPOSE_TEMPLATE="dc-${DEPLOY}.yml"
 DOCKER_COMPOSE_TEMPLATE=${1:-$DEFAULT_COMPOSE_TEMPLATE}
 CONFIG_INI=./deploy/conf/config.ini
