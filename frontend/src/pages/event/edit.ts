@@ -38,6 +38,7 @@ export const schema = yup.object().shape({
     ),
     submission_deadline: yup.date().nullable().label('submission deadline'),
     start_date: yup.date().required()
+        .when('early_registration_deadline', dateAfterConstraint('early registration deadline', 'start date'))
         .when('registration_deadline', dateAfterConstraint('registration deadline', 'start date'))
         .when('submission_deadline', dateAfterConstraint('submission deadline', 'start date'))
         .label('start date'),

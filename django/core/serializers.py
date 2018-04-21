@@ -160,6 +160,12 @@ class EventSerializer(serializers.ModelSerializer):
         if early_registration_deadline and registration_deadline and registration_deadline < early_registration_deadline:
             msgs.append('Early registration deadlines should be EARLIER than a plain old registration deadline.')
 
+        if early_registration_deadline and early_registration_deadline > start_date:
+            msgs.append('Early registration deadlines should occur before the event starts.')
+
+        if registration_deadline and registration_deadline > start_date:
+            msgs.append('Registration deadlines should occur before the event starts.')
+
         if submission_deadline and submission_deadline > start_date:
             msgs.append('Submission deadlines should occur before the event starts.')
 
