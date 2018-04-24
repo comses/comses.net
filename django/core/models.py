@@ -24,6 +24,7 @@ from wagtail.images.models import Image
 from wagtail.search import index
 from wagtail.snippets.models import register_snippet
 
+from .backends import add_to_comses_permission_whitelist
 from .fields import MarkdownField
 
 
@@ -137,6 +138,7 @@ class MemberProfileQuerySet(models.QuerySet):
             User.objects.filter(email=candidate_email).exclude(pk=exclude_user.pk).values_list('pk'))
 
 
+@add_to_comses_permission_whitelist
 @register_snippet
 class MemberProfile(index.Indexed, ClusterableModel):
     """
@@ -371,6 +373,7 @@ class EventQuerySet(models.QuerySet):
         return self
 
 
+@add_to_comses_permission_whitelist
 class Event(index.Indexed, ClusterableModel):
     title = models.CharField(max_length=300)
     date_created = models.DateTimeField(default=timezone.now)
@@ -446,6 +449,7 @@ class JobQuerySet(models.QuerySet):
         return self.select_related('submitter__member_profile').order_by('-date_created')[:number]
 
 
+@add_to_comses_permission_whitelist
 class Job(index.Indexed, ClusterableModel):
     title = models.CharField(max_length=300, help_text=_('Job posting title'))
     date_created = models.DateTimeField(default=timezone.now)

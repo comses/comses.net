@@ -1,10 +1,13 @@
 import logging
+import re
 
-from django.contrib.auth.models import User
+from django.contrib.auth.models import Permission
+from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import PermissionDenied
-from django.db.models import FieldDoesNotExist
-from guardian import shortcuts as sc
+from django.utils.functional import cached_property
 from guardian.shortcuts import get_perms
+
+from core.queryset import PUBLISHED_ATTRIBUTE_KEY, DELETABLE_ATTRIBUTE_KEY, OWNER_ATTRIBUTE_KEY
 
 """
 Custom permission checking for models
@@ -16,15 +19,6 @@ Permissions must be between the ModelPermission backend and the Guardian backend
 """
 
 logger = logging.getLogger(__name__)
-
-OWNER_ATTRIBUTE_KEY = "submitter"
-PUBLISHED_ATTRIBUTE_KEY = "live"
-DELETABLE_ATTRIBUTE_KEY = 'deletable'
-
-
-def is_handled_perm(perm: str):
-    """Permission prefixes handled by this permissions backend"""
-    return 'add_' in perm or 'change_' in perm or 'delete_' in perm or 'view_' in perm
 
 
 def is_object_action(perm: str):
@@ -48,6 +42,16 @@ def is_delete_action(perm: str):
     return 'delete_' in perm
 
 
+def get_model(perm):
+    try:
+        app_label, codename = perm.split('.')
+    except ValueError:
+        logger.error('Failed to split {}'.format(perm))
+        raise
+    permission = Permission.objects.get(content_type__app_label=app_label, codename=codename)
+    return permission.content_type.model_class()
+
+
 def has_authenticated_model_permission(user, perm, obj):
     if user.is_active and not is_object_action(perm):
         return True
@@ -58,7 +62,7 @@ def has_authenticated_model_permission(user, perm, obj):
     if user.is_anonymous and not is_view_action(perm):
         raise PermissionDenied
 
-    return True
+    return False
 
 
 def has_delete_permission(perm, obj):
@@ -88,50 +92,20 @@ def has_submitter_permission(user, obj):
     return user == getattr(obj, OWNER_ATTRIBUTE_KEY, None)
 
 
-def make_change_delete_view_perms(model):
-    model_name = model._meta.model_name
-    app_label = model._meta.app_label
-    return ['{}.{}_{}'.format(app_label, action, model_name) for action in ['change', 'delete', 'view']]
+HANDLED_MODELS = set()
 
 
-def has_field(model, field_name):
-    try:
-        model._meta.get_field(field_name)
-        return True
-    except FieldDoesNotExist:
-        return False
-
-
-def get_db_user(user):
-    """Replaces AnonymousUser with Guardian anonymous user db record. Otherwise returns input"""
-    if user.is_anonymous:
-        user = User.objects.get(username='AnonymousUser')
-    return user
-
-
-def get_viewable_objects_for_user(user, queryset):
-    """A user can view an object in a list view if they have any permissions on the object
-    (currently change, delete or view permission)"""
-    model = queryset.model
-    perms = make_change_delete_view_perms(model)
-
-    # Do not filter the queryset if the model does not have the PUBLISHED_ATTRIBUTE_KEY
-    # (models without PUBLISHED_ATTRIBUTE_KEY are assumed to be live so are always included in list results)
-    if hasattr(model, 'HAS_PUBLISHED_KEY') or has_field(model, PUBLISHED_ATTRIBUTE_KEY):
-        user = get_db_user(user)
-        is_public_queryset = queryset.public()
-        is_submitter_queryset = queryset.filter(submitter=user)
-        has_object_permission_queryset = sc.get_objects_for_user(user, perms=perms, any_perm=True,
-                                                                 accept_global_perms=False, klass=queryset)
-        queryset &= has_object_permission_queryset | is_public_queryset | is_submitter_queryset
-
-    return queryset
+def add_to_comses_permission_whitelist(model):
+    HANDLED_MODELS.add(model)
+    return model
 
 
 class ComsesObjectPermissionBackend:
     """
     Allow user that submitted the obj to perform any action with it
     """
+
+    HANDLED_PERMS = re.compile('add_|change_|delete_|view_')
 
     def authenticate(self, request, username, password, **kwargs):
         return None
@@ -144,7 +118,8 @@ class ComsesObjectPermissionBackend:
         if not user.is_active and not user.is_anonymous:
             raise PermissionDenied
 
-        if is_handled_perm(perm):
+        model = get_model(perm)
+        if model in HANDLED_MODELS and re.search(self.HANDLED_PERMS, perm):
             return has_authenticated_model_permission(user, perm, obj) or \
                    has_delete_permission(perm, obj) or \
                    has_view_permission(perm, user, obj) or \

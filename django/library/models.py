@@ -26,14 +26,18 @@ from modelcluster.models import ClusterableModel
 from rest_framework.exceptions import ValidationError
 from taggit.models import TaggedItemBase
 from unidecode import unidecode
+from wagtail.admin.edit_handlers import FieldPanel, InlinePanel
 from wagtail.images.models import Image, AbstractImage, AbstractRendition, get_upload_to, ImageQuerySet
 from wagtail.search import index
 from wagtail.search.backends import get_search_backend
+from wagtail.snippets.edit_handlers import SnippetChooserPanel
+from wagtail.snippets.models import register_snippet
 
 from core import fs
-from core.backends import get_viewable_objects_for_user
+from core.backends import add_to_comses_permission_whitelist
+from core.queryset import get_viewable_objects_for_user
 from core.fields import MarkdownField
-from core.models import Platform
+from core.models import Platform, MemberProfile
 from .fs import CodebaseReleaseFsApi, StagingDirectories, FileCategoryDirectories, MessageLevels
 
 logger = logging.getLogger(__name__)
@@ -271,6 +275,7 @@ class CodebaseQuerySet(models.QuerySet):
         return self.public().filter(peer_reviewed=True)
 
 
+@add_to_comses_permission_whitelist
 class Codebase(index.Indexed, ClusterableModel):
     """
     Metadata applicable across a set of CodebaseReleases
@@ -716,6 +721,8 @@ class CodebaseReleaseQuerySet(models.QuerySet):
         return qs[:number]
 
 
+@add_to_comses_permission_whitelist
+@register_snippet
 class CodebaseRelease(index.Indexed, ClusterableModel):
     """
     A snapshot of a codebase at a particular moment in time, versioned and addressable in a git repo behind-the-scenes
@@ -942,7 +949,7 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
     def publish(self):
         CodebaseReleasePublisher(self).publish()
 
-# FIXME: use semver.bump_version instead of this handrolled logic
+    # FIXME: use semver.bump_version instead of this handrolled logic
     def possible_next_versions(self, minor_only=False):
         major, minor, patch = [int(v) for v in self.version_number.split('.')]
         next_minor = '{}.{}.0'.format(major, minor + 1)
@@ -1062,6 +1069,7 @@ class ReleaseContributor(models.Model):
         return "{0} contributor {1}".format(self.release, self.contributor)
 
 
+@register_snippet
 class PeerReview(models.Model):
     REVIEWER_RECOMMENDATION = Choices(
         ('accept', _('This computational model meets CoMSES Net peer review requirements.')),
@@ -1082,13 +1090,21 @@ class PeerReview(models.Model):
                               help_text=_("The current status of this review."),
                               max_length=32)
     codebase_release = models.OneToOneField(CodebaseRelease, related_name='review', on_delete=models.PROTECT)
-    assigned_reviewer = models.ForeignKey(User, null=True, blank=True, related_name='+',
+    assigned_reviewer = models.ForeignKey(MemberProfile, null=True, blank=True, related_name='+',
                                           on_delete=models.SET_NULL,
                                           help_text=_('User assigned to perform this review'))
     assigned_reviewer_email = models.EmailField(blank=True,
                                                 help_text=_('Assigned reviewer email'))
-    submitter = models.ForeignKey(User, related_name='+', on_delete=models.PROTECT)
+    submitter = models.ForeignKey(MemberProfile, related_name='+', on_delete=models.PROTECT)
     uuid = models.UUIDField(default=uuid.uuid4, unique=True, null=True)
+
+    panels = [
+        FieldPanel('status'),
+        SnippetChooserPanel('codebase_release'),
+        SnippetChooserPanel('assigned_reviewer'),
+        FieldPanel('assigned_reviewer_email'),
+        SnippetChooserPanel('submitter')
+    ]
 
     def get_assigned_reviewer_email(self):
         if self.assigned_reviewer:
@@ -1102,10 +1118,11 @@ class PeerReview(models.Model):
         return reverse('library:peer-review-detail', kwargs={'uuid': self.uuid})
 
 
+@register_snippet
 class PeerReviewInvitation(models.Model):
     date_created = models.DateTimeField(auto_now_add=True)
     review = models.ForeignKey(PeerReview, related_name='invitations', on_delete=models.CASCADE)
-    editor = models.ForeignKey(User, related_name='+', on_delete=models.PROTECT)
+    editor = models.ForeignKey(MemberProfile, related_name='+', on_delete=models.PROTECT)
     candidate_reviewer = models.ForeignKey(User, related_name='+',
                                            null=True, blank=True,
                                            on_delete=models.CASCADE)
@@ -1113,21 +1130,23 @@ class PeerReviewInvitation(models.Model):
     optional_message = MarkdownField(help_text=_("Optional markdown text to be added to the email"))
 
 
+@register_snippet
 class PeerReviewAction(models.Model):
     date_created = models.DateTimeField(auto_now_add=True)
     review = models.ForeignKey(PeerReview, related_name='actions', on_delete=models.CASCADE)
     action = models.CharField(choices=PeerReview.REVIEW_STATUS, help_text=_("status action requested."),
                               max_length=32)
-    author = models.ForeignKey(User, related_name='+', on_delete=models.CASCADE,
+    author = models.ForeignKey(MemberProfile, related_name='+', on_delete=models.CASCADE,
                                help_text=_('User originating this action'))
     message = models.CharField(blank=True, max_length=500)
 
 
+@register_snippet
 class PeerReviewerFeedback(models.Model):
     date_created = models.DateTimeField(auto_now_add=True)
     review = models.ForeignKey(PeerReview, related_name='feedback_set', on_delete=models.CASCADE)
     recommendation = models.CharField(choices=PeerReview.REVIEWER_RECOMMENDATION, max_length=16)
-    reviewer = models.ForeignKey(User, on_delete=models.PROTECT)
+    reviewer = models.ForeignKey(MemberProfile, on_delete=models.PROTECT)
     private_reviewer_notes = MarkdownField(help_text=_('Private reviewer notes to the editor.'))
     private_editor_notes = MarkdownField(help_text=_('Private editor notes regarding this peer review'))
     notes_to_author = MarkdownField(help_text=_("Notes to be sent to the model author"))

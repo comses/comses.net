@@ -22,7 +22,7 @@ from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 from rest_framework.views import exception_handler
 
-from .permissions import ComsesPermissions
+from .permissions import AllowUnauthenticatedViewPermissions
 from .search import GeneralSearch
 
 logger = logging.getLogger(__name__)
@@ -138,7 +138,7 @@ class PermissionRequiredByHttpMethodMixin:
 
     def get_required_permissions(self, request=None):
         model = self.model
-        template_perms = ComsesPermissions.perms_map[self.method]
+        template_perms = AllowUnauthenticatedViewPermissions.perms_map[self.method]
         perms = [template_perm % {'app_label': model._meta.app_label,
                                   'model_name': model._meta.model_name}
                  for template_perm in template_perms]

@@ -212,7 +212,7 @@ class TagCleanup(models.Model):
 
     class Meta:
         permissions = (
-            ('process', 'Able to process tag cleanups'),
+            ('process_tagcleanup', 'Able to process tag cleanups'),
         )
 
 

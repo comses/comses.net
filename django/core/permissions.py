@@ -5,7 +5,11 @@ from rest_framework import permissions
 logger = logging.getLogger(__name__)
 
 
-class ComsesPermissions(permissions.DjangoObjectPermissions):
+class AllowUnauthenticatedPermissions(permissions.DjangoObjectPermissions):
+    authenticated_users_only = False
+
+
+class AllowUnauthenticatedViewPermissions(permissions.DjangoObjectPermissions):
     authenticated_users_only = False
 
     perms_map = {

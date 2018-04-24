@@ -358,7 +358,7 @@ WAGTAIL_FRONTEND_LOGIN_URL = 'auth_login'
 
 REST_FRAMEWORK = {
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.LimitOffsetPagination',
-    'DEFAULT_PERMISSION_CLASSES': ('core.permissions.ComsesPermissions',),
+    'DEFAULT_PERMISSION_CLASSES': ('rest_framework.permissions.DjangoObjectPermissions',),
     'DEFAULT_RENDERER_CLASSES': (
         'core.renderers.RootContextHTMLRenderer',
         'rest_framework.renderers.JSONRenderer',

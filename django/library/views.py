@@ -16,7 +16,7 @@ from rest_framework.decorators import action
 from rest_framework.exceptions import PermissionDenied as DrfPermissionDenied, ValidationError
 from rest_framework.response import Response
 
-from core.permissions import ComsesPermissions
+from core.permissions import AllowUnauthenticatedViewPermissions
 from core.view_helpers import add_change_delete_perms, get_search_queryset
 from core.views import (CommonViewSetMixin, FormUpdateView, FormCreateView, SmallResultSetPagination,
                         CaseInsensitiveOrderingFilter)
@@ -105,6 +105,7 @@ class CodebaseViewSet(CommonViewSetMixin,
     pagination_class = SmallResultSetPagination
     queryset = Codebase.objects.with_tags().with_featured_images().order_by('-first_published_at', 'title')
     filter_backends = (CaseInsensitiveOrderingFilter, CodebaseFilter)
+    permission_classes = (AllowUnauthenticatedViewPermissions,)
     ordering_fields = ('first_published_at', 'title', 'last_modified', 'peer_reviewed', 'submitter__last_name',
                        'submitter__username')
 
@@ -304,7 +305,7 @@ class CodebaseReleaseViewSet(CommonViewSetMixin,
 
     queryset = CodebaseRelease.objects.with_platforms().with_programming_languages()
     pagination_class = SmallResultSetPagination
-    permission_classes = (NestedCodebaseReleasePermission, ComsesPermissions,)
+    permission_classes = (NestedCodebaseReleasePermission, AllowUnauthenticatedViewPermissions,)
 
     @property
     def template_name(self):

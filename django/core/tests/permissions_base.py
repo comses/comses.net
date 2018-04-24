@@ -3,7 +3,7 @@ from django.urls import resolve
 from guardian.shortcuts import assign_perm
 from rest_framework import status
 from rest_framework.test import APIRequestFactory, force_authenticate, APITestCase
-from core.backends import get_viewable_objects_for_user
+from core.queryset import get_viewable_objects_for_user
 from django.contrib.auth.models import AnonymousUser, User
 
 

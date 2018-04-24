@@ -16,7 +16,6 @@ class ProcessTagCleanupsTestCase(TestCase):
         ])
 
     def test_process_tagcleanups_permission(self):
-        print(self.superuser.__dict__)
         self.client.login(username=self.user.username, password=self.user_factory.password)
 
         # Users without process_tagcleanup permission should not be able to use the route
