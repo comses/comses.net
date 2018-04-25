@@ -73,6 +73,7 @@ class TagCleanupQuerySet(models.QuerySet):
         tag_cleanups = self.filter(transaction_id__isnull=True)
         tag_groupings = tag_cleanups.values('old_name').annotate(new_names=ArrayAgg('new_name')).order_by('old_name')
         for tag_grouping in tag_groupings:
+            logger.debug('tag cleanup: %s => %s', tag_grouping['old_name'], tag_grouping['new_names'])
             migrator.migrate(old_name=tag_grouping['old_name'], new_names=tag_grouping['new_names'])
         tct = TagCleanupTransaction.objects.create()
         tag_cleanups.update(transaction=tct)
@@ -101,15 +102,17 @@ class Matcher:
 
 
 def pl_regex(name, flags=re.I):
-    return re.compile(r'\b{}(?:\b|\s+|\Z|v?\d+\.\d+\.\d+(?:-?\w[\w-]*)*|\d+)'.format(name), flags=flags)
+    return re.compile(r'\b{}(?:,|\b|\s+|\Z|v?\d+\.\d+\.\d+(?:-?\w[\w-]*)*|\d+)'.format(name), flags=flags)
 
 
 PLATFORM_AND_LANGUAGE_MATCHERS = [
     Matcher('AnyLogic', pl_regex('anylogic')),
-    Matcher('C', pl_regex(r'c(?!(?:\+\+|#))')),
+    Matcher('C', pl_regex(r'(?<!objective[-\s])c(?!(?:\+\+|#))')),
     Matcher('Cormas', pl_regex('cormas')),
     Matcher('C++', pl_regex(r'v?c\+\+')),
     Matcher('C#', pl_regex('c#')),
+    Matcher('DEVS Suite', pl_regex('devs suite')),
+    Matcher('GRASS', pl_regex('grass')),
     Matcher('Excel', pl_regex('excel')),
     Matcher('GAMA', pl_regex('(?:gama?l|gama)')),
     Matcher('Groovy', pl_regex('groovy')),
@@ -123,11 +126,15 @@ PLATFORM_AND_LANGUAGE_MATCHERS = [
     Matcher('Mathematica', pl_regex('mathematica')),
     Matcher('MatLab', pl_regex('matlab')),
     Matcher('Objective-C', pl_regex(r'objective(:?[-\s]+)?c')),
+    Matcher('Pandora', pl_regex('pandora')),
+    Matcher('Powersim Studio', pl_regex('powersim\s+studio')),
     Matcher('Python', pl_regex('python')),
     Matcher('R', pl_regex('r')),
     Matcher('Repast', pl_regex('repast')),
     Matcher('ReLogo', pl_regex('relogo')),
     Matcher('SciLab', pl_regex('scilab')),
+    Matcher('SocLab', pl_regex('soclab')),
+    Matcher('Stella', pl_regex('stella')),
     Matcher('Smalltalk', pl_regex('smalltalk')),
     Matcher('Stata', pl_regex('stata')),
     Matcher('VBA', pl_regex('vba')),
