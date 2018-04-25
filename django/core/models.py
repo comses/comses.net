@@ -165,6 +165,36 @@ class MemberProfile(index.Indexed, ClusterableModel):
 
     objects = MemberProfileQuerySet.as_manager()
 
+    panels = [
+        FieldPanel('bio', widget=forms.Textarea),
+        FieldPanel('research_interests', widget=forms.Textarea),
+        FieldPanel('personal_url'),
+        FieldPanel('professional_url'),
+        FieldPanel('institution'),
+        ImageChooserPanel('picture'),
+        FieldPanel('tags'),
+    ]
+
+    search_fields = [
+        index.SearchField('bio', partial_match=True, boost=5),
+        index.SearchField('research_interests', partial_match=True, boost=5),
+        index.FilterField('is_active'),
+        index.FilterField('username'),
+        index.SearchField('degrees', partial_match=True),
+        index.SearchField('name', partial_match=True, boost=5),
+        index.RelatedFields('institution', [
+            index.SearchField('name', partial_match=True),
+        ]),
+        index.RelatedFields('tags', [
+            index.SearchField('name', partial_match=True),
+        ]),
+        index.RelatedFields('user', [
+            index.SearchField('first_name', partial_match=True),
+            index.SearchField('last_name', partial_match=True, boost=3),
+            index.SearchField('email', partial_match=True, boost=3)
+        ]),
+    ]
+
     """
     Returns the ORCID profile URL associated with this member profile if it exists, or None
     """
@@ -245,36 +275,6 @@ class MemberProfile(index.Indexed, ClusterableModel):
 
     def __str__(self):
         return str(self.user)
-
-    panels = [
-        FieldPanel('bio', widget=forms.Textarea),
-        FieldPanel('research_interests', widget=forms.Textarea),
-        FieldPanel('personal_url'),
-        FieldPanel('professional_url'),
-        FieldPanel('institution'),
-        ImageChooserPanel('picture'),
-        FieldPanel('tags'),
-    ]
-
-    search_fields = [
-        index.SearchField('bio', partial_match=True, boost=5),
-        index.SearchField('research_interests', partial_match=True, boost=5),
-        index.FilterField('is_active'),
-        index.FilterField('username'),
-        index.SearchField('degrees', partial_match=True),
-        index.SearchField('name', partial_match=True, boost=5),
-        index.RelatedFields('institution', [
-            index.SearchField('name', partial_match=True),
-        ]),
-        index.RelatedFields('tags', [
-            index.SearchField('name', partial_match=True),
-        ]),
-        index.RelatedFields('user', [
-            index.SearchField('first_name', partial_match=True),
-            index.SearchField('last_name', partial_match=True, boost=3),
-            index.SearchField('email', partial_match=True, boost=3)
-        ]),
-    ]
 
 
 class PlatformTag(TaggedItemBase):
