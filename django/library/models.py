@@ -722,7 +722,6 @@ class CodebaseReleaseQuerySet(models.QuerySet):
 
 
 @add_to_comses_permission_whitelist
-@register_snippet
 class CodebaseRelease(index.Indexed, ClusterableModel):
     """
     A snapshot of a codebase at a particular moment in time, versioned and addressable in a git repo behind-the-scenes
@@ -1100,7 +1099,6 @@ class PeerReview(models.Model):
 
     panels = [
         FieldPanel('status'),
-        SnippetChooserPanel('codebase_release'),
         SnippetChooserPanel('assigned_reviewer'),
         FieldPanel('assigned_reviewer_email'),
         SnippetChooserPanel('submitter')
