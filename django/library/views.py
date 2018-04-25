@@ -19,7 +19,7 @@ from rest_framework.response import Response
 from core.permissions import AllowUnauthenticatedViewPermissions
 from core.view_helpers import add_change_delete_perms, get_search_queryset
 from core.views import (CommonViewSetMixin, FormUpdateView, FormCreateView, SmallResultSetPagination,
-                        CaseInsensitiveOrderingFilter)
+                        CaseInsensitiveOrderingFilter, OnlyObjectPermissionNoDeleteViewSet)
 from .forms import PeerReviewEditorForm, PeerReviewInvitationForm
 from .fs import FileCategoryDirectories, StagingDirectories, MessageLevels
 from .models import (Codebase, CodebaseRelease, Contributor, CodebaseImage, PeerReview, PeerReviewerFeedback)
@@ -98,8 +98,7 @@ class CodebaseFilter(filters.BaseFilterBackend):
 
 
 class CodebaseViewSet(CommonViewSetMixin,
-                      mixins.CreateModelMixin, mixins.ListModelMixin, mixins.RetrieveModelMixin, mixins.UpdateModelMixin,
-                      viewsets.GenericViewSet):
+                      OnlyObjectPermissionNoDeleteViewSet):
     lookup_field = 'identifier'
     lookup_value_regex = r'[\w\-\.]+'
     pagination_class = SmallResultSetPagination
@@ -142,7 +141,7 @@ class CodebaseViewSet(CommonViewSetMixin,
             return Response(data)
 
 
-class DevelopmentCodebaseDeleteView(mixins.DestroyModelMixin, viewsets.GenericViewSet):
+class DevelopmentCodebaseDeleteView(mixins.DestroyModelMixin, CodebaseViewSet):
     lookup_field = 'identifier'
     lookup_value_regex = r'[\w\-\.]+'
     pagination_class = SmallResultSetPagination
@@ -296,9 +295,7 @@ class CodebaseReleaseShareViewSet(CommonViewSetMixin, mixins.RetrieveModelMixin,
 
 
 class CodebaseReleaseViewSet(CommonViewSetMixin,
-                             mixins.CreateModelMixin, mixins.ListModelMixin, mixins.RetrieveModelMixin,
-                             mixins.UpdateModelMixin,
-                             viewsets.GenericViewSet):
+                             OnlyObjectPermissionNoDeleteViewSet):
     namespace = 'library/codebases/releases/'
     lookup_field = 'version_number'
     lookup_value_regex = r'\d+\.\d+\.\d+'

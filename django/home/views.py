@@ -27,7 +27,7 @@ from core.serializers import TagSerializer, EventSerializer, JobSerializer
 from core.utils import parse_datetime
 from core.view_helpers import retrieve_with_perms, get_search_queryset
 from core.views import (CaseInsensitiveOrderingFilter, CommonViewSetMixin, FormCreateView, FormUpdateView,
-                        SmallResultSetPagination)
+                        SmallResultSetPagination, OnlyObjectPermissionModelViewSet, OnlyObjectPermissionNoDeleteViewSet)
 from library.models import Codebase
 from .models import FeaturedContentItem, MemberProfile, ContactPage
 from .serializers import (FeaturedContentItemSerializer, UserMessageSerializer, MemberProfileSerializer,
@@ -94,8 +94,7 @@ class MemberProfileFilter(filters.BaseFilterBackend):
 
 
 class ProfileViewSet(CommonViewSetMixin,
-                     mixins.CreateModelMixin, mixins.ListModelMixin, mixins.RetrieveModelMixin, mixins.UpdateModelMixin,
-                     viewsets.GenericViewSet):
+                     OnlyObjectPermissionNoDeleteViewSet):
     lookup_field = 'user__pk'
     lookup_url_kwarg = 'pk'
     queryset = MemberProfile.objects.public().with_tags().order_by('-user__date_joined')
@@ -203,7 +202,7 @@ class EventFilter(filters.BaseFilterBackend):
         return get_search_queryset(query_string, queryset, tags=tags, criteria=criteria)
 
 
-class EventViewSet(CommonViewSetMixin, viewsets.ModelViewSet):
+class EventViewSet(CommonViewSetMixin, OnlyObjectPermissionModelViewSet):
     serializer_class = EventSerializer
     queryset = Event.objects.with_tags().with_submitter().order_by('-date_created', 'title')
     pagination_class = SmallResultSetPagination
@@ -294,7 +293,7 @@ class JobFilter(filters.BaseFilterBackend):
         return get_search_queryset(qs, queryset, tags=tags, criteria=criteria)
 
 
-class JobViewSet(CommonViewSetMixin, viewsets.ModelViewSet):
+class JobViewSet(CommonViewSetMixin, OnlyObjectPermissionModelViewSet):
     serializer_class = JobSerializer
     pagination_class = SmallResultSetPagination
     queryset = Job.objects.with_tags().with_submitter().order_by('-date_created')
