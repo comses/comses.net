@@ -15,7 +15,7 @@ from django.db.models.functions import Lower
 from django.http import Http404, HttpResponseBadRequest, HttpResponseRedirect, QueryDict, HttpResponseServerError
 from django.shortcuts import render
 from django.views.generic import DetailView, TemplateView
-from rest_framework import filters
+from rest_framework import filters, viewsets, generics, mixins
 from rest_framework.exceptions import (PermissionDenied as DrfPermissionDenied, NotAuthenticated, NotFound,
                                        APIException)
 from rest_framework.pagination import PageNumberPagination
@@ -366,3 +366,20 @@ class SearchView(TemplateView):
         context['__all__'] = pagination_context
         context.update(pagination_context)
         return context
+
+
+class OnlyObjectPermissionGenericViewSet(viewsets.GenericViewSet):
+    def check_permissions(self, request):
+        """We only want to check object level permissions"""
+        return
+
+
+class OnlyObjectPermissionNoDeleteViewSet(mixins.CreateModelMixin, mixins.ListModelMixin, mixins.RetrieveModelMixin,
+                                          mixins.UpdateModelMixin, OnlyObjectPermissionGenericViewSet):
+    pass
+
+
+class OnlyObjectPermissionModelViewSet(mixins.CreateModelMixin, mixins.DestroyModelMixin, mixins.ListModelMixin,
+                                       mixins.RetrieveModelMixin, mixins.UpdateModelMixin,
+                                       OnlyObjectPermissionGenericViewSet):
+    pass
