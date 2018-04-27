@@ -8,6 +8,7 @@ import hashlib
 import hmac
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.models import AnonymousUser, User
 from django.contrib.auth.views import redirect_to_login
 from django.core.exceptions import PermissionDenied
 from django.db.models import F
@@ -369,9 +370,7 @@ class SearchView(TemplateView):
 
 
 class OnlyObjectPermissionGenericViewSet(viewsets.GenericViewSet):
-    def check_permissions(self, request):
-        """We only want to check object level permissions"""
-        return
+    pass
 
 
 class OnlyObjectPermissionNoDeleteViewSet(mixins.CreateModelMixin, mixins.ListModelMixin, mixins.RetrieveModelMixin,

@@ -73,7 +73,8 @@ class ContributorSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Contributor
-        fields = ('id', 'given_name', 'middle_name', 'family_name', 'name', 'email', 'user', 'type', 'affiliations', 'profile_url')
+        fields = ('id', 'given_name', 'middle_name', 'family_name', 'name', 'email', 'user', 'type', 'affiliations',
+                  'profile_url')
 
 
 class ListReleaseContributorSerializer(serializers.ListSerializer):
@@ -294,7 +295,7 @@ class CodebaseReleaseSerializer(serializers.ModelSerializer):
                   'release_notes', 'documentation', 'doi', 'download_count', 'embargo_end_date', 'first_published_at',
                   'last_modified', 'last_published_on', 'license', 'live', 'os', 'os_display', 'peer_reviewed',
                   'platforms', 'programming_languages', 'submitted_package', 'submitter', 'codebase', 'version_number',
-                  'id', 'share_url', )
+                  'id', 'share_url',)
 
 
 class CodebaseReleaseEditSerializer(CodebaseReleaseSerializer):

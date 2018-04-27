@@ -1,9 +1,6 @@
-import logging
 from django.db import transaction
 
 from .models import TagCleanup, TagCuratorProxy
-
-logger = logging.getLogger(__name__)
 
 acronyms = [
     ('cellular automata', 'ca'),
@@ -26,7 +23,6 @@ def load_initial_data():
         ('from', 'other')
     ]
     for bad_translation in bad_translations:
-        logger.info('from: %s -> to: %s', bad_translation[0], bad_translation[1])
         TagCleanup.objects.get(new_name=bad_translation[0], old_name=bad_translation[1]).delete()
     TagCleanup.objects.process()
 

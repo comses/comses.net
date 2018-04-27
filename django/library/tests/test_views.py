@@ -3,6 +3,7 @@ import pathlib
 import io
 import shutil
 from django.conf import settings
+from django.contrib.auth.models import User
 from django.test import TestCase
 from django.urls import reverse
 from guardian.shortcuts import assign_perm
@@ -58,9 +59,6 @@ class CodebaseViewSetTestCase(BaseViewSetTestCase):
         response = self.client.put(instance.get_absolute_url(), serialized.data, HTTP_ACCEPT='application/json',
                                    format='json')
         has_perm = user.has_perm(create_perm_str(instance, 'change'), obj=instance)
-        if user.is_anonymous:
-            self.assertResponsePermissionDenied(response)
-            return
         if has_perm:
             self.assertResponseOk(response)
         elif instance.live:
@@ -85,7 +83,7 @@ class CodebaseViewSetTestCase(BaseViewSetTestCase):
         codebase.create_release(initialize=False)
         codebase = Codebase.objects.get(pk=codebase.id)
         response = self.client.delete(codebase.get_absolute_url())
-        self.assertResponsePermissionDenied(response)
+        self.assertResponseMethodNotAllowed(response)
 
     def check_update(self):
         for user in self.users_able_to_login:
@@ -135,7 +133,7 @@ class CodebaseReleaseViewSetTestCase(BaseViewSetTestCase):
         self.path = self.codebase_release.get_list_url()
 
     def test_release_creation_only_if_codebase_change_permission(self):
-        response = self.client.post(path=self.path, format='json')
+        response = self.client.post(path=self.path, format='json', HTTP_ACCEPT='application/json')
         self.assertResponsePermissionDenied(response)
 
         self.login(self.other_user, self.user_factory.password)
@@ -150,7 +148,7 @@ class CodebaseReleaseViewSetTestCase(BaseViewSetTestCase):
         path = self.codebase_release.get_absolute_url()
 
         response = self.client.delete(path=path)
-        self.assertResponsePermissionDenied(response)
+        self.assertResponseMethodNotAllowed(response)
 
         self.client.login(username=self.other_user.username, password=self.user_factory.password)
         response = self.client.delete(path=path, HTTP_ACCEPT='application/json')
@@ -179,7 +177,7 @@ class CodebaseReleaseUnpublishedFilesTestCase(ApiAccountMixin, ResponseStatusCod
 
         # Unpublished codebase release permissions
         response = self.client.post(api.get_originals_list_url(category=FileCategoryDirectories.code))
-        self.assertResponsePermissionDenied(response)
+        self.assertResponseNotFound(response)
         for user, expected_status_code in [(self.submitter, status.HTTP_400_BAD_REQUEST),
                                            (self.superuser, status.HTTP_400_BAD_REQUEST),
                                            (self.other_user, status.HTTP_404_NOT_FOUND)]:
@@ -240,12 +238,14 @@ class CodebaseReleaseUnpublishedFilesTestCase(ApiAccountMixin, ResponseStatusCod
     def test_delete_file(self):
         path_to_foo = pathlib.Path('foo.txt')
         api = self.codebase_release.get_fs_api()
+        print(self.codebase_release)
+        print('CodebaseRelease perm %s' % self.submitter.has_perm('library.delete_codebaserelease', self.codebase_release))
 
         # Unpublished codebase release permissions
         response = self.client.delete(
             api.get_absolute_url(category=FileCategoryDirectories.code,
                                  relpath=path_to_foo))
-        self.assertResponsePermissionDenied(response)
+        self.assertResponseNotFound(response)
         for user, expected_status_code in [(self.submitter, status.HTTP_400_BAD_REQUEST),
                                            (self.superuser, status.HTTP_400_BAD_REQUEST),
                                            (self.other_user, status.HTTP_404_NOT_FOUND)]:

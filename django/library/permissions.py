@@ -1,9 +1,18 @@
-from rest_framework import permissions
+from core.permissions import AllowUnauthenticatedPermissions
 
-class CodebaseReleaseUnpublishedFilePermissions(permissions.DjangoObjectPermissions):
-    authenticated_users_only = False
 
+class CodebaseReleaseUnpublishedFilePermissions(AllowUnauthenticatedPermissions):
     perms_map = {
+        'GET': [],
+        'OPTIONS': [],
+        'HEAD': [],
+        'POST': [],
+        'PUT': [],
+        'PATCH': [],
+        'DELETE': [],
+    }
+
+    object_perms_map = {
         'GET': ['%(app_label)s.view_%(model_name)s'],
         'OPTIONS': [],
         'HEAD': [],
