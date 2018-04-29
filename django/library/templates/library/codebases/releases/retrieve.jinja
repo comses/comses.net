@@ -318,10 +318,12 @@
 
 {% block js %}
     {# FIXME: remove this if there's a better way to include npm dependencies manually in a page #}
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/1.7.1/clipboard.min.js"></script>
-    <script>
+    {% with CLIPBOARD_JS_VERSION="2.0.0" %}
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/{{CLIPBOARD_JS_VERSION}}/clipboard.min.js" async></script>
+    {% endwith %}
+    <script defer>
         new Clipboard('.btn-clipboard');
     </script>
-    {{ render_bundle('release_regenerate_share_uuid') }}
+    {{ render_bundle('release_regenerate_share_uuid', attrs='defer') }}
     {{ embed_discourse_comments(live, submitter.username) }}
 {% endblock %}
