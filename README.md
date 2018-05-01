@@ -1,5 +1,5 @@
 # Computational Reproducibility @ CoMSES Net
-[![Build Status](https://travis-ci.org/comses/core.comses.net.svg?branch=master)](https://travis-ci.org/comses/core.comses.net)
+[![Build Status](https://travis-ci.org/comses/comses.net.svg?branch=master)](https://travis-ci.org/comses/comses.net)
 [![Coverage Status](https://coveralls.io/repos/github/comses/core.comses.net/badge.svg?branch=master)](https://coveralls.io/github/comses/core.comses.net?branch=master)
 
 A revamped version of the openabm.org CMS using Wagtail, Django Rest Framework, Git, and VueJS.
