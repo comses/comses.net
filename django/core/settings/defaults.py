@@ -13,7 +13,6 @@ import os
 import pathlib
 from enum import Enum
 
-# DEFAULT_EXTENSIONS defined at https://github.com/niwinz/django-jinja/blob/master/django_jinja/builtins/__init__.py
 from django_jinja.builtins import DEFAULT_EXTENSIONS
 
 
@@ -22,6 +21,9 @@ class Environment(Enum):
     STAGING = 1
     PRODUCTION = 2
     TEST = 3
+
+    def is_staging_or_production(self):
+        return self in (Environment.PRODUCTION, Environment.STAGING)
 
     def is_production(self):
         return self == Environment.PRODUCTION
@@ -422,8 +424,8 @@ SOCIALACCOUNT_PROVIDERS = {
     },
 }
 
-DISCOURSE_BASE_URL = config.get('discourse', 'DISCOURSE_BASE_URL', fallback='https://forum.comses.net')
-DISCOURSE_SSO_SECRET = config.get('secrets', 'DISCOURSE_SSO_SECRET')
+DISCOURSE_BASE_URL = config.get('discourse', 'DISCOURSE_BASE_URL', fallback='https://test-discourse.comses.net')
+DISCOURSE_SSO_SECRET = config.get('secrets', 'DISCOURSE_SSO_SECRET', fallback='unconfigured')
 DISCOURSE_API_KEY = config.get('secrets', 'DISCOURSE_API_KEY', fallback='unconfigured')
 DISCOURSE_API_USERNAME = config.get('discourse', 'DISCOURSE_API_USERNAME', fallback='unconfigured')
 
@@ -445,10 +447,11 @@ TEMPLATES = [
             'constants': {
                 'DISCOURSE_BASE_URL': DISCOURSE_BASE_URL
             },
-            'auto_reload': True,  # FIXME: disable this in production
+            'auto_reload': True,
             'translation_engine': 'django.utils.translation',
+            # FIXME: https://docs.djangoproject.com/en/2.0/topics/templates/#module-django.template.backends.django
+            # context_processor usage in jinja templates is discouraged, move these over eventually
             'context_processors': [
-                # FIXME: remove debug context processor in production
                 'django.template.context_processors.debug',
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
