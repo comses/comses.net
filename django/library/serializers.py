@@ -11,7 +11,8 @@ from wagtail.images.models import SourceImageIOError
 from core.serializers import (YMD_DATETIME_FORMAT, PUBLISH_DATE_FORMAT, LinkedUserSerializer, create, update, save_tags,
                               TagSerializer, MarkdownField)
 from home.common_serializers import RelatedMemberProfileSerializer
-from .models import ReleaseContributor, Codebase, CodebaseRelease, Contributor, License, CodebaseImage
+from .models import ReleaseContributor, Codebase, CodebaseRelease, Contributor, License, CodebaseImage, PeerReview, \
+    PeerReviewerFeedback, PeerReviewInvitation
 
 logger = logging.getLogger(__name__)
 
@@ -288,14 +289,20 @@ class CodebaseReleaseSerializer(serializers.ModelSerializer):
     submitter = LinkedUserSerializer(read_only=True, label='Submitter')
     version_number = serializers.ReadOnlyField()
     release_notes = MarkdownField()
+    has_review = serializers.SerializerMethodField()
+
+    def get_has_review(self, instance):
+        if hasattr(instance, 'review'):
+            return True
+        return False
 
     class Meta:
         model = CodebaseRelease
         fields = ('absolute_url', 'citation_text', 'release_contributors', 'date_created', 'dependencies',
                   'release_notes', 'documentation', 'doi', 'download_count', 'embargo_end_date', 'first_published_at',
                   'last_modified', 'last_published_on', 'license', 'live', 'os', 'os_display', 'peer_reviewed',
-                  'platforms', 'programming_languages', 'submitted_package', 'submitter', 'codebase', 'version_number',
-                  'id', 'share_url',)
+                  'platforms', 'programming_languages', 'has_review', 'submitted_package', 'submitter', 'codebase',
+                  'version_number', 'id', 'share_url',)
 
 
 class CodebaseReleaseEditSerializer(CodebaseReleaseSerializer):
@@ -335,3 +342,25 @@ class CodebaseReleaseEditSerializer(CodebaseReleaseSerializer):
     class Meta:
         model = CodebaseRelease
         fields = CodebaseReleaseSerializer.Meta.fields + ('possible_licenses',)
+
+
+class PeerReviewFeedbackEditorSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PeerReviewerFeedback
+        fields = '__all__'
+        read_only_fields = ('date_created', 'review', 'recommendation', 'reviewer',
+                            'private_reviewer_notes', 'notes_to_author',
+                            'has_narrative_documentation', 'narrative_documentation_comments',
+                            'has_clean_code', 'clean_code_comments',
+                            'is_runnable', 'runnable_comments')
+
+
+class PeerReviewInvitationSerializer(serializers.ModelSerializer):
+    """Serialize review invitations. Build for list, detail and create routes
+    (updating a peer review invitation may not make sense since an email has
+    already been sent)"""
+
+    class Meta:
+        model = PeerReviewInvitation
+        fields = '__all__'
+        read_only_fields = ('date_created',)

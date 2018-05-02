@@ -272,8 +272,10 @@
             <div class='section'>
                 <b class="card-title">Status</b>
                 <p class="card-text">
-                {% if codebase.peer_reviewed %}
+                {% if peer_reviewed %}
                     <img src="{{ static("images/icons/peer-reviewed.png") }}" alt="Peer Reviewed">
+                {% elif has_review %}
+                    Peer review underway
                 {% else %}
                     Not reviewed
                 {% endif %}
@@ -296,11 +298,14 @@
         Request to review {{ request.build_absolute_uri(absolute_url) }}
         {%- endset %}
         {# FIXME: see https://github.com/comses/core.comses.net/issues/43 #}
-        <a href='mailto: editors@comses.net?subject=model review: {{codebase.title}}&body={{review_template_text}}'>
-            <div class='btn btn-secondary my-1 w-100'>
-                Request peer review
-            </div>
-        </a>
+        {% if not has_review %}
+            <form method="post" action="{{ url('library:codebaserelease-request-peer-review', identifier=codebase.identifier, version_number=version_number) }}">
+                {% csrf_token %}
+                <button type="submit" class='btn btn-secondary my-1 w-100'>
+                    Request peer review
+                </button>
+            </form>
+        {% endif %}
     {% endif %}
     {% if live %}
         <a id="releaseDownload" data-name="download" rel='nofollow' href="{{ url('library:codebaserelease-download', identifier=codebase.identifier, version_number=version_number) }}">

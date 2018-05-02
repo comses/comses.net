@@ -204,3 +204,7 @@
     </script>
     {% endif %}
 {% endmacro %}
+
+{% macro format_date(date) %}
+    {{ date.strftime('%B %d, %Y %I:%M %p') }}
+{% endmacro %}

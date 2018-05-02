@@ -22,12 +22,12 @@ from wagtail.images.models import Image
 from wagtail.search.backends import get_search_backend
 
 from core.models import FollowUser, Event, Job
-from core.permissions import AllowUnauthenticatedPermissions, AllowUnauthenticatedViewPermissions
+from core.permissions import ObjectPermissions, ViewRestrictedObjectPermissions
 from core.serializers import TagSerializer, EventSerializer, JobSerializer
 from core.utils import parse_datetime
 from core.view_helpers import retrieve_with_perms, get_search_queryset
 from core.views import (CaseInsensitiveOrderingFilter, CommonViewSetMixin, FormCreateView, FormUpdateView,
-                        SmallResultSetPagination, OnlyObjectPermissionModelViewSet, OnlyObjectPermissionNoDeleteViewSet)
+                        SmallResultSetPagination, OnlyObjectPermissionModelViewSet, NoDeleteViewSet)
 from library.models import Codebase
 from .models import FeaturedContentItem, MemberProfile, ContactPage
 from .serializers import (FeaturedContentItemSerializer, UserMessageSerializer, MemberProfileSerializer,
@@ -94,13 +94,13 @@ class MemberProfileFilter(filters.BaseFilterBackend):
 
 
 class ProfileViewSet(CommonViewSetMixin,
-                     OnlyObjectPermissionNoDeleteViewSet):
+                     NoDeleteViewSet):
     lookup_field = 'user__pk'
     lookup_url_kwarg = 'pk'
     queryset = MemberProfile.objects.public().with_tags().order_by('-user__date_joined')
     pagination_class = SmallResultSetPagination
     filter_backends = (CaseInsensitiveOrderingFilter, MemberProfileFilter)
-    permission_classes = (AllowUnauthenticatedPermissions,)
+    permission_classes = (ObjectPermissions,)
     ordering_fields = ('user__date_joined', 'user__last_name', 'user__first_name',)
 
     def get_serializer_class(self):
@@ -207,7 +207,7 @@ class EventViewSet(CommonViewSetMixin, OnlyObjectPermissionModelViewSet):
     queryset = Event.objects.with_tags().with_submitter().order_by('-date_created', 'title')
     pagination_class = SmallResultSetPagination
     filter_backends = (CaseInsensitiveOrderingFilter, EventFilter)
-    permission_classes = (AllowUnauthenticatedViewPermissions,)
+    permission_classes = (ViewRestrictedObjectPermissions,)
     ordering_fields = ('date_created', 'last_modified',
                        'early_registration_deadline', 'submission_deadline', 'start_date',)
 
@@ -298,7 +298,7 @@ class JobViewSet(CommonViewSetMixin, OnlyObjectPermissionModelViewSet):
     pagination_class = SmallResultSetPagination
     queryset = Job.objects.with_tags().with_submitter().order_by('-date_created')
     filter_backends = (CaseInsensitiveOrderingFilter, JobFilter)
-    permission_classes = (AllowUnauthenticatedViewPermissions,)
+    permission_classes = (ViewRestrictedObjectPermissions,)
     ordering_fields = ('application_deadline', 'date_created', 'last_modified', )
 
     def retrieve(self, request, *args, **kwargs):

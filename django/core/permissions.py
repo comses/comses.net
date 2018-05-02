@@ -7,7 +7,7 @@ from rest_framework.permissions import SAFE_METHODS
 logger = logging.getLogger(__name__)
 
 
-class AllowUnauthenticatedPermissions(permissions.DjangoObjectPermissions):
+class ObjectPermissions(permissions.DjangoObjectPermissions):
     authenticated_users_only = False
 
     perms_map = {
@@ -42,7 +42,7 @@ class AllowUnauthenticatedPermissions(permissions.DjangoObjectPermissions):
         return [perm % kwargs for perm in self.object_perms_map[method]]
 
 
-class AllowUnauthenticatedViewPermissions(AllowUnauthenticatedPermissions):
+class ViewRestrictedObjectPermissions(ObjectPermissions):
     object_perms_map = {
         'GET': ['%(app_label)s.view_%(model_name)s'],
         'OPTIONS': [],

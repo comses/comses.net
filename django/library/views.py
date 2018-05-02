@@ -4,29 +4,33 @@ import pathlib
 from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.core.exceptions import PermissionDenied
 from django.db import transaction
-from django.http import FileResponse, Http404
+from django.http import FileResponse, Http404, HttpResponseRedirect
 from django.shortcuts import get_object_or_404, redirect
-from django.urls import resolve, reverse_lazy
+from django.urls import resolve, reverse_lazy, reverse
 from django.views import View
 from django.views.generic.base import RedirectView
 from django.views.generic.detail import DetailView
-from django.views.generic.edit import UpdateView, FormView
+from django.views.generic.edit import UpdateView, FormView, CreateView
+from django_jinja.views.generic import ListView
+from guardian.decorators import permission_required
 from rest_framework import viewsets, generics, renderers, status, permissions, filters, mixins
 from rest_framework.decorators import action
 from rest_framework.exceptions import PermissionDenied as DrfPermissionDenied, ValidationError
 from rest_framework.response import Response
 
-from core.permissions import AllowUnauthenticatedViewPermissions
+from core.permissions import ViewRestrictedObjectPermissions
 from core.view_helpers import add_change_delete_perms, get_search_queryset
 from core.views import (CommonViewSetMixin, FormUpdateView, FormCreateView, SmallResultSetPagination,
-                        CaseInsensitiveOrderingFilter, OnlyObjectPermissionNoDeleteViewSet)
-from .forms import PeerReviewEditorForm, PeerReviewInvitationForm
+                        CaseInsensitiveOrderingFilter, NoDeleteViewSet,
+                        NoDeleteNoUpdateViewSet)
+from .forms import PeerReviewEditForm, PeerReviewInvitationForm, PeerReviewerFeedbackReviewerForm
 from .fs import FileCategoryDirectories, StagingDirectories, MessageLevels
-from .models import (Codebase, CodebaseRelease, Contributor, CodebaseImage, PeerReview, PeerReviewerFeedback)
-from .permissions import CodebaseReleaseUnpublishedFilePermissions
+from .models import (Codebase, CodebaseRelease, Contributor, CodebaseImage, PeerReview, PeerReviewerFeedback,
+                     PeerReviewInvitation, PeerReviewAction)
+from .permissions import CodebaseReleaseUnpublishedFilePermissions, PeerReviewInvitationPermissions
 from .serializers import (CodebaseSerializer, RelatedCodebaseSerializer, CodebaseReleaseSerializer,
                           ContributorSerializer, ReleaseContributorSerializer, CodebaseReleaseEditSerializer,
-                          CodebaseImageSerializer)
+                          CodebaseImageSerializer, PeerReviewInvitationSerializer, PeerReviewFeedbackEditorSerializer)
 
 logger = logging.getLogger(__name__)
 
@@ -41,21 +45,49 @@ def has_permission_to_create_release(request, view):
     return user.has_perms(required_perms, obj=codebase)
 
 
-class PeerReviewView(DetailView):
-    template_name = 'library/review/detail.jinja'
+class PeerReviewInvitationViewSet(NoDeleteNoUpdateViewSet):
+    queryset = PeerReviewInvitation.objects.all()
+    permission_classes = (PeerReviewInvitationPermissions,)
+    renderer_classes = (renderers.JSONRenderer,)
+    serializer_class = PeerReviewInvitationSerializer
+
+    def get_queryset(self):
+        uuid = self.kwargs['slug']
+        return self.queryset.filter(review__uuid=uuid)
+
+
+class PeerReviewFeedbackViewSet(NoDeleteNoUpdateViewSet):
+    queryset = PeerReviewerFeedback.objects.all()
+    renderer_classes = (renderers.JSONRenderer,)
+    serializer_class = PeerReviewFeedbackEditorSerializer
+
+    def get_queryset(self):
+        uuid = self.kwargs['slug']
+        return self.queryset.filter(review__uuid=uuid)
+
+
+class PeerReviewDashboardView(ListView):
+    template_name = 'library/review/dashboard.jinja'
+    model = PeerReviewAction
+    context_object_name = 'peer_review_actions'
+
+
+class PeerReviewEditorView(UpdateView):
+    template_name = 'library/review/editor_update.jinja'
     model = PeerReview
-    slug_field = 'uuid'
+    context_object_name = 'review'
 
 
-class PeerReviewEditorView(PermissionRequiredMixin, UpdateView):
-    template_name = 'library/review/editor.jinja'
-    form_class = PeerReviewEditorForm
-    success_url = reverse_lazy('library:editor-review-queue')
+class PeerReviewFeedbackListView(ListView):
+    template_name = 'library/review/feedback/list.jinja'
     model = PeerReview
+    context_object_name = 'review_feedback_set'
 
-    def has_permission(self):
-        # FIXME: change to group membership later
-        return self.request.user.is_superuser
+
+class PeerReviewFeedbackCreateView(CreateView):
+    template_name = 'library/review/feedback/create.jinja'
+    model = PeerReviewerFeedback
+    context_object_name = 'review_feedback'
 
 
 class SendPeerReviewInvitation(PermissionRequiredMixin, FormView):
@@ -65,11 +97,6 @@ class SendPeerReviewInvitation(PermissionRequiredMixin, FormView):
     def form_valid(self, form):
         form.send_email()
         return super().form_valid(form)
-
-
-class PeerReviewerFeedbackView(UpdateView):
-    template_name = 'library/review/feedback.jinja'
-    model = PeerReviewerFeedback
 
 
 class CodebaseFilter(filters.BaseFilterBackend):
@@ -98,13 +125,13 @@ class CodebaseFilter(filters.BaseFilterBackend):
 
 
 class CodebaseViewSet(CommonViewSetMixin,
-                      OnlyObjectPermissionNoDeleteViewSet):
+                      NoDeleteViewSet):
     lookup_field = 'identifier'
     lookup_value_regex = r'[\w\-\.]+'
     pagination_class = SmallResultSetPagination
     queryset = Codebase.objects.with_tags().with_featured_images().order_by('-first_published_at', 'title')
     filter_backends = (CaseInsensitiveOrderingFilter, CodebaseFilter)
-    permission_classes = (AllowUnauthenticatedViewPermissions,)
+    permission_classes = (ViewRestrictedObjectPermissions,)
     ordering_fields = ('first_published_at', 'title', 'last_modified', 'peer_reviewed', 'submitter__last_name',
                        'submitter__username')
 
@@ -294,15 +321,33 @@ class CodebaseReleaseShareViewSet(CommonViewSetMixin, mixins.RetrieveModelMixin,
         return response
 
 
+@permission_required('library.create_codebaserelease',
+                     (CodebaseRelease, 'codebase__identifier', 'identifier', 'version_number', 'version_number'))
+def create_peer_review(request, identifier, version_number):
+    if request.method == 'POST':
+        codebase_release = get_object_or_404(CodebaseRelease, codebase__identifier=identifier,
+                                             version_number=version_number)
+        review, created = PeerReview.objects.get_or_create(
+            codebase_release=codebase_release,
+            defaults={
+                'submitter': request.user.member_profile
+            }
+        )
+        return HttpResponseRedirect(reverse('library:codebaserelease-detail',
+                                            kwargs=dict(identifier=identifier, version_number=version_number)))
+    else:
+        return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
+
+
 class CodebaseReleaseViewSet(CommonViewSetMixin,
-                             OnlyObjectPermissionNoDeleteViewSet):
-    namespace = 'library/codebases/releases/'
+                             NoDeleteViewSet):
+    namespace = 'library/codebases/releases'
     lookup_field = 'version_number'
     lookup_value_regex = r'\d+\.\d+\.\d+'
 
     queryset = CodebaseRelease.objects.with_platforms().with_programming_languages()
     pagination_class = SmallResultSetPagination
-    permission_classes = (NestedCodebaseReleasePermission, AllowUnauthenticatedViewPermissions,)
+    permission_classes = (NestedCodebaseReleasePermission, ViewRestrictedObjectPermissions,)
 
     @property
     def template_name(self):
@@ -357,18 +402,6 @@ class CodebaseReleaseViewSet(CommonViewSetMixin,
             raise ValidationError({'non_field_errors': ['Cannot regenerate share uuid on published release']})
         codebase_release.regenerate_share_uuid()
         return Response(data=request.build_absolute_uri(codebase_release.share_url), status=status.HTTP_200_OK)
-
-    @action(detail=True, methods=['post'])
-    @transaction.atomic
-    def request_peer_review(self, request, **kwargs):
-        codebase_release = self.get_object()
-        review, created = PeerReview.objects.get_or_create(
-            codebase_release=codebase_release,
-            defaults={
-                'submitter': request.user
-            }
-        )
-        return Response(data={'created': created}, status=status.HTTP_201_CREATED)
 
     @action(detail=True, methods=['post'])
     @transaction.atomic

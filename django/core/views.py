@@ -23,7 +23,7 @@ from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 from rest_framework.views import exception_handler
 
-from .permissions import AllowUnauthenticatedViewPermissions
+from .permissions import ViewRestrictedObjectPermissions
 from .search import GeneralSearch
 
 logger = logging.getLogger(__name__)
@@ -139,7 +139,7 @@ class PermissionRequiredByHttpMethodMixin:
 
     def get_required_permissions(self, request=None):
         model = self.model
-        template_perms = AllowUnauthenticatedViewPermissions.perms_map[self.method]
+        template_perms = ViewRestrictedObjectPermissions.perms_map[self.method]
         perms = [template_perm % {'app_label': model._meta.app_label,
                                   'model_name': model._meta.model_name}
                  for template_perm in template_perms]
@@ -369,16 +369,17 @@ class SearchView(TemplateView):
         return context
 
 
-class OnlyObjectPermissionGenericViewSet(viewsets.GenericViewSet):
+class NoDeleteNoUpdateViewSet(mixins.CreateModelMixin, mixins.ListModelMixin, mixins.RetrieveModelMixin,
+                              viewsets.GenericViewSet):
     pass
 
 
-class OnlyObjectPermissionNoDeleteViewSet(mixins.CreateModelMixin, mixins.ListModelMixin, mixins.RetrieveModelMixin,
-                                          mixins.UpdateModelMixin, OnlyObjectPermissionGenericViewSet):
+class NoDeleteViewSet(mixins.CreateModelMixin, mixins.ListModelMixin, mixins.RetrieveModelMixin,
+                      mixins.UpdateModelMixin, viewsets.GenericViewSet):
     pass
 
 
 class OnlyObjectPermissionModelViewSet(mixins.CreateModelMixin, mixins.DestroyModelMixin, mixins.ListModelMixin,
                                        mixins.RetrieveModelMixin, mixins.UpdateModelMixin,
-                                       OnlyObjectPermissionGenericViewSet):
+                                       viewsets.GenericViewSet):
     pass

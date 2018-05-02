@@ -1101,7 +1101,6 @@ class PeerReview(models.Model):
         FieldPanel('status'),
         SnippetChooserPanel('assigned_reviewer'),
         FieldPanel('assigned_reviewer_email'),
-        SnippetChooserPanel('submitter')
     ]
 
     def get_assigned_reviewer_email(self):
@@ -1113,7 +1112,13 @@ class PeerReview(models.Model):
         if not self.uuid:
             self.uuid = uuid.uuid4()
             self.save()
-        return reverse('library:peer-review-detail', kwargs={'uuid': self.uuid})
+        return reverse('library:peer-review-detail', kwargs={'slug': self.uuid})
+
+    def __str__(self):
+        return 'PeerReview of "{} v{}" by {}'.format(
+            self.codebase_release.codebase.title,
+            self.codebase_release.version_number,
+            self.codebase_release.submitter.get_full_name() or self.codebase_release.submitter)
 
 
 @register_snippet
@@ -1126,6 +1131,9 @@ class PeerReviewInvitation(models.Model):
                                            on_delete=models.CASCADE)
     candidate_email = models.EmailField(blank=True, help_text=_("Contact email for candidate non-member reviewer"))
     optional_message = MarkdownField(help_text=_("Optional markdown text to be added to the email"))
+
+    class Meta:
+        permissions = (('view_peerreviewinvitation', 'Can view peer review invitations'),)
 
 
 @register_snippet
