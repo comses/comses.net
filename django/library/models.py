@@ -12,6 +12,7 @@ from django.contrib.postgres.fields import JSONField, ArrayField
 from django.core.cache import cache
 from django.core.files.images import ImageFile
 from django.core.files.storage import FileSystemStorage
+from django.core.mail import send_mail
 from django.db import models, transaction
 from django.db.models import Prefetch
 from django.urls import reverse
@@ -1126,11 +1127,31 @@ class PeerReviewInvitation(models.Model):
     date_created = models.DateTimeField(auto_now_add=True)
     review = models.ForeignKey(PeerReview, related_name='invitations', on_delete=models.CASCADE)
     editor = models.ForeignKey(MemberProfile, related_name='+', on_delete=models.PROTECT)
-    candidate_reviewer = models.ForeignKey(User, related_name='+',
+    candidate_reviewer = models.ForeignKey(MemberProfile, related_name='+',
                                            null=True, blank=True,
                                            on_delete=models.CASCADE)
     candidate_email = models.EmailField(blank=True, help_text=_("Contact email for candidate non-member reviewer"))
     optional_message = MarkdownField(help_text=_("Optional markdown text to be added to the email"))
+    slug = models.UUIDField()
+
+    @property
+    def invitee(self):
+        return self.candidate_reviewer.name if self.candidate_reviewer else self.candidate_email
+
+    @property
+    def recipient(self):
+        return self.candidate_email or self.candidate_reviewer.email
+
+    @property
+    def from_email(self):
+        return settings.DEFAULT_FROM_EMAIL
+
+    def send_invitation(self):
+        """Email the reviewer a invitation"""
+        send_mail()
+
+    def get_absolute_url(self):
+        return reverse('library:peer-review-invitation', kwargs=dict(slug=self.slug))
 
     class Meta:
         permissions = (('view_peerreviewinvitation', 'Can view peer review invitations'),)
@@ -1150,7 +1171,7 @@ class PeerReviewAction(models.Model):
 @register_snippet
 class PeerReviewerFeedback(models.Model):
     date_created = models.DateTimeField(auto_now_add=True)
-    review = models.ForeignKey(PeerReview, related_name='feedback_set', on_delete=models.CASCADE)
+    invitation = models.ForeignKey(PeerReviewInvitation, related_name='feedback_set', on_delete=models.CASCADE)
     recommendation = models.CharField(choices=PeerReview.REVIEWER_RECOMMENDATION, max_length=16)
     reviewer = models.ForeignKey(MemberProfile, on_delete=models.PROTECT)
     private_reviewer_notes = MarkdownField(help_text=_('Private reviewer notes to the editor.'))

@@ -3,6 +3,7 @@ import * as queryString from 'query-string'
 import {api} from 'connection'
 import {CreateOrUpdateHandler} from "api/handler"
 import {pickBy, isEmpty} from 'lodash'
+import Base = Mocha.reporters.Base;
 
 abstract class BaseAPI {
 
@@ -48,6 +49,36 @@ export class JobAPI extends BaseAPI {
         return '/jobs/';
     }
 }
+
+export class ReviewEditorAPI {
+    baseUrl() {
+        return '/reviews/'
+    }
+
+    listInvitationsUrl(review_uuid) {
+        return `${this.baseUrl()}${review_uuid}/editor/invitations/`;
+    }
+
+    listInvitations(review_uuid) {
+        return api.get(this.listInvitationsUrl(review_uuid));
+    }
+
+    listFeedbackUrl(review_uuid) {
+        return `${this.baseUrl()}${review_uuid}/editor/feedback/`;
+    }
+
+    listFeedback(review_uuid) {
+        return api.get(this.listFeedbackUrl(review_uuid));
+    }
+
+    findReviewersUrl({review_uuid, query}) {
+        return `${this.baseUrl()}${review_uuid}/editor/reviewers/`
+    }
+
+    findReviewers({review_uuid, query}) {
+        return api.get(this.findReviewersUrl({review_uuid, query}));
+    }
+ }
 
 export class ProfileAPI extends BaseAPI {
 

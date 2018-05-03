@@ -10,7 +10,7 @@ class PeerReviewEditForm(forms.ModelForm):
         fields = ['status',]
 
 
-class PeerReviewInvitationForm(forms.Form):
+class PeerReviewInvitationReplyForm(forms.Form):
     email = forms.EmailField()
     review_url = forms.URLField()
     message = forms.CharField(widget=forms.Textarea)

@@ -2,46 +2,20 @@
 {% from 'common.jinja' import format_date %}
 {% from 'library/review/includes/codebase_release.jinja' import codebase_release_name %}
 
+{% block introduction %}
+
+{% endblock %}
+
 {% block content %}
     <h1>Review of
         <a href="{{ review.codebase_release.get_absolute_url() }}">
             {{ codebase_release_name(review.codebase_release) }}
         </a> requested by
-        <a href="{{ review.submitter.get_absolute_url() }}">{{ review.submitter.name }}</a></h1>
-    <div class="container">
-        <div class="row">
-            <div class="col-md-6 col-sm-12 px-0">
-                <small class="mx-0">Date Created: {{ format_date(review.date_created) }}</small>
-            </div>
-            <div class="col-md-6 col-sm-12 px-0">
-                <small class="float-md-right">Last Modified: {{ format_date(review.last_modified) }}</small>
-            </div>
-        </div>
-        <div class="row">
-            <div class="col-md-6 col-sm-12 px-0">
-                <button class="btn btn-primary">Display and Invite Reviewers</button>
-            </div>
-            <div class="col-md-6 col-sm-12 px-0">
-                <button class="btn btn-primary float-md-right">Reviewer Feedback</button>
-            </div>
-        </div>
-        <div class="row">
-            <div class="col-md-6 px-0 pt-3">
-                Assigned Reviewer:
-                {% if review.assigned_reviewer %}
-                    <a href="{{ review.assigned_reviewer.get_absolute_url() }}">
-                        {{ review.assigned_reviewer.name }}
-                    </a>
-                {% elif review.assigned_reviewer_email %}
-                    {{ review.assigned_reviewer_email }}
-                {% else %}
-                    No reviewer assigned
-                {% endif %}
-            </div>
-        </div>
-    </div>
-    <form action="" method="post">{% csrf_token %}
-        {% include 'includes/form.jinja' %}
-        <button type="submit" class="btn btn-primary">Submit</button>
-    </form>
+        <a href="{{ review.submitter.get_absolute_url() }}">{{ review.submitter.name }}</a>
+    </h1>
+    <div id="app" data-review-uuid="{{ review.uuid }}"></div>
+{% endblock %}
+
+{% block js %}
+    {{ render_bundle('reviews') }}
 {% endblock %}

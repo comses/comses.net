@@ -25,8 +25,12 @@ if settings.DEPLOY_ENVIRONMENT == Environment.DEVELOPMENT:
 urlpatterns = [
     path('reviews/dashboard/', views.PeerReviewDashboardView.as_view(), name='peer-review-dashboard'),
     path('reviews/<uuid:slug>/editor/', views.PeerReviewEditorView.as_view(), name='peer-review-detail'),
-    path('reviews/<uuid:slug>/reviewer/feedback/', views.PeerReviewFeedbackListView.as_view(), name='peer-review-feedback-list'),
-    path('reviews/<uuid:slug>/reviewer/feedback/create/', views.PeerReviewFeedbackCreateView.as_view(), name='peer-review-feedback-create'),
+    path('invitation/<uuid:slug>/',
+         views.PeerReviewInvitationUpdateView.as_view(), name='peer-review-invitation'),
+    path('invitation/<uuid:slug>/feedback/',
+         views.PeerReviewFeedbackListView.as_view(), name='peer-review-feedback-list'),
+    path('invitation/<uuid:slug>/feedback/create/',
+         views.PeerReviewFeedbackCreateView.as_view(), name='peer-review-feedback-create'),
 
     path('contributors/', views.ContributorList.as_view()),
     path('codebases/add/', views.CodebaseFormCreateView.as_view(), name='codebase-add'),

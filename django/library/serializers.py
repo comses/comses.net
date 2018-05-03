@@ -8,6 +8,7 @@ from django.utils.translation import ugettext_lazy as _
 from rest_framework import serializers
 from wagtail.images.models import SourceImageIOError
 
+from core.models import MemberProfile
 from core.serializers import (YMD_DATETIME_FORMAT, PUBLISH_DATE_FORMAT, LinkedUserSerializer, create, update, save_tags,
                               TagSerializer, MarkdownField)
 from home.common_serializers import RelatedMemberProfileSerializer

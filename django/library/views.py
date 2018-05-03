@@ -18,12 +18,13 @@ from rest_framework.decorators import action
 from rest_framework.exceptions import PermissionDenied as DrfPermissionDenied, ValidationError
 from rest_framework.response import Response
 
+from core.models import MemberProfile
 from core.permissions import ViewRestrictedObjectPermissions
 from core.view_helpers import add_change_delete_perms, get_search_queryset
 from core.views import (CommonViewSetMixin, FormUpdateView, FormCreateView, SmallResultSetPagination,
                         CaseInsensitiveOrderingFilter, NoDeleteViewSet,
                         NoDeleteNoUpdateViewSet)
-from .forms import PeerReviewEditForm, PeerReviewInvitationForm, PeerReviewerFeedbackReviewerForm
+from .forms import PeerReviewEditForm, PeerReviewerFeedbackReviewerForm, PeerReviewInvitationReplyForm
 from .fs import FileCategoryDirectories, StagingDirectories, MessageLevels
 from .models import (Codebase, CodebaseRelease, Contributor, CodebaseImage, PeerReview, PeerReviewerFeedback,
                      PeerReviewInvitation, PeerReviewAction)
@@ -55,6 +56,13 @@ class PeerReviewInvitationViewSet(NoDeleteNoUpdateViewSet):
         uuid = self.kwargs['slug']
         return self.queryset.filter(review__uuid=uuid)
 
+    @action(detail=True, methods=['post'])
+    def invite_reviewer(self, request, slug):
+        codebase_release = get_object_or_404(CodebaseRelease, review__uuid=slug)
+        username = request.data['username']
+        reviewer = get_object_or_404(MemberProfile, user__username=username)
+        codebase_release.send_reviewer_invite(reviewer)
+
 
 class PeerReviewFeedbackViewSet(NoDeleteNoUpdateViewSet):
     queryset = PeerReviewerFeedback.objects.all()
@@ -72,10 +80,12 @@ class PeerReviewDashboardView(ListView):
     context_object_name = 'peer_review_actions'
 
 
-class PeerReviewEditorView(UpdateView):
-    template_name = 'library/review/editor_update.jinja'
-    model = PeerReview
+class PeerReviewEditorView(PermissionRequiredMixin, DetailView):
     context_object_name = 'review'
+    model = PeerReview
+    permission_required = 'library.change_peerreview'
+    slug_field = 'uuid'
+    template_name = 'library/review/editor_update.jinja'
 
 
 class PeerReviewFeedbackListView(ListView):
@@ -90,13 +100,10 @@ class PeerReviewFeedbackCreateView(CreateView):
     context_object_name = 'review_feedback'
 
 
-class SendPeerReviewInvitation(PermissionRequiredMixin, FormView):
-    form_class = PeerReviewInvitationForm
-    success_url = reverse_lazy('library:editor-review-queue')
-
-    def form_valid(self, form):
-        form.send_email()
-        return super().form_valid(form)
+class PeerReviewInvitationUpdateView(UpdateView):
+    template_name = 'library/review/invitations/update.jinja'
+    form_class = PeerReviewInvitationReplyForm
+    context_object_name = 'invitation'
 
 
 class CodebaseFilter(filters.BaseFilterBackend):

@@ -15,9 +15,10 @@ modeladmin_register(CodebaseImageAdmin)
 
 class PeerReviewAdmin(ModelAdmin):
     model = PeerReview
-    list_display = ('status', 'codebase_release__title', 'reviewer_recommendation', 'date_created')
+    list_display = ('status', 'codebase_release', 'date_created')
     list_filter = ('status', 'date_created',)
-    search_fields = ('submitter', 'codebase_release__title')
+    search_fields = ('submitter', 'codebase_release__codebase__title')
+    edit_template_name = 'modeladmin/library/peerreview/edit.html'
 
 
 class PeerReviewerFeedbackAdmin(ModelAdmin):
