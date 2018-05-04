@@ -1127,7 +1127,7 @@ class PeerReviewInvitation(models.Model):
     date_created = models.DateTimeField(auto_now_add=True)
     review = models.ForeignKey(PeerReview, related_name='invitations', on_delete=models.CASCADE)
     editor = models.ForeignKey(MemberProfile, related_name='+', on_delete=models.PROTECT)
-    candidate_reviewer = models.ForeignKey(MemberProfile, related_name='+',
+    candidate_reviewer = models.ForeignKey(MemberProfile, related_name='peer_review_invitation_set',
                                            null=True, blank=True,
                                            on_delete=models.CASCADE)
     candidate_email = models.EmailField(blank=True, help_text=_("Contact email for candidate non-member reviewer"))
@@ -1173,7 +1173,7 @@ class PeerReviewerFeedback(models.Model):
     date_created = models.DateTimeField(auto_now_add=True)
     invitation = models.ForeignKey(PeerReviewInvitation, related_name='feedback_set', on_delete=models.CASCADE)
     recommendation = models.CharField(choices=PeerReview.REVIEWER_RECOMMENDATION, max_length=16)
-    reviewer = models.ForeignKey(MemberProfile, on_delete=models.PROTECT)
+    reviewer = models.ForeignKey(MemberProfile, related_name='reviewer_feedback_set', on_delete=models.PROTECT)
     private_reviewer_notes = MarkdownField(help_text=_('Private reviewer notes to the editor.'))
     private_editor_notes = MarkdownField(help_text=_('Private editor notes regarding this peer review'))
     notes_to_author = MarkdownField(help_text=_("Notes to be sent to the model author"))
@@ -1200,4 +1200,4 @@ class PeerReviewerFeedback(models.Model):
     )
 
     def get_absolute_url(self):
-        return reverse('library:reviewer-feedback', kwargs={'review_uuid': self.review.uuid})
+        return reverse('library:reviewer-feedback', kwargs={'review_uuid': self.invitation.slug})

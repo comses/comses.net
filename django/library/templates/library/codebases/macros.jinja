@@ -1,4 +1,50 @@
-{% from "common.jinja" import search_tag_href %}
+{% from "common.jinja" import search_tag_href, checkmark %}
+{% macro render_reviewer_feedback(reviewer_feedback) %}
+<div class='reviewer-feedback card'>
+    <div class='card-header'>
+        <h3 class='card-title'>
+            <a href='{{reviewer_feedback.codebase_release_url}}'>
+                {{ reviewer_feedback.codebase_release_title }}
+            </a>
+        </h3>
+        <h4 class='card-subtitle mb-2 text-muted'>
+            {{ reviewer_feedback.recommendation }}
+        </h4>
+    </div>
+    <div class='card-body'>
+        <h5 class='card-title'>Narrative documentation: {{ checkmark(reviewer_feedback.has_narrative_documentation) }}</h5>
+        <p class='card-text'>
+        {{ reviewer_feedback.narrative_documentation_comments }}
+        </p>
+    </div>
+    <div class='card-body'>
+        <h5 class='card-title'>Clean code: {{ checkmark(reviewer_feedback.has_clean_code) }}</h5>
+        <p class='card-text'>
+        {{ reviewer_feedback.clean_code_comments }}
+        </p>
+    </div>
+    <div class='card-body'>
+        <h5 class='card-title'>Runnable: {{ checkmark(reviewer_feedback.is_runnable) }}</h5>
+        <p class='card-text'>
+        {{ reviewer_feedback.runnable_comments }}
+        </p>
+    </div>
+    <div class='card-body'>
+        <h5 class='card-title'>Notes to author</h5>
+        <p class='card-text'>
+        {{ reviewer_feedback.notes_to_author }}
+        </p>
+    </div>
+    <div class='card-body'>
+        <h5 class='card-title'>Private communication</h5>
+        <p class='card-text'>
+        {{ reviewer_feedback.private_reviewer_notes }}
+        </p>
+    </div>
+    <a class='card-link' href='{{reviewer_feedback.get_absolute_url()}}'>View</a>
+</div>
+{% endmacro %}
+
 {% macro render_codebase_result(item, detail_url_name) %}
 {% with latest_release_url=url(detail_url_name, identifier=item.identifier) %}
     <div class="search-result">
@@ -58,4 +104,3 @@
     </div>
 {% endwith %}
 {% endmacro %}
-

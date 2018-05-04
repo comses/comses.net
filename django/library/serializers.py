@@ -12,8 +12,8 @@ from core.models import MemberProfile
 from core.serializers import (YMD_DATETIME_FORMAT, PUBLISH_DATE_FORMAT, LinkedUserSerializer, create, update, save_tags,
                               TagSerializer, MarkdownField)
 from home.common_serializers import RelatedMemberProfileSerializer
-from .models import ReleaseContributor, Codebase, CodebaseRelease, Contributor, License, CodebaseImage, PeerReview, \
-    PeerReviewerFeedback, PeerReviewInvitation
+from .models import (ReleaseContributor, Codebase, CodebaseRelease, Contributor, License, CodebaseImage, PeerReview,
+                     PeerReviewerFeedback, PeerReviewInvitation)
 
 logger = logging.getLogger(__name__)
 
@@ -356,10 +356,16 @@ class PeerReviewFeedbackEditorSerializer(serializers.ModelSerializer):
                             'is_runnable', 'runnable_comments')
 
 
+class PeerReviewerFeedbackSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PeerReviewerFeedback
+
+
 class PeerReviewInvitationSerializer(serializers.ModelSerializer):
     """Serialize review invitations. Build for list, detail and create routes
     (updating a peer review invitation may not make sense since an email has
     already been sent)"""
+    url = serializers.ReadOnlyField(source='get_absolute_url')
 
     class Meta:
         model = PeerReviewInvitation
