@@ -12,14 +12,16 @@ from django.contrib.postgres.fields import JSONField, ArrayField
 from django.core.cache import cache
 from django.core.files.images import ImageFile
 from django.core.files.storage import FileSystemStorage
-from django.core.mail import send_mail
+from django.core.mail import send_mail, EmailMultiAlternatives
 from django.db import models, transaction
 from django.db.models import Prefetch
+from django.template.loader import get_template
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.text import slugify
 from django.utils.translation import ugettext_lazy as _
 from ipware import get_client_ip
+from jinja2.runtime import Context
 from model_utils import Choices
 from modelcluster.contrib.taggit import ClusterTaggableManager
 from modelcluster.fields import ParentalKey
@@ -39,6 +41,7 @@ from core.backends import add_to_comses_permission_whitelist
 from core.queryset import get_viewable_objects_for_user
 from core.fields import MarkdownField
 from core.models import Platform, MemberProfile
+from core.templatetags.globals import markdown
 from .fs import CodebaseReleaseFsApi, StagingDirectories, FileCategoryDirectories, MessageLevels
 
 logger = logging.getLogger(__name__)
@@ -1132,11 +1135,12 @@ class PeerReviewInvitation(models.Model):
                                            on_delete=models.CASCADE)
     candidate_email = models.EmailField(blank=True, help_text=_("Contact email for candidate non-member reviewer"))
     optional_message = MarkdownField(help_text=_("Optional markdown text to be added to the email"))
-    slug = models.UUIDField()
+    slug = models.UUIDField(unique=True, default=uuid.uuid4, editable=False)
+    accepted = models.NullBooleanField()
 
     @property
     def invitee(self):
-        return self.candidate_reviewer.name if self.candidate_reviewer else self.candidate_email
+        return self.candidate_reviewer.name if self.candidate_reviewer else 'comses reviewer'
 
     @property
     def recipient(self):
@@ -1148,7 +1152,12 @@ class PeerReviewInvitation(models.Model):
 
     def send_invitation(self):
         """Email the reviewer a invitation"""
-        send_mail()
+        template = get_template('library/review/email/review_invite.jinja')
+        markdown_content = template.render(invitation=self)
+        subject = 'Review Model "{}"'.format(self.review.codebase_release.codebase.title)
+        msg = EmailMultiAlternatives(subject, markdown_content, self.recipient)
+        msg.attach_alternative(markdown(markdown_content), 'text/html')
+        msg.send()
 
     def get_absolute_url(self):
         return reverse('library:peer-review-invitation', kwargs=dict(slug=self.slug))

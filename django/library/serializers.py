@@ -349,7 +349,7 @@ class PeerReviewFeedbackEditorSerializer(serializers.ModelSerializer):
     class Meta:
         model = PeerReviewerFeedback
         fields = '__all__'
-        read_only_fields = ('date_created', 'review', 'recommendation', 'reviewer',
+        read_only_fields = ('date_created', 'invitation', 'recommendation', 'reviewer',
                             'private_reviewer_notes', 'notes_to_author',
                             'has_narrative_documentation', 'narrative_documentation_comments',
                             'has_clean_code', 'clean_code_comments',

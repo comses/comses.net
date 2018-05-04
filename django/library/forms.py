@@ -1,13 +1,24 @@
 from django import forms
 
 from core import models
-from .models import PeerReview, PeerReviewerFeedback
+from .models import PeerReview, PeerReviewerFeedback, PeerReviewInvitation
 
 
 class PeerReviewEditForm(forms.ModelForm):
     class Meta:
         model = PeerReview
         fields = ['status',]
+
+
+class PeerReviewInvitationForm(forms.ModelForm):
+    class Meta:
+        model = PeerReviewInvitation
+        fields = [
+            'review',
+            'editor',
+            'candidate_reviewer',
+            'candidate_email',
+        ]
 
 
 class PeerReviewInvitationReplyForm(forms.Form):

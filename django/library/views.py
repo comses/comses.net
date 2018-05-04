@@ -24,7 +24,8 @@ from core.view_helpers import add_change_delete_perms, get_search_queryset
 from core.views import (CommonViewSetMixin, FormUpdateView, FormCreateView, SmallResultSetPagination,
                         CaseInsensitiveOrderingFilter, NoDeleteViewSet,
                         NoDeleteNoUpdateViewSet)
-from .forms import PeerReviewEditForm, PeerReviewerFeedbackReviewerForm, PeerReviewInvitationReplyForm
+from .forms import PeerReviewEditForm, PeerReviewerFeedbackReviewerForm, PeerReviewInvitationReplyForm, \
+    PeerReviewInvitationForm
 from .fs import FileCategoryDirectories, StagingDirectories, MessageLevels
 from .models import (Codebase, CodebaseRelease, Contributor, CodebaseImage, PeerReview, PeerReviewerFeedback,
                      PeerReviewInvitation, PeerReviewAction)
@@ -56,12 +57,18 @@ class PeerReviewInvitationViewSet(NoDeleteNoUpdateViewSet):
         uuid = self.kwargs['slug']
         return self.queryset.filter(review__uuid=uuid)
 
-    @action(detail=True, methods=['post'])
-    def invite_reviewer(self, request, slug):
-        codebase_release = get_object_or_404(CodebaseRelease, review__uuid=slug)
-        username = request.data['username']
-        reviewer = get_object_or_404(MemberProfile, user__username=username)
-        codebase_release.send_reviewer_invite(reviewer)
+    @transaction.atomic
+    @action(detail=False, methods=['post'])
+    def send_invitation(self, request, slug):
+        data = request.data
+        data['review'] = get_object_or_404(PeerReview, uuid=slug).id
+        data['editor'] = request.user.member_profile.id
+        form = PeerReviewInvitationForm(data=data)
+        if form.is_valid():
+            form.save()
+            return Response(status=status.HTTP_200_OK)
+        else:
+            return Response(status=status.HTTP_400_BAD_REQUEST, data=form.errors)
 
 
 class PeerReviewFeedbackViewSet(NoDeleteNoUpdateViewSet):
@@ -70,8 +77,8 @@ class PeerReviewFeedbackViewSet(NoDeleteNoUpdateViewSet):
     serializer_class = PeerReviewFeedbackEditorSerializer
 
     def get_queryset(self):
-        uuid = self.kwargs['slug']
-        return self.queryset.filter(review__uuid=uuid)
+        slug = self.kwargs['slug']
+        return self.queryset.filter(invitation__slug=slug)
 
 
 class PeerReviewDashboardView(ListView):
@@ -94,7 +101,7 @@ class PeerReviewFeedbackListView(ListView):
     context_object_name = 'review_feedback_set'
 
 
-class PeerReviewFeedbackCreateView(CreateView):
+class PeerReviewFeedbackUpdateView(UpdateView):
     template_name = 'library/review/feedback/create.jinja'
     model = PeerReviewerFeedback
     context_object_name = 'review_feedback'

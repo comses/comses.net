@@ -2,6 +2,9 @@ import {Component, Prop} from 'vue-property-decorator'
 import Vue from 'vue'
 import {ReviewEditorAPI} from "api/index";
 import {ReviewerFinder} from "./reviewer_finder";
+import {baseHandleOtherError, CreateOrUpdateHandler, FormComponent} from "handler";
+import {AxiosResponse} from "axios";
+import {api} from "connection";
 
 const reviewApi = new ReviewEditorAPI();
 
@@ -18,7 +21,10 @@ const reviewApi = new ReviewEditorAPI();
                 <div class="col-10">
                     <h2>
                         {{ candidate_reviewer.full_name }}
-                        <span class="pull-right"><button class="btn btn-primary">Invite</button></span>
+                        <span class="pull-right">
+                            <button class="btn btn-primary" @click="sendEmail">Invite</button>
+                            <button class="btn btn-danger" @click="candidate_reviewer = null">Cancel</button>
+                        </span>
                     </h2>
                     <div class="tag-list">
                         <div class="tag mx-1" v-for="tag in candidate_reviewer.tags">{{ tag.name }}</div>
@@ -47,8 +53,18 @@ export class Invitations extends Vue {
     @Prop()
     review_uuid: string;
 
+    get state() {
+        return this.invitations;
+    }
+
     async created() {
         const response = await reviewApi.listFeedback(this.review_uuid);
         this.invitations = response.data.results;
+    }
+
+    async sendEmail() {
+        const response = await api.axios.post(
+            reviewApi.sendInvitationUrl({review_uuid: this.review_uuid}),
+            this.candidate_reviewer);
     }
 }

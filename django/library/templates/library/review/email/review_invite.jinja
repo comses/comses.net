@@ -1,0 +1,9 @@
+{% from "common.jinja" import search_tag_href %}
+{% set release = invitation.review.codebase_release %}
+{% set codebase = release.codebase %}
+
+Dear {{ invitation.invitee }},
+
+You have been requested to review the model [{{ codebase.title }}]({{ release.get_absolute_url() }}).
+
+To accept or decline this invitation click [here]({{ invitation.get_absolute_url() }}").

@@ -57,7 +57,7 @@ export interface FormRedirectComponent extends FormComponent {
     detailPageUrl(state): string
 }
 
-function baseHandleOtherError(response_or_network_error): string {
+export function baseHandleOtherError(response_or_network_error): string {
     let msg: string;
     if (!_.isUndefined(response_or_network_error.response)) {
         switch (response_or_network_error.response.status) {

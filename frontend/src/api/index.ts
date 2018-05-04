@@ -78,6 +78,14 @@ export class ReviewEditorAPI {
     findReviewers({review_uuid, query}) {
         return api.get(this.findReviewersUrl({review_uuid, query}));
     }
+
+    sendInvitationUrl({review_uuid}) {
+        return `${this.baseUrl()}${review_uuid}/editor/invitations/send_invitation/`
+    }
+
+    sendInvitation({review_uuid}, component) {
+        return api.post(this.sendInvitationUrl({review_uuid}), component);
+    }
  }
 
 export class ProfileAPI extends BaseAPI {

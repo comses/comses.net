@@ -29,8 +29,8 @@ urlpatterns = [
          views.PeerReviewInvitationUpdateView.as_view(), name='peer-review-invitation'),
     path('invitation/<uuid:slug>/feedback/',
          views.PeerReviewFeedbackListView.as_view(), name='peer-review-feedback-list'),
-    path('invitation/<uuid:slug>/feedback/create/',
-         views.PeerReviewFeedbackCreateView.as_view(), name='peer-review-feedback-create'),
+    path('invitation/<uuid:slug>/feedback/edit/',
+         views.PeerReviewFeedbackUpdateView.as_view(), name='peer-review-feedback-edit'),
 
     path('contributors/', views.ContributorList.as_view()),
     path('codebases/add/', views.CodebaseFormCreateView.as_view(), name='codebase-add'),
