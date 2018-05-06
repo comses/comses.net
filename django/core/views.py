@@ -8,6 +8,7 @@ import hashlib
 import hmac
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.models import AnonymousUser, User
 from django.contrib.auth.views import redirect_to_login
 from django.core.exceptions import PermissionDenied
 from django.db.models import F
@@ -15,14 +16,14 @@ from django.db.models.functions import Lower
 from django.http import Http404, HttpResponseBadRequest, HttpResponseRedirect, QueryDict, HttpResponseServerError
 from django.shortcuts import render
 from django.views.generic import DetailView, TemplateView
-from rest_framework import filters
+from rest_framework import filters, viewsets, generics, mixins
 from rest_framework.exceptions import (PermissionDenied as DrfPermissionDenied, NotAuthenticated, NotFound,
                                        APIException)
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 from rest_framework.views import exception_handler
 
-from .permissions import ComsesPermissions
+from .permissions import ViewRestrictedObjectPermissions
 from .search import GeneralSearch
 
 logger = logging.getLogger(__name__)
@@ -138,7 +139,7 @@ class PermissionRequiredByHttpMethodMixin:
 
     def get_required_permissions(self, request=None):
         model = self.model
-        template_perms = ComsesPermissions.perms_map[self.method]
+        template_perms = ViewRestrictedObjectPermissions.perms_map[self.method]
         perms = [template_perm % {'app_label': model._meta.app_label,
                                   'model_name': model._meta.model_name}
                  for template_perm in template_perms]
@@ -366,3 +367,19 @@ class SearchView(TemplateView):
         context['__all__'] = pagination_context
         context.update(pagination_context)
         return context
+
+
+class NoDeleteNoUpdateViewSet(mixins.CreateModelMixin, mixins.ListModelMixin, mixins.RetrieveModelMixin,
+                              viewsets.GenericViewSet):
+    pass
+
+
+class NoDeleteViewSet(mixins.CreateModelMixin, mixins.ListModelMixin, mixins.RetrieveModelMixin,
+                      mixins.UpdateModelMixin, viewsets.GenericViewSet):
+    pass
+
+
+class OnlyObjectPermissionModelViewSet(mixins.CreateModelMixin, mixins.DestroyModelMixin, mixins.ListModelMixin,
+                                       mixins.RetrieveModelMixin, mixins.UpdateModelMixin,
+                                       viewsets.GenericViewSet):
+    pass

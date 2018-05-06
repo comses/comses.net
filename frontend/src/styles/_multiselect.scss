@@ -8,6 +8,10 @@
   z-index: 3;
 }
 
+.multiselect__option {
+  white-space: normal;
+}
+
 .child-is-invalid {
   .multiselect__tags {
     border-color: $form-feedback-invalid-color;

@@ -24,6 +24,7 @@ from wagtail.images.models import Image
 from wagtail.search import index
 from wagtail.snippets.models import register_snippet
 
+from .backends import add_to_comses_permission_whitelist
 from .fields import MarkdownField
 
 
@@ -137,6 +138,7 @@ class MemberProfileQuerySet(models.QuerySet):
             User.objects.filter(email=candidate_email).exclude(pk=exclude_user.pk).values_list('pk'))
 
 
+@add_to_comses_permission_whitelist
 @register_snippet
 class MemberProfile(index.Indexed, ClusterableModel):
     """
@@ -162,6 +164,36 @@ class MemberProfile(index.Indexed, ClusterableModel):
     research_interests = MarkdownField(max_length=512)
 
     objects = MemberProfileQuerySet.as_manager()
+
+    panels = [
+        FieldPanel('bio', widget=forms.Textarea),
+        FieldPanel('research_interests', widget=forms.Textarea),
+        FieldPanel('personal_url'),
+        FieldPanel('professional_url'),
+        FieldPanel('institution'),
+        ImageChooserPanel('picture'),
+        FieldPanel('tags'),
+    ]
+
+    search_fields = [
+        index.SearchField('bio', partial_match=True, boost=5),
+        index.SearchField('research_interests', partial_match=True, boost=5),
+        index.FilterField('is_active'),
+        index.FilterField('username'),
+        index.SearchField('degrees', partial_match=True),
+        index.SearchField('name', partial_match=True, boost=5),
+        index.RelatedFields('institution', [
+            index.SearchField('name', partial_match=True),
+        ]),
+        index.RelatedFields('tags', [
+            index.SearchField('name', partial_match=True),
+        ]),
+        index.RelatedFields('user', [
+            index.SearchField('first_name', partial_match=True),
+            index.SearchField('last_name', partial_match=True, boost=3),
+            index.SearchField('email', partial_match=True, boost=3)
+        ]),
+    ]
 
     """
     Returns the ORCID profile URL associated with this member profile if it exists, or None
@@ -243,36 +275,6 @@ class MemberProfile(index.Indexed, ClusterableModel):
 
     def __str__(self):
         return str(self.user)
-
-    panels = [
-        FieldPanel('bio', widget=forms.Textarea),
-        FieldPanel('research_interests', widget=forms.Textarea),
-        FieldPanel('personal_url'),
-        FieldPanel('professional_url'),
-        FieldPanel('institution'),
-        ImageChooserPanel('picture'),
-        FieldPanel('tags'),
-    ]
-
-    search_fields = [
-        index.SearchField('bio', partial_match=True, boost=5),
-        index.SearchField('research_interests', partial_match=True, boost=5),
-        index.FilterField('is_active'),
-        index.FilterField('username'),
-        index.SearchField('degrees', partial_match=True),
-        index.SearchField('name', partial_match=True, boost=5),
-        index.RelatedFields('institution', [
-            index.SearchField('name', partial_match=True),
-        ]),
-        index.RelatedFields('tags', [
-            index.SearchField('name', partial_match=True),
-        ]),
-        index.RelatedFields('user', [
-            index.SearchField('first_name', partial_match=True),
-            index.SearchField('last_name', partial_match=True, boost=3),
-            index.SearchField('email', partial_match=True, boost=3)
-        ]),
-    ]
 
 
 class PlatformTag(TaggedItemBase):
@@ -371,6 +373,7 @@ class EventQuerySet(models.QuerySet):
         return self
 
 
+@add_to_comses_permission_whitelist
 class Event(index.Indexed, ClusterableModel):
     title = models.CharField(max_length=300)
     date_created = models.DateTimeField(default=timezone.now)
@@ -446,6 +449,7 @@ class JobQuerySet(models.QuerySet):
         return self.select_related('submitter__member_profile').order_by('-date_created')[:number]
 
 
+@add_to_comses_permission_whitelist
 class Job(index.Indexed, ClusterableModel):
     title = models.CharField(max_length=300, help_text=_('Job posting title'))
     date_created = models.DateTimeField(default=timezone.now)

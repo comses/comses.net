@@ -1,6 +1,6 @@
 {% extends "sidebar_layout.jinja" %}
 {% from "common.jinja" import breadcrumb, subnav, institution_href, search_tag_btn, render_social_profile_url %}
-{% from "library/codebases/macros.jinja" import render_codebase_result %}
+{% from "library/codebases/macros.jinja" import render_codebase_result, render_reviewer_feedback %}
 
 {% block title %}User profile for {{ full_name }}{% endblock %}
 
@@ -84,6 +84,11 @@
         <li class='nav-item'>
             <a class='nav-link' data-toggle='tab' href='#publications' role='tab'>Publications</a>
         </li>
+        {% if has_change_perm %}
+            <li class='nav-item'>
+                <a class='nav-link' data-toggle='tab' href='#peer-reviews' role='tab'>Peer Reviews</a>
+            </li>
+        {% endif %}
     </ul>
     <div class='tab-content'>
         <div class='tab-pane active' id='bio' role='tabpanel'>
@@ -121,6 +126,32 @@
                 Coming soon.
             </p>
         </div>
+        {% if has_change_perm %}
+            <div class='tab-pane' id='peer-reviews' role='tabpanel'>
+                <h3>Peer Reviews</h3>
+                {% for feedback in all_reviewer_feedback %}
+                    {{ render_reviewer_feedback(feedback) }}
+                {% else %}
+                    <p>
+                    No peer reviews conducted.
+                    </p>
+                {% endfor %}
+                <h3>Pending Peer Review Invitations</h3>
+                <div class='card'>
+                    <ul class='list-group'>
+                        {% for invitation in pending_invitations %}
+                            <li class='list-group-item'>
+                                <a href='{{ invitation.get_absolute_url() }}'>
+                                    {{ invitation.codebase_release_title }}
+                                </a>
+                            </li>
+                        {% else %}
+                            <li class='list-group-item'>No pending invitations</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        {% endif %}
     </div>
 {% endblock %}
 

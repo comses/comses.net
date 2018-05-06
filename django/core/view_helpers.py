@@ -55,6 +55,6 @@ def retrieve_with_perms(self, request, *args, **kwargs):
 
 
 def add_change_delete_perms(instance, data, user):
-    data['has_change_perm'] = user.has_perm('change_' + instance._meta.model_name, instance)
-    data['has_delete_perm'] = user.has_perm('delete_' + instance._meta.model_name, instance)
+    data['has_change_perm'] = user.has_perm('{}.change_{}'.format(instance._meta.app_label, instance._meta.model_name), instance)
+    data['has_delete_perm'] = user.has_perm('{}.delete_{}'.format(instance._meta.app_label, instance._meta.model_name), instance)
     return data

@@ -1,0 +1,21 @@
+{% extends 'base.jinja' %}
+{% from 'common.jinja' import format_date %}
+{% from 'library/review/includes/codebase_release.jinja' import codebase_release_name %}
+
+{% block introduction %}
+
+{% endblock %}
+
+{% block content %}
+    <h1>Review of
+        <a href="{{ review.codebase_release.get_absolute_url() }}">
+            {{ codebase_release_name(review.codebase_release) }}
+        </a> requested by
+        <a href="{{ review.submitter.get_absolute_url() }}">{{ review.submitter.name }}</a>
+    </h1>
+    <div id="app" data-review-uuid="{{ review.uuid }}"></div>
+{% endblock %}
+
+{% block js %}
+    {{ render_bundle('reviews') }}
+{% endblock %}

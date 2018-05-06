@@ -1,0 +1,44 @@
+{% from "common.jinja" import search_tag_href %}
+{% set release = invitation.review.codebase_release %}
+{% set codebase = release.codebase %}
+
+<html>
+<head>
+    {{ render_bundle('styles') }}
+</head>
+<body>
+Hello {{ invitation.invitee }},
+
+You have been requested to review the model
+
+<div class="card">
+    <div class="card-body">
+        <h1 class="card-title">
+            <a href="{{ release.get_absolute_url() }}">{{ codebase.title }} v{{ release.version_number }}</a>
+        </h1>
+
+        <span class="card-text">
+        {{ codebase.description|markdown }}
+        </span>
+
+        <b>Tags</b>
+        {% for tag in codebase.tags.all() %}
+        {{ search_tag_href(p, category='codebases') }}
+        {% else %}
+
+        <b>Programming Languages</b>
+        {% for programming_language in release.programming_languages %}
+        {{ search_tag_href(programming_language, category='codebases') }}
+        {% else %}
+
+        <b>Platforms</b>
+        {% for platform_tag in release.platform_tags %}
+        {{ search_tag_href(platform_tag, category='codebases') }}
+        {% else %}
+    </div>
+</div>
+
+To accept or decline this invitation click <a href="{{ invitation.get_absolute_url() }}">here</a>.
+
+</body>
+</html>

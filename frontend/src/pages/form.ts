@@ -71,10 +71,10 @@ function createComputed(key: string, validate: (self, value) => Promise<any>) {
         }), 500);
     return {
         get: function () {
-            return this.state[key];
+            return (<any>this).state[key];
         },
         set: function (value) {
-            this.state[key] = value;
+            (<any>this).state[key] = value;
             debouncedValidator(this, value);
         }
     }

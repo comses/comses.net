@@ -9,3 +9,5 @@ class MarkdownTextarea(widgets.MarkdownTextarea):
             value = value.raw
         # renderer isn't passed here because WidgetWithScript doesn't have that argument
         return super().render(name, value, attrs)
+
+

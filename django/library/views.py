@@ -4,26 +4,34 @@ import pathlib
 from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.core.exceptions import PermissionDenied
 from django.db import transaction
-from django.http import FileResponse, Http404
+from django.http import FileResponse, Http404, HttpResponseRedirect
 from django.shortcuts import get_object_or_404, redirect
-from django.urls import resolve
+from django.urls import resolve, reverse_lazy, reverse
 from django.views import View
 from django.views.generic.base import RedirectView
+from django.views.generic.detail import DetailView
+from django.views.generic.edit import UpdateView, FormView, CreateView
+from django_jinja.views.generic import ListView
+from guardian.decorators import permission_required
 from rest_framework import viewsets, generics, renderers, status, permissions, filters, mixins
 from rest_framework.decorators import action
 from rest_framework.exceptions import PermissionDenied as DrfPermissionDenied, ValidationError
 from rest_framework.response import Response
 
-from core.permissions import ComsesPermissions
+from core.models import MemberProfile
+from core.permissions import ViewRestrictedObjectPermissions
 from core.view_helpers import add_change_delete_perms, get_search_queryset
 from core.views import (CommonViewSetMixin, FormUpdateView, FormCreateView, SmallResultSetPagination,
-                        CaseInsensitiveOrderingFilter)
+                        CaseInsensitiveOrderingFilter, NoDeleteViewSet,
+                        NoDeleteNoUpdateViewSet)
+from .forms import PeerReviewEditForm, PeerReviewerFeedbackReviewerForm, PeerReviewInvitationReplyForm
 from .fs import FileCategoryDirectories, StagingDirectories, MessageLevels
-from .models import Codebase, CodebaseRelease, Contributor, CodebaseImage
-from .permissions import CodebaseReleaseUnpublishedFilePermissions
+from .models import (Codebase, CodebaseRelease, Contributor, CodebaseImage, PeerReview, PeerReviewerFeedback,
+                     PeerReviewInvitation, PeerReviewAction)
+from .permissions import CodebaseReleaseUnpublishedFilePermissions, PeerReviewInvitationPermissions
 from .serializers import (CodebaseSerializer, RelatedCodebaseSerializer, CodebaseReleaseSerializer,
                           ContributorSerializer, ReleaseContributorSerializer, CodebaseReleaseEditSerializer,
-                          CodebaseImageSerializer)
+                          CodebaseImageSerializer, PeerReviewInvitationSerializer, PeerReviewFeedbackEditorSerializer)
 
 logger = logging.getLogger(__name__)
 
@@ -36,6 +44,66 @@ def has_permission_to_create_release(request, view):
     else:
         required_perms = []
     return user.has_perms(required_perms, obj=codebase)
+
+
+class PeerReviewInvitationViewSet(NoDeleteNoUpdateViewSet):
+    queryset = PeerReviewInvitation.objects.all()
+    permission_classes = (PeerReviewInvitationPermissions,)
+    renderer_classes = (renderers.JSONRenderer,)
+    serializer_class = PeerReviewInvitationSerializer
+
+    def get_queryset(self):
+        uuid = self.kwargs['slug']
+        return self.queryset.filter(review__uuid=uuid)
+
+    @action(detail=True, methods=['post'])
+    def invite_reviewer(self, request, slug):
+        codebase_release = get_object_or_404(CodebaseRelease, review__uuid=slug)
+        username = request.data['username']
+        reviewer = get_object_or_404(MemberProfile, user__username=username)
+        codebase_release.send_reviewer_invite(reviewer)
+
+
+class PeerReviewFeedbackViewSet(NoDeleteNoUpdateViewSet):
+    queryset = PeerReviewerFeedback.objects.all()
+    renderer_classes = (renderers.JSONRenderer,)
+    serializer_class = PeerReviewFeedbackEditorSerializer
+
+    def get_queryset(self):
+        uuid = self.kwargs['slug']
+        return self.queryset.filter(review__uuid=uuid)
+
+
+class PeerReviewDashboardView(ListView):
+    template_name = 'library/review/dashboard.jinja'
+    model = PeerReviewAction
+    context_object_name = 'peer_review_actions'
+
+
+class PeerReviewEditorView(PermissionRequiredMixin, DetailView):
+    context_object_name = 'review'
+    model = PeerReview
+    permission_required = 'library.change_peerreview'
+    slug_field = 'uuid'
+    template_name = 'library/review/editor_update.jinja'
+
+
+class PeerReviewFeedbackListView(ListView):
+    template_name = 'library/review/feedback/list.jinja'
+    model = PeerReview
+    context_object_name = 'review_feedback_set'
+
+
+class PeerReviewFeedbackCreateView(CreateView):
+    template_name = 'library/review/feedback/create.jinja'
+    model = PeerReviewerFeedback
+    context_object_name = 'review_feedback'
+
+
+class PeerReviewInvitationUpdateView(UpdateView):
+    template_name = 'library/review/invitations/update.jinja'
+    form_class = PeerReviewInvitationReplyForm
+    context_object_name = 'invitation'
 
 
 class CodebaseFilter(filters.BaseFilterBackend):
@@ -64,13 +132,13 @@ class CodebaseFilter(filters.BaseFilterBackend):
 
 
 class CodebaseViewSet(CommonViewSetMixin,
-                      mixins.CreateModelMixin, mixins.ListModelMixin, mixins.RetrieveModelMixin, mixins.UpdateModelMixin,
-                      viewsets.GenericViewSet):
+                      NoDeleteViewSet):
     lookup_field = 'identifier'
     lookup_value_regex = r'[\w\-\.]+'
     pagination_class = SmallResultSetPagination
     queryset = Codebase.objects.with_tags().with_featured_images().order_by('-first_published_at', 'title')
     filter_backends = (CaseInsensitiveOrderingFilter, CodebaseFilter)
+    permission_classes = (ViewRestrictedObjectPermissions,)
     ordering_fields = ('first_published_at', 'title', 'last_modified', 'peer_reviewed', 'submitter__last_name',
                        'submitter__username')
 
@@ -107,7 +175,7 @@ class CodebaseViewSet(CommonViewSetMixin,
             return Response(data)
 
 
-class DevelopmentCodebaseDeleteView(mixins.DestroyModelMixin, viewsets.GenericViewSet):
+class DevelopmentCodebaseDeleteView(mixins.DestroyModelMixin, CodebaseViewSet):
     lookup_field = 'identifier'
     lookup_value_regex = r'[\w\-\.]+'
     pagination_class = SmallResultSetPagination
@@ -238,7 +306,6 @@ class CodebaseReleaseShareViewSet(CommonViewSetMixin, mixins.RetrieveModelMixin,
     permission_classes = (permissions.AllowAny,)
 
     def retrieve(self, request, *args, **kwargs):
-        logger.debug("retrieving object: %s", self.get_object())
         release = self.get_object()
         serializer = self.get_serializer(release)
         return Response(serializer.data)
@@ -261,17 +328,33 @@ class CodebaseReleaseShareViewSet(CommonViewSetMixin, mixins.RetrieveModelMixin,
         return response
 
 
+@permission_required('library.create_codebaserelease',
+                     (CodebaseRelease, 'codebase__identifier', 'identifier', 'version_number', 'version_number'))
+def create_peer_review(request, identifier, version_number):
+    if request.method == 'POST':
+        codebase_release = get_object_or_404(CodebaseRelease, codebase__identifier=identifier,
+                                             version_number=version_number)
+        review, created = PeerReview.objects.get_or_create(
+            codebase_release=codebase_release,
+            defaults={
+                'submitter': request.user.member_profile
+            }
+        )
+        return HttpResponseRedirect(reverse('library:codebaserelease-detail',
+                                            kwargs=dict(identifier=identifier, version_number=version_number)))
+    else:
+        return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
+
+
 class CodebaseReleaseViewSet(CommonViewSetMixin,
-                             mixins.CreateModelMixin, mixins.ListModelMixin, mixins.RetrieveModelMixin,
-                             mixins.UpdateModelMixin,
-                             viewsets.GenericViewSet):
-    namespace = 'library/codebases/releases/'
+                             NoDeleteViewSet):
+    namespace = 'library/codebases/releases'
     lookup_field = 'version_number'
     lookup_value_regex = r'\d+\.\d+\.\d+'
 
     queryset = CodebaseRelease.objects.with_platforms().with_programming_languages()
     pagination_class = SmallResultSetPagination
-    permission_classes = (NestedCodebaseReleasePermission, ComsesPermissions,)
+    permission_classes = (NestedCodebaseReleasePermission, ViewRestrictedObjectPermissions,)
 
     @property
     def template_name(self):

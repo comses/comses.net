@@ -6,3 +6,5 @@ declare module "*.html" {
 declare const __BASE_URL__: string;
 
 declare module 'yup';
+
+declare const Holder;

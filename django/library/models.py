@@ -1,9 +1,10 @@
 import logging
 import mimetypes
+import os
 import pathlib
 import uuid
+from enum import Enum
 
-import os
 import semver
 from django.conf import settings
 from django.contrib.auth.models import User
@@ -11,13 +12,13 @@ from django.contrib.postgres.fields import JSONField, ArrayField
 from django.core.cache import cache
 from django.core.files.images import ImageFile
 from django.core.files.storage import FileSystemStorage
+from django.core.mail import send_mail
 from django.db import models, transaction
 from django.db.models import Prefetch
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.text import slugify
 from django.utils.translation import ugettext_lazy as _
-from enum import Enum
 from ipware import get_client_ip
 from model_utils import Choices
 from modelcluster.contrib.taggit import ClusterTaggableManager
@@ -26,14 +27,18 @@ from modelcluster.models import ClusterableModel
 from rest_framework.exceptions import ValidationError
 from taggit.models import TaggedItemBase
 from unidecode import unidecode
+from wagtail.admin.edit_handlers import FieldPanel, InlinePanel
 from wagtail.images.models import Image, AbstractImage, AbstractRendition, get_upload_to, ImageQuerySet
 from wagtail.search import index
 from wagtail.search.backends import get_search_backend
+from wagtail.snippets.edit_handlers import SnippetChooserPanel
+from wagtail.snippets.models import register_snippet
 
 from core import fs
-from core.backends import get_viewable_objects_for_user
+from core.backends import add_to_comses_permission_whitelist
+from core.queryset import get_viewable_objects_for_user
 from core.fields import MarkdownField
-from core.models import Platform
+from core.models import Platform, MemberProfile
 from .fs import CodebaseReleaseFsApi, StagingDirectories, FileCategoryDirectories, MessageLevels
 
 logger = logging.getLogger(__name__)
@@ -271,6 +276,7 @@ class CodebaseQuerySet(models.QuerySet):
         return self.public().filter(peer_reviewed=True)
 
 
+@add_to_comses_permission_whitelist
 class Codebase(index.Indexed, ClusterableModel):
     """
     Metadata applicable across a set of CodebaseReleases
@@ -716,6 +722,7 @@ class CodebaseReleaseQuerySet(models.QuerySet):
         return qs[:number]
 
 
+@add_to_comses_permission_whitelist
 class CodebaseRelease(index.Indexed, ClusterableModel):
     """
     A snapshot of a codebase at a particular moment in time, versioned and addressable in a git repo behind-the-scenes
@@ -833,10 +840,9 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
 
     @property
     def regenerate_share_url(self):
-        if not self.share_uuid:
-            self.regenerate_share_uuid()
-        return reverse('library:codebaserelease-regenerate-share-uuid', kwargs={'identifier': self.codebase.identifier,
-                                                                                'version_number': self.version_number})
+        return reverse('library:codebaserelease-regenerate-share-uuid',
+                       kwargs={'identifier': self.codebase.identifier,
+                               'version_number': self.version_number})
 
     # FIXME: lift magic constants
     @property
@@ -943,7 +949,7 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
     def publish(self):
         CodebaseReleasePublisher(self).publish()
 
-# FIXME: use semver.bump_version instead of this handrolled logic
+    # FIXME: use semver.bump_version instead of this handrolled logic
     def possible_next_versions(self, minor_only=False):
         major, minor, patch = [int(v) for v in self.version_number.split('.')]
         next_minor = '{}.{}.0'.format(major, minor + 1)
@@ -1061,3 +1067,137 @@ class ReleaseContributor(models.Model):
 
     def __str__(self):
         return "{0} contributor {1}".format(self.release, self.contributor)
+
+
+@register_snippet
+class PeerReview(models.Model):
+    REVIEWER_RECOMMENDATION = Choices(
+        ('accept', _('This computational model meets CoMSES Net peer review requirements.')),
+        ('revise', _('This computational model must be revised to meet CoMSES Net peer review requirements.')),
+    )
+    EDITOR_RECOMMENDATION = [('editor_' + c[0], c[1]) for c in REVIEWER_RECOMMENDATION]
+    REVIEW_STATUS = Choices(
+        ('requested', _('Author requested review')),
+        ('reviewer_invited', _('Reviewer invited')),
+        ('reviewer_declined', _('Reviewer declined')),
+        ('reviewer_accepted', _('Reviewer accepted')),
+        ('reviewer_completed', _('Review has been completed and reviewer has made a recommendation'))
+    ) + EDITOR_RECOMMENDATION
+
+    date_created = models.DateTimeField(auto_now_add=True)
+    last_modified = models.DateTimeField(auto_now=True)
+    status = models.CharField(choices=REVIEW_STATUS, default=REVIEW_STATUS.requested,
+                              help_text=_("The current status of this review."),
+                              max_length=32)
+    codebase_release = models.OneToOneField(CodebaseRelease, related_name='review', on_delete=models.PROTECT)
+    assigned_reviewer = models.ForeignKey(MemberProfile, null=True, blank=True, related_name='+',
+                                          on_delete=models.SET_NULL,
+                                          help_text=_('User assigned to perform this review'))
+    assigned_reviewer_email = models.EmailField(blank=True,
+                                                help_text=_('Assigned reviewer email'))
+    submitter = models.ForeignKey(MemberProfile, related_name='+', on_delete=models.PROTECT)
+    uuid = models.UUIDField(default=uuid.uuid4, unique=True, null=True)
+
+    panels = [
+        FieldPanel('status'),
+        SnippetChooserPanel('assigned_reviewer'),
+        FieldPanel('assigned_reviewer_email'),
+    ]
+
+    def get_assigned_reviewer_email(self):
+        if self.assigned_reviewer:
+            return self.assigned_reviewer.email
+        return self.assigned_reviewer_email
+
+    def get_absolute_url(self):
+        if not self.uuid:
+            self.uuid = uuid.uuid4()
+            self.save()
+        return reverse('library:peer-review-detail', kwargs={'slug': self.uuid})
+
+    def __str__(self):
+        return 'PeerReview of "{} v{}" by {}'.format(
+            self.codebase_release.codebase.title,
+            self.codebase_release.version_number,
+            self.codebase_release.submitter.get_full_name() or self.codebase_release.submitter)
+
+
+@register_snippet
+class PeerReviewInvitation(models.Model):
+    date_created = models.DateTimeField(auto_now_add=True)
+    review = models.ForeignKey(PeerReview, related_name='invitations', on_delete=models.CASCADE)
+    editor = models.ForeignKey(MemberProfile, related_name='+', on_delete=models.PROTECT)
+    candidate_reviewer = models.ForeignKey(MemberProfile, related_name='peer_review_invitation_set',
+                                           null=True, blank=True,
+                                           on_delete=models.CASCADE)
+    candidate_email = models.EmailField(blank=True, help_text=_("Contact email for candidate non-member reviewer"))
+    optional_message = MarkdownField(help_text=_("Optional markdown text to be added to the email"))
+    slug = models.UUIDField()
+
+    @property
+    def invitee(self):
+        return self.candidate_reviewer.name if self.candidate_reviewer else self.candidate_email
+
+    @property
+    def recipient(self):
+        return self.candidate_email or self.candidate_reviewer.email
+
+    @property
+    def from_email(self):
+        return settings.DEFAULT_FROM_EMAIL
+
+    def send_invitation(self):
+        """Email the reviewer a invitation"""
+        send_mail()
+
+    def get_absolute_url(self):
+        return reverse('library:peer-review-invitation', kwargs=dict(slug=self.slug))
+
+    class Meta:
+        permissions = (('view_peerreviewinvitation', 'Can view peer review invitations'),)
+
+
+@register_snippet
+class PeerReviewAction(models.Model):
+    date_created = models.DateTimeField(auto_now_add=True)
+    review = models.ForeignKey(PeerReview, related_name='actions', on_delete=models.CASCADE)
+    action = models.CharField(choices=PeerReview.REVIEW_STATUS, help_text=_("status action requested."),
+                              max_length=32)
+    author = models.ForeignKey(MemberProfile, related_name='+', on_delete=models.CASCADE,
+                               help_text=_('User originating this action'))
+    message = models.CharField(blank=True, max_length=500)
+
+
+@register_snippet
+class PeerReviewerFeedback(models.Model):
+    date_created = models.DateTimeField(auto_now_add=True)
+    invitation = models.ForeignKey(PeerReviewInvitation, related_name='feedback_set', on_delete=models.CASCADE)
+    recommendation = models.CharField(choices=PeerReview.REVIEWER_RECOMMENDATION, max_length=16)
+    reviewer = models.ForeignKey(MemberProfile, related_name='reviewer_feedback_set', on_delete=models.PROTECT)
+    private_reviewer_notes = MarkdownField(help_text=_('Private reviewer notes to the editor.'))
+    private_editor_notes = MarkdownField(help_text=_('Private editor notes regarding this peer review'))
+    notes_to_author = MarkdownField(help_text=_("Notes to be sent to the model author"))
+    has_narrative_documentation = models.BooleanField(
+        default=False,
+        help_text=_('Is there sufficiently detailed accompanying narrative documentation?')
+    )
+    narrative_documentation_comments = models.TextField(
+        help_text=_('Reviewer comments on the narrative documentation')
+    )
+    has_clean_code = models.BooleanField(
+        default=False,
+        help_text=_('Is the code clean, well-written, and well-commented with consistent formatting?')
+    )
+    clean_code_comments = models.TextField(
+        help_text=_('Reviewer comments on code cleanliness')
+    )
+    is_runnable = models.BooleanField(
+        default=False,
+        help_text=_('Were you able to run the model with the provided instructions?')
+    )
+    runnable_comments = models.TextField(
+        help_text=_('Reviewer comments on running the model with the provided instructions')
+    )
+
+    def get_absolute_url(self):
+        return reverse('library:reviewer-feedback', kwargs={'review_uuid': self.invitation.slug})

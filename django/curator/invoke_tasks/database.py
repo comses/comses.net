@@ -17,6 +17,12 @@ def get_database_settings(db_key):
     )
 
 
+@task(aliases=['sh'])
+def shell(ctx, db_key=_DEFAULT_DATABASE):
+    """Open a pgcli shell to the database"""
+    ctx.run('pgcli -h {db_host} -d {db_name} -U {db_user}'.format(**get_database_settings(db_key)), pty=True)
+
+
 @task(aliases=['pgpass'])
 def create_pgpass_file(ctx, db_key=_DEFAULT_DATABASE, force=False):
     db_config = get_database_settings(db_key)

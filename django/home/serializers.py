@@ -9,7 +9,9 @@ from rest_framework.exceptions import ValidationError as DrfValidationError
 
 from core.models import Institution, MemberProfile
 from core.serializers import TagSerializer, MarkdownField
-from library.serializers import RelatedCodebaseSerializer
+from library.serializers import (RelatedCodebaseSerializer, PeerReviewerFeedbackSerializer,
+                                 PeerReviewInvitationSerializer)
+
 from .models import (FeaturedContentItem, UserMessage)
 
 logger = logging.getLogger(__name__)
@@ -29,6 +31,7 @@ class UserMessageSerializer(serializers.ModelSerializer):
         fields = ('message', 'user')
 
 
+# FIXME: try to reduce duplication here and MemberProfileSerializer
 class MemberProfileListSerializer(serializers.ModelSerializer):
     date_joined = serializers.DateTimeField(source='user.date_joined', read_only=True, format='%c')
     full_name = serializers.CharField(source='name')
@@ -82,6 +85,10 @@ class MemberProfileSerializer(serializers.ModelSerializer):
     profile_url = serializers.URLField(source='get_absolute_url', read_only=True)
     bio = MarkdownField()
     research_interests = MarkdownField()
+
+    # reviewer data
+    all_reviewer_feedback = PeerReviewerFeedbackSerializer(source='reviewer_feedback_set', many=True, read_only=True)
+    pending_invitations = PeerReviewInvitationSerializer(source='peer_review_invitation_set', many=True, read_only=True)
 
     def get_email(self, instance):
         request = self.context.get('request')
@@ -171,4 +178,7 @@ class MemberProfileSerializer(serializers.ModelSerializer):
             'institution_name', 'institution_url',
             # MemberProfile
             'avatar', 'bio', 'name', 'degrees', 'full_member', 'tags', 'orcid_url', 'github_url', 'personal_url',
-            'is_reviewer', 'professional_url', 'profile_url', 'research_interests',)
+            'is_reviewer', 'professional_url', 'profile_url', 'research_interests',
+            # peer reviews
+            'all_reviewer_feedback', 'pending_invitations',
+        )

@@ -22,7 +22,6 @@ describe('codebase editing', () => {
     it('should allow updating and retrieving of codebases', async () => {
         const _identifier = await createCodebase();
         try {
-            console.log('foo');
             const vm = new EditCodebase({propsData: {_identifier}});
             await vm.initializeForm();
             expect((<any>vm).title).to.equal('Sugarscape');

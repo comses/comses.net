@@ -10,17 +10,16 @@ import Multiselect from 'vue-multiselect'
 
 const profileAPI = new ProfileAPI();
 
-const debounceFetchMatchingUsers = _.debounce((self: UsernameSearch, query: string) => {
-    self.isLoading = true;
-    profileAPI.search({query, page: 1})
-            .then(response => {
-                self.matchingUsers = response.data.results;
-                self.isLoading = false;
-            })
-            .catch(err => {
-                self.localErrors = 'Error fetching tags';
-                self.isLoading = false;
-            });
+const debounceFetchMatchingUsers = _.debounce(async (self: UsernameSearch, query: string) => {
+    try {
+        self.isLoading = true;
+        const response = await profileAPI.search({query, page: 1});
+        self.matchingUsers = response.data.results;
+        self.isLoading = false;
+    } catch (err) {
+        self.localErrors = 'Error fetching tags';
+        self.isLoading = false;
+    }
 }, 600);
 
 @Component({

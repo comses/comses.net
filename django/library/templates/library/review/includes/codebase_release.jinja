@@ -1,0 +1,3 @@
+{% macro codebase_release_name(codebase_release) %}
+    {{ codebase_release.codebase.title }} v{{ codebase_release.version_number }}
+{% endmacro %}

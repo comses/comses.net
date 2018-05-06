@@ -25,7 +25,7 @@ module.exports = function(config) {
         },
         webpack: webpackConfig,
         client: {
-           captureConsole: false
+           captureConsole: true
         },
         reporters: ['mocha', 'coverage'],
         browsers: ['ChromeCustom'],
