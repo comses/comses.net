@@ -56,6 +56,11 @@ services:
       - ./deploy/conf/config.ini:/secrets/config.ini
       - ./deploy/elasticsearch.conf.d:/etc/elasticsearch
       - ./docker/shared:/shared
+    depends_on:
+      - ${DB_HOST}
+      - js
+      - elasticsearch
+      - redis
     environment:
       DJANGO_SETTINGS_MODULE: "core.settings.dev"
       DB_USER: ${DB_USER}
