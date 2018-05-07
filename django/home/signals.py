@@ -27,7 +27,7 @@ def sync_discourse_user(sender, instance: User, created, **kwargs):
     """Create a discourse user account when a user is created"""
     # to test discourse synchronization locally eliminate the DEPLOY_ENVIRONMENT check
     # but this will produce many test accounts if enabled in testing
-    if created and instance.username not in EXCLUDED_USERNAMES and settings.is_staging_or_production():
+    if created and instance.username not in EXCLUDED_USERNAMES and settings.DEPLOY_ENVIRONMENT.is_staging_or_production():
         response = create_discourse_user(instance)
         response.raise_for_status()
         data = response.json()
