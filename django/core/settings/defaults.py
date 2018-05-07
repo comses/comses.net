@@ -226,7 +226,7 @@ LOGGING = {
     'version': 1,
     'disable_existing_loggers': True,
     'root': {
-        'level': 'INFO',
+        'level': 'DEBUG',
         'handlers': ['console', 'rollingfile'],
     },
     'formatters': {
@@ -279,12 +279,12 @@ LOGGING = {
             'handlers': ['console', 'rollingfile'],
             'propagate': False,
         },
-        'library.fs': {
+        'core': {
             'level': 'DEBUG',
             'handlers': ['console', 'rollingfile'],
-            'propagate': False
+            'propagate': False,
         },
-        'core': {
+        'invoke': {
             'level': 'DEBUG',
             'handlers': ['console', 'rollingfile'],
             'propagate': False,
