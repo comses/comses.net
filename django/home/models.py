@@ -507,6 +507,11 @@ class Journal(index.Indexed, ClusterableModel):
         ]),
     ]
 
+    def __lt__(self, other):
+        if isinstance(other, Journal):
+            return self.name < other.name
+        raise TypeError("Unorderable types: {0} < {1}".format(Journal, type(other)))
+
     def __str__(self):
         return "{0} {1} {2}".format(self.name, self.url, self.issn)
 
@@ -522,7 +527,7 @@ class JournalSnippetPlacement(models.Model):
     class Meta:
         verbose_name = 'journal placement'
         verbose_name_plural = 'journal placements'
-        ordering = ('journal__name',)
+        ordering = ['journal']
 
 
 class JournalIndexPage(NavigationMixin, Page):
