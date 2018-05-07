@@ -1,11 +1,12 @@
 [run]
+branch = True
 source =
-    home
     core
+    curator
+    home
     library
-    drupal_migrator
 
 [paths]
 source =
-    ./
+    .
     /code
