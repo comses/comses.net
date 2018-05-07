@@ -29,7 +29,7 @@ from wagtail.snippets.models import register_snippet
 
 from core.fields import MarkdownField
 from core.models import MemberProfile, Platform, Event, Job
-from core.utils import get_canonical_image
+from core.fs import get_canonical_image
 from library.models import Codebase
 from .forms import ContactForm
 

@@ -1,22 +1,7 @@
-import pathlib
 from distutils.util import strtobool
 
 from dateutil import parser
-from django.core.files.images import ImageFile
 from django.utils import timezone
-from wagtail.images.models import Image
-
-
-def get_canonical_image(title, path, user):
-    _image_path = pathlib.Path(path)
-    if Image.objects.filter(title=title).exists():
-        _image = Image.objects.get(title=title)
-    else:
-        _image = Image.objects.create(
-            title=title,
-            file=ImageFile(_image_path.open('rb')),
-            uploaded_by_user=user)
-    return _image
 
 
 def parse_datetime(datetime_str: str):
