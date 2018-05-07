@@ -6,7 +6,7 @@ from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group, User
 from django.contrib.postgres.fields import ArrayField, JSONField
-from django.db import models
+from django.db import models, transaction
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.translation import ugettext_lazy as _
@@ -27,6 +27,8 @@ from wagtail.snippets.models import register_snippet
 from .backends import add_to_comses_permission_whitelist
 from .fields import MarkdownField
 
+EXCLUDED_USERNAMES = ('AnonymousUser', 'openabm')
+
 
 class ComsesGroups(Enum):
     ADMIN = "Admins"
@@ -36,9 +38,7 @@ class ComsesGroups(Enum):
 
     @staticmethod
     def initialize():
-        return [
-            Group.objects.get_or_create(name=g.value)[0] for g in ComsesGroups
-        ]
+        return [Group.objects.get_or_create(name=g.value)[0] for g in ComsesGroups]
 
     def get_group(self):
         _group = getattr(self, 'group', None)
@@ -47,6 +47,7 @@ class ComsesGroups(Enum):
         return _group
 
 
+@transaction.atomic
 def get_sentinel_user():
     return get_user_model().objects.get_or_create(username='openabm')[0]
 
@@ -74,7 +75,7 @@ class SocialMediaSettings(BaseSetting):
     contact_form_recipients = ArrayField(
         models.EmailField(),
         help_text=_('Email address(es) where contact forms will be sent. Separate multiple addresses with commas,'
-                    ' e.g., `editors@openabm.org,info@openabm.org`'),
+                    ' e.g., `editors@comses.net,info@comses.net`'),
         default=list)
 
 
@@ -99,15 +100,14 @@ class MemberProfileTag(TaggedItemBase):
 
 
 class FollowUser(models.Model):
-    target = models.ForeignKey(User, related_name='followers', on_delete=models.CASCADE)
-    source = models.ForeignKey(User, related_name='following', on_delete=models.CASCADE)
+    target = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='followers', on_delete=models.CASCADE)
+    source = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='following', on_delete=models.CASCADE)
 
     def __str__(self):
         return '{0} following {1}'.format(self.source, self.target)
 
 
 class MemberProfileQuerySet(models.QuerySet):
-    EXCLUDED_USERS = ('AnonymousUser', 'openabm')
 
     def find_by_name(self, query):
         return self.filter(models.Q(user__username__icontains=query) |
@@ -126,7 +126,7 @@ class MemberProfileQuerySet(models.QuerySet):
         return self.prefetch_related('tagged_members__tag')
 
     def public(self, **kwargs):
-        return self.filter(user__is_active=True, **kwargs).exclude(user__username__in=self.EXCLUDED_USERS)
+        return self.filter(user__is_active=True, **kwargs).exclude(user__username__in=EXCLUDED_USERNAMES)
 
     def find_users_with_email(self, candidate_email, exclude_user=None):
         """
@@ -391,7 +391,7 @@ class Event(index.Indexed, ClusterableModel):
 
     objects = EventQuerySet.as_manager()
 
-    submitter = models.ForeignKey(User, on_delete=models.SET(get_sentinel_user))
+    submitter = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET(get_sentinel_user))
 
     search_fields = [
         index.SearchField('title', partial_match=True, boost=10),
@@ -460,7 +460,7 @@ class Job(index.Indexed, ClusterableModel):
     tags = ClusterTaggableManager(through=JobTag, blank=True)
     external_url = models.URLField(blank=True)
 
-    submitter = models.ForeignKey(User, related_name='jobs', on_delete=models.SET(get_sentinel_user))
+    submitter = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='jobs', on_delete=models.SET(get_sentinel_user))
 
     objects = JobQuerySet.as_manager()
 

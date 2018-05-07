@@ -8,17 +8,16 @@ from django.dispatch import receiver
 from wagtail.core.models import Site as WagtailSite
 
 from core.discourse import create_discourse_user
-from core.models import MemberProfile
+from core.models import MemberProfile, EXCLUDED_USERNAMES
 
 logger = logging.getLogger(__name__)
-
 
 @receiver(post_save, sender=User, dispatch_uid='member_profile_sync')
 def sync_user_member_profiles(sender, instance: User, created, **kwargs):
     """
     Ensure every created User has an associated MemberProfile
     """
-    if created and instance.username not in ('AnonymousUser',):
+    if created and instance.username not in EXCLUDED_USERNAMES:
         # ignore anonymous user
         MemberProfile.objects.get_or_create(user=instance)
 
@@ -26,24 +25,23 @@ def sync_user_member_profiles(sender, instance: User, created, **kwargs):
 @receiver(post_save, sender=User, dispatch_uid='discourse_user_sync')
 def sync_discourse_user(sender, instance: User, created, **kwargs):
     """Create a discourse user account when a user is created"""
-
-    # if you want to test discourse synchronization locally you could eliminate the DEPLOY_ENVIRONMENT check
-    # note: this will produce many test accounts if enabled in testing
-    is_staging_or_production = settings.DEPLOY_ENVIRONMENT.is_production() or settings.DEPLOY_ENVIRONMENT.is_staging()
-    if created and instance.username not in ('AnonymousUser',) and is_staging_or_production:
+    # to test discourse synchronization locally eliminate the DEPLOY_ENVIRONMENT check
+    # but this will produce many test accounts if enabled in testing
+    if created and instance.username not in EXCLUDED_USERNAMES and settings.is_staging_or_production():
         response = create_discourse_user(instance)
         response.raise_for_status()
         data = response.json()
-        if data.get('success', False):
-            logger.error('Failed syncing user {} to discourse. Got payload of {}.'.format(instance, response.json()))
+        if data.get('success'):
+            logger.debug('synced user %s with discourse: %s', instance, response.json())
         else:
-            logger.debug('Syncing user {} to discourse. Got payload of {}.'.format(instance, response.json()))
+            logger.error('failed to sync user %s with discourse: %s', instance, response.json())
 
 
 @receiver(post_save, sender=WagtailSite, dispatch_uid='wagtail_site_sync')
 def sync_wagtail_django_sites(sender, instance: WagtailSite, created: bool, **kwargs):
     """
     Keep default django.contrib.sites.models.Site in sync with the wagtail.wagtailcore.models.Site instance.
+    This is one-way only, so changes should typically be made to the WagtailSite model.
     """
     if instance.is_default_site and all([instance.site_name, instance.hostname]):
         site = Site.objects.first()
