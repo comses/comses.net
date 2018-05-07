@@ -343,7 +343,7 @@ class EventQuerySet(models.QuerySet):
     def find_by_interval(self, start, end):
         """
         Returns all Events whose early registration deadline or submission deadline falls within the interval and whose
-        start date and end date do not intersect with the interval
+        start date and end date intersect with the interval
         :param start:
         :param end:
         :return:
@@ -353,9 +353,9 @@ class EventQuerySet(models.QuerySet):
             models.Q(early_registration_deadline__range=[start, end]) |
             # or submission deadline falls between the interval
             models.Q(submission_deadline__range=[start, end]) |
-            models.Q(start_date__gte=start)
-            # exclude events whose end date is before the interval start
-        ).exclude(models.Q(end_date__lte=start))
+            models.Q(start_date__range=[start, end]) |
+            models.Q(end_date__range=[start, end])
+        )
 
     def with_submitter(self):
         return self.select_related('submitter')
