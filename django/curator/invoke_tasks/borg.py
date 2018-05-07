@@ -7,7 +7,7 @@ from django.conf import settings
 from invoke import task
 
 from . import database as db
-from .util import confirm
+from core.utils import confirm
 
 DEFAULT_LIBRARY_BASENAME = os.path.basename(settings.LIBRARY_ROOT)
 DEFAULT_MEDIA_BASENAME = os.path.basename(settings.MEDIA_ROOT)

@@ -3,7 +3,8 @@ import pathlib
 
 from invoke import task
 from django.conf import settings
-from .util import dj, confirm
+from .utils import dj
+from core.utils import confirm
 
 _DEFAULT_DATABASE = 'default'
 
@@ -53,7 +54,6 @@ def run_migrations(ctx, clean=False, initial=False):
         for app in apps:
             migration_dir = os.path.join(app, 'migrations')
             ctx.run('find {0} -name 00*.py -delete -print'.format(migration_dir))
-    # dj(ctx, 'makemigrations citation --noinput')
     dj(ctx, 'makemigrations {0} --noinput'.format(' '.join(apps)))
     migrate_command = 'migrate --noinput'
     if initial:

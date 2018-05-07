@@ -2,7 +2,7 @@
 
 from invoke import task, call
 from django.conf import settings
-from .util import dj, env
+from .utils import dj, env
 
 
 @task(aliases=['ss'])

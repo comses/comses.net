@@ -1,6 +1,6 @@
 from invoke import task
 from .base import setup_site
-from .util import dj
+from .utils import dj
 
 @task(aliases=['idd'])
 def import_drupal_data(ctx, directory='/shared/incoming'):
