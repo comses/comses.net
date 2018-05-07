@@ -5,6 +5,8 @@ source =
     curator
     home
     library
+omit =
+    */templates/*
 
 [paths]
 source =
