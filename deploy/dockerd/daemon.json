@@ -1,0 +1,6 @@
+{
+    "data-root": "/docker/data",
+    "storage-driver": "overlay2",
+    "max-size": "20m",
+    "max-file": "6"
+}
