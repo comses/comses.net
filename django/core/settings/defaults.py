@@ -47,6 +47,8 @@ BASE_DIR = os.path.dirname(PROJECT_DIR)
 
 DEBUG = True
 
+MAINTENANCE_MODE = None
+
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/2.0/howto/deployment/checklist/
 
@@ -107,7 +109,7 @@ COMSES_APPS = [
     'curator.apps.CuratorConfig',
 ]
 
-INSTALLED_APPS = DJANGO_APPS + WAGTAIL_APPS + COMSES_APPS + THIRD_PARTY_APPS
+INSTALLED_APPS = DJANGO_APPS + WAGTAIL_APPS + THIRD_PARTY_APPS + COMSES_APPS
 
 MIDDLEWARE = [
     'django.contrib.sessions.middleware.SessionMiddleware',
