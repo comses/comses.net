@@ -42,6 +42,7 @@ from core.queryset import get_viewable_objects_for_user
 from core.fields import MarkdownField
 from core.models import Platform, MemberProfile
 from core.templatetags.globals import markdown
+from core.view_helpers import search_backend
 from .fs import CodebaseReleaseFsApi, StagingDirectories, FileCategoryDirectories, MessageLevels
 
 logger = logging.getLogger(__name__)
@@ -776,7 +777,7 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
     programming_languages = ClusterTaggableManager(through=ProgrammingLanguage,
                                                    related_name='pl_codebase_releases')
     codebase = models.ForeignKey(Codebase, related_name='releases', on_delete=models.PROTECT)
-    submitter = models.ForeignKey(User, on_delete=models.PROTECT)
+    submitter = models.ForeignKey(User, related_name='releases', on_delete=models.PROTECT)
     contributors = models.ManyToManyField(Contributor, through='ReleaseContributor')
     submitted_package = models.FileField(upload_to=Codebase._release_upload_path, max_length=1000, null=True,
                                          storage=FileSystemStorage(location=settings.LIBRARY_ROOT))
@@ -1093,7 +1094,7 @@ class PeerReview(models.Model):
                               help_text=_("The current status of this review."),
                               max_length=32)
     codebase_release = models.OneToOneField(CodebaseRelease, related_name='review', on_delete=models.PROTECT)
-    assigned_reviewer = models.ForeignKey(MemberProfile, null=True, blank=True, related_name='+',
+    assigned_reviewer = models.ForeignKey(MemberProfile, null=True, blank=True, related_name='reviews',
                                           on_delete=models.SET_NULL,
                                           help_text=_('User assigned to perform this review'))
     assigned_reviewer_email = models.EmailField(blank=True,
@@ -1118,11 +1119,30 @@ class PeerReview(models.Model):
             self.save()
         return reverse('library:peer-review-detail', kwargs={'slug': self.uuid})
 
+    @staticmethod
+    def get_reviewers(query=None):
+        queryset = MemberProfile.objects.annotate(
+            n_pending_reviews=models.Sum((models.Case(models.When(reviews__status='editor_accept', then=1),
+                                                      default=0,
+                                                      output_field=models.IntegerField()))),
+            n_total_reviews=models.Count('reviews'))
+        if query is not None:
+            results = search_backend.search(query, queryset)
+            results.model = queryset.model
+            return results
+        else:
+            return queryset
+
     def __str__(self):
         return 'PeerReview of "{} v{}" by {}'.format(
             self.codebase_release.codebase.title,
             self.codebase_release.version_number,
             self.codebase_release.submitter.get_full_name() or self.codebase_release.submitter)
+
+
+class PeerReviewInvitationQuerySet(models.QuerySet):
+    def with_reviewer_statistics(self):
+        return self.prefetch_related(models.Prefetch('candidate_reviewer', PeerReview.get_reviewers()))
 
 
 @register_snippet
@@ -1137,6 +1157,8 @@ class PeerReviewInvitation(models.Model):
     optional_message = MarkdownField(help_text=_("Optional markdown text to be added to the email"))
     slug = models.UUIDField(unique=True, default=uuid.uuid4, editable=False)
     accepted = models.NullBooleanField()
+
+    objects = PeerReviewInvitationQuerySet.as_manager()
 
     @property
     def invitee(self):

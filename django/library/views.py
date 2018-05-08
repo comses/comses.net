@@ -14,11 +14,11 @@ from django.views.generic.edit import UpdateView, FormView, CreateView
 from django_jinja.views.generic import ListView
 from guardian.decorators import permission_required
 from rest_framework import viewsets, generics, renderers, status, permissions, filters, mixins
-from rest_framework.decorators import action
+from rest_framework.decorators import action, api_view
 from rest_framework.exceptions import PermissionDenied as DrfPermissionDenied, ValidationError
 from rest_framework.response import Response
 
-from core.models import MemberProfile
+from core.models import MemberProfile, ComsesGroups
 from core.permissions import ViewRestrictedObjectPermissions
 from core.view_helpers import add_change_delete_perms, get_search_queryset
 from core.views import (CommonViewSetMixin, FormUpdateView, FormCreateView, SmallResultSetPagination,
@@ -32,7 +32,8 @@ from .models import (Codebase, CodebaseRelease, Contributor, CodebaseImage, Peer
 from .permissions import CodebaseReleaseUnpublishedFilePermissions, PeerReviewInvitationPermissions
 from .serializers import (CodebaseSerializer, RelatedCodebaseSerializer, CodebaseReleaseSerializer,
                           ContributorSerializer, ReleaseContributorSerializer, CodebaseReleaseEditSerializer,
-                          CodebaseImageSerializer, PeerReviewInvitationSerializer, PeerReviewFeedbackEditorSerializer)
+                          CodebaseImageSerializer, PeerReviewInvitationSerializer, PeerReviewFeedbackEditorSerializer,
+                          PeerReviewReviewerSerializer)
 
 logger = logging.getLogger(__name__)
 
@@ -47,8 +48,18 @@ def has_permission_to_create_release(request, view):
     return user.has_perms(required_perms, obj=codebase)
 
 
+class PeerReviewReviewerListView(mixins.ListModelMixin, viewsets.GenericViewSet):
+    queryset = MemberProfile.objects.all()
+    serializer_class = PeerReviewReviewerSerializer
+
+    def get_queryset(self):
+        query = self.request.query_params.get('query', '')
+        results = PeerReview.get_reviewers(query)
+        return results
+
+
 class PeerReviewInvitationViewSet(NoDeleteNoUpdateViewSet):
-    queryset = PeerReviewInvitation.objects.all()
+    queryset = PeerReviewInvitation.objects.with_reviewer_statistics()
     permission_classes = (PeerReviewInvitationPermissions,)
     renderer_classes = (renderers.JSONRenderer,)
     serializer_class = PeerReviewInvitationSerializer
@@ -61,9 +72,17 @@ class PeerReviewInvitationViewSet(NoDeleteNoUpdateViewSet):
     @action(detail=False, methods=['post'])
     def send_invitation(self, request, slug):
         data = request.data
-        data['review'] = get_object_or_404(PeerReview, uuid=slug).id
-        data['editor'] = request.user.member_profile.id
-        form = PeerReviewInvitationForm(data=data)
+        candidate_reviewer_id = data.get('id')
+        candidate_email = data.get('email')
+        form_data = dict(review=get_object_or_404(PeerReview, uuid=slug).id,
+                         editor=request.user.member_profile.id)
+        if candidate_reviewer_id is not None:
+            form_data['candidate_reviewer'] = candidate_reviewer_id
+        elif candidate_email is not None:
+            form_data['candidate_email'] = candidate_email
+        else:
+            raise ValidationError('Must have either id or email fields')
+        form = PeerReviewInvitationForm(data=form_data)
         if form.is_valid():
             form.save()
             return Response(status=status.HTTP_200_OK)

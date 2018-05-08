@@ -3,6 +3,7 @@ import Vue from 'vue'
 import Multiselect from 'vue-multiselect'
 import {ProfileAPI, ReviewEditorAPI} from "api";
 import * as _ from 'lodash';
+import {holder} from "pages/review/directives";
 
 const reviewApi = new ReviewEditorAPI();
 const profileApi = new ProfileAPI();
@@ -10,7 +11,7 @@ const profileApi = new ProfileAPI();
 const debounceFetchMatchingUsers = _.debounce(async (self: ReviewerFinder, query: string) => {
     try {
         self.isLoading = true;
-        const response = await profileApi.search({query, page: 1});
+        const response = await reviewApi.findReviewers({query});
         self.matchingUsers = response.data.results;
         self.isLoading = false;
     } catch (err) {
@@ -38,10 +39,10 @@ const debounceFetchMatchingUsers = _.debounce(async (self: ReviewerFinder, query
                 <div class="container">
                     <div class="row">
                         <div class="col-2">
-                            <img v-holder="props.option.avatar">
+                            <img v-holder="props.option.avatar_url">
                         </div>
                         <div class="col-10">
-                            <h2>{{ props.option.full_name }}</h2>
+                            <h2>{{ props.option.name }}</h2>
                             <div class="tag-list">
                                 <div class="tag mx-1" v-for="tag in props.option.tags">{{ tag.name }}</div>
                             </div>
@@ -54,22 +55,7 @@ const debounceFetchMatchingUsers = _.debounce(async (self: ReviewerFinder, query
         Multiselect
     },
     directives: {
-        holder: {
-            update(el, binding) {
-                if (!binding.expression) {
-                    throw new Error('holder directive must have a value')
-                }
-                if (_.isNull(binding.value)) {
-                    el.setAttribute('src', undefined);
-                    el.setAttribute('data-src', 'holder.js/80x80?text=No submitted image');
-                    Holder.run({
-                        images: el
-                    });
-                } else {
-                    el.setAttribute('src', binding.value);
-                }
-            }
-        }
+        holder
     }
 })
 export class ReviewerFinder extends Vue {

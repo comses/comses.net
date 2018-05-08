@@ -11,6 +11,7 @@ router = SimpleRouter()
 router.register(r'codebases', views.CodebaseViewSet)
 router.register(r'codebases/(?P<identifier>[\w\-.]+)/media', views.CodebaseFilesViewSet)
 router.register(r'codebases/(?P<identifier>[\w\-.]+)/releases', views.CodebaseReleaseViewSet)
+router.register(r'reviewers', views.PeerReviewReviewerListView),
 router.register(r'reviews/(?P<slug>[\da-f\-]+)/editor/invitations', views.PeerReviewInvitationViewSet),
 router.register(r'reviews/(?P<slug>[\da-f\-]+)/editor/feedback', views.PeerReviewFeedbackViewSet),
 router.register(views.CodebaseReleaseFilesSipViewSet.get_url_matcher(),

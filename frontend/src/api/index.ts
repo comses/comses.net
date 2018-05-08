@@ -71,12 +71,12 @@ export class ReviewEditorAPI {
         return api.get(this.listFeedbackUrl(review_uuid));
     }
 
-    findReviewersUrl({review_uuid, query}) {
-        return `${this.baseUrl()}${review_uuid}/editor/reviewers/`
+    findReviewersUrl({query}) {
+        return `/reviewers/?query=${query}`
     }
 
-    findReviewers({review_uuid, query}) {
-        return api.get(this.findReviewersUrl({review_uuid, query}));
+    findReviewers({query}) {
+        return api.axios.get(this.findReviewersUrl({query}));
     }
 
     sendInvitationUrl({review_uuid}) {
