@@ -1,3 +1,4 @@
+import json
 import logging
 from datetime import datetime
 from typing import Optional
@@ -121,6 +122,10 @@ def format_datetime(text: Optional[str], format_string=FULL_DATE_FORMAT):
         return None
     d = parse_datetime(text)
     return d.strftime(format_string)
+
+@library.filter
+def to_json(value):
+    return json.dumps(value)
 
 # # http://stackoverflow.com/questions/6453652/how-to-add-the-current-query-string-to-an-url-in-a-django-template
 # @register.simple_tag

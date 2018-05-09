@@ -63,6 +63,7 @@ class PeerReviewInvitationViewSet(NoDeleteNoUpdateViewSet):
     permission_classes = (PeerReviewInvitationPermissions,)
     renderer_classes = (renderers.JSONRenderer,)
     serializer_class = PeerReviewInvitationSerializer
+    lookup_url_kwarg = 'invitation_slug'
 
     def get_queryset(self):
         uuid = self.kwargs['slug']
@@ -88,6 +89,13 @@ class PeerReviewInvitationViewSet(NoDeleteNoUpdateViewSet):
             return Response(status=status.HTTP_200_OK)
         else:
             return Response(status=status.HTTP_400_BAD_REQUEST, data=form.errors)
+
+    @transaction.atomic
+    @action(detail=True, methods=['post'])
+    def resend_invitation(self, request, slug, invitation_slug):
+        invitation = get_object_or_404(PeerReviewInvitation, slug=invitation_slug)
+        invitation.send_invitation()
+        return Response(status=status.HTTP_200_OK)
 
 
 class PeerReviewFeedbackViewSet(NoDeleteNoUpdateViewSet):

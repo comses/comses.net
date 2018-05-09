@@ -83,8 +83,16 @@ export class ReviewEditorAPI {
         return `${this.baseUrl()}${review_uuid}/editor/invitations/send_invitation/`
     }
 
-    sendInvitation({review_uuid}, component) {
-        return api.post(this.sendInvitationUrl({review_uuid}), component);
+    sendInvitation({review_uuid}, candidate_reviewer) {
+        return api.axios.post(this.sendInvitationUrl({review_uuid}), candidate_reviewer);
+    }
+
+    resendInvitationUrl({slug, invitation_slug}) {
+        return `${this.baseUrl()}${slug}/editor/invitations/${invitation_slug}/resend_invitation/`
+    }
+
+    resendInvitation({slug, invitation_slug}) {
+        return api.axios.post(this.resendInvitationUrl({slug, invitation_slug}));
     }
  }
 

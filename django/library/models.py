@@ -21,7 +21,6 @@ from django.utils import timezone
 from django.utils.text import slugify
 from django.utils.translation import ugettext_lazy as _
 from ipware import get_client_ip
-from jinja2.runtime import Context
 from model_utils import Choices
 from modelcluster.contrib.taggit import ClusterTaggableManager
 from modelcluster.fields import ParentalKey
@@ -1133,6 +1132,10 @@ class PeerReview(models.Model):
         else:
             return queryset
 
+    @property
+    def status_levels(self):
+        return [{'value': choice[0], 'label': str(choice[1])} for choice in self.REVIEW_STATUS]
+
     def __str__(self):
         return 'PeerReview of "{} v{}" by {}'.format(
             self.codebase_release.codebase.title,
@@ -1175,7 +1178,7 @@ class PeerReviewInvitation(models.Model):
     def send_invitation(self):
         """Email the reviewer a invitation"""
         template = get_template('library/review/email/review_invite.jinja')
-        markdown_content = template.render(invitation=self)
+        markdown_content = template.render(context=dict(invitation=self))
         subject = 'Review Model "{}"'.format(self.review.codebase_release.codebase.title)
         msg = EmailMultiAlternatives(subject, markdown_content, self.recipient)
         msg.attach_alternative(markdown(markdown_content), 'text/html')

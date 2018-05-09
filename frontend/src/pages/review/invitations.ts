@@ -12,18 +12,38 @@ const reviewApi = new ReviewEditorAPI();
     // language=Vue
     template: `<div>
         <h2>Find and Invite a Reviewer</h2>
-        <c-reviewer-finder v-model="candidate_reviewer" v-if="!candidate_reviewer"></c-reviewer-finder>
+        <p class="text-muted">
+            Find an internal or external reviewer for the model. Add an external reviewer using an email address or
+            an internal reviewer.
+        </p>
+        <div class="container-fluid" v-if="!candidate_reviewer">
+            <div class="row">
+                <div class="col-xs-12 col-sm-10 px-0">
+                    <div class="form-group mb-0" v-if="candidate_is_external">
+                        <input type="email" class="form-control" placeholder="Enter email" v-model="candidate_email">
+                    </div>
+                    <c-reviewer-finder v-model="candidate_reviewer" v-else></c-reviewer-finder>
+                </div>
+                <div class="col-xs-12 col-sm-2 px-0">
+                    <div class="btn-group w-100 h-100" v-if="candidate_is_external">
+                        <button class="btn btn-block btn-outline-secondary" @click="sendEmail">Invite</button>
+                        <button class="btn btn-block btn-outline-info mt-0 h-100" @click="candidate_is_external = false">Find Reviewer</button>
+                    </div>
+                    <button class="btn btn-outline-info h-100 w-100" @click="candidate_is_external = true" v-else>Email Only</button>
+                </div>
+            </div>
+        </div>
         <div class="container" v-else>
             <div class="row">
                 <div class="col-2">
-                    <img :src="candidate_reviewer.avatar">
+                    <img :src="candidate_reviewer.avatar_url">
                 </div>
                 <div class="col-10">
                     <h2>
                         {{ candidate_reviewer.name }}
                         <span class="pull-right">
-                            <button class="btn btn-primary" @click="sendEmail">Invite</button>
-                            <button class="btn btn-danger" @click="candidate_reviewer = null">Cancel</button>
+                            <button class="btn btn-primary" @click="sendEmail" type="button">Invite</button>
+                            <button class="btn btn-danger" @click="candidate_reviewer = null" type="button">Cancel</button>
                         </span>
                     </h2>
                     <div class="tag-list">
@@ -42,9 +62,9 @@ const reviewApi = new ReviewEditorAPI();
                 <div class="col-xs-12 col-sm-10">
                     <h3>
                         {{ displayTitle(invitation) }}
-                        <span class="badge badge-info"></span>
+                        <span class="badge badge-info">{{ displayInvitationStatus(invitation) }}</span>
                         <span class="float-md-right">
-                            <button class="btn btn-outline-secondary">Resend Invite</button>
+                            <button class="btn btn-outline-secondary" @click="resendEmail(invitation.slug)">Resend Invite</button>
                         </span>
                     </h3>
                     <div class="tag-list">
@@ -64,8 +84,10 @@ const reviewApi = new ReviewEditorAPI();
 })
 export class Invitations extends Vue {
     candidate_reviewer = null;
+    candidate_email = '';
     invitations: Array<any> = [];
     feedback: Array<any> = [];
+    candidate_is_external = false;
 
     @Prop()
     review_uuid: string;
@@ -82,7 +104,21 @@ export class Invitations extends Vue {
         if (!_.isNull(invitation.candidate_reviewer)) {
             return invitation.candidate_reviewer.name
         } else {
-            return `External user (${invitation.candidate_email})`;
+            return `External reviewer (${invitation.candidate_email})`;
+        }
+    }
+
+    displayInvitationStatus(invitation) {
+        switch (invitation.accepted) {
+            case true: {
+                return 'Accepted'
+            }
+            case false: {
+                return 'Rejected'
+            }
+            default: {
+                return 'Waiting for response'
+            }
         }
     }
 
@@ -98,9 +134,18 @@ export class Invitations extends Vue {
     }
 
     async sendEmail() {
-        const response = await api.axios.post(
-            reviewApi.sendInvitationUrl({review_uuid: this.review_uuid}),
-            this.candidate_reviewer);
+        if (this.candidate_is_external) {
+            const response = await reviewApi.sendInvitation({review_uuid: this.review_uuid}, {email: this.candidate_email});
+        } else {
+            const response = await reviewApi.sendInvitation({review_uuid: this.review_uuid}, this.candidate_reviewer);
+        }
+
+        this.candidate_reviewer = null;
+        this.candidate_email = '';
         this.refresh();
+    }
+
+    async resendEmail(invitation_slug) {
+        const response = await reviewApi.resendInvitation({slug: this.review_uuid, invitation_slug});
     }
 }

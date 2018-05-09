@@ -8,7 +8,14 @@ import {Feedback} from './feedback'
         <c-invitations :review_uuid="review_uuid"></c-invitations>
         <h2>Feedback</h2>
         <c-feedback :review_uuid="review_uuid"></c-feedback>
-        <div>Status</div>
+        <div class="form-group">
+            <label for="status" class="form-control-label">Status</label>
+            <select id="status" class="form-control">
+                <option v-for="status_level in status_levels" value="status_level.value">
+                    {{ status_level.label }}
+                </option>
+            </select>
+        </div>
     </div>`,
     components: {
         'c-invitations': Invitations,
@@ -16,6 +23,9 @@ import {Feedback} from './feedback'
     }
 })
 export class EditorReviewDetail extends Vue {
+    @Prop()
+    status_levels: Array<{ value: string, label: string }>;
+
     @Prop()
     review_uuid: string;
 }

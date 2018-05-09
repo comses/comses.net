@@ -9,7 +9,7 @@ from rest_framework.exceptions import ValidationError as DrfValidationError
 
 from core.models import Institution, MemberProfile
 from core.serializers import TagSerializer, MarkdownField
-from library.serializers import (RelatedCodebaseSerializer, PeerReviewerFeedbackSerializer,
+from library.serializers import (RelatedCodebaseSerializer, PeerReviewFeedbackEditorSerializer,
                                  PeerReviewInvitationSerializer)
 
 from .models import (FeaturedContentItem, UserMessage)
@@ -87,7 +87,7 @@ class MemberProfileSerializer(serializers.ModelSerializer):
     research_interests = MarkdownField()
 
     # reviewer data
-    all_reviewer_feedback = PeerReviewerFeedbackSerializer(source='reviewer_feedback_set', many=True, read_only=True)
+    all_reviewer_feedback = PeerReviewFeedbackEditorSerializer(source='reviewer_feedback_set', many=True, read_only=True)
     pending_invitations = PeerReviewInvitationSerializer(source='peer_review_invitation_set', many=True, read_only=True)
 
     def get_email(self, instance):

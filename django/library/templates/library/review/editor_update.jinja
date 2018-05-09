@@ -13,9 +13,6 @@
         </a> requested by
         <a href="{{ review.submitter.get_absolute_url() }}">{{ review.submitter.name }}</a>
     </h1>
-    <div id="app" data-review-uuid="{{ review.uuid }}"></div>
-{% endblock %}
-
-{% block js %}
-    {{ render_bundle('reviews') }}
+    <div id="app" data-review-uuid="{{ review.uuid }}" data-status-levels="{{ review.status_levels|to_json }}"></div>
+    {{ render_bundle('reviews', attrs='async') }}
 {% endblock %}

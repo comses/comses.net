@@ -227,9 +227,9 @@
             <script src='https://cdn.ravenjs.com/{{RAVENJS_VERSION}}/vue/raven.min.js' crossorigin='anonymous'></script>
             <script>Raven.config('{{ sentry_public_dsn() }}').install()</script>
         {% endwith %}
-        {{ render_bundle('manifest', attrs='defer') }}
-        {{ render_bundle('vendors', attrs='defer') }}
-        {{ render_bundle('common', attrs='defer') }}
+        {{ render_bundle('manifest') }}
+        {{ render_bundle('vendors') }}
+        {{ render_bundle('common') }}
         <script defer>
 function submitLogout() {
     document.getElementById('logoutForm').submit();
