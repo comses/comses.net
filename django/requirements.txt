@@ -1,26 +1,26 @@
 bagit==1.6.4
-bleach==2.1.2
+bleach==2.1.3
 dealer==2.0.5
--e git+https://github.com/pennersr/django-allauth.git#egg=django-allauth
-# django-allauth==0.36.0
+django-allauth==0.36.0
 django-cookie-law==2.0.1
-django-extensions==2.0.6
+django-extensions==2.0.7
 django-guardian==1.4.9
-django-ipware==2.0.1
+django-ipware==2.1.0
 django-jinja==2.4.1
 django-location-field==2.0.3
 django-markupfield==1.4.3
-django-model-utils==3.1.1
+django-model-utils==3.1.2
 django-recaptcha==1.4.0
 django-redis==4.9.0
 django-rest-auth==0.9.3
 django-rest-swagger==2.1.2
 django-reversion==2.0.13
-# for django 2.0 compat
+# for django 2.0 compat, pypi not yet updated with latest release
 -e git+https://github.com/jazzband/django-robots.git@3.1.0#egg=robots
+# django-robots==3.1.0
 django-timezone-field==2.0
 django-webpack-loader
-djangorestframework==3.8
+djangorestframework==3.8.2
 djangorestframework-jsonapi==2.4.0
 djangorestframework-jwt==1.11.0
 wagtail-markdown>=0.5a3
@@ -31,7 +31,7 @@ markdown==2.6.11
 nltk>=3.2.5,<4.0.0
 psycopg2==2.7.4
 pygit2==0.24.2
-raven==6.5.0
+raven==6.7.0
 semver==2.7.9
 uwsgi==2.0.17
 wagtail==2.0.1
