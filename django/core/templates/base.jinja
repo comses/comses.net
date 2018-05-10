@@ -221,8 +221,8 @@
             })(window,document,'script','dataLayer','GTM-TLNSSCJ');</script>
             <!-- End Google Tag Manager -->
         {% endif %}
-        <script src="//cdn.rawgit.com/imsky/holder/master/holder.js" async></script>
-        {% with RAVENJS_VERSION='3.23.3' %}
+        <script src="//cdnjs.cloudflare.com/ajax/libs/holder/2.9.4/holder.min.js" async></script>
+        {% with RAVENJS_VERSION='3.25.0' %}
             <script src='https://cdn.ravenjs.com/{{RAVENJS_VERSION}}/vue/raven.min.js' crossorigin='anonymous'></script>
             <script>Raven.config('{{ sentry_public_dsn() }}').install()</script>
         {% endwith %}
