@@ -25,10 +25,11 @@
                         <span class="fa fa-rss"></span> Subscribe
                     </a>
                     <div class="dropdown-menu" aria-labelledby="subscribeDropdownLink">
-                        <a class="dropdown-item" href="{{ url('rss') }}">Full RSS Feed</a>
-                        <a class="dropdown-item" href="{{ url('atom') }}">Full Atom Feed</a>
-                        <a class='dropdown-item' href='{{ url('atom-events') }}'>Events Feed</a>
-                        <a class='dropdown-item' href='{{ url('atom-jobs') }}'>Jobs Feed</a>
+                        <a class="dropdown-item" href="{{ url('rss') }}">RSS</a>
+                        <a class="dropdown-item" href="{{ url('atom') }}">Atom</a>
+                        <div class='dropdown-divider'></div>
+                        <a class='dropdown-item' href='{{ url('atom-events') }}'>Events</a>
+                        <a class='dropdown-item' href='{{ url('atom-jobs') }}'>Jobs</a>
                     </div>
                 </li>
                 {% if user.is_authenticated %}
@@ -36,10 +37,12 @@
                         <a class="nav-link dropdown-toggle" id='userDropdownMenuLink'
                            data-toggle="dropdown" role="button" href="#" aria-haspopup="true" aria-expanded="false">
                             <span class="fa fa-user-o"></span> {{ user.username }}
+                            {# FIXME: this should be cached instead
                             {% if user.emailaddress_set.filter(verified=False).exists() %}
                                 <span class="badge badge-warning">Email Unverified</span>
                                 <span class="sr-only">Email Unverified</span>
                             {% endif %}
+                            #}
                         </a>
                         <div class="dropdown-menu" aria-labelledby='userDropdownMenuLink'>
                             <a class="dropdown-item" href="{{ profile_url }}"><i class='fa fa-user-o'></i> Your Account</a>
@@ -71,19 +74,17 @@
                 <li class="nav-item">
                     <a href="{{ url('home:event-calendar') }}" class="nav-link">Events</a>
                 </li>
-                <li>
-                    <a href="/community/" class="nav-link">Community</a>
-                </li>
-                {#
-                <li>
-                    <a href="{{ url('home:job-list') }}" class="nav-link">Jobs</a>
-                </li>
-                #}
                 <li class='nav-item'>
-                    <a href="{{ DISCOURSE_BASE_URL }}" class='nav-link'>Forums</a>
+                    <a href="{{ url('home:job-list') }}" class='nav-link'>Jobs</a>
+                </li>
+                <li class='nav-item'>
+                    <a href="/community/" class="nav-link">Community</a>
                 </li>
                 <li class="nav-item">
                     <a href="/resources/" class="nav-link">Resources</a>
+                </li>
+                <li class='nav-item'>
+                    <a href="{{ DISCOURSE_BASE_URL }}" class='nav-link'>Forums</a>
                 </li>
                 <li class='nav-item'>
                     <a href='/about/' class='nav-link'>About</a>
