@@ -28,7 +28,7 @@
                 <label class='col-form-label' for='{{ field.id_for_label }}'>{{ field.label }}</label>
                 {{ field|add_field_css("form-control") }}
                 {% if field.errors %}
-                    <small class='form-text has-errors'>{{ field.errors }}</small>
+                    <small class='invalid-feedback'>{{ field.errors }}</small>
                 {% endif %}
                 {% if field.help_text %}
                     <small class='form-text text-muted'>{{ field.help_text }}</small>

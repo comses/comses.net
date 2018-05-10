@@ -129,15 +129,21 @@ class PeerReviewFeedbackListView(ListView):
 
 
 class PeerReviewFeedbackUpdateView(UpdateView):
-    template_name = 'library/review/feedback/create.jinja'
+    template_name = 'library/review/feedback/update.jinja'
     model = PeerReviewerFeedback
     context_object_name = 'review_feedback'
+    slug_field = 'invitation__slug'
+    slug_url_kwarg = 'slug'
 
 
 class PeerReviewInvitationUpdateView(UpdateView):
-    template_name = 'library/review/invitations/update.jinja'
-    form_class = PeerReviewInvitationReplyForm
     context_object_name = 'invitation'
+    form_class = PeerReviewInvitationReplyForm
+    queryset = PeerReviewInvitation.objects.all()
+    template_name = 'library/review/invitations/update.jinja'
+
+    def get_success_url(self):
+        return self.object.feedback_set.last().get_absolute_url()
 
 
 class CodebaseFilter(filters.BaseFilterBackend):

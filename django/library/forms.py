@@ -7,7 +7,7 @@ from .models import PeerReview, PeerReviewerFeedback, PeerReviewInvitation
 class PeerReviewEditForm(forms.ModelForm):
     class Meta:
         model = PeerReview
-        fields = ['status',]
+        fields = ['status', ]
 
 
 class PeerReviewInvitationForm(forms.ModelForm):
@@ -21,13 +21,27 @@ class PeerReviewInvitationForm(forms.ModelForm):
         ]
 
 
-class PeerReviewInvitationReplyForm(forms.Form):
-    email = forms.EmailField()
-    review_url = forms.URLField()
-    message = forms.CharField(widget=forms.Textarea)
+class PeerReviewInvitationReplyForm(forms.ModelForm):
+    def clean_accepted(self):
+        data = self.cleaned_data['accepted']
+        if data is None:
+            raise forms.ValidationError('Must accept or decline invitation')
+        return data
+
+    def save(self, commit=True):
+        instance = super().save(commit)
+        if instance.accepted:
+            instance.create_feedback()
+        return instance
+
+    class Meta:
+        model = PeerReviewInvitation
+        fields = ['accepted']
 
 
 class PeerReviewerFeedbackReviewerForm(forms.ModelForm):
+
+
     class Meta:
         model = PeerReviewerFeedback
         fields = ['recommendation',
@@ -47,5 +61,3 @@ class PeerReviewerFeedbackEditorForm(forms.ModelForm):
             'private_editor_notes',
             'notes_to_author'
         ]
-
-

@@ -1,0 +1,17 @@
+{% extends 'base.jinja' %}
+
+{% set release = invitation.review.codebase_release %}
+{% set codebase = release.codebase %}
+
+{% block content %}
+    <h1>You have been invited to review
+        <a href="{{ release.share_url }}">{{ codebase.title }} v{{ release.version_number }}</a>
+    </h1>
+
+    <p>Please accept or decline the invitation by selecting accept of decline before and pressing submit</p>
+
+    <form method="post">
+        {% include 'includes/form.jinja' %}
+        <button class="btn btn-primary">Submit</button>
+    </form>
+{% endblock %}

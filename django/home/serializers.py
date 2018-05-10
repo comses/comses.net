@@ -10,7 +10,7 @@ from rest_framework.exceptions import ValidationError as DrfValidationError
 from core.models import Institution, MemberProfile
 from core.serializers import TagSerializer, MarkdownField
 from library.serializers import (RelatedCodebaseSerializer, PeerReviewFeedbackEditorSerializer,
-                                 PeerReviewInvitationSerializer)
+                                 PeerReviewInvitationSerializer, RelatedPeerReviewInvitationSerializer)
 
 from .models import (FeaturedContentItem, UserMessage)
 
@@ -88,7 +88,7 @@ class MemberProfileSerializer(serializers.ModelSerializer):
 
     # reviewer data
     all_reviewer_feedback = PeerReviewFeedbackEditorSerializer(source='reviewer_feedback_set', many=True, read_only=True)
-    pending_invitations = PeerReviewInvitationSerializer(source='peer_review_invitation_set', many=True, read_only=True)
+    invitations = RelatedPeerReviewInvitationSerializer(source='peer_review_invitation_set', many=True, read_only=True)
 
     def get_email(self, instance):
         request = self.context.get('request')
@@ -180,5 +180,5 @@ class MemberProfileSerializer(serializers.ModelSerializer):
             'avatar', 'bio', 'name', 'degrees', 'full_member', 'tags', 'orcid_url', 'github_url', 'personal_url',
             'is_reviewer', 'professional_url', 'profile_url', 'research_interests',
             # peer reviews
-            'all_reviewer_feedback', 'pending_invitations',
+            'all_reviewer_feedback', 'invitations',
         )

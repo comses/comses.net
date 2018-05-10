@@ -110,8 +110,10 @@ def markdown(text: str):
 
 
 @library.filter
-def add_field_css(field, *args):
-    css_classes = field.css_classes(*args)
+def add_field_css(field, css_classes: str):
+    if field.errors:
+        css_classes += ' is-invalid'
+    css_classes = field.css_classes(css_classes)
     deduped_css_classes = ' '.join(set(css_classes.split(' ')))
     return field.as_widget(attrs={'class': deduped_css_classes})
 
@@ -122,6 +124,7 @@ def format_datetime(text: Optional[str], format_string=FULL_DATE_FORMAT):
         return None
     d = parse_datetime(text)
     return d.strftime(format_string)
+
 
 @library.filter
 def to_json(value):

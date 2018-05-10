@@ -308,6 +308,13 @@ div.activity {
 }
 
 .errorlist {
+  padding-left: 0;
+}
+
+.errorlist li {
+  display: block;
+  margin: 0 0 0 0;
+  @extend .alert;
   @extend .alert-danger;
 }
 

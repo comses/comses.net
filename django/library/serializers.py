@@ -380,3 +380,19 @@ class PeerReviewInvitationSerializer(serializers.ModelSerializer):
         model = PeerReviewInvitation
         fields = '__all__'
         read_only_fields = ('date_created',)
+
+
+class RelatedPeerReviewInvitationSerializer(serializers.ModelSerializer):
+    url = serializers.ReadOnlyField(source='get_absolute_url')
+    codebase_release_title = serializers.SerializerMethodField()
+
+    def get_codebase_release_title(self, instance):
+        release = instance.review.codebase_release
+        version_number = release.version_number
+        title = release.codebase.title
+        return '{} {}'.format(title, version_number)
+
+    class Meta:
+        model = PeerReviewInvitation
+        fields = ('date_created', 'optional_message', 'accepted', 'url', 'codebase_release_title')
+        read_only_fields = ('date_created',)

@@ -1159,7 +1159,11 @@ class PeerReviewInvitation(models.Model):
     candidate_email = models.EmailField(blank=True, help_text=_("Contact email for candidate non-member reviewer"))
     optional_message = MarkdownField(help_text=_("Optional markdown text to be added to the email"))
     slug = models.UUIDField(unique=True, default=uuid.uuid4, editable=False)
-    accepted = models.NullBooleanField()
+    accepted = models.NullBooleanField(verbose_name=_("Accept or Decline Invitation"),
+                                       choices=Choices((None, _('Waiting for response')),
+                                                       (False, _('Decline invitation')),
+                                                       (True, _('Accept invitation'))),
+                                       help_text=_('Accept or decline a peer review invitation'))
 
     objects = PeerReviewInvitationQuerySet.as_manager()
 
@@ -1187,6 +1191,9 @@ class PeerReviewInvitation(models.Model):
     def get_absolute_url(self):
         return reverse('library:peer-review-invitation', kwargs=dict(slug=self.slug))
 
+    def create_feedback(self):
+        return PeerReviewerFeedback.objects.create(invitation=self)
+
     class Meta:
         permissions = (('view_peerreviewinvitation', 'Can view peer review invitations'),)
 
@@ -1206,32 +1213,31 @@ class PeerReviewAction(models.Model):
 class PeerReviewerFeedback(models.Model):
     date_created = models.DateTimeField(auto_now_add=True)
     invitation = models.ForeignKey(PeerReviewInvitation, related_name='feedback_set', on_delete=models.CASCADE)
-    recommendation = models.CharField(choices=PeerReview.REVIEWER_RECOMMENDATION, max_length=16)
-    reviewer = models.ForeignKey(MemberProfile, related_name='reviewer_feedback_set', on_delete=models.PROTECT)
-    private_reviewer_notes = MarkdownField(help_text=_('Private reviewer notes to the editor.'))
-    private_editor_notes = MarkdownField(help_text=_('Private editor notes regarding this peer review'))
-    notes_to_author = MarkdownField(help_text=_("Notes to be sent to the model author"))
+    recommendation = models.CharField(choices=PeerReview.REVIEWER_RECOMMENDATION, max_length=16, blank=True)
+    private_reviewer_notes = MarkdownField(help_text=_('Private reviewer notes to the editor.'), blank=True)
+    private_editor_notes = MarkdownField(help_text=_('Private editor notes regarding this peer review'), blank=True)
+    notes_to_author = MarkdownField(help_text=_("Notes to be sent to the model author"), blank=True)
     has_narrative_documentation = models.BooleanField(
         default=False,
         help_text=_('Is there sufficiently detailed accompanying narrative documentation?')
     )
     narrative_documentation_comments = models.TextField(
-        help_text=_('Reviewer comments on the narrative documentation')
+        help_text=_('Reviewer comments on the narrative documentation'), blank=True
     )
     has_clean_code = models.BooleanField(
         default=False,
         help_text=_('Is the code clean, well-written, and well-commented with consistent formatting?')
     )
     clean_code_comments = models.TextField(
-        help_text=_('Reviewer comments on code cleanliness')
+        help_text=_('Reviewer comments on code cleanliness'), blank=True
     )
     is_runnable = models.BooleanField(
         default=False,
         help_text=_('Were you able to run the model with the provided instructions?')
     )
     runnable_comments = models.TextField(
-        help_text=_('Reviewer comments on running the model with the provided instructions')
+        help_text=_('Reviewer comments on running the model with the provided instructions'), blank=True
     )
 
     def get_absolute_url(self):
-        return reverse('library:reviewer-feedback', kwargs={'review_uuid': self.invitation.slug})
+        return reverse('library:peer-review-feedback-edit', kwargs={'slug': self.invitation.slug})

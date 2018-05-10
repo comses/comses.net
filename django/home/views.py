@@ -28,7 +28,7 @@ from core.utils import parse_datetime
 from core.view_helpers import retrieve_with_perms, get_search_queryset
 from core.views import (CaseInsensitiveOrderingFilter, CommonViewSetMixin, FormCreateView, FormUpdateView,
                         SmallResultSetPagination, OnlyObjectPermissionModelViewSet, NoDeleteViewSet)
-from library.models import Codebase
+from library.models import Codebase, PeerReviewInvitation
 from .models import FeaturedContentItem, MemberProfile, ContactPage
 from .serializers import (FeaturedContentItemSerializer, UserMessageSerializer, MemberProfileSerializer,
                           MemberProfileListSerializer)
@@ -36,7 +36,6 @@ from .serializers import (FeaturedContentItemSerializer, UserMessageSerializer, 
 logger = logging.getLogger(__name__)
 
 search = get_search_backend()
-
 
 """
 Contains wagtail related views
@@ -110,10 +109,12 @@ class ProfileViewSet(CommonViewSetMixin,
 
     def get_queryset(self):
         if self.action == 'retrieve':
-            return self.queryset.prefetch_related('institution').prefetch_related(
-                Prefetch('user', User.objects.prefetch_related(
+            return self.queryset \
+                .prefetch_related('institution') \
+                .prefetch_related(Prefetch('user', User.objects.prefetch_related(
                     Prefetch('codebases', Codebase.objects.with_tags().with_featured_images()
-                             .with_contributors(user=self.request.user).order_by('-date_created')))))
+                         .with_contributors(user=self.request.user).order_by('-date_created'))))) \
+                .prefetch_related('peer_review_invitation_set__review__codebase_release__codebase')
         return self.queryset.with_institution().with_user()
 
     def retrieve(self, request, *args, **kwargs):
@@ -299,7 +300,7 @@ class JobViewSet(CommonViewSetMixin, OnlyObjectPermissionModelViewSet):
     queryset = Job.objects.with_tags().with_submitter().order_by('-date_created')
     filter_backends = (CaseInsensitiveOrderingFilter, JobFilter)
     permission_classes = (ViewRestrictedObjectPermissions,)
-    ordering_fields = ('application_deadline', 'date_created', 'last_modified', )
+    ordering_fields = ('application_deadline', 'date_created', 'last_modified',)
 
     def retrieve(self, request, *args, **kwargs):
         return retrieve_with_perms(self, request, *args, **kwargs)
