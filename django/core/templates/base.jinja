@@ -212,13 +212,15 @@
         {% endblock %}
         {# JS section #}
         <script type="application/javascript" src="{{ static('cookielaw/js/cookielaw.js') }}"></script>
-        <!-- Google Tag Manager -->
-        <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
-        new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
-        j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
-        'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
-        })(window,document,'script','dataLayer','GTM-TLNSSCJ');</script>
-        <!-- End Google Tag Manager -->
+        {% if is_production() %}
+            <!-- Google Tag Manager -->
+            <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+            new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+            j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+            'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+            })(window,document,'script','dataLayer','GTM-TLNSSCJ');</script>
+            <!-- End Google Tag Manager -->
+        {% endif %}
         <script src="//cdn.rawgit.com/imsky/holder/master/holder.js" async></script>
         {% with RAVENJS_VERSION='3.23.3' %}
             <script src='https://cdn.ravenjs.com/{{RAVENJS_VERSION}}/vue/raven.min.js' crossorigin='anonymous'></script>
