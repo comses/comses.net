@@ -9,7 +9,6 @@ django-guardian==1.4.9
 django-ipware==2.0.1
 django-jinja==2.4.1
 django-location-field==2.0.3
-django-maintenance-mode==0.9.0
 django-markupfield==1.4.3
 django-model-utils==3.1.1
 django-recaptcha==1.4.0
