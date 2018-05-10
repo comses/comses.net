@@ -285,7 +285,7 @@ class PlatformTag(TaggedItemBase):
 class Platform(index.Indexed, ClusterableModel):
     name = models.CharField(max_length=255)
     active = models.BooleanField(default=True)
-    description = MarkdownField(max_length=512, blank=True)
+    description = MarkdownField(max_length=1024)
     date_created = models.DateTimeField(default=timezone.now)
     # last_updated = models.DateField(blank=True, null=True, help_text=_("Date of last update for the ABM platform itself."))
     last_modified = models.DateTimeField(auto_now=True)
@@ -324,6 +324,11 @@ class Platform(index.Indexed, ClusterableModel):
 
     def __str__(self):
         return self.name
+
+    def __lt__(self, other):
+        if isinstance(other, Platform):
+            return self.name < other.name
+        raise TypeError("Unorderable types: {0} < {1}".format(Platform, type(other)))
 
 
 class PlatformRelease(models.Model):

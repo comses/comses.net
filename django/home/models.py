@@ -455,7 +455,7 @@ class PlatformSnippetPlacement(models.Model):
     class Meta:
         verbose_name = 'platform placement'
         verbose_name_plural = 'platform placements'
-        ordering = ('platform__name',)
+        ordering = ['platform']
 
 
 class PlatformIndexPage(NavigationMixin, Page):
@@ -487,7 +487,7 @@ class Journal(index.Indexed, ClusterableModel):
     name = models.CharField(max_length=255)
     url = models.URLField()
     issn = models.CharField(max_length=16, blank=True, help_text=_("Linking ISSN-L for this Journal"))
-    description = MarkdownField(max_length=1000)
+    description = MarkdownField(max_length=1024)
     tags = TaggableManager(through=JournalTag, blank=True)
 
     panels = [
