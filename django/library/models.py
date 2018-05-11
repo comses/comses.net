@@ -1072,6 +1072,69 @@ class ReleaseContributor(models.Model):
         return "{0} contributor {1}".format(self.release, self.contributor)
 
 
+class ChoicesMixin(Enum):
+    @classmethod
+    def to_choices(cls):
+        return Choices((choice.name, choice.value) for choice in cls)
+
+
+class ReviewerRecommendation(ChoicesMixin, Enum):
+    accept = _('This computational model meets CoMSES Net peer review requirements.')
+    revise = _('This computational model must be revised to meet CoMSES Net peer review requirements.')
+
+
+class ReviewStatus(ChoicesMixin, Enum):
+    """
+    Review status represents the aggregate status of the review.
+
+    Used by the editor, author and reviewer to determine who has to respond and if the review is complete
+    """
+
+    # No reviewer has given feedback
+    awaiting_reviewer_feedback = _('Awaiting reviewer feedback')
+    # At least one reviewer has provided feedback on a model and an editor has not requested changes
+    # to the model
+    awaiting_editor_feedback = _('Awaiting editor feedback')
+    # An editor has requested changes to a model. The author has either not given changes or
+    # given changes that the editor has not approved of yet or has asked further revisions on
+    awaiting_author_changes = _('Awaiting author release changes')
+    # The model review process is complete
+    complete = _('Review is complete')
+
+
+class ReviewInvitationStatus(ChoicesMixin, Enum):
+    """
+    Review invitation summarizes the statuses of a review's invitations.
+
+    - Used by the editor to determine whether or not they need to invite more reviewers.
+    - Seen by the author for status purposes
+
+    This value is frozen after the review is complete.
+    """
+
+    # At least invitation has been accepted and the timeout for feedback has not passed
+    at_least_one_active_accepted_invite = _('The review has at least one active reviewer')
+    # Any invitations that have been accepted have passed their feedback deadlines
+    no_active_accepted_invite = _('The review has no accepted invitations')
+
+
+class ReviewEvent(ChoicesMixin, Enum):
+    """
+    The review event represents events that have occurred on a review.
+
+    Used by the editor to understand the history of changes applied to the models
+    """
+
+    invitation_sent = _('Reviewer has been invited')
+    invitation_resent = _('Reviewer invitation has been resent')
+    invitation_accepted = _('Reviewer has accepted invitation')
+    invitation_declined = _('Reviewer has declined invitation')
+    reviewer_gave_feedback = _('Reviewer has given feedback')
+    author_made_changes = _('Author has made changes to the release')
+    editor_called_for_revisions = _('Editor has asked author for release revisions')
+    editor_accepted = _('Editor has certified release')
+
+
 @register_snippet
 class PeerReview(models.Model):
     REVIEWER_RECOMMENDATION = Choices(
@@ -1082,16 +1145,20 @@ class PeerReview(models.Model):
     REVIEW_STATUS = Choices(
         ('requested', _('Author requested review')),
         ('reviewer_invited', _('Reviewer invited')),
-        ('reviewer_declined', _('Reviewer declined')),
-        ('reviewer_accepted', _('Reviewer accepted')),
+        ('reviewer_waiting_for_feedback', _('Awaiting reviewer feedback')),
         ('reviewer_completed', _('Review has been completed and reviewer has made a recommendation'))
     ) + EDITOR_RECOMMENDATION
 
     date_created = models.DateTimeField(auto_now_add=True)
     last_modified = models.DateTimeField(auto_now=True)
-    status = models.CharField(choices=REVIEW_STATUS, default=REVIEW_STATUS.requested,
+    status = models.CharField(choices=ReviewStatus.to_choices(),
+                              default=ReviewStatus.awaiting_first_accepted_invitation.name,
                               help_text=_("The current status of this review."),
                               max_length=32)
+    invitation_status = models.CharField(choices=ReviewInvitationStatus.to_choices(),
+                                         default=ReviewInvitationStatus.no_active_accepted_invite.name,
+                                         help_text=_('The invitation status of this review'),
+                                         max_length=32)
     codebase_release = models.OneToOneField(CodebaseRelease, related_name='review', on_delete=models.PROTECT)
     assigned_reviewer = models.ForeignKey(MemberProfile, null=True, blank=True, related_name='reviews',
                                           on_delete=models.SET_NULL,
@@ -1196,24 +1263,14 @@ class PeerReviewInvitation(models.Model):
 
     class Meta:
         permissions = (('view_peerreviewinvitation', 'Can view peer review invitations'),)
-
-
-@register_snippet
-class PeerReviewAction(models.Model):
-    date_created = models.DateTimeField(auto_now_add=True)
-    review = models.ForeignKey(PeerReview, related_name='actions', on_delete=models.CASCADE)
-    action = models.CharField(choices=PeerReview.REVIEW_STATUS, help_text=_("status action requested."),
-                              max_length=32)
-    author = models.ForeignKey(MemberProfile, related_name='+', on_delete=models.CASCADE,
-                               help_text=_('User originating this action'))
-    message = models.CharField(blank=True, max_length=500)
+        unique_together = (('review', 'candidate_reviewer'),)
 
 
 @register_snippet
 class PeerReviewerFeedback(models.Model):
     date_created = models.DateTimeField(auto_now_add=True)
     invitation = models.ForeignKey(PeerReviewInvitation, related_name='feedback_set', on_delete=models.CASCADE)
-    recommendation = models.CharField(choices=PeerReview.REVIEWER_RECOMMENDATION, max_length=16, blank=True)
+    recommendation = models.CharField(choices=ReviewerRecommendation.to_choices(), max_length=16, blank=True)
     private_reviewer_notes = MarkdownField(help_text=_('Private reviewer notes to the editor.'), blank=True)
     private_editor_notes = MarkdownField(help_text=_('Private editor notes regarding this peer review'), blank=True)
     notes_to_author = MarkdownField(help_text=_("Notes to be sent to the model author"), blank=True)
@@ -1240,4 +1297,78 @@ class PeerReviewerFeedback(models.Model):
     )
 
     def get_absolute_url(self):
-        return reverse('library:peer-review-feedback-edit', kwargs={'slug': self.invitation.slug})
+        return reverse('library:peer-review-feedback-edit',
+                       kwargs={'slug': self.invitation.slug, 'feedback_id': self.id})
+
+
+@register_snippet
+class PeerReviewEvent(models.Model):
+    date_created = models.DateTimeField(auto_now_add=True)
+    review = models.ForeignKey(PeerReview, related_name='actions', on_delete=models.CASCADE)
+    action = models.CharField(choices=ReviewEvent.to_choices(), help_text=_("status action requested."),
+                              max_length=32)
+    author = models.ForeignKey(MemberProfile, related_name='+', on_delete=models.CASCADE,
+                               help_text=_('User originating this action'))
+    message = models.CharField(blank=True, max_length=500)
+
+    def add_message(self, message):
+        if self.message:
+            self.message += '\n\n{}'.format(message)
+        else:
+            self.message = message
+
+    @classmethod
+    def invitation_sent(cls, invitation: PeerReviewInvitation):
+        return cls(review=invitation.review,
+                   action=ReviewEvent.invitation_sent.name,
+                   author=invitation.editor,
+                   message='Invitation from {} to {}'.format(
+                       invitation.editor,
+                       invitation.candidate_reviewer or invitation.candidate_email))
+
+    @classmethod
+    def invitation_accepted(cls, invitation: PeerReviewInvitation):
+        return cls(review=invitation.review,
+                   action=ReviewEvent,
+                   author=invitation.editor,
+                   message='Invitation accepted by {}'.format(invitation.candidate_reviewer))
+
+    @classmethod
+    def invitation_declined(cls, invitation: PeerReviewInvitation):
+        return cls(review=invitation.review,
+                   action=ReviewEvent.invitation_declined.name,
+                   author=invitation.editor,
+                   message='Invitation declined by {}'.format(invitation.candidate_reviewer))
+
+    @classmethod
+    def reviewer_gave_feedback(cls, feedback: 'PeerReviewerFeedback'):
+        reviewer = feedback.invitation.candidate_reviewer or feedback.invitation.candidate_email
+        release = feedback.invitation.review.codebase_release
+        return cls(review=feedback.invitation.review,
+                   action=ReviewEvent.reviewer_gave_feedback.name,
+                   author=feedback.invitation.candidate_reviewer,
+                   message='Reviewer {} provided feedback'.format(reviewer, release))
+
+    @classmethod
+    def editor_called_for_revisions(cls, feedback: 'PeerReviewerFeedback'):
+        return cls(review=feedback.invitation.review,
+                   action=ReviewEvent.editor_called_for_revisions.name,
+                   author=feedback.invitation.editor,
+                   message='Editor {} called for revisions'.format(feedback.invitation.editor))
+
+    @classmethod
+    def author_made_changes(cls, review: PeerReview, changes_made: str):
+        author = review.codebase_release.submitter.member_profile
+        review_event = cls(review=review,
+                           action=ReviewEvent.author_made_changes.name,
+                           author=author,
+                           message='Author {} made changes'.format(author))
+        review_event.add_message(changes_made)
+        return review_event
+
+    @classmethod
+    def editor_accepted(cls, review: PeerReview, editor: MemberProfile):
+        return cls(review=review,
+                   action=ReviewEvent.editor_accepted.name,
+                   author=editor,
+                   message='Editor {} has certified model'.format(editor))
