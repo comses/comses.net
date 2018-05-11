@@ -1,7 +1,10 @@
+import logging
+
 from django import forms
 
-from core import models
 from .models import PeerReview, PeerReviewerFeedback, PeerReviewInvitation
+
+logger = logging.getLogger(__name__)
 
 
 class PeerReviewEditForm(forms.ModelForm):
@@ -39,8 +42,33 @@ class PeerReviewInvitationReplyForm(forms.ModelForm):
         fields = ['accepted']
 
 
-class PeerReviewerFeedbackReviewerForm(forms.ModelForm):
+class CheckCharFieldLengthMixin:
+    def _check_char_field_has_content(self, field_name, min_length=10):
+        content = self.cleaned_data[field_name]
+        if len(content) < min_length:
+            raise forms.ValidationError('Field {} must have at least {} characters'.format(
+                PeerReviewerFeedback._meta.get_field(field_name).verbose_name, min_length))
+        return content
 
+
+class PeerReviewerFeedbackReviewerForm(CheckCharFieldLengthMixin, forms.ModelForm):
+    def clean_recommendation(self):
+        recommendation = self.cleaned_data['recommendation']
+        if not recommendation:
+            raise forms.ValidationError('Recommendation must be selected')
+        return recommendation
+
+    def clean_private_reviewer_notes(self):
+        return self._check_char_field_has_content(field_name='private_reviewer_notes')
+
+    def clean_narrative_documentation_comments(self):
+        return self._check_char_field_has_content(field_name='narrative_documentation_comments')
+
+    def clean_clean_code_comments(self):
+        return self._check_char_field_has_content(field_name='clean_code_comments')
+
+    def clean_runnable_comments(self):
+        return self._check_char_field_has_content(field_name='runnable_comments')
 
     class Meta:
         model = PeerReviewerFeedback
@@ -54,7 +82,10 @@ class PeerReviewerFeedbackReviewerForm(forms.ModelForm):
                   'runnable_comments']
 
 
-class PeerReviewerFeedbackEditorForm(forms.ModelForm):
+class PeerReviewerFeedbackEditorForm(CheckCharFieldLengthMixin, forms.ModelForm):
+    def clean_notes_to_author(self):
+        return self._check_char_field_has_content('notes_to_author')
+
     class Meta:
         model = PeerReviewerFeedback
         fields = [

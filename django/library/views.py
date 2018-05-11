@@ -28,7 +28,7 @@ from .forms import PeerReviewEditForm, PeerReviewerFeedbackReviewerForm, PeerRev
     PeerReviewInvitationForm
 from .fs import FileCategoryDirectories, StagingDirectories, MessageLevels
 from .models import (Codebase, CodebaseRelease, Contributor, CodebaseImage, PeerReview, PeerReviewerFeedback,
-                     PeerReviewInvitation, PeerReviewAction)
+                     PeerReviewInvitation, PeerReviewEvent)
 from .permissions import CodebaseReleaseUnpublishedFilePermissions, PeerReviewInvitationPermissions
 from .serializers import (CodebaseSerializer, RelatedCodebaseSerializer, CodebaseReleaseSerializer,
                           ContributorSerializer, ReleaseContributorSerializer, CodebaseReleaseEditSerializer,
@@ -110,7 +110,7 @@ class PeerReviewFeedbackViewSet(NoDeleteNoUpdateViewSet):
 
 class PeerReviewDashboardView(ListView):
     template_name = 'library/review/dashboard.jinja'
-    model = PeerReviewAction
+    model = PeerReviewEvent
     context_object_name = 'peer_review_actions'
 
 
@@ -129,11 +129,17 @@ class PeerReviewFeedbackListView(ListView):
 
 
 class PeerReviewFeedbackUpdateView(UpdateView):
-    template_name = 'library/review/feedback/update.jinja'
-    model = PeerReviewerFeedback
     context_object_name = 'review_feedback'
-    slug_field = 'invitation__slug'
-    slug_url_kwarg = 'slug'
+    form_class = PeerReviewerFeedbackReviewerForm
+    template_name = 'library/review/feedback/update.jinja'
+
+    def get_object(self, queryset=None):
+        if queryset is None:
+            queryset = PeerReviewerFeedback.objects.all()
+        feedback = get_object_or_404(queryset, invitation__slug=self.kwargs['slug'], id=self.kwargs['feedback_id'])
+        # if feedback.recommendation:
+        #     raise PermissionDenied('Feedback cannot be modified once submitted')
+        return feedback
 
 
 class PeerReviewInvitationUpdateView(UpdateView):

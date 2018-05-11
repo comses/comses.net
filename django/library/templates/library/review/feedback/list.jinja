@@ -1,1 +1,13 @@
 {% extends 'base.jinja' %}
+
+{% block content %}
+    {% if review_feedback_set %}
+        <div>
+            {% for feedback in review_feedback_set %}
+                <div>{{ feedback }}</div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <p>No feedback about the release has been created</p>
+    {% endif %}
+{% endblock %}

@@ -30,7 +30,7 @@ urlpatterns = [
          views.PeerReviewInvitationUpdateView.as_view(), name='peer-review-invitation'),
     path('invitation/<uuid:slug>/feedback/',
          views.PeerReviewFeedbackListView.as_view(), name='peer-review-feedback-list'),
-    path('invitation/<uuid:slug>/feedback/edit/',
+    path('invitation/<uuid:slug>/feedback/<int:feedback_id>/edit/',
          views.PeerReviewFeedbackUpdateView.as_view(), name='peer-review-feedback-edit'),
 
     path('contributors/', views.ContributorList.as_view()),

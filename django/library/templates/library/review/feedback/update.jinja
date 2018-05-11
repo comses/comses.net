@@ -2,7 +2,7 @@
 {% from 'library/review/includes/codebase_release.jinja' import codebase_release_name %}
 
 {% block content %}
-    <h1>Feedback for <i>{{ codebase_release_name(review_feedback.review.codebase_release) }}</i></h1>
+    <h1>Feedback for <i>{{ codebase_release_name(review_feedback.invitation.review.codebase_release) }}</i></h1>
     <form action="" method="post">{% csrf_token %}
         {% include 'includes/form.jinja' %}
         <button type="submit" class="btn btn-primary">Submit</button>
