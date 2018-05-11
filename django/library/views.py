@@ -28,7 +28,7 @@ from .forms import PeerReviewEditForm, PeerReviewerFeedbackReviewerForm, PeerRev
     PeerReviewInvitationForm
 from .fs import FileCategoryDirectories, StagingDirectories, MessageLevels
 from .models import (Codebase, CodebaseRelease, Contributor, CodebaseImage, PeerReview, PeerReviewerFeedback,
-                     PeerReviewInvitation, PeerReviewEvent)
+                     PeerReviewInvitation, PeerReviewEventLog)
 from .permissions import CodebaseReleaseUnpublishedFilePermissions, PeerReviewInvitationPermissions
 from .serializers import (CodebaseSerializer, RelatedCodebaseSerializer, CodebaseReleaseSerializer,
                           ContributorSerializer, ReleaseContributorSerializer, CodebaseReleaseEditSerializer,
@@ -94,7 +94,7 @@ class PeerReviewInvitationViewSet(NoDeleteNoUpdateViewSet):
     @action(detail=True, methods=['post'])
     def resend_invitation(self, request, slug, invitation_slug):
         invitation = get_object_or_404(PeerReviewInvitation, slug=invitation_slug)
-        invitation.send_invitation()
+        invitation.send_email()
         return Response(status=status.HTTP_200_OK)
 
 
@@ -110,7 +110,7 @@ class PeerReviewFeedbackViewSet(NoDeleteNoUpdateViewSet):
 
 class PeerReviewDashboardView(ListView):
     template_name = 'library/review/dashboard.jinja'
-    model = PeerReviewEvent
+    model = PeerReviewEventLog
     context_object_name = 'peer_review_actions'
 
 

@@ -1091,7 +1091,7 @@ class ReviewStatus(ChoicesMixin, Enum):
     """
 
     # No reviewer has given feedback
-    awaiting_reviewer_feedback = _('Awaiting reviewer feedback')
+    awaiting_reviewer_feedack = _('Awaiting reviewer feedback')
     # At least one reviewer has provided feedback on a model and an editor has not requested changes
     # to the model
     awaiting_editor_feedback = _('Awaiting editor feedback')
@@ -1102,23 +1102,7 @@ class ReviewStatus(ChoicesMixin, Enum):
     complete = _('Review is complete')
 
 
-class ReviewInvitationStatus(ChoicesMixin, Enum):
-    """
-    Review invitation summarizes the statuses of a review's invitations.
-
-    - Used by the editor to determine whether or not they need to invite more reviewers.
-    - Seen by the author for status purposes
-
-    This value is frozen after the review is complete.
-    """
-
-    # At least invitation has been accepted and the timeout for feedback has not passed
-    at_least_one_active_accepted_invite = _('The review has at least one active reviewer')
-    # Any invitations that have been accepted have passed their feedback deadlines
-    no_active_accepted_invite = _('The review has no accepted invitations')
-
-
-class ReviewEvent(ChoicesMixin, Enum):
+class PeerReviewEvent(ChoicesMixin, Enum):
     """
     The review event represents events that have occurred on a review.
 
@@ -1131,6 +1115,7 @@ class ReviewEvent(ChoicesMixin, Enum):
     invitation_declined = _('Reviewer has declined invitation')
     reviewer_gave_feedback = _('Reviewer has given feedback')
     author_made_changes = _('Author has made changes to the release')
+    editor_changed_review_status = _('Editor manually changed review status')
     editor_called_for_revisions = _('Editor has asked author for release revisions')
     editor_accepted = _('Editor has certified release')
 
@@ -1152,13 +1137,9 @@ class PeerReview(models.Model):
     date_created = models.DateTimeField(auto_now_add=True)
     last_modified = models.DateTimeField(auto_now=True)
     status = models.CharField(choices=ReviewStatus.to_choices(),
-                              default=ReviewStatus.awaiting_first_accepted_invitation.name,
+                              default=ReviewStatus.awaiting_reviewer_feedback.name,
                               help_text=_("The current status of this review."),
                               max_length=32)
-    invitation_status = models.CharField(choices=ReviewInvitationStatus.to_choices(),
-                                         default=ReviewInvitationStatus.no_active_accepted_invite.name,
-                                         help_text=_('The invitation status of this review'),
-                                         max_length=32)
     codebase_release = models.OneToOneField(CodebaseRelease, related_name='review', on_delete=models.PROTECT)
     assigned_reviewer = models.ForeignKey(MemberProfile, null=True, blank=True, related_name='reviews',
                                           on_delete=models.SET_NULL,
@@ -1184,6 +1165,33 @@ class PeerReview(models.Model):
             self.uuid = uuid.uuid4()
             self.save()
         return reverse('library:peer-review-detail', kwargs={'slug': self.uuid})
+
+    def editor_changed_review_status(self, editor: MemberProfile, new_status: ReviewStatus):
+        old_status = self.status
+        self.status = new_status
+        self.save()
+        if new_status == ReviewStatus.complete:
+            action = PeerReviewEvent.editor_accepted.name
+            message = 'Editor {} has certified model'.format(editor)
+        else:
+            action = PeerReviewEvent.editor_changed_review_status.name
+            message = 'Editor changed review status from {} to {}'.format(old_status, self.status)
+        event = PeerReviewEventLog(review=self,
+                                   action=action,
+                                   author=editor,
+                                   message=message)
+        event.save()
+        return event
+
+    def author_made_changes(self, changes_made=None):
+        author = self.codebase_release.submitter.member_profile
+        review_event = PeerReviewEventLog(review=self,
+                                          action=PeerReviewEvent.author_made_changes.name,
+                                          author=author,
+                                          message='Author {} made changes'.format(author))
+        if changes_made:
+            review_event.add_message(changes_made)
+        return review_event
 
     @staticmethod
     def get_reviewers(query=None):
@@ -1246,14 +1254,50 @@ class PeerReviewInvitation(models.Model):
     def from_email(self):
         return settings.DEFAULT_FROM_EMAIL
 
-    def send_invitation(self):
-        """Email the reviewer a invitation"""
+    def send_email(self, resend=True):
+        """Email the reviewer a invitation
+
+        Preconditions:
+
+        should only"""
         template = get_template('library/review/email/review_invite.jinja')
         markdown_content = template.render(context=dict(invitation=self))
         subject = 'Review Model "{}"'.format(self.review.codebase_release.codebase.title)
         msg = EmailMultiAlternatives(subject, markdown_content, self.recipient)
         msg.attach_alternative(markdown(markdown_content), 'text/html')
         msg.send()
+        event = PeerReviewEventLog(review=self.review,
+                                   author=self.editor,
+                                   message='Invitation from {} to {}'.format(
+                                       self.editor,
+                                       self.candidate_reviewer or self.candidate_email))
+        if resend:
+            event.action = PeerReviewEvent.invitation_sent.name
+        else:
+            event.action = PeerReviewEvent.invitation_resent.name
+        return event.save()
+
+    @transaction.atomic
+    def accept_invitation(self):
+        self.accepted = True
+        self.save()
+        event = PeerReviewEventLog(review=self.review,
+                                   action=PeerReviewEvent.invitation_accepted.name,
+                                   author=self.editor,
+                                   message='Invitation accepted by {}'.format(self.candidate_reviewer))
+        event.save()
+        return event
+
+    @transaction.atomic
+    def decline_invitation(self):
+        self.accepted = False
+        self.save()
+        event = PeerReviewEventLog(review=self.review,
+                                   action=PeerReviewEvent.invitation_declined.name,
+                                   author=self.editor,
+                                   message='Invitation declined by {}'.format(self.candidate_reviewer))
+        event.save()
+        return event
 
     def get_absolute_url(self):
         return reverse('library:peer-review-invitation', kwargs=dict(slug=self.slug))
@@ -1300,12 +1344,42 @@ class PeerReviewerFeedback(models.Model):
         return reverse('library:peer-review-feedback-edit',
                        kwargs={'slug': self.invitation.slug, 'feedback_id': self.id})
 
+    def reviewer_gave_feedback(self):
+        """Add a reviewer gave feedback event to the log
+
+        Preconditions:
+
+        reviewer updated feedback
+        """
+        reviewer = self.invitation.candidate_reviewer or self.invitation.candidate_email
+        release = self.invitation.review.codebase_release
+        event = PeerReviewEventLog(review=self.invitation.review,
+                                   action=PeerReviewEvent.reviewer_gave_feedback.name,
+                                   author=self.invitation.candidate_reviewer,
+                                   message='Reviewer {} provided feedback'.format(reviewer, release))
+        event.save()
+        return event
+
+    def editor_called_for_revisions(self):
+        """Added am editor called for revisions event to the log
+
+        Preconditions:
+
+        editor updated feedback
+        """
+        event = PeerReviewEventLog(review=self.invitation.review,
+                                   action=PeerReviewEvent.editor_called_for_revisions.name,
+                                   author=self.invitation.editor,
+                                   message='Editor {} called for revisions'.format(self.invitation.editor))
+        event.save()
+        return event
+
 
 @register_snippet
-class PeerReviewEvent(models.Model):
+class PeerReviewEventLog(models.Model):
     date_created = models.DateTimeField(auto_now_add=True)
     review = models.ForeignKey(PeerReview, related_name='actions', on_delete=models.CASCADE)
-    action = models.CharField(choices=ReviewEvent.to_choices(), help_text=_("status action requested."),
+    action = models.CharField(choices=PeerReviewEvent.to_choices(), help_text=_("status action requested."),
                               max_length=32)
     author = models.ForeignKey(MemberProfile, related_name='+', on_delete=models.CASCADE,
                                help_text=_('User originating this action'))
@@ -1316,59 +1390,3 @@ class PeerReviewEvent(models.Model):
             self.message += '\n\n{}'.format(message)
         else:
             self.message = message
-
-    @classmethod
-    def invitation_sent(cls, invitation: PeerReviewInvitation):
-        return cls(review=invitation.review,
-                   action=ReviewEvent.invitation_sent.name,
-                   author=invitation.editor,
-                   message='Invitation from {} to {}'.format(
-                       invitation.editor,
-                       invitation.candidate_reviewer or invitation.candidate_email))
-
-    @classmethod
-    def invitation_accepted(cls, invitation: PeerReviewInvitation):
-        return cls(review=invitation.review,
-                   action=ReviewEvent,
-                   author=invitation.editor,
-                   message='Invitation accepted by {}'.format(invitation.candidate_reviewer))
-
-    @classmethod
-    def invitation_declined(cls, invitation: PeerReviewInvitation):
-        return cls(review=invitation.review,
-                   action=ReviewEvent.invitation_declined.name,
-                   author=invitation.editor,
-                   message='Invitation declined by {}'.format(invitation.candidate_reviewer))
-
-    @classmethod
-    def reviewer_gave_feedback(cls, feedback: 'PeerReviewerFeedback'):
-        reviewer = feedback.invitation.candidate_reviewer or feedback.invitation.candidate_email
-        release = feedback.invitation.review.codebase_release
-        return cls(review=feedback.invitation.review,
-                   action=ReviewEvent.reviewer_gave_feedback.name,
-                   author=feedback.invitation.candidate_reviewer,
-                   message='Reviewer {} provided feedback'.format(reviewer, release))
-
-    @classmethod
-    def editor_called_for_revisions(cls, feedback: 'PeerReviewerFeedback'):
-        return cls(review=feedback.invitation.review,
-                   action=ReviewEvent.editor_called_for_revisions.name,
-                   author=feedback.invitation.editor,
-                   message='Editor {} called for revisions'.format(feedback.invitation.editor))
-
-    @classmethod
-    def author_made_changes(cls, review: PeerReview, changes_made: str):
-        author = review.codebase_release.submitter.member_profile
-        review_event = cls(review=review,
-                           action=ReviewEvent.author_made_changes.name,
-                           author=author,
-                           message='Author {} made changes'.format(author))
-        review_event.add_message(changes_made)
-        return review_event
-
-    @classmethod
-    def editor_accepted(cls, review: PeerReview, editor: MemberProfile):
-        return cls(review=review,
-                   action=ReviewEvent.editor_accepted.name,
-                   author=editor,
-                   message='Editor {} has certified model'.format(editor))

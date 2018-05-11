@@ -2,18 +2,28 @@ import logging
 
 from django import forms
 
-from .models import PeerReview, PeerReviewerFeedback, PeerReviewInvitation
+from core.models import MemberProfile
+from .models import PeerReview, PeerReviewerFeedback, PeerReviewInvitation, PeerReviewEventLog
 
 logger = logging.getLogger(__name__)
 
 
 class PeerReviewEditForm(forms.ModelForm):
+    def save(self, commit=True):
+        review = self.instance.editor_change_review_status(self.cleaned_data['status'])
+        return review
+
     class Meta:
         model = PeerReview
-        fields = ['status', ]
+        fields = ['status',]
 
 
 class PeerReviewInvitationForm(forms.ModelForm):
+    def save(self, commit=True):
+        invitation = super().save(commit)
+        invitation.send_email()
+        return invitation
+
     class Meta:
         model = PeerReviewInvitation
         fields = [
@@ -32,10 +42,17 @@ class PeerReviewInvitationReplyForm(forms.ModelForm):
         return data
 
     def save(self, commit=True):
-        instance = super().save(commit)
-        if instance.accepted:
-            instance.create_feedback()
-        return instance
+        accepted = self.instance.accepted
+        invitation = super().save(commit)
+
+        if invitation.accepted:
+            invitation.accept_invitation()
+        else:
+            invitation.declined_invitation()
+
+        if invitation.accepted and accepted is None:
+            invitation.create_feedback()
+        return invitation
 
     class Meta:
         model = PeerReviewInvitation
@@ -70,6 +87,11 @@ class PeerReviewerFeedbackReviewerForm(CheckCharFieldLengthMixin, forms.ModelFor
     def clean_runnable_comments(self):
         return self._check_char_field_has_content(field_name='runnable_comments')
 
+    def save(self, commit=True):
+        feedback = super().save(commit)
+        feedback.reviewer_gave_feedback()
+        return feedback
+
     class Meta:
         model = PeerReviewerFeedback
         fields = ['recommendation',
@@ -85,6 +107,11 @@ class PeerReviewerFeedbackReviewerForm(CheckCharFieldLengthMixin, forms.ModelFor
 class PeerReviewerFeedbackEditorForm(CheckCharFieldLengthMixin, forms.ModelForm):
     def clean_notes_to_author(self):
         return self._check_char_field_has_content('notes_to_author')
+
+    def save(self, commit=True):
+        feedback = super().save(commit)
+        feedback.editor_called_for_revisions()
+        return feedback
 
     class Meta:
         model = PeerReviewerFeedback
