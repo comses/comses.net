@@ -1075,7 +1075,7 @@ class ReleaseContributor(models.Model):
 class ChoicesMixin(Enum):
     @classmethod
     def to_choices(cls):
-        return Choices((choice.name, choice.value) for choice in cls)
+        return Choices(*((choice.name, choice.value) for choice in cls))
 
 
 class ReviewerRecommendation(ChoicesMixin, Enum):
@@ -1091,7 +1091,7 @@ class ReviewStatus(ChoicesMixin, Enum):
     """
 
     # No reviewer has given feedback
-    awaiting_reviewer_feedack = _('Awaiting reviewer feedback')
+    awaiting_reviewer_feedback = _('Awaiting reviewer feedback')
     # At least one reviewer has provided feedback on a model and an editor has not requested changes
     # to the model
     awaiting_editor_feedback = _('Awaiting editor feedback')
@@ -1122,18 +1122,6 @@ class PeerReviewEvent(ChoicesMixin, Enum):
 
 @register_snippet
 class PeerReview(models.Model):
-    REVIEWER_RECOMMENDATION = Choices(
-        ('accept', _('This computational model meets CoMSES Net peer review requirements.')),
-        ('revise', _('This computational model must be revised to meet CoMSES Net peer review requirements.')),
-    )
-    EDITOR_RECOMMENDATION = [('editor_' + c[0], c[1]) for c in REVIEWER_RECOMMENDATION]
-    REVIEW_STATUS = Choices(
-        ('requested', _('Author requested review')),
-        ('reviewer_invited', _('Reviewer invited')),
-        ('reviewer_waiting_for_feedback', _('Awaiting reviewer feedback')),
-        ('reviewer_completed', _('Review has been completed and reviewer has made a recommendation'))
-    ) + EDITOR_RECOMMENDATION
-
     date_created = models.DateTimeField(auto_now_add=True)
     last_modified = models.DateTimeField(auto_now=True)
     status = models.CharField(choices=ReviewStatus.to_choices(),
@@ -1209,7 +1197,7 @@ class PeerReview(models.Model):
 
     @property
     def status_levels(self):
-        return [{'value': choice[0], 'label': str(choice[1])} for choice in self.REVIEW_STATUS]
+        return [{'value': choice[0], 'label': str(choice[1])} for choice in ReviewStatus.to_choices()]
 
     def __str__(self):
         return 'PeerReview of "{} v{}" by {}'.format(
@@ -1361,7 +1349,7 @@ class PeerReviewerFeedback(models.Model):
         return event
 
     def editor_called_for_revisions(self):
-        """Added am editor called for revisions event to the log
+        """Added an editor called for revisions event to the log
 
         Preconditions:
 
