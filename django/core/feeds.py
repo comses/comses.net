@@ -32,7 +32,7 @@ class ComsesFeed(Feed):
         return item.get_absolute_url()
 
     def item_author_name(self, item):
-        return item.submitter.get_full_name()
+        return item.submitter.member_profile.name
 
     def item_author_link(self, item):
         return item.submitter.member_profile.get_absolute_url()
@@ -65,7 +65,7 @@ class AllFeed(ComsesFeed):
 
 class RssSiteNewsFeed(ComsesFeed):
     title = 'CoMSES jobs, events and codebase releases'
-    link = 'https://www.comses.net'
+    link = 'https://www.comses.net/'
     description = 'New jobs, events and codebase releases (last 120 days)'
     feed_url = '/feeds/rss/'
 
@@ -86,7 +86,7 @@ class RssEventFeed(ComsesFeed):
     title = 'CoMSES Net events feed'
     link = 'https://www.comses.net/events/'
     description = 'New events posted on comses.net'
-    feed_url = '/feeds/events/'
+    feed_url = '/feeds/events/rss/'
 
     def items(self):
         # FIXME: lift magic constants or make it configurable
@@ -95,6 +95,7 @@ class RssEventFeed(ComsesFeed):
 class AtomEventFeed(RssEventFeed):
     feed_type = Atom1Feed
     subtitle = RssEventFeed.description
+    feed_url = '/feeds/events/atom/'
 
 
 class RssJobFeed(ComsesFeed):
