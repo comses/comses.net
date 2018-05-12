@@ -1,10 +1,27 @@
 {% extends 'base.jinja' %}
+{% from 'common.jinja' import format_date %}
 
 {% block content %}
+    <h1>Feedback for <a href="{{ review.codebase_release.share_url }}">{{ review.title }}</a></h1>
     {% if review_feedback_set %}
         <div>
             {% for feedback in review_feedback_set %}
-                <div>{{ feedback }}</div>
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">
+                            <a href="{{ feedback.get_absolute_url() }}">
+                                Feedback by {{ feedback.invitation.invitee_title }} on {{ format_date(feedback.date_created) }}
+                            </a>
+                            {% if feedback.recommendation %}
+                                <span class="float-right badge badge-success">Accept</span>
+                            {% elif feedback.recommendation == False %}
+                                <span class="float-right badge badge-warning">Revise</span>
+                            {% else %}
+                                <span class="float-right badge badge-important">Incomplete</span>
+                            {% endif %}
+                        </h5>
+                    </div>
+                </div>
             {% endfor %}
         </div>
     {% else %}

@@ -124,8 +124,18 @@ class PeerReviewEditorView(PermissionRequiredMixin, DetailView):
 
 class PeerReviewFeedbackListView(ListView):
     template_name = 'library/review/feedback/list.jinja'
-    model = PeerReview
+    model = PeerReviewerFeedback
     context_object_name = 'review_feedback_set'
+
+    def get_queryset(self):
+        slug = self.kwargs['slug']
+        invitation = get_object_or_404(PeerReviewInvitation, slug=slug)
+        return self.model.objects.filter(invitation=invitation)
+
+    def get_context_data(self, *, object_list=None, **kwargs):
+        context = super().get_context_data(object_list=object_list, **kwargs)
+        context['review'] = get_object_or_404(PeerReviewInvitation, slug=self.kwargs['slug']).review
+        return context
 
 
 class PeerReviewFeedbackUpdateView(UpdateView):

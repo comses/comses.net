@@ -128,29 +128,30 @@
         </div>
         {% if has_change_perm %}
             <div class='tab-pane' id='peer-reviews' role='tabpanel'>
-                <h3>Peer Reviews</h3>
-                {% for feedback in all_reviewer_feedback %}
-                    {{ render_reviewer_feedback(feedback) }}
-                {% else %}
-                    <p>
-                    No peer reviews conducted.
-                    </p>
-                {% endfor %}
-                <h3>Peer Review Invitations</h3>
+                <h3>Peer Review Statuses</h3>
                 <div class='card'>
                     <ul class='list-group'>
                         {% for invitation in invitations %}
                             <li class='list-group-item'>
-                                <a href='{{ invitation.url }}'>
-                                    {{ invitation.codebase_release_title }}
-                                </a>
                                 {% if invitation.accepted is none %}
-                                    <span class="badge badge-info">Waiting for response</span>
-                                {% elif not invitation.accepted %}
-                                    <span class="badge badge-warning">Rejected review request</span>
+                                    <a href='{{ invitation.url }}'>
+                                        {{ invitation.codebase_release_title }}
+                                    </a>
                                 {% else %}
-                                    <span class="badge badge-success">Acceped review request</span>
+                                    <a href="{{ invitation.feedback_list_url }}">
+                                        {{ invitation.codebase_release_title }}
+                                    </a>
                                 {% endif %}
+                                {{ invitation.date_created }}
+                                <span class="float-right">
+                                    {% if invitation.accepted is none %}
+                                        <span class="badge badge-info">Waiting for response</span>
+                                    {% elif not invitation.accepted %}
+                                        <span class="badge badge-warning">Rejected review request</span>
+                                    {% else %}
+                                        <span class="badge badge-success">{{ invitation.status }}</span>
+                                    {% endif %}
+                                </span>
                             </li>
                         {% else %}
                             <li class='list-group-item'>No pending invitations</li>

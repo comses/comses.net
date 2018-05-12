@@ -13,7 +13,7 @@ from core.serializers import (YMD_DATETIME_FORMAT, PUBLISH_DATE_FORMAT, LinkedUs
                               TagSerializer, MarkdownField)
 from home.common_serializers import RelatedMemberProfileSerializer
 from .models import (ReleaseContributor, Codebase, CodebaseRelease, Contributor, License, CodebaseImage, PeerReview,
-                     PeerReviewerFeedback, PeerReviewInvitation)
+                     PeerReviewerFeedback, PeerReviewInvitation, ReviewStatus)
 
 logger = logging.getLogger(__name__)
 
@@ -384,7 +384,9 @@ class PeerReviewInvitationSerializer(serializers.ModelSerializer):
 
 class RelatedPeerReviewInvitationSerializer(serializers.ModelSerializer):
     url = serializers.ReadOnlyField(source='get_absolute_url')
+    feedback_list_url = serializers.ReadOnlyField(source='get_feedback_list_url')
     codebase_release_title = serializers.SerializerMethodField()
+    status = serializers.SerializerMethodField()
 
     def get_codebase_release_title(self, instance):
         release = instance.review.codebase_release
@@ -392,7 +394,11 @@ class RelatedPeerReviewInvitationSerializer(serializers.ModelSerializer):
         title = release.codebase.title
         return '{} {}'.format(title, version_number)
 
+    def get_status(self, instance):
+        return ReviewStatus[instance.review.status].value
+
     class Meta:
         model = PeerReviewInvitation
-        fields = ('date_created', 'optional_message', 'accepted', 'url', 'codebase_release_title')
+        fields = ('date_created', 'optional_message', 'accepted',
+                  'url', 'feedback_list_url', 'codebase_release_title', 'status')
         read_only_fields = ('date_created',)

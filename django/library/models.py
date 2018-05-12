@@ -40,6 +40,7 @@ from core.backends import add_to_comses_permission_whitelist
 from core.queryset import get_viewable_objects_for_user
 from core.fields import MarkdownField
 from core.models import Platform, MemberProfile
+from core.serializers import PUBLISH_DATE_FORMAT
 from core.templatetags.globals import markdown
 from core.view_helpers import search_backend
 from .fs import CodebaseReleaseFsApi, StagingDirectories, FileCategoryDirectories, MessageLevels
@@ -1199,6 +1200,11 @@ class PeerReview(models.Model):
     def status_levels(self):
         return [{'value': choice[0], 'label': str(choice[1])} for choice in ReviewStatus.to_choices()]
 
+    @property
+    def title(self):
+        return '{} v{}'.format(self.codebase_release.codebase.title,
+                               self.codebase_release.version_number)
+
     def __str__(self):
         return 'PeerReview of "{} v{}" by {}'.format(
             self.codebase_release.codebase.title,
@@ -1233,6 +1239,10 @@ class PeerReviewInvitation(models.Model):
     @property
     def invitee(self):
         return self.candidate_reviewer.name if self.candidate_reviewer else 'comses reviewer'
+
+    @property
+    def invitee_title(self):
+        return self.candidate_reviewer.name if self.candidate_reviewer else self.candidate_email
 
     @property
     def recipient(self):
@@ -1289,6 +1299,9 @@ class PeerReviewInvitation(models.Model):
 
     def get_absolute_url(self):
         return reverse('library:peer-review-invitation', kwargs=dict(slug=self.slug))
+
+    def get_feedback_list_url(self):
+        return reverse('library:peer-review-feedback-list', kwargs=dict(slug=self.slug))
 
     def create_feedback(self):
         return PeerReviewerFeedback.objects.create(invitation=self)
@@ -1361,6 +1374,12 @@ class PeerReviewerFeedback(models.Model):
                                    message='Editor {} called for revisions'.format(self.invitation.editor))
         event.save()
         return event
+
+    def __str__(self):
+        return 'Feedback by {} for {} v{} on {}'.format(self.invitation.candidate_reviewer,
+                                                        self.invitation.review.codebase_release.codebase.title,
+                                                        self.invitation.review.codebase_release.version_number,
+                                                        self.date_created.strftime(PUBLISH_DATE_FORMAT))
 
 
 @register_snippet
