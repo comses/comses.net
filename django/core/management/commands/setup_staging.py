@@ -25,13 +25,14 @@ class Command(BaseCommand):
         github.client_id = settings.GITHUB_CLIENT_ID
         github.secret = settings.GITHUB_CLIENT_SECRET
         github.save()
+        if settings.DEPLOY_ENVIRONMENT.is_production():
+            confirm("Update staging Site objects and robots.txt? (y/n) ")
         # set Django Site object metadata appropriately
-        if confirm("Update staging Site objects and robots.txt? (y/n) "):
-            site = Site.objects.first()
-            site.site_name = 'CoMSES Net Staging Site'
-            site.hostname = 'test.comses.net'
-            site.save()
-            logger.debug("saved wagtail site %s", site)
-            # set up robots.txt to deny all
-            call_command('setup_robots_txt', '--no-allow')
-            logger.debug("setup staging robots.txt")
+        site = Site.objects.first()
+        site.site_name = 'CoMSES Net Staging Site'
+        site.hostname = 'test.comses.net'
+        site.save()
+        logger.debug("saved wagtail site %s", site)
+        # set up robots.txt to deny all
+        call_command('setup_robots_txt', '--no-allow')
+        logger.debug("setup staging robots.txt")
