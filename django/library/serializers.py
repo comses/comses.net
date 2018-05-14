@@ -346,6 +346,11 @@ class CodebaseReleaseEditSerializer(CodebaseReleaseSerializer):
 
 
 class PeerReviewFeedbackEditorSerializer(serializers.ModelSerializer):
+    reviewer_name = serializers.SerializerMethodField()
+
+    def get_reviewer_name(self, instance):
+        return instance.invitation.invitee_title
+
     class Meta:
         model = PeerReviewerFeedback
         fields = '__all__'
@@ -353,7 +358,7 @@ class PeerReviewFeedbackEditorSerializer(serializers.ModelSerializer):
                             'private_reviewer_notes', 'notes_to_author',
                             'has_narrative_documentation', 'narrative_documentation_comments',
                             'has_clean_code', 'clean_code_comments',
-                            'is_runnable', 'runnable_comments')
+                            'is_runnable', 'reviewer_name', 'runnable_comments')
 
 
 class PeerReviewReviewerSerializer(serializers.ModelSerializer):

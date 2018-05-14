@@ -105,13 +105,13 @@ class PeerReviewFeedbackViewSet(NoDeleteNoUpdateViewSet):
 
     def get_queryset(self):
         slug = self.kwargs['slug']
-        return self.queryset.filter(invitation__slug=slug)
+        return self.queryset.filter(invitation__review__uuid=slug)
 
 
 class PeerReviewDashboardView(ListView):
     template_name = 'library/review/dashboard.jinja'
-    model = PeerReviewEventLog
-    context_object_name = 'peer_review_actions'
+    model = PeerReview
+    context_object_name = 'reviews'
 
 
 class PeerReviewEditorView(PermissionRequiredMixin, DetailView):
@@ -136,6 +136,13 @@ class PeerReviewFeedbackListView(ListView):
         context = super().get_context_data(object_list=object_list, **kwargs)
         context['review'] = get_object_or_404(PeerReviewInvitation, slug=self.kwargs['slug']).review
         return context
+
+    def post(self, request, *args, **kwargs):
+        slug = self.kwargs['slug']
+        invitation = PeerReviewInvitation.objects.get(slug=slug)
+        if not invitation.feedback_set.exists():
+            invitation.create_feedback()
+        return HttpResponseRedirect(invitation.get_feedback_list_url())
 
 
 class PeerReviewFeedbackUpdateView(UpdateView):

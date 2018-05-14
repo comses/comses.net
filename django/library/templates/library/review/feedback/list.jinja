@@ -2,7 +2,15 @@
 {% from 'common.jinja' import format_date %}
 
 {% block content %}
-    <h1>Feedback for <a href="{{ review.codebase_release.share_url }}">{{ review.title }}</a></h1>
+    <h1>
+        Feedback for <a href="{{ review.codebase_release.share_url }}">{{ review.title }}</a>
+        <span class="float-right">
+            <form method="post">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-primary">Create</button>
+            </form>
+        </span>
+    </h1>
     {% if review_feedback_set %}
         <div>
             {% for feedback in review_feedback_set %}

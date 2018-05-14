@@ -1,1 +1,17 @@
 {% extends 'base.jinja' %}
+
+{% block introduction %}
+    <h1>Peer Review Dashboard</h1>
+{% endblock %}
+
+{% block content %}
+    {% for review in reviews %}
+        <div class="card">
+            <div class="card-body">
+                <h3><a href="{{ review.get_absolute_url() }}">{{ review.title }}</a></h3>
+            </div>
+        </div>
+    {% else %}
+        <p>No reviews</p>
+    {% endfor %}
+{% endblock %}
