@@ -89,7 +89,7 @@ enum FormContributorState {
                 <div class="modal-body">
                     <c-username name="username" v-model="user" @input="setUserDefaults"
                         :errorMsgs="errors.user"
-                        label="User Name" help="Find a matching user here">
+                        label="Name" help="Type to search for matching users here (searches name and email)">
                     </c-username>
                     <c-input name="given_name" v-model="given_name" label="Given Name" :errorMsgs="errors.given_name"
                         :required="config.given_name">
@@ -111,7 +111,7 @@ enum FormContributorState {
                         :errorMsgs="errors.affiliations"
                         :required="config.affiliations"
                         label="Affiliations"
-                        help="The institution(s) and other groups you are affiliated with. Press enter to add.">
+                        help="The institution(s) this contributor is affiliated with. You must press enter to add an affiliation.">
                     </c-edit-affiliations>
                     <label for="contributorType" class="form-control-label">
                         Contributor Type
@@ -123,8 +123,8 @@ enum FormContributorState {
                     <div v-if="errors.type.length > 0" class="invalid-feedback-always">{{ errors.type.join(', ') }}</div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-primary" @click="save">Save</button>
-                    <button type="button" class="btn btn-primary" @click="cancel">Cancel</button>
+                    <button type="button" class="btn btn-primary mr-auto" @click="save">Save</button>
+                    <button type="button" class="btn btn-secondary" @click="cancel">Cancel</button>
                 </div>
             </div>
         </div>
@@ -172,21 +172,20 @@ class EditContributor extends createFormValidator(contributorSchema) {
 }
 
 @Component(<any>{
-    template: `<div class="card">
+    template: `<div class="card mt-2">
         <div class="card-header">
-            Release Contributor
+            <h5 class='card-title'>Add or edit a Release Contributor</h5>
         </div>
         <div class="card-body">
             <div :class="['form-group', errors.contributor.length === 0 ? '' : 'child-is-invalid' ]">
-                <label class="form-control-label">Contributor</label>
                 <div class="row">
-                    <div class="col-11">
+                    <div class="col-9">
                         <multiselect
                             v-model="contributor"
                             :custom-label="contributorLabel"
                             label="family_name"
                             track-by="id"
-                            placeholder="Type to find contributor"
+                            placeholder="Type to find a contributor previously entered in our system"
                             :allow-empty="true"
                             :options="matchingContributors"
                             :loading="isLoading"
@@ -197,8 +196,8 @@ class EditContributor extends createFormValidator(contributorSchema) {
                             @search-change="fetchMatchingContributors">
                         </multiselect>
                     </div>
-                    <div class="col-1">
-                        <button type="button" class="btn btn-primary" @click="$emit('editContributor', state.contributor)"><span class="fa fa-plus"></span></button>
+                    <div class="col-3">
+                        <button class="btn btn-block btn-primary" @click="$emit('editContributor', state.contributor)"><i class='fa fa-plus'></i> Add a new contributor</button>
                     </div>
                 </div>
                 <div class="invalid-feedback" v-show="errors.contributor">
@@ -206,7 +205,6 @@ class EditContributor extends createFormValidator(contributorSchema) {
                 </div>
             </div>
             <div :class="['form-group', errors.roles.length === 0 ? '' : 'child-is-invalid' ]">
-                <label class="form-control-label">Role</label>
                 <multiselect name="roles" 
                     v-model="roles"
                     :multiple="true"
@@ -219,8 +217,8 @@ class EditContributor extends createFormValidator(contributorSchema) {
                     {{ errors.roles.join(', ') }}
                 </div>
             </div>
-            <button type="button" class="btn btn-primary" @click="save">Add</button>
-            <button type="button" class="btn btn-primary" @click="cancel">Cancel</button>
+            <button type="button" class="btn btn-primary" @click="save"><i class='fa fa-user-plus'></i> Register citable contributor</button>
+            <button type="button" class="btn btn-secondary" @click="cancel">Cancel</button>
         </div>
     </div>`,
     components: {
@@ -283,25 +281,29 @@ class EditReleaseContributor extends createFormValidator(releaseContributorSchem
 @Component(<any>{
     // language=Vue
     template: `<div>
-        <p>
-            Please list the contributors who worked on the project here. You (the submitter) must be included in the
-            list of release contributors. A correct listing of contributors ensures that the model displays in their 
-            user profile on CoMSES (assuming they have a user account) and makes the model discoverable by searching for
-            the contributor's name.
+        <p class='mt-3'>
+            Please list the contributors that should be included in a citation for this software release. Ordering is
+            important, as is the role of the contributor. You can drag and drop release contributors via the 
+            <i class='fa fa-exchange'></i> button to change the order in which they appear, edit them <i class='fa fa-edit'></i>, or
+            remove them <i class='fa fa-remove'></i>.
+        </p>
+        <p>By default, we will always add the submitter (you) as a release contributor. There must be at least one
+        contributor for a given release. Make sure you click "Save" after you're done making changes. Unsaved release
+        contributors display in yellow.
         </p>
         <label class="form-control-label required">Current Release Contributors</label>
         <draggable v-model="state" v-if="state.length > 0" @end="refreshStatusMessage">
             <ul v-for="releaseContributor in state" :key="releaseContributor._id" class="list-group">
                 <li :class="['list-group-item d-flex justify-content-between', { 'list-group-item-warning': releaseContributor.edited}]">
                     <div>
-                        <span class="text-muted fa fa-minus-square-o has-pointer-cursor"></span>
+                        <span class="btn btn-sm fa fa-exchange"></span>
                         {{ releaseContributorLabel(releaseContributor) }}
                     </div>
                     <div v-show="matchesState(['list'])">
-                        <span class="badge badge-default badge-pill" @click="editReleaseContributor(releaseContributor)">
+                        <span class="btn btn-sm" @click="editReleaseContributor(releaseContributor)">
                             <span class="fa fa-edit"></span>
                         </span>
-                        <span class="badge badge-default badge-pill" @click="deleteReleaseContributor(releaseContributor._id)">
+                        <span class="btn btn-sm" @click="deleteReleaseContributor(releaseContributor._id)">
                             <span class="fa fa-remove"></span>
                         </span>
                     </div>
@@ -309,14 +311,15 @@ class EditReleaseContributor extends createFormValidator(releaseContributorSchem
             </ul>
         </draggable>
         <div class="alert alert-primary" role="alert" v-else>No contributors</div>
-        <button type="button" class="btn btn-primary" ref="saveReleaseContributorsBtn" @click="save">Save</button>
+        <button class="mt-2 btn btn-primary" ref="saveReleaseContributorsBtn" @click="save">Save</button>
         <c-message-display :messages="statusMessages" @clear="statusMessages = []" />
-        <div>
-            <small class="text-muted">
-                Click on a release contributor edit and delete buttons to edit or delete them. Drag and drop release 
-                contributors to change the order in which they appear. Main release contributors at the top. Create a 
-                new contributor by clicking the add button below. Unsaved release contributors display in yellow.
-            </small>
+        <hr>
+        <div class='mt-2'>
+            You can add new contributors via the form below. If you can't find an existing Contributor in our system,
+            you can add a new one via the 
+            <button class='btn btn-primary btn-sm'><i class='fa fa-plus'></i></button> button. After you've selected a contributor, click the 
+            <button class='btn btn-sm btn-primary'><i class='fa fa-user-plus'></i> Register</button> button to register
+            them as a cited contributor to this release.
         </div>
         <c-edit-release-contributor :releaseContributor="releaseContributor"
                 @save="saveReleaseContributor" @cancel="cancelReleaseContributor" ref="releaseContributor"
