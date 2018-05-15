@@ -12,7 +12,7 @@ from django.contrib.postgres.fields import JSONField, ArrayField
 from django.core.cache import cache
 from django.core.files.images import ImageFile
 from django.core.files.storage import FileSystemStorage
-from django.core.mail import send_mail, EmailMultiAlternatives
+from django.core.mail import EmailMultiAlternatives
 from django.db import models, transaction
 from django.db.models import Prefetch
 from django.template.loader import get_template
@@ -28,7 +28,7 @@ from modelcluster.models import ClusterableModel
 from rest_framework.exceptions import ValidationError
 from taggit.models import TaggedItemBase
 from unidecode import unidecode
-from wagtail.admin.edit_handlers import FieldPanel, InlinePanel
+from wagtail.admin.edit_handlers import FieldPanel
 from wagtail.images.models import Image, AbstractImage, AbstractRendition, get_upload_to, ImageQuerySet
 from wagtail.search import index
 from wagtail.search.backends import get_search_backend
@@ -142,6 +142,12 @@ class Contributor(index.Indexed, ClusterableModel):
             return self.user.member_profile.orcid_url
         return None
 
+    @property
+    def member_profile_url(self):
+        if self.user:
+            return self.user.member_profile.get_absolute_url()
+        return None
+
     def to_codemeta(self):
         codemeta = {
             '@type': self.type.capitalize(),
@@ -176,9 +182,7 @@ class Contributor(index.Indexed, ClusterableModel):
                 else:
                     full_name = self.given_name
             elif self.user:
-                full_name = self.user.get_full_name()
-                if not full_name:
-                    full_name = self.user.username
+                full_name = self.user.member_profile.name
             else:
                 logger.warning("No usable name found for contributor %s", self.pk)
                 return 'No name'

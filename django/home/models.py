@@ -1,5 +1,5 @@
 import logging
-from datetime import datetime
+from datetime import date, datetime
 from textwrap import shorten
 
 import requests
@@ -28,9 +28,9 @@ from wagtail.snippets.edit_handlers import SnippetChooserPanel
 from wagtail.snippets.models import register_snippet
 
 from core.fields import MarkdownField
-from core.models import MemberProfile, Platform, Event, Job
 from core.fs import get_canonical_image
-from library.models import Codebase
+from core.models import MemberProfile, Platform, Event, Job
+from library.models import Codebase, Contributor
 from .forms import ContactForm
 
 logger = logging.getLogger(__name__)
@@ -366,7 +366,7 @@ class CategoryIndexPage(NavigationMixin, Page):
 
 class StreamPage(Page, NavigationMixin):
     template = models.CharField(max_length=128, default='home/stream_page.jinja')
-    date = models.DateField("Post date", default=timezone.now)
+    post_date = models.DateField("Post date", default=timezone.now)
     description = models.CharField(max_length=512, blank=True)
 
     body = StreamField([
@@ -377,7 +377,7 @@ class StreamPage(Page, NavigationMixin):
     ])
 
     content_panels = Page.content_panels + [
-        FieldPanel('date'),
+        FieldPanel('post_date'),
         FieldPanel('description'),
         StreamFieldPanel('body'),
     ]
@@ -392,7 +392,7 @@ class MarkdownPage(NavigationMixin, Page):
                     'this, help text suggestions on placement of elements may no longer apply.'),
         default='home/markdown_page.jinja'
     )
-    date = models.DateField("Post date", default=timezone.now)
+    post_date = models.DateField("Post date", default=timezone.now)
     description = MarkdownField(max_length=512, blank=True,
                                 help_text=_('Markdown-enabled summary text placed below the heading and title.'))
     body = MarkdownField(blank=True, help_text=_('Markdown-enabled main content pane for this page.'))
@@ -402,7 +402,7 @@ class MarkdownPage(NavigationMixin, Page):
     )
 
     content_panels = Page.content_panels + [
-        FieldPanel('date'),
+        FieldPanel('post_date'),
         FieldPanel('jumbotron'),
         FieldPanel('heading'),
         FieldPanel('description'),
@@ -411,7 +411,7 @@ class MarkdownPage(NavigationMixin, Page):
     ]
 
     search_fields = Page.search_fields + [
-        index.FilterField('date'),
+        index.FilterField('post_date'),
         index.SearchField('description', partial_match=True),
         index.SearchField('body', partial_match=True),
         index.SearchField('heading', partial_match=True),
@@ -541,6 +541,102 @@ class JournalIndexPage(NavigationMixin, Page):
 
 
 @register_snippet
+class ConferenceTheme(models.Model):
+
+    CATEGORIES = Choices('Panel', 'Session')
+
+    title = models.CharField(max_length=512)
+    category = models.CharField(choices=CATEGORIES, default=CATEGORIES.Panel, max_length=16)
+    description = MarkdownField()
+    external_url = models.URLField(help_text=_("URL to this conference theme's (panel / session) Discourse topic"))
+    page = ParentalKey('home.ConferencePage', related_name='themes')
+
+    def add_presentations(self, presentations):
+        """
+        presentations must be a collection of dicts with the following keys:
+        title, url, user_pk, contributors (optional)
+        """
+        for presentation in presentations:
+            user_id = presentation['user_pk']
+            submitter = MemberProfile.objects.get(user__pk=user_id)
+            conference_presentation, created = self.presentations.get_or_create(
+                title=presentation['title'],
+                external_url=presentation['url'],
+                submitter=submitter,
+            )
+            contributors = presentation.get('contributors')
+            if contributors:
+                conference_presentation.contributors.set(Contributor.objects.filter(user__pk__in=contributors))
+            else:
+                conference_presentation.contributors.add(Contributor.objects.get(user__pk=user_id))
+            conference_presentation.save()
+
+    def __str__(self):
+        return "{0} {1}".format(self.category, self.title)
+
+    content_panels = [
+        FieldPanel('title'),
+        FieldPanel('category'),
+        FieldPanel('description'),
+        FieldPanel('external_url'),
+        InlinePanel('presentations')
+    ]
+
+
+class ConferencePresentation(models.Model):
+    theme = models.ForeignKey(ConferenceTheme, related_name='presentations', on_delete=models.CASCADE)
+    title = models.CharField(max_length=512, help_text=_("Title of this presentation"))
+    external_url = models.URLField(help_text=_("URL to this presentation's Discourse topic"))
+    submitter = models.ForeignKey(MemberProfile, on_delete=models.PROTECT)
+    contributors = models.ManyToManyField(Contributor, related_name='conference_presentation_contributors')
+
+    def markdown_contributors(self):
+        """ returns markdown formatted authors """
+        linked_authors = ['[{0}]({1})'.format(c.get_full_name(), c.member_profile_url) for c in self.contributors.all()]
+        return ', '.join(linked_authors)
+
+    def __str__(self):
+        return self.title
+
+
+class ConferencePage(Page):
+
+    template = 'home/conference/index.jinja'
+    introduction = MarkdownField(help_text=_("Lead introduction to the conference"))
+    content = MarkdownField(help_text=_("Conference main body content markdown text"))
+    start_date = models.DateField()
+    end_date = models.DateField()
+    external_url = models.URLField(help_text=_("URL to the top-level Discourse category topic for this conference."))
+    submission_deadline = models.DateField(null=True, blank=True)
+
+    @property
+    def is_accepting_submissions(self):
+        if self.submission_deadline:
+            return date.today() < self.submission_deadline
+        return False
+
+    content_panels = Page.content_panels + [
+        FieldPanel('start_date'),
+        FieldPanel('end_date'),
+        FieldPanel('introduction'),
+        FieldPanel('content'),
+        FieldPanel('external_url'),
+        InlinePanel('themes', label='Themes'),
+    ]
+
+
+class ConferenceIndexPage(Page):
+
+    template = 'home/conference/list.jinja'
+
+    def __init__(self, *args, **kwargs):
+        kwargs.setdefault('slug', 'conference')
+        super().__init__(*args, **kwargs)
+
+    content_panels = Page.content_panels
+
+
+@register_snippet
 class FaqEntry(index.Indexed, models.Model):
     FAQ_CATEGORIES = Choices(
         ('abm', _('Agent-based Modeling Questions')),
@@ -648,7 +744,7 @@ class NewsIndexPage(Page):
 
 class NewsPage(Page):
     body = RichTextField()
-    date = models.DateField("Post date")
+    post_date = models.DateField("Post date")
     feed_image = models.ForeignKey(
         'wagtailimages.Image',
         null=True,
@@ -658,13 +754,13 @@ class NewsPage(Page):
     )
 
     search_fields = Page.search_fields + [
-        index.FilterField('date'),
+        index.FilterField('post_date'),
         index.SearchField('body', partial_match=True),
     ]
 
     # Editor panels configuration
     content_panels = Page.content_panels + [
-        FieldPanel('date'),
+        FieldPanel('post_date'),
         FieldPanel('body', classname="full"),
         InlinePanel('related_links', label="Related links"),
     ]
