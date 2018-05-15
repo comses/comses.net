@@ -23,16 +23,16 @@ type UploadInfo = UploadSuccess | UploadProgress | UploadFailure;
 
 @Component(<any>{
     template: `<div>
-        <h1 class="mt-4">{{ title }}</h1>
+        <h3 class="mt-4">{{ title }}</h3>
         <slot name="label"></slot>
-        <small class="form-text text-muted" v-if="instructions">{{ instructions }}</small>
+        <div class="text-muted" v-if="instructions">{{ instructions }}</div>
         <div class="d-flex justify-content-between">
             <div>
                 <label :for="uploadId"><div class="btn btn-primary">Upload a file</div></label>
                 <input class="invisible" :id="uploadId" type="file" @change="handleFiles($event)">
             </div>
             <div>
-                <button class="btn btn-outline-warning" @click="clear">Remove all files</button>
+                <button class="btn btn-danger" @click="clear">Remove all files</button>
             </div>
         </div>
         <div>
@@ -48,10 +48,10 @@ type UploadInfo = UploadSuccess | UploadProgress | UploadFailure;
                 </div>
             </div>
         </div>
-        <small class="form-text text-muted">
-            {{ originalInstructions }}
-        </small>
         <div class="list-group" v-if="originals.length > 0">
+            <small class="form-text text-muted">
+                {{ originalInstructions }}
+            </small>
             <div class="list-group-item d-flex justify-content-between align-items-center" v-for="file in originals">
                 {{ file.name }}
                 <button class="btn btn-sm btn-danger pull-right" @click="deleteFile(file.identifier)">
@@ -59,9 +59,9 @@ type UploadInfo = UploadSuccess | UploadProgress | UploadFailure;
                 </button>
             </div>
         </div>
-        <p v-else>
+        <div class='alert alert-info' v-else>
             No files uploaded
-        </p>
+        </div>
     </div>`
 })
 export class Upload extends Vue {
