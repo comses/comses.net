@@ -26,13 +26,13 @@ export class Check extends Vue {
             <div class="col-sm-12 col-md-6 col-lg-4" v-if="!published">
                 <div class="card">
                     <div class="card-header">
-                        Upload
+                        <h5 class='card-title'>Upload</h5>
                     </div>
                     <div class="card-body">
                         <p class="card-text">
                             <c-check label="At least one code file" :check="uploadProgress.code"></c-check>
-                            <c-check label="At least one data file (optional)" :check="uploadProgress.data"></c-check>
-                            <c-check label="At least one doc file" :check="uploadProgress.docs"></c-check>
+                            <c-check label="At least one narrative documentation file" :check="uploadProgress.docs"></c-check>
+                            <c-check label="At least one input data file (optional)" :check="uploadProgress.data"></c-check>
                             <c-check label="At least one result file (optional)" :check="uploadProgress.results"></c-check>
                         </p>
                     </div>
@@ -41,7 +41,7 @@ export class Check extends Vue {
             <div :class="cardClass">
                 <div class="card">
                     <div class="card-header">
-                        Contributors
+                        <h5 class='card-title'>Contributors</h5>
                     </div>
                     <div class="card-body">
                         <c-check label="More than one contributor" :check="contributorProgress"></c-check>
@@ -51,14 +51,14 @@ export class Check extends Vue {
             <div :class="cardClass">
                 <div class="card">
                     <div class="card-header">
-                        Detail
+                        <h5 class='card-title'>Metadata</h5>
                     </div>
                     <div class="card-body">
-                        <c-check label="Release note done" :check="detailProgress.release_notes"></c-check>
-                        <c-check label="Operating system selected" :check="detailProgress.os"></c-check>
-                        <c-check label="Platforms selected" :check="detailProgress.platforms"></c-check>
-                        <c-check label="Languages selected" :check="detailProgress.programming_languages"></c-check>
-                        <c-check label="License chosen" :check="detailProgress.license"></c-check> 
+                        <c-check label="Release notes" :check="detailProgress.release_notes"></c-check>
+                        <c-check label="Operating system" :check="detailProgress.os"></c-check>
+                        <c-check label="Platform" :check="detailProgress.platforms"></c-check>
+                        <c-check label="Programming language" :check="detailProgress.programming_languages"></c-check>
+                        <c-check label="License" :check="detailProgress.license"></c-check> 
                     </div>
                 </div>
             </div>
