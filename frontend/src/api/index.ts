@@ -94,6 +94,14 @@ export class ReviewEditorAPI {
     resendInvitation({slug, invitation_slug}) {
         return api.axios.post(this.resendInvitationUrl({slug, invitation_slug}));
     }
+
+    reviewUrl({slug}) {
+        return `${this.baseUrl()}${slug}/editor/`;
+    }
+
+    changeStatus({slug}, status) {
+        return api.axios.put(this.reviewUrl({slug}), {status});
+    }
  }
 
 export class ProfileAPI extends BaseAPI {

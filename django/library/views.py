@@ -6,7 +6,7 @@ from django.core.exceptions import PermissionDenied
 from django.db import transaction
 from django.http import FileResponse, Http404, HttpResponseRedirect, QueryDict
 from django.shortcuts import get_object_or_404, redirect
-from django.urls import resolve, reverse_lazy, reverse
+from django.urls import resolve, reverse
 from django.views import View
 from django.views.generic.base import RedirectView
 from django.views.generic.detail import DetailView
@@ -14,7 +14,7 @@ from django.views.generic.edit import UpdateView, FormView, CreateView
 from django_jinja.views.generic import ListView
 from guardian.decorators import permission_required
 from rest_framework import viewsets, generics, renderers, status, permissions, filters, mixins
-from rest_framework.decorators import action, api_view
+from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.exceptions import PermissionDenied as DrfPermissionDenied, ValidationError
 from rest_framework.response import Response
 
@@ -24,11 +24,11 @@ from core.view_helpers import add_change_delete_perms, get_search_queryset
 from core.views import (CommonViewSetMixin, FormUpdateView, FormCreateView, SmallResultSetPagination,
                         CaseInsensitiveOrderingFilter, NoDeleteViewSet,
                         NoDeleteNoUpdateViewSet)
-from .forms import PeerReviewEditForm, PeerReviewerFeedbackReviewerForm, PeerReviewInvitationReplyForm, \
-    PeerReviewInvitationForm
+from .forms import PeerReviewerFeedbackReviewerForm, PeerReviewInvitationReplyForm, \
+    PeerReviewInvitationForm, PeerReviewerFeedbackEditorForm
 from .fs import FileCategoryDirectories, StagingDirectories, MessageLevels
 from .models import (Codebase, CodebaseRelease, Contributor, CodebaseImage, PeerReview, PeerReviewerFeedback,
-                     PeerReviewInvitation, PeerReviewEventLog)
+                     PeerReviewInvitation, PeerReviewEventLog, ReviewStatus)
 from .permissions import CodebaseReleaseUnpublishedFilePermissions, PeerReviewInvitationPermissions
 from .serializers import (CodebaseSerializer, RelatedCodebaseSerializer, CodebaseReleaseSerializer,
                           ContributorSerializer, ReleaseContributorSerializer, CodebaseReleaseEditSerializer,
@@ -58,6 +58,24 @@ class PeerReviewReviewerListView(mixins.ListModelMixin, viewsets.GenericViewSet)
         return results
 
 
+@api_view(['PUT'])
+@permission_classes([])
+def _change_peer_review_status(request):
+    if not request.user.has_perm('library.change_peerreview'):
+        raise PermissionDenied()
+    slug = request.kwargs.get('slug')
+    review = get_object_or_404(PeerReview, slug=slug)
+
+    raw_status = request.data['status']
+    try:
+        new_status = ReviewStatus[raw_status]
+    except KeyError:
+        raise ValidationError('status {} not valid'.format(raw_status))
+    review.editor_change_review_status(request.user.member_profile, new_status)
+
+    return Response(data={'status': new_status.name}, status=status.HTTP_200_OK)
+
+
 class PeerReviewInvitationViewSet(NoDeleteNoUpdateViewSet):
     queryset = PeerReviewInvitation.objects.with_reviewer_statistics()
     permission_classes = (PeerReviewInvitationPermissions,)
@@ -66,8 +84,8 @@ class PeerReviewInvitationViewSet(NoDeleteNoUpdateViewSet):
     lookup_url_kwarg = 'invitation_slug'
 
     def get_queryset(self):
-        uuid = self.kwargs['slug']
-        return self.queryset.filter(review__uuid=uuid)
+        slug = self.kwargs['slug']
+        return self.queryset.filter(review__slug=slug)
 
     @transaction.atomic
     @action(detail=False, methods=['post'])
@@ -75,7 +93,7 @@ class PeerReviewInvitationViewSet(NoDeleteNoUpdateViewSet):
         data = request.data
         candidate_reviewer_id = data.get('id')
         candidate_email = data.get('email')
-        form_data = dict(review=get_object_or_404(PeerReview, uuid=slug).id,
+        form_data = dict(review=get_object_or_404(PeerReview, slug=slug).id,
                          editor=request.user.member_profile.id)
         if candidate_reviewer_id is not None:
             form_data['candidate_reviewer'] = candidate_reviewer_id
@@ -105,7 +123,7 @@ class PeerReviewFeedbackViewSet(NoDeleteNoUpdateViewSet):
 
     def get_queryset(self):
         slug = self.kwargs['slug']
-        return self.queryset.filter(invitation__review__uuid=slug)
+        return self.queryset.filter(invitation__review__slug=slug)
 
 
 class PeerReviewDashboardView(ListView):
@@ -118,8 +136,12 @@ class PeerReviewEditorView(PermissionRequiredMixin, DetailView):
     context_object_name = 'review'
     model = PeerReview
     permission_required = 'library.change_peerreview'
-    slug_field = 'uuid'
+    slug_field = 'slug'
     template_name = 'library/review/editor_update.jinja'
+
+    def put(self, request, *args, **kwargs):
+        request.kwargs = kwargs
+        return _change_peer_review_status(request)
 
 
 class PeerReviewFeedbackListView(ListView):
@@ -181,6 +203,43 @@ class PeerReviewFeedbackUpdateView(UpdateView):
 
     def get_success_url(self):
         return self.object.invitation.get_feedback_list_url()
+
+
+class PeerReviewEditorFeedbackUpdateView(UpdateView):
+    context_object_name = 'review_feedback'
+    form_class = PeerReviewerFeedbackEditorForm
+    template_name = 'library/review/feedback/editor_update.jinja'
+
+    def get_object(self, queryset=None):
+        if queryset is None:
+            queryset = PeerReviewerFeedback.objects.all()
+        feedback = get_object_or_404(queryset, invitation__slug=self.kwargs['slug'], id=self.kwargs['feedback_id'])
+        if feedback.editor_submitted:
+            raise PermissionDenied('Feedback cannot be modified once submitted')
+        return feedback
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+
+        if self.request.method == 'POST':
+            data = QueryDict(mutable=True)
+            for k, v in kwargs['data'].items():
+                data[k] = v
+            EDITOR_SUBMITTED = 'editor_submitted'
+            query_params = self.request.GET
+            submit = query_params.get(EDITOR_SUBMITTED)
+            logger.error({'submit': submit})
+            if submit is not None:
+                data[EDITOR_SUBMITTED] = 'True'
+            else:
+                data[EDITOR_SUBMITTED] = 'False'
+            logger.error(data)
+            kwargs['data'] = data
+
+        return kwargs
+
+    def get_success_url(self):
+        return self.object.invitation.review.get_absolute_url()
 
 
 class PeerReviewInvitationUpdateView(UpdateView):

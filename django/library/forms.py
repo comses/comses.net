@@ -3,19 +3,10 @@ import logging
 from django import forms
 
 from core.models import MemberProfile
+from core.widgets import MarkdownTextarea
 from .models import PeerReview, PeerReviewerFeedback, PeerReviewInvitation, PeerReviewEventLog
 
 logger = logging.getLogger(__name__)
-
-
-class PeerReviewEditForm(forms.ModelForm):
-    def save(self, commit=True):
-        review = self.instance.editor_change_review_status(self.cleaned_data['status'])
-        return review
-
-    class Meta:
-        model = PeerReview
-        fields = ['status',]
 
 
 class PeerReviewInvitationForm(forms.ModelForm):
@@ -97,15 +88,15 @@ class PeerReviewerFeedbackReviewerForm(CheckCharFieldLengthMixin, forms.ModelFor
     class Meta:
         model = PeerReviewerFeedback
         fields = [
-            'recommendation',
-            'private_reviewer_notes',
             'has_narrative_documentation',
             'narrative_documentation_comments',
             'has_clean_code',
             'clean_code_comments',
             'is_runnable',
             'runnable_comments',
+            'private_reviewer_notes',
             'reviewer_submitted',
+            'recommendation',
         ]
 
 
@@ -122,5 +113,10 @@ class PeerReviewerFeedbackEditorForm(CheckCharFieldLengthMixin, forms.ModelForm)
         model = PeerReviewerFeedback
         fields = [
             'private_editor_notes',
-            'notes_to_author'
+            'notes_to_author',
+            'editor_submitted',
         ]
+        widgets = {
+            'private_editor_notes': MarkdownTextarea(),
+            'notes_to_author': MarkdownTextarea()
+        }

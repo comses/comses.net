@@ -346,6 +346,7 @@ class CodebaseReleaseEditSerializer(CodebaseReleaseSerializer):
 
 
 class PeerReviewFeedbackEditorSerializer(serializers.ModelSerializer):
+    editor_url = serializers.CharField(source='get_editor_url')
     reviewer_name = serializers.SerializerMethodField()
 
     def get_reviewer_name(self, instance):
@@ -355,7 +356,7 @@ class PeerReviewFeedbackEditorSerializer(serializers.ModelSerializer):
         model = PeerReviewerFeedback
         fields = '__all__'
         read_only_fields = ('date_created', 'invitation', 'recommendation', 'reviewer',
-                            'private_reviewer_notes', 'notes_to_author',
+                            'private_reviewer_notes', 'notes_to_author', 'editor_url',
                             'has_narrative_documentation', 'narrative_documentation_comments',
                             'has_clean_code', 'clean_code_comments',
                             'is_runnable', 'reviewer_name', 'runnable_comments')

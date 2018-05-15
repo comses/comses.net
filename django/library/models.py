@@ -43,6 +43,7 @@ from core.models import Platform, MemberProfile
 from core.serializers import PUBLISH_DATE_FORMAT
 from core.templatetags.globals import markdown
 from core.view_helpers import search_backend
+from core.widgets import MarkdownTextarea
 from .fs import CodebaseReleaseFsApi, StagingDirectories, FileCategoryDirectories, MessageLevels
 
 logger = logging.getLogger(__name__)
@@ -1136,7 +1137,7 @@ class PeerReview(models.Model):
     assigned_reviewer_email = models.EmailField(blank=True,
                                                 help_text=_('Assigned reviewer email'))
     submitter = models.ForeignKey(MemberProfile, related_name='+', on_delete=models.PROTECT)
-    uuid = models.UUIDField(default=uuid.uuid4, unique=True, null=True)
+    slug = models.UUIDField(default=uuid.uuid4, unique=True, null=True)
 
     panels = [
         FieldPanel('status'),
@@ -1150,14 +1151,14 @@ class PeerReview(models.Model):
         return self.assigned_reviewer_email
 
     def get_absolute_url(self):
-        if not self.uuid:
-            self.uuid = uuid.uuid4()
+        if not self.slug:
+            self.slug = uuid.uuid4()
             self.save()
-        return reverse('library:peer-review-detail', kwargs={'slug': self.uuid})
+        return reverse('library:peer-review-detail', kwargs={'slug': self.slug})
 
-    def editor_changed_review_status(self, editor: MemberProfile, new_status: ReviewStatus):
+    def editor_change_review_status(self, editor: MemberProfile, new_status: ReviewStatus):
         old_status = self.status
-        self.status = new_status
+        self.status = new_status.name
         self.save()
         if new_status == ReviewStatus.complete:
             action = PeerReviewEvent.editor_accepted.name
@@ -1235,6 +1236,13 @@ class PeerReviewInvitation(models.Model):
                                        help_text=_('Accept or decline a peer review invitation'))
 
     objects = PeerReviewInvitationQuerySet.as_manager()
+
+    @property
+    def email(self):
+        if self.candidate_reviewer is not None:
+            return self.candidate_reviewer.email
+        else:
+            return self.candidate_email
 
     @property
     def invitee(self):
@@ -1351,6 +1359,10 @@ class PeerReviewerFeedback(models.Model):
 
     def get_absolute_url(self):
         return reverse('library:peer-review-feedback-edit',
+                       kwargs={'slug': self.invitation.slug, 'feedback_id': self.id})
+
+    def get_editor_url(self):
+        return reverse('library:peer-review-feedback-editor-edit',
                        kwargs={'slug': self.invitation.slug, 'feedback_id': self.id})
 
     def reviewer_gave_feedback(self):

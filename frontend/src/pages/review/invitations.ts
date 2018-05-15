@@ -90,7 +90,7 @@ export class Invitations extends Vue {
     candidate_is_external = false;
 
     @Prop()
-    review_uuid: string;
+    review_slug: string;
 
     get state() {
         return this.invitations;
@@ -123,9 +123,9 @@ export class Invitations extends Vue {
     }
 
     async refresh() {
-        const responseInvitations = await reviewApi.listInvitations(this.review_uuid);
+        const responseInvitations = await reviewApi.listInvitations(this.review_slug);
         this.invitations = responseInvitations.data.results;
-        const responseFeedback = await reviewApi.listFeedback(this.review_uuid);
+        const responseFeedback = await reviewApi.listFeedback(this.review_slug);
         this.feedback = responseFeedback.data.results;
     }
 
@@ -135,9 +135,9 @@ export class Invitations extends Vue {
 
     async sendEmail() {
         if (this.candidate_is_external) {
-            const response = await reviewApi.sendInvitation({review_uuid: this.review_uuid}, {email: this.candidate_email});
+            const response = await reviewApi.sendInvitation({review_uuid: this.review_slug}, {email: this.candidate_email});
         } else {
-            const response = await reviewApi.sendInvitation({review_uuid: this.review_uuid}, this.candidate_reviewer);
+            const response = await reviewApi.sendInvitation({review_uuid: this.review_slug}, this.candidate_reviewer);
         }
 
         this.candidate_reviewer = null;
@@ -146,6 +146,6 @@ export class Invitations extends Vue {
     }
 
     async resendEmail(invitation_slug) {
-        const response = await reviewApi.resendInvitation({slug: this.review_uuid, invitation_slug});
+        const response = await reviewApi.resendInvitation({slug: this.review_slug, invitation_slug});
     }
 }

@@ -12,6 +12,6 @@
 {% endblock %}
 
 {% block content %}
-    <div id="app" data-review-uuid="{{ review.uuid }}" data-status-levels="{{ review.status_levels|to_json }}"></div>
+    <div id="app" data-review-slug="{{ review.slug }}" data-status-levels="{{ review.status_levels|to_json }}" data-status="{{ review.status }}"></div>
     {{ render_bundle('reviews', attrs='async') }}
 {% endblock %}
