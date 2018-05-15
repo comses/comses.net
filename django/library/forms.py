@@ -48,7 +48,7 @@ class PeerReviewInvitationReplyForm(forms.ModelForm):
         if invitation.accepted:
             invitation.accept_invitation()
         else:
-            invitation.declined_invitation()
+            invitation.decline_invitation()
 
         if invitation.accepted and accepted is None:
             invitation.create_feedback()
@@ -69,6 +69,8 @@ class CheckCharFieldLengthMixin:
 
 
 class PeerReviewerFeedbackReviewerForm(CheckCharFieldLengthMixin, forms.ModelForm):
+    reviewer_submitted = forms.BooleanField(widget=forms.HiddenInput())
+
     def clean_recommendation(self):
         recommendation = self.cleaned_data['recommendation']
         if not recommendation:
@@ -102,7 +104,8 @@ class PeerReviewerFeedbackReviewerForm(CheckCharFieldLengthMixin, forms.ModelFor
             'has_clean_code',
             'clean_code_comments',
             'is_runnable',
-            'runnable_comments'
+            'runnable_comments',
+            'reviewer_submitted',
         ]
 
 

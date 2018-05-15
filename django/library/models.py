@@ -1340,6 +1340,14 @@ class PeerReviewerFeedback(models.Model):
     runnable_comments = models.TextField(
         help_text=_('Reviewer comments on running the model with the provided instructions'), blank=True
     )
+    reviewer_submitted = models.BooleanField(
+        help_text=_('Whether or not feedback has been submitted by reviewer. Submitted feedback cannot be edited'),
+        default=False
+    )
+    editor_submitted = models.BooleanField(
+        help_text=_('Whether or not feedback has submitted by editor. Submitted feedback cannot be edited'),
+        default=False
+    )
 
     def get_absolute_url(self):
         return reverse('library:peer-review-feedback-edit',

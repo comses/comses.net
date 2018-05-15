@@ -4,7 +4,8 @@ from uuid import UUID
 from django.contrib.auth.models import User
 from django.test import TestCase
 
-from library.models import Codebase, CodebaseRelease, ReleaseContributor, Contributor
+from library.models import Codebase, CodebaseRelease, ReleaseContributor, Contributor, PeerReviewerFeedback, \
+    PeerReviewInvitation, PeerReview
 from library.serializers import CodebaseSerializer
 
 
@@ -120,3 +121,46 @@ class CodebaseReleaseFactory:
                 raise KeyError('Key "{}" is not a property of codebase'.format(k))
         codebase_release.save()
         return codebase_release
+
+
+class PeerReviewFactory:
+    def __init__(self, submitter, codebase_release):
+        self.submitter = submitter
+        self.codebase_release = codebase_release
+
+    def get_default_data(self):
+        return {
+            'submitter': self.submitter,
+            'codebase_release': self.codebase_release
+        }
+
+    def create(self, **defaults):
+        kwargs = self.get_default_data()
+        kwargs.update(defaults)
+
+        review = PeerReview(**kwargs)
+        review.save()
+        return review
+
+
+class PeerReviewInvitationFactory:
+    def __init__(self, editor, reviewer, review):
+        self.editor = editor
+        self.review = review
+        self.reviewer = reviewer
+
+    def get_default_data(self):
+        return {
+            'candidate_reviewer': self.reviewer,
+            'editor': self.editor,
+            'review': self.review
+        }
+
+    def create(self, **defaults):
+        kwargs = self.get_default_data()
+        kwargs.update(defaults)
+
+        invitation = PeerReviewInvitation(**kwargs)
+        invitation.save()
+        return invitation
+

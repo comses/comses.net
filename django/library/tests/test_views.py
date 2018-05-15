@@ -15,7 +15,8 @@ from core.tests.base import UserFactory
 from core.tests.permissions_base import BaseViewSetTestCase, create_perm_str, ResponseStatusCodesMixin, ApiAccountMixin
 from library.fs import FileCategoryDirectories
 from library.models import Codebase
-from .base import CodebaseFactory, ContributorFactory, ReleaseContributorFactory
+from .base import CodebaseFactory, ContributorFactory, ReleaseContributorFactory, PeerReviewFactory, \
+    PeerReviewInvitationFactory
 from ..views import CodebaseViewSet, CodebaseReleaseViewSet
 
 
@@ -239,7 +240,8 @@ class CodebaseReleaseUnpublishedFilesTestCase(ApiAccountMixin, ResponseStatusCod
         path_to_foo = pathlib.Path('foo.txt')
         api = self.codebase_release.get_fs_api()
         print(self.codebase_release)
-        print('CodebaseRelease perm %s' % self.submitter.has_perm('library.delete_codebaserelease', self.codebase_release))
+        print('CodebaseRelease perm %s' % self.submitter.has_perm('library.delete_codebaserelease',
+                                                                  self.codebase_release))
 
         # Unpublished codebase release permissions
         response = self.client.delete(
@@ -378,6 +380,82 @@ class CodebaseReleaseRenderPageTestCase(TestCase):
                                            kwargs={'identifier': self.codebase.identifier,
                                                    'version_number': self.codebase_release.version_number}))
         self.assertTrue(response.status_code, True)
+
+
+class ReviewSetup:
+    @classmethod
+    def setUpReviewData(cls):
+        cls.user_factory = UserFactory()
+        cls.editor = cls.user_factory.create().member_profile
+        cls.reviewer = cls.user_factory.create().member_profile
+        cls.submitter = cls.user_factory.create()
+
+        cls.codebase_factory = CodebaseFactory(cls.submitter)
+        cls.codebase = cls.codebase_factory.create()
+        cls.codebase_release = cls.codebase.create_release(initialize=False)
+        cls.review_factory = PeerReviewFactory(submitter=cls.codebase.submitter.member_profile,
+                                               codebase_release=cls.codebase_release)
+        cls.review = cls.review_factory.create()
+
+
+class PeerReviewInvitationTestCase(ReviewSetup, ResponseStatusCodesMixin, TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.setUpReviewData()
+
+    def setUp(self):
+        invitation_factory = PeerReviewInvitationFactory(editor=self.editor, reviewer=self.reviewer, review=self.review)
+        self.invitation = invitation_factory.create()
+
+    def test_can_only_accept_invite_once(self):
+        url = self.invitation.get_absolute_url()
+        get_invitation_page_response = self.client.get(url)
+        self.assertResponseOk(get_invitation_page_response)
+        post_invitation_page_response = self.client.post(url, data={'accepted': True})
+        self.assertResponseFound(post_invitation_page_response)
+
+        get_invitation_page_response_again = self.client.get(url)
+        self.assertResponsePermissionDenied(get_invitation_page_response_again)
+        post_invitation_page_response_again = self.client.post(url, data={'accepted': True})
+        self.assertResponsePermissionDenied(post_invitation_page_response_again)
+
+    def test_can_only_decline_invite_once(self):
+        url = self.invitation.get_absolute_url()
+        get_invitation_page_response = self.client.get(url)
+        self.assertResponseOk(get_invitation_page_response)
+        post_invitation_page_response = self.client.post(url, data={'accepted': False})
+        self.assertResponseFound(post_invitation_page_response)
+
+        get_invitation_page_response_again = self.client.get(url)
+        self.assertResponsePermissionDenied(get_invitation_page_response_again)
+        post_invitation_page_response_again = self.client.post(url, data={'accepted': False})
+        self.assertResponsePermissionDenied(post_invitation_page_response_again)
+
+    @classmethod
+    def tearDownClass(cls):
+        pass
+
+
+class PeerReviewFeedbackTestCase(ReviewSetup, ResponseStatusCodesMixin, TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.setUpReviewData()
+        invitation_factory = PeerReviewInvitationFactory(editor=cls.editor, reviewer=cls.reviewer, review=cls.review)
+        cls.invitation = invitation_factory.create()
+
+    def setUp(self):
+        self.feedback = self.invitation.create_feedback()
+
+    def test_reviewer_cannot_view_or_change_feedback_after_submission(self):
+        url = self.feedback.get_absolute_url()
+        get_feedback = self.client.get(url)
+        self.assertResponseOk(get_feedback)
+        post_reviewer_feedback = self.client.post(url)
+        self.assertResponseFound(post_reviewer_feedback)
+
+
+#     def test_editor_cannot_view_or_change_feedback_after_submission(self):
+#         pass
 
 
 def tearDownModule():

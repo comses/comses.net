@@ -3,16 +3,15 @@
 {% from 'library/review/includes/codebase_release.jinja' import codebase_release_name %}
 
 {% block introduction %}
-
+    <h1>Review of
+        <a href="{{ review.codebase_release.get_absolute_url() }}" class="text-white px-0">
+            {{ codebase_release_name(review.codebase_release) }}
+        </a> requested by
+        <a href="{{ review.submitter.get_absolute_url() }}" class="text-white px-0">{{ review.submitter.name }}</a>
+    </h1>
 {% endblock %}
 
 {% block content %}
-    <h1>Review of
-        <a href="{{ review.codebase_release.get_absolute_url() }}">
-            {{ codebase_release_name(review.codebase_release) }}
-        </a> requested by
-        <a href="{{ review.submitter.get_absolute_url() }}">{{ review.submitter.name }}</a>
-    </h1>
     <div id="app" data-review-uuid="{{ review.uuid }}" data-status-levels="{{ review.status_levels|to_json }}"></div>
     {{ render_bundle('reviews', attrs='async') }}
 {% endblock %}

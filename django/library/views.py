@@ -4,7 +4,7 @@ import pathlib
 from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.core.exceptions import PermissionDenied
 from django.db import transaction
-from django.http import FileResponse, Http404, HttpResponseRedirect
+from django.http import FileResponse, Http404, HttpResponseRedirect, QueryDict
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import resolve, reverse_lazy, reverse
 from django.views import View
@@ -134,7 +134,10 @@ class PeerReviewFeedbackListView(ListView):
 
     def get_context_data(self, *, object_list=None, **kwargs):
         context = super().get_context_data(object_list=object_list, **kwargs)
-        context['review'] = get_object_or_404(PeerReviewInvitation, slug=self.kwargs['slug']).review
+        invitation = get_object_or_404(PeerReviewInvitation, slug=self.kwargs['slug'])
+        review = invitation.review
+        context['invitation'] = invitation
+        context['review'] = review
         return context
 
     def post(self, request, *args, **kwargs):
@@ -154,9 +157,30 @@ class PeerReviewFeedbackUpdateView(UpdateView):
         if queryset is None:
             queryset = PeerReviewerFeedback.objects.all()
         feedback = get_object_or_404(queryset, invitation__slug=self.kwargs['slug'], id=self.kwargs['feedback_id'])
-        # if feedback.recommendation:
-        #     raise PermissionDenied('Feedback cannot be modified once submitted')
+        if feedback.reviewer_submitted:
+            raise PermissionDenied('Feedback cannot be modified once submitted')
         return feedback
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+
+        if self.request.method == 'POST':
+            data = QueryDict(mutable=True)
+            for k, v in kwargs['data'].items():
+                data[k] = v
+            REVIEWER_SUBMITTED = 'reviewer_submitted'
+            query_params = self.request.GET
+            submit = query_params.get(REVIEWER_SUBMITTED)
+            if submit is not None:
+                data[REVIEWER_SUBMITTED] = ['True']
+            else:
+                data[REVIEWER_SUBMITTED] = ['False']
+            kwargs['data'] = data
+
+        return kwargs
+
+    def get_success_url(self):
+        return self.object.invitation.get_feedback_list_url()
 
 
 class PeerReviewInvitationUpdateView(UpdateView):
@@ -165,8 +189,18 @@ class PeerReviewInvitationUpdateView(UpdateView):
     queryset = PeerReviewInvitation.objects.all()
     template_name = 'library/review/invitations/update.jinja'
 
+    def get_object(self, queryset=None):
+        slug = self.kwargs['slug']
+        invitation = get_object_or_404(PeerReviewInvitation, slug=slug)
+        if invitation.accepted in [False, True]:
+            raise PermissionDenied('Can only accept or decline invitation once')
+        return invitation
+
     def get_success_url(self):
-        return self.object.feedback_set.last().get_absolute_url()
+        feedback = self.object.feedback_set.last()
+        if feedback is None:
+            feedback = self.object.create_feedback()
+        return feedback.get_absolute_url()
 
 
 class CodebaseFilter(filters.BaseFilterBackend):
