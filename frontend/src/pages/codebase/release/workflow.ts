@@ -133,30 +133,32 @@ export const publishSchema = yup.object().shape({
         <div class="modal-dialog" role="document">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">Publish Codebase Release {{ _version_number }}</h5>
-
+                    <h4 class="modal-title">Publish Codebase Release {{ _version_number }}</h4>
                     <button type="button" class="close" @click="close" aria-label="Close">
                         <span aria-hidden="true">&times;</span>
                     </button>
                 </div>
                 <div class="modal-body">
-                    <p>Before publishing a release you must pick a semantic version to associate it with. In semantic 
-                    versioning a version is composed of major, minor and patch parts. A new major version should be 
-                    set if your new release is backwards incompatible with the previous release. A new release should 
-                    bump the minor number is the release introduced new features but remains backwards compatible. A
-                    new release should bump the patch number if the new release has bug fix release changes only.</p>
+                    <p><b>Note!</b> Publishing a release makes it possible for anyone to view and download it. Once a
+                    release is published, the files associated with the release will be <b>frozen</b> and you will no
+                    longer be able to add or remove files to the release. You will still be able to edit certain release
+                    metadata, however.
+                    </p>
+                    <p>Please assign a semantic version number to this release. CoMSES Net adheres to the 
+                    <a target='_blank' href='https://semver.org'>semantic versioning</a> standard, which splits a version number into
+                    three parts: major, minor and patch. For example, version 2.7.18 has major version 2,
+                    minor version 7, and patch version 18. You should increase the <i>major</i> version (leftmost number)
+                    if this new release is backwards incompatible with the previous release. You should increase the
+                    <i>minor</i> version (middle number) if this release introduced new features but remains backwards
+                    compatible. And finally, you should increase the <i>patch</i> version (rightmost number) if this
+                    release only contains bug fixes and remains backwards compatible (sans the bugs of course!).
+                    </p>
                     <c-input v-model="version_number" name="version_number" :errorMsgs="errors.version_number"
                         label="Version Number">
-                        <div class="form-text text-muted" slot="help">
-                            Change the semantic version before release. Please see here for more information on 
-                            <a href="https://semver.org/">semantic versioning</a>
-                        </div>
+                        <small class="form-text text-muted" slot="help">
+                            <a target='_blank' href="https://semver.org/">more info on semantic versioning</a>
+                        </small>
                     </c-input>
-                    <p>
-                        Publishing a codebase result release makes possible for anyone to view and download it. 
-                        Published releases must have code and documentation files and at least one contributor. Once a
-                        release is published files associated with the release cannot be added, modified or deleted.
-                    </p>
                     <p>
                         Publishing a release cannot be undone. Do you want to continue?
                     </p>
@@ -164,8 +166,8 @@ export const publishSchema = yup.object().shape({
                 <c-message-display :messages="statusMessages" @clear="clear">
                 </c-message-display>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-primary" @click="publish">Publish</button>
-                    <button type="button" class="btn btn-secondary" @click="close">Cancel</button>
+                    <button class="btn btn-danger mr-auto" @click="publish"><i class='fa fa-share-alt'></i> Publish</button>
+                    <button class="btn btn-secondary" @click="close">Cancel</button>
                 </div>
             </div>
         </div>
@@ -219,24 +221,28 @@ class PublishModal extends createFormValidator(publishSchema) {
     },
     template: `<div>
         <div v-if="isInitialized">
-            <h1>{{ $store.state.release.codebase.title }} <i>v{{ $store.state.release.version_number }}</i>
-                <span class="has-pointer-cursor btn btn-sm btn-secondary" data-target="#editCodebaseModal" data-toggle="modal">Edit Common Metadata | Add Images/Media</span>
-                <span class="badge badge-success" v-if="isPublished">Published</span>
-                <span v-else>
-                    <span class="badge badge-warning">Unpublished</span> <span class="btn btn-sm btn-secondary" data-target="#publishCodebaseReleaseModal" data-toggle="modal">Publish</span>
-                </span>
-            </h1>
+            <h1>{{ $store.state.release.codebase.title }} <i>v{{ $store.state.release.version_number }}</i></h1>
+            <div class='pb-2'>
+                <span class="btn btn-primary" data-target="#editCodebaseModal" data-toggle="modal"><i class='fa fa-edit'></i> Edit Common Metadata | Add Images &amp; Media</span>
+                <div class='float-right'>
+                    <span class="disabled btn btn-info" v-if="isPublished"><i class='fa fa-share-alt'></i> Published</span>
+                    <span v-else>
+                        <span class="btn btn-danger" data-target="#publishCodebaseReleaseModal" data-toggle="modal"><span class='fa fa-share-alt'></span> Publish</span>
+                        <span class="disabled btn btn-info"><i class='fa fa-lock'></i> Private</span>
+                    </span>
+                    </div>
+            </div>
             <c-progress></c-progress>
             <ul class="nav nav-tabs justify-content-center">
                 <li class="nav-item" v-if="!isPublished" data-toggle="tooltip" data-placement="bottom" title="">
-                    <router-link :to="{ name: 'upload'}" class="nav-link required" active-class="disabled">Upload</router-link>
+                    <router-link :to="{ name: 'upload'}" class="nav-link" active-class="active">Upload</router-link>
                 </li>
                 <li class="nav-item">
-                    <router-link :to="{ name: 'contributors' }" class="nav-link required" active-class="disabled">Contributors</router-link>
+                    <router-link :to="{ name: 'contributors' }" class="nav-link" active-class="active">Contributors</router-link>
                 </li>
                 <li class="nav-item">
-                    <router-link :to="{ name: 'detail' }" class="nav-link required" active-class="disabled">
-                        Detail<span class="badge badge-pill badge-danger" v-if="detailPageErrors !== 0">{{ detailPageErrors }} errors</span>
+                    <router-link :to="{ name: 'detail' }" class="nav-link" active-class="active">
+                        Metadata<span class="badge badge-pill badge-danger" v-if="detailPageErrors !== 0">{{ detailPageErrors }} errors</span>
                     </router-link>
                 </li>
             </ul>
