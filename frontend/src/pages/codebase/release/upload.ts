@@ -45,11 +45,11 @@ class FileTree extends Vue {
 
 @Component(<any>{
     template: `<div>
-            <p>
-                Releases should include any code, documentation, input data and simulation results that would help
-                someone else to understand the model. At least one code file is required.
+            <p class='mt-3'>
+                Releases should include all code, documentation, input data and simulation results necessary for someone
+                else (including your future self) to understand or reuse the model. Source code is required.
             </p>
-            <button class="btn btn-outline-secondary" @click="showPreview">Preview Download Package</button>
+            <button class="btn btn-secondary" @click="showPreview">Preview Download Package</button>
             <div class="modal fade" id="previewModal" tabindex="-1" role="dialog" aria-labelledby="previewModalLabel">
                 <div class="modal-dialog" role="document">
                     <div class="modal-content">
@@ -77,7 +77,7 @@ class FileTree extends Vue {
                     @deleteFile="deleteFile(config.uploadType, $event)" @clear="clear(config.uploadType)"
                     @doneUpload="doneUpload(config.uploadType)">    
                 </c-upload>
-                <p v-if="config.description">{{ config.description }}</p>
+                <hr>
             </div>
         </div>`,
     components: {
@@ -92,32 +92,36 @@ export class UploadPage extends Vue {
         {
             uploadType: 'code',
             acceptedFileTypes: '*/*',
-            title: 'Upload Code',
-            instructions: 'Upload code associated with a project here. If an archive (zip or tar file) is uploaded it is extracted first.',
-            originalInstructions: 'The original files uploaded show here. It is possible to have one archive or many non archive files. Files should be codebase related but all files are accepted',
-            description: `Code associated with a release goes here. If you have your project in version control a 
-                snapshot of the whole project should go in this folder as an archive.`
-        },
+            title: 'Upload Source Code',
+            instructions: `You can upload a single plaintext source file (e.g., NetLogo) or zipped archive of plaintext
+            source code (currently accepting zip or tar files) representing your codebase. Archives will be unpacked and
+            extracted as part of archival processing and system files will be removed but the archive's directory
+            structure is preserved.  All file types are accepted though they should be in open or plaintext formats.`,
+            originalInstructions: 'Submitted source code file.',
+        }, 
         {
             uploadType: 'data',
             acceptedFileTypes: '*/*',
             title: 'Upload Data',
-            instructions: 'Upload data associated with a project here. If an archive (zip or tar file) is uploaded it is extracted first.',
-            originalInstructions: 'The original files uploaded show here. It is possible to have one archive or many non archive files. Files should be data but all files are accepted'
+            instructions: `Upload any data associated with your source code. If an archive (zip or tar file) is uploaded
+            it is extracted first. Files should be plaintext or open data formats but all file types are accepted.`,
+            originalInstructions: 'Submitted data files.'
         },
         {
             uploadType: 'docs',
             acceptedFileTypes: '*/*',
-            title: 'Upload Documentation',
-            instructions: 'Upload documentation associated with a project here. If an archive (zip or tar file) is uploaded it is extracted first.',
-            originalInstructions: 'The original files uploaded show here. It is possible to have one archive or many non archive files. Files should be docs and only PDF, MarkDown, text and ReStructured text are accepted'
+            title: 'Upload Narrative Documentation',
+            instructions: `Upload narrative documentation (e.g., the ODD Protocol) that comprehensively describes your
+            computational model. Acceptable files include plain text formats (e.g., Markdown, Jupyter Notebooks,
+            ReStructuredText), OpenDocument Text (ODT), or PDF`,
+            originalInstructions: 'Submitted narrative documentation files.'
         },
         {
             uploadType: 'results',
             acceptedFileTypes: '*/*',
             title: 'Upload Simulation Outputs',
-            instructions: 'Upload simulation outputs associated with a project here. If an archive (zip or tar file) is uploaded it is extracted first.',
-            originalInstructions: 'The original files uploaded show here. It is possible to have one archive or many non archive files. Files should be results but all files are accepted'
+            instructions: 'Upload simulation outputs associated with your computational model. Ideally these data files should be in plain text or other open data formats.',
+            originalInstructions: 'Submitted model output files.'
         }
     ];
 
