@@ -31,9 +31,14 @@ export const schema = yup.object().shape({
 
 @Component(<any>{
     template: `<div>
+        <p class='mt-3'>
+            Detailed metadata helps others discover and reuse your computational models. Please take the time to
+            document how to run your computational model, software and data dependencies, accepted inputs and expected
+            outputs.
+        </p>
         <p>
-            Detailed metadata for a release. Metadata makes the release more discoverable and helps potential users 
-            quickly determine if the model is about an issue useful to them.
+            <small class='text-muted'><em>NOTE: We will be updating this process soon to help us build containerized versions of your
+            computational models - stay tuned!</em></small>
         </p>
         <c-markdown v-model="release_notes" :errorMsgs="errors.release_notes" name="releaseNotes" rows="3" 
             label="Release Notes" :required="config.release_notes">
@@ -41,7 +46,7 @@ export const schema = yup.object().shape({
         <c-datepicker v-model="embargo_end_date" :errorMsgs="errors.embargo_end_date" name="embargoEndDate" :clearButton="true"
             :required="config.embargo_end_date"
             label="Embargo End Date"
-            help="The date your release is automatically published">
+            help="If this release is currently private, a date when your release will be automatically published">
         </c-datepicker>
         <div :class="['form-group', {'child-is-invalid': errors.os.length > 0}]">
             <label :class="['form-control-label', {'required': config.os}]">Operating System</label>
@@ -50,14 +55,14 @@ export const schema = yup.object().shape({
                 @input="updateOs"
                 name="os" 
                 :options="osOptions" 
-                placeholder="Pick the OS the model runs on"
+                placeholder="The operating system and version this model has been developed and tested on, e.g., Ubuntu 18.04 or Windows 10"
                 label="display"
                 track-by="name">
             </multiselect>
             <div v-if="errors.os.length > 0" class="invalid-feedback">{{ errors.os.join(', ') }}</div>
         </div>
         <c-tagger v-model="platforms" placeholder="Type to add platforms" :required="config.platforms"
-            label="Platforms" help="Platforms used in this model" :errorMsgs="errors.platforms">
+            label="Platforms" help="Modeling platforms (if any) used in this model" :errorMsgs="errors.platforms">
         </c-tagger>
         <c-tagger v-model="programming_languages" placeholder="Type to add programming languages" :required="config.programming_languages"
             label="Programming Languages" help="Programming languages used in this model" :errorMsgs="errors.programming_languages">
@@ -67,13 +72,14 @@ export const schema = yup.object().shape({
             <multiselect v-model="license" label="name" track-by="name" placeholder="Type to find license" :options="licenseOptions">
                 <template slot="option" scope="props">
                     <div>
-                        {{ props.option.name }} <a :href="props.option.url" target="_blank"><span class="fa fa-external-link"></span></a>
+                         <a class='btn btn-sm btn-info' :href="props.option.url" target="_blank"><span class="fa fa-external-link"></span> view</a>
+                         {{ props.option.name }}
                     </div>
                 </template>
             </multiselect>
             <div v-if="errors.license.length > 0" class="invalid-feedback">a license must be selected</div>
-            <small class="form-text text-muted">A software licence is a document governing use and redistribution of your model. 
-                See <a href="https://choosealicense.org">here</a> to compare licenses
+            <small class="form-text text-muted">The open source licence you would like to govern use and redistribution of your computational model. 
+                <a target='_blank' href="//choosealicense.org">choosealicense.org</a> is a good resource for deciding what license to use.
             </small>
         </div>
         <c-message-display :messages="statusMessages" @clear="statusMessages = []"/>
