@@ -847,6 +847,10 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
         return reverse('library:codebaserelease-download',
                        kwargs={'identifier': self.codebase.identifier, 'version_number': self.version_number})
 
+    def get_notify_reviewer_of_changes_url(self):
+        return reverse('library:codebaserelease-notify-reviewer-of-changes',
+                       kwargs={'identifier': self.codebase.identifier, 'version_number': self.version_number})
+
     def get_review_download_url(self):
         if not self.share_uuid:
             self.regenerate_share_uuid()
@@ -1232,6 +1236,11 @@ class PeerReviewInvitationQuerySet(models.QuerySet):
     def with_reviewer_statistics(self):
         return self.prefetch_related(models.Prefetch('candidate_reviewer', PeerReview.get_reviewers()))
 
+    def send_author_updated_content_email(self):
+        events = [invitation.send_author_updated_content_email(save=False) for invitation in self]
+        events = self.bulk_create(events)
+        return events
+
 
 @register_snippet
 class PeerReviewInvitation(models.Model):
@@ -1276,11 +1285,7 @@ class PeerReviewInvitation(models.Model):
         return settings.DEFAULT_FROM_EMAIL
 
     def send_email(self, resend=True):
-        """Email the reviewer a invitation
-
-        Preconditions:
-
-        should only"""
+        """Email the reviewer a invitation"""
         template = get_template('library/review/email/review_invite.jinja')
         markdown_content = template.render(context=dict(invitation=self))
         subject = 'Review Model "{}"'.format(self.review.codebase_release.codebase.title)
@@ -1297,6 +1302,21 @@ class PeerReviewInvitation(models.Model):
         else:
             event.action = PeerReviewEvent.invitation_resent.name
         return event.save()
+
+    def send_author_updated_content_email(self, save=True):
+        template = get_template('library/review/email/review_invite.jinja')
+        markdown_content = template.render(context=dict(invitation=self))
+        subject = 'Updates to model "{}"'.format(self.review.codebase_release.codebase.title)
+        msg = EmailMultiAlternatives(subject, markdown_content, self.recipient)
+        msg.attach_alternative(markdown(markdown_content), 'text/html')
+        msg.send()
+        event = PeerReviewEventLog(review=self.review,
+                                   author=self.editor,
+                                   message='Notified {} of model update'.format(
+                                       self.candidate_reviewer or self.candidate_email))
+        if save:
+            event.save()
+        return event
 
     @transaction.atomic
     def accept_invitation(self):

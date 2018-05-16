@@ -605,6 +605,12 @@ class CodebaseReleaseViewSet(CommonViewSetMixin,
         contents = fs_api.list_sip_contents()
         return Response(data=contents, status=status.HTTP_200_OK)
 
+    @action(detail=True, methods=['post'])
+    def notify_reviewer_of_changes(self, request, **kwargs):
+        codebase_release = self.get_object()
+        codebase_release.review.invitations.send_author_updated_content_email()
+        return Response(status=status.HTTP_200_OK)
+
 
 class BaseCodebaseReleaseFilesViewSet(viewsets.GenericViewSet):
     lookup_field = 'relpath'
