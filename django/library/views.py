@@ -28,7 +28,7 @@ from .forms import PeerReviewerFeedbackReviewerForm, PeerReviewInvitationReplyFo
     PeerReviewInvitationForm, PeerReviewerFeedbackEditorForm
 from .fs import FileCategoryDirectories, StagingDirectories, MessageLevels
 from .models import (Codebase, CodebaseRelease, Contributor, CodebaseImage, PeerReview, PeerReviewerFeedback,
-                     PeerReviewInvitation, PeerReviewEventLog, ReviewStatus)
+                     PeerReviewInvitation, PeerReviewEventLog, ReviewStatus, OPERATING_SYSTEMS)
 from .permissions import CodebaseReleaseUnpublishedFilePermissions, PeerReviewInvitationPermissions
 from .serializers import (CodebaseSerializer, RelatedCodebaseSerializer, CodebaseReleaseSerializer,
                           ContributorSerializer, ReleaseContributorSerializer, CodebaseReleaseEditSerializer,
@@ -535,6 +535,12 @@ class CodebaseReleaseViewSet(CommonViewSetMixin,
 
     def retrieve(self, request, *args, **kwargs):
         instance = self.get_object()
+        if request.accepted_renderer.format == 'html':
+            perms = {}
+            add_change_delete_perms(instance, perms, request.user)
+            return Response({'release': instance, **perms,
+                             'review_status_enum': ReviewStatus,
+                             'operating_systems_enum': OPERATING_SYSTEMS})
         serializer = self.get_serializer(instance)
         data = add_change_delete_perms(instance, serializer.data, request.user)
         return Response(data)

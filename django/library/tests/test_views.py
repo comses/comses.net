@@ -344,7 +344,7 @@ class CodebaseReleasePublishTestCase(TestCase):
         api.add(content=docs_file, category=FileCategoryDirectories.docs)
         self.codebase_release.publish()
 
-        download_response = self.client.get(self.codebase_release.review_download_url)
+        download_response = self.client.get(self.codebase_release.get_review_download_url())
         self.assertEqual(download_response.status_code, 404)
         response = self.client.post(self.codebase_release.regenerate_share_url, HTTP_ACCEPT='application/json')
         self.assertEqual(response.status_code, 400)
@@ -401,6 +401,7 @@ class ReviewSetup:
 class PeerReviewInvitationTestCase(ReviewSetup, ResponseStatusCodesMixin, TestCase):
     @classmethod
     def setUpClass(cls):
+        super().setUpClass()
         cls.setUpReviewData()
 
     def setUp(self):
@@ -433,12 +434,13 @@ class PeerReviewInvitationTestCase(ReviewSetup, ResponseStatusCodesMixin, TestCa
 
     @classmethod
     def tearDownClass(cls):
-        pass
+        super().tearDownClass()
 
 
 class PeerReviewFeedbackTestCase(ReviewSetup, ResponseStatusCodesMixin, TestCase):
     @classmethod
     def setUpClass(cls):
+        super().setUpClass()
         cls.setUpReviewData()
         invitation_factory = PeerReviewInvitationFactory(editor=cls.editor, reviewer=cls.reviewer, review=cls.review)
         cls.invitation = invitation_factory.create()
@@ -446,16 +448,9 @@ class PeerReviewFeedbackTestCase(ReviewSetup, ResponseStatusCodesMixin, TestCase
     def setUp(self):
         self.feedback = self.invitation.create_feedback()
 
-    def test_reviewer_cannot_view_or_change_feedback_after_submission(self):
-        url = self.feedback.get_absolute_url()
-        get_feedback = self.client.get(url)
-        self.assertResponseOk(get_feedback)
-        post_reviewer_feedback = self.client.post(url)
-        self.assertResponseFound(post_reviewer_feedback)
-
-
-#     def test_editor_cannot_view_or_change_feedback_after_submission(self):
-#         pass
+    @classmethod
+    def tearDownClass(cls):
+        super().tearDownClass()
 
 
 def tearDownModule():

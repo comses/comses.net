@@ -18,6 +18,7 @@ from django.db.models import Prefetch
 from django.template.loader import get_template
 from django.urls import reverse
 from django.utils import timezone
+from django.utils.http import urlencode
 from django.utils.text import slugify
 from django.utils.translation import ugettext_lazy as _
 from ipware import get_client_ip
@@ -190,6 +191,13 @@ class Contributor(index.Indexed, ClusterableModel):
     @property
     def formatted_affiliations(self):
         return ' '.join(self.affiliations.all())
+
+    def get_profile_url(self):
+        user = self.user
+        if user:
+            return user.member_profile.get_absolute_url()
+        else:
+            return "{0}?{1}".format(reverse('home:profile-list'), urlencode({'query': self.name}))
 
     def __str__(self):
         if self.email:
@@ -831,8 +839,15 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
         return reverse('library:codebaserelease-detail',
                        kwargs={'identifier': self.codebase.identifier, 'version_number': self.version_number})
 
-    @property
-    def review_download_url(self):
+    def get_request_peer_review_url(self):
+        return reverse('library:codebaserelease-request-peer-review',
+                       kwargs={'identifier': self.codebase.identifier, 'version_number': self.version_number})
+
+    def get_download_url(self):
+        return reverse('library:codebaserelease-download',
+                       kwargs={'identifier': self.codebase.identifier, 'version_number': self.version_number})
+
+    def get_review_download_url(self):
         if not self.share_uuid:
             self.regenerate_share_uuid()
         return reverse('library:codebaserelease-share-download', kwargs={'share_uuid': self.share_uuid})

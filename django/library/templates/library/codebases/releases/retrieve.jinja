@@ -1,5 +1,11 @@
 {% extends "sidebar_layout.jinja" %}
-{% from "common.jinja" import breadcrumb, embed_discourse_comments, member_profile_href, share_card, search_tag_href %}
+{% from "common.jinja" import breadcrumb, embed_discourse_comments, share_card, search_tag_href %}
+
+{% macro member_href(member_profile) %}
+    <a href="{{ member_profile.get_absolute_url() }}">{{ member_profile.name }}</a>
+{% endmacro %}
+
+{% set codebase = release.codebase %}
 
 {% block title %}{{ codebase.title }}{% endblock %}
 
@@ -9,62 +15,57 @@
     {{ breadcrumb([
     {'url': url('library:codebase-list'), 'text': 'Computational Model Library' },
     {'text': codebase.title },
-    {'text': version_number },
+    {'text': release.version_number },
     ]) }}
 {% endblock %}
-
-{# Unpublished codebases have a null latest version number (which so we need to create release url)
-    so we need to check to make sure it has one first#}
-{% if codebase.latest_version_number %}
-    {% set latest_version_url = url('library:codebaserelease-detail', identifier=codebase.identifier, version_number=codebase.latest_version_number) %}
-{% endif %}
 
 {% block content %}
     <div id={{ 'discourse-content' if live else 'content' }}>
         {% if not live %}
             <div class="alert alert-danger mt-2">The release you are viewing is currently unpublished.
                 {% if codebase.latest_version_number and version_number != codebase.latest_version_number %}
-                    The latest published version is <a href='{{ latest_version_url }}'>{{codebase.latest_version_number}}</a>
+                    The latest published version is
+                    <a href='{{ codebase.latest_version.get_absolute_url() }}'>{{ codebase.latest_version.version_number }}</a>
                 {% endif %}
             </div>
         {% else %}
-            {% if version_number != codebase.latest_version_number %}
+            {% if release.version_number != codebase.latest_version.version_number %}
                 <div class="alert alert-warning mt-2">This release is out-of-date. The latest version is
-                    <a href='{{ latest_version_url }}'>{{codebase.latest_version_number}}</a>
+                    <a href='{{ release.get_absolute_url() }}'>{{ codebase.latest_version.version_number }}</a>
                 </div>
             {% endif %}
         {% endif %}
         <h1 class='codebase-title pb-4'>{{ codebase.title }}</h1>
         <div class='metadata'>
-            <b>Submitted by:</b> {{ member_profile_href(codebase.submitter) }}
+            <b>Submitted by:</b> {{ member_href(codebase.submitter.member_profile) }}
             <b class='pl-2'>Platform:</b>
-            {% for p in platform_tags %}
+            {% for p in release.platform_tags.all() %}
                 {{ search_tag_href(p, category='codebases') }}
             {% else %}
                 None
             {% endfor %}
-            <b class='pl-2'>Version: </b> {{ version_number }}
+            <b class='pl-2'>Version: </b> {{ release.version_number }}
             <b class='pl-2'>Language:</b>
-            {% for pl in programming_languages %}
+            {% for pl in release.programming_languages.all() %}
                 {{ search_tag_href(pl, category='codebases') }}
             {% endfor %}
         </div>
         <div class='tag-list'>
-            {% for tag in codebase.tags %}
+            {% for tag in codebase.tags.all() %}
                 {{ search_tag_href(tag, category='codebases') }}
             {% endfor %}
         </div>
         <div class='pt-4'>
             <div class='lead'>
-                {{ codebase.description|markdown }}
+                {{ codebase.description.raw|markdown }}
             </div>
             <h3><u>Release Notes</u></h3>
             <div class='lead'>
-            {% if release_notes %}
-                {{ release_notes|markdown }}
-            {% else %}
-                No release notes were entered with this release.
-            {% endif %}
+                {% if release.release_notes %}
+                    {{ release.release_notes.raw|markdown }}
+                {% else %}
+                    No release notes were entered with this release.
+                {% endif %}
             </div>
         </div>
     </div>
@@ -72,13 +73,13 @@
         <div class='card-body'>
             <h2 class='card-title'>Cite this Model</h2>
             <div class='card-text'>
-                {% if live %}
-                    {{ citation_text|markdown }}
+                {% if release.live %}
+                    {{ release.citation_text.raw|markdown }}
                 {% elif has_change_perm %}
                     This model is currently <b>unpublished</b>.
                     <div class='input-group' id="regenerate_share_uuid"
-                         data-absolute-url="{{ absolute_url }}"
-                         data-share-url="{{ request.build_absolute_uri(share_url) }}">
+                         data-absolute-url="{{ release.get_absolute_url() }}"
+                         data-share-url="{{ request.build_absolute_uri(release.share_url) }}">
                         <div class='input-group-prepend'>
                             <span class='btn input-group-text'>
                                 <i class='fa fa-retweet' @click="regenerateShareUuid"></i>
@@ -89,7 +90,7 @@
                             <span class='btn btn-clipboard input-group-text' data-clipboard-target='#release-share-url'>
                                 <i class='fa fa-copy'></i>
                             </span>
-                    </div>
+                        </div>
                     </div>
                     <small class='text-muted'>
                         Use this link to share this release privately with others. Anyone with this URL will be able to
@@ -108,7 +109,7 @@
             <div class='card-body'>
                 <h2 class='card-title'>Replication of a previously published model</h2>
                 <p class='card-text'>
-                {{ replication_text }}
+                    {{ replication_text }}
                 </p>
             </div>
         </div>
@@ -118,7 +119,7 @@
             <div class='card-body'>
                 <h2 class='card-title'>References</h2>
                 <p class='card-text'>
-                {{ codebase.references_text }}
+                    {{ codebase.references_text }}
                 </p>
             </div>
         </div>
@@ -128,7 +129,7 @@
             <div class='card-body'>
                 <h2 class='card-title'>Associated Publication</h2>
                 <p class='card-text'>
-                {{ codebase.associated_publication_text }}
+                    {{ codebase.associated_publication_text }}
                 </p>
             </div>
         </div>
@@ -148,8 +149,8 @@
         <div class='tab-pane active' id='images' role='tabpanel'>
             {# FIXME: iterate and display all images in media #}
             <div class='p-3'>
-                {% if codebase.featured_image is not none %}
-                    {{ image(codebase.featured_image, "width-780", class='d-block img-fluid') }}
+                {% if codebase.get_featured_image() is not none %}
+                    {{ image(codebase.get_featured_image(), "width-780", class='d-block img-fluid') }}
                 {% else %}
                     <img src="holder.js/780x400?text=No uploaded images" class="img-fluid img-thumbnail">
                 {% endif %}
@@ -159,25 +160,26 @@
             <div class='card-metadata'>
                 <div class='card-body'>
                     <div class='section'>
-                        <b class='card-title'>Submitter:</b> {{ member_profile_href(submitter) }}
+                        <b class='card-title'>Submitter:</b> {{ member_href(release.submitter.member_profile) }}
                     </div>
                     <div class='section'>
-                        <b class='card-title'>DOI:</b> {{ doi }}
+                        <b class='card-title'>DOI:</b> {{ release.doi }}
                     </div>
                     <div class='section'>
-                        <b class='card-title'>License:</b> <a href='{{ license.url }}'>{{ license.name }}</a>
+                        <b class='card-title'>License:</b> <a
+                            href='{{ release.license.url }}'>{{ release.license.name }}</a>
                     </div>
                     <div class='section'>
-                        <b class='card-title'>Operating System:</b> {{ os_display }}
+                        <b class='card-title'>Operating System:</b> {{ operating_systems_enum[release.os] }}
                     </div>
                     <div class='section'>
                         <b class='card-title'>Programming Language:</b>
-                        {% for pl in programming_languages %}
+                        {% for pl in release.programming_languages.all() %}
                             {{ search_tag_href(pl, category='codebases') }}
                         {% endfor %}
                     </div>
                     <div class='section'>
-                        <b class='card-title'>Dependencies:</b> {{ dependencies }}
+                        <b class='card-title'>Dependencies:</b> {{ release.dependencies }}
                     </div>
                 </div>
             </div>
@@ -185,48 +187,49 @@
         <div class='tab-pane' id='versions' role='tabpanel'>
             <table class='table table-striped'>
                 <thead>
-                    <tr>
-                        <th>Version</th>
-                        <th>Submitter</th>
-                        <th>First published</th>
-                        <th>Last modified</th>
-                        {% if has_change_perm %}
-                            <th>Status</th>
-                            <th>Edit</th>
-                        {% endif %}
-                    </tr>
+                <tr>
+                    <th>Version</th>
+                    <th>Submitter</th>
+                    <th>First published</th>
+                    <th>Last modified</th>
+                    {% if has_change_perm %}
+                        <th>Status</th>
+                        <th>Edit</th>
+                    {% endif %}
+                </tr>
                 </thead>
                 <tbody>
-                    {% for release in codebase.releases %}
-                        <tr>
-                            <td><a href='{{ release.absolute_url }}'>{{ release.version_number }}</a></td>
-                            <td>{{ member_profile_href(release.submitter) }}</td>
-                            <td>{{ release.first_published_at }}</td>
-                            <td>{{ release.last_published_on }}</td>
-                            {% if has_change_perm %}
-                                <td>
-                                    {% if release.draft %}
-                                        <span class="badge badge-danger">Draft</span>
-                                    {% elif release.live %}
-                                        <span class="badge badge-success">Published</span>
-                                    {% else %}
-                                        <span class="badge badge-warning">Unpublished</span>
-                                    {% endif %}
-                                </td>
-                                <td>
-                                    <a href="{{ url('library:codebaserelease-edit', identifier=codebase.identifier, version_number=release.version_number) }}">
-                                        <span class="fa fa-edit"></span>
-                                    </a>
-                                </td>
-                            {% endif %}
-                        </tr>
+                {% for related_release in codebase.releases.all() %}
+                    <tr>
+                        <td><a href='{{ related_release.get_absolute_url() }}'>{{ related_release.version_number }}</a>
+                        </td>
+                        <td>{{ member_href(release.submitter.member_profile) }}</td>
+                        <td>{{ release.first_published_at }}</td>
+                        <td>{{ release.last_published_on }}</td>
+                        {% if has_change_perm %}
+                            <td>
+                                {% if release.draft %}
+                                    <span class="badge badge-danger">Draft</span>
+                                {% elif release.live %}
+                                    <span class="badge badge-success">Published</span>
+                                {% else %}
+                                    <span class="badge badge-warning">Unpublished</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <a href="{{ release.get_edit_url() }}">
+                                    <span class="fa fa-edit"></span>
+                                </a>
+                            </td>
+                        {% endif %}
+                    </tr>
                 {% endfor %}
                 </tbody>
             </table>
             <form>
                 {% csrf_token %}
                 {% if has_change_perm %}
-                    <button class="btn btn-secondary" formmethod="post" formaction="{{ url('library:codebaserelease-draft', identifier=codebase.identifier) }}">
+                    <button class="btn btn-secondary" formmethod="post" formaction="{{ codebase.get_draft_url() }}">
                         Draft a new release
                     </button>
                 {% endif %}
@@ -239,84 +242,89 @@
 {% endblock %}
 
 {% block sidebar %}
-    <div class='card-metadata'>
-        <div class='card-body'>
-            <div class='section'>
-                <b class="card-title">Authors</b>
-                <p class='card-text'>
+<div class='card-metadata'>
+    <div class='card-body'>
+        <div class='section'>
+            <b class="card-title">Authors</b>
+            <p class='card-text'>
                 {% for c in codebase.all_contributors %}
                     {% set badge_class='badge-success' if c.user else 'badge-default' %}
-                    <a href='{{c.profile_url}}'>
-                        <span class='badge {{badge_class}}'>
+                    <a href='{{ c.get_profile_url() }}'>
+                        <span class='badge {{ badge_class }}'>
                             {{ c.name }}
                         </span>
                     </a>
                 {% endfor %}
-                </p>
-            </div>
-            <div class='section'>
-                <b class="card-title">Publish Date</b>
-                <p class='card-text'>
-                {{ first_published_at }}
-                </p>
-            </div>
-            <div class='section'>
-                <b class="card-title">Last Updated</b>
-                <p class='card-text'>
-                {{ last_published_on }}
-                </p>
-            </div>
-            <div class='section'>
-                <b class="card-title">Downloads: </b>{{ codebase.download_count }}
-            </div>
-            <div class='section'>
-                <b class="card-title">Status</b>
-                <p class="card-text">
-                {% if peer_reviewed %}
+            </p>
+        </div>
+        <div class='section'>
+            <b class="card-title">Publish Date</b>
+            <p class='card-text'>
+                {{ release.first_published_at }}
+            </p>
+        </div>
+        <div class='section'>
+            <b class="card-title">Last Updated</b>
+            <p class='card-text'>
+                {{ release.last_published_on }}
+            </p>
+        </div>
+        <div class='section'>
+            <b class="card-title">Downloads: </b>{{ codebase.download_count() }}
+        </div>
+        <div class='section'>
+            <b class="card-title">Status</b>
+            <p class="card-text">
+                {% if release.peer_reviewed %}
                     <img src="{{ static("images/icons/peer-reviewed.png") }}" alt="Peer Reviewed">
                 {% elif has_review %}
                     Peer review underway
                 {% else %}
                     Not reviewed
                 {% endif %}
-                </p>
-            </div>
+            </p>
         </div>
     </div>
-    {% if has_change_perm %}
-        <form>
-            {% csrf_token %}
-            <button class="btn btn-secondary my-1 w-100" formmethod="post"
-                    formaction="{{ url('library:codebaserelease-draft', identifier=codebase.identifier) }}">
-                Draft a new release
-            </button>
-        </form>
-        <a href="{{ url('library:codebaserelease-edit', identifier=codebase.identifier, version_number=version_number) }}">
-            <div class="btn btn-secondary my-1 w-100">Edit metadata</div>
-        </a>
-        {% set review_template_text -%}
-        Request to review {{ request.build_absolute_uri(absolute_url) }}
-        {%- endset %}
-        {# FIXME: see https://github.com/comses/core.comses.net/issues/43 #}
-        {% if not has_review %}
-            <form method="post" action="{{ url('library:codebaserelease-request-peer-review', identifier=codebase.identifier, version_number=version_number) }}">
-                {% csrf_token %}
-                <button type="submit" class='btn btn-secondary my-1 w-100'>
-                    Request peer review
-                </button>
-            </form>
-        {% endif %}
-    {% endif %}
-    {% if live %}
-        <a id="releaseDownload" data-name="download" rel='nofollow' href="{{ url('library:codebaserelease-download', identifier=codebase.identifier, version_number=version_number) }}">
-            <button type="button" class="btn btn-primary my-1 w-100">Download</button>
-        </a>
-    {% else %}
-        <a rel='nofollow' href="{{ share_url }}download/">
-            <button type="button" class="btn btn-primary my-1 w-100">Download for Review</button>
-        </a>
-    {% endif %}
-    {# FIXME: disabled for now <button type="button" class="btn btn-primary my-1 w-100">Follow</button>
+</div>
+{% if has_change_perm %}
+<form>
+    {% csrf_token %}
+    <button class="btn btn-secondary my-1 w-100" formmethod="post"
+            formaction="{{ codebase.get_draft_url() }}">
+        Draft a new release
+    </button>
+</form>
+<a href="{{ release.get_edit_url() }}">
+    <div class="btn btn-secondary my-1 w-100">Edit metadata</div>
+</a>
+{% set review_template_text -%}
+Request to review {{ request.build_absolute_uri(absolute_url) }}
+{%- endset %}
+{# FIXME: see https://github.com/comses/core.comses.net/issues/43 #}
+{% if release.review is none %}
+    <form method="post" action="{{ release.get_request_peer_review_url() }}">
+        {% csrf_token %}
+        <button type="submit" class='btn btn-secondary my-1 w-100'>
+            Request peer review
+        </button>
+    </form>
+{% elif release.review.status == review_status_enum.awaiting_author_changes.name %}
+    <button type="button" class="btn btn-danger my-1 w-100">Content Updated</button>
+{% else %}
+    <button type="button" class="btn btn-warning my-1 w-100"
+            disabled>{{ review_status_enum[release.review.status].value }}</button>
+{% endif %}
+{% endif %}
+{% if live %}
+    <a id="releaseDownload" data-name="download" rel='nofollow' href="{{ release.get_download_url() }}">
+        <button type="button" class="btn btn-primary my-1 w-100">Download</button>
+    </a>
+{% else %}
+    <a rel='nofollow' href="{{ release.get_review_download_url() }}">
+        <button type="button" class="btn btn-primary my-1 w-100">Download for Review</button>
+    </a>
+{% endif %}
+{# FIXME: disabled for now <button type="button" class="btn btn-primary my-1 w-100">Follow</button>
     {{ share_card(absolute_url) }}
     #}
 {% endblock %}
@@ -324,11 +332,12 @@
 {% block js %}
     {# FIXME: remove this if there's a better way to include npm dependencies manually in a page #}
     {% with CLIPBOARD_JS_VERSION="2.0.0" %}
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/{{CLIPBOARD_JS_VERSION}}/clipboard.min.js" async></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/{{ CLIPBOARD_JS_VERSION }}/clipboard.min.js"
+                async></script>
     {% endwith %}
     <script defer>
         new Clipboard('.btn-clipboard');
     </script>
     {{ render_bundle('release_regenerate_share_uuid', attrs='defer') }}
-    {{ embed_discourse_comments(live, submitter.username) }}
+    {{ embed_discourse_comments(live, release.submitter.username) }}
 {% endblock %}
