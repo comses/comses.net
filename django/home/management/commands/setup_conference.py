@@ -4,6 +4,7 @@ Initializes CoMSES virtual conference Page Models and other canned data.
 
 import logging
 
+from django.contrib.auth.models import User
 from django.core.management.base import BaseCommand
 
 from home.models import (LandingPage, ConferenceIndexPage, ConferencePage, ConferenceTheme)
@@ -31,24 +32,28 @@ We welcome presentations dealing with agent-based modeling of social, ecological
 """
 
 COMSES_2018_CONTENT = """
-We realize that a virtual conference will not have the same intensity as a face-to-face conference, but we expect that this still leads to a lively interaction between the participants. The reason we organize such a conference is to provide low cost opportunity to interact with other CoMSES Net members. There will be no registration fee for the conference, but one needs to be registered as a CoMSES member.
+A virtual conference will probably not have the same intensity as a face-to-face conference, but we expect lively interaction between participants. Our goal in organizing these virtual conferences is to provide low cost opportunities for engaging interaction within the CoMSES Net community. There will be no registration fee for the conference, but you will need to be [registered as a CoMSES member](/accounts/signup/) in order to submit a presentation and/or engage with the presenters.
 
-Instead of traveling to the conference to attend panels and deliver a talk, speakers will do the following:
+If you are interested in presenting at CoMSES 2018, instead of traveling to a conference to attend panels and deliver a talk, you will instead be expected to do the following:
 
-1. Film yourself giving a talk of a maximum length of 12 minutes. This can be done with your own desktop or laptop. You can film yourself giving a talk or have a narrated slide show, or pursue a more ambitious edited video which combines speaking, slides and model simulations. It is now possible and relatively easy to record a high quality presentation with modern video editing software.
-2. During the conference, participants can ask you questions, and you are expected to respond to questions raised by your talk. You will automatically receive emails when users post questions or comments on your presentation. Only registered comses.net members will be able to post questions or comments.
-3. View other presentations and ask questions to other speakers. Since the conference is over a three week period you will not experience the problem of many parallel sessions that traditional face-to-face conferences pose.
-4. You will be expected to have an up to date profile page on comses.net by the time of submission.
+1. Record yourselves giving a talk no more than 12 minutes. You can film yourself giving a talk or have a narrated slide show, or pursue a more ambitious edited video which combines speaking, slides, animations, or model simulations. It is now possible and relatively easy to record a high quality presentation with [modern video editing software](https://en.wikipedia.org/wiki/List_of_video_editing_software).
+2. During the conference, participants may ask you questions, and you will be expected to respond to questions raised by your talk. You will automatically receive emails when users post questions or comments on your presentation. Only registered comses.net members will be able to post questions or comments.
+3. During the conference, you should also view other presentations and ask questions of other speakers. Since the conference is over a three week period you will not experience the problem of many parallel sessions that traditional face-to-face conferences pose.
+4. You will be expected to have an up to date [profile page](/accounts/profile/) on comses.net by the time of submission.
 
-The deadline for videos submission is __Sunday, September 16__. You can post your video on a Youtube channel or submit the video file itself using WeTransfer. We will decide on acceptance of the video for the conference based on the following criteria:
+The deadline for video submission is __Sunday, September 16__ and we will post a submission link with more information soon. We will decide on acceptance of the video for the conference based on the following criteria:
 
-- Maximum length video is 12 minutes
-- Presentation is in English
-- Presenter is a CoMSES member at the time of submitting the video
-- Presentation is related to the theme of the conference
-- Presenter has included a link to their model code and documentation (in the comses model library or other digital repository).
+- Maximum length video is 12 minutes (_required_)
+- Presentation is in English (_required_)
+- Presentation is related to the theme of the conference (_required_)
+- Presenter is a CoMSES member at the time of submitting the video (_required_)
+- Presenter has included a link to their model code and documentation and archived it in the comses model library or other digital repository (_recommended_)
 
 In the 2 weeks between the submission and the start of the conference we will check the submissions for eligibility and may contact presenters if adjustments are needed. We will then organize the presentations into sessions for the conference.
+"""
+
+COMSES_2018_SUBMISSION_INFO = """
+Submissions are not yet open, we will post a link to the submission form in the coming weeks. Thanks for your interest!
 """
 
 class Command(BaseCommand):
@@ -247,6 +252,7 @@ class Command(BaseCommand):
             title='CoMSES 2018',
             introduction=COMSES_2018_INTRO,
             content=COMSES_2018_CONTENT,
+            submission_information=COMSES_2018_SUBMISSION_INFO,
             external_url='https://forum.comses.net/c/events/comses-2018',
             submission_deadline='2018-9-16',
         )
@@ -263,7 +269,7 @@ class Command(BaseCommand):
         except ConferenceIndexPage.DoesNotExist:
             landing_page = LandingPage.objects.first()
             landing_page.add_child(instance=conference_index_page)
-            revision = conference_index_page.save_revision(user=3, submitted_for_moderation=False)
+            revision = conference_index_page.save_revision(user=User.objects.get(pk=3), submitted_for_moderation=False)
             revision.publish()
         self.build_comses_2017_page(conference_index_page)
         self.build_comses_2018_page(conference_index_page)

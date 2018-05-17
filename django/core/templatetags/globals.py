@@ -35,7 +35,7 @@ def cookielaw(request):
 @library.global_function
 def now(format_string):
     """
-    Simulates the Django https://docs.djangoproject.com/en/1.10/ref/templates/builtins/#now default templatetag
+    Simulates the Django https://docs.djangoproject.com/en/dev/ref/templates/builtins/#now default templatetag
     Usage: {{ now('Y') }}
     """
     tzinfo = get_current_timezone() if settings.USE_TZ else None

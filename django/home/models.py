@@ -608,12 +608,21 @@ class ConferencePage(Page):
     end_date = models.DateField()
     external_url = models.URLField(help_text=_("URL to the top-level Discourse category topic for this conference."))
     submission_deadline = models.DateField(null=True, blank=True)
+    submission_information = MarkdownField(help_text=_("Markdown formatted info on how to submit a presentation to the conference"))
 
     @property
     def is_accepting_submissions(self):
         if self.submission_deadline:
             return date.today() < self.submission_deadline
         return False
+
+    @property
+    def is_open(self):
+        return self.start_date <= date.today() <= self.end_date
+
+    @property
+    def is_archived(self):
+        return date.today() > self.end_date
 
     content_panels = Page.content_panels + [
         FieldPanel('start_date'),

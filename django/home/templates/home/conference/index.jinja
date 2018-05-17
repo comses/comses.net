@@ -15,22 +15,37 @@
     {{ page.content }}
     {% endautoescape %}
     {% if page.is_accepting_submissions %}
-        Submissions are due <mark>{{page.submission_deadline.strftime('%c')}}</mark>
+        <div class='alert alert-info'>
+            {% autoescape false %}
+                {{ page.submission_information }}
+            {% endautoescape %}
+        </div>
+    {% elif not page.is_open %}
+        <div class='alert alert-info'>
+            Submissions are now closed and being evaluated. Please check back again on {{ page.start_date.strftime("%c") }}. 
+        </div>
     {% else %}
         <div class='alert alert-warning'> 
-            <i class='fa fa-exclamation-triangle'></i>
             Presentations are posted as forum topics, with top-level conference themes pinned to the top of the 
             <a href='{{ page.external_url }}'>conference page</a>. In order to post comments, feedbacks, and engage in
             discussion with the presenters and other participants you will need to 
             <a href='{{signup_url}}'>create a comses.net account</a> or 
             <a href='{{login_url}}'>sign in with an existing comses.net account</a>.
         </div>
-        <a class='btn btn-lg btn-primary' href='{{ page.external_url }}'>Join the conference</a>
+        {% if page.is_archived %}
+            <div class='alert alert-info'>
+            <i class='fa fa-exclamation-triangle'></i>
+            {{ page.title }} is now over and so you might not receive any response from the original authors, but the presentations and comments are still available.
+            </div>
+            <a class='btn btn-lg btn-primary' href='{{ page.external_url }}'>View the archived conference</a>
+        {% else %}
+            <a class='btn btn-lg btn-primary' href='{{ page.external_url }}'>Join the conference</a>
+        {% endif %}
     {% endif %}
     {% for theme in page.themes.order_by('category') %}
         <div class='card my-3'>
             <h3 class='card-header'>
-                <span class='badge-comses badge-secondary'>{{theme.category}}</span>
+                <span class='p-1 badge-comses badge-secondary'>{{theme.category}}</span>
                 <a href='{{theme.external_url}}'>{{ theme.title }}</a>
             </h3>
             <div class='card-body'>
