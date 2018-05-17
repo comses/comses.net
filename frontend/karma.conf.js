@@ -1,4 +1,5 @@
 const webpack = require('webpack');
+const stringify = require('stringify-object');
 
 const externalWebpackConfig = require('./webpack.conf');
 const webpackConfig = {};
@@ -8,14 +9,16 @@ webpackConfig['plugins'] = externalWebpackConfig['plugins'].filter(plugin =>
     plugin instanceof webpack.DefinePlugin || plugin instanceof webpack.ProvidePlugin);
 webpackConfig['devtool'] = 'inline-source-map';
 
-module.exports = function(config) {
+console.log(stringify({resolve: webpackConfig.resolve, module: webpackConfig.module, devtool: webpackConfig.devtool}));
+
+module.exports = function (config) {
     config.set({
         files: [
-           {pattern: 'src/**/*.spec.ts', watched: false}
+            {pattern: 'src/**/*.spec.ts', watched: false}
         ],
         frameworks: ['mocha', 'chai', 'sinon'],
         preprocessors: {
-           'src/**/*.spec.ts': ['webpack', 'sourcemap']
+            'src/**/*.spec.ts': ['webpack', 'sourcemap']
         },
         proxies: {
             '': {
@@ -25,7 +28,7 @@ module.exports = function(config) {
         },
         webpack: webpackConfig,
         client: {
-           captureConsole: true
+            captureConsole: true
         },
         reporters: ['mocha', 'coverage'],
         browsers: ['ChromeCustom'],
