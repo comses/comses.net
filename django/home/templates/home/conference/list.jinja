@@ -1,0 +1,16 @@
+{% extends "base.jinja" %}
+{% from "common.jinja" import breadcrumb %}
+
+{% block introduction %}
+    <h1>CoMSES Virtual Conferences</h1>
+{% endblock %}
+
+{% block content %}
+    {{ breadcrumb([{'url': '/community/', 'text': 'Community'}, {'text': 'CoMSES Conferences' }])}}
+    <p class='lead'>
+    CoMSES Net hosted its inaugural virtual conference in 2017 to provide a venue for the computational modeling
+    community to engage with each other's work with video presentations and feedback provided in an asynchronous format
+    via <a href='https://www.discourse.org/'>a Discourse forum</a>.
+    </p>
+    <a class='btn btn-primary' href='{{ page.external_url }}'>Join the latest conference</a>
+{% endblock %}

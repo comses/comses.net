@@ -1,0 +1,51 @@
+{% extends "base.jinja" %}
+{% from "common.jinja" import breadcrumb %}
+
+{% block introduction %}
+    <h1>{{ page.title }}</h1>
+    <h2>{{ page.start_date }} - {{ page.end_date }}</h2>
+{% endblock %}
+
+{% block content %}
+    {{ breadcrumb([{'url': '/community/', 'text': 'Community'}, {'text': page.title }])}}
+    {% autoescape false %}
+    <div class='lead'>
+        {{ page.introduction }}
+    </div>
+    {{ page.content }}
+    {% endautoescape %}
+    {% if page.is_accepting_submissions %}
+        Submissions are due <mark>{{page.submission_deadline.strftime('%c')}}</mark>
+    {% else %}
+        <div class='alert alert-warning'> 
+            <i class='fa fa-exclamation-triangle'></i>
+            Presentations are posted as forum topics, with top-level conference themes pinned to the top of the 
+            <a href='{{ page.external_url }}'>conference page</a>. In order to post comments, feedbacks, and engage in
+            discussion with the presenters and other participants you will need to 
+            <a href='{{signup_url}}'>create a comses.net account</a> or 
+            <a href='{{login_url}}'>sign in with an existing comses.net account</a>.
+        </div>
+        <a class='btn btn-lg btn-primary' href='{{ page.external_url }}'>Join the conference</a>
+    {% endif %}
+    {% for theme in page.themes.order_by('category') %}
+        <div class='card my-3'>
+            <h3 class='card-header'>
+                <span class='badge-comses badge-secondary'>{{theme.category}}</span>
+                <a href='{{theme.external_url}}'>{{ theme.title }}</a>
+            </h3>
+            <div class='card-body'>
+                {% autoescape false %}
+                    {{ theme.description }}
+                {% endautoescape %}
+                <ul>
+                    {% for presentation in theme.presentations.all() %}
+                        <li>{% for contributor in presentation.contributors.all() -%}
+                                <a class='badge badge-success contributor' href='{{contributor.member_profile_url}}'>{{ contributor.get_full_name() }}</a>
+                            {% endfor -%}
+                            <a class='text-gray' href='{{ presentation.external_url }}'><em>{{ presentation.title }}</em></a></li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    {% endfor %}
+{% endblock %}

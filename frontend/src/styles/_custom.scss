@@ -27,6 +27,19 @@ $font-family-base: 'Open Sans', Roboto, 'Helvetica Neue', sans-serif;
     background-color: #fff !important;
 }
 
+.badge-comses {
+    @extend .badge;
+    font-size: 100%;
+}
+
+.badge-primary {
+    @include badge-variant($green);
+}
+
+.badge-secondary {
+    @include badge-variant($blue);
+}
+
 a.anchor {
     display: block;
     position: relative;
@@ -493,10 +506,6 @@ html {
   margin-top: .25rem;
   font-size: .875rem;
   color: $form-feedback-invalid-color;
-}
-
-.has-pointer-cursor {
-  cursor: pointer;
 }
 
 .required::after {
