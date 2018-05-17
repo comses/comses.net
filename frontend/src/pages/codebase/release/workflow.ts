@@ -222,9 +222,12 @@ class PublishModal extends createFormValidator(publishSchema) {
     template: `<div>
         <div v-if="isInitialized">
             <h1>{{ $store.state.release.codebase.title }} <i>v{{ $store.state.release.version_number }}</i></h1>
+            <h5 class="text-muted">Review Status: {{ reviewStatus }}</h5>
             <div class='pb-2'>
                 <span class="btn btn-primary" data-target="#editCodebaseModal" data-toggle="modal"><i class='fa fa-edit'></i> Edit Common Metadata | Add Images &amp; Media</span>
                 <div class='float-right'>
+                    <span class="btn btn-outline-danger" v-if="!hasReview">Request Review</span>
+                    <span class="btn btn-outline-danger" v-else-if="!isReviewComplete">Notify Reviewers of Changes</span>
                     <span class="disabled btn btn-info" v-if="isPublished"><i class='fa fa-share-alt'></i> Published</span>
                     <span v-else>
                         <span class="btn btn-danger" data-target="#publishCodebaseReleaseModal" data-toggle="modal"><span class='fa fa-share-alt'></span> Publish</span>
@@ -272,7 +275,26 @@ class Workflow extends Vue {
     @Prop()
     version_number: string;
 
+    @Prop()
+    review_status_enum: object;
+
     isInitialized: boolean = false;
+
+    get isReviewComplete() {
+        return this.$store.state.release.review_status === 'complete';
+    }
+
+    get hasReview() {
+        return !_.isNull(this.$store.state.release.review_status);
+    }
+
+    get reviewStatus() {
+        const status = this.$store.state.release.review_status;
+        if (_.isNull(status)) {
+            return 'Not reviewed'
+        }
+        return this.review_status_enum[this.$store.state.release.review_status];
+    }
 
     get absolute_url() {
         return this.$store.state.release.absolute_url;

@@ -160,6 +160,7 @@ interface AbstractCodebaseRelease extends UndefinedWithId {
     possible_licenses: Array<{ name: string, url: string }>
     programming_languages: Array<{ name: string }>
     release_notes: string
+    review_status: string | null;
     submitted_package: string
     submitter: User
     version_number: string

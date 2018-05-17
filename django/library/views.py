@@ -722,11 +722,18 @@ class CodebaseReleaseFilesOriginalsViewSet(BaseCodebaseReleaseFilesViewSet):
 class CodebaseReleaseFormCreateView(FormCreateView):
     namespace = 'library/codebases/releases'
     model = CodebaseRelease
+    context_object_name = 'release'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['review_status_enum'] = ReviewStatus
+        return context
 
 
 class CodebaseReleaseFormUpdateView(FormUpdateView):
     namespace = 'library/codebases/releases'
     model = CodebaseRelease
+    context_object_name = 'release'
 
     def get_object(self, queryset=None):
         identifier = self.kwargs['identifier']
@@ -734,6 +741,11 @@ class CodebaseReleaseFormUpdateView(FormUpdateView):
         return get_object_or_404(queryset or CodebaseRelease,
                                  version_number=version_number,
                                  codebase__identifier=identifier)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['review_status_enum'] = ReviewStatus
+        return context
 
 
 class ContributorFilter(filters.BaseFilterBackend):

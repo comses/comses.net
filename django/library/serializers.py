@@ -290,13 +290,17 @@ class CodebaseReleaseSerializer(serializers.ModelSerializer):
     submitter = LinkedUserSerializer(read_only=True, label='Submitter')
     version_number = serializers.ReadOnlyField()
     release_notes = MarkdownField()
+    review_status = serializers.SerializerMethodField()
+
+    def get_review_status(self, instance):
+        return instance.review.status if instance.review else None
 
     class Meta:
         model = CodebaseRelease
         fields = ('absolute_url', 'citation_text', 'release_contributors', 'date_created', 'dependencies',
                   'release_notes', 'documentation', 'doi', 'download_count', 'embargo_end_date', 'first_published_at',
                   'last_modified', 'last_published_on', 'license', 'live', 'os', 'os_display', 'peer_reviewed',
-                  'platforms', 'programming_languages', 'submitted_package', 'submitter', 'codebase',
+                  'platforms', 'programming_languages', 'submitted_package', 'submitter', 'codebase', 'review_status',
                   'version_number', 'id', 'share_url',)
 
 

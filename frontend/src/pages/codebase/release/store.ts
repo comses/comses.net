@@ -60,6 +60,7 @@ const initialState: CodebaseReleaseStore = {
         possible_licenses: [],
         programming_languages: [],
         release_notes: '',
+        review_status: null,
         submitted_package: '',
         submitter: {
             family_name: '',

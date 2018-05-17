@@ -1,3 +1,4 @@
+import json
 import logging
 import mimetypes
 import os
@@ -1097,6 +1098,14 @@ class ChoicesMixin(Enum):
     @classmethod
     def to_choices(cls):
         return Choices(*((choice.name, choice.value) for choice in cls))
+
+    @classmethod
+    def to_dict(cls):
+        return {level.name: str(level.value) for level in cls}
+
+    @classmethod
+    def to_json(cls):
+        return json.dumps(cls.to_dict())
 
 
 class ReviewerRecommendation(ChoicesMixin, Enum):
