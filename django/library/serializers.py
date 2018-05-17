@@ -293,7 +293,7 @@ class CodebaseReleaseSerializer(serializers.ModelSerializer):
     review_status = serializers.SerializerMethodField()
 
     def get_review_status(self, instance):
-        return instance.review.status if instance.review else None
+        return instance.review.status if hasattr(instance, 'review') else None
 
     class Meta:
         model = CodebaseRelease
