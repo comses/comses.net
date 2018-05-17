@@ -10,8 +10,8 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ('wagtailcore', '0040_page_draft_title'),
-        ('library', '0002_auto_20180514_1741'),
-        ('core', '0002_auto_20180514_1741'),
+        ('library', '0001_initial'),
+        ('core', '0001_initial'),
         ('home', '0004_auto_20180421_0144'),
     ]
 
