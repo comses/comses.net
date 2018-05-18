@@ -852,8 +852,8 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
         return reverse('library:codebaserelease-download',
                        kwargs={'identifier': self.codebase.identifier, 'version_number': self.version_number})
 
-    def get_notify_reviewer_of_changes_url(self):
-        return reverse('library:codebaserelease-notify-reviewer-of-changes',
+    def get_notify_reviewers_of_changes_url(self):
+        return reverse('library:codebaserelease-notify-reviewers-of-changes',
                        kwargs={'identifier': self.codebase.identifier, 'version_number': self.version_number})
 
     def get_review_download_url(self):
@@ -1211,6 +1211,14 @@ class PeerReview(models.Model):
                                           action=PeerReviewEvent.author_made_changes.name,
                                           author=author,
                                           message='Author {} made changes'.format(author))
+
+        qs = self.invitations.filter(accepted=True)
+        if not qs.exists():
+            raise ValidationError('No reviewers has yet accepted an invite. No status update needed.')
+
+        qs.send_author_updated_content_email()
+        self.status = ReviewStatus.awaiting_reviewer_feedback.name
+        self.save()
         if changes_made:
             review_event.add_message(changes_made)
         return review_event
@@ -1251,7 +1259,7 @@ class PeerReviewInvitationQuerySet(models.QuerySet):
 
     def send_author_updated_content_email(self):
         events = [invitation.send_author_updated_content_email(save=False) for invitation in self]
-        events = self.bulk_create(events)
+        events = PeerReviewEventLog.objects.bulk_create(events)
         return events
 
 
@@ -1323,6 +1331,7 @@ class PeerReviewInvitation(models.Model):
         msg = EmailMultiAlternatives(subject, markdown_content, self.recipient)
         msg.attach_alternative(markdown(markdown_content), 'text/html')
         msg.send()
+
         event = PeerReviewEventLog(review=self.review,
                                    author=self.editor,
                                    message='Notified {} of model update'.format(

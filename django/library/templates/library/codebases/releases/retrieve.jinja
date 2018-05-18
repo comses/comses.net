@@ -309,9 +309,9 @@ Request to review {{ request.build_absolute_uri(absolute_url) }}
         </button>
     </form>
 {% elif release.review.status == review_status_enum.awaiting_author_changes.name %}
-    <form action="{{ release.get_notify_reviewer_of_changes_url() }}">
+    <form method="post" action="{{ release.get_notify_reviewers_of_changes_url() }}">
         {% csrf_token %}
-        <button type="submit" class="btn btn-danger my-1 w-100">Reviewer suggestions made</button>
+        <button type="submit" class="btn btn-danger my-1 w-100">Notify Reviewers of Changes</button>
     </form>
 {% else %}
     <button type="button" class="btn btn-warning my-1 w-100"

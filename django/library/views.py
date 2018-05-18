@@ -581,6 +581,17 @@ class CodebaseReleaseViewSet(CommonViewSetMixin,
         codebase_release.publish()
         return Response(data=codebase_release.version_number, status=status.HTTP_200_OK)
 
+    @action(detail=True, methods=['post'])
+    @transaction.atomic
+    def notify_reviewers_of_changes(self, request, **kwargs):
+        codebase_release = self.get_object()
+        if hasattr(codebase_release, 'review'):
+            codebase_release.review.author_made_changes()
+            return Response(status=status.HTTP_200_OK)
+        else:
+            return Response(data={'non_field_errors': ['Must request a review before reviewers can be contacted']},
+                            status=status.HTTP_400_BAD_REQUEST)
+
     @action(detail=True, methods=['get'])
     @transaction.atomic
     def download(self, request, **kwargs):
@@ -604,12 +615,6 @@ class CodebaseReleaseViewSet(CommonViewSetMixin,
         fs_api = codebase_release.get_fs_api()
         contents = fs_api.list_sip_contents()
         return Response(data=contents, status=status.HTTP_200_OK)
-
-    @action(detail=True, methods=['post'])
-    def notify_reviewer_of_changes(self, request, **kwargs):
-        codebase_release = self.get_object()
-        codebase_release.review.invitations.send_author_updated_content_email()
-        return Response(status=status.HTTP_200_OK)
 
 
 class BaseCodebaseReleaseFilesViewSet(viewsets.GenericViewSet):

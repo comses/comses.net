@@ -204,6 +204,10 @@ export class CodebaseReleaseAPI {
         return api.post(`${this.detailUrl({identifier, version_number})}publish/`, publish_component);
     }
 
+    notifyReviewersOfChanges({identifier, version_number}, component) {
+        return api.post(`${this.detailUrl({identifier, version_number})}notify_reviewers_of_changes/`, component);
+    }
+
     retrieve({identifier, version_number}) {
         return api.get(this.detailEditUrl({identifier, version_number}));
     }
