@@ -337,7 +337,7 @@
 {% block js %}
     {# FIXME: remove this if there's a better way to include npm dependencies manually in a page #}
     {% with CLIPBOARD_JS_VERSION="2.0.0" %}
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/{{ CLIPBOARD_JS_VERSION }}/clipboard.min.js" async></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/{{ CLIPBOARD_JS_VERSION }}/clipboard.min.js"></script>
     {% endwith %}
     <script defer>
         new Clipboard('.btn-clipboard');
