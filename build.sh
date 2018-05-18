@@ -38,9 +38,9 @@ if [[ -f "${CONFIG_INI}" ]]; then
         esac
     done
 fi
-DB_PASSWORD=$(head /dev/urandom | tr -dc A-Za-z0-9 | head -c42)
-DJANGO_SECRET_KEY=$(head /dev/urandom | tr -dc A-Za-z0-9 | head -c42)
-TEST_BASIC_AUTH_PASSWORD=$(head /dev/urandom | tr -dc A-Za-z0-9 | head -c42)
+DB_PASSWORD=$(head /dev/urandom | tr -dc '[:alnum:]' | head -c42)
+DJANGO_SECRET_KEY=$(head /dev/urandom | base64 | head -c60)
+TEST_BASIC_AUTH_PASSWORD=$(head /dev/urandom | tr -dc '[:alnum:]' | head -c42)
 TEST_USER_ID=10000000
 TEST_USERNAME=__test_user__
 
