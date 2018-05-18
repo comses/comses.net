@@ -124,11 +124,16 @@ def add_field_css(field, css_classes: str):
 
 
 @library.filter
-def format_datetime(text: Optional[str], format_string=FULL_DATE_FORMAT):
+def format_datetime_str(text: Optional[str], format_string=FULL_DATE_FORMAT):
     if text is None:
         return None
     d = parse_datetime(text)
-    return d.strftime(format_string)
+    return format_datetime(d, format_string)
+
+
+@library.filter
+def format_datetime(date_obj, format_string=FULL_DATE_FORMAT):
+    return date_obj.strftime(format_string)
 
 
 @library.filter

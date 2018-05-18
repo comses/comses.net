@@ -1,9 +1,5 @@
 {% extends "sidebar_layout.jinja" %}
-{% from "common.jinja" import breadcrumb, embed_discourse_comments, share_card, search_tag_href %}
-
-{% macro member_href(member_profile) %}
-    <a href="{{ member_profile.get_absolute_url() }}">{{ member_profile.name }}</a>
-{% endmacro %}
+{% from "common.jinja" import breadcrumb, embed_discourse_comments, share_card, search_tag_href, member_profile_href %}
 
 {% set codebase = release.codebase %}
 
@@ -37,7 +33,7 @@
         {% endif %}
         <h1 class='codebase-title pb-4'>{{ codebase.title }}</h1>
         <div class='metadata'>
-            <b>Submitted by:</b> {{ member_href(codebase.submitter.member_profile) }}
+            <b>Submitted by:</b> {{ member_profile_href(codebase.submitter.member_profile) }}
             <b class='pl-2'>Platform:</b>
             {% for p in release.platform_tags.all() %}
                 {{ search_tag_href(p, category='codebases') }}
@@ -164,7 +160,7 @@
             <div class='card-metadata'>
                 <div class='card-body'>
                     <div class='section'>
-                        <b class='card-title'>Submitter:</b> {{ member_href(release.submitter.member_profile) }}
+                        <b class='card-title'>Submitter:</b> {{ member_profile_href(release.submitter.member_profile) }}
                     </div>
                     <div class='section'>
                         <b class='card-title'>DOI:</b> {{ release.doi }}
@@ -207,9 +203,9 @@
                     <tr>
                         <td><a href='{{ related_release.get_absolute_url() }}'>{{ related_release.version_number }}</a>
                         </td>
-                        <td>{{ member_href(release.submitter.member_profile) }}</td>
-                        <td>{{ release.first_published_at }}</td>
-                        <td>{{ release.last_published_on }}</td>
+                        <td>{{ member_profile_href(release.submitter.member_profile) }}</td>
+                        <td>{{ release.first_published_at|format_datetime('%c') }}</td>
+                        <td>{{ release.last_published_on|format_datetime('%c') }}</td>
                         {% if has_change_perm %}
                             <td>
                                 {% if release.draft %}
@@ -244,7 +240,7 @@
     <h2 class='discourse-comments'>Discussion</h2>
     <div id='discourse-comments'>
         {% if not should_enable_discourse(release.live) %}
-            Commenting is disabled. Due to liveness (live? {{ release.live }}) or environment ({{ deploy_environment() }}).
+            Commenting is disabled. (live? {{ release.live }}) environment ({{ deploy_environment() }}).
         {% endif %}
     </div>
 {% endblock %}
@@ -268,13 +264,13 @@
         <div class='section'>
             <b class="card-title">Publish Date</b>
             <p class='card-text'>
-                {{ release.first_published_at }}
+                {{ release.first_published_at|format_datetime }}
             </p>
         </div>
         <div class='section'>
             <b class="card-title">Last Updated</b>
             <p class='card-text'>
-                {{ release.last_published_on }}
+                {{ release.last_published_on|format_datetime }}
             </p>
         </div>
         <div class='section'>
