@@ -1,5 +1,5 @@
 {% extends "base.jinja" %}
-{% from "common.jinja" import breadcrumb, subnav, submit_model_btn, search_tag_href %}
+{% from "common.jinja" import breadcrumb, subnav, submit_model_btn, search_tag_href, member_profile_href %}
 
 {% block title %}{{ page.title }}{% endblock %}
 
@@ -25,9 +25,7 @@
                         <div class='col-3'>
                             <div class='text-center card-title'>
                                 <h3 class='title'>
-                                    <a href='{{ placement.member_profile.get_absolute_url()}}'>
-                                        {{ placement.member_profile.user.get_full_name() }}
-                                    </a>
+                                    {{ member_profile_href(placement.member_profile) }}
                                 </h3>
                             </div>
                             <div class='d-block'>
@@ -42,8 +40,8 @@
                         </div>
                         <div class='col-9'>
                             {% autoescape false %}
-                                {{ placement.member_profile.bio.rendered }}
-                                {{ placement.member_profile.research_interests.rendered }}
+                                {{ placement.member_profile.bio }}
+                                {{ placement.member_profile.research_interests }}
                             {% endautoescape %}
                         </div>
                     </div>

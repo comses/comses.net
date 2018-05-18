@@ -270,6 +270,10 @@ class MemberProfile(index.Indexed, ClusterableModel):
         else:
             self.user.groups.remove(group)
 
+    @property
+    def profile_url(self):
+        return self.get_absolute_url()
+
     def get_absolute_url(self):
         return reverse('home:profile-detail', kwargs={'pk': self.user.pk})
 

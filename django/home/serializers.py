@@ -34,7 +34,6 @@ class UserMessageSerializer(serializers.ModelSerializer):
 # FIXME: try to reduce duplication here and MemberProfileSerializer
 class MemberProfileListSerializer(serializers.ModelSerializer):
     date_joined = serializers.DateTimeField(source='user.date_joined', read_only=True, format='%c')
-    full_name = serializers.CharField(source='name')
     username = serializers.CharField(source='user.username')
     profile_url = serializers.URLField(source='get_absolute_url', read_only=True)
     tags = TagSerializer(many=True)
@@ -50,7 +49,7 @@ class MemberProfileListSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = MemberProfile
-        fields = ('date_joined', 'full_name', 'profile_url', 'tags', 'username', 'avatar', 'bio', 'research_interests',
+        fields = ('date_joined', 'name', 'profile_url', 'tags', 'username', 'avatar', 'bio', 'research_interests',
                   'full_member', 'is_reviewer', 'degrees',)
 
 
@@ -61,7 +60,6 @@ class MemberProfileSerializer(serializers.ModelSerializer):
     # User fields
     date_joined = serializers.DateTimeField(source='user.date_joined', read_only=True, format='%B %d %Y')
     family_name = serializers.CharField(source='user.last_name')
-    full_name = serializers.CharField(source='name', read_only=True)
     given_name = serializers.CharField(source='user.first_name')
     username = serializers.CharField(source='user.username', read_only=True)
     user_pk = serializers.IntegerField(source='user.pk', read_only=True)
@@ -169,7 +167,7 @@ class MemberProfileSerializer(serializers.ModelSerializer):
         model = MemberProfile
         fields = (
             # User
-            'date_joined', 'family_name', 'full_name', 'given_name', 'profile_url',
+            'date_joined', 'family_name', 'given_name', 'profile_url',
             'username', 'email', 'user_pk',
             # Follower
             'follower_count', 'following_count',
@@ -178,7 +176,7 @@ class MemberProfileSerializer(serializers.ModelSerializer):
             'institution_name', 'institution_url',
             # MemberProfile
             'avatar', 'bio', 'name', 'degrees', 'full_member', 'tags', 'orcid_url', 'github_url', 'personal_url',
-            'is_reviewer', 'professional_url', 'profile_url', 'research_interests',
+            'is_reviewer', 'professional_url', 'profile_url', 'research_interests', 'name',
             # peer reviews
             'all_reviewer_feedback', 'invitations',
         )
