@@ -73,8 +73,8 @@ const initialState: CodebaseReleaseStore = {
 
 export const contributorSchema = yup.object().shape({
     user: yup.object().shape({
-        full_name: yup.string(),
-        insitution_name: yup.string(),
+        name: yup.string(),
+        institution_name: yup.string(),
         institution_url: yup.string(),
         profile_url: yup.string(),
         username: yup.string()

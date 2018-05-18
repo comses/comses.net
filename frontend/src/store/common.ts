@@ -55,7 +55,7 @@ export interface MemberProfile extends UndefinedWithId {
 }
 
 interface RelatedMemberProfile {
-    full_name: string
+    name: string
     institution_name: string
     institution_url: string
     profile_url: string
@@ -80,7 +80,7 @@ export const emptyContributor = (valid: boolean = false): Contributor => {
         family_name: '',
         type: 'person',
         user: {
-            full_name: '',
+            name: '',
             institution_name: '',
             institution_url: '',
             profile_url: '',

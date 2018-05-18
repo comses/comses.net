@@ -38,8 +38,8 @@ const listContributors = _.debounce(async (state, self) => {
 }, 800);
 
 const userSchema = yup.object().shape({
-    full_name: yup.string(),
-    insitution_name: yup.string(),
+    name: yup.string(),
+    institution_name: yup.string(),
     institution_url: yup.string(),
     profile_url: yup.string(),
     username: yup.string()
@@ -247,7 +247,7 @@ class EditReleaseContributor extends createFormValidator(releaseContributorSchem
         let name = [contributor.given_name, contributor.family_name].filter(el => !_.isEmpty(el)).join(' ');
         const user = contributor.user;
         if (!_.isNull(user)) {
-            name = name === '' ? (<any>user).full_name : name;
+            name = name === '' ? (<any>user).name : name;
             const username = (<any>user).username;
 
             return !_.isNull(username) ? `${name} (${username})` : name;
