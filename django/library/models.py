@@ -1177,6 +1177,13 @@ class PeerReview(models.Model):
         FieldPanel('assigned_reviewer_email'),
     ]
 
+    @property
+    def is_awaiting_author_changes(self):
+        return ReviewStatus.awaiting_author_changes.name == self.status
+
+    def get_status_display(self):
+        return ReviewStatus[self.status].value
+
     def get_assigned_reviewer_email(self):
         if self.assigned_reviewer:
             return self.assigned_reviewer.email
@@ -1341,7 +1348,7 @@ class PeerReviewInvitation(models.Model):
         return event
 
     @transaction.atomic
-    def accept_invitation(self):
+    def accept(self):
         self.accepted = True
         self.save()
         event = PeerReviewEventLog(review=self.review,
@@ -1352,7 +1359,7 @@ class PeerReviewInvitation(models.Model):
         return event
 
     @transaction.atomic
-    def decline_invitation(self):
+    def decline(self):
         self.accepted = False
         self.save()
         event = PeerReviewEventLog(review=self.review,

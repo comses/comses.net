@@ -539,7 +539,6 @@ class CodebaseReleaseViewSet(CommonViewSetMixin,
             perms = {}
             add_change_delete_perms(instance, perms, request.user)
             return Response({'release': instance, **perms,
-                             'review_status_enum': ReviewStatus,
                              'operating_systems_enum': OPERATING_SYSTEMS})
         serializer = self.get_serializer(instance)
         data = add_change_delete_perms(instance, serializer.data, request.user)

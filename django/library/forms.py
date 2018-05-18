@@ -37,9 +37,9 @@ class PeerReviewInvitationReplyForm(forms.ModelForm):
         invitation = super().save(commit)
 
         if invitation.accepted:
-            invitation.accept_invitation()
+            invitation.accept()
         else:
-            invitation.decline_invitation()
+            invitation.decline()
 
         if invitation.accepted and accepted is None:
             invitation.create_feedback()
