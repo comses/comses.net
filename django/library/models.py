@@ -856,6 +856,9 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
         return reverse('library:codebaserelease-notify-reviewers-of-changes',
                        kwargs={'identifier': self.codebase.identifier, 'version_number': self.version_number})
 
+    def get_review(self):
+        return self.review if hasattr(self, 'review') else None
+
     def get_review_download_url(self):
         if not self.share_uuid:
             self.regenerate_share_uuid()

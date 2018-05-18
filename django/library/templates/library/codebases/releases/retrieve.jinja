@@ -308,7 +308,7 @@
     Request to review {{ request.build_absolute_uri(absolute_url) }}
     {%- endset %}
     {# FIXME: see https://github.com/comses/core.comses.net/issues/43 #}
-    {% if release.review is none %}
+    {% if release.get_review() is none %}
         <form method="post" action="{{ release.get_request_peer_review_url() }}">
             {% csrf_token %}
             <button type="submit" class='btn btn-secondary my-1 w-100'>
