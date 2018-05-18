@@ -66,9 +66,9 @@ export default class UsernameSearch extends BaseControl {
     localErrors: string = '';
 
     displayInfo(userInfo) {
-        let displayName: string = userInfo.full_name;
-        if (userInfo.full_name !== userInfo.username) {
-            displayName = `${userInfo.full_name} (${userInfo.username})`;
+        let displayName: string = userInfo.name;
+        if (userInfo.name !== userInfo.username) {
+            displayName = `${userInfo.name} (${userInfo.username})`;
         }
         return `${displayName}${userInfo.institution_name ? `, ${userInfo.institution_name}` : ''}`;
     }

@@ -2,15 +2,15 @@
 {% from "common.jinja" import breadcrumb, subnav, institution_href, search_tag_btn, render_social_profile_url %}
 {% from "library/codebases/macros.jinja" import render_codebase_result, render_reviewer_feedback %}
 
-{% block title %}User profile for {{ full_name }}{% endblock %}
+{% block title %}User profile for {{ name }}{% endblock %}
 
-{% block introduction %}<h1>{{ full_name }}</h1>{% endblock %}
+{% block introduction %}<h1>{{ name }}</h1>{% endblock %}
 
 {% block top %}
     {{ breadcrumb([
     { 'url': '/community/', 'text': 'Community' },
     { 'url': url("home:profile-list"), 'text': 'Users'},
-    { 'text': full_name}
+    { 'text': name}
     ]) }}
 
     {{ subnav([
@@ -18,6 +18,7 @@
     { 'url': DISCOURSE_BASE_URL, 'text': 'Forum' },
     { 'url': url("home:profile-list"), 'text': 'Users', 'active': True },
     { 'url': url("home:job-list"), 'text': 'Jobs' },
+    { 'url': url("home:digest"), 'text': 'Newsletter' },
     ]) }}
 {% endblock %}
 
@@ -36,7 +37,7 @@
         <div class='col-9'>
             <div class='card profile-details'>
                 <div class='card-body'>
-                    <h4 class='card-title'>{{ full_name }}</h4>
+                    <h4 class='card-title'>{{ name }}</h4>
                     {% for degree in degrees %}
                         <p class='card-text'>{{ degree }}</p>
                     {% endfor %}
