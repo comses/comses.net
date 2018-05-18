@@ -7,7 +7,6 @@ DEPLOY_ENVIRONMENT = Environment.STAGING
 # EMAIL_FILE_PATH = '/shared/logs/mail.log'
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 
-
 EMAIL_HOST = config.get('email', 'EMAIL_HOST', fallback='smtp.sparkpostmail.com')
 EMAIL_PORT = config.get('email', 'EMAIL_PORT', fallback='587')
 EMAIL_HOST_USER = config.get('email', 'EMAIL_HOST_USER', fallback='SMTP_Injection')
@@ -16,6 +15,22 @@ EMAIL_SUBJECT_PREFIX = config.get('email', 'EMAIL_SUBJECT_PREFIX', fallback='[te
 EMAIL_USE_TLS = True
 
 ALLOWED_HOSTS = ['.comses.net']
+
+# security settings from manage.py check --deploy
+
+# https://docs.djangoproject.com/en/2.0/ref/middleware/#http-strict-transport-security
+SECURE_HSTS_SECONDS = 3600
+SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+# https://docs.djangoproject.com/en/2.0/ref/settings/#secure-content-type-nosniff
+SECURE_CONTENT_TYPE_NOSNIFF = True
+# https://docs.djangoproject.com/en/2.0/ref/settings/#secure-browser-xss-filter
+SECURE_BROWSER_XSS_FILTER = True
+# https://docs.djangoproject.com/en/2.0/ref/settings/#session-cookie-secure
+SESSION_COOKIE_SECURE = True
+# https://docs.djangoproject.com/en/2.0/ref/settings/#csrf-cookie-secure
+CSRF_COOKIE_SECURE = True
+# https://docs.djangoproject.com/en/2.0/ref/clickjacking/
+X_FRAME_OPTIONS = 'DENY'
 
 # see https://docs.sentry.io/clients/python/integrations/django/
 # add sentry error id middleware for better tracking
