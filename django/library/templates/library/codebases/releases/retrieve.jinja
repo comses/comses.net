@@ -20,8 +20,8 @@
 {% endblock %}
 
 {% block content %}
-    <div id={{ 'discourse-content' if live else 'content' }}>
-        {% if not live %}
+    <div id={{ 'discourse-content' if release.live else 'content' }}>
+        {% if not release.live %}
             <div class="alert alert-danger mt-2">The release you are viewing is currently unpublished.
                 {% if codebase.latest_version_number and version_number != codebase.latest_version_number %}
                     The latest published version is
@@ -57,12 +57,16 @@
         </div>
         <div class='pt-4'>
             <div class='lead'>
-                {{ codebase.description.raw|markdown }}
+                {% autoescape false %}
+                    {{ codebase.description }}
+                {% endautoescape %}
             </div>
             <h3><u>Release Notes</u></h3>
             <div class='lead'>
                 {% if release.release_notes %}
-                    {{ release.release_notes.raw|markdown }}
+                    {% autoescape false %}
+                        {{ release.release_notes }}
+                    {% endautoescape %}
                 {% else %}
                     No release notes were entered with this release.
                 {% endif %}
@@ -74,7 +78,7 @@
             <h2 class='card-title'>Cite this Model</h2>
             <div class='card-text'>
                 {% if release.live %}
-                    {{ release.citation_text.raw|markdown }}
+                    {{ release.citation_text|markdown }}
                 {% elif has_change_perm %}
                     This model is currently <b>unpublished</b>.
                     <div class='input-group' id="regenerate_share_uuid"
@@ -238,7 +242,11 @@
     </div>
     <hr>
     <h2 class='discourse-comments'>Discussion</h2>
-    <div id='discourse-comments'></div>
+    <div id='discourse-comments'>
+        {% if not should_enable_discourse(release.live) %}
+            Commenting is disabled. Due to liveness (live? {{ release.live }}) or environment ({{ deploy_environment() }}).
+        {% endif %}
+    </div>
 {% endblock %}
 
 {% block sidebar %}
@@ -287,38 +295,36 @@
     </div>
 </div>
 {% if has_change_perm %}
-<form>
-    {% csrf_token %}
-    <button class="btn btn-secondary my-1 w-100" formmethod="post"
-            formaction="{{ codebase.get_draft_url() }}">
-        Draft a new release
-    </button>
-</form>
-<a href="{{ release.get_edit_url() }}">
-    <div class="btn btn-secondary my-1 w-100">Edit metadata</div>
-</a>
-{% set review_template_text -%}
-Request to review {{ request.build_absolute_uri(absolute_url) }}
-{%- endset %}
-{# FIXME: see https://github.com/comses/core.comses.net/issues/43 #}
-{% if release.review is none %}
-    <form method="post" action="{{ release.get_request_peer_review_url() }}">
+    <form>
         {% csrf_token %}
-        <button type="submit" class='btn btn-secondary my-1 w-100'>
-            Request peer review
+        <button class="btn btn-secondary my-1 w-100" formmethod="post" formaction="{{ codebase.get_draft_url() }}">
+            Draft a new release
         </button>
     </form>
-{% elif release.review.status == review_status_enum.awaiting_author_changes.name %}
-    <form method="post" action="{{ release.get_notify_reviewers_of_changes_url() }}">
+    <a href="{{ release.get_edit_url() }}">
+        <div class="btn btn-secondary my-1 w-100">Edit metadata</div>
+    </a>
+    {% set review_template_text -%}
+    Request to review {{ request.build_absolute_uri(absolute_url) }}
+    {%- endset %}
+    {# FIXME: see https://github.com/comses/core.comses.net/issues/43 #}
+    {% if release.review is none %}
+        <form method="post" action="{{ release.get_request_peer_review_url() }}">
+            {% csrf_token %}
+            <button type="submit" class='btn btn-secondary my-1 w-100'>
+                Request peer review
+            </button>
+        </form>
+    {% elif release.review.status == review_status_enum.awaiting_author_changes.name %}
+        <form method="post" action="{{ release.get_notify_reviewers_of_changes_url() }}">
         {% csrf_token %}
         <button type="submit" class="btn btn-danger my-1 w-100">Notify Reviewers of Changes</button>
-    </form>
-{% else %}
-    <button type="button" class="btn btn-warning my-1 w-100"
-            disabled>{{ review_status_enum[release.review.status].value }}</button>
+        </form>
+    {% else %}
+        <button type="button" class="btn btn-warning my-1 w-100" disabled>{{ review_status_enum[release.review.status].value }}</button>
+    {% endif %}
 {% endif %}
-{% endif %}
-{% if live %}
+{% if release.live %}
     <a id="releaseDownload" data-name="download" rel='nofollow' href="{{ release.get_download_url() }}">
         <button type="button" class="btn btn-primary my-1 w-100">Download</button>
     </a>
@@ -335,8 +341,7 @@ Request to review {{ request.build_absolute_uri(absolute_url) }}
 {% block js %}
     {# FIXME: remove this if there's a better way to include npm dependencies manually in a page #}
     {% with CLIPBOARD_JS_VERSION="2.0.0" %}
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/{{ CLIPBOARD_JS_VERSION }}/clipboard.min.js"
-                async></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/{{ CLIPBOARD_JS_VERSION }}/clipboard.min.js" async></script>
     {% endwith %}
     <script defer>
         new Clipboard('.btn-clipboard');

@@ -68,6 +68,11 @@ def is_production():
 
 
 @library.global_function
+def deploy_environment():
+    return settings.DEPLOY_ENVIRONMENT
+
+
+@library.global_function
 def sentry_public_dsn():
     return settings.RAVEN_CONFIG.get('public_dsn')
 
