@@ -47,10 +47,10 @@ BASE_DIR = os.path.dirname(PROJECT_DIR)
 
 DEBUG = True
 
-# Quick-start development settings - unsuitable for production
+# Quick-start development settings - make sure to properly override in prod.py
 # See https://docs.djangoproject.com/en/2.0/howto/deployment/checklist/
 
-# Application definition
+# wagtail configuration: http://docs.wagtail.io/en/v2.0.1/getting_started/integrating_into_django.html
 WAGTAIL_APPS = [
     'wagtail.contrib.forms',
     'wagtail.contrib.redirects',
@@ -84,15 +84,16 @@ DJANGO_APPS = [
 
 THIRD_PARTY_APPS = [
     'captcha',
+    'cookielaw',
     'django_extensions',
     'django_jinja',
     'guardian',
     'rest_framework',
     'rest_framework_swagger',
+    'robots',
     'timezone_field',
     'webpack_loader',
-    'robots',
-    'cookielaw',
+    'waffle',
     'allauth',
     'allauth.account',
     'allauth.socialaccount',
@@ -118,6 +119,7 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'django.middleware.security.SecurityMiddleware',
 
+    'waffle.middleware.WaffleMiddleware',
     'wagtail.core.middleware.SiteMiddleware',
     'wagtail.contrib.redirects.middleware.RedirectMiddleware',
 ]
@@ -337,7 +339,7 @@ MEDIA_URL = '/media/'
 
 # Wagtail settings
 
-WAGTAIL_SITE_NAME = "Network for Computational Modeling in Social and Ecological Systems"
+WAGTAIL_SITE_NAME = "CoMSES Net"
 APPEND_SLASH = True
 WAGTAIL_APPEND_SLASH = True
 
@@ -374,10 +376,11 @@ REST_FRAMEWORK = {
     'PAGE_SIZE': 10
 }
 
-# add redis cache http://docs.wagtail.io/en/v1.12.2/advanced_topics/performance.html#cache
+# add redis cache http://docs.wagtail.io/en/v2.0.1/advanced_topics/performance.html#cache
 CACHES = {
     'default': {
         'BACKEND': 'django_redis.cache.RedisCache',
+        # FIXME: switch to TCP in prod
         'LOCATION': 'unix:/shared/redis/redis.sock',
         'OPTIONS': {
             'CLIENT_CLASS': 'django_redis.client.DefaultClient',
@@ -443,6 +446,7 @@ TEMPLATES = [
                 'wagtail.core.jinja2tags.core',
                 'wagtail.admin.jinja2tags.userbar',
                 'wagtail.images.jinja2tags.images',
+                'waffle.jinja.WaffleExtension',
             ],
             'constants': {
                 'DISCOURSE_BASE_URL': DISCOURSE_BASE_URL
