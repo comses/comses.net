@@ -339,8 +339,10 @@
     {% with CLIPBOARD_JS_VERSION="2.0.0" %}
         <script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/{{ CLIPBOARD_JS_VERSION }}/clipboard.min.js"></script>
     {% endwith %}
-    <script defer>
-        new Clipboard('.btn-clipboard');
+    <script>
+        document.addEventListener("DOMContentLoaded", function(event) {
+            new ClipboardJS('.btn-clipboard');
+        });
     </script>
     {{ render_bundle('release_regenerate_share_uuid', attrs='defer') }}
     {{ embed_discourse_comments(release.live, release.submitter.username) }}
