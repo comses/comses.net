@@ -1,4 +1,4 @@
-FROM comses/base:1.1.0
+FROM comses/base:1.1.1
 
 ARG REQUIREMENTS_FILE=requirements-dev.txt
 ARG RUN_SCRIPT=./deploy/dev.sh
@@ -35,9 +35,7 @@ RUN sed -i "s|archive.ubuntu.com|${UBUNTU_MIRROR}|" /etc/apt/sources.list \
         && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 COPY ${REQUIREMENTS_FILE} requirements.txt /tmp/
-RUN pip3 install -r /tmp/${REQUIREMENTS_FILE} --no-cache-dir \
-        && python -m nltk.downloader stopwords \
-        && python -m nltk.downloader punkt
+RUN pip3 install -r /tmp/${REQUIREMENTS_FILE} --no-cache-dir
 COPY ./deploy/db/autopostgresqlbackup /etc/cron.daily/autopostgresqlbackup
 COPY ./deploy/db/autopostgresqlbackup.conf /etc/default/autopostgresqlbackup
 COPY ./deploy/db/postgresql-backup-pre /etc/
