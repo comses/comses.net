@@ -8,7 +8,7 @@
         </ul>
     </div>
 {% endif %}
-{% for field in form %}
+{% for field in form.visible_fields() %}
     {% set error_class='has-errors' if field.errors else ''%}
     {% if field|is_checkbox %}
         <div class='form-group'>
@@ -36,6 +36,9 @@
             </div>
         </div>
     {% endif %}
+{% endfor %}
+{% for field in form.hidden_fields() %}
+    {{ field }}
 {% endfor %}
 {% if redirect_field_value %}
     <input type="hidden" name="{{ redirect_field_name }}" value="{{ redirect_field_value }}" />
