@@ -303,22 +303,36 @@
     {% set review_template_text -%}
     Request to review {{ request.build_absolute_uri(absolute_url) }}
     {%- endset %}
-    {# FIXME: see https://github.com/comses/core.comses.net/issues/43 #}
-    {% if release.get_review() is none %}
-        <form method="post" action="{{ release.get_request_peer_review_url() }}">
+    {% if waffle.switch('peer_review_workflow.enabled') %}
+
+        {% if release.get_review() is none %}
+            <form method="post" action="{{ release.get_request_peer_review_url() }}">
+                {% csrf_token %}
+                <button type="submit" class='btn btn-secondary my-1 w-100'>
+                    Request peer review
+                </button>
+            </form>
+        {% elif release.review.is_awaiting_author_changes %}
+            <form method="post" action="{{ release.get_notify_reviewers_of_changes_url() }}">
             {% csrf_token %}
-            <button type="submit" class='btn btn-secondary my-1 w-100'>
+            <button type="submit" class="btn btn-danger my-1 w-100">Notify Reviewers of Changes</button>
+            </form>
+        {% else %}
+            <button type="button" class="btn btn-warning my-1 w-100" disabled>{{ release.review.get_status_display() }}</button>
+        {% endif %}
+
+    {% else -%}
+
+        {% set review_template_text -%}
+        Request to review {{ request.build_absolute_uri(absolute_url) }}
+        {%- endset %}
+        <a href='mailto: editors@comses.net?subject=model review: {{codebase.title}}&body={{review_template_text}}'>
+            <div class='btn btn-secondary my-1 w-100'>
                 Request peer review
-            </button>
-        </form>
-    {% elif release.review.is_awaiting_author_changes %}
-        <form method="post" action="{{ release.get_notify_reviewers_of_changes_url() }}">
-        {% csrf_token %}
-        <button type="submit" class="btn btn-danger my-1 w-100">Notify Reviewers of Changes</button>
-        </form>
-    {% else %}
-        <button type="button" class="btn btn-warning my-1 w-100" disabled>{{ release.review.get_status_display() }}</button>
-    {% endif %}
+            </div>
+        </a>
+
+    {%- endif %}
 {% endif %}
 {% if release.live %}
     <a id="releaseDownload" data-name="download" rel='nofollow' href="{{ release.get_download_url() }}">
