@@ -11,19 +11,6 @@ const reviewApi = new ReviewEditorAPI();
         <c-invitations :review_slug="review_slug"></c-invitations>
         <h2>Feedback</h2>
         <c-feedback :review_slug="review_slug"></c-feedback>
-        <div class="form-group">
-            <label for="status" class="form-control-label">Status</label>
-            <div class="input-group">
-                <select id="status" class="form-control" v-model="status">
-                    <option v-for="status_level in status_levels" :value="status_level.value" :selected="status_level.value === status">
-                        {{ status_level.label }}
-                    </option>
-                </select>
-                <div class="input-group-append">
-                    <button type="button" class="btn btn-primary" @click="saveStatus">Save</button>
-                </div>
-            </div>
-        </div>
     </div>`,
     components: {
         'c-invitations': Invitations,

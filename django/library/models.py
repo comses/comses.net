@@ -918,6 +918,11 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
         self.downloads.create(user=user, referrer=referrer, ip_address=client_ip)
 
     @property
+    def title(self):
+        return '{} v{}'.format(self.codebase.title,
+                               self.version_number)
+
+    @property
     def archive_filename(self):
         return '{0}_v{1}.zip'.format(slugify(self.codebase.title), self.version_number)
 
@@ -1181,6 +1186,10 @@ class PeerReview(models.Model):
     ]
 
     @property
+    def is_complete(self):
+        return ReviewStatus.complete.name == self.status
+
+    @property
     def is_awaiting_author_changes(self):
         return ReviewStatus.awaiting_author_changes.name == self.status
 
@@ -1198,21 +1207,25 @@ class PeerReview(models.Model):
             self.save()
         return reverse('library:peer-review-detail', kwargs={'slug': self.slug})
 
-    def editor_change_review_status(self, editor: MemberProfile, new_status: ReviewStatus):
-        old_status = self.status
-        self.status = new_status.name
+    @transaction.atomic
+    def set_complete_status(self, editor: MemberProfile):
+        self.status = ReviewStatus.complete.name
         self.save()
-        if new_status == ReviewStatus.complete:
-            action = PeerReviewEvent.editor_accepted.name
-            message = 'Editor {} has certified model'.format(editor)
-        else:
-            action = PeerReviewEvent.editor_changed_review_status.name
-            message = 'Editor changed review status from {} to {}'.format(old_status, self.status)
+        action = PeerReviewEvent.editor_accepted.name
+        message = 'Editor {} has certified model'.format(editor)
         event = PeerReviewEventLog(review=self,
                                    action=action,
                                    author=editor,
                                    message=message)
         event.save()
+
+        template = get_template('library/review/email/review_complete.jinja')
+        markdown_content = template.render(context=dict(feedback=self))
+        subject = 'Peer review complete for release "{}"'.format(self.title)
+        msg = EmailMultiAlternatives(subject, markdown_content, self.submitter.email)
+        msg.attach_alternative(markdown(markdown_content), 'text/html')
+        msg.send()
+
         return event
 
     def author_made_changes(self, changes_made=None):
@@ -1253,8 +1266,7 @@ class PeerReview(models.Model):
 
     @property
     def title(self):
-        return '{} v{}'.format(self.codebase_release.codebase.title,
-                               self.codebase_release.version_number)
+        return self.codebase_release.title
 
     def __str__(self):
         return 'PeerReview of "{} v{}" by {}'.format(
@@ -1353,13 +1365,17 @@ class PeerReviewInvitation(models.Model):
     @transaction.atomic
     def accept(self):
         self.accepted = True
+        if not self.feedback_set.exists():
+            feedback = self.create_feedback()
+        else:
+            feedback = self.feedback_set.last()
         self.save()
         event = PeerReviewEventLog(review=self.review,
                                    action=PeerReviewEvent.invitation_accepted.name,
                                    author=self.editor,
                                    message='Invitation accepted by {}'.format(self.candidate_reviewer))
         event.save()
-        return event
+        return feedback, event
 
     @transaction.atomic
     def decline(self):
@@ -1419,10 +1435,6 @@ class PeerReviewerFeedback(models.Model):
         help_text=_('Whether or not feedback has been submitted by reviewer. Submitted feedback cannot be edited'),
         default=False
     )
-    editor_submitted = models.BooleanField(
-        help_text=_('Whether or not feedback has submitted by editor. Submitted feedback cannot be edited'),
-        default=False
-    )
 
     def get_absolute_url(self):
         return reverse('library:peer-review-feedback-edit',
@@ -1455,6 +1467,13 @@ class PeerReviewerFeedback(models.Model):
 
         editor updated feedback
         """
+        template = get_template('library/review/email/revision_request.jinja')
+        markdown_content = template.render(context=dict(feedback=self))
+        subject = 'Revisions requested for model "{}"'.format(self.review.codebase_release.codebase.title)
+        msg = EmailMultiAlternatives(subject, markdown_content, self.invitation.review.submitter.email)
+        msg.attach_alternative(markdown(markdown_content), 'text/html')
+        msg.send()
+
         event = PeerReviewEventLog(review=self.invitation.review,
                                    action=PeerReviewEvent.editor_called_for_revisions.name,
                                    author=self.invitation.editor,

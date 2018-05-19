@@ -60,8 +60,6 @@ class CheckCharFieldLengthMixin:
 
 
 class PeerReviewerFeedbackReviewerForm(CheckCharFieldLengthMixin, forms.ModelForm):
-    reviewer_submitted = forms.BooleanField(widget=forms.HiddenInput())
-
     def clean_recommendation(self):
         recommendation = self.cleaned_data['recommendation']
         if not recommendation:
@@ -98,6 +96,9 @@ class PeerReviewerFeedbackReviewerForm(CheckCharFieldLengthMixin, forms.ModelFor
             'reviewer_submitted',
             'recommendation',
         ]
+        widgets = {
+            'reviewer_submitted': forms.HiddenInput()
+        }
 
 
 class PeerReviewerFeedbackEditorForm(CheckCharFieldLengthMixin, forms.ModelForm):
@@ -114,7 +115,6 @@ class PeerReviewerFeedbackEditorForm(CheckCharFieldLengthMixin, forms.ModelForm)
         fields = [
             'private_editor_notes',
             'notes_to_author',
-            'editor_submitted',
         ]
         widgets = {
             'private_editor_notes': MarkdownTextarea(),

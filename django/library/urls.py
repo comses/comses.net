@@ -28,8 +28,6 @@ urlpatterns = [
     path('reviews/<uuid:slug>/editor/', views.PeerReviewEditorView.as_view(), name='peer-review-detail'),
     path('invitation/<uuid:slug>/',
          views.PeerReviewInvitationUpdateView.as_view(), name='peer-review-invitation'),
-    path('invitation/<uuid:slug>/feedback/',
-         views.PeerReviewFeedbackListView.as_view(), name='peer-review-feedback-list'),
     path('invitation/<uuid:slug>/feedback/<int:feedback_id>/edit/',
          views.PeerReviewFeedbackUpdateView.as_view(), name='peer-review-feedback-edit'),
     path('invitation/<uuid:slug>/feedback/<int:feedback_id>/editor/edit/',

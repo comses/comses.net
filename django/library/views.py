@@ -48,6 +48,24 @@ def has_permission_to_create_release(request, view):
     return user.has_perms(required_perms, obj=codebase)
 
 
+class PeerReviewDashboardView(ListView):
+    template_name = 'library/review/dashboard.jinja'
+    model = PeerReview
+    context_object_name = 'reviews'
+
+
+class PeerReviewEditorView(PermissionRequiredMixin, DetailView):
+    context_object_name = 'review'
+    model = PeerReview
+    permission_required = 'library.change_peerreview'
+    slug_field = 'slug'
+    template_name = 'library/review/editor_update.jinja'
+
+    def put(self, request, *args, **kwargs):
+        request.kwargs = kwargs
+        return _change_peer_review_status(request)
+
+
 class PeerReviewReviewerListView(mixins.ListModelMixin, viewsets.GenericViewSet):
     queryset = MemberProfile.objects.all()
     serializer_class = PeerReviewReviewerSerializer
@@ -116,6 +134,29 @@ class PeerReviewInvitationViewSet(NoDeleteNoUpdateViewSet):
         return Response(status=status.HTTP_200_OK)
 
 
+class PeerReviewInvitationUpdateView(UpdateView):
+    context_object_name = 'invitation'
+    form_class = PeerReviewInvitationReplyForm
+    queryset = PeerReviewInvitation.objects.all()
+    template_name = 'library/review/invitations/update.jinja'
+
+    def get_object(self, queryset=None):
+        slug = self.kwargs['slug']
+        invitation = get_object_or_404(PeerReviewInvitation, slug=slug)
+        if invitation.accepted in [False, True]:
+            raise PermissionDenied('Can only accept or decline invitation once')
+        return invitation
+
+    def get_success_url(self):
+        if self.object.accepted:
+            feedback = self.object.feedback_set.last()
+            if feedback is None:
+                feedback = self.object.create_feedback()
+            return feedback.get_absolute_url()
+        else:
+            return self.object.review.codebase_release.share_url
+
+
 class PeerReviewFeedbackViewSet(NoDeleteNoUpdateViewSet):
     queryset = PeerReviewerFeedback.objects.all()
     renderer_classes = (renderers.JSONRenderer,)
@@ -126,77 +167,41 @@ class PeerReviewFeedbackViewSet(NoDeleteNoUpdateViewSet):
         return self.queryset.filter(invitation__review__slug=slug)
 
 
-class PeerReviewDashboardView(ListView):
-    template_name = 'library/review/dashboard.jinja'
-    model = PeerReview
-    context_object_name = 'reviews'
-
-
-class PeerReviewEditorView(PermissionRequiredMixin, DetailView):
-    context_object_name = 'review'
-    model = PeerReview
-    permission_required = 'library.change_peerreview'
-    slug_field = 'slug'
-    template_name = 'library/review/editor_update.jinja'
-
-    def put(self, request, *args, **kwargs):
-        request.kwargs = kwargs
-        return _change_peer_review_status(request)
-
-
-class PeerReviewFeedbackListView(ListView):
-    template_name = 'library/review/feedback/list.jinja'
-    model = PeerReviewerFeedback
-    context_object_name = 'review_feedback_set'
-
-    def get_queryset(self):
-        slug = self.kwargs['slug']
-        invitation = get_object_or_404(PeerReviewInvitation, slug=slug)
-        return self.model.objects.filter(invitation=invitation)
-
-    def get_context_data(self, *, object_list=None, **kwargs):
-        context = super().get_context_data(object_list=object_list, **kwargs)
-        invitation = get_object_or_404(PeerReviewInvitation, slug=self.kwargs['slug'])
-        review = invitation.review
-        context['invitation'] = invitation
-        context['review'] = review
-        return context
-
-    def post(self, request, *args, **kwargs):
-        slug = self.kwargs['slug']
-        invitation = PeerReviewInvitation.objects.get(slug=slug)
-        if not invitation.feedback_set.exists():
-            invitation.create_feedback()
-        return HttpResponseRedirect(invitation.get_feedback_list_url())
-
-
 class PeerReviewFeedbackUpdateView(UpdateView):
     context_object_name = 'review_feedback'
     form_class = PeerReviewerFeedbackReviewerForm
     template_name = 'library/review/feedback/update.jinja'
 
+    def get_context_data(self, **kwargs):
+        feedback_set = PeerReviewerFeedback.objects \
+            .filter(invitation__review=self.object.invitation.review) \
+            .exclude(id=self.object.id)
+        context = super().get_context_data(**kwargs)
+        context['feedback_set'] = feedback_set
+        return context
+
     def get_object(self, queryset=None):
         if queryset is None:
             queryset = PeerReviewerFeedback.objects.all()
         feedback = get_object_or_404(queryset, invitation__slug=self.kwargs['slug'], id=self.kwargs['feedback_id'])
-        if feedback.reviewer_submitted:
-            raise PermissionDenied('Feedback cannot be modified once submitted')
+        if not feedback.invitation.accepted:
+            raise PermissionDenied('Cannot access feedback of declined review')
         return feedback
 
     def get_form_kwargs(self):
+        REVIEWER_SUBMITTED = 'reviewer_submitted'
         kwargs = super().get_form_kwargs()
 
         if self.request.method == 'POST':
             data = QueryDict(mutable=True)
             for k, v in kwargs['data'].items():
                 data[k] = v
-            REVIEWER_SUBMITTED = 'reviewer_submitted'
             query_params = self.request.GET
-            submit = query_params.get(REVIEWER_SUBMITTED)
+            submit = query_params.get('submit')
             if submit is not None:
-                data[REVIEWER_SUBMITTED] = ['True']
+                data[REVIEWER_SUBMITTED] = 'True'
             else:
-                data[REVIEWER_SUBMITTED] = ['False']
+                data[REVIEWER_SUBMITTED] = 'False'
             kwargs['data'] = data
 
         return kwargs
@@ -214,52 +219,20 @@ class PeerReviewEditorFeedbackUpdateView(UpdateView):
         if queryset is None:
             queryset = PeerReviewerFeedback.objects.all()
         feedback = get_object_or_404(queryset, invitation__slug=self.kwargs['slug'], id=self.kwargs['feedback_id'])
-        if feedback.editor_submitted:
-            raise PermissionDenied('Feedback cannot be modified once submitted')
         return feedback
 
-    def get_form_kwargs(self):
-        kwargs = super().get_form_kwargs()
-
-        if self.request.method == 'POST':
-            data = QueryDict(mutable=True)
-            for k, v in kwargs['data'].items():
-                data[k] = v
-            EDITOR_SUBMITTED = 'editor_submitted'
-            query_params = self.request.GET
-            submit = query_params.get(EDITOR_SUBMITTED)
-            logger.error({'submit': submit})
-            if submit is not None:
-                data[EDITOR_SUBMITTED] = 'True'
-            else:
-                data[EDITOR_SUBMITTED] = 'False'
-            logger.error(data)
-            kwargs['data'] = data
-
-        return kwargs
+    def form_valid(self, form):
+        self.object = form.save()
+        query_params = self.request.GET
+        accept = query_params.get('accept')
+        if accept is not None:
+            self.object.invitation.review.set_complete_status(editor=self.request.user.member_profile)
+        else:
+            self.object.editor_called_for_revisions()
+        return HttpResponseRedirect(self.get_success_url())
 
     def get_success_url(self):
         return self.object.invitation.review.get_absolute_url()
-
-
-class PeerReviewInvitationUpdateView(UpdateView):
-    context_object_name = 'invitation'
-    form_class = PeerReviewInvitationReplyForm
-    queryset = PeerReviewInvitation.objects.all()
-    template_name = 'library/review/invitations/update.jinja'
-
-    def get_object(self, queryset=None):
-        slug = self.kwargs['slug']
-        invitation = get_object_or_404(PeerReviewInvitation, slug=slug)
-        if invitation.accepted in [False, True]:
-            raise PermissionDenied('Can only accept or decline invitation once')
-        return invitation
-
-    def get_success_url(self):
-        feedback = self.object.feedback_set.last()
-        if feedback is None:
-            feedback = self.object.create_feedback()
-        return feedback.get_absolute_url()
 
 
 class CodebaseFilter(filters.BaseFilterBackend):
@@ -462,8 +435,13 @@ class CodebaseReleaseShareViewSet(CommonViewSetMixin, mixins.RetrieveModelMixin,
     permission_classes = (permissions.AllowAny,)
 
     def retrieve(self, request, *args, **kwargs):
-        release = self.get_object()
-        serializer = self.get_serializer(release)
+        instance = self.get_object()
+        if request.accepted_renderer.format == 'html':
+            perms = {}
+            add_change_delete_perms(instance, perms, request.user)
+            return Response({'release': instance, **perms,
+                             'operating_systems_enum': OPERATING_SYSTEMS})
+        serializer = self.get_serializer(instance)
         return Response(serializer.data)
 
     @action(detail=True, methods=['get'])

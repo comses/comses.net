@@ -8,7 +8,14 @@
     {% for review in reviews %}
         <div class="card">
             <div class="card-body">
-                <h3><a href="{{ review.get_absolute_url() }}">{{ review.title }}</a></h3>
+                <h3>
+                    <a href="{{ review.get_absolute_url() }}">{{ review.title }}</a>
+                    {% if review.is_complete %}
+                        <span class="badge badge-primary">{{ review.get_status_display() }}</span>
+                    {% else %}
+                        <span class="badge badge-warning">{{ review.get_status_display() }}</span>
+                    {% endif %}
+                </h3>
             </div>
         </div>
     {% else %}

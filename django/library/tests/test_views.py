@@ -439,8 +439,8 @@ class PeerReviewInvitationTestCase(ReviewSetup, ResponseStatusCodesMixin, TestCa
 
 class PeerReviewFeedbackTestCase(ReviewSetup, ResponseStatusCodesMixin, TestCase):
     @classmethod
-    def setUpClass(cls):
-        super().setUpClass()
+    def setUpTestData(cls):
+        super().setUpTestData()
         cls.setUpReviewData()
         invitation_factory = PeerReviewInvitationFactory(editor=cls.editor, reviewer=cls.reviewer, review=cls.review)
         cls.invitation = invitation_factory.create()
@@ -448,9 +448,14 @@ class PeerReviewFeedbackTestCase(ReviewSetup, ResponseStatusCodesMixin, TestCase
     def setUp(self):
         self.feedback = self.invitation.create_feedback()
 
-    @classmethod
-    def tearDownClass(cls):
-        super().tearDownClass()
+    def test_can_only_access_feedback_if_invitation_accepted(self):
+        feedback, _ = self.invitation.accept()
+        response_accept = self.client.get(feedback.get_absolute_url())
+        self.assertResponseOk(response_accept)
+
+        self.invitation.decline()
+        response_decline = self.client.get(feedback.get_absolute_url())
+        self.assertResponsePermissionDenied(response_decline)
 
 
 def tearDownModule():

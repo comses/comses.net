@@ -1,10 +1,48 @@
 {% extends 'base.jinja' %}
 {% from 'library/review/includes/codebase_release.jinja' import codebase_release_name %}
+{% from 'library/review/feedback/display_feedback.jinja' import display_reviewer_feedback %}
+
+{% block introduction %}
+    <h1>Feedback for <a href="{{ review_feedback.invitation.review.codebase_release.share_url }}"
+                        class="text-white px-0">
+        {{ review_feedback.invitation.review.codebase_release.title }}</a>
+
+        {% if review_feedback.reviewer_submitted %}
+            <span class="badge badge-primary">Already Submitted</span>
+        {% else %}
+            <span class="badge badge-warning">Not Submitted</span>
+        {% endif %}
+    </h1>
+{% endblock %}
 
 {% block content %}
-    <h1>Feedback for <i>{{ codebase_release_name(review_feedback.invitation.review.codebase_release) }}</i></h1>
-    <form action="" method="post">{% csrf_token %}
+    <p>
+        Enter feedback about a release here. You can save your progress with the save button. Pressing the submit button
+        saves your feedback and notifies the editor that you want the editor to look at it. Your feedback can be edited
+        after you have submitted but you should avoid removing any feedback comments (only add to existing comments).
+    </p>
+
+    <h3>Other Reviewer Feedback</h3>
+
+    <p>
+        Previous feedback given by other reviewers is displayed here to provide context for the review.
+    </p>
+
+    {% for feedback in feedback_set %}
+        <div class="card">
+            <div class="card-body">
+                {{ display_reviewer_feedback(feedback) }}
+            </div>
+        </div>
+    {% else %}
+        <div class="alert alert-info">No other feedback given</div>
+    {% endfor %}
+
+    <h3>Your Feedback</h3>
+
+    <form>
         {% include 'includes/form.jinja' %}
-        <button type="submit" class="btn btn-primary">Submit</button>
+        <button type="submit" class="btn btn-secondary" formaction="" formmethod="post">Save</button>
+        <button type="submit" class="btn btn-primary" formaction="?submit" formmethod="post">Submit</button>
     </form>
 {% endblock %}

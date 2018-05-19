@@ -1,72 +1,20 @@
 {% extends 'base.jinja' %}
 {% from 'library/review/includes/codebase_release.jinja' import codebase_release_name %}
-
-{% macro displayCheck(q) %}
-    fa {% if q %}fa-check text-success{% else %}fa-times text-danger{% endif %}
-{% endmacro %}
+{% from 'library/review/feedback/display_feedback.jinja' import display_reviewer_feedback %}
 
 {% block introduction %}
-    <h1>Editor feedback for <i>{{ codebase_release_name(review_feedback.invitation.review.codebase_release) }}</i></h1>
+    <h1>Editor feedback for <a href="{{ review_feedback.invitation.review.codebase_release.share_url }}" class="text-white px-0">
+        {{ review_feedback.invitation.review.codebase_release.title }}</a>
+    </h1>
 {% endblock %}
 
 {% block content %}
-    <h1>Reviewer Comments</h1>
-    <p>
-        <b>Has Clean Code:</b>
-        <span class="{{ displayCheck(review_feedback.has_clean_code) }}"></span>
-    </p>
-    <p>
-        <b>Clean Code Comments:</b>
-    </p>
-    {{ review_feedback.clean_code_comments|markdown }}
-
-    <p>
-        <b>Has Narrative Documentation:</b>
-        <span class="{{ displayCheck(review_feedback.has_narrative_documentation) }}"></span>
-    </p>
-    <p>
-        <b>Narrative Documentation Comments:</b>
-    </p>
-    {{ review_feedback.narrative_documentation_comments|markdown }}
-
-    <p>
-        <b>Is Runnable:</b>
-        <span class="{{ displayCheck(review_feedback.is_runnable) }}"></span>
-    </p>
-    <p>
-        <b>Runnable Comments:</b>
-    </p>
-    {{ review_feedback.runnable_comments|markdown }}
+    {{ display_reviewer_feedback(review_feedback) }}
 
     <h1>Editor Comments</h1>
-    <ul class="nav nav-tabs" id="tab-header" role="tablist">
-        <li class="nav-item">
-            <a class="nav-link active" id="accept-tab" data-toggle="tab"
-               href="#accept-release" role="tab" aria-controls="accept_release" aria-selected="true">
-                Accept Release
-            </a>
-        </li>
-        <li class="nav-item">
-            <a class="nav-link" id="revise-tab" data-toggle="tab"
-               href="#revise-release" role="tab" aria-controls="revice_release" aria-selected="false">
-                Revise Release
-            </a>
-        </li>
-    </ul>
-    <div class="tab-content" id="tab-content">
-        <div class="tab-pane fade show active" id="accept-release" role="tabpanel" aria-labelledby="accept-tab">
-            <form method="post">
-                {% include 'includes/form.jinja' %}
-                <input type="hidden" name="action" value="accept">
-                <button type="submit" class="btn btn-primary">Accept Release</button>
-            </form>
-        </div>
-        <div class="tab-pane fade" id="revise-release" role="tabpanel" aria-labelledby="revise-tab">
-           <form method="post">
-                {% include 'includes/form.jinja' %}
-                <input type="hidden" name="action" value="revise">
-                <button type="submit" class="btn btn-primary">Revise Release</button>
-            </form>
-        </div>
-    </div>
+    <form method="post">
+        {% include 'includes/form.jinja' %}
+        <button type="submit" class="btn btn-danger">Revise</button>
+        <button type="submit" class="btn btn-primary" formaction="?accept">Accept</button>
+    </form>
 {% endblock %}

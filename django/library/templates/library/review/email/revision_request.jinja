@@ -1,0 +1,11 @@
+{% from "common.jinja" import search_tag_href %}
+{% set invitation = feedback.invitation %}
+{% set submitter = invitation.review.submitter %}
+{% set release = invitation.review.codebase_release %}
+{% set codebase = release.codebase %}
+
+Dear {{ submitter.name }},
+
+The reviewer for release [{{ release.title }}]({{ release.get_absolute_url() }}) has requested changes.
+
+{{ feedback.notes_to_author }}
