@@ -243,6 +243,7 @@
             Commenting is disabled. (live? {{ release.live }}) environment ({{ deploy_environment() }}).
         {% endif %}
     </div>
+    {{ embed_discourse_comments(release.live, release.submitter.username) }}
 {% endblock %}
 
 {% block sidebar %}
@@ -359,5 +360,4 @@
         });
     </script>
     {{ render_bundle('release_regenerate_share_uuid', attrs='defer') }}
-    {{ embed_discourse_comments(release.live, release.submitter.username) }}
 {% endblock %}

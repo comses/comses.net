@@ -78,9 +78,6 @@
     <div class="col-12">
         <h4>Comments</h4>
         <div id="discourse-comments"></div>
+        {{ embed_discourse_comments(true, submitter.username) }}
     </div>
-{% endblock %}
-
-{% block js %}
-    {{ embed_discourse_comments(true, submitter.username) }}
 {% endblock %}
