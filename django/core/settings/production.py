@@ -21,6 +21,7 @@ TEMPLATES = [
                 'wagtail.core.jinja2tags.core',
                 'wagtail.admin.jinja2tags.userbar',
                 'wagtail.images.jinja2tags.images',
+                'waffle.jinja.WaffleExtension',
             ],
             'constants': {
                 'DISCOURSE_BASE_URL': DISCOURSE_BASE_URL
@@ -45,7 +46,6 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
-
                 'wagtail.contrib.settings.context_processors.settings',
             ],
         },
