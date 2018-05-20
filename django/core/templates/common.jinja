@@ -194,8 +194,10 @@
 {% endmacro %}
 
 {% macro embed_discourse_comments(is_public, submitter_username) %}
-    {# See https://meta.discourse.org/t/embedding-discourse-comments-via-javascript/31963 for details #}
-    {% if should_enable_discourse(is_public) %}
+{# See https://meta.discourse.org/t/embedding-discourse-comments-via-javascript/31963 for details #}
+{% if should_enable_discourse(is_public) %}
+    <h3>Discussion</h3>
+    <div id="discourse-comments"></div>
     <script>
         DiscourseEmbed = {
             discourseUrl: "{{ DISCOURSE_BASE_URL }}/",
@@ -210,7 +212,14 @@
             (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(d);
         })();
     </script>
+{% else %}
+    Discourse comments are disabled.
+    {% if not is_public %}
+        <em><span class='fa fa-lock'></span> (this page is private)</em>
+    {% else %}
+        Currently in <em><mark>{{ deploy_environment() }}</mark></em> mode.
     {% endif %}
+{% endif %}
 {% endmacro %}
 
 {% macro format_date(date) %}

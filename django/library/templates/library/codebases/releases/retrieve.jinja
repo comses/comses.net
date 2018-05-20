@@ -237,12 +237,6 @@
         </div>
     </div>
     <hr>
-    <h2 class='discourse-comments'>Discussion</h2>
-    <div id='discourse-comments'>
-        {% if not should_enable_discourse(release.live) %}
-            Commenting is disabled. (live? {{ release.live }}) environment ({{ deploy_environment() }}).
-        {% endif %}
-    </div>
     {{ embed_discourse_comments(release.live, release.submitter.username) }}
 {% endblock %}
 

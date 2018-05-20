@@ -75,9 +75,7 @@
 {% endblock %}
 
 {% block bottom %}
-    <div class="col-12">
-        <h4>Comments</h4>
-        <div id="discourse-comments"></div>
+    <div class='col-12'>
         {{ embed_discourse_comments(true, submitter.username) }}
     </div>
 {% endblock %}
