@@ -45,7 +45,6 @@ from core.models import Platform, MemberProfile
 from core.serializers import PUBLISH_DATE_FORMAT
 from core.templatetags.globals import markdown
 from core.view_helpers import search_backend
-from core.widgets import MarkdownTextarea
 from .fs import CodebaseReleaseFsApi, StagingDirectories, FileCategoryDirectories, MessageLevels
 
 logger = logging.getLogger(__name__)
@@ -730,10 +729,7 @@ class CodebaseReleaseQuerySet(models.QuerySet):
 
     def latest_for_feed(self, number=10, include_all=False):
         qs = self.public().select_related('codebase', 'submitter__member_profile').annotate(
-            description=models.F('codebase__description'),
-            title=models.functions.Concat(models.F('codebase__title'),
-                                          models.Value(' '),
-                                          models.F('version_number'))
+            description=models.F('codebase__description')
         ).order_by('-date_created')
         if include_all:
             return qs
