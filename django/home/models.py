@@ -642,6 +642,9 @@ class ConferenceIndexPage(Page):
         kwargs.setdefault('slug', 'conference')
         super().__init__(*args, **kwargs)
 
+    def conferences(self):
+        return ConferencePage.objects.live().descendant_of(self)
+
     content_panels = Page.content_panels
 
 

@@ -6,11 +6,16 @@
 {% endblock %}
 
 {% block content %}
-    {{ breadcrumb([{'url': '/community/', 'text': 'Community'}, {'text': 'CoMSES Conferences' }])}}
+    {{ breadcrumb([{'url': '/community/', 'text': 'Community'}, {'text': 'CoMSES Virtual Conferences' }])}}
     <p class='lead'>
-    CoMSES Net hosted its inaugural virtual conference in 2017 to provide a venue for the computational modeling
-    community to engage with each other's work with video presentations and feedback provided in an asynchronous format
-    via <a href='https://www.discourse.org/'>a Discourse forum</a>.
+    CoMSES Net hosted its inaugural virtual conference in 2017 to provide an interactive venue for the computational
+    modeling community with video presentations and feedback provided in an asynchronous format
+    via our <a href='https://www.discourse.org/'>Discourse</a> <a href='{{ DISCOURSE_BASE_URL }}'>forum</a>.
     </p>
-    <a class='btn btn-primary' href='{{ page.external_url }}'>Join the latest conference</a>
+    <ul class='list-group'>
+        {% for conference in page.conferences() %}
+            <li class='list-group-item'><a href='{{ conference.url }}'>{{conference.title }}: {{ conference.start_date|format_datetime }} &mdash; {{ conference.end_date|format_datetime }}</li>
+        {% endfor %}
+    </ul>
+    <a class='btn btn-primary' href='{{ page.get_children().live().last().url }}'>Join the latest conference</a>
 {% endblock %}

@@ -2,17 +2,18 @@
 {% from "common.jinja" import breadcrumb %}
 
 {% block introduction %}
-    <h1>{{ page.title }}</h1>
-    <h2>{{ page.start_date }} - {{ page.end_date }}</h2>
+    <h1 class='pt-0 mt-4'>{{ page.title }}<br>
+        {{ page.start_date|format_datetime }} &mdash; {{ page.end_date|format_datetime }}
+    </h1>
 {% endblock %}
 
 {% block content %}
-    {{ breadcrumb([{'url': '/community/', 'text': 'Community'}, {'text': page.title }])}}
+    {{ breadcrumb([{'url': '/community/', 'text': 'Community'}, {'url': '/conference/', 'text': 'CoMSES Virtual Conferences'}, {'text': page.title }])}}
     {% autoescape false %}
-    <div class='lead'>
-        {{ page.introduction }}
-    </div>
-    {{ page.content }}
+        <div class='lead'>
+            {{ page.introduction }}
+        </div>
+        {{ page.content }}
     {% endautoescape %}
     {% if page.is_accepting_submissions %}
         <div class='alert alert-info'>
@@ -22,14 +23,14 @@
         </div>
     {% elif not page.is_open %}
         <div class='alert alert-info'>
-            Submissions are now closed and being evaluated. Please check back again on {{ page.start_date.strftime("%c") }}. 
+            Submissions are now closed and being evaluated. Please check back again on {{ page.start_date|format_datetime }}.
         </div>
     {% else %}
-        <div class='alert alert-warning'> 
-            Presentations are posted as forum topics, with top-level conference themes pinned to the top of the 
+        <div class='alert alert-warning'>
+            Presentations are posted as forum topics, with top-level conference themes pinned to the top of the
             <a href='{{ page.external_url }}'>conference page</a>. In order to post comments, feedbacks, and engage in
-            discussion with the presenters and other participants you will need to 
-            <a href='{{signup_url}}'>create a comses.net account</a> or 
+            discussion with the presenters and other participants you will need to
+            <a href='{{signup_url}}'>create a comses.net account</a> or
             <a href='{{login_url}}'>sign in with an existing comses.net account</a>.
         </div>
         {% if page.is_archived %}
