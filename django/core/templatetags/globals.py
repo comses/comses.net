@@ -133,6 +133,8 @@ def format_datetime_str(text: Optional[str], format_string=FULL_DATE_FORMAT):
 
 @library.filter
 def format_datetime(date_obj, format_string=FULL_DATE_FORMAT):
+    if date_obj is None:
+        return None
     return date_obj.strftime(format_string)
 
 
