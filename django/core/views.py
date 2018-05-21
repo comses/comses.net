@@ -369,8 +369,58 @@ class SearchView(TemplateView):
         return context
 
 
+class HtmlRetrieveModelMixin:
+    """
+    Retrieve a model instance. If renderer if html pass the instance to the template directly
+    """
+
+    context_object_name = 'object'
+
+    def get_retrieve_context(self, instance):
+        return {self.context_object_name: instance}
+
+    def retrieve(self, request, *args, **kwargs):
+        instance = self.get_object()
+        if request.accepted_renderer.format == 'html':
+            return Response(self.get_retrieve_context(instance))
+
+        serializer = self.get_serializer(instance)
+        return Response(serializer.data)
+
+
+class HtmlListModelMixin:
+    """
+    List a queryset. If renderer if html pass the queryset to the template directly
+    """
+
+    context_list_name = 'object'
+
+    def get_list_context(self, page_or_queryset):
+        return {self.context_list_name: page_or_queryset}
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.filter_queryset(self.get_queryset())
+        page = self.paginate_queryset(queryset)
+        if request.accepted_renderer.format == 'html':
+            context = self.get_list_context(page or queryset)
+            logger.error(context)
+            return Response(context) if page is None else self.get_paginated_response(context)
+
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+
+
 class NoDeleteNoUpdateViewSet(mixins.CreateModelMixin, mixins.ListModelMixin, mixins.RetrieveModelMixin,
                               viewsets.GenericViewSet):
+    pass
+
+
+class HtmlNoDeleteNoUpdateViewSet(mixins.CreateModelMixin, HtmlListModelMixin, HtmlRetrieveModelMixin,
+                                  viewsets.GenericViewSet):
     pass
 
 
@@ -379,7 +429,18 @@ class NoDeleteViewSet(mixins.CreateModelMixin, mixins.ListModelMixin, mixins.Ret
     pass
 
 
+class HtmlNoDeleteViewSet(mixins.CreateModelMixin, HtmlListModelMixin, HtmlRetrieveModelMixin,
+                          mixins.UpdateModelMixin, viewsets.GenericViewSet):
+    pass
+
+
 class OnlyObjectPermissionModelViewSet(mixins.CreateModelMixin, mixins.DestroyModelMixin, mixins.ListModelMixin,
                                        mixins.RetrieveModelMixin, mixins.UpdateModelMixin,
                                        viewsets.GenericViewSet):
+    pass
+
+
+class HtmlOnlyObjectPermissionModelViewSet(mixins.CreateModelMixin, mixins.DestroyModelMixin, HtmlListModelMixin,
+                                           HtmlRetrieveModelMixin, mixins.UpdateModelMixin,
+                                           viewsets.GenericViewSet):
     pass
