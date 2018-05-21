@@ -2,11 +2,13 @@
 
 from invoke import task, call
 from django.conf import settings
+from core.utils import confirm
 from .utils import dj, env
 
 
 @task(aliases=['ss'])
 def setup_site(ctx, site_name='CoRe @ CoMSES Net', site_domain='www.comses.net'):
+    confirm("This is a destructive process and will remove all existing root pages. Are you sure you want to run this? (y/n) ")
     dj(ctx, 'setup_site --site-name="{0}" --site-domain="{1}"'.format(site_name, site_domain))
     if not settings.DEPLOY_ENVIRONMENT.is_production():
         deny_robots(ctx)
@@ -23,9 +25,19 @@ def deny_robots(ctx):
 
 
 @task(aliases=['cs'])
-def collect_static(ctx):
+def collectstatic(ctx):
     dj(ctx, 'collectstatic -c --noinput', pty=True)
     ctx.run('touch ./core/wsgi.py')
+
+
+@task(aliases=['uindex'])
+def update_index(ctx):
+    dj(ctx, 'update_index', pty=True)
+
+
+@task(aliases=['prep'], pre=[collectstatic, update_index])
+def prepare(ctx):
+    pass
 
 
 @task(aliases=['qc'])
