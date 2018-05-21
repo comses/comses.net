@@ -14,6 +14,7 @@ import pathlib
 from enum import Enum
 
 from django_jinja.builtins import DEFAULT_EXTENSIONS
+from django.contrib.messages import constants as messages
 
 
 class Environment(Enum):
@@ -479,3 +480,11 @@ TEMPLATES = [
         },
     },
 ]
+
+MESSAGE_TAGS = {
+    messages.SUCCESS: 'alert alert-success',
+    messages.DEBUG: '',
+    messages.INFO: 'alert alert-info',
+    messages.WARNING: 'alert alert-warning',
+    messages.ERROR: 'alert alert-danger'
+}
