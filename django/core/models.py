@@ -213,6 +213,26 @@ class MemberProfile(index.Indexed, ClusterableModel):
     Returns the github profile URL associated with this member profile if it exists, or None
     """
 
+    # Proxies to related user object
+
+    @property
+    def date_joined(self):
+        return self.user.date_joined
+
+    @property
+    def email(self):
+        return self.user.email
+
+    @property
+    def username(self):
+        return self.user.username
+
+    @property
+    def is_active(self):
+        return self.user.is_active
+
+    # Urls
+
     @property
     def github_url(self):
         return self.get_social_account_profile_url('github')
@@ -227,36 +247,40 @@ class MemberProfile(index.Indexed, ClusterableModel):
         return self.user.socialaccount_set.filter(provider=provider_name).first()
 
     @property
-    def institution_name(self):
-        return self.institution.name if self.institution else None
-
-    @property
     def institution_url(self):
         return self.institution.url if self.institution else None
+
+    @property
+    def profile_url(self):
+        return self.get_absolute_url()
+
+    def get_absolute_url(self):
+        return reverse('home:profile-detail', kwargs={'pk': self.user.pk})
+
+    def get_edit_url(self):
+        return reverse('home:profile-edit', kwargs={'user__pk': self.user.pk})
+
+    @classmethod
+    def get_list_url(cls):
+        return reverse('home:profile-list')
+
+    # Other
+
+    @property
+    def institution_name(self):
+        return self.institution.name if self.institution else None
 
     @property
     def submitter(self):
         return self.user
 
     @property
-    def is_active(self):
-        return self.user.is_active
-
-    @property
     def is_reviewer(self):
         return self.user.groups.filter(name=ComsesGroups.REVIEWER.value).exists()
 
     @property
-    def username(self):
-        return self.user.username
-
-    @property
     def name(self):
         return self.user.get_full_name() or self.user.username
-
-    @property
-    def email(self):
-        return self.user.email
 
     @property
     def full_member(self):
@@ -269,13 +293,6 @@ class MemberProfile(index.Indexed, ClusterableModel):
             self.user.groups.add(group)
         else:
             self.user.groups.remove(group)
-
-    @property
-    def profile_url(self):
-        return self.get_absolute_url()
-
-    def get_absolute_url(self):
-        return reverse('home:profile-detail', kwargs={'pk': self.user.pk})
 
     def __str__(self):
         return str(self.user)
