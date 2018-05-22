@@ -16,6 +16,7 @@
 {% endblock %}
 
 {% block content %}
+    {% include 'includes/messages.jinja' %}
     <div id={{ 'discourse-content' if release.live else 'content' }}>
         {% if not release.live %}
             <div class="alert alert-danger mt-2">The release you are viewing is currently unpublished.

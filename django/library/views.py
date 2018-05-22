@@ -1,6 +1,7 @@
 import logging
 import pathlib
 
+from django.contrib import messages
 from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.core.exceptions import PermissionDenied
 from django.db import transaction
@@ -23,7 +24,7 @@ from core.permissions import ViewRestrictedObjectPermissions
 from core.view_helpers import add_change_delete_perms, get_search_queryset
 from core.views import (CommonViewSetMixin, FormUpdateView, FormCreateView, SmallResultSetPagination,
                         CaseInsensitiveOrderingFilter, NoDeleteViewSet,
-                        NoDeleteNoUpdateViewSet)
+                        NoDeleteNoUpdateViewSet, HtmlNoDeleteViewSet)
 from .forms import PeerReviewerFeedbackReviewerForm, PeerReviewInvitationReplyForm, \
     PeerReviewInvitationForm, PeerReviewerFeedbackEditorForm
 from .fs import FileCategoryDirectories, StagingDirectories, MessageLevels
@@ -188,6 +189,10 @@ class PeerReviewFeedbackUpdateView(UpdateView):
             raise PermissionDenied('Cannot access feedback of declined review')
         return feedback
 
+    def get_submitted_query_param(self):
+        query_params = self.request.GET
+        return query_params.get('submit')
+
     def get_form_kwargs(self):
         REVIEWER_SUBMITTED = 'reviewer_submitted'
         kwargs = super().get_form_kwargs()
@@ -196,8 +201,7 @@ class PeerReviewFeedbackUpdateView(UpdateView):
             data = QueryDict(mutable=True)
             for k, v in kwargs['data'].items():
                 data[k] = v
-            query_params = self.request.GET
-            submit = query_params.get('submit')
+            submit = self.get_submitted_query_param()
             if submit is not None:
                 data[REVIEWER_SUBMITTED] = 'True'
             else:
@@ -207,7 +211,10 @@ class PeerReviewFeedbackUpdateView(UpdateView):
         return kwargs
 
     def get_success_url(self):
-        return self.object.invitation.get_feedback_list_url()
+        if self.get_submitted_query_param() is not None:
+            return self.request.user.member_profile.get_absolute_url()
+        else:
+            return self.object.get_absolute_url()
 
 
 class PeerReviewEditorFeedbackUpdateView(UpdateView):
@@ -261,15 +268,17 @@ class CodebaseFilter(filters.BaseFilterBackend):
 
 
 class CodebaseViewSet(CommonViewSetMixin,
-                      NoDeleteViewSet):
+                      HtmlNoDeleteViewSet):
     lookup_field = 'identifier'
     lookup_value_regex = r'[\w\-\.]+'
     pagination_class = SmallResultSetPagination
     queryset = Codebase.objects.with_tags().with_featured_images().order_by('-first_published_at', 'title')
     filter_backends = (CaseInsensitiveOrderingFilter, CodebaseFilter)
     permission_classes = (ViewRestrictedObjectPermissions,)
+    serializer_class = CodebaseSerializer
     ordering_fields = ('first_published_at', 'title', 'last_modified', 'peer_reviewed', 'submitter__last_name',
                        'submitter__username')
+    context_list_name = 'codebases'
 
     def get_queryset(self):
         if self.action == 'list':
@@ -277,11 +286,6 @@ class CodebaseViewSet(CommonViewSetMixin,
             return self.queryset.public()
         else:
             return self.queryset.accessible(user=self.request.user)
-
-    def get_serializer_class(self):
-        if self.action == 'list':
-            return RelatedCodebaseSerializer
-        return CodebaseSerializer
 
     def perform_create(self, serializer):
         codebase = serializer.save()
@@ -474,8 +478,9 @@ def create_peer_review(request, identifier, version_number):
                 'submitter': request.user.member_profile
             }
         )
-        return HttpResponseRedirect(reverse('library:codebaserelease-detail',
-                                            kwargs=dict(identifier=identifier, version_number=version_number)))
+        response = HttpResponseRedirect(codebase_release.get_absolute_url())
+        messages.success(request, 'Started peer review process')
+        return response
     else:
         return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
@@ -564,9 +569,17 @@ class CodebaseReleaseViewSet(CommonViewSetMixin,
         codebase_release = self.get_object()
         if hasattr(codebase_release, 'review'):
             codebase_release.review.author_made_changes()
+            if request.accepted_media_type == 'html':
+                messages.success(request, 'Reviewers notified of changes')
+                return HttpResponseRedirect(codebase_release.get_absolute_url())
             return Response(status=status.HTTP_200_OK)
         else:
-            return Response(data={'non_field_errors': ['Must request a review before reviewers can be contacted']},
+            msg = 'Must request a review before reviewers can be contacted'
+            if request.accepted_media_type == 'html':
+                response = HttpResponseRedirect(codebase_release.get_absolute_url())
+                messages.add_message(request, messages.ERROR, msg)
+                return response
+            return Response(data={'non_field_errors': [msg]},
                             status=status.HTTP_400_BAD_REQUEST)
 
     @action(detail=True, methods=['get'])

@@ -25,9 +25,10 @@ from core.models import FollowUser, Event, Job
 from core.permissions import ObjectPermissions, ViewRestrictedObjectPermissions
 from core.serializers import TagSerializer, EventSerializer, JobSerializer
 from core.utils import parse_datetime
-from core.view_helpers import retrieve_with_perms, get_search_queryset
+from core.view_helpers import retrieve_with_perms, get_search_queryset, add_change_delete_perms
 from core.views import (CaseInsensitiveOrderingFilter, CommonViewSetMixin, FormCreateView, FormUpdateView,
-                        SmallResultSetPagination, OnlyObjectPermissionModelViewSet, NoDeleteViewSet)
+                        SmallResultSetPagination, OnlyObjectPermissionModelViewSet, NoDeleteViewSet,
+                        HtmlNoDeleteViewSet)
 from library.models import Codebase, PeerReviewInvitation
 from .models import FeaturedContentItem, MemberProfile, ContactPage
 from .serializers import (FeaturedContentItemSerializer, UserMessageSerializer, MemberProfileSerializer,
@@ -93,19 +94,17 @@ class MemberProfileFilter(filters.BaseFilterBackend):
 
 
 class ProfileViewSet(CommonViewSetMixin,
-                     NoDeleteViewSet):
+                     HtmlNoDeleteViewSet):
     lookup_field = 'user__pk'
     lookup_url_kwarg = 'pk'
     queryset = MemberProfile.objects.public().with_tags().order_by('-user__date_joined')
     pagination_class = SmallResultSetPagination
     filter_backends = (CaseInsensitiveOrderingFilter, MemberProfileFilter)
     permission_classes = (ObjectPermissions,)
+    serializer_class = MemberProfileSerializer
     ordering_fields = ('user__date_joined', 'user__last_name', 'user__first_name',)
-
-    def get_serializer_class(self):
-        if self.action == 'list':
-            return MemberProfileListSerializer
-        return MemberProfileSerializer
+    context_object_name = 'profile'
+    context_list_name = 'profiles'
 
     def get_queryset(self):
         if self.action == 'retrieve':
@@ -117,8 +116,10 @@ class ProfileViewSet(CommonViewSetMixin,
                 .prefetch_related('peer_review_invitation_set__review__codebase_release__codebase')
         return self.queryset.with_institution().with_user()
 
-    def retrieve(self, request, *args, **kwargs):
-        return retrieve_with_perms(self, request, *args, **kwargs)
+    def get_retrieve_context(self, instance):
+        context = super().get_retrieve_context(instance)
+        add_change_delete_perms(instance, context, self.request.user)
+        return context
 
     @action(detail=True, methods=['post'])
     @method_decorator(login_required)

@@ -1,7 +1,7 @@
 {% extends "sidebar_layout.jinja" %}
 {% from "common.jinja" import item_component, list_page, paginator, breadcrumb, subnav, member_profile_href, search_tag_href %}
 
-{% macro render_user(member_profile, detail_url_name) %}
+{% macro render_user(member_profile) %}
 <div class="search-result">
     <div class="title">
         <h1>
@@ -13,12 +13,12 @@
             {% endif %}
             {% endcall %}
             <small class="text-muted float-right">
-                Member since: {{ member_profile.date_joined }}
+                Member since: {{ member_profile.date_joined|format_datetime }}
                 {% if member_profile.full_member %}
                     <span class="badge badge-primary">Full Member</span>
                 {% endif %}
                 {% if member_profile.is_reviewer %}
-                    <span class="badge badge-success">Reviewer</i>
+                    <span class="badge badge-success">Reviewer</span>
                 {% endif %}
             </small>
         </h1>
@@ -29,18 +29,18 @@
         {% endif %}
         {% if member_profile.bio %}
             <div class='bio'>
-                {{ member_profile.bio|markdown }}
+                {{ member_profile.bio.raw|markdown }}
             </div>
         {%endif %}
         {% if member_profile.research_interests %}
             <div class='research-interests'>
-                {{ member_profile.research_interests|markdown }}
+                {{ member_profile.research_interests.raw|markdown }}
             </div>
         {% endif %}
     </div>
     {% if member_profile.tags %}
         <div class="tag-list">
-        {% for tag in member_profile.tags %}
+        {% for tag in member_profile.tags.all() %}
             {{ search_tag_href(tag, category='users') }}
         {% endfor %}
         </div>
@@ -66,12 +66,18 @@
     {'url': url("home:digest"), 'text': 'Newsletter'},
     ])
     }}
-    {{ paginator('home:profile-list', __all__) }}
+    {{ paginator('home:profile-list', paginator_data) }}
     <div id="sortby"></div>
 {% endblock %}
 
 {% block content %}
-    {{ list_page(__all__, render_user, 'home:profile-detail') }}
+    {% for profile in profiles %}
+        {{ render_user(profile) }}
+    {% else %}
+        <p class='lead pt-3'>
+            No matching results found.
+        </p>
+    {% endfor %}
 {% endblock %}
 
 {% block sidebar %}
@@ -81,7 +87,7 @@
 
 {% block bottom %}
     <div class="col">
-        {{ paginator('home:profile-list', __all__) }}
+        {{ paginator('home:profile-list', paginator_data) }}
     </div>
 {% endblock %}
 

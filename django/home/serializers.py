@@ -84,10 +84,6 @@ class MemberProfileSerializer(serializers.ModelSerializer):
     bio = MarkdownField()
     research_interests = MarkdownField()
 
-    # reviewer data
-    all_reviewer_feedback = PeerReviewFeedbackEditorSerializer(source='reviewer_feedback_set', many=True, read_only=True)
-    invitations = RelatedPeerReviewInvitationSerializer(source='peer_review_invitation_set', many=True, read_only=True)
-
     def get_email(self, instance):
         request = self.context.get('request')
         if request and request.user.is_anonymous:
@@ -177,6 +173,4 @@ class MemberProfileSerializer(serializers.ModelSerializer):
             # MemberProfile
             'avatar', 'bio', 'name', 'degrees', 'full_member', 'tags', 'orcid_url', 'github_url', 'personal_url',
             'is_reviewer', 'professional_url', 'profile_url', 'research_interests', 'name',
-            # peer reviews
-            'all_reviewer_feedback', 'invitations',
         )

@@ -80,7 +80,8 @@ class PeerReviewerFeedbackReviewerForm(CheckCharFieldLengthMixin, forms.ModelFor
 
     def save(self, commit=True):
         feedback = super().save(commit)
-        feedback.reviewer_gave_feedback()
+        if feedback.reviewer_submitted:
+            feedback.reviewer_gave_feedback()
         return feedback
 
     class Meta:

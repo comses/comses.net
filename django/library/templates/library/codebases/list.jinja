@@ -8,13 +8,19 @@
 
 {% block top %}
     {{ breadcrumb([{'text': 'Computational Model Library'}]) }}
-    {{ paginator('library:codebase-list', __all__) }}
+    {{ paginator('library:codebase-list', paginator_data) }}
     <div id='sortby'></div>
 {% endblock %}
 
 {% block content %}
-    {{ list_page(__all__, render_codebase_result, 'library:codebase-detail') }}
-    {{ paginator('library:codebase-list', __all__) }}
+    {% for codebase in codebases %}
+        {{ render_codebase_result(codebase) }}
+    {% else %}
+        <p class='lead pt-3'>
+            No matching results found.
+        </p>
+    {% endfor %}
+    {{ paginator('library:codebase-list', paginator_data) }}
 {% endblock %}
 
 {% block sidebar %}

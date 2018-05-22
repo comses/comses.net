@@ -247,23 +247,8 @@ class SmallResultSetPagination(PageNumberPagination):
         return [v if k == 'query' else '{0}: {1}'.format(k, v) for k, v in query_params.items()]
 
     def get_paginated_response(self, data):
-        query_params = self.request.query_params.copy()
-        query = query_params.get('query')
-        page = query_params.pop('page', [1])[0]
-        count = self.page.paginator.count
-        try:
-            current_page_number = max(1, int(page))
-        except:
-            current_page_number = 1
-        return Response(
-            self.create_paginated_context_data(
-                query=query,
-                data=data,
-                current_page_number=current_page_number,
-                count=count,
-                query_params=query_params
-            )
-        )
+        context = self.get_context_data(data)
+        return Response(context)
 
     @classmethod
     def create_paginated_context_data(cls, query, data, current_page_number, count, query_params, size=None):
@@ -285,6 +270,23 @@ class SmallResultSetPagination(PageNumberPagination):
             'num_pages': num_pages,
             'results': data
         })
+
+    def get_context_data(self, data):
+        query_params = self.request.query_params.copy()
+        query = query_params.get('query')
+        page = query_params.pop('page', [1])[0]
+        count = self.page.paginator.count
+        try:
+            current_page_number = max(1, int(page))
+        except:
+            current_page_number = 1
+        return self.create_paginated_context_data(
+            query=query,
+            data=data,
+            current_page_number=current_page_number,
+            count=count,
+            query_params=query_params
+        )
 
 
 @login_required
@@ -377,7 +379,8 @@ class HtmlRetrieveModelMixin:
     context_object_name = 'object'
 
     def get_retrieve_context(self, instance):
-        return {self.context_object_name: instance}
+        context = {self.context_object_name: instance}
+        return context
 
     def retrieve(self, request, *args, **kwargs):
         instance = self.get_object()
@@ -396,15 +399,17 @@ class HtmlListModelMixin:
     context_list_name = 'object'
 
     def get_list_context(self, page_or_queryset):
-        return {self.context_list_name: page_or_queryset}
+        context = {self.context_list_name: page_or_queryset}
+        if self.paginator:
+            context['paginator_data'] = self.paginator.get_context_data(context)
+        return context
 
     def list(self, request, *args, **kwargs):
         queryset = self.filter_queryset(self.get_queryset())
         page = self.paginate_queryset(queryset)
         if request.accepted_renderer.format == 'html':
             context = self.get_list_context(page or queryset)
-            logger.error(context)
-            return Response(context) if page is None else self.get_paginated_response(context)
+            return Response(context)
 
         if page is not None:
             serializer = self.get_serializer(page, many=True)

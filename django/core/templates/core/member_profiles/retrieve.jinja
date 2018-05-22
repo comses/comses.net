@@ -2,21 +2,21 @@
 {% from "common.jinja" import breadcrumb, subnav, institution_href, search_tag_btn, render_social_profile_url %}
 {% from "library/codebases/macros.jinja" import render_codebase_result, render_reviewer_feedback %}
 
-{% block title %}User profile for {{ name }}{% endblock %}
+{% block title %}User profile for {{ profile.name }}{% endblock %}
 
-{% block introduction %}<h1>{{ name }}</h1>{% endblock %}
+{% block introduction %}<h1>{{ profile.name }}</h1>{% endblock %}
 
 {% block top %}
     {{ breadcrumb([
     { 'url': '/community/', 'text': 'Community' },
-    { 'url': url("home:profile-list"), 'text': 'Users'},
-    { 'text': name}
+    { 'url': profile.get_list_url(), 'text': 'Users'},
+    { 'text': profile.name}
     ]) }}
 
     {{ subnav([
     { 'url': '/community/', 'text': 'Community' },
     { 'url': DISCOURSE_BASE_URL, 'text': 'Forum' },
-    { 'url': url("home:profile-list"), 'text': 'Users', 'active': True },
+    { 'url': profile.get_list_url(), 'text': 'Users', 'active': True },
     { 'url': url("home:job-list"), 'text': 'Jobs' },
     { 'url': url("home:digest"), 'text': 'Newsletter' },
     ]) }}
@@ -26,49 +26,49 @@
     <div class='row'>
         <div class='col-3'>
             <div class='mt-5'>
-                {% if avatar is none %}
+                {% if profile.avatar_url is none %}
                     <img src="holder.js/150x150?text=No picture available"
                          class="img-fluid mx-auto d-block rounded">
                 {% else %}
-                    {{ image(avatar, "fill-150x150", width=150, height=150, class="img-fluid img-thumbnail mx-auto d-block rounded") }}
+                    {{ image(profile.picture, "fill-150x150", width=150, height=150, class="img-fluid img-thumbnail mx-auto d-block rounded") }}
                 {% endif %}
             </div>
         </div>
         <div class='col-9'>
             <div class='card profile-details'>
                 <div class='card-body'>
-                    <h4 class='card-title'>{{ name }}</h4>
+                    <h4 class='card-title'>{{ profile.name }}</h4>
                     {% for degree in degrees %}
-                        <p class='card-text'>{{ degree }}</p>
+                        <p class='card-text'>{{ profile.degree }}</p>
                     {% endfor %}
-                    {% for affiliation in affiliations %}
+                    {% for affiliation in profile.affiliations %}
                         <p class='card-text'>{{ affiliation }}</p>
                     {% endfor %}
-                    {% if institution %}
+                    {% if profile.institution %}
                         <b class='card-title'>Institution</b>
                         <p class='card-text'>
                         {{ institution_href(institution) }}
                         </p>
                     {% endif %}
-                    {% if personal_url %}
+                    {% if profile.personal_url %}
                         <b class='card-title'>Personal homepage</b>
                         <p class='card-text'>
-                        <a href='{{ personal_url }}' target='_blank'>{{ personal_url }}</a>
+                        <a href='{{ profile.personal_url }}' target='_blank'>{{ profile.personal_url }}</a>
                         </p>
                     {% endif %}
-                    {% if professional_url %}
+                    {% if profile.professional_url %}
                         <b class='card-title'>Professional homepage</b>
                         <p class='card-text'>
-                        <a href='{{ professional_url }}' target='_blank'>{{ professional_url }}</a>
+                        <a href='{{ profile.professional_url }}' target='_blank'>{{ profile.professional_url }}</a>
                         </p>
                     {% endif %}
                     <b class='card-title'>ORCID<sup><a href='/about/orcid/'>?</a></sup></b>
                     {% with social_connect=request.user.username == username %}
                         <p class='card-text'>
-                        {{ render_social_profile_url(request, 'orcid', orcid_url, connect=social_connect) }}
+                        {{ render_social_profile_url(request, 'orcid', profile.orcid_url, connect=social_connect) }}
                         </p>
                         <b class='card-title'>GitHub<sup><a target='_blank' href='https://education.github.com'>?</a></sup></b>
-                        <p class='card-text'>{{ render_social_profile_url(request, 'github', github_url, connect=social_connect) }}
+                        <p class='card-text'>{{ render_social_profile_url(request, 'github', profile.github_url, connect=social_connect) }}
                         </p>
                     {% endwith %}
                 </div>
@@ -93,19 +93,19 @@
     </ul>
     <div class='tab-content'>
         <div class='tab-pane active' id='bio' role='tabpanel'>
-            {% if bio %}
+            {% if profile.bio %}
                 <h3 class='m-0 py-3 title'>Bio</h3>
                 <p>
-                    {{ bio|markdown }}
+                    {{ profile.bio.raw|markdown }}
                 </p>
             {% endif %}
-            {% if research_interests %}
+            {% if profile.research_interests %}
                 <h3 class='m-0 py-3 title'>Research Interests</h3>
                 <p>
-                    {{ research_interests|markdown }}
+                    {{ profile.research_interests.raw|markdown }}
                 </p>
             {% endif %}
-            {% if not bio and not research_interests %}
+            {% if not profile.bio and not profile.research_interests %}
                 <p class='lead p-5'>
                     No bio entered.
                 </p>
@@ -114,8 +114,8 @@
         </div>
         <div class='tab-pane' id='code' role='tabpanel'>
             {# FIXME: use codebase list component #}
-            {% for codebase in codebases %}
-                {{ render_codebase_result(codebase, 'library:codebase-detail') }}
+            {% for codebase in profile.user.codebases.all() %}
+                {{ render_codebase_result(codebase) }}
             {% else %}
                 <p class='lead p-5'>
                     No associated codebases.
@@ -132,25 +132,27 @@
                 <h3>Peer Review Statuses</h3>
                 <div class='card'>
                     <ul class='list-group'>
-                        {% for invitation in invitations %}
+                        {% for invitation in profile.peer_review_invitation_set.all() %}
                             <li class='list-group-item'>
                                 {% if invitation.accepted is none %}
-                                    <a href='{{ invitation.url }}'>
-                                        {{ invitation.codebase_release_title }}
+                                    <a href='{{ invitation.get_absolute_url() }}'>
+                                        {{ invitation.review.title }}
+                                    </a>
+                                {% elif invitation.accepted %}
+                                    <a href="{{ invitation.latest_feedback.get_absolute_url() }}">
+                                        {{ invitation.review.title }}
                                     </a>
                                 {% else %}
-                                    <a href="{{ invitation.feedback_list_url }}">
-                                        {{ invitation.codebase_release_title }}
-                                    </a>
+                                    {{ invitation.review.title }}
                                 {% endif %}
-                                {{ invitation.date_created }}
+                                {{ invitation.date_created|format_datetime }}
                                 <span class="float-right">
                                     {% if invitation.accepted is none %}
                                         <span class="badge badge-info">Waiting for response</span>
                                     {% elif not invitation.accepted %}
                                         <span class="badge badge-warning">Rejected review request</span>
                                     {% else %}
-                                        <span class="badge badge-success">{{ invitation.status }}</span>
+                                        <span class="badge badge-success">{{ invitation.review.get_status_display() }}</span>
                                     {% endif %}
                                 </span>
                             </li>
@@ -170,14 +172,14 @@
         <div class='card-body'>
 
             {% if has_change_perm %}
-                <a href="{{ url('home:profile-edit', user__pk=user_pk) }}" class='btn btn-primary w-100 my-1'>
+                <a href="{{ profile.get_edit_url() }}" class='btn btn-primary w-100 my-1'>
                     Edit Profile</a>
                 <a href="{{ url('library:codebase-add') }}" class="btn btn-primary w-100 my-1">
                     Archive a model
                 </a>
             {% endif %}
-            {% if email and request.user.username != username %}
-                <a class='btn btn-primary w-100 my-1' href="mailto:{{ email }}">Send Message</a>
+            {% if profile.email and request.user.username != username %}
+                <a class='btn btn-primary w-100 my-1' href="mailto:{{ profile.email }}">Send Message</a>
                 {#
                 <p class='card-text'>
                     <a href='#' onclick='toggleFollow()' class='btn btn-primary w-100'>Follow</a>
@@ -202,20 +204,20 @@
             #}
             <h2 class='card-title'>Research Interests</h2>
             <p class='card-text tag-list'>
-                {% for keyword in tags %}
+                {% for keyword in profile.tags.all() %}
                     <small>{{ search_tag_btn(keyword, category='users') }}</small>
                 {% else %}
                     none selected
                 {% endfor %}
             </p>
             <p class="card-text">
-                {% if full_member %}
+                {% if profile.full_member %}
                     <span class="badge badge-primary">Full Member</span>
                 {% else %}
                     <span class="badge badge-secondary">Basic Member</span>
                 {% endif %}
-                {% if is_reviewer %}
-                    <span class="badge badge-primary">Reviewer</i>
+                {% if profile.is_reviewer %}
+                    <span class="badge badge-primary">Reviewer</span>
                 {% endif %}
             </p>
         </div>

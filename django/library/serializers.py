@@ -388,9 +388,12 @@ class PeerReviewInvitationSerializer(serializers.ModelSerializer):
 
 class RelatedPeerReviewInvitationSerializer(serializers.ModelSerializer):
     url = serializers.ReadOnlyField(source='get_absolute_url')
-    feedback_list_url = serializers.ReadOnlyField(source='get_feedback_list_url')
+    latest_feedback_url = serializers.SerializerMethodField()
     codebase_release_title = serializers.SerializerMethodField()
     status = serializers.SerializerMethodField()
+
+    def get_latest_feedback_url(self, instance):
+        return instance.latest_feedback.get_absolute_url()
 
     def get_codebase_release_title(self, instance):
         release = instance.review.codebase_release
@@ -404,5 +407,5 @@ class RelatedPeerReviewInvitationSerializer(serializers.ModelSerializer):
     class Meta:
         model = PeerReviewInvitation
         fields = ('date_created', 'optional_message', 'accepted',
-                  'url', 'feedback_list_url', 'codebase_release_title', 'status')
+                  'url', 'latest_feedback_url', 'codebase_release_title', 'status')
         read_only_fields = ('date_created',)

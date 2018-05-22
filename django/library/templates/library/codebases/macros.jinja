@@ -45,32 +45,31 @@
 </div>
 {% endmacro %}
 
-{% macro render_codebase_result(item, detail_url_name) %}
-{% with latest_release_url=url(detail_url_name, identifier=item.identifier) %}
+{% macro render_codebase_result(codebase) %}
     <div class="search-result">
         <div class="row">
             <div class="col-md-12 col-lg-3">
-                <a href="{{ latest_release_url }}">
-                {% if item.featured_image is none %}
+                <a href="{{ codebase.get_absolute_url() }}">
+                {% if not codebase.featured_images.exists() %}
                     <img src="holder.js/175x175?text=No submitted images" class="img-fluid img-thumbnail">
                 {% else %}
-                    {{ image(item.featured_image, "fill-175x175", class="img-fluid img-thumbnail") }}
+                    {{ image(codebase.featured_images.first(), "fill-175x175", class="img-fluid img-thumbnail") }}
                 {% endif %}
                 </a>
             </div>
             <div class="col-md-12 col-lg-9">
                 <div class="title">
                     <h1>
-                        {% if item.peer_reviewed %}
+                        {% if codebase.peer_reviewed %}
                             <span class='badge badge-primary'>Peer reviewed</span>
                         {% endif %}
-                        <a href="{{ latest_release_url }}">{{ item.title }}</a>
-                        {% if not item.live %}
+                        <a href="{{ codebase.get_absolute_url() }}">{{ codebase.title }}</a>
+                        {% if not codebase.live %}
                             <span class="badge badge-danger">Unpublished</span>
                         {% endif %}
                     </h1>
                     <small>
-                        {% for codebase_contributor in item.all_contributors %}
+                        {% for codebase_contributor in codebase.all_contributors %}
                             {% set badge_class='badge-success' if codebase_contributor.user else 'badge-default' %}
                             <a class='badge {{badge_class}} contributor' href="{{ codebase_contributor.profile_url }}">
                                 {{ codebase_contributor.name }}
@@ -79,10 +78,10 @@
                             no contributors listed
                         {% endfor %}
                         |
-                        {% if item.live %}
-                            Published {{ item.first_published_at }}
-                            {% if item.first_published_at != item.last_published_on %}
-                                | Last modified {{ item.last_published_on }}
+                        {% if codebase.live %}
+                            Published {{ codebase.first_published_at }}
+                            {% if codebase.first_published_at != codebase.last_published_on %}
+                                | Last modified {{ codebase.last_published_on }}
                             {% endif %}
                         {% else %}
                             Unpublished
@@ -90,11 +89,11 @@
                     </small>
                 </div>
                 <div class="summary">
-                    {{ item.summarized_description|markdown }}
+                    {{ codebase.summarized_description|markdown }}
                 </div>
-                {% if item.tags %}
+                {% if codebase.tags.exists() %}
                     <div class="tag-list">
-                        {% for tag in item.tags %}
+                        {% for tag in codebase.tags.all() %}
                             {{ search_tag_href(tag, category='codebases') }}
                         {% endfor %}
                     </div>
@@ -102,5 +101,4 @@
             </div>
         </div>
     </div>
-{% endwith %}
 {% endmacro %}
