@@ -11,12 +11,18 @@
             data-target='#navbar-content' aria-controls='navbar-content' aria-expanded='false' aria-label='Toggle navigation'>
             <span class='navbar-toggler-icon'></span>
         </button>
-        <a class='navbar-brand pt-3' href='/'>
-            <span class="logo">CoMSES Network | OpenABM</span>
-            <a href="http://westbigdatahub.org/" target="_blank">
-                <img height='64' src="{{ static("images/logo-westhub-black.png") }}" alt="NSF West Big Data Hub">
-            </a>
-        </a>
+        <span class='navbar-brand'>
+            <div class='row'>
+                <div class='col'>
+                    <a href='/'><span class="logo">CoMSES Network | OpenABM</span></a>
+                </div>
+                <div class='col px-0'>
+                    <a href="http://westbigdatahub.org/" target="_blank">
+                        <img height='70' src="{{ static("images/logo-westhub-black.png") }}" alt="NSF West Big Data Hub">
+                    </a>
+                </div>
+            </div>
+        </span>
         <div class='collapse navbar-collapse flex-md-column my-auto justify-content-end' id='navbar-content'>
             <ul class='navbar-nav ml-auto small'>
                 <li class="nav-item dropdown">
