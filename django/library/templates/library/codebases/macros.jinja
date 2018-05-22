@@ -51,7 +51,7 @@
             <div class="col-md-12 col-lg-3">
                 <a href="{{ codebase.get_absolute_url() }}">
                 {% if not codebase.featured_images.exists() %}
-                    <img src="holder.js/175x175?text=No submitted images" class="img-fluid img-thumbnail">
+                    <img alt='No submitted images' src="holder.js/175x175?text=No submitted images" class="img-fluid img-thumbnail">
                 {% else %}
                     {{ image(codebase.featured_images.first(), "fill-175x175", class="img-fluid img-thumbnail") }}
                 {% endif %}

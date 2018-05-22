@@ -31,7 +31,7 @@
                             <div class='d-block'>
                                 <a href='{{ placement.member_profile.get_absolute_url()}}'>
                                     {% if placement.member_profile.picture is none %}
-                                        <img src="holder.js/150x150?text=No picture available" class="img-fluid mx-auto d-block rounded">
+                                        <img alt='No picture available' src="holder.js/150x150?text=No picture available" class="img-fluid mx-auto d-block rounded">
                                     {% else %}
                                         {{ image(placement.member_profile.picture, "fill-150x150", class="rounded mx-auto img-fluid d-block") }}
                                     {% endif %}

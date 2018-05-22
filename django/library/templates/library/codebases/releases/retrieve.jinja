@@ -153,7 +153,7 @@
                 {% if codebase.get_featured_image() is not none %}
                     {{ image(codebase.get_featured_image(), "width-780", class='d-block img-fluid') }}
                 {% else %}
-                    <img src="holder.js/780x400?text=No uploaded images" class="img-fluid img-thumbnail">
+                    <img alt='No submitted images' src="holder.js/780x400?text=No submitted images" class="img-fluid img-thumbnail">
                 {% endif %}
             </div>
         </div>

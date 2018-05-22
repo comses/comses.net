@@ -40,7 +40,7 @@ const api = new ProfileAPI();
             <h3>Profile image</h3>
             <label style='cursor: pointer; margin-top: -20px;' for='profileUpload' class="form-control-label">
             <img class='mt-3 d-block rounded img-fluid img-thumbnail' alt='Profile Image' v-if="state.avatar" :src="state.avatar">
-            <img class='mt-3 d-block rounded img-fluid img-thumbnail' src='holder.js/150x150?text=Click to edit' v-else>
+            <img class='mt-3 d-block rounded img-fluid img-thumbnail' alt='Click to edit' src='holder.js/150x150?text=Click to edit' v-else>
             </label>
             <input id='profileUpload' type="file" class="d-none form-control-file" @change="uploadImage">
         </div>
