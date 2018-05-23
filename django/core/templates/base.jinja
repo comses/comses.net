@@ -221,7 +221,7 @@
             {# Override this in templates to add extra stylesheets #}
         {% endblock %}
         {# JS section #}
-        <script type="application/javascript" src="{{ static('cookielaw/js/cookielaw.js') }}"></script>
+        <script src="{{ static('cookielaw/js/cookielaw.js') }}"></script>
         {% if is_production() %}
             <!-- Google Tag Manager -->
             <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
