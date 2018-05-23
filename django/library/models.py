@@ -44,6 +44,7 @@ from core.fields import MarkdownField
 from core.models import Platform, MemberProfile
 from core.serializers import PUBLISH_DATE_FORMAT
 from core.templatetags.globals import markdown
+from core.utils import create_email
 from core.view_helpers import search_backend
 from .fs import CodebaseReleaseFsApi, StagingDirectories, FileCategoryDirectories, MessageLevels
 
@@ -1225,9 +1226,8 @@ class PeerReview(models.Model):
         template = get_template('library/review/email/review_complete.jinja')
         markdown_content = template.render(context=dict(review=self))
         subject = 'Peer review complete for release "{}"'.format(self.title)
-        msg = EmailMultiAlternatives(subject, markdown_content, self.submitter.email)
-        msg.attach_alternative(markdown(markdown_content), 'text/html')
-        msg.send()
+        email = create_email(subject=subject, body=markdown_content, to=[self.submitter.email])
+        email.send()
 
         return event
 
@@ -1267,9 +1267,8 @@ class PeerReview(models.Model):
             template = get_template('library/review/email/author_updated_content_for_editor_email.jinja')
             markdown_content = template.render(context=dict(review=self, editor=editor))
             subject = 'Updates to release "{}"'.format(self.title)
-            msg = EmailMultiAlternatives(subject, markdown_content, editor.email)
-            msg.attach_alternative(markdown(markdown_content), 'text/html')
-            msg.send()
+            email = create_email(subject=subject, body=markdown_content, to=[editor.email])
+            email.send()
 
             event.save()
             events.append(event)
@@ -1367,9 +1366,8 @@ class PeerReviewInvitation(models.Model):
         template = get_template('library/review/email/review_invite.jinja')
         markdown_content = template.render(context=dict(invitation=self))
         subject = 'Review Model "{}"'.format(self.review.codebase_release.codebase.title)
-        msg = EmailMultiAlternatives(subject, markdown_content, self.recipient)
-        msg.attach_alternative(markdown(markdown_content), 'text/html')
-        msg.send()
+        email = create_email(subject=subject, body=markdown_content, to=[self.recipient])
+        email.send()
         event = PeerReviewEventLog(review=self.review,
                                    author=self.editor,
                                    message='Invitation from {} to {}'.format(
@@ -1390,9 +1388,8 @@ class PeerReviewInvitation(models.Model):
         template = get_template('library/review/email/author_updated_content_for_reviewer_email.jinja')
         markdown_content = template.render(context=dict(invitation=self))
         subject = 'Updates to release "{}"'.format(self.review.title)
-        msg = EmailMultiAlternatives(subject, markdown_content, self.recipient)
-        msg.attach_alternative(markdown(markdown_content), 'text/html')
-        msg.send()
+        email = create_email(subject=subject, body=markdown_content, to=[self.recipient])
+        email.send()
 
         if save:
             event.save()
@@ -1511,9 +1508,8 @@ class PeerReviewerFeedback(models.Model):
         template = get_template('library/review/email/revision_request.jinja')
         markdown_content = template.render(context=dict(feedback=self))
         subject = 'Revisions requested for release "{}"'.format(self.invitation.review.title)
-        msg = EmailMultiAlternatives(subject, markdown_content, self.invitation.review.submitter.email)
-        msg.attach_alternative(markdown(markdown_content), 'text/html')
-        msg.send()
+        email = create_email(subject=subject, body=markdown_content, to=[self.invitation.review.submitter.email])
+        email.send()
 
         event.save()
         review = self.invitation.review

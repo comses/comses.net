@@ -1,7 +1,11 @@
 from distutils.util import strtobool
 
 from dateutil import parser
+from django.conf import settings
+from django.core.mail import EmailMultiAlternatives
 from django.utils import timezone
+
+from core.templatetags.globals import markdown
 
 
 def parse_datetime(datetime_str: str):
@@ -28,3 +32,9 @@ def confirm(prompt="Continue? (y/n) ", cancel_message="Aborted."):
     if not response_as_bool:
         raise RuntimeError(cancel_message)
     return True
+
+
+def create_email(subject, body, to, from_email=settings.DEFAULT_FROM_EMAIL, **kwargs):
+    email = EmailMultiAlternatives(subject=subject, body=body, to=to, from_email=from_email, **kwargs)
+    email.attach_alternative(markdown(body), 'text/html')
+    return email
