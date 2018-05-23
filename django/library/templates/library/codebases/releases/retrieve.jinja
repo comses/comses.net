@@ -308,11 +308,6 @@
                     Request peer review
                 </button>
             </form>
-        {% elif release.review.is_awaiting_author_changes %}
-            <form method="post" action="{{ release.get_notify_reviewers_of_changes_url() }}">
-            {% csrf_token %}
-            <button type="submit" class="btn btn-danger my-1 w-100">Notify Reviewers of Changes</button>
-            </form>
         {% else %}
             <button type="button" class="btn btn-warning my-1 w-100" disabled>{{ release.review.get_status_display() }}</button>
         {% endif %}

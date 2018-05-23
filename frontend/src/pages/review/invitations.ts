@@ -143,9 +143,11 @@ export class Invitations extends Vue {
         this.candidate_reviewer = null;
         this.candidate_email = '';
         this.refresh();
+        this.$emit('pollEvents');
     }
 
     async resendEmail(invitation_slug) {
         const response = await reviewApi.resendInvitation({slug: this.review_slug, invitation_slug});
+        this.$emit('pollEvents');
     }
 }

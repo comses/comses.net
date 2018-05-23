@@ -18,6 +18,6 @@
 
 {% block content %}
     <div id="app" data-review-slug="{{ review.slug }}" data-status-levels="{{ review.status_levels|to_json }}"
-         data-status="{{ review.status }}"></div>
+         data-status="{{ review.status }}" data-event-list-url="{{ review.get_event_list_url() }}"></div>
     {{ render_bundle('reviews', attrs='async') }}
 {% endblock %}

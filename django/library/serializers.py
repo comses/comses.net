@@ -13,7 +13,7 @@ from core.serializers import (YMD_DATETIME_FORMAT, PUBLISH_DATE_FORMAT, LinkedUs
                               TagSerializer, MarkdownField)
 from home.common_serializers import RelatedMemberProfileSerializer
 from .models import (ReleaseContributor, Codebase, CodebaseRelease, Contributor, License, CodebaseImage, PeerReview,
-                     PeerReviewerFeedback, PeerReviewInvitation, ReviewStatus)
+                     PeerReviewerFeedback, PeerReviewInvitation, ReviewStatus, PeerReviewEventLog)
 
 logger = logging.getLogger(__name__)
 
@@ -290,10 +290,20 @@ class CodebaseReleaseSerializer(serializers.ModelSerializer):
     submitter = LinkedUserSerializer(read_only=True, label='Submitter')
     version_number = serializers.ReadOnlyField()
     release_notes = MarkdownField()
+    urls = serializers.SerializerMethodField()
     review_status = serializers.SerializerMethodField()
 
+    def get_urls(self, instance):
+        review = instance.get_review()
+        review_url = review.get_absolute_url() if review else None
+        notify_reviewers_of_changes_url = instance.get_notify_reviewers_of_changes_url() if review else None
+        return {
+            'review': review_url,
+            'notify_reviewers_of_changes': notify_reviewers_of_changes_url
+        }
+
     def get_review_status(self, instance):
-        return instance.review.status if hasattr(instance, 'review') else None
+        return instance.review.status if instance.get_review() else None
 
     class Meta:
         model = CodebaseRelease
@@ -301,7 +311,7 @@ class CodebaseReleaseSerializer(serializers.ModelSerializer):
                   'release_notes', 'documentation', 'doi', 'download_count', 'embargo_end_date', 'first_published_at',
                   'last_modified', 'last_published_on', 'license', 'live', 'os', 'os_display', 'peer_reviewed',
                   'platforms', 'programming_languages', 'submitted_package', 'submitter', 'codebase', 'review_status',
-                  'version_number', 'id', 'share_url',)
+                  'version_number', 'id', 'share_url', 'urls',)
 
 
 class CodebaseReleaseEditSerializer(CodebaseReleaseSerializer):
@@ -409,3 +419,20 @@ class RelatedPeerReviewInvitationSerializer(serializers.ModelSerializer):
         fields = ('date_created', 'optional_message', 'accepted',
                   'url', 'latest_feedback_url', 'codebase_release_title', 'status')
         read_only_fields = ('date_created',)
+
+
+class AuthorSerializer(serializers.ModelSerializer):
+    absolute_url = serializers.URLField(source='get_absolute_url')
+
+    class Meta:
+        model = MemberProfile
+        fields = ('name', 'absolute_url')
+
+
+class PeerReviewEventLogSerializer(serializers.ModelSerializer):
+    author = AuthorSerializer()
+    date_created = serializers.DateTimeField(format=PUBLISH_DATE_FORMAT)
+
+    class Meta:
+        model = PeerReviewEventLog
+        fields = ('date_created', 'review', 'action', 'author', 'message',)

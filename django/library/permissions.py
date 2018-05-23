@@ -25,7 +25,7 @@ class CodebaseReleaseUnpublishedFilePermissions(ObjectPermissions):
     }
 
 
-class PeerReviewInvitationPermissions(DjangoModelPermissions):
+class ModelDefinitionOnlyPermissions(DjangoModelPermissions):
     perms_map = {
         'GET': ['%(app_label)s.view_%(model_name)s'],
         'OPTIONS': [],

@@ -30,11 +30,11 @@ from .forms import PeerReviewerFeedbackReviewerForm, PeerReviewInvitationReplyFo
 from .fs import FileCategoryDirectories, StagingDirectories, MessageLevels
 from .models import (Codebase, CodebaseRelease, Contributor, CodebaseImage, PeerReview, PeerReviewerFeedback,
                      PeerReviewInvitation, PeerReviewEventLog, ReviewStatus, OPERATING_SYSTEMS)
-from .permissions import CodebaseReleaseUnpublishedFilePermissions, PeerReviewInvitationPermissions
+from .permissions import CodebaseReleaseUnpublishedFilePermissions, ModelDefinitionOnlyPermissions
 from .serializers import (CodebaseSerializer, RelatedCodebaseSerializer, CodebaseReleaseSerializer,
                           ContributorSerializer, ReleaseContributorSerializer, CodebaseReleaseEditSerializer,
                           CodebaseImageSerializer, PeerReviewInvitationSerializer, PeerReviewFeedbackEditorSerializer,
-                          PeerReviewReviewerSerializer)
+                          PeerReviewReviewerSerializer, PeerReviewEventLogSerializer)
 
 logger = logging.getLogger(__name__)
 
@@ -97,7 +97,7 @@ def _change_peer_review_status(request):
 
 class PeerReviewInvitationViewSet(NoDeleteNoUpdateViewSet):
     queryset = PeerReviewInvitation.objects.with_reviewer_statistics()
-    permission_classes = (PeerReviewInvitationPermissions,)
+    permission_classes = (ModelDefinitionOnlyPermissions,)
     renderer_classes = (renderers.JSONRenderer,)
     serializer_class = PeerReviewInvitationSerializer
     lookup_url_kwarg = 'invitation_slug'
@@ -240,6 +240,17 @@ class PeerReviewEditorFeedbackUpdateView(UpdateView):
 
     def get_success_url(self):
         return self.object.invitation.review.get_absolute_url()
+
+
+@api_view(['get'])
+@permission_classes([])
+def list_review_event_log(request, slug):
+    review = get_object_or_404(PeerReview, slug=slug)
+    if not MemberProfile.objects.editors().filter(pk=request.user.member_profile.pk).exists():
+        raise Http404()
+    queryset = review.events.order_by('-date_created')[:10]
+    serializer = PeerReviewEventLogSerializer(queryset, many=True)
+    return Response(serializer.data)
 
 
 class CodebaseFilter(filters.BaseFilterBackend):
@@ -567,8 +578,9 @@ class CodebaseReleaseViewSet(CommonViewSetMixin,
     @transaction.atomic
     def notify_reviewers_of_changes(self, request, **kwargs):
         codebase_release = self.get_object()
-        if hasattr(codebase_release, 'review'):
-            codebase_release.review.author_made_changes()
+        review = codebase_release.get_review()
+        if review:
+            review.author_made_changes()
             if request.accepted_media_type == 'html':
                 messages.success(request, 'Reviewers notified of changes')
                 return HttpResponseRedirect(codebase_release.get_absolute_url())

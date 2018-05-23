@@ -125,6 +125,10 @@ class MemberProfileQuerySet(models.QuerySet):
     def with_tags(self):
         return self.prefetch_related('tagged_members__tag')
 
+    def editors(self):
+        return self.filter(user__in=ComsesGroups.EDITOR.get_group().user_set.all()
+                           .union(User.objects.filter(is_superuser=True)).values_list('id', flat=True))
+
     def public(self, **kwargs):
         return self.filter(user__is_active=True, **kwargs).exclude(user__username__in=EXCLUDED_USERNAMES)
 

@@ -10,7 +10,7 @@ import CodebaseReleaseMetadata from './detail'
 import CodebaseEditForm from '../edit'
 import {store} from './store'
 import {CreateOrUpdateHandler} from "api/handler";
-import {CodebaseReleaseAPI, CodebaseAPI} from "api";
+import {CodebaseReleaseAPI, CodebaseAPI, ReviewEditorAPI} from "api";
 import * as _ from 'lodash';
 import yup from'yup';
 import {Progress} from "pages/codebase/release/progress";
@@ -18,9 +18,11 @@ import {createFormValidator} from "pages/form";
 import {HandlerWithRedirect} from "handler";
 import Input from "components/forms/input";
 import MessageDisplay from "components/message_display";
+import {ConfirmationModal} from "components/confirmation_modal";
 
 const codebaseReleaseAPI = new CodebaseReleaseAPI();
 const codebaseAPI = new CodebaseAPI();
+const reviewAPI = new ReviewEditorAPI();
 
 Vue.use(Vuex);
 Vue.use(VueRouter);
@@ -215,6 +217,7 @@ class PublishModal extends createFormValidator(publishSchema) {
 @Component(<any>{
     store: new Vuex.Store(store),
     components: {
+        'c-confirmation-modal': ConfirmationModal,
         'c-publish-modal': PublishModal,
         'c-codebase-edit-form-popup': CodebaseEditFormPopup,
         'c-progress': Progress
@@ -226,14 +229,14 @@ class PublishModal extends createFormValidator(publishSchema) {
             <div class='pb-2'>
                 <span class="btn btn-primary" data-target="#editCodebaseModal" data-toggle="modal"><i class='fa fa-edit'></i> Edit Common Metadata | Add Images &amp; Media</span>
                 <div class='float-right'>
-                    <span class="btn btn-outline-danger" v-if="!hasReview">Request Review</span>
-                    <span class="btn btn-outline-danger" v-else-if="!isReviewComplete">Notify Reviewers of Changes</span>
+                    <span class="btn btn-outline-danger" v-if="!hasReview" data-target="#peerReviewModal" data-toggle="modal">Request Review</span>
+                    <span class="btn btn-outline-danger" v-else-if="isAwaitingAuthorChanges" data-target="#notifyReviewersModal" data-toggle="modal">Notify Reviewers of Changes</span>
                     <span class="disabled btn btn-info" v-if="isPublished"><i class='fa fa-share-alt'></i> Published</span>
                     <span v-else>
                         <span class="btn btn-danger" data-target="#publishCodebaseReleaseModal" data-toggle="modal"><span class='fa fa-share-alt'></span> Publish</span>
                         <span class="disabled btn btn-info"><i class='fa fa-lock'></i> Private</span>
                     </span>
-                    </div>
+                </div>
             </div>
             <c-progress></c-progress>
             <ul class="nav nav-tabs justify-content-center">
@@ -258,6 +261,17 @@ class PublishModal extends createFormValidator(publishSchema) {
         <div v-else>
             <h1>Loading codebase release metadata...</h1>
         </div>
+        <c-confirmation-modal title="Request Peer Review" base_name="peerReviewModal" :url="peerReviewUrl">
+            <template slot="body">
+                <p>Are you sure you want to request a review of your release?</p>
+            </template>
+        </c-confirmation-modal>
+        <c-confirmation-modal title="Notify Reviewers of Changes" base_name="notifyReviewersModal"
+            :url="notifyReviewersOfChangesUrl">
+            <template slot="body">
+                <p>Do you want to notify any reviewers of changes?</p>
+            </template>
+        </c-confirmation-modal>
     </div>`,
     router: new VueRouter({
         routes: [
@@ -280,8 +294,16 @@ class Workflow extends Vue {
 
     isInitialized: boolean = false;
 
-    get isReviewComplete() {
-        return this.$store.state.release.review_status === 'complete';
+    get peerReviewUrl() {
+        return this.$store.state.release.urls.review;
+    }
+
+    get notifyReviewersOfChangesUrl() {
+        return this.$store.state.release.urls.notify_reviewers_of_changes;
+    }
+
+    get isAwaitingAuthorChanges() {
+        return this.$store.state.release.review_status === 'awaiting_author_changes';
     }
 
     get hasReview() {

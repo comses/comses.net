@@ -1206,6 +1206,9 @@ class PeerReview(models.Model):
             self.save()
         return reverse('library:peer-review-detail', kwargs={'slug': self.slug})
 
+    def get_event_list_url(self):
+        return reverse('library:peer-review-event-list', kwargs={'slug': self.slug})
+
     @transaction.atomic
     def set_complete_status(self, editor: MemberProfile):
         self.status = ReviewStatus.complete.name
@@ -1228,15 +1231,19 @@ class PeerReview(models.Model):
         return event
 
     def author_made_changes(self, changes_made=None):
-        author = self.codebase_release.submitter.member_profile
+        author = self.submitter
         review_event = PeerReviewEventLog(review=self,
                                           action=PeerReviewEvent.author_made_changes.name,
                                           author=author,
                                           message='Author {} made changes'.format(author))
+        review_event.save()
 
         qs = self.invitations.filter(accepted=True)
         if not qs.exists():
-            raise ValidationError('No reviewers has yet accepted an invite. No status update needed.')
+            self.status = ReviewStatus.awaiting_editor_feedback.name
+            self.save()
+            self.send_editor_updated_content_email()
+            return review_event
 
         qs.send_author_updated_content_email()
         self.status = ReviewStatus.awaiting_reviewer_feedback.name
@@ -1244,6 +1251,28 @@ class PeerReview(models.Model):
         if changes_made:
             review_event.add_message(changes_made)
         return review_event
+
+    def send_editor_updated_content_email(self):
+        editors = MemberProfile.objects.filter(pk__in=self.invitations.values_list('editor_id', flat=True))
+        if not editors.exists():
+            editors = MemberProfile.objects.filter(user__is_superuser=True)
+
+        events = []
+        for editor in editors:
+            event = PeerReviewEventLog(review=self,
+                                       author=editor,
+                                       message='Notified editor {} of model update'.format(editor))
+
+            template = get_template('library/review/email/author_updated_content_for_editor_email.jinja')
+            markdown_content = template.render(context=dict(review=self, editor=editor))
+            subject = 'Updates to release "{}"'.format(self.title)
+            msg = EmailMultiAlternatives(subject, markdown_content, editor.email)
+            msg.attach_alternative(markdown(markdown_content), 'text/html')
+            msg.send()
+
+            event.save()
+            events.append(event)
+        return events
 
     @staticmethod
     def get_reviewers(query=None):
@@ -1352,17 +1381,18 @@ class PeerReviewInvitation(models.Model):
         return event.save()
 
     def send_author_updated_content_email(self, save=True):
-        template = get_template('library/review/email/review_invite.jinja')
+        event = PeerReviewEventLog(review=self.review,
+                                   author=self.editor,
+                                   message='Notified reviewer {} of model update'.format(
+                                       self.candidate_reviewer or self.candidate_email))
+
+        template = get_template('library/review/email/author_updated_content_for_reviewer_email.jinja')
         markdown_content = template.render(context=dict(invitation=self))
-        subject = 'Updates to model "{}"'.format(self.review.codebase_release.codebase.title)
+        subject = 'Updates to release "{}"'.format(self.review.title)
         msg = EmailMultiAlternatives(subject, markdown_content, self.recipient)
         msg.attach_alternative(markdown(markdown_content), 'text/html')
         msg.send()
 
-        event = PeerReviewEventLog(review=self.review,
-                                   author=self.editor,
-                                   message='Notified {} of model update'.format(
-                                       self.candidate_reviewer or self.candidate_email))
         if save:
             event.save()
         return event
@@ -1476,7 +1506,6 @@ class PeerReviewerFeedback(models.Model):
                                    action=PeerReviewEvent.editor_called_for_revisions.name,
                                    author=self.invitation.editor,
                                    message='Editor {} called for revisions'.format(self.invitation.editor))
-        event.save()
 
         template = get_template('library/review/email/revision_request.jinja')
         markdown_content = template.render(context=dict(feedback=self))
@@ -1484,6 +1513,11 @@ class PeerReviewerFeedback(models.Model):
         msg = EmailMultiAlternatives(subject, markdown_content, self.invitation.review.submitter.email)
         msg.attach_alternative(markdown(markdown_content), 'text/html')
         msg.send()
+
+        event.save()
+        review = self.invitation.review
+        review.status = ReviewStatus.awaiting_author_changes.name
+        review.save()
 
         return event
 
@@ -1497,7 +1531,7 @@ class PeerReviewerFeedback(models.Model):
 @register_snippet
 class PeerReviewEventLog(models.Model):
     date_created = models.DateTimeField(auto_now_add=True)
-    review = models.ForeignKey(PeerReview, related_name='actions', on_delete=models.CASCADE)
+    review = models.ForeignKey(PeerReview, related_name='events', on_delete=models.CASCADE)
     action = models.CharField(choices=PeerReviewEvent.to_choices(), help_text=_("status action requested."),
                               max_length=32)
     author = models.ForeignKey(MemberProfile, related_name='+', on_delete=models.CASCADE,

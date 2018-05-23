@@ -67,7 +67,11 @@ const initialState: CodebaseReleaseStore = {
             given_name: '',
             username: ''
         },
-        version_number: ''
+        version_number: '',
+        urls: {
+            review: null,
+            notify_reviewers_of_changes: null
+        }
     }
 };
 

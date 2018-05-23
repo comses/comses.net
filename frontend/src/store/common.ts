@@ -164,6 +164,10 @@ interface AbstractCodebaseRelease extends UndefinedWithId {
     submitted_package: string
     submitter: User
     version_number: string
+    urls: {
+        review: string | null,
+        notify_reviewers_of_changes: string | null
+    }
 }
 
 export interface CodebaseRelease extends AbstractCodebaseRelease {

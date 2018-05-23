@@ -26,6 +26,7 @@ if settings.DEPLOY_ENVIRONMENT == Environment.DEVELOPMENT:
 urlpatterns = [
     path('reviews/dashboard/', views.PeerReviewDashboardView.as_view(), name='peer-review-dashboard'),
     path('reviews/<uuid:slug>/editor/', views.PeerReviewEditorView.as_view(), name='peer-review-detail'),
+    path('reviews/<uuid:slug>/events/', views.list_review_event_log, name='peer-review-event-list'),
     path('invitation/<uuid:slug>/',
          views.PeerReviewInvitationUpdateView.as_view(), name='peer-review-invitation'),
     path('invitation/<uuid:slug>/feedback/<int:feedback_id>/edit/',
