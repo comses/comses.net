@@ -60,7 +60,7 @@ export class ConfirmationModal extends Vue {
             const response = await api.axios.post(this.url);
             this.errors = [];
             this.$emit('success', response.data);
-            (<any>$)(this.modalId).modal('hide');
+            (<any>$)(`#${this.modalId}`).modal('hide');
         } catch (e) {
             if (_.isArray(_.get(e, 'response.data'))) {
                 this.errors = e.response.data;

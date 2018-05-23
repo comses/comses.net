@@ -477,23 +477,32 @@ class CodebaseReleaseShareViewSet(CommonViewSetMixin, mixins.RetrieveModelMixin,
         return response
 
 
+@api_view(['post'])
+@permission_classes([])
 @permission_required('library.create_codebaserelease',
                      (CodebaseRelease, 'codebase__identifier', 'identifier', 'version_number', 'version_number'))
+@transaction.atomic
 def create_peer_review(request, identifier, version_number):
-    if request.method == 'POST':
-        codebase_release = get_object_or_404(CodebaseRelease, codebase__identifier=identifier,
-                                             version_number=version_number)
-        review, created = PeerReview.objects.get_or_create(
-            codebase_release=codebase_release,
-            defaults={
-                'submitter': request.user.member_profile
-            }
-        )
+    codebase_release = get_object_or_404(CodebaseRelease, codebase__identifier=identifier,
+                                         version_number=version_number)
+    review, created = PeerReview.objects.get_or_create(
+        codebase_release=codebase_release,
+        defaults={
+            'submitter': request.user.member_profile
+        }
+    )
+    if request.accepted_renderer.format == 'html':
         response = HttpResponseRedirect(codebase_release.get_absolute_url())
         messages.success(request, 'Started peer review process')
         return response
     else:
-        return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
+        return Response(data={
+            'review_status': review.status,
+            'urls': {
+                'review': review.get_absolute_url(),
+                'notify_reviewers_of_changes': codebase_release.get_notify_reviewers_of_changes_url()
+            }
+        }, status=status.HTTP_200_OK)
 
 
 class CodebaseReleaseViewSet(CommonViewSetMixin,
@@ -581,15 +590,15 @@ class CodebaseReleaseViewSet(CommonViewSetMixin,
         review = codebase_release.get_review()
         if review:
             review.author_made_changes()
-            if request.accepted_media_type == 'html':
+            if request.accepted_renderer.format == 'html':
                 messages.success(request, 'Reviewers notified of changes')
                 return HttpResponseRedirect(codebase_release.get_absolute_url())
-            return Response(status=status.HTTP_200_OK)
+            return Response(data=review.status, status=status.HTTP_200_OK)
         else:
             msg = 'Must request a review before reviewers can be contacted'
-            if request.accepted_media_type == 'html':
+            if request.accepted_renderer.format == 'html':
                 response = HttpResponseRedirect(codebase_release.get_absolute_url())
-                messages.add_message(request, messages.ERROR, msg)
+                messages.error(request, msg)
                 return response
             return Response(data={'non_field_errors': [msg]},
                             status=status.HTTP_400_BAD_REQUEST)

@@ -69,6 +69,7 @@ const initialState: CodebaseReleaseStore = {
         },
         version_number: '',
         urls: {
+            request_peer_review: null,
             review: null,
             notify_reviewers_of_changes: null
         }
@@ -153,6 +154,13 @@ export const store = {
         }
     },
     mutations: {
+        setReviewStatus(state, review_status) {
+            state.release.review_status = review_status;
+        },
+        setUrls(state, urls) {
+            state.release.urls.review = urls.review;
+            state.release.urls.notify_reviewers_of_changes = urls.notify_reviewers_of_changes;
+        },
         setCodebase(state, codebase) {
             state.release.codebase = _.cloneDeep(codebase);
         },

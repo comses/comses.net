@@ -261,13 +261,14 @@ class PublishModal extends createFormValidator(publishSchema) {
         <div v-else>
             <h1>Loading codebase release metadata...</h1>
         </div>
-        <c-confirmation-modal title="Request Peer Review" base_name="peerReviewModal" :url="peerReviewUrl">
+        <c-confirmation-modal title="Request Peer Review" base_name="peerReviewModal" :url="requestPeerReviewUrl"
+            @success="handlePeerReviewCreation">
             <template slot="body">
                 <p>Are you sure you want to request a review of your release?</p>
             </template>
         </c-confirmation-modal>
         <c-confirmation-modal title="Notify Reviewers of Changes" base_name="notifyReviewersModal"
-            :url="notifyReviewersOfChangesUrl">
+            :url="notifyReviewersOfChangesUrl" @success="setReviewStatus">
             <template slot="body">
                 <p>Do you want to notify any reviewers of changes?</p>
             </template>
@@ -294,8 +295,8 @@ class Workflow extends Vue {
 
     isInitialized: boolean = false;
 
-    get peerReviewUrl() {
-        return this.$store.state.release.urls.review;
+    get requestPeerReviewUrl() {
+        return this.$store.state.release.urls.request_peer_review;
     }
 
     get notifyReviewersOfChangesUrl() {
@@ -354,6 +355,19 @@ class Workflow extends Vue {
 
     setCodebase(codebase) {
         this.$store.commit('setCodebase', codebase);
+    }
+
+    setReviewStatus(review_status) {
+        this.$store.commit('setReviewStatus', review_status);
+    }
+
+    setUrls(urls) {
+        this.$store.commit('setUrls', urls);
+    }
+
+    handlePeerReviewCreation(data) {
+        this.setReviewStatus(data.review_status);
+        this.setUrls(data.urls);
     }
 }
 

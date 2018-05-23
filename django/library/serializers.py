@@ -294,10 +294,12 @@ class CodebaseReleaseSerializer(serializers.ModelSerializer):
     review_status = serializers.SerializerMethodField()
 
     def get_urls(self, instance):
+        request_peer_review_url = instance.get_request_peer_review_url()
         review = instance.get_review()
         review_url = review.get_absolute_url() if review else None
         notify_reviewers_of_changes_url = instance.get_notify_reviewers_of_changes_url() if review else None
         return {
+            'request_peer_review': request_peer_review_url,
             'review': review_url,
             'notify_reviewers_of_changes': notify_reviewers_of_changes_url
         }
@@ -431,7 +433,7 @@ class AuthorSerializer(serializers.ModelSerializer):
 
 class PeerReviewEventLogSerializer(serializers.ModelSerializer):
     author = AuthorSerializer()
-    date_created = serializers.DateTimeField(format=PUBLISH_DATE_FORMAT)
+    date_created = serializers.DateTimeField(format='%I:%M%p %b %d, %Y')
 
     class Meta:
         model = PeerReviewEventLog

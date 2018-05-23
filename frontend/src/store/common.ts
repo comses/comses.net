@@ -165,6 +165,7 @@ interface AbstractCodebaseRelease extends UndefinedWithId {
     submitter: User
     version_number: string
     urls: {
+        request_peer_review: string | null
         review: string | null,
         notify_reviewers_of_changes: string | null
     }
