@@ -5,6 +5,7 @@ from typing import Optional
 
 from allauth.socialaccount import providers
 from django.conf import settings
+from django.contrib.sites.models import Site
 from django.forms.widgets import CheckboxInput
 from django.template import defaultfilters
 from django.template.loader import render_to_string
@@ -18,6 +19,14 @@ from core.fields import render_sanitized_markdown
 from core.serializers import FULL_DATE_FORMAT
 
 logger = logging.getLogger(__name__)
+
+
+@library.global_function
+def build_absolute_uri(relative_url):
+    domain = Site.objects.get_current().domain
+    protocol = 'https' if '.comses.net' in settings.ALLOWED_HOSTS else 'http'
+    absolute_url = '{}://{}{}'.format(protocol, domain, relative_url)
+    return absolute_url
 
 
 @library.global_function

@@ -4,6 +4,6 @@
 
 Dear {{ invitation.invitee }},
 
-You have been requested to review the model [{{ codebase.title }}]({{ release.share_url }}).
+You have been requested to review the model [{{ codebase.title }}]({{ build_absolute_uri(release.share_url) }}).
 
-To accept or decline this invitation click [here]({{ invitation.get_absolute_url() }}").
+To accept or decline this invitation click [here]({{ build_absolute_uri(invitation.get_absolute_url()) }}").
