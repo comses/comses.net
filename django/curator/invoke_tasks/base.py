@@ -25,9 +25,10 @@ def deny_robots(ctx):
 
 
 @task(aliases=['cs'])
-def collectstatic(ctx):
+def collectstatic(ctx, reload_uwsgi=False):
     dj(ctx, 'collectstatic -c --noinput', pty=True)
-    ctx.run('touch ./core/wsgi.py')
+    if reload_uwsgi:
+        restart_uwsgi(ctx)
 
 
 @task(aliases=['uindex'])
@@ -35,7 +36,12 @@ def update_index(ctx):
     dj(ctx, 'update_index', pty=True)
 
 
-@task(aliases=['prep'], pre=[collectstatic, update_index])
+@task(aliases=['restart'])
+def restart_uwsgi(ctx):
+    ctx.run('touch ./core/wsgi.py')
+
+
+@task(aliases=['prep'], pre=[collectstatic, update_index], post=[restart_uwsgi])
 def prepare(ctx):
     pass
 
