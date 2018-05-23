@@ -477,34 +477,6 @@ class CodebaseReleaseShareViewSet(CommonViewSetMixin, mixins.RetrieveModelMixin,
         return response
 
 
-@api_view(['post'])
-@permission_classes([])
-@permission_required('library.create_codebaserelease',
-                     (CodebaseRelease, 'codebase__identifier', 'identifier', 'version_number', 'version_number'))
-@transaction.atomic
-def create_peer_review(request, identifier, version_number):
-    codebase_release = get_object_or_404(CodebaseRelease, codebase__identifier=identifier,
-                                         version_number=version_number)
-    review, created = PeerReview.objects.get_or_create(
-        codebase_release=codebase_release,
-        defaults={
-            'submitter': request.user.member_profile
-        }
-    )
-    if request.accepted_renderer.format == 'html':
-        response = HttpResponseRedirect(codebase_release.get_absolute_url())
-        messages.success(request, 'Started peer review process')
-        return response
-    else:
-        return Response(data={
-            'review_status': review.status,
-            'urls': {
-                'review': review.get_absolute_url(),
-                'notify_reviewers_of_changes': codebase_release.get_notify_reviewers_of_changes_url()
-            }
-        }, status=status.HTTP_200_OK)
-
-
 class CodebaseReleaseViewSet(CommonViewSetMixin,
                              NoDeleteViewSet):
     namespace = 'library/codebases/releases'
@@ -602,6 +574,30 @@ class CodebaseReleaseViewSet(CommonViewSetMixin,
                 return response
             return Response(data={'non_field_errors': [msg]},
                             status=status.HTTP_400_BAD_REQUEST)
+
+    @action(detail=True, methods=['post'])
+    @transaction.atomic
+    def request_peer_review(self, request, identifier, version_number):
+        codebase_release = get_object_or_404(CodebaseRelease, codebase__identifier=identifier,
+                                             version_number=version_number)
+        review, created = PeerReview.objects.get_or_create(
+            codebase_release=codebase_release,
+            defaults={
+                'submitter': request.user.member_profile
+            }
+        )
+        if request.accepted_renderer.format == 'html':
+            response = HttpResponseRedirect(codebase_release.get_absolute_url())
+            messages.success(request, 'Started peer review process')
+            return response
+        else:
+            return Response(data={
+                'review_status': review.status,
+                'urls': {
+                    'review': review.get_absolute_url(),
+                    'notify_reviewers_of_changes': codebase_release.get_notify_reviewers_of_changes_url()
+                }
+            }, status=status.HTTP_200_OK)
 
     @action(detail=True, methods=['get'])
     @transaction.atomic

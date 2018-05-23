@@ -42,8 +42,6 @@ urlpatterns = [
          name='codebaserelease-draft'),
     path('codebases/<slug:identifier>/version/<int:version_number>/',
          views.CodebaseVersionRedirectView.as_view(), name='version-redirect'),
-    re_path(r'^codebases/(?P<identifier>[\w\-.]+)/releases/(?P<version_number>\d+\.\d+\.\d+)/peer_review/$',
-            views.create_peer_review, name='codebaserelease-request-peer-review'),
     re_path(r'^codebases/(?P<identifier>[\w\-.]+)/releases/(?P<version_number>\d+\.\d+\.\d+)/edit/$',
             views.CodebaseReleaseFormUpdateView.as_view(), name='codebaserelease-edit'),
     path('codebases/<slug:identifier>/releases/add/',
