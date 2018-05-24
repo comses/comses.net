@@ -35,20 +35,20 @@
         <p>
             <b>Private Reviewer Notes</b>
         </p>
-        {{ feedback.private_reviewer_notes|markdown }}
+        {{ feedback.private_reviewer_notes.rendered|safe }}
     {% endif %}
 
     {% if include_editor %}
         <p>
             <b>Notes to Author</b>
         </p>
-        {{ feedback.notes_to_author|markdown }}
+        {{ feedback.notes_to_author.rendered|safe }}
 
         {% if include_private %}
             <p>
                 <b>Private Editor Notes</b>
             </p>
-            {{ feedback.private_editor_notes|markdown }}
+            {{ feedback.private_editor_notes.rendered|safe }}
         {% endif %}
     {% endif %}
 
