@@ -1191,6 +1191,10 @@ class PeerReview(models.Model):
     def is_awaiting_author_changes(self):
         return ReviewStatus.awaiting_author_changes.name == self.status
 
+    @property
+    def is_awaiting_reviewer_changes(self):
+        return ReviewStatus.awaiting_reviewer_changes.name == self.status
+
     def get_status_display(self):
         return ReviewStatus[self.status].value
 
