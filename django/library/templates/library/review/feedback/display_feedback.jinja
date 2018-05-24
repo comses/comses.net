@@ -2,7 +2,7 @@
     fa {% if q %}fa-check text-success{% else %}fa-times text-danger{% endif %}
 {% endmacro %}
 
-{% macro display_reviewer_feedback(feedback) %}
+{% macro display_reviewer_feedback(feedback, include_private=false, include_editor=false) %}
     <h1>Reviewer Comments</h1>
     <p>
         <b>Has Clean Code:</b>
@@ -30,4 +30,27 @@
         <b>Runnable Comments:</b>
     </p>
     {{ feedback.runnable_comments|markdown }}
+
+    {% if include_private %}
+        <p>
+            <b>Private Reviewer Notes</b>
+        </p>
+        {{ feedback.private_reviewer_notes|markdown }}
+    {% endif %}
+
+    {% if include_editor %}
+        <p>
+            <b>Notes to Author</b>
+        </p>
+        {{ feedback.notes_to_author|markdown }}
+
+        {% if include_private %}
+            <p>
+                <b>Private Editor Notes</b>
+            </p>
+            {{ feedback.private_editor_notes|markdown }}
+        {% endif %}
+    {% endif %}
+
+
 {% endmacro %}

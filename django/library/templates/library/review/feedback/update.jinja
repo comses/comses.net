@@ -31,7 +31,7 @@
     {% for feedback in feedback_set %}
         <div class="card">
             <div class="card-body">
-                {{ display_reviewer_feedback(feedback) }}
+                {{ display_reviewer_feedback(feedback, include_editor=true) }}
             </div>
         </div>
     {% else %}
