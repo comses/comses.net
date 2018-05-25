@@ -25,7 +25,7 @@ from core.views import (CommonViewSetMixin, FormUpdateView, FormCreateView, Smal
                         CaseInsensitiveOrderingFilter, NoDeleteViewSet,
                         NoDeleteNoUpdateViewSet, HtmlNoDeleteViewSet)
 from .forms import PeerReviewerFeedbackReviewerForm, PeerReviewInvitationReplyForm, \
-    PeerReviewInvitationForm, PeerReviewerFeedbackEditorForm
+    PeerReviewInvitationForm, PeerReviewerFeedbackEditorForm, PeerReviewerFeedbackReviewerSaveForm
 from .fs import FileCategoryDirectories, StagingDirectories, MessageLevels
 from .models import (Codebase, CodebaseRelease, Contributor, CodebaseImage, PeerReview, PeerReviewerFeedback,
                      PeerReviewInvitation, PeerReviewEventLog, ReviewStatus, OPERATING_SYSTEMS)
@@ -178,6 +178,12 @@ class PeerReviewFeedbackUpdateView(UpdateView):
     context_object_name = 'review_feedback'
     form_class = PeerReviewerFeedbackReviewerForm
     template_name = 'library/review/feedback/update.jinja'
+
+    def get_form_class(self):
+        if self.request.method == 'POST':
+            submit = self.get_submitted_query_param() in ['True', True, ['True']]
+            return PeerReviewerFeedbackReviewerForm if submit else PeerReviewerFeedbackReviewerSaveForm
+        return PeerReviewerFeedbackReviewerForm
 
     def get_context_data(self, **kwargs):
         feedback_set = PeerReviewerFeedback.objects \

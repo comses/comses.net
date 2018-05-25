@@ -3,8 +3,6 @@ import pathlib
 import io
 import shutil
 from django.conf import settings
-from django.contrib.auth.models import User
-from django.forms import forms
 from django.test import TestCase
 from django.urls import reverse
 from guardian.shortcuts import assign_perm
@@ -17,8 +15,8 @@ from core.tests.permissions_base import BaseViewSetTestCase, create_perm_str, Re
 from library.forms import PeerReviewerFeedbackReviewerForm
 from library.fs import FileCategoryDirectories
 from library.models import Codebase, ReviewStatus
-from .base import CodebaseFactory, ContributorFactory, ReleaseContributorFactory, PeerReviewFactory, \
-    PeerReviewInvitationFactory
+from library.tests.base import ReviewSetup
+from .base import CodebaseFactory, ContributorFactory, ReleaseContributorFactory, PeerReviewInvitationFactory
 from ..views import CodebaseViewSet, CodebaseReleaseViewSet
 
 
@@ -382,22 +380,6 @@ class CodebaseReleaseRenderPageTestCase(TestCase):
                                            kwargs={'identifier': self.codebase.identifier,
                                                    'version_number': self.codebase_release.version_number}))
         self.assertTrue(response.status_code, True)
-
-
-class ReviewSetup:
-    @classmethod
-    def setUpReviewData(cls):
-        cls.user_factory = UserFactory()
-        cls.editor = cls.user_factory.create().member_profile
-        cls.reviewer = cls.user_factory.create().member_profile
-        cls.submitter = cls.user_factory.create()
-
-        cls.codebase_factory = CodebaseFactory(cls.submitter)
-        cls.codebase = cls.codebase_factory.create()
-        cls.codebase_release = cls.codebase.create_release(initialize=False)
-        cls.review_factory = PeerReviewFactory(submitter=cls.codebase.submitter.member_profile,
-                                               codebase_release=cls.codebase_release)
-        cls.review = cls.review_factory.create()
 
 
 class PeerReviewInvitationTestCase(ReviewSetup, ResponseStatusCodesMixin, TestCase):

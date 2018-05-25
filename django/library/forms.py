@@ -1,9 +1,8 @@
 import logging
 
 from django import forms
+from django.utils.translation import ugettext_lazy as _
 
-from core.models import MemberProfile
-from core.widgets import MarkdownTextarea
 from .models import PeerReview, PeerReviewerFeedback, PeerReviewInvitation, PeerReviewEventLog
 
 logger = logging.getLogger(__name__)
@@ -81,6 +80,22 @@ class PeerReviewerFeedbackReviewerForm(CheckCharFieldLengthMixin, forms.ModelFor
         cleaned_data = super().clean()
         if self.instance.invitation.review.is_complete:
             raise forms.ValidationError('Feedback cannot be updated on a complete review')
+
+        if cleaned_data['reviewer_submitted'] and cleaned_data['recommendation']:
+            has_narrative_documentation = cleaned_data['has_narrative_documentation']
+            has_clean_code = cleaned_data['has_clean_code']
+            is_runnable = cleaned_data['is_runnable']
+
+            checklist_errors = []
+            if not has_narrative_documentation:
+                checklist_errors.append(_('Recommended releases must have narrative documentation'))
+            if not has_clean_code:
+                checklist_errors.append(_('Recommended releases must have clean code'))
+            if not is_runnable:
+                checklist_errors.append(_('Recommended releases must have runnable code'))
+
+            if checklist_errors:
+                raise forms.ValidationError([forms.ValidationError(e) for e in checklist_errors])
         return cleaned_data
 
     def save(self, commit=True):
@@ -105,6 +120,13 @@ class PeerReviewerFeedbackReviewerForm(CheckCharFieldLengthMixin, forms.ModelFor
         widgets = {
             'reviewer_submitted': forms.HiddenInput()
         }
+
+
+class PeerReviewerFeedbackReviewerSaveForm(forms.ModelForm):
+    class Meta:
+        model = PeerReviewerFeedback
+        fields = PeerReviewerFeedbackReviewerForm.Meta.fields
+        widgets = PeerReviewerFeedbackReviewerForm.Meta.widgets
 
 
 class PeerReviewerFeedbackEditorForm(CheckCharFieldLengthMixin, forms.ModelForm):

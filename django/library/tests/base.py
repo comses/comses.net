@@ -4,6 +4,7 @@ from uuid import UUID
 from django.contrib.auth.models import User
 from django.test import TestCase
 
+from core.tests.base import UserFactory
 from library.models import Codebase, CodebaseRelease, ReleaseContributor, Contributor, PeerReviewerFeedback, \
     PeerReviewInvitation, PeerReview
 from library.serializers import CodebaseSerializer
@@ -164,3 +165,18 @@ class PeerReviewInvitationFactory:
         invitation.save()
         return invitation
 
+
+class ReviewSetup:
+    @classmethod
+    def setUpReviewData(cls):
+        cls.user_factory = UserFactory()
+        cls.editor = cls.user_factory.create().member_profile
+        cls.reviewer = cls.user_factory.create().member_profile
+        cls.submitter = cls.user_factory.create()
+
+        cls.codebase_factory = CodebaseFactory(cls.submitter)
+        cls.codebase = cls.codebase_factory.create()
+        cls.codebase_release = cls.codebase.create_release(initialize=False)
+        cls.review_factory = PeerReviewFactory(submitter=cls.codebase.submitter.member_profile,
+                                               codebase_release=cls.codebase_release)
+        cls.review = cls.review_factory.create()
