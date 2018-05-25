@@ -55,8 +55,12 @@
                     {{ display_reviewer_feedback(feedback, include_editor=true) }}
                 </div>
             </div>
-        {% else %}
-            <div class="alert alert-info">No other feedback given</div>
         {% endfor %}
+
+        {{ display_reviewer_feedback(review_feedback, include_editor=true) }}
+
+        {% if not feedback_set and not review_feedback %}
+            <div class="alert alert-info">No other feedback given</div>
+        {% endif %}
     {% endif %}
 {% endblock %}
