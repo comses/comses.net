@@ -138,7 +138,7 @@
                                     <a href='{{ invitation.get_absolute_url() }}'>
                                         {{ invitation.review.title }}
                                     </a>
-                                {% elif invitation.accepted and not invitation.review.is_complete %}
+                                {% elif invitation.accepted %}
                                     <a href="{{ invitation.latest_feedback.get_absolute_url() }}">
                                         {{ invitation.review.title }}
                                     </a>
@@ -149,7 +149,9 @@
                                 <span class="float-right">
                                     {% if invitation.accepted is none %}
                                         <span class="badge badge-warning">Waiting for response</span>
-                                    {% elif not invitation.accepted or invitation.review.is_complete %}
+                                    {% elif invitation.review.is_complete %}
+                                        <span class="badge badge-light">Review complete</span>
+                                    {% elif not invitation.accepted %}
                                         <span class="badge badge-secondary">Rejected review request</span>
                                     {% elif invitation.review.is_awaiting_reviewer_changes %}
                                         <span class="badge badge-warning">{{ invitation.review.get_status_display() }}</span>
