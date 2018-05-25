@@ -1226,6 +1226,8 @@ class PeerReview(models.Model):
                                    author=editor,
                                    message=message)
         event.save()
+        self.codebase_release.peer_reviewed = True
+        self.codebase_release.save()
 
         template = get_template('library/review/email/review_complete.jinja')
         markdown_content = template.render(context=dict(review=self))
@@ -1323,9 +1325,7 @@ class PeerReviewInvitation(models.Model):
     review = models.ForeignKey(PeerReview, related_name='invitations', on_delete=models.CASCADE)
     editor = models.ForeignKey(MemberProfile, related_name='+', on_delete=models.PROTECT)
     candidate_reviewer = models.ForeignKey(MemberProfile, related_name='peer_review_invitation_set',
-                                           null=True, blank=True,
-                                           on_delete=models.CASCADE)
-    candidate_email = models.EmailField(blank=True, help_text=_("Contact email for candidate non-member reviewer"))
+                                           blank=True, on_delete=models.CASCADE)
     optional_message = MarkdownField(help_text=_("Optional markdown text to be added to the email"))
     slug = models.UUIDField(unique=True, default=uuid.uuid4, editable=False)
     accepted = models.NullBooleanField(verbose_name=_("Accept or Decline Invitation"),
@@ -1344,22 +1344,19 @@ class PeerReviewInvitation(models.Model):
 
     @property
     def email(self):
-        if self.candidate_reviewer is not None:
-            return self.candidate_reviewer.email
-        else:
-            return self.candidate_email
+        return self.candidate_reviewer.email
 
     @property
     def invitee(self):
-        return self.candidate_reviewer.name if self.candidate_reviewer else 'comses reviewer'
+        return self.candidate_reviewer.name
 
     @property
     def invitee_title(self):
-        return self.candidate_reviewer.name if self.candidate_reviewer else self.candidate_email
+        return self.candidate_reviewer.name
 
     @property
     def recipient(self):
-        return self.candidate_email or self.candidate_reviewer.email
+        return self.candidate_reviewer.email
 
     @property
     def from_email(self):
@@ -1376,7 +1373,7 @@ class PeerReviewInvitation(models.Model):
                                    author=self.editor,
                                    message='Invitation from {} to {}'.format(
                                        self.editor,
-                                       self.candidate_reviewer or self.candidate_email))
+                                       self.candidate_reviewer))
         if resend:
             event.action = PeerReviewEvent.invitation_sent.name
         else:
@@ -1387,7 +1384,7 @@ class PeerReviewInvitation(models.Model):
         event = PeerReviewEventLog(review=self.review,
                                    author=self.editor,
                                    message='Notified reviewer {} of model update'.format(
-                                       self.candidate_reviewer or self.candidate_email))
+                                       self.candidate_reviewer))
 
         template = get_template('library/review/email/author_updated_content_for_reviewer_email.jinja')
         markdown_content = template.render(context=dict(invitation=self))
@@ -1488,7 +1485,7 @@ class PeerReviewerFeedback(models.Model):
         review = self.invitation.review
         review.status = ReviewStatus.awaiting_editor_feedback.name
         review.save()
-        reviewer = self.invitation.candidate_reviewer or self.invitation.candidate_email
+        reviewer = self.invitation.candidate_reviewer
         release = self.invitation.review.codebase_release
         event = PeerReviewEventLog(review=self.invitation.review,
                                    action=PeerReviewEvent.reviewer_gave_feedback.name,

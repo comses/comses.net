@@ -18,18 +18,8 @@ const reviewApi = new ReviewEditorAPI();
         </p>
         <div class="container-fluid" v-if="!candidate_reviewer">
             <div class="row">
-                <div class="col-xs-12 col-sm-10 px-0">
-                    <div class="form-group mb-0" v-if="candidate_is_external">
-                        <input type="email" class="form-control" placeholder="Enter email" v-model="candidate_email">
-                    </div>
-                    <c-reviewer-finder v-model="candidate_reviewer" v-else></c-reviewer-finder>
-                </div>
-                <div class="col-xs-12 col-sm-2 px-0">
-                    <div class="btn-group w-100 h-100" v-if="candidate_is_external">
-                        <button class="btn btn-block btn-outline-secondary" @click="sendEmail">Invite</button>
-                        <button class="btn btn-block btn-outline-info mt-0 h-100" @click="candidate_is_external = false">Find Reviewer</button>
-                    </div>
-                    <button class="btn btn-outline-info h-100 w-100" @click="candidate_is_external = true" v-else>Email Only</button>
+                <div class="col-12 px-0">
+                    <c-reviewer-finder v-model="candidate_reviewer"></c-reviewer-finder>
                 </div>
             </div>
         </div>
@@ -87,7 +77,6 @@ export class Invitations extends Vue {
     candidate_email = '';
     invitations: Array<any> = [];
     feedback: Array<any> = [];
-    candidate_is_external = false;
 
     @Prop()
     review_slug: string;
@@ -134,14 +123,9 @@ export class Invitations extends Vue {
     }
 
     async sendEmail() {
-        if (this.candidate_is_external) {
-            const response = await reviewApi.sendInvitation({review_uuid: this.review_slug}, {email: this.candidate_email});
-        } else {
-            const response = await reviewApi.sendInvitation({review_uuid: this.review_slug}, this.candidate_reviewer);
-        }
+        const response = await reviewApi.sendInvitation({review_uuid: this.review_slug}, this.candidate_reviewer);
 
         this.candidate_reviewer = null;
-        this.candidate_email = '';
         this.refresh();
         this.$emit('pollEvents');
     }
