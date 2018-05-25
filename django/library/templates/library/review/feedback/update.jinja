@@ -16,33 +16,47 @@
 {% endblock %}
 
 {% block content %}
-    <p>
-        Enter feedback about a release here. You can save your progress with the save button. Pressing the submit button
-        saves your feedback and notifies the editor that you want the editor to look at it. Your feedback can be edited
-        after you have submitted but you should avoid removing any feedback comments (only add to existing comments).
-    </p>
+    {% if not review_feedback.invitation.review.is_complete %}
+        <p>
+            Enter feedback about a release here. You can save your progress with the save button. Pressing the submit button
+            saves your feedback and notifies the editor that you want the editor to look at it. Your feedback can be edited
+            after you have submitted but you should avoid removing any feedback comments (only add to existing comments).
+        </p>
 
-    <h3>Other Reviewer Feedback</h3>
+        <h3>Other Reviewer Feedback</h3>
 
-    <p>
-        Previous feedback given by other reviewers is displayed here to provide context for the review.
-    </p>
+        <p>
+            Previous feedback given by other reviewers is displayed here to provide context for the review.
+        </p>
 
-    {% for feedback in feedback_set %}
-        <div class="card">
-            <div class="card-body">
-                {{ display_reviewer_feedback(feedback, include_editor=true) }}
+        {% for feedback in feedback_set %}
+            <div class="card">
+                <div class="card-body">
+                    {{ display_reviewer_feedback(feedback, include_editor=true) }}
+                </div>
             </div>
-        </div>
+        {% else %}
+            <div class="alert alert-info">No other feedback given</div>
+        {% endfor %}
+
+        <h3>Your Feedback</h3>
+
+        <form>
+            {% include 'includes/form.jinja' %}
+            <button type="submit" class="btn btn-secondary" formaction="" formmethod="post">Save</button>
+            <button type="submit" class="btn btn-primary" formaction="?submit" formmethod="post">Submit</button>
+        </form>
     {% else %}
-        <div class="alert alert-info">No other feedback given</div>
-    {% endfor %}
+        <p>Peer review process is complete. Please see below for a record of the feedback</p>
 
-    <h3>Your Feedback</h3>
-
-    <form>
-        {% include 'includes/form.jinja' %}
-        <button type="submit" class="btn btn-secondary" formaction="" formmethod="post">Save</button>
-        <button type="submit" class="btn btn-primary" formaction="?submit" formmethod="post">Submit</button>
-    </form>
+        {% for feedback in feedback_set %}
+            <div class="card">
+                <div class="card-body">
+                    {{ display_reviewer_feedback(feedback, include_editor=true) }}
+                </div>
+            </div>
+        {% else %}
+            <div class="alert alert-info">No other feedback given</div>
+        {% endfor %}
+    {% endif %}
 {% endblock %}

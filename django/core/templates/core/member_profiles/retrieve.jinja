@@ -138,7 +138,7 @@
                                     <a href='{{ invitation.get_absolute_url() }}'>
                                         {{ invitation.review.title }}
                                     </a>
-                                {% elif invitation.accepted %}
+                                {% elif invitation.accepted and not invitation.review.is_complete %}
                                     <a href="{{ invitation.latest_feedback.get_absolute_url() }}">
                                         {{ invitation.review.title }}
                                     </a>

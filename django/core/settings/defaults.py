@@ -288,7 +288,7 @@ LOGGING = {
             'propagate': False,
         },
         'invoke': {
-            'level': 'DEBUG',
+            'level': 'INFO',
             'handlers': ['console', 'rollingfile'],
             'propagate': False,
         },

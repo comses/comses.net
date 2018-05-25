@@ -4,6 +4,7 @@ import io
 import shutil
 from django.conf import settings
 from django.contrib.auth.models import User
+from django.forms import forms
 from django.test import TestCase
 from django.urls import reverse
 from guardian.shortcuts import assign_perm
@@ -13,8 +14,9 @@ from rest_framework.test import APIClient
 
 from core.tests.base import UserFactory
 from core.tests.permissions_base import BaseViewSetTestCase, create_perm_str, ResponseStatusCodesMixin, ApiAccountMixin
+from library.forms import PeerReviewerFeedbackReviewerForm
 from library.fs import FileCategoryDirectories
-from library.models import Codebase
+from library.models import Codebase, ReviewStatus
 from .base import CodebaseFactory, ContributorFactory, ReleaseContributorFactory, PeerReviewFactory, \
     PeerReviewInvitationFactory
 from ..views import CodebaseViewSet, CodebaseReleaseViewSet
@@ -456,6 +458,14 @@ class PeerReviewFeedbackTestCase(ReviewSetup, ResponseStatusCodesMixin, TestCase
         self.invitation.decline()
         response_decline = self.client.get(feedback.get_absolute_url())
         self.assertResponsePermissionDenied(response_decline)
+
+    def test_cannot_update_feedback_on_complete_review(self):
+        feedback, _ = self.invitation.accept()
+        self.review.status = ReviewStatus.complete
+        self.review.save()
+        data = PeerReviewerFeedbackReviewerForm(instance=feedback).initial
+        form = PeerReviewerFeedbackReviewerForm(data.copy(), instance=feedback)
+        self.assertFalse(form.is_valid())
 
 
 def tearDownModule():

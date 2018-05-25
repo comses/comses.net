@@ -7,19 +7,18 @@ from django.core.exceptions import PermissionDenied
 from django.db import transaction
 from django.http import FileResponse, Http404, HttpResponseRedirect, QueryDict
 from django.shortcuts import get_object_or_404, redirect
-from django.urls import resolve, reverse
+from django.urls import resolve
 from django.views import View
 from django.views.generic.base import RedirectView
 from django.views.generic.detail import DetailView
-from django.views.generic.edit import UpdateView, FormView, CreateView
+from django.views.generic.edit import UpdateView
 from django_jinja.views.generic import ListView
-from guardian.decorators import permission_required
 from rest_framework import viewsets, generics, renderers, status, permissions, filters, mixins
 from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.exceptions import PermissionDenied as DrfPermissionDenied, ValidationError
 from rest_framework.response import Response
 
-from core.models import MemberProfile, ComsesGroups
+from core.models import MemberProfile
 from core.permissions import ViewRestrictedObjectPermissions
 from core.view_helpers import add_change_delete_perms, get_search_queryset
 from core.views import (CommonViewSetMixin, FormUpdateView, FormCreateView, SmallResultSetPagination,
@@ -95,9 +94,16 @@ def _change_peer_review_status(request):
     return Response(data={'status': new_status.name}, status=status.HTTP_200_OK)
 
 
+class NestedPeerReviewInvitation(permissions.BasePermission):
+    def has_permission(self, request, view):
+        if request.user.has_perm('library.change_peerreview'):
+            return True
+        raise DrfPermissionDenied
+
+
 class PeerReviewInvitationViewSet(NoDeleteNoUpdateViewSet):
     queryset = PeerReviewInvitation.objects.with_reviewer_statistics()
-    permission_classes = (ModelDefinitionOnlyPermissions,)
+    permission_classes = (NestedPeerReviewInvitation,)
     renderer_classes = (renderers.JSONRenderer,)
     serializer_class = PeerReviewInvitationSerializer
     lookup_url_kwarg = 'invitation_slug'
@@ -227,16 +233,6 @@ class PeerReviewEditorFeedbackUpdateView(UpdateView):
             queryset = PeerReviewerFeedback.objects.all()
         feedback = get_object_or_404(queryset, invitation__slug=self.kwargs['slug'], id=self.kwargs['feedback_id'])
         return feedback
-
-    def form_valid(self, form):
-        self.object = form.save()
-        query_params = self.request.GET
-        accept = query_params.get('accept')
-        if accept is not None:
-            self.object.invitation.review.set_complete_status(editor=self.request.user.member_profile)
-        else:
-            self.object.editor_called_for_revisions()
-        return HttpResponseRedirect(self.get_success_url())
 
     def get_success_url(self):
         return self.object.invitation.review.get_absolute_url()

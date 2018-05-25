@@ -19,7 +19,7 @@ const reviewApi = new ReviewEditorAPI();
 
                 <div class="col-xs-12 col-sm-6">
                     <span class="badge badge-warning" v-if="!feedback.reviewer_submitted && !feedback.editor_submitted">Reviewer Has Not Submitted</span>
-                    <span class="badge badge-secondary" v-else-if="feedback.reviewer_submitted && !feedback.editor_submitted">Reviewer Has Submitted</a>
+                    <span class="badge badge-secondary" v-else-if="feedback.reviewer_submitted && !feedback.editor_submitted">Reviewer Has Submitted</span>
                     <span class="badge badge-primary" v-else>Review Done</span>
                 </div>
             </div>

@@ -21,7 +21,6 @@ class PeerReviewInvitationForm(forms.ModelForm):
             'review',
             'editor',
             'candidate_reviewer',
-            'candidate_email',
         ]
 
 
@@ -78,6 +77,12 @@ class PeerReviewerFeedbackReviewerForm(CheckCharFieldLengthMixin, forms.ModelFor
     def clean_runnable_comments(self):
         return self._check_char_field_has_content(field_name='runnable_comments')
 
+    def clean(self):
+        cleaned_data = super().clean()
+        if self.instance.invitation.review.is_complete:
+            raise forms.ValidationError('Feedback cannot be updated on a complete review')
+        return cleaned_data
+
     def save(self, commit=True):
         feedback = super().save(commit)
         if feedback.reviewer_submitted:
@@ -103,12 +108,23 @@ class PeerReviewerFeedbackReviewerForm(CheckCharFieldLengthMixin, forms.ModelFor
 
 
 class PeerReviewerFeedbackEditorForm(CheckCharFieldLengthMixin, forms.ModelForm):
+    def __init__(self, **kwargs):
+        if 'instance' in kwargs:
+            feedback = kwargs['instance']
+            kwargs['initial']['accept'] = feedback.invitation.review.is_complete
+        super().__init__(**kwargs)
+
+    accept = forms.BooleanField(label='Accept?')
+
     def clean_notes_to_author(self):
         return self._check_char_field_has_content('notes_to_author')
 
     def save(self, commit=True):
         feedback = super().save(commit)
-        feedback.editor_called_for_revisions()
+        if self.cleaned_data['accept']:
+            feedback.invitation.review.set_complete_status(editor=feedback.invitation.editor)
+        else:
+            feedback.editor_called_for_revisions()
         return feedback
 
     class Meta:
@@ -116,8 +132,5 @@ class PeerReviewerFeedbackEditorForm(CheckCharFieldLengthMixin, forms.ModelForm)
         fields = [
             'private_editor_notes',
             'notes_to_author',
+            'accept'
         ]
-        widgets = {
-            'private_editor_notes': MarkdownTextarea(),
-            'notes_to_author': MarkdownTextarea()
-        }
