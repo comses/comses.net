@@ -1,5 +1,5 @@
 {% extends "wagtailadmin/base.html" %}
-{% load gravatar staticfiles i18n %}
+{% load staticfiles i18n %}
 {% block titletag %}{% trans "Dashboard" %}{% endblock %}
 {% block bodyclass %}homepage{% endblock %}
 
@@ -12,9 +12,6 @@
 {% block content %}
     <header class="merged nice-padding">
         <div class="row row-flush">
-            <div class="col1">
-                <div class="avatar"><img src="{% gravatar_url user.email %}" alt="" /></div>
-            </div>
             <div class="col9">
                 <h1>{% block branding_welcome %}{% blocktrans %}Welcome to the {{ site_name }} Dashboard {% endblocktrans %}{% endblock %}</h1>
                 <h2>{{ user.get_full_name|default:user.get_username }}</h2>
