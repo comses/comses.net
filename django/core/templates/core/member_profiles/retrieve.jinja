@@ -47,7 +47,7 @@
                     {% if profile.institution %}
                         <b class='card-title'>Institution</b>
                         <p class='card-text'>
-                        {{ institution_href(institution) }}
+                        {{ institution_href(profile.institution) }}
                         </p>
                     {% endif %}
                     {% if profile.personal_url %}
@@ -62,10 +62,9 @@
                         <a href='{{ profile.professional_url }}' target='_blank'>{{ profile.professional_url }}</a>
                         </p>
                     {% endif %}
-                    <b class='card-title'>ORCID<sup><a href='/about/orcid/'>?</a></sup></b>
                     {% with social_connect=request.user.username == username %}
-                        <p class='card-text'>
-                        {{ render_social_profile_url(request, 'orcid', profile.orcid_url, connect=social_connect) }}
+                        <b class='card-title'>ORCID<sup><a href={{ slugurl('orcid') }}>?</a></sup></b>
+                        <p class='card-text'>{{ render_social_profile_url(request, 'orcid', profile.orcid_url, connect=social_connect) }}
                         </p>
                         <b class='card-title'>GitHub<sup><a target='_blank' href='https://education.github.com'>?</a></sup></b>
                         <p class='card-text'>{{ render_social_profile_url(request, 'github', profile.github_url, connect=social_connect) }}
@@ -87,60 +86,58 @@
         </li>
         {% if has_change_perm %}
             <li class='nav-item'>
-                <a class='nav-link' data-toggle='tab' href='#peer-reviews' role='tab'>Peer Reviews</a>
+                <a class='nav-link' data-toggle='tab' href='#peer-reviews' role='tab'>Model Reviews</a>
             </li>
         {% endif %}
     </ul>
     <div class='tab-content'>
         <div class='tab-pane active' id='bio' role='tabpanel'>
-            {% if profile.bio %}
-                <h3 class='m-0 py-3 title'>Bio</h3>
-                <p>
-                    {{ profile.bio.raw|markdown }}
-                </p>
-            {% endif %}
-            {% if profile.research_interests %}
-                <h3 class='m-0 py-3 title'>Research Interests</h3>
-                <p>
-                    {{ profile.research_interests.raw|markdown }}
-                </p>
-            {% endif %}
-            {% if not profile.bio and not profile.research_interests %}
-                <p class='lead p-5'>
+            {% autoescape off %}
+                {% if profile.bio.rendered %}
+                    <p class='lead'>
+                    {{ profile.bio.rendered }}
+                    </p>
+                {% else %}
+                    <p class='lead p-3'>
                     No bio entered.
-                </p>
+                    </p>
+                {% endif %}
+            {% endautoescape %}
+            {% if profile.research_interests.rendered %}
+                <h4 class='m-0 py-3'>Research Interests</h4>
+                {% autoescape off %}
+                    {{ profile.research_interests.rendered }}
+                {% endautoescape %}
             {% endif %}
-
         </div>
         <div class='tab-pane' id='code' role='tabpanel'>
             {# FIXME: use codebase list component #}
             {% for codebase in profile.user.codebases.all() %}
                 {{ render_codebase_result(codebase) }}
             {% else %}
-                <p class='lead p-5'>
+                <p class='lead p-3'>
                     No associated codebases.
                 </p>
             {% endfor %}
         </div>
         <div class='tab-pane' id='publications' role='tabpanel'>
-            <p class='lead p-5'>
+            <p class='lead p-3'>
                 Coming soon.
             </p>
         </div>
         {% if has_change_perm %}
             <div class='tab-pane' id='peer-reviews' role='tabpanel'>
-                <h3>Peer Review Statuses</h3>
-                <div class='card'>
-                    <ul class='list-group'>
+                {% if profile.peer_review_invitation_set.exists() %}
+                    <ul class='list-group list-group-flush'>
                         {% for invitation in profile.peer_review_invitation_set.all() %}
                             <li class='list-group-item'>
                                 {% if invitation.accepted is none %}
                                     <a href='{{ invitation.get_absolute_url() }}'>
-                                        {{ invitation.review.title }}
+                                    {{ invitation.review.title }}
                                     </a>
                                 {% elif invitation.accepted %}
                                     <a href="{{ invitation.latest_feedback.get_absolute_url() }}">
-                                        {{ invitation.review.title }}
+                                    {{ invitation.review.title }}
                                     </a>
                                 {% else %}
                                     {{ invitation.review.title }}
@@ -160,11 +157,13 @@
                                     {% endif %}
                                 </span>
                             </li>
-                        {% else %}
-                            <li class='list-group-item'>No pending invitations</li>
                         {% endfor %}
                     </ul>
-                </div>
+                {% else %}
+                    <p class='lead p-3'>
+                    No pending invitations
+                    </p>
+                {% endif %}
             </div>
         {% endif %}
     </div>
