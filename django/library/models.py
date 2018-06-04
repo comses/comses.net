@@ -13,7 +13,6 @@ from django.contrib.postgres.fields import JSONField, ArrayField
 from django.core.cache import cache
 from django.core.files.images import ImageFile
 from django.core.files.storage import FileSystemStorage
-from django.core.mail import EmailMultiAlternatives
 from django.db import models, transaction
 from django.db.models import Prefetch
 from django.template.loader import get_template
@@ -43,7 +42,6 @@ from core.queryset import get_viewable_objects_for_user
 from core.fields import MarkdownField
 from core.models import Platform, MemberProfile
 from core.serializers import PUBLISH_DATE_FORMAT
-from core.templatetags.globals import markdown
 from core.utils import create_email
 from core.view_helpers import search_backend
 from .fs import CodebaseReleaseFsApi, StagingDirectories, FileCategoryDirectories, MessageLevels
@@ -461,6 +459,9 @@ class Codebase(index.Indexed, ClusterableModel):
 
     def download_count(self):
         return CodebaseReleaseDownload.objects.filter(release__codebase__id=self.pk).count()
+
+    def ordered_releases(self, **kwargs):
+        return self.releases.order_by('-version_number').filter(**kwargs)
 
     @classmethod
     def get_list_url(cls):

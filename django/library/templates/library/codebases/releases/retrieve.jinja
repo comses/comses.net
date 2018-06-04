@@ -200,25 +200,28 @@
                 </tr>
                 </thead>
                 <tbody>
-                {% for related_release in codebase.releases.all() %}
+                {% for related_release in codebase.ordered_releases().all() %}
                     <tr>
                         <td><a href='{{ related_release.get_absolute_url() }}'>{{ related_release.version_number }}</a>
                         </td>
-                        <td>{{ member_profile_href(release.submitter.member_profile) }}</td>
-                        <td>{{ release.first_published_at|format_datetime('%c') }}</td>
-                        <td>{{ release.last_published_on|format_datetime('%c') }}</td>
+                        <td>{{ member_profile_href(related_release.submitter.member_profile) }}</td>
+                        <td>{{ related_release.first_published_at|format_datetime('%c') }}</td>
+                        <td>{{ related_release.last_published_on|format_datetime('%c') }}</td>
                         {% if has_change_perm %}
                             <td>
-                                {% if release.draft %}
+                                {% if related_release.draft %}
                                     <span class="badge badge-danger">Draft</span>
-                                {% elif release.live %}
+                                {% elif related_release.live %}
                                     <span class="badge badge-success">Published</span>
                                 {% else %}
                                     <span class="badge badge-warning">Unpublished</span>
                                 {% endif %}
+                                {% if related_release.peer_reviewed %}
+                                    <span class='badge badge-info'>Peer Reviewed</span>
+                                {% endif %}
                             </td>
                             <td>
-                                <a href="{{ release.get_edit_url() }}">
+                                <a href="{{ related_release.get_edit_url() }}">
                                     <span class="fa fa-edit"></span>
                                 </a>
                             </td>
@@ -275,7 +278,7 @@
         <div class='section'>
             <b class="card-title">Status</b>
             <p class="card-text">
-                {% if release.peer_reviewed %}
+                {% if codebase.peer_reviewed %}
                     <img src="{{ static("images/icons/peer-reviewed.png") }}" alt="Peer Reviewed">
                 {% elif has_review %}
                     Peer review underway
