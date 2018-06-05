@@ -64,6 +64,7 @@ interface RelatedMemberProfile {
 
 export interface Contributor {
     affiliations: Array<string>
+    email: string
     given_name: string
     middle_name: string
     family_name: string
@@ -75,6 +76,7 @@ export interface Contributor {
 export const emptyContributor = (valid: boolean = false): Contributor => {
     return {
         affiliations: [],
+        email: '',
         given_name: '',
         middle_name: '',
         family_name: '',

@@ -46,7 +46,7 @@ const userSchema = yup.object().shape({
 });
 
 const contributorSchema = yup.object().shape({
-    user: yup.mixed().test('is-not-null', '${path} must have a value', value => !_.isNull(value)).label('this'),
+    user: yup.mixed().nullable(),
     email: yup.string().email().required(),
     given_name: yup.string().required(),
     family_name: yup.string().required(),
@@ -78,6 +78,19 @@ enum FormContributorState {
     editReleaseContributor,
     editContributor
 };
+
+function contributorLabel(contributor: Contributor) {
+    let name = [contributor.given_name, contributor.family_name].filter(el => !_.isEmpty(el)).join(' ');
+    name = name.length > 0 ? name : contributor.email;
+    const user = contributor.user;
+    if (!_.isNull(user)) {
+        name = name === '' ? (<any>user).name : name;
+        const username = (<any>user).username;
+
+        return !_.isNull(username) ? `${name} [${username}]` : name;
+    }
+    return name;
+}
 
 @Component(<any>{
     template: `<div class="modal" id="createContributorForm">
@@ -162,7 +175,7 @@ class EditContributor extends createFormValidator(contributorSchema) {
         this.state.email = this.state.email || user.email;
         this.state.type = this.state.type || user.type;
         if (_.isEmpty(this.state.affiliations) && user.institution_name) {
-            this.state.affiliations = [{ name: user.institution_name }];
+            this.state.affiliations = [{name: user.institution_name}];
         }
     }
 
@@ -181,7 +194,7 @@ class EditContributor extends createFormValidator(contributorSchema) {
                 <div class="row">
                     <div class="col-9">
                         <multiselect
-                            v-model="contributor"
+                            v-model="candidateContributor"
                             :custom-label="contributorLabel"
                             label="family_name"
                             track-by="id"
@@ -233,7 +246,7 @@ class EditReleaseContributor extends createFormValidator(releaseContributorSchem
     matchingContributors: Array<Contributor> = [];
     roleOptions: Array<string> = Object.keys(roleLookup);
 
-    @Watch('releaseContributor', { immediate: true, deep: true })
+    @Watch('releaseContributor', {immediate: true, deep: true})
     setFormState(releaseContributor: CodebaseContributor | null) {
         if (!_.isNull(releaseContributor)) {
             (<any>this).replace(releaseContributor);
@@ -243,16 +256,24 @@ class EditReleaseContributor extends createFormValidator(releaseContributorSchem
         }
     }
 
-    contributorLabel(contributor: Contributor) {
-        let name = [contributor.given_name, contributor.family_name].filter(el => !_.isEmpty(el)).join(' ');
-        const user = contributor.user;
-        if (!_.isNull(user)) {
-            name = name === '' ? (<any>user).name : name;
-            const username = (<any>user).username;
-
-            return !_.isNull(username) ? `${name} (${username})` : name;
+    get candidateContributor() {
+        // want to display label if no contributor is selected
+        // the default contributor has an empty email so the label gets displayed
+        // also display label if no contributor object is present
+        if (!_.get(this.state.contributor, 'email', null)) {
+            return null
         }
-        return name;
+        return this.state.contributor;
+    }
+
+    set candidateContributor(contributor: Contributor | null) {
+        if (!_.isEmpty(contributor)) {
+            (<any>this).contributor = contributor;
+        }
+    }
+
+    contributorLabel(contributor: Contributor) {
+        return contributorLabel(contributor);
     }
 
     roleLabel(value: string) {
@@ -356,7 +377,7 @@ class EditContributors extends Vue {
 
     formState: FormContributorState = FormContributorState.list;
 
-    statusMessages: Array<{ classNames: string, message}> = [];
+    statusMessages: Array<{ classNames: string, message }> = [];
     initialState: Array<CodebaseContributor> = [];
     state: Array<CodebaseContributor> = [];
     releaseContributor: CodebaseContributor | null = null;
@@ -365,7 +386,7 @@ class EditContributors extends Vue {
     message: string = '';
 
     releaseContributorLabel(releaseContributor: CodebaseContributor) {
-        const name = [releaseContributor.contributor.given_name, releaseContributor.contributor.family_name].join(' ');
+        const name = contributorLabel(releaseContributor.contributor);
         const roles = releaseContributor.roles.length > 0 ? ` (${releaseContributor.roles.map(this.roleLabel).join(', ')})` : '';
         return `${name}${roles}`
     }
