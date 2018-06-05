@@ -883,6 +883,13 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
         return None
 
     @property
+    def is_peer_review_requestable(self):
+        """
+        Returns true if this release has not already been peer reviewed and a related PeerReview does not exist
+        """
+        return not self.peer_reviewed and self.get_review() is None
+
+    @property
     def doi_url(self):
         return 'https://doi.org/{0}'.format(self.doi)
 

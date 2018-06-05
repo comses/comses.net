@@ -276,7 +276,6 @@
             <b class="card-title">Downloads: </b>{{ codebase.download_count() }}
         </div>
         <div class='section'>
-            <b class="card-title">Status</b>
             <p class="card-text">
                 {% if codebase.peer_reviewed %}
                     <img src="{{ static("images/icons/peer-reviewed.png") }}" alt="Peer Reviewed">
@@ -304,21 +303,23 @@
     {%- endset %}
     {% if waffle.switch('peer_review_workflow.enabled') %}
 
-        {% if release.get_review() is none %}
-            <form method="post" action="{{ release.get_request_peer_review_url() }}">
-                {% csrf_token %}
-                <button type="submit" class='btn btn-secondary my-1 w-100'>
-                    Request peer review
-                </button>
-            </form>
-        {% elif release.review.is_awaiting_author_changes %}
-            <form method="post" action="{{ release.get_notify_reviewers_of_changes_url() }}">
-                {% csrf_token %}
-                <button type="submit" class="btn btn-danger my-1 w-100">Revisions complete, request new review</button>
-            </form>
-        {% else %}
-            <button type="button" class="btn btn-warning my-1 w-100" disabled>{{ release.review.get_status_display() }}</button>
-        {% endif %}
+        {% with review=release.get_review() %}
+            {% if release.is_peer_review_requestable %}
+                <form method="post" action="{{ release.get_request_peer_review_url() }}">
+                    {% csrf_token %}
+                    <button type="submit" class='btn btn-secondary my-1 w-100'>
+                        Request peer review
+                    </button>
+                </form>
+            {% elif review.is_awaiting_author_changes %}
+                <form method="post" action="{{ release.get_notify_reviewers_of_changes_url() }}">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger my-1 w-100">Revisions complete, request new review</button>
+                </form>
+            {% elif review is not none %}
+                <button type="button" class="btn btn-warning my-1 w-100" disabled>{{ review.get_status_display() }}</button>
+            {% endif %}
+        {% endwith %}
 
     {% else -%}
 
@@ -326,22 +327,23 @@
         Request to review {{ request.build_absolute_uri(absolute_url) }}
         {%- endset %}
         {% with review=release.get_review() %}
-        {% if review is none %}
-            <a href='mailto: editors@comses.net?subject=model review: {{codebase.title}}&body={{review_template_text}}'>
-                <div class='btn btn-secondary my-1 w-100'>
-                    Request peer review
-                </div>
-            </a>
-        {% elif review.is_awaiting_author_changes %}
-            <a href='mailto: editors@comses.net?subject=revised model review: {{codebase.title}}&body={{review_template_text}}'>
-                <div class='btn btn-secondary my-1 w-100'>
-                    Revisions complete, request new review
-                </div>
-            </a>
-        {% else %}
-            <button type="button" class="btn btn-info my-1 w-100" disabled>{{ review.get_status_display() }}</button>
-        {% endif %}
-        {# end waffle switch #}
+            {% if release.is_peer_review_requestable %}
+                <a href='mailto: editors@comses.net?subject=model review: {{codebase.title}}&body={{review_template_text}}'>
+                    <div class='btn btn-secondary my-1 w-100'>
+                        Request peer review
+                    </div>
+                </a>
+            {% elif review.is_awaiting_author_changes %}
+                <a href='mailto: editors@comses.net?subject=revised model review: {{codebase.title}}&body={{review_template_text}}'>
+                    <div class='btn btn-secondary my-1 w-100'>
+                        Revisions complete, request new review
+                    </div>
+                </a>
+            {% elif review is not none %}
+                <button type="button" class="btn btn-info my-1 w-100" disabled>{{ review.get_status_display() }}</button>
+            {% endif %}
+        {% endwith %}
+    {# end waffle switch #}
     {%- endif %}
     {# end has_change_perm #}
 {% endif %}
