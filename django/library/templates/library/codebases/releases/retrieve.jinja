@@ -314,7 +314,7 @@
         {% elif release.review.is_awaiting_author_changes %}
             <form method="post" action="{{ release.get_notify_reviewers_of_changes_url() }}">
                 {% csrf_token %}
-                <button type="submit" class="btn btn-danger my-1 w-100">Notify Reviewers of Changes</button>
+                <button type="submit" class="btn btn-danger my-1 w-100">Revisions complete, request new review</button>
             </form>
         {% else %}
             <button type="button" class="btn btn-warning my-1 w-100" disabled>{{ release.review.get_status_display() }}</button>
@@ -325,13 +325,25 @@
         {% set review_template_text -%}
         Request to review {{ request.build_absolute_uri(absolute_url) }}
         {%- endset %}
-        <a href='mailto: editors@comses.net?subject=model review: {{codebase.title}}&body={{review_template_text}}'>
-            <div class='btn btn-secondary my-1 w-100'>
-                Request peer review
-            </div>
-        </a>
-
+        {% with review=release.get_review() %}
+        {% if review is none %}
+            <a href='mailto: editors@comses.net?subject=model review: {{codebase.title}}&body={{review_template_text}}'>
+                <div class='btn btn-secondary my-1 w-100'>
+                    Request peer review
+                </div>
+            </a>
+        {% elif review.is_awaiting_author_changes %}
+            <a href='mailto: editors@comses.net?subject=revised model review: {{codebase.title}}&body={{review_template_text}}'>
+                <div class='btn btn-secondary my-1 w-100'>
+                    Revisions complete, request new review
+                </div>
+            </a>
+        {% else %}
+            <button type="button" class="btn btn-info my-1 w-100" disabled>{{ review.get_status_display() }}</button>
+        {% endif %}
+        {# end waffle switch #}
     {%- endif %}
+    {# end has_change_perm #}
 {% endif %}
 {% if release.live %}
     <a id="releaseDownload" data-name="download" rel='nofollow' href="{{ release.get_download_url() }}">
