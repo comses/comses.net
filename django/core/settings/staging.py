@@ -43,6 +43,7 @@ WSGI_APPLICATION = 'core.wsgi.application'
 
 INSTALLED_APPS += [
     'raven.contrib.django.raven_compat',
+    'fixture_magic',
 ]
 
 LOGGING = {

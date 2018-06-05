@@ -7,7 +7,7 @@ EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
 MIDDLEWARE += ['debug_toolbar.middleware.DebugToolbarMiddleware']
 
-INSTALLED_APPS += ['debug_toolbar']
+INSTALLED_APPS += ['debug_toolbar', 'fixture_magic', ]
 
 ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'dev.comses.asu.edu', 'cms']
 

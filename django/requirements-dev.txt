@@ -1,10 +1,10 @@
 -r requirements.txt
 # dev requirements
-Sphinx
-django-debug-toolbar
-django-debug-toolbar-request-history
 coverage
 coveralls
+django-debug-toolbar
+django-debug-toolbar-request-history
+django-fixture-magic
 pgcli
-Sphinx
+sphinx
 sphinx_rtd_theme

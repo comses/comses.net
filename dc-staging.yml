@@ -100,7 +100,7 @@ services:
     build:
       context: ./django
       args:
-        REQUIREMENTS_FILE: requirements.txt
+        REQUIREMENTS_FILE: requirements-dev.txt
         UBUNTU_MIRROR: "nova.clouds.archive.ubuntu.com"
         RUN_SCRIPT: "./deploy/prod.sh"
     image: comses/cms:{RELEASE_VERSION}
@@ -111,7 +111,7 @@ services:
       - ./docker/shared:/shared
       - sockets:/shared/sockets
     environment:
-      DJANGO_SETTINGS_MODULE: "core.settings.production"
+      DJANGO_SETTINGS_MODULE: "core.settings.staging"
       DB_USER: ${DB_USER}
       DB_HOST: ${DB_HOST}
       DB_NAME: ${DB_NAME}
