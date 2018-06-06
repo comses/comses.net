@@ -1,0 +1,6 @@
+#!/bin/bash
+
+# run standard django tests
+docker-compose run --rm cms /code/deploy/test.sh
+# run frontend tests
+docker-compose up -d && docker-compose exec cms ./manage.py frontend_setup && docker-compose exec js /code/deploy/test.sh

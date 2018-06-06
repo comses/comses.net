@@ -6,8 +6,7 @@ source =
     home
     library
 omit =
-    */templates/*
-
+    *.jinja
 [paths]
 source =
     .

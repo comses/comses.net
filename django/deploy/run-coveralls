@@ -1,0 +1,9 @@
+#!/bin/bash
+
+set -ev
+
+pushd "${PWD}/django";
+mv .coverage{,.123};
+coverage combine --append;
+coveralls;
+popd;

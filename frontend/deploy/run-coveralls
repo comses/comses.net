@@ -1,0 +1,6 @@
+#!/bin/bash
+
+set -ev
+
+cd "$PWD/frontend";
+cat ./coverage/lcov.info | ./node_modules/coveralls/bin/coveralls.js
