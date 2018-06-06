@@ -79,7 +79,7 @@ enum FormContributorState {
     editContributor
 };
 
-function contributorLabel(contributor: Contributor) {
+function displayContributorLabel(contributor: Contributor) {
     let name = [contributor.given_name, contributor.family_name].filter(el => !_.isEmpty(el)).join(' ');
     name = name.length > 0 ? name : contributor.email;
     const user = contributor.user;
@@ -258,9 +258,10 @@ class EditReleaseContributor extends createFormValidator(releaseContributorSchem
 
     get candidateContributor() {
         // want to display label if no contributor is selected
-        // the default contributor has an empty email so the label gets displayed
-        // also display label if no contributor object is present
-        if (!_.get(this.state.contributor, 'email', null)) {
+        if (this.state.contributor &&
+            _.isEmpty(this.state.contributor.email) &&
+            _.isEmpty(this.state.contributor.given_name) &&
+            _.isEmpty(this.state.contributor.family_name)) {
             return null
         }
         return this.state.contributor;
@@ -273,7 +274,7 @@ class EditReleaseContributor extends createFormValidator(releaseContributorSchem
     }
 
     contributorLabel(contributor: Contributor) {
-        return contributorLabel(contributor);
+        return displayContributorLabel(contributor);
     }
 
     roleLabel(value: string) {
@@ -386,7 +387,7 @@ class EditContributors extends Vue {
     message: string = '';
 
     releaseContributorLabel(releaseContributor: CodebaseContributor) {
-        const name = contributorLabel(releaseContributor.contributor);
+        const name = displayContributorLabel(releaseContributor.contributor);
         const roles = releaseContributor.roles.length > 0 ? ` (${releaseContributor.roles.map(this.roleLabel).join(', ')})` : '';
         return `${name}${roles}`
     }
