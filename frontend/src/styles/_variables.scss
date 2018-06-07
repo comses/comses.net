@@ -26,6 +26,9 @@ $theme-colors: (
 $button-color-primary: #92c02e;
 
 // Border Radius Override
+// FIXME: consider leaving this enabled and instead override the specific elements that need squareness to have no
+// border-radius - otherwise this appears to prevent all border-radius from badges buttons etc
+// see #363
 $enable-rounded: false;
 
 // // Font Size Overrides
