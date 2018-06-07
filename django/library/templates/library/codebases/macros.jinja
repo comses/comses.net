@@ -79,9 +79,9 @@
                         {% endfor %}
                         |
                         {% if codebase.live %}
-                            Published {{ codebase.first_published_at }}
+                            Published {{ codebase.first_published_at|format_datetime('%c') }}
                             {% if codebase.first_published_at != codebase.last_published_on %}
-                                | Last modified {{ codebase.last_published_on }}
+                                | Last modified {{ codebase.last_published_on|format_datetime('%c') }}
                             {% endif %}
                         {% else %}
                             Unpublished
