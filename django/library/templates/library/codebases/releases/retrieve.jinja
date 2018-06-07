@@ -273,17 +273,23 @@
             </p>
         </div>
         <div class='section'>
-            <b class="card-title">Downloads: </b>{{ codebase.download_count() }}
+            <b class="card-title">Downloads
+                <span class='btn btn-sm btn-outline-primary disabled'>{{ codebase.download_count() }}</span>
+            </b> 
         </div>
         <div class='section'>
-            <p class="card-text">
-                {% if codebase.peer_reviewed %}
-                    <img src="{{ static("images/icons/peer-reviewed.png") }}" alt="Peer Reviewed">
-                {% elif has_review %}
-                    Peer review underway
-                {% else %}
-                    Not reviewed
-                {% endif %}
+            {% if codebase.peer_reviewed %}
+                <img src="{{ static("images/icons/peer-reviewed.png") }}" alt="Peer Reviewed">
+            {% else %}
+                <b class='card-title'>
+                    {% if release.get_review() %}
+                        Review in process
+                        <span class='btn btn-sm btn-warning disabled'>{{ release.get_review().get_status_display() }}</span>
+                    {% else %}
+                        Not reviewed
+                    {% endif %}
+                </h4>
+            {% endif %}
             </p>
         </div>
     </div>
