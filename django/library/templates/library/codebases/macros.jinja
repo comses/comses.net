@@ -71,7 +71,7 @@
                     <small>
                         {% for codebase_contributor in codebase.all_contributors %}
                             {% set badge_class='badge-success' if codebase_contributor.user else 'badge-default' %}
-                            <a class='badge {{badge_class}} contributor' href="{{ codebase_contributor.profile_url }}">
+                            <a class='badge {{badge_class}} contributor' href="{{ codebase_contributor.member_profile_url }}">
                                 {{ codebase_contributor.name }}
                             </a>
                         {% else %}
