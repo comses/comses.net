@@ -3,7 +3,6 @@ import * as queryString from 'query-string'
 import {api} from 'connection'
 import {CreateOrUpdateHandler} from "api/handler"
 import {pickBy, isEmpty} from 'lodash'
-import Base = Mocha.reporters.Base;
 
 abstract class BaseAPI {
 
