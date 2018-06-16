@@ -36,7 +36,7 @@ RUN sed -i "s|archive.ubuntu.com|${UBUNTU_MIRROR}|" /etc/apt/sources.list \
 
 COPY ${REQUIREMENTS_FILE} requirements.txt /tmp/
 RUN pip3 install -r /tmp/${REQUIREMENTS_FILE} --no-cache-dir
-COPY ./deploy/db/autopostgresqlbackup /etc/cron.daily/autopostgresqlbackup
+COPY ./deploy/db/autopostgresqlbackup /etc/cron.daily/backup
 COPY ./deploy/db/autopostgresqlbackup.conf /etc/default/autopostgresqlbackup
 COPY ./deploy/db/postgresql-backup-pre /etc/
 COPY ./deploy/logrotate.d/* /etc/logrotate.d/
