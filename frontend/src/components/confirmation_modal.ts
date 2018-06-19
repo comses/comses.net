@@ -20,13 +20,11 @@ import * as _ from 'lodash';
                         </div>
                     </div>
                 <div class="modal-footer">
-                    <div class="btn-group">
-                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-                        <button type="button" class="btn btn-primary" @click="submit" v-if="ajax_submit">Save changes</button>
-                        <form v-else>
-                            <button type="submit" class="btn btn-primary" formmethod="post" :formaction="url">Save changes</button>
-                        </form>
-                    </div>
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-danger" @click="submit" v-if="ajax_submit">Submit</button>
+                    <form v-else>
+                        <button type="submit" class="btn btn-danger" formmethod="post" :formaction="url">Submit</button>
+                    </form>
                 </div>
             </div>
         </div>
