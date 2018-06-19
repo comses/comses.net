@@ -1,13 +1,12 @@
 import csv
-
-import os
-from django.core.management.base import BaseCommand
-
-from dateutil.parser import parse as date_parse
-import pytz
 import logging
+import os
 
-from django.db.models import Count, F, Max, Prefetch
+import pytz
+from datetime import date
+from dateutil.parser import parse as date_parse
+from django.core.management.base import BaseCommand
+from django.db.models import Count, Max
 
 from library.models import CodebaseReleaseDownload, CodebaseRelease, Codebase
 
@@ -15,11 +14,11 @@ logger = logging.getLogger(__name__)
 
 
 class Command(BaseCommand):
-    help = "Clean up taggit tags"
+    help = "Export download statistics CSV for a given time period"
 
     def add_arguments(self, parser):
-        parser.add_argument('--from', '-f', help='isoformat from date')
-        parser.add_argument('--to', '-t', help='isoformat to date', default=None)
+        parser.add_argument('--from', help='isoformat start date')
+        parser.add_argument('--to', help='isoformat end date', default=None)
         parser.add_argument('--directory', '-d', help='directory to store statistics in', default='/shared/statistics')
         parser.add_argument('--aggregations', '-a', default='release,codebase,ip,new',
                             help='aggregations - comma separated list of release, codebase, ip')
@@ -29,11 +28,13 @@ class Command(BaseCommand):
             .prefetch_related('codebase').only('version_number', 'codebase__identifier').in_bulk()
         results = downloads.values('release_id').annotate(count=Count('*')).order_by('-count')
         with open(dest, 'w', newline='') as f:
-            fieldnames = ['url', 'count']
+            fieldnames = ['url', 'count', 'authors']
             writer = csv.DictWriter(f, fieldnames=fieldnames)
             writer.writeheader()
             for result in results.iterator():
-                writer.writerow({'url': releases[result['release_id']].get_absolute_url(), 'count': result['count']})
+                release = releases[result.get('release_id')]
+                authors = ', '.join([c.contributor.get_full_name() for c in release.index_ordered_release_contributors])
+                writer.writerow({'url': release.get_absolute_url(), 'count': result['count'], 'authors': authors})
 
     def export_codebase_download_statistics(self, downloads, dest):
         codebases = Codebase.objects.filter(releases__id__in=downloads.values_list('release_id', flat=True)) \
@@ -69,8 +70,7 @@ class Command(BaseCommand):
         updated_codebases = Codebase.objects.public().filter(releases__in=in_range_releases)\
             .filter(releases__in=out_range_releases).distinct().order_by('title')
 
-        max_dates_bulk = {r['codebase_id']: r['date'] for r in in_range_releases
-            .values('codebase_id').annotate(date=Max('date_created'))}
+        max_dates_bulk = {r['codebase_id']: r['date'] for r in in_range_releases.values('codebase_id').annotate(date=Max('date_created'))}
         for qs, filename in [(new_codebases, 'new_codebases.csv'), (updated_codebases, 'updated_codebases.csv')]:
             with open(os.path.join(directory, filename), 'w', newline='') as f:
                 fieldnames = ['url', 'title', 'date']
@@ -93,8 +93,12 @@ class Command(BaseCommand):
         ./manage.py curator_statistics --from 2016-05-06
         ```
         """
-        from_date = date_parse(options['from']).replace(tzinfo=pytz.UTC)
-        to_date = date_parse(options['to']).replace(tzinfo=pytz.UTC) if options['to'] else None
+        from_date_string = options.get('from')
+        to_date_string = options.get('to')
+
+        default_from_date = date.today().replace(month=1, day=1)
+        from_date = date_parse(from_date_string).replace(tzinfo=pytz.UTC) if from_date_string else default_from_date
+        to_date = date_parse(to_date_string).replace(tzinfo=pytz.UTC) if to_date_string else None
         aggregations = options['aggregations'].split(',')
         if to_date:
             filters = dict(date_created__range=[from_date, to_date])

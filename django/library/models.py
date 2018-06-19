@@ -934,8 +934,7 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
 
     @property
     def contributor_list(self):
-        return [c.contributor.get_full_name(family_name_first=True) for c in
-                self.codebase_contributors.order_by('index')]
+        return [c.contributor.get_full_name(family_name_first=True) for c in self.index_ordered_release_contributors]
 
     @property
     def index_ordered_release_contributors(self):
