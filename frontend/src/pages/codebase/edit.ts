@@ -18,7 +18,7 @@ export const schema = yup.object().shape({
     latest_version_number: yup.string(),
     live: yup.bool(),
     is_replication: yup.bool(),
-    tags: yup.array().of(yup.object().shape({name: yup.string().required()})).min(1).required(),
+    tags: yup.array().of(yup.object().shape({name: yup.string().required()})),
     repository_url: yup.string().url()
 });
 

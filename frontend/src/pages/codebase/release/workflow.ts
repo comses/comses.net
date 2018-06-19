@@ -31,7 +31,7 @@ type CodebaseTabs = 'metadata' | 'media';
 
 @Component({
     template: `<div class="modal fade" id="editCodebaseModal">
-            <div class="modal-dialog" role="document">
+            <div class="modal-dialog modal-lg" role="document">
                 <div class="modal-content">
                     <div class="modal-header">
                         <h5 class="modal-title">Edit Codebase</h5>
@@ -229,7 +229,7 @@ class PublishModal extends createFormValidator(publishSchema) {
             <div class='pb-2'>
                 <span class="btn btn-primary" data-target="#editCodebaseModal" data-toggle="modal"><i class='fa fa-edit'></i> Edit Common Metadata | Add Images &amp; Media</span>
                 <div class='float-right'>
-                    <span class="btn btn-outline-danger" v-if="!hasReview" data-target="#peerReviewModal" data-toggle="modal">Request Review</span>
+                    <span class="btn btn-outline-danger" v-if="!hasReview" data-target="#peerReviewModal" data-toggle="modal">Request Peer Review</span>
                     <span class="btn btn-outline-danger" v-else-if="isAwaitingAuthorChanges" data-target="#notifyReviewersModal" data-toggle="modal">Notify Reviewers of Changes</span>
                     <span class="disabled btn btn-info" v-if="isPublished"><i class='fa fa-share-alt'></i> Published</span>
                     <span v-else>
@@ -264,7 +264,7 @@ class PublishModal extends createFormValidator(publishSchema) {
         <c-confirmation-modal title="Request Peer Review" base_name="peerReviewModal" :url="requestPeerReviewUrl"
             @success="handlePeerReviewCreation">
             <template slot="body">
-                <p>Are you sure you want to request a review of your release?</p>
+                <p>Are you sure you want to request a peer review of your release?</p>
             </template>
         </c-confirmation-modal>
         <c-confirmation-modal title="Notify Reviewers of Changes" base_name="notifyReviewersModal"
