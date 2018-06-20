@@ -20,15 +20,15 @@
     <div id={{ 'discourse-content' if release.live else 'content' }}>
         {% if not release.live %}
             <div class="alert alert-danger mt-2">The release you are viewing is currently unpublished.
-                {% if codebase.latest_version_number and version_number != codebase.latest_version_number %}
+                {% if codebase.latest_version_number and release.version_number != codebase.latest_version_number %}
                     The latest published version is
                     <a href='{{ codebase.latest_version.get_absolute_url() }}'>{{ codebase.latest_version.version_number }}</a>
                 {% endif %}
             </div>
         {% else %}
-            {% if release.version_number != codebase.latest_version.version_number %}
+            {% if release.version_number != codebase.latest_version_number %}
                 <div class="alert alert-warning mt-2">This release is out-of-date. The latest version is
-                    <a href='{{ release.get_absolute_url() }}'>{{ codebase.latest_version.version_number }}</a>
+                    <a href='{{ codebase.latest_version.get_absolute_url() }}'>{{ codebase.latest_version.version_number }}</a>
                 </div>
             {% endif %}
         {% endif %}
@@ -105,12 +105,12 @@
             </div>
         </div>
     </div>
-    {% if codebase.replication %}
+    {% if codebase.is_replication %}
         <div class='card-metadata'>
             <div class='card-body'>
                 <h2 class='card-title'>Replication of a previously published model</h2>
                 <p class='card-text'>
-                    {{ replication_text }}
+                    {{ codebase.replication_text }}
                 </p>
             </div>
         </div>
@@ -171,7 +171,7 @@
                             href='{{ release.license.url }}'>{{ release.license.name }}</a>
                     </div>
                     <div class='section'>
-                        <b class='card-title'>Operating System:</b> {{ operating_systems_enum[release.os] }}
+                        <b class='card-title'>Operating System:</b> {{ release.get_os_display() }}
                     </div>
                     <div class='section'>
                         <b class='card-title'>Programming Language:</b>
