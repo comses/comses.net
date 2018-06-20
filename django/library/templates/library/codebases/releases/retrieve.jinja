@@ -18,19 +18,14 @@
 {% block content %}
     {% include 'includes/messages.jinja' %}
     <div id={{ 'discourse-content' if release.live else 'content' }}>
-        {% if not release.live %}
-            <div class="alert alert-danger mt-2">The release you are viewing is currently unpublished.
-                {% if codebase.latest_version_number and release.version_number != codebase.latest_version_number %}
-                    The latest published version is
-                    <a href='{{ codebase.latest_version.get_absolute_url() }}'>{{ codebase.latest_version.version_number }}</a>
-                {% endif %}
-            </div>
-        {% else %}
-            {% if release.version_number != codebase.latest_version_number %}
+        {% if release.live %}
+            {% if release.version_number != codebase.latest_version.version_number %}
                 <div class="alert alert-warning mt-2">This release is out-of-date. The latest version is
-                    <a href='{{ codebase.latest_version.get_absolute_url() }}'>{{ codebase.latest_version.version_number }}</a>
+                <a href='{{ codebase.latest_version.get_absolute_url() }}'>{{ codebase.latest_version.version_number }}</a>
                 </div>
             {% endif %}
+        {% else %}
+            <div class="alert alert-danger mt-2">The release you are viewing is currently unpublished.</div>
         {% endif %}
         <h1 class='codebase-title pb-4'>{{ codebase.title }}</h1>
         <div class='metadata'>
@@ -195,21 +190,20 @@
                     <th>Submitter</th>
                     <th>First published</th>
                     <th>Last modified</th>
+                    <th>Status</th>
                     {% if has_change_perm %}
-                        <th>Status</th>
                         <th>Edit</th>
                     {% endif %}
                 </tr>
                 </thead>
                 <tbody>
-                {% for related_release in codebase.ordered_releases().all() %}
-                    <tr>
-                        <td><a href='{{ related_release.get_absolute_url() }}'>{{ related_release.version_number }}</a>
-                        </td>
-                        <td>{{ member_profile_href(related_release.submitter.member_profile) }}</td>
-                        <td>{{ related_release.first_published_at|format_datetime('%c') }}</td>
-                        <td>{{ related_release.last_published_on|format_datetime('%c') }}</td>
-                        {% if has_change_perm %}
+                    {% for related_release in codebase.ordered_releases(has_change_perm) %}
+                        <tr>
+                            <td><a href='{{ related_release.get_absolute_url() }}'>{{ related_release.version_number }}</a>
+                            </td>
+                            <td>{{ member_profile_href(related_release.submitter.member_profile) }}</td>
+                            <td>{{ related_release.first_published_at|format_datetime('%c') }}</td>
+                            <td>{{ related_release.last_published_on|format_datetime('%c') }}</td>
                             <td>
                                 {% if related_release.draft %}
                                     <span class="badge badge-danger">Draft</span>
@@ -222,14 +216,15 @@
                                     <span class='badge badge-info'>Peer Reviewed</span>
                                 {% endif %}
                             </td>
-                            <td>
-                                <a href="{{ related_release.get_edit_url() }}">
-                                    <span class="fa fa-edit"></span>
-                                </a>
-                            </td>
-                        {% endif %}
-                    </tr>
-                {% endfor %}
+                            {% if has_change_perm %}
+                                <td>
+                                    <a href="{{ related_release.get_edit_url() }}">
+                                        <span class="fa fa-edit"></span>
+                                    </a>
+                                </td>
+                            {% endif %}
+                        </tr>
+                    {% endfor %}
                 </tbody>
             </table>
             <form>

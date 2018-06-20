@@ -460,8 +460,9 @@ class Codebase(index.Indexed, ClusterableModel):
     def download_count(self):
         return CodebaseReleaseDownload.objects.filter(release__codebase__id=self.pk).count()
 
-    def ordered_releases(self, **kwargs):
-        return self.releases.order_by('-version_number').filter(**kwargs)
+    def ordered_releases(self, has_change_perm=False, **kwargs):
+        releases = self.releases.order_by('-version_number').filter(**kwargs)
+        return releases if has_change_perm else releases.exclude(live=False)
 
     @classmethod
     def get_list_url(cls):
