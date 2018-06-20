@@ -230,8 +230,8 @@ class EditContributor extends createFormValidator(contributorSchema) {
                     {{ errors.roles.join(', ') }}
                 </div>
             </div>
-            <button type="button" class="btn btn-primary" @click="save"><i class='fa fa-user-plus'></i> Register citable contributor</button>
             <button type="button" class="btn btn-secondary" @click="cancel">Cancel</button>
+            <button type="button" class="btn btn-primary" @click="save"><i class='fa fa-user-plus'></i> Register citable contributor</button>
         </div>
     </div>`,
     components: {

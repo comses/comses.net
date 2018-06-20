@@ -168,8 +168,8 @@ export const publishSchema = yup.object().shape({
                 <c-message-display :messages="statusMessages" @clear="clear">
                 </c-message-display>
                 <div class="modal-footer">
-                    <button class="btn btn-danger mr-auto" @click="publish"><i class='fa fa-share-alt'></i> Publish</button>
                     <button class="btn btn-secondary" @click="close">Cancel</button>
+                    <button class="btn btn-danger ml-auto" @click="publish"><i class='fa fa-share-alt'></i> Publish</button>
                 </div>
             </div>
         </div>
