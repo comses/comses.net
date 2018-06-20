@@ -150,11 +150,13 @@
         <div class='tab-pane active' id='images' role='tabpanel'>
             {# FIXME: iterate and display all images in media #}
             <div class='p-3'>
-                {% if codebase.get_featured_image() is not none %}
-                    {{ image(codebase.get_featured_image(), "width-780", class='d-block img-fluid') }}
-                {% else %}
-                    <img alt='No submitted images' src="holder.js/780x400?text=No submitted images" class="img-fluid img-thumbnail">
-                {% endif %}
+                {% with featured_image=codebase.get_featured_image() %}
+                    {% if featured_image is not none %}
+                        {{ image(featured_image, "width-780", class='d-block img-fluid') }}
+                    {% else %}
+                        <img alt='No submitted images' src="holder.js/780x400?text=No submitted images" class="img-fluid img-thumbnail">
+                    {% endif %}
+                {% endwith %}
             </div>
         </div>
         <div class='tab-pane' id='details' role='tabpanel'>
