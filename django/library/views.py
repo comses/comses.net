@@ -24,15 +24,15 @@ from core.view_helpers import add_change_delete_perms, get_search_queryset
 from core.views import (CommonViewSetMixin, FormUpdateView, FormCreateView, SmallResultSetPagination,
                         CaseInsensitiveOrderingFilter, NoDeleteViewSet,
                         NoDeleteNoUpdateViewSet, HtmlNoDeleteViewSet)
-from .forms import PeerReviewerFeedbackReviewerForm, PeerReviewInvitationReplyForm, \
-    PeerReviewInvitationForm, PeerReviewerFeedbackEditorForm, PeerReviewerFeedbackReviewerSaveForm
+from .forms import (PeerReviewerFeedbackReviewerForm, PeerReviewInvitationReplyForm, PeerReviewInvitationForm,
+                    PeerReviewerFeedbackEditorForm, PeerReviewerFeedbackReviewerSaveForm)
 from .fs import FileCategoryDirectories, StagingDirectories, MessageLevels
 from .models import (Codebase, CodebaseRelease, Contributor, CodebaseImage, PeerReview, PeerReviewerFeedback,
-                     PeerReviewInvitation, PeerReviewEventLog, ReviewStatus, OPERATING_SYSTEMS)
-from .permissions import CodebaseReleaseUnpublishedFilePermissions, ModelDefinitionOnlyPermissions
-from .serializers import (CodebaseSerializer, RelatedCodebaseSerializer, CodebaseReleaseSerializer,
-                          ContributorSerializer, ReleaseContributorSerializer, CodebaseReleaseEditSerializer,
-                          CodebaseImageSerializer, PeerReviewInvitationSerializer, PeerReviewFeedbackEditorSerializer,
+                     PeerReviewInvitation, ReviewStatus)
+from .permissions import CodebaseReleaseUnpublishedFilePermissions
+from .serializers import (CodebaseSerializer, CodebaseReleaseSerializer, ContributorSerializer,
+                          ReleaseContributorSerializer, CodebaseReleaseEditSerializer, CodebaseImageSerializer,
+                          PeerReviewInvitationSerializer, PeerReviewFeedbackEditorSerializer,
                           PeerReviewReviewerSerializer, PeerReviewEventLogSerializer)
 
 logger = logging.getLogger(__name__)
@@ -456,8 +456,7 @@ class CodebaseReleaseShareViewSet(CommonViewSetMixin, mixins.RetrieveModelMixin,
         if request.accepted_renderer.format == 'html':
             perms = {}
             add_change_delete_perms(instance, perms, request.user)
-            return Response({'release': instance, **perms,
-                             'operating_systems_enum': OPERATING_SYSTEMS})
+            return Response({'release': instance, **perms})
         serializer = self.get_serializer(instance)
         return Response(serializer.data)
 
@@ -515,8 +514,7 @@ class CodebaseReleaseViewSet(CommonViewSetMixin,
         if request.accepted_renderer.format == 'html':
             perms = {}
             add_change_delete_perms(instance, perms, request.user)
-            return Response({'release': instance, **perms,
-                             'operating_systems_enum': OPERATING_SYSTEMS})
+            return Response({'release': instance, **perms})
         serializer = self.get_serializer(instance)
         data = add_change_delete_perms(instance, serializer.data, request.user)
         return Response(data)
