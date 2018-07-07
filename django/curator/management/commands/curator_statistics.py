@@ -17,8 +17,8 @@ class Command(BaseCommand):
     help = "Export download statistics CSV for a given time period"
 
     def add_arguments(self, parser):
-        parser.add_argument('--from', help='isoformat start date')
-        parser.add_argument('--to', help='isoformat end date', default=None)
+        parser.add_argument('--from', help='isoformat start date (yyyy-mm-dd) e.g., --from 2018-03-15')
+        parser.add_argument('--to', help='isoformat end date (yyyy-mm-dd) e.g., --to 2018-06-01. Blank defaults to today.', default=None)
         parser.add_argument('--directory', '-d', help='directory to store statistics in', default='/shared/statistics')
         parser.add_argument('--aggregations', '-a', default='release,codebase,ip,new',
                             help='aggregations - comma separated list of release, codebase, ip')
