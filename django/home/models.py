@@ -145,10 +145,15 @@ class LandingPage(Page):
     community_statement = models.TextField()
 
     def get_featured_content(self):
-        return self.featured_content_queue.all()[:self.FEATURED_CONTENT_COUNT]
+        return self.featured_content_queue.select_related(
+            'image',
+            'codebase_image',
+            'link_codebase',
+            'link_page'
+        ).all()[:self.FEATURED_CONTENT_COUNT]
 
     def get_canned_forum_activity(self):
-        random_submitters = User.objects.filter(pk__in=(3, 5, 7, 11, 13, 17))
+        random_submitters = User.objects.select_related('member_profile').filter(pk__in=(3, 5, 7, 11, 13, 17))
         return [
             {
                 'title': "Generated Forum Topic {}".format(i),
