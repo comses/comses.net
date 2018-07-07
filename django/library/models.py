@@ -430,8 +430,9 @@ class Codebase(index.Indexed, ClusterableModel):
 
         if codebase_contributors is None:
             codebase_contributors = set()
-            for release in self.releases.all():
-                for release_contributor in release.codebase_contributors.select_related('contributor').all():
+            for release in self.releases.prefetch_related('codebase_contributors').all():
+                for release_contributor in release.codebase_contributors.select_related(
+                        'contributor__user__member_profile').all():
                     contributor = release_contributor.contributor
                     codebase_contributors.add(contributor)
             cache.set(redis_key, codebase_contributors)
