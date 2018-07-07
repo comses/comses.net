@@ -32,10 +32,9 @@
                     </a>
                     <div class="dropdown-menu" aria-labelledby="subscribeDropdownLink">
                         <a class="dropdown-item" href="{{ url('rss') }}">RSS</a>
-                        <a class="dropdown-item" href="{{ url('atom') }}">Atom</a>
                         <div class='dropdown-divider'></div>
-                        <a class='dropdown-item' href='{{ url('atom-events') }}'>Events</a>
-                        <a class='dropdown-item' href='{{ url('atom-jobs') }}'>Jobs</a>
+                        <a class='dropdown-item' href='{{ url('rss-events') }}'>Events</a>
+                        <a class='dropdown-item' href='{{ url('rss-jobs') }}'>Jobs</a>
                     </div>
                 </li>
                 {% if user.is_authenticated %}
