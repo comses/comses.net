@@ -69,7 +69,6 @@ WAGTAIL_APPS = [
     'taggit',
     'modelcluster',
     'search',
-    'wagtailmarkdown'
 ]
 
 DJANGO_APPS = [
