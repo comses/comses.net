@@ -1,4 +1,5 @@
 import logging
+from collections import Counter, defaultdict
 
 from django.contrib.auth.models import User
 from django.urls import reverse
@@ -6,6 +7,7 @@ from django.utils import timezone
 from django.utils.http import urlencode
 from django.utils.translation import ugettext_lazy as _
 from rest_framework import serializers
+from rest_framework.exceptions import ValidationError
 from wagtail.images.models import SourceImageIOError
 
 from core.models import MemberProfile
@@ -42,22 +44,33 @@ class ContributorSerializer(serializers.ModelSerializer):
     affiliations = TagSerializer(many=True)
     profile_url = serializers.SerializerMethodField()
 
+    def get_existing_contributor(self, validated_data):
+        user = validated_data.get('user')
+        username = user.get('username') if user else None
+        if username is not None:
+            return User.objects.get(username=username), Contributor.objects.filter(user__username=username).first()
+        else:
+            name = {'given_name': validated_data['given_name'], 'family_name': validated_data['family_name']}
+            return None, Contributor.objects.filter(**name).first()
+
+    def save(self, **kwargs):
+        if self.instance is None:
+            validated_data = dict(
+                list(self.validated_data.items()) +
+                list(kwargs.items())
+            )
+            user, self.instance = self.get_existing_contributor(validated_data)
+            if user:
+                kwargs['user_id'] = user.id
+        self.validated_data.pop('user')
+        return super().save(**kwargs)
+
     def get_profile_url(self, instance):
         user = instance.user
         if user:
             return user.member_profile.get_absolute_url()
         else:
             return "{0}?{1}".format(reverse('home:profile-list'), urlencode({'query': instance.name}))
-
-    def _create_or_update(self, validated_data):
-        affiliations_serializer = TagSerializer(many=True, data=validated_data.pop('affiliations'))
-        raw_user = validated_data.pop('user')
-        if raw_user:
-            user = User.objects.get(username=raw_user['username'])
-        else:
-            user = None
-        validated_data['user_id'] = user.id if user else None
-        return affiliations_serializer, user
 
     def update(self, instance, validated_data):
         affiliations_serializer = TagSerializer(many=True, data=validated_data.pop('affiliations'))
@@ -67,9 +80,9 @@ class ContributorSerializer(serializers.ModelSerializer):
         return instance
 
     def create(self, validated_data):
-        affiliations_list_serializer, user = self._create_or_update(validated_data)
+        affiliations_serializer = TagSerializer(many=True, data=validated_data.pop('affiliations'))
         instance = super().create(validated_data)
-        save_tags(instance, affiliations_list_serializer, 'affiliations')
+        save_tags(instance, affiliations_serializer, 'affiliations')
         instance.save()
         return instance
 
@@ -80,6 +93,27 @@ class ContributorSerializer(serializers.ModelSerializer):
 
 
 class ListReleaseContributorSerializer(serializers.ListSerializer):
+    def validate(self, attrs):
+        attrs = super().validate(attrs)
+        self.check_unique_users([rc['contributor'] for rc in attrs])
+        return attrs
+
+    def check_unique_users(self, contributors):
+        user_map = defaultdict(list)
+        for contributor in contributors:
+            raw_user = contributor['user']
+            if raw_user:
+                username = raw_user['username']
+                user_map[username].append(contributor)
+
+        for username, related_contributors in user_map.items():
+            related_contributor_count = len(related_contributors)
+            if related_contributor_count > 1:
+                user = User.objects.get(username=username)
+                raise ValidationError(
+                    {'non_field_errors': ['User {} occurs {} time(s) in the contributor list. Duplicates must be removed in order to save'
+                        .format(user.get_full_name(), related_contributor_count)]})
+
     def create(self, validated_data):
         ReleaseContributor.objects.filter(release_id=self.context['release_id']).delete()
         release_contributors = []
@@ -124,18 +158,10 @@ class ReleaseContributorSerializer(serializers.ModelSerializer):
 
     @staticmethod
     def create_unsaved(context, validated_data):
-        contributor_serializer = ContributorSerializer()
-        contributor_serializer._errors = {}
         raw_contributor = validated_data.pop('contributor')
-        kwargs = {'given_name': raw_contributor['given_name'], 'family_name': raw_contributor['family_name']}
-        if raw_contributor.get('user'):
-            kwargs = {'user__username': raw_contributor['user']['username']}
-        contributor = Contributor.objects.filter(**kwargs).first()
-        if contributor:
-            raw_contributor.pop('user')
-            contributor = contributor_serializer.update(instance=contributor, validated_data=raw_contributor)
-        else:
-            contributor = contributor_serializer.create(raw_contributor)
+        contributor_serializer = ContributorSerializer(data=raw_contributor)
+        contributor_serializer.is_valid(raise_exception=True)
+        contributor = contributor_serializer.save()
 
         validated_data['release_id'] = context['release_id']
         validated_data['contributor_id'] = contributor.id
