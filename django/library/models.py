@@ -526,10 +526,15 @@ class Codebase(index.Indexed, ClusterableModel):
             self.save()
         return release
 
-    def import_media(self, fileobj, title=None, media=None):
-        if media is None:
-            media = self.media
+    def import_media(self, fileobj, user=None, title=None):
+        if user is None:
+            user = self.submitter
+
         name = os.path.basename(fileobj.name)
+
+        if title is None:
+            title = name or self.title
+
         path = self.media_dir(name)
         os.makedirs(str(path.parent), exist_ok=True)
         with path.open('wb') as f:
@@ -543,22 +548,21 @@ class Codebase(index.Indexed, ClusterableModel):
             'featured': fs.is_image(str(path)),
         }
 
-        logger.info('featured image: %s', image_metadata['name'])
+        logger.info('featured image: %s', image_metadata)
         if image_metadata['featured']:
             filename = image_metadata['name']
             path = pathlib.Path(image_metadata['path'], filename)
             image = CodebaseImage(codebase=self,
-                                  title=title or name or self.title,
+                                  title=title,
                                   file=ImageFile(path.open('rb')),
-                                  uploaded_by_user=self.submitter)
+                                  uploaded_by_user=user)
             image.save()
             self.featured_images.add(image)
             logger.info('added featured image')
             return image
 
-        media.append(image_metadata)
-        self.media = media
-        return None
+        self.media.append(image_metadata)
+        return image_metadata
 
     @transaction.atomic
     def get_or_create_draft(self):

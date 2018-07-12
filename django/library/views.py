@@ -357,7 +357,7 @@ class CodebaseVersionRedirectView(RedirectView):
         return super().get_redirect_url(*args, **kwargs)
 
 
-class CodebaseFilesViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
+class CodebaseImageViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
     lookup_field = 'codebaseimage_id'
     lookup_value_regex = r'\d+'
     queryset = CodebaseImage.objects.all()
@@ -367,7 +367,7 @@ class CodebaseFilesViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
     def get_queryset(self):
         resolved = resolve(self.request.path)
         identifier = resolved.kwargs['identifier']
-        return self.queryset.accessible(user=self.request.user).filter(codebase__identifier=identifier)
+        return self.queryset.filter(codebase__identifier=identifier)
 
     def get_object(self):
         queryset = self.filter_queryset(self.get_queryset())
@@ -381,7 +381,7 @@ class CodebaseFilesViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
         fileobj = request.data.get('file')
         if fileobj is None:
             raise ValidationError({'file': ['This field is required']})
-        image = codebase.import_media(fileobj)
+        image = codebase.import_media(fileobj, user=request.user)
         if image is None:
             raise ValidationError([{'msg': {'detail': 'file is not an image', 'stage': 'media'}}])
         codebase.save()
