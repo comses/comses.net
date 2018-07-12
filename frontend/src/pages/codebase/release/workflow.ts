@@ -50,14 +50,14 @@ type CodebaseTabs = 'metadata' | 'media';
                         </ul>
                         <div class="tab-content">
                             <div :class="['tab-pane fade', contentClass('metadata')]">
-                                <codebase-edit-form :_identifier="identifier" redirect="#editCodebaseModal" 
+                                <codebase-edit-form :_identifier="identifier" redirect="#editCodebaseModal"
                                     @updated="$emit('updated', $event)">
                                 </codebase-edit-form>
                             </div>
                             <div :class="['tab-pane fade', contentClass('media')]">
-                                <c-upload :uploadUrl="uploadUrl" title="Upload Media" 
+                                <c-upload :uploadUrl="uploadUrl" title="Upload Media"
                                     instructions="Upload featured media files here. Images are displayed on the release detail page of every release"
-                                    originalInstructions="Current media files" :originals="files" @doneUpload="getMediaFiles" 
+                                    originalInstructions="Current media files" :originals="files" @doneUpload="getMediaFiles"
                                     @deleteFile="deleteFile" @clear="clear">
                                 </c-upload>
                             </div>
@@ -225,7 +225,7 @@ class PublishModal extends createFormValidator(publishSchema) {
     template: `<div>
         <div v-if="isInitialized">
             <h1>{{ $store.state.release.codebase.title }} <i>v{{ $store.state.release.version_number }}</i></h1>
-            <h5 class="text-muted">Review Status: {{ reviewStatus }}</h5>
+            <h5 class="text-muted">Review Status: {{ reviewStatus }} | <a :href='absolute_url'>View Live</a></h5>
             <div class='pb-2'>
                 <span class="btn btn-primary" data-target="#editCodebaseModal" data-toggle="modal"><i class='fa fa-edit'></i> Edit Common Metadata | Add Images &amp; Media</span>
                 <div class='float-right'>
