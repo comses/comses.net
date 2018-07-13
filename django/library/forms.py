@@ -136,7 +136,7 @@ class PeerReviewerFeedbackEditorForm(CheckCharFieldLengthMixin, forms.ModelForm)
             kwargs['initial']['accept'] = feedback.invitation.review.is_complete
         super().__init__(**kwargs)
 
-    accept = forms.BooleanField(label='Accept?')
+    accept = forms.BooleanField(label='Accept?', required=False)
 
     def clean_notes_to_author(self):
         return self._check_char_field_has_content('notes_to_author')
