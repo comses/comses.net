@@ -69,10 +69,8 @@ class LinkedUserSerializer(serializers.ModelSerializer):
     username = serializers.ReadOnlyField()
 
     def get_name(self, user):
-        name = user.member_profile.name
-        if name:
-            return name
-        return user.username
+        # FIXME: duplicate logic in user.member_profile.name
+        return user.get_full_name() or user.username
 
     class Meta:
         model = User

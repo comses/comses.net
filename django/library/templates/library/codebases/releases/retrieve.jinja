@@ -100,22 +100,18 @@
             </div>
         </div>
     </div>
-    {% if codebase.is_replication %}
-        <div class='card-metadata'>
-            <div class='card-body'>
-                <h2 class='card-title'>Replication of a previously published model</h2>
-                <p class='card-text'>
-                    {{ codebase.replication_text }}
-                </p>
-            </div>
-        </div>
-    {% endif %}
     {% if codebase.references_text %}
         <div class='card-metadata'>
             <div class='card-body'>
-                <h2 class='card-title'>References</h2>
+                <h2 class='card-title'>References
+                </h2>
+                {% if codebase.is_replication %}
+                    <p class='card-text'>
+                    <em>Replication of a previously described model</em>
+                    </p>
+                {% endif %}
                 <p class='card-text'>
-                    {{ codebase.references_text }}
+                {{ codebase.references_text }}
                 </p>
             </div>
         </div>
