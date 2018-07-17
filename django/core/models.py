@@ -252,7 +252,7 @@ class MemberProfile(index.Indexed, ClusterableModel):
 
     @property
     def institution_url(self):
-        return self.institution.url if self.institution else None
+        return self.institution.url if self.institution else ''
 
     @property
     def profile_url(self):
@@ -272,7 +272,7 @@ class MemberProfile(index.Indexed, ClusterableModel):
 
     @property
     def institution_name(self):
-        return self.institution.name if self.institution else None
+        return self.institution.name if self.institution else ''
 
     @property
     def submitter(self):

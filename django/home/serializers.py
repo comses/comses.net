@@ -72,8 +72,8 @@ class MemberProfileSerializer(serializers.ModelSerializer):
     codebases = RelatedCodebaseSerializer(source='user.codebases', many=True, read_only=True)
 
     # Institution
-    institution_name = serializers.CharField(required=False)
-    institution_url = serializers.URLField(required=False)
+    institution_name = serializers.CharField(allow_blank=True)
+    institution_url = serializers.URLField(allow_blank=True)
 
     # MemberProfile
     avatar = serializers.SerializerMethodField()  # needed to materialize the FK relationship for wagtailimages
