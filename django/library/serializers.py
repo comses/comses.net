@@ -11,7 +11,7 @@ from rest_framework.exceptions import ValidationError
 from wagtail.images.models import SourceImageIOError
 
 from core.models import MemberProfile
-from core.serializers import (YMD_DATETIME_FORMAT, PUBLISH_DATE_FORMAT, LinkedUserSerializer, create, update, save_tags,
+from core.serializers import (YMD_DATETIME_FORMAT, PUBLISH_DATE_FORMAT, LinkedUserSerializer, create, update, add_tags,
                               TagSerializer, MarkdownField)
 from home.common_serializers import RelatedMemberProfileSerializer
 from .models import (ReleaseContributor, Codebase, CodebaseRelease, Contributor, License, CodebaseImage, PeerReview,
@@ -75,14 +75,14 @@ class ContributorSerializer(serializers.ModelSerializer):
     def update(self, instance, validated_data):
         affiliations_serializer = TagSerializer(many=True, data=validated_data.pop('affiliations'))
         instance = super().update(instance, validated_data)
-        save_tags(instance, affiliations_serializer, 'affiliations')
+        add_tags(instance, affiliations_serializer, 'affiliations')
         instance.save()
         return instance
 
     def create(self, validated_data):
         affiliations_serializer = TagSerializer(many=True, data=validated_data.pop('affiliations'))
         instance = super().create(validated_data)
-        save_tags(instance, affiliations_serializer, 'affiliations')
+        add_tags(instance, affiliations_serializer, 'affiliations')
         instance.save()
         return instance
 
@@ -238,8 +238,8 @@ class CodebaseSerializer(serializers.ModelSerializer, FeaturedImageMixin):
         codebase = Codebase(**validated_data)
         codebase.submitter = self.context['request'].user
         codebase.identifier = codebase.uuid
+        add_tags(codebase, serialized_tags)
         codebase.save()
-        save_tags(codebase, serialized_tags)
         return codebase
 
     def update(self, instance, validated_data):
@@ -356,8 +356,8 @@ class CodebaseReleaseEditSerializer(CodebaseReleaseSerializer):
         raw_license = validated_data.pop('license')
         existing_license = License.objects.get(name=raw_license['name'])
 
-        save_tags(instance, programming_languages, 'programming_languages')
-        save_tags(instance, platform_tags, 'platform_tags')
+        add_tags(instance, programming_languages, 'programming_languages')
+        add_tags(instance, platform_tags, 'platform_tags')
 
         instance = super().update(instance, validated_data)
 
