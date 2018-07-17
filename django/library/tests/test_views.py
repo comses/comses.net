@@ -443,7 +443,7 @@ class PeerReviewFeedbackTestCase(ReviewSetup, ResponseStatusCodesMixin, TestCase
 
     def test_cannot_update_feedback_on_complete_review(self):
         feedback, _ = self.invitation.accept()
-        self.review.status = ReviewStatus.complete
+        self.review.status = ReviewStatus.complete.name
         self.review.save()
         data = PeerReviewerFeedbackReviewerForm(instance=feedback).initial
         form = PeerReviewerFeedbackReviewerForm(data.copy(), instance=feedback)

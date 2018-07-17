@@ -1,9 +1,10 @@
 import logging
 
 from django import forms
+from django.forms.utils import ErrorDict
 from django.utils.translation import ugettext_lazy as _
 
-from .models import PeerReview, PeerReviewerFeedback, PeerReviewInvitation, PeerReviewEventLog
+from .models import PeerReview, PeerReviewerFeedback, PeerReviewInvitation, PeerReviewEventLog, ReviewerRecommendation
 
 logger = logging.getLogger(__name__)
 
@@ -78,10 +79,9 @@ class PeerReviewerFeedbackReviewerForm(CheckCharFieldLengthMixin, forms.ModelFor
 
     def clean(self):
         cleaned_data = super().clean()
-        if self.instance.invitation.review.is_complete:
-            raise forms.ValidationError('Feedback cannot be updated on a complete review')
 
-        if cleaned_data['reviewer_submitted'] and cleaned_data['recommendation']:
+        reviewer_submitted = cleaned_data.get('reviewer_submitted')
+        if reviewer_submitted and cleaned_data.get('recommendation') == ReviewerRecommendation.accept.name:
             has_narrative_documentation = cleaned_data['has_narrative_documentation']
             has_clean_code = cleaned_data['has_clean_code']
             is_runnable = cleaned_data['is_runnable']
@@ -96,7 +96,26 @@ class PeerReviewerFeedbackReviewerForm(CheckCharFieldLengthMixin, forms.ModelFor
 
             if checklist_errors:
                 raise forms.ValidationError([forms.ValidationError(e) for e in checklist_errors])
+
         return cleaned_data
+
+    def full_clean(self):
+        self._errors = ErrorDict()
+        if not self.is_bound:  # Stop further processing.
+            return
+        self.cleaned_data = {}
+        # If the form is permitted to be empty, and none of the form data has
+        # changed from the initial data, short circuit any validation.
+        if self.empty_permitted and not self.has_changed():
+            return
+
+        self._clean_fields()
+        if not self.cleaned_data.get('reviewer_submitted', True):
+            self._errors = ErrorDict()
+        if self.instance.invitation.review.is_complete:
+            self.add_error(field=None, error='Feedback cannot be updated on a complete review')
+        self._clean_form()
+        self._post_clean()
 
     def save(self, commit=True):
         feedback = super().save(commit)
@@ -120,13 +139,6 @@ class PeerReviewerFeedbackReviewerForm(CheckCharFieldLengthMixin, forms.ModelFor
         widgets = {
             'reviewer_submitted': forms.HiddenInput()
         }
-
-
-class PeerReviewerFeedbackReviewerSaveForm(forms.ModelForm):
-    class Meta:
-        model = PeerReviewerFeedback
-        fields = PeerReviewerFeedbackReviewerForm.Meta.fields
-        widgets = PeerReviewerFeedbackReviewerForm.Meta.widgets
 
 
 class PeerReviewerFeedbackEditorForm(CheckCharFieldLengthMixin, forms.ModelForm):

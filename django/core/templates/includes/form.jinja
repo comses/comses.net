@@ -1,8 +1,8 @@
 {% csrf_token %}
 {% if form.non_field_errors() %}
     <div class='alert alert-danger'>
-        <ul class='errors'>
-            {% for error in form.non_field_errors %}
+        <ul class='errorlist'>
+            {% for error in form.non_field_errors() %}
                 <li>{{ error|safe }}</li>
             {% endfor %}
         </ul>

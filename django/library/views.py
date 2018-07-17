@@ -24,8 +24,9 @@ from core.view_helpers import add_change_delete_perms, get_search_queryset
 from core.views import (CommonViewSetMixin, FormUpdateView, FormCreateView, SmallResultSetPagination,
                         CaseInsensitiveOrderingFilter, NoDeleteViewSet,
                         NoDeleteNoUpdateViewSet, HtmlNoDeleteViewSet)
+from home.models import LandingPage
 from .forms import (PeerReviewerFeedbackReviewerForm, PeerReviewInvitationReplyForm, PeerReviewInvitationForm,
-                    PeerReviewerFeedbackEditorForm, PeerReviewerFeedbackReviewerSaveForm)
+                    PeerReviewerFeedbackEditorForm)
 from .fs import FileCategoryDirectories, StagingDirectories, MessageLevels
 from .models import (Codebase, CodebaseRelease, Contributor, CodebaseImage, PeerReview, PeerReviewerFeedback,
                      PeerReviewInvitation, ReviewStatus)
@@ -179,12 +180,6 @@ class PeerReviewFeedbackUpdateView(UpdateView):
     form_class = PeerReviewerFeedbackReviewerForm
     template_name = 'library/review/feedback/update.jinja'
 
-    def get_form_class(self):
-        if self.request.method == 'POST':
-            submit = self.get_submitted_query_param() in ['True', True, ['True']]
-            return PeerReviewerFeedbackReviewerForm if submit else PeerReviewerFeedbackReviewerSaveForm
-        return PeerReviewerFeedbackReviewerForm
-
     def get_context_data(self, **kwargs):
         feedback_set = PeerReviewerFeedback.objects \
             .filter(invitation__review=self.object.invitation.review) \
@@ -201,30 +196,9 @@ class PeerReviewFeedbackUpdateView(UpdateView):
             raise PermissionDenied('Cannot access feedback of declined review')
         return feedback
 
-    def get_submitted_query_param(self):
-        query_params = self.request.GET
-        return query_params.get('submit')
-
-    def get_form_kwargs(self):
-        REVIEWER_SUBMITTED = 'reviewer_submitted'
-        kwargs = super().get_form_kwargs()
-
-        if self.request.method == 'POST':
-            data = QueryDict(mutable=True)
-            for k, v in kwargs['data'].items():
-                data[k] = v
-            submit = self.get_submitted_query_param()
-            if submit is not None:
-                data[REVIEWER_SUBMITTED] = 'True'
-            else:
-                data[REVIEWER_SUBMITTED] = 'False'
-            kwargs['data'] = data
-
-        return kwargs
-
     def get_success_url(self):
-        if self.get_submitted_query_param() is not None:
-            return self.request.user.member_profile.get_absolute_url()
+        if self.object.reviewer_submitted:
+            return self.object.invitation.candidate_reviewer.get_absolute_url()
         else:
             return self.object.get_absolute_url()
 

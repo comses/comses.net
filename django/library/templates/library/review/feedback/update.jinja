@@ -41,11 +41,24 @@
 
         <h3>Your Feedback</h3>
 
-        <form>
+        <form method="post">
             {% include 'includes/form.jinja' %}
-            <button type="submit" class="btn btn-secondary" formaction="" formmethod="post">Save</button>
-            <button type="submit" class="btn btn-primary" formaction="?submit" formmethod="post">Submit</button>
+            <button id="save" class="btn btn-secondary">Save</button>
+            <button id="submitReview" class="btn btn-primary">Submit</button>
         </form>
+        <script>
+            document.getElementById('submitReview').addEventListener('click', function(ev) {
+                ev.preventDefault();
+                document.getElementById('id_reviewer_submitted').value = true;
+                ev.target.form.submit();
+             });
+
+            document.getElementById('save').addEventListener('click', function(ev) {
+                ev.preventDefault();
+                document.getElementById('id_reviewer_submitted').value = false;
+                ev.target.form.submit();
+             })
+        </script>
     {% else %}
         <p>Peer review process is complete. Please see below for a record of the feedback</p>
 
