@@ -50,7 +50,7 @@ def create(model_cls, validated_data, context):
     validated_data['submitter_id'] = user.id
     # Relate with other many to many relations
     obj = model_cls.objects.create(**validated_data)
-    add_tags(obj, tags)
+    set_tags(obj, tags)
     obj.save()
     return obj
 
@@ -58,7 +58,7 @@ def create(model_cls, validated_data, context):
 def update(serializer_update, instance, validated_data):
     tags = TagSerializer(many=True, data=validated_data.pop('tags'))
     instance = serializer_update(instance, validated_data)
-    add_tags(instance, tags)
+    set_tags(instance, tags)
     instance.save()
     return instance
 
@@ -91,7 +91,7 @@ class EditableSerializerMixin(serializers.Serializer):
         return request.user.has_perm("{}.change_{}".format(app_label, model_name), obj)
 
 
-def add_tags(instance, related, attr: str = 'tags'):
+def set_tags(instance, related, attr: str = 'tags'):
     """Associate taggit tags with an instance.
 
     Instance must be saved afterward for associations to be saved in the db"""
