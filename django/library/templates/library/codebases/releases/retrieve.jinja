@@ -157,11 +157,10 @@
                         <b class='card-title'>Submitter:</b> {{ member_profile_href(release.submitter.member_profile) }}
                     </div>
                     <div class='section'>
-                        <b class='card-title'>DOI:</b> {{ release.doi }}
+                        <b class='card-title'>DOI:</b> <a href='{{release.doi_url}}'>{{ release.doi_url }}</a>
                     </div>
                     <div class='section'>
-                        <b class='card-title'>License:</b> <a
-                            href='{{ release.license.url }}'>{{ release.license.name }}</a>
+                        <b class='card-title'>License:</b> <a href='{{ release.license.url }}'>{{ release.license.name }}</a>
                     </div>
                     <div class='section'>
                         <b class='card-title'>Operating System:</b> {{ release.get_os_display() }}
