@@ -180,17 +180,13 @@
                 </a>
             {% endif %}
             {# FIXME: set up JS logic for message / follow #}
-            {% if profile.email %}
-                {% if profile.is_messageable(request.user) %}
+            {% if profile.is_messageable(request.user) %}
                 <a class='btn btn-primary w-100 my-1' href="mailto:{{ profile.email }}">Send Message</a>
                 {#
                 <p class='card-text'>
                     <a href='#' onclick='toggleFollow()' class='btn btn-primary w-100'>Follow</a>
                 </p>
                 #}
-                {% else %}
-                    <a class='btn btn-primary w-100 my-1' href='{{login_url}}?next={{profile.get_absolute_url()}}'>Send message</a>
-                {% endif %}
             {% endif %}
             {#
             <div class='row'>
