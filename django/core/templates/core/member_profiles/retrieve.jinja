@@ -170,10 +170,8 @@
 {% endblock %}
 
 {% block sidebar %}
-    {# FIXME: set up JS logic for message / follow #}
     <div class='card-metadata'>
         <div class='card-body'>
-
             {% if has_change_perm %}
                 <a href="{{ profile.get_edit_url() }}" class='btn btn-primary w-100 my-1'>
                     Edit Profile</a>
@@ -181,13 +179,18 @@
                     Archive a model
                 </a>
             {% endif %}
-            {% if profile.email and request.user.username != username %}
+            {# FIXME: set up JS logic for message / follow #}
+            {% if profile.email %}
+                {% if profile.is_messageable(request.user) %}
                 <a class='btn btn-primary w-100 my-1' href="mailto:{{ profile.email }}">Send Message</a>
                 {#
                 <p class='card-text'>
                     <a href='#' onclick='toggleFollow()' class='btn btn-primary w-100'>Follow</a>
                 </p>
                 #}
+                {% else %}
+                    <a class='btn btn-primary w-100 my-1' href='{{login_url}}?next={{profile.get_absolute_url()}}'>Send message</a>
+                {% endif %}
             {% endif %}
             {#
             <div class='row'>

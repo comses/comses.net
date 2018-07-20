@@ -298,6 +298,9 @@ class MemberProfile(index.Indexed, ClusterableModel):
         else:
             self.user.groups.remove(group)
 
+    def is_messageable(self, user):
+        return user.is_authenticated and user != self.user
+
     def __str__(self):
         return str(self.user)
 
