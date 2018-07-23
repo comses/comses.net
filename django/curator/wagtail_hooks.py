@@ -18,7 +18,7 @@ from wagtail.contrib.modeladmin.views import IndexView
 from wagtail.core import hooks
 
 from core.models import Event, Job
-from library.models import CodebaseRelease
+from library.models import CodebaseRelease, PeerReview
 from .models import TagCleanup
 
 
@@ -115,6 +115,8 @@ class RecentActivityPanel:
             '-last_modified')
         modified_jobs = Job.objects.filter(last_modified__gt=start_date).select_related('submitter').order_by(
             '-last_modified')
+        modified_peer_reviews = PeerReview.objects.filter(last_modified__gt=start_date) \
+            .select_related('codebase_release', 'submitter').order_by('-last_modified')
 
         return render_to_string('curator/home/recent_activity.html', {
             'start_date': start_date,
@@ -126,7 +128,9 @@ class RecentActivityPanel:
             'modified_jobs_count': modified_jobs.count(),
             'modified_jobs': modified_jobs[:max_size],
             'modified_releases_count': modified_releases.count(),
-            'modified_releases': modified_releases[:max_size]
+            'modified_releases': modified_releases[:max_size],
+            'modified_reviews_count': modified_peer_reviews.count(),
+            'modified_reviews': modified_peer_reviews[:max_size]
         }, request=self.request)
 
 
