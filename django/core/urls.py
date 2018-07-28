@@ -7,6 +7,7 @@ from rest_framework_swagger.views import get_swagger_view
 from wagtail.admin import urls as wagtailadmin_urls
 from wagtail.core import urls as wagtail_urls
 
+from conference import urls as conference_urls
 from curator import wagtail_hooks, urls as curator_urls
 from home import urls as home_urls
 from library import urls as library_urls
@@ -31,6 +32,7 @@ urlpatterns = [
     path('', include(home_urls, namespace='home')),
     path('', include(library_urls, namespace='library')),
     path('', include(curator_urls, namespace='curator')),
+    path('', include(conference_urls, namespace='conference')),
     path('discourse/sso', views.discourse_sso, name='discourse-sso'),
     path('django/admin/', admin.site.urls),
     # Replace the default wagtail admin home page

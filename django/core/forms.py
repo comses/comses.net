@@ -40,3 +40,4 @@ class SignupForm(forms.Form):
         if full_member:
             user.groups.add(ComsesGroups.FULL_MEMBER.get_group())
         user.save()
+

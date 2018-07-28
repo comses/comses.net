@@ -1,0 +1,15 @@
+{% extends "base.jinja" %}
+
+{% block title %}{% trans %} Submit a presentation for CoMSES 2018{% endtrans %}{% endblock %}
+
+{% block introduction %}<h1>{% trans %} Submit a presentation for CoMSES 2018{% endtrans %}</h1>{% endblock %}
+
+{% block content %}
+<p>Submissions to CoMSES 2017 should be about a topic related to the social and ecological sciences</p>
+
+<form class="signup" id="signup_form" method="post">
+    {% include "includes/form.jinja" %}
+    <button type="submit" class='btn btn-primary'>{% trans %} Sign Up{% endtrans %}</button>
+</form>
+
+{% endblock %}
