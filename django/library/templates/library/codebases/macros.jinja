@@ -70,12 +70,19 @@
                     </h1>
                     <small>
                         {% for codebase_contributor in codebase.all_contributors %}
-                            {% set badge_class='badge-success' if codebase_contributor.user else 'badge-default' %}
-                            <a class='badge {{badge_class}} contributor' href="{{ codebase_contributor.member_profile_url }}">
-                                {{ codebase_contributor.name }}
-                            </a>
+                            {% set contributor_name=codebase_contributor.name %}
+                            {% if codebase_contributor.user %}
+                                <a class='badge badge-success contributor' href="{{ codebase_contributor.member_profile_url }}">
+                                    {{ contributor_name }}
+                                </a>
+                            {% else %}
+                                <a class='badge contributor' href="?query={{contributor_name}}">
+                                    {{ contributor_name }}
+                                </a>
+                            {% endif %}
                         {% else %}
-                            no contributors listed
+                            {# FIXME: this is a degenerate case, there should always be at least 1 contributor (the submitter) #}
+                            no contributors listed 
                         {% endfor %}
                         |
                         {% if codebase.live %}

@@ -4,6 +4,7 @@ import mimetypes
 import os
 import pathlib
 import uuid
+from collections import OrderedDict
 from enum import Enum
 
 import semver
@@ -38,9 +39,9 @@ from wagtail.snippets.models import register_snippet
 
 from core import fs
 from core.backends import add_to_comses_permission_whitelist
-from core.queryset import get_viewable_objects_for_user
 from core.fields import MarkdownField
 from core.models import Platform, MemberProfile
+from core.queryset import get_viewable_objects_for_user
 from core.serializers import PUBLISH_DATE_FORMAT
 from core.utils import create_email
 from core.view_helpers import search_backend
@@ -429,12 +430,15 @@ class Codebase(index.Indexed, ClusterableModel):
         codebase_contributors = cache.get(redis_key) if not force else None
 
         if codebase_contributors is None:
-            codebase_contributors = set()
+            codebase_contributors_dict = OrderedDict()
             for release in self.releases.prefetch_related('codebase_contributors').all():
                 for release_contributor in release.codebase_contributors.select_related(
-                        'contributor__user__member_profile').all():
+                        'contributor__user__member_profile').order_by('index'):
                     contributor = release_contributor.contributor
-                    codebase_contributors.add(contributor)
+                    codebase_contributors_dict[contributor] = None
+            # PEP 448 syntax to unpack dict keys into list literal
+            # https://www.python.org/dev/peps/pep-0448/
+            codebase_contributors = [*codebase_contributors_dict]
             cache.set(redis_key, codebase_contributors)
         return codebase_contributors
 
