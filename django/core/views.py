@@ -1,14 +1,13 @@
+import base64
+import hashlib
+import hmac
 import logging
 from collections import OrderedDict
 from itertools import chain
 from urllib import parse
 
-import base64
-import hashlib
-import hmac
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
-from django.contrib.auth.models import AnonymousUser, User
 from django.contrib.auth.views import redirect_to_login
 from django.core.exceptions import PermissionDenied
 from django.db.models import F
@@ -16,7 +15,7 @@ from django.db.models.functions import Lower
 from django.http import Http404, HttpResponseBadRequest, HttpResponseRedirect, QueryDict, HttpResponseServerError
 from django.shortcuts import render
 from django.views.generic import DetailView, TemplateView
-from rest_framework import filters, viewsets, generics, mixins
+from rest_framework import filters, viewsets, mixins
 from rest_framework.exceptions import (PermissionDenied as DrfPermissionDenied, NotAuthenticated, NotFound,
                                        APIException)
 from rest_framework.pagination import PageNumberPagination

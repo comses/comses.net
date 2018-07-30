@@ -1,12 +1,12 @@
 import imghdr
 import logging
 import mimetypes
+import os
 import pathlib
+import shutil
 
 import bagit
-import os
 import rarfile
-import shutil
 from PIL import Image
 from django.core.exceptions import SuspiciousFileOperation
 from django.core.files.images import ImageFile

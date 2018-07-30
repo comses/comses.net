@@ -1,6 +1,6 @@
 import logging
-
 import re
+
 from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 from wagtail.search.backends import get_search_backend

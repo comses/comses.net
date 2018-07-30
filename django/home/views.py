@@ -27,12 +27,10 @@ from core.serializers import TagSerializer, EventSerializer, JobSerializer
 from core.utils import parse_datetime
 from core.view_helpers import retrieve_with_perms, get_search_queryset, add_change_delete_perms
 from core.views import (CaseInsensitiveOrderingFilter, CommonViewSetMixin, FormCreateView, FormUpdateView,
-                        SmallResultSetPagination, OnlyObjectPermissionModelViewSet, NoDeleteViewSet,
-                        HtmlNoDeleteViewSet)
-from library.models import Codebase, PeerReviewInvitation
+                        SmallResultSetPagination, OnlyObjectPermissionModelViewSet, HtmlNoDeleteViewSet)
+from library.models import Codebase
 from .models import FeaturedContentItem, MemberProfile, ContactPage
-from .serializers import (FeaturedContentItemSerializer, UserMessageSerializer, MemberProfileSerializer,
-                          MemberProfileListSerializer)
+from .serializers import (FeaturedContentItemSerializer, UserMessageSerializer, MemberProfileSerializer)
 
 logger = logging.getLogger(__name__)
 

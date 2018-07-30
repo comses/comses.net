@@ -1,4 +1,5 @@
 import pathlib
+from enum import Enum
 
 from allauth.account.models import EmailAddress
 from django import forms
@@ -10,7 +11,6 @@ from django.db import models, transaction
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.translation import ugettext_lazy as _
-from enum import Enum
 from modelcluster.contrib.taggit import ClusterTaggableManager
 from modelcluster.fields import ParentalKey
 from modelcluster.models import ClusterableModel

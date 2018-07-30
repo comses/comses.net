@@ -1,8 +1,6 @@
 import logging
 
-from django.http import Http404
 from rest_framework import permissions, exceptions
-from rest_framework.permissions import SAFE_METHODS
 
 logger = logging.getLogger(__name__)
 

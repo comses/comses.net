@@ -1,6 +1,6 @@
+from django.utils.translation import ugettext_lazy as _
 from wagtail.contrib.modeladmin.options import (ModelAdmin, modeladmin_register, ModelAdminGroup)
 
-from django.utils.translation import ugettext_lazy as _
 from .models import CodebaseImage, PeerReview, PeerReviewerFeedback, PeerReviewInvitation
 
 

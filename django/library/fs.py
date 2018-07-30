@@ -1,24 +1,24 @@
 import json
 import logging
 import mimetypes
-import zipfile
-from pathlib import Path
-from typing import Optional
-
-import bagit
 import os
-import rarfile
 import re
 import shutil
 import tarfile
+import zipfile
+from enum import Enum
+from functools import total_ordering
+from pathlib import Path
+from tempfile import TemporaryDirectory
+from typing import Optional
+
+import bagit
+import rarfile
 from django.conf import settings
 from django.core.files.storage import FileSystemStorage
 from django.core.files.uploadedfile import File
 from django.urls import reverse
-from enum import Enum
-from functools import total_ordering
 from rest_framework.exceptions import ValidationError
-from tempfile import TemporaryDirectory
 
 from core import fs
 

@@ -1,5 +1,5 @@
 import logging
-from collections import Counter, defaultdict
+from collections import defaultdict
 
 from django.contrib.auth.models import User
 from django.urls import reverse
@@ -14,7 +14,7 @@ from core.models import MemberProfile
 from core.serializers import (YMD_DATETIME_FORMAT, PUBLISH_DATE_FORMAT, LinkedUserSerializer, create, update, set_tags,
                               TagSerializer, MarkdownField)
 from home.common_serializers import RelatedMemberProfileSerializer
-from .models import (ReleaseContributor, Codebase, CodebaseRelease, Contributor, License, CodebaseImage, PeerReview,
+from .models import (ReleaseContributor, Codebase, CodebaseRelease, Contributor, License, CodebaseImage,
                      PeerReviewerFeedback, PeerReviewInvitation, ReviewStatus, PeerReviewEventLog)
 
 logger = logging.getLogger(__name__)

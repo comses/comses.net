@@ -1,6 +1,6 @@
+import logging
 import os
 
-import logging
 import requests
 from django.conf import settings
 

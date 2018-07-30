@@ -9,9 +9,7 @@ from rest_framework.exceptions import ValidationError as DrfValidationError
 
 from core.models import Institution, MemberProfile
 from core.serializers import TagSerializer, MarkdownField
-from library.serializers import (RelatedCodebaseSerializer, PeerReviewFeedbackEditorSerializer,
-                                 PeerReviewInvitationSerializer, RelatedPeerReviewInvitationSerializer)
-
+from library.serializers import (RelatedCodebaseSerializer)
 from .models import (FeaturedContentItem, UserMessage)
 
 logger = logging.getLogger(__name__)

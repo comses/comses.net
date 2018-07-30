@@ -3,8 +3,8 @@ import re
 from itertools import chain
 from operator import attrgetter
 
-from django.urls import path
 from django.contrib.syndication.views import Feed
+from django.urls import path
 from django.utils.feedgenerator import Atom1Feed, Rss201rev2Feed
 
 from library.models import CodebaseRelease

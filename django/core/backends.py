@@ -2,9 +2,7 @@ import logging
 import re
 
 from django.contrib.auth.models import Permission
-from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import PermissionDenied
-from django.utils.functional import cached_property
 from guardian.shortcuts import get_perms
 
 from core.queryset import PUBLISHED_ATTRIBUTE_KEY, DELETABLE_ATTRIBUTE_KEY, OWNER_ATTRIBUTE_KEY

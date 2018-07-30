@@ -4,7 +4,7 @@ from django import forms
 from django.forms.utils import ErrorDict
 from django.utils.translation import ugettext_lazy as _
 
-from .models import PeerReview, PeerReviewerFeedback, PeerReviewInvitation, PeerReviewEventLog, ReviewerRecommendation
+from .models import PeerReviewerFeedback, PeerReviewInvitation, ReviewerRecommendation
 
 logger = logging.getLogger(__name__)
 

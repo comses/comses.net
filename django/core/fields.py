@@ -5,6 +5,7 @@ import markdown
 from django.utils.html import linebreaks, escape
 from jinja2.utils import urlize
 from markupfield.fields import MarkupField
+
 from .widgets import MarkdownTextarea
 
 logger = logging.getLogger(__name__)

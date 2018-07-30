@@ -5,7 +5,7 @@ from django.contrib import messages
 from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.core.exceptions import PermissionDenied
 from django.db import transaction
-from django.http import FileResponse, Http404, HttpResponseRedirect, QueryDict
+from django.http import FileResponse, Http404, HttpResponseRedirect
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import resolve
 from django.views import View
@@ -24,7 +24,6 @@ from core.view_helpers import add_change_delete_perms, get_search_queryset
 from core.views import (CommonViewSetMixin, FormUpdateView, FormCreateView, SmallResultSetPagination,
                         CaseInsensitiveOrderingFilter, NoDeleteViewSet,
                         NoDeleteNoUpdateViewSet, HtmlNoDeleteViewSet)
-from home.models import LandingPage
 from .forms import (PeerReviewerFeedbackReviewerForm, PeerReviewInvitationReplyForm, PeerReviewInvitationForm,
                     PeerReviewerFeedbackEditorForm)
 from .fs import FileCategoryDirectories, StagingDirectories, MessageLevels
