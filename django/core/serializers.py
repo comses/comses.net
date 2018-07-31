@@ -34,7 +34,7 @@ class TagListSerializer(serializers.ListSerializer):
 
 
 class TagSerializer(serializers.ModelSerializer):
-    name = serializers.CharField()  # disable uniqueness check so TagListSerializer will validate properly
+    name = serializers.CharField(max_length=Tag._meta.get_field('name').max_length)  # disable uniqueness check so TagListSerializer will validate properly
 
     class Meta:
         model = Tag
