@@ -207,7 +207,7 @@
                                 {% else %}
                                     <span class="badge badge-warning">Unpublished</span>
                                 {% endif %}
-                                {% if related_release.peer_reviewed %}
+                                {% if related_release.codebase.peer_reviewed or related_release.peer_reviewed %}
                                     <span class='badge badge-info'>Peer Reviewed</span>
                                 {% endif %}
                             </td>
@@ -270,7 +270,7 @@
             </b> 
         </div>
         <div class='section'>
-            {% if codebase.peer_reviewed %}
+            {% if codebase.peer_reviewed or release.peer_reviewed %}
                 <img src="{{ static("images/icons/peer-reviewed.png") }}" alt="Peer Reviewed">
             {% else %}
                 <b class='card-title'>
