@@ -1,4 +1,5 @@
 import logging
+import re
 
 from django import forms
 from django.conf import settings
@@ -8,6 +9,9 @@ from django.utils.translation import ugettext_lazy as _
 from wagtail.core.models import Site
 
 from core.models import SocialMediaSettings
+from home.models import ConferenceSubmission
+
+YOUTUBE_URL = re.compile(r'^https?://(www\.)?youtube.com(.*)')
 
 logger = logging.getLogger(__name__)
 
@@ -74,3 +78,19 @@ class ContactForm(forms.Form):
             reply_to=[self.cleaned_data.get('email') or self.from_email],
         )
         email.send(fail_silently=fail_silently)
+
+
+class ConferenceSubmissionForm(forms.ModelForm):
+    def clean_video_url(self):
+        video_url = self.cleaned_data['video_url']
+        # This doesn't work for all youtube urls. https://gist.github.com/Glurt/ea11b690ba4b1278e049
+        # if not re.match(YOUTUBE_URL, video_url):
+        #    raise forms.ValidationError('Video URL must be a Youtube URL')
+        return video_url
+
+    class Meta:
+        model = ConferenceSubmission
+        fields = ('id', 'title', 'abstract', 'video_url', 'model_url', 'submitter')
+        widgets = {
+            'submitter': forms.HiddenInput()
+        }

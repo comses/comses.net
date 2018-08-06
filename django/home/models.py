@@ -653,6 +653,22 @@ class ConferenceIndexPage(Page):
     content_panels = Page.content_panels
 
 
+class ConferenceSubmission(models.Model):
+    submitter = models.ForeignKey(MemberProfile, on_delete=models.DO_NOTHING)
+    presenters = models.ManyToManyField(Contributor)
+    conference = models.ForeignKey(ConferencePage, related_name='submissions', on_delete=models.PROTECT)
+    date_created = models.DateTimeField(default=timezone.now)
+    last_modified = models.DateTimeField(auto_now=True)
+
+    title = models.CharField(max_length=150, help_text=_('Presentation title'))
+    abstract = MarkdownField(max_length=3000, help_text=_('Presentation abstract'), blank=False)
+    video_url = models.URLField(help_text=_('YouTube video link'))
+    model_url = models.URLField(help_text=_('Link to the model associated with the video'), blank=True)
+
+    def __str__(self):
+        return "submission {} by {}".format(self.title, self.submitter)
+
+
 @register_snippet
 class FaqEntry(index.Indexed, models.Model):
     FAQ_CATEGORIES = Choices(

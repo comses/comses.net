@@ -10,7 +10,7 @@ from django.db.models import Prefetch
 from django.shortcuts import redirect
 from django.urls import reverse
 from django.utils.decorators import method_decorator
-from django.views.generic import TemplateView, RedirectView
+from django.views.generic import TemplateView, RedirectView, CreateView
 from rest_framework import viewsets, generics, parsers, status, mixins, renderers, filters
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
@@ -29,6 +29,7 @@ from core.view_helpers import retrieve_with_perms, get_search_queryset, add_chan
 from core.views import (CaseInsensitiveOrderingFilter, CommonViewSetMixin, FormCreateView, FormUpdateView,
                         SmallResultSetPagination, OnlyObjectPermissionModelViewSet, HtmlNoDeleteViewSet)
 from library.models import Codebase
+from .forms import ConferenceSubmissionForm
 from .models import FeaturedContentItem, MemberProfile, ContactPage
 from .serializers import (FeaturedContentItemSerializer, UserMessageSerializer, MemberProfileSerializer)
 
@@ -332,3 +333,17 @@ class DigestView(TemplateView):
         except requests.exceptions.RequestException as e:
             logger.exception(e)
         return context_data
+
+
+class ConferenceSubmissionView(LoginRequiredMixin, CreateView):
+    template_name = 'home/conference/submission.jinja'
+    form_class = ConferenceSubmissionForm
+    success_url = '/'
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs().copy()
+        if self.request.POST:
+            data = kwargs['data'].copy()
+            data['submitter'] = self.request.user.member_profile.id
+            kwargs['data'] = data
+        return kwargs

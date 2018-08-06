@@ -1,11 +1,9 @@
 import json
 
 from django.core.management.base import BaseCommand
-from django.conf import settings
 from django.template.loader import get_template
-from django.utils import timezone
 
-from conference.models import Submission2018
+from home.models import ConferenceSubmission
 
 
 def create_post(id, author, body, date):
@@ -40,7 +38,7 @@ class Command(BaseCommand):
         category = options['category']
         template = get_template('conference/discourse_submission_body.jinja')
 
-        submissions = Submission2018.objects.all()
+        submissions = ConferenceSubmission.objects.all()
         topics = []
         for submission in submissions:
             body = template.render(context=dict(title=submission.title,
@@ -54,4 +52,3 @@ class Command(BaseCommand):
             topics.append(topic)
         with open('tmp', 'w') as f:
             json.dump(topics, f, indent=True)
-
