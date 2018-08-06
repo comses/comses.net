@@ -157,7 +157,17 @@
                         <b class='card-title'>Submitter:</b> {{ member_profile_href(release.submitter.member_profile) }}
                     </div>
                     <div class='section'>
-                        <b class='card-title'>DOI:</b> <a href='{{release.doi_url}}'>{{ release.doi_url }}</a>
+                        <b class='card-title'>DOI:</b>
+                        {% if release.doi %}
+                            <a href='{{release.doi_url}}'>{{ release.doi_url }}</a>
+                        {% else %}
+                            No assigned DOI. 
+                            {% if has_change_perm %}
+                                We assign DOIs to peer reviewed models or models associated with a peer
+                                reviewed publication. If you would like to request a DOI at this time for an upcoming
+                                publication, please <a href='{{slugurl('contact')}}'>contact us</a>.
+                            {% endif %}
+                        {% endif %}
                     </div>
                     <div class='section'>
                         <b class='card-title'>License:</b> <a href='{{ release.license.url }}'>{{ release.license.name }}</a>
@@ -172,7 +182,12 @@
                         {% endfor %}
                     </div>
                     <div class='section'>
-                        <b class='card-title'>Dependencies:</b> {{ release.dependencies }}
+                        <b class='card-title'>Dependencies:</b> 
+                        {% if release.dependencies %}
+                            {{ release.dependencies }}
+                        {% else %}
+                            None listed
+                        {% endif %}
                     </div>
                 </div>
             </div>
