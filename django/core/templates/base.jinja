@@ -67,7 +67,7 @@
                     </li>
                 {% else %}
                     <li class='nav-item'>
-                        <a class="nav-link" href="{{ login_url }}">Sign In <i class='fa fa-sign-in'></i></a>
+                        <a class="nav-link" href="{{ login_url }}?next={{request.path or '/'}}">Sign In <i class='fa fa-sign-in'></i></a>
                     </li>
                     <li class='nav-item'>
                         <a class='nav-link' href="{{ signup_url }}">Become a Member</a>
