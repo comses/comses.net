@@ -106,7 +106,6 @@ COMSES_APPS = [
     'home.apps.HomeConfig',
     'library.apps.LibraryConfig',
     'curator.apps.CuratorConfig',
-    'conference.apps.ConferenceConfig',
 ]
 
 INSTALLED_APPS = DJANGO_APPS + WAGTAIL_APPS + COMSES_APPS + THIRD_PARTY_APPS
