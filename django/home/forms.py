@@ -9,7 +9,7 @@ from django.utils.translation import ugettext_lazy as _
 from wagtail.core.models import Site
 
 from core.models import SocialMediaSettings
-from home.models import ConferenceSubmission
+from .models import ConferenceSubmission
 
 YOUTUBE_URL = re.compile(r'^https?://(www\.)?youtube.com(.*)')
 

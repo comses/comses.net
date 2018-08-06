@@ -31,7 +31,6 @@ from core.fields import MarkdownField
 from core.fs import get_canonical_image
 from core.models import MemberProfile, Platform, Event, Job
 from library.models import Codebase, Contributor
-from .forms import ContactForm
 
 logger = logging.getLogger(__name__)
 
@@ -428,6 +427,7 @@ class ContactPage(NavigationMixin, Page):
     description = models.CharField(max_length=512, blank=True)
 
     def serve(self, request):
+        from .forms import ContactForm
         if request.method == 'POST':
             form = ContactForm(request=request, data=request.POST)
             if form.is_valid():
