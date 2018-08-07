@@ -8,7 +8,6 @@ from django.template import loader
 from django.utils.translation import ugettext_lazy as _
 from wagtail.core.models import Site
 
-from core.widgets import MarkdownTextarea
 from core.models import SocialMediaSettings
 from .models import ConferenceSubmission
 
@@ -87,12 +86,10 @@ class ConferenceSubmissionForm(forms.ModelForm):
         # This doesn't work for all youtube urls. https://gist.github.com/Glurt/ea11b690ba4b1278e049
         # if not re.match(YOUTUBE_URL, video_url):
         #    raise forms.ValidationError('Video URL must be a Youtube URL')
-        return video_url
+        if 'youtube.com' in video_url or 'youtu.be' in video_url:
+            return video_url
+        raise forms.ValidationError('Please submit a YouTube URL - it will make our lives much easier organizing the content. Thank you!')
 
     class Meta:
         model = ConferenceSubmission
-        fields = ('id', 'title', 'abstract', 'video_url', 'model_url', 'submitter', 'conference')
-        widgets = {
-            'submitter': forms.HiddenInput(),
-            'conference': forms.HiddenInput(),
-        }
+        fields = ('id', 'title', 'abstract', 'video_url', 'model_url',)

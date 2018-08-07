@@ -1,6 +1,7 @@
 import logging
 
 import requests
+from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.models import User
@@ -8,6 +9,7 @@ from django.core.cache import cache
 from django.core.files.images import ImageFile
 from django.db.models import Prefetch
 from django.shortcuts import redirect
+from django.template.loader import get_template
 from django.urls import reverse
 from django.utils.decorators import method_decorator
 from django.views.generic import TemplateView, RedirectView, CreateView
@@ -24,7 +26,7 @@ from wagtail.search.backends import get_search_backend
 from core.models import FollowUser, Event, Job
 from core.permissions import ObjectPermissions, ViewRestrictedObjectPermissions
 from core.serializers import TagSerializer, EventSerializer, JobSerializer
-from core.utils import parse_datetime
+from core.utils import parse_datetime, send_markdown_email
 from core.view_helpers import retrieve_with_perms, get_search_queryset, add_change_delete_perms
 from core.views import (CaseInsensitiveOrderingFilter, CommonViewSetMixin, FormCreateView, FormUpdateView,
                         SmallResultSetPagination, OnlyObjectPermissionModelViewSet, HtmlNoDeleteViewSet)
@@ -339,11 +341,15 @@ class DigestView(TemplateView):
 class ConferenceSubmissionView(LoginRequiredMixin, CreateView):
     template_name = 'home/conference/submission.jinja'
     form_class = ConferenceSubmissionForm
-    success_url = '/'
 
     @property
     def conference(self):
-        return ConferencePage.objects.get(slug=self.kwargs['slug'])
+        if getattr(self, '_conference', None) is None:
+            self._conference = ConferencePage.objects.get(slug=self.kwargs['slug'])
+        return self._conference
+
+    def get_success_url(self):
+        return self.conference.url
 
     @property
     def submitter(self):
@@ -353,8 +359,9 @@ class ConferenceSubmissionView(LoginRequiredMixin, CreateView):
         # returns a list of tuples of id/description
         return [
             ('videoLength', 'The length of my submitted video is under 12 minutes.'),
-            ('presentationLanguage', 'My presentation is in English.'),
+            # ('presentationLanguage', 'My presentation is in English.'),
             ('presentationTheme', 'My presentation is related to the theme of this conference.'),
+            ('fullMemberProfile', 'I have a current member profile page.'),
         ]
 
     def get_context_data(self, **kwargs):
@@ -365,6 +372,26 @@ class ConferenceSubmissionView(LoginRequiredMixin, CreateView):
         return ctx
 
     def form_valid(self, form):
-        form.instance.conference = self.conference
         form.instance.submitter = self.submitter
+        form.instance.conference = self.conference
+        # send an email to editors
+        self._send_email(form, submitter=form.instance.submitter, conference=form.instance.conference)
         return super().form_valid(form)
+
+    def _send_email(self, form, submitter=None, conference=None):
+        template = get_template('home/conference/email/notify.jinja')
+        markdown_content = template.render(context={
+            'form': form,
+            'conference': conference,
+            'submitter': submitter
+        })
+        send_markdown_email(subject='{0} presentation submission'.format(conference.title),
+                            body=markdown_content,
+                            to=[submitter.email],
+                            bcc=[settings.SERVER_EMAIL])
+
+    def form_invalid(self, form):
+        logger.debug("form was invalid: %s", form)
+        response = super().form_invalid(form)
+        logger.debug("invalid form response: %s", response)
+        return response

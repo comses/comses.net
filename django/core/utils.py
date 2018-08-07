@@ -34,7 +34,11 @@ def confirm(prompt="Continue? (y/n) ", cancel_message="Aborted."):
     return True
 
 
-def create_email(subject, body, to, from_email=settings.DEFAULT_FROM_EMAIL, **kwargs):
+def create_markdown_email(subject, body, to, from_email=settings.DEFAULT_FROM_EMAIL, **kwargs):
     email = EmailMultiAlternatives(subject=subject, body=body, to=to, from_email=from_email, **kwargs)
     email.attach_alternative(markdown(body), 'text/html')
     return email
+
+
+def send_markdown_email(subject, body, to, from_email=settings.DEFAULT_FROM_EMAIL, **kwargs):
+    create_markdown_email(subject, body, to, from_email, **kwargs).send()
