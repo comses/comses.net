@@ -17,18 +17,15 @@ class MarkdownTextarea(WidgetWithScript, forms.widgets.Textarea):
         # renderer isn't passed here because WidgetWithScript doesn't have that argument
         return super().render(name, value, attrs)
 
-    @property
-    def media(self):
-        return forms.Media(
-            css={
-                'all': (
-                    # FIXME: this hardcoded URL should instead be pulled from frontend simplemde dependencies
-                    'https://cdnjs.cloudflare.com/ajax/libs/simplemde/1.11.2/simplemde.min.css',
-                )
-            },
-            js=(
-                # FIXME: this hardcoded URL should be instead be pulled from frontend simplemde dependencies
-                'https://cdnjs.cloudflare.com/ajax/libs/simplemde/1.11.2/simplemde.min.js',
-                'static/js/simplemde.attach.js',
+    class Media:
+        css = {
+            'all': (
+                # FIXME: this hardcoded URL should instead be pulled from frontend simplemde dependencies
+                'https://cdnjs.cloudflare.com/ajax/libs/simplemde/1.11.2/simplemde.min.css',
             )
+        }
+        js = (
+            # FIXME: this hardcoded URL should be instead be pulled from frontend simplemde dependencies
+            'https://cdnjs.cloudflare.com/ajax/libs/simplemde/1.11.2/simplemde.min.js',
+            'js/simplemde.attach.js',
         )
