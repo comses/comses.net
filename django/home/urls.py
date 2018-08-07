@@ -15,7 +15,7 @@ router.register(r'users', views.ProfileViewSet, base_name='profile')
 
 urlpatterns = [
     path('digest/', views.DigestView.as_view(), name='digest'),
-    path('conference/submit/', views.ConferenceSubmissionView.as_view(), name='submit-conference'),
+    path('conference/<int:slug>/submit/', views.ConferenceSubmissionView.as_view(), name='submit-conference'),
     path('users/follow/', views.ToggleFollowUser.as_view(), name='follow-user'),
     path('events/<int:pk>/edit/', views.EventUpdateView.as_view(), name='event-edit'),
     path('events/add/', views.EventCreateView.as_view(), name='event-add'),

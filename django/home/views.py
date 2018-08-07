@@ -30,7 +30,7 @@ from core.views import (CaseInsensitiveOrderingFilter, CommonViewSetMixin, FormC
                         SmallResultSetPagination, OnlyObjectPermissionModelViewSet, HtmlNoDeleteViewSet)
 from library.models import Codebase
 from .forms import ConferenceSubmissionForm
-from .models import FeaturedContentItem, MemberProfile, ContactPage
+from .models import FeaturedContentItem, MemberProfile, ContactPage, ConferencePage
 from .serializers import (FeaturedContentItemSerializer, UserMessageSerializer, MemberProfileSerializer)
 
 logger = logging.getLogger(__name__)
@@ -107,11 +107,12 @@ class ProfileViewSet(CommonViewSetMixin,
 
     def get_queryset(self):
         if self.action == 'retrieve':
+            # FIXME: queries like this should live in the MemberProfileQuerySet / models layer, not the view.
             return self.queryset \
                 .prefetch_related('institution') \
                 .prefetch_related(Prefetch('user', User.objects.prefetch_related(
                     Prefetch('codebases', Codebase.objects.with_tags().with_featured_images()
-                         .with_contributors(user=self.request.user).order_by('-date_created'))))) \
+                             .with_contributors(user=self.request.user).order_by('-date_created'))))) \
                 .prefetch_related('peer_review_invitation_set__review__codebase_release__codebase')
         return self.queryset.with_institution().with_user()
 
@@ -340,10 +341,30 @@ class ConferenceSubmissionView(LoginRequiredMixin, CreateView):
     form_class = ConferenceSubmissionForm
     success_url = '/'
 
-    def get_form_kwargs(self):
-        kwargs = super().get_form_kwargs().copy()
-        if self.request.POST:
-            data = kwargs['data'].copy()
-            data['submitter'] = self.request.user.member_profile.id
-            kwargs['data'] = data
-        return kwargs
+    @property
+    def conference(self):
+        return ConferencePage.objects.get(slug=self.kwargs['slug'])
+
+    @property
+    def submitter(self):
+        return self.request.user.member_profile
+
+    def conference_requirements(self):
+        # returns a list of tuples of id/description
+        return [
+            ('videoLength', 'The length of my submitted video is under 12 minutes.'),
+            ('presentationLanguage', 'My presentation is in English.'),
+            ('presentationTheme', 'My presentation is related to the theme of this conference.'),
+        ]
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        ctx['conference'] = self.conference
+        ctx['submitter'] = self.submitter
+        ctx['conference_requirements'] = self.conference_requirements()
+        return ctx
+
+    def form_valid(self, form):
+        form.instance.conference = self.conference
+        form.instance.submitter = self.submitter
+        return super().form_valid(form)

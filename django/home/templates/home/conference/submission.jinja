@@ -1,15 +1,28 @@
 {% extends "base.jinja" %}
 
-{% block title %}{% trans %} Submit a presentation for CoMSES 2018{% endtrans %}{% endblock %}
+{% block title %}Submit a presentation for {{ conference.title }}{% endblock %}
 
-{% block introduction %}<h1>{% trans %} Submit a presentation for CoMSES 2018{% endtrans %}</h1>{% endblock %}
+{% block introduction %}<h1>Submit a presentation for {{ conference.title }}</h1>{% endblock %}
+
+{% block extra_css %}
+    {{ form.media }}
+{% endblock extra_css %}
 
 {% block content %}
-<p>Submissions to CoMSES 2017 should be about a topic related to the social and ecological sciences</p>
+    {{ conference.introduction|safe }}
 
-<form class="signup" id="signup_form" method="post">
-    {% include "includes/form.jinja" %}
-    <button type="submit" class='btn btn-primary'>{% trans %} Sign Up{% endtrans %}</button>
-</form>
+    Thanks for your interest in being a presenter for {{ conference.title }}!
 
+    <form class="signup" id="signup_form" method="post">
+        {% include "includes/form.jinja" %}
+        {% for checkboxId, description in conference_requirements %}
+            <div class='form-check'>
+                <input class='form-check-input' required type='checkbox' name='requirements' value='' id='{{checkboxId}}'>
+                <label class='form-check-label' for='{{checkboxId}}'>
+                    {{ description }}
+                </label>
+            </div>
+        {% endfor %}
+        <button type="submit" class='btn btn-primary'>Submit</button>
+    </form>
 {% endblock %}

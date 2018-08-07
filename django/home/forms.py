@@ -8,6 +8,7 @@ from django.template import loader
 from django.utils.translation import ugettext_lazy as _
 from wagtail.core.models import Site
 
+from core.widgets import MarkdownTextarea
 from core.models import SocialMediaSettings
 from .models import ConferenceSubmission
 
@@ -90,7 +91,8 @@ class ConferenceSubmissionForm(forms.ModelForm):
 
     class Meta:
         model = ConferenceSubmission
-        fields = ('id', 'title', 'abstract', 'video_url', 'model_url', 'submitter')
+        fields = ('id', 'title', 'abstract', 'video_url', 'model_url', 'submitter', 'conference')
         widgets = {
-            'submitter': forms.HiddenInput()
+            'submitter': forms.HiddenInput(),
+            'conference': forms.HiddenInput(),
         }

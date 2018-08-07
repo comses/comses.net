@@ -662,8 +662,8 @@ class ConferenceSubmission(models.Model):
 
     title = models.CharField(max_length=150, help_text=_('Presentation title'))
     abstract = MarkdownField(max_length=3000, help_text=_('Presentation abstract'), blank=False)
-    video_url = models.URLField(help_text=_('YouTube video link'))
-    model_url = models.URLField(help_text=_('Link to the model associated with the video'), blank=True)
+    video_url = models.URLField(help_text=_('URL to your video presentation - YouTube links preferred'))
+    model_url = models.URLField(help_text=_('Persistent URL to a model associated with your presentation (if applicable)'), blank=True)
 
     def __str__(self):
         return "submission {} by {}".format(self.title, self.submitter)
