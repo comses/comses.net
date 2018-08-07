@@ -21,11 +21,11 @@ class MarkdownTextarea(WidgetWithScript, forms.widgets.Textarea):
         css = {
             'all': (
                 # FIXME: this hardcoded URL should instead be pulled from frontend simplemde dependencies
-                'https://cdnjs.cloudflare.com/ajax/libs/simplemde/1.11.2/simplemde.min.css',
+                'https://cdn.jsdelivr.net/npm/inscrybmde@1.11.4/dist/inscrybmde.min.css',
             )
         }
         js = (
             # FIXME: this hardcoded URL should be instead be pulled from frontend simplemde dependencies
-            'https://cdnjs.cloudflare.com/ajax/libs/simplemde/1.11.2/simplemde.min.js',
+            'https://cdn.jsdelivr.net/npm/inscrybmde@1.11.4/dist/inscrybmde.min.js',
             'js/simplemde.attach.js',
         )

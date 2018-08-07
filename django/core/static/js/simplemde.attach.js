@@ -15,22 +15,29 @@
  * Used to initialize Simple MDE when Markdown blocks are used in StreamFields
  */
 function simplemdeAttach(id) {
-        var mde = new SimpleMDE({
+        var mde = new InscrybMDE({
             element: document.getElementById(id),
             autofocus: false,
+            toolbar: [
+                "bold", "italic", "heading", "|",
+                "quote", "unordered-list", "ordered-list", "|",
+                "link", "image", "table", "|",
+                "preview"
+            ],
         });
         mde.render();
 
-        mde.codemirror.on("change", function(){
-            $('#' + id).val(mde.value());
+        mde.codemirror.on("change", function() {
+            document.getElementById(id).value = mde.value();
         });
 }
 
 /*
  * Used to initialize Simple MDE when MarkdownFields are used on a page.
  */
-$(document).ready(function() {
-    $(".object.markdown textarea").each(function(index, elem) {
-        simplemdeAttach(elem.id);
+document.addEventListener("DOMContentLoaded", function() {
+    var elements = document.querySelectorAll('.object.markdown textarea');
+    Array.prototype.forEach.call(elements, function(element, index) {
+        simplemdeAttach(element.id);
     });
 });
