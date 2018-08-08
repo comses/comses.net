@@ -1,11 +1,14 @@
 Dear {{ submitter.name }},
 
-Thank you for your submission to {{ conference.title }}! We will begin checking submissions 2 weeks before the start of
-the conference {{ conference.start_date }} may contact you then if adjustments are needed. We will then organize the
-presentations into sessions for the conference.
+Thank you for your submission to {{ conference.title }}! We will begin checking submissions and organizing them into
+sessions **2 weeks before the start of the conference** ({{ conference.start_date|format_datetime }}) and will contact
+you if any adjustments are needed.
 
-Here is what you sent us:
+For posterity, here is what we received:
 
-{{ form.as_p() }}
+{% for field in form.visible_fields() %}
+    * {{ field.label }}: {{ field.value() }}
+{%- endfor %}
+
 
 Thanks for being a part of CoMSES Net!
