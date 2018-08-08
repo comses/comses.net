@@ -383,7 +383,8 @@ class ConferenceSubmissionView(LoginRequiredMixin, CreateView):
         markdown_content = template.render(context={
             'form': form,
             'conference': conference,
-            'submitter': submitter
+            'submitter': submitter,
+            'profile_url': self.request.build_absolute_uri(submitter.profile_url)
         })
         send_markdown_email(subject='{0} presentation submission'.format(conference.title),
                             body=markdown_content,

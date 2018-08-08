@@ -24,7 +24,7 @@ class Migration(migrations.Migration):
                 ('title', models.CharField(help_text='Presentation title', max_length=150)),
                 ('abstract', core.fields.MarkdownField(blank=True, help_text='Presentation abstract', max_length=3000, rendered_field=True)),
                 ('abstract_markup_type', models.CharField(choices=[('', '--'), ('markdown', 'markdown'), ('html', 'html'), ('plain', 'plain'), ('', '')], default='markdown', max_length=30)),
-                ('video_url', models.URLField(help_text='URL to your video presentation - YouTube links preferred')),
+                ('video_url', models.URLField(help_text='URL to your video presentation')),
                 ('_abstract_rendered', models.TextField(editable=False)),
                 ('model_url', models.URLField(blank=True, help_text='Persistent URL to a model associated with your presentation (if applicable)')),
                 ('conference', models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, related_name='submissions', to='home.ConferencePage')),

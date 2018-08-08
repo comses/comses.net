@@ -9,9 +9,14 @@
 {% endblock extra_css %}
 
 {% block content %}
+    <div class='lead'>
     {{ conference.introduction|safe }}
+    </div>
 
-    Thanks for your interest in being a presenter for {{ conference.title }}!
+    <p>
+    Please fill out the following form if you'd like to submit a video presentation for {{ conference.title }}. Videos
+    must be <a href='https://support.google.com/youtube/answer/57407'>uploaded to YouTube</a>. Thanks for contributing!
+    </p>
 
     <form class="signup" id="signup_form" method="post">
         {% include "includes/form.jinja" %}
