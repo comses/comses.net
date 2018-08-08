@@ -635,6 +635,8 @@ class ConferencePage(Page):
         FieldPanel('introduction'),
         FieldPanel('content'),
         FieldPanel('external_url'),
+        FieldPanel('submission_deadline'),
+        FieldPanel('submission_information'),
         InlinePanel('themes', label='Themes'),
     ]
 
