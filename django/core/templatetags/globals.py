@@ -24,7 +24,7 @@ logger = logging.getLogger(__name__)
 @library.global_function
 def build_absolute_uri(relative_url):
     domain = Site.objects.get_current().domain
-    protocol = 'https' if '.comses.net' in settings.ALLOWED_HOSTS else 'http'
+    protocol = 'https' if settings.SECURE_SSL_REDIRECT else 'http'
     absolute_url = '{}://{}{}'.format(protocol, domain, relative_url)
     return absolute_url
 
