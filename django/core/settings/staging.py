@@ -19,7 +19,7 @@ ALLOWED_HOSTS = ['.comses.net']
 # security settings from manage.py check --deploy
 # https://docs.djangoproject.com/en/2.0/ref/settings/#secure-proxy-ssl-header
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
-
+SECURE_SSL_REDIRECT = True
 # https://docs.djangoproject.com/en/2.0/ref/middleware/#http-strict-transport-security
 SECURE_HSTS_PRELOAD = True
 SECURE_HSTS_SECONDS = 31536000
