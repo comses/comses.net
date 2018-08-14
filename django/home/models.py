@@ -685,6 +685,14 @@ class FaqEntry(index.Indexed, models.Model):
     last_modified = models.DateTimeField(auto_now_add=True)
     submitter = models.ForeignKey(User, blank=True, null=True, on_delete=models.SET_NULL)
 
+    search_fields = [
+        index.SearchField('category'),
+        index.SearchField('question'),
+        index.SearchField('answer'),
+        index.FilterField('date_created'),
+        index.FilterField('last_modified'),
+    ]
+
     def __str__(self):
         return "[{0}] {1} {2}".format(self.category, self.question, shorten(self.answer, 140))
 
@@ -717,10 +725,15 @@ class FaqPage(Page, NavigationMixin):
         InlinePanel('faq_entry_placements', label='FAQ Entries')
     ]
 
+    def get_faq_entry_questions(self):
+        return '\n'.join(FaqEntry.objects.values_list('question', flat=True))
+
+    def get_faq_entry_answers(self):
+        return '\n'.join(FaqEntry.objects.values_list('answer', flat=True))
+
     search_fields = Page.search_fields + [
-        index.RelatedFields('faq_entry_placements', [
-            index.SearchField('faq_entry', partial_match=True)
-        ])
+        index.SearchField('get_faq_entry_questions', partial_match=True),
+        index.SearchField('get_faq_entry_answers', partial_match=True),
     ]
 
 

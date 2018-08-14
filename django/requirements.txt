@@ -31,7 +31,7 @@ psycopg2==2.7.5
 raven==6.7.0
 semver==2.8.1
 uwsgi==2.0.17.1
-wagtail==2.1.2
+wagtail==2.2.1
 # deployment and management command dependencies
 beautifulsoup4==4.6.0
 invoke
