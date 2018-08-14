@@ -4,16 +4,23 @@ set -o errexit
 set -o pipefail
 set -o nounset
 
-ENVIRONMENT=${1:-"staging"}
+ENVIRONMENT=${1:-"dev"}
 
 echo "Deploying latest build of comses.net"
+SERVICES="redis db elasticsearch nginx"
 git describe --tags >| django/release-version.txt;
 docker-compose build --pull;
-docker-compose pull redis db nginx elasticsearch;
-docker-compose up -d cms db nginx redis elasticsearch;
-if [[ ${ENVIRONMENT} == "prod" ]]; then
-    exec docker-compose up -d elasticsearch2
+
+if [[ ${ENVIRONMENT} == "dev" ]]; then
+    SERVICES="redis db elasticsearch js"
 fi
 
+docker-compose pull ${SERVICES}
+
+if [[ ${ENVIRONMENT} == "prod" ]]; then
+    SERVICES="${SERVICES} elasticsearch2"
+fi
+
+docker-compose up -d cms ${SERVICES};
 docker-compose up js
 docker-compose exec cms inv prepare
