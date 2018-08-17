@@ -11,11 +11,11 @@ SERVICES="redis db elasticsearch nginx"
 git describe --tags >| django/release-version.txt;
 docker-compose build --pull;
 
+docker-compose pull ${SERVICES}
+
 if [[ ${ENVIRONMENT} == "dev" ]]; then
     SERVICES="redis db elasticsearch js"
 fi
-
-docker-compose pull ${SERVICES}
 
 if [[ ${ENVIRONMENT} == "prod" ]]; then
     SERVICES="${SERVICES} elasticsearch2"
