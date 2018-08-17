@@ -1,4 +1,4 @@
-FROM comses/base:1.1.1
+FROM comses/base:1.2.0
 
 ARG REQUIREMENTS_FILE=requirements-dev.txt
 ARG RUN_SCRIPT=./deploy/dev.sh
