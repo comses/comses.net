@@ -15,11 +15,13 @@ docker-compose pull ${SERVICES}
 
 if [[ ${ENVIRONMENT} == "dev" ]]; then
     SERVICES="redis db elasticsearch js"
+else
+    # bring js container up synchronously in staging + prod
+    docker-compose up js
 fi
 
 if [[ ${ENVIRONMENT} == "prod" ]]; then
     SERVICES="${SERVICES} elasticsearch2"
-    docker-compose up js
 fi
 
 docker-compose up -d cms ${SERVICES};
