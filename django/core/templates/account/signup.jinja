@@ -12,18 +12,21 @@
 </div>
 <p class='lead'>
 As a scientific community of practice, members of the CoMSES Network have access to a suite of community
-resources and also share a responsibility to contribute to the community. CoMSES members will enjoy increased
-benefits as this international community grows and builds this resource base. Public content include discussion
-forums, events, jobs and appointments, educational materials, bibliographic references, and published models in
-the Computational Library.
+resources and also share a responsibility to contribute back to the community. Public services include 
+<a href='https://forum.comses.net'>discussion forums</a>, <a href='/events/'>an events calendar</a>, 
+<a href='/jobs/'>a jobs and appointments board</a>, <a href='{{slugurl('education')}}'>educational materials</a>, and
+access to the <a href='/codebases/'>Computational Model Library</a> where submitters can request peer review and DOIs
+for their published model releases. 
 </p>
 <p>
-There are two categories of membership in the network, <em>Basic</em> and <em>Full Members</em>.
+There are two categories of membership in the network, <em>Basic</em> and <em>Full Members</em>. Registered CoMSES
+members consent to receive periodic emails from CoMSES Net regarding upcoming events and opportunities including our
+<a href='/digest/'>quarterly newsletter digest</a>.
 </p>
 {% include 'includes/membership.jinja' %}
 <form class="signup" id="signup_form" method="post">
     {% include "includes/form.jinja" %}
-    <button type="submit" class='btn btn-primary'>{% trans %} Sign Up{% endtrans %}</button>
+    <button type="submit" class='btn btn-primary'>{% trans %}Sign Up{% endtrans %}</button>
 </form>
 
 {% endblock %}
