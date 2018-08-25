@@ -248,7 +248,9 @@
         </div>
     </div>
     <hr>
-    {{ embed_discourse_comments(release.live, release.submitter.username) }}
+    {# FIXME: only display discourse on public facing page #}
+    {% set discourse_enabled = release.live and release.get_absolute_url() in request.path %}
+    {{ embed_discourse_comments(discourse_enabled, release.submitter.username) }}
 {% endblock %}
 
 {% block sidebar %}
