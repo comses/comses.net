@@ -26,4 +26,4 @@ class Command(BaseCommand):
             qs = qs.filter(date_joined__gte=after_date)
         csvf = csv.writer(sys.stdout)
         for user in qs:
-            csvf.writerow(["{0} {1}".format(user.first_name, user.last_name), user.email])
+            csvf.writerow([user.first_name, user.last_name, user.email])
