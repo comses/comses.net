@@ -1,11 +1,9 @@
+import logging
 import pathlib
 
 from django.core.management.base import BaseCommand
-from django.conf import settings
 
-import logging
-
-from curator.models import TagCleanup, CanonicalName, PENDING_TAG_CLEANUPS_FILENAME
+from curator.models import TagCleanup, PENDING_TAG_CLEANUPS_FILENAME
 
 logger = logging.getLogger(__name__)
 

@@ -1,8 +1,6 @@
-import pathlib
-from django.core.management.base import BaseCommand
-
 import logging
-from django.conf import settings
+
+from django.core.management.base import BaseCommand
 from invoke import Context
 
 from curator.invoke_tasks.borg import backup

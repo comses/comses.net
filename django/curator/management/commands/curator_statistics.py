@@ -1,10 +1,10 @@
 import csv
 import logging
 import os
+from datetime import date
 
 import pytz
-from datetime import date
-from dateutil.parser import parse as date_parse
+from dateutil.parser import parse as parse_date
 from django.core.management.base import BaseCommand
 from django.db.models import Count, Max
 
@@ -97,8 +97,8 @@ class Command(BaseCommand):
         to_date_string = options.get('to')
 
         default_from_date = date.today().replace(month=1, day=1)
-        from_date = date_parse(from_date_string).replace(tzinfo=pytz.UTC) if from_date_string else default_from_date
-        to_date = date_parse(to_date_string).replace(tzinfo=pytz.UTC) if to_date_string else None
+        from_date = parse_date(from_date_string).replace(tzinfo=pytz.UTC) if from_date_string else default_from_date
+        to_date = parse_date(to_date_string).replace(tzinfo=pytz.UTC) if to_date_string else None
         aggregations = options['aggregations'].split(',')
         if to_date:
             filters = dict(date_created__range=[from_date, to_date])
