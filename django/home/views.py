@@ -15,7 +15,7 @@ from django.utils.decorators import method_decorator
 from django.views.generic import TemplateView, RedirectView, CreateView
 from rest_framework import viewsets, generics, parsers, status, mixins, renderers, filters
 from rest_framework.decorators import action
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.renderers import JSONRenderer, TemplateHTMLRenderer
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -74,6 +74,7 @@ class TagListView(mixins.ListModelMixin, viewsets.GenericViewSet):
     queryset = Tag.objects.all()
     pagination_class = SmallResultSetPagination
     renderer_classes = (renderers.JSONRenderer,)
+    permission_classes = (AllowAny,)
 
     def get_queryset(self):
         query = self.request.query_params.get('query')
