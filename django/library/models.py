@@ -656,6 +656,7 @@ class CodebaseImageQuerySet(ImageQuerySet):
         return self.filter(uploaded_by_user=user)
 
 
+@add_to_comses_permission_whitelist
 class CodebaseImage(AbstractImage):
     codebase = models.ForeignKey(Codebase, related_name='featured_images', on_delete=models.CASCADE)
     file = models.ImageField(
