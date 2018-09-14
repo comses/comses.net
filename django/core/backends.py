@@ -94,6 +94,9 @@ HANDLED_MODELS = set()
 
 
 def add_to_comses_permission_whitelist(model):
+    """
+    Include model permissions checking for the ComsesObjectPermissionBackend
+    """
     HANDLED_MODELS.add(model)
     return model
 
@@ -101,6 +104,12 @@ def add_to_comses_permission_whitelist(model):
 class ComsesObjectPermissionBackend:
     """
     Allow user that submitted the obj to perform any action with it
+
+    Additional permission checking is performed for whitelisted models:
+    - allow the action if the user is the owner of the model
+      - unless the model is not deletable
+    - never allow unauthenticated users to perform destructive operations
+    - allow viewing of published models to everyone
     """
 
     HANDLED_PERMS = re.compile('add_|change_|delete_|view_')
