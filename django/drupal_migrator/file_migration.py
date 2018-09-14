@@ -101,7 +101,7 @@ class ModelFileset:
             for media_dir_entry in self._media:
                 with open(media_dir_entry.path, 'rb') as file_entry:
                     logger.info('importing media file: %s', file_entry.name)
-                    codebase.import_media(file_entry)
+                    codebase.import_media(file_entry, images_only=False)
                 shutil.copy(media_dir_entry.path, media_dir)
         codebase.save()
 

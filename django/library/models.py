@@ -1,6 +1,5 @@
 import json
 import logging
-import mimetypes
 import os
 import pathlib
 import uuid
@@ -27,7 +26,7 @@ from model_utils import Choices
 from modelcluster.contrib.taggit import ClusterTaggableManager
 from modelcluster.fields import ParentalKey
 from modelcluster.models import ClusterableModel
-from rest_framework.exceptions import ValidationError
+from rest_framework.exceptions import ValidationError, UnsupportedMediaType
 from taggit.models import TaggedItemBase
 from unidecode import unidecode
 from wagtail.admin.edit_handlers import FieldPanel
@@ -40,6 +39,7 @@ from wagtail.snippets.models import register_snippet
 from core import fs
 from core.backends import add_to_comses_permission_whitelist
 from core.fields import MarkdownField
+from core.fs import mimetypes
 from core.models import Platform, MemberProfile
 from core.queryset import get_viewable_objects_for_user
 from core.serializers import PUBLISH_DATE_FORMAT
@@ -530,7 +530,7 @@ class Codebase(index.Indexed, ClusterableModel):
             self.save()
         return release
 
-    def import_media(self, fileobj, user=None, title=None):
+    def import_media(self, fileobj, user=None, title=None, images_only=True):
         if user is None:
             user = self.submitter
 
@@ -544,12 +544,15 @@ class Codebase(index.Indexed, ClusterableModel):
         with path.open('wb') as f:
             f.write(fileobj.read())
 
+        is_image = fs.is_image(str(path))
+        if not is_image and images_only:
+            raise UnsupportedMediaType(mimetypes.guess_type(name)[0], detail='{} is not an image'.format(name))
         image_metadata = {
             'name': name,
             'path': str(self.media_dir()),
             'mimetype': mimetypes.guess_type(str(path)),
             'url': self.media_url(name),
-            'featured': fs.is_image(str(path)),
+            'featured': is_image,
         }
 
         logger.info('featured image: %s', image_metadata)
@@ -564,9 +567,9 @@ class Codebase(index.Indexed, ClusterableModel):
             self.featured_images.add(image)
             logger.info('added featured image')
             return image
-
-        self.media.append(image_metadata)
-        return image_metadata
+        else:
+            self.media.append(image_metadata)
+            return image_metadata
 
     @transaction.atomic
     def get_or_create_draft(self):

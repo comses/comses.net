@@ -43,7 +43,10 @@ type UploadInfo = UploadSuccess | UploadProgress | UploadFailure;
                 <button class="close" aria-label="Close" @click="clearUploadErrors">
                     <span aria-hidden="true"><span class="fa fa-close"></span></span>
                 </button>
-                <div v-for="(error, name) in fileUploadErrorMsgs">
+                <div v-if="fileUploadErrorMsgs.detail">
+                   {{ fileUploadErrorMsgs.detail }}
+                </div>
+                <div v-for="(error, name) in fileUploadErrorMsgs" v-else>
                     <div v-for="msg in error.msgs"><b>{{ displayStage(msg.msg.stage) }}</b>: {{ msg.msg.detail }}</div>
                 </div>
             </div>
@@ -107,12 +110,16 @@ export class Upload extends Vue {
             const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
             this.$set(this.fileUploadProgressMsgs, file.name, {kind: 'progress', percentCompleted, size: file.size});
         };
-        _.delay(() => this.$delete(this.fileUploadProgressMsgs, file.name), 3000);
+        _.delay(() => this.$delete(this.fileUploadProgressMsgs, file.name), 6000);
         try {
             await api.postForm(this.uploadUrl, formData,
                 {headers: {'Content-Type': 'multipart/form-data'}, onUploadProgress})
         } catch (error) {
             if (error.response) {
+                const response = error.response;
+                if (response.status !== 400) {
+                    this.fileUploadErrorMsgs = response.data;
+                }
                 this.$set(this.fileUploadErrorMsgs, file.name, {kind: 'failure', msgs: error.response.data})
             }
         }
