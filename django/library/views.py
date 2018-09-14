@@ -19,7 +19,7 @@ from rest_framework.exceptions import PermissionDenied as DrfPermissionDenied, V
 from rest_framework.response import Response
 
 from core.models import MemberProfile
-from core.permissions import ViewRestrictedObjectPermissions
+from core.permissions import ObjectPermissions, ViewRestrictedObjectPermissions
 from core.view_helpers import add_change_delete_perms, get_search_queryset
 from core.views import (CommonViewSetMixin, FormUpdateView, FormCreateView, SmallResultSetPagination,
                         CaseInsensitiveOrderingFilter, NoDeleteViewSet,
@@ -330,12 +330,19 @@ class CodebaseVersionRedirectView(RedirectView):
         return super().get_redirect_url(*args, **kwargs)
 
 
+class CodebaseImagePermission(permissions.BasePermission):
+    def has_permission(self, request, view):
+        codebase = get_object_or_404(Codebase, identifier=view.kwargs['identifier'])
+        return request.user.has_perm('library.change_codebase', codebase)
+
+
 class CodebaseImageViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
     lookup_field = 'codebaseimage_id'
     lookup_value_regex = r'\d+'
     queryset = CodebaseImage.objects.all()
     serializer_class = CodebaseImageSerializer
     renderer_classes = (renderers.JSONRenderer,)
+    permission_classes = (CodebaseImagePermission,)
 
     def get_queryset(self):
         resolved = resolve(self.request.path)
