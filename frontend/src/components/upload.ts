@@ -117,7 +117,7 @@ export class Upload extends Vue {
         } catch (error) {
             if (error.response) {
                 const response = error.response;
-                if (response.status !== 400) {
+                if (response.data.detail) {
                     this.fileUploadErrorMsgs = response.data;
                 }
                 this.$set(this.fileUploadErrorMsgs, file.name, {kind: 'failure', msgs: error.response.data})
