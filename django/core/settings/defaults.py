@@ -157,7 +157,7 @@ TAGGIT_CASE_INSENSITIVE = True
 RELEASE_VERSION_FILE = "release-version.txt"
 
 release_version_file = pathlib.Path(RELEASE_VERSION_FILE)
-RELEASE_VERSION = "v1.0.6"
+RELEASE_VERSION = "v1.2.6"
 
 if release_version_file.is_file():
     with release_version_file.open('r') as infile:
@@ -487,3 +487,7 @@ MESSAGE_TAGS = {
     messages.WARNING: 'alert alert-warning',
     messages.ERROR: 'alert alert-danger'
 }
+
+FILE_UPLOAD_MAX_MEMORY_SIZE = 104857600
+FILE_UPLOAD_PERMISSIONS = 0o644
+FILE_UPLOAD_TEMP_DIR = "/shared/uploads/"

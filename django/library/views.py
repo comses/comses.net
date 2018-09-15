@@ -19,7 +19,7 @@ from rest_framework.exceptions import PermissionDenied as DrfPermissionDenied, V
 from rest_framework.response import Response
 
 from core.models import MemberProfile
-from core.permissions import ObjectPermissions, ViewRestrictedObjectPermissions
+from core.permissions import ViewRestrictedObjectPermissions
 from core.view_helpers import add_change_delete_perms, get_search_queryset
 from core.views import (CommonViewSetMixin, FormUpdateView, FormCreateView, SmallResultSetPagination,
                         CaseInsensitiveOrderingFilter, NoDeleteViewSet,
@@ -684,7 +684,7 @@ class CodebaseReleaseFilesOriginalsViewSet(BaseCodebaseReleaseFilesViewSet):
         codebase_release = self.get_object()
         fs_api = codebase_release.get_fs_api()
         category = self.get_category()
-        fileobj = request.data.get('file')
+        fileobj = request.FILES.get('file')
         if fileobj is None:
             raise ValidationError({'file': ['This field is required']})
         msgs = fs_api.add(content=fileobj, category=category)
