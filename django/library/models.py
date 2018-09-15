@@ -546,6 +546,8 @@ class Codebase(index.Indexed, ClusterableModel):
 
         is_image = fs.is_image(str(path))
         if not is_image and images_only:
+            logger.info('removing non image file: %s', path)
+            path.unlink()
             raise UnsupportedMediaType(mimetypes.guess_type(name)[0], detail='{} is not an image'.format(name))
         image_metadata = {
             'name': name,
