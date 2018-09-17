@@ -11,16 +11,14 @@ const reviewApi = new ReviewEditorAPI();
             <div class="row" v-for="feedback in feedback_items">
                 <div class="col-xs-12 col-sm-6">
                     <a :href="feedback.editor_url">
-                        <span class="text-success" v-if="feedback.recommendation">Recommended</span>
-                        <span class="text-danger" v-else>Not Recommended</span>
-                        by {{ feedback.reviewer_name }}
+                        {{feedback.recommendation}} by {{ feedback.reviewer_name }}
                     </a>
                 </div>
-
                 <div class="col-xs-12 col-sm-6">
-                    <span class="badge badge-warning" v-if="!feedback.reviewer_submitted && !feedback.editor_submitted">Reviewer Has Not Submitted</span>
-                    <span class="badge badge-secondary" v-else-if="feedback.reviewer_submitted && !feedback.editor_submitted">Reviewer Has Submitted</span>
-                    <span class="badge badge-primary" v-else>Review Done</span>
+                    <span class="badge badge-warning" v-if="feedback.reviewer_submitted && !feedback.editor_submitted">
+    Reviewer has submitted a review, editor action needed</span>
+                    <span class="badge badge-primary" v-else>Waiting for reviewer feedback</span>
+                    <span class="badge badge-secondary" v-if="feedback.editor_submitted">Editor has replied to author</span>
                 </div>
             </div>
         </div>
