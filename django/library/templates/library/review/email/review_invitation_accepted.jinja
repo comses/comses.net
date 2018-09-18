@@ -1,0 +1,10 @@
+{% from "common.jinja" import search_tag_href %}
+{% set release = invitation.review.codebase_release %}
+{% set codebase = release.codebase %}
+
+Dear {{ review.invitee }},
+
+You have accepted the invitation to review [{{ release.title }}]({{ build_absolute_uri(release.get_absolute_url()) }}).
+You can provide feedback about the release by visiting its
+[feedback]({{ build_absolute_uri(feedback.get_absolute_url()) }}) page (which is also available on your profile page
+under the model review heading and on the model's review page above.

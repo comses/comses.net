@@ -566,6 +566,8 @@ class CodebaseReleaseViewSet(CommonViewSetMixin,
                 'submitter': request.user.member_profile
             }
         )
+        if created:
+            review.send_author_requested_peer_review_email()
         if request.accepted_renderer.format == 'html':
             response = HttpResponseRedirect(codebase_release.get_absolute_url())
             messages.success(request, 'Started peer review process')
