@@ -15,10 +15,10 @@ const reviewApi = new ReviewEditorAPI();
                     </a>
                 </div>
                 <div class="col-xs-12 col-sm-6">
+                    <span class="badge badge-success" v-if="feedback.reviewer_submitted && feedback.editor_submitted">Review completed and editor has replied to author</span>
                     <span class="badge badge-warning" v-if="feedback.reviewer_submitted && !feedback.editor_submitted">
     Reviewer has submitted a review, editor action needed</span>
-                    <span class="badge badge-primary" v-else>Waiting for reviewer feedback</span>
-                    <span class="badge badge-secondary" v-if="feedback.editor_submitted">Editor has replied to author</span>
+                    <span class="badge badge-primary" v-else>Waiting for reviewer feedback since {{ feedback.date_created }}</span>
                 </div>
             </div>
         </div>
