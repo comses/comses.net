@@ -168,15 +168,18 @@ h2.discourse-comments {
   text-align: center;
   height: 480px;
   h1, h2, h3, h4 {
-    padding-top: 40px;
     font-family: 'Alte-DIN-1451-Mittelschrift', 'Open Sans', sans-serif;
     color: white;
     font-weight: 200;
   }
   h1 {
+    padding-top: 40px;
     font-size: 3.5rem;
   }
   h2 {
+      font-size: 1.5rem;
+  }
+  h3 {
     font-size: 1rem;
     font-family: 'Open Sans', sans-serif;
     text-transform: uppercase;
