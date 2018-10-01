@@ -150,28 +150,21 @@ class EventSerializer(serializers.ModelSerializer):
             dates.append(end_date)
 
         msgs = []
-        current_date = timezone.now()
-        for field_value, field_name in [(early_registration_deadline, early_registration_deadline_name),
-                                        (registration_deadline, registration_deadline_name),
-                                        (submission_deadline, submission_deadline_name)]:
-            if field_value and current_date and current_date > field_value:
-                msgs.append("The {} should be after today's date {}.".format(
-                    field_name.replace('_', ' '), current_date))
 
         if early_registration_deadline and registration_deadline and registration_deadline < early_registration_deadline:
-            msgs.append('Early registration deadlines should be EARLIER than a plain old registration deadline.')
+            msgs.append('Early registration deadlines should be earlier than the regular registration deadline.')
 
         if early_registration_deadline and early_registration_deadline > start_date:
-            msgs.append('Early registration deadlines should occur before the event starts.')
+            msgs.append('Early registration deadlines should be earlier than the event start date.')
 
         if registration_deadline and registration_deadline > start_date:
-            msgs.append('Registration deadlines should occur before the event starts.')
+            msgs.append('Registration deadlines should be earlier than the event start date.')
 
         if submission_deadline and submission_deadline > start_date:
-            msgs.append('Submission deadlines should occur before the event starts.')
+            msgs.append('Submission deadlines should be earlier than the event start date.')
 
         if end_date and start_date >= end_date:
-            msgs.append('The event start date should be before the event end date.')
+            msgs.append('The event start date should be earlier than the event end date.')
 
         if msgs:
             raise ValidationError(' '.join(s.capitalize() for s in msgs))
