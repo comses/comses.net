@@ -12,15 +12,17 @@ $(function() {
             }
         },
         height: 'auto',
+        timezone: 'UTC',
         themeSystem: 'bootstrap4',
+        nextDayThreshold: "00:00:00",
         header: {
             left: 'prev,next today',
             center: 'title addEventButton',
             right: 'month,agendaWeek,listMonth',
         },
         events: {
-            'url': '/events/calendar/',
-            'allDayDefault': true
+            'url': '/events/calendar/'
+            // 'allDayDefault': true,
         },
         eventRender: function(event, element) {
             let eventElement = element[0];

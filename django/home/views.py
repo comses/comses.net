@@ -247,7 +247,7 @@ class EventViewSet(CommonViewSetMixin, OnlyObjectPermissionModelViewSet):
         return {
             'title': event.title,
             'start': event.start_date.isoformat(),
-            'end': event.end_date.isoformat(),
+            'end': event.end_date.replace(hour=23).isoformat(),
             'url': event.get_absolute_url(),
             'color': '#3a87ad',
         }
