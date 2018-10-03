@@ -19,7 +19,7 @@
     {% include 'includes/messages.jinja' %}
     <div id={{ 'discourse-content' if release.live else 'content' }}>
         {% if release.live %}
-            {% if release.version_number != codebase.latest_version.version_number %}
+            {% if not release.is_latest_version %}
                 <div class="alert alert-warning mt-2">This release is out-of-date. The latest version is
                 <a href='{{ codebase.latest_version.get_absolute_url() }}'>{{ codebase.latest_version.version_number }}</a>
                 </div>
@@ -36,7 +36,6 @@
             {% else %}
                 None
             {% endfor %}
-            <b class='pl-2'>Version: </b> {{ release.version_number }}
             <b class='pl-2'>Language:</b>
             {% for pl in release.programming_languages.all() %}
                 {{ search_tag_href(pl, category='codebases') }}
@@ -53,6 +52,16 @@
                     {{ codebase.description }}
                 {% endautoescape %}
             </div>
+            <div class='py-3'>
+                {% with featured_image=codebase.get_featured_image() %}
+                    {% if featured_image is not none %}
+                        {{ image(featured_image, "width-780", class='d-block img-fluid') }}
+                    {% else %}
+                        <img alt='No submitted images' src="holder.js/200x200?text=No submitted images" class="img-fluid img-thumbnail">
+                    {% endif %}
+                {% endwith %}
+            </div>
+
             <h3><u>Release Notes</u></h3>
             <div class='lead'>
                 {% if release.release_notes %}
@@ -128,71 +137,11 @@
     {% endif %}
     <ul class='nav nav-tabs detail-tabs' role='tablist'>
         <li class='nav-item'>
-            <a class='nav-link active' data-toggle='tab' href='#images' role='tab'>Images</a>
-        </li>
-        <li class='nav-item'>
-            <a class='nav-link' data-toggle='tab' href='#details' role='tab'>Details</a>
-        </li>
-        <li class='nav-item'>
-            <a class='nav-link' data-toggle='tab' href='#versions' role='tab'>Versions</a>
+            <a class='nav-link active' data-toggle='tab' href='#versions' role='tab'>Model Versions</a>
         </li>
     </ul>
     <div class='tab-content'>
-        <div class='tab-pane active' id='images' role='tabpanel'>
-            {# FIXME: iterate and display all images in media #}
-            <div class='p-3'>
-                {% with featured_image=codebase.get_featured_image() %}
-                    {% if featured_image is not none %}
-                        {{ image(featured_image, "width-780", class='d-block img-fluid') }}
-                    {% else %}
-                        <img alt='No submitted images' src="holder.js/780x400?text=No submitted images" class="img-fluid img-thumbnail">
-                    {% endif %}
-                {% endwith %}
-            </div>
-        </div>
-        <div class='tab-pane' id='details' role='tabpanel'>
-            <div class='card-metadata'>
-                <div class='card-body'>
-                    <div class='section'>
-                        <b class='card-title'>Submitter:</b> {{ member_profile_href(release.submitter.member_profile) }}
-                    </div>
-                    <div class='section'>
-                        <b class='card-title'>DOI:</b>
-                        {% if release.doi %}
-                            <a href='{{release.doi_url}}'>{{ release.doi_url }}</a>
-                        {% else %}
-                            No assigned DOI. 
-                            {% if has_change_perm %}
-                                We assign DOIs to peer reviewed models or models associated with a peer
-                                reviewed publication. If you would like to request a DOI at this time for an upcoming
-                                publication, please <a href='{{slugurl('contact')}}'>contact us</a>.
-                            {% endif %}
-                        {% endif %}
-                    </div>
-                    <div class='section'>
-                        <b class='card-title'>License:</b> <a href='{{ release.license.url }}'>{{ release.license.name }}</a>
-                    </div>
-                    <div class='section'>
-                        <b class='card-title'>Operating System:</b> {{ release.get_os_display() }}
-                    </div>
-                    <div class='section'>
-                        <b class='card-title'>Programming Language:</b>
-                        {% for pl in release.programming_languages.all() %}
-                            {{ search_tag_href(pl, category='codebases') }}
-                        {% endfor %}
-                    </div>
-                    <div class='section'>
-                        <b class='card-title'>Dependencies:</b> 
-                        {% if release.dependencies %}
-                            {{ release.dependencies }}
-                        {% else %}
-                            None listed
-                        {% endif %}
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class='tab-pane' id='versions' role='tabpanel'>
+        <div class='tab-pane active' id='versions' role='tabpanel'>
             <table class='table table-striped'>
                 <thead>
                 <tr>
@@ -268,20 +217,49 @@
                     </a>
                 {% endfor %}
             </p>
-        </div>
-        <div class='section'>
+            <b class='card-title'>DOI</b>
+            <p>
+            {% if release.doi %}
+                <a href='{{release.doi_url}}'><span class='badge badge-success'>{{ release.doi_url }}</span></a>
+            {% else %}
+                No assigned DOI. 
+                {% if has_change_perm %}
+                    We assign DOIs to peer reviewed models or models associated with a peer
+                    reviewed publication. If you would like to request a DOI at this time for an upcoming
+                    publication, please <a href='{{slugurl('contact')}}'>contact us</a>.
+                {% endif %}
+            {% endif %}
+            </p>
+            <b class='card-title'>Model Version</b>
+            <p>
+            {{ release.version_number }}
+            </p>
+            <b class='card-title'>License</b>
+            <p><a href='{{ release.license.url }}'>{{ release.license.name }}</a></p>
+            <b class='card-title'>Operating System</b>
+            <p>{{ release.get_os_display() }}</p>
+            <b class='card-title'>Programming Language</b>
+            <p>
+            {% for pl in release.programming_languages.all() %}
+                {{ search_tag_href(pl, category='codebases') }}
+            {% endfor %}
+            </p>
+            <b class='card-title'>Dependencies</b> 
+            <p>
+            {% if release.dependencies %}
+                {{ release.dependencies }}
+            {% else %}
+                None listed
+            {% endif %}
+            </p>
             <b class="card-title">Publish Date</b>
             <p class='card-text'>
                 {{ release.first_published_at|format_datetime }}
             </p>
-        </div>
-        <div class='section'>
             <b class="card-title">Last Updated</b>
             <p class='card-text'>
                 {{ release.last_published_on|format_datetime }}
             </p>
-        </div>
-        <div class='section'>
             <b class="card-title">Downloads
                 <span class='btn btn-sm btn-outline-primary disabled'>{{ codebase.download_count() }}</span>
             </b> 
@@ -291,13 +269,15 @@
                 <img src="{{ static("images/icons/peer-reviewed.png") }}" alt="Peer Reviewed">
             {% else %}
                 <b class='card-title'>
-                    {% if release.get_review() %}
-                        Review in process
-                        <span class='btn btn-sm btn-warning disabled'>{{ release.get_review().get_status_display() }}</span>
-                    {% else %}
-                        Not reviewed
-                    {% endif %}
-                </h4>
+                    Peer Review
+                </b>
+                <p>
+                {% if release.get_review() %}
+                    <span class='btn btn-sm btn-warning disabled'>{{ release.get_review().get_status_display() }}</span>
+                {% else %}
+                    Not peer reviewed
+                {% endif %}
+                </p>
             {% endif %}
             </p>
         </div>

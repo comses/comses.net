@@ -905,6 +905,10 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
         return not self.peer_reviewed and self.get_review() is None
 
     @property
+    def is_latest_version(self):
+        return self.version_number == self.codebase.latest_version.version_number
+
+    @property
     def doi_url(self):
         return 'https://doi.org/{0}'.format(self.doi)
 
