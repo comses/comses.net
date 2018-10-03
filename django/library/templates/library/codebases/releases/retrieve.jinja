@@ -55,9 +55,7 @@
             <div class='py-3'>
                 {% with featured_image=codebase.get_featured_image() %}
                     {% if featured_image is not none %}
-                        {{ image(featured_image, "width-780", class='d-block img-fluid') }}
-                    {% else %}
-                        <img alt='No submitted images' src="holder.js/200x200?text=No submitted images" class="img-fluid img-thumbnail">
+                        {{ image(featured_image, "width-300", class='d-block img-fluid') }}
                     {% endif %}
                 {% endwith %}
             </div>
@@ -222,11 +220,14 @@
             {% if release.doi %}
                 <a href='{{release.doi_url}}'><span class='badge badge-success'>{{ release.doi_url }}</span></a>
             {% else %}
-                No assigned DOI. 
+                No assigned DOI
                 {% if has_change_perm %}
+                    <div>
+                    <i class='fa fa-exclamation-triangle'></i>
                     We assign DOIs to peer reviewed models or models associated with a peer
-                    reviewed publication. If you would like to request a DOI at this time for an upcoming
-                    publication, please <a href='{{slugurl('contact')}}'>contact us</a>.
+                    reviewed publication. If you would like to request a DOI 
+                    please <a href='{{slugurl('contact')}}'>contact us</a>.
+                    </div>
                 {% endif %}
             {% endif %}
             </p>
