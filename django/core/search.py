@@ -147,7 +147,7 @@ class GeneralSearch:
                 'bool': {
                     'must': {
                         'match': {
-                            '_all': text
+                            '_all_text': text
                         }
                     },
                     'filter': {
