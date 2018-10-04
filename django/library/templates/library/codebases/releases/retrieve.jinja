@@ -27,7 +27,7 @@
         {% else %}
             <div class="alert alert-danger mt-2">The release you are viewing is currently unpublished.</div>
         {% endif %}
-        <h1 class='codebase-title pb-4'>{{ codebase.title }}</h1>
+        <h1 class='codebase-title pb-4'>{{ codebase.title }} <em>(version {{release.version_number}})</em></h1>
         <div class='metadata'>
             <b>Submitted by:</b> {{ member_profile_href(codebase.submitter.member_profile) }}
             <b class='pl-2'>Platform:</b>
