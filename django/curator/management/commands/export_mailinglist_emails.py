@@ -15,15 +15,14 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument('--after', '-a', action='store', dest='after', default=None,
-                            help='isoformat (yyyy-mm-dd) date the users were added e.g., --from 2018-03-15')
+                            help='yyyy-mm-dd date after which users were added e.g., --after=2018-03-15')
 
     def handle(self, *args, **options):
-        UserModel = get_user_model()
+        qs = get_user_model().objects.filter(is_active=True)
         after_string = options['after']
-        qs = UserModel.objects.filter(is_active=True)
         if after_string is not None:
             after_date = parse_date(after_string).replace(tzinfo=pytz.UTC)
             qs = qs.filter(date_joined__gte=after_date)
         csvf = csv.writer(sys.stdout)
         for user in qs:
-            csvf.writerow([user.first_name, user.last_name, user.email])
+            csvf.writerow([user.first_name, user.last_name, user.member_profile.institution, user.email])
