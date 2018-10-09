@@ -871,7 +871,13 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
                                'version_number': self.version_number})
 
     def get_review(self):
-        return self.review if hasattr(self, 'review') else None
+        return getattr(self, 'review', None)
+
+    def get_review_status_display(self):
+        review = self.get_review()
+        if review:
+            return review.get_status_display()
+        return 'Artifacts have not been reviewed'
 
     def get_review_download_url(self):
         if not self.share_uuid:
@@ -1167,6 +1173,14 @@ class ReviewStatus(ChoicesMixin, Enum):
     # The model review process is complete
     complete = _('Review is complete')
 
+    @property
+    def is_pending(self):
+        return self != ReviewStatus.complete
+
+    @property
+    def display_message(self):
+        return 'Peer review in process' if self.is_pending else 'Peer reviewed'
+
 
 class PeerReviewEvent(ChoicesMixin, Enum):
     """
@@ -1222,7 +1236,7 @@ class PeerReview(models.Model):
         return ReviewStatus.awaiting_reviewer_changes.name == self.status
 
     def get_status_display(self):
-        return ReviewStatus[self.status].value
+        return ReviewStatus[self.status].display_message
 
     def get_assigned_reviewer_email(self):
         if self.assigned_reviewer:

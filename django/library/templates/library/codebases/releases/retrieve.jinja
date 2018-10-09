@@ -263,7 +263,7 @@
             </p>
             <b class="card-title">Downloads
                 <span class='btn btn-sm btn-outline-primary disabled'>{{ codebase.download_count() }}</span>
-            </b> 
+            </b>
         </div>
         <div class='section'>
             {% if codebase.peer_reviewed or release.peer_reviewed %}
@@ -273,11 +273,7 @@
                     Peer Review
                 </b>
                 <p>
-                {% if release.get_review() %}
-                    <span class='btn btn-sm btn-warning disabled'>{{ release.get_review().get_status_display() }}</span>
-                {% else %}
-                    Not peer reviewed
-                {% endif %}
+                <span class='btn btn-sm btn-warning disabled'>{{ release.get_review_status_display() }}</span>
                 </p>
             {% endif %}
             </p>
