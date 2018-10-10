@@ -1,8 +1,9 @@
 {% set release = invitation.review.codebase_release %}
-{% set codebase = release.codebase %}
 
-Dear {{ invitation.invitee }},
+Dear CoMSES Net Reviewer,
 
-The author of [{{ codebase.title }}]({{ build_absolute_uri(release.share_url) }}) has taken into account your feedback.
+The author of [{{ release.title }}]({{ build_absolute_uri(release.share_url) }}) has made changes based on your feedback and has requested a re-review of their model.
 
-Please check the model and update your feedback to reflect any changes made.
+We would appreciate if you would be willing to check the model again and [provide review feedback]({{ build_absolute_uri(invitation.feedback.get_absolute_url()) }}).
+
+Thank you for volunteering your time to the CoMSES Net community!

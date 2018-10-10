@@ -1264,27 +1264,35 @@ class PeerReview(models.Model):
 
         return event
 
+    def log(self, message: str, action: PeerReviewEvent, author: MemberProfile):
+        return self.events.create(message=message, action=action.name, author=author)
+
+    def set_status(self, status: ReviewStatus):
+        self.status = status.name
+
     def author_made_changes(self, changes_made=None):
         author = self.submitter
-        review_event = PeerReviewEventLog(review=self,
-                                          action=PeerReviewEvent.author_made_changes.name,
-                                          author=author,
-                                          message='Author {} made changes'.format(author))
-        review_event.save()
-
-        qs = self.invitations.filter(accepted=True)
-        if not qs.exists():
-            self.status = ReviewStatus.awaiting_editor_feedback.name
-            self.save()
-            self.send_editor_updated_content_email()
-            return review_event
-
-        qs.send_author_updated_content_email()
-        self.status = ReviewStatus.awaiting_reviewer_feedback.name
+        review_event = self.log(message='Author {} has made changes to the release'.format(author),
+                                action=PeerReviewEvent.author_made_changes,
+                                author=author)
+        self.send_author_updated_content_email()
+        self.set_status(ReviewStatus.awaiting_reviewer_feedback)
         self.save()
         if changes_made:
             review_event.add_message(changes_made)
         return review_event
+
+    def send_author_updated_content_email(self):
+        qs = self.invitations.filter(accepted=True)
+        if qs.exists():
+            self.status = ReviewStatus.awaiting_editor_feedback.name
+        else:
+            self.status = ReviewStatus.awaiting_reviewer_feedback.name
+
+        for invitation in qs:
+            invitation.send_author_updated_content_email()
+
+        self.save()
 
     def send_author_requested_peer_review_email(self):
         template = get_template('library/review/email/review_complete.jinja')
@@ -1348,11 +1356,6 @@ class PeerReviewInvitationQuerySet(models.QuerySet):
     def with_reviewer_statistics(self):
         return self.prefetch_related(models.Prefetch('candidate_reviewer', PeerReview.get_reviewers()))
 
-    def send_author_updated_content_email(self):
-        events = [invitation.send_author_updated_content_email(save=False) for invitation in self]
-        events = PeerReviewEventLog.objects.bulk_create(events)
-        return events
-
 
 @register_snippet
 class PeerReviewInvitation(models.Model):
@@ -1374,34 +1377,42 @@ class PeerReviewInvitation(models.Model):
     @property
     def latest_feedback(self):
         if not self.feedback_set.exists():
-            return self.create_feedback()
+            return self.feedback_set.create()
         return self.feedback_set.last()
 
     @property
-    def email(self):
+    def reviewer_email(self):
         return self.candidate_reviewer.email
+
+    @property
+    def editor_email(self):
+        return self.editor.email
 
     @property
     def invitee(self):
         return self.candidate_reviewer.name
 
     @property
-    def invitee_title(self):
-        return self.candidate_reviewer.name
-
-    @property
-    def recipient(self):
-        return self.candidate_reviewer.email
-
-    @property
     def from_email(self):
         return settings.DEFAULT_FROM_EMAIL
+
+    def send_author_updated_content_email(self):
+        template = get_template('library/review/email/author_updated_content_for_reviewer_email.jinja')
+        # create a new feedback object for the reviewer to manipulate
+        markdown_content = template.render(context=dict(invitation=self,
+                                                        feedback=self.feedback_set.create()))
+        subject = 'Updates to release {}'.format(self.review.title)
+        email = create_markdown_email(subject=subject, body=markdown_content,
+                                      to=[self.reviewer_email],
+                                      cc=[self.editor_email],
+                                      from_email=self.editor_email)
+        email.send()
 
     def send_email(self, resend=True):
         """Email the reviewer a invitation"""
         template = get_template('library/review/email/review_invite.jinja')
         markdown_content = template.render(context=dict(invitation=self))
-        subject = 'Review Model "{}"'.format(self.review.codebase_release.codebase.title)
+        subject = 'Review Model {}'.format(self.review.title)
         email = create_markdown_email(subject=subject, body=markdown_content, to=[self.recipient],
                                       cc=[settings.EDITOR_EMAIL])
         email.send()
@@ -1416,37 +1427,14 @@ class PeerReviewInvitation(models.Model):
             event.action = PeerReviewEvent.invitation_resent.name
         return event.save()
 
-    def send_author_updated_content_email(self, save=True):
-        event = PeerReviewEventLog(review=self.review,
-                                   author=self.editor,
-                                   message='Notified reviewer {} of model update'.format(
-                                       self.candidate_reviewer))
-
-        template = get_template('library/review/email/author_updated_content_for_reviewer_email.jinja')
-        markdown_content = template.render(context=dict(invitation=self))
-        subject = 'Updates to release "{}"'.format(self.review.title)
-        email = create_markdown_email(subject=subject, body=markdown_content, to=[self.recipient],
-                                      from_email=self.review.submitter.email)
-        email.send()
-
-        if save:
-            event.save()
-        return event
-
     @transaction.atomic
     def accept(self):
         self.accepted = True
-        if not self.feedback_set.exists():
-            feedback = self.create_feedback()
-        else:
-            feedback = self.feedback_set.last()
+        feedback = self.latest_feedback
         self.save()
-        event = PeerReviewEventLog(review=self.review,
-                                   action=PeerReviewEvent.invitation_accepted.name,
-                                   author=self.editor,
-                                   message='Invitation accepted by {}'.format(self.candidate_reviewer))
-        event.save()
-
+        event = self.review.log(action=PeerReviewEvent.invitation_accepted,
+                                author=self.editor,
+                                message='Invitation accepted by {}'.format(self.candidate_reviewer))
         template = get_template('library/review/email/review_invitation_accepted.jinja')
         markdown_content = template.render(context=dict(invitation=self, feedback=feedback))
         subject = 'Accepted Invitation to Review Model "{}"'.format(self.review.codebase_release.codebase.title)
@@ -1475,9 +1463,6 @@ class PeerReviewInvitation(models.Model):
 
     def get_absolute_url(self):
         return reverse('library:peer-review-invitation', kwargs=dict(slug=self.slug))
-
-    def create_feedback(self):
-        return PeerReviewerFeedback.objects.create(invitation=self)
 
     class Meta:
         permissions = (('view_peerreviewinvitation', 'Can view peer review invitations'),)
