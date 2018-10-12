@@ -32,7 +32,7 @@ class ComsesFeed(Feed):
         return item.get_absolute_url()
 
     def item_author_name(self, item):
-        return item.submitter.member_profile.name
+        return item.submitter.username
 
     def item_author_link(self, item):
         return item.submitter.member_profile.get_absolute_url()
