@@ -2,5 +2,13 @@
 
 Dear {{ review.submitter.name }},
 
-The peer review of your release [{{ release.title }}]({{ build_absolute_uri(release.get_absolute_url()) }}) is complete. Your
-release is now marked as peer reviewed.
+Congratulations! The peer review of your model [{{ release.title }}]({{ build_absolute_uri(release.get_absolute_url()) }}) 
+is now complete and your release has been marked as peer reviewed. In the coming months we will be building a DOI
+registration workflow that will automatically assign a DOI to all peer reviewed models but if you need a DOI immediately
+please feel free to [contact us]({{ slugurl('contact') }}).
+
+Thank you for submitting your computational model for review to CoMSES Net! We hope you will be willing to serve as a
+reviewer of model code as well in future peer reviews.
+
+Best regards,
+The CoMSES Net Editors
