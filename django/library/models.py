@@ -4,6 +4,7 @@ import os
 import pathlib
 import uuid
 from collections import OrderedDict
+from datetime import timedelta
 from enum import Enum
 
 import semver
@@ -1302,27 +1303,6 @@ class PeerReview(models.Model):
                                       from_email=self.submitter.email, to=[settings.EDITOR_EMAIL])
         email.send()
 
-    def send_editor_updated_content_email(self):
-        editors = MemberProfile.objects.filter(pk__in=self.invitations.values_list('editor_id', flat=True))
-        if not editors.exists():
-            editors = MemberProfile.objects.filter(user__is_superuser=True)
-
-        events = []
-        for editor in editors:
-            event = PeerReviewEventLog(review=self,
-                                       author=editor,
-                                       message='Notified editor {} of model update'.format(editor))
-
-            template = get_template('library/review/email/author_updated_content_for_editor_email.jinja')
-            markdown_content = template.render(context=dict(review=self, editor=editor))
-            subject = 'Updates to release "{}"'.format(self.title)
-            email = create_markdown_email(subject=subject, body=markdown_content, to=[settings.EDITOR_EMAIL, editor.email])
-            email.send()
-
-            event.save()
-            events.append(event)
-        return events
-
     @staticmethod
     def get_reviewers(query=None):
         queryset = MemberProfile.objects.annotate(
@@ -1379,6 +1359,11 @@ class PeerReviewInvitation(models.Model):
         if not self.feedback_set.exists():
             return self.feedback_set.create()
         return self.feedback_set.last()
+
+    @property
+    def expiration_date(self):
+        # FIXME: lift magic constant to SiteSettings or settings.py
+        return self.date_created + timedelta(days=21)
 
     @property
     def reviewer_email(self):
