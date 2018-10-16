@@ -581,6 +581,8 @@ class Codebase(index.Indexed, ClusterableModel):
         return draft
 
     def create_release(self, initialize=True, **overrides):
+        # FIXME: guard against not creating a new draft if there's an existing unpublished release, see
+        # https://github.com/comses/comses.net/issues/304
         submitter = self.submitter
         version_number = self.next_version_number()
         previous_release = self.releases.last()
@@ -605,6 +607,7 @@ class Codebase(index.Indexed, ClusterableModel):
             release = previous_release
             for k, v in release_metadata.items():
                 setattr(release, k, v)
+            release.doi = None
             release.save()
             previous_release_contributors.copy_to(release)
 
