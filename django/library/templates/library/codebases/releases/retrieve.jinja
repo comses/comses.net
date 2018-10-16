@@ -169,8 +169,13 @@
                                 {% else %}
                                     <span class="badge badge-warning">Unpublished</span>
                                 {% endif %}
-                                {% if related_release.codebase.peer_reviewed or related_release.peer_reviewed %}
+                                {% if related_release.peer_reviewed %}
                                     <span class='badge badge-info'>Peer Reviewed</span>
+                                {% endif %}
+                                {% if related_release.doi %}
+                                    <a href='{{related_release.doi_url}}'>
+                                        <span class='badge badge-info'>{{related_release.doi_url}}</span>
+                                    </a>
                                 {% endif %}
                             </td>
                             {% if has_change_perm %}
@@ -218,7 +223,11 @@
             <b class='card-title'>DOI</b>
             <p>
             {% if release.doi %}
-                <a href='{{release.doi_url}}'><span class='badge badge-success'>{{ release.doi_url }}</span></a>
+                <a href='{{release.doi_url}}'><span class='badge badge-info'>{{ release.doi_url }}</span></a>
+            {% elif codebase.doi %}
+                This codebase has an associated DOI that points at a different version. Please use this DOI to cite the
+                model.
+                <a href='{{codebase.doi_url}}'><span class='badge badge-info'>{{ codebase.doi_url }}</span></a>
             {% else %}
                 No assigned DOI
                 {% if has_change_perm %}

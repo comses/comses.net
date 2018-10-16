@@ -473,6 +473,10 @@ class Codebase(index.Indexed, ClusterableModel):
     def get_list_url(cls):
         return reverse('library:codebase-list')
 
+    @staticmethod
+    def format_doi_url(doi_string):
+        return 'https://doi.org/{0}'.format(doi_string) if doi_string else ''
+
     def get_absolute_url(self):
         return reverse('library:codebase-detail', kwargs={'identifier': self.identifier})
 
@@ -481,6 +485,10 @@ class Codebase(index.Indexed, ClusterableModel):
 
     def media_url(self, name):
         return '{0}/media/{1}'.format(self.get_absolute_url(), name)
+
+    @property
+    def doi_url(self):
+        return Codebase.format_doi_url(self.doi)
 
     def get_all_next_possible_version_numbers(self, minor_only=False):
         if self.releases.all():
@@ -919,7 +927,7 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
 
     @property
     def doi_url(self):
-        return 'https://doi.org/{0}'.format(self.doi)
+        return Codebase.format_doi_url(self.doi)
 
     @property
     def permanent_url(self):
