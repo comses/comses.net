@@ -1356,8 +1356,7 @@ class PeerReviewInvitation(models.Model):
 
     @property
     def expiration_date(self):
-        # FIXME: lift magic constant to SiteSettings or settings.py
-        return self.date_created + timedelta(days=21)
+        return self.date_created + timedelta(days=settings.PEER_REVIEW_INVITATION_EXPIRATION)
 
     @property
     def reviewer_email(self):
@@ -1378,13 +1377,19 @@ class PeerReviewInvitation(models.Model):
     def send_author_updated_content_email(self):
         template = get_template('library/review/email/author_updated_content_for_reviewer_email.jinja')
         # create a new feedback object for the reviewer to manipulate
-        markdown_content = template.render(context=dict(invitation=self,
-                                                        feedback=self.feedback_set.create()))
-        subject = 'Updates to release {}'.format(self.review.title)
-        email = create_markdown_email(subject=subject, body=markdown_content,
-                                      to=[self.reviewer_email],
-                                      cc=[self.editor_email],
-                                      from_email=self.editor_email)
+        markdown_content = template.render(
+            context={
+                'invitation': self,
+                'feedback': self.feedback_set.create()
+            })
+        subject = '[CoMSES Net] Peer review: updates to release {}'.format(self.review.title)
+        email = create_markdown_email(
+            subject=subject,
+            body=markdown_content,
+            to=[self.reviewer_email],
+            cc=[self.editor_email],
+            from_email=self.editor_email
+        )
         email.send()
 
     @transaction.atomic
@@ -1392,7 +1397,7 @@ class PeerReviewInvitation(models.Model):
         """send an email to a candidate reviewer"""
         template = get_template('library/review/email/review_invite.jinja')
         markdown_content = template.render(context=dict(invitation=self))
-        subject = '[CoMSES Net] Request to peer review a computational model'
+        subject = '[CoMSES Net] Peer review: Request to review a computational model'
         email = create_markdown_email(subject=subject,
                                       body=markdown_content,
                                       to=[self.recipient],
@@ -1445,6 +1450,7 @@ class PeerReviewInvitation(models.Model):
 @register_snippet
 class PeerReviewerFeedback(models.Model):
     date_created = models.DateTimeField(auto_now_add=True)
+    last_modified = models.DateTimeField(auto_now=True)
     invitation = models.ForeignKey(PeerReviewInvitation, related_name='feedback_set', on_delete=models.CASCADE)
     recommendation = models.CharField(choices=ReviewerRecommendation.to_choices(), max_length=16, blank=True)
     private_reviewer_notes = MarkdownField(help_text=_('Private reviewer notes to the editor.'), blank=True)
@@ -1526,7 +1532,7 @@ class PeerReviewerFeedback(models.Model):
 
     def __str__(self):
         invitation = self.invitation
-        return 'Review feedback by {}: (submitted? {}) (recommendation: {})'.format(
+        return 'Peer Review Feedback by {}. (submitted? {}) (recommendation: {})'.format(
             invitation.candidate_reviewer,
             self.reviewer_submitted,
             self.get_recommendation_display()
