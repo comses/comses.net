@@ -40,7 +40,6 @@ from wagtail.snippets.models import register_snippet
 from core import fs
 from core.backends import add_to_comses_permission_whitelist
 from core.fields import MarkdownField
-from core.fs import mimetypes
 from core.models import Platform, MemberProfile
 from core.queryset import get_viewable_objects_for_user
 from core.serializers import PUBLISH_DATE_FORMAT
@@ -549,11 +548,11 @@ class Codebase(index.Indexed, ClusterableModel):
         if not is_image and images_only:
             logger.info('removing non image file: %s', path)
             path.unlink()
-            raise UnsupportedMediaType(mimetypes.guess_type(name)[0], detail='{} is not an image'.format(name))
+            raise UnsupportedMediaType(fs.mimetypes.guess_type(name)[0], detail='{} is not an image'.format(name))
         image_metadata = {
             'name': name,
             'path': str(self.media_dir()),
-            'mimetype': mimetypes.guess_type(str(path)),
+            'mimetype': fs.mimetypes.guess_type(str(path)),
             'url': self.media_url(name),
             'featured': is_image,
         }
@@ -891,13 +890,6 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
                        kwargs={'identifier': self.codebase.identifier,
                                'version_number': self.version_number})
 
-    # FIXME: lift magic constants
-    @property
-    def handle_url(self):
-        if '2286.0/oabm' in self.doi:
-            return 'http://hdl.handle.net/{0}'.format(self.doi)
-        return None
-
     @property
     def is_peer_review_requestable(self):
         """
@@ -937,6 +929,7 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
     def download_count(self):
         return self.downloads.count()
 
+    @transaction.atomic
     def record_download(self, request):
         referrer = request.META.get('HTTP_REFERER', '')
         client_ip, is_routable = get_client_ip(request)
@@ -1200,7 +1193,7 @@ class PeerReview(models.Model):
                                           on_delete=models.SET_NULL,
                                           help_text=_('User assigned to perform this review'))
     assigned_reviewer_email = models.EmailField(blank=True,
-                                                help_text=_('Assigned reviewer email'))
+                                                help_text=_('Assigned reviewer email used for non-CoMSES members'))
     submitter = models.ForeignKey(MemberProfile, related_name='+', on_delete=models.PROTECT)
     slug = models.UUIDField(default=uuid.uuid4, unique=True, null=True)
 
@@ -1233,6 +1226,7 @@ class PeerReview(models.Model):
     def get_edit_url(self):
         return reverse('library:profile-edit', kwargs={'user_pk': self.user.pk})
 
+    @transaction.atomic
     def get_absolute_url(self):
         if not self.slug:
             self.slug = uuid.uuid4()
@@ -1244,26 +1238,26 @@ class PeerReview(models.Model):
 
     @transaction.atomic
     def set_complete_status(self, editor: MemberProfile):
-        self.status = ReviewStatus.complete.name
+        self.set_status(ReviewStatus.complete)
         self.save()
-        action = PeerReviewEvent.editor_accepted.name
-        message = 'Editor {} has certified model'.format(editor)
-        event = PeerReviewEventLog(review=self,
-                                   action=action,
-                                   author=editor,
-                                   message=message)
-        event.save()
+        self.log(
+            author=editor,
+            action = PeerReviewEvent.editor_accepted,
+            message = 'Editor {} certified model as peer reviewed'.format(editor)
+        )
         self.codebase_release.peer_reviewed = True
         self.codebase_release.save()
 
         template = get_template('library/review/email/review_complete.jinja')
         markdown_content = template.render(context=dict(review=self))
-        subject = 'Peer review complete for release "{}"'.format(self.title)
-        email = create_markdown_email(subject=subject, body=markdown_content, to=[self.submitter.email],
-                                      bcc=[settings.EDITOR_EMAIL, editor.email])
+        subject = '[CoMSES Net] Peer review completed'
+        email = create_markdown_email(
+            subject=subject,
+            body=markdown_content,
+            to=[self.submitter.email],
+            bcc=[settings.EDITOR_EMAIL, editor.email]
+        )
         email.send()
-
-        return event
 
     def log(self, message: str, action: PeerReviewEvent, author: MemberProfile):
         return self.events.create(message=message, action=action.name, author=author)
@@ -1285,22 +1279,20 @@ class PeerReview(models.Model):
 
     def send_author_updated_content_email(self):
         qs = self.invitations.filter(accepted=True)
-        if qs.exists():
-            self.status = ReviewStatus.awaiting_editor_feedback.name
-        else:
-            self.status = ReviewStatus.awaiting_reviewer_feedback.name
-
+        # if there are no currently accepted invitations, status should be set to awaiting editor feedback
+        self.set_status(ReviewStatus.awaiting_reviewer_feedback if qs.exists() else ReviewStatus.awaiting_editor_feedback)
         for invitation in qs:
             invitation.send_author_updated_content_email()
-
         self.save()
 
     def send_author_requested_peer_review_email(self):
         template = get_template('library/review/email/review_complete.jinja')
-        markdown_content = template.render(context=dict(review=self))
+        markdown_content = template.render(context={'review': self})
         subject = '{} requested peer review of release "{}"'.format(self.submitter.name, self.title)
-        email = create_markdown_email(subject=subject, body=markdown_content,
-                                      from_email=self.submitter.email, to=[settings.EDITOR_EMAIL])
+        email = create_markdown_email(subject=subject,
+                                      body=markdown_content,
+                                      from_email=self.submitter.email,
+                                      to=[settings.EDITOR_EMAIL])
         email.send()
 
     @staticmethod
@@ -1326,10 +1318,12 @@ class PeerReview(models.Model):
         return self.codebase_release.title
 
     def __str__(self):
-        return 'PeerReview of "{} v{}" by {}'.format(
-            self.codebase_release.codebase.title,
-            self.codebase_release.version_number,
-            self.codebase_release.submitter.get_full_name() or self.codebase_release.submitter)
+        return 'Peer Review of {} requested on {}. Status: {}, last modified {}'.format(
+            self.title,
+            self.date_created,
+            self.get_status_display(),
+            self.last_modified
+        )
 
 
 class PeerReviewInvitationQuerySet(models.QuerySet):
@@ -1393,24 +1387,22 @@ class PeerReviewInvitation(models.Model):
                                       from_email=self.editor_email)
         email.send()
 
-    def send_email(self, resend=True):
-        """Email the reviewer a invitation"""
+    @transaction.atomic
+    def send_candidate_reviewer_email(self, resend=True):
+        """send an email to a candidate reviewer"""
         template = get_template('library/review/email/review_invite.jinja')
         markdown_content = template.render(context=dict(invitation=self))
-        subject = 'Review Model {}'.format(self.review.title)
-        email = create_markdown_email(subject=subject, body=markdown_content, to=[self.recipient],
+        subject = '[CoMSES Net] Request to peer review a computational model'
+        email = create_markdown_email(subject=subject,
+                                      body=markdown_content,
+                                      to=[self.recipient],
                                       cc=[settings.EDITOR_EMAIL])
         email.send()
-        event = PeerReviewEventLog(review=self.review,
-                                   author=self.editor,
-                                   message='Invitation from {} to {}'.format(
-                                       self.editor,
-                                       self.candidate_reviewer))
-        if resend:
-            event.action = PeerReviewEvent.invitation_sent.name
-        else:
-            event.action = PeerReviewEvent.invitation_resent.name
-        return event.save()
+        self.review.log(
+            action=PeerReviewEvent.invitation_sent if resend else PeerReviewEvent.invitation_resent,
+            author=self.editor,
+            message='{0} sent an invitation to candidate reviewer {1}'.format(
+                self.editor, self.candidate_reviewer))
 
     @transaction.atomic
     def accept(self):
@@ -1432,19 +1424,15 @@ class PeerReviewInvitation(models.Model):
     def decline(self):
         self.accepted = False
         self.save()
-        event = PeerReviewEventLog(review=self.review,
-                                   action=PeerReviewEvent.invitation_declined.name,
-                                   author=self.editor,
-                                   message='Invitation declined by {}'.format(self.candidate_reviewer))
-        event.save()
-
+        self.review.log(action=PeerReviewEvent.invitation_declined,
+                        author=self.editor,
+                        message='Invitation declined by {}'.format(self.candidate_reviewer))
         template = get_template('library/review/email/review_invitation_declined.jinja')
         markdown_content = template.render(context=dict(invitation=self))
-        subject = 'Accepted Invitation to Review Model "{}"'.format(self.review.codebase_release.codebase.title)
+        subject = 'Declined Invitation to Review Model "{}"'.format(self.review.title)
         email = create_markdown_email(subject=subject, body=markdown_content, to=[self.editor.email],
                                       from_email=self.review.submitter.email)
         email.send()
-        return event
 
     def get_absolute_url(self):
         return reverse('library:peer-review-invitation', kwargs=dict(slug=self.slug))
@@ -1481,10 +1469,11 @@ class PeerReviewerFeedback(models.Model):
         help_text=_('Were you able to run the model with the provided instructions?')
     )
     runnable_comments = models.TextField(
-        help_text=_('Reviewer comments on running the model with the provided instructions'), blank=True
+        help_text=_('Reviewer comments on running the model with the provided instructions'),
+        blank=True
     )
     reviewer_submitted = models.BooleanField(
-        help_text=_('Whether or not feedback has been submitted by reviewer. Submitted feedback cannot be edited'),
+        help_text=_('true when reviewer has formally submit feedback, protecting the data from further edits'),
         default=False
     )
 
@@ -1496,7 +1485,7 @@ class PeerReviewerFeedback(models.Model):
         return reverse('library:peer-review-feedback-editor-edit',
                        kwargs={'slug': self.invitation.slug, 'feedback_id': self.id})
 
-    def reviewer_gave_feedback(self):
+    def reviewer_completed(self):
         """Add a reviewer gave feedback event to the log
 
         Preconditions:
@@ -1504,16 +1493,14 @@ class PeerReviewerFeedback(models.Model):
         reviewer updated feedback
         """
         review = self.invitation.review
-        review.status = ReviewStatus.awaiting_editor_feedback.name
+        review.set_status(ReviewStatus.awaiting_editor_feedback)
         review.save()
         reviewer = self.invitation.candidate_reviewer
-        release = self.invitation.review.codebase_release
-        event = PeerReviewEventLog(review=self.invitation.review,
-                                   action=PeerReviewEvent.reviewer_gave_feedback.name,
-                                   author=self.invitation.candidate_reviewer,
-                                   message='Reviewer {} provided feedback'.format(reviewer, release))
-        event.save()
-        return event
+        return review.log(
+            action=PeerReviewEvent.reviewer_gave_feedback,
+            author=self.invitation.candidate_reviewer,
+            message='Reviewer {} provided feedback'.format(reviewer)
+        )
 
     def editor_called_for_revisions(self):
         """Added an editor called for revisions event to the log
@@ -1522,29 +1509,28 @@ class PeerReviewerFeedback(models.Model):
 
         editor updated feedback
         """
-        event = PeerReviewEventLog(review=self.invitation.review,
-                                   action=PeerReviewEvent.editor_called_for_revisions.name,
-                                   author=self.invitation.editor,
-                                   message='Editor {} called for revisions'.format(self.invitation.editor))
-
+        review = self.invitation.review
+        editor = self.invitation.editor
+        review.log(
+            action=PeerReviewEvent.editor_called_for_revisions,
+            author=editor,
+            message='Editor {} called for revisions'.format(editor)
+        )
         template = get_template('library/review/email/revision_request.jinja')
-        markdown_content = template.render(context=dict(feedback=self))
-        subject = 'Revisions requested for release "{}"'.format(self.invitation.review.title)
+        markdown_content = template.render(context={'feedback': self})
+        subject = '[CoMSES Net]: peer review complete - revisions requested'
         email = create_markdown_email(subject=subject, body=markdown_content, to=[self.invitation.review.submitter.email])
         email.send()
-
-        event.save()
-        review = self.invitation.review
-        review.status = ReviewStatus.awaiting_author_changes.name
+        review.set_status(ReviewStatus.awaiting_author_changes)
         review.save()
 
-        return event
-
     def __str__(self):
-        return 'Feedback by {} for {} v{} on {}'.format(self.invitation.candidate_reviewer,
-                                                        self.invitation.review.codebase_release.codebase.title,
-                                                        self.invitation.review.codebase_release.version_number,
-                                                        self.date_created.strftime(PUBLISH_DATE_FORMAT))
+        invitation = self.invitation
+        return 'Review feedback by {}: (submitted? {}) (recommendation: {})'.format(
+            invitation.candidate_reviewer,
+            self.reviewer_submitted,
+            self.get_recommendation_display()
+        )
 
 
 @register_snippet

@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 class PeerReviewInvitationForm(forms.ModelForm):
     def save(self, commit=True):
         invitation = super().save(commit)
-        invitation.send_email()
+        invitation.send_candidate_reviewer_email()
         return invitation
 
     class Meta:
@@ -120,7 +120,7 @@ class PeerReviewerFeedbackReviewerForm(CheckCharFieldLengthMixin, forms.ModelFor
     def save(self, commit=True):
         feedback = super().save(commit)
         if feedback.reviewer_submitted:
-            feedback.reviewer_gave_feedback()
+            feedback.reviewer_completed()
         return feedback
 
     class Meta:

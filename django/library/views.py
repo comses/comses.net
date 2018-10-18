@@ -137,7 +137,7 @@ class PeerReviewInvitationViewSet(NoDeleteNoUpdateViewSet):
     @action(detail=True, methods=['post'])
     def resend_invitation(self, request, slug, invitation_slug):
         invitation = get_object_or_404(PeerReviewInvitation, slug=invitation_slug)
-        invitation.send_email()
+        invitation.send_candidate_reviewer_email()
         return Response(status=status.HTTP_200_OK)
 
 
