@@ -1359,6 +1359,10 @@ class PeerReviewInvitation(models.Model):
         return self.date_created + timedelta(days=settings.PEER_REVIEW_INVITATION_EXPIRATION)
 
     @property
+    def is_expired(self):
+        return timezone.now() > self.expiration_date
+
+    @property
     def reviewer_email(self):
         return self.candidate_reviewer.email
 
@@ -1393,7 +1397,7 @@ class PeerReviewInvitation(models.Model):
         email.send()
 
     @transaction.atomic
-    def send_candidate_reviewer_email(self, resend=True):
+    def send_candidate_reviewer_email(self, resend=False):
         """send an email to a candidate reviewer"""
         template = get_template('library/review/email/review_invite.jinja')
         markdown_content = template.render(context=dict(invitation=self))

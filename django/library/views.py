@@ -118,7 +118,8 @@ class PeerReviewInvitationViewSet(NoDeleteNoUpdateViewSet):
         data = request.data
         candidate_reviewer_id = data.get('id')
         candidate_email = data.get('email')
-        form_data = dict(review=get_object_or_404(PeerReview, slug=slug).id,
+        review = get_object_or_404(PeerReview, slug=slug)
+        form_data = dict(review=review.id,
                          editor=request.user.member_profile.id)
         if candidate_reviewer_id is not None:
             form_data['candidate_reviewer'] = candidate_reviewer_id
@@ -128,6 +129,8 @@ class PeerReviewInvitationViewSet(NoDeleteNoUpdateViewSet):
             raise ValidationError('Must have either id or email fields')
         form = PeerReviewInvitationForm(data=form_data)
         if form.is_valid():
+            # FIXME: consider an explicit invitation.send_candidate_reviewer_email() here instead of
+            # buried in the form.save() logic to match resend_invitation better and make it more clear what's going on
             form.save()
             return Response(status=status.HTTP_200_OK)
         else:
@@ -137,7 +140,7 @@ class PeerReviewInvitationViewSet(NoDeleteNoUpdateViewSet):
     @action(detail=True, methods=['post'])
     def resend_invitation(self, request, slug, invitation_slug):
         invitation = get_object_or_404(PeerReviewInvitation, slug=invitation_slug)
-        invitation.send_candidate_reviewer_email()
+        invitation.send_candidate_reviewer_email(resend=True)
         return Response(status=status.HTTP_200_OK)
 
 
@@ -151,15 +154,15 @@ class PeerReviewInvitationUpdateView(UpdateView):
         slug = self.kwargs['slug']
         invitation = get_object_or_404(PeerReviewInvitation, slug=slug)
         if invitation.accepted in [False, True]:
-            raise PermissionDenied('Can only accept or decline invitation once')
+            raise PermissionDenied("You have already responded to this invitation.")
+        elif invitation.is_expired:
+            raise PermissionDenied("This invitation has expired.")
         return invitation
 
     def get_success_url(self):
+        """ FIXME: this needs documentation """
         if self.object.accepted:
-            feedback = self.object.feedback_set.last()
-            if feedback is None:
-                feedback = self.object.create_feedback()
-            return feedback.get_absolute_url()
+            return self.object.latest_feedback.get_absolute_url()
         else:
             return self.object.review.codebase_release.share_url
 
