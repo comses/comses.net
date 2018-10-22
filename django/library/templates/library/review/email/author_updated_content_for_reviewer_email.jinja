@@ -1,9 +1,11 @@
 {% set release = invitation.review.codebase_release %}
 
-Dear CoMSES Net Reviewer,
+Dear {{ invitation.invitee }},
 
-The author of [{{ release.title }}]({{ build_absolute_uri(release.share_url) }}) has made changes based on your feedback and has requested a re-review of their model.
+The author of [{{ release.title }}]({{ build_absolute_uri(release.share_url) }}) has made changes based on your feedback has requested that their model be reviewed again.
 
-We would appreciate if you would be willing to check the model again and [provide review feedback]({{ build_absolute_uri(invitation.feedback.get_absolute_url()) }}).
+We would appreciate if you would be willing to check the model again and [provide feedback again]({{ build_absolute_uri(feedback.get_absolute_url()) }}) based on the same criteria, listed below.
 
-Thank you for volunteering your time to the CoMSES Net community!
+{% include "review/includes/review_criteria.jinja" %}
+
+Thank you for your service to the CoMSES Net community!
