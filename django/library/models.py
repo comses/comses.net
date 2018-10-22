@@ -1248,7 +1248,7 @@ class PeerReview(models.Model):
         self.codebase_release.peer_reviewed = True
         self.codebase_release.save()
 
-        template = get_template('library/review/email/review_complete.jinja')
+        template = get_template('library/review/email/review_completed.jinja')
         markdown_content = template.render(context=dict(review=self))
         subject = '[CoMSES Net] Peer review completed'
         email = create_markdown_email(
@@ -1282,13 +1282,15 @@ class PeerReview(models.Model):
         self.save()
 
     def send_author_requested_peer_review_email(self):
-        template = get_template('library/review/email/review_complete.jinja')
+        template = get_template('library/review/email/review_requested.jinja')
         markdown_content = template.render(context={'review': self})
         subject = '{} requested peer review of release "{}"'.format(self.submitter.name, self.title)
-        email = create_markdown_email(subject=subject,
-                                      body=markdown_content,
-                                      from_email=self.submitter.email,
-                                      to=[settings.EDITOR_EMAIL])
+        email = create_markdown_email(
+            subject=subject,
+            body=markdown_content,
+            from_email=self.submitter.email,
+            to=[settings.EDITOR_EMAIL]
+        )
         email.send()
 
     @staticmethod
