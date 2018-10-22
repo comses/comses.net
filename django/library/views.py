@@ -544,7 +544,7 @@ class CodebaseReleaseViewSet(CommonViewSetMixin,
         codebase_release = self.get_object()
         review = codebase_release.get_review()
         if review:
-            review.author_made_changes()
+            review.author_resubmitted_changes()
             if request.accepted_renderer.format == 'html':
                 messages.success(request, 'Reviewers notified of changes')
                 return HttpResponseRedirect(codebase_release.get_absolute_url())
