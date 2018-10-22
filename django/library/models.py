@@ -42,7 +42,6 @@ from core.backends import add_to_comses_permission_whitelist
 from core.fields import MarkdownField
 from core.models import Platform, MemberProfile
 from core.queryset import get_viewable_objects_for_user
-from core.serializers import PUBLISH_DATE_FORMAT
 from core.utils import create_markdown_email
 from core.view_helpers import search_backend
 from .fs import CodebaseReleaseFsApi, StagingDirectories, FileCategoryDirectories, MessageLevels
@@ -1243,8 +1242,8 @@ class PeerReview(models.Model):
         self.save()
         self.log(
             author=editor,
-            action = PeerReviewEvent.release_certified,
-            message = 'Editor {} certified model as peer reviewed'.format(editor)
+            action=PeerReviewEvent.release_certified,
+            message='Editor {} certified model as peer reviewed'.format(editor)
         )
         self.codebase_release.peer_reviewed = True
         self.codebase_release.save()
@@ -1394,7 +1393,7 @@ class PeerReviewInvitation(models.Model):
             body=markdown_content,
             to=[self.reviewer_email],
             cc=[self.editor_email],
-            from_email=self.editor_email
+            from_email=settings.EDITOR_EMAIL
         )
         email.send()
 
@@ -1404,15 +1403,18 @@ class PeerReviewInvitation(models.Model):
         template = get_template('library/review/email/review_invite.jinja')
         markdown_content = template.render(context=dict(invitation=self))
         subject = '[CoMSES Net] Peer review: Request to review a computational model'
-        email = create_markdown_email(subject=subject,
-                                      body=markdown_content,
-                                      to=[self.recipient],
-                                      cc=[settings.EDITOR_EMAIL])
+        email = create_markdown_email(
+            subject=subject,
+            body=markdown_content,
+            to=[self.reviewer_email],
+            cc=[self.editor_email],
+            from_email=settings.EDITOR_EMAIL
+        )
         email.send()
         self.review.log(
             action=PeerReviewEvent.invitation_sent if resend else PeerReviewEvent.invitation_resent,
             author=self.editor,
-            message='{0} sent an invitation to candidate reviewer {1}'.format(
+            message='{} sent an invitation to candidate reviewer {}'.format(
                 self.editor, self.candidate_reviewer))
 
     @transaction.atomic
@@ -1461,7 +1463,8 @@ class PeerReviewerFeedback(models.Model):
     recommendation = models.CharField(choices=ReviewerRecommendation.to_choices(), max_length=16, blank=True)
     private_reviewer_notes = MarkdownField(help_text=_('Private reviewer notes to the editor.'), blank=True)
     private_editor_notes = MarkdownField(help_text=_('Private editor notes regarding this peer review'), blank=True)
-    notes_to_author = MarkdownField(help_text=_("Notes to be sent to the model author"), blank=True)
+    notes_to_author = MarkdownField(help_text=_("Editor's notes to be sent to the model author, manually compiled from other reviewer comments."),
+                                    blank=True)
     has_narrative_documentation = models.BooleanField(
         default=False,
         help_text=_('Is there sufficiently detailed accompanying narrative documentation?')
@@ -1529,8 +1532,8 @@ class PeerReviewerFeedback(models.Model):
             message='Editor {} called for revisions'.format(editor)
         )
         template = get_template('library/review/email/revision_request.jinja')
-        markdown_content = template.render(context={'feedback': self})
-        subject = '[CoMSES Net]: peer review complete - revisions requested'
+        markdown_content = template.render(context={'review': review, 'feedback': self})
+        subject = '[CoMSES Net] Peer review completed: revisions requested'
         email = create_markdown_email(subject=subject, body=markdown_content, to=[self.invitation.review.submitter.email])
         email.send()
         review.set_status(ReviewStatus.awaiting_author_changes)
