@@ -40,7 +40,7 @@ def confirm(prompt="Continue? (y/n) ", cancel_message="Aborted."):
     return True
 
 
-def create_markdown_email(subject: str, to, template_name: str=None, context: dict=None, body=None, from_email: str=settings.DEFAULT_FROM_EMAIL,
+def create_markdown_email(subject: str, to, template_name: str=None, context: dict=None, body: str=None, from_email: str=settings.DEFAULT_FROM_EMAIL,
                           **kwargs):
     if all([template_name, context]):
         # override body if a template name and context were given to us
@@ -59,5 +59,5 @@ def create_markdown_email(subject: str, to, template_name: str=None, context: di
         raise ValueError("Ignoring request to create a markdown email with no content")
 
 
-def send_markdown_email(subject: str, body: str, to, from_email=settings.DEFAULT_FROM_EMAIL, **kwargs):
-    create_markdown_email(subject, body, to, from_email, **kwargs).send()
+def send_markdown_email(subject: str, to, from_email=settings.DEFAULT_FROM_EMAIL, **kwargs):
+    create_markdown_email(subject, to, from_email, **kwargs).send()
