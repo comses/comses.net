@@ -226,7 +226,7 @@ def list_review_event_log(request, slug):
     review = get_object_or_404(PeerReview, slug=slug)
     if not MemberProfile.objects.editors().filter(pk=request.user.member_profile.pk).exists():
         raise Http404()
-    queryset = review.events.order_by('-date_created')[:10]
+    queryset = review.event_set.order_by('-date_created')[:10]
     serializer = PeerReviewEventLogSerializer(queryset, many=True)
     return Response(serializer.data)
 

@@ -3,9 +3,15 @@ from distutils.util import strtobool
 from dateutil import parser
 from django.conf import settings
 from django.core.mail import EmailMultiAlternatives
+from django.template.loader import get_template
+from django.template.exceptions import TemplateDoesNotExist, TemplateSyntaxError
 from django.utils import timezone
 
 from core.templatetags.globals import markdown
+
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 def parse_datetime(datetime_str: str):
@@ -34,11 +40,24 @@ def confirm(prompt="Continue? (y/n) ", cancel_message="Aborted."):
     return True
 
 
-def create_markdown_email(subject, body, to, from_email=settings.EDITOR_EMAIL, **kwargs):
-    email = EmailMultiAlternatives(subject=subject, body=body, to=to, from_email=from_email, **kwargs)
-    email.attach_alternative(markdown(body), 'text/html')
-    return email
+def create_markdown_email(subject: str, to, template_name: str=None, context: dict=None, body=None, from_email: str=settings.DEFAULT_FROM_EMAIL,
+                          **kwargs):
+    if all([template_name, context]):
+        # override body if a template name and context were given to us
+        try:
+            template = get_template(template_name)
+            body = template.render(context=context)
+        except TemplateDoesNotExist:
+            logger.error("couldn't find template %s", template_name)
+        except TemplateSyntaxError:
+            logger.error("invalid template %s", template_name)
+    if body:
+        email = EmailMultiAlternatives(subject=subject, body=body, to=to, from_email=from_email, **kwargs)
+        email.attach_alternative(markdown(body), 'text/html')
+        return email
+    else:
+        raise ValueError("Ignoring request to create a markdown email with no content")
 
 
-def send_markdown_email(subject, body, to, from_email=settings.DEFAULT_FROM_EMAIL, **kwargs):
+def send_markdown_email(subject: str, body: str, to, from_email=settings.DEFAULT_FROM_EMAIL, **kwargs):
     create_markdown_email(subject, body, to, from_email, **kwargs).send()
