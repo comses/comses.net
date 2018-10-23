@@ -40,7 +40,7 @@ def confirm(prompt="Continue? (y/n) ", cancel_message="Aborted."):
     return True
 
 
-def create_markdown_email(subject: str, to, template_name: str=None, context: dict=None, body: str=None, from_email: str=settings.DEFAULT_FROM_EMAIL,
+def create_markdown_email(subject: str=None, to=None, template_name: str=None, context: dict=None, body: str=None, from_email: str=settings.DEFAULT_FROM_EMAIL,
                           **kwargs):
     if all([template_name, context]):
         # override body if a template name and context were given to us
@@ -51,13 +51,16 @@ def create_markdown_email(subject: str, to, template_name: str=None, context: di
             logger.error("couldn't find template %s", template_name)
         except TemplateSyntaxError:
             logger.error("invalid template %s", template_name)
-    if body:
+    required_fields = [subject, to, body, from_email]
+    if all(required_fields):
         email = EmailMultiAlternatives(subject=subject, body=body, to=to, from_email=from_email, **kwargs)
         email.attach_alternative(markdown(body), 'text/html')
         return email
     else:
-        raise ValueError("Ignoring request to create a markdown email with no content")
+        raise ValueError("Ignoring request to create a markdown email with missing required content {}".format(required_fields))
 
 
-def send_markdown_email(subject: str, to, from_email=settings.DEFAULT_FROM_EMAIL, **kwargs):
-    create_markdown_email(subject, to, from_email, **kwargs).send()
+def send_markdown_email(**kwargs):
+    # convenience method for create_markdown_email, so we just keep the same signature
+    # use kwargs only, positional args for email parameters can be fraught
+    create_markdown_email(**kwargs).send()
