@@ -1,10 +1,9 @@
-Our model peer review system focuses on the following three criteria:
+Our computational model peer review system involves verifying that the model's source code and documentation is complete and meets baseline standards that are derived from ["good enough practices"]({{build_absolute_uri("/resources/guides-to-good-practice/")}}) in the software engineering and scientific communities we serve. Through this process we hope to foster higher quality models shared in the community for reuse, reproducibility, and advancement of the field as well as serve as an exemplar in the [emerging discipline of software citation](https://www.force11.org/software-citation-principles).
 
-1. Does the model run?
-2. Is it sufficiently documented? This is an admittedly subjective evaluation but you should be looking for complete
-narrative documentation, either following the spirit of the ODD protocol or equivalent, that informs a reader at a high
-level of essential internals and assumptions made in the model.
-3. Does the model have well-structured, "clean" code with appropriate comments and documented inputs and expected outputs?
+Reviewers are asked to review the computational model according to the following criteria:
 
-We do not expect an assessment of whether or not the model code is theoretically sound or producing correct outputs,
-though if you spot any red flags in the code please feel free to point them out.
+1. Does the model run? This may involve compilation into an executable, resolving input data dependencies or software library dependencies - all of which should be clearly documented.
+2. Is it sufficiently documented using the [ODD protocol](http://www.ufz.de/index.php?de=40429) or equivalent detailed narrative protocol? Although this can be an admittedly subjective evaluation you should be looking for cogent narrative documentation with enough detail to enable other computational modelers to replicate the model and its results without having to refer to the source code. Good documentation will often present important detailed internals and assumptions made in the model as well as a high level overview of the model.
+3. Does the model have well-structured, "clean" code with appropriate comments and documented inputs and expected outputs? This will help others (including your future self) reuse, review, or make improvements to your code.
+
+We do not expect an assessment of whether the model source code is theoretically sound, has scientific merit or is producing correct outputs, though if you spot any red flags in the code please feel free to point them out.
