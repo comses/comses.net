@@ -6,20 +6,15 @@ In order to promote good practices and high quality computational models, the Co
 
 As a member of CoMSES Net, would you be willing to review the computational model [{{ release.title }}]({{build_absolute_uri(release.share_url)}})?
 
-### Description
-~~~~
-    {{ release.codebase.description }}
-~~~~
+#### Description
+{{ release.codebase.description }}
 
 #### Release Notes
-~~~~
-    {{ release.release_notes }}
-~~~~
+{{ release.release_notes }}
 
-This process is not intended to be time-intensive and consists of a review of the source code and documentation to ensure it meets baseline standards for readability, documentation, and whether the model can be run.
-
+#### Review Criteria
 {% include "library/review/includes/review_criteria.jinja" %}
 
-You can accept or decline this invitation at [this custom invitation page]({{ build_absolute_uri(invitation.get_absolute_url()) }}). This invitation will expire by {{ invitation.expiration_date|format_datetime }}.
+You can accept or decline this invitation on [your custom invitation page]({{ build_absolute_uri(invitation.get_absolute_url()) }}). This invitation will expire by {{ invitation.expiration_date|format_datetime }} - we would appreciate it if you could let us know before that time so we can continue to provide model peer review in a timely manner.
 
 On behalf of the editors@comses.net, thank you for being a part of the CoMSES Net community!
