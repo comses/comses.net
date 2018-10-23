@@ -4,14 +4,22 @@ Dear {{ invitation.invitee }},
 
 In order to promote good practices and high quality computational models, the CoMSES Net Computational Model Library allows authors of models in the library to request peer review of their models. 
 
-As a member of CoMSES Net, would you be willing to review the computational model [{{ release.title }}]({{build_absolute_uri(release.share_url)}})? A brief description of the model follows:
+As a member of CoMSES Net, would you be willing to review the computational model [{{ release.title }}]({{build_absolute_uri(release.share_url)}})?
 
-{{ release.description }}
+### Description
+~~~~
+    {{ release.codebase.description }}
+~~~~
 
-The process is not very time-intensive and involves a review of the source code and documentation to ensure it meets basic standards for readability and whether the model can be run.
+#### Release Notes
+~~~~
+    {{ release.release_notes }}
+~~~~
+
+This process is not intended to be time-intensive and consists of a review of the source code and documentation to ensure it meets baseline standards for readability, documentation, and whether the model can be run.
 
 {% include "library/review/includes/review_criteria.jinja" %}
 
-You can accept or decline this invitation at [your custom invitation page]({{ build_absolute_uri(invitation.get_absolute_url()) }}). This invitation will expire by {{ invitation.expiration_date }}.
+You can accept or decline this invitation at [this custom invitation page]({{ build_absolute_uri(invitation.get_absolute_url()) }}). This invitation will expire by {{ invitation.expiration_date|format_datetime }}.
 
 On behalf of the editors@comses.net, thank you for being a part of the CoMSES Net community!
