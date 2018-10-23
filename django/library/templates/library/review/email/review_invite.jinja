@@ -1,9 +1,16 @@
-{% from "common.jinja" import search_tag_href %}
 {% set release = invitation.review.codebase_release %}
-{% set codebase = release.codebase %}
 
 Dear {{ invitation.invitee }},
 
-You have been requested to review the model [{{ codebase.title }}]({{ build_absolute_uri(release.share_url) }}).
+We have received a request to peer review the following computational model and invite you to review it:
 
-To accept or decline this invitation click [here]({{ build_absolute_uri(invitation.get_absolute_url()) }}).
+    [{{ release.title }}]({{ build_absolute_uri(release.share_url) }})
+
+{% include "library/review/includes/review_criteria.jinja" %}
+
+Please let us know if you are willing to perform a peer review of this model and its associated
+documentation at [your custom invitation page]({{ build_absolute_uri(invitation.get_absolute_url()) }}).
+
+This invitation will expire by {{ invitation.expiration_date }} and we would appreciate if you would let us know if you are willing to review the computational model by that date.
+
+On behalf of the editors@comses.net, thank you for being a part of the CoMSES Net community!

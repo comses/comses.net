@@ -1,0 +1,14 @@
+{% from "common.jinja" import search_tag_href %}
+{% set release = invitation.review.codebase_release %}
+{% set codebase = release.codebase %}
+
+Dear {{ invitation.invitee }},
+
+Thank you for accepting the invitation to review [{{ release.title }}]({{ build_absolute_uri(release.get_absolute_url()) }}).
+
+{% include "library/review/includes/review_criteria.jinja" %}
+
+You can provide private feedback on this model at [your private review feedback page]({{ build_absolute_uri(feedback.get_absolute_url())}}) - you can also find all of your past peer reviews on your [profile page](/accounts/profile/) under the `Model Reviews` tab. These are only visible to you and the managing editors at comses.net.
+
+On behalf of the editors@comses.net, thank you for being willing to serve as a reviewer for CoMSES Net! This is an
+important community service and we appreciate your time and dedication.

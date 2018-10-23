@@ -176,6 +176,10 @@ else:
 DEFAULT_FROM_EMAIL = config.get('email', 'DEFAULT_FROM_EMAIL', fallback='info@comses.net')
 # email address used for errors emails sent to ADMINS and MANAGERS
 SERVER_EMAIL = config.get('email', 'SERVER_EMAIL', fallback='editors@comses.net')
+EDITOR_EMAIL = config.get('email', 'EDITOR_EMAIL', fallback='editors@comses.net')
+
+# number of days before a peer review invitation expires
+PEER_REVIEW_INVITATION_EXPIRATION = 21
 
 RECAPTCHA_PUBLIC_KEY = config.get('captcha', 'RECAPTCHA_PUBLIC_KEY', fallback='')
 RECAPTCHA_PRIVATE_KEY = config.get('captcha', 'RECAPTCHA_PRIVATE_KEY', fallback='')

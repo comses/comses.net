@@ -386,7 +386,7 @@ class PeerReviewFeedbackEditorSerializer(serializers.ModelSerializer):
     reviewer_name = serializers.SerializerMethodField()
 
     def get_reviewer_name(self, instance):
-        return instance.invitation.invitee_title
+        return instance.invitation.candidate_reviewer.name
 
     class Meta:
         model = PeerReviewerFeedback
