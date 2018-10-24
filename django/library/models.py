@@ -661,9 +661,6 @@ class Codebase(index.Indexed, ClusterableModel):
         return "{0} {1} identifier={2} live={3}".format(self.title, self.date_created, repr(self.identifier),
                                                         live)
 
-    class Meta:
-        permissions = (('view_codebase', 'Can view codebase'),)
-
 
 class CodebaseImageQuerySet(ImageQuerySet):
     def accessible(self, user):
@@ -1053,7 +1050,6 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
 
     class Meta:
         unique_together = ('codebase', 'version_number')
-        permissions = (('view_codebaserelease', 'Can view codebase release'),)
 
 
 class CodebaseReleasePublisher:
@@ -1464,7 +1460,6 @@ class PeerReviewInvitation(models.Model):
         return reverse('library:peer-review-invitation', kwargs=dict(slug=self.slug))
 
     class Meta:
-        permissions = (('view_peerreviewinvitation', 'Can view peer review invitations'),)
         unique_together = (('review', 'candidate_reviewer'),)
 
 

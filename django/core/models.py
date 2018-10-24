@@ -460,9 +460,6 @@ class Event(index.Indexed, ClusterableModel):
             self.title, self.submitter.username, self.date_created.strftime('%c')
         )
 
-    class Meta:
-        permissions = (('view_event', 'Can view events'),)
-
 
 class JobTag(TaggedItemBase):
     content_object = ParentalKey('core.Job', related_name='tagged_jobs')
@@ -531,6 +528,3 @@ class Job(index.Indexed, ClusterableModel):
     @property
     def owner(self):
         return self.submitter
-
-    class Meta:
-        permissions = (('view_job', 'Can view job'),)
