@@ -26,7 +26,7 @@ const reviewApi = new ReviewEditorAPI();
         <div class="container" v-else>
             <div class="row">
                 <div class="col-2">
-                    <img :src="candidate_reviewer.avatar_url">
+                    <img :src="candidate_reviewer.avatar_url" class='img-fluid img-thumbnail'>
                 </div>
                 <div class="col-10">
                     <h2>
@@ -46,7 +46,7 @@ const reviewApi = new ReviewEditorAPI();
         <div class="container-fluid" v-if="invitations.length > 0">
             <div class="row border-bottom py-2" v-for="invitation in invitations">
                 <div class="col-xs-12 col-sm-2">
-                    <img :src="invitation.candidate_reviewer.avatar_url" v-if="invitation.candidate_reviewer">
+                    <img :src="invitation.candidate_reviewer.avatar_url" v-if="invitation.candidate_reviewer" class='img-fluid img-thumbnail'>
                     <span v-else>No image</span>
                 </div>
                 <div class="col-xs-12 col-sm-10">
@@ -103,7 +103,7 @@ export class Invitations extends Vue {
                 return 'Accepted'
             }
             case false: {
-                return 'Rejected'
+                return 'Declined'
             }
             default: {
                 return 'Waiting for response'

@@ -149,11 +149,10 @@
                                     {% elif invitation.review.is_complete %}
                                         <span class="badge badge-light">Review complete</span>
                                     {% elif not invitation.accepted %}
-                                        <span class="badge badge-secondary">Rejected review request</span>
-                                    {% elif invitation.review.is_awaiting_reviewer_changes %}
-                                        <span class="badge badge-warning">{{ invitation.review.get_status_display() }}</span>
+                                        <span class="badge badge-secondary">Declined review request</span>
                                     {% else %}
-                                        <span class="badge badge-info">{{ invitation.review.get_status_display() }}</span>
+                                        {% set badge_class="badge-warning" if invitation.review.is_awaiting_reviewer_changes else "badge-info" %}
+                                        <span class="badge {{badge_class}}">{{ invitation.review.get_status_display() }}</span>
                                     {% endif %}
                                 </span>
                             </li>
