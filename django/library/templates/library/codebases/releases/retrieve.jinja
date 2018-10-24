@@ -225,8 +225,7 @@
             {% if release.doi %}
                 <a href='{{release.doi_url}}'><span class='badge badge-info'>{{ release.doi_url }}</span></a>
             {% elif codebase.doi %}
-                This codebase has an associated DOI that points at a different version. Please use this DOI to cite the
-                model.
+                Please use the following DOI to cite this model.
                 <a href='{{codebase.doi_url}}'><span class='badge badge-info'>{{ codebase.doi_url }}</span></a>
             {% else %}
                 No assigned DOI
