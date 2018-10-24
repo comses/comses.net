@@ -1310,7 +1310,6 @@ class PeerReview(models.Model):
             subject='[CoMSES Net] New peer review request',
             template_name='library/review/email/review_requested.jinja',
             context={'review': self},
-            from_email=self.submitter.email,
             to=[settings.EDITOR_EMAIL]
         )
 
