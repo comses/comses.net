@@ -1,6 +1,5 @@
 bagit==1.7.0
 bleach==2.1.4
-django>2.0,<2.1
 django-allauth==0.37.1
 django-cookie-law==2.0.1
 django-extensions==2.1.2
@@ -31,7 +30,7 @@ psycopg2-binary==2.7.5
 raven==6.7.0
 semver==2.8.1
 uwsgi==2.0.17.1
-wagtail==2.2.2
+wagtail==2.3
 # deployment and management command dependencies
 beautifulsoup4==4.6.3
 invoke
