@@ -6,11 +6,13 @@ In order to promote good practices and high quality computational models, the Co
 
 As a member of CoMSES Net, would you be willing to review the computational model [{{ release.title }}]({{build_absolute_uri(release.share_url)}})?
 
+{% autoescape false %}
 #### Description
 {{ release.codebase.description }}
 
 #### Release Notes
 {{ release.release_notes }}
+{% endautoescape %}
 
 #### Review Criteria
 {% include "library/review/includes/review_criteria.jinja" %}
