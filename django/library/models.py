@@ -787,7 +787,6 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
     identifier = models.CharField(max_length=128, unique=True, null=True)
     doi = models.CharField(max_length=128, unique=True, null=True)
     license = models.ForeignKey(License, null=True, on_delete=models.SET_NULL)
-    # FIXME: replace with or append/prepend README.md
     release_notes = MarkdownField(blank=True, help_text=_('Markdown formattable text, e.g., run conditions'))
     summary = models.CharField(max_length=500, blank=True)
     documentation = models.FileField(null=True, help_text=_('Fulltext documentation file (PDF/PDFA)'))

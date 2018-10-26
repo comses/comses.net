@@ -11,10 +11,9 @@ const reviewApi = new ReviewEditorAPI();
 @Component({
     // language=Vue
     template: `<div>
-        <h2>Find and Invite a Reviewer</h2>
+        <h2>Invite a Reviewer</h2>
         <p class="text-muted">
-            Find an internal or external reviewer for the model. Add an external reviewer using an email address or
-            an internal reviewer.
+            Search by name, email address, or username among existing CoMSES Net members (external reviewer invitation not implemented yet)
         </p>
         <div class="container-fluid" v-if="!candidate_reviewer">
             <div class="row">
