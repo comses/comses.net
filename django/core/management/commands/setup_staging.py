@@ -29,10 +29,9 @@ class Command(BaseCommand):
             confirm("Update staging Site objects and robots.txt? (y/n) ")
         # set Django Site object metadata appropriately
         site = Site.objects.first()
-        site.site_name = 'CoMSES Net Staging Site'
-        site.hostname = 'test.comses.net'
+        site.site_name = 'CoMSES Net Test Site'
+        site.hostname = 'localhost' if settings.DEPLOY_ENVIRONMENT.is_development() else 'test.comses.net'
         site.save()
-        logger.debug("saved wagtail site %s", site)
         # set up robots.txt to deny all
         call_command('setup_robots_txt', '--no-allow')
-        logger.debug("setup staging robots.txt")
+        logger.debug("Completed test site setup for environment %s", settings.DEPLOY_ENVIRONMENT)
