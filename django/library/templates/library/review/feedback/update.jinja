@@ -1,14 +1,11 @@
 {% extends 'base.jinja' %}
-{% from 'library/review/includes/codebase_release.jinja' import codebase_release_name %}
-{% from 'library/review/feedback/display_feedback.jinja' import display_reviewer_feedback %}
+{% from 'library/review/includes/macros.jinja' import render_review_criteria, display_reviewer_feedback %}
+{% set release=review_feedback.invitation.review.codebase_release %}
 
 {% block introduction %}
-    <h1>Feedback for <a href="{{ review_feedback.invitation.review.codebase_release.share_url }}"
-                        class="text-white px-0">
-        {{ review_feedback.invitation.review.codebase_release.title }}</a>
-
+    <h1>Computational Model Library Peer Review Feedback
         {% if review_feedback.reviewer_submitted %}
-            <span class="badge badge-primary">Already Submitted</span>
+            <span class="badge badge-primary">Submitted</span>
         {% else %}
             <span class="badge badge-warning">Not Submitted</span>
         {% endif %}
@@ -16,35 +13,40 @@
 {% endblock %}
 
 {% block content %}
-    {% if not review_feedback.invitation.review.is_complete %}
-        <p>
-            Enter feedback about a release here. You can save your progress with the save button. Pressing the submit button
-            saves your feedback and notifies the editor that you want the editor to look at it. Your feedback can be edited
-            after you have submitted but you should avoid removing any feedback comments (only add to existing comments).
-        </p>
-
-        <h3>Other Reviewer Feedback</h3>
-
-        <p>
-            Previous feedback given by other reviewers is displayed here to provide context for the review.
-        </p>
-
+    {% if review_feedback.invitation.review.is_complete %}
+        <p>Peer review is complete. Please see below for a record of the feedback</p>
         {% for feedback in feedback_set %}
             <div class="card">
                 <div class="card-body">
                     {{ display_reviewer_feedback(feedback, include_editor=true) }}
                 </div>
             </div>
-        {% else %}
-            <div class="alert alert-info">No other feedback given</div>
         {% endfor %}
 
-        <h3>Your Feedback</h3>
+        {{ display_reviewer_feedback(review_feedback, include_editor=true) }}
 
+        {% if not feedback_set and not review_feedback %}
+            <div class="alert alert-info">No feedback recorded</div>
+        {% endif %}
+    {% else %}
+        <h2>Peer Review Feedback Form</h2>
+        <p class='lead'>
+        Please review &quot;<em>{{ release.title }}</em>&quot;
+        <a target='_blank' href="{{ review_feedback.invitation.review.codebase_release.share_url }}">
+            (click here to open in a new window/tab)
+        </a>
+        </p>
+        <p>
+            You can save your progress at any time with the save button. Use the Submit button to send your finalized
+            responses to the managing review editor. If you have modifications to make to your feedback please
+            <a href='mailto: {{ review_feedback.invitation.editor_email }}'>contact the managing review editor.</a>
+        </p>
+        <h3>Review Criteria</h3>
+        {{ render_review_criteria() }}
         <form method="post">
             {% include 'includes/form.jinja' %}
             <button id="save" class="btn btn-secondary">Save</button>
-            <button id="submitReview" class="btn btn-primary">Submit</button>
+            <button id="submitReview" class="btn btn-primary">Submit to Editor</button>
         </form>
         <script>
             document.getElementById('submitReview').addEventListener('click', function(ev) {
@@ -59,21 +61,5 @@
                 ev.target.form.submit();
              })
         </script>
-    {% else %}
-        <p>Peer review process is complete. Please see below for a record of the feedback</p>
-
-        {% for feedback in feedback_set %}
-            <div class="card">
-                <div class="card-body">
-                    {{ display_reviewer_feedback(feedback, include_editor=true) }}
-                </div>
-            </div>
-        {% endfor %}
-
-        {{ display_reviewer_feedback(review_feedback, include_editor=true) }}
-
-        {% if not feedback_set and not review_feedback %}
-            <div class="alert alert-info">No other feedback given</div>
-        {% endif %}
     {% endif %}
 {% endblock %}

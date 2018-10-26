@@ -181,27 +181,21 @@ class PeerReviewFeedbackUpdateView(UpdateView):
     context_object_name = 'review_feedback'
     form_class = PeerReviewerFeedbackReviewerForm
     template_name = 'library/review/feedback/update.jinja'
+    pk_url_kwarg = 'feedback_id'
+    queryset = PeerReviewerFeedback.objects.all()
 
     def get_context_data(self, **kwargs):
-        feedback_set = PeerReviewerFeedback.objects \
-            .filter(invitation__review=self.object.invitation.review) \
-            .exclude(id=self.object.id)
+        other_feedback = self.object.invitation.feedback_set.exclude(id=self.object.id)
         context = super().get_context_data(**kwargs)
-        context['feedback_set'] = feedback_set
+        context['feedback_set'] = other_feedback
         return context
-
-    def get_object(self, queryset=None):
-        if queryset is None:
-            queryset = PeerReviewerFeedback.objects.all()
-        feedback = get_object_or_404(queryset, invitation__slug=self.kwargs['slug'], id=self.kwargs['feedback_id'])
-        if not feedback.invitation.accepted:
-            raise PermissionDenied('Cannot access feedback of declined review')
-        return feedback
 
     def get_success_url(self):
         if self.object.reviewer_submitted:
+            messages.success("Thank you for taking the time to serve as a CoMSES Net reviewer and providing feedback on this model.")
             return self.object.invitation.candidate_reviewer.get_absolute_url()
         else:
+            messages.success("Review feedback saved.")
             return self.object.get_absolute_url()
 
 
@@ -209,12 +203,8 @@ class PeerReviewEditorFeedbackUpdateView(UpdateView):
     context_object_name = 'review_feedback'
     form_class = PeerReviewerFeedbackEditorForm
     template_name = 'library/review/feedback/editor_update.jinja'
-
-    def get_object(self, queryset=None):
-        if queryset is None:
-            queryset = PeerReviewerFeedback.objects.all()
-        feedback = get_object_or_404(queryset, invitation__slug=self.kwargs['slug'], id=self.kwargs['feedback_id'])
-        return feedback
+    pk_url_kwarg = 'feedback_id'
+    queryset = PeerReviewerFeedback.objects.all()
 
     def get_success_url(self):
         return self.object.invitation.review.get_absolute_url()

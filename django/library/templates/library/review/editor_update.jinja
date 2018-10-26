@@ -1,11 +1,10 @@
 {% extends 'base.jinja' %}
 {% from 'common.jinja' import format_date %}
-{% from 'library/review/includes/codebase_release.jinja' import codebase_release_name %}
 
 {% block introduction %}
     <h1>Review of
         <a href="{{ review.codebase_release.share_url }}" class="text-white px-0">
-            {{ codebase_release_name(review.codebase_release) }}
+            {{ review.title }}
         </a> requested by
         <a href="{{ review.submitter.get_absolute_url() }}" class="text-white px-0">{{ review.submitter.name }}</a>
         {% if review.is_complete %}

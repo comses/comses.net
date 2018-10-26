@@ -1,18 +1,21 @@
 {% extends 'base.jinja' %}
-{% from 'library/review/includes/codebase_release.jinja' import codebase_release_name %}
-{% from 'library/review/feedback/display_feedback.jinja' import display_reviewer_feedback %}
+{% from 'library/review/includes/macros.jinja' import display_reviewer_feedback %}
 
 {% block introduction %}
-    <h1>Editor feedback for <a href="{{ review_feedback.invitation.review.codebase_release.share_url }}" class="text-white px-0">
-        {{ review_feedback.invitation.review.codebase_release.title }}</a>
-    </h1>
+    <h1>Computational Model Library Peer Review: Editor</h1>
 {% endblock %}
 
 {% block content %}
-
+    <h2>Editor Peer Review Management</h2>
+    <p class='lead'>
+    Feedback submitted by <mark>{{review_feedback.invitation.candidate_reviewer}}</mark> on {{review_feedback.last_modified|format_datetime}}.
+    </p>
+    <h2>{{ review_feedback.invitation.review.title }}<a href="{{ review_feedback.invitation.review.codebase_release.share_url }}">(click to view in a new window/tab)</a>
+    </h2>
+    <mark>
     {{ display_reviewer_feedback(review_feedback, include_private=true) }}
-
-    <h1>Editor Comments</h1>
+    </mark>
+    <h2>Editor Form</h2>
     <form method="post">
         {% include 'includes/form.jinja' %}
         <button type="submit" class="btn btn-primary">Submit</button>

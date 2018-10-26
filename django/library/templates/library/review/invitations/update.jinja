@@ -1,11 +1,9 @@
 {% extends 'base.jinja' %}
 
+{% from 'library/review/includes/macros.jinja' import render_review_criteria %}
+
 {% set release = invitation.review.codebase_release %}
 {% set codebase = release.codebase %}
-
-{% macro include_review_criteria() %}
-{% include "library/review/includes/review_criteria.jinja" %}
-{% endmacro %}
 
 {% block title %}
     Peer Review Invitation
@@ -43,7 +41,7 @@
     <section>
         <h3>Review criteria</h3>
         <p>
-        {{ include_review_criteria()|markdown }}
+        {{ render_review_criteria() }}
         </p>
     </section>
     <form method="post">

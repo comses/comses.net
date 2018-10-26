@@ -1354,11 +1354,15 @@ class PeerReviewInvitation(models.Model):
                                            on_delete=models.CASCADE)
     optional_message = MarkdownField(help_text=_("Optional markdown text to be added to the email"))
     slug = models.UUIDField(unique=True, default=uuid.uuid4, editable=False)
-    accepted = models.NullBooleanField(verbose_name=_("Status of this invitation"),
-                                       choices=Choices((None, _('Waiting for response')),
-                                                       (False, _('Decline invitation')),
-                                                       (True, _('Accept invitation'))),
-                                       help_text=_('Accept or decline a peer review invitation'))
+    accepted = models.NullBooleanField(
+        verbose_name=_("Invitation status"),
+        choices=Choices(
+            (None, _('Waiting for response')),
+            (False, _('Decline')),
+            (True, _('Accept')),
+        ),
+        help_text=_('Accept or decline this peer review invitation')
+    )
 
     objects = PeerReviewInvitationQuerySet.as_manager()
 
@@ -1507,6 +1511,7 @@ class PeerReviewerFeedback(models.Model):
         return reverse('library:peer-review-feedback-editor-edit',
                        kwargs={'slug': self.invitation.slug, 'feedback_id': self.id})
 
+    @transaction.atomic
     def reviewer_completed(self):
         """Add a reviewer gave feedback event to the log
 

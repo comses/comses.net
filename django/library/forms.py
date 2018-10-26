@@ -28,7 +28,7 @@ class PeerReviewInvitationReplyForm(forms.ModelForm):
     def clean_accepted(self):
         data = self.cleaned_data['accepted']
         if data is None:
-            raise forms.ValidationError('Must accept or decline invitation')
+            raise forms.ValidationError('Please accept or decline the invitation')
         return data
 
     def save(self, commit=True):
