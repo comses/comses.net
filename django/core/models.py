@@ -195,7 +195,8 @@ class MemberProfile(index.Indexed, ClusterableModel):
         index.RelatedFields('user', [
             index.SearchField('first_name', partial_match=True),
             index.SearchField('last_name', partial_match=True, boost=3),
-            index.SearchField('email', partial_match=True, boost=3)
+            index.SearchField('email', partial_match=True, boost=3),
+            index.SearchField('username', partial_match=True, boost=5),
         ]),
     ]
 
