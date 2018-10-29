@@ -106,13 +106,15 @@ class ListReleaseContributorSerializer(serializers.ListSerializer):
                 username = raw_user['username']
                 user_map[username].append(contributor)
 
+        error_messages = []
         for username, related_contributors in user_map.items():
             related_contributor_count = len(related_contributors)
             if related_contributor_count > 1:
                 user = User.objects.get(username=username)
-                raise ValidationError(
-                    {'non_field_errors': ['User {} occurs {} time(s) in the contributor list. Duplicates must be removed in order to save'
-                        .format(user.get_full_name(), related_contributor_count)]})
+                error_messages.append('User {} occurs {} time(s) in the contributor list. Duplicates must be removed in order to save'.format(
+                    user.get_full_name(), related_contributor_count))
+        if error_messages:
+            raise ValidationError({'non_field_errors': error_messages})
 
     def create(self, validated_data):
         ReleaseContributor.objects.filter(release_id=self.context['release_id']).delete()
@@ -384,6 +386,10 @@ class CodebaseReleaseEditSerializer(CodebaseReleaseSerializer):
 class PeerReviewFeedbackEditorSerializer(serializers.ModelSerializer):
     editor_url = serializers.CharField(source='get_editor_url')
     reviewer_name = serializers.SerializerMethodField()
+    review_status = serializers.SerializerMethodField()
+
+    def get_review_status(self, instance):
+        return instance.invitation.review.get_status_display()
 
     def get_reviewer_name(self, instance):
         return instance.invitation.candidate_reviewer.name
