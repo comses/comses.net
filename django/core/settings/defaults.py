@@ -486,7 +486,7 @@ TEMPLATES = [
 
 MESSAGE_TAGS = {
     messages.SUCCESS: 'alert alert-success',
-    messages.DEBUG: '',
+    messages.DEBUG: 'alert alert-info',
     messages.INFO: 'alert alert-info',
     messages.WARNING: 'alert alert-warning',
     messages.ERROR: 'alert alert-danger'
