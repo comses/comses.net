@@ -1,12 +1,10 @@
 {% csrf_token %}
 {% if form.non_field_errors() %}
-    <div class='alert alert-danger'>
-        <ul class='errorlist'>
-            {% for error in form.non_field_errors() %}
-                <li>{{ error|safe }}</li>
-            {% endfor %}
-        </ul>
-    </div>
+    <ul class='list-group'>
+    {% for error in form.non_field_errors() %}
+        <li class='list-group-item list-group-item-danger'>{{ error|safe }}</li>
+    {% endfor %}
+    </ul>
 {% endif %}
 {% for field in form.visible_fields() %}
     {% set error_class='has-errors' if field.errors else ''%}
