@@ -881,7 +881,7 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
     def get_review_status_display(self):
         review = self.get_review()
         if review:
-            return review.get_status_display()
+            return review.get_simplified_status_display()
         return 'Artifacts have not been reviewed'
 
     def get_review_download_url(self):
@@ -1236,7 +1236,7 @@ class PeerReview(models.Model):
     def get_status(self):
         return ReviewStatus[self.status]
 
-    def get_status_display(self):
+    def get_simplified_status_display(self):
         return self.get_status().display_message
 
     def get_assigned_reviewer_email(self):
@@ -1432,25 +1432,24 @@ class PeerReviewInvitation(models.Model):
     @transaction.atomic
     def accept(self):
         self.accepted = True
-        feedback = self.latest_feedback
         self.save()
-        event = self.review.log(action=PeerReviewEvent.invitation_accepted,
-                                author=self.editor,
-                                message='Invitation accepted by {}'.format(self.candidate_reviewer))
+        feedback = self.latest_feedback
+        self.review.log(action=PeerReviewEvent.invitation_accepted,
+                        author=self.candidate_reviewer,
+                        message='Invitation accepted by {}'.format(self.candidate_reviewer))
         send_markdown_email(
             subject='[CoMSES Net] Peer review: accepted invitation to review model',
             template_name='library/review/email/review_invitation_accepted.jinja',
             context={'invitation': self, 'feedback': feedback},
             to=[self.reviewer_email, self.editor.email],
         )
-        return feedback, event
 
     @transaction.atomic
     def decline(self):
         self.accepted = False
         self.save()
         self.review.log(action=PeerReviewEvent.invitation_declined,
-                        author=self.editor,
+                        author=self.candidate_reviewer,
                         message='Invitation declined by {}'.format(self.candidate_reviewer))
         send_markdown_email(
             subject='[CoMSES Net] Peer review: declined invitation to review model',
@@ -1523,10 +1522,16 @@ class PeerReviewerFeedback(models.Model):
         review.set_status(ReviewStatus.awaiting_editor_feedback)
         review.save()
         reviewer = self.invitation.candidate_reviewer
-        return review.log(
+        review.log(
             action=PeerReviewEvent.reviewer_feedback_submitted,
-            author=self.invitation.candidate_reviewer,
+            author=reviewer,
             message='Reviewer {} provided feedback'.format(reviewer)
+        )
+        send_markdown_email(
+            subject='[CoMSES Net] Peer review: reviewer submitted, editor action needed',
+            template_name='library/review/email/reviewer_submitted.jinja',
+            context={'review': review, 'invitation': self.invitation},
+            to=[self.invitation.editor_email],
         )
 
     @transaction.atomic
@@ -1544,15 +1549,15 @@ class PeerReviewerFeedback(models.Model):
             author=editor,
             message='Editor {} called for revisions'.format(editor)
         )
+        review.set_status(ReviewStatus.awaiting_author_changes)
+        review.save()
         send_markdown_email(
             subject='[CoMSES Net] Peer review: revisions requested',
             template_name='library/review/email/model_revisions_requested.jinja',
             context={'review': review, 'feedback': self},
             to=[review.submitter.email],
-            cc=[editor.email]
+            bcc=[editor.email]
         )
-        review.set_status(ReviewStatus.awaiting_author_changes)
-        review.save()
 
     def __str__(self):
         invitation = self.invitation

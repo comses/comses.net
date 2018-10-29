@@ -32,17 +32,11 @@ class PeerReviewInvitationReplyForm(forms.ModelForm):
         return data
 
     def save(self, commit=True):
-        accepted = self.instance.accepted
-        invitation = super().save(commit)
-
+        invitation = super().save(commit=commit)
         if invitation.accepted:
             invitation.accept()
         else:
             invitation.decline()
-
-        if invitation.accepted and accepted is None:
-            invitation.create_feedback()
-        return invitation
 
     class Meta:
         model = PeerReviewInvitation
@@ -62,7 +56,7 @@ class PeerReviewerFeedbackReviewerForm(CheckCharFieldLengthMixin, forms.ModelFor
     def clean_recommendation(self):
         recommendation = self.cleaned_data['recommendation']
         if not recommendation:
-            raise forms.ValidationError('Recommendation must be selected')
+            raise forms.ValidationError('Please select a valid recommendation (accept or revise).')
         return recommendation
 
     def clean_private_reviewer_notes(self):
@@ -79,7 +73,6 @@ class PeerReviewerFeedbackReviewerForm(CheckCharFieldLengthMixin, forms.ModelFor
 
     def clean(self):
         cleaned_data = super().clean()
-
         reviewer_submitted = cleaned_data.get('reviewer_submitted')
         if reviewer_submitted and cleaned_data.get('recommendation') == ReviewerRecommendation.accept.name:
             has_narrative_documentation = cleaned_data['has_narrative_documentation']
@@ -88,11 +81,11 @@ class PeerReviewerFeedbackReviewerForm(CheckCharFieldLengthMixin, forms.ModelFor
 
             checklist_errors = []
             if not has_narrative_documentation:
-                checklist_errors.append(_('Recommended releases must have narrative documentation'))
+                checklist_errors.append(_('Recommended releases must have accompanying narrative documentation.'))
             if not has_clean_code:
-                checklist_errors.append(_('Recommended releases must have clean code'))
+                checklist_errors.append(_('Recommended releases should have clean code.'))
             if not is_runnable:
-                checklist_errors.append(_('Recommended releases must have runnable code'))
+                checklist_errors.append(_('Recommended releases must have runnable code.'))
 
             if checklist_errors:
                 raise forms.ValidationError([forms.ValidationError(e) for e in checklist_errors])
@@ -113,7 +106,8 @@ class PeerReviewerFeedbackReviewerForm(CheckCharFieldLengthMixin, forms.ModelFor
         if not self.cleaned_data.get('reviewer_submitted', True):
             self._errors = ErrorDict()
         if self.instance.invitation.review.is_complete:
-            self.add_error(field=None, error='Feedback cannot be updated on a complete review')
+            self.add_error(field=None, error='Feedback cannot be updated on a completed review')
+        # FIXME: we should not rely on internal marked methods, need to clean this up
         self._clean_form()
         self._post_clean()
 

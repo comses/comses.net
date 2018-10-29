@@ -15,7 +15,7 @@ from core.serializers import (YMD_DATETIME_FORMAT, PUBLISH_DATE_FORMAT, LinkedUs
                               TagSerializer, MarkdownField)
 from home.common_serializers import RelatedMemberProfileSerializer
 from .models import (ReleaseContributor, Codebase, CodebaseRelease, Contributor, License, CodebaseImage,
-                     PeerReviewerFeedback, PeerReviewInvitation, ReviewStatus, PeerReviewEventLog)
+                     PeerReviewerFeedback, PeerReviewInvitation, PeerReviewEventLog)
 
 logger = logging.getLogger(__name__)
 
@@ -446,7 +446,7 @@ class RelatedPeerReviewInvitationSerializer(serializers.ModelSerializer):
         return '{} {}'.format(title, version_number)
 
     def get_status(self, instance):
-        return ReviewStatus[instance.review.status].value
+        return instance.review.get_status_display()
 
     class Meta:
         model = PeerReviewInvitation
