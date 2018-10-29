@@ -150,21 +150,22 @@ class PeerReviewInvitationUpdateView(UpdateView):
     queryset = PeerReviewInvitation.objects.all()
     template_name = 'library/review/invitations/update.jinja'
 
-    def get_object(self, queryset=None):
-        slug = self.kwargs['slug']
-        invitation = get_object_or_404(PeerReviewInvitation, slug=slug)
-        if invitation.accepted in [False, True]:
-            raise PermissionDenied("You have already responded to this invitation.")
-        elif invitation.is_expired:
-            raise PermissionDenied("This invitation has expired.")
-        return invitation
+    def get(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        if self.object.accepted:
+            return redirect(self.object.latest_feedback)
+        elif self.object.is_expired:
+            messages.error(request, "This invitation has expired.")
+            raise PermissionDenied()
+        elif self.object.accepted is False:
+            messages.warning(request, "You previously declined this invitation.")
+        return super().get(request, *args, **kwargs)
 
     def get_success_url(self):
-        """ FIXME: this needs documentation """
         if self.object.accepted:
             return self.object.latest_feedback.get_absolute_url()
         else:
-            return self.object.review.codebase_release.share_url
+            return self.object.get_absolute_url()
 
 
 class PeerReviewFeedbackViewSet(NoDeleteNoUpdateViewSet):
@@ -192,10 +193,10 @@ class PeerReviewFeedbackUpdateView(UpdateView):
 
     def get_success_url(self):
         if self.object.reviewer_submitted:
-            messages.success("Thank you for taking the time to serve as a CoMSES Net reviewer and providing feedback on this model.")
+            messages.success(self.request, "Thank you for taking the time to serve as a CoMSES Net reviewer and providing feedback on this model.")
             return self.object.invitation.candidate_reviewer.get_absolute_url()
         else:
-            messages.success("Review feedback saved.")
+            messages.info(self.request, "Your feedback has been saved. Please submit it to the editor when complete.")
             return self.object.get_absolute_url()
 
 
@@ -342,7 +343,7 @@ class CodebaseImageViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
         identifier = resolved.kwargs['identifier']
         return self.queryset.filter(codebase__identifier=identifier)
 
-    def get_object(self):
+    def get_object(self, queryset=None):
         queryset = self.filter_queryset(self.get_queryset())
         parser_context = self.get_parser_context(self.request)
         kwargs = parser_context['kwargs']
@@ -645,7 +646,8 @@ class BaseCodebaseReleaseFilesViewSet(viewsets.GenericViewSet):
                     for path in data]
         return Response(data=data, status=status.HTTP_200_OK)
 
-    def get_object(self):
+    def get_object(self, queryset=None):
+        # FIXME: should we always override the queryset? This logic is a bit confusing
         queryset = self.filter_queryset(self.get_queryset())
         parser_context = self.get_parser_context(self.request)
         kwargs = parser_context['kwargs']
