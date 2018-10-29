@@ -10,18 +10,16 @@ import * as _ from 'lodash';
 const reviewApi = new ReviewEditorAPI();
 
 @Component({
-    template: `<div class="container-fluid">
-            <div class="row">
+    template: `<div class="row">
                 <div class="col-sm-12 col-md-8">
                     <c-invitations :review_slug="review_slug" @pollEvents="retrieveEvents"></c-invitations>
-                    <h2>Feedback</h2>
+                    <h2 class='my-3'>Feedback</h2>
                     <c-feedback :review_slug="review_slug"></c-feedback>
                 </div>
                 <div class="col-sm-12 col-md-4">
                     <c-event-log :events="events" :errors="event_errors"></c-event-log>
                 </div>
-            </div>
-    </div>`,
+              </div>`,
     components: {
         'c-event-log': EventLog,
         'c-invitations': Invitations,

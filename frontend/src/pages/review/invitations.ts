@@ -13,11 +13,11 @@ const reviewApi = new ReviewEditorAPI();
     template: `<div>
         <h2>Invite a Reviewer</h2>
         <p class="text-muted">
-            Search by name, email address, or username among existing CoMSES Net members (external reviewer invitation not implemented yet)
+            Search by name, email address, or username among existing CoMSES Net members (<em>external reviewer invitation not implemented yet</em>)
         </p>
         <div class="container-fluid" v-if="!candidate_reviewer">
             <div class="row">
-                <div class="col-12 px-0">
+                <div class="col-12 px-0 mb-3">
                     <c-reviewer-finder v-model="candidate_reviewer"></c-reviewer-finder>
                 </div>
             </div>
@@ -41,7 +41,7 @@ const reviewApi = new ReviewEditorAPI();
                 </div>
             </div>
         </div>
-        <h2>Previous Invitees</h2>
+        <h2>Invited Reviewers</h2>
         <div class="container-fluid" v-if="invitations.length > 0">
             <div class="row border-bottom py-2" v-for="invitation in invitations">
                 <div class="col-xs-12 col-sm-2">
