@@ -39,7 +39,7 @@ const debounceFetchMatchingUsers = _.debounce(async (self: ReviewerFinder, query
                 <div class="container">
                     <div class="row">
                         <div class="col-2">
-                            <img v-holder="props.option.avatar_url">
+                            <img :src="props.option.avatar_url" class='img-fluid img-thumbnail' alt='No picture available'>
                         </div>
                         <div class="col-10">
                             <h2>{{ props.option.name }}</h2>
