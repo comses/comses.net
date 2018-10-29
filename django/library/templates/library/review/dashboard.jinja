@@ -10,15 +10,12 @@
             <div class="card-body">
                 <h3>
                     <a href="{{ review.get_absolute_url() }}">{{ review.title }}</a>
-                    {% if review.is_complete %}
-                        <span class="badge badge-primary">{{ review.get_status_display() }}</span>
-                    {% else %}
-                        <span class="badge badge-warning">{{ review.get_status_display() }}</span>
-                    {% endif %}
+                    {% set badge_class="badge-primary" if review.is_complete else "badge-warning" %}
+                    <span class="badge {{badge_class}}">{{ review.get_status_display() }}</span>
                 </h3>
             </div>
         </div>
     {% else %}
-        <p>No reviews</p>
+        <p>No peer reviews</p>
     {% endfor %}
 {% endblock %}

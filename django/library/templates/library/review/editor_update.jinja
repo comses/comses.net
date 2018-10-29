@@ -2,21 +2,27 @@
 {% from 'common.jinja' import format_date %}
 
 {% block introduction %}
-    <h1>Review of
-        <a href="{{ review.codebase_release.share_url }}" class="text-white px-0">
-            {{ review.title }}
-        </a> requested by
-        <a href="{{ review.submitter.get_absolute_url() }}" class="text-white px-0">{{ review.submitter.name }}</a>
-        {% if review.is_complete %}
-            <span class="badge badge-primary">{{ review.get_status_display() }}</span>
-        {% else %}
-            <span class="badge badge-warning">{{ review.get_status_display() }}</span>
-        {% endif %}
-    </h1>
+    <h1>CoMSES Net Peer Review Editor</h1>
 {% endblock %}
 
 {% block content %}
-    <div id="app" data-review-slug="{{ review.slug }}" data-status-levels="{{ review.status_levels|to_json }}"
-         data-status="{{ review.status }}" data-event-list-url="{{ review.get_event_list_url() }}"></div>
+    <h2>Peer review for <a href="{{ review.codebase_release.share_url }}">{{ review.title }}</a></h2>
+    <p class='lead'>
+    Requested by <a href="{{ review.submitter.get_absolute_url() }}">{{ review.submitter.name }}</a>
+    {% if review.is_complete %}
+        <span class="badge badge-primary">{{ review.get_status_display() }}</span>
+    {% else %}
+        <span class="badge badge-warning">{{ review.get_status_display() }}</span>
+    {% endif %}
+    </p>
+
+    <div id="app" data-review-slug="{{ review.slug }}"
+                  data-status-levels="{{ review.status_levels|to_json }}"
+                  data-status="{{ review.status }}"
+                  data-event-list-url="{{ review.get_event_list_url() }}">
+    </div>
+{% endblock %}
+
+{% block js %}
     {{ render_bundle('reviews', attrs='async') }}
 {% endblock %}

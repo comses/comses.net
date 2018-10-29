@@ -36,13 +36,18 @@
             (click here to open in a new window/tab)
         </a>
         </p>
-        <p>
+        <div class='alert alert-info' role='alert'>
             You can save your progress at any time with the save button. Use the Submit button to send your finalized
             responses to the managing review editor. If you have modifications to make to your feedback please
-            <a href='mailto: {{ review_feedback.invitation.editor_email }}'>contact the managing review editor.</a>
-        </p>
+            <a href='mailto:{{ review_feedback.invitation.editor_email }}?subject=Peer review feedback changes'>contact the managing review editor.</a>
+        </div>
         <h3>Review Criteria</h3>
         {{ render_review_criteria() }}
+        <h3>Review feedback</h3>
+        <div class='alert alert-info' role='alert'>
+            Please note: in order to meet CoMSES Net peer review requirements, all boxes must be checked. Your feedback
+            will be compiled and edited by the review editor before being sent back to the model author.
+        </div>
         <form method="post">
             {% include 'includes/form.jinja' %}
             <button id="save" class="btn btn-secondary">Save</button>
