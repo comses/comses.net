@@ -407,13 +407,9 @@ class PeerReviewFeedbackEditorSerializer(serializers.ModelSerializer):
 class PeerReviewReviewerSerializer(serializers.ModelSerializer):
     tags = TagSerializer(many=True)
 
-    # annotated fields
-    n_pending_reviews = serializers.IntegerField()
-    n_total_reviews = serializers.IntegerField()
-
     class Meta:
         model = MemberProfile
-        fields = ('id', 'avatar_url', 'degrees', 'name', 'n_pending_reviews', 'n_total_reviews', 'tags',)
+        fields = ('id', 'avatar_url', 'degrees', 'name', 'tags',)
 
 
 class PeerReviewInvitationSerializer(serializers.ModelSerializer):

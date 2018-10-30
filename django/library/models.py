@@ -33,7 +33,6 @@ from wagtail.admin.edit_handlers import FieldPanel
 from wagtail.images.models import Image, AbstractImage, AbstractRendition, get_upload_to, ImageQuerySet
 from wagtail.search import index
 from wagtail.search.backends import get_search_backend
-from wagtail.snippets.edit_handlers import SnippetChooserPanel
 from wagtail.snippets.models import register_snippet
 
 from core import fs
@@ -42,7 +41,6 @@ from core.fields import MarkdownField
 from core.models import Platform, MemberProfile
 from core.queryset import get_viewable_objects_for_user
 from core.utils import send_markdown_email
-from core.view_helpers import search_backend
 from .fs import CodebaseReleaseFsApi, StagingDirectories, FileCategoryDirectories, MessageLevels
 
 logger = logging.getLogger(__name__)
@@ -1176,7 +1174,19 @@ class ReviewStatus(ChoicesMixin, Enum):
         return self != ReviewStatus.complete
 
     @property
-    def display_message(self):
+    def is_complete(self):
+        return self == ReviewStatus.complete
+
+    @property
+    def is_awaiting_author_changes(self):
+        return self == ReviewStatus.awaiting_author_changes
+
+    @property
+    def is_awaiting_editor_feedback(self):
+        return self == ReviewStatus.awaiting_editor_feedback
+
+    @property
+    def simple_display_message(self):
         return 'Peer review in process' if self.is_pending else 'Peer reviewed'
 
 
@@ -1198,6 +1208,27 @@ class PeerReviewEvent(ChoicesMixin, Enum):
     release_certified = _('Editor has taken reviewer feedback into account and certified this release as peer reviewed')
 
 
+class PeerReviewQuerySet(models.QuerySet):
+
+    def find_candidate_reviewers(self, query=None):
+        # TODO: return a MemberProfile queryset annotated with number of invitations, accepted invitations, and completed
+        # reviews
+        # invited_reviewers_qs = PeerReviewInvitation.objects.candidate_reviewers()
+        raw_query = ('SELECT mp.id, sum(case when pri.id is not null and pri.accepted is null then 1 else 0 end) as n_unresponded_invitations, '
+                     'sum(case when pri.accepted=false then 1 else 0 end) as n_declined_invitations, '
+                     'sum(case when pri.accepted=true then 1 else 0 end) as n_accepted_invitations '
+                     'FROM library_peerreviewinvitation pri RIGHT JOIN core_memberprofile mp ON pri.candidate_reviewer_id=mp.id '
+                     'INNER JOIN auth_user u on mp.user_id=u.id '
+                     'WHERE u.is_active=true AND u.id > 2 '
+                     'GROUP BY mp.id;')
+
+        queryset = MemberProfile.objects.public()
+        if query is not None:
+            return get_search_backend().search(query, queryset)
+        else:
+            return queryset
+
+
 @register_snippet
 class PeerReview(models.Model):
     date_created = models.DateTimeField(auto_now_add=True)
@@ -1207,42 +1238,32 @@ class PeerReview(models.Model):
                               help_text=_("The current status of this review."),
                               max_length=32)
     codebase_release = models.OneToOneField(CodebaseRelease, related_name='review', on_delete=models.PROTECT)
-    assigned_reviewer = models.ForeignKey(MemberProfile, null=True, blank=True, related_name='reviews',
-                                          on_delete=models.SET_NULL,
-                                          help_text=_('User assigned to perform this review'))
-    assigned_reviewer_email = models.EmailField(blank=True,
-                                                help_text=_('Assigned reviewer email used for non-CoMSES members'))
     submitter = models.ForeignKey(MemberProfile, related_name='+', on_delete=models.PROTECT)
     slug = models.UUIDField(default=uuid.uuid4, unique=True, null=True)
 
+    objects = PeerReviewQuerySet.as_manager()
+
     panels = [
         FieldPanel('status'),
-        SnippetChooserPanel('assigned_reviewer'),
-        FieldPanel('assigned_reviewer_email'),
     ]
 
     @property
     def is_complete(self):
-        return ReviewStatus.complete.name == self.status
+        return self.get_status().is_complete
 
     @property
     def is_awaiting_author_changes(self):
-        return ReviewStatus.awaiting_author_changes.name == self.status
+        return self.get_status().is_awaiting_author_changes
 
     @property
     def is_awaiting_reviewer_changes(self):
-        return ReviewStatus.awaiting_reviewer_changes.name == self.status
+        return self.get_status().is_awaiting_reviewer_changes
 
     def get_status(self):
         return ReviewStatus[self.status]
 
     def get_simplified_status_display(self):
-        return self.get_status().display_message
-
-    def get_assigned_reviewer_email(self):
-        if self.assigned_reviewer:
-            return self.assigned_reviewer.email
-        return self.assigned_reviewer_email
+        return self.get_status().simple_display_message
 
     def get_edit_url(self):
         return reverse('library:profile-edit', kwargs={'user_pk': self.user.pk})
@@ -1308,20 +1329,6 @@ class PeerReview(models.Model):
             to=[settings.EDITOR_EMAIL]
         )
 
-    @staticmethod
-    def get_reviewers(query=None):
-        queryset = MemberProfile.objects.annotate(
-            n_pending_reviews=models.Sum((models.Case(models.When(reviews__status='editor_accept', then=1),
-                                                      default=0,
-                                                      output_field=models.IntegerField()))),
-            n_total_reviews=models.Count('reviews'))
-        if query is not None:
-            results = search_backend.search(query, queryset)
-            results.model = queryset.model
-            return results
-        else:
-            return queryset
-
     @property
     def status_levels(self):
         return [{'value': choice[0], 'label': str(choice[1])} for choice in ReviewStatus.to_choices()]
@@ -1340,8 +1347,22 @@ class PeerReview(models.Model):
 
 
 class PeerReviewInvitationQuerySet(models.QuerySet):
+
+    def accepted(self, **kwargs):
+        return self.filter(accepted=True, **kwargs)
+
+    def declined(self, **kwargs):
+        return self.filter(accepted=False, **kwargs)
+
+    def pending(self, **kwargs):
+        return self.filter(accepted__isnull=True, **kwargs)
+
+    def candidate_reviewers(self, **kwargs):
+        # FIXME: fairly horribly inefficient
+        return MemberProfile.objects.filter(pk__in=self.values_list('candidate_reviewer', flat=True))
+
     def with_reviewer_statistics(self):
-        return self.prefetch_related(models.Prefetch('candidate_reviewer', PeerReview.get_reviewers()))
+        return self.prefetch_related(models.Prefetch('candidate_reviewer', PeerReview.objects.find_candidate_reviewers()))
 
 
 @register_snippet

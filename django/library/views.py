@@ -74,7 +74,7 @@ class PeerReviewReviewerListView(mixins.ListModelMixin, viewsets.GenericViewSet)
 
     def get_queryset(self):
         query = self.request.query_params.get('query', '')
-        results = PeerReview.get_reviewers(query)
+        results = PeerReview.objects.find_candidate_reviewers(query)
         return results
 
 
