@@ -737,6 +737,18 @@ class FaqPage(Page, NavigationMixin):
     ]
 
 
+class PeopleEntryPlacementQuerySet(models.QuerySet):
+
+    def board(self, **kwargs):
+        return self.filter(category=PeopleEntryPlacement.CATEGORIES.board, **kwargs)
+
+    def update_sort_order_alpha(self):
+        for idx, pep in enumerate(self.order_by('member_profile__user__last_name')):
+            pep.sort_order = idx
+            pep.save()
+
+
+@register_snippet
 class PeopleEntryPlacement(Orderable, models.Model):
     CATEGORIES = Choices(
         (1, 'directorate', _('Directorate')),
@@ -748,6 +760,15 @@ class PeopleEntryPlacement(Orderable, models.Model):
     page = ParentalKey('home.PeoplePage', related_name='people_entry_placements')
     member_profile = models.ForeignKey('core.MemberProfile', related_name='+', on_delete=models.CASCADE)
     category = models.PositiveIntegerField(choices=CATEGORIES, default=CATEGORIES.board)
+    term = models.CharField(blank=True, max_length=32, help_text=_('The term for a given board member (e.g., 2016-2018)'))
+
+    objects = PeopleEntryPlacementQuerySet.as_manager()
+
+    panels = [
+        SnippetChooserPanel('member_profile'),
+        FieldPanel('category'),
+        FieldPanel('term'),
+    ]
 
     def __str__(self):
         return "{0}: {1} {2}".format(self.sort_order, self.member_profile, self.category)
@@ -760,6 +781,9 @@ class PeoplePage(Page, NavigationMixin):
     template = 'home/about/people.jinja'
     heading = models.CharField(max_length=64)
     description = models.CharField(max_length=1000, blank=True)
+
+    def sort_board(self):
+        PeopleEntryPlacement.objects.board().update_sort_order_alpha()
 
     def add_users(self, category, usernames, offset):
         for idx, username in enumerate(usernames):
