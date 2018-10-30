@@ -53,6 +53,8 @@ class PeerReviewDashboardView(ListView):
     model = PeerReview
     context_object_name = 'reviews'
 
+    ordering = ['status', '-last_modified', '-date_created']
+
 
 class PeerReviewEditorView(PermissionRequiredMixin, DetailView):
     context_object_name = 'review'
