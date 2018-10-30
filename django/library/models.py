@@ -1292,7 +1292,7 @@ class PeerReview(models.Model):
         self.send_author_updated_content_email()
 
     def send_author_updated_content_email(self):
-        qs = self.invitations.filter(accepted=True)
+        qs = self.invitation_set.filter(accepted=True)
         # if there are no currently accepted invitations, status should be set to awaiting editor feedback
         _status = ReviewStatus.awaiting_reviewer_feedback if qs.exists() else ReviewStatus.awaiting_editor_feedback
         self.set_status(_status)
