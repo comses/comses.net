@@ -16,7 +16,6 @@
 {% endblock %}
 
 {% block content %}
-    {% include 'includes/messages.jinja' %}
     <div id={{ 'discourse-content' if release.live else 'content' }}>
         {% if release.live %}
             {% if not release.is_latest_version %}
