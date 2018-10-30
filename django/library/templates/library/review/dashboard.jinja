@@ -1,18 +1,31 @@
 {% extends 'base.jinja' %}
 
 {% block introduction %}
-    <h1>Peer Review Dashboard</h1>
+    <h1>Peer Review Editor Dashboard</h1>
 {% endblock %}
 
 {% block content %}
     {% for review in reviews %}
         <div class="card">
             <div class="card-body">
-                <h3>
+                <h4 class='card-title'>
                     <a href="{{ review.get_absolute_url() }}">{{ review.title }}</a>
-                    {% set badge_class="badge-primary" if review.is_complete else "badge-warning" %}
-                    <span class="badge {{badge_class}}">{{ review.get_status_display() }}</span>
-                </h3>
+                </h4>
+                <p class='card-text'>
+                {% set badge_class="badge-primary" if review.is_complete else "badge-warning" %}
+                <div class='row'>
+                    <div class='col'>
+                        <span class="badge {{badge_class}}">{{ review.get_status_display() }}</span>
+                        <span class='badge badge-info'>{{ review.invitation_set.count() }} invitations</span>
+                    </div>
+                    <div class='col'>
+                        Requested on: {{ review.date_created|format_datetime }}
+                    </div>
+                    <div class='col'>
+                        Last modified: <b>{{ review.last_modified|format_datetime }}</b>
+                    </div>
+                </div>
+                </p>
             </div>
         </div>
     {% else %}
