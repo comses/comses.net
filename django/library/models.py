@@ -41,6 +41,7 @@ from core.fields import MarkdownField
 from core.models import Platform, MemberProfile
 from core.queryset import get_viewable_objects_for_user
 from core.utils import send_markdown_email
+from core.view_helpers import get_search_queryset
 from .fs import CodebaseReleaseFsApi, StagingDirectories, FileCategoryDirectories, MessageLevels
 
 logger = logging.getLogger(__name__)
@@ -1214,6 +1215,7 @@ class PeerReviewQuerySet(models.QuerySet):
         # TODO: return a MemberProfile queryset annotated with number of invitations, accepted invitations, and completed
         # reviews
         # invited_reviewers_qs = PeerReviewInvitation.objects.candidate_reviewers()
+        """
         raw_query = ('SELECT mp.id, sum(case when pri.id is not null and pri.accepted is null then 1 else 0 end) as n_unresponded_invitations, '
                      'sum(case when pri.accepted=false then 1 else 0 end) as n_declined_invitations, '
                      'sum(case when pri.accepted=true then 1 else 0 end) as n_accepted_invitations '
@@ -1221,12 +1223,10 @@ class PeerReviewQuerySet(models.QuerySet):
                      'INNER JOIN auth_user u on mp.user_id=u.id '
                      'WHERE u.is_active=true AND u.id > 2 '
                      'GROUP BY mp.id;')
+        """
 
         queryset = MemberProfile.objects.public()
-        if query is not None:
-            return get_search_backend().search(query, queryset)
-        else:
-            return queryset
+        return get_search_queryset(query, queryset)
 
 
 @register_snippet
