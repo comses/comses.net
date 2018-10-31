@@ -1,13 +1,17 @@
+import glob
+import logging
 import os
 import pathlib
 
-from invoke import task
 from django.conf import settings
-from .utils import dj
+from invoke import task
+
 from core.utils import confirm
+from .utils import dj
 
 _DEFAULT_DATABASE = 'default'
 
+logger = logging.getLogger(__name__)
 
 def get_database_settings(db_key):
     return dict(
@@ -65,10 +69,12 @@ def run_migrations(ctx, clean=False, initial=False):
 def drop(ctx, database=_DEFAULT_DATABASE, create=False):
     db_config = get_database_settings(database)
     create_pgpass_file(ctx)
-    set_connection_limit = 'psql -h {db_host} -c "alter database {db_name} connection limit 1;" -w {db_name} {db_user}'.format(
-        **db_config)
-    terminate_backend = 'psql -h {db_host} -c "select pg_terminate_backend(pid) from pg_stat_activity where pid <> pg_backend_pid() and datname=\'{db_name}\'" -w {db_name} {db_user}'.format(
-        **db_config)
+    set_connection_limit = ('psql -h {db_host} -c "ALTER DATABASE {db_name} connection limit 1;" '
+                            '-w {db_name} {db_user}').format(**db_config)
+    terminate_backend = ('psql -h {db_host} -c '
+                         '"SELECT pg_terminate_backend(pid) '
+                         'FROM pg_stat_activity WHERE pid <> pg_backend_pid() AND datname=\'{db_name}\'" '
+                         '-w {db_name} {db_user}').format(**db_config)
     dropdb = 'dropdb -w --if-exists -e {db_name} -U {db_user} -h {db_host}'.format(**db_config)
     check_if_database_exists = 'psql template1 -tA -U {db_user} -h {db_host} -c "select 1 from pg_database where datname=\'{db_name}\'"'.format(
         **db_config)
@@ -82,20 +88,27 @@ def drop(ctx, database=_DEFAULT_DATABASE, create=False):
 
 
 @task(aliases=['rfd'])
-def restore_from_dump(ctx, target_database=_DEFAULT_DATABASE, dumpfile='comsesnet.sql', force=False, migrate=True):
+def restore_from_dump(ctx, target_database=_DEFAULT_DATABASE, dumpfile=None, force=False, migrate=True,
+                      clean_migration=False):
     db_config = get_database_settings(target_database)
+    if dumpfile is None:
+        # XXX: core assumption about how autopostgresqlbackup names new dumps
+        dumpfile = glob.glob('/shared/backups/latest/comsesnet_*.sql.gz')[0]
+        logger.debug("Using latest autopostgresqlbackup dump %s", dumpfile)
+
     dumpfile_path = pathlib.Path(dumpfile)
-    if dumpfile.endswith('.sql') and dumpfile_path.is_file():
+    if dumpfile_path.is_file():
         if not force:
-            confirm("This will destroy the database and try to reload it from a dumpfile {0}. Continue? (y/n) ".format(
+            confirm("This will destroy the database and reload it from {0}. Continue? (y/n) ".format(
                 dumpfile))
-        drop(ctx, database=target_database, create=True)
-        ctx.run('psql -w -q -h db {db_name} {db_user} < {dumpfile}'.format(dumpfile=dumpfile, **db_config), echo=True)
-    elif dumpfile.endswith('.sql.gz') and dumpfile_path.is_file():
-        if not force:
-            confirm("This will destroy the database and try to reload it from a dumpfile {0}. Continue? (y/n) ".format(
-                dumpfile))
-        drop(ctx, database=target_database, create=True)
-        ctx.run('zcat {dumpfile} | psql -w -q -h db {db_name} {db_user}'.format(dumpfile=dumpfile, **db_config), echo=True)
-    if migrate:
-        run_migrations(ctx, clean=True, initial=True)
+        if dumpfile.endswith('.sql'):
+            drop(ctx, database=target_database, create=True)
+            ctx.run('psql -w -q -h db {db_name} {db_user} < {dumpfile}'.format(dumpfile=dumpfile, **db_config), echo=True)
+        elif dumpfile.endswith('.sql.gz'):
+            drop(ctx, database=target_database, create=True)
+            ctx.run('zcat {dumpfile} | psql -w -q -h db {db_name} {db_user}'.format(dumpfile=dumpfile, **db_config),
+                    echo=True)
+        if migrate:
+            run_migrations(ctx, clean=clean_migration, initial=True)
+    else:
+        logger.warning("Unable to restore from dumpfile %s", dumpfile)
