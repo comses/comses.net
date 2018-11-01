@@ -157,7 +157,7 @@ class MemberProfile(index.Indexed, ClusterableModel):
     timezone = TimeZoneField(blank=True)
 
     affiliations = JSONField(default=list, help_text=_("JSON-LD list of affiliated institutions"))
-    bio = MarkdownField(max_length=512, help_text=_('Brief bio'))
+    bio = MarkdownField(max_length=2048, help_text=_('Brief bio'))
     degrees = ArrayField(models.CharField(max_length=255), blank=True, default=list)
     institution = models.ForeignKey(Institution, null=True, on_delete=models.SET_NULL)
     tags = ClusterTaggableManager(through=MemberProfileTag, blank=True)
@@ -165,7 +165,7 @@ class MemberProfile(index.Indexed, ClusterableModel):
     personal_url = models.URLField(blank=True)
     picture = models.ForeignKey(Image, null=True, help_text=_('Profile picture'), on_delete=models.SET_NULL)
     professional_url = models.URLField(blank=True)
-    research_interests = MarkdownField(max_length=512)
+    research_interests = MarkdownField(max_length=2048)
 
     objects = MemberProfileQuerySet.as_manager()
 
