@@ -8,7 +8,7 @@ from django.contrib.auth.models import User
 from django.core.cache import cache
 from django.core.files.images import ImageFile
 from django.db.models import Prefetch
-from django.shortcuts import redirect
+from django.shortcuts import redirect, get_object_or_404
 from django.template.loader import get_template
 from django.urls import reverse
 from django.utils.decorators import method_decorator
@@ -142,9 +142,8 @@ class MemberProfileImageUploadView(generics.CreateAPIView):
 
     def create(self, request, *args, **kwargs):
         file_obj = request.data['file']
-        member_profile = request.user.member_profile
-        image = Image(title=file_obj.name, file=ImageFile(file_obj), uploaded_by_user=request.user)
-        image.save()
+        member_profile = get_object_or_404(MemberProfile, **kwargs)
+        image = Image.objects.create(title=file_obj.name, file=ImageFile(file_obj), uploaded_by_user=request.user)
         member_profile.picture = image
         member_profile.save()
         return Response(data=image.get_rendition('fill-150x150').url, status=200)
