@@ -1554,6 +1554,12 @@ class PeerReviewerFeedback(models.Model):
             context={'review': review, 'invitation': self.invitation},
             to=[self.invitation.editor_email],
         )
+        send_markdown_email(
+            subject='[CoMSES Net] Peer review: feedback submitted',
+            template_name='library/review/email/reviewer_submitted_thanks.jinja',
+            context={'review': review, 'invitation': self.invitation},
+            to=[reviewer.email],
+        )
 
     @transaction.atomic
     def editor_called_for_revisions(self):

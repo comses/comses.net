@@ -188,14 +188,14 @@ class PeerReviewFeedbackUpdateView(UpdateView):
     queryset = PeerReviewerFeedback.objects.all()
 
     def get_context_data(self, **kwargs):
-        other_feedback = self.object.invitation.feedback_set.exclude(id=self.object.id)
+        other_feedback = self.object.invitation.feedback_set.exclude(pk=self.object.pk)
         context = super().get_context_data(**kwargs)
         context['feedback_set'] = other_feedback
         return context
 
     def get_success_url(self):
         if self.object.reviewer_submitted:
-            messages.success(self.request, "Thank you for taking the time to serve as a CoMSES Net reviewer and providing feedback on this model.")
+            messages.info(self.request, "Peer Review feedback submitted. Thank you for taking the time to serve as a CoMSES Net reviewer!")
             return self.object.invitation.candidate_reviewer.get_absolute_url()
         else:
             messages.info(self.request, "Your feedback has been saved. Please submit it to the editor when complete.")

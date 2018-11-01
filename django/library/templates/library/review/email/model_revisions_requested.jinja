@@ -1,16 +1,11 @@
-{% from "common.jinja" import search_tag_href %}
 {% set release=review.codebase_release %}
 
 Dear {{ review.submitter.name }},
 
-The reviewer for your computational model [{{ release.title }}]({{ build_absolute_uri(release.share_url) }}) has recommended that the following changes be made to your model:
+The reviewer for your computational model [{{ release.title }}]({{ build_absolute_uri(release.share_url) }}) has recommended that changes be made to your model. These are summarized below:
 
 {% autoescape false %}
 {{ feedback.notes_to_author }}
 {% endautoescape %}
 
-For transparency, the review criteria we use to evaluate computational models in the [CoMSES Net Computational Model Library](https://www.comses.net/codebases/) are included below.
-
-{% include "library/review/includes/review_criteria.jinja" %}
-
-On behalf of the editors@comses.net, thank you for submitting your computational models to CoMSES Net! We hope that this service is useful to the community and believe that the requested changes will make your model more useful to the broader community as well.
+On behalf of the editors@comses.net, thank you for submitting your computational model(s) to CoMSES Net! Our peer review service is intended to serve the community and we hope that you find the requested changes will improve your model's accessibility and potential for reuse. If you have any questions or concerns about this process, please feel free to <a href='{{build_absolute_uri(slugurl("contact"))}}'>contact us</a>.
