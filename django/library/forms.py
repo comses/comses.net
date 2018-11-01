@@ -37,6 +37,7 @@ class PeerReviewInvitationReplyForm(forms.ModelForm):
             invitation.accept()
         else:
             invitation.decline()
+        return invitation
 
     class Meta:
         model = PeerReviewInvitation
