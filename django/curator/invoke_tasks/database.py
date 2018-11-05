@@ -13,6 +13,7 @@ _DEFAULT_DATABASE = 'default'
 
 logger = logging.getLogger(__name__)
 
+
 def get_database_settings(db_key):
     return dict(
         db_name=settings.DATABASES[db_key]['NAME'],
@@ -25,6 +26,7 @@ def get_database_settings(db_key):
 @task(aliases=['sh'])
 def shell(ctx, db_key=_DEFAULT_DATABASE):
     """Open a pgcli shell to the database"""
+    create_pgpass_file(ctx)
     ctx.run('pgcli -h {db_host} -d {db_name} -U {db_user}'.format(**get_database_settings(db_key)), pty=True)
 
 
