@@ -119,6 +119,7 @@
 
 {% macro footer() %}
 {{ cookielaw(request) }}
+{% with social_settings=settings("core.SocialMediaSettings", use_default_site=True) %}
 <footer class="footer">
     <div class="container">
         {% if not user.is_authenticated or not user.member_profile.full_member %}
@@ -134,16 +135,7 @@
         {% endif %}
         <div class="row">
             <div class="col-xs-12 col-lg-3">
-                {% with social_settings=settings("core.SocialMediaSettings", use_default_site=True) %}
                     <ul class="social-media">
-                        <li>
-                            <a href="https://github.com/{{ social_settings.github_account }}" title="GitHub" target="_blank">
-                                <span class="fa-stack">
-                                    <i class="fa fa-circle fa-stack-2x"></i>
-                                    <i class="fa fa-code-fork fa-inverse fa-stack-1x"></i>
-                                </span>
-                            </a>
-                        </li>
                         <li>
                             <a href="https://twitter.com/{{ social_settings.twitter_account }}" title="Follow us at @{{ social_settings.twitter_account }}" target="_blank">
                                 <span class="fa-stack">
@@ -160,10 +152,17 @@
                                 </span>
                             </a>
                         </li>
+                        <li>
+                            <a href='{{ social_settings.youtube_url }}' title='YouTube Channel' target='_blank'>
+                                <span class='fa-stack'>
+                                    <i class='fa fa-circle fa-stack-2x'></i>
+                                    <i class='fa fa-youtube-play fa-inverse fa-stack-1x'></i>
+                                </span>
+                            </a>
+                        </li>
                     </ul>
-                {% endwith %}
             </div>
-            <div class="col-xs-12 col-lg-9">
+            <div class="mx-0 px-0 col-xs-12 col-lg-9">
                 <ul class="organizations">
                     <li>
                         <a href="http://www.asu.edu/" target="_blank">
@@ -186,9 +185,18 @@
     </div>
     <p class="copyright text-center">&copy; 2007 - {{ now('Y') }} CoMSES Net |
     <a class='footer' href='{{ contact_url }}'>Contact us</a><br>
-    <small>comses.net build: {{ release_version() }}</small>
+    <small>
+        <a href="https://github.com/{{ social_settings.github_account }}" title="GitHub" target="_blank">
+            <span class="fa-stack">
+                <i class="fa fa-circle fa-stack-2x"></i>
+                <i class="fa fa-code-fork fa-inverse fa-stack-1x"></i>
+            </span>
+        </a>
+        comses.net build: {{ release_version() }} 
+    </small>
     </p>
 </footer>
+{% endwith %}
 {% endmacro %}
 
 <!DOCTYPE html>
