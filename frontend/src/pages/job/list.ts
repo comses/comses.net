@@ -6,9 +6,9 @@ new SortBy({
     propsData: {
         sortOptions: [
             {label: 'Relevance', value: ''},
-            {label: 'Publish date', value: 'date_created'},
-            {label: 'Last modified date', value: 'last_modified'},
-            {label: 'Application deadline', value: 'application_deadline'}
+            {label: 'Application deadline', value: 'application_deadline'},
+            {label: 'Date posted', value: 'date_created'},
+            {label: 'Recently modified ', value: 'last_modified'},
         ],
     },
 }).$mount('#sortby');
