@@ -1,5 +1,5 @@
 import * as _ from 'lodash';
-import yup from 'yup';
+import * as yup from 'yup';
 import Vue from 'vue'
 import {VueClass} from 'vue-class-component/lib/declarations'
 import {Component} from 'vue-property-decorator'

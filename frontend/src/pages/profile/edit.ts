@@ -11,7 +11,7 @@ import {ProfileAPI} from 'api'
 import * as _ from 'lodash'
 import {createFormValidator} from 'pages/form'
 import {HandlerWithRedirect} from "handler";
-import yup from 'yup'
+import * as yup from 'yup'
 import Checkbox from "components/forms/checkbox";
 
 export const schema = yup.object().shape({

@@ -12,7 +12,7 @@ import {store} from './store'
 import {CreateOrUpdateHandler} from "api/handler";
 import {CodebaseReleaseAPI, CodebaseAPI, ReviewEditorAPI} from "api";
 import * as _ from 'lodash';
-import yup from'yup';
+import * as yup from'yup';
 import {Progress} from "pages/codebase/release/progress";
 import {createFormValidator} from "pages/form";
 import {HandlerWithRedirect} from "handler";

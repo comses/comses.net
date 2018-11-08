@@ -1,15 +1,15 @@
-import Vue from 'vue'
-import {CalendarEvent} from 'store/common'
-import {EventAPI} from 'api'
-import Markdown from 'components/forms/markdown'
-import Tagger from 'components/tagger'
-import Input from 'components/forms/input'
+import Vue from 'vue';
+import {CalendarEvent} from 'store/common';
+import {EventAPI} from 'api';
+import Markdown from 'components/forms/markdown';
+import Tagger from 'components/tagger';
+import Input from 'components/forms/input';
 import Datepicker from 'components/forms/datepicker';
-import MessageDisplay from 'components/message_display'
-import * as _ from 'lodash'
+import MessageDisplay from 'components/message_display';
+import * as _ from 'lodash';
 import {Component, Prop} from "vue-property-decorator";
-import * as yup from 'yup'
-import {createFormValidator, reachRelated} from "pages/form"
+import * as yup from 'yup';
+import {createFormValidator, reachRelated} from "pages/form";
 import {Mixin} from 'util/vue-mixin';
 import {HandlerWithRedirect} from "handler";
 
