@@ -1,3 +1,3 @@
 #!/bin/bash
 
-uwsgi --ini /code/deploy/uwsgi.ini;
+exec uwsgi --ini /code/deploy/uwsgi.ini

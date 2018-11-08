@@ -16,4 +16,4 @@ initdb() {
     fi
 }
 initdb
-nohup /code/manage.py runserver 0.0.0.0:8000
+exec /code/manage.py runserver 0.0.0.0:8000
