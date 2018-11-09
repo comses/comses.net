@@ -118,7 +118,7 @@ services:
         REQUIREMENTS_FILE: requirements.txt
         UBUNTU_MIRROR: "nova.clouds.archive.ubuntu.com"
         RUN_SCRIPT: "./deploy/prod.sh"
-    image: comses/cms:{RELEASE_VERSION}
+    image: comses/cms:${RELEASE_VERSION}
     restart: always
     volumes:
       - ./deploy/conf/config.ini:/secrets/config.ini
