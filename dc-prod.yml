@@ -90,14 +90,14 @@ services:
       - ./frontend/deploy:/code/deploy
       - ./docker/shared/webpack:/shared/webpack
   maintenance:
-    image: nginx:1.14
+    image: nginx:1.15
     ports:
       - "127.0.0.1:8889:80"
     volumes:
       - ./deploy/nginx/nginx-maintenance.conf:/etc/nginx/nginx.conf
       - ./deploy/nginx/maintenance:/srv
   nginx:
-    image: nginx:1.14
+    image: nginx:1.15
     restart: always
     volumes:
       - ./deploy/nginx/nginx-haproxy.conf:/etc/nginx/nginx.conf
@@ -106,6 +106,8 @@ services:
       - ./docker/shared/static:/srv/static
       - ./docker/shared/media:/srv/media
       - sockets:/shared/sockets
+    depends_on:
+      - cms
     networks:
       - cms
     command: ["nginx", "-g", "daemon off;"]
@@ -125,6 +127,11 @@ services:
       - ./deploy/elasticsearch.conf.d:/etc/elasticsearch
       - ./docker/shared:/shared
       - sockets:/shared/sockets
+    depends_on:
+      - ${DB_HOST}
+      - elasticsearch
+      - elasticsearch2
+      - redis
     networks:
       - esnet
       - cms

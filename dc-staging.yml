@@ -11,7 +11,7 @@ services:
     image: docker.elastic.co/elasticsearch/elasticsearch:${ES_VERSION}
     restart: always
     ports:
-      - "127.0.0.1:9200:9200"
+      - "9200:9200"
     environment:
       - cluster.name=docker-cluster
       - bootstrap.memory_lock=true
@@ -82,7 +82,7 @@ services:
       - ./frontend/deploy:/code/deploy
       - ./docker/shared/webpack:/shared/webpack
   nginx:
-    image: nginx:1.13
+    image: nginx:latest
     restart: always
     volumes:
       - ./deploy/nginx/nginx-staging.conf:/etc/nginx/nginx.conf
@@ -93,8 +93,8 @@ services:
       - sockets:/shared/sockets
     command: ["nginx", "-g", "daemon off;"]
     ports:
-      - "127.0.0.1:8880:80"
-    links:
+      - "80:80"
+    depends_on:
       - cms
   cms:
     build:
@@ -118,7 +118,7 @@ services:
       DB_PORT: ${DB_PORT}
     ports:
       - "127.0.0.1:9191:9191" # uWSGI stats server
-    links:
+    depends_on:
       - ${DB_HOST}
       - elasticsearch
       - redis
