@@ -40,6 +40,12 @@ class ComsesGroups(Enum):
     def initialize():
         return [Group.objects.get_or_create(name=g.value)[0] for g in ComsesGroups]
 
+    def users(self, **kwargs):
+        return self.get_group().user_set.filter(**kwargs)
+
+    def member_profiles(self, **kwargs):
+        return MemberProfile.objects.filter(user__in=self.users(**kwargs))
+
     def get_group(self):
         _group = getattr(self, 'group', None)
         if _group is None:
@@ -125,9 +131,11 @@ class MemberProfileQuerySet(models.QuerySet):
     def with_tags(self):
         return self.prefetch_related('tagged_members__tag')
 
-    def editors(self):
-        return self.filter(user__in=ComsesGroups.EDITOR.get_group().user_set.all()
-                           .union(User.objects.filter(is_superuser=True)).values_list('id', flat=True))
+    def full_members(self, **kwargs):
+        return ComsesGroups.FULL_MEMBER.member_profiles(**kwargs)
+
+    def editors(self, **kwargs):
+        return ComsesGroups.EDITOR.member_profiles(**kwargs)
 
     def public(self, **kwargs):
         return self.filter(user__is_active=True, **kwargs).exclude(user__username__in=EXCLUDED_USERNAMES)
