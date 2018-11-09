@@ -4,14 +4,16 @@ services:
     image: redis:4-alpine
     restart: always
     command: ["redis-server", "/usr/local/etc/redis/redis.conf"]
+    networks:
+      - cms
     volumes:
       - ./deploy/conf/redis.conf:/usr/local/etc/redis/redis.conf
       - ./docker/shared/redis:/data
   elasticsearch:
     image: docker.elastic.co/elasticsearch/elasticsearch:${ES_VERSION}
     restart: always
-    ports:
-      - "9200:9200"
+    networks:
+      - esnet
     environment:
       - cluster.name=docker-cluster
       - bootstrap.memory_lock=true
@@ -37,6 +39,8 @@ services:
   elasticsearch2:
     image: docker.elastic.co/elasticsearch/elasticsearch:${ES_VERSION}
     restart: always
+    networks:
+      - esnet
     environment:
       - cluster.name=docker-cluster
       - bootstrap.memory_lock=true
@@ -62,6 +66,8 @@ services:
   ${DB_HOST}:
     image: comses/postgis:10
     restart: always
+    networks:
+      - db
     volumes:
       - ./docker/shared/pgdata:/var/lib/postgresql/data
     environment:
@@ -92,6 +98,8 @@ services:
       - ./docker/shared/media:/srv/media
       - sockets:/shared/sockets
     command: ["nginx", "-g", "daemon off;"]
+    networks:
+      - cms
     ports:
       - "80:80"
     depends_on:
@@ -105,6 +113,9 @@ services:
         RUN_SCRIPT: "./deploy/prod.sh"
     image: comses/cms:${RELEASE_VERSION}
     restart: always
+    networks:
+      - cms
+      - esnet
     volumes:
       - ./deploy/conf/config.ini:/secrets/config.ini
       - ./deploy/elasticsearch.conf.d:/etc/elasticsearch
@@ -122,6 +133,14 @@ services:
       - ${DB_HOST}
       - elasticsearch
       - redis
+networks:
+  esnet:
+    driver: bridge
+  cms:
+    driver: bridge
+  db:
+    driver: bridge
+
 volumes:
   sockets:
     driver: local
