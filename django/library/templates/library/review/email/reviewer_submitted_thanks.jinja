@@ -4,4 +4,4 @@ Dear {{ invitation.invitee }},
 
 On behalf of the editors@comses.net, thank you for serving as a peer reviewer for [{{ release.title }}]({{ build_absolute_uri(release.get_absolute_url()) }}). Your feedback has been submitted to the managing review editor and we will compile it and submit a final recommendation to the model author.
 
-This is an important community service and we appreciate your time and dedication. If you have any comments, suggestions, or feedback on the peer review process, please <a href='{{build_absolute_uri(slugurl("contact")}}'>let us know</a>.
+This is an important community service and we appreciate your time and dedication. If you have any comments, suggestions, or feedback on the peer review process, please <a href='{{ build_absolute_uri(slugurl("contact")) }}'>let us know</a>.
