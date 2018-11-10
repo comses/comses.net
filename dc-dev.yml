@@ -1,7 +1,7 @@
 version: '3'
 services:
   redis:
-    image: redis:4-alpine
+    image: redis:5-alpine
     command: ["redis-server", "/usr/local/etc/redis/redis.conf"]
     volumes:
       - ./deploy/conf/redis.conf:/usr/local/etc/redis/redis.conf
