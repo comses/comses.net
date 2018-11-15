@@ -20,32 +20,39 @@
         <div id='{{ category }}' class='pt-3 people {{ category }}'>
             <h2 class='people'>{{ get_choices_display(category, people_categories) }}</h2>
             {% for placement in group_list %}
+                {% with member_profile=placement.member_profile %}
                 <div class='card'>
                     <div class='card-body row'>
                         <div class='col-3'>
-                            <div class='text-center card-title'>
+                            <div class='card-title'>
                                 <h3 class='title'>
-                                    {{ member_profile_href(placement.member_profile) }}
+                                    {{ member_profile_href(member_profile) }}
                                 </h3>
+                                {% if placement.is_board_member and placement.term %}
+                                    <div class='card-text'>
+                                        Term(s): <em>{{ placement.term }}</em>
+                                    </div>
+                                {% endif %}
                             </div>
                             <div class='d-block'>
-                                <a href='{{ placement.member_profile.get_absolute_url()}}'>
-                                    {% if placement.member_profile.picture is none %}
+                                <a href='{{ member_profile.get_absolute_url()}}'>
+                                    {% if member_profile.picture is none %}
                                         <img alt='No picture available' src="holder.js/150x150?text=No picture available" class="img-fluid mx-auto d-block rounded">
                                     {% else %}
-                                        {{ image(placement.member_profile.picture, "fill-150x150", class="rounded mx-auto img-fluid d-block") }}
+                                        {{ image(member_profile.picture, "fill-150x150", class="rounded mx-auto img-fluid d-block") }}
                                     {% endif %}
                                 </a>
                             </div>
                         </div>
                         <div class='col-9'>
                             {% autoescape false %}
-                                {{ placement.member_profile.bio }}
-                                {{ placement.member_profile.research_interests }}
+                                {{ member_profile.bio }}
+                                {{ member_profile.research_interests }}
                             {% endautoescape %}
                         </div>
                     </div>
                 </div>
+            {% endwith %}
             {% endfor %}
         </div>
     {% endfor %}

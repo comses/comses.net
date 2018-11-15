@@ -754,13 +754,14 @@ class PeopleEntryPlacement(Orderable, models.Model):
         (1, 'directorate', _('Directorate')),
         (2, 'board', _('Executive Board')),
         (3, 'digest', _('CoMSES Digest Editors')),
-        (4, 'staff', _('Staff')),
+        (4, 'infrastructure', _('Infrastructure Group')),
         (5, 'alumni', _('Executive Board Alumni')),
     )
     page = ParentalKey('home.PeoplePage', related_name='people_entry_placements')
     member_profile = models.ForeignKey('core.MemberProfile', related_name='+', on_delete=models.CASCADE)
     category = models.PositiveIntegerField(choices=CATEGORIES, default=CATEGORIES.board)
-    term = models.CharField(blank=True, max_length=32, help_text=_('The term for a given board member (e.g., 2016-2018)'))
+    term = models.CharField(blank=True, max_length=64,
+                            help_text=_('The term for a given board member (e.g., 2016-2018 or 2008-2010, 2014-2016)'))
 
     objects = PeopleEntryPlacementQuerySet.as_manager()
 
@@ -769,6 +770,10 @@ class PeopleEntryPlacement(Orderable, models.Model):
         FieldPanel('category'),
         FieldPanel('term'),
     ]
+
+    @property
+    def is_board_member(self):
+        return self.category in (self.CATEGORIES.board, self.CATEGORIES.alumni)
 
     def __str__(self):
         return "{0}: {1} {2}".format(self.sort_order, self.member_profile, self.category)
