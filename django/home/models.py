@@ -785,7 +785,7 @@ class PeopleEntryPlacement(Orderable, models.Model):
 class PeoplePage(Page, NavigationMixin):
     template = 'home/about/people.jinja'
     heading = models.CharField(max_length=64)
-    description = models.CharField(max_length=1000, blank=True)
+    description = MarkdownField(help_text=_("Text blurb on the people leading comses.net"))
 
     def sort_board(self):
         PeopleEntryPlacement.objects.board().update_sort_order_alpha()
