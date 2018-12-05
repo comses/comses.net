@@ -91,6 +91,9 @@ class License(models.Model):
     name = models.CharField(max_length=200, help_text=_('SPDX license code from https://spdx.org/licenses/'))
     url = models.URLField(blank=True)
 
+    def __str__(self):
+        return "{} ({})".format(self.name, self.url)
+
 
 class Contributor(index.Indexed, ClusterableModel):
     given_name = models.CharField(max_length=100, blank=True,
