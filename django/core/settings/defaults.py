@@ -1,5 +1,5 @@
 """
-Django settings for core.comses.net
+Django settings for comses.net
 
 For more information on this file, see
 https://docs.djangoproject.com/en/2.0/topics/settings/
@@ -477,7 +477,6 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
-
                 'wagtail.contrib.settings.context_processors.settings',
             ],
         },
