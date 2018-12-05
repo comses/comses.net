@@ -6,14 +6,17 @@ from .base import ReviewSetup
 
 
 class PeerReviewerFeedbackFormTestCase(ReviewSetup, TestCase):
+
     @classmethod
     def setUpTestData(cls):
         cls.setUpReviewData()
 
     def test_cannot_recommend_if_code_is_not_clean(self):
-        invitation = self.review.invitation_set.create(editor=self.editor,
-                                                    candidate_reviewer=self.reviewer)
-        feedback = invitation.create_feedback()
+        invitation = self.review.invitation_set.create(
+            editor=self.editor,
+            candidate_reviewer=self.reviewer
+        )
+        feedback = invitation.latest_feedback()
 
         # Submitted changes should be validated
         data = PeerReviewerFeedbackReviewerForm(instance=feedback).initial.copy()
