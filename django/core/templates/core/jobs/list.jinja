@@ -1,5 +1,5 @@
 {% extends "sidebar_layout.jinja" %}
-{% from "common.jinja" import list_page, paginator, breadcrumb, subnav, member_profile_href, search_tag_href %}
+{% from "common.jinja" import list_page, paginator, breadcrumb, member_profile_href, search_tag_href %}
 
 {% macro render_job(item, detail_url_name) %}
 <div class="card">
@@ -42,14 +42,6 @@
     {'url': '/community/', 'text': 'Community'},
     {'text': 'Jobs & Appointments' }
     ]) 
-    }}
-    {{ subnav([
-    {'url': '/community/', 'text': 'Community'},
-    {'url': DISCOURSE_BASE_URL, 'text': 'Forum'},
-    {'url': url("home:profile-list"), 'text': 'Users'},
-    {'url': url("home:job-list"), 'text': 'Jobs', 'active': true},
-    {'url': url("home:digest"), 'text': 'Newsletter'},
-    ])
     }}
     {{ paginator('home:job-list', __all__) }}
     <div id="sortby"></div>
