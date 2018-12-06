@@ -623,7 +623,7 @@ class ConferencePage(Page):
 
     @property
     def is_open(self):
-        return self.start_date <= date.today() <= self.end_date
+        return self.start_date <= date.today()
 
     @property
     def is_archived(self):
