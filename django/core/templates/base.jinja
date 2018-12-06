@@ -24,7 +24,7 @@
             </div>
         </div>
         <div class='collapse navbar-collapse flex-md-column my-auto justify-content-end' id='navbar-content'>
-            <ul class='navbar-nav ml-auto small'>
+            <ul class='navbar-nav ml-auto'>
                 <li class="nav-item dropdown">
                     <a class="nav-link dropdown-toggle" id="subscribeDropdownLink"
                        data-toggle="dropdown" role="button" href="#" aria-haspopup="true" aria-expanded="false">
@@ -67,7 +67,7 @@
                     </li>
                 {% else %}
                     <li class='nav-item'>
-                        <a class="nav-link" href="{{ login_url }}?next={{request.path or '/'}}">Sign In <i class='fa fa-sign-in'></i></a>
+                        <a class="nav-link" href="{{ login_url }}?next={{request.path}}">Sign In <i class='fa fa-sign-in'></i></a>
                     </li>
                     <li class='nav-item'>
                         <a class='nav-link' href="{{ signup_url }}">Become a Member</a>
@@ -92,7 +92,7 @@
                     <a href="/resources/" class="nav-link">Resources</a>
                 </li>
                 <li class='nav-item'>
-                    <a href="{{ DISCOURSE_BASE_URL }}" class='nav-link'>Forums</a>
+                    <a href="{{ DISCOURSE_BASE_URL }}" class='nav-link'>Forums <i class='fa fa-external-link'></i></a>
                 </li>
                 <li class='nav-item'>
                     <a href='/about/' class='nav-link'>About</a>
