@@ -295,7 +295,7 @@ class Breadcrumb(Orderable, models.Model):
     title = models.CharField(max_length=255)
 
     def __str__(self):
-        return '{0}: {1}'.format(self.title, self.url)
+        return 'Breadcrumb for page {0}: {1} ({2})'.format(str(self.page), self.title, self.url)
 
 
 class NavigationMixin(object):
@@ -384,6 +384,7 @@ class StreamPage(Page, NavigationMixin):
         FieldPanel('post_date'),
         FieldPanel('description'),
         StreamFieldPanel('body'),
+        InlinePanel('navigation_links', label=_('Subnavigation Links')),
     ]
 
 
@@ -412,6 +413,7 @@ class MarkdownPage(NavigationMixin, Page):
         FieldPanel('description'),
         FieldPanel('body'),
         FieldPanel('template'),
+        InlinePanel('navigation_links', label=_('Subnavigation Links')),
     ]
 
     search_fields = Page.search_fields + [
@@ -470,6 +472,7 @@ class PlatformIndexPage(NavigationMixin, Page):
     content_panels = Page.content_panels + [
         FieldPanel('description'),
         InlinePanel('platform_placements', label='Platforms'),
+        InlinePanel('navigation_links', label=_('Subnavigation Links')),
     ]
 
     def get_platforms(self):
@@ -542,6 +545,7 @@ class JournalIndexPage(NavigationMixin, Page):
     content_panels = Page.content_panels + [
         FieldPanel('description'),
         InlinePanel('journal_placements', label='Journals'),
+        InlinePanel('navigation_links', label=_('Subnavigation Links')),
     ]
 
 
