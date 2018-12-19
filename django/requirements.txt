@@ -29,10 +29,10 @@ nltk>=3.2.5,<4.0.0
 psycopg2-binary==2.7.6.1
 raven==6.7.0
 redis==3.0.1
-requests==2.20.1
+requests==2.21.0
 semver==2.8.1
 uwsgi==2.0.17.1
-wagtail==2.3
+wagtail==2.4
 # deployment and management command dependencies
 beautifulsoup4==4.6.3
 invoke
