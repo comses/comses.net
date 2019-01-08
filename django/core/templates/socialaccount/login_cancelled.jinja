@@ -3,17 +3,14 @@
 {% set provider_name = account.get_provider().name %}
 
 {% block introduction %}
-    <h1>Login Cancelled</h1>
+    <h1>Social Sign-In Canceled</h1>
 {% endblock %}
 
 {% block content %}
 
-{% url 'account_login' as login_url %}
 
 <p>
-{% blocktrans %}
-You decided to cancel logging in to our site using one of your existing accounts. If this was a mistake, please proceed to <a href="{{login_url}}">sign in</a>.
-{% endblocktrans %}
+Your request to sign-in using an existing account has been canceled. If this was a mistake, you can try to <a href="{{url('account_login')}}">sign in</a> again.
 </p>
 
 {% endblock %}
