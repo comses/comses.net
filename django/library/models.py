@@ -1581,11 +1581,12 @@ class PeerReviewerFeedback(models.Model):
         )
         review.set_status(ReviewStatus.awaiting_author_changes)
         review.save()
+        recipients = {review.submitter.email, review.codebase_release.submitter.email}
         send_markdown_email(
             subject='[CoMSES Net] Peer review: revisions requested',
             template_name='library/review/email/model_revisions_requested.jinja',
             context={'review': review, 'feedback': self},
-            to=[review.submitter.email],
+            to=recipients,
             bcc=[editor.email]
         )
 
