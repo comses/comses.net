@@ -15,6 +15,7 @@ if [[ ${ENVIRONMENT} == "dev" ]]; then
     SERVICES="redis db elasticsearch js"
 else
     # bring js container up synchronously in staging + prod
+    docker-compose pull db redis nginx
     docker-compose up js
 fi
 
