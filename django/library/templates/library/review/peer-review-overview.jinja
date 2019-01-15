@@ -1,0 +1,19 @@
+{% extends "base.jinja" %}
+{% from 'library/review/includes/macros.jinja' import render_review_criteria %}
+
+{% block introduction %}
+    <h1>Computational Model Library Peer Review</h1>
+{% endblock %}
+
+{% block content %}
+    <h2 class='title'>CoMSES Net Computational Library Peer Review</h2>
+    <img class='d-block img-fluid' src="{{ static("images/icons/peer-reviewed.png") }}" alt="Peer Reviewed">
+    <p>
+    Authors who <a href="{{ url('library:codebase-add') }}">submit their computational models</a> to the 
+    <a href="{{ url('library:codebase-list') }}">CoMSES Net Computational Model Library</a> can request peer review of
+    their models. If the model passes review, models will be granted a peer reviewed badge 
+    and a <a href='https://www.doi.org/faq.html'>DOI</a>.
+    </p>
+    <h2 class='title'>Review Criteria</h2>
+    {{ render_review_criteria() }}
+{% endblock %}

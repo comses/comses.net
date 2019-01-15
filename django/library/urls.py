@@ -1,5 +1,6 @@
 from django.conf import settings
 from django.urls import path, re_path
+from django.views.generic.base import TemplateView
 from rest_framework.routers import SimpleRouter
 
 from core.settings.defaults import Environment
@@ -24,6 +25,7 @@ if settings.DEPLOY_ENVIRONMENT == Environment.DEVELOPMENT:
     router.register(r'test_codebases', views.DevelopmentCodebaseDeleteView, base_name='test_codebases')
 
 urlpatterns = [
+    path('reviews/', TemplateView.as_view(template_name='library/review/peer-review-overview.jinja'), name='peer-review-overview'),
     path('reviews/dashboard/', views.PeerReviewDashboardView.as_view(), name='peer-review-dashboard'),
     path('reviews/<uuid:slug>/editor/', views.PeerReviewEditorView.as_view(), name='peer-review-detail'),
     path('reviews/<uuid:slug>/events/', views.list_review_event_log, name='peer-review-event-list'),
