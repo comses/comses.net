@@ -53,7 +53,7 @@
                             <div class="dropdown-menu" aria-labelledby='userDropdownMenuLink'>
                                 <a class="dropdown-item" href="{{ profile_url }}"><i class='fa fa-user-o'></i> Your Account</a>
                                 {% if user.has_perm('library.change_peerreview') %}
-                                    <a class="dropdown-item" href="{{ url('library:peer-review-dashboard') }}">Manage Peer Reviews</a>
+                                    <a class="dropdown-item" href="{{ url('library:peer-review-dashboard') }}"><i class='fa fa-flask'></i> Manage Peer Reviews</a>
                                 {% endif %}
                                 {# POST logouts, see http://django-allauth.readthedocs.io/en/latest/views.html#logout-account-logout #}
                                 <form id='logoutForm' method='post' action='{{ logout_url }}'>
