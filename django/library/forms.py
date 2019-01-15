@@ -121,12 +121,12 @@ class PeerReviewerFeedbackReviewerForm(CheckCharFieldLengthMixin, forms.ModelFor
     class Meta:
         model = PeerReviewerFeedback
         fields = [
+            'is_runnable',
+            'runnable_comments',
             'has_narrative_documentation',
             'narrative_documentation_comments',
             'has_clean_code',
             'clean_code_comments',
-            'is_runnable',
-            'runnable_comments',
             'private_reviewer_notes',
             'reviewer_submitted',
             'recommendation',
