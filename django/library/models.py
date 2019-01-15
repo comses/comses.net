@@ -1495,34 +1495,37 @@ class PeerReviewerFeedback(models.Model):
     last_modified = models.DateTimeField(auto_now=True)
     invitation = models.ForeignKey(PeerReviewInvitation, related_name='feedback_set', on_delete=models.CASCADE)
     recommendation = models.CharField(choices=ReviewerRecommendation.to_choices(), max_length=16, blank=True)
-    private_reviewer_notes = MarkdownField(help_text=_('Private reviewer notes to the editor.'), blank=True)
+    private_reviewer_notes = MarkdownField(
+        help_text=_('Private reviewer notes to be sent to and viewed by the CoMSES review editors only.'),
+        blank=True
+    )
     private_editor_notes = MarkdownField(help_text=_('Private editor notes regarding this peer review'), blank=True)
     notes_to_author = MarkdownField(help_text=_("Editor's notes to be sent to the model author, manually compiled from other reviewer comments."),
                                     blank=True)
     has_narrative_documentation = models.BooleanField(
         default=False,
-        help_text=_('Is there sufficiently detailed accompanying narrative documentation?')
+        help_text=_('Is there sufficiently detailed accompanying narrative documentation? Check if yes, leave blank for no.')
     )
     narrative_documentation_comments = models.TextField(
         help_text=_('Reviewer comments on the narrative documentation'), blank=True
     )
     has_clean_code = models.BooleanField(
         default=False,
-        help_text=_('Is the code clean, well-written, and well-commented with consistent formatting?')
+        help_text=_('Is the code clean, well-written, and well-commented with consistent formatting? Check for yes, leave blank for no.')
     )
     clean_code_comments = models.TextField(
         help_text=_('Reviewer comments on code cleanliness'), blank=True
     )
     is_runnable = models.BooleanField(
         default=False,
-        help_text=_('Were you able to run the model with the provided instructions?')
+        help_text=_('Were you able to run the model with the provided instructions? Check for yes, leave blank for no.')
     )
     runnable_comments = models.TextField(
         help_text=_('Reviewer comments on running the model with the provided instructions'),
         blank=True
     )
     reviewer_submitted = models.BooleanField(
-        help_text=_('true when reviewer has formally submit feedback, protecting the data from further edits'),
+        help_text=_('Internal field, set to True when the reviewer has finalized their feedback and is ready for an editor to check their submission.'),
         default=False
     )
 
