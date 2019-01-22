@@ -230,10 +230,13 @@
                 No assigned DOI
                 {% if has_change_perm %}
                     <div>
-                    <i class='fa fa-exclamation-triangle'></i>
-                    We assign DOIs to peer reviewed models or models associated with a peer
-                    reviewed publication. If you would like to request a DOI 
-                    please <a href='{{slugurl('contact')}}'>contact us</a>.
+                    <i class='text-primary fa fa-exclamation-triangle'></i>
+                    <small>
+                        We assign DOIs to <a href='{{ url("library:peer-review-overview") }}'>peer reviewed models</a>. If you would like a DOI and your
+                    model has not been reviewed yet, please request a peer review by clicking the "Request peer review"
+                    button below. If your model has already been reviewed and has not yet been assigned a DOI, please 
+                    <a href='{{slugurl('contact')}}'>contact us</a>.
+                    </small>
                     </div>
                 {% endif %}
             {% endif %}
@@ -302,7 +305,7 @@
             <form method="post" action="{{ release.get_request_peer_review_url() }}">
                 {% csrf_token %}
                 <button type="submit" class='btn btn-secondary my-1 w-100'>
-                    Request peer review
+                    Request peer review 
                 </button>
             </form>
         {% elif review.is_awaiting_author_changes %}
