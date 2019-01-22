@@ -291,12 +291,6 @@
     </div>
 </div>
 {% if has_change_perm %}
-    <form>
-        {% csrf_token %}
-        <button class="btn btn-secondary my-1 w-100" formmethod="post" formaction="{{ codebase.get_draft_url() }}">
-            Draft a new release
-        </button>
-    </form>
     <a href="{{ release.get_edit_url() }}">
         <div class="btn btn-secondary my-1 w-100">Edit metadata</div>
     </a>
