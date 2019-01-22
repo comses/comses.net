@@ -78,8 +78,12 @@ export const schema = yup.object().shape({
                 </template>
             </multiselect>
             <div v-if="errors.license.length > 0" class="invalid-feedback">a license must be selected</div>
-            <small class="form-text text-muted">The open source licence you would like to govern use and redistribution of your computational model. 
-                <a target='_blank' href="//choosealicense.org">choosealicense.org</a> is a good resource for deciding what license to use.
+            <small class="form-text text-muted">
+            An open source licence to govern use and redistribution of your computational model.
+            For more information about open source licenses, you may find the advice at
+            <a target='_blank' href="//choosealicense.com">choosealicense.com</a> or 
+            <a target='_blank' href='//opensource.org/licenses'>opensource.org/licenses</a>
+            helpful for deciding which license to use.
             </small>
         </div>
         <c-message-display :messages="statusMessages" @clear="statusMessages = []"/>
