@@ -112,7 +112,7 @@ services:
       - cms
     command: ["nginx", "-g", "daemon off;"]
     ports:
-      - "127.0.0.1:8880:80"
+      - "80:80"
   cms:
     build:
       context: ./django
