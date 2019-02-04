@@ -46,28 +46,20 @@ class FileTree extends Vue {
 @Component(<any>{
     template: `<div>
             <p class='mt-3'>
-                Releases should include all code, documentation, input data and simulation results necessary for someone
-                else (including your future self) to understand or reuse the model. Source code is required.
+                A codebase releases should include all code, documentation, input data and simulation results necessary for 
+                someone else (including your future self) to understand or reuse the model. Source code is required. Please take 
+                note of the directory structure that we use for your uploaded files - in particular, data files are uploaded to a 
+                <code>project-root/data</code> directory so if your source code has references to your uploaded data files you 
+                should consider using the relative path <code>../data/&lt;datafile&gt;</code>. This will make the lives of others 
+                who want to download and run your model easier.
             </p>
-            <button class="btn btn-secondary" @click="showPreview">Preview Download Package</button>
-            <div class="modal fade" id="previewModal" tabindex="-1" role="dialog" aria-labelledby="previewModalLabel">
-                <div class="modal-dialog" role="document">
-                    <div class="modal-content">
-                        <div class="modal-header">
-                            <h5 class="modal-title" id="previewModalLabel">Release File Download Preview</h5>
-                            <button type="button" class="close" @click="closePreview" aria-label="Close">
-                                <span aria-hidden="true" class="fa fa-times"></span>
-                            </button>
-                        </div>
-                        <div class="modal-body">
-                            <span class="text-warning" v-if="folderContents === null">Loading download preview...</span>
-                            <div class="alert alert-danger" v-else-if="folderContents.error !== undefined">
-                                {{ folderContents.error }}
-                            </div>
-                            <c-file-tree :directory="folderContents" v-else></c-file-tree>
-                        </div>
-                    </div>
+            <div class="card card-body bg-light">
+                <h3 class='card-title'>Current Archival Package Filesystem Layout</h3>
+                <span class="text-warning" v-if="folderContents === null">Loading download preview...</span>
+                <div class="alert alert-danger" v-else-if="folderContents.error !== undefined">
+                    {{ folderContents.error }}
                 </div>
+                <c-file-tree :directory="folderContents" v-else></c-file-tree>
             </div>
             <div v-for="config in configs">
                 <c-upload :uploadType="config.uploadType" :acceptedFileTypes="config.acceptedFileTypes"
@@ -93,27 +85,34 @@ export class UploadPage extends Vue {
             uploadType: 'code',
             acceptedFileTypes: '*/*',
             title: 'Upload Source Code',
-            instructions: `You can upload a single plaintext source file (e.g., NetLogo) or zipped archive of plaintext
-            source code (currently accepting zip or tar files) representing your codebase. Archives will be unpacked and
-            extracted as part of archival processing and system files will be removed but the archive's directory
-            structure is preserved.  All file types are accepted though they should be in open or plaintext formats.`,
-            originalInstructions: 'Submitted source code file.',
+            instructions: `You can upload a single plaintext source file (e.g., a NetLogo .nlogo file) or a tar or zip archive of 
+            plaintext source code representing your codebase. Archives will be unpacked and extracted as part of archival processing 
+            and system files will be removed but the archive's directory structure is preserved.  All file types are currently 
+            accepted though files should be stored in open or plaintext formats. We may remove executables or binaries in the
+            future.`,
+            originalInstructions: 'Submitted source code file(s):',
         }, 
         {
             uploadType: 'data',
             acceptedFileTypes: '*/*',
             title: 'Upload Data',
-            instructions: `Upload any data associated with your source code. If an archive (zip or tar file) is uploaded
-            it is extracted first. Files should be plaintext or open data formats but all file types are accepted.`,
-            originalInstructions: 'Submitted data files.'
+            instructions: `Upload any datasets required by your source code. There is a limit on file upload size so if 
+            your datasets are very large, you may consider using osf.io or figshare or other data repository to store your
+            data and refer to it in your code via DOI or other permanent URL. If a zip or tar archive is uploaded
+            it will be automatically unpacked. Files should be plaintext or an open data formats but all file types 
+            are currently accepted. Please note that data files uploaded here will be placed in a "<project-root>/data"
+            directory so if you'd like for your source code to work immediately when another researcher downloads your 
+            codebase, please consider referring to any input data files via a relative path "../data/<your-data-file>".`,
+            originalInstructions: 'Submitted data file(s):'
         },
         {
             uploadType: 'docs',
             acceptedFileTypes: '*/*',
             title: 'Upload Narrative Documentation',
-            instructions: `Upload narrative documentation (e.g., the ODD Protocol) that comprehensively describes your
-            computational model. Acceptable files include plain text formats (e.g., Markdown, Jupyter Notebooks,
-            ReStructuredText), OpenDocument Text (ODT), or PDF`,
+            instructions: `Upload narrative documentation that comprehensively describes your computational model. The ODD
+            Protocol offers a good starting point for thinking about how to comprehensively describe agent based models and
+            good Narrative Documentation often includes equations, pseudocode, and flow diagrams. Acceptable files include 
+            plain text formats (including Markdown and other structured text), OpenDocument Text files (ODT), and PDF documents.`,
             originalInstructions: 'Submitted narrative documentation files.'
         },
         {
@@ -133,19 +132,14 @@ export class UploadPage extends Vue {
         return this.$store.state.release.codebase.identifier;
     }
 
-    showPreview() {
-        (<any>$)('#previewModal').modal('show');
+    created() {
         this.getDownloadPreview();
     }
 
-    closePreview() {
-        (<any>$)('#previewModal').modal('hide');
-        this.folderContents = null;
-    }
-
     async getDownloadPreview() {
-        const response = await codebaseReleaseAPI
-            .downloadPreview({ identifier: this.identifier, version_number: this.version_number});
+        const response = await codebaseReleaseAPI.downloadPreview(
+            { identifier: this.identifier, version_number: this.version_number}
+        );
         if (response.data) {
             this.folderContents = response.data;
         } else {
@@ -164,14 +158,17 @@ export class UploadPage extends Vue {
     }
 
     doneUpload(uploadType: string) {
+        this.getDownloadPreview();
         return this.$store.dispatch('getOriginalFiles', uploadType);
     }
 
     deleteFile(uploadType: string, path: string) {
+        this.getDownloadPreview();
         this.$store.dispatch('deleteFile', {category: uploadType, path});
     }
 
     clear(uploadType: string) {
+        this.getDownloadPreview();
         this.$store.dispatch('clearCategory', {
             identifier: this.identifier, version_number: this.version_number,
             category: uploadType

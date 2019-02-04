@@ -36,17 +36,13 @@ export const schema = yup.object().shape({
             document how to run your computational model, software and data dependencies, accepted inputs and expected
             outputs.
         </p>
-        <p>
-            <small class='text-muted'><em>NOTE: We will be updating this process soon to help us build containerized versions of your
-            computational models - stay tuned!</em></small>
-        </p>
         <c-markdown v-model="release_notes" :errorMsgs="errors.release_notes" name="releaseNotes" rows="3" 
             label="Release Notes" :required="config.release_notes">
         </c-markdown>
         <c-datepicker v-model="embargo_end_date" :errorMsgs="errors.embargo_end_date" name="embargoEndDate" :clearButton="true"
             :required="config.embargo_end_date"
             label="Embargo End Date"
-            help="If this release is currently private, a date when your release will be automatically published">
+            help="The date your private release will be automatically made public">
         </c-datepicker>
         <div :class="['form-group', {'child-is-invalid': errors.os.length > 0}]">
             <label :class="['form-control-label', {'required': config.os}]">Operating System</label>
@@ -55,7 +51,7 @@ export const schema = yup.object().shape({
                 @input="updateOs"
                 name="os" 
                 :options="osOptions" 
-                placeholder="The operating system and version this model has been developed and tested on, e.g., Ubuntu 18.04 or Windows 10"
+                placeholder="The operating system this model has been developed and tested on, e.g., Ubuntu, Mac, or Windows"
                 label="display"
                 track-by="name">
             </multiselect>

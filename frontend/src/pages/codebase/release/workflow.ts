@@ -224,8 +224,14 @@ class PublishModal extends createFormValidator(publishSchema) {
     },
     template: `<div>
         <div v-if="isInitialized">
-            <h1>{{ $store.state.release.codebase.title }} <i>v{{ $store.state.release.version_number }}</i></h1>
-            <h5 class="text-muted">Review Status: {{ reviewStatus }} | <a :href='absolute_url'>View Live</a></h5>
+            <h1>
+            <span v-if='! isPublished' title='This release is currently private and unpublished.' class="disabled btn btn-warning"><i class='fa fa-lock'></i> Private</span>
+            {{ $store.state.release.codebase.title }} <i>v{{ $store.state.release.version_number }}</i>
+            </h1>
+            <h5 class="text-muted">
+            Peer Review Status: {{ reviewStatus }} | <a :href='absolute_url'>View Live</a> 
+            <a class='float-right' href='//forum.comses.net/t/archiving-your-model-1-getting-started/7377'><i class='fa fa-question-circle'></i> Need help? Check out our archiving tutorial</a>
+            </h5>
             <div class='pb-2'>
                 <span class="btn btn-primary" data-target="#editCodebaseModal" data-toggle="modal"><i class='fa fa-edit'></i> Edit Common Metadata | Add Images &amp; Media</span>
                 <div class='float-right'>
@@ -234,7 +240,6 @@ class PublishModal extends createFormValidator(publishSchema) {
                     <span class="disabled btn btn-info" v-if="isPublished"><i class='fa fa-share-alt'></i> Published</span>
                     <span v-else>
                         <span class="btn btn-danger" data-target="#publishCodebaseReleaseModal" data-toggle="modal"><span class='fa fa-share-alt'></span> Publish</span>
-                        <span class="disabled btn btn-info"><i class='fa fa-lock'></i> Private</span>
                     </span>
                 </div>
             </div>
