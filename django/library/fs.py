@@ -71,7 +71,7 @@ ACCEPT_ALL_REGEX = re.compile(r'.*')
 MIMETYPE_MATCHER = {
     FileCategoryDirectories.code: ACCEPT_ALL_REGEX,
     FileCategoryDirectories.data: ACCEPT_ALL_REGEX,
-    FileCategoryDirectories.docs: re.compile(r'text/markdown|application/pdf|text/plain|text/x-rtf'),
+    FileCategoryDirectories.docs: re.compile(r'text/markdown|application/pdf|text/plain|text/x-rtf|application/vnd.oasis.opendocument.text'),
     FileCategoryDirectories.media: re.compile(r'image/.*|video/.*'),
     FileCategoryDirectories.originals: ACCEPT_ALL_REGEX,
     FileCategoryDirectories.results: ACCEPT_ALL_REGEX

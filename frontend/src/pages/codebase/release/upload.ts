@@ -46,12 +46,15 @@ class FileTree extends Vue {
 @Component(<any>{
     template: `<div>
             <p class='mt-3'>
-                A codebase releases should include all code, documentation, input data and simulation results necessary for 
-                someone else (including your future self) to understand or reuse the model. Source code is required. Please take 
-                note of the directory structure that we use for your uploaded files - in particular, data files are uploaded to a 
-                <code>project-root/data</code> directory so if your source code has references to your uploaded data files you 
-                should consider using the relative path <code>../data/&lt;datafile&gt;</code>. This will make the lives of others 
-                who want to download and run your model easier.
+                A codebase release should ideally include the source code, documentation, input data and dependencies necessary for 
+                someone else (including your future self) to understand, replicate, or reuse the model. Please note that we impose a
+                specific directory structure to organize your uploaded files - you can view the active filesystem layout below. 
+                Source code is placed in <code>project-root/code/</code>, data files are placed in <code>project-root/data/</code>,
+                and documentation files are placed in <code>project-root/docs/</code>, and simulation outputs are placed in 
+                <code>project-root/results/</code>. 
+                This means that if your source code has references to your uploaded data files you should consider using the relative path 
+                <code>../data/&lt;datafile&gt;</code> to access those data files. This will make the lives of others 
+                wishing to review, download and run your model easier.
             </p>
             <div class="card card-body bg-light">
                 <h3 class='card-title'>Current Archival Package Filesystem Layout</h3>
@@ -90,7 +93,7 @@ export class UploadPage extends Vue {
             and system files will be removed but the archive's directory structure is preserved.  All file types are currently 
             accepted though files should be stored in open or plaintext formats. We may remove executables or binaries in the
             future.`,
-            originalInstructions: 'Submitted source code file(s):',
+            originalInstructions: 'Submitted source code file(s) to be placed in <project-root>/code/'
         }, 
         {
             uploadType: 'data',
@@ -103,7 +106,7 @@ export class UploadPage extends Vue {
             are currently accepted. Please note that data files uploaded here will be placed in a "<project-root>/data"
             directory so if you'd like for your source code to work immediately when another researcher downloads your 
             codebase, please consider referring to any input data files via a relative path "../data/<your-data-file>".`,
-            originalInstructions: 'Submitted data file(s):'
+            originalInstructions: 'Submitted data file(s) to be placed in <project-root>/data/'
         },
         {
             uploadType: 'docs',
@@ -113,14 +116,14 @@ export class UploadPage extends Vue {
             Protocol offers a good starting point for thinking about how to comprehensively describe agent based models and
             good Narrative Documentation often includes equations, pseudocode, and flow diagrams. Acceptable files include 
             plain text formats (including Markdown and other structured text), OpenDocument Text files (ODT), and PDF documents.`,
-            originalInstructions: 'Submitted narrative documentation files.'
+            originalInstructions: 'Submitted narrative documentation file(s) to be placed in <project-root>/docs/',
         },
         {
             uploadType: 'results',
             acceptedFileTypes: '*/*',
             title: 'Upload Simulation Outputs',
             instructions: 'Upload simulation outputs associated with your computational model. Ideally these data files should be in plain text or other open data formats.',
-            originalInstructions: 'Submitted model output files.'
+            originalInstructions: 'Submitted model output file(s) to be placed in <project-root>/results/'
         }
     ];
 
