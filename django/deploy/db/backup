@@ -1,6 +1,6 @@
 #!/bin/bash
 
 if [ -x /usr/sbin/autopostgresqlbackup ]; then
-	cd /code &&	inv db.backup borg.backup
+    cd /code && /usr/local/bin/inv db.backup borg.backup
 fi
 

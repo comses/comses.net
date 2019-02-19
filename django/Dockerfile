@@ -2,7 +2,7 @@ FROM comses/base:1.2.0
 
 ARG REQUIREMENTS_FILE=requirements-dev.txt
 ARG RUN_SCRIPT=./deploy/dev.sh
-ARG UBUNTU_MIRROR=mirror.math.princeton.edu/pub
+ARG UBUNTU_MIRROR=mirror.pnl.gov/ubuntu
 
 RUN sed -i "s|archive.ubuntu.com|${UBUNTU_MIRROR}|" /etc/apt/sources.list \
         && apt-get update \
@@ -36,7 +36,7 @@ RUN sed -i "s|archive.ubuntu.com|${UBUNTU_MIRROR}|" /etc/apt/sources.list \
 
 COPY ${REQUIREMENTS_FILE} requirements.txt /tmp/
 RUN pip3 install -r /tmp/${REQUIREMENTS_FILE} --no-cache-dir
-COPY ./deploy/db/autopostgresqlbackup /etc/cron.daily/backup
+COPY ./deploy/db/backup /etc/cron.daily/backup
 COPY ./deploy/db/autopostgresqlbackup.conf /etc/default/autopostgresqlbackup
 COPY ./deploy/db/postgresql-backup-pre /etc/
 COPY ./deploy/logrotate.d/* /etc/logrotate.d/
