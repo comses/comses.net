@@ -398,7 +398,7 @@ class MarkdownPage(NavigationMixin, Page):
         default='home/markdown_page.jinja'
     )
     post_date = models.DateField("Post date", default=timezone.now)
-    description = MarkdownField(max_length=512, blank=True,
+    description = MarkdownField(max_length=1024, blank=True,
                                 help_text=_('Markdown-enabled summary text placed below the heading and title.'))
     body = MarkdownField(blank=True, help_text=_('Markdown-enabled main content pane for this page.'))
     jumbotron = models.BooleanField(
@@ -495,7 +495,7 @@ class Journal(index.Indexed, ClusterableModel):
     name = models.CharField(max_length=255)
     url = models.URLField()
     issn = models.CharField(max_length=16, blank=True, help_text=_("Linking ISSN-L for this Journal"))
-    description = MarkdownField(max_length=1024)
+    description = MarkdownField()
     tags = TaggableManager(through=JournalTag, blank=True)
 
     panels = [
