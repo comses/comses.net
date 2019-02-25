@@ -1,4 +1,4 @@
-/home/ubuntu/logs/comsesnet.log /home/ubuntu/logs/django.log /home/ubuntu/logs/uwsgi.log {
+/opt/comses.net/logs/comsesnet.log /opt/comses.net/logs/django.log /opt/comses.net/logs/uwsgi.log {
     rotate 8
     maxsize 50M
     dateext
@@ -13,7 +13,7 @@
     endscript
 }
 
-/home/ubuntu/logs/nginx/*.log {
+/opt/comses.net/logs/nginx/*.log {
     dateext
 	missingok
 	notifempty
