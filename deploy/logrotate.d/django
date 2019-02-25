@@ -1,13 +1,28 @@
-/home/ubuntu/logs/comsesnet.log /home/ubuntu/logs/django.log {
+/home/ubuntu/logs/comsesnet.log /home/ubuntu/logs/django.log /home/ubuntu/logs/uwsgi.log {
     rotate 8
     maxsize 50M
-    weekly
-    notifempty
     dateext
+    weekly
+    missingok
+    notifempty
     compress
     delaycompress
     sharedscripts
     postrotate
         cd /opt/comses.net && docker-compose exec cms touch /code/core/wsgi.py
     endscript
+}
+
+/home/ubuntu/logs/nginx/*.log {
+    dateext
+	missingok
+	notifempty
+	rotate 10
+    weekly
+	compress
+	delaycompress
+	sharedscripts
+	postrotate
+		cd /opt/comses.net && docker-compose restart nginx
+	endscript
 }
