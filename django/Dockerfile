@@ -32,14 +32,13 @@ RUN sed -i "s|archive.ubuntu.com|${UBUNTU_MIRROR}|" /etc/apt/sources.list \
         && mkdir -p /etc/service/django \
         && touch /etc/service/django/run /etc/postgresql-backup-pre \
         && chmod a+x /etc/service/django/run /etc/postgresql-backup-pre \
-        && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+        && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 COPY ${REQUIREMENTS_FILE} requirements.txt /tmp/
 RUN pip3 install -r /tmp/${REQUIREMENTS_FILE} --no-cache-dir
-COPY ./deploy/db/backup /etc/cron.daily/backup
+COPY ./deploy/cron.daily/backup /etc/cron.daily/backup
 COPY ./deploy/db/autopostgresqlbackup.conf /etc/default/autopostgresqlbackup
 COPY ./deploy/db/postgresql-backup-pre /etc/
-COPY ./deploy/logrotate.d/* /etc/logrotate.d/
 COPY ${RUN_SCRIPT} /etc/service/django/run
 WORKDIR /code
 COPY . /code

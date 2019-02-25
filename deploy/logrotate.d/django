@@ -1,0 +1,13 @@
+/home/ubuntu/logs/comsesnet.log /home/ubuntu/logs/django.log {
+    rotate 8
+    maxsize 50M
+    weekly
+    notifempty
+    dateext
+    compress
+    delaycompress
+    sharedscripts
+    postrotate
+        cd /opt/comses.net && docker-compose exec cms touch /code/core/wsgi.py
+    endscript
+}

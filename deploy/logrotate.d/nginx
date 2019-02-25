@@ -1,0 +1,13 @@
+/home/ubuntu/logs/nginx/*.log {
+    dateext
+	missingok
+	notifempty
+	rotate 10
+    weekly
+	compress
+	delaycompress
+	sharedscripts
+	postrotate
+		cd /opt/comses.net && docker-compose restart nginx
+	endscript
+}

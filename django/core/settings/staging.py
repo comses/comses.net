@@ -51,7 +51,7 @@ LOGGING = {
     'disable_existing_loggers': True,
     'root': {
         'level': 'WARNING',
-        'handlers': ['sentry', 'rollingfile', 'console'],
+        'handlers': ['sentry', 'comsesfile'],
     },
     'formatters': {
         'verbose': {
@@ -71,20 +71,16 @@ LOGGING = {
             'formatter': 'verbose'
         },
         'djangofile': {
-            'level': 'DEBUG',
-            'class': 'logging.handlers.RotatingFileHandler',
+            'level': 'WARNING',
+            'class': 'logging.handlers.WatchedFileHandler',
             'formatter': 'verbose',
             'filename': os.path.join(LOG_DIRECTORY, 'django.log'),
-            'backupCount': 6,
-            'maxBytes': 10000000,
         },
-        'rollingfile': {
-            'level': 'DEBUG',
-            'class': 'logging.handlers.RotatingFileHandler',
+        'comsesfile': {
+            'level': 'WARNING',
+            'class': 'logging.handlers.WatchedFileHandler',
             'formatter': 'verbose',
             'filename': os.path.join(LOG_DIRECTORY, 'comsesnet.log'),
-            'backupCount': 6,
-            'maxBytes': 10000000,
         },
     },
     'loggers': {
@@ -94,13 +90,13 @@ LOGGING = {
             'propagate': False,
         },
         'django': {
-            'level': 'DEBUG',
+            'level': 'WARNING',
             'handlers': ['console', 'djangofile'],
             'propagate': False,
         },
         'raven': {
             'level': 'DEBUG',
-            'handlers': ['console', 'djangofile'],
+            'handlers': ['console'],
             'propagate': False,
         },
         'sentry.errors': {
@@ -109,23 +105,18 @@ LOGGING = {
             'propagate': False,
         },
         'home': {
-            'level': 'DEBUG',
-            'handlers': ['console', 'rollingfile'],
+            'level': 'WARNING',
+            'handlers': ['comsesfile'],
             'propagate': False,
         },
         'library': {
-            'level': 'DEBUG',
-            'handlers': ['console', 'rollingfile'],
+            'level': 'WARNING',
+            'handlers': ['comsesfile'],
             'propagate': False,
         },
-        'library.fs': {
-            'level': 'DEBUG',
-            'handlers': ['console', 'rollingfile'],
-            'propagate': False
-        },
         'core': {
-            'level': 'DEBUG',
-            'handlers': ['console', 'rollingfile'],
+            'level': 'WARNING',
+            'handlers': ['comsesfile'],
             'propagate': False,
         },
     }

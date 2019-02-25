@@ -233,7 +233,7 @@ LOGGING = {
     'disable_existing_loggers': True,
     'root': {
         'level': 'DEBUG',
-        'handlers': ['console', 'rollingfile'],
+        'handlers': ['console', 'comsesfile'],
     },
     'formatters': {
         'verbose': {
@@ -249,25 +249,21 @@ LOGGING = {
         },
         'djangofile': {
             'level': 'DEBUG',
-            'class': 'logging.handlers.RotatingFileHandler',
+            'class': 'logging.handlers.WatchedFileHandler',
             'formatter': 'verbose',
             'filename': os.path.join(LOG_DIRECTORY, 'django.log'),
-            'backupCount': 6,
-            'maxBytes': 10000000,
         },
-        'rollingfile': {
+        'comsesfile': {
             'level': 'DEBUG',
-            'class': 'logging.handlers.RotatingFileHandler',
+            'class': 'logging.handlers.WatchedFileHandler',
             'formatter': 'verbose',
             'filename': os.path.join(LOG_DIRECTORY, 'comsesnet.log'),
-            'backupCount': 6,
-            'maxBytes': 10000000,
         },
     },
     'loggers': {
         'bagit': {
             'level': 'WARNING',
-            'handlers': ['console', 'rollingfile'],
+            'handlers': ['console', 'comsesfile'],
             'propagate': False
         },
         'django': {
@@ -277,32 +273,32 @@ LOGGING = {
         },
         'home': {
             'level': 'DEBUG',
-            'handlers': ['console', 'rollingfile'],
+            'handlers': ['console', 'comsesfile'],
             'propagate': False,
         },
         'library': {
             'level': 'DEBUG',
-            'handlers': ['console', 'rollingfile'],
+            'handlers': ['console', 'comsesfile'],
             'propagate': False,
         },
         'core': {
             'level': 'DEBUG',
-            'handlers': ['console', 'rollingfile'],
+            'handlers': ['console', 'comsesfile'],
             'propagate': False,
         },
         'invoke': {
             'level': 'INFO',
-            'handlers': ['console', 'rollingfile'],
+            'handlers': ['console', 'comsesfile'],
             'propagate': False,
         },
         'MARKDOWN': {
             'level': 'ERROR',
-            'handlers': ['console', 'rollingfile'],
+            'handlers': ['console', 'comsesfile'],
             'propagate': False,
         },
         'breadability': {
             'level': 'ERROR',
-            'handlers': ['console', 'rollingfile'],
+            'handlers': ['console', 'comsesfile'],
             'propagate': False,
         },
     }
