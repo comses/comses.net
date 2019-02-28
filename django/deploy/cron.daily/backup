@@ -1,6 +1,3 @@
-#!/bin/bash
+#!/bin/sh
 
-if [ -x /usr/sbin/autopostgresqlbackup ]; then
-    cd /code && /usr/local/bin/inv db.backup borg.backup
-fi
-
+cd /code && /usr/local/bin/inv db.backup borg.backup > /var/log/comses-backup.log 2>&1
