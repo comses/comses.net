@@ -1,4 +1,3 @@
-#!/bin/bash
+#!/bin/sh
 
-cd /code;
-invoke db.pgpass 2> /dev/null;
+/usr/local/bin/inv -r /code db.pgpass > /var/log/db-backup.log 2>&1 
