@@ -29,13 +29,13 @@
         <h1 class='codebase-title pb-4'>{{ codebase.title }} <em>(version {{release.version_number}})</em></h1>
         <div class='metadata'>
             <b>Submitted by:</b> {{ member_profile_href(codebase.submitter.member_profile) }}
-            <b class='pl-2'>Platform:</b>
+            <b class='pl-2'>Software Framework:</b>
             {% for p in release.platform_tags.all() %}
                 {{ search_tag_href(p, category='codebases') }}
             {% else %}
                 None
             {% endfor %}
-            <b class='pl-2'>Language:</b>
+            <b class='pl-2'>Programming Language:</b>
             {% for pl in release.programming_languages.all() %}
                 {{ search_tag_href(pl, category='codebases') }}
             {% endfor %}

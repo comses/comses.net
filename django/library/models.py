@@ -67,7 +67,7 @@ OPERATING_SYSTEMS = Choices(
     ('linux', _('Unix/Linux')),
     ('macos', _('Mac OS')),
     ('windows', _('Windows')),
-    ('platform_independent', _('Platform Independent')),
+    ('platform_independent', _('Operating System Independent')),
 )
 
 

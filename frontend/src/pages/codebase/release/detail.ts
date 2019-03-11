@@ -58,7 +58,7 @@ export const schema = yup.object().shape({
             <div v-if="errors.os.length > 0" class="invalid-feedback">{{ errors.os.join(', ') }}</div>
         </div>
         <c-tagger v-model="platforms" placeholder="Type to add platforms" :required="config.platforms"
-            label="Platforms" help="Modeling platforms (if any) used in this model" :errorMsgs="errors.platforms">
+            label="Software Framework(s)" help="Modeling software frameworks (if any) used by this model" :errorMsgs="errors.platforms">
         </c-tagger>
         <c-tagger v-model="programming_languages" placeholder="Type to add programming languages" :required="config.programming_languages"
             label="Programming Languages" help="Programming languages used in this model" :errorMsgs="errors.programming_languages">
@@ -116,7 +116,7 @@ export default class Detail extends createFormValidator(schema) {
         {name: 'linux', display: 'Unix/Linux'},
         {name: 'macos', display: 'Mac OS'},
         {name: 'windows', display: 'Windows'},
-        {name: 'platform_independent', display: 'Platform Independent'},
+        {name: 'platform_independent', display: 'Operating System Independent'},
     ];
     matchingPlatforms = [];
     isLoadingPlatforms = false;

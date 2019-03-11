@@ -56,7 +56,7 @@ export class Check extends Vue {
                     <div class="card-body">
                         <c-check label="Release notes" :check="detailProgress.release_notes"></c-check>
                         <c-check label="Operating system" :check="detailProgress.os"></c-check>
-                        <c-check label="Platform" :check="detailProgress.platforms"></c-check>
+                        <c-check label="Software Framework" :check="detailProgress.platforms"></c-check>
                         <c-check label="Programming language" :check="detailProgress.programming_languages"></c-check>
                         <c-check label="License" :check="detailProgress.license"></c-check> 
                     </div>
