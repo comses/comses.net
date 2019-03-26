@@ -36,7 +36,7 @@ export const schema = yup.object().shape({
             document how to run your computational model, software and data dependencies, accepted inputs and expected
             outputs.
         </p>
-        <c-markdown v-model="release_notes" :errorMsgs="errors.release_notes" name="releaseNotes" rows="3" 
+        <c-markdown v-model="release_notes" :errorMsgs="errors.release_notes" name="releaseNotes" rows="3"
             label="Release Notes" :required="config.release_notes">
         </c-markdown>
         <c-datepicker v-model="embargo_end_date" :errorMsgs="errors.embargo_end_date" name="embargoEndDate" :clearButton="true"
@@ -46,11 +46,11 @@ export const schema = yup.object().shape({
         </c-datepicker>
         <div :class="['form-group', {'child-is-invalid': errors.os.length > 0}]">
             <label :class="['form-control-label', {'required': config.os}]">Operating System</label>
-            <multiselect 
+            <multiselect
                 :value="osOption"
                 @input="updateOs"
-                name="os" 
-                :options="osOptions" 
+                name="os"
+                :options="osOptions"
                 placeholder="The operating system this model has been developed and tested on, e.g., Ubuntu, Mac, or Windows"
                 label="display"
                 track-by="name">
@@ -58,7 +58,7 @@ export const schema = yup.object().shape({
             <div v-if="errors.os.length > 0" class="invalid-feedback">{{ errors.os.join(', ') }}</div>
         </div>
         <c-tagger v-model="platforms" placeholder="Type to add platforms" :required="config.platforms"
-            label="Software Framework(s)" help="Modeling software frameworks (if any) used by this model" :errorMsgs="errors.platforms">
+            label="Software Framework(s)" help="Modeling software frameworks (e.g., NetLogo, RePast, Mason, CORMAS, Mesa) used by this model" :errorMsgs="errors.platforms">
         </c-tagger>
         <c-tagger v-model="programming_languages" placeholder="Type to add programming languages" :required="config.programming_languages"
             label="Programming Languages" help="Programming languages used in this model" :errorMsgs="errors.programming_languages">
@@ -77,7 +77,7 @@ export const schema = yup.object().shape({
             <small class="form-text text-muted">
             An open source licence to govern use and redistribution of your computational model.
             For more information about open source licenses, you may find the advice at
-            <a target='_blank' href="//choosealicense.com">choosealicense.com</a> or 
+            <a target='_blank' href="//choosealicense.com">choosealicense.com</a> or
             <a target='_blank' href='//opensource.org/licenses'>opensource.org/licenses</a>
             helpful for deciding which license to use.
             </small>
