@@ -24,18 +24,17 @@
     }}
     {{ subnav([
     {'url': '/community/', 'text': 'Community'},
-    {'url': DISCOURSE_BASE_URL, 'text': 'Forum'},
-    {'url': url("home:profile-list"), 'text': 'Users'},
-    {'url': url("home:job-list"), 'text': 'Jobs'},
-    {'url': url("home:digest"), 'text': 'Newsletter', 'active': true},
+    {'url': slugurl('conference'), 'text': 'Virtual Conferences'},
+    {'url': url("home:digest"), 'text': 'CoMSES Digest', 'active': true},
     ])
     }}
     <div class='jumbotron'>
         <h1 class='display-5'>CoMSES Digest Newsletter</h1>
         <p class='pt-4 lead'>
         The CoMSES Digest is a quarterly newsletter edited by <a href='/users/642/'>Dr. John Murphy</a> with relevant
-        comses.net community news. Current and past issues are archived below - if you'd like to receive it in your
-        inbox, please <a href='http://eepurl.com/b8GCUv'>join our mailing list</a>.
+        comses.net community news - you can view all past issues in our archive below. CoMSES Net Full Members are
+        automatically signed up to receive the newsletter, but you can also <a href='http://eepurl.com/b8GCUv'>join our
+        mailing list</a> as a basic member.
         </p>
     </div>
     <div class='content'>

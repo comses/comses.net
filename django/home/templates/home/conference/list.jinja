@@ -1,5 +1,5 @@
 {% extends "base.jinja" %}
-{% from "common.jinja" import breadcrumb %}
+{% from "common.jinja" import breadcrumb, subnav %}
 
 {% block introduction %}
     <h1>CoMSES Virtual Conferences</h1>
@@ -7,6 +7,7 @@
 
 {% block content %}
     {{ breadcrumb([{'url': '/community/', 'text': 'Community'}, {'text': 'CoMSES Virtual Conferences' }])}}
+    {{ subnav(page.get_navigation_links()) }}
     <p class='lead'>
     CoMSES Net hosted its inaugural virtual conference in 2017 to provide an interactive venue for the computational
     modeling community with video presentations and feedback provided in an asynchronous format

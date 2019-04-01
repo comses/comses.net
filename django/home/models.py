@@ -645,7 +645,7 @@ class ConferencePage(Page):
     ]
 
 
-class ConferenceIndexPage(Page):
+class ConferenceIndexPage(Page, NavigationMixin):
 
     template = 'home/conference/list.jinja'
 
