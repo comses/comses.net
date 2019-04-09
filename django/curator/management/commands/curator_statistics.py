@@ -20,8 +20,8 @@ class Command(BaseCommand):
         parser.add_argument('--from', help='isoformat start date (yyyy-mm-dd) e.g., --from 2018-03-15')
         parser.add_argument('--to', help='isoformat end date (yyyy-mm-dd) e.g., --to 2018-06-01. Blank defaults to today.', default=None)
         parser.add_argument('--directory', '-d', help='directory to store statistics in', default='/shared/statistics')
-        parser.add_argument('--aggregations', '-a', default='release,codebase,ip,new',
-                            help='aggregations - comma separated list of release, codebase, ip')
+        parser.add_argument('--aggregations', '-a', default='release,codebase,ip,new,reviewed',
+                            help='comma separated list of things to aggregate, default is release, codebase, ip, new, reviewed')
 
     def export_release_download_statistics(self, downloads, dest):
         releases = CodebaseRelease.objects.filter(id__in=downloads.values_list('release_id', flat=True)) \
@@ -59,18 +59,22 @@ class Command(BaseCommand):
             for result in results.iterator():
                 writer.writerow(result)
 
-    def export_new_and_updated_codebases(self, filters, directory):
-        in_range_releases = CodebaseRelease.objects.filter(**filters)
-        if 'date_created__range' in filters:
-            out_range_releases = CodebaseRelease.objects.exclude(date_created__gte=filters['date_created__range'][0])
-        else:
-            out_range_releases = CodebaseRelease.objects.exclude(**filters)
-        new_codebases = Codebase.objects.public().filter(releases__in=in_range_releases)\
-            .exclude(releases__in=out_range_releases).distinct().order_by('title')
-        updated_codebases = Codebase.objects.public().filter(releases__in=in_range_releases)\
-            .filter(releases__in=out_range_releases).distinct().order_by('title')
+    def export_reviewed_codebases(self, filters, directory, filename='reviewed-releases.csv'):
+        header = ['url', 'title', 'date', 'doi']
+        releases = CodebaseRelease.objects.filter(**filters, peer_reviewed=True)
+        with open(os.path.join(directory, filename), 'w') as out:
+            writer = csv.DictWriter(out, fieldnames=header)
+            writer.writeheader()
+            for release in releases.iterator():
+                writer.writerow({
+                    'url': release.get_absolute_url(),
+                    'title': release.title,
+                    'date': release.last_modified
+                })
 
-        max_dates_bulk = {r['codebase_id']: r['date'] for r in in_range_releases.values('codebase_id').annotate(date=Max('date_created'))}
+    def export_new_and_updated_codebases(self, filters, directory):
+        new_codebases, updated_codebases, releases = Codebase.objects.recently_updated(filters)
+        max_dates_bulk = {r['codebase_id']: r['date'] for r in releases.values('codebase_id').annotate(date=Max('date_created'))}
         for qs, filename in [(new_codebases, 'new_codebases.csv'), (updated_codebases, 'updated_codebases.csv')]:
             with open(os.path.join(directory, filename), 'w', newline='') as f:
                 fieldnames = ['url', 'title', 'date']
@@ -107,16 +111,22 @@ class Command(BaseCommand):
         directory = options['directory']
 
         os.makedirs(directory, exist_ok=True)
-        downloads = CodebaseReleaseDownload.objects.filter(release__in=CodebaseRelease.objects.public())\
-            .filter(**filters)
+        downloads = CodebaseReleaseDownload.objects.filter(
+            release__in=CodebaseRelease.objects.public()).filter(
+            **filters)
         if 'codebase' in aggregations:
-            self.export_codebase_download_statistics(downloads,
-                                                     dest=os.path.join(directory, 'codebase_download_counts.csv'))
+            self.export_codebase_download_statistics(
+                downloads,
+                dest=os.path.join(directory, 'codebase_download_counts.csv'))
         if 'release' in aggregations:
-            self.export_release_download_statistics(downloads,
-                                                    dest=os.path.join(directory, 'release_download_counts.csv'))
+            self.export_release_download_statistics(
+                downloads,
+                dest=os.path.join(directory, 'release_download_counts.csv'))
         if 'ip' in aggregations:
-            self.export_ip_download_statistics(downloads,
-                                               dest=os.path.join(directory, 'ip_download_counts.csv'))
+            self.export_ip_download_statistics(
+                downloads,
+                dest=os.path.join(directory, 'ip_download_counts.csv'))
         if 'new' in aggregations:
             self.export_new_and_updated_codebases(filters=filters, directory=directory)
+        if 'reviewed' in aggregations:
+            self.export_reviewed_codebases(filters=filters, directory=directory)

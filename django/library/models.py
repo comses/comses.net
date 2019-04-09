@@ -292,6 +292,24 @@ class CodebaseQuerySet(models.QuerySet):
     def peer_reviewed(self):
         return self.public().filter(peer_reviewed=True)
 
+    def recently_updated(self, date_filters, **kwargs):
+        """ Returns a tuple of three querysets containing new codebases, recently updated codebases, and
+        all releases matching the date filters, in order """
+        # FIXME: the query logic here seems inefficient, check if we should optimize this later
+        # copy pasted from the curator_statistics.py management command
+        releases = CodebaseRelease.objects.filter(**date_filters, **kwargs)
+        if 'date_created__range' in date_filters:
+            updated_releases = CodebaseRelease.objects.exclude(date_created__gte=date_filters['date_created__range'][0])
+        else:
+            updated_releases = CodebaseRelease.objects.exclude(**date_filters)
+        new_codebases = self.public().filter(
+            releases__in=releases
+        ).exclude(releases__in=updated_releases).distinct().order_by('title')
+        updated_codebases = self.public().filter(
+            releases__in=releases.intersection(updated_releases)
+        ).distinct().order_by('title')
+        return new_codebases, updated_codebases, releases
+
 
 @add_to_comses_permission_whitelist
 class Codebase(index.Indexed, ClusterableModel):
@@ -659,9 +677,10 @@ class Codebase(index.Indexed, ClusterableModel):
         }
 
     def __str__(self):
-        live = repr(self.live) if hasattr(self, 'live') else 'Unknown'
-        return "{0} {1} identifier={2} live={3}".format(self.title, self.date_created, repr(self.identifier),
-                                                        live)
+        return "{0} {1} identifier={2} live={3}".format(self.title,
+                                                        self.date_created,
+                                                        str(self.identifier),
+                                                        self.live)
 
 
 class CodebaseImageQuerySet(ImageQuerySet):
