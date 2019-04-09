@@ -295,9 +295,12 @@ class CodebaseQuerySet(models.QuerySet):
     def recently_updated(self, date_filters, **kwargs):
         """ Returns a tuple of three querysets containing new codebases, recently updated codebases, and
         all releases matching the date filters, in order """
-        # FIXME: the query logic here seems inefficient, check if we should optimize this later
+        # FIXME: the query logic here seems inefficient and possibly wrong as it does not seem to report
+        # clearly updated 
+        # valid results in updated_codebases, check again later
         # copy pasted from the curator_statistics.py management command
         releases = CodebaseRelease.objects.filter(**date_filters, **kwargs)
+
         if 'date_created__range' in date_filters:
             updated_releases = CodebaseRelease.objects.exclude(date_created__gte=date_filters['date_created__range'][0])
         else:
@@ -306,8 +309,8 @@ class CodebaseQuerySet(models.QuerySet):
             releases__in=releases
         ).exclude(releases__in=updated_releases).distinct().order_by('title')
         updated_codebases = self.public().filter(
-            releases__in=releases.intersection(updated_releases)
-        ).distinct().order_by('title')
+            releases__in=releases).filter(
+            releases__in=updated_releases).distinct().order_by('title')
         return new_codebases, updated_codebases, releases
 
 
