@@ -295,9 +295,8 @@ class CodebaseQuerySet(models.QuerySet):
     def recently_updated(self, date_filters, **kwargs):
         """ Returns a tuple of three querysets containing new codebases, recently updated codebases, and
         all releases matching the date filters, in order """
-        # FIXME: the query logic here seems inefficient and possibly wrong as it does not seem to report
-        # clearly updated 
-        # valid results in updated_codebases, check again later
+        # FIXME: logic might need to be adjusted, updated releases that have been recently modified are not captured
+        # (would need to also query on last_modified I think)
         # copy pasted from the curator_statistics.py management command
         releases = CodebaseRelease.objects.filter(**date_filters, **kwargs)
 
@@ -373,6 +372,7 @@ class Codebase(index.Indexed, ClusterableModel):
     search_fields = [
         index.SearchField('title', partial_match=True, boost=10),
         index.SearchField('description', partial_match=True),
+        index.SearchField('concatenated_tags', partial_match=True),
         index.FilterField('peer_reviewed'),
         index.FilterField('featured'),
         index.FilterField('is_replication'),
@@ -388,6 +388,10 @@ class Codebase(index.Indexed, ClusterableModel):
     ]
 
     HAS_PUBLISHED_KEY = True
+
+    @property
+    def concatenated_tags(self):
+        return ' '.join(self.tags.values_list('name', flat=True))
 
     @property
     def deletable(self):
