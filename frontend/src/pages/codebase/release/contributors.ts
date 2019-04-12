@@ -300,12 +300,33 @@ class EditReleaseContributor extends createFormValidator(releaseContributorSchem
     }
 }
 
+
+class ContributorResponseHandler extends HandlerShowSuccessMessage {
+    updateListServerValidationMessage(errors) {
+        this.component.statusMessages = _.concat({
+                classNames: 'alert alert-danger',
+                message: 'Server Side Validation Errors'
+            },
+            _.zipWith(errors, (<Array<CodebaseContributor>>this.state), (error, releaseContributor) => ({
+                releaseContributor,
+                error
+            }))
+                .filter(value => !_.isEmpty(value.error))
+                .map(value => {
+                    return {
+                        classNames: 'alert alert-danger',
+                        message: `${displayContributorLabel(value.releaseContributor.contributor)}: ${JSON.stringify(value.error)}`
+                    }
+                }));
+    }
+}
+
 @Component(<any>{
     // language=Vue
     template: `<div>
         <p class='mt-3'>
             Please list the contributors that should be included in a citation for this software release. Ordering is
-            important, as is the role of the contributor. You can drag and drop release contributors via the 
+            important, as is the role of the contributor. You can drag and drop release contributors via the
             <i class='fa fa-exchange'></i> button to change the order in which they appear, edit them <i class='fa fa-edit'></i>, or
             remove them <i class='fa fa-remove'></i>.
         </p>
@@ -313,6 +334,21 @@ class EditReleaseContributor extends createFormValidator(releaseContributorSchem
         contributor for a given release. Make sure you click "Save" after you're done making changes. Unsaved release
         contributors display in yellow.
         </p>
+        <div class='mt-2'>
+            You can add new contributors via the form below. If you can't find an existing Contributor in our system,
+            you can add a new one via the
+            <button class='btn btn-primary btn-sm'><i class='fa fa-plus'></i></button> button. After you've selected a contributor, click the
+            <button class='btn btn-sm btn-primary'><i class='fa fa-user-plus'></i> Register</button> button to register
+            them as a cited contributor to this release.
+        </div>
+        <c-edit-release-contributor :releaseContributor="releaseContributor"
+                @save="saveReleaseContributor" @cancel="cancelReleaseContributor" ref="releaseContributor"
+                @editContributor="editContributor">
+        </c-edit-release-contributor>
+        <c-edit-contributor :contributor="contributor" ref="contributor"
+                            @save="saveContributor" @cancel="cancelContributor">
+        </c-edit-contributor>
+        <hr>
         <label class="form-control-label required">Current Release Contributors</label>
         <draggable v-model="state" v-if="state.length > 0" @end="refreshStatusMessage">
             <ul v-for="releaseContributor in state" :key="releaseContributor._id" class="list-group">
@@ -333,23 +369,8 @@ class EditReleaseContributor extends createFormValidator(releaseContributorSchem
             </ul>
         </draggable>
         <div class="alert alert-primary" role="alert" v-else>No contributors</div>
-        <button class="mt-2 btn btn-primary" ref="saveReleaseContributorsBtn" @click="save">Save</button>
+        <button class="pull-right mt-2 btn btn-primary" ref="saveReleaseContributorsBtn" @click="save">Save</button>
         <c-message-display :messages="statusMessages" @clear="statusMessages = []" />
-        <hr>
-        <div class='mt-2'>
-            You can add new contributors via the form below. If you can't find an existing Contributor in our system,
-            you can add a new one via the 
-            <button class='btn btn-primary btn-sm'><i class='fa fa-plus'></i></button> button. After you've selected a contributor, click the 
-            <button class='btn btn-sm btn-primary'><i class='fa fa-user-plus'></i> Register</button> button to register
-            them as a cited contributor to this release.
-        </div>
-        <c-edit-release-contributor :releaseContributor="releaseContributor"
-                @save="saveReleaseContributor" @cancel="cancelReleaseContributor" ref="releaseContributor"
-                @editContributor="editContributor">
-        </c-edit-release-contributor>
-        <c-edit-contributor :contributor="contributor" ref="contributor"
-                            @save="saveContributor" @cancel="cancelContributor">
-        </c-edit-contributor>
     </div>`,
     components: {
         'c-checkbox': Checkbox,
@@ -419,7 +440,10 @@ class EditContributors extends Vue {
         const response = await codebaseReleaseAPI.updateContributors({
             identifier,
             version_number
-        }, new HandlerShowSuccessMessage(this));
+        }, new ContributorResponseHandler(this));
+        if (_.isEmpty(response) || response.status < 200 || response.status >= 300) {
+            return;
+        }
         await this.$store.dispatch('getCodebaseRelease', {identifier, version_number});
         this.initialize();
     }

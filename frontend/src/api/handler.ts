@@ -125,17 +125,33 @@ export class HandlerShowSuccessMessage implements CreateOrUpdateHandler {
         return this.component.state;
     }
 
+    updateListServerValidationMessage(data) {
+        this.component.statusMessages = data
+            .map((error, index) => ({error, index}))
+            .filter(value => !_.isEmpty(value.error))
+            .map(value => ({
+                classNames: 'alert alert-danger',
+                message: `Validation error at element ${value.index}: ${value.error}`
+            }));
+    }
+
     handleOtherError(response_or_network_error) {
         const msg = baseHandleOtherError(response_or_network_error);
         this.component.statusMessages = [{classNames: 'alert alert-danger', message: msg}];
     }
 
     handleServerValidationError(response: { response: AxiosResponse}) {
-        const message = response.response.data.non_field_errors;
-        this.component.statusMessages = [{
-            classNames: 'alert alert-danger',
-            message: message ? `Server side validation failed: ${message}` : 'Server side validation failed'
-        }];
+        const data = response.response.data;
+        if (_.has(data, 'non_field_errors')) {
+            const errors = data.non_field_errors;
+            this.component.statusMessages = [{
+                classNames: 'alert alert-danger',
+                message: errors ? `Server side validation failed: ${errors}` : 'Server side validation failed'
+            }];
+        } else {
+            this.updateListServerValidationMessage(data);
+        }
+
     }
 
     handleSuccessWithDataResponse(response: AxiosResponse) {
@@ -220,6 +236,7 @@ export class Api {
         try {
             const response = await this.axios({method, url, data: component.state, config});
             component.handleSuccessWithDataResponse(response);
+            return response;
         } catch (error) {
             if (error.response.status === 400) {
                 component.handleServerValidationError(error);
