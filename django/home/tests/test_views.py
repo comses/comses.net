@@ -143,7 +143,7 @@ class WagtailAdminLoginTestCase(TestCase):
 
     def test_regular_login(self):
         regular_user = self.user_factory.create()
-        self.assertLoginStatusCodeMatchForUser(regular_user, status.HTTP_302_FOUND)
+        self.assertLoginStatusCodeMatchForUser(regular_user, status.HTTP_403_FORBIDDEN)
 
     def test_superuser_login(self):
         superuser = self.user_factory.create(is_superuser=True)
@@ -151,7 +151,7 @@ class WagtailAdminLoginTestCase(TestCase):
 
     def test_staff_login(self):
         staff = self.user_factory.create(is_staff=True)
-        self.assertLoginStatusCodeMatchForUser(staff, status.HTTP_302_FOUND)
+        self.assertLoginStatusCodeMatchForUser(staff, status.HTTP_403_FORBIDDEN)
 
     def test_access_admin_login(self):
         content_type = ContentType.objects.get(model='admin')
