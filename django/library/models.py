@@ -1493,6 +1493,7 @@ class PeerReviewInvitation(models.Model):
             context={'invitation': self, 'feedback': feedback},
             to=[self.reviewer_email, self.editor.email],
         )
+        return feedback
 
     @transaction.atomic
     def decline(self):

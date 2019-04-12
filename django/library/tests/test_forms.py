@@ -16,7 +16,7 @@ class PeerReviewerFeedbackFormTestCase(ReviewSetup, TestCase):
             editor=self.editor,
             candidate_reviewer=self.reviewer
         )
-        feedback = invitation.latest_feedback()
+        feedback = invitation.latest_feedback
 
         # Submitted changes should be validated
         data = PeerReviewerFeedbackReviewerForm(instance=feedback).initial.copy()
