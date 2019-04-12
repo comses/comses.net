@@ -430,7 +430,7 @@ class PeerReviewFeedbackTestCase(ReviewSetup, ResponseStatusCodesMixin, TestCase
         cls.invitation = invitation_factory.create()
 
     def setUp(self):
-        self.feedback = self.invitation.latest_feedback()
+        self.feedback = self.invitation.latest_feedback
 
     def test_can_only_access_feedback_if_invitation_accepted(self):
         feedback, _ = self.invitation.accept()
