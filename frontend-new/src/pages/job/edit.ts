@@ -7,7 +7,7 @@ import DatePicker from '@/components/forms/datepicker'
 import {JobAPI} from 'api/index'
 import * as _ from 'lodash'
 import * as yup from 'yup'
-import {Job} from 'store/common'
+import {Job} from '@/store/common'
 import {createFormValidator} from "pages/form"
 import {Component, Prop} from "vue-property-decorator";
 import {Mixin} from "util/vue-mixin";

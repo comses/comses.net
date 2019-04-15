@@ -1,7 +1,7 @@
 import {Component, Prop} from 'vue-property-decorator'
 import Vue from 'vue'
 import * as _ from 'lodash'
-import {StatusMessages} from "store/common";
+import {StatusMessages} from "@/store/common";
 
 @Component({
     template: `<div class="card border-light" v-if="messages && messages.length > 0">

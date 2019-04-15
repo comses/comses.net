@@ -3,7 +3,7 @@ import Vue from 'vue'
 import {
     CalendarEvent, CodebaseContributor, Contributor, emptyContributor, emptyReleaseContributor,
     User
-} from 'store/common'
+} from '@/store/common'
 import {CodebaseReleaseAPI, ContributorAPI} from 'api'
 import {store} from './store'
 import Checkbox from '@/components/forms/checkbox'
