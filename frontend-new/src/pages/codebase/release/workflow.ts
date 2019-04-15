@@ -9,7 +9,7 @@ import {UploadPage} from './upload'
 import CodebaseReleaseMetadata from './detail'
 import CodebaseEditForm from '../edit'
 import {store} from './store'
-import {CreateOrUpdateHandler} from "api/handler";
+import {CreateOrUpdateHandler} from "@/api/handler";
 import {CodebaseReleaseAPI, CodebaseAPI, ReviewEditorAPI} from "api";
 import * as _ from 'lodash';
 import * as yup from'yup';

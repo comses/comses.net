@@ -4,7 +4,7 @@ import * as _ from 'lodash'
 import { expect } from 'chai'
 
 import * as stringify from 'stringify-object'
-import {EventAPI} from "api/index";
+import {EventAPI} from "@/api/index";
 
 function addDaysToDate(date: Date, days: number): Date {
     const newDate = new Date(date.valueOf());

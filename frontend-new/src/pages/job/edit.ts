@@ -4,13 +4,13 @@ import Tagger from '@/components/tagger'
 import Input from '@/components/forms/input'
 import MessageDisplay from '@/components/message_display'
 import DatePicker from '@/components/forms/datepicker'
-import {JobAPI} from 'api/index'
+import {JobAPI} from '@/api/index'
 import * as _ from 'lodash'
 import * as yup from 'yup'
 import {Job} from '@/store/common'
 import {createFormValidator} from "@/pages/form"
 import {Component, Prop} from "vue-property-decorator";
-import {Mixin} from "util/vue-mixin";
+import {Mixin} from "@/util/vue-mixin";
 import {HandlerWithRedirect} from "handler";
 
 const api = new JobAPI();

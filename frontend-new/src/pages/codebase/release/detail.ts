@@ -1,6 +1,6 @@
 import * as Vue from 'vue'
 import * as _ from 'lodash'
-import {CodebaseReleaseAPI} from "api/index";
+import {CodebaseReleaseAPI} from "@/api/index";
 import {Component, Prop, Watch} from 'vue-property-decorator'
 import Checkbox from '@/components/forms/checkbox'
 import Datepicker from '@/components/forms/datepicker'

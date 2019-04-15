@@ -1,7 +1,7 @@
 import {Component, Prop} from 'vue-property-decorator'
 import Vue from 'vue'
 import Vuex from 'vuex'
-import {CodebaseReleaseAPI} from "api/index";
+import {CodebaseReleaseAPI} from "@/api/index";
 import {Upload} from "@/components/upload";
 import * as _ from 'lodash';
 

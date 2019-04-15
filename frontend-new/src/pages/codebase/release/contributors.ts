@@ -19,7 +19,7 @@ import * as _ from 'lodash'
 import * as yup from 'yup'
 import {createDefaultValue, createFormValidator} from '@/pages/form'
 import * as _$ from 'jquery'
-import {HandlerShowSuccessMessage} from "api/handler";
+import {HandlerShowSuccessMessage} from "@/api/handler";
 
 const $: any = _$;
 

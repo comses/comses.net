@@ -1,7 +1,7 @@
 import {AxiosRequestConfig, AxiosResponse} from 'axios'
 import * as queryString from 'query-string'
 import {api} from 'connection'
-import {CreateOrUpdateHandler} from "api/handler"
+import {CreateOrUpdateHandler} from "@/api/handler"
 import {pickBy, isEmpty} from 'lodash'
 
 abstract class BaseAPI {

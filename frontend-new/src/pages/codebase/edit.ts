@@ -1,6 +1,6 @@
 import Vue from 'vue'
 import {Component, Prop} from 'vue-property-decorator'
-import {CodebaseAPI, CodebaseReleaseAPI} from "api/index";
+import {CodebaseAPI, CodebaseReleaseAPI} from "@/api/index";
 import Checkbox from '@/components/forms/checkbox'
 import Input from '@/components/forms/input'
 import Tagger from '@/components/tagger'
