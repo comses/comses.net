@@ -6,8 +6,8 @@ RUN sh -c 'echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable 
 RUN apt-get update && apt-get install -y google-chrome-stable realpath nasm libjpeg-turbo-progs
 
 WORKDIR /code
-COPY package.json yarn.lock /code/
+COPY package.json /code
 RUN yarn install
 # Separating to ensure that changes to the below files won't cause dependency reinstall
-COPY babel.config.js .browserslistrc cypress.json jest.config.js package.json postcss.config.js tsconfig.json tslint.json /code/
-CMD ["yarn", "serve"]
+COPY babel.config.js cypress.json jest.config.js postcss.config.js tsconfig.json tslint.json vue.config.js /code/
+CMD ["yarn", "serve", "--port", "3000", "--host", "0.0.0.0"]

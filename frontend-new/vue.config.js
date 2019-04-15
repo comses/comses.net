@@ -1,10 +1,8 @@
 module.exports = {
-    pages: {
-        codebase_detail: {
-            entry: './src/views/codebase/detail.vue'
-        },
-        codebase_list: {
-            entry: './src/views/codebase/list.vue'
-        }
-    }
-};
+  pages: {
+    example: 'src/pages/example.ts',
+    index: 'src/main.ts',
+		other: 'src/pages/other.ts'
+  },
+  runtimeCompiler: true
+}
