@@ -2,7 +2,7 @@ import {Component, Prop} from 'vue-property-decorator'
 import Vue from 'vue'
 import {Invitations} from './invitations'
 import {Feedback} from './feedback'
-import {ReviewEditorAPI} from "api";
+import {ReviewEditorAPI} from "@/api";
 import {api} from "connection";
 import {EventLog} from "./event_log";
 import * as _ from 'lodash';
