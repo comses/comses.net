@@ -1,18 +1,18 @@
 import {Component, Prop} from 'vue-property-decorator'
 import * as Vue from 'vue'
-import Markdown from 'components/forms/markdown'
-import Tagger from 'components/tagger'
-import Input from 'components/forms/input'
-import Datepicker from 'components/forms/datepicker';
-import TextArea from 'components/forms/textarea'
-import MessageDisplay from 'components/message_display'
-import EditItems from 'components/edit_items'
+import Markdown from '@/components/forms/markdown'
+import Tagger from '@/components/tagger'
+import Input from '@/components/forms/input'
+import Datepicker from '@/components/forms/datepicker';
+import TextArea from '@/components/forms/textarea'
+import MessageDisplay from '@/components/message_display'
+import EditItems from '@/components/edit_items'
 import {ProfileAPI} from 'api'
 import * as _ from 'lodash'
 import {createFormValidator} from 'pages/form'
 import {HandlerWithRedirect} from "handler";
 import * as yup from 'yup'
-import Checkbox from "components/forms/checkbox";
+import Checkbox from "@/components/forms/checkbox";
 
 export const schema = yup.object().shape({
     given_name: yup.string().required(),

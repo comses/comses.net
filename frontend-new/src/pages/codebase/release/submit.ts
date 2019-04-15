@@ -1,8 +1,8 @@
 import { Component, Prop, Watch } from 'vue-property-decorator'
 import Vue from 'vue'
-import Checkbox from 'components/forms/checkbox'
+import Checkbox from '@/components/forms/checkbox'
 import Multiselect from 'vue-multiselect'
-import Input from 'components/forms/input'
+import Input from '@/components/forms/input'
 
 @Component({
     template: `<div>

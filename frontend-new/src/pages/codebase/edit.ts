@@ -1,16 +1,16 @@
 import Vue from 'vue'
 import {Component, Prop} from 'vue-property-decorator'
 import {CodebaseAPI, CodebaseReleaseAPI} from "api/index";
-import Checkbox from 'components/forms/checkbox'
-import Input from 'components/forms/input'
-import Tagger from 'components/tagger'
-import MarkdownEditor from 'components/forms/markdown'
-import MessageDisplay from 'components/message_display'
+import Checkbox from '@/components/forms/checkbox'
+import Input from '@/components/forms/input'
+import Tagger from '@/components/tagger'
+import MarkdownEditor from '@/components/forms/markdown'
+import MessageDisplay from '@/components/message_display'
 import {createFormValidator} from "pages/form"
 import * as yup from 'yup'
 import * as _ from 'lodash'
 import {HandlerWithRedirect, HandlerShowSuccessMessage, DismissOnSuccessHandler} from "handler"
-import {Upload} from "components/upload";
+import {Upload} from "@/components/upload";
 
 export const schema = yup.object().shape({
     title: yup.string().required(),

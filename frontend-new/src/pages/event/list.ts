@@ -1,5 +1,5 @@
 import {SearchEvents} from 'pages/event/search';
-import {SortBy} from "components/sort-by";
+import {SortBy} from "@/components/sort-by";
 
 new SearchEvents().$mount('#sidebar');
 new SortBy({

@@ -1,9 +1,9 @@
 import {Component, Prop} from 'vue-property-decorator'
-import {Search} from 'components/search'
+import {Search} from '@/components/search'
 import Vue from 'vue'
-import DatePicker from 'components/forms/datepicker'
-import Input from 'components/forms/input'
-import Tagger from 'components/tagger'
+import DatePicker from '@/components/forms/datepicker'
+import Input from '@/components/forms/input'
+import Tagger from '@/components/tagger'
 import * as queryString from 'query-string'
 import * as _ from 'lodash'
 import {JobAPI} from 'api';

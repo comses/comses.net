@@ -1,5 +1,5 @@
 import {Component, Prop} from 'vue-property-decorator'
-import BaseControl from 'components/forms/base'
+import BaseControl from '@/components/forms/base'
 import * as draggable from 'vuedraggable'
 
 @Component({

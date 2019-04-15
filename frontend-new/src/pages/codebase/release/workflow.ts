@@ -4,7 +4,7 @@ import Vuex from 'vuex'
 import VueRouter from 'vue-router'
 
 import Contributors from './contributors'
-import {Upload} from "components/upload";
+import {Upload} from "@/components/upload";
 import {UploadPage} from './upload'
 import CodebaseReleaseMetadata from './detail'
 import CodebaseEditForm from '../edit'
@@ -16,9 +16,9 @@ import * as yup from'yup';
 import {Progress} from "pages/codebase/release/progress";
 import {createFormValidator} from "pages/form";
 import {HandlerWithRedirect} from "handler";
-import Input from "components/forms/input";
-import MessageDisplay from "components/message_display";
-import {ConfirmationModal} from "components/confirmation_modal";
+import Input from "@/components/forms/input";
+import MessageDisplay from "@/components/message_display";
+import {ConfirmationModal} from "@/components/confirmation_modal";
 
 const codebaseReleaseAPI = new CodebaseReleaseAPI();
 const codebaseAPI = new CodebaseAPI();

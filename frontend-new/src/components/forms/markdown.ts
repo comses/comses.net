@@ -1,4 +1,4 @@
-import BaseControl from 'components/forms/base'
+import BaseControl from '@/components/forms/base'
 import {Component, Prop} from 'vue-property-decorator'
 import {markdownEditor as MarkdownEditor} from 'vue-simplemde'
 
