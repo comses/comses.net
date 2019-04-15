@@ -1,0 +1,23 @@
+@import '~vue-multiselect/dist/vue-multiselect.min.css';
+
+.multiselect__tags {
+  border-radius: 0;
+}
+
+.multiselect--above .multiselect__content-wrapper {
+  z-index: 3;
+}
+
+.multiselect__option {
+  white-space: normal;
+}
+
+.child-is-invalid {
+  .multiselect__tags {
+    border-color: $form-feedback-invalid-color;
+  }
+
+  .invalid-feedback {
+    display: block;
+  }
+}
