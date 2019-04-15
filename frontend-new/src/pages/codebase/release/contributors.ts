@@ -17,7 +17,7 @@ import Username from '@/components/username'
 import * as draggable from 'vuedraggable'
 import * as _ from 'lodash'
 import * as yup from 'yup'
-import {createDefaultValue, createFormValidator} from 'pages/form'
+import {createDefaultValue, createFormValidator} from '@/pages/form'
 import * as _$ from 'jquery'
 import {HandlerShowSuccessMessage} from "api/handler";
 

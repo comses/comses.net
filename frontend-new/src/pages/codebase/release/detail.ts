@@ -11,8 +11,8 @@ import Input from '@/components/forms/input'
 import Multiselect from 'vue-multiselect'
 import Tagger from '@/components/tagger'
 import * as yup from 'yup'
-import {createFormValidator} from 'pages/form'
-import {HandlerShowSuccessMessage} from 'api/handler'
+import {createFormValidator} from '@/pages/form'
+import {HandlerShowSuccessMessage} from '@/api/handler'
 
 const codebaseReleaseAPI = new CodebaseReleaseAPI();
 

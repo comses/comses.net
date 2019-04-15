@@ -9,7 +9,7 @@ import MessageDisplay from '@/components/message_display';
 import * as _ from 'lodash';
 import {Component, Prop} from "vue-property-decorator";
 import * as yup from 'yup';
-import {createFormValidator, reachRelated} from "pages/form";
+import {createFormValidator, reachRelated} from "@/pages/form";
 import {Mixin} from 'util/vue-mixin';
 import {HandlerWithRedirect} from "handler";
 

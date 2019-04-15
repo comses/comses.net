@@ -1,5 +1,5 @@
 import EditEvent, {schema} from './edit'
-import {createDefaultValue} from "pages/form"
+import {createDefaultValue} from "@/pages/form"
 import * as _ from 'lodash'
 import { expect } from 'chai'
 

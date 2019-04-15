@@ -1,5 +1,5 @@
 import EditJob, {schema} from './edit'
-import {createDefaultValue} from "pages/form"
+import {createDefaultValue} from "@/pages/form"
 import {JobAPI} from "api"
 import * as _ from 'lodash'
 import { expect } from 'chai'

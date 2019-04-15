@@ -1,4 +1,4 @@
-import {SearchCodebases} from 'pages/codebase/search';
+import {SearchCodebases} from '@/pages/codebase/search';
 import {SortBy} from '@/components/sort-by';
 import * as queryString from 'query-string';
 

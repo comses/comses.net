@@ -1,5 +1,5 @@
 import EditCodebase, {schema} from './edit'
-import {createDefaultValue} from 'pages/form'
+import {createDefaultValue} from '@/pages/form'
 import {CodebaseAPI} from 'api'
 import * as _ from 'lodash'
 import { expect } from 'chai'
