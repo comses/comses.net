@@ -1,7 +1,7 @@
-import pathlib
-
 import io
+import pathlib
 import shutil
+
 from django.conf import settings
 from django.test import TestCase
 from django.urls import reverse
@@ -392,31 +392,37 @@ class PeerReviewInvitationTestCase(ReviewSetup, ResponseStatusCodesMixin, TestCa
         invitation_factory = PeerReviewInvitationFactory(editor=self.editor, reviewer=self.reviewer, review=self.review)
         self.invitation = invitation_factory.create()
 
-    def test_can_only_accept_invite_once(self):
+    def test_accept_invitation_multiple_times(self):
         url = self.invitation.get_absolute_url()
         get_invitation_page_response = self.client.get(url)
         self.assertResponseOk(get_invitation_page_response)
         post_invitation_page_response = self.client.post(url, data={'accepted': True})
         self.assertResponseFound(post_invitation_page_response)
 
-        # FIXME: no longer raise permission denied for a get, only a post
-        # get_invitation_page_response_again = self.client.get(url)
-        # self.assertResponsePermissionDenied(get_invitation_page_response_again)
-        post_invitation_page_response_again = self.client.post(url, data={'accepted': True})
-        self.assertResponsePermissionDenied(post_invitation_page_response_again)
+        feedback = self.invitation.latest_feedback
 
-    def test_can_only_decline_invite_once(self):
+        get_invitation_page_response_again = self.client.get(url)
+        # going back to the invitation page after accepting redirects to latest feedback
+        self.assertRedirects(get_invitation_page_response_again, feedback.get_absolute_url())
+        post_invitation_page_response_again = self.client.post(url, data={'accepted': True})
+        self.assertRedirects(post_invitation_page_response_again, feedback.get_absolute_url())
+
+    def test_accept_after_decline(self):
         url = self.invitation.get_absolute_url()
         get_invitation_page_response = self.client.get(url)
         self.assertResponseOk(get_invitation_page_response)
         post_invitation_page_response = self.client.post(url, data={'accepted': False})
         self.assertResponseFound(post_invitation_page_response)
+        self.assertRedirects(post_invitation_page_response, url)
 
-        # get_invitation_page_response_again = self.client.get(url)
-        # self.assertTrue(str(get_invitation_page_response_again.content).contains('You previously declined this invitation'))
-        # self.assertResponsePermissionDenied(get_invitation_page_response_again)
+        get_invitation_page_response_again = self.client.get(url)
+        self.assertContains(get_invitation_page_response_again, 'You previously declined this invitation')
+        # candidate reviewers are allowed to decline again
         post_invitation_page_response_again = self.client.post(url, data={'accepted': False})
-        self.assertResponsePermissionDenied(post_invitation_page_response_again)
+        self.assertRedirects(post_invitation_page_response_again, url)
+        # candidate reviewers are allowed to accept after declining
+        accept_invitation_response = self.client.post(url, data={'accepted': True})
+        self.assertRedirects(accept_invitation_response, self.invitation.latest_feedback.get_absolute_url())
 
     @classmethod
     def tearDownClass(cls):

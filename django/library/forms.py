@@ -10,6 +10,9 @@ logger = logging.getLogger(__name__)
 
 
 class PeerReviewInvitationForm(forms.ModelForm):
+    """
+    Sends an invitation to a candidate reviewer
+    """
     def save(self, commit=True):
         invitation = super().save(commit)
         invitation.send_candidate_reviewer_email()
@@ -25,6 +28,9 @@ class PeerReviewInvitationForm(forms.ModelForm):
 
 
 class PeerReviewInvitationReplyForm(forms.ModelForm):
+    """
+    Processes a peer review invitation reply (accept / decline) from a candidate reviewer
+    """
     def clean_accepted(self):
         data = self.cleaned_data['accepted']
         if data is None:

@@ -8,6 +8,7 @@ from django.db import transaction
 from django.http import FileResponse, Http404, HttpResponseRedirect
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import resolve
+from django.utils.translation import ugettext_lazy as _
 from django.views import View
 from django.views.generic.base import RedirectView
 from django.views.generic.detail import DetailView
@@ -157,10 +158,11 @@ class PeerReviewInvitationUpdateView(UpdateView):
         if self.object.accepted:
             return redirect(self.object.latest_feedback)
         elif self.object.is_expired:
-            messages.error(request, "This invitation has expired.")
-            raise PermissionDenied()
+            error_message = _('This invitation has expired.')
+            messages.error(request, error_message)
+            raise PermissionDenied(error_message)
         elif self.object.accepted is False:
-            messages.warning(request, "You previously declined this invitation.")
+            messages.warning(request, _("You previously declined this invitation."))
         return super().get(request, *args, **kwargs)
 
     def get_success_url(self):
@@ -187,6 +189,12 @@ class PeerReviewFeedbackUpdateView(UpdateView):
     pk_url_kwarg = 'feedback_id'
     queryset = PeerReviewerFeedback.objects.all()
 
+    def get(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        if not self.object.invitation.accepted:
+            raise PermissionDenied(_("Sorry, you have already declined this invitation"))
+        return super().get(request, *args, **kwargs)
+
     def get_context_data(self, **kwargs):
         other_feedback = self.object.invitation.feedback_set.exclude(pk=self.object.pk)
         context = super().get_context_data(**kwargs)
@@ -195,7 +203,10 @@ class PeerReviewFeedbackUpdateView(UpdateView):
 
     def get_success_url(self):
         if self.object.reviewer_submitted:
-            messages.info(self.request, "Peer Review feedback submitted. Thank you for taking the time to serve as a CoMSES Net reviewer!")
+            messages.info(
+                self.request,
+                _("Your review feedback has been submitted. Thank you for taking the time to serve as a "
+                  "CoMSES Net reviewer!"))
             return self.object.invitation.candidate_reviewer.get_absolute_url()
         else:
             messages.info(self.request, "Your feedback has been saved. Please submit it to the editor when complete.")
@@ -382,7 +393,7 @@ class CodebaseReleaseDraftView(PermissionRequiredMixin, View):
     def has_permission(self):
         if has_permission_to_create_release(view=self, request=self.request):
             return True
-        raise PermissionDenied
+        raise PermissionDenied("Sorry, you do not have permissions to create a new draft release for this codebase.")
 
     def post(self, *args, **kwargs):
         identifier = kwargs['identifier']
@@ -449,7 +460,7 @@ class CodebaseReleaseShareViewSet(CommonViewSetMixin, mixins.RetrieveModelMixin,
         except FileNotFoundError:
             logger.error("Unable to find review archive for codebase release %s (%s)", codebase_release.pk,
                          codebase_release.get_absolute_url())
-            raise Http404()
+            raise Http404
 
         return response
 
@@ -590,7 +601,7 @@ class CodebaseReleaseViewSet(CommonViewSetMixin,
         except FileNotFoundError:
             logger.error("Unable to find archive for codebase release %s (%s)", codebase_release.pk,
                          codebase_release.get_absolute_url())
-            raise Http404()
+            raise Http404
 
         return response
 
