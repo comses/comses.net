@@ -29,6 +29,35 @@ module.exports = {
                 Tooltip: "exports-loader?Tooltip!bootstrap/js/dist/tooltip",
                 Util: "exports-loader?Util!bootstrap/js/dist/util",
             }]);
+
+        config.optimization
+            .splitChunks({
+                cacheGroups: {
+                    vendors: {
+                        name: 'chunk-vendors',
+                        test: /[\\/]node_modules[\\/]/,
+                        priority: -10,
+                        chunks: 'initial'
+                    },
+                    common: {
+                        name: 'chunk-common',
+                        minChunks: 2,
+                        priority: -20,
+                        chunks: 'initial',
+                        reuseExistingChunk: true
+                    }
+                }
+            });
+
+        config.devServer
+            .public('http://0.0.0.0:3000')
+            .host('0.0.0.0')
+            .port(3000)
+            .hotOnly(true)
+            .watchOptions({poll: 1000})
+            .https(false)
+            .headers({"Access-Control-Allow-Origin": ["\*"]});
+
         return config;
     },
     outputDir: '/shared/webpack',
@@ -46,6 +75,6 @@ module.exports = {
         job_list: './src/pages/job/list.ts',
         profile_list: './src/pages/profile/list.ts',
     },
-    publicPath: '/static/',
+    publicPath: process.env.NODE_ENV === 'development' ? 'http://localhost:3000/static/' : '/static/',
     runtimeCompiler: true
 };
