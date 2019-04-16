@@ -4,7 +4,7 @@ import {
     CalendarEvent, CodebaseContributor, Contributor, emptyContributor, emptyReleaseContributor,
     User
 } from '@/store/common'
-import {CodebaseReleaseAPI, ContributorAPI} from 'api'
+import {CodebaseReleaseAPI, ContributorAPI} from "@/api"
 import {store} from './store'
 import Checkbox from '@/components/forms/checkbox'
 import Datepicker from '@/components/forms/datepicker'

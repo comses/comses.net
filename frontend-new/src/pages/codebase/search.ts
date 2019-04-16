@@ -4,7 +4,7 @@ import Vue from 'vue'
 import DatePicker from '@/components/forms/datepicker'
 import Input from '@/components/forms/input'
 import Tagger from '@/components/tagger'
-import {CodebaseAPI} from 'api';
+import {CodebaseAPI} from "@/api";
 
 const api = new CodebaseAPI();
 

@@ -2,7 +2,7 @@ import BaseControl from './forms/base'
 import {Component, Prop} from 'vue-property-decorator'
 import * as _ from 'lodash'
 import Multiselect from 'vue-multiselect'
-import {TagAPI} from 'api'
+import {TagAPI} from "@/api"
 
 @Component({
     template: `<div :class="['form-group', {'child-is-invalid': isInvalid }]">

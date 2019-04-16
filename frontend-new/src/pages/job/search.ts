@@ -6,7 +6,7 @@ import Input from '@/components/forms/input'
 import Tagger from '@/components/tagger'
 import * as queryString from 'query-string'
 import * as _ from 'lodash'
-import {JobAPI} from 'api';
+import {JobAPI} from "@/api";
 
 
 @Component({

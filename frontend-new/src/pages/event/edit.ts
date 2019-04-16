@@ -1,6 +1,6 @@
 import Vue from 'vue';
 import {CalendarEvent} from '@/store/common';
-import {EventAPI} from 'api';
+import {EventAPI} from "@/api";
 import Markdown from '@/components/forms/markdown';
 import Tagger from '@/components/tagger';
 import Input from '@/components/forms/input';

@@ -1,7 +1,7 @@
 import * as Vue from 'vue'
 import Vuex from 'vuex'
 import {CodebaseReleaseStore, CodebaseContributor} from '@/store/common'
-import {CodebaseReleaseAPI, CodebaseAPI} from 'api'
+import {CodebaseReleaseAPI, CodebaseAPI} from "@/api"
 import * as _ from 'lodash'
 import * as yup from 'yup'
 

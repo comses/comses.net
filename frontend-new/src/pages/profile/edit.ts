@@ -7,7 +7,7 @@ import Datepicker from '@/components/forms/datepicker';
 import TextArea from '@/components/forms/textarea'
 import MessageDisplay from '@/components/message_display'
 import EditItems from '@/components/edit_items'
-import {ProfileAPI} from 'api'
+import {ProfileAPI} from "@/api"
 import * as _ from 'lodash'
 import {createFormValidator} from '@/pages/form'
 import {HandlerWithRedirect} from "handler";
