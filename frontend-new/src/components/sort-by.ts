@@ -40,7 +40,7 @@ export class SortBy extends Vue {
             this.sortByAscDesc = "desc";
         }
         else {
-            this.selectedOptionValue = orderingQueryParam;
+            this.selectedOptionValue = _.isArray(orderingQueryParam) ? orderingQueryParam.join(','): orderingQueryParam;
             this.sortByAscDesc = "asc";
         }
     }
@@ -55,7 +55,7 @@ export class SortBy extends Vue {
     updateSortBy() {
         const queryParams = queryString.parse(window.location.search);
         if (this.orderingParameter === '') {
-            delete queryParams['ordering']
+            delete queryParams['ordering'];
         } else {
             queryParams['ordering'] = this.orderingParameter;
         }
