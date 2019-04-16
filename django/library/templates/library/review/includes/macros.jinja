@@ -3,7 +3,15 @@
 {% endmacro %}
 
 {% macro render_review_criteria() %}
-    {{ include_review_criteria()|markdown }}
+{{ include_review_criteria()|markdown }}
+{% endmacro %}
+
+{% macro include_review_reminders() %}
+{% include "library/review/includes/reminders.jinja" %}
+{% endmacro %}
+
+{% macro render_review_reminders() %}
+{{ include_review_reminders()|markdown }}
 {% endmacro %}
 
 {% macro displayCheck(q) %}

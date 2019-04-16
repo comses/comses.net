@@ -1,5 +1,6 @@
 {% extends "sidebar_layout.jinja" %}
 {% from "common.jinja" import breadcrumb, embed_discourse_comments, share_card, search_tag_href, member_profile_href %}
+{% from "library/review/includes/macros.jinja" import render_review_reminders %}
 
 {% set codebase = release.codebase %}
 
@@ -298,9 +299,30 @@
         {% if release.is_peer_review_requestable %}
             <form method="post" action="{{ release.get_request_peer_review_url() }}">
                 {% csrf_token %}
-                <button type="submit" class='btn btn-secondary my-1 w-100'>
+                <button type="button" data-toggle='modal' data-target='#confirm-peer-review' class='btn btn-secondary my-1 w-100'>
                     Request peer review 
                 </button>
+                <div class='modal fade' id='confirm-peer-review' tabindex='-1' role='dialog'
+                        aria-labelledby='confirm-peer-review-label' aria-hidden='true'>
+                    <div class='modal-dialog' role='document'>
+                        <div class='modal-content'>
+                            <div class='modal-header'>
+                                <h4 class='modal-title text-danger' id='confirm-peer-review-label'>
+                                    <i class='fa fa-exclamation-triangle fa-2x'></i> Peer Review Request: Important Reminders!</h4>
+                                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                    <span aria-hidden="true">&times;</span>
+                                </button>
+                            </div>
+                            <div class='modal-body'>
+                                {{ render_review_reminders() }}
+                            </div>
+                            <div class='modal-footer'>
+                                <button type="button" class="btn btn-warning" data-dismiss="modal">Cancel</button>
+                                <button type="submit" class="btn btn-primary">Submit peer review request</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </form>
         {% elif review.is_awaiting_author_changes %}
             <form method="post" action="{{ release.get_notify_reviewers_of_changes_url() }}">
