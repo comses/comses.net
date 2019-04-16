@@ -1,5 +1,7 @@
-import 'fullcalendar'
-import * as $ from 'jquery'
+import 'fullcalendar';
+import * as _$ from 'jquery';
+
+const $: any = _$;
 
 $(function() {
     $('#calendar').fullCalendar({
