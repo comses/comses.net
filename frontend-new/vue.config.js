@@ -74,6 +74,7 @@ module.exports = {
         event_list: './src/pages/event/list.ts',
         job_list: './src/pages/job/list.ts',
         profile_list: './src/pages/profile/list.ts',
+        styles: './src/styles/index.scss'
     },
     publicPath: process.env.NODE_ENV === 'development' ? 'http://localhost:3000/static/' : '/static/',
     runtimeCompiler: true

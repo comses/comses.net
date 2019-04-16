@@ -241,7 +241,7 @@
             {# override in templates to add extra meta tags or anything else within the <head></head> #}
         {% endblock %}
         {# Global stylesheets #}
-        {{ render_bundle('styles', 'css') }}
+        {{ render_bundle('styles') }}
         {% block extra_css %}
             {# Override this in templates to add extra stylesheets #}
         {% endblock %}
@@ -261,9 +261,8 @@
             <script src='https://cdn.ravenjs.com/{{RAVENJS_VERSION}}/vue/raven.min.js' crossorigin='anonymous'></script>
             <script>Raven.config('{{ sentry_public_dsn() }}').install()</script>
         {% endwith %}
-        {{ render_bundle('manifest') }}
-        {{ render_bundle('vendors') }}
-        {{ render_bundle('common') }}
+        {{ render_bundle('chunk-vendors') }}
+        {{ render_bundle('chunk-common') }}
         <script>
 function submitLogout() {
     document.getElementById('logoutForm').submit();
