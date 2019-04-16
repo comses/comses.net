@@ -1,5 +1,5 @@
-import {Component, Prop} from 'vue-property-decorator'
-import Vue from 'vue'
+import {Component, Prop} from 'vue-property-decorator';
+import Vue from 'vue';
 
 // Tabbing is not consistent between browsers but tabbing order works as expected in
 // in Chrome, Firefox and Safari. If tabindex is placed on <a> then tabbing would not
@@ -22,18 +22,18 @@ import Vue from 'vue'
                     {{ searchLabel }}
                 </div>
             </a>
-        </div>`
+        </div>`,
 })
 export class Search extends Vue {
     @Prop()
-    submitLabel: string;
+    public submitLabel: string;
 
     @Prop()
-    submitUrl: string;
+    public submitUrl: string;
 
     @Prop()
-    searchLabel: string;
+    public searchLabel: string;
 
     @Prop()
-    searchUrl: string;
+    public searchUrl: string;
 }

@@ -1,10 +1,10 @@
 
-import Vue from 'vue'
-import {Component, Prop} from 'vue-property-decorator'
+import Vue from 'vue';
+import {Component, Prop} from 'vue-property-decorator';
 
-import Input from '@/components/forms/input'
+import Input from '@/components/forms/input';
 import Datepicker from '@/components/forms/datepicker';
-import {VueClass} from "vue-class-component/lib/declarations";
+import {VueClass} from 'vue-class-component/lib/declarations';
 
 
 @Component({
@@ -67,23 +67,23 @@ import {VueClass} from "vue-class-component/lib/declarations";
     </div>`,
     components: {
         'c-input': Input,
-        'c-date-picker': Datepicker
-    }
+        'c-date-picker': Datepicker,
+    },
 })
 export default class Sidebar extends Vue {
-    state = {
+    public state = {
         keyword_search: 'foo',
         start_date: null,
         end_date: null,
         tag_search: 'bar',
         tags: [
             {name: 'ecology', selected: false, count: 52},
-            {name: 'decision', selected: true, count: 10}
+            {name: 'decision', selected: true, count: 10},
         ],
         author_search: 'baz',
         authors: [
             {name: 'Marco Janssen', selected: false, count: 52},
-            {name: 'Michael C. Barton', selected: false, count: 43}
-        ]
+            {name: 'Michael C. Barton', selected: false, count: 43},
+        ],
     };
-};
+}

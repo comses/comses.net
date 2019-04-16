@@ -1,10 +1,10 @@
-import {Component, Prop} from 'vue-property-decorator'
-import Vue from 'vue'
-import {Invitations} from './invitations'
-import {Feedback} from './feedback'
-import {ReviewEditorAPI} from "@/api";
-import {api} from "connection";
-import {EventLog} from "./event_log";
+import {Component, Prop} from 'vue-property-decorator';
+import Vue from 'vue';
+import {Invitations} from './invitations';
+import {Feedback} from './feedback';
+import {ReviewEditorAPI} from '@/api';
+import {api} from 'connection';
+import {EventLog} from './event_log';
 import * as _ from 'lodash';
 
 const reviewApi = new ReviewEditorAPI();
@@ -24,24 +24,24 @@ const reviewApi = new ReviewEditorAPI();
         'c-event-log': EventLog,
         'c-invitations': Invitations,
         'c-feedback': Feedback,
-    }
+    },
 })
 export class EditorReviewDetail extends Vue {
     @Prop()
-    status_levels: Array<{ value: string, label: string }>;
+    public status_levels: Array<{ value: string, label: string }>;
 
-    status: string = this.status_levels[0].value;
-
-    @Prop()
-    review_slug: string;
+    public status: string = this.status_levels[0].value;
 
     @Prop()
-    event_list_url: string;
+    public review_slug: string;
 
-    events: Array<object> = [];
-    event_errors: Array<string> = [];
+    @Prop()
+    public event_list_url: string;
 
-    async retrieveEvents() {
+    public events: object[] = [];
+    public event_errors: string[] = [];
+
+    public async retrieveEvents() {
         try {
             const response = await api.axios.get(this.event_list_url);
             this.events = response.data;
@@ -50,12 +50,12 @@ export class EditorReviewDetail extends Vue {
             if (_.isArray(_.get(e, 'response.data'))) {
                 this.event_errors = e.response.data;
             } else {
-                this.event_errors = ['Error loading events']
+                this.event_errors = ['Error loading events'];
             }
         }
     }
 
-    created() {
+    public created() {
         this.retrieveEvents();
     }
 }

@@ -1,12 +1,12 @@
-import {Component, Prop} from 'vue-property-decorator'
-import {Search} from '@/components/search'
-import Vue from 'vue'
-import DatePicker from '@/components/forms/datepicker'
-import Input from '@/components/forms/input'
-import Tagger from '@/components/tagger'
-import * as queryString from 'query-string'
-import * as _ from 'lodash'
-import {JobAPI} from "@/api";
+import {Component, Prop} from 'vue-property-decorator';
+import {Search} from '@/components/search';
+import Vue from 'vue';
+import DatePicker from '@/components/forms/datepicker';
+import Input from '@/components/forms/input';
+import Tagger from '@/components/tagger';
+import * as queryString from 'query-string';
+import * as _ from 'lodash';
+import {JobAPI} from '@/api';
 
 
 @Component({
@@ -40,29 +40,29 @@ import {JobAPI} from "@/api";
         'c-input': Input,
         'c-tagger': Tagger,
         'c-search': Search,
-    }
+    },
 })
 export class SearchJobs extends Vue {
-    readonly api = new JobAPI();
-    fullTextSearch: string = '';
+    public readonly api = new JobAPI();
+    public fullTextSearch: string = '';
 
-    initialPostingDate = null;
-    applicationDeadline = null;
+    public initialPostingDate = null;
+    public applicationDeadline = null;
 
-    tags: Array<{name: string}> = [];
-    contributors = [];
+    public tags: Array<{name: string}> = [];
+    public contributors = [];
 
     get query() {
         const queryObject = {
             query: this.fullTextSearch,
             date_created__gte: this.initialPostingDate,
             application_deadline__gte: this.applicationDeadline,
-            tags: this.tags.map(tag => tag.name)
+            tags: this.tags.map((tag) => tag.name),
         };
         return this.api.searchUrl(queryObject);
     }
 
-    search() {
+    public search() {
         window.location.href = this.query;
     }
 }

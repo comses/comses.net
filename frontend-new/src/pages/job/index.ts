@@ -1,12 +1,12 @@
-import EditJob from './edit'
-import * as Vue from 'vue'
+import EditJob from './edit';
+import * as Vue from 'vue';
 
 function matchUpdateUrl(pathname) {
     let match = pathname.match(/\/jobs\/([0-9]+)\/edit\//);
     if (match !== null) {
         match = match[1];
     }
-    return match
+    return match;
 }
 
 const _id = matchUpdateUrl(window.location.pathname);

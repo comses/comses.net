@@ -1,10 +1,10 @@
-import {Component, Prop} from 'vue-property-decorator'
-import {Search} from '@/components/search'
-import Vue from 'vue'
-import DatePicker from '@/components/forms/datepicker'
-import Input from '@/components/forms/input'
-import Tagger from '@/components/tagger'
-import {EventAPI} from "@/api"
+import {Component, Prop} from 'vue-property-decorator';
+import {Search} from '@/components/search';
+import Vue from 'vue';
+import DatePicker from '@/components/forms/datepicker';
+import Input from '@/components/forms/input';
+import Tagger from '@/components/tagger';
+import {EventAPI} from '@/api';
 
 
 @Component({
@@ -38,27 +38,27 @@ import {EventAPI} from "@/api"
         'c-input': Input,
         'c-tagger': Tagger,
         'c-search': Search,
-    }
+    },
 })
 export class SearchEvents extends Vue {
-    private api = new EventAPI();
-    fullTextSearch: string = '';
-    submissionDeadline = null;
-    startDate = null;
-    tags: Array<{name: string}> = [];
-    contributors = [];
 
     get query() {
         const queryObject = {
             query: this.fullTextSearch,
             start_date__gte: this.startDate,
             submission_deadline__gte: this.submissionDeadline,
-            tags: this.tags.map(tag => tag.name)
+            tags: this.tags.map((tag) => tag.name),
         };
         return this.api.searchUrl(queryObject);
     }
+    public fullTextSearch: string = '';
+    public submissionDeadline = null;
+    public startDate = null;
+    public tags: Array<{name: string}> = [];
+    public contributors = [];
+    private api = new EventAPI();
 
-    search() {
+    public search() {
         window.location.href = this.query;
     }
 }

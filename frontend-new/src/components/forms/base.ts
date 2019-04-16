@@ -1,26 +1,26 @@
-import Vue from 'vue'
-import {Component, Prop} from 'vue-property-decorator'
-import * as _ from 'lodash'
+import Vue from 'vue';
+import {Component, Prop} from 'vue-property-decorator';
+import * as _ from 'lodash';
 
 @Component
 export default class BaseControl extends Vue {
     @Prop({default: true})
-    required;
+    public required;
 
     @Prop()
-    value;
+    public value;
 
     @Prop()
-    name: string;
+    public name: string;
 
     @Prop()
-    customId;
+    public customId;
 
     @Prop({default: () => []})
-    errorMsgs: Array<string>;
+    public errorMsgs: string[];
 
     get requiredClass() {
-        return {'required': this.required};
+        return {required: this.required};
     }
 
     get controlId() {
@@ -35,7 +35,7 @@ export default class BaseControl extends Vue {
         return this.errorMsgs.join(', ');
     }
 
-    updateValue(value: any) {
+    public updateValue(value: any) {
         this.$emit('input', value);
     }
 }

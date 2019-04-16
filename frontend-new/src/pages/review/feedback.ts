@@ -1,6 +1,6 @@
-import {Component, Prop} from 'vue-property-decorator'
-import Vue from 'vue'
-import {ReviewEditorAPI} from "@/api/index";
+import {Component, Prop} from 'vue-property-decorator';
+import Vue from 'vue';
+import {ReviewEditorAPI} from '@/api/index';
 import * as _ from 'lodash';
 
 const reviewApi = new ReviewEditorAPI();
@@ -20,19 +20,19 @@ const reviewApi = new ReviewEditorAPI();
             </div>
         </div>
         <p v-else>No reviewer feedback submitted yet</p>
-    </div>`
+    </div>`,
 })
 export class Feedback extends Vue {
     @Prop()
-    review_slug: string;
+    public review_slug: string;
 
-    feedback_items: Array<any> = [];
+    public feedback_items: any[] = [];
 
-    editorHasCompletedFeedback(feedback) {
+    public editorHasCompletedFeedback(feedback) {
         return !_.isEmpty(feedback.private_editor_notes) && !_.isEmpty(feedback.notes_to_author);
     }
 
-    async created() {
+    public async created() {
         const response = await reviewApi.listFeedback(this.review_slug);
         this.feedback_items = response.data.results;
     }

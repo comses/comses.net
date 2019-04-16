@@ -1,27 +1,27 @@
-import Vue from 'vue'
-import {Component, Prop} from 'vue-property-decorator'
-import {api} from "connection";
+import Vue from 'vue';
+import {Component, Prop} from 'vue-property-decorator';
+import {api} from 'connection';
 
 @Component({})
 class RegenerateShareUUID extends Vue {
     @Prop()
-    absolute_url: string;
+    public absolute_url: string;
 
     @Prop()
-    initial_share_url: string;
+    public initial_share_url: string;
 
-    share_url: string = '';
+    public share_url: string = '';
 
-    created() {
+    public handle;
+
+    public created() {
         this.share_url = this.initial_share_url;
     }
 
-    regenerateShareUuid() {
+    public regenerateShareUuid() {
         api.axios.post(`${this.absolute_url}regenerate_share_uuid/`)
-            .then(r => this.share_url = r.data)
+            .then((r) => this.share_url = r.data);
     }
-
-    handle
 }
 
 const el = document.getElementById('regenerate_share_uuid');

@@ -1,9 +1,9 @@
-import {Component, Prop} from 'vue-property-decorator'
-import Vue from 'vue'
-import Multiselect from 'vue-multiselect'
-import {ProfileAPI, ReviewEditorAPI} from "@/api";
+import {Component, Prop} from 'vue-property-decorator';
+import Vue from 'vue';
+import Multiselect from 'vue-multiselect';
+import {ProfileAPI, ReviewEditorAPI} from '@/api';
 import * as _ from 'lodash';
-import {holder} from "@/pages/review/directives";
+import {holder} from '@/pages/review/directives';
 
 const reviewApi = new ReviewEditorAPI();
 const profileApi = new ProfileAPI();
@@ -48,30 +48,30 @@ const debounceFetchMatchingUsers = _.debounce(async (self: ReviewerFinder, query
                             </div>
                         </div>
                     </div>
-                </div>            
+                </div>
             </template>
         </multiselect>`,
     components: {
-        Multiselect
+        Multiselect,
     },
     directives: {
-        holder
-    }
+        holder,
+    },
 })
 export class ReviewerFinder extends Vue {
     @Prop()
-    value;
+    public value;
 
-    isLoading = false;
-    localErrors = '';
-    matchingUsers = [];
+    public isLoading = false;
+    public localErrors = '';
+    public matchingUsers = [];
 
-    fetchMatchingUsers(query) {
+    public fetchMatchingUsers(query) {
         debounceFetchMatchingUsers.cancel();
         debounceFetchMatchingUsers(this, query);
     }
 
-    updateValue(value) {
+    public updateValue(value) {
         this.localErrors = '';
         this.$emit('input', value);
     }

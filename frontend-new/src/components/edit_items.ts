@@ -1,6 +1,6 @@
-import {Component, Prop} from 'vue-property-decorator'
-import BaseControl from '@/components/forms/base'
-import * as draggable from 'vuedraggable'
+import {Component, Prop} from 'vue-property-decorator';
+import BaseControl from '@/components/forms/base';
+import * as draggable from 'vuedraggable';
 
 @Component({
     template: `<div class="form-group">
@@ -21,22 +21,22 @@ import * as draggable from 'vuedraggable'
             <small class="form-text text-muted">{{ help }}</small>
         </slot>
     </div>`,
-    components: {draggable}
+    components: {draggable},
 })
 export default class EditTextList extends BaseControl {
     @Prop({default: 'Press enter to add item'})
-    placeholder: string;
+    public placeholder: string;
 
     @Prop()
-    label: string;
+    public label: string;
 
     @Prop()
-    help: string;
+    public help: string;
 
-    drag: boolean = false;
-    potential_item: string = '';
+    public drag: boolean = false;
+    public potential_item: string = '';
 
-    create() {
+    public create() {
         this.$emit('create', this.potential_item);
         this.potential_item = '';
     }

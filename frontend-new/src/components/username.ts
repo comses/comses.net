@@ -1,12 +1,12 @@
 
-import BaseControl from './forms/base'
-import {Component, Prop} from 'vue-property-decorator'
+import BaseControl from './forms/base';
+import {Component, Prop} from 'vue-property-decorator';
 
-import * as queryString from 'query-string'
-import * as _ from 'lodash'
-import {ProfileAPI} from "@/api"
+import * as queryString from 'query-string';
+import * as _ from 'lodash';
+import {ProfileAPI} from '@/api';
 
-import Multiselect from 'vue-multiselect'
+import Multiselect from 'vue-multiselect';
 
 const profileAPI = new ProfileAPI();
 
@@ -51,21 +51,21 @@ const debounceFetchMatchingUsers = _.debounce(async (self: UsernameSearch, query
         </slot>
     </div>`,
     components: {
-        Multiselect
-    }
+        Multiselect,
+    },
 })
 export default class UsernameSearch extends BaseControl {
     @Prop({default: ''})
-    label: string;
+    public label: string;
 
     @Prop({default: ''})
-    help: string;
+    public help: string;
 
-    isLoading = false;
-    matchingUsers = [];
-    localErrors: string = '';
+    public isLoading = false;
+    public matchingUsers = [];
+    public localErrors: string = '';
 
-    displayInfo(userInfo) {
+    public displayInfo(userInfo) {
         let displayName: string = userInfo.name;
         if (userInfo.name !== userInfo.username) {
             displayName = `${userInfo.name} (${userInfo.username})`;
@@ -73,12 +73,12 @@ export default class UsernameSearch extends BaseControl {
         return `${displayName}${userInfo.institution_name ? `, ${userInfo.institution_name}` : ''}`;
     }
 
-    fetchMatchingUsers(query) {
+    public fetchMatchingUsers(query) {
         debounceFetchMatchingUsers.cancel();
         debounceFetchMatchingUsers(this, query);
     }
 
-    updateValue(value) {
+    public updateValue(value) {
         this.localErrors = '';
         this.$emit('input', value);
     }

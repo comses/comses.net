@@ -1,15 +1,15 @@
-import {Component, Prop} from 'vue-property-decorator'
-import {Search} from '@/components/search'
-import Vue from 'vue'
-import DatePicker from '@/components/forms/datepicker'
-import Input from '@/components/forms/input'
-import ProfileTagger from '@/components/tagger'
-import * as queryString from 'query-string'
-import * as _ from 'lodash'
-import {ProfileAPI} from "@/api"
+import {Component, Prop} from 'vue-property-decorator';
+import {Search} from '@/components/search';
+import Vue from 'vue';
+import DatePicker from '@/components/forms/datepicker';
+import Input from '@/components/forms/input';
+import ProfileTagger from '@/components/tagger';
+import * as queryString from 'query-string';
+import * as _ from 'lodash';
+import {ProfileAPI} from '@/api';
 
 
-@Component(<any>{
+@Component({
     // language=Vue
     template: `
         <div>
@@ -40,27 +40,27 @@ import {ProfileAPI} from "@/api"
         'c-input': Input,
         'c-tagger': ProfileTagger,
         'c-search': Search,
-    }
-})
+    },
+} as any)
 export class SearchProfiles extends Vue {
-    @Prop()
-    is_authenticated: boolean;
-
-    private api = new ProfileAPI();
-    fullTextSearch: string = '';
-
-    tags: Array<{name: string}> = [];
 
     get query() {
         const queryObject = {
             query: this.fullTextSearch,
-            tags: this.tags.map(keyword => keyword.name),
+            tags: this.tags.map((keyword) => keyword.name),
             page: 1,
         };
         return this.api.searchUrl(queryObject);
     }
+    @Prop()
+    public is_authenticated: boolean;
+    public fullTextSearch: string = '';
 
-    search() {
+    public tags: Array<{name: string}> = [];
+
+    private api = new ProfileAPI();
+
+    public search() {
         window.location.href = this.query;
     }
 }

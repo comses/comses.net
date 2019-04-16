@@ -1,12 +1,12 @@
 import * as _ from 'lodash';
 import * as yup from 'yup';
-import Vue from 'vue'
-import {VueClass} from 'vue-class-component/lib/declarations'
-import {Component} from 'vue-property-decorator'
+import Vue from 'vue';
+import {VueClass} from 'vue-class-component/lib/declarations';
+import {Component} from 'vue-property-decorator';
 
 const yupDefaultFormDispatch = {
     [yup.object().constructor]: (schema) => {
-        let default_value: object = {};
+        const default_value: object = {};
         for (const field_name in schema.fields) {
             const subSchema = schema.fields[field_name];
             default_value[field_name] = createDefaultValue(subSchema);
@@ -30,7 +30,7 @@ const yupDefaultFormDispatch = {
         } else {
             return null;
         }
-    }
+    },
 };
 
 export function createDefaultValue(schema) {
@@ -43,7 +43,7 @@ export function createDefaultValue(schema) {
     if (schema.constructor in yupDefaultFormDispatch) {
         return yupDefaultFormDispatch[schema.constructor](schema);
     } else {
-        throw new Error(`invalid schema type: ${schema.constructor.name}`)
+        throw new Error(`invalid schema type: ${schema.constructor.name}`);
     }
 }
 
@@ -70,19 +70,19 @@ function createComputed(key: string, validate: (self, value) => Promise<any>) {
         .catch(() => {
         }), 500);
     return {
-        get: function () {
-            return (<any>this).state[key];
+        get() {
+            return (this as any).state[key];
         },
-        set: function (value) {
-            (<any>this).state[key] = value;
+        set(value) {
+            (this as any).state[key] = value;
             debouncedValidator(this, value);
-        }
-    }
+        },
+    };
 }
 
 function createDefaultErrors(keys) {
     const errors = {};
-    keys.forEach(key => {
+    keys.forEach((key) => {
         errors[key] = [];
     });
     return errors;
@@ -99,7 +99,7 @@ export function populateErrorsFromValidationError(self, ve) {
     }
     self.statusMessages = [{
         classNames: 'alert alert-warning',
-        message: 'Form not submitted. Please check above for validation errors.'
+        message: 'Form not submitted. Please check above for validation errors.',
     }];
 }
 
@@ -108,7 +108,7 @@ export function reachRelated(schema, key) {
     const subSchema = yup.reach(schema, key);
     shape[key] = subSchema;
 
-    const dependentKeys: Array<string> = subSchema._deps;
+    const dependentKeys: string[] = subSchema._deps;
     for (const dependentKey of dependentKeys) {
         const dependentSchema = yup.reach(schema, dependentKey).clone();
         dependentSchema._conditions = [];
@@ -147,17 +147,17 @@ export function createFormValidator(schema) {
         validators[key] = validator;
     }, {});
 
-    @Component(<any>{
+    @Component({
         computed,
-        $validators
-    })
+        $validators,
+    } as any)
     class FormValidator extends Vue {
-        statusMessages: Array<{ classNames: string, message: string }> = [];
-        state = defaultValue;
-        errors = defaultErrors;
-        config = formControlConfig;
+        public statusMessages: Array<{ classNames: string, message: string }> = [];
+        public state = defaultValue;
+        public errors = defaultErrors;
+        public config = formControlConfig;
 
-        async validate() {
+        public async validate() {
             try {
                 const state = await schema.validate(this.state, {abortEarly: false});
             } catch (validationErrors) {
@@ -166,11 +166,11 @@ export function createFormValidator(schema) {
             }
         }
 
-        clear() {
-            keys.forEach(key => this.errors[key] = []);
+        public clear() {
+            keys.forEach((key) => this.errors[key] = []);
         }
 
-        replace(state) {
+        public replace(state) {
             this.clear();
             this.state = state;
         }

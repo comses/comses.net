@@ -1,16 +1,16 @@
-import Vue from 'vue'
-import {Component, Prop} from 'vue-property-decorator'
-import {CodebaseAPI, CodebaseReleaseAPI} from "@/api/index";
-import Checkbox from '@/components/forms/checkbox'
-import Input from '@/components/forms/input'
-import Tagger from '@/components/tagger'
-import MarkdownEditor from '@/components/forms/markdown'
-import MessageDisplay from '@/components/message_display'
-import {createFormValidator} from "@/pages/form"
-import * as yup from 'yup'
-import * as _ from 'lodash'
-import {HandlerWithRedirect, HandlerShowSuccessMessage, DismissOnSuccessHandler} from "handler"
-import {Upload} from "@/components/upload";
+import Vue from 'vue';
+import {Component, Prop} from 'vue-property-decorator';
+import {CodebaseAPI, CodebaseReleaseAPI} from '@/api/index';
+import Checkbox from '@/components/forms/checkbox';
+import Input from '@/components/forms/input';
+import Tagger from '@/components/tagger';
+import MarkdownEditor from '@/components/forms/markdown';
+import MessageDisplay from '@/components/message_display';
+import {createFormValidator} from '@/pages/form';
+import * as yup from 'yup';
+import * as _ from 'lodash';
+import {HandlerWithRedirect, HandlerShowSuccessMessage, DismissOnSuccessHandler} from 'handler';
+import {Upload} from '@/components/upload';
 
 export const schema = yup.object().shape({
     title: yup.string().required(),
@@ -19,13 +19,13 @@ export const schema = yup.object().shape({
     live: yup.bool(),
     is_replication: yup.bool(),
     tags: yup.array().of(yup.object().shape({name: yup.string().required()})),
-    repository_url: yup.string().url()
+    repository_url: yup.string().url(),
 });
 
 const api = new CodebaseAPI();
 const releaseApi = new CodebaseReleaseAPI();
 
-@Component(<any>{
+@Component({
     template: `<div>
         <c-input v-model="title" name="title" :errorMsgs="errors.title" :required="config.title" label="Title"
             help="A short title describing the codebase">
@@ -52,17 +52,17 @@ const releaseApi = new CodebaseReleaseAPI();
         'c-markdown': MarkdownEditor,
         'c-message-display': MessageDisplay,
         'c-tagger': Tagger,
-        'c-upload': Upload
-    }
-})
+        'c-upload': Upload,
+    },
+} as any)
 export default class Description extends createFormValidator(schema) {
     @Prop({default: null})
-    _identifier: string;
+    public _identifier: string;
 
     @Prop({default: null})
-    redirect: string | null;
+    public redirect: string | null;
 
-    detailPageUrl(state) {
+    public detailPageUrl(state) {
         this.state.identifier = state.identifier;
         const version_number = this.state.latest_version_number || '1.0.0';
         if (_.isNull(this._identifier)) {
@@ -72,18 +72,18 @@ export default class Description extends createFormValidator(schema) {
         }
     }
 
-    async initializeForm() {
+    public async initializeForm() {
         if (this._identifier) {
             const response = await api.retrieve(this._identifier);
             this.state = response.data;
         }
     }
 
-    created() {
+    public created() {
         this.initializeForm();
     }
 
-    async createOrUpdate() {
+    public async createOrUpdate() {
         this.$emit('createOrUpdate');
         let handler;
         if (_.isNull(this.redirect)) {
@@ -98,7 +98,7 @@ export default class Description extends createFormValidator(schema) {
         }
     }
 
-    async save() {
+    public async save() {
         await this.validate();
         return this.createOrUpdate();
     }

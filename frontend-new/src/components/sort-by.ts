@@ -1,6 +1,7 @@
-import {Component, Prop} from 'vue-property-decorator'
-import Vue from 'vue'
-import * as queryString from 'query-string'
+import {Component, Prop} from 'vue-property-decorator';
+import Vue from 'vue';
+import * as queryString from 'query-string';
+import * as _ from 'lodash';
 
 @Component({
     // language=Vue
@@ -22,42 +23,41 @@ import * as queryString from 'query-string'
             <label class='form-check-label' for='sort_descending'>Sort descending</label>
         </div>
         <button type='button' @click="updateSortBy" class='btn btn-secondary'>Apply</button>
-    </form>`
+    </form>`,
 })
 export class SortBy extends Vue {
     @Prop()
-    sortOptions: Array<{label:string, value: string}>;
+    public sortOptions: Array<{label: string, value: string}>;
 
-    selectedOptionValue: string;
+    public selectedOptionValue: string;
 
-    sortByAscDesc: string;
+    public sortByAscDesc: string;
 
-    created() {
+    public created() {
         const queryParams = queryString.parse(window.location.search);
-        const orderingQueryParam = queryParams['ordering'] || '';
+        const orderingQueryParam = queryParams.ordering || '';
         if (orderingQueryParam.startsWith('-')) {
             this.selectedOptionValue = orderingQueryParam.slice(1);
-            this.sortByAscDesc = "desc";
-        }
-        else {
-            this.selectedOptionValue = _.isArray(orderingQueryParam) ? orderingQueryParam.join(','): orderingQueryParam;
-            this.sortByAscDesc = "asc";
+            this.sortByAscDesc = 'desc';
+        } else {
+            this.selectedOptionValue = _.isArray(orderingQueryParam) ? orderingQueryParam.join(',') : orderingQueryParam;
+            this.sortByAscDesc = 'asc';
         }
     }
 
     get orderingParameter() {
-        if (this.sortByAscDesc === "desc") {
-            return "-" + this.selectedOptionValue;
+        if (this.sortByAscDesc === 'desc') {
+            return '-' + this.selectedOptionValue;
         }
         return this.selectedOptionValue;
     }
 
-    updateSortBy() {
-        const queryParams = queryString.parse(window.location.search);
+    public updateSortBy() {
+        const queryParams: any = queryString.parse(window.location.search);
         if (this.orderingParameter === '') {
-            delete queryParams['ordering'];
+            delete queryParams.ordering;
         } else {
-            queryParams['ordering'] = this.orderingParameter;
+            queryParams.ordering = this.orderingParameter;
         }
         window.location.search = queryString.stringify(queryParams);
     }

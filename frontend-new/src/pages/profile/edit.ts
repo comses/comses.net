@@ -1,18 +1,18 @@
-import {Component, Prop} from 'vue-property-decorator'
-import * as Vue from 'vue'
-import Markdown from '@/components/forms/markdown'
-import Tagger from '@/components/tagger'
-import Input from '@/components/forms/input'
+import {Component, Prop} from 'vue-property-decorator';
+import * as Vue from 'vue';
+import Markdown from '@/components/forms/markdown';
+import Tagger from '@/components/tagger';
+import Input from '@/components/forms/input';
 import Datepicker from '@/components/forms/datepicker';
-import TextArea from '@/components/forms/textarea'
-import MessageDisplay from '@/components/message_display'
-import EditItems from '@/components/edit_items'
-import {ProfileAPI} from "@/api"
-import * as _ from 'lodash'
-import {createFormValidator} from '@/pages/form'
-import {HandlerWithRedirect} from "handler";
-import * as yup from 'yup'
-import Checkbox from "@/components/forms/checkbox";
+import TextArea from '@/components/forms/textarea';
+import MessageDisplay from '@/components/message_display';
+import EditItems from '@/components/edit_items';
+import {ProfileAPI} from '@/api';
+import * as _ from 'lodash';
+import {createFormValidator} from '@/pages/form';
+import {HandlerWithRedirect} from 'handler';
+import * as yup from 'yup';
+import Checkbox from '@/components/forms/checkbox';
 
 export const schema = yup.object().shape({
     given_name: yup.string().required(),
@@ -33,7 +33,7 @@ export const schema = yup.object().shape({
 
 const api = new ProfileAPI();
 
-@Component(<any>{
+@Component({
     template: `<form v-cloak>
         <div class='row'>
         <div class="form-group col-6">
@@ -125,49 +125,49 @@ const api = new ProfileAPI();
         'c-textarea': TextArea,
         'c-input': Input,
         'c-edit-degrees': EditItems,
-    }
-})
+    },
+} as any)
 export default class EditProfile extends createFormValidator(schema) {
     @Prop()
-    _pk: number | null;
+    public _pk: number | null;
 
-    initial_full_member: boolean = true;
+    public initial_full_member: boolean = true;
 
-    detailPageUrl(state) {
+    public detailPageUrl(state) {
         return api.detailUrl(state.user_pk);
     }
 
-    detailUrlParams(state) {
+    public detailUrlParams(state) {
         return state.user_pk;
     }
 
-    initializeForm() {
+    public initializeForm() {
         if (this._pk !== null) {
-            return this.retrieve(this._pk)
+            return this.retrieve(this._pk);
         }
     }
 
-    created() {
+    public created() {
         this.initializeForm();
     }
 
-    createOrUpdate() {
+    public createOrUpdate() {
         return api.update(this.state.user_pk, new HandlerWithRedirect(this));
     }
 
-    async createOrUpdateIfValid() {
+    public async createOrUpdateIfValid() {
         await this.validate();
         return this.createOrUpdate();
     }
 
-    retrieve(pk: number) {
-        return api.retrieve(pk).then(r => {
+    public retrieve(pk: number) {
+        return api.retrieve(pk).then((r) => {
             this.state = r.data;
             this.initial_full_member = this.state.full_member;
         });
     }
 
-    async uploadImage(event) {
+    public async uploadImage(event) {
         const file = event.target.files[0];
         const response = await api.uploadProfilePicture({pk: this._pk}, file);
         this.state.avatar = response.data;

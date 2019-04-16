@@ -1,17 +1,17 @@
 import Vue from 'vue';
 import {CalendarEvent} from '@/store/common';
-import {EventAPI} from "@/api";
+import {EventAPI} from '@/api';
 import Markdown from '@/components/forms/markdown';
 import Tagger from '@/components/tagger';
 import Input from '@/components/forms/input';
 import Datepicker from '@/components/forms/datepicker';
 import MessageDisplay from '@/components/message_display';
 import * as _ from 'lodash';
-import {Component, Prop} from "vue-property-decorator";
+import {Component, Prop} from 'vue-property-decorator';
 import * as yup from 'yup';
-import {createFormValidator, reachRelated} from "@/pages/form";
+import {createFormValidator, reachRelated} from '@/pages/form';
 import {Mixin} from '@/util/vue-mixin';
-import {HandlerWithRedirect} from "handler";
+import {HandlerWithRedirect} from 'handler';
 
 const api = new EventAPI();
 
@@ -22,7 +22,7 @@ function dateAfterConstraint(before_name: string, after_name: string) {
         } else {
             return schema.min(before_date, `${_.capitalize(after_name)} must be after ${before_name}`);
         }
-    }
+    };
 }
 
 export const schema = yup.object().shape({
@@ -34,7 +34,7 @@ export const schema = yup.object().shape({
     early_registration_deadline: yup.date().nullable().label('early registration deadline'),
     registration_deadline: yup.date().nullable().label('registration deadline').when(
         'early_registration_deadline',
-        dateAfterConstraint('early registration deadline', 'registration deadline')
+        dateAfterConstraint('early registration deadline', 'registration deadline'),
     ),
     submission_deadline: yup.date().nullable().label('submission deadline'),
     start_date: yup.date().required()
@@ -44,10 +44,10 @@ export const schema = yup.object().shape({
         .label('start date'),
     end_date: yup.date().nullable()
         .when('start_date', dateAfterConstraint('start date', 'end date')),
-    external_url: yup.string().url().nullable()
+    external_url: yup.string().url().nullable(),
 });
 
-@Component(<any>{
+@Component({
     template: `<form>
         <c-input v-model="title" name="title" :errorMsgs="errors.title" :required="config.title"
             label="Title" help="A short  title describing the event">
@@ -57,7 +57,7 @@ export const schema = yup.object().shape({
         </c-input>
         <div class="row">
             <div class="col-6">
-                <c-datepicker v-model="start_date" name="start_date" :errorMsgs="errors.start_date" 
+                <c-datepicker v-model="start_date" name="start_date" :errorMsgs="errors.start_date"
                     :required="config.start_date" label="Start Date" help="The date the event begins">
                 </c-datepicker>
             </div>
@@ -70,7 +70,7 @@ export const schema = yup.object().shape({
         <div class="row">
             <div class="col-6 d-inline">
                 <c-datepicker v-model="early_registration_deadline" name="early_registration_deadline"
-                                :errorMsgs="errors.early_registration_deadline" :clearButton="true" 
+                                :errorMsgs="errors.early_registration_deadline" :clearButton="true"
                                 :required="config.early_registration_deadline"
                                 label="Early Registration Deadline"
                                 help="The last day for early registration of the event (inclusive)">
@@ -109,7 +109,7 @@ export const schema = yup.object().shape({
             </div>
         </c-markdown>
         <c-input v-model="external_url" name="external_url" :errorMsgs="errors.external_url" :required="config.external_url"
-            label="Link to event website" help="Link to a more detailed website for this event">    
+            label="Link to event website" help="Link to a more detailed website for this event">
         </c-input>
         <c-tagger v-model="tags" name="tags" :errorMsgs="errors.tags" label="Tags" :required="false">
         </c-tagger>
@@ -124,46 +124,46 @@ export const schema = yup.object().shape({
         'c-message-display': MessageDisplay,
         'c-datepicker': Datepicker,
         'c-tagger': Tagger,
-        'c-input': Input
+        'c-input': Input,
     },
-})
+} as any)
 class EditEvent extends createFormValidator(schema) {
     // determine whether you are creating or updating based on wat route you are on
     // update -> grab the appropriate state from the store
     // create -> use the default store state
 
     @Prop()
-    _id: number | null;
+    public _id: number | null;
 
     get endDateOpenDate() {
         return this.state.end_date ? this.state.end_date : this.state.start_date;
     }
 
-    detailPageUrl(state) {
+    public detailPageUrl(state) {
         this.state.id = state.id;
         return api.detailUrl(this.state.id);
     }
 
-    initializeForm() {
+    public initializeForm() {
         if (this._id !== null) {
             return this.retrieve(this._id);
         }
     }
 
-    created() {
+    public created() {
         this.initializeForm();
     }
 
-    createSummaryFromDescription() {
-        (<any>this).state.summary = _.truncate(this.state.description, {'length': 200, 'omission': '[...]'});
+    public createSummaryFromDescription() {
+        (this as any).state.summary = _.truncate(this.state.description, {length: 200, omission: '[...]'});
     }
 
-    async createOrUpdateIfValid() {
+    public async createOrUpdateIfValid() {
         await this.validate();
         this.createOrUpdate();
     }
 
-    createOrUpdate() {
+    public createOrUpdate() {
         if (_.isNil(this.state.id)) {
             return api.create(new HandlerWithRedirect(this));
         } else {
@@ -171,8 +171,8 @@ class EditEvent extends createFormValidator(schema) {
         }
     }
 
-    retrieve(id: number) {
-        return api.retrieve(id).then(r => this.state = r.data);
+    public retrieve(id: number) {
+        return api.retrieve(id).then((r) => this.state = r.data);
     }
 }
 

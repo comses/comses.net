@@ -1,7 +1,7 @@
-import {Component, Prop} from 'vue-property-decorator'
-import Vue from 'vue'
-import * as _ from 'lodash'
-import {StatusMessages} from "@/store/common";
+import {Component, Prop} from 'vue-property-decorator';
+import Vue from 'vue';
+import * as _ from 'lodash';
+import {StatusMessages} from '@/store/common';
 
 @Component({
     template: `<div class="card border-light" v-if="messages && messages.length > 0">
@@ -11,15 +11,15 @@ import {StatusMessages} from "@/store/common";
         <div class="card-body px-0 py-0">
             <div v-for="m in messages" :class="m.classNames">
                 {{ m.message }}
-            </div>        
+            </div>
         </div>
-    </div>`
+    </div>`,
 })
 export default class MessageDisplay extends Vue {
     @Prop()
-    messages?: Array<{classNames: string, message: string}>;
+    public messages?: Array<{classNames: string, message: string}>;
 
-    clear() {
+    public clear() {
         this.$emit('clear');
     }
 }

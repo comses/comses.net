@@ -1,5 +1,5 @@
 import {SearchProfiles} from './search';
-import {SortBy} from "@/components/sort-by";
+import {SortBy} from '@/components/sort-by';
 
 // FIXME: look into better ways to pass data from Django -> Vue. may also need to check full member status
 function extract_membership_status() {
@@ -9,7 +9,7 @@ function extract_membership_status() {
 }
 const is_authenticated = extract_membership_status();
 
-new SearchProfiles({ propsData:{ is_authenticated }}).$mount('#sidebar');
+new SearchProfiles({ propsData: { is_authenticated }}).$mount('#sidebar');
 new SortBy({
     propsData: {
         sortOptions: [

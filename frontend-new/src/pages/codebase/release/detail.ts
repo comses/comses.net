@@ -1,18 +1,18 @@
-import * as Vue from 'vue'
-import * as _ from 'lodash'
-import {CodebaseReleaseAPI} from "@/api/index";
-import {Component, Prop, Watch} from 'vue-property-decorator'
-import Checkbox from '@/components/forms/checkbox'
-import Datepicker from '@/components/forms/datepicker'
-import Markdown from '@/components/forms/markdown'
-import MessageDisplay from '@/components/message_display'
-import TextArea from '@/components/forms/textarea'
-import Input from '@/components/forms/input'
-import Multiselect from 'vue-multiselect'
-import Tagger from '@/components/tagger'
-import * as yup from 'yup'
-import {createFormValidator} from '@/pages/form'
-import {HandlerShowSuccessMessage} from '@/api/handler'
+import * as Vue from 'vue';
+import * as _ from 'lodash';
+import {CodebaseReleaseAPI} from '@/api/index';
+import {Component, Prop, Watch} from 'vue-property-decorator';
+import Checkbox from '@/components/forms/checkbox';
+import Datepicker from '@/components/forms/datepicker';
+import Markdown from '@/components/forms/markdown';
+import MessageDisplay from '@/components/message_display';
+import TextArea from '@/components/forms/textarea';
+import Input from '@/components/forms/input';
+import Multiselect from 'vue-multiselect';
+import Tagger from '@/components/tagger';
+import * as yup from 'yup';
+import {createFormValidator} from '@/pages/form';
+import {HandlerShowSuccessMessage} from '@/api/handler';
 
 const codebaseReleaseAPI = new CodebaseReleaseAPI();
 
@@ -25,11 +25,11 @@ export const schema = yup.object().shape({
     live: yup.bool().label('this'),
     license: yup.object().shape({
         name: yup.string().required(),
-        url: yup.string().url().required()
-    }).required().label('this')
+        url: yup.string().url().required(),
+    }).required().label('this'),
 });
 
-@Component(<any>{
+@Component({
     template: `<div>
         <p class='mt-3'>
             Detailed metadata helps others discover and reuse your computational models. Please take the time to
@@ -95,34 +95,16 @@ export const schema = yup.object().shape({
         'c-tagger': Tagger,
         Multiselect,
     },
-})
+} as any)
 export default class Detail extends createFormValidator(schema) {
-    created() {
-        (<any>this).state = this.$store.getters.detail;
-    }
 
     get identity() {
         return this.$store.getters.identity;
     }
 
-    message: string = '';
-
     get licenseOptions() {
-        return this.$store.state.release.possible_licenses
+        return this.$store.state.release.possible_licenses;
     }
-
-    osOptions = [
-        {name: 'other', display: 'Other'},
-        {name: 'linux', display: 'Unix/Linux'},
-        {name: 'macos', display: 'Mac OS'},
-        {name: 'windows', display: 'Windows'},
-        {name: 'platform_independent', display: 'Operating System Independent'},
-    ];
-    matchingPlatforms = [];
-    isLoadingPlatforms = false;
-
-    matchingProgrammingLanguages = [{name: 'NetLogo'}, {name: 'Python'}];
-    isLoadingProgrammingLanguages = false;
 
     get isPublished() {
         return this.$store.state.release.live;
@@ -132,30 +114,48 @@ export default class Detail extends createFormValidator(schema) {
         return _.find(this.osOptions, (option) => option.name === this.state.os);
     }
 
-    applyTextEdit(ev) {
-        (<any>this).release_notes = ev.event.target.innerHTML;
+    public message: string = '';
+
+    public osOptions = [
+        {name: 'other', display: 'Other'},
+        {name: 'linux', display: 'Unix/Linux'},
+        {name: 'macos', display: 'Mac OS'},
+        {name: 'windows', display: 'Windows'},
+        {name: 'platform_independent', display: 'Operating System Independent'},
+    ];
+    public matchingPlatforms = [];
+    public isLoadingPlatforms = false;
+
+    public matchingProgrammingLanguages = [{name: 'NetLogo'}, {name: 'Python'}];
+    public isLoadingProgrammingLanguages = false;
+    public created() {
+        (this as any).state = this.$store.getters.detail;
     }
 
-    updateOs(value) {
-        (<any>this).os = value.name
+    public applyTextEdit(ev) {
+        (this as any).release_notes = ev.event.target.innerHTML;
     }
 
-    updatePlatforms(value) {
-        (<any>this).platforms = value.name
+    public updateOs(value) {
+        (this as any).os = value.name;
     }
 
-    updateProgrammingLanguages(value) {
-        (<any>this).programming_languages = value.name;
+    public updatePlatforms(value) {
+        (this as any).platforms = value.name;
     }
 
-    async save() {
+    public updateProgrammingLanguages(value) {
+        (this as any).programming_languages = value.name;
+    }
+
+    public async save() {
         try {
             const {identifier, version_number} = this.identity;
             const self: any = this;
             await self.validate();
             const response = await codebaseReleaseAPI.updateDetail({
                 identifier,
-                version_number
+                version_number,
             }, new HandlerShowSuccessMessage(this));
             await this.$store.dispatch('getCodebaseRelease', {identifier, version_number});
         } catch (e) {

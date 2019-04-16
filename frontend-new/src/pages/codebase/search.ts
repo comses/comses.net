@@ -1,14 +1,14 @@
-import {Component, Prop} from 'vue-property-decorator'
-import {Search} from '@/components/search'
-import Vue from 'vue'
-import DatePicker from '@/components/forms/datepicker'
-import Input from '@/components/forms/input'
-import Tagger from '@/components/tagger'
-import {CodebaseAPI} from "@/api";
+import {Component, Prop} from 'vue-property-decorator';
+import {Search} from '@/components/search';
+import Vue from 'vue';
+import DatePicker from '@/components/forms/datepicker';
+import Input from '@/components/forms/input';
+import Tagger from '@/components/tagger';
+import {CodebaseAPI} from '@/api';
 
 const api = new CodebaseAPI();
 
-@Component(<any>{
+@Component({
     // language=Vue
     template: `
         <c-search submitLabel="Archive a model" searchLabel="Search" submitUrl="/codebases/add/" :searchUrl="query">
@@ -37,28 +37,28 @@ const api = new CodebaseAPI();
         'c-input': Input,
         'c-tagger': Tagger,
         'c-search': Search,
-    }
-})
+    },
+} as any)
 export class SearchCodebases extends Vue {
-    fullTextSearch: string = '';
+    public fullTextSearch: string = '';
 
-    startDate: string | null = null;
-    endDate: string | null = null;
+    public startDate: string | null = null;
+    public endDate: string | null = null;
 
-    tags: Array<{name: string}> = [];
-    contributors = [];
+    public tags: Array<{name: string}> = [];
+    public contributors = [];
 
     get query() {
         const queryObject = {
             query: this.fullTextSearch,
             published_after: this.startDate,
             published_before: this.endDate,
-            tags: this.tags.map(tag => tag.name)
+            tags: this.tags.map((tag) => tag.name),
         };
         return api.searchUrl(queryObject);
     }
 
-    search() {
+    public search() {
         window.location.href = this.query;
     }
 }
