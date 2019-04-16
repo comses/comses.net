@@ -3,7 +3,7 @@ import Vue from 'vue';
 import {Invitations} from './invitations';
 import {Feedback} from './feedback';
 import {ReviewEditorAPI} from '@/api';
-import {api} from 'connection';
+import {api} from '@/api/connection';
 import {EventLog} from './event_log';
 import * as _ from 'lodash';
 

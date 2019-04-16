@@ -1,6 +1,6 @@
 import {Component, Prop} from 'vue-property-decorator';
 import Vue from 'vue';
-import {api} from 'connection';
+import {api} from '@/api/connection';
 import * as _ from 'lodash';
 
 @Component({

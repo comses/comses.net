@@ -11,7 +11,7 @@ import {Job} from '@/store/common';
 import {createFormValidator} from '@/pages/form';
 import {Component, Prop} from 'vue-property-decorator';
 import {Mixin} from '@/util/vue-mixin';
-import {HandlerWithRedirect} from 'handler';
+import {HandlerWithRedirect} from '@/api/handler';
 
 const api = new JobAPI();
 

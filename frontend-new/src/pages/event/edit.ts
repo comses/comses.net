@@ -11,7 +11,7 @@ import {Component, Prop} from 'vue-property-decorator';
 import * as yup from 'yup';
 import {createFormValidator, reachRelated} from '@/pages/form';
 import {Mixin} from '@/util/vue-mixin';
-import {HandlerWithRedirect} from 'handler';
+import {HandlerWithRedirect} from '@/api/handler';
 
 const api = new EventAPI();
 

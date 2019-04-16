@@ -35,7 +35,7 @@ export class SortBy extends Vue {
 
     public created() {
         const queryParams = queryString.parse(window.location.search);
-        const orderingQueryParam = queryParams.ordering || '';
+        const orderingQueryParam: any = queryParams.ordering || '';
         if (orderingQueryParam.startsWith('-')) {
             this.selectedOptionValue = orderingQueryParam.slice(1);
             this.sortByAscDesc = 'desc';

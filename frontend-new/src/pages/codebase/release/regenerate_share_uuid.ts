@@ -1,6 +1,6 @@
 import Vue from 'vue';
 import {Component, Prop} from 'vue-property-decorator';
-import {api} from 'connection';
+import {api} from '@/api/connection';
 
 @Component({})
 class RegenerateShareUUID extends Vue {

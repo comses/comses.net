@@ -10,7 +10,7 @@ import EditItems from '@/components/edit_items';
 import {ProfileAPI} from '@/api';
 import * as _ from 'lodash';
 import {createFormValidator} from '@/pages/form';
-import {HandlerWithRedirect} from 'handler';
+import {HandlerWithRedirect} from '@/api/handler';
 import * as yup from 'yup';
 import Checkbox from '@/components/forms/checkbox';
 

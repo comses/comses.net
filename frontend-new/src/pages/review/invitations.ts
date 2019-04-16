@@ -2,7 +2,7 @@ import {Component, Prop} from 'vue-property-decorator';
 import Vue from 'vue';
 import {ReviewEditorAPI} from '@/api/index';
 import {ReviewerFinder} from './reviewer_finder';
-import {api} from 'connection';
+import {api} from '@/api/connection';
 import {holder} from '@/pages/review/directives';
 import * as _ from 'lodash';
 

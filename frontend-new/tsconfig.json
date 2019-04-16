@@ -16,12 +16,6 @@
       "jest"
     ],
     "paths": {
-      "connection": [
-        "src/api/connection"
-      ],
-      "handler": [
-        "src/api/handler"
-      ],
       "@/*": [
         "src/*"
       ]
