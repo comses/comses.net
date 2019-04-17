@@ -76,7 +76,8 @@ module.exports = {
     },
     outputDir: '/shared/webpack',
     pages: {
-        home: 'src/pages/home.vue'
+        home: 'src/pages/home.vue',
+        job_list: './src/pages/job/list.ts'
     },
     publicPath: process.env.NODE_ENV === 'development' ? 'http://localhost:3000/static/' : '/static/',
     runtimeCompiler: true
