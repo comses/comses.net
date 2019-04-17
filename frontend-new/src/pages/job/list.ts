@@ -1,4 +1,4 @@
-import {SearchJobs} from './search';
+import {SearchJobs} from './Search';
 import {SortBy} from '@/components/sort-by';
 
 new SearchJobs().$mount('#sidebar');

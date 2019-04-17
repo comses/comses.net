@@ -1,4 +1,4 @@
-import EditEvent from './edit';
+import EditEvent from './Edit';
 
 function matchUpdateUrl(pathname) {
     let match = pathname.match(/\/events\/([0-9]+)\/edit\//);
