@@ -1,3 +1,4 @@
+import '@/styles/index.scss'
 import EditCodebase from './edit'
 
 function extractUrlParams(pathname: string) {
