@@ -3,14 +3,14 @@ const webpack = require('webpack');
 const _ = require('lodash');
 const path = require('path')
 
-function addStyleResource (rule) {
-  rule.use('style-resource')
-    .loader('style-resources-loader')
-    .options({
-      patterns: [
-        path.resolve(__dirname, './src/styles/index.scss'),
-      ],
-    })
+function addStyleResource(rule) {
+    rule.use('style-resource')
+        .loader('style-resources-loader')
+        .options({
+            patterns: [
+                path.resolve(__dirname, './src/styles/index.scss'),
+            ],
+        })
 }
 
 const pages = {
@@ -79,7 +79,10 @@ module.exports = {
         home: 'src/pages/home.vue',
         event_list: './src/pages/event/list.ts',
         job_list: './src/pages/job/list.ts',
-        profile_list: './src/pages/profile/list.ts'
+        profile_list: './src/pages/profile/list.ts',
+        events: './src/pages/event',
+        jobs: './src/pages/job',
+        profiles: './src/pages/profile',
     },
     publicPath: process.env.NODE_ENV === 'development' ? 'http://localhost:3000/static/' : '/static/',
     runtimeCompiler: true

@@ -1,4 +1,4 @@
-import EditProfile from './edit';
+import EditProfile from './Edit.vue';
 
 function extractParams() {
     const el = document.getElementById('app');

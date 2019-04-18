@@ -1,4 +1,4 @@
-import {SearchEvents} from '@/pages/event/search';
+import {SearchEvents} from '@/pages/event/Search.vue';
 import {SortBy} from '@/components/sort-by';
 
 new SearchEvents().$mount('#sidebar');

@@ -1,4 +1,4 @@
-import {SearchProfiles} from './search';
+import {SearchProfiles} from './Search.vue';
 import {SortBy} from '@/components/sort-by';
 
 // FIXME: look into better ways to pass data from Django -> Vue. may also need to check full member status

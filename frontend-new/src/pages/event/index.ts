@@ -1,4 +1,4 @@
-import EditEvent from './Edit';
+import EditEvent from './Edit.vue';
 
 function matchUpdateUrl(pathname) {
     let match = pathname.match(/\/events\/([0-9]+)\/edit\//);
