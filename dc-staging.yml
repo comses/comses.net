@@ -96,6 +96,7 @@ services:
       - ./docker/shared/logs/nginx:/var/log/nginx
       - ./docker/shared/static:/srv/static
       - ./docker/shared/media:/srv/media
+      - ./docker/shared/library:/library
       - sockets:/shared/sockets
     command: ["nginx", "-g", "daemon off;"]
     networks:
