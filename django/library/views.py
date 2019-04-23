@@ -5,7 +5,7 @@ from django.contrib import messages
 from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.core.exceptions import PermissionDenied
 from django.db import transaction
-from django.http import FileResponse, Http404, HttpResponseRedirect
+from django.http import HttpResponse, Http404, HttpResponseRedirect
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import resolve
 from django.utils.translation import ugettext_lazy as _
@@ -431,6 +431,18 @@ class NestedCodebaseReleaseUnpublishedFilesPermission(permissions.BasePermission
         return True
 
 
+def build_archive_download_response(codebase_release, review_archive=False):
+    fs_api = codebase_release.get_fs_api()
+    response = HttpResponse()
+    response['Content-Disposition'] = 'attachment; filename={}'.format(codebase_release.archive_filename)
+    archive_uri = fs_api.archive_uri
+    if review_archive:
+        fs_api.build_review_archive()
+        archive_uri = fs_api.review_archive_uri
+    response['X-Accel-Redirect'] = '/library/internal/{0}'.format(archive_uri)
+    return response
+
+
 class CodebaseReleaseShareViewSet(CommonViewSetMixin, mixins.RetrieveModelMixin, viewsets.GenericViewSet):
     namespace = 'library/codebases/releases/'
     queryset = CodebaseRelease.objects.with_platforms().with_programming_languages()
@@ -452,11 +464,8 @@ class CodebaseReleaseShareViewSet(CommonViewSetMixin, mixins.RetrieveModelMixin,
         codebase_release = self.get_object()
         if codebase_release.live:
             raise Http404('Cannot download review archive on published release')
-        fs_api = codebase_release.get_fs_api()
         try:
-            f, mimetype = fs_api.retrieve_review_archive()
-            response = FileResponse(f, content_type=mimetype)
-            response['Content-Disposition'] = 'attachment; filename={}'.format(codebase_release.archive_filename)
+            response = build_archive_download_response(codebase_release, review_archive=True)
         except FileNotFoundError:
             logger.error("Unable to find review archive for codebase release %s (%s)", codebase_release.pk,
                          codebase_release.get_absolute_url())
@@ -592,11 +601,8 @@ class CodebaseReleaseViewSet(CommonViewSetMixin,
     @transaction.atomic
     def download(self, request, **kwargs):
         codebase_release = self.get_object()
-        fs_api = codebase_release.get_fs_api()
         try:
-            f, mimetype = fs_api.retrieve_archive()
-            response = FileResponse(f, content_type=mimetype)
-            response['Content-Disposition'] = 'attachment; filename={}'.format(codebase_release.archive_filename)
+            response = build_archive_download_response(codebase_release)
             codebase_release.record_download(request)
         except FileNotFoundError:
             logger.error("Unable to find archive for codebase release %s (%s)", codebase_release.pk,

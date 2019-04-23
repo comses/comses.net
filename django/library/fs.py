@@ -360,8 +360,7 @@ class CodebaseReleaseFsApi:
 
     @property
     def rootdir(self):
-        return Path(settings.LIBRARY_ROOT, str(self.uuid),
-                    'releases', str(self.release_id)).absolute()
+        return Path(settings.LIBRARY_ROOT, str(self.uuid), 'releases', str(self.release_id)).absolute()
 
     @property
     def aip_dir(self):
@@ -457,9 +456,23 @@ class CodebaseReleaseFsApi:
         return True
 
     def retrieve_review_archive(self):
-        shutil.make_archive(str(self.review_archivepath.parent.joinpath(self.review_archivepath.stem)),
-                            format='zip', root_dir=str(self.sip_contents_dir))
+        self.build_review_archive()
         return File(self.review_archivepath.open('rb')), 'application/zip'
+
+    def build_review_archive(self):
+        shutil.make_archive(str(self.review_archivepath.with_suffix('')),
+                            format='zip', root_dir=str(self.sip_contents_dir))
+        return self.review_archivepath
+
+    @property
+    def archive_uri(self):
+        """ returns the internal URI used by nginx to access this release's official archive package """
+        return self.archivepath.relative_to(settings.LIBRARY_ROOT)
+
+    @property
+    def review_archive_uri(self):
+        """ returns the internal uri used by nginx to access this release's review archive package """
+        return self.review_archivepath.relative_to(settings.LIBRARY_ROOT)
 
     def retrieve_archive(self):
         return File(self.archivepath.open('rb')), 'application/zip'
