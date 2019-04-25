@@ -8,4 +8,5 @@ initdb() {
     /code/deploy/wait-for-it.sh db:5432 -- invoke db.init
 }
 initdb
+sleep 30s
 /code/deploy/wait-for-it.sh elasticsearch:9200 -t 30 -- invoke test --tests="$@" --coverage
