@@ -91,7 +91,7 @@ class Institution(models.Model):
     url = models.URLField(blank=True)
     acronym = models.CharField(max_length=50)
 
-    content_panels = [
+    panels = [
         FieldPanel('name'),
         FieldPanel('url'),
         FieldPanel('acronym'),

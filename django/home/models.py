@@ -583,7 +583,7 @@ class ConferenceTheme(models.Model):
     def __str__(self):
         return "{0} {1}".format(self.category, self.title)
 
-    content_panels = [
+    panels = [
         FieldPanel('title'),
         FieldPanel('category'),
         FieldPanel('description'),
