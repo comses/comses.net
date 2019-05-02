@@ -27,7 +27,7 @@
 
 <script lang="ts">
     import {Component, Prop, Vue} from 'vue-property-decorator';
-    import {Search} from '@/components/search';
+    import Search from '@/components/Search.vue';
     import DatePicker from '@/components/forms/DatePicker.vue';
     import Input from '@/components/forms/input';
     import Tagger from '@/components/tagger';
