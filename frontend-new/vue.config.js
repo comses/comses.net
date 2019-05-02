@@ -1,7 +1,7 @@
 const BundleTracker = require('webpack-bundle-tracker');
 const webpack = require('webpack');
 const _ = require('lodash');
-const path = require('path')
+const path = require('path');
 
 function addStyleResource(rule) {
     rule.use('style-resource')
@@ -86,6 +86,8 @@ module.exports = {
         events: './src/pages/event',
         jobs: './src/pages/job',
         profiles: './src/pages/profile',
+        releases: './src/pages/codebase/release',
+        reviews: './src/pages/review',
         release_regenerate_share_uuid: './src/pages/codebase/release/regenerate_share_uuid.ts'
     },
     publicPath: process.env.NODE_ENV === 'development' ? 'http://localhost:3000/static/' : '/static/',

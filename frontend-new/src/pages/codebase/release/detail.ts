@@ -1,9 +1,8 @@
-import * as Vue from 'vue';
 import * as _ from 'lodash';
-import {CodebaseReleaseAPI} from '@/api/index';
+import {CodebaseReleaseAPI} from '@/api';
 import {Component, Prop, Watch} from 'vue-property-decorator';
 import Checkbox from '@/components/forms/checkbox';
-import Datepicker from '@/components/forms/datepicker';
+import Datepicker from '@/components/forms/DatePicker.vue';
 import Markdown from '@/components/forms/markdown';
 import MessageDisplay from '@/components/message_display';
 import TextArea from '@/components/forms/textarea';
@@ -66,7 +65,7 @@ export const schema = yup.object().shape({
         <div :class="['form-group', {'child-is-invalid': errors.license.length > 0}]">
             <label :class="['form-control-label', {'required': config.license }]">License</label>
             <multiselect v-model="license" label="name" track-by="name" placeholder="Type to find license" :options="licenseOptions">
-                <template slot="option" scope="props">
+                <template slot="option" slot-scope="props">
                     <div>
                          <a class='btn btn-sm btn-info' :href="props.option.url" target="_blank"><span class="fa fa-external-link"></span> view</a>
                          {{ props.option.name }}

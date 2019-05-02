@@ -5,11 +5,8 @@ import {
     User,
 } from '@/store/common';
 import {CodebaseReleaseAPI, ContributorAPI} from '@/api';
-import {store} from './store';
 import Checkbox from '@/components/forms/checkbox';
-import Datepicker from '@/components/forms/datepicker';
 import Input from '@/components/forms/input';
-import Markdown from '@/components/forms/markdown';
 import MessageDisplay from '@/components/message_display';
 import EditItems from '@/components/edit_items';
 import Multiselect from 'vue-multiselect';
