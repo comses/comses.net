@@ -82,9 +82,11 @@ module.exports = {
         event_list: './src/pages/event/list.ts',
         job_list: './src/pages/job/list.ts',
         profile_list: './src/pages/profile/list.ts',
+        codebases: './src/pages/codebase',
         events: './src/pages/event',
         jobs: './src/pages/job',
         profiles: './src/pages/profile',
+        release_regenerate_share_uuid: './src/pages/codebase/release/regenerate_share_uuid.ts'
     },
     publicPath: process.env.NODE_ENV === 'development' ? 'http://localhost:3000/static/' : '/static/',
     runtimeCompiler: true

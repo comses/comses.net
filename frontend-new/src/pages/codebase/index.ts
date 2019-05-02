@@ -1,4 +1,4 @@
-import EditCodebase from './edit';
+import EditCodebase from './Edit.vue';
 
 function extractUrlParams(pathname: string) {
     const match = pathname.match(/\/codebases\/([\w-]+)\/edit\//);
