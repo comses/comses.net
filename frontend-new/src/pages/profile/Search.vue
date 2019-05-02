@@ -45,7 +45,7 @@
             'c-search': Search,
         },
     } as any)
-    export class SearchProfiles extends Vue {
+    export default class SearchProfiles extends Vue {
 
         get query() {
             const queryObject = {

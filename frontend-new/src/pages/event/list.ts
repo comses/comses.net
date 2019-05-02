@@ -1,5 +1,5 @@
-import {SearchEvents} from '@/pages/event/Search.vue';
-import {SortBy} from '@/components/sort-by';
+import SearchEvents from '@/pages/event/Search.vue';
+import SortBy from '@/components/SortBy.vue';
 
 new SearchEvents().$mount('#sidebar');
 new SortBy({

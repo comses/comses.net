@@ -42,8 +42,7 @@
             'c-search': Search,
         },
     })
-    export class SearchJobs extends Vue {
-        public readonly
+    export default class SearchJobs extends Vue {
         api = new JobAPI();
         public fullTextSearch: string = '';
 

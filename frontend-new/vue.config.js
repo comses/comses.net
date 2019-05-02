@@ -77,6 +77,8 @@ module.exports = {
     outputDir: '/shared/webpack',
     pages: {
         home: 'src/pages/home.vue',
+        codebase_list: './src/pages/codebase/list.ts',
+        event_calendar: './src/pages/event/calendar.ts',
         event_list: './src/pages/event/list.ts',
         job_list: './src/pages/job/list.ts',
         profile_list: './src/pages/profile/list.ts',
