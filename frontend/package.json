@@ -8,7 +8,9 @@
     "dev": "NODE_ENV=development BASE_URL='' webpack --config webpack.conf.js --watch",
     "build": "NODE_ENV=production BASE_URL='' webpack --config webpack.conf.js",
     "webpack": "webpack",
-    "karma": "NODE_ENV=testing BASE_URL='' karma"
+    "karma": "NODE_ENV=testing BASE_URL='' karma",
+    "snyk-protect": "snyk protect",
+    "prepublish": "npm run snyk-protect"
   },
   "dependencies": {
     "axios": "~0",
@@ -34,7 +36,8 @@
     "vuedraggable": "^2.11.0",
     "vuejs-datepicker": "~0",
     "vuex": "^3.0.0",
-    "yup": "^0.26.6"
+    "yup": "^0.26.6",
+    "snyk": "^1.161.1"
   },
   "devDependencies": {
     "@types/chai": "^4.1.0",
@@ -93,5 +96,6 @@
   "engines": {
     "node": ">= 4.0.0",
     "npm": ">= 3.0.0"
-  }
+  },
+  "snyk": true
 }
