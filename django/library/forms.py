@@ -66,9 +66,6 @@ class PeerReviewerFeedbackReviewerForm(CheckCharFieldLengthMixin, forms.ModelFor
             raise forms.ValidationError('Please select a valid recommendation (accept or revise).')
         return recommendation
 
-    def clean_private_reviewer_notes(self):
-        return self._check_char_field_has_content(field_name='private_reviewer_notes')
-
     def clean_narrative_documentation_comments(self):
         return self._check_char_field_has_content(field_name='narrative_documentation_comments')
 
