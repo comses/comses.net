@@ -33,7 +33,7 @@ requests==2.21.0
 semver==2.8.1
 uwsgi==2.0.18
 uwsgitop==0.11
-wagtail==2.5
+wagtail==2.5.1
 # deployment and management command dependencies
 beautifulsoup4==4.6.3
 invoke
