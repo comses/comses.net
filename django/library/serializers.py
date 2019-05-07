@@ -317,7 +317,7 @@ class CodebaseReleaseSerializer(serializers.ModelSerializer):
     programming_languages = TagSerializer(many=True)
     submitter = LinkedUserSerializer(read_only=True, label='Submitter')
     version_number = serializers.ReadOnlyField()
-    release_notes = MarkdownField()
+    release_notes = MarkdownField(max_length=2048)
     urls = serializers.SerializerMethodField()
     review_status = serializers.SerializerMethodField()
 

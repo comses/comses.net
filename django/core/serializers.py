@@ -102,7 +102,7 @@ def set_tags(instance, related, attr: str = 'tags'):
     getattr(instance, attr).add(*db_tags)
 
 
-class MarkdownField(serializers.Field):
+class MarkdownField(serializers.CharField):
 
     def to_representation(self, obj):
         if isinstance(obj, Markup):

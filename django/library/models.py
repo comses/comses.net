@@ -815,8 +815,10 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
     identifier = models.CharField(max_length=128, unique=True, null=True)
     doi = models.CharField(max_length=128, unique=True, null=True)
     license = models.ForeignKey(License, null=True, on_delete=models.SET_NULL)
-    release_notes = MarkdownField(blank=True, help_text=_('Markdown formattable text, e.g., run conditions'))
-    summary = models.CharField(max_length=500, blank=True)
+    release_notes = MarkdownField(blank=True,
+                                  max_length=2048,
+                                  help_text=_('Markdown formattable text, e.g., run conditions'))
+    summary = models.CharField(max_length=1000, blank=True)
     documentation = models.FileField(null=True, help_text=_('Fulltext documentation file (PDF/PDFA)'))
     embargo_end_date = models.DateTimeField(null=True, blank=True)
     version_number = models.CharField(max_length=32,
