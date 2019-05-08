@@ -104,6 +104,10 @@ def set_tags(instance, related, attr: str = 'tags'):
 
 class MarkdownField(serializers.CharField):
 
+    def __init__(self, *args, **kwargs):
+        kwargs.setdefault('allow_blank', True)
+        super().__init__(*args, **kwargs)
+
     def to_representation(self, obj):
         if isinstance(obj, Markup):
             return obj.raw
