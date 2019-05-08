@@ -20,7 +20,7 @@ before_install:
 install: 
   - docker --version
   - echo "1" | ./build.sh 
-  - pip3 install python-coveralls coverage
+  - pip3 install coveralls coverage
 script:
   - docker-compose run --rm cms /code/deploy/test.sh
   - docker-compose up -d && docker-compose exec cms ./manage.py setup_frontend_tests && docker-compose exec js /code/deploy/test.sh
