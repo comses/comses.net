@@ -23,9 +23,9 @@
                 </div>
             </div>
         </div>
-        <div class='collapse navbar-collapse d-flex flex-column my-auto justify-content-end' id='navbar-content'>
+        <div class='collapse navbar-collapse d-flex flex-column' id='navbar-content'>
             <div class='d-flex flex-row ml-auto'>
-                <ul class='navbar-nav'>
+                <ul class='navbar-nav top-nav'>
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" id="subscribeDropdownLink"
                         data-toggle="dropdown" role="button" href="#" aria-haspopup="true" aria-expanded="false">
@@ -76,8 +76,8 @@
                     {% endif %}
                 </ul>
             </div>
-            <div class='d-flex flex-row'>
-                <ul class='navbar-nav ml-auto'>
+            <div class='d-flex flex-row ml-auto'>
+                <ul class='navbar-nav top-nav'>
                     {# FIXME: consider replacing with wagtailmenu #}
                     <li class="nav-item">
                         <a href="{{ url('library:codebase-list') }}" class="nav-link">Computational Library</a>
@@ -260,11 +260,11 @@
             <script src='https://cdn.ravenjs.com/{{RAVENJS_VERSION}}/vue/raven.min.js' crossorigin='anonymous'></script>
             <script>Raven.config('{{ sentry_public_dsn() }}').install()</script>
         {% endwith %}
-        {{ render_bundle('home') }}
 	{% if not deploy_environment().is_development() %}
 	    {{ render_bundle('chunk-common') }}
 	    {{ render_bundle('chunk-vendors') }}
 	{% endif %}
+        {{ render_bundle('home') }}
         <script>
 function submitLogout() {
     document.getElementById('logoutForm').submit();
