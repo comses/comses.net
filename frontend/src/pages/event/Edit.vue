@@ -143,7 +143,7 @@
         public _id: number | null;
 
         get endDateOpenDate() {
-            return this.state.end_date ? this.state.end_date : this.state.start_date;
+            return this.state.end_date ? new Date(this.state.end_date) : new Date(this.state.start_date);
         }
 
         public detailPageUrl(state) {

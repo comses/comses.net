@@ -1,6 +1,6 @@
 import {Component, Prop} from 'vue-property-decorator';
 import BaseControl from './base';
-import * as Datepicker from 'vuejs-datepicker';
+import Datepicker from 'vuejs-datepicker';
 import * as _ from 'lodash';
 
 @Component({
@@ -35,7 +35,7 @@ export default class InputDatepicker extends BaseControl {
     public clearButton: boolean;
 
     @Prop()
-    public openDate: string;
+    public openDate: string | Date;
 
     get format() {
         return _.isEmpty(this.formatString) ? 'yyyy-MM-dd' : this.formatString;
