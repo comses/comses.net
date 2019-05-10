@@ -1,10 +1,10 @@
-import {Component, Prop} from 'vue-property-decorator'
-import Vue from 'vue'
-import {ReviewEditorAPI} from "api/index";
-import {ReviewerFinder} from "./reviewer_finder";
-import {api} from "connection";
-import {holder} from "pages/review/directives";
-import * as _ from 'lodash'
+import {Component, Prop} from 'vue-property-decorator';
+import Vue from 'vue';
+import {ReviewEditorAPI} from '@/api/index';
+import {ReviewerFinder} from './reviewer_finder';
+import {api} from '@/api/connection';
+import {holder} from '@/pages/review/directives';
+import * as _ from 'lodash';
 
 const reviewApi = new ReviewEditorAPI();
 
@@ -65,63 +65,63 @@ const reviewApi = new ReviewEditorAPI();
         <p v-else>No reviewers has been invited</p>
     </div>`,
     components: {
-        'c-reviewer-finder': ReviewerFinder
+        'c-reviewer-finder': ReviewerFinder,
     },
     directives: {
-        holder
-    }
+        holder,
+    },
 })
 export class Invitations extends Vue {
-    candidate_reviewer = null;
-    candidate_email = '';
-    invitations: Array<any> = [];
-    feedback: Array<any> = [];
+    public candidate_reviewer = null;
+    public candidate_email = '';
+    public invitations: any[] = [];
+    public feedback: any[] = [];
 
     @Prop()
-    review_slug: string;
+    public review_slug: string;
 
     get state() {
         return this.invitations;
     }
 
-    candidateReviewerTags(invitation) {
+    public candidateReviewerTags(invitation) {
         return invitation.candidate_reviewer ? invitation.candidate_reviewer.tags : [];
     }
 
-    displayTitle(invitation) {
+    public displayTitle(invitation) {
         if (!_.isNull(invitation.candidate_reviewer)) {
-            return invitation.candidate_reviewer.name
+            return invitation.candidate_reviewer.name;
         } else {
             return `External reviewer (${invitation.candidate_email})`;
         }
     }
 
-    displayInvitationStatus(invitation) {
+    public displayInvitationStatus(invitation) {
         switch (invitation.accepted) {
             case true: {
-                return 'Accepted'
+                return 'Accepted';
             }
             case false: {
-                return 'Declined'
+                return 'Declined';
             }
             default: {
-                return 'Waiting for response'
+                return 'Waiting for response';
             }
         }
     }
 
-    async refresh() {
+    public async refresh() {
         const responseInvitations = await reviewApi.listInvitations(this.review_slug);
         this.invitations = responseInvitations.data.results;
         const responseFeedback = await reviewApi.listFeedback(this.review_slug);
         this.feedback = responseFeedback.data.results;
     }
 
-    async created() {
+    public async created() {
         this.refresh();
     }
 
-    async sendEmail() {
+    public async sendEmail() {
         const response = await reviewApi.sendInvitation({review_uuid: this.review_slug}, this.candidate_reviewer);
 
         this.candidate_reviewer = null;
@@ -129,7 +129,7 @@ export class Invitations extends Vue {
         this.$emit('pollEvents');
     }
 
-    async resendEmail(invitation_slug) {
+    public async resendEmail(invitation_slug) {
         const response = await reviewApi.resendInvitation({slug: this.review_slug, invitation_slug});
         this.$emit('pollEvents');
     }

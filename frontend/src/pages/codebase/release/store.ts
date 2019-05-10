@@ -1,9 +1,9 @@
-import * as Vue from 'vue'
-import Vuex from 'vuex'
-import {CodebaseReleaseStore, CodebaseContributor} from 'store/common'
-import {CodebaseReleaseAPI, CodebaseAPI} from 'api'
-import * as _ from 'lodash'
-import * as yup from 'yup'
+import * as Vue from 'vue';
+import Vuex from 'vuex';
+import {CodebaseReleaseStore, CodebaseContributor} from '@/store/common';
+import {CodebaseReleaseAPI, CodebaseAPI} from '@/api';
+import * as _ from 'lodash';
+import * as yup from 'yup';
 
 const codebaseReleaseAPI = new CodebaseReleaseAPI();
 const codebaseAPI = new CodebaseAPI();
@@ -16,7 +16,7 @@ const initialState: CodebaseReleaseStore = {
             docs: [],
             results: [],
         },
-        media: []
+        media: [],
     },
     release: {
         codebase: {
@@ -39,11 +39,11 @@ const initialState: CodebaseReleaseStore = {
             submitter: {
                 family_name: '',
                 given_name: '',
-                username: ''
+                username: '',
             },
             summary: '',
             tags: [],
-            title: ''
+            title: '',
         },
         absolute_url: '',
         release_contributors: [],
@@ -65,15 +65,15 @@ const initialState: CodebaseReleaseStore = {
         submitter: {
             family_name: '',
             given_name: '',
-            username: ''
+            username: '',
         },
         version_number: '',
         urls: {
             request_peer_review: null,
             review: null,
-            notify_reviewers_of_changes: null
-        }
-    }
+            notify_reviewers_of_changes: null,
+        },
+    },
 };
 
 export const contributorSchema = yup.object().shape({
@@ -82,13 +82,13 @@ export const contributorSchema = yup.object().shape({
         institution_name: yup.string(),
         institution_url: yup.string(),
         profile_url: yup.string(),
-        username: yup.string()
+        username: yup.string(),
     }).nullable(),
     given_name: yup.string().required(),
     family_name: yup.string().required(),
     middle_name: yup.string(),
     affilitions: yup.array().of(yup.string()).min(1),
-    type: yup.mixed().oneOf(['person', 'organization'])
+    type: yup.mixed().oneOf(['person', 'organization']),
 });
 
 export const schema = yup.object().shape({
@@ -97,7 +97,7 @@ export const schema = yup.object().shape({
         description: yup.string().required().min(20),
         live: yup.bool().label('is published?'),
         is_replication: yup.bool(),
-        repository_url: yup.string().url(`Not a valid url. URLs must start with http or https`)
+        repository_url: yup.string().url(`Not a valid url. URLs must start with http or https`),
     }).required(),
     contributors: yup.array().of(contributorSchema),
     release_notes: yup.string().required(),
@@ -106,25 +106,25 @@ export const schema = yup.object().shape({
     platforms: yup.array().of(yup.string()),
     programming_languages: yup.array().of(yup.string()),
     live: yup.bool(),
-    license: yup.string().required()
+    license: yup.string().required(),
 });
 
 function getFiles(context, category) {
         return codebaseReleaseAPI.listOriginalFiles({
             identifier: context.state.release.codebase.identifier,
-            version_number: context.state.release.version_number, category
-        }).then(response => context.commit('setFiles', {category, value: response.data}));
+            version_number: context.state.release.version_number, category,
+        }).then((response) => context.commit('setFiles', {category, value: response.data}));
 }
 
 interface CodebaseReleaseDetail {
-    description: string
-    documentation: string
-    embargo_end_date: string | null
-    os: string
-    license: string
-    live: boolean
-    platforms: Array<{ name: string }>
-    programming_languages: Array<{ name: string }>
+    description: string;
+    documentation: string;
+    embargo_end_date: string | null;
+    os: string;
+    license: string;
+    live: boolean;
+    platforms: Array<{ name: string }>;
+    programming_languages: Array<{ name: string }>;
 }
 
 export const store = {
@@ -140,18 +140,18 @@ export const store = {
                 platforms: state.release.platforms,
                 programming_languages: state.release.programming_languages,
                 release_notes: state.release.release_notes,
-            }
+            };
         },
 
         identity(state: CodebaseReleaseStore) {
             return {
                 identifier: state.release.codebase.identifier,
-                version_number: state.release.version_number
-            }
+                version_number: state.release.version_number,
+            };
         },
         release_contributors(state: CodebaseReleaseStore) {
             return state.release.release_contributors;
-        }
+        },
     },
     mutations: {
         setReviewStatus(state, review_status) {
@@ -184,26 +184,26 @@ export const store = {
         },
         setValidationErrors(state, validation_errors) {
             console.log(validation_errors);
-            validation_errors.inner.forEach(validation_error => {
+            validation_errors.inner.forEach((validation_error) => {
                 _.set(state.validation_errors, validation_error.path, [validation_error.message]);
-            })
+            });
         },
         setCodebaseRelease(state, data) {
             Object.keys(state.release).forEach(
-                function (k) {
+                function(k) {
                     if (data[k] !== undefined) {
                         state.release[k] = data[k];
                     }
                 });
-            state.release.release_contributors.forEach(v => {
+            state.release.release_contributors.forEach((v) => {
                 v._id = _.uniqueId();
             });
-        }
+        },
     },
     actions: {
         getCodebaseRelease(context, {identifier, version_number}) {
             return codebaseReleaseAPI.retrieve({identifier, version_number}).then(
-                response => context.commit('setCodebaseRelease', response.data));
+                (response) => context.commit('setCodebaseRelease', response.data));
         },
 
         setAtPath(context, {path, value}) {
@@ -215,10 +215,10 @@ export const store = {
 
         // Calculate any validation errors after 1s wait
         setErrorsAtPath: _.debounce((context, {schema, path, value}) => schema.validate(value).then(
-            value => context.commit('unsetValidationErrorAtPath', path),
-            validation_error => context.commit('setValidationErrorAtPath', {
+            (value) => context.commit('unsetValidationErrorAtPath', path),
+            (validation_error) => context.commit('setValidationErrorAtPath', {
                 path,
-                value: validation_error.errors
+                value: validation_error.errors,
             })), 800),
 
         getOriginalFiles(context, category) {
@@ -232,21 +232,21 @@ export const store = {
 
         deleteFile(context, {category, path}: { category: string, path: string }) {
             codebaseReleaseAPI.deleteFile({path})
-                .then(response => Promise.all([
+                .then((response) => Promise.all([
                     context.dispatch('getOriginalFiles', category),
                 ]));
         },
 
         clearCategory(context, {identifier, version_number, category}) {
             codebaseReleaseAPI.clearCategory({identifier, version_number, category})
-                .then(response => Promise.all([
+                .then((response) => Promise.all([
                     context.dispatch('getOriginalFiles', category),
                 ]));
         },
 
         initialize(context, {identifier, version_number}) {
             return context.dispatch('getCodebaseRelease', {identifier, version_number})
-                .then(r => {
+                .then((r) => {
                     if (context.state.release.live) {
                         return Promise.all([
                             context.dispatch('getMediaFiles'),
@@ -258,9 +258,9 @@ export const store = {
                             context.dispatch('getOriginalFiles', 'code'),
                             context.dispatch('getOriginalFiles', 'media'),
                             context.dispatch('getMediaFiles'),
-                        ])
+                        ]);
                     }
                 });
-        }
-    }
+        },
+    },
 };

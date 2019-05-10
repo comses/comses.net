@@ -1,4 +1,4 @@
-import {EditorReviewDetail} from "./edit";
+import {EditorReviewDetail} from './edit';
 
 function extractParams() {
     const el = document.getElementById('app');

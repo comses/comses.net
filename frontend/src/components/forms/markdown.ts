@@ -1,11 +1,11 @@
-import BaseControl from 'components/forms/base'
-import {Component, Prop} from 'vue-property-decorator'
-import {markdownEditor as MarkdownEditor} from 'vue-simplemde'
+import BaseControl from '@/components/forms/base';
+import {Component, Prop} from 'vue-property-decorator';
+import {markdownEditor as MarkdownEditor} from 'vue-simplemde';
 
 enum ViewMode {
     code,
     view,
-    code_and_view
+    code_and_view,
 }
 
 @Component({
@@ -21,25 +21,25 @@ enum ViewMode {
         </slot>
     </div>`,
     components: {
-        MarkdownEditor
-    }
+        MarkdownEditor,
+    },
 })
 class MarkDown extends BaseControl {
     @Prop({default: '10em'})
-    minHeight: string;
+    public minHeight: string;
 
     @Prop()
-    label: string;
+    public label: string;
 
     @Prop()
-    help: string;
+    public help: string;
 
     get simplemde() {
-        return (<any>this.$refs.editor).simplemde;
+        return (this.$refs.editor as any).simplemde;
     }
 
-    mounted() {
-        this.simplemde.codemirror.options.extraKeys['Tab'] = false;
+    public mounted() {
+        this.simplemde.codemirror.options.extraKeys.Tab = false;
         this.simplemde.codemirror.options.extraKeys['Shift-Tab'] = false;
     }
 }

@@ -1,8 +1,8 @@
-import BaseControl from './forms/base'
-import {Component, Prop} from 'vue-property-decorator'
-import * as _ from 'lodash'
-import Multiselect from 'vue-multiselect'
-import {TagAPI} from 'api'
+import BaseControl from './forms/base';
+import {Component, Prop} from 'vue-property-decorator';
+import * as _ from 'lodash';
+import Multiselect from 'vue-multiselect';
+import {TagAPI} from '@/api';
 
 @Component({
     template: `<div :class="['form-group', {'child-is-invalid': isInvalid }]">
@@ -36,39 +36,39 @@ import {TagAPI} from 'api'
         </slot>
     </div>`,
     components: {
-        Multiselect
-    }
+        Multiselect,
+    },
 })
 export default class Tagger extends BaseControl {
     @Prop({default: 'Type to find matching tags'})
-    placeholder: string;
+    public placeholder: string;
 
     @Prop()
-    label: string;
+    public label: string;
 
     @Prop()
-    help: string;
+    public help: string;
 
-    isLoading = false;
-    matchingTags = [];
+    public isLoading = false;
+    public matchingTags = [];
 
-    addTag(name, id) {
+    public addTag(name, id) {
         this.updateValue(_.concat(this.value, [{ name}]));
     }
 
-    list(query) {
+    public list(query) {
         return TagAPI.list({query});
     }
 
-    async fetchMatchingTags(query) {
+    public async fetchMatchingTags(query) {
         this.isLoading = true;
         const response = await this.list(query);
         this.matchingTags = response.data.results;
         this.isLoading = false;
     }
 
-    updateValue(value) {
-        let self: any = this;
+    public updateValue(value) {
+        const self: any = this;
         this.$emit('input', value);
         this.$emit('clear', this.name);
     }
@@ -76,7 +76,7 @@ export default class Tagger extends BaseControl {
 
 export class EventTagger extends Tagger {
 
-    list(query) {
+    public list(query) {
         return TagAPI.listEventTags({query});
     }
 
@@ -84,15 +84,15 @@ export class EventTagger extends Tagger {
 
 export class JobTagger extends Tagger {
 
-    list(query) {
-        return TagAPI.listJobTags({query}); 
+    public list(query) {
+        return TagAPI.listJobTags({query});
     }
 
 }
 
 export class CodebaseTagger extends Tagger {
 
-    list(query) {
+    public list(query) {
         return TagAPI.listCodebaseTags({query});
     }
 
@@ -100,7 +100,7 @@ export class CodebaseTagger extends Tagger {
 
 export class ProfileTagger extends Tagger {
 
-    list(query) {
+    public list(query) {
         return TagAPI.listProfileTags({query});
     }
 

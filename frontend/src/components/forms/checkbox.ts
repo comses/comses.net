@@ -1,5 +1,5 @@
-import { Component, Prop } from 'vue-property-decorator'
-import BaseControl from './base'
+import { Component, Prop } from 'vue-property-decorator';
+import BaseControl from './base';
 
 @Component({
     template: `<div class="form-check">
@@ -14,22 +14,22 @@ import BaseControl from './base'
         <div class="invalid-feedback">
             {{ errorMessage }}
         </div>
-    </div>`
+    </div>`,
 })
 class Checkbox extends BaseControl {
     @Prop({ default: ''})
-    validate: string;
+    public validate: string;
 
     @Prop()
-    label: string;
+    public label: string;
 
     @Prop({ default: ''})
-    help: string;
+    public help: string;
 
-    toggle(value: string) {
+    public toggle(value: string) {
         let v: boolean = false;
         if (value === 'true') {
-            v = true
+            v = true;
         }
         this.updateValue(!v);
     }

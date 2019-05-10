@@ -1,5 +1,5 @@
-import {SearchJobs} from './search';
-import {SortBy} from "components/sort-by";
+import SearchJobs from './Search.vue';
+import SortBy from '@/components/SortBy.vue';
 
 new SearchJobs().$mount('#sidebar');
 new SortBy({

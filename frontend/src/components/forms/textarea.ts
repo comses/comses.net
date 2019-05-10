@@ -1,5 +1,5 @@
-import {Component, Prop} from 'vue-property-decorator'
-import BaseControl from './base'
+import {Component, Prop} from 'vue-property-decorator';
+import BaseControl from './base';
 
 @Component({
     template: `<div class="form-group">
@@ -12,12 +12,12 @@ import BaseControl from './base'
         <slot name="help">
             <small :aria-describedby='controlId' class="form-text text-muted">{{ help }}</small>
         </slot>
-    </div>`
+    </div>`,
 })
 export default class TextArea extends BaseControl {
     @Prop({default: ''})
-    label: string;
+    public label: string;
 
     @Prop({default: 10})
-    rows: string;
+    public rows: string;
 }

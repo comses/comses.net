@@ -1,12 +1,11 @@
-import '@/styles/index.scss'
-import EditCodebase from './edit'
+import EditCodebase from './Edit.vue';
 
 function extractUrlParams(pathname: string) {
-    let match = pathname.match(/\/codebases\/([\w-]+)\/edit\//);
+    const match = pathname.match(/\/codebases\/([\w-]+)\/edit\//);
     if (match !== null) {
         return { _identifier: match[1] };
     }
-    return { _identifier: null }
+    return { _identifier: null };
 }
 
 const editCodebase = new EditCodebase({ propsData: extractUrlParams(window.location.pathname)}).$mount('#app');

@@ -1,23 +1,23 @@
-import Vue from 'vue'
-import {Component, Prop} from 'vue-property-decorator'
-import {schema} from './detail'
+import Vue from 'vue';
+import {Component, Prop} from 'vue-property-decorator';
+import {schema} from './detail';
 import * as _ from 'lodash';
-import {populateErrorsFromValidationError} from 'pages/form'
+import {populateErrorsFromValidationError} from '@/pages/form';
 
 @Component({
     template: `<p class="card-text">
-        {{ label }}: 
+        {{ label }}:
         <span v-if="check" class="fa fa-check text-success"></span>
-        <span v-else class="fa fa-times text-danger"></span> 
-    </p>`
+        <span v-else class="fa fa-times text-danger"></span>
+    </p>`,
 
 })
 export class Check extends Vue {
     @Prop()
-    check: boolean;
+    public check: boolean;
 
     @Prop()
-    label: string;
+    public label: string;
 }
 
 @Component({
@@ -58,20 +58,20 @@ export class Check extends Vue {
                         <c-check label="Operating system" :check="detailProgress.os"></c-check>
                         <c-check label="Software Framework" :check="detailProgress.platforms"></c-check>
                         <c-check label="Programming language" :check="detailProgress.programming_languages"></c-check>
-                        <c-check label="License" :check="detailProgress.license"></c-check> 
+                        <c-check label="License" :check="detailProgress.license"></c-check>
                     </div>
                 </div>
             </div>
         </div>
     </div>`,
     components: {
-        'c-check': Check
-    }
+        'c-check': Check,
+    },
 })
 export class Progress extends Vue {
     get cardClass() {
         // Published releases stretch contributor and detail cards to take up whole row
-        return ['col-sm-12 col-md-6', { 'col-lg-4': !this.published }]
+        return ['col-sm-12 col-md-6', { 'col-lg-4': !this.published }];
     }
 
     get published() {
@@ -99,7 +99,7 @@ export class Progress extends Vue {
             code: this.upload.code.length > 0,
             data: this.upload.data.length > 0,
             docs: this.upload.docs.length > 0,
-            results: this.upload.results.length > 0
+            results: this.upload.results.length > 0,
         };
     }
 
