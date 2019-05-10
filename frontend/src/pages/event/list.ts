@@ -1,5 +1,5 @@
-import {SearchEvents} from 'pages/event/search';
-import {SortBy} from "components/sort-by";
+import SearchEvents from '@/pages/event/Search.vue';
+import SortBy from '@/components/SortBy.vue';
 
 new SearchEvents().$mount('#sidebar');
 new SortBy({
@@ -10,7 +10,7 @@ new SortBy({
             {label: 'Submission deadline', value: 'submission_deadline'},
             {label: 'Early registration deadline', value: 'early_registration_deadline'},
             {label: 'Date posted', value: 'date_created'},
-            {label: 'Recently modified', value: 'last_modified'}
+            {label: 'Recently modified', value: 'last_modified'},
         ],
     },
 }).$mount('#sortby');

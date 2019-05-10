@@ -1,5 +1,5 @@
-import { Component, Prop } from 'vue-property-decorator'
-import BaseControl from './base'
+import { Component, Prop } from 'vue-property-decorator';
+import BaseControl from './base';
 
 @Component({
     template: `<div class="form-group">
@@ -14,25 +14,25 @@ import BaseControl from './base'
         <slot name="help">
             <small :aria-describedby='controlId' class="form-text text-muted">{{ help }}</small>
         </slot>
-    </div>`
+    </div>`,
 })
 class Input extends BaseControl {
     @Prop({ default: ''})
-    validate: string;
+    public validate: string;
 
     @Prop({ default: 'text'})
-    type: string;
+    public type: string;
 
     @Prop({default: ''})
-    label: string;
+    public label: string;
 
     @Prop({ default: ''})
-    help: string;
+    public help: string;
 
-    toggle(value: string) {
+    public toggle(value: string) {
         let v: boolean = false;
         if (value === 'true') {
-            v = true
+            v = true;
         }
         this.$emit('input', !v);
     }

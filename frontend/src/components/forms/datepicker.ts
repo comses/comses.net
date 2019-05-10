@@ -1,6 +1,6 @@
-import {Component, Prop} from 'vue-property-decorator'
-import BaseControl from './base'
-import * as Datepicker from 'vuejs-datepicker'
+import {Component, Prop} from 'vue-property-decorator';
+import BaseControl from './base';
+import Datepicker from 'vuejs-datepicker';
 import * as _ from 'lodash';
 
 @Component({
@@ -9,7 +9,7 @@ import * as _ from 'lodash';
             <label :class="['form-control-label', requiredClass]">{{ label }}</label>
         </slot>
         <datepicker :bootstrap-styling="true" :value="dateValue" @input="updateDate" wrapper-class="comses-datepicker"
-        :format="format" :input-class="datepickerInputClass" clear-button-icon='fa fa-times' :clear-button="clearButton" 
+        :format="format" :input-class="datepickerInputClass" clear-button-icon='fa fa-times' :clear-button="clearButton"
         :open-date="openDate" @cleared="cleared">
         </datepicker>
         <div v-if="isInvalid" class="invalid-feedback-always">{{ errorMessage }}</div>
@@ -18,27 +18,27 @@ import * as _ from 'lodash';
         </slot>
     </div>`,
     components: {
-        'datepicker': Datepicker
-    }
+        datepicker: Datepicker,
+    },
 })
 export default class InputDatepicker extends BaseControl {
     @Prop()
-    label: string;
+    public label: string;
 
     @Prop()
-    help: string;
+    public help: string;
 
     @Prop()
-    formatString: string;
+    public formatString: string;
 
     @Prop({default: false})
-    clearButton: boolean;
+    public clearButton: boolean;
 
     @Prop()
-    openDate: string;
+    public openDate: string | Date;
 
     get format() {
-        return _.isEmpty(this.formatString) ? "yyyy-MM-dd" : this.formatString;
+        return _.isEmpty(this.formatString) ? 'yyyy-MM-dd' : this.formatString;
     }
 
     get datepickerInputClass() {
@@ -57,11 +57,10 @@ export default class InputDatepicker extends BaseControl {
         return new Date(year, month, day);
     }
 
-    updateDate(value) {
+    public updateDate(value) {
         if (_.isNil(value)) {
             this.updateValue(value);
-        }
-        else {
+        } else {
             switch (value.constructor.name) {
                 case 'String': this.updateValue(value); break;
                 case 'Date': this.updateValue(value.toISOString()); break;
@@ -70,7 +69,7 @@ export default class InputDatepicker extends BaseControl {
         }
     }
 
-    cleared() {
+    public cleared() {
         this.updateValue(null);
     }
 }

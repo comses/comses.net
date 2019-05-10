@@ -1,24 +1,24 @@
-import {Component, Prop, Watch} from 'vue-property-decorator'
-import Vue from 'vue'
-import Vuex from 'vuex'
-import VueRouter from 'vue-router'
+import {Component, Prop, Watch} from 'vue-property-decorator';
+import Vue from 'vue';
+import Vuex from 'vuex';
+import VueRouter from 'vue-router';
 
-import Contributors from './contributors'
-import {Upload} from "components/upload";
-import {UploadPage} from './upload'
-import CodebaseReleaseMetadata from './detail'
-import CodebaseEditForm from '../edit'
-import {store} from './store'
-import {CreateOrUpdateHandler} from "api/handler";
-import {CodebaseReleaseAPI, CodebaseAPI, ReviewEditorAPI} from "api";
+import Contributors from './contributors';
+import {Upload} from '@/components/upload';
+import {UploadPage} from './upload';
+import CodebaseReleaseMetadata from './detail';
+import CodebaseEditForm from '../Edit.vue';
+import {store} from './store';
+import {CreateOrUpdateHandler} from '@/api/handler';
+import {CodebaseReleaseAPI, CodebaseAPI, ReviewEditorAPI} from '@/api';
 import * as _ from 'lodash';
-import * as yup from'yup';
-import {Progress} from "pages/codebase/release/progress";
-import {createFormValidator} from "pages/form";
-import {HandlerWithRedirect} from "handler";
-import Input from "components/forms/input";
-import MessageDisplay from "components/message_display";
-import {ConfirmationModal} from "components/confirmation_modal";
+import * as yup from 'yup';
+import {Progress} from '@/pages/codebase/release/progress';
+import {createFormValidator} from '@/pages/form';
+import {HandlerWithRedirect} from '@/api/handler';
+import Input from '@/components/forms/input';
+import MessageDisplay from '@/components/message_display';
+import {ConfirmationModal} from '@/components/confirmation_modal';
 
 const codebaseReleaseAPI = new CodebaseReleaseAPI();
 const codebaseAPI = new CodebaseAPI();
@@ -68,34 +68,34 @@ type CodebaseTabs = 'metadata' | 'media';
         </div>`,
     components: {
         'codebase-edit-form': CodebaseEditForm,
-        'c-upload': Upload
-    }
+        'c-upload': Upload,
+    },
 })
 class CodebaseEditFormPopup extends Vue {
     @Prop()
-    identifier: string;
+    public identifier: string;
 
     @Prop()
-    redirect: boolean;
+    public redirect: boolean;
 
     @Prop()
-    files: Array<{ name: string, identifier: any }>;
+    public files: Array<{ name: string, identifier: any }>;
 
     get uploadUrl() {
         return codebaseAPI.mediaListUrl(this.identifier);
     }
 
-    active: CodebaseTabs = 'metadata';
+    public active: CodebaseTabs = 'metadata';
 
-    isActive(name: CodebaseTabs) {
+    public isActive(name: CodebaseTabs) {
         return name == this.active;
     }
 
-    setActive(name: CodebaseTabs) {
+    public setActive(name: CodebaseTabs) {
         this.active = name;
     }
 
-    tabClass(name: CodebaseTabs) {
+    public tabClass(name: CodebaseTabs) {
         if (name === this.active) {
             return 'active';
         } else {
@@ -103,31 +103,31 @@ class CodebaseEditFormPopup extends Vue {
         }
     }
 
-    contentClass(name: CodebaseTabs) {
+    public contentClass(name: CodebaseTabs) {
         if (name === this.active) {
             return 'show active';
         } else {
-            return ''
+            return '';
         }
     }
 
-    getMediaFiles() {
+    public getMediaFiles() {
         this.$store.dispatch('getMediaFiles');
     }
 
-    async deleteFile(image_id) {
+    public async deleteFile(image_id) {
         await codebaseAPI.mediaDelete(this.identifier, image_id);
         this.getMediaFiles();
     }
 
-    async clear() {
+    public async clear() {
         await codebaseAPI.mediaClear(this.identifier);
         this.getMediaFiles();
     }
 }
 
 export const publishSchema = yup.object().shape({
-   version_number: yup.string().required().matches(/\d+\.\d+\.\d+/, 'Not a valid semantic version string. Must be in MAJOR.MINOR.PATCH format.')
+   version_number: yup.string().required().matches(/\d+\.\d+\.\d+/, 'Not a valid semantic version string. Must be in MAJOR.MINOR.PATCH format.'),
 });
 
 @Component({
@@ -146,7 +146,7 @@ export const publishSchema = yup.object().shape({
                     longer be able to add or remove files to the release. You will still be able to edit certain release
                     metadata, however.
                     </p>
-                    <p>Please assign a semantic version number to this release. CoMSES Net adheres to the 
+                    <p>Please assign a semantic version number to this release. CoMSES Net adheres to the
                     <a target='_blank' href='https://semver.org'>semantic versioning</a> standard, which splits a version number into
                     three parts: major, minor and patch. For example, version 2.7.18 has major version 2,
                     minor version 7, and patch version 18. You should increase the <i>major</i> version (leftmost number)
@@ -176,51 +176,51 @@ export const publishSchema = yup.object().shape({
     </div>`,
     components: {
         'c-input': Input,
-        'c-message-display': MessageDisplay
-    }
+        'c-message-display': MessageDisplay,
+    },
 })
 class PublishModal extends createFormValidator(publishSchema) {
     @Prop()
-    identifier: string;
+    public identifier: string;
 
     @Prop()
-    _version_number: number;
+    public _version_number: number;
 
     @Prop()
-    absolute_url: string;
+    public absolute_url: string;
 
     @Watch('_version_number', {immediate: true})
-    setVersionNumber() {
-        (<any>this).version_number = _.clone(this._version_number);
+    public setVersionNumber() {
+        (this as any).version_number = _.clone(this._version_number);
     }
 
-    clear() {
+    public clear() {
         this.statusMessages = [];
     }
 
-    close() {
-        (<any>$('#publishCodebaseReleaseModal')).modal('hide');
+    public close() {
+        ($('#publishCodebaseReleaseModal') as any).modal('hide');
         this.clear();
     }
 
-    detailPageUrl(version_number) {
+    public detailPageUrl(version_number) {
         return codebaseReleaseAPI.detailUrl({identifier: this.identifier, version_number});
     }
 
-    publish() {
+    public publish() {
         this.clear();
         return codebaseReleaseAPI.publish({identifier: this.identifier, version_number: this._version_number},
             new HandlerWithRedirect(this));
     }
 }
 
-@Component(<any>{
+@Component({
     store: new Vuex.Store(store),
     components: {
         'c-confirmation-modal': ConfirmationModal,
         'c-publish-modal': PublishModal,
         'c-codebase-edit-form-popup': CodebaseEditFormPopup,
-        'c-progress': Progress
+        'c-progress': Progress,
     },
     template: `<div>
         <div v-if="isInitialized">
@@ -229,7 +229,7 @@ class PublishModal extends createFormValidator(publishSchema) {
             {{ $store.state.release.codebase.title }} <i>v{{ $store.state.release.version_number }}</i>
             </h1>
             <h5 class="text-muted">
-            Peer Review Status: {{ reviewStatus }} | <a :href='absolute_url'>View Live</a> 
+            Peer Review Status: {{ reviewStatus }} | <a :href='absolute_url'>View Live</a>
             <a class='float-right' href='//forum.comses.net/t/archiving-your-model-1-getting-started/7377'><i class='fa fa-question-circle'></i> Need help? Check out our archiving tutorial</a>
             </h5>
             <div class='pb-2'>
@@ -284,21 +284,21 @@ class PublishModal extends createFormValidator(publishSchema) {
             {path: '/', redirect: {name: 'contributors'}},
             {path: '/upload', component: UploadPage, name: 'upload'},
             {path: '/contributors/', component: Contributors, name: 'contributors'},
-            {path: '/detail/', component: CodebaseReleaseMetadata, name: 'detail'}
-        ]
-    })
-})
+            {path: '/detail/', component: CodebaseReleaseMetadata, name: 'detail'},
+        ],
+    }),
+} as any)
 class Workflow extends Vue {
     @Prop()
-    identifier: string;
+    public identifier: string;
 
     @Prop()
-    version_number: string;
+    public version_number: string;
 
     @Prop()
-    review_status_enum: object;
+    public review_status_enum: object;
 
-    isInitialized: boolean = false;
+    public isInitialized: boolean = false;
 
     get requestPeerReviewUrl() {
         return this.$store.state.release.urls.request_peer_review;
@@ -319,7 +319,7 @@ class Workflow extends Vue {
     get reviewStatus() {
         const status = this.$store.state.release.review_status;
         if (_.isNull(status)) {
-            return 'Not reviewed'
+            return 'Not reviewed';
         }
         return this.review_status_enum[this.$store.state.release.review_status];
     }
@@ -339,7 +339,7 @@ class Workflow extends Vue {
             case 'detail':
                 return this.$store.getters.detail;
             default:
-                return {}
+                return {};
         }
     }
 
@@ -347,30 +347,30 @@ class Workflow extends Vue {
         return 0;
     }
 
-    created() {
+    public created() {
         if (this.identifier && this.version_number) {
             this.$store.dispatch('initialize', {
                 identifier: this.identifier,
-                version_number: this.version_number
-            }).then(response => this.isInitialized = true);
+                version_number: this.version_number,
+            }).then((response) => this.isInitialized = true);
         } else {
             this.isInitialized = true;
         }
     }
 
-    setCodebase(codebase) {
+    public setCodebase(codebase) {
         this.$store.commit('setCodebase', codebase);
     }
 
-    setReviewStatus(review_status) {
+    public setReviewStatus(review_status) {
         this.$store.commit('setReviewStatus', review_status);
     }
 
-    setUrls(urls) {
+    public setUrls(urls) {
         this.$store.commit('setUrls', urls);
     }
 
-    handlePeerReviewCreation(data) {
+    public handlePeerReviewCreation(data) {
         this.setReviewStatus(data.review_status);
         this.setUrls(data.urls);
     }

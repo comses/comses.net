@@ -1,5 +1,5 @@
-import {detect} from 'detect-browser'
-import Vue from 'vue'
+import {detect} from 'detect-browser';
+import Vue from 'vue';
 import {Component, Prop} from 'vue-property-decorator';
 
 const MIN_CHROME_VERSION = 59;
@@ -14,16 +14,16 @@ const MIN_CHROME_VERSION = 59;
                 <span class='fa fa-warning'></span> Browser is unsupported. Some site functionality may not work.
             </div>
         </li>
-    </ul>`
+    </ul>`,
 })
 export class BrowserDetect extends Vue {
-    browser_warnings = {
-        'ie': 'All versions of Internet Explorer are unsupported. Some site functionality may not work.',
-        'chrome': `Chrome versions before ${MIN_CHROME_VERSION} are unsupported. Some site functionality may not work.`
+    public browser_warnings = {
+        ie: 'All versions of Internet Explorer are unsupported. Some site functionality may not work.',
+        chrome: `Chrome versions before ${MIN_CHROME_VERSION} are unsupported. Some site functionality may not work.`,
     };
 
     @Prop()
-    browser: any;
+    public browser: any;
 
     get supported() {
         if (this.browser) {

@@ -1,8 +1,8 @@
-import { Component, Prop, Watch } from 'vue-property-decorator'
-import Vue from 'vue'
-import Checkbox from 'components/forms/checkbox'
-import Multiselect from 'vue-multiselect'
-import Input from 'components/forms/input'
+import { Component, Prop, Watch } from 'vue-property-decorator';
+import Vue from 'vue';
+import Checkbox from '@/components/forms/checkbox';
+import Multiselect from 'vue-multiselect';
+import Input from '@/components/forms/input';
 
 @Component({
     template: `<div>
@@ -18,19 +18,19 @@ import Input from 'components/forms/input'
         'c-checkbox': Checkbox,
         'c-input': Input,
         Multiselect,
-    }
+    },
 })
 export default class Submit extends Vue {
-    validationMsg: { type: 'error' | 'success' | 'none', msg: string} = { type: 'none', msg: ''};
+    public validationMsg: { type: 'error' | 'success' | 'none', msg: string} = { type: 'none', msg: ''};
 
     @Watch('acceptTermsAndConditions')
-    onChangeAcceptTermsAndConditions() {
+    public onChangeAcceptTermsAndConditions() {
         this.validationMsg = { type: 'none', msg: ''};
     }
 
-    submit() {
+    public submit() {
         this.$store.dispatch('submitIfValid')
-            .then(response => this.validationMsg = { type: 'success', msg: 'Submission Successful'})
-            .catch(response => this.validationMsg = { type: 'error', msg: 'Submission Failed' });
+            .then((response) => this.validationMsg = { type: 'success', msg: 'Submission Successful'})
+            .catch((response) => this.validationMsg = { type: 'error', msg: 'Submission Failed' });
     }
 }

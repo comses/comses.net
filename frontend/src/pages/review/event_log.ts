@@ -1,5 +1,5 @@
-import {Component, Prop} from "vue-property-decorator";
-import Vue from "vue";
+import {Component, Prop} from 'vue-property-decorator';
+import Vue from 'vue';
 
 @Component({
     template: `<div>
@@ -18,12 +18,12 @@ import Vue from "vue";
                 </div>
             </div>
         </div>
-    </div>`
+    </div>`,
 })
 export class EventLog extends Vue {
     @Prop()
-    events: Array<object>;
+    public events: object[];
 
     @Prop()
-    errors: Array<string>;
+    public errors: string[];
 }

@@ -1,16 +1,16 @@
-import {AxiosRequestConfig, AxiosResponse} from 'axios'
-import * as _ from 'lodash'
-import * as _$ from 'jquery'
-import axios from "axios";
+import {AxiosRequestConfig, AxiosResponse} from 'axios';
+import * as _ from 'lodash';
+import * as _$ from 'jquery';
+import axios from 'axios';
 
 const $: any = _$;
 
 export function getCookie(name) {
     let cookieValue: null | string = null;
     if (document.cookie && document.cookie != '') {
-        let cookies = document.cookie.split(';');
+        const cookies = document.cookie.split(';');
         for (let i = 0; i < cookies.length; i++) {
-            let cookie = _.trim(cookies[i]);
+            const cookie = _.trim(cookies[i]);
             // Does this cookie string begin with the name we want?
             if (cookie.substring(0, name.length + 1) == (name + '=')) {
                 cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
@@ -24,7 +24,7 @@ export function getCookie(name) {
 enum StatusMessageCode {
     danger,
     warning,
-    success
+    success,
 }
 
 function changePage(url: string) {
@@ -32,29 +32,29 @@ function changePage(url: string) {
 }
 
 export interface CreateOrUpdateHandler {
-    state: object
+    state: object;
 
-    handleSuccessWithDataResponse(response: AxiosResponse): void
+    handleSuccessWithDataResponse(response: AxiosResponse): void;
 
-    handleSuccessWithoutDataResponse(response: AxiosResponse): void
+    handleSuccessWithoutDataResponse(response: AxiosResponse): void;
 
-    handleOtherError(network_error): void
+    handleOtherError(network_error): void;
 
-    handleServerValidationError(response: { response: AxiosResponse }): void
+    handleServerValidationError(response: { response: AxiosResponse }): void;
 }
 
 export interface FormComponent {
-    validate(): Promise<any>
 
-    state: object
-    statusMessages: Array<{ classNames: string, message: string }>
-    $emit: (...x: Array<any>) => void
+    state: object;
+    statusMessages: Array<{ classNames: string, message: string }>;
+    $emit: (...x: any[]) => void;
+    validate(): Promise<any>;
 }
 
 export interface FormRedirectComponent extends FormComponent {
-    errors
+    errors;
 
-    detailPageUrl(state): string
+    detailPageUrl(state): string;
 }
 
 export function baseHandleOtherError(response_or_network_error): string {
@@ -67,7 +67,7 @@ export function baseHandleOtherError(response_or_network_error): string {
             default: msg = `HTTP Error (${response_or_network_error.response.status})`; break;
         }
     } else {
-        msg = 'Network Error. Request never got a response from server.'
+        msg = 'Network Error. Request never got a response from server.';
     }
     return msg;
 }
@@ -82,8 +82,8 @@ function baseHandleValidationError(responseError, component: FormRedirectCompone
         } else {
             component.statusMessages.push({
                 classNames: 'alert alert-danger',
-                message: `${field}: '${response.data[field]}'`
-            })
+                message: `${field}: '${response.data[field]}'`,
+            });
         }
     }
 }
@@ -98,21 +98,21 @@ export class HandlerWithRedirect implements CreateOrUpdateHandler {
         return this.component.state;
     }
 
-    handleOtherError(response_or_network_error) {
+    public handleOtherError(response_or_network_error) {
         const msg = baseHandleOtherError(response_or_network_error);
         this.component.statusMessages = [{classNames: 'alert alert-danger', message: msg}];
     }
 
 
-    handleServerValidationError(responseError) {
+    public handleServerValidationError(responseError) {
         baseHandleValidationError(responseError, this.component);
     }
 
-    handleSuccessWithDataResponse(response: AxiosResponse) {
+    public handleSuccessWithDataResponse(response: AxiosResponse) {
         changePage(this.component.detailPageUrl(response.data));
     }
 
-    handleSuccessWithoutDataResponse(response: AxiosResponse) {
+    public handleSuccessWithoutDataResponse(response: AxiosResponse) {
         changePage(this.component.detailPageUrl(response.data));
     }
 }
@@ -125,28 +125,28 @@ export class HandlerShowSuccessMessage implements CreateOrUpdateHandler {
         return this.component.state;
     }
 
-    updateListServerValidationMessage(data) {
+    public updateListServerValidationMessage(data) {
         this.component.statusMessages = data
             .map((error, index) => ({error, index}))
-            .filter(value => !_.isEmpty(value.error))
-            .map(value => ({
+            .filter((value) => !_.isEmpty(value.error))
+            .map((value) => ({
                 classNames: 'alert alert-danger',
-                message: `Validation error at element ${value.index}: ${value.error}`
+                message: `Validation error at element ${value.index}: ${value.error}`,
             }));
     }
 
-    handleOtherError(response_or_network_error) {
+    public handleOtherError(response_or_network_error) {
         const msg = baseHandleOtherError(response_or_network_error);
         this.component.statusMessages = [{classNames: 'alert alert-danger', message: msg}];
     }
 
-    handleServerValidationError(response: { response: AxiosResponse}) {
+    public handleServerValidationError(response: { response: AxiosResponse}) {
         const data = response.response.data;
         if (_.has(data, 'non_field_errors')) {
             const errors = data.non_field_errors;
             this.component.statusMessages = [{
                 classNames: 'alert alert-danger',
-                message: errors ? `Server side validation failed: ${errors}` : 'Server side validation failed'
+                message: errors ? `Server side validation failed: ${errors}` : 'Server side validation failed',
             }];
         } else {
             this.updateListServerValidationMessage(data);
@@ -154,12 +154,12 @@ export class HandlerShowSuccessMessage implements CreateOrUpdateHandler {
 
     }
 
-    handleSuccessWithDataResponse(response: AxiosResponse) {
+    public handleSuccessWithDataResponse(response: AxiosResponse) {
         this.component.state = response.data;
         this.component.statusMessages = [{classNames: 'alert alert-success', message: 'Successfully saved'}];
     }
 
-    handleSuccessWithoutDataResponse(response: AxiosResponse) {
+    public handleSuccessWithoutDataResponse(response: AxiosResponse) {
         this.component.statusMessages = [{classNames: 'alert alert-success', message: 'Successfully saved'}];
     }
 
@@ -174,7 +174,7 @@ export class DismissOnSuccessHandler implements CreateOrUpdateHandler {
         return this.component.state;
     }
 
-    handleOtherError(response_or_network_error) {
+    public handleOtherError(response_or_network_error) {
         let msg;
         if (!_.isUndefined(response_or_network_error.response)) {
             switch (response_or_network_error.response.status) {
@@ -184,28 +184,28 @@ export class DismissOnSuccessHandler implements CreateOrUpdateHandler {
                 default: msg = `HTTP Error (${response_or_network_error.response.status})`; break;
             }
         } else {
-            msg = 'Network Error. Request never got a response from server.'
+            msg = 'Network Error. Request never got a response from server.';
         }
 
         this.component.statusMessages = [{classNames: 'alert alert-danger', message: msg}];
     }
 
-    handleServerValidationError(response: { response: AxiosResponse }) {
+    public handleServerValidationError(response: { response: AxiosResponse }) {
         this.component.statusMessages = [{classNames: 'alert alert-danger', message: 'Server side validation failed'}];
     }
 
-    handleSuccessWithDataResponse(response: AxiosResponse) {
+    public handleSuccessWithDataResponse(response: AxiosResponse) {
         this.component.state = response.data;
         this.component.statusMessages = [];
         this.dismissModal();
     }
 
-    handleSuccessWithoutDataResponse(response: AxiosResponse) {
+    public handleSuccessWithoutDataResponse(response: AxiosResponse) {
         this.component.statusMessages = [];
         this.dismissModal();
     }
 
-    dismissModal() {
+    public dismissModal() {
         $(this.modalId).modal('hide');
         this.component.$emit('updated', this.state);
     }
@@ -218,21 +218,21 @@ export class Api {
         if (_.isUndefined(config)) {
             config = {
                 headers: {'Content-Type': 'application/json'},
-                baseURL: (<any>window).__BASE_URL__
+                baseURL: (window as any).__BASE_URL__,
             };
         }
         this.axios = axios.create(config);
-        this.axios.interceptors.request.use(config => {
+        this.axios.interceptors.request.use((config) => {
             config.headers['X-CSRFToken'] = getCookie('csrftoken');
             return config;
-        }, error => Promise.reject(error));
+        }, (error) => Promise.reject(error));
     }
 
-    async postForm(url: string, formData: FormData, config?: AxiosRequestConfig) {
+    public async postForm(url: string, formData: FormData, config?: AxiosRequestConfig) {
         return this.axios.post(url, formData, config);
     }
 
-    async postOrPut(method: 'post' | 'put', url: string, component: CreateOrUpdateHandler, config?: AxiosRequestConfig) {
+    public async postOrPut(method: 'post' | 'put', url: string, component: CreateOrUpdateHandler, config?: AxiosRequestConfig) {
         try {
             const response = await this.axios({method, url, data: component.state, config});
             component.handleSuccessWithDataResponse(response);
@@ -246,19 +246,19 @@ export class Api {
         }
     }
 
-    post(url: string, component: CreateOrUpdateHandler, config?: AxiosRequestConfig) {
+    public post(url: string, component: CreateOrUpdateHandler, config?: AxiosRequestConfig) {
         return this.postOrPut('post', url, component, config);
     }
 
-    put(url: string, component: CreateOrUpdateHandler, config?: AxiosRequestConfig) {
+    public put(url: string, component: CreateOrUpdateHandler, config?: AxiosRequestConfig) {
         return this.postOrPut('put', url, component, config);
     }
 
-    get(url: string, config?: AxiosRequestConfig) {
+    public get(url: string, config?: AxiosRequestConfig) {
         return this.axios.get(url, config);
     }
 
-    delete(url: string, config?: AxiosRequestConfig) {
+    public delete(url: string, config?: AxiosRequestConfig) {
         return this.axios.delete(url);
     }
 }

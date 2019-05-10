@@ -1,27 +1,27 @@
-import {Component, Prop} from 'vue-property-decorator'
-import {api} from "api/connection";
-import Vue from 'vue'
-import * as _ from 'lodash'
+import {Component, Prop} from 'vue-property-decorator';
+import {api} from '@/api/connection';
+import Vue from 'vue';
+import * as _ from 'lodash';
 
 interface UploadSuccess {
-    kind: 'success'
-    msg: string
+    kind: 'success';
+    msg: string;
 }
 
 interface UploadProgress {
-    kind: 'progress'
-    percentCompleted: number
-    size: number
+    kind: 'progress';
+    percentCompleted: number;
+    size: number;
 }
 
 interface UploadFailure {
-    kind: 'failure'
-    msgs: Array<{ level: string, msg: { detail: string, stage: string } }>
+    kind: 'failure';
+    msgs: Array<{ level: string, msg: { detail: string, stage: string } }>;
 }
 
 type UploadInfo = UploadSuccess | UploadProgress | UploadFailure;
 
-@Component(<any>{
+@Component({
     template: `<div>
         <h3 class="mt-4">{{ title }}</h3>
         <slot name="label"></slot>
@@ -65,43 +65,43 @@ type UploadInfo = UploadSuccess | UploadProgress | UploadFailure;
         <div class='alert alert-info' v-else>
             No files uploaded
         </div>
-    </div>`
-})
+    </div>`,
+} as any)
 export class Upload extends Vue {
     @Prop()
-    uploadUrl: string;
+    public uploadUrl: string;
 
-    fileUploadErrorMsgs: { [name: string]: UploadInfo } = {};
-    fileUploadProgressMsgs: { [name: string]: UploadProgress } = {};
-
-    @Prop()
-    title: string;
-
-    @Prop({default: ''})
-    instructions: string;
-
-    @Prop({default: ''})
-    acceptedFileTypes: string;
-
-    @Prop({default: ''})
-    originalInstructions: string;
+    public fileUploadErrorMsgs: { [name: string]: UploadInfo } = {};
+    public fileUploadProgressMsgs: { [name: string]: UploadProgress } = {};
 
     @Prop()
-    originals: Array<any>;
+    public title: string;
+
+    @Prop({default: ''})
+    public instructions: string;
+
+    @Prop({default: ''})
+    public acceptedFileTypes: string;
+
+    @Prop({default: ''})
+    public originalInstructions: string;
+
+    @Prop()
+    public originals: any[];
 
     get uploadId() {
         return `upload_${_.uniqueId()}`;
     }
 
-    displayStage(stage) {
+    public displayStage(stage) {
         if (stage === 'sip') {
-            return 'During archive unpack'
+            return 'During archive unpack';
         } else {
-            return 'During upload'
+            return 'During upload';
         }
     }
 
-    async handleFiles(event) {
+    public async handleFiles(event) {
         const file = event.target.files[0];
         const formData = new FormData();
         formData.append('file', file);
@@ -113,21 +113,21 @@ export class Upload extends Vue {
         _.delay(() => this.$delete(this.fileUploadProgressMsgs, file.name), 6000);
         try {
             await api.postForm(this.uploadUrl, formData,
-                {headers: {'Content-Type': 'multipart/form-data'}, onUploadProgress})
+                {headers: {'Content-Type': 'multipart/form-data'}, onUploadProgress});
         } catch (error) {
             if (error.response) {
                 const response = error.response;
                 if (response.data.detail) {
                     this.fileUploadErrorMsgs = response.data;
                 }
-                this.$set(this.fileUploadErrorMsgs, file.name, {kind: 'failure', msgs: error.response.data})
+                this.$set(this.fileUploadErrorMsgs, file.name, {kind: 'failure', msgs: error.response.data});
             }
         }
         event.target.value = null;
         this.$emit('doneUpload');
     }
 
-    clearUploadErrors() {
+    public clearUploadErrors() {
         this.fileUploadErrorMsgs = {};
     }
 
@@ -135,11 +135,11 @@ export class Upload extends Vue {
         return !_.isEmpty(this.fileUploadErrorMsgs);
     }
 
-    deleteFile(identifier: string) {
+    public deleteFile(identifier: string) {
         this.$emit('deleteFile', identifier);
     }
 
-    clear() {
+    public clear() {
         this.$emit('clear');
     }
 }

@@ -23,8 +23,6 @@ install:
   - pip3 install coveralls coverage
 script:
   - docker-compose run --rm cms /code/deploy/test.sh
-  - docker-compose up -d && docker-compose exec cms ./manage.py setup_frontend_tests && docker-compose exec js /code/deploy/test.sh
-  - docker-compose run --rm cms /code/deploy/build_docs.sh
 after_success:
   - bash django/deploy/run-coveralls
   - bash frontend/deploy/run-coveralls

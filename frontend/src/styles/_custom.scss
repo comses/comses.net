@@ -16,6 +16,13 @@ $font-family-base: 'Open Sans', Roboto, 'Helvetica Neue', sans-serif;
   }
 }
 
+.top-nav {
+    .nav-link {
+        padding-left: 0.6em !important;
+        padding-right: 0.2em !important;
+    }
+}
+
 .fc-toolbar {
     .btn-primary {
         @include button-variant($blue, $blue);
