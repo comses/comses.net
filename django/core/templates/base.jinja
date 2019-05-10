@@ -261,6 +261,10 @@
             <script>Raven.config('{{ sentry_public_dsn() }}').install()</script>
         {% endwith %}
         {{ render_bundle('home') }}
+	{% if not deploy_environment().is_development() %}
+	    {{ render_bundle('chunk-common') }}
+	    {{ render_bundle('chunk-vendors') }}
+	{% endif %}
         <script>
 function submitLogout() {
     document.getElementById('logoutForm').submit();
