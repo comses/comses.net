@@ -260,10 +260,10 @@
             <script src='https://cdn.ravenjs.com/{{RAVENJS_VERSION}}/vue/raven.min.js' crossorigin='anonymous'></script>
             <script>Raven.config('{{ sentry_public_dsn() }}').install()</script>
         {% endwith %}
-	{% if not deploy_environment().is_development() %}
-	    {{ render_bundle('chunk-common') }}
-	    {{ render_bundle('chunk-vendors') }}
-	{% endif %}
+        {% if deploy_environment().is_staging_or_production() %}
+            {{ render_bundle('chunk-common') }}
+            {{ render_bundle('chunk-vendors') }}
+        {% endif %}
         {{ render_bundle('home') }}
         <script>
 function submitLogout() {
