@@ -44,17 +44,12 @@ export interface CreateOrUpdateHandler {
 }
 
 export interface FormComponent {
-
+    errors?: any;
     state: object;
     statusMessages: Array<{ classNames: string, message: string }>;
     $emit: (...x: any[]) => void;
     validate(): Promise<any>;
-}
-
-export interface FormRedirectComponent extends FormComponent {
-    errors;
-
-    detailPageUrl(state): string;
+    detailPageUrl?(state): string;
 }
 
 export function baseHandleOtherError(response_or_network_error): string {
@@ -72,10 +67,17 @@ export function baseHandleOtherError(response_or_network_error): string {
     return msg;
 }
 
-function baseHandleValidationError(responseError, component: FormRedirectComponent) {
+function baseHandleValidationError(responseError, component: FormComponent) {
     const response = responseError.response;
     component.statusMessages = [{classNames: 'alert alert-danger', message: 'Server side validation failed'}];
-    const non_field_errors = response.data.non_field_errors;
+    const data = response.data
+    if (_.has(data, 'non_field_errors')) {
+        const errors = data.non_field_errors;
+        if (!_.isUndefined(errors)) {
+            component.statusMessages[0].message = `Server side validation failed: ${errors}`
+        }
+        delete data.non_field_errors
+    }
     for (const field of _.keys(response.data)) {
         if (!_.isUndefined(component.errors[field])) {
             component.errors[field] = response.data[field];
@@ -91,7 +93,7 @@ function baseHandleValidationError(responseError, component: FormRedirectCompone
 export class HandlerWithRedirect implements CreateOrUpdateHandler {
     // Requires state and detailPageUrl properties to be present on component
 
-    constructor(public component: FormRedirectComponent) {
+    constructor(public component: FormComponent) {
     }
 
     get state() {
@@ -142,16 +144,12 @@ export class HandlerShowSuccessMessage implements CreateOrUpdateHandler {
 
     public handleServerValidationError(response: { response: AxiosResponse}) {
         const data = response.response.data;
-        if (_.has(data, 'non_field_errors')) {
-            const errors = data.non_field_errors;
-            this.component.statusMessages = [{
-                classNames: 'alert alert-danger',
-                message: errors ? `Server side validation failed: ${errors}` : 'Server side validation failed',
-            }];
-        } else {
+        if (Array.isArray(data)) {
             this.updateListServerValidationMessage(data);
         }
-
+        else {
+            baseHandleValidationError(response, this.component)
+        }
     }
 
     public handleSuccessWithDataResponse(response: AxiosResponse) {
