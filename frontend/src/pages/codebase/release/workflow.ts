@@ -144,16 +144,19 @@ export const publishSchema = yup.object().shape({
                     <p><b>Note!</b> Publishing a release makes it possible for anyone to view and download it. Once a
                     release is published, the files associated with the release will be <b>frozen</b> and you will no
                     longer be able to add or remove files to the release. You will still be able to edit certain release
-                    metadata, however.
+                    metadata, however. If you'd like to request <a href='/reviews/'>a peer review</a> of your model you
+                    should do that first so you may address any concerns raised during the peer review process that may
+                    include changes to the files associated with your release.
                     </p>
-                    <p>Please assign a semantic version number to this release. CoMSES Net adheres to the
-                    <a target='_blank' href='https://semver.org'>semantic versioning</a> standard, which splits a version number into
-                    three parts: major, minor and patch. For example, version 2.7.18 has major version 2,
-                    minor version 7, and patch version 18. You should increase the <i>major</i> version (leftmost number)
-                    if this new release is backwards incompatible with the previous release. You should increase the
-                    <i>minor</i> version (middle number) if this release introduced new features but remains backwards
-                    compatible. And finally, you should increase the <i>patch</i> version (rightmost number) if this
-                    release only contains bug fixes and remains backwards compatible (sans the bugs of course!).
+                    <p>Please assign a semantic version number to this release. CoMSES Net currently uses the
+                    <a target='_blank' href='https://semver.org'>semantic versioning</a> standard, which splits a
+                    version number into three parts: major, minor and patch. For example, version 2.7.18 has major
+                    version 2, minor version 7, and patch version 18. You should increase the <i>major</i> version
+                    (leftmost number) if this new release is backwards incompatible with the previous release. You
+                    should increase the <i>minor</i> version (middle number) if this release introduced new features but
+                    remains backwards compatible. And finally, you should increase the <i>patch</i> version (rightmost
+                    number) if this release only contains bug fixes and remains backwards compatible (sans the bugs of
+                    course!).
                     </p>
                     <c-input v-model="version_number" name="version_number" :errorMsgs="errors.version_number"
                         label="Version Number">
