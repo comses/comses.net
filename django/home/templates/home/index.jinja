@@ -19,7 +19,7 @@
         <div class='row'>
             <div class='col'>
                 {{ page.mission_statement }}
-                <a href='/about/'>Learn more</a>
+                <a href='{{ slugurl("about") }}'>Learn more</a>
             </div>
         </div>
     </div>
@@ -41,16 +41,16 @@
                 </div>
             </div>
             <div class='col'>
-                <a href='/resources/'>
+                <a href='{{ slugurl("resources") }}'>
                     <img src='{{ static("images/icons/search.png") }}' alt='Resources for Computational Modelers'>
                     <h3>Resources for Modelers</h3>
                 </a>
                 <div class='caption'>
                     Community curated information on 
-                    <a href='/resources/modeling-platforms/'>agent based modeling platforms</a>, 
-                    <a href='/resources/standards/'>documentation standards</a>, 
-                    <a href='/resources/education/'>educational materials</a>, and
-                    <a href='/resources/guides-to-good-practice/'>guides to good practice for developing and documenting computational models for reuse and reproducibility</a>.
+                    <a href='{{ slugurl("modeling-frameworks") }}'>agent based modeling software frameworks</a>,
+                    <a href='{{ slugurl("standards") }}'>documentation standards</a>,
+                    <a href='{{ slugurl("education") }}'>educational materials</a>, and
+                    <a href='{{ slugurl("guides-to-good-practice") }}'>guides to good practice for developing and documenting computational models for reuse and reproducibility</a>.
                 </div>
             </div>
             <div class='col'>

@@ -288,6 +288,9 @@ class SubNavigationLink(Orderable, models.Model):
     url = models.CharField("Relative path, absolute path, or full URL", max_length=255)
     title = models.CharField(max_length=128)
 
+    def __str__(self):
+        return f'SubNavigationLink for page {self.page}: {self.title} ({self.url})'
+
 
 class Breadcrumb(Orderable, models.Model):
     page = ParentalKey(Page, related_name='breadcrumbs')
@@ -295,7 +298,7 @@ class Breadcrumb(Orderable, models.Model):
     title = models.CharField(max_length=255)
 
     def __str__(self):
-        return 'Breadcrumb for page {0}: {1} ({2})'.format(str(self.page), self.title, self.url)
+        return f'Breadcrumb for page {self.page}: {self.title} ({self.url})'
 
 
 class NavigationMixin(object):
