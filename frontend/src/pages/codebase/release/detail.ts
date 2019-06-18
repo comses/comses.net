@@ -50,16 +50,16 @@ export const schema = yup.object().shape({
                 @input="updateOs"
                 name="os"
                 :options="osOptions"
-                placeholder="The operating system this model has been developed and tested on, e.g., Ubuntu, Mac, or Windows"
+                placeholder="The operating system(s) this model is compatible with, e.g., Linux, macOS, Windows"
                 label="display"
                 track-by="name">
             </multiselect>
             <div v-if="errors.os.length > 0" class="invalid-feedback">{{ errors.os.join(', ') }}</div>
         </div>
-        <c-tagger v-model="platforms" placeholder="Type to add platforms" :required="config.platforms"
-            label="Software Framework(s)" help="Modeling software frameworks (e.g., NetLogo, RePast, Mason, CORMAS, Mesa) used by this model" :errorMsgs="errors.platforms">
+        <c-tagger v-model="platforms" placeholder="Software frameworks used by this model" :required="false"
+            label="Software Framework(s)" help="Modeling software frameworks (e.g., NetLogo, RePast, Mason, CORMAS, Mesa, etc.) used by this model" :errorMsgs="errors.platforms">
         </c-tagger>
-        <c-tagger v-model="programming_languages" placeholder="Type to add programming languages" :required="config.programming_languages"
+        <c-tagger v-model="programming_languages" placeholder="Programming languages used by this model" :required="config.programming_languages"
             label="Programming Languages" help="Programming languages used in this model" :errorMsgs="errors.programming_languages">
         </c-tagger>
         <div :class="['form-group', {'child-is-invalid': errors.license.length > 0}]">
@@ -74,11 +74,10 @@ export const schema = yup.object().shape({
             </multiselect>
             <div v-if="errors.license.length > 0" class="invalid-feedback">a license must be selected</div>
             <small class="form-text text-muted">
-            An open source licence to govern use and redistribution of your computational model.
-            For more information about open source licenses, you may find the advice at
+            An open source licence to govern use and redistribution of your computational model. For more information
+            and advice about picking an open source license, please check out
             <a target='_blank' href="//choosealicense.com">choosealicense.com</a> or
-            <a target='_blank' href='//opensource.org/licenses'>opensource.org/licenses</a>
-            helpful for deciding which license to use.
+            <a target='_blank' href='//opensource.org/licenses'>opensource.org/licenses</a>.
             </small>
         </div>
         <c-message-display :messages="statusMessages" @clear="statusMessages = []"/>

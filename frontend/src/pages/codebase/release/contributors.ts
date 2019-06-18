@@ -132,8 +132,8 @@ function displayContributorLabel(contributor: Contributor) {
                     <div v-if="errors.type.length > 0" class="invalid-feedback-always">{{ errors.type.join(', ') }}</div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-primary mr-auto" @click="save">Save</button>
                     <button type="button" class="btn btn-secondary" @click="cancel">Cancel</button>
+                    <button type="button" class="btn btn-primary ml-auto" @click="save">Save</button>
                 </div>
             </div>
         </div>
@@ -226,8 +226,10 @@ class EditContributor extends createFormValidator(contributorSchema) {
                     {{ errors.roles.join(', ') }}
                 </div>
             </div>
-            <button type="button" class="btn btn-secondary" @click="cancel">Cancel</button>
-            <button type="button" class="btn btn-primary" @click="save"><i class='fa fa-user-plus'></i> Register citable contributor</button>
+            <div class='d-flex justify-content-end'>
+              <button type="button" class="btn btn-secondary" @click="cancel">Cancel</button>
+              <button type="button" class="ml-auto btn btn-primary" @click="save"><i class='fa fa-user-plus'></i> Register citable contributor</button>
+            </div>
         </div>
     </div>`,
     components: {
