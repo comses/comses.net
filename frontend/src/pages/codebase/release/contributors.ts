@@ -15,10 +15,10 @@ import * as draggable from 'vuedraggable';
 import * as _ from 'lodash';
 import * as yup from 'yup';
 import {createDefaultValue, createFormValidator} from '@/pages/form';
-import * as _$ from 'jquery';
+import 'bootstrap';
+import jQuery from 'jquery';
 import {HandlerShowSuccessMessage} from '@/api/handler';
 
-const $: any = _$;
 
 const codebaseReleaseAPI = new CodebaseReleaseAPI();
 
@@ -502,18 +502,18 @@ class EditContributors extends Vue {
 
     public editContributor(contributor: Contributor) {
         this.contributor = _.merge({}, contributor);
-        $('#createContributorForm').modal('show');
+        jQuery('#createContributorForm').modal('show');
         this.formState = FormContributorState.editContributor;
     }
 
     public cancelContributor() {
-        $('#createContributorForm').modal('hide');
+        jQuery('#createContributorForm').modal('hide');
         this.formState = FormContributorState.editReleaseContributor;
     }
 
     public saveContributor(contributor: Contributor) {
         this.formState = FormContributorState.editReleaseContributor;
-        $('#createContributorForm').modal('hide');
+        jQuery('#createContributorForm').modal('hide');
         if (_.isNull(this.releaseContributor)) {
             this.releaseContributor = createDefaultValue(releaseContributorSchema);
         }
