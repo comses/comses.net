@@ -227,7 +227,7 @@ class EditContributor extends createFormValidator(contributorSchema) {
                 </div>
             </div>
             <div class='d-flex justify-content-end'>
-              <button type="button" class="btn btn-secondary" @click="cancel">Cancel</button>
+              <button type="button" class="btn btn-secondary" @click="cancel" v-show="hasEdits">Cancel</button>
               <button type="button" class="ml-auto btn btn-primary" @click="save"><i class='fa fa-user-plus'></i> Register citable contributor</button>
             </div>
         </div>
@@ -269,6 +269,10 @@ class EditReleaseContributor extends createFormValidator(releaseContributorSchem
         if (!_.isEmpty(contributor)) {
             (this as any).contributor = contributor;
         }
+    }
+
+     get hasEdits(): boolean {
+        return !_.isEmpty(this.candidateContributor) || !_.isEmpty(this.roles)
     }
 
     public contributorLabel(contributor: Contributor) {
@@ -509,7 +513,11 @@ class EditContributors extends Vue {
 
     public cancelContributor() {
         $('#createContributorForm').modal('hide');
-        this.formState = FormContributorState.editReleaseContributor;
+        if (!this.$refs.releaseContributor.hasEdits) {
+            this.formState = FormContributorState.list;
+        } else {
+            this.formState = FormContributorState.editReleaseContributor;
+        }
     }
 
     public saveContributor(contributor: Contributor) {
