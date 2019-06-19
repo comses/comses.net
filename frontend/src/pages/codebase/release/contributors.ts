@@ -272,7 +272,7 @@ class EditReleaseContributor extends createFormValidator(releaseContributorSchem
     }
 
      get hasEdits(): boolean {
-        return !_.isEmpty(this.candidateContributor) || !_.isEmpty(this.roles)
+        return !_.isEmpty(this.candidateContributor) || !_.isEmpty((this as any).roles)
     }
 
     public contributorLabel(contributor: Contributor) {
@@ -513,7 +513,7 @@ class EditContributors extends Vue {
 
     public cancelContributor() {
         $('#createContributorForm').modal('hide');
-        if (!this.$refs.releaseContributor.hasEdits) {
+        if (!(this as any).$refs.releaseContributor.hasEdits) {
             this.formState = FormContributorState.list;
         } else {
             this.formState = FormContributorState.editReleaseContributor;
