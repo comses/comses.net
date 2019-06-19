@@ -14,11 +14,13 @@ import Username from '@/components/username';
 import * as draggable from 'vuedraggable';
 import * as _ from 'lodash';
 import * as yup from 'yup';
+import * as _$ from 'jquery';
 import {createDefaultValue, createFormValidator} from '@/pages/form';
 import 'bootstrap/js/dist/modal'
 import {HandlerShowSuccessMessage} from '@/api/handler';
 
 
+const $: any = _$;
 const codebaseReleaseAPI = new CodebaseReleaseAPI();
 
 const listContributors = _.debounce(async (state, self) => {
