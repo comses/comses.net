@@ -455,10 +455,6 @@ class CodebaseReleaseFsApi:
             json.dump(metadata, codemeta_out)
         return True
 
-    def retrieve_review_archive(self):
-        self.build_review_archive()
-        return File(self.review_archivepath.open('rb')), 'application/zip'
-
     def build_review_archive(self):
         shutil.make_archive(str(self.review_archivepath.with_suffix('')),
                             format='zip', root_dir=str(self.sip_contents_dir))
@@ -474,8 +470,13 @@ class CodebaseReleaseFsApi:
         """ returns the internal uri used by nginx to access this release's review archive package """
         return self.review_archivepath.relative_to(settings.LIBRARY_ROOT)
 
-    def retrieve_archive(self):
-        return File(self.archivepath.open('rb')), 'application/zip'
+    @property
+    def archive_size(self):
+        return self.archivepath.stat().st_size
+
+    @property
+    def review_archive_size(self):
+        return self.review_archivepath.stat().st_size
 
     def clear_category(self, category: FileCategoryDirectories):
         originals_storage = self.get_originals_storage()

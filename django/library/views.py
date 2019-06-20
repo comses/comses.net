@@ -432,13 +432,24 @@ class NestedCodebaseReleaseUnpublishedFilesPermission(permissions.BasePermission
 
 
 def build_archive_download_response(codebase_release, review_archive=False):
+    """
+    Returns an HttpResponse object that uses nginx to serve our codebase archive zipfiles.
+    (https://www.nginx.com/resources/wiki/start/topics/examples/x-accel/)
+    :param codebase_release: The specific CodebaseRelease instance archive to download
+    :param review_archive: when true we force a rebuild of the CodebaseRelease archive and use the review archive URI
+    which is basically just review_archive.zip instead of archive.zip
+    :return:
+    """
     fs_api = codebase_release.get_fs_api()
     response = HttpResponse()
+    response['Content-Type'] = ''
     response['Content-Disposition'] = 'attachment; filename={}'.format(codebase_release.archive_filename)
+    # response['Content-Length'] = fs_api.archive_size
     archive_uri = fs_api.archive_uri
     if review_archive:
         fs_api.build_review_archive()
         archive_uri = fs_api.review_archive_uri
+    #    response['Content-Length'] = fs_api.review_archive_size
     response['X-Accel-Redirect'] = '/library/internal/{0}'.format(archive_uri)
     return response
 
