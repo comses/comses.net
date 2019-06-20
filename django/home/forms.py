@@ -1,18 +1,15 @@
 import logging
-import re
 
 from captcha.fields import ReCaptchaField
 from django import forms
 from django.conf import settings
-from django.core.mail import EmailMessage
 from django.template import loader
 from django.utils.translation import ugettext_lazy as _
 from wagtail.core.models import Site
 
 from core.models import SocialMediaSettings
+from core.utils import send_markdown_email
 from .models import ConferenceSubmission
-
-YOUTUBE_URL = re.compile(r'^https?://(www\.)?youtube.com(.*)')
 
 logger = logging.getLogger(__name__)
 
@@ -50,7 +47,7 @@ class ContactForm(forms.Form):
     def recipient_list(self):
         recipients = SocialMediaSettings.for_site(self.request.site).contact_form_recipients
         if not recipients:
-            recipients = ('editors@comses.net',)
+            recipients = [settings.EDITOR_EMAIL]
         return recipients
 
     @property
@@ -73,13 +70,13 @@ class ContactForm(forms.Form):
     def save(self, fail_silently=False):
         if not self.is_valid():
             raise ValueError("Can't send a message from invalid contact form")
-        email = EmailMessage(
+        send_markdown_email(
             subject=self.subject,
-            body=self.message,
+            template_name=self.template_name,
+            context=self.get_context(),
             to=self.recipient_list,
             reply_to=[self.cleaned_data.get('email') or self.from_email],
         )
-        email.send(fail_silently=fail_silently)
 
 
 class ConferenceSubmissionForm(forms.ModelForm):
