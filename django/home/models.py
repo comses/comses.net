@@ -591,7 +591,7 @@ class ConferenceTheme(models.Model):
         FieldPanel('category'),
         FieldPanel('description'),
         FieldPanel('external_url'),
-        InlinePanel('presentations')
+        # InlinePanel('presentations')
     ]
 
 
