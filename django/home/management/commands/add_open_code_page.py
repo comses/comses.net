@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 DESCRIPTION = """
 The Open Code badge is awarded to publications reliant on computational artifacts that archive the source code needed to reproduce their reported results in an open access, trusted digital repository that adheres to best practices for [software citation](https://www.force11.org/software-citation-principles) and [FAIR data](https://www.go-fair.org/fair-principles/).
 
-![open code html](/static/images/icons/open-code-badge-html.png) ![open code terminal](/static/images/icons/open-code-badge-terminal.png)
+![open code html](/static/images/icons/open-code-badge-html.png)
 """
 CONTENT = """
 In order to be awarded an Open Code badge, all source code should be made publicly available in a searchable, open access, trusted digital repository. A DOI, permanent URL or other permanent digital resource locator for accessing the model code must be provided that links to the specific version of the code used in the the publication. Narrative documentation and detailed software metadata should also accompany the source code and enable others to fully understand and/or replicate the source code. Metadata should clearly indicate all software, system, and data dependencies needed to compile and/or execute the source code with versions included. 
