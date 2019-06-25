@@ -258,10 +258,7 @@ class Command(BaseCommand):
             end_date='2018-10-19',
             title='CoMSES 2018',
             introduction=COMSES_2018_INTRO,
-            # content=COMSES_2018_CONTENT,
-            # submission_information=COMSES_2018_SUBMISSION_INFO,
             external_url='https://forum.comses.net/c/events/comses-2018',
-            # submission_deadline='2018-9-16',
         )
         conference_index_page.add_child(instance=comses_2018)
 
@@ -275,8 +272,9 @@ class Command(BaseCommand):
             content=COMSES_2019_CONTENT,
             submission_information=COMSES_2019_SUBMISSION_INFO,
             external_url='https://forum.comses.net/c/events/comses-2018',
-            submission_deadline='2019-9-1',
+            submission_deadline='2019-9-30',
         )
+        conference_index_page.add_child(instance=comses_2019)
 
     def handle(self, *args, **options):
         conference_index_title = 'CoMSES Virtual Conferences'
@@ -294,3 +292,5 @@ class Command(BaseCommand):
         self.build_comses_2017_page(conference_index_page)
         self.build_comses_2018_page(conference_index_page)
         self.build_comses_2019_page(conference_index_page)
+
+#data migration management command
