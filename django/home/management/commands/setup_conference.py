@@ -32,7 +32,7 @@ We welcome presentations dealing with agent-based modeling of social, ecological
 """
 
 COMSES_2019_INTRO = """
-CoMSES Net is hosting its second virtual conference, CoMSES 2019!
+CoMSES Net is hosting its third virtual conference, CoMSES 2019!
 
 We welcome presentations dealing with agent-based modeling of social, ecological and social-ecological systems, as well as methodological issues in the context of agent-based modeling. This conference will occur online and is intended for CoMSES Net members. During the conference, which will take place over three weeks, talks will be available for viewing on the conference website, our Discourse forums. Q&A will also take place online during this period, as participants and other CoMSES members can engage with speakers on our [forum](https://forum.comses.net). We will prioritize talks that cover models that have [made their model code and documentation available](https://www.comses.net/codebases/).
 
@@ -48,7 +48,7 @@ If you are interested in presenting at CoMSES 2019, instead of traveling to a co
 3. During the conference, you should also view other presentations and ask questions of other speakers. Since the conference is over a three week period you will not experience the problem of many parallel sessions that traditional face-to-face conferences pose.
 4. You will be expected to have an up to date [profile page](/accounts/profile/) on comses.net by the time of submission.
 
-The deadline for video submission is __Sunday, September 1__ and we will post a submission link with more information soon. We will decide on acceptance of the video for the conference based on the following criteria:
+The deadline for video submission is __Monday, September 30__ and we will post a submission link with more information soon. We will decide on acceptance of the video for the conference based on the following criteria:
 
 - Maximum length video is 12 minutes (_required_)
 - Presentation is in English (_required_)
@@ -60,7 +60,10 @@ In the 2 weeks between the submission and the start of the conference we will ch
 """
 
 COMSES_2019_SUBMISSION_INFO = """
-Abstract submission are due by Sunday, September 2019. 
+[Submissions are now open](submit)! In order to submit a presentation, please upload your video presentation to YouTube and then fill out the [following form](submit). We look forward to seeing what you all are working on.
+
+Abstract submissions are due by Friday, August 30, 2019. 
+Video submissions are due by Monday, September 30, 2019.
 """
 
 class Command(BaseCommand):
@@ -292,5 +295,3 @@ class Command(BaseCommand):
         self.build_comses_2017_page(conference_index_page)
         self.build_comses_2018_page(conference_index_page)
         self.build_comses_2019_page(conference_index_page)
-
-#data migration management command
