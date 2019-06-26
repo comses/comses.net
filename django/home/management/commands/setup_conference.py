@@ -31,31 +31,6 @@ CoMSES Net is hosting its second virtual conference, CoMSES 2018!
 We welcome presentations dealing with agent-based modeling of social, ecological and social-ecological systems, as well as methodological issues in the context of agent-based modeling. This conference will occur online and is intended for CoMSES Net members. During the conference, which will take place over three weeks, talks will be available for viewing on the conference website, our Discourse forums. Q&A will also take place online during this period, as participants and other CoMSES members can engage with speakers on our [forum](https://forum.comses.net). We will prioritize talks that cover models that have [made their model code and documentation available](https://www.comses.net/codebases/).
 """
 
-COMSES_2018_CONTENT = """
-A virtual conference will probably not have the same intensity as a face-to-face conference, but we expect lively interaction between participants. Our goal in organizing these virtual conferences is to provide low cost opportunities for engaging interaction within the CoMSES Net community. There will be no registration fee for the conference, but you will need to be [registered as a CoMSES member](/accounts/signup/) in order to submit a presentation and/or engage with the presenters.
-
-If you are interested in presenting at CoMSES 2018, instead of traveling to a conference to attend panels and deliver a talk, you will instead be expected to do the following:
-
-1. Record yourselves giving a talk no more than 12 minutes. You can film yourself giving a talk or have a narrated slide show, or pursue a more ambitious edited video which combines speaking, slides, animations, or model simulations. It is now possible and relatively easy to record a high quality presentation with [modern video editing software](https://en.wikipedia.org/wiki/List_of_video_editing_software).
-2. During the conference, participants may ask you questions, and you will be expected to respond to questions raised by your talk. You will automatically receive emails when users post questions or comments on your presentation. Only registered comses.net members will be able to post questions or comments.
-3. During the conference, you should also view other presentations and ask questions of other speakers. Since the conference is over a three week period you will not experience the problem of many parallel sessions that traditional face-to-face conferences pose.
-4. You will be expected to have an up to date [profile page](/accounts/profile/) on comses.net by the time of submission.
-
-The deadline for video submission is __Sunday, September 16__ and we will post a submission link with more information soon. We will decide on acceptance of the video for the conference based on the following criteria:
-
-- Maximum length video is 12 minutes (_required_)
-- Presentation is in English (_required_)
-- Presentation is related to the theme of the conference (_required_)
-- Presenter is a CoMSES member at the time of submitting the video (_required_)
-- Presenter has included a link to their model code and documentation and archived it in the comses model library or other digital repository (_recommended_)
-
-In the 2 weeks between the submission and the start of the conference we will check the submissions for eligibility and may contact presenters if adjustments are needed. We will then organize the presentations into sessions for the conference.
-"""
-
-COMSES_2018_SUBMISSION_INFO = """
-Submissions are not yet open, we will post a link to the submission form in the coming weeks. Thanks for your interest!
-"""
-
 class Command(BaseCommand):
 
     """
@@ -251,10 +226,7 @@ class Command(BaseCommand):
             end_date='2018-10-19',
             title='CoMSES 2018',
             introduction=COMSES_2018_INTRO,
-            content=COMSES_2018_CONTENT,
-            submission_information=COMSES_2018_SUBMISSION_INFO,
             external_url='https://forum.comses.net/c/events/comses-2018',
-            submission_deadline='2018-9-16',
         )
         conference_index_page.add_child(instance=comses_2018)
 
