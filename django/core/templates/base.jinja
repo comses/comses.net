@@ -7,10 +7,6 @@
 {% macro navbar() %}
 <nav class='navbar navbar-expand-md navbar-light fixed-top'>
     <div class='container'>
-        <button class='navbar-toggler navbar-toggler-right align-self-center mt-3' type='button' data-toggle='collapse'
-            data-target='#navbar-content' aria-controls='navbar-content' aria-expanded='false' aria-label='Toggle navigation'>
-            <span class='navbar-toggler-icon'></span>
-        </button>
         <div class='navbar-brand'>
             <div class='row'>
                 <div class='col'>
@@ -23,7 +19,13 @@
                 </div>
             </div>
         </div>
-        <div class='collapse navbar-collapse d-flex flex-column' id='navbar-content'>
+        <nav class="navbar navbar-inverse bg-inverse">
+            <button class='navbar-toggler navbar-toggler-right align-self-center mt-3' type='button' data-toggle='collapse'
+            data-target='#navbar-content' aria-controls='navbar-content' aria-expanded='false' aria-label='Toggle navigation'>
+                <span class='navbar-toggler-icon'></span>
+            </button>
+        </nav>
+        <div class='navbar-collapse collapse' id='navbar-content'>
             <div class='d-flex flex-row ml-auto justify-content-end'>
                 <ul class='navbar-nav top-nav'>
                     <li class="nav-item dropdown">
@@ -76,8 +78,8 @@
                     {% endif %}
                 </ul>
             </div>
-            <div class='d-flex flex-row ml-auto justify-content-end'>
-                <ul class='navbar-nav navbar-expand-sm top-nav'>
+            <div class='d-flex flex-row ml-auto justify-content-end '>
+                <ul class='navbar-nav top-nav'>
                     {# FIXME: consider replacing with wagtailmenu #}
                     <li class="nav-item">
                         <a href="{{ url('library:codebase-list') }}" class="nav-link">Computational Library</a>
