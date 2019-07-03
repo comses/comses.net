@@ -5,32 +5,42 @@
 {% set profile_url = url('home:profile-detail', pk=user.pk) if user.is_authenticated else signup_url %}
 
 {% macro navbar() %}
-<nav class='navbar navbar-expand-md navbar-light fixed-top'>
-    <div class='container'>
-        <div class='navbar-brand'>
-            <div class='row'>
-                <div class='col'>
-                    <a href='/'><span class="logo">CoMSES Network | OpenABM</span></a>
-                </div>
-                <div class='col px-0'>
-                    <a href="http://westbigdatahub.org/" target="_blank">
-                        <img height='70' src="{{ static("images/logo-westhub-black.png") }}" alt="NSF West Big Data Hub">
-                    </a>
+    <nav class='navbar navbar-expand-md navbar-light fixed-top'>
+        <div class='container'>
+
+            {# navbar header #}
+            <div class='navbar-brand'>
+                <div class='row'>
+                    <div class='col'>
+                        <a href='/'><span class="logo">CoMSES Network | OpenABM</span></a>
+                    </div>
+                    <div class='col px-0'>
+                        <a href="http://westbigdatahub.org/" target="_blank">
+                            <img height='70' src="{{ static("images/logo-westhub-black.png") }}"
+                                 alt="NSF West Big Data Hub">
+                        </a>
+                    </div>
                 </div>
             </div>
-        </div>
-        <nav class="navbar navbar-inverse bg-inverse">
-            <button class='navbar-toggler navbar-toggler-right align-self-center mt-3' type='button' data-toggle='collapse'
-            data-target='#navbar-content' aria-controls='navbar-content' aria-expanded='false' aria-label='Toggle navigation'>
-                <span class='navbar-toggler-icon'></span>
-            </button>
-        </nav>
-        <div class='navbar-collapse collapse' id='navbar-content'>
+            {# end navbar header #}
+
+            {# hamburger menu dropdown #}
+            <nav class="navbar navbar-inverse bg-inverse">
+                <button class='navbar-toggler navbar-toggler-right align-self-center mt-3' type='button'
+                        data-toggle='collapse'
+                        data-target='#navbar-content' aria-controls='navbar-content' aria-expanded='false'
+                        aria-label='Toggle navigation'>
+                    <span class='navbar-toggler-icon'></span>
+                </button>
+            </nav>
+            {# end hamburger menu dropdown #}
+
+            {# subscibe and login #}
             <div class='d-flex flex-row ml-auto justify-content-end'>
                 <ul class='navbar-nav top-nav'>
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" id="subscribeDropdownLink"
-                        data-toggle="dropdown" role="button" href="#" aria-haspopup="true" aria-expanded="false">
+                           data-toggle="dropdown" role="button" href="#" aria-haspopup="true" aria-expanded="false">
                             <span class="fa fa-rss"></span> Subscribe
                         </a>
                         <div class="dropdown-menu" aria-labelledby="subscribeDropdownLink">
@@ -43,7 +53,7 @@
                     {% if user.is_authenticated %}
                         <li class="nav-item dropdown">
                             <a class="nav-link dropdown-toggle" id='userDropdownMenuLink'
-                            data-toggle="dropdown" role="button" href="#" aria-haspopup="true" aria-expanded="false">
+                               data-toggle="dropdown" role="button" href="#" aria-haspopup="true" aria-expanded="false">
                                 <span class="fa fa-user-o"></span> {{ user.username }}
                                 {# FIXME: this should be cached instead
                                 {% if user.emailaddress_set.filter(verified=False).exists() %}
@@ -53,24 +63,29 @@
                                 #}
                             </a>
                             <div class="dropdown-menu" aria-labelledby='userDropdownMenuLink'>
-                                <a class="dropdown-item" href="{{ profile_url }}"><i class='fa fa-user-o'></i> Your Account</a>
+                                <a class="dropdown-item" href="{{ profile_url }}"><i class='fa fa-user-o'></i> Your
+                                    Account</a>
                                 {% if user.has_perm('library.change_peerreview') %}
-                                    <a class="dropdown-item" href="{{ url('library:peer-review-dashboard') }}"><i class='fa fa-flask'></i> Manage Peer Reviews</a>
+                                    <a class="dropdown-item" href="{{ url('library:peer-review-dashboard') }}"><i
+                                            class='fa fa-flask'></i> Manage Peer Reviews</a>
                                 {% endif %}
                                 {# POST logouts, see http://django-allauth.readthedocs.io/en/latest/views.html#logout-account-logout #}
                                 <form id='logoutForm' method='post' action='{{ logout_url }}'>
                                     {% csrf_token %}
                                     {% if redirect_field_value %}
-                                        <input type="hidden" name="{{ redirect_field_name }}" value="{{ redirect_field_value }}"/>
+                                        <input type="hidden" name="{{ redirect_field_name }}"
+                                               value="{{ redirect_field_value }}"/>
                                     {% endif %}
                                     <input type='submit' style='display: none;'>
                                 </form>
-                                <a class="dropdown-item" onclick='return submitLogout();' href="{{ logout_url }}"><i class='fa fa-sign-out'></i> Sign Out</a>
+                                <a class="dropdown-item" onclick='return submitLogout();' href="{{ logout_url }}"><i
+                                        class='fa fa-sign-out'></i> Sign Out</a>
                             </div>
                         </li>
                     {% else %}
                         <li class='nav-item'>
-                            <a class="nav-link" href="{{ login_url }}?next={{request.path}}">Sign In <i class='fa fa-sign-in'></i></a>
+                            <a class="nav-link" href="{{ login_url }}?next={{ request.path }}">Sign In <i
+                                    class='fa fa-sign-in'></i></a>
                         </li>
                         <li class='nav-item'>
                             <a class='nav-link' href="{{ signup_url }}">Become a Member</a>
@@ -78,254 +93,278 @@
                     {% endif %}
                 </ul>
             </div>
-            <div class='d-flex flex-row ml-auto justify-content-end '>
-                <ul class='navbar-nav top-nav'>
-                    {# FIXME: consider replacing with wagtailmenu #}
-                    <li class="nav-item">
-                        <a href="{{ url('library:codebase-list') }}" class="nav-link">Computational Library</a>
-                    </li>
-                    <li class="nav-item">
-                        <a href="{{ url('home:event-calendar') }}" class="nav-link">Events</a>
-                    </li>
-                    <li class='nav-item'>
-                        <a href="{{ url('home:job-list') }}" class='nav-link'>Jobs</a>
-                    </li>
-                    <li class='nav-item'>
-                        <a href="/community/" class="nav-link">Community</a>
-                    </li>
-                    <li class="nav-item">
-                        <a href="/resources/" class="nav-link">Resources</a>
-                    </li>
-                    <li class='nav-item'>
-                        <a href="{{ DISCOURSE_BASE_URL }}" class='nav-link'>Forums <i class='fa fa-external-link'></i></a>
-                    </li>
-                    <li class='nav-item'>
-                        <a href='/about/' class='nav-link'>About</a>
-                    </li>
-                    <li id='search-dropdown' class="my-auto nav-item dropdown show">
-                        <a id='search-button' onclick='focusSearch()' href='#' class='dropdown-toggle' data-toggle='dropdown' aria-expanded='false' aria-haspopup='true'>
-                            <i class='fa fa-search'></i>
-                        </a>
-                        <div id='header-search-form' class='p-2 dropdown-menu' aria-labelledby='search-button'>
-                            <form method="get" action="/search/">
-                                <input id='header-search-input' type='text' name="query" class='p-2 form-control' placeholder='search entire site' autofocus>
-                                <div class='float-right'>
-                                    <small><a href='/search/'>options</a></small>
-                                </div>
-                            </form>
-                        </div>
-                    </li>
-                </ul>
+            {# end subscibe and login #}
+
+            {# hamburger menu content #}
+            <div class='navbar-collapse collapse' id='navbar-content'>
+                {# menu #}
+                <div class='d-flex flex-row ml-auto justify-content-end'>
+                    <ul class='navbar-nav top-nav'>
+                        {# FIXME: consider replacing with wagtailmenu #}
+                        <li class="nav-item">
+                            <a href="{{ url('library:codebase-list') }}" class="nav-link">Computational Library</a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="{{ url('home:event-calendar') }}" class="nav-link">Events</a>
+                        </li>
+                        <li class='nav-item'>
+                            <a href="{{ url('home:job-list') }}" class='nav-link'>Jobs</a>
+                        </li>
+                        <li class='nav-item'>
+                            <a href="/community/" class="nav-link">Community</a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="/resources/" class="nav-link">Resources</a>
+                        </li>
+                        <li class='nav-item'>
+                            <a href="{{ DISCOURSE_BASE_URL }}" class='nav-link'>Forums <i
+                                    class='fa fa-external-link'></i></a>
+                        </li>
+                        <li class='nav-item'>
+                            <a href='/about/' class='nav-link'>About</a>
+                        </li>
+                        <li id='search-dropdown' class="my-auto nav-item dropdown show">
+                            <a id='search-button' onclick='focusSearch()' href='#' class='dropdown-toggle'
+                               data-toggle='dropdown' aria-expanded='false' aria-haspopup='true'>
+                                <i class='fa fa-search'></i>
+                            </a>
+                            <div id='header-search-form' class='p-2 dropdown-menu' aria-labelledby='search-button'>
+                                <form method="get" action="/search/">
+                                    <input id='header-search-input' type='text' name="query" class='p-2 form-control'
+                                           placeholder='search entire site' autofocus>
+                                    <div class='float-right'>
+                                        <small><a href='/search/'>options</a></small>
+                                    </div>
+                                </form>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+                <ul id="browser-message"></ul>
             </div>
-            <ul id="browser-message"></ul>
+            {# end hamburger menu content #}
         </div>
-    </div>
-</nav>
+    </nav>
 {% endmacro %}
 
 {% macro footer() %}
-{{ cookielaw(request) }}
-{% with social_settings=settings("core.SocialMediaSettings", use_default_site=True) %}
-<footer class="footer">
-    <div class="container">
-        {% if not user.is_authenticated or not user.member_profile.full_member %}
-            <div class='row'>
-                <div class='col'>
-                </div>
-                <div class='col text-center'>
-                    <a class='btn btn-primary' href='{{ profile_url }}'>Become a member</a>
-                </div>
-                <div class='col'>
-                </div>
-            </div>
-        {% endif %}
-        <div class="row py-0">
-            <div class="col-xs-12 col-lg-3">
-                    <ul class="social-media">
-                        <li>
-                            <a href="https://twitter.com/{{ social_settings.twitter_account }}" title="Follow us at @{{ social_settings.twitter_account }}" target="_blank">
+    {{ cookielaw(request) }}
+    {% with social_settings=settings("core.SocialMediaSettings", use_default_site=True) %}
+        <footer class="footer">
+            <div class="container">
+                {% if not user.is_authenticated or not user.member_profile.full_member %}
+                    <div class='row'>
+                        <div class='col'>
+                        </div>
+                        <div class='col text-center'>
+                            <a class='btn btn-primary' href='{{ profile_url }}'>Become a member</a>
+                        </div>
+                        <div class='col'>
+                        </div>
+                    </div>
+                {% endif %}
+                <div class="row py-0">
+                    <div class="col-xs-12 col-lg-3">
+                        <ul class="social-media">
+                            <li>
+                                <a href="https://twitter.com/{{ social_settings.twitter_account }}"
+                                   title="Follow us at @{{ social_settings.twitter_account }}" target="_blank">
                                 <span class="fa-stack">
                                     <i class="fa fa-circle fa-stack-2x"></i>
                                     <i class="fa fa-twitter fa-inverse fa-stack-1x"></i>
                                 </span>
-                            </a>
-                        </li>
-                        <li>
-                            <a href="{{ social_settings.mailing_list_url }}" title="Email Sign Up" target="_blank">
+                                </a>
+                            </li>
+                            <li>
+                                <a href="{{ social_settings.mailing_list_url }}" title="Email Sign Up" target="_blank">
                                 <span class="fa-stack">
                                     <i class="fa fa-circle fa-stack-2x"></i>
                                     <i class="fa fa-envelope fa-inverse fa-stack-1x"></i>
                                 </span>
-                            </a>
-                        </li>
-                        <li>
-                            <a href='{{ social_settings.youtube_url }}' title='YouTube Channel' target='_blank'>
+                                </a>
+                            </li>
+                            <li>
+                                <a href='{{ social_settings.youtube_url }}' title='YouTube Channel' target='_blank'>
                                 <span class='fa-stack'>
                                     <i class='fa fa-circle fa-stack-2x'></i>
                                     <i class='fa fa-youtube-play fa-inverse fa-stack-1x'></i>
                                 </span>
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="col-xs-12 col-lg-9">
+                        <ul class="organizations">
+                            <li>
+                                <a href="http://www.asu.edu/" target="_blank">
+                                    <img src="{{ static("images/logo-asu.png") }}" alt="Arizona State University">
+                                </a>
+                            </li>
+                            <li>
+                                <a href="http://www.nsf.gov/" target="_blank">
+                                    <img src="{{ static("images/logo-nsf.png") }}" alt="National Science Foundation">
+                                </a>
+                            </li>
+                            <li>
+                                <a href="http://orcid.org/" target="_blank">
+                                    <img src="{{ static("images/logo-orcid-member-170px.png") }}" alt="ORCID">
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+                <div class='py-0 row justify-content-center'>
+                    <ul class='organizations'>
+                        <li>
+                            <a href='https://www.computecanada.ca' target='_blank'>
+                                <img class='rounded' height="160" src='{{ static("images/logo-compute-canada.jpg") }}'
+                                     alt='Compute Canada'>
+                            </a>
+                        </li>
+                        <li>
+                            <a href='https://www.westgrid.ca' target='_blank'>
+                                <img class='rounded' height='160' src='{{ static("images/logo-westgrid.png") }}'
+                                     alt='Compute Canada WestGrid'>
                             </a>
                         </li>
                     </ul>
+                </div>
             </div>
-            <div class="col-xs-12 col-lg-9">
-                <ul class="organizations">
-                    <li>
-                        <a href="http://www.asu.edu/" target="_blank">
-                            <img src="{{ static("images/logo-asu.png") }}" alt="Arizona State University">
-                        </a>
-                    </li>
-                    <li>
-                        <a href="http://www.nsf.gov/" target="_blank">
-                            <img src="{{ static("images/logo-nsf.png") }}" alt="National Science Foundation">
-                        </a>
-                    </li>
-                    <li>
-                        <a href="http://orcid.org/" target="_blank">
-                            <img src="{{ static("images/logo-orcid-member-170px.png") }}" alt="ORCID">
-                        </a>
-                    </li>
-                </ul>
-            </div>
-        </div>
-        <div class='py-0 row justify-content-center'>
-                <ul class='organizations'>
-                    <li>
-                        <a href='https://www.computecanada.ca' target='_blank'>
-                            <img class='rounded' height="160" src='{{ static("images/logo-compute-canada.jpg") }}' alt='Compute Canada'>
-                        </a>
-                    </li>
-                    <li>
-                        <a href='https://www.westgrid.ca' target='_blank'>
-                            <img class='rounded' height='160' src='{{ static("images/logo-westgrid.png") }}' alt='Compute Canada WestGrid'>
-                        </a>
-                    </li>
-                </ul>
-        </div>
-    </div>
-    <p class="copyright text-center">&copy; 2007 - {{ now('Y') }} CoMSES Net |
-    <a class='footer' href='{{ contact_url }}'>Contact us</a><br>
-    <small>
-        <a href="https://github.com/{{ social_settings.github_account }}" title="GitHub" target="_blank">
+            <p class="copyright text-center">&copy; 2007 - {{ now('Y') }} CoMSES Net |
+                <a class='footer' href='{{ contact_url }}'>Contact us</a><br>
+                <small>
+                    <a href="https://github.com/{{ social_settings.github_account }}" title="GitHub" target="_blank">
             <span class="fa-stack">
                 <i class="fa fa-circle fa-stack-2x"></i>
                 <i class="fa fa-code-fork fa-inverse fa-stack-1x"></i>
             </span>
-        </a>
-        comses.net build: {{ release_version() }} 
-    </small>
-    </p>
-</footer>
-{% endwith %}
+                    </a>
+                    comses.net build: {{ release_version() }}
+                </small>
+            </p>
+        </footer>
+    {% endwith %}
 {% endmacro %}
 
 <!DOCTYPE html>
 <html lang="en" class="no-js">
-    <head>
-        <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-        {%- if not is_production() %}
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    {%- if not is_production() %}
         <meta name='robots' content='noindex'>
-        {%- endif %}
-        <meta http-equiv="X-UA-Compatible" content="IE=edge">
-        <link rel="apple-touch-icon" sizes="144x144" href="{{ static('favicon/apple-touch-icon.png') }}">
-        <link rel="icon" type="image/png" sizes="32x32" href="{{ static('favicon/favicon-32x32.png') }}">
-        <link rel="icon" type="image/png" sizes="16x16" href="{{ static('favicon/favicon-16x16.png') }}">
-        <link rel="manifest" href="{{ static('favicon/site.webmanifest') }}">
-        <link rel="mask-icon" href="{{ static('favicon/safari-pinned-tab.svg') }}" color="#5bbad5">
-		<meta name="msapplication-TileColor" content="#da532c">
-		<meta name="theme-color" content="#ffffff">
-        <title>
-            {% block title %}CoMSES Net{% endblock %}
-        </title>
-        <meta name="description" content="CoMSES Net is an international research coordination network dedicated to fostering good practices for computational modeling through cyberinfrastructure and community development."/>
-        {% block head %}
-            {# override in templates to add extra meta tags or anything else within the <head></head> #}
-        {% endblock %}
-        {# Global stylesheets #}
-        {% block extra_css %}
-            {# Override this in templates to add extra stylesheets #}
-        {% endblock %}
-        {# JS section #}
-        <script src="{{ static('cookielaw/js/cookielaw.js') }}"></script>
-        {% if is_production() %}
-            <!-- Google Tag Manager -->
-            <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
-            new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
-            j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
-            'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
-            })(window,document,'script','dataLayer','GTM-TLNSSCJ');</script>
-            <!-- End Google Tag Manager -->
-        {% endif %}
-        <script src="//cdnjs.cloudflare.com/ajax/libs/holder/2.9.4/holder.min.js"></script>
-        {% with RAVENJS_VERSION='3.25.0' %}
-            <script src='https://cdn.ravenjs.com/{{RAVENJS_VERSION}}/vue/raven.min.js' crossorigin='anonymous'></script>
-            <script>Raven.config('{{ sentry_public_dsn() }}').install()</script>
-        {% endwith %}
-        {% if deploy_environment().is_staging_or_production() %}
-            {{ render_bundle('chunk-common') }}
-            {{ render_bundle('chunk-vendors') }}
-        {% endif %}
-        {{ render_bundle('home') }}
-        <script>
-function submitLogout() {
-    document.getElementById('logoutForm').submit();
-    return false;
-}
-function focusSearch() {
-    setTimeout(function() { document.getElementById("header-search-input").focus() }, 0);
-}
-        </script>
+    {%- endif %}
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <link rel="apple-touch-icon" sizes="144x144" href="{{ static('favicon/apple-touch-icon.png') }}">
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ static('favicon/favicon-32x32.png') }}">
+    <link rel="icon" type="image/png" sizes="16x16" href="{{ static('favicon/favicon-16x16.png') }}">
+    <link rel="manifest" href="{{ static('favicon/site.webmanifest') }}">
+    <link rel="mask-icon" href="{{ static('favicon/safari-pinned-tab.svg') }}" color="#5bbad5">
+    <meta name="msapplication-TileColor" content="#da532c">
+    <meta name="theme-color" content="#ffffff">
+    <title>
+        {% block title %}CoMSES Net{% endblock %}
+    </title>
+    <meta name="description"
+          content="CoMSES Net is an international research coordination network dedicated to fostering good practices for computational modeling through cyberinfrastructure and community development."/>
+    {% block head %}
+        {# override in templates to add extra meta tags or anything else within the <head></head> #}
+    {% endblock %}
+    {# Global stylesheets #}
+    {% block extra_css %}
+        {# Override this in templates to add extra stylesheets #}
+    {% endblock %}
+    {# JS section #}
+    <script src="{{ static('cookielaw/js/cookielaw.js') }}"></script>
+    {% if is_production() %}
+        <!-- Google Tag Manager -->
+        <script>(function (w, d, s, l, i) {
+            w[l] = w[l] || [];
+            w[l].push({
+                'gtm.start':
+                    new Date().getTime(), event: 'gtm.js'
+            });
+            var f = d.getElementsByTagName(s)[0],
+                j = d.createElement(s), dl = l != 'dataLayer' ? '&l=' + l : '';
+            j.async = true;
+            j.src =
+                'https://www.googletagmanager.com/gtm.js?id=' + i + dl;
+            f.parentNode.insertBefore(j, f);
+        })(window, document, 'script', 'dataLayer', 'GTM-TLNSSCJ');</script>
+        <!-- End Google Tag Manager -->
+    {% endif %}
+    <script src="//cdnjs.cloudflare.com/ajax/libs/holder/2.9.4/holder.min.js"></script>
+    {% with RAVENJS_VERSION='3.25.0' %}
+        <script src='https://cdn.ravenjs.com/{{ RAVENJS_VERSION }}/vue/raven.min.js' crossorigin='anonymous'></script>
+        <script>Raven.config('{{ sentry_public_dsn() }}').install()</script>
+    {% endwith %}
+    {% if deploy_environment().is_staging_or_production() %}
+        {{ render_bundle('chunk-common') }}
+        {{ render_bundle('chunk-vendors') }}
+    {% endif %}
+    {{ render_bundle('home') }}
+    <script>
+        function submitLogout() {
+            document.getElementById('logoutForm').submit();
+            return false;
+        }
 
-        {% block js %}
-            {# Override this in templates to add extra javascript #}
-        {% endblock %}
-    </head>
-    <body class="{% block body_class %}{% endblock %}">
-        <!-- Google Tag Manager (noscript) -->
-        <noscript>
-            <iframe src="https://www.googletagmanager.com/ns.html?id=GTM-TLNSSCJ"
-                    height="0"
-                    width="0"
-                    style="display:none;visibility:hidden"></iframe>
-        </noscript>
-        <!-- End Google Tag Manager (noscript) -->
-        {{ navbar() }}
-        {% block introduction_section %}
-            <section class='introduction'>
-            <div class="container">
-                {% block introduction %}
-                {% endblock %}
+        function focusSearch() {
+            setTimeout(function () {
+                document.getElementById("header-search-input").focus()
+            }, 0);
+        }
+    </script>
+
+    {% block js %}
+        {# Override this in templates to add extra javascript #}
+    {% endblock %}
+</head>
+<body class="{% block body_class %}{% endblock %}">
+<!-- Google Tag Manager (noscript) -->
+<noscript>
+    <iframe src="https://www.googletagmanager.com/ns.html?id=GTM-TLNSSCJ"
+            height="0"
+            width="0"
+            style="display:none;visibility:hidden"></iframe>
+</noscript>
+<!-- End Google Tag Manager (noscript) -->
+{{ navbar() }}
+{% block introduction_section %}
+    <section class='introduction'>
+        <div class="container">
+            {% block introduction %}
+            {% endblock %}
+        </div>
+    </section>
+{% endblock introduction_section %}
+{% if not is_production() %}
+    <div class='alert alert-danger mt-3'>
+        <i class='fa fa-warning fa-2x'></i>
+        You are currently accessing a <b>test version of the comses.net website</b>. Information that you
+        view or store here will <b>not be preserved</b> and may not be consistent.
+    </div>
+{% endif %}
+{% block page %}
+    <section class='messages'>
+        {% for message in messages %}
+            <div class='{{ message.tags }}'>
+                <i class='fa fa-info-circle'></i> {{ message }}
             </div>
-            </section>
-        {% endblock introduction_section %}
-        {% if not is_production() %}
-            <div class='alert alert-danger mt-3'>
-            <i class='fa fa-warning fa-2x'></i>
-            You are currently accessing a <b>test version of the comses.net website</b>. Information that you
-            view or store here will <b>not be preserved</b> and may not be consistent.
-            </div>
-        {% endif %}
-        {% block page %}
-            <section class='messages'>
-                {% for message in messages %}
-                    <div class='{{message.tags}}'>
-                        <i class='fa fa-info-circle'></i> {{ message }}
-                    </div>
-                {% endfor %}
-            </section>
-            <section class='page'>
-                <div class="container">
-                    {% block breadcrumb %}
-                    {% endblock %}
-                    {% block content %}
-                        <div class="row">
-                        </div>
-                    {% endblock content %}
+        {% endfor %}
+    </section>
+    <section class='page'>
+        <div class="container">
+            {% block breadcrumb %}
+            {% endblock %}
+            {% block content %}
+                <div class="row">
                 </div>
-            </section>
-        {% endblock page %}
+            {% endblock content %}
+        </div>
+    </section>
+{% endblock page %}
 
-        {{ footer() }}
-    </body>
+{{ footer() }}
+</body>
 </html>
