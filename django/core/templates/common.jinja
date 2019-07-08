@@ -200,7 +200,7 @@
         DiscourseEmbed = {
             discourseUrl: "{{ DISCOURSE_BASE_URL }}/",
             discourseUserName: "{{ submitter_username }}",
-            discourseEmbedUrl: window.location.href
+            discourseEmbedUrl: window.location.origin + window.location.pathname
         };
         (function () {
             var d = document.createElement('script');
