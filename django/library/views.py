@@ -516,6 +516,10 @@ class CodebaseReleaseViewSet(CommonViewSetMixin,
         headers = self.get_success_headers(serializer.data)
         return Response(status=status.HTTP_201_CREATED, data=serializer.data, headers=headers)
 
+    def list(self, request, *args, **kwargs):
+        identifier = kwargs['identifier']
+        return redirect('library:codebase-detail', identifier=identifier)
+
     def retrieve(self, request, *args, **kwargs):
         instance = self.get_object()
         if request.accepted_renderer.format == 'html':
