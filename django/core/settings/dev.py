@@ -28,7 +28,7 @@ DEBUG_TOOLBAR_PANELS = [
     'debug_toolbar.panels.logging.LoggingPanel',
     'debug_toolbar.panels.redirects.RedirectsPanel',
     'debug_toolbar.panels.profiling.ProfilingPanel',
-    'ddt_request_history.panels.request_history.RequestHistoryPanel',
+    # 'ddt_request_history.panels.request_history.RequestHistoryPanel',
 ]
 
 WAFFLE_SWITCH_DEFAULT = True
