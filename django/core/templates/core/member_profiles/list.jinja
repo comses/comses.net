@@ -53,17 +53,10 @@
 {% block introduction %}<h1>Community</h1>{% endblock %}
 
 {% block top %}
-    {{ breadcrumb([
-    {'url': '/community/', 'text': 'Community'},
-    {'url': url("home:profile-list"), 'text': 'Users'},
-    ])
-    }}
-    {{ subnav([
-    {'url': '/community/', 'text': 'Community' },
-    {'url': DISCOURSE_BASE_URL, 'text': 'Forum' },
-    {'url': url("home:profile-list"), 'text': 'Users', 'active': True },
-    {'url': url("home:job-list"), 'text': 'Jobs' },
-    {'url': url("home:digest"), 'text': 'Newsletter'},
+    {{ 
+    breadcrumb([
+        {'url': '/community/', 'text': 'Community'},
+        {'url': url("home:profile-list"), 'text': 'Users'}
     ])
     }}
     {{ paginator('home:profile-list', paginator_data) }}
@@ -81,7 +74,6 @@
 {% endblock %}
 
 {% block sidebar %}
-    {# FIXME: look into better ways to pass data from Django -> Vue. may also need to check full member status #}
     <div id="sidebar" data-is-authenticated="{{ user.is_authenticated }}"></div>
 {% endblock %}
 

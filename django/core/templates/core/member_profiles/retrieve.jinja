@@ -12,14 +12,6 @@
     { 'url': profile.get_list_url(), 'text': 'Users'},
     { 'text': profile.name}
     ]) }}
-
-    {{ subnav([
-    { 'url': '/community/', 'text': 'Community' },
-    { 'url': DISCOURSE_BASE_URL, 'text': 'Forum' },
-    { 'url': profile.get_list_url(), 'text': 'Users', 'active': True },
-    { 'url': url("home:job-list"), 'text': 'Jobs' },
-    { 'url': url("home:digest"), 'text': 'Newsletter' },
-    ]) }}
 {% endblock %}
 
 {% block content %}
@@ -116,13 +108,13 @@
                 {{ render_codebase_result(codebase) }}
             {% else %}
                 <p class='lead p-3'>
-                    No associated codebases.
+                    None
                 </p>
             {% endfor %}
         </div>
         <div class='tab-pane' id='publications' role='tabpanel'>
             <p class='lead p-3'>
-                Coming soon.
+            Coming soon.
             </p>
         </div>
         {% if has_change_perm %}
