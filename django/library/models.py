@@ -1531,21 +1531,21 @@ class PeerReviewerFeedback(models.Model):
                                     blank=True)
     has_narrative_documentation = models.BooleanField(
         default=False,
-        help_text=_('Is there sufficiently detailed accompanying narrative documentation? Check if yes, leave blank for no.')
+        help_text=_('Is there sufficiently detailed accompanying narrative documentation? (A checked box indicates that the model has narrative documentation)')
     )
     narrative_documentation_comments = models.TextField(
         help_text=_('Reviewer comments on the narrative documentation'), blank=True
     )
     has_clean_code = models.BooleanField(
         default=False,
-        help_text=_('Is the code clean, well-written, and well-commented with consistent formatting? Check for yes, leave blank for no.')
+        help_text=_('Is the code clean, well-written, and well-commented with consistent formatting? (A checked box indicates that the model code is clean)')
     )
     clean_code_comments = models.TextField(
         help_text=_('Reviewer comments on code cleanliness'), blank=True
     )
     is_runnable = models.BooleanField(
         default=False,
-        help_text=_('Were you able to run the model with the provided instructions? Check for yes, leave blank for no.')
+        help_text=_('Were you able to run the model with the provided instructions? (A checked box indicates that the model is runnable)')
     )
     runnable_comments = models.TextField(
         help_text=_('Reviewer comments on running the model with the provided instructions'),
