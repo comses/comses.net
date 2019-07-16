@@ -5,145 +5,171 @@
 {% set profile_url = url('home:profile-detail', pk=user.pk) if user.is_authenticated else signup_url %}
 
 {% macro navbar() %}
-    <nav class='navbar navbar-expand-md navbar-light fixed-top'>
-        <div class='container'>
-
-            {# navbar header #}
-            <div class='navbar-brand'>
-                <div class='row'>
-                    <div class='col'>
-                        <a href='/'><span class="logo">CoMSES Network | OpenABM</span></a>
-                    </div>
-                    <div class='col px-0'>
-                        <a href="http://westbigdatahub.org/" target="_blank">
-                            <img height='70' src="{{ static("images/logo-westhub-black.png") }}"
-                                 alt="NSF West Big Data Hub">
-                        </a>
-                    </div>
-                </div>
-            </div>
-            {# end navbar header #}
-
-            {# hamburger menu dropdown #}
-            <nav class="navbar navbar-inverse bg-inverse">
-                <button class='navbar-toggler navbar-toggler-right align-self-center mt-3' type='button'
+    <nav class="navbar navbar-expand-lg navbar-toggleable-md navbar-light">
+        {# navbar header #}
+        <div class="navbar-header">
+            {# hamburger collapse menu #}
+            <div class="navbar-nav pull-right">
+                <button class='navbar-toggler navbar-toggler-right align-self-center'
                         data-toggle='collapse'
-                        data-target='#navbar-content' aria-controls='navbar-content' aria-expanded='false'
+                        data-target='.navbar-collapse'
+                        aria-controls='navbar-collapse'
+                        aria-expanded='false'
                         aria-label='Toggle navigation'>
-                    <span class='navbar-toggler-icon'></span>
+                    <span class="navbar-toggler-icon"></span>
                 </button>
-            </nav>
-            {# end hamburger menu dropdown #}
+            </div>
+            {# end hamburger collapse menu #}
+            <a class="navbar-brand pull-left" href="/">
+                <span class="logo">CoMSES Network | Open ABM</span>
+            </a>
+            <a class="navbar-brand pull-left" href="http://westbigdatahub.org/" target="_blank">
+                 <img height='70'
+                      src="{{ static("images/logo-westhub-black.png") }}"
+                      alt="NSF West Big Data Hub">
+            </a>
+        </div>
+        {# end navbar header #}
 
-            {# subscibe and login #}
-            <div class='d-flex flex-row ml-auto justify-content-end'>
-                <ul class='navbar-nav top-nav'>
+        {# hamburger menu content #}
+        <div class="navbar-nav navbar-collapse collapse" style="padding-top: 30px">
+            {# subscribe and login #}
+            <ul class="nav navbar-nav">
+                {# subcribe #}
+                <li class='nav-item dropdown'>
+                    <a class="nav-link dropdown-toggle"
+                       id="subscribeDropdownLink"
+                       data-toggle="dropdown"
+                       role="button"
+                       href="#"
+                       aria-haspopup="true"
+                       aria-expanded="false">
+                        <span class="fa fa-rss"></span>
+                        Subscribe
+                    </a>
+                    <div class="dropdown-menu"
+                        aria-labelledby="subscribeDropdownLink">
+                        <a class="dropdown-item" href="{{ url('rss') }}">RSS</a>
+                        <div class="dropdown-divider"></div>
+                        <a class="dropdown-item" href="{{ url('rss-events') }}">Events</a>
+                        <a class="dropdown-item" href="{{ url('rss-jobs') }}">Jobs</a>
+                    </div>
+                </li>
+                {# end subscribe #}
+
+                {# login #}
+                {% if user.is_authenticated %}
                     <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" id="subscribeDropdownLink"
-                           data-toggle="dropdown" role="button" href="#" aria-haspopup="true" aria-expanded="false">
-                            <span class="fa fa-rss"></span> Subscribe
+                        <a class="nav-link dropdown-toggle"
+                           id="userDropdownMenuLink"
+                           data-toggle="dropdown"
+                           role="button"
+                           href="#"
+                           aria-haspopup="true"
+                           aria-expanded="false"
+                        >
+                            <span class="fa fa-user-o"></span>
+                            {{ user.username }}
+                            {# FIXME: this should be cached instead #}
+                            {% if user.emailaddress_set.filter(verified=False).exists() %}
+                                <span class="badge badge-warning">Email Unverified</span>
+                                <span class="sr-only">Email Unverified</span>
+                            {% endif %}
                         </a>
-                        <div class="dropdown-menu" aria-labelledby="subscribeDropdownLink">
-                            <a class="dropdown-item" href="{{ url('rss') }}">RSS</a>
-                            <div class='dropdown-divider'></div>
-                            <a class='dropdown-item' href='{{ url('rss-events') }}'>Events</a>
-                            <a class='dropdown-item' href='{{ url('rss-jobs') }}'>Jobs</a>
+                        <div class="dropdown-menu"
+                            aria-labeledby="userDropdownMenuLink">
+                            <a class="dropdown-item" href="{{ profile_url }}">
+                                <i class="fa fa-user-o"></i>
+                                Your Account
+                            </a>
+                            {% if user.has_perm('library.change_peerreview') %}
+                            <a class="dropdown-item" href="{{ url('library:peer-review-dashboard') }}">
+                                <i class="fa fa-flask"></i>
+                                Manage Peer Reviews
+                            </a>
+                            {% endif %}
+                            {# POST logouts, see http://django-allauth.readthedocs.io/en/latest/views.html#logout-account-logout #}
+                            <form id="logoutForm" method="post" action="{{ logout_url }}">
+                                {% csrf_token %}
+                                {% if redirect_field_value %}
+                                    <input type="hidden"
+                                            name="{{ redirect_field_name }}"
+                                            value="{{ redirect_field_value }}" />
+                                {% endif %}
+                            <input type="submit" style="display: none">
+                            </form>
+                            <a class="dropdown-item"
+                               onclick='return submitLogout();'
+                               href="{{ logout_url }}">
+                                <i class='fa fa-sign-out'></i>
+                                Sign Out
+                            </a>
                         </div>
                     </li>
-                    {% if user.is_authenticated %}
-                        <li class="nav-item dropdown">
-                            <a class="nav-link dropdown-toggle" id='userDropdownMenuLink'
-                               data-toggle="dropdown" role="button" href="#" aria-haspopup="true" aria-expanded="false">
-                                <span class="fa fa-user-o"></span> {{ user.username }}
-                                {# FIXME: this should be cached instead
-                                {% if user.emailaddress_set.filter(verified=False).exists() %}
-                                    <span class="badge badge-warning">Email Unverified</span>
-                                    <span class="sr-only">Email Unverified</span>
-                                {% endif %}
-                                #}
-                            </a>
-                            <div class="dropdown-menu" aria-labelledby='userDropdownMenuLink'>
-                                <a class="dropdown-item" href="{{ profile_url }}"><i class='fa fa-user-o'></i> Your
-                                    Account</a>
-                                {% if user.has_perm('library.change_peerreview') %}
-                                    <a class="dropdown-item" href="{{ url('library:peer-review-dashboard') }}"><i
-                                            class='fa fa-flask'></i> Manage Peer Reviews</a>
-                                {% endif %}
-                                {# POST logouts, see http://django-allauth.readthedocs.io/en/latest/views.html#logout-account-logout #}
-                                <form id='logoutForm' method='post' action='{{ logout_url }}'>
-                                    {% csrf_token %}
-                                    {% if redirect_field_value %}
-                                        <input type="hidden" name="{{ redirect_field_name }}"
-                                               value="{{ redirect_field_value }}"/>
-                                    {% endif %}
-                                    <input type='submit' style='display: none;'>
-                                </form>
-                                <a class="dropdown-item" onclick='return submitLogout();' href="{{ logout_url }}"><i
-                                        class='fa fa-sign-out'></i> Sign Out</a>
+                {% else %}
+                    <li class="nav-item">
+                        <a class="nav-link"
+                            href="{{ login_url }}?next={{ request.path }}">
+                            Sign In
+                            <i class="fa fa-sign-in"></i>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ signup_url }}">
+                            Become a Member
+                        </a>
+                    </li>
+                {% endif %}
+                {# end login #}
+                {# FIXME: consider replacing with wagtail menu #}
+                <li class="nav-item">
+                    <a href="{{ url('library:codebase-list') }}" class="nav-link">Computational Library</a>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ url('home:event-calendar') }}" class="nav-link">Events</a>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ url('home:job-list') }}" class="nav-link">Jobs</a>
+                </li>
+                <li class="nav-item">
+                    <a href="/community/" class="nav-link">Community</a>
+                </li>
+                <li class="nav-item">
+                    <a href="/resources/" class="nav-link">Resources</a>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ DISCOURSE_BASE_URL }}" class="nav-link">
+                            Forums
+                        <i class="fa fa-external-link"></i>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="/about/" class="nav-link">About</a>
+                </li>
+                <li id="search-dropdown" class="my-auto nav-item dropdown show">
+                    <a id="search-button"
+                       onclick="focusSearch()"
+                       href="#"
+                       class="dropdown-toggle"
+                       data-toggle="dropdown"
+                       aria-expanded="false"
+                       aria-haspopup="true">
+                        <i class="fa fa-search"></i>
+                    </a>
+                    <div id="header-search-form" class="p-2 dropdown-menu" aria-labelledby="search-button">
+                        <form method="get" action="/search/">
+                            <input id="header-search-input" type="text" name="query" class="p-2 form-control"
+                                   placeholder="search entire site">
+                            <div class="float-right">
+                                <small><a href="/search/">options</a></small>
                             </div>
-                        </li>
-                    {% else %}
-                        <li class='nav-item'>
-                            <a class="nav-link" href="{{ login_url }}?next={{ request.path }}">Sign In <i
-                                    class='fa fa-sign-in'></i></a>
-                        </li>
-                        <li class='nav-item'>
-                            <a class='nav-link' href="{{ signup_url }}">Become a Member</a>
-                        </li>
-                    {% endif %}
-                </ul>
-            </div>
-            {# end subscibe and login #}
-
-            {# hamburger menu content #}
-            <div class='navbar-collapse collapse' id='navbar-content'>
-                {# menu #}
-                <div class='d-flex flex-row ml-auto justify-content-end'>
-                    <ul class='navbar-nav top-nav'>
-                        {# FIXME: consider replacing with wagtailmenu #}
-                        <li class="nav-item">
-                            <a href="{{ url('library:codebase-list') }}" class="nav-link">Computational Library</a>
-                        </li>
-                        <li class="nav-item">
-                            <a href="{{ url('home:event-calendar') }}" class="nav-link">Events</a>
-                        </li>
-                        <li class='nav-item'>
-                            <a href="{{ url('home:job-list') }}" class='nav-link'>Jobs</a>
-                        </li>
-                        <li class='nav-item'>
-                            <a href="/community/" class="nav-link">Community</a>
-                        </li>
-                        <li class="nav-item">
-                            <a href="/resources/" class="nav-link">Resources</a>
-                        </li>
-                        <li class='nav-item'>
-                            <a href="{{ DISCOURSE_BASE_URL }}" class='nav-link'>Forums <i
-                                    class='fa fa-external-link'></i></a>
-                        </li>
-                        <li class='nav-item'>
-                            <a href='/about/' class='nav-link'>About</a>
-                        </li>
-                        <li id='search-dropdown' class="my-auto nav-item dropdown show">
-                            <a id='search-button' onclick='focusSearch()' href='#' class='dropdown-toggle'
-                               data-toggle='dropdown' aria-expanded='false' aria-haspopup='true'>
-                                <i class='fa fa-search'></i>
-                            </a>
-                            <div id='header-search-form' class='p-2 dropdown-menu' aria-labelledby='search-button'>
-                                <form method="get" action="/search/">
-                                    <input id='header-search-input' type='text' name="query" class='p-2 form-control'
-                                           placeholder='search entire site' autofocus>
-                                    <div class='float-right'>
-                                        <small><a href='/search/'>options</a></small>
-                                    </div>
-                                </form>
-                            </div>
-                        </li>
-                    </ul>
-                </div>
-                <ul id="browser-message"></ul>
-            </div>
-            {# end hamburger menu content #}
+                        </form>
+                    </div>
+                </li>
+            </ul>
+            <ul id="browser-message"></ul>
         </div>
+        {# end hamburger menu content #}
     </nav>
 {% endmacro %}
 
