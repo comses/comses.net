@@ -111,7 +111,7 @@ class ListReleaseContributorSerializer(serializers.ListSerializer):
             related_contributor_count = len(related_contributors)
             if related_contributor_count > 1:
                 user = User.objects.get(username=username)
-                error_messages.append('User {} occurs {} time(s) in the contributor list. Duplicates must be removed in order to save'.format(
+                error_messages.append('"{}" occurs {} time(s) in the contributor list. Please remove all duplicates before saving.'.format(
                     user.get_full_name(), related_contributor_count))
         if error_messages:
             raise ValidationError({'non_field_errors': error_messages})
