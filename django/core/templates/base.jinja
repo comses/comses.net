@@ -20,10 +20,10 @@
                 </button>
             </div>
             {# end hamburger collapse menu #}
-            <a class="navbar-brand pull-left" href="/">
+            <a class="navbar-brand" href="/">
                 <span class="logo">CoMSES Network | Open ABM</span>
             </a>
-            <a class="navbar-brand pull-left" href="http://westbigdatahub.org/" target="_blank">
+            <a class="navbar-brand" href="http://westbigdatahub.org/" target="_blank">
                  <img height='70'
                       src="{{ static("images/logo-westhub-black.png") }}"
                       alt="NSF West Big Data Hub">
@@ -32,8 +32,9 @@
         {# end navbar header #}
 
         {# hamburger menu content #}
-        <div class="navbar-nav navbar-collapse collapse" style="padding-top: 30px">
+        <div class="navbar-nav navbar-collapse collapse flex-column ml-lg-0 ml-3 pt-md-4">
             {# subscribe and login #}
+        <div class="d-md-flex flex-row">
             <ul class="nav navbar-nav">
                 {# subcribe #}
                 <li class='nav-item dropdown'>
@@ -121,6 +122,10 @@
                     </li>
                 {% endif %}
                 {# end login #}
+            </ul>
+        </div>
+
+            <ul class="navbar-nav flex-md-row">
                 {# FIXME: consider replacing with wagtail menu #}
                 <li class="nav-item">
                     <a href="{{ url('library:codebase-list') }}" class="nav-link">Computational Library</a>
