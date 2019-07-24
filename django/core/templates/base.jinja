@@ -5,9 +5,9 @@
 {% set profile_url = url('home:profile-detail', pk=user.pk) if user.is_authenticated else signup_url %}
 
 {% macro navbar() %}
-    <nav class="navbar navbar-expand-lg navbar-toggleable-md navbar-light">
+    <nav class="comses-navbar navbar navbar-expand-lg navbar-toggleable-md navbar-light">
         {# navbar header #}
-        <div class="navbar-header">
+        <div class="navbar-header d-flex align-items-center">
             {# hamburger collapse menu #}
             <div class="navbar-nav">
                 <button class='navbar-toggler navbar-toggler-right align-self-end'
@@ -20,10 +20,10 @@
                 </button>
             </div>
             {# end hamburger collapse menu #}
-            <a class="navbar-brand" href="/">
+            <a class="mx-0 navbar-brand" href="/">
                 <span class="logo">CoMSES Network | Open ABM</span>
             </a>
-            <a class="navbar-brand" href="http://westbigdatahub.org/" target="_blank">
+            <a class="ml-1 mr-0 navbar-brand" href="http://westbigdatahub.org/" target="_blank">
                  <img height='70'
                       src="{{ static("images/logo-westhub-black.png") }}"
                       alt="NSF West Big Data Hub">
@@ -246,13 +246,13 @@
                     <ul class='organizations'>
                         <li>
                             <a href='https://www.computecanada.ca' target='_blank'>
-                                <img class='rounded' height="160" src='{{ static("images/logo-compute-canada.jpg") }}'
+                                <img class='rounded' height="100" src='{{ static("images/logo-compute-canada.jpg") }}'
                                      alt='Compute Canada'>
                             </a>
                         </li>
                         <li>
                             <a href='https://www.westgrid.ca' target='_blank'>
-                                <img class='rounded' height='160' src='{{ static("images/logo-westgrid.png") }}'
+                                <img class='rounded' height='100' src='{{ static("images/logo-westgrid.png") }}'
                                      alt='Compute Canada WestGrid'>
                             </a>
                         </li>
