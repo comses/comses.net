@@ -88,6 +88,21 @@ $fa-font-path: '~font-awesome/fonts/';
   width: 308px !important;
 }
 
+.main-nav {
+  float: none;
+  list-style-type: none;
+}
+
+.main-nav li {
+  margin-right: 10px;
+}
+
+.navbar-toggler {
+  position: absolute;
+  top: 10px;
+  right: 20px;
+}q
+
 .page {
   padding-top: $default-padding;
   padding-bottom: $default-padding;
