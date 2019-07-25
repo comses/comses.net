@@ -5,9 +5,9 @@
 {% set profile_url = url('home:profile-detail', pk=user.pk) if user.is_authenticated else signup_url %}
 
 {% macro navbar() %}
-    <nav class="comses-navbar navbar navbar-expand-lg navbar-toggleable-md navbar-light">
+    <nav class="comses-navbar navbar navbar-expand-xl navbar-toggleable-md navbar-light">
         {# navbar header #}
-        <div class="navbar-header">
+        <div class="navbar-header d-flex align-items-center">
             {# hamburger collapse menu #}
             <div class="navbar-nav">
                 <button class='navbar-toggler navbar-toggler-right align-self-end'
@@ -32,9 +32,9 @@
         {# end navbar header #}
 
         {# hamburger menu content #}
-        <div class="navbar-nav navbar-collapse collapse flex-column align-items-start ml-lg-2 ml-0">
-            {# subscribe and login #}
-            <ul class="nav navbar-nav ml-auto py-0 px-lg-2 main-nav">
+        <div class="navbar-nav navbar-collapse collapse flex-column align-items-start ml-0">
+            {# subscribe and login first row #}
+            <ul class="nav navbar-nav mr-0 ml-xl-auto py-0 px-xl-2 main-nav">
                 {# subcribe #}
                 <li class='nav-item dropdown py-0'>
                     <a class="nav-link dropdown-toggle"
@@ -60,7 +60,7 @@
                 {# login #}
                 {% if user.is_authenticated %}
                     <li class="nav-item dropdown py-0">
-                        <a class="nav-link dropdown-toggle"
+                        <a class="pr-0 nav-link dropdown-toggle"
                            id="userDropdownMenuLink"
                            data-toggle="dropdown"
                            role="button"
@@ -122,8 +122,8 @@
                 {% endif %}
                 {# end login #}
             </ul>
-
-            <ul class="navbar-nav  mb-auto mt-0 ml-auto main-nav">
+            {# second row of links #}
+            <ul class="navbar-nav ml-xl-auto main-nav">
                 {# FIXME: consider replacing with wagtail menu #}
                 <li class="nav-item py-0">
                     <a href="{{ url('library:codebase-list') }}" class="nav-link">Computational Library</a>
