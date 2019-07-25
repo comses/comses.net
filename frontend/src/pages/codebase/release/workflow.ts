@@ -136,15 +136,15 @@ export const publishSchema = yup.object().shape({
             <div class="modal-content">
                 <div class="modal-header">
                     <h4 class="modal-title">Publish Codebase Release {{ _version_number }}</h4>
-                    <button type="button" class="close" @click="close" aria-label="Close">
+                    <button type="button" data-dismiss='modal' class="close" @click="close" aria-label="Close">
                         <span aria-hidden="true">&times;</span>
                     </button>
                 </div>
                 <div class="modal-body">
-                    <p><b>Note!</b> Publishing a release makes it possible for anyone to view and download it. Once a
+                    <p><b>Please read carefully!</b> <b>Publishing</b> a release makes it possible for anyone to view and download it. Once a
                     release is published, the files associated with the release will be <b>frozen</b> and you will no
-                    longer be able to add or remove files to the release. You will still be able to edit certain release
-                    metadata, however. If you'd like to request <a href='/reviews/'>a peer review</a> of your model you
+                    longer be able to add or remove files to the release. You will still be able to edit your model's 
+                    metadata. If you'd like to request <a href='/reviews/'>a peer review</a> of your model you
                     should do that first so you may address any concerns raised during the peer review process that may
                     include changes to the files associated with your release.
                     </p>
@@ -171,7 +171,7 @@ export const publishSchema = yup.object().shape({
                 <c-message-display :messages="statusMessages" @clear="clear">
                 </c-message-display>
                 <div class="modal-footer">
-                    <button class="btn btn-secondary" @click="close">Cancel</button>
+                    <button class="btn btn-secondary" data-dismiss='modal' @click="close">Cancel</button>
                     <button class="btn btn-danger ml-auto" @click="publish"><i class='fa fa-share-alt'></i> Publish</button>
                 </div>
             </div>
