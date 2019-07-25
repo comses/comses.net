@@ -16,11 +16,10 @@ $font-family-base: 'Open Sans', Roboto, 'Helvetica Neue', sans-serif;
   }
 }
 
-.top-nav {
-    .nav-link {
-        padding-left: 0.6em !important;
-        padding-right: 0.2em !important;
-    }
+.comses-navbar {
+    margin-right: auto;
+    margin-left: auto;
+    max-width: 1200px;
 }
 
 .fc-toolbar {
@@ -87,6 +86,17 @@ $fa-font-path: '~font-awesome/fonts/';
   display: inline-block;
   height: 70px !important;
   width: 308px !important;
+}
+
+.main-nav {
+  float: none;
+  list-style-type: none;
+}
+
+.navbar-toggler {
+  position: absolute;
+  top: 10px;
+  right: 20px;
 }
 
 .page {
