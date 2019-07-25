@@ -1086,8 +1086,6 @@ class CodebaseReleasePublisher:
         self.codebase_release = codebase_release
 
     def is_publishable(self):
-        if not self.codebase_release.contributors.filter(user=self.codebase_release.submitter).exists():
-            raise ValidationError('Submitter must be in the contributor list')
         fs_api = self.codebase_release.get_fs_api()
         storage = fs_api.get_stage_storage(StagingDirectories.sip)
         code_msg = self.has_files(storage, FileCategoryDirectories.code)

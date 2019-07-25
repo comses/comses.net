@@ -111,8 +111,9 @@ class ListReleaseContributorSerializer(serializers.ListSerializer):
             related_contributor_count = len(related_contributors)
             if related_contributor_count > 1:
                 user = User.objects.get(username=username)
-                error_messages.append('"{}" occurs {} time(s) in the contributor list. Please remove all duplicates before saving.'.format(
-                    user.get_full_name(), related_contributor_count))
+                error_messages.append(
+                    f'"{user.get_full_name()}" was listed {related_contributor_count} times in the contributors list. Please remove all duplicates - you can assign multiple roles to the same contributor.'
+                )
         if error_messages:
             raise ValidationError({'non_field_errors': error_messages})
 
