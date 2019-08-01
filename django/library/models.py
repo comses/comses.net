@@ -1297,6 +1297,9 @@ class PeerReview(models.Model):
     def get_edit_url(self):
         return reverse('library:profile-edit', kwargs={'user_pk': self.user.pk})
 
+    def get_invite(self, member_profile):
+        return self.invitation_set.filter(candidate_reviewer=member_profile).first()
+
     @transaction.atomic
     def get_absolute_url(self):
         if not self.slug:

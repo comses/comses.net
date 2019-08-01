@@ -49,6 +49,15 @@
             be passed (e.g., all checkboxes are satisfied). Private comments will <em>not</em> be included in any
             correspondence back to the model author and only used for internal book-keeping.
         </div>
+        {% for feedback in feedback_set %}
+            <div class="card">
+                <div class="card-body">
+                    {{ display_reviewer_feedback(feedback, include_editor=true) }}
+                </div>
+            </div>
+        {% endfor %}
+        <br>
+
         <form method="post">
             {% include 'includes/form.jinja' %}
             <button id="save" class="btn btn-secondary">Save</button>
