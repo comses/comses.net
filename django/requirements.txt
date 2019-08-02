@@ -33,7 +33,7 @@ requests==2.22.0
 semver==2.8.1
 uwsgi==2.0.18
 uwsgitop==0.11
-wagtail==2.5.1
+wagtail==2.6
 invoke
 ipython
 rarfile
