@@ -5,7 +5,7 @@
 {% set profile_url = url('home:profile-detail', pk=user.pk) if user.is_authenticated else signup_url %}
 
 {% macro navbar() %}
-    <div class="fixed-top bg-white w-100%">
+    <div class="fixed-top bg-white w-100">
         <nav class="comses-navbar navbar navbar-expand-xl navbar-toggleable-md navbar-light">
             {# navbar header #}
             <div class="navbar-header d-flex align-items-center">
