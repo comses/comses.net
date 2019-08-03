@@ -336,9 +336,11 @@
     {# end has_change_perm #}
 {% endif %}
 {% with review=release.get_review() %}
-    {% set invite = review.get_invite(request.user.member_profile) if not request.user.is_anonymous else None %}
-    {% if invite %}
-        <a class="btn btn-primary my-1 w-100" href="{{ invite.get_absolute_url() }}">My feedback</a>
+    {% if review %}
+        {% set invite = review.get_invite(request.user.member_profile) if not request.user.is_anonymous else None %}
+        {% if invite %}
+            <a class="btn btn-primary my-1 w-100" href="{{ invite.get_absolute_url() }}">My feedback</a>
+        {% endif %}
     {% endif %}
 {% endwith %}
 {% if release.live %}
