@@ -3,7 +3,7 @@
 
 Dear {{ review.submitter.name }},
 
-Congratulations! The peer review of your model [{{ release.title }}]({{ release_url }}) is now complete and your release has been marked as peer reviewed. An automatic DOI registration workflow that automatically assigns a DOI to all peer reviewed models is under development but if you need a DOI immediately please feel free to [contact us]({{ build_absolute_uri(slugurl('contact')) }}).
+Congratulations! The peer review of your model [{{ release.title }}]({{ build_absolute_uri(release.get_absolute_url()) }}) is now complete and your release has been marked as peer reviewed. An automatic DOI registration workflow that automatically assigns a DOI to all peer reviewed models is under development but if you need a DOI immediately please feel free to [contact us]({{ build_absolute_uri(slugurl('contact')) }}).
 
 Thank you for submitting your computational model for review to CoMSES Net! We hope you will be willing to serve as a reviewer of model code as well in future model peer reviews.
 
