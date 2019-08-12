@@ -60,6 +60,7 @@ class CheckCharFieldLengthMixin:
 
 
 class PeerReviewerFeedbackReviewerForm(CheckCharFieldLengthMixin, forms.ModelForm):
+
     def clean_recommendation(self):
         recommendation = self.cleaned_data['recommendation']
         if not recommendation:
@@ -84,12 +85,24 @@ class PeerReviewerFeedbackReviewerForm(CheckCharFieldLengthMixin, forms.ModelFor
             is_runnable = cleaned_data['is_runnable']
 
             checklist_errors = []
-            if not has_narrative_documentation:
-                checklist_errors.append(_('Recommended releases must have accompanying narrative documentation.'))
-            if not has_clean_code:
-                checklist_errors.append(_('Recommended releases should have clean code.'))
-            if not is_runnable:
+
+            if is_runnable:
+                self.fields_required(['runnable_comments'])
                 checklist_errors.append(_('Recommended releases must have runnable code.'))
+            else:
+                self.cleaned_data['runnable_comments'] = ''
+
+            if has_narrative_documentation:
+                self.fields_required(['narrative_documentation_comments'])
+            else:
+                self.cleaned_data['narrative_documentation_comments'] = ''
+                checklist_errors.append(_('Recommended releases must have accompanying narrative documentation.'))
+
+            if has_clean_code:
+                self.fields_required(['clean_code_comments'])
+            else:
+                self.cleaned_data['clean_code_comments'] = ''
+                checklist_errors.append(_('Recommended releases should have clean code.'))
 
             if checklist_errors:
                 raise forms.ValidationError([forms.ValidationError(e) for e in checklist_errors])
@@ -114,6 +127,13 @@ class PeerReviewerFeedbackReviewerForm(CheckCharFieldLengthMixin, forms.ModelFor
         # FIXME: we should not rely on internal marked methods, need to clean this up
         self._clean_form()
         self._post_clean()
+
+    """ Mark conditional fields required """
+    def fields_required(self, fields):
+        for field in fields:
+            if not self.cleaned_data.get(field, ''):
+                msg = forms.ValidationError("This field is required")
+                self.add_error(field, msg)
 
     def save(self, commit=True):
         feedback = super().save(commit)
