@@ -7,12 +7,13 @@ const $: any = _$;
 
 export function getCookie(name) {
     let cookieValue: null | string = null;
-    if (document.cookie && document.cookie != '') {
+    if (document.cookie && document.cookie !== '') {
         const cookies = document.cookie.split(';');
-        for (let i = 0; i < cookies.length; i++) {
+
+        for (const i of cookies) {
             const cookie = _.trim(cookies[i]);
             // Does this cookie string begin with the name we want?
-            if (cookie.substring(0, name.length + 1) == (name + '=')) {
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
                 cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
                 break;
             }
@@ -38,7 +39,7 @@ export interface CreateOrUpdateHandler {
 
     handleSuccessWithoutDataResponse(response: AxiosResponse): void;
 
-    handleOtherError(network_error): void;
+    handleOtherError(networkError): void;
 
     handleServerValidationError(response: { response: AxiosResponse }): void;
 }
@@ -52,14 +53,22 @@ export interface FormComponent {
     detailPageUrl?(state): string;
 }
 
-export function baseHandleOtherError(response_or_network_error): string {
+export function baseHandleOtherError(responseOrNetworkError): string {
     let msg: string;
-    if (!_.isUndefined(response_or_network_error.response)) {
-        switch (response_or_network_error.response.status) {
-            case 403: msg = 'Server Forbidden Error (tried to read, create or modify something you do not have permission to)'; break;
-            case 404: msg = 'Server Resource Not Found Error (tried to read, create or modify something that does not exist)'; break;
-            case 500: msg = 'Internal Server Error (server has a bug)'; break;
-            default: msg = `HTTP Error (${response_or_network_error.response.status})`; break;
+    if (!_.isUndefined(responseOrNetworkError.response)) {
+        switch (responseOrNetworkError.response.status) {
+            case 403:
+                msg = 'Server Forbidden Error (tried to read, create or modify something you do not have permission to)';
+                break;
+            case 404:
+                msg = 'Server Resource Not Found Error (tried to read, create or modify something that does not exist)';
+                break;
+            case 500:
+                msg = 'Internal Server Error (server has a bug)';
+                break;
+            default:
+                msg = `HTTP Error (${responseOrNetworkError.response.status})`;
+                break;
         }
     } else {
         msg = 'Network Error. Request never got a response from server.';
@@ -100,8 +109,8 @@ export class HandlerWithRedirect implements CreateOrUpdateHandler {
         return this.component.state;
     }
 
-    public handleOtherError(response_or_network_error) {
-        const msg = baseHandleOtherError(response_or_network_error);
+    public handleOtherError(responseOrNetworkError) {
+        const msg = baseHandleOtherError(responseOrNetworkError);
         this.component.statusMessages = [{classNames: 'alert alert-danger', message: msg}];
     }
 
