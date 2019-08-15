@@ -5,12 +5,10 @@ DEPLOY_ENVIRONMENT = Environment.STAGING
 
 # EMAIL_BACKEND = 'django.core.mail.backends.filebased.EmailBackend'
 # EMAIL_FILE_PATH = '/shared/logs/mail.log'
-EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_BACKEND = 'anymail.backends.mailgun.EmailBackend'
 
-EMAIL_HOST = config.get('email', 'EMAIL_HOST', fallback='smtp.sparkpostmail.com')
-EMAIL_PORT = config.get('email', 'EMAIL_PORT', fallback='587')
-EMAIL_HOST_USER = config.get('email', 'EMAIL_HOST_USER', fallback='SMTP_Injection')
-EMAIL_HOST_PASSWORD = config.get('email', 'EMAIL_HOST_PASSWORD', fallback='')
+MAILGUN_API_KEY = config.get('email', 'MAILGUN_API_KEY')
+MAILGUN_SENDER_DOMAIN = config.get('email', 'MAILGUN_SENDER_DOMAIN', fallback='mg.comses.net')
 EMAIL_SUBJECT_PREFIX = config.get('email', 'EMAIL_SUBJECT_PREFIX', fallback='[test.comses.net]')
 EMAIL_USE_TLS = True
 
@@ -45,8 +43,14 @@ WSGI_APPLICATION = 'core.wsgi.application'
 
 INSTALLED_APPS += [
     'raven.contrib.django.raven_compat',
+    'anymail',
     'fixture_magic',
 ]
+
+ANYMAIL = {
+    'MAILGUN_API_KEY': MAILGUN_API_KEY,
+    'MAILGUN_SENDER_DOMAIN': MAILGUN_SENDER_DOMAIN,
+}
 
 LOGGING = {
     'version': 1,
