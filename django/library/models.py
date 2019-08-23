@@ -919,6 +919,12 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
             self.regenerate_share_uuid()
         return reverse('library:codebaserelease-share-download', kwargs={'share_uuid': self.share_uuid})
 
+    def verify_metadata(self):
+        if self.license is None or self.os is None or self.release_notes is None or self.platforms is None or self.programming_languages is None or self.contributors is None:
+            return False
+        else:
+            return True
+
     @property
     def share_url(self):
         if not self.share_uuid:
@@ -936,7 +942,7 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
         """
         Returns true if this release has not already been peer reviewed and a related PeerReview does not exist
         """
-        return not self.peer_reviewed and self.get_review() is None
+        return not self.peer_reviewed and self.get_review() is None and self.verify_metadata() is True
 
     @property
     def is_latest_version(self):
