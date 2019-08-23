@@ -920,10 +920,7 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
         return reverse('library:codebaserelease-share-download', kwargs={'share_uuid': self.share_uuid})
 
     def verify_metadata(self):
-        if self.license is not None or self.programming_languages.exists() or self.os.exists() or self.contributors.exists():
-            return True
-        else:
-            return False
+        return bool(self.license is not None or self.programming_languages.exists() or self.os.exists() or self.contributors.exists())
 
     @property
     def share_url(self):
