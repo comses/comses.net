@@ -286,6 +286,12 @@
                 <p>
                 <span class='btn btn-sm btn-warning disabled'>{{ release.get_review_status_display() }}</span>
                 </p>
+                {% if not release.is_peer_review_requestable %}
+                    <div class='alert alert-danger mt-3'>
+                        <i class='fa fa-warning fa-2x'></i>
+                        Peer review requests cannot be submitted until <b>all necessary metadata fields are complete</b>.
+                    </div>
+                {% endif %}
             {% endif %}
             </p>
         </div>
