@@ -912,7 +912,7 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
         review = self.get_review()
         if review:
             return review.get_simplified_status_display()
-        return 'Artifacts have not been reviewed'
+        return ''
 
     def get_review_download_url(self):
         if not self.share_uuid:

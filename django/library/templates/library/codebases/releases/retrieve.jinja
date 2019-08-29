@@ -284,7 +284,7 @@
                     Peer Review
                 </b>
                 <p>
-                <span class='btn btn-sm btn-warning disabled'>{{ release.get_review_status_display() }}</span>
+                <span class='btn btn-sm btn-warning disabled'>{{ release.get_review_status_display() or 'Unreviewed' }}</span>
                 </p>
             {% endif %}
             </p>
