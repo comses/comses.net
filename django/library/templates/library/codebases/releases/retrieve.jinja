@@ -11,7 +11,7 @@
 {% block top %}
     {{ breadcrumb([
     {'url': url('library:codebase-list'), 'text': 'Computational Model Library' },
-    {'text': codebase.title },
+    {'url': url('library:codebase-detail', codebase.identifier), 'text': codebase.title|truncate(68) },
     {'text': release.version_number },
     ]) }}
 {% endblock %}

@@ -162,16 +162,20 @@
 {% endmacro %}
 
 {% macro breadcrumb(items) %}
-<ol class="breadcrumb">
-    <li class='breadcrumb-item'><a href='/'>Home</a></li>
-    {% for item in items %}
-        {% if not item.url %}
-            <li class="breadcrumb-item active">{{ item.text }}</li>
-        {% else %}
-            <li class="breadcrumb-item"><a href="{{ item.url }}">{{ item.text }}</a></li>
-        {% endif %}
-    {% endfor %}
-</ol>
+{% if items|length > 0 %}
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class='breadcrumb-item'><a href='/'>Home</a></li>
+            {% for item in items %}
+                {% if not item.url %}
+                    <li class="breadcrumb-item active" aria-current="page">{{ item.text }}</li>
+                {% else %}
+                    <li class="breadcrumb-item"><a href="{{ item.url }}">{{ item.text }}</a></li>
+                {% endif %}
+            {% endfor %}
+        </ol>
+    </nav>
+{% endif %}
 {% endmacro %}
 
 {% macro render_social_profile_url(request, provider_name, profile_url, connect=False) %}
