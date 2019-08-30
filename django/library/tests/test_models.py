@@ -8,8 +8,9 @@ from django.core.files.base import ContentFile
 from rest_framework.exceptions import ValidationError
 
 from core.tests.base import UserFactory
-from .base import BaseModelTestCase, CodebaseFactory
-from ..models import Codebase, CodebaseRelease
+
+from .base import BaseModelTestCase, CodebaseFactory, ContributorFactory, ReleaseContributorFactory
+from ..models import Codebase, CodebaseRelease, License
 
 logger = logging.getLogger(__name__)
 
@@ -104,3 +105,23 @@ class CodebaseReleaseTest(BaseModelTestCase):
         self.codebase_release.save()
         cr = self.codebase.create_release(initialize=False)
         self.assertNotEqual(self.codebase_release.share_uuid, cr.share_uuid)
+
+    def test_metadata_completeness(self):
+        self.assertFalse(self.codebase_release.verify_metadata())
+
+        self.codebase_release.os = 'Windows'
+        self.assertFalse(self.codebase_release.verify_metadata())
+
+        license = License.objects.create(name='Windows', url='http://foo.com')
+        self.codebase_release.license = license
+        self.assertFalse(self.codebase_release.verify_metadata())
+
+        self.codebase_release.programming_languages.add('Java')
+        self.assertFalse(self.codebase_release.verify_metadata())
+
+        release_contributor_factory = ReleaseContributorFactory(self.codebase_release)
+        contributor_factory = ContributorFactory(user=self.submitter)
+        contributor = contributor_factory.create()
+        release_contributor_factory.create(contributor)
+
+        self.assertTrue(self.codebase_release.verify_metadata())
