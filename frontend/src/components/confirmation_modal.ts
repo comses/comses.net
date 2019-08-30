@@ -21,9 +21,9 @@ import * as _ from 'lodash';
                     </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
-                    <button type="button" class="btn btn-danger" @click="submit" v-if="ajax_submit">Submit</button>
+                    <button type="button" class="btn btn-danger" data-dismiss="modal" @click="submit" v-if="ajax_submit">Submit</button>
                     <form v-else>
-                        <button type="submit" class="btn btn-danger" formmethod="post" :formaction="url">Submit</button>
+                        <button type="submit" class="btn btn-danger" data-dismiss="modal" formmethod="post" :formaction="url">Submit</button>
                     </form>
                 </div>
             </div>

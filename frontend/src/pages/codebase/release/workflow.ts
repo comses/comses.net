@@ -30,7 +30,7 @@ Vue.use(VueRouter);
 type CodebaseTabs = 'metadata' | 'media';
 
 @Component({
-    template: `<div class="modal fade" id="editCodebaseModal">
+    template: `<div class="modal fade" id="editCodebaseModal" role='dialog'>
             <div class="modal-dialog modal-lg" role="document">
                 <div class="modal-content">
                     <div class="modal-header">
