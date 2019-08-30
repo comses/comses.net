@@ -322,7 +322,7 @@ class Workflow extends Vue {
     get reviewStatus() {
         const status = this.$store.state.release.review_status;
         if (_.isNull(status)) {
-            return 'Not reviewed';
+            return 'Unreviewed';
         }
         return this.review_status_enum[this.$store.state.release.review_status];
     }
