@@ -939,7 +939,7 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
         """
         Returns true if this release has not already been peer reviewed and a related PeerReview does not exist
         """
-        return not self.peer_reviewed and self.get_review() is None
+        return not self.peer_reviewed and self.get_review() is None and self.verify_metadata()
 
     @property
     def is_latest_version(self):
