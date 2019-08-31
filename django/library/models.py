@@ -922,7 +922,7 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
     def verify_metadata(self):
         return bool(self.license and self.programming_languages.exists() and self.os and self.contributors.exists())
 
-    @property:
+    @property
     def share_url(self):
         if not self.share_uuid:
             self.regenerate_share_uuid()
