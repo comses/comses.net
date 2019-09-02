@@ -469,7 +469,7 @@ class PlatformSnippetPlacement(models.Model):
 
 
 class PlatformIndexPage(NavigationMixin, Page):
-    template = 'home/resources/platforms.jinja'
+    template = 'home/resources/frameworks.jinja'
     description = models.TextField(blank=True)
 
     content_panels = Page.content_panels + [
