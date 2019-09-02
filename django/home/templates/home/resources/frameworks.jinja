@@ -22,6 +22,9 @@
             {% else %}
                 <span class='badge badge-warning'>inactive</span>
             {% endif %}
+            {% if p.platform.open_source %}
+                <span class='badge badge-primary'><i class='fa fa-code-fork'></i></span>
+            {% endif %}
         </h3>
         <div class='description'>
             {% autoescape off %}{{ p.platform.description.rendered }}{% endautoescape %}
