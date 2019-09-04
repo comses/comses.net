@@ -108,13 +108,13 @@
                 {{ render_codebase_result(codebase) }}
             {% else %}
                 <p class='lead p-3'>
-                    None
+                    No submitted codebases.
                 </p>
             {% endfor %}
         </div>
         <div class='tab-pane' id='publications' role='tabpanel'>
             <p class='lead p-3'>
-            Coming soon.
+            Under development.
             </p>
         </div>
         {% if has_change_perm %}
@@ -152,7 +152,10 @@
                     </ul>
                 {% else %}
                     <p class='lead p-3'>
-                    No pending invitations
+                    You haven't been invited to review another CoMSES member's models yet. If you would like to be added
+                    to the pool of CoMSES members willing to
+                    <a href='{{url("library:peer-review-overview")}}'>peer review other computational models</a>
+                    please <a href='{{slugurl("contact")}}'>let us know</a>.
                     </p>
                 {% endif %}
             </div>
