@@ -1167,16 +1167,19 @@ class ReleaseContributor(models.Model):
 
 class ChoicesMixin(Enum):
     @classmethod
-    def to_choices(cls):
-        return Choices(*((choice.name, choice.value) for choice in cls))
+    def to_choices(cls, extra=None):
+        return Choices(*cls.to_dict(extra).items())
 
     @classmethod
-    def to_dict(cls):
-        return {level.name: str(level.value) for level in cls}
+    def to_dict(cls, extra=None):
+        d = {level.name: str(level.value) for level in cls}
+        if extra:
+            d.update(extra)
+        return d
 
     @classmethod
-    def to_json(cls):
-        return json.dumps(cls.to_dict())
+    def to_json(cls, extra=None):
+        return json.dumps(cls.to_dict(extra))
 
 
 class ReviewerRecommendation(ChoicesMixin, Enum):

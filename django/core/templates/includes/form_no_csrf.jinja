@@ -1,0 +1,42 @@
+{% if form.non_field_errors() %}
+    <ul class='list-group'>
+    {% for error in form.non_field_errors() %}
+        <li class='list-group-item list-group-item-danger'>{{ error|safe }}</li>
+    {% endfor %}
+    </ul>
+{% endif %}
+{% for field in form.visible_fields() %}
+    {% set error_class='has-errors' if field.errors else ''%}
+    {% if field|is_checkbox %}
+        <div class='form-group'>
+            <div class='form-check'>
+                <label class='form-check-label'>
+                    {{ field|add_field_css("form-check-input") }}
+                    {{ field.label }}
+                    {% if field.help_text %}
+                        <small class='form-text text-muted'>{{ field.help_text }}</small>
+                    {% endif %}
+                </label>
+            </div>
+        </div>
+    {% else %}
+        <div class='form-row'>
+            <div class='form-group col-12 {{ error_class }}'>
+                <label class='col-form-label' for='{{ field.id_for_label }}'>{{ field.label }}</label>
+                {{ field|add_field_css("form-control") }}
+                {% if field.errors %}
+                    <small class='invalid-feedback'>{{ field.errors }}</small>
+                {% endif %}
+                {% if field.help_text %}
+                    <small class='form-text text-muted'>{{ field.help_text }}</small>
+                {% endif %}
+            </div>
+        </div>
+    {% endif %}
+{% endfor %}
+{% for field in form.hidden_fields() %}
+    {{ field }}
+{% endfor %}
+{% if redirect_field_value %}
+    <input type="hidden" name="{{ redirect_field_name }}" value="{{ redirect_field_value }}" />
+{% endif %}

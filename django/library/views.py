@@ -26,7 +26,7 @@ from core.views import (CommonViewSetMixin, FormUpdateView, FormCreateView, Smal
                         CaseInsensitiveOrderingFilter, NoDeleteViewSet,
                         NoDeleteNoUpdateViewSet, HtmlNoDeleteViewSet)
 from .forms import (PeerReviewerFeedbackReviewerForm, PeerReviewInvitationReplyForm, PeerReviewInvitationForm,
-                    PeerReviewerFeedbackEditorForm)
+                    PeerReviewerFeedbackEditorForm, PeerReviewFilterForm)
 from .fs import FileCategoryDirectories, StagingDirectories, MessageLevels
 from .models import (Codebase, CodebaseRelease, Contributor, CodebaseImage, PeerReview, PeerReviewerFeedback,
                      PeerReviewInvitation, ReviewStatus)
@@ -53,8 +53,21 @@ class PeerReviewDashboardView(ListView):
     template_name = 'library/review/dashboard.jinja'
     model = PeerReview
     context_object_name = 'reviews'
+    paginate_by = 15
 
     ordering = ['status', '-last_modified', '-date_created']
+
+    def get_queryset(self):
+        status = self.request.GET.get('status')
+        reviews = PeerReview.objects.all()
+        if status:
+            reviews = reviews.filter(status=status)
+        return reviews
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['form'] = PeerReviewFilterForm(data={'status': self.request.GET.get('status', '')})
+        return context
 
 
 class PeerReviewEditorView(PermissionRequiredMixin, DetailView):

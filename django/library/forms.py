@@ -4,7 +4,7 @@ from django import forms
 from django.forms.utils import ErrorDict
 from django.utils.translation import ugettext_lazy as _
 
-from .models import PeerReviewerFeedback, PeerReviewInvitation, ReviewerRecommendation
+from .models import PeerReviewerFeedback, PeerReviewInvitation, ReviewerRecommendation, ReviewStatus
 
 logger = logging.getLogger(__name__)
 
@@ -166,3 +166,8 @@ class PeerReviewerFeedbackEditorForm(CheckCharFieldLengthMixin, forms.ModelForm)
             'notes_to_author',
             'accept'
         ]
+
+
+class PeerReviewFilterForm(forms.Form):
+    status = forms.CharField(required=False, widget=forms.Select(choices=ReviewStatus.to_choices({'': 'Any status'})))
+

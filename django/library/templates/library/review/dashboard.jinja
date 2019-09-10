@@ -1,4 +1,4 @@
-{% extends 'base.jinja' %}
+{% extends 'sidebar_layout.jinja' %}
 
 {% block introduction %}
     <h1>Peer Review Editor Dashboard</h1>
@@ -31,4 +31,42 @@
     {% else %}
         <p>No peer reviews</p>
     {% endfor %}
+    <nav aria-label="Page navigation">
+        <ul class="pt-3 pagination">
+            {% if page_obj.has_previous() %}
+                {% if page_obj.number != 1 %}
+                    <li class="page-item">
+                        <a href="?page=1" class="page-link">1</a>
+                    </li>
+                {% endif %}
+                {% if page_obj.previous_page_number() > 1 %}
+                    <li class="page-item">
+                        <a href="?page={{ page_obj.previous_page_number() }}" class="page-link">{{ page_obj.previous_page_number() }}</a>
+                    </li>
+                {% endif %}
+            {% endif %}
+            <li class="page-item">
+                <a href="?page={{ page_obj.number }}" class="page-link">{{ page_obj.number }}</a>
+            </li>
+            {% if page_obj.has_next() %}
+                {% if page_obj.next_page_number() != page_obj.paginator.num_pages %}
+                    <li class="page-item">
+                        <a href="?page={{ page_obj.next_page_number() }}" class="page-link">{{ page_obj.next_page_number() }}</a>
+                    </li>
+                {% endif %}
+                {% if page_obj.number != page_obj.paginator.num_page %}
+                    <li class="page-item">
+                        <a href="?page={{ page_obj.paginator.num_pages }}" class="page-link">{{ page_obj.paginator.num_pages }}</a>
+                    </li>
+                {% endif %}
+            {% endif %}
+        </ul>
+    </nav>
+{% endblock %}
+
+{% block sidebar %}
+    <form method='GET'>
+        {% include 'includes/form_no_csrf.jinja' %}
+	    <button type="submit" class="btn btn-primary">Filter</button>
+    </form>
 {% endblock %}
