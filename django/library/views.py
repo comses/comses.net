@@ -49,9 +49,10 @@ def has_permission_to_create_release(request, view):
     return user.has_perms(required_perms, obj=codebase)
 
 
-class PeerReviewDashboardView(ListView):
+class PeerReviewDashboardView(PermissionRequiredMixin, ListView):
     template_name = 'library/review/dashboard.jinja'
     model = PeerReview
+    permission_required = 'library.change_peerreview'
     context_object_name = 'reviews'
     paginate_by = 15
 
