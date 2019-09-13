@@ -87,7 +87,7 @@ export class UploadPage extends Vue {
         {
             uploadType: 'code',
             acceptedFileTypes: '*/*',
-            title: 'Upload Source Code',
+            title: 'Upload Source Code (required)',
             instructions: `You can upload a single plaintext source file (e.g., a NetLogo .nlogo file) or a tar or zip archive of
             plaintext source code representing your codebase. Archives will be unpacked and extracted as part of archival processing
             and system files will be removed but the archive's directory structure is preserved.  All file types are currently
@@ -96,9 +96,19 @@ export class UploadPage extends Vue {
             originalInstructions: 'Submitted source code file(s) to be placed in <project-root>/code/',
         },
         {
+            uploadType: 'docs',
+            acceptedFileTypes: '*/*',
+            title: 'Upload Narrative Documentation (required)',
+            instructions: `Upload narrative documentation that comprehensively describes your computational model. The ODD
+            Protocol offers a good starting point for thinking about how to comprehensively describe agent based models and
+            good Narrative Documentation often includes equations, pseudocode, and flow diagrams. Acceptable files include
+            plain text formats (including Markdown and other structured text), OpenDocument Text files (ODT), and PDF documents.`,
+            originalInstructions: 'Submitted narrative documentation file(s) to be placed in <project-root>/docs/',
+        },
+        {
             uploadType: 'data',
             acceptedFileTypes: '*/*',
-            title: 'Upload Data',
+            title: 'Upload Data (optional)',
             instructions: `Upload any datasets required by your source code. There is a limit on file upload size so if
             your datasets are very large, you may consider using osf.io or figshare or other data repository to store your
             data and refer to it in your code via DOI or other permanent URL. If a zip or tar archive is uploaded
@@ -109,19 +119,9 @@ export class UploadPage extends Vue {
             originalInstructions: 'Submitted data file(s) to be placed in <project-root>/data/',
         },
         {
-            uploadType: 'docs',
-            acceptedFileTypes: '*/*',
-            title: 'Upload Narrative Documentation',
-            instructions: `Upload narrative documentation that comprehensively describes your computational model. The ODD
-            Protocol offers a good starting point for thinking about how to comprehensively describe agent based models and
-            good Narrative Documentation often includes equations, pseudocode, and flow diagrams. Acceptable files include
-            plain text formats (including Markdown and other structured text), OpenDocument Text files (ODT), and PDF documents.`,
-            originalInstructions: 'Submitted narrative documentation file(s) to be placed in <project-root>/docs/',
-        },
-        {
             uploadType: 'results',
             acceptedFileTypes: '*/*',
-            title: 'Upload Simulation Outputs',
+            title: 'Upload Simulation Outputs (optional)',
             instructions: 'Upload simulation outputs associated with your computational model. Ideally these data files should be in plain text or other open data formats.',
             originalInstructions: 'Submitted model output file(s) to be placed in <project-root>/results/',
         },

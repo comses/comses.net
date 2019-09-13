@@ -18,7 +18,7 @@
                  :required="config.repository_url">
         </c-input>
         <c-message-display :messages="statusMessages" @clear="statusMessages = []"></c-message-display>
-        <button class="btn btn-primary" data-dismiss="modal" type="button" @click="save()">Save</button>
+        <button class="btn btn-primary" data-dismiss="modal" type="button" @click="save()">Next</button>
     </div>
 </template>
 
