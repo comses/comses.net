@@ -296,8 +296,9 @@
     <title>
         {% block title %}CoMSES Net{% endblock %}
     </title>
-    <meta name="description"
-          content="CoMSES Net is an international research coordination network dedicated to fostering good practices for computational modeling through cyberinfrastructure and community development."/>
+    {% block meta_description %}
+        <meta name="description" content="CoMSES Net is an international open research community dedicated to fostering good practices for computational / agent based modeling.">
+    {% endblock %}
     {% block head %}
         {# override in templates to add extra meta tags or anything else within the <head></head> #}
     {% endblock %}
