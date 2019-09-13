@@ -1,26 +1,24 @@
 <template>
-    <c-search submitLabel="Archive a model" searchLabel="Search" submitUrl="/codebases/add/" :searchUrl="query">
-        <div slot="searchForm">
-            <div class="card-metadata">
-                <div class="title">
-                    Search
-                </div>
-                <div class="card-body">
-                        <span @keyup.enter="search">
-                            <c-input :required="false" label="Keywords" type="text" v-model="fullTextSearch"
-                                     name="fullTextSearch" :errorMsgs="[]">
-                            </c-input>
-                        </span>
-                    <c-datepicker v-model="startDate" :required="false" name="startDate" :errorMsgs="[]"
-                                  :clearButton="true" label="Published After">
-                    </c-datepicker>
-                    <c-datepicker v-model="endDate" :required="false" name="endDate" :errorMsgs="[]" :clearButton="true"
-                                  label="Published Before">
-                    </c-datepicker>
-                    <c-tagger v-model="tags" :required="false" placeholder="Type to add tags" label="Tags">
-                    </c-tagger>
-                </div>
-            </div>
+    <c-search submitLabel="Archive a model" submitUrl="/codebases/add/" searchLabel="Search" :searchUrl="query">
+        <div class="card-metadata" slot="searchForm">
+          <div class="title">
+            Search
+          </div>
+          <div class="card-body">
+            <span @keyup.enter="search">
+              <c-input :required="false" label="Keywords" type="text" v-model="fullTextSearch"
+                                                                      name="fullTextSearch" :errorMsgs="[]">
+              </c-input>
+            </span>
+            <c-datepicker v-model="startDate" :required="false" name="startDate" :errorMsgs="[]"
+                                                                :clearButton="true" label="Published After">
+            </c-datepicker>
+            <c-datepicker v-model="endDate" :required="false" name="endDate" :errorMsgs="[]" :clearButton="true"
+                                                              label="Published Before">
+            </c-datepicker>
+            <c-tagger v-model="tags" :required="false" placeholder="Type to add tags" label="Tags">
+            </c-tagger>
+          </div>
         </div>
     </c-search>
 </template>

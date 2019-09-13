@@ -1,7 +1,7 @@
 <template>
     <div>
         <a class="text-white" :href="submitUrl">
-            <div class="btn btn-primary w-100" tabindex="0">
+            <div class="btn btn-secondary w-100" tabindex="0">
                 {{ submitLabel }}
             </div>
         </a>
