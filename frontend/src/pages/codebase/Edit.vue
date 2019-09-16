@@ -10,8 +10,10 @@
                     :required="config.is_replication"
                     help="Is this model a replication of a prior computational model?">
         </c-checkbox>
-        <c-input v-if="is_replication" v-model="replication_text" :errorMsgs="errors.replication_text" name="replication text" label="URL / DOI / Citation"
-        help="URL / DOI / citation for the original model being replicated">
+        <c-input v-if="is_replication" v-model="replication_text" :errorMsgs="errors.replication_text"
+                 name="replication_url" label="URL / DOI / Citation"
+                 help="URL / DOI / citation for the original model being replicated"
+                :required="config.replication_text">
         </c-input>
         <c-tagger v-model="tags" name="tags" :errorMsgs="errors.tags" :required="config.tags" label="Tags">
         </c-tagger>
