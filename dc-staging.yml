@@ -88,7 +88,7 @@ services:
       - ./frontend/deploy:/code/deploy
       - ./docker/shared/webpack:/shared/webpack
   nginx:
-    image: nginx:latest
+    image: nginx:stable
     restart: always
     volumes:
       - ./deploy/nginx/nginx-staging.conf:/etc/nginx/nginx.conf

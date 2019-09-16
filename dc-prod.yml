@@ -90,14 +90,14 @@ services:
       - ./frontend/deploy:/code/deploy
       - ./docker/shared/webpack:/shared/webpack
   maintenance:
-    image: nginx:1.15
+    image: nginx:stable
     ports:
       - "127.0.0.1:8889:80"
     volumes:
       - ./deploy/nginx/nginx-maintenance.conf:/etc/nginx/nginx.conf
       - ./deploy/nginx/maintenance:/srv
   nginx:
-    image: nginx:1.15
+    image: nginx:stable
     restart: always
     volumes:
       - ./deploy/nginx/nginx-haproxy.conf:/etc/nginx/nginx.conf
