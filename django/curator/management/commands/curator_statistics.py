@@ -60,7 +60,7 @@ class Command(BaseCommand):
                 writer.writerow(result)
 
     def export_reviewed_codebases(self, filters, directory, filename='reviewed-releases.csv'):
-        header = ['url', 'title', 'date', 'doi']
+        header = ['url', 'title', 'date requested', 'last modified', 'doi']
         releases = CodebaseRelease.objects.filter(**filters, peer_reviewed=True)
         with open(os.path.join(directory, filename), 'w') as out:
             writer = csv.DictWriter(out, fieldnames=header)
@@ -69,7 +69,9 @@ class Command(BaseCommand):
                 writer.writerow({
                     'url': release.get_absolute_url(),
                     'title': release.title,
-                    'date': release.last_modified
+                    'date requested': release.date_created,
+                    'last modified': release.last_modified,
+                    'doi': release.doi
                 })
 
     def export_new_and_updated_codebases(self, filters, directory):
