@@ -116,6 +116,10 @@ class CodebaseReleaseTest(BaseModelTestCase):
         self.codebase_release.license = license
         self.assertFalse(self.codebase_release.verify_metadata())
 
+        self.codebase_release.contributors.all().delete()
+
+        self.assertFalse(self.codebase_release.contributors.exists())
+
         self.codebase_release.programming_languages.add('Java')
         self.assertFalse(self.codebase_release.verify_metadata())
 
