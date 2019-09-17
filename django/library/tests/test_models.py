@@ -8,7 +8,6 @@ from django.core.files.base import ContentFile
 from rest_framework.exceptions import ValidationError
 
 from core.tests.base import UserFactory
-
 from .base import BaseModelTestCase, CodebaseFactory, ContributorFactory, ReleaseContributorFactory
 from ..models import Codebase, CodebaseRelease, License
 
@@ -115,7 +114,7 @@ class CodebaseReleaseTest(BaseModelTestCase):
         self.codebase_release.os = 'Windows'
         self.assertRaises(ValidationError, lambda: self.codebase_release.validate_publishable())
 
-        license = License.objects.create(name='Windows', url='http://foo.com')
+        license = License.objects.create(name='0BSD', url='https://spdx.org/licenses/0BSD.html')
         self.codebase_release.license = license
         self.assertRaises(ValidationError, lambda: self.codebase_release.validate_publishable())
 

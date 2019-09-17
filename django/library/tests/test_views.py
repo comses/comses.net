@@ -14,7 +14,7 @@ from core.tests.base import UserFactory
 from core.tests.permissions_base import BaseViewSetTestCase, create_perm_str, ResponseStatusCodesMixin, ApiAccountMixin
 from library.forms import PeerReviewerFeedbackReviewerForm
 from library.fs import FileCategoryDirectories
-from library.models import Codebase, ReviewStatus
+from library.models import Codebase, License, ReviewStatus
 from library.tests.base import ReviewSetup
 from .base import CodebaseFactory, ContributorFactory, ReleaseContributorFactory, PeerReviewInvitationFactory
 from ..views import CodebaseViewSet, CodebaseReleaseViewSet
@@ -342,12 +342,27 @@ class CodebaseReleasePublishTestCase(TestCase):
         api = self.codebase_release.get_fs_api()
         api.add(content=code_file, category=FileCategoryDirectories.code)
         api.add(content=docs_file, category=FileCategoryDirectories.docs)
+
+        with self.assertRaises(ValidationError, msg='Codebase has no metadata, should fail publish'):
+            self.codebase_release.publish()
+
+        # FIXME: add metadata to codebase release and verify that publish doesn't raise a ValidationError
+        self.codebase_release.os = 'Windows'
+        self.assertRaises(ValidationError, lambda: self.codebase_release.publish())
+
+        self.codebase_release.license = License.objects.create(name='0BSD', url='https://spdx.org/licenses/0BSD.html')
+        self.assertRaises(ValidationError, lambda: self.codebase_release.publish())
+
+        self.codebase_release.programming_languages.add('Java')
+
         self.codebase_release.publish()
 
         download_response = self.client.get(self.codebase_release.get_review_download_url())
-        self.assertEqual(download_response.status_code, 404)
+        self.assertEqual(download_response.status_code, 404,
+                         msg='Published model should not allow access to a review download URL')
         response = self.client.post(self.codebase_release.regenerate_share_url, HTTP_ACCEPT='application/json')
-        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.status_code, 400,
+                         msg='Published model should not permit regeneration of a unique share URL')
 
 
 class CodebaseRenderPageTestCase(TestCase):
