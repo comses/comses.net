@@ -107,25 +107,25 @@ class CodebaseReleaseTest(BaseModelTestCase):
         self.assertNotEqual(self.codebase_release.share_uuid, cr.share_uuid)
 
     def test_metadata_completeness(self):
-        self.assertFalse(self.codebase_release.verify_metadata())
+        # make sure release contributors are empty since we currently automatically add the submitter as an author
+        self.codebase_release.contributors.all().delete()
+        self.assertFalse(self.codebase_release.contributors.exists())
 
+        self.assertRaises(ValidationError, lambda: self.codebase_release.validate_publishable())
         self.codebase_release.os = 'Windows'
-        self.assertFalse(self.codebase_release.verify_metadata())
+        self.assertRaises(ValidationError, lambda: self.codebase_release.validate_publishable())
 
         license = License.objects.create(name='Windows', url='http://foo.com')
         self.codebase_release.license = license
-        self.assertFalse(self.codebase_release.verify_metadata())
-
-        self.codebase_release.contributors.all().delete()
-
-        self.assertFalse(self.codebase_release.contributors.exists())
+        self.assertRaises(ValidationError, lambda: self.codebase_release.validate_publishable())
 
         self.codebase_release.programming_languages.add('Java')
-        self.assertFalse(self.codebase_release.verify_metadata())
+        self.assertRaises(ValidationError, lambda: self.codebase_release.validate_publishable())
 
         release_contributor_factory = ReleaseContributorFactory(self.codebase_release)
         contributor_factory = ContributorFactory(user=self.submitter)
         contributor = contributor_factory.create()
         release_contributor_factory.create(contributor)
 
-        self.assertTrue(self.codebase_release.verify_metadata())
+        self.assertRaises(ValidationError, lambda: self.codebase_release.validate_publishable())
+        self.assertTrue(self.codebase_release.validate_metadata())

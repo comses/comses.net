@@ -605,6 +605,7 @@ class CodebaseReleaseViewSet(CommonViewSetMixin,
     def request_peer_review(self, request, identifier, version_number):
         codebase_release = get_object_or_404(CodebaseRelease, codebase__identifier=identifier,
                                              version_number=version_number)
+        codebase_release.validate_publishable()
         review, created = PeerReview.objects.get_or_create(
             codebase_release=codebase_release,
             defaults={

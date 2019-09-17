@@ -919,8 +919,56 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
             self.regenerate_share_uuid()
         return reverse('library:codebaserelease-share-download', kwargs={'share_uuid': self.share_uuid})
 
-    def verify_metadata(self):
-        return bool(self.license and self.programming_languages.exists() and self.os and self.contributors.exists())
+    def validate_publishable(self):
+        self.validate_metadata()
+        self.validate_uploaded_files()
+
+    def validate_metadata(self):
+        """
+        Validates that this CodebaseRelease has enough metadata to be publish()-able
+
+        Does not validate files
+
+        metadata: has license, author contributor, programming languages, software framework, operating system
+        :return: True if this codebase release satisfies publishing metadata requirements,
+        raises a ValidationError with appropriate error messages if any metadata is missing
+        """
+        errors = []
+
+        # naive check for metadata being present (i.e., None or false-y values)
+        if not self.license:
+            errors.append(ValidationError(_('Please specify a software license.')))
+        if not self.programming_languages.exists():
+            errors.append(ValidationError(_('Please list at least one programming language used to implement this model.')))
+        if not self.os:
+            errors.append(ValidationError(_('Please specify compatible operating systems for this model.')))
+        if not self.contributors.exists():
+            errors.append(ValidationError(_('Please add at least one contributor.')))
+        if errors:
+            raise ValidationError(errors)
+        return True
+
+    def validate_uploaded_files(self):
+        fs_api = self.get_fs_api()
+        storage = fs_api.get_stage_storage(StagingDirectories.sip)
+        code_msg = self.check_files(storage, FileCategoryDirectories.code)
+        docs_msg = self.check_files(storage, FileCategoryDirectories.docs)
+        msg = ' '.join(m for m in [code_msg, docs_msg] if m)
+        if msg:
+            raise ValidationError(msg)
+        return True
+
+    @staticmethod
+    def check_files(storage, category: FileCategoryDirectories):
+        # FIXME: storage API should be refactored to make this logic cleaner
+        if storage.exists(category.name):
+            uploaded_files = list(storage.list(category))
+        else:
+            uploaded_files = []
+        if not uploaded_files:
+            return 'Must have at least one {} file.'.format(category.name)
+        else:
+            return ''
 
     @property
     def share_url(self):
@@ -937,9 +985,16 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
     @property
     def is_peer_review_requestable(self):
         """
-        Returns true if this release has not already been peer reviewed and a related PeerReview does not exist
+        Returns true if this release is
+        1. ready to be published
+        2. has not already been peer reviewed
+        3. a related PeerReview does not exist
         """
-        return not self.peer_reviewed and self.get_review() is None and self.verify_metadata()
+        try:
+            self.validate_publishable()
+        except ValidationError:
+            return False
+        return not self.peer_reviewed and self.get_review() is None
 
     @property
     def is_latest_version(self):
@@ -1046,7 +1101,28 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
 
     @transaction.atomic
     def publish(self):
-        CodebaseReleasePublisher(self).publish()
+        self.validate_publishable()
+        self._publish()
+
+    def _publish(self):
+        if not self.live:
+            now = timezone.now()
+            self.first_published_at = now
+            self.last_published_on = now
+            self.live = True
+            self.draft = False
+            fs_api = self.get_fs_api()
+            fs_api.get_or_create_sip_bag(self.codebase_release.bagit_info)
+            fs_api.build_aip()
+            fs_api.build_archive()
+            self.save()
+            codebase = self.codebase
+            codebase.latest_version = self.codebase_release
+            codebase.live = True
+            codebase.last_published_on = now
+            if codebase.first_published_at is None:
+                codebase.first_published_at = now
+            codebase.save()
 
     # FIXME: use semver.bump_version instead of this handrolled logic
     def possible_next_versions(self, minor_only=False):
@@ -1082,53 +1158,6 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
 
     class Meta:
         unique_together = ('codebase', 'version_number')
-
-
-class CodebaseReleasePublisher:
-    def __init__(self, codebase_release: CodebaseRelease):
-        self.codebase_release = codebase_release
-
-    def is_publishable(self):
-        fs_api = self.codebase_release.get_fs_api()
-        storage = fs_api.get_stage_storage(StagingDirectories.sip)
-        code_msg = self.has_files(storage, FileCategoryDirectories.code)
-        docs_msg = self.has_files(storage, FileCategoryDirectories.docs)
-        msg = ' '.join(m for m in [code_msg, docs_msg] if m)
-        if msg:
-            raise ValidationError(msg)
-
-    def has_files(self, storage, category: FileCategoryDirectories):
-        if storage.exists(category.name):
-            code_files = list(storage.list(category))
-        else:
-            code_files = []
-        if not code_files:
-            return 'Must have at least one {} file.'.format(category.name)
-        else:
-            return ''
-
-    def publish(self):
-        if not self.codebase_release.live:
-            self.is_publishable()
-            now = timezone.now()
-            self.codebase_release.first_published_at = now
-            self.codebase_release.last_published_on = now
-            self.codebase_release.live = True
-            self.codebase_release.draft = False
-            fs_api = self.codebase_release.get_fs_api()
-            fs_api.get_or_create_sip_bag(self.codebase_release.bagit_info)
-            fs_api.build_aip()
-            fs_api.build_archive()
-            self.codebase_release.save()
-
-            codebase = self.codebase_release.codebase
-
-            codebase.latest_version = self.codebase_release
-            codebase.live = True
-            codebase.last_published_on = now
-            if codebase.first_published_at is None:
-                codebase.first_published_at = now
-            codebase.save()
 
 
 class ReleaseContributorQuerySet(models.QuerySet):
