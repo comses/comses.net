@@ -10,6 +10,12 @@
                     :required="config.is_replication"
                     help="Is this model a replication of a prior computational model?">
         </c-checkbox>
+        <c-textarea v-if="is_replication" v-model="replication_text" :errorMsgs="errors.replication_text"
+                 name="replication_url" label="URL / DOI / Citation"
+                 help="URL / DOI / citation for the original model being replicated"
+                 rows="3"
+                :required="config.replication_text">
+        </c-textarea>
         <c-tagger v-model="tags" name="tags" :errorMsgs="errors.tags" :required="config.tags" label="Tags">
         </c-tagger>
         <c-input v-model="repository_url" :errorMsgs="errors.repository_url" name="repository_url"
@@ -27,9 +33,10 @@
     import {CodebaseAPI, CodebaseReleaseAPI} from '@/api';
     import Checkbox from '@/components/forms/checkbox';
     import Input from '@/components/forms/input';
-    import Tagger from '@/components/tagger';
     import MarkdownEditor from '@/components/forms/markdown';
     import MessageDisplay from '@/components/message_display';
+    import Tagger from '@/components/tagger';
+    import TextArea from '@/components/forms/textarea';
     import {createFormValidator} from '@/pages/form';
     import * as yup from 'yup';
     import * as _ from 'lodash';
@@ -42,6 +49,8 @@
         latest_version_number: yup.string(),
         live: yup.bool(),
         is_replication: yup.bool(),
+        replication_text: yup.string().when('is_replication',
+          (is_replication, schema) => { return is_replication ? schema.required() : schema.notRequired() }),
         tags: yup.array().of(yup.object().shape({name: yup.string().required()})),
         repository_url: yup.string().url(),
     });
@@ -56,6 +65,7 @@
             'c-markdown': MarkdownEditor,
             'c-message-display': MessageDisplay,
             'c-tagger': Tagger,
+            'c-textarea': TextArea,
             'c-upload': Upload,
         },
     } as any)
