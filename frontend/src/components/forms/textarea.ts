@@ -18,6 +18,9 @@ export default class TextArea extends BaseControl {
     @Prop({default: ''})
     public label: string;
 
+    @Prop({ default: ''})
+    public help: string;
+
     @Prop({default: 10})
     public rows: string;
 }
