@@ -152,10 +152,10 @@
                     </ul>
                 {% else %}
                     <p class='lead p-3'>
-                    You haven't been invited to review another CoMSES member's models yet. If you would like to be added
-                    to the pool of CoMSES members willing to
-                    <a href='{{url("library:peer-review-overview")}}'>peer review other computational models</a>
-                    please <a href='{{slugurl("contact")}}'>let us know</a>.
+                    You haven't been invited to review other CoMSES member's models yet. If you would like to be added
+                    to the pool of CoMSES Computational Model Library 
+                    <a href='{{url("library:peer-review-overview")}}'>Peer Reviewers</a> please 
+                    <a href='{{slugurl("contact")}}'>let us know</a>.
                     </p>
                 {% endif %}
             </div>
@@ -169,7 +169,7 @@
             {% if has_change_perm %}
                 <a href="{{ profile.get_edit_url() }}" class='btn btn-primary w-100 my-1'>
                     Edit Profile</a>
-                <a href="{{ url('library:codebase-add') }}" class="btn btn-primary w-100 my-1">
+                <a href="{{ url('library:codebase-add') }}" class="btn btn-secondary w-100 my-1">
                     Archive a model
                 </a>
             {% endif %}

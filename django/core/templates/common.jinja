@@ -179,8 +179,8 @@
 {% endmacro %}
 
 {% macro render_social_profile_url(request, provider_name, profile_url, connect=False) %}
-{# special case orcid icon #}
-{% with provider_icon_class="ai text-orcid ai-orcid" if provider_name == "orcid" else "text-gray fa fa-" ~ provider_name %}
+{# FIXME: simplify this when we upgrade to fontawesome 5 https://github.com/comses/comses.net/issues/261 #}
+{% with provider_icon_class="text-orcid fab fab-orcid" if provider_name == "orcid" else "text-gray fa fa-" ~ provider_name %}
     {% if profile_url %}
         <a target='_blank' href='{{ profile_url }}'>
             <i class='{{ provider_icon_class }}'></i> {{ profile_url }}
