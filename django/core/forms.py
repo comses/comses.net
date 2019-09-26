@@ -24,6 +24,10 @@ class SignupForm(forms.Form):
     )
     captcha = ReCaptchaField()
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['username'].widget.attrs.pop('autofocus')
+
     def signup(self, request, user):
         data = self.cleaned_data
         user.username = data['username'].lower()
@@ -31,13 +35,12 @@ class SignupForm(forms.Form):
         user.first_name = data.get('first_name')
         user.last_name = data.get('last_name')
         password = data.get('password1')
-        if password:
-            # FIXME: assumes cleaned_data, password1 == password2 check already done
+        if password and password == data.get('password2'):
             user.set_password(password)
         else:
             user.set_unusable_password()
         full_member = data.get('full_member')
         if full_member:
             user.groups.add(ComsesGroups.FULL_MEMBER.get_group())
+            # FIXME: add user to mailchimp list
         user.save()
-

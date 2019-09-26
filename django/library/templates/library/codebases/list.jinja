@@ -17,7 +17,7 @@
 {% endblock %}
 
 {% block content %}
-    {% include "library/codebases/archive-model-help.jinja" %}
+    {% include "library/includes/archive_model_help.jinja" %}
     {% for codebase in codebases %}
         {{ render_codebase_result(codebase) }}
     {% else %}

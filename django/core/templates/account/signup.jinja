@@ -12,18 +12,23 @@
 </div>
 <p class='lead'>
 As a scientific community of practice, members of the CoMSES Network have access to a suite of community
-resources and also share a responsibility to contribute back to the community. Public services include 
-<a href='https://forum.comses.net'>discussion forums</a>, <a href='/events/'>an events calendar</a>, 
+resources and also share a responsibility to contribute back to the community. Public services include
+<a href='https://forum.comses.net'>discussion forums</a>, <a href='/events/'>an events calendar</a>,
 <a href='/jobs/'>a jobs and appointments board</a>, <a href='{{slugurl('education')}}'>educational materials</a>, and
-access to the <a href='/codebases/'>Computational Model Library</a> where submitters can 
-<a href='/reviews/'>request peer review</a> and DOIs for their published model releases. 
+access to the <a href='/codebases/'>Computational Model Library</a> where submitters can
+<a href='/reviews/'>request peer review</a> and DOIs for their published models.
 </p>
 <p>
-There are two categories of membership in the network, <em>Basic</em> and <em>Full Members</em>. Registered CoMSES
-members consent to receive periodic emails from CoMSES Net regarding upcoming events and opportunities including our
+There are two categories of membership in the network, <em>Basic</em> and <em>Full Members</em>. By registering with
+CoMSES net,  receive periodic emails from CoMSES Net regarding upcoming events and opportunities including our
 <a href='/digest/'>quarterly newsletter digest</a>.
 </p>
 {% include 'includes/membership.jinja' %}
+<p>
+You can become a CoMSES member by filling out the form below or using the social authentication buttons below if you
+have an existing GitHub or ORCID account.
+</p>
+{% include 'includes/socialauth_login.jinja' %}
 <form class="signup" id="signup_form" method="post">
     {% include "includes/form.jinja" %}
     <button type="submit" class='btn btn-primary'>{% trans %}Sign Up{% endtrans %}</button>
