@@ -76,7 +76,7 @@
                                     {{ contributor_name }}
                                 </a>
                             {% else %}
-                                <a class='badge contributor' href="?query={{contributor_name}}">
+                                <a class='badge contributor' href="?query={{contributor_name|urlencode}}">
                                     {{ contributor_name }}
                                 </a>
                             {% endif %}
