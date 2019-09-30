@@ -16,23 +16,23 @@
       rows="3"
       label="Description"
     ></c-markdown>
-    <c-checkbox
-      v-model="is_replication"
-      :errorMsgs="errors.is_replication"
-      name="replication"
-      label="Replication"
-      :required="config.is_replication"
-      help="Is this model a replication of a prior computational model?"
-    ></c-checkbox>
     <c-textarea
-      v-if="is_replication"
       v-model="replication_text"
       :errorMsgs="errors.replication_text"
-      name="replication_url"
-      label="URL / DOI / Citation"
-      help="URL / DOI / citation for the original model being replicated"
+      name="replication_text"
+      label="Replication of an existing model?"
+      help="Is this model a replication of a prior computational model? Please enter its DOI, other permanent identifier, or citation text."
       rows="3"
       :required="config.replication_text"
+    ></c-textarea>
+    <c-textarea
+      v-model="references_text"
+      :errorMsgs="errors.references_text"
+      name="references_text"
+      label="References"
+      help="Is this model associated with other publications? Please enter a DOI, other permanent identifier, or citation text."
+      rows="3"
+      :required="config.references_text"
     ></c-textarea>
     <c-tagger
       v-model="tags"
@@ -45,8 +45,8 @@
       v-model="repository_url"
       :errorMsgs="errors.repository_url"
       name="repository_url"
-      label="Repository URL"
-      help="URL to a version control source code repository (e.g., GitHub or BitBucket)"
+      label="Source Code Repository URL"
+      help="Is this model already on GitHub or BitBucket? Enter its URL for future CoMSES and GitHub integration."
       :required="config.repository_url"
     ></c-input>
     <c-message-display :messages="statusMessages" @clear="statusMessages = []"></c-message-display>
@@ -77,13 +77,8 @@ export const schema = yup.object().shape({
   title: yup.string().required(),
   description: yup.string().required(),
   latest_version_number: yup.string(),
-  live: yup.bool(),
-  is_replication: yup.bool(),
-  replication_text: yup
-    .string()
-    .when("is_replication", (is_replication, schema) => {
-      return is_replication ? schema.required() : schema.notRequired();
-    }),
+  replication_text: yup.string(),
+  references_text: yup.string(),
   tags: yup.array().of(yup.object().shape({ name: yup.string().required() })),
   repository_url: yup.string().url()
 });

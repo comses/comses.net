@@ -333,7 +333,6 @@ class Codebase(index.Indexed, ClusterableModel):
 
     date_created = models.DateTimeField(default=timezone.now)
     last_modified = models.DateTimeField(auto_now=True)
-    is_replication = models.BooleanField(default=False, help_text=_("Is this model a replication of another model?"))
     # FIXME: should this be a rollup of peer reviewed CodebaseReleases?
     peer_reviewed = models.BooleanField(default=False)
 
@@ -388,6 +387,10 @@ class Codebase(index.Indexed, ClusterableModel):
     ]
 
     HAS_PUBLISHED_KEY = True
+
+    @property
+    def is_replication(self):
+        return bool(self.replication_text.strip())
 
     @property
     def concatenated_tags(self):
