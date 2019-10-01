@@ -26,11 +26,20 @@
       :required="config.replication_text"
     ></c-textarea>
     <c-textarea
+      v-model="associated_publication_text"
+      :errorMsgs="errors.associated_publication_text"
+      name="associated_publication_text"
+      label="Associated Publication(s)"
+      help="Is this model associated with any publications? Please enter a DOI, other permanent identifier, or citation text."
+      rows="3"
+      :required="config.associated_publication_text"
+    ></c-textarea>
+    <c-textarea
       v-model="references_text"
       :errorMsgs="errors.references_text"
       name="references_text"
       label="References"
-      help="Is this model associated with other publications? Please enter a DOI, other permanent identifier, or citation text."
+      help="Please list any references to related publications. Please enter a DOI, other permanent identifier, or citation text."
       rows="3"
       :required="config.references_text"
     ></c-textarea>
@@ -78,6 +87,7 @@ export const schema = yup.object().shape({
   description: yup.string().required(),
   latest_version_number: yup.string(),
   replication_text: yup.string(),
+  associated_publication_text: yup.string(),
   references_text: yup.string(),
   tags: yup.array().of(yup.object().shape({ name: yup.string().required() })),
   repository_url: yup.string().url()
