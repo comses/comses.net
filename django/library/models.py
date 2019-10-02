@@ -352,9 +352,12 @@ class Codebase(index.Indexed, ClusterableModel):
     # FIXME: original Drupal data was stored as text fields -
     # after catalog integration remove these / replace with M2M relationships to Publication entities
     # publication metadata
-    references_text = models.TextField(blank=True, help_text=_("Reference DOI / Citations"))
-    associated_publication_text = models.TextField(blank=True, help_text=_(
-        "DOI / URL / citation to publication associated with this codebase."))
+    references_text = models.TextField(
+        blank=True,
+        help_text=_("References to related publications (DOIs or citation text"))
+    associated_publication_text = models.TextField(
+        blank=True,
+        help_text=_("DOI, Permanent URL, or citation to a publication associated with this codebase."))
     tags = ClusterTaggableManager(through=CodebaseTag)
     # evaluate this JSONField as an add-anything way to record relationships between this Codebase and other entities
     # with URLs / resolvable identifiers

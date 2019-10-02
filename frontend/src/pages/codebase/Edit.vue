@@ -39,7 +39,7 @@
       :errorMsgs="errors.references_text"
       name="references_text"
       label="References"
-      help="Please list any references to related publications. Please enter a DOI, other permanent identifier, or citation text."
+      help="References to related publications. Please enter a DOI, other permanent identifier, or citation text."
       rows="3"
       :required="config.references_text"
     ></c-textarea>

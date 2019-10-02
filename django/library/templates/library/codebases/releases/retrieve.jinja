@@ -112,7 +112,7 @@
             <div class='card-body'>
                 <h2 class='card-title'><i class='fa fa-share-alt'></i> Replication of a previously described model</h2>
                 <p class='card-text'>
-                    {{ codebase.replication_text }}
+                    {{ codebase.replication_text|markdown }}
                 </p>
             </div>
         </div>
@@ -122,7 +122,7 @@
             <div class='card-body'>
                 <h2 class='card-title'><i class='fa fa-book'></i> Associated Publication(s)</h2>
                 <p class='card-text'>
-                    {{ codebase.associated_publication_text }}
+                    {{ codebase.associated_publication_text|markdown }}
                 </p>
             </div>
         </div>
@@ -132,7 +132,7 @@
             <div class='card-body'>
                 <h2 class='card-title'><i class='fa fa-book'></i> References</h2>
                 <p class='card-text'>
-                {{ codebase.references_text }}
+                {{ codebase.references_text|markdown }}
                 </p>
             </div>
         </div>

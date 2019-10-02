@@ -177,6 +177,8 @@ DEFAULT_FROM_EMAIL = config.get('email', 'DEFAULT_FROM_EMAIL', fallback='info@co
 # email address used for errors emails sent to ADMINS and MANAGERS
 SERVER_EMAIL = config.get('email', 'SERVER_EMAIL', fallback='editors@comses.net')
 EDITOR_EMAIL = config.get('email', 'EDITOR_EMAIL', fallback='editors@comses.net')
+# default email subject prefix
+EMAIL_SUBJECT_PREFIX = config.get('email', 'EMAIL_SUBJECT_PREFIX', fallback='[CoMSES Net]')
 
 # number of days before a peer review invitation expires
 PEER_REVIEW_INVITATION_EXPIRATION = 21
