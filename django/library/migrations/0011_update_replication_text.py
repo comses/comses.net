@@ -8,12 +8,13 @@ class Migration(migrations.Migration):
 
     def update_replication_text(apps, schema_editor):
         Codebase = apps.get_model('library', 'Codebase')
-        Codebase.objects.filter(is_replication=True).exclude(replication_text='', references_text='').update(replication_text=F('references_text'))
-        Codebase.objects.filter(is_replication=True).update(references_text='')
+        Codebase.objects.filter(is_replication=True, replication_text='').exclude(references_text='').update(replication_text=F('references_text'))
+        Codebase.objects.filter(is_replication=True).exclude(replication_text='').update(references_text='')
 
     def unupdate_replication_text(apps, schema_editor):
         Codebase = apps.get_model('library', 'Codebase')
-        Codebase.objects.filter(is_replication=True).exclude(references_text='', replication_text='').update(references_text=F('replication_text'))
+        # FIXME: this won't work properly if is_replication isn't set by the subsequent schema migration
+        Codebase.objects.filter(is_replication=True, references_text='').exclude(replication_text='').update(references_text=F('replication_text'))
         Codebase.objects.filter(is_replication=True).update(replication_text='')
 
     dependencies = [
