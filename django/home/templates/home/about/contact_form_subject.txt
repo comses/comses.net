@@ -1,1 +1,1 @@
-[comses.net] contact page feedback: {{ subject_text }}
+contact page feedback: {{ subject_text }}

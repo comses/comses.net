@@ -40,7 +40,9 @@ def confirm(prompt="Continue? (y/n) ", cancel_message="Aborted."):
     return True
 
 
-def create_markdown_email(subject: str=None, to=None, template_name: str=None, context: dict=None, body: str=None, from_email: str=settings.DEFAULT_FROM_EMAIL,
+def create_markdown_email(subject: str=None, to=None, template_name: str=None, context: dict=None, body: str=None,
+                          from_email: str=settings.DEFAULT_FROM_EMAIL,
+                          email_subject_prefix: str=settings.EMAIL_SUBJECT_PREFIX,
                           **kwargs):
     if all([template_name, context]):
         # override body if a template name and context were given to us
@@ -53,6 +55,7 @@ def create_markdown_email(subject: str=None, to=None, template_name: str=None, c
             logger.error("invalid template %s", template_name)
     required_fields = [subject, to, body, from_email]
     if all(required_fields):
+        subject = f'{email_subject_prefix} {subject}'
         email = EmailMultiAlternatives(subject=subject, body=body, to=to, from_email=from_email, **kwargs)
         email.attach_alternative(markdown(body), 'text/html')
         return email
@@ -61,6 +64,6 @@ def create_markdown_email(subject: str=None, to=None, template_name: str=None, c
 
 
 def send_markdown_email(**kwargs):
-    # convenience method for create_markdown_email, so we just keep the same signature
+    # convenience method for create_markdown_email with the same signature
     # use kwargs only, positional args for email parameters can be fraught
     create_markdown_email(**kwargs).send()
