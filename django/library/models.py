@@ -1529,7 +1529,7 @@ class PeerReviewInvitation(models.Model):
         feedback = self.latest_feedback
         self.review.log(action=PeerReviewEvent.invitation_accepted,
                         author=self.candidate_reviewer,
-                        message=f'Invitation accepted by {self.candidate.reviewer}')
+                        message=f'Invitation accepted by {self.candidate_reviewer}')
         send_markdown_email(
             subject='Peer review: accepted invitation to review model',
             template_name='library/review/email/review_invitation_accepted.jinja',
