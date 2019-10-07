@@ -3,8 +3,25 @@
 {% block introduction_section %}
     <section class='landing-page-introduction'>
         <div class='container'>
-            <h1>A growing collection of resources for <br>computational model-based science.</h1>
-            <h3>Community cyberinfrastructure to preserve computational models &amp; their digital context<br>+ Educational resources and FAQ's on agent based modeling</h3>
+            <h1 class='text-white'>A growing collection of resources for <br>computational model-based science.</h1>
+            <h3 class='text-white'>Community cyberinfrastructure to preserve computational models &amp; their digital context<br>+ Educational resources and FAQ's on agent based modeling</h3>
+            {% with site_settings=settings("core.SiteSettings", use_default_site=True) %}
+                {% if site_settings.has_banner %}
+                    <div class='banner alert alert-warning' role='alert'>
+                        <h4 class='alert-heading text-muted'>
+                            {{ site_settings.last_modified.strftime('%b %-d, %Y') }}
+                        </h4>
+                        <a href='{{ site_settings.banner_destination_url }}'>
+                            <h2>
+                                <i class='fa fa-bullhorn fa-2x'>
+                                </i>
+                                {{ site_settings.banner_message }}
+                                <i class='fa fa-bullhorn fa-2x'></i>
+                            </h2>
+                        </a>
+                    </div>
+                {% endif %}
+            {% endwith %}
             <div class='row'>
                 <div class='col'>
                     <a class='btn btn-primary' href='{{ url("library:codebase-list") }}'>View model library</a>
