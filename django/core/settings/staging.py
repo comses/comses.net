@@ -62,7 +62,7 @@ LOGGING = {
     'disable_existing_loggers': True,
     'root': {
         'level': 'WARNING',
-        'handlers': ['sentry', 'comsesfile'],
+        'handlers': ['comsesfile'],
     },
     'formatters': {
         'verbose': {
@@ -99,11 +99,6 @@ LOGGING = {
         'django': {
             'level': 'WARNING',
             'handlers': ['console', 'djangofile'],
-            'propagate': False,
-        },
-        'sentry.errors': {
-            'level': 'DEBUG',
-            'handlers': ['console'],
             'propagate': False,
         },
         'home': {
