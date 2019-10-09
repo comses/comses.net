@@ -187,14 +187,8 @@ RECAPTCHA_PUBLIC_KEY = config.get('captcha', 'RECAPTCHA_PUBLIC_KEY', fallback=''
 RECAPTCHA_PRIVATE_KEY = config.get('captcha', 'RECAPTCHA_PRIVATE_KEY', fallback='')
 NOCAPTCHA = True
 
-RAVEN_CONFIG = {
-    'dsn': config.get('logging', 'SENTRY_DSN', fallback=''),
-    'public_dsn': config.get('logging', 'SENTRY_PUBLIC_DSN', fallback=''),
-    # If you are using git, you can also automatically configure the
-    # release based on the git info.
-    # 'release': raven.fetch_git_sha(BASE_DIR),
-}
-
+# sentry DSN
+SENTRY_DSN = config.get('logging', 'SENTRY_DSN', fallback='')
 
 SECRET_KEY = config.get('secrets', 'SECRET_KEY')
 

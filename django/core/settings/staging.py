@@ -1,7 +1,17 @@
 from .defaults import *
 
+import sentry_sdk
+from sentry_sdk.integrations.django import DjangoIntegration
+
 DEBUG = False
 DEPLOY_ENVIRONMENT = Environment.STAGING
+
+# configure sentry
+sentry_sdk.init(
+    dsn=config.get('logging', 'SENTRY_DSN', fallback=''),
+    integrations=[DjangoIntegration()]
+)
+
 
 # EMAIL_BACKEND = 'django.core.mail.backends.filebased.EmailBackend'
 # EMAIL_FILE_PATH = '/shared/logs/mail.log'
@@ -35,14 +45,9 @@ CSRF_COOKIE_SECURE = True
 # https://docs.djangoproject.com/en/2.0/ref/clickjacking/
 X_FRAME_OPTIONS = 'DENY'
 
-# see https://docs.sentry.io/clients/python/integrations/django/
-# add sentry error id middleware for better tracking
-MIDDLEWARE += ['raven.contrib.django.raven_compat.middleware.SentryResponseErrorIdMiddleware']
-
 WSGI_APPLICATION = 'core.wsgi.application'
 
 INSTALLED_APPS += [
-    'raven.contrib.django.raven_compat',
     'anymail',
     'fixture_magic',
 ]
@@ -67,10 +72,6 @@ LOGGING = {
         },
     },
     'handlers': {
-        'sentry': {
-            'level': 'ERROR',
-            'class': 'raven.contrib.django.raven_compat.handlers.SentryHandler',
-        },
         'console': {
             'level': 'DEBUG',
             'class': 'logging.StreamHandler',
@@ -98,11 +99,6 @@ LOGGING = {
         'django': {
             'level': 'WARNING',
             'handlers': ['console', 'djangofile'],
-            'propagate': False,
-        },
-        'raven': {
-            'level': 'DEBUG',
-            'handlers': ['console'],
             'propagate': False,
         },
         'sentry.errors': {

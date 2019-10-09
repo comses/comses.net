@@ -326,9 +326,13 @@
         <!-- End Google Tag Manager -->
     {% endif %}
     <script src="//cdnjs.cloudflare.com/ajax/libs/holder/2.9.4/holder.min.js"></script>
-    {% with RAVENJS_VERSION='3.25.0' %}
-        <script src='https://cdn.ravenjs.com/{{ RAVENJS_VERSION }}/vue/raven.min.js' crossorigin='anonymous'></script>
-        <script>Raven.config('{{ sentry_public_dsn() }}').install()</script>
+    {% with SENTRYJS_VERSION='5.6.3' %}
+        <script 
+            src="https://browser.sentry-cdn.com/{{SENTRYJS_VERSION}}/bundle.min.js" 
+            integrity="sha384-/Cqa/8kaWn7emdqIBLk3AkFMAHBk0LObErtMhO+hr52CntkaurEnihPmqYj3uJho"
+            crossorigin="anonymous">
+        </script>
+        <script>Sentry.init('{{ sentry_dsn() }}').install()</script>
     {% endwith %}
     {% if deploy_environment().is_staging_or_production() %}
         {{ render_bundle('chunk-common') }}

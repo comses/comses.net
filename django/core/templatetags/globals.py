@@ -82,8 +82,8 @@ def deploy_environment():
 
 
 @library.global_function
-def sentry_public_dsn():
-    return settings.RAVEN_CONFIG.get('public_dsn')
+def sentry_dsn():
+    return settings.SENTRY_DSN
 
 
 @library.global_function
