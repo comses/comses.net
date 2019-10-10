@@ -11,6 +11,9 @@ EMAIL_SUBJECT_PREFIX = config.get('email', 'EMAIL_SUBJECT_PREFIX', fallback='[co
 # remove sandbox orcid provider
 SOCIALACCOUNT_PROVIDERS.pop('orcid', None)
 
+
+ALLOWED_HOSTS = ['206.12.90.38', '.comses.net']
+
 TEMPLATES = [
     {
         'BACKEND': 'django_jinja.backend.Jinja2',
