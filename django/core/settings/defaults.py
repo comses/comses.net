@@ -157,7 +157,8 @@ TAGGIT_CASE_INSENSITIVE = True
 RELEASE_VERSION_FILE = "release-version.txt"
 
 release_version_file = pathlib.Path(RELEASE_VERSION_FILE)
-RELEASE_VERSION = "v1.2.6"
+
+RELEASE_VERSION = "v2019.10"
 
 if release_version_file.is_file():
     with release_version_file.open('r') as infile:

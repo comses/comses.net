@@ -325,18 +325,23 @@
         })(window, document, 'script', 'dataLayer', 'GTM-TLNSSCJ');</script>
         <!-- End Google Tag Manager -->
     {% endif %}
-    <script src="//cdnjs.cloudflare.com/ajax/libs/holder/2.9.4/holder.min.js"></script>
-    {% with SENTRYJS_VERSION='5.6.3' %}
-        <script 
-            src="https://browser.sentry-cdn.com/{{SENTRYJS_VERSION}}/bundle.min.js" 
-            integrity="sha384-/Cqa/8kaWn7emdqIBLk3AkFMAHBk0LObErtMhO+hr52CntkaurEnihPmqYj3uJho"
-            crossorigin="anonymous">
-        </script>
-        <script>Sentry.init('{{ sentry_dsn() }}').install()</script>
-    {% endwith %}
+    <script src="//cdnjs.cloudflare.com/ajax/libs/holder/2.9.6/holder.min.js"></script>
     {% if deploy_environment().is_staging_or_production() %}
         {{ render_bundle('chunk-common') }}
         {{ render_bundle('chunk-vendors') }}
+        {% with SENTRYJS_VERSION='5.6.3' %}
+            <script 
+                src="https://browser.sentry-cdn.com/{{SENTRYJS_VERSION}}/bundle.min.js" 
+                integrity="sha384-/Cqa/8kaWn7emdqIBLk3AkFMAHBk0LObErtMhO+hr52CntkaurEnihPmqYj3uJho"
+                crossorigin="anonymous">
+            </script>
+            <script>
+                Sentry.init(
+                    dsn: "{{ sentry_dsn() }}",
+                    release: "{{ release_version() }}"
+                )
+            </script>
+        {% endwith %}
     {% endif %}
     {{ render_bundle('home') }}
     <script>
