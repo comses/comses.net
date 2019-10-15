@@ -65,7 +65,7 @@ module.exports = {
             }]);
 
         config
-            .plugin('webpack-provide')
+            .plugin('define-sentry')
             .use(webpack.DefinePlugin, [{
                 'process.env.SENTRY_DSN': JSON.stringify(projectSettings.logging.SENTRY_DSN)
             }]);
