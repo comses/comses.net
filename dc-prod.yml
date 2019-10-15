@@ -89,6 +89,7 @@ services:
       - ./frontend/src:/code/src
       - ./frontend/deploy:/code/deploy
       - ./docker/shared/webpack:/shared/webpack
+      - ./deploy/conf/config.ini:/secrets/config.ini
   maintenance:
     image: nginx:stable
     ports:

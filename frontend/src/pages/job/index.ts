@@ -1,3 +1,4 @@
+import '@/pages/sentry';
 import Edit from './Edit.vue';
 
 function matchUpdateUrl(pathname) {

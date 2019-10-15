@@ -249,8 +249,14 @@ export default class EditProfile extends createFormValidator(schema) {
   }
 
   public async createOrUpdateIfValid() {
-    await this.validate();
-    return this.createOrUpdate();
+    try {
+      await this.validate();
+      return this.createOrUpdate();
+    } catch (e) {
+      if (!(e instanceof yup.ValidationError)) {
+        throw e;
+      }
+    }
   }
 
   public retrieve(pk: number) {

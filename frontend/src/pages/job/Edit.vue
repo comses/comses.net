@@ -92,8 +92,14 @@ class EditJob extends createFormValidator(schema) {
     }
 
     public async createOrUpdateIfValid() {
-        await this.validate();
-        this.createOrUpdate();
+        try {
+            await this.validate();
+            return this.createOrUpdate();
+        } catch (e) {
+            if (!(e instanceof yup.ValidationError)) {
+                throw e;
+            }
+        }
     }
 
     public async createOrUpdate() {

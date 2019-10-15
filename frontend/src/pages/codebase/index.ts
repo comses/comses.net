@@ -1,3 +1,4 @@
+import '@/pages/sentry';
 import EditCodebase from './Edit.vue';
 
 function extractUrlParams(pathname: string) {
@@ -9,4 +10,3 @@ function extractUrlParams(pathname: string) {
 }
 
 const editCodebase = new EditCodebase({ propsData: extractUrlParams(window.location.pathname)}).$mount('#app');
-console.log({editCodebase});

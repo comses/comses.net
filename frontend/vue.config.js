@@ -2,6 +2,10 @@ const BundleTracker = require('webpack-bundle-tracker');
 const webpack = require('webpack');
 const _ = require('lodash');
 const path = require('path');
+const ini = require('ini');
+const fs = require('fs');
+
+const projectSettings = ini.decode(fs.readFileSync('/secrets/config.ini', 'utf8'));
 
 function addStyleResource(rule) {
     rule.use('style-resource')
@@ -58,6 +62,12 @@ module.exports = {
                 Tab: "exports-loader?Tab!bootstrap/js/dist/tab",
                 Tooltip: "exports-loader?Tooltip!bootstrap/js/dist/tooltip",
                 Util: "exports-loader?Util!bootstrap/js/dist/util",
+            }]);
+
+        config
+            .plugin('webpack-provide')
+            .use(webpack.DefinePlugin, [{
+                'process.env.SENTRY_DSN': JSON.stringify(projectSettings.logging.SENTRY_DSN)
             }]);
 
         config.devServer

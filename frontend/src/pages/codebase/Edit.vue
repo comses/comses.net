@@ -154,8 +154,14 @@ export default class Description extends createFormValidator(schema) {
   }
 
   public async save() {
-    await this.validate();
-    return this.createOrUpdate();
+    try {
+      await this.validate();
+      return this.createOrUpdate();
+    } catch (e) {
+      if (!(e instanceof yup.ValidationError)) {
+        throw e;
+      }
+    }
   }
 }
 </script>

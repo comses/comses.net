@@ -49,6 +49,7 @@ services:
       - ./frontend/src:/code/src
       - ./frontend/deploy:/code/deploy
       - ./docker/shared:/shared
+      - ./deploy/conf/config.ini:/secrets/config.ini
   cms:
     build: django
     image: comses/cms:dev

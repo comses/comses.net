@@ -1,3 +1,4 @@
+import '@/pages/sentry';
 import {EditorReviewDetail} from './edit';
 
 function extractParams() {

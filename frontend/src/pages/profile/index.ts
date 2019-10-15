@@ -1,3 +1,4 @@
+import '@/pages/sentry';
 import EditProfile from './Edit.vue';
 
 function extractParams() {

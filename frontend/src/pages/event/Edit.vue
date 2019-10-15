@@ -166,8 +166,14 @@
         }
 
         public async createOrUpdateIfValid() {
+          try {
             await this.validate();
-            this.createOrUpdate();
+            return this.createOrUpdate();
+          } catch (e) {
+            if (!(e instanceof yup.ValidationError)) {
+              throw e;
+            }
+          }
         }
 
         public createOrUpdate() {

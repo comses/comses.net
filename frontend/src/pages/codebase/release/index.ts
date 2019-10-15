@@ -1,3 +1,4 @@
+import '@/pages/sentry';
 import Workflow from './workflow';
 
 function extractParams(pathname: string) {
