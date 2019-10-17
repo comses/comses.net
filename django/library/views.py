@@ -1,10 +1,12 @@
 import logging
 import pathlib
+from datetime import datetime, timedelta
 
 from django.contrib import messages
 from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.core.exceptions import PermissionDenied
 from django.db import transaction
+from django.db.models import Count, Q
 from django.http import HttpResponse, Http404, HttpResponseRedirect
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import resolve
@@ -56,18 +58,43 @@ class PeerReviewDashboardView(PermissionRequiredMixin, ListView):
     context_object_name = 'reviews'
     paginate_by = 15
 
-    ordering = ['status', '-last_modified', '-date_created']
+    def get_query_params(self):
+        form = PeerReviewFilterForm(self.request.GET)
+        if form.is_valid():
+            return form.cleaned_data
+        return {}
 
     def get_queryset(self):
-        status = self.request.GET.get('status')
-        reviews = PeerReview.objects.all()
-        if status:
-            reviews = reviews.filter(status=status)
+        query_params = self.get_query_params()
+        requires_editor_input = query_params.get('requires_editor_input')
+        include_dated_author_change_requests = query_params.get('include_dated_author_change_requests')
+        include_dated_reviewer_feedback_requests = query_params.get('include_dated_reviewer_feedback_requests')
+        order_by = query_params.get('order_by')
+        reviews = PeerReview.objects \
+            .annotate(n_accepted_invites=Count('invitation_set', filter=Q(invitation_set__accepted=True)))
+
+        filters = Q()
+        if requires_editor_input:
+            filters |= (Q(n_accepted_invites=0) |
+                        Q(status=ReviewStatus.awaiting_editor_feedback.name) |
+                        (Q(last_modified__lt=datetime.now() - timedelta(days=25)) & Q(
+                            status=ReviewStatus.awaiting_editor_feedback.name)))
+        if include_dated_author_change_requests:
+            filters |= Q(last_modified__lt=datetime.now() - timedelta(days=25)) & Q(
+                status=ReviewStatus.awaiting_author_changes.name)
+        if include_dated_reviewer_feedback_requests:
+            filters |= Q(last_modified__lt=datetime.now() - timedelta(days=25)) & Q(
+                status=ReviewStatus.awaiting_reviewer_feedback.name)
+        if filters:
+            reviews = reviews \
+                .filter(filters)
+        if order_by:
+            reviews = reviews.order_by(order_by)
         return reviews
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['form'] = PeerReviewFilterForm(data={'status': self.request.GET.get('status', '')})
+        context['form'] = PeerReviewFilterForm(data=self.get_query_params())
         return context
 
 

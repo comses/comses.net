@@ -169,5 +169,16 @@ class PeerReviewerFeedbackEditorForm(CheckCharFieldLengthMixin, forms.ModelForm)
 
 
 class PeerReviewFilterForm(forms.Form):
-    status = forms.CharField(required=False, widget=forms.Select(choices=ReviewStatus.to_choices({'': 'Any status'})))
+    requires_editor_input = forms.BooleanField(required=False)
+    include_dated_author_change_requests = forms.BooleanField(required=False)
+    include_dated_reviewer_feedback_requests = forms.BooleanField(required=False)
+    order_by = forms.ChoiceField(choices=[
+        ('-last_modified', 'Last Modified DESC'),
+        ('n_accepted_invites', '# Accepted Invites ASC'),
+        ('codebase_release__codebase__title', 'Title ASC')], required=False)
 
+    def clean_order_by(self):
+        data = self.cleaned_data['order_by']
+        if not data:
+            return '-last_modified'
+        return data

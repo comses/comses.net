@@ -16,7 +16,7 @@
                 <div class='row'>
                     <div class='col'>
                         <span class="badge {{badge_class}}">{{ review.get_status_display() }}</span>
-                        <span class='badge badge-info'>{{ review.invitation_set.count() }} invitations</span>
+                        <span class='badge badge-info'>{{ review.n_accepted_invites }}/{{ review.invitation_set.count() }} invitations</span>
                     </div>
                     <div class='col'>
                         Requested on: {{ review.date_created|format_datetime }}
