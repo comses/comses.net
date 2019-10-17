@@ -58,8 +58,11 @@ class PeerReviewDashboardView(PermissionRequiredMixin, ListView):
     context_object_name = 'reviews'
     paginate_by = 15
 
+    def get_form(self):
+        return PeerReviewFilterForm(self.request.GET)
+
     def get_query_params(self):
-        form = PeerReviewFilterForm(self.request.GET)
+        form = self.get_form()
         if form.is_valid():
             return form.cleaned_data
         return {}
@@ -94,7 +97,15 @@ class PeerReviewDashboardView(PermissionRequiredMixin, ListView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['form'] = PeerReviewFilterForm(data=self.get_query_params())
+        context['form'] = self.get_form()
+        query = self.request.GET.copy()
+        if 'page' in query:
+            query.pop('page')
+        if query:
+            query_string = f'&{query.urlencode()}'
+        else:
+            query_string = ''
+        context['query_string'] = query_string
         return context
 
 

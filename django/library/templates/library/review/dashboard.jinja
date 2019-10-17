@@ -36,27 +36,27 @@
             {% if page_obj.has_previous() %}
                 {% if page_obj.number != 1 %}
                     <li class="page-item">
-                        <a href="?page=1" class="page-link">1</a>
+                        <a href="?page=1{{ query_string }}" class="page-link">1</a>
                     </li>
                 {% endif %}
                 {% if page_obj.previous_page_number() > 1 %}
                     <li class="page-item">
-                        <a href="?page={{ page_obj.previous_page_number() }}" class="page-link">{{ page_obj.previous_page_number() }}</a>
+                        <a href="?page={{ page_obj.previous_page_number() }}{{ query_string }}" class="page-link">{{ page_obj.previous_page_number() }}</a>
                     </li>
                 {% endif %}
             {% endif %}
             <li class="page-item">
-                <a href="?page={{ page_obj.number }}" class="page-link">{{ page_obj.number }}</a>
+                <a href="?page={{ page_obj.number }}{{ query_string }}" class="page-link">{{ page_obj.number }}</a>
             </li>
             {% if page_obj.has_next() %}
                 {% if page_obj.next_page_number() != page_obj.paginator.num_pages %}
                     <li class="page-item">
-                        <a href="?page={{ page_obj.next_page_number() }}" class="page-link">{{ page_obj.next_page_number() }}</a>
+                        <a href="?page={{ page_obj.next_page_number() }}{{ query_string }}" class="page-link">{{ page_obj.next_page_number() }}</a>
                     </li>
                 {% endif %}
                 {% if page_obj.number != page_obj.paginator.num_page %}
                     <li class="page-item">
-                        <a href="?page={{ page_obj.paginator.num_pages }}" class="page-link">{{ page_obj.paginator.num_pages }}</a>
+                        <a href="?page={{ page_obj.paginator.num_pages }}{{ query_string }}" class="page-link">{{ page_obj.paginator.num_pages }}</a>
                     </li>
                 {% endif %}
             {% endif %}
