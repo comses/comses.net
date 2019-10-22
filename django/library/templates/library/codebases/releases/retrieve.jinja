@@ -178,7 +178,7 @@
                                 {% endif %}
                                 {% if related_release.doi %}
                                     <a href='{{related_release.doi_url}}'>
-                                        <span class='badge badge-info'>{{related_release.doi_url}}</span>
+                                        <span class='badge badge-info'>{{related_release.doi}}</span>
                                     </a>
                                 {% endif %}
                             </td>
@@ -227,10 +227,10 @@
             <b class='card-title'>DOI</b>
             <p>
             {% if release.doi %}
-                <a href='{{release.doi_url}}'><span class='badge badge-info'>{{ release.doi_url }}</span></a>
+                <a href='{{release.doi_url}}'><span class='badge badge-info'>{{ release.doi }}</span></a>
             {% elif codebase.doi %}
-                Please use the following DOI to cite this model.
-                <a href='{{codebase.doi_url}}'><span class='badge badge-info'>{{ codebase.doi_url }}</span></a>
+                <small>This DOI is for the parent Codebase and always points at the most recent published version of this model.</small>
+                <a href='{{codebase.doi_url}}'><span class='badge badge-info'>{{ codebase.doi }}</span></a>
             {% else %}
                 No assigned DOI
                 {% if has_change_perm %}
