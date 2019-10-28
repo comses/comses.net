@@ -6,7 +6,7 @@ from django.contrib import messages
 from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.core.exceptions import PermissionDenied
 from django.db import transaction
-from django.db.models import Count, Q
+from django.db.models import Count, Q, Prefetch, Max
 from django.http import HttpResponse, Http404, HttpResponseRedirect
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import resolve
@@ -55,7 +55,7 @@ class PeerReviewDashboardView(PermissionRequiredMixin, ListView):
     template_name = 'library/review/dashboard.jinja'
     model = PeerReview
     permission_required = 'library.change_peerreview'
-    context_object_name = 'reviews'
+    context_object_name = 'codebases'
     paginate_by = 15
 
     def get_form(self):
@@ -91,9 +91,21 @@ class PeerReviewDashboardView(PermissionRequiredMixin, ListView):
         if filters:
             reviews = reviews \
                 .filter(filters)
-        if order_by:
-            reviews = reviews.order_by(order_by)
-        return reviews
+
+        codebases = Codebase.objects \
+            .filter(releases__review__in=reviews) \
+            .prefetch_related(
+                Prefetch(
+                    'releases',
+                    queryset=
+                        CodebaseRelease.objects \
+                            .filter(review__in=reviews) \
+                            .select_related('review') \
+                            .annotate(n_accepted_invites=Count('review__invitation_set', filter=Q(review__invitation_set__accepted=True))))) \
+            .annotate(min_n_accepted_invites=Count('releases__review__invitation_set', filter=Q(releases__review__invitation_set__accepted=True))) \
+            .annotate(max_last_modified=Max('releases__review__last_modified')) \
+            .order_by(order_by)
+        return codebases
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)

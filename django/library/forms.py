@@ -173,9 +173,9 @@ class PeerReviewFilterForm(forms.Form):
     include_dated_author_change_requests = forms.BooleanField(required=False)
     include_dated_reviewer_feedback_requests = forms.BooleanField(required=False)
     order_by = forms.ChoiceField(choices=[
-        ('-last_modified', 'Last Modified DESC'),
-        ('n_accepted_invites', '# Accepted Invites ASC'),
-        ('codebase_release__codebase__title', 'Title ASC')], required=False)
+        ('-max_last_modified', 'Last Modified DESC'),
+        ('min_n_accepted_invites', 'Min Accepted Invites ASC'),
+        ('title', 'Title ASC')], required=False)
 
     def clean_order_by(self):
         data = self.cleaned_data['order_by']
