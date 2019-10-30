@@ -6,7 +6,7 @@ from django.contrib import messages
 from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.core.exceptions import PermissionDenied
 from django.db import transaction
-from django.db.models import Count, Q, Prefetch, Max
+from django.db.models import Count, Q, Prefetch, Max, FilteredRelation, OuterRef, Exists
 from django.http import HttpResponse, Http404, HttpResponseRedirect
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import resolve
@@ -308,6 +308,7 @@ class CodebaseFilter(filters.BaseFilterBackend):
         qs = query_params.get('query')
         published_start_date = query_params.get('published_after')
         published_end_date = query_params.get('published_before')
+        peer_review_status = query_params.get('peer_review_status')
         # platform = query_params.get('platform')
         # programming_language = query_params.get('programming_language')
         tags = query_params.getlist('tags')
@@ -321,6 +322,13 @@ class CodebaseFilter(filters.BaseFilterBackend):
             criteria.update(first_published_at__gte=published_start_date)
         elif published_end_date:
             criteria.update(first_published_at__lte=published_end_date)
+
+        if peer_review_status:
+            # reviewed_releases = CodebaseRelease.objects.filter(review__isnull=False, codebase=OuterRef('pk'))
+            if peer_review_status == 'reviewed':
+                criteria.update(peer_reviewed=True)
+            elif peer_review_status == 'not_reviewed':
+                criteria.update(peer_reviewed=False)
         return get_search_queryset(qs, queryset, tags=tags, criteria=criteria)
 
 

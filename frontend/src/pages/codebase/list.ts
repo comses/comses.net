@@ -10,7 +10,6 @@ new SortBy({
             {label: 'Title', value: 'title'},
             {label: 'Date published', value: 'first_published_at'},
             {label: 'Author: family name', value: 'submitter__last_name'},
-            {label: 'Peer reviewed', value: 'peer_reviewed'},
         ],
     },
 }).$mount('#sortby');
