@@ -1362,6 +1362,8 @@ class PeerReview(models.Model):
         )
         self.codebase_release.peer_reviewed = True
         self.codebase_release.save()
+        self.codebase_release.codebase.peer_reviewed = True
+        self.codebase_release.codebase.save()
 
         # FIXME: consider moving this into explicit send_model_certified_email()
         send_markdown_email(
