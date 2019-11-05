@@ -125,14 +125,18 @@ class Contributor(index.Indexed, ClusterableModel):
 
     @staticmethod
     def from_user(user):
-        return Contributor.objects.get_or_create(
-            user=user,
-            defaults={
-                'given_name': user.first_name,
-                'family_name': user.last_name,
-                'email': user.email
-            }
-        )
+        try:
+            return Contributor.objects.get_or_create(
+                user=user,
+                defaults={
+                    'given_name': user.first_name,
+                    'family_name': user.last_name,
+                    'email': user.email
+                }
+            )
+        except Contributor.MultipleObjectsReturned:
+            logger.exception("Data integrity issue: found multiple Contributors with the same User %s", user)
+            return Contributor.objects.filter(user=user).first()
 
     @property
     def name(self):
