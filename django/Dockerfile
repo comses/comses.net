@@ -2,7 +2,7 @@ FROM comses/base:1.2.0
 
 ARG REQUIREMENTS_FILE=requirements-dev.txt
 ARG RUN_SCRIPT=./deploy/dev.sh
-ARG UBUNTU_MIRROR=mirror.pnl.gov/ubuntu
+ARG UBUNTU_MIRROR=mirror.arizona.edu/ubuntu
 
 RUN sed -i "s|archive.ubuntu.com|${UBUNTU_MIRROR}|" /etc/apt/sources.list \
         && apt-get update \
