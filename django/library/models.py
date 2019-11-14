@@ -1025,8 +1025,8 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
 
     @property
     def citation_text(self):
-        if not self.last_published_on:
-            return 'This model must be published first in order to be citable.'
+        if not self.live:
+            return 'This model must be published in order to be citable.'
 
         authors = ', '.join(self.contributor_list)
         return '{authors} ({publish_date}). "{title}" (Version {version}). _{cml}_. Retrieved from: {purl}'.format(
@@ -1704,10 +1704,10 @@ class CodeMeta():
     @classmethod
     def from_release(cls, release: CodebaseRelease):
         metadata = cls.INITIAL_DATA.copy()
+        codebase = release.codebase
         metadata.update(
-            name=release.codebase.title,
-            identifier=str(release.codebase.identifier),
-            description=release.codebase.description.raw,
+            name=codebase.title,
+            description=codebase.description.raw,
             softwareVersion=release.version_number,
             version=release.version_number,
             operatingSystem=release.os,
@@ -1721,10 +1721,18 @@ class CodeMeta():
             runtimePlatform=release.codemeta_platforms(),
             url=release.permanent_url,
         )
-        if release.license:
-            metadata.update(license=release.license.url)
         if release.live:
             metadata.update(datePublished=release.last_published_on.strftime(cls.DEFAULT_DATE_FORMAT))
+            metadata.update(citation=release.citation_text)
+            metadata.update(copyrightYear=release.last_published_on.year)
+        if release.license:
+            metadata.update(license=release.license.url)
+        if codebase.repository_url:
+            metadata.update(codeRepository=codebase.repository_url)
+        if codebase.references_text:
+            metadata.update(referencePublication=codebase.references_text)
+        identifier = release.doi_url if release.doi else release.identifier
+        metadata.update(identifier=identifier)
         return CodeMeta(metadata)
 
     def to_dict(self):
