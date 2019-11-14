@@ -1707,7 +1707,6 @@ class CodeMeta():
         metadata.update(
             name=release.codebase.title,
             identifier=str(release.codebase.identifier),
-            license=release.license.url,
             description=release.codebase.description.raw,
             softwareVersion=release.version_number,
             version=release.version_number,
@@ -1718,11 +1717,14 @@ class CodeMeta():
             releaseNotes=release.release_notes.raw,
             dateCreated=release.date_created.strftime(cls.DEFAULT_DATE_FORMAT),
             dateModified=release.last_modified.strftime(cls.DEFAULT_DATE_FORMAT),
-            datePublished=release.last_published_on.strftime(cls.DEFAULT_DATE_FORMAT),
             keywords=release.codemeta_keywords(),
             runtimePlatform=release.codemeta_platforms(),
             url=release.permanent_url,
         )
+        if release.license:
+            metadata.update(license=release.license.url)
+        if release.live:
+            metadata.update(datePublished=release.last_published_on.strftime(cls.DEFAULT_DATE_FORMAT))
         return CodeMeta(metadata)
 
     def to_dict(self):
