@@ -201,7 +201,7 @@ class Contributor(index.Indexed, ClusterableModel):
 
     @property
     def formatted_affiliations(self):
-        return ' '.join(self.affiliations.all())
+        return ', '.join(self.affiliations.values_list('name', flat=True))
 
     def get_profile_url(self):
         user = self.user
@@ -1718,6 +1718,7 @@ class CodeMeta():
             operatingSystem=release.os,
             programmingLanguage=release.codemeta_programming_languages(),
             author=release.codemeta_authors(),
+            identifier=release.permanent_url,
             dateCreated=release.date_created.strftime(cls.DEFAULT_DATE_FORMAT),
             dateModified=release.last_modified.strftime(cls.DEFAULT_DATE_FORMAT),
             keywords=release.codemeta_keywords(),
@@ -1736,11 +1737,8 @@ class CodeMeta():
             metadata.update(referencePublication=codebase.references_text)
         if release.release_notes:
             metadata.update(releaseNotes=release.release_notes.raw)
-        identifier = release.doi_url if release.doi else release.identifier
         # FIXME: add softwareRequirements based on dependencies (see
         # https://ropensci.github.io/codemetar/articles/codemeta-intro.html)
-        metadata.update(identifier=identifier)
-
         return CodeMeta(metadata)
 
     def to_dict(self):
