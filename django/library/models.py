@@ -156,13 +156,16 @@ class Contributor(index.Indexed, ClusterableModel):
 
     def to_codemeta(self):
         codemeta = {
-            '@type': self.type.capitalize(),
+            '@type': 'Person',
             'givenName': self.given_name,
             'familyName': self.family_name,
-            'email': self.email,
         }
         if self.orcid_url:
             codemeta['@id'] = self.orcid_url
+        if self.affiliations.exists():
+            codemeta['affiliation'] = self.formatted_affiliations
+        if self.email:
+            codemeta['email'] = self.email
         return codemeta
 
     def get_aggregated_search_fields(self):
@@ -1074,6 +1077,12 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
             # FIXME: check codemeta for additional metadata
         }
 
+    def codemeta_keywords(self):
+        return [tag.name for tag in self.codebase.tags.all()]
+
+    def codemeta_platforms(self):
+        return [tag.name for tag in self.platform_tags.all()]
+
     def codemeta_authors(self):
         return [author.contributor.to_codemeta() for author in ReleaseContributor.objects.authors(self)]
 
@@ -1082,26 +1091,22 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
 
     @property
     def codemeta(self):
-        # FIXME: probably DEFAULT_CODEMETA_DATA belongs here instead and fs_api should refer to it
-        metadata = self.get_fs_api().DEFAULT_CODEMETA_DATA.copy()
-        metadata.update(
-            identifier=str(self.codebase.uuid),
-            license=self.license.url,
-            description=self.codebase.description.raw,
-            version=self.version_number,
-            programmingLanguage=self.codemeta_programming_languages(),
-            author=self.codemeta_authors(),
-        )
-        return metadata
+        ''' Returns a CodeMeta object that can be dumped to json '''
+        return CodeMeta.from_release(self)
 
     @property
     def is_published(self):
         return self.live and not self.draft
 
     def get_fs_api(self, mimetype_mismatch_message_level=MessageLevels.error) -> CodebaseReleaseFsApi:
-        fs_api = CodebaseReleaseFsApi(uuid=self.codebase.uuid, identifier=self.codebase.identifier,
-                                      version_number=self.version_number, release_id=self.id,
-                                      mimetype_mismatch_message_level=mimetype_mismatch_message_level)
+        fs_api = CodebaseReleaseFsApi(
+            uuid=self.codebase.uuid,
+            identifier=self.codebase.identifier,
+            version_number=self.version_number,
+            release_id=self.id,
+            codemeta=self.codemeta,
+            mimetype_mismatch_message_level=mimetype_mismatch_message_level
+        )
         fs_api.initialize()
         return fs_api
 
@@ -1676,6 +1681,52 @@ class PeerReviewerFeedback(models.Model):
             self.reviewer_submitted,
             self.get_recommendation_display()
         )
+
+
+class CodeMeta():
+    DEFAULT_DATE_FORMAT = '%Y-%m-%d'
+    INITIAL_DATA = {
+        "@context": ["https://doi.org/doi:10.5063/schema/codemeta-2.0", "http://schema.org"],
+        "@type": "SoftwareSourceCode",
+        "provider": {
+            "@id": "https://www.comses.net",
+            "@type": "Organization",
+            "name": "CoMSES Net",
+            "url": "https://www.comses.net/"
+        },
+    }
+
+    def __init__(self, metadata: dict):
+        if not metadata:
+            raise ValueError("Must initialize with a dictionary of codemeta values")
+        self.metadata = metadata
+
+    @classmethod
+    def from_release(cls, release: CodebaseRelease):
+        metadata = cls.INITIAL_DATA.copy()
+        metadata.update(
+            name=release.codebase.title,
+            identifier=str(release.codebase.identifier),
+            license=release.license.url,
+            description=release.codebase.description.raw,
+            softwareVersion=release.version_number,
+            version=release.version_number,
+            operatingSystem=release.os,
+            programmingLanguage=release.codemeta_programming_languages(),
+            author=release.codemeta_authors(),
+            downloadUrl=f'{settings.BASE_URL}{release.get_download_url()}',
+            releaseNotes=release.release_notes.raw,
+            dateCreated=release.date_created.strftime(cls.DEFAULT_DATE_FORMAT),
+            dateModified=release.last_modified.strftime(cls.DEFAULT_DATE_FORMAT),
+            datePublished=release.last_published_on.strftime(cls.DEFAULT_DATE_FORMAT),
+            keywords=release.codemeta_keywords(),
+            runtimePlatform=release.codemeta_platforms(),
+            url=release.permanent_url,
+        )
+        return CodeMeta(metadata)
+
+    def to_dict(self):
+        return self.metadata.copy()
 
 
 @register_snippet

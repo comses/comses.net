@@ -323,25 +323,16 @@ class CodebaseReleaseFsApi:
     associated with a codebase release at the moment, implement file locks if this assumption turns out badly
     """
 
-    DEFAULT_CODEMETA_DATA = {
-        "@context": ["https://doi.org/doi:10.5063/schema/codemeta-2.0", "http://schema.org"],
-        "@type": "SoftwareSourceCode",
-        "provider": {
-            "@id": "https://www.comses.net",
-            "@type": "Organization",
-            "name": "CoMSES Network (CoMSES)",
-            "url": "https://www.comses.net"
-        },
-    }
-
     def __init__(self, uuid, identifier, version_number, release_id,
                  system_file_presence_message_level=MessageLevels.error,
-                 mimetype_mismatch_message_level=MessageLevels.error):
+                 mimetype_mismatch_message_level=MessageLevels.error,
+                 codemeta=None):
         self.uuid = uuid
         self.identifier = identifier
         self.version_number = version_number
         self.release_id = release_id
         self.mimetype_mismatch_message_level = mimetype_mismatch_message_level
+        self.codemeta = codemeta
 
     def logfilename(self):
         return self.rootdir.joinpath('audit.log')
@@ -391,7 +382,8 @@ class CodebaseReleaseFsApi:
             originals_dir = self.originals_dir
         return CodebaseReleaseOriginalStorage(
             mimetype_mismatch_message_level=self.mimetype_mismatch_message_level,
-            location=str(originals_dir))
+            location=str(originals_dir)
+        )
 
     def get_sip_storage(self, mimetype_mismatch_message_level=None):
         if mimetype_mismatch_message_level is None:
@@ -436,24 +428,20 @@ class CodebaseReleaseFsApi:
         if not self.sip_codemeta.exists():
             os.makedirs(str(sip_dir), exist_ok=True)
             # touch a codemeta.json file in the sip_dir so make_bag has something to
-            self.initialize_codemeta()
+            self.add_codemeta()
             fs.make_bag(str(sip_dir), {})
 
-    def initialize_codemeta(self, metadata=None):
+    def add_codemeta(self):
         """
         Returns True if a fresh codemeta.json file was created, False otherwise
-        :param path: an optional path to the codemeta file. If no path is passed in, it tries to create a new
-        codemeta.json file in the sip_dir bound to the CodebaseRelease associated with this FS API
+        :param metadata: an optional dictionary with codemeta properties
         :return:
         """
         path = self.sip_codemeta
-        if path.exists():
-            return False
-        if metadata is None or not isinstance(metadata, dict):
-            metadata = self.DEFAULT_CODEMETA_DATA
+        created = not path.exists()
         with path.open(mode='w', encoding='utf-8') as codemeta_out:
-            json.dump(metadata, codemeta_out)
-        return True
+            json.dump(self.codemeta.to_dict(), codemeta_out)
+        return created
 
     def build_review_archive(self):
         shutil.make_archive(str(self.review_archivepath.with_suffix('')),
