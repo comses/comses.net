@@ -1688,11 +1688,17 @@ class CodeMeta():
     INITIAL_DATA = {
         "@context": ["https://doi.org/doi:10.5063/schema/codemeta-2.0", "http://schema.org"],
         "@type": "SoftwareSourceCode",
+        "publisher": {
+            "@id": "https://www.comses.net",
+            "@type": "Organization",
+            "name": "CoMSES Net",
+            "url": "https://www.comses.net"
+        },
         "provider": {
             "@id": "https://www.comses.net",
             "@type": "Organization",
             "name": "CoMSES Net",
-            "url": "https://www.comses.net/"
+            "url": "https://www.comses.net"
         },
     }
 
@@ -1708,13 +1714,10 @@ class CodeMeta():
         metadata.update(
             name=codebase.title,
             description=codebase.description.raw,
-            softwareVersion=release.version_number,
             version=release.version_number,
             operatingSystem=release.os,
             programmingLanguage=release.codemeta_programming_languages(),
             author=release.codemeta_authors(),
-            downloadUrl=f'{settings.BASE_URL}{release.get_download_url()}',
-            releaseNotes=release.release_notes.raw,
             dateCreated=release.date_created.strftime(cls.DEFAULT_DATE_FORMAT),
             dateModified=release.last_modified.strftime(cls.DEFAULT_DATE_FORMAT),
             keywords=release.codemeta_keywords(),
@@ -1731,8 +1734,13 @@ class CodeMeta():
             metadata.update(codeRepository=codebase.repository_url)
         if codebase.references_text:
             metadata.update(referencePublication=codebase.references_text)
+        if release.release_notes:
+            metadata.update(releaseNotes=release.release_notes.raw)
         identifier = release.doi_url if release.doi else release.identifier
+        # FIXME: add softwareRequirements based on dependencies (see
+        # https://ropensci.github.io/codemetar/articles/codemeta-intro.html)
         metadata.update(identifier=identifier)
+
         return CodeMeta(metadata)
 
     def to_dict(self):
