@@ -441,7 +441,7 @@ class CodebaseReleaseFsApi:
         created = not path.exists()
         with path.open(mode='w', encoding='utf-8') as codemeta_out:
             json.dump(self.codemeta.to_dict(), codemeta_out)
-        self.build_archive()
+        self.build_archive(force=True)
         return created
 
     def build_review_archive(self):
