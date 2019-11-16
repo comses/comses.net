@@ -441,6 +441,7 @@ class CodebaseReleaseFsApi:
         created = not path.exists()
         with path.open(mode='w', encoding='utf-8') as codemeta_out:
             json.dump(self.codemeta.to_dict(), codemeta_out)
+        self.build_archive()
         return created
 
     def build_review_archive(self):
@@ -593,6 +594,7 @@ class CodebaseReleaseFsApi:
 
     def build_archive_at_dest(self, dest):
         logger.info("building archive")
+        self.build_aip()
         if self.aip_contents_dir.exists():
             with zipfile.ZipFile(dest, 'w') as archive:
                 for root_path, dirs, file_paths in os.walk(str(self.aip_contents_dir)):
@@ -611,7 +613,6 @@ class CodebaseReleaseFsApi:
 
     def rebuild(self):
         msgs = self.build_sip()
-        self.build_aip()
         self.build_archive(force=True)
         return msgs
 
