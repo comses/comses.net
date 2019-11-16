@@ -1098,6 +1098,13 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
     def is_published(self):
         return self.live and not self.draft
 
+    @property
+    def codemeta_json(self):
+        return self.get_fs_api().get_codemeta_json()
+
+    def add_codemeta(self, force=True):
+        return self.get_fs_api().add_codemeta(force=force)
+
     def get_fs_api(self, mimetype_mismatch_message_level=MessageLevels.error) -> CodebaseReleaseFsApi:
         fs_api = CodebaseReleaseFsApi(
             uuid=self.codebase.uuid,

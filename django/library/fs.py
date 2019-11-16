@@ -431,23 +431,33 @@ class CodebaseReleaseFsApi:
             self.add_codemeta()
             fs.make_bag(str(sip_dir), {})
 
-    def add_codemeta(self):
+    def add_codemeta(self, force=False):
         """
-        Returns True if a fresh codemeta.json file was created, False otherwise
+        Returns True if a codemeta.json file was created, False otherwise
         :param metadata: an optional dictionary with codemeta properties
         :return:
         """
         path = self.sip_codemeta
-        created = not path.exists()
-        with path.open(mode='w', encoding='utf-8') as codemeta_out:
-            json.dump(self.codemeta.to_dict(), codemeta_out)
-        self.build_archive(force=True)
-        return created
+        if force or not path.exists():
+            with path.open(mode='w', encoding='utf-8') as codemeta_out:
+                json.dump(self.codemeta.to_dict(), codemeta_out)
+            self.build_archive(force=True)
+            return True
+        return False
+
+    def get_codemeta_json(self):
+        if not self.sip_codemeta.exists():
+            self.add_codemeta()
+        return json.dumps(json.load(self.sip_codemeta.open()))
 
     def build_review_archive(self):
         shutil.make_archive(str(self.review_archivepath.with_suffix('')),
                             format='zip', root_dir=str(self.sip_contents_dir))
         return self.review_archivepath
+
+    @property
+    def codemeta_uri(self):
+        return self.sip_codemeta.relative_to(settings.LIBRARY_ROOT)
 
     @property
     def archive_uri(self):

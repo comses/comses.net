@@ -4,11 +4,17 @@
 
 {% set codebase = release.codebase %}
 
-{% block title %}{{ codebase.title }}{% endblock %}
+{%- block title -%}{{ codebase.title }}{% endblock %}
 
-{% block introduction %}<h1>Computational Model Library</h1>{% endblock %}
+{%- block head -%}
+   <script type="application/ld+json">
+       {{ release.codemeta_json|safe }}
+   </script>
+{% endblock %}
 
-{% block top %}
+{%- block introduction -%}<h1>Computational Model Library</h1>{% endblock %}
+
+{%- block top -%}
     {{ breadcrumb([
     {'url': url('library:codebase-list'), 'text': 'Computational Model Library' },
     {'url': url('library:codebase-detail', codebase.identifier), 'text': codebase.title|truncate(68) },
