@@ -231,27 +231,23 @@
                 {% endfor %}
             </p>
             <b class='card-title'>DOI</b>
-            <p>
             {% if release.doi %}
-                <a href='{{release.doi_url}}'><span class='badge badge-info'>{{ release.doi }}</span></a>
+            <p><a href='{{release.doi_url}}'><span class='badge badge-info'>{{ release.doi }}</span></a></p>
             {% elif codebase.doi %}
-                <small>This DOI is for the parent Codebase and always points at the most recent published version of this model.</small>
-                <a href='{{codebase.doi_url}}'><span class='badge badge-info'>{{ codebase.doi }}</span></a>
+	    <p><small>This DOI is for the parent Codebase and always points at the most recent published version of this model.</small>
+                <a href='{{codebase.doi_url}}'><span class='badge badge-info'>{{ codebase.doi }}</span></a></p>
             {% else %}
-                No assigned DOI
+	    <p>No assigned DOI</p>
                 {% if has_change_perm %}
-                    <div>
+                    <div class='text-muted small'>
                     <i class='text-primary fa fa-exclamation-triangle'></i>
-                    <small>
                         We assign DOIs to <a href='{{ url("library:peer-review-overview") }}'>peer reviewed models</a>. If you would like a DOI and your
                     model has not been reviewed yet, please request a peer review by clicking the "Request peer review"
                     button below. If your model has already been reviewed and has not yet been assigned a DOI, please 
                     <a href='{{slugurl('contact')}}'>contact us</a>.
-                    </small>
                     </div>
                 {% endif %}
             {% endif %}
-            </p>
             <b class='card-title'>Model Version</b>
             <p>
             {{ release.version_number }}
@@ -294,10 +290,9 @@
                     Peer Review
                 </b>
                 <p>
-                <span class='btn btn-sm btn-warning disabled'>{{ release.get_review_status_display() or 'Unreviewed' }}</span>
+                <span class='btn btn-sm btn-warning disabled'>{{ release.get_review_status_display() }}</span>
                 </p>
             {% endif %}
-            </p>
         </div>
     </div>
 </div>
@@ -354,12 +349,12 @@
     {% endif %}
 {% endwith %}
 {% if release.live %}
-    <a id="releaseDownload" data-name="download" rel='nofollow' href="{{ release.get_download_url() }}">
-        <button type="button" class="btn btn-primary my-1 w-100">Download</button>
+    <a id="releaseDownload" class='btn btn-primary my-1 w-100' data-name="download" rel='nofollow' href="{{ release.get_download_url() }}">
+        Download
     </a>
 {% else %}
-    <a rel='nofollow' href="{{ release.get_review_download_url() }}">
-        <button type="button" class="btn btn-primary my-1 w-100">Download for Review</button>
+    <a rel='nofollow' class='btn btn-primary my-1 w-100' href="{{ release.get_review_download_url() }}">
+        Download for Review
     </a>
 {% endif %}
 {# FIXME: disabled for now <button type="button" class="btn btn-primary my-1 w-100">Follow</button>
