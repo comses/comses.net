@@ -428,10 +428,10 @@ class CodebaseReleaseFsApi:
         if not self.sip_codemeta.exists():
             os.makedirs(str(sip_dir), exist_ok=True)
             # touch a codemeta.json file in the sip_dir so make_bag has something to
-            self.add_codemeta()
+            self.create_or_update_codemeta()
             fs.make_bag(str(sip_dir), {})
 
-    def add_codemeta(self, force=False):
+    def create_or_update_codemeta(self, force=False):
         """
         Returns True if a codemeta.json file was created, False otherwise
         :param metadata: an optional dictionary with codemeta properties
@@ -446,11 +446,10 @@ class CodebaseReleaseFsApi:
         return False
 
     def get_codemeta_json(self):
-        if not self.sip_codemeta.exists():
-            self.add_codemeta()
-        return json.dumps(json.load(self.sip_codemeta.open()))
+        return self.codemeta.to_json()
 
     def build_review_archive(self):
+        self.create_or_update_codemeta(force=True)
         shutil.make_archive(str(self.review_archivepath.with_suffix('')),
                             format='zip', root_dir=str(self.sip_contents_dir))
         return self.review_archivepath

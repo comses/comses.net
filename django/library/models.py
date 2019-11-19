@@ -1100,10 +1100,10 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
 
     @property
     def codemeta_json(self):
-        return self.get_fs_api().get_codemeta_json()
+        return self.codemeta.to_json()
 
-    def add_codemeta(self, force=True):
-        return self.get_fs_api().add_codemeta(force=force)
+    def create_or_update_codemeta(self, force=True):
+        return self.get_fs_api().create_or_update_codemeta(force=force)
 
     def get_fs_api(self, mimetype_mismatch_message_level=MessageLevels.error) -> CodebaseReleaseFsApi:
         fs_api = CodebaseReleaseFsApi(
@@ -1747,6 +1747,10 @@ class CodeMeta():
         # FIXME: add softwareRequirements based on dependencies (see
         # https://ropensci.github.io/codemetar/articles/codemeta-intro.html)
         return CodeMeta(metadata)
+
+    def to_json(self):
+        ''' Returns a JSON string of this codemeta data '''
+        return json.dumps(self.metadata)
 
     def to_dict(self):
         return self.metadata.copy()

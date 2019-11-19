@@ -18,4 +18,4 @@ class Command(BaseCommand):
     """
     def handle(self, *args, **options):
         for release in CodebaseRelease.objects.all():
-            release.get_fs_api().add_codemeta()
+            release.get_fs_api().create_or_update_codemeta()
