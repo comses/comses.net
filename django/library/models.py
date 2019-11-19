@@ -1693,7 +1693,7 @@ class PeerReviewerFeedback(models.Model):
 class CodeMeta():
     DEFAULT_DATE_FORMAT = '%Y-%m-%d'
     INITIAL_DATA = {
-        "@context": ["https://doi.org/doi:10.5063/schema/codemeta-2.0", "http://schema.org"],
+        "@context": "https://doi.org/doi:10.5063/schema/codemeta-2.0",
         "@type": "SoftwareSourceCode",
         "publisher": {
             "@id": "https://www.comses.net",
