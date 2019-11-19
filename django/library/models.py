@@ -1077,22 +1077,10 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
             # FIXME: check codemeta for additional metadata
         }
 
-    def codemeta_keywords(self):
-        return [tag.name for tag in self.codebase.tags.all()]
-
-    def codemeta_platforms(self):
-        return [tag.name for tag in self.platform_tags.all()]
-
-    def codemeta_authors(self):
-        return [author.contributor.to_codemeta() for author in ReleaseContributor.objects.authors(self)]
-
-    def codemeta_programming_languages(self):
-        return [{'@type': 'ComputerLanguage', 'name': pl.name} for pl in self.programming_languages.all()]
-
     @property
     def codemeta(self):
         ''' Returns a CodeMeta object that can be dumped to json '''
-        return CodeMeta.from_release(self)
+        return CodeMeta.build(self)
 
     @property
     def is_published(self):
@@ -1695,6 +1683,7 @@ class CodeMeta():
     INITIAL_DATA = {
         "@context": "https://doi.org/doi:10.5063/schema/codemeta-2.0",
         "@type": "SoftwareSourceCode",
+        "isPartOf": "https://comses.net/codebases",
         "publisher": {
             "@id": "https://www.comses.net",
             "@type": "Organization",
@@ -1715,21 +1704,54 @@ class CodeMeta():
         self.metadata = metadata
 
     @classmethod
-    def from_release(cls, release: CodebaseRelease):
+    def convert_target_product(cls, codebase_release: CodebaseRelease):
+        target_product = {
+            "@type": "SoftwareApplication",
+            "operatingSystem": codebase_release.os,
+            "applicationCategory": "Computational Model",
+        }
+        if codebase_release.live:
+            target_product.update(
+                downloadUrl=f'{settings.BASE_URL}{codebase_release.get_download_url()}',
+                releaseNotes=codebase_release.release_notes.raw,
+                softwareVersion=codebase_release.version_number,
+                identifier=codebase_release.permanent_url,
+                sameAs=codebase_release.permanent_url,
+            )
+        return target_product
+
+    @classmethod
+    def convert_keywords(cls, codebase_release: CodebaseRelease):
+        return [tag.name for tag in codebase_release.codebase.tags.all()]
+
+    @classmethod
+    def convert_platforms(cls, codebase_release: CodebaseRelease):
+        return [tag.name for tag in codebase_release.platform_tags.all()]
+
+    @classmethod
+    def convert_authors(cls, codebase_release: CodebaseRelease):
+        return [author.contributor.to_codemeta() for author in ReleaseContributor.objects.authors(codebase_release)]
+
+    @classmethod
+    def convert_programming_languages(cls, codebase_release: CodebaseRelease):
+        return [{'@type': 'ComputerLanguage', 'name': pl.name} for pl in codebase_release.programming_languages.all()]
+
+    @classmethod
+    def build(cls, release: CodebaseRelease):
         metadata = cls.INITIAL_DATA.copy()
         codebase = release.codebase
         metadata.update(
             name=codebase.title,
             description=codebase.description.raw,
             version=release.version_number,
-            operatingSystem=release.os,
-            programmingLanguage=release.codemeta_programming_languages(),
-            author=release.codemeta_authors(),
+            targetProduct=cls.convert_target_product(release),
+            programmingLanguage=cls.convert_programming_languages(release),
+            author=cls.convert_authors(release),
             identifier=release.permanent_url,
-            dateCreated=release.date_created.strftime(cls.DEFAULT_DATE_FORMAT),
-            dateModified=release.last_modified.strftime(cls.DEFAULT_DATE_FORMAT),
-            keywords=release.codemeta_keywords(),
-            runtimePlatform=release.codemeta_platforms(),
+            dateCreated=release.date_created.isoformat(),
+            dateModified=release.last_modified.isoformat(),
+            keywords=cls.convert_keywords(release),
+            runtimePlatform=cls.convert_platforms(release),
             url=release.permanent_url,
         )
         if release.live:
@@ -1744,8 +1766,6 @@ class CodeMeta():
             metadata.update(referencePublication=codebase.references_text)
         if release.release_notes:
             metadata.update(releaseNotes=release.release_notes.raw)
-        # FIXME: add softwareRequirements based on dependencies (see
-        # https://ropensci.github.io/codemetar/articles/codemeta-intro.html)
         return CodeMeta(metadata)
 
     def to_json(self):
