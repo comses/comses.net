@@ -22,6 +22,7 @@ from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 from rest_framework.views import exception_handler
 
+from .discourse import build_discourse_url
 from .permissions import ViewRestrictedObjectPermissions
 from .search import GeneralSearch
 
@@ -277,7 +278,7 @@ class SmallResultSetPagination(PageNumberPagination):
         count = self.page.paginator.count
         try:
             current_page_number = max(1, int(page))
-        except:
+        except ValueError:
             current_page_number = 1
         return self.create_paginated_context_data(
             query=query,
@@ -337,7 +338,7 @@ def discourse_sso(request):
     query_string = parse.urlencode({'sso': return_payload, 'sig': h.hexdigest()})
 
     # Redirect back to Discourse
-    discourse_sso_url = '{0}/session/sso_login?{1}'.format(settings.DISCOURSE_BASE_URL, query_string)
+    discourse_sso_url = build_discourse_url(f'session/sso_login?{query_string}')
     return HttpResponseRedirect(discourse_sso_url)
 
 

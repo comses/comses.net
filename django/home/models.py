@@ -27,6 +27,7 @@ from wagtail.search import index
 from wagtail.snippets.edit_handlers import SnippetChooserPanel
 from wagtail.snippets.models import register_snippet
 
+from core.discourse import build_discourse_url
 from core.fields import MarkdownField
 from core.fs import get_canonical_image
 from core.models import MemberProfile, Platform, Event, Job
@@ -190,7 +191,7 @@ class LandingPage(Page):
                 submitter = target_object.submitter
                 submitter_url = submitter.member_profile.get_absolute_url()
             else:
-                submitter = User.objects.get(username='AnonymousUser')
+                submitter = User.get_anonymous()
         return submitter, submitter_url
 
     def get_recent_forum_activity(self):
@@ -203,7 +204,7 @@ class LandingPage(Page):
             return recent_forum_activity
         # transform topics list of dictionaries into web template format with title, submitter, date_created, and url.
         try:
-            r = requests.get('{0}/{1}'.format(settings.DISCOURSE_BASE_URL, 'latest.json'),
+            r = requests.get(build_discourse_url('latest.json'),
                              params={'order': 'created', 'sort': 'asc'},
                              timeout=3.0)
             posts_dict = r.json()
@@ -211,9 +212,7 @@ class LandingPage(Page):
             recent_forum_activity = []
             for topic in topics[:self.RECENT_FORUM_ACTIVITY_COUNT]:
                 topic_title = topic['title']
-                topic_url = '{0}/t/{1}/{2}'.format(settings.DISCOURSE_BASE_URL,
-                                                   topic['slug'],
-                                                   topic['id'])
+                topic_url = build_discourse_url('t/{0}/{1}'.format(topic['slug'], topic['id']))
                 # getting back to the original submitter involves some trickery.
                 # The Discourse embed Javascript queues up a crawler to hit the given page and parses it for content to use
                 # as the initial topic text. However, this topic gets added as a specific Discourse User (`comses`,

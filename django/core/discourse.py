@@ -6,10 +6,13 @@ from django.conf import settings
 
 logger = logging.getLogger(__name__)
 
+def build_discourse_url(uri):
+    return f'{settings.DISCOURSE_BASE_URL}/{uri}'
+
 
 def create_discourse_user(user):
     response = requests.post(
-        f'{settings.DISCOURSE_BASE_URL}/users',
+        build_discourse_url('users'),
         data=dict(
             name=user.get_full_name(),
             username=user.username,
