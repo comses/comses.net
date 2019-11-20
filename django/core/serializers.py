@@ -13,7 +13,7 @@ from .models import Event, Job, Institution
 logger = logging.getLogger(__name__)
 
 YMD_DATETIME_FORMAT = '%Y-%m-%d'
-PUBLISH_DATE_FORMAT = '%b %d, %Y'
+DATE_PUBLISHED_FORMAT = '%b %d, %Y'
 FULL_DATE_FORMAT = '%A, %B %d, %Y'
 
 
@@ -121,7 +121,7 @@ class EventSerializer(serializers.ModelSerializer):
     submitter = LinkedUserSerializer(read_only=True, help_text=_('User that created the event'), label='Submitter')
     absolute_url = serializers.URLField(source='get_absolute_url',
                                         read_only=True, help_text=_('URL to the detail page of the event'))
-    date_created = serializers.DateTimeField(format=PUBLISH_DATE_FORMAT, read_only=True)
+    date_created = serializers.DateTimeField(format=DATE_PUBLISHED_FORMAT, read_only=True)
     last_modified = serializers.DateTimeField(format='%c', read_only=True)
     description = MarkdownField()
 
@@ -197,12 +197,12 @@ class JobSerializer(serializers.ModelSerializer):
         read_only=True,
         help_text=_('URL to the detail page of the job'))
 
-    date_created = serializers.DateTimeField(format=PUBLISH_DATE_FORMAT, read_only=True)
+    date_created = serializers.DateTimeField(format=DATE_PUBLISHED_FORMAT, read_only=True)
     description = MarkdownField()
     last_modified = serializers.DateTimeField(format='%c', read_only=True)
     application_deadline = serializers.DateField(allow_null=True, input_formats=['%Y-%m-%dT%H:%M:%S.%fZ', 'iso-8601'])
     formatted_application_deadline = serializers.DateField(source='application_deadline', read_only=True,
-                                                           format=PUBLISH_DATE_FORMAT)
+                                                           format=DATE_PUBLISHED_FORMAT)
     tags = TagSerializer(many=True, label='Tags')
 
     def create(self, validated_data):

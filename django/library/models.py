@@ -1679,11 +1679,11 @@ class PeerReviewerFeedback(models.Model):
 
 
 class CodeMeta():
-    DEFAULT_DATE_FORMAT = '%Y-%m-%d'
+    DATE_PUBLISHED_FORMAT = '%Y-%m-%d'
     INITIAL_DATA = {
-        "@context": "https://doi.org/doi:10.5063/schema/codemeta-2.0",
+        "@context": ["https://doi.org/10.5063/schema/codemeta-2.0", "http://schema.org"],
         "@type": "SoftwareSourceCode",
-        "isPartOf": "https://comses.net/codebases",
+        "isPartOf": "https://www.comses.net/codebases",
         "publisher": {
             "@id": "https://www.comses.net",
             "@type": "Organization",
@@ -1755,7 +1755,7 @@ class CodeMeta():
             url=release.permanent_url,
         )
         if release.live:
-            metadata.update(datePublished=release.last_published_on.strftime(cls.DEFAULT_DATE_FORMAT))
+            metadata.update(datePublished=release.last_published_on.strftime(cls.DATE_PUBLISHED_FORMAT))
             metadata.update(citation=release.citation_text)
             metadata.update(copyrightYear=release.last_published_on.year)
         if release.license:
@@ -1769,10 +1769,11 @@ class CodeMeta():
         return CodeMeta(metadata)
 
     def to_json(self):
-        ''' Returns a JSON string of this codemeta data '''
+        """ Returns a JSON string of this codemeta data """
         return json.dumps(self.metadata)
 
     def to_dict(self):
+
         return self.metadata.copy()
 
 

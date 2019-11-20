@@ -11,8 +11,8 @@ from rest_framework.exceptions import ValidationError
 from wagtail.images.models import SourceImageIOError
 
 from core.models import MemberProfile
-from core.serializers import (YMD_DATETIME_FORMAT, PUBLISH_DATE_FORMAT, LinkedUserSerializer, create, update, set_tags,
-                              TagSerializer, MarkdownField)
+from core.serializers import (YMD_DATETIME_FORMAT, DATE_PUBLISHED_FORMAT, LinkedUserSerializer, create, update,
+                              set_tags, TagSerializer, MarkdownField)
 from home.common_serializers import RelatedMemberProfileSerializer
 from .models import (ReleaseContributor, Codebase, CodebaseRelease, Contributor, License, CodebaseImage,
                      PeerReviewerFeedback, PeerReviewInvitation, PeerReviewEventLog)
@@ -110,9 +110,11 @@ class ListReleaseContributorSerializer(serializers.ListSerializer):
         for username, related_contributors in user_map.items():
             related_contributor_count = len(related_contributors)
             if related_contributor_count > 1:
-                user = User.objects.get(username=username)
                 error_messages.append(
-                    f'"{user.get_full_name()}" was listed {related_contributor_count} times in the contributors list. Please remove all duplicates - you can assign multiple roles to the same contributor.'
+                    (
+                        f'Validation Error: "{username}" was listed {related_contributor_count} times in the contributors list.'
+                        f'Please remove all duplicates and assign multiple roles to them instead.'
+                    )
                 )
         if error_messages:
             raise ValidationError({'non_field_errors': error_messages})
@@ -199,8 +201,8 @@ class RelatedCodebaseReleaseSerializer(serializers.ModelSerializer):
     release_contributors = ReleaseContributorSerializer(read_only=True, many=True,
                                                         source='index_ordered_release_contributors', )
     submitter = LinkedUserSerializer(read_only=True, label='Submitter')
-    first_published_at = serializers.DateTimeField(format=PUBLISH_DATE_FORMAT, read_only=True)
-    last_published_on = serializers.DateTimeField(format=PUBLISH_DATE_FORMAT, read_only=True)
+    first_published_at = serializers.DateTimeField(format=DATE_PUBLISHED_FORMAT, read_only=True)
+    last_published_on = serializers.DateTimeField(format=DATE_PUBLISHED_FORMAT, read_only=True)
 
     class Meta:
         model = CodebaseRelease
@@ -214,8 +216,8 @@ class CodebaseSerializer(serializers.ModelSerializer, FeaturedImageMixin):
     date_created = serializers.DateTimeField(read_only=True,
                                              default=serializers.CreateOnlyDefault(timezone.now))
     download_count = serializers.IntegerField(read_only=True)
-    first_published_at = serializers.DateTimeField(format=PUBLISH_DATE_FORMAT, read_only=True)
-    last_published_on = serializers.DateTimeField(format=PUBLISH_DATE_FORMAT, read_only=True)
+    first_published_at = serializers.DateTimeField(format=DATE_PUBLISHED_FORMAT, read_only=True)
+    last_published_on = serializers.DateTimeField(format=DATE_PUBLISHED_FORMAT, read_only=True)
     latest_version_number = serializers.ReadOnlyField(source='latest_version.version_number')
     releases = serializers.SerializerMethodField()
     submitter = LinkedUserSerializer(read_only=True,
@@ -265,8 +267,8 @@ class RelatedCodebaseSerializer(serializers.ModelSerializer, FeaturedImageMixin)
     all_contributors = ContributorSerializer(many=True, read_only=True)
     tags = TagSerializer(many=True)
     version_number = serializers.ReadOnlyField(source='latest_version.version_number')
-    first_published_at = serializers.DateTimeField(read_only=True, format=PUBLISH_DATE_FORMAT)
-    last_published_on = serializers.DateTimeField(read_only=True, format=PUBLISH_DATE_FORMAT)
+    first_published_at = serializers.DateTimeField(read_only=True, format=DATE_PUBLISHED_FORMAT)
+    last_published_on = serializers.DateTimeField(read_only=True, format=DATE_PUBLISHED_FORMAT)
     summarized_description = serializers.CharField(read_only=True)
     live = serializers.SerializerMethodField()
 
@@ -309,8 +311,8 @@ class CodebaseReleaseSerializer(serializers.ModelSerializer):
     release_contributors = ReleaseContributorSerializer(read_only=True, source='index_ordered_release_contributors',
                                                         many=True)
     date_created = serializers.DateTimeField(format=YMD_DATETIME_FORMAT, read_only=True)
-    first_published_at = serializers.DateTimeField(format=PUBLISH_DATE_FORMAT, read_only=True)
-    last_published_on = serializers.DateTimeField(format=PUBLISH_DATE_FORMAT, read_only=True)
+    first_published_at = serializers.DateTimeField(format=DATE_PUBLISHED_FORMAT, read_only=True)
+    last_published_on = serializers.DateTimeField(format=DATE_PUBLISHED_FORMAT, read_only=True)
     license = LicenseSerializer()
     live = serializers.ReadOnlyField()
     os_display = serializers.ReadOnlyField(source='get_os_display')
