@@ -35,9 +35,7 @@ OWNER_ATTRIBUTE_KEY = "submitter"
 
 def get_db_user(user):
     """Replaces AnonymousUser with Guardian anonymous user db record. Otherwise returns input"""
-    if user.is_anonymous:
-        user = User.objects.get(username='AnonymousUser')
-    return user
+    return User.get_anonymous() if user.is_anonymous else user
 
 
 def has_field(model, field_name):
