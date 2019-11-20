@@ -6,6 +6,9 @@
 {% block introduction %}
     <h1>Job Postings</h1>
 {% endblock %}
+{%- block head -%}
+<link rel='canonical' href='{{ absolute_url }}'>
+{% endblock %}
 {% block top %}
     {{ breadcrumb([
     {'url': url('home:job-list'), 'text': 'Jobs & Appointments' },

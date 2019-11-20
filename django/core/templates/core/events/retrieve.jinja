@@ -5,6 +5,10 @@
 
 {% block introduction %}<h1>Community Events</h1>{% endblock %}
 
+{%- block head -%}
+<link rel='canonical' href='{{ absolute_url }}'>
+{% endblock %}
+
 {% block top %}
     {{ breadcrumb([
     {'text': 'Community Events', 'url': url('home:event-calendar')},

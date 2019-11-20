@@ -10,6 +10,7 @@
    <script type="application/ld+json">
        {{ release.codemeta_json|safe }}
    </script>
+   <link rel='canonical' href='{{release.permanent_url}}'>
 {% endblock %}
 
 {%- block introduction -%}<h1>Computational Model Library</h1>{% endblock %}
@@ -26,9 +27,11 @@
     <div id={{ 'discourse-content' if release.live else 'content' }}>
         {% if release.live %}
             {% if not release.is_latest_version %}
-                <div class="alert alert-warning mt-2">This release is out-of-date. The latest version is
-                <a href='{{ codebase.latest_version.get_absolute_url() }}'>{{ codebase.latest_version.version_number }}</a>
-                </div>
+                {% with latest_version=codebase.latest_version %}
+                    <div class="alert alert-warning mt-2">This release is out-of-date. The latest version is
+                        <a href='{{ latest_version.get_absolute_url() }}'>{{ latest_version.version_number }}</a>
+                    </div>
+                {% endwith %}
             {% endif %}
         {% else %}
             <div class="alert alert-danger mt-2">The release you are viewing is currently unpublished.</div>
@@ -63,7 +66,6 @@
                     {% endif %}
                 {% endwith %}
             </div>
-
             <h3><u>Release Notes</u></h3>
             <div class='lead'>
                 {{ release.release_notes.rendered|default("No release notes entered with this release.")|safe }}
@@ -99,8 +101,7 @@
                         <span class="fa fa-retweet"></span>
                     </small>
                 {% else %}
-                    Hold on! This model is unpublished.
-                    Perhaps the authors are not ready for it to be cited.
+                    Hold on! This model is unpublished. Perhaps the authors are not ready for it to be cited yet.
                 {% endif %}
             </div>
         </div>

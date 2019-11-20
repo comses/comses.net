@@ -201,10 +201,15 @@
     <h3>Discussion</h3>
     <div id="discourse-comments"></div>
     <script>
+        var canonicalUrl = window.location.origin + window.location.pathname;
+        var canonicalUrlElement = document.querySelector("link[rel='canonical']");
+        if (canonicalUrlElement == null) {
+            canonicalUrl = canonicalUrlElement.href;
+        }
         DiscourseEmbed = {
             discourseUrl: "{{ DISCOURSE_BASE_URL }}/",
             discourseUserName: "{{ submitter_username }}",
-            discourseEmbedUrl: window.location.origin + window.location.pathname
+            discourseEmbedUrl: canonicalUrl
         };
         (function () {
             var d = document.createElement('script');
