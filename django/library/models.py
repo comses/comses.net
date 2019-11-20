@@ -1691,6 +1691,8 @@ class CodeMeta():
         "@type": "SoftwareSourceCode",
         "isPartOf": {
             "@type": "WebApplication",
+            "applicationCategory": "Computational Modeling Software Repository",
+            "operatingSystem": "Any",
             "name": "CoMSES Model Library",
             "url": "https://www.comses.net/codebases",
         },
