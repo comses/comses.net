@@ -594,7 +594,7 @@ class Codebase(index.Indexed, ClusterableModel):
         if not is_image and images_only:
             logger.info('removing non image file: %s', path)
             path.unlink()
-            raise UnsupportedMediaType(fs.mimetypes.guess_type(name)[0], detail='{} is not an image'.format(name))
+            raise UnsupportedMediaType(fs.mimetypes.guess_type(name)[0], detail=f'{name} is not an image')
         image_metadata = {
             'name': name,
             'path': str(self.media_dir()),
@@ -1680,31 +1680,32 @@ class PeerReviewerFeedback(models.Model):
 
 class CodeMeta():
     DATE_PUBLISHED_FORMAT = '%Y-%m-%d'
+    COMSES_ORGANIZATION = {
+        "@id": "https://www.comses.net",
+        "@type": "Organization",
+        "name": "CoMSES Net",
+        "url": "https://www.comses.net"
+    }
     INITIAL_DATA = {
         "@context": ["https://doi.org/10.5063/schema/codemeta-2.0", "http://schema.org"],
         "@type": "SoftwareSourceCode",
-        "isPartOf": "https://www.comses.net/codebases",
-        "publisher": {
-            "@id": "https://www.comses.net",
-            "@type": "Organization",
-            "name": "CoMSES Net",
-            "url": "https://www.comses.net"
+        "isPartOf": {
+            "@type": "WebApplication",
+            "name": "CoMSES Model Library",
+            "url": "https://www.comses.net/codebases",
         },
-        "provider": {
-            "@id": "https://www.comses.net",
-            "@type": "Organization",
-            "name": "CoMSES Net",
-            "url": "https://www.comses.net"
-        },
+        "publisher": COMSES_ORGANIZATION,
+        "provider": COMSES_ORGANIZATION
     }
 
     def __init__(self, metadata: dict):
         if not metadata:
-            raise ValueError("Must initialize with a dictionary of codemeta values")
+            raise ValueError("Initialize with a base dictionary with codemeta terms mapped to JSON-serializable values")
         self.metadata = metadata
 
     @classmethod
     def convert_target_product(cls, codebase_release: CodebaseRelease):
+        from wagtail.images.views.serve import generate_image_url
         target_product = {
             "@type": "SoftwareApplication",
             "operatingSystem": codebase_release.os,
@@ -1718,6 +1719,13 @@ class CodeMeta():
                 identifier=codebase_release.permanent_url,
                 sameAs=codebase_release.permanent_url,
             )
+        featured_image = codebase_release.codebase.get_featured_image()
+        if featured_image:
+            relative_screenshot_url = generate_image_url(
+                featured_image,
+                'fill-205x115',
+                viewname='home:wagtailimages_serve')
+            target_product.update(screenshot=f'{settings.BASE_URL}{relative_screenshot_url}')
         return target_product
 
     @classmethod
@@ -1770,10 +1778,10 @@ class CodeMeta():
 
     def to_json(self):
         """ Returns a JSON string of this codemeta data """
+        # FIXME: should ideally validate metadata as well
         return json.dumps(self.metadata)
 
     def to_dict(self):
-
         return self.metadata.copy()
 
 

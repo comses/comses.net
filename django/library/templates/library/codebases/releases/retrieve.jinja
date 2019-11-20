@@ -54,9 +54,7 @@
         </div>
         <div class='pt-4'>
             <div class='lead'>
-                {% autoescape false %}
-                    {{ codebase.description }}
-                {% endautoescape %}
+                {{ codebase.description|safe }}
             </div>
             <div class='py-3'>
                 {% with featured_image=codebase.get_featured_image() %}
@@ -68,13 +66,7 @@
 
             <h3><u>Release Notes</u></h3>
             <div class='lead'>
-                {% if release.release_notes %}
-                    {% autoescape false %}
-                        {{ release.release_notes }}
-                    {% endautoescape %}
-                {% else %}
-                    No release notes were entered with this release.
-                {% endif %}
+                {{ release.release_notes.rendered|default("No release notes entered with this release.")|safe }}
             </div>
         </div>
     </div>
