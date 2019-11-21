@@ -203,10 +203,10 @@
     <script>
         var canonicalUrl = window.location.origin + window.location.pathname;
         var canonicalUrlElement = document.querySelector("link[rel='canonical']");
-        if (canonicalUrlElement == null) {
+        if (canonicalUrlElement != null) {
             canonicalUrl = canonicalUrlElement.href;
         }
-        DiscourseEmbed = {
+        window.DiscourseEmbed = {
             discourseUrl: "{{ DISCOURSE_BASE_URL }}/",
             discourseUserName: "{{ submitter_username }}",
             discourseEmbedUrl: canonicalUrl
