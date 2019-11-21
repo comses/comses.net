@@ -1687,7 +1687,7 @@ class CodeMeta():
         "url": "https://www.comses.net"
     }
     INITIAL_DATA = {
-        "@context": ["https://doi.org/10.5063/schema/codemeta-2.0", "http://schema.org"],
+        "@context": "http://schema.org",
         "@type": "SoftwareSourceCode",
         "isPartOf": {
             "@type": "WebApplication",
