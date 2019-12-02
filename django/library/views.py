@@ -6,7 +6,7 @@ from django.contrib import messages
 from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.core.exceptions import PermissionDenied
 from django.db import transaction
-from django.db.models import Count, Q, Prefetch, Max, FilteredRelation, OuterRef, Exists
+from django.db.models import Count, Q, Prefetch, Max
 from django.http import HttpResponse, Http404, HttpResponseRedirect
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import resolve
@@ -37,6 +37,7 @@ from .serializers import (CodebaseSerializer, CodebaseReleaseSerializer, Contrib
                           ReleaseContributorSerializer, CodebaseReleaseEditSerializer, CodebaseImageSerializer,
                           PeerReviewInvitationSerializer, PeerReviewFeedbackEditorSerializer,
                           PeerReviewReviewerSerializer, PeerReviewEventLogSerializer)
+
 
 logger = logging.getLogger(__name__)
 
@@ -73,10 +74,11 @@ class PeerReviewDashboardView(PermissionRequiredMixin, ListView):
         include_dated_author_change_requests = query_params.get('include_dated_author_change_requests')
         include_dated_reviewer_feedback_requests = query_params.get('include_dated_reviewer_feedback_requests')
         order_by = query_params.get('order_by')
-        reviews = PeerReview.objects \
-            .annotate(n_accepted_invites=Count('invitation_set', filter=Q(invitation_set__accepted=True)))
+        reviews = PeerReview.objects.annotate(n_accepted_invites=Count('invitation_set', filter=Q(invitation_set__accepted=True)))
 
         filters = Q()
+        # FIXME: refactor - this type of complicated query logic should probably be encapsulated in a model's QuerySet
+        # if possible
         if requires_editor_input:
             filters |= (Q(n_accepted_invites=0) |
                         Q(status=ReviewStatus.awaiting_editor_feedback.name) |
@@ -89,19 +91,16 @@ class PeerReviewDashboardView(PermissionRequiredMixin, ListView):
             filters |= Q(last_modified__lt=datetime.now() - timedelta(days=25)) & Q(
                 status=ReviewStatus.awaiting_reviewer_feedback.name)
         if filters:
-            reviews = reviews \
-                .filter(filters)
+            reviews = reviews.filter(filters)
 
         codebases = Codebase.objects \
             .filter(releases__review__in=reviews) \
             .prefetch_related(
                 Prefetch(
                     'releases',
-                    queryset=
-                        CodebaseRelease.objects \
-                            .filter(review__in=reviews) \
-                            .select_related('review') \
-                            .annotate(n_accepted_invites=Count('review__invitation_set', filter=Q(review__invitation_set__accepted=True))))) \
+                    queryset=CodebaseRelease.objects.filter(review__in=reviews)
+                    .select_related('review')
+                    .annotate(n_accepted_invites=Count('review__invitation_set', filter=Q(review__invitation_set__accepted=True))))) \
             .annotate(min_n_accepted_invites=Count('releases__review__invitation_set', filter=Q(releases__review__invitation_set__accepted=True))) \
             .annotate(max_last_modified=Max('releases__review__last_modified')) \
             .order_by(order_by)
@@ -360,10 +359,15 @@ class CodebaseViewSet(CommonViewSetMixin,
         instance = self.get_object()
         # check content negotiation to see if we should redirect to the latest release detail page or if this is an API
         # request for a JSON serialization of this Codebase.
-        # FIXME: this should go away if/when we segregate DRF API calls under /api/v1/codebases/
         if request.accepted_media_type == 'text/html':
+            # FIXME: making this go to instance.latest_version instead for the interim
+            current_version = instance.latest_version
+            """
+            FIXME: the below code should be encapsulated in the CodebaseReleaseQuerySet if we in fact do want to do
+            something like this. check at the next comses meeting
             current_version = CodebaseRelease.objects.accessible(request.user).filter(codebase=instance).order_by(
                 '-date_created').first()
+            """
             if not current_version:
                 raise Http404
             return redirect(current_version)
