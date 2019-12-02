@@ -626,6 +626,20 @@ class Codebase(index.Indexed, ClusterableModel):
             draft = self.create_release()
         return draft
 
+    @transaction.atomic
+    def unpublish(self):
+        self.live = False
+        self.last_published_on = None
+        self.first_published_at = None
+        self.save()
+        codebase = self.codebase
+        # if this is the only public release, unpublish the codebase as well
+        if not codebase.releases.filter(live=True).exists():
+            codebase.live = False
+            codebase.last_published_on = None
+            codebase.first_published_at = None
+            codebase.save()
+
     def create_release(self, initialize=True, **overrides):
         # FIXME: guard against not creating a new draft if there's an existing unpublished release, see
         # https://github.com/comses/comses.net/issues/304
