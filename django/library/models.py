@@ -594,7 +594,7 @@ class Codebase(index.Indexed, ClusterableModel):
         if not is_image and images_only:
             logger.info('removing non image file: %s', path)
             path.unlink()
-            raise UnsupportedMediaType(fs.mimetypes.guess_type(name)[0], detail=f'{name} is not an image')
+            raise UnsupportedMediaType(fs.mimetypes.guess_type(name)[0], detail=f'{name} is not a valid file type. Must be a GIF, PNG, JPEG')
         image_metadata = {
             'name': name,
             'path': str(self.media_dir()),

@@ -29,7 +29,8 @@ type UploadInfo = UploadSuccess | UploadProgress | UploadFailure;
         <div class="d-flex justify-content-between">
             <div>
                 <label :for="uploadId"><div class="btn btn-primary">Upload a file</div></label>
-                <input class="invisible" :id="uploadId" type="file" @change="handleFiles($event)">
+                <input class="invisible" :id="uploadId" type="file"
+                       @change="handleFiles($event)" :accept="acceptedFileTypes">
             </div>
             <div>
                 <button class="btn btn-danger" @click="clear">Remove all files</button>

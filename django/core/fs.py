@@ -36,7 +36,8 @@ def is_archive(path: str):
 
 def is_image(path: str):
     try:
-        return imghdr.what(path)
+        filetype = imghdr.what(path)
+        return filetype in ['jpeg', 'png', 'gif']
     except:
         return None
 

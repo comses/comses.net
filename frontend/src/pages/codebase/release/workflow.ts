@@ -58,6 +58,7 @@ type CodebaseTabs = 'metadata' | 'media';
                                 <c-upload :uploadUrl="uploadUrl" title="Upload Media"
                                     instructions="Upload featured media files here. Images are displayed on the release detail page of every release"
                                     originalInstructions="Current media files" :originals="files" @doneUpload="getMediaFiles"
+                                    acceptedFileTypes="image/gif, image/jpeg, image/png"
                                     @deleteFile="deleteFile" @clear="clear">
                                 </c-upload>
                             </div>
