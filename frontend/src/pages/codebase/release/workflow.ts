@@ -56,7 +56,7 @@ type CodebaseTabs = 'metadata' | 'media';
                             </div>
                             <div :class="['tab-pane fade', contentClass('media')]">
                                 <c-upload :uploadUrl="uploadUrl" title="Upload Media"
-                                    instructions="Upload featured media files here. Images are displayed on the release detail page of every release"
+                                    instructions="Upload featured media files here. Images are displayed on the release detail page of every release. GIF, JPEG and PNG files only."
                                     originalInstructions="Current media files" :originals="files" @doneUpload="getMediaFiles"
                                     acceptedFileTypes="image/gif, image/jpeg, image/png"
                                     @deleteFile="deleteFile" @clear="clear">
