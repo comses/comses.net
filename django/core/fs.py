@@ -8,6 +8,7 @@ import shutil
 import bagit
 import rarfile
 from PIL import Image
+from django.conf import settings
 from django.core.exceptions import SuspiciousFileOperation
 from django.core.files.images import ImageFile
 from wagtail.images.models import Image
@@ -37,7 +38,7 @@ def is_archive(path: str):
 def is_image(path: str):
     try:
         filetype = imghdr.what(path)
-        return filetype in ['jpeg', 'png', 'gif']
+        return filetype in settings.ACCEPTED_IMAGE_TYPES
     except:
         return None
 
