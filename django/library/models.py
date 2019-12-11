@@ -296,6 +296,9 @@ class CodebaseQuerySet(models.QuerySet):
         """Returns a queryset of all live codebases and their live releases"""
         return self.with_contributors()
 
+    def latest_accessible_release(self, codebase, user):
+        return CodebaseRelease.objects.accessible(user).filter(codebase=codebase).order_by('-last_modified').first()
+
     def peer_reviewed(self):
         return self.public().filter(peer_reviewed=True)
 
@@ -594,7 +597,9 @@ class Codebase(index.Indexed, ClusterableModel):
         if not is_image and images_only:
             logger.info('removing non image file: %s', path)
             path.unlink()
-            raise UnsupportedMediaType(fs.mimetypes.guess_type(name)[0], detail=f'{name} has the wrong file type. You can only upload {", ".join(settings.ACCEPTED_IMAGE_TYPES)} files')
+            raise UnsupportedMediaType(
+                fs.mimetypes.guess_type(name)[0],
+                detail=f'{name} has the wrong file type. You can only upload {settings.ACCEPTED_IMAGE_TYPES} files')
         image_metadata = {
             'name': name,
             'path': str(self.media_dir()),
