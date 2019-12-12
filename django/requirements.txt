@@ -30,7 +30,7 @@ markdown==3.1.1
 nltk>=3.2.5,<4.0.0
 psycopg2-binary==2.8.4
 requests==2.22.0
-semver==2.8.1
+semver==2.9.0
 sentry-sdk==0.12.3
 uwsgi==2.0.18
 uwsgitop==0.11

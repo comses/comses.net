@@ -1,5 +1,6 @@
 import logging
 import pathlib
+import semver
 import uuid
 
 from django.conf import settings
@@ -84,7 +85,7 @@ class CodebaseReleaseTest(BaseModelTestCase):
     def test_version_number_mutation(self):
         other_codebase_release = self.codebase.create_release(initialize=False)
         version_numbers = other_codebase_release.get_allowed_version_numbers()
-        self.assertEqual(version_numbers, {'1.0.1', '1.1.0', '2.0.0'})
+        self.assertEqual(version_numbers, set([semver.parse_version_info(vn) for vn in {'1.0.1', '1.1.0', '2.0.0'}]))
 
         with self.assertRaises(ValidationError):
             other_codebase_release.set_version_number('1.0.0')
@@ -96,7 +97,7 @@ class CodebaseReleaseTest(BaseModelTestCase):
         self.assertEqual(other_codebase_release.version_number, '54.2.0')
 
         other_codebase_release.set_version_number('1.0.1')
-        self.assertEqual(other_codebase_release.version_number,'1.0.1')
+        self.assertEqual(other_codebase_release.version_number, '1.0.1')
 
     def test_create_codebase_release_share_uuid(self):
         """Ensure we can create a second codebase release an it hasa different share uuid"""

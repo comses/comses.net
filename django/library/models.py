@@ -216,10 +216,20 @@ class Contributor(index.Indexed, ClusterableModel):
         return self.get_full_name()
 
 
-class SemanticVersionBump(Enum):
-    MAJOR = semver.bump_major
-    MINOR = semver.bump_minor
-    PATCH = semver.bump_patch
+class SemanticVersion:
+    ALPHA = semver.parse_version_info('0.0.1')
+    BETA = semver.parse_version_info('0.1.0')
+    DEFAULT = semver.parse_version_info('1.0.0')
+
+    @staticmethod
+    def possible_next_versions(version_number, minor_only=False):
+        try:
+            version_info = semver.parse_version_info(version_number)
+        except ValueError:
+            version_info = SemanticVersion.DEFAULT
+        if minor_only:
+            return {version_info.bump_minor(), }
+        return {version_info.bump_major(), version_info.bump_minor(), version_info.bump_patch()}
 
 
 class CodebaseReleaseDownload(models.Model):
@@ -295,9 +305,6 @@ class CodebaseQuerySet(models.QuerySet):
     def public(self):
         """Returns a queryset of all live codebases and their live releases"""
         return self.with_contributors()
-
-    def latest_accessible_release(self, codebase, user):
-        return CodebaseRelease.objects.accessible(user).filter(codebase=codebase).order_by('-last_modified').first()
 
     def peer_reviewed(self):
         return self.public().filter(peer_reviewed=True)
@@ -531,25 +538,25 @@ class Codebase(index.Indexed, ClusterableModel):
     def doi_url(self):
         return Codebase.format_doi_url(self.doi)
 
+    def latest_accessible_release(self, user):
+        return CodebaseRelease.objects.accessible(user).filter(codebase=self).order_by('-last_modified').first()
+
     def get_all_next_possible_version_numbers(self, minor_only=False):
-        if self.releases.all():
+        if self.releases.exists():
             possible_version_numbers = set()
-            for release in self.releases.all():
+            all_releases = self.releases.all()
+            for release in all_releases:
                 possible_version_numbers.update(release.possible_next_versions(minor_only))
-            for release in self.releases.all():
-                possible_version_numbers.discard(release.version_number)
+            for release in all_releases:
+                possible_version_numbers.discard(release.version_info)
             return possible_version_numbers
         else:
-            return {'1.0.0', }
+            return {SemanticVersion.DEFAULT, }
 
-    def next_version_number(self, version_number=None):
-        if version_number is None:
-            possible_version_numbers = self.get_all_next_possible_version_numbers(minor_only=True)
-            max_version_number = '1.0.0'
-            for version_number in possible_version_numbers:
-                max_version_number = semver.max_ver(max_version_number, version_number)
-            version_number = max_version_number
-        return version_number
+    def next_version_number(self, minor_only=True):
+        possible_version_numbers = self.get_all_next_possible_version_numbers(minor_only=minor_only)
+        next_version_number = max(possible_version_numbers)
+        return str(next_version_number)
 
     def import_release(self, submitter=None, submitter_id=None, version_number=None, submitted_package=None, **kwargs):
         if submitter_id is None:
@@ -989,6 +996,15 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
             return ''
 
     @property
+    def version_info(self):
+        if self.version_number:
+            try:
+                return semver.parse_version_info(self.version_number)
+            except ValueError:
+                logger.exception("invalid version number: %s", self.version_number)
+        return None
+
+    @property
     def share_url(self):
         if not self.share_uuid:
             self.regenerate_share_uuid()
@@ -1016,7 +1032,10 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
 
     @property
     def is_latest_version(self):
-        return self.version_number == self.codebase.latest_version.version_number
+        if self.codebase.latest_version:
+            return self.version_number == self.codebase.latest_version.version_number
+        logger.warning("Codebase %s has no latest version", self.codebase)
+        return True
 
     @property
     def doi_url(self):
@@ -1153,15 +1172,8 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
             codebase.first_published_at = None
             codebase.save()
 
-    # FIXME: use semver.bump_version instead of this handrolled logic
     def possible_next_versions(self, minor_only=False):
-        major, minor, patch = [int(v) for v in self.version_number.split('.')]
-        next_minor = '{}.{}.0'.format(major, minor + 1)
-        if minor_only:
-            return {next_minor, }
-        next_major = '{}.0.0'.format(major + 1)
-        next_bugfix = '{}.{}.{}'.format(major, minor, patch + 1)
-        return {next_major, next_minor, next_bugfix}
+        return SemanticVersion.possible_next_versions(self.version_number, minor_only)
 
     def get_allowed_version_numbers(self):
         codebase = Codebase.objects.prefetch_related(
@@ -1171,15 +1183,15 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
 
     def set_version_number(self, version_number):
         if self.is_published:
-            raise ValidationError({'non_field_errors': ['Cannot set version number on published release']})
+            raise ValidationError({'non_field_errors': ['You cannot set the version number on a published release.']})
         try:
             semver.parse(version_number)
         except ValueError:
-            raise ValidationError({'version_number': ['Version number not a valid semantic version string']})
-        not_allowed_version_numbers = CodebaseRelease.objects.filter(codebase=self.codebase).exclude(id=self.id) \
-            .order_by('version_number').values_list('version_number', flat=True)
-        if version_number in not_allowed_version_numbers:
-            raise ValidationError({'version_number': ["Another release has version number. Please select another"]})
+            raise ValidationError({'version_number': [f'The version number {version_number} is not a valid semantic version string.']})
+        existing_version_numbers = self.codebase.releases.exclude(pk=self.pk).order_by('version_number').values_list(
+            'version_number', flat=True)
+        if version_number in existing_version_numbers:
+            raise ValidationError({'version_number': [f"Another release has this version number {version_number}. Please select a different version number."]})
         self.version_number = version_number
 
     def __str__(self):

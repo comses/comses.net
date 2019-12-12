@@ -363,7 +363,7 @@ class CodebaseViewSet(CommonViewSetMixin,
             current_version = instance.latest_version
             if not current_version:
                 # no latest_version set, try to retrieve the latest accessible release for this user
-                current_version = Codebase.objects.latest_accessible_release(instance, request.user)
+                current_version = instance.latest_accessible_release(request.user)
             if not current_version:
                 raise Http404
             return redirect(current_version)
