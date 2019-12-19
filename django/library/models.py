@@ -670,8 +670,8 @@ class Codebase(index.Indexed, ClusterableModel):
             previous_release_contributors.copy_to(release)
 
         if initialize:
-            fs_api = release.get_fs_api()
-            fs_api.initialize()
+            release.get_fs_api().validate_bagit()
+
         if release.is_published:
             self.latest_version = release
             self.save()
@@ -1118,16 +1118,7 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
         return self.get_fs_api().create_or_update_codemeta(force=force)
 
     def get_fs_api(self, mimetype_mismatch_message_level=MessageLevels.error) -> CodebaseReleaseFsApi:
-        fs_api = CodebaseReleaseFsApi(
-            uuid=self.codebase.uuid,
-            identifier=self.codebase.identifier,
-            version_number=self.version_number,
-            release_id=self.id,
-            codemeta=self.codemeta,
-            mimetype_mismatch_message_level=mimetype_mismatch_message_level
-        )
-        fs_api.initialize()
-        return fs_api
+        return CodebaseReleaseFsApi.initialize(self, mimetype_mismatch_message_level=mimetype_mismatch_message_level)
 
     def add_contributor(self, submitter):
         contributor, created = Contributor.from_user(submitter)

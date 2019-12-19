@@ -12,6 +12,7 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import Optional
 
+import bagit
 import rarfile
 from django.conf import settings
 from django.core.files.storage import FileSystemStorage
@@ -319,19 +320,20 @@ class CodebaseReleaseFsApi:
     Interface to maintain files associated with a codebase
 
     FIXME: This is not currently protected against concurrent file access but only the submitter can edit files
-    associated with a codebase release at the moment, implement file locks if this assumption turns out badly
+    associated with a codebase release at the moment. Will need to implement file locks if/when this assumption fails to
+    hold
     """
 
-    def __init__(self, uuid, identifier, version_number, release_id,
+    def __init__(self, codebase_release,
                  system_file_presence_message_level=MessageLevels.error,
-                 mimetype_mismatch_message_level=MessageLevels.error,
-                 codemeta=None):
-        self.uuid = uuid
-        self.identifier = identifier
-        self.version_number = version_number
-        self.release_id = release_id
+                 mimetype_mismatch_message_level=MessageLevels.error):
+        self.uuid = str(codebase_release.codebase.uuid)
+        self.identifier = codebase_release.codebase.identifier
+        self.version_number = codebase_release.version_number
+        self.release_id = codebase_release.id
+        self.codemeta = codebase_release.codemeta
+        self.bagit_info = codebase_release.bagit_info
         self.mimetype_mismatch_message_level = mimetype_mismatch_message_level
-        self.codemeta = codemeta
 
     def logfilename(self):
         return self.rootdir.joinpath('audit.log')
@@ -422,11 +424,30 @@ class CodebaseReleaseFsApi:
     def _create_msg_group(self):
         return MessageGroup()
 
-    def initialize(self):
-        sip_dir = self.sip_dir
+    def validate_bagit(self):
+        bag = self.get_or_create_sip_bag()
+        try:
+            bag.validate()
+        except bagit.BagValidationError as e:
+            logger.exception(e)
+
+        for path, fixity in bag.entries.items():
+            logger.info("path %s with md5 %s", path, fixity)
+
+    @classmethod
+    def initialize(cls, codebase_release,
+                   system_file_presence_message_level=MessageLevels.error,
+                   mimetype_mismatch_message_level=MessageLevels.error,
+                   bagit_info=None):
+        fs_api = CodebaseReleaseFsApi(
+            codebase_release,
+            system_file_presence_message_level=system_file_presence_message_level,
+            mimetype_mismatch_message_level=mimetype_mismatch_message_level)
+        sip_dir = fs_api.sip_dir
         if not sip_dir.exists():
             os.makedirs(sip_dir, exist_ok=True)
-            fs.make_bag(str(sip_dir), {})
+            fs_api.get_or_create_sip_bag(bagit_info)
+        return fs_api
 
     def create_or_update_codemeta(self, force=False):
         """
@@ -444,8 +465,8 @@ class CodebaseReleaseFsApi:
     def get_codemeta_json(self):
         return self.codemeta.to_json()
 
-    def build_published_archive(self, bagit_info, force=True):
-        self.get_or_create_sip_bag(bagit_info)
+    def build_published_archive(self, force=False):
+        self.get_or_create_sip_bag(self.bagit_info)
         self.build_aip()
         self.build_archive(force=force)
 
@@ -561,21 +582,12 @@ class CodebaseReleaseFsApi:
 
         return msgs
 
-    def get_or_create_sip_bag(self, bagit_info):
+    def get_or_create_sip_bag(self, bagit_info=None):
         logger.info("creating bagit metadata")
         sip_dir = str(self.sip_dir)
-        try:
-            bag = fs.make_bag(sip_dir, bagit_info)
-            bag.save(manifests=True)
-        except RuntimeError as e:
-            # FIXME: is this still needed?
-            # Temporary hack to get around a bagit error that changes
-            # the working directory
-            logger.exception(e)
-            logger.info("creating bagit metadata failed. moving on")
-            logger.info("moved to wrong directory: %s", os.getcwd())
-            os.chdir('/code')
-            logger.info("reset working directory to: %s", os.getcwd())
+        bag = fs.make_bag(sip_dir, bagit_info)
+        bag.save(manifests=True)
+        return bag
 
     def build_sip(self, originals_dir: Optional[str] = None):
         logger.info("building sip")
