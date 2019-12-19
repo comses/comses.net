@@ -372,7 +372,7 @@ class CodebaseReleaseFsApi:
 
     @property
     def codemeta_path(self):
-        return self.sip_dir.joinpath('codemeta.json')
+        return self.sip_contents_dir.joinpath('codemeta.json')
 
     @property
     def sip_contents_dir(self):
@@ -466,6 +466,7 @@ class CodebaseReleaseFsApi:
         return self.codemeta.to_json()
 
     def build_published_archive(self, force=False):
+        self.create_or_update_codemeta(force=force)
         self.get_or_create_sip_bag(self.bagit_info)
         self.build_aip()
         self.build_archive(force=force)
