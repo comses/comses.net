@@ -370,8 +370,8 @@ class CodebaseReleaseFsApi:
         return self.rootdir.joinpath('sip')
 
     @property
-    def sip_codemeta(self):
-        return self.sip_dir.joinpath('codemeta.json')
+    def codemeta_path(self):
+        return self.aip_dir.joinpath('codemeta.json')
 
     @property
     def sip_contents_dir(self):
@@ -425,11 +425,7 @@ class CodebaseReleaseFsApi:
 
     def initialize(self):
         sip_dir = self.sip_dir
-        if not self.sip_codemeta.exists():
-            os.makedirs(str(sip_dir), exist_ok=True)
-            # touch a codemeta.json file in the sip_dir so make_bag has something to
-            self.create_or_update_codemeta()
-            fs.make_bag(str(sip_dir), {})
+        os.makedirs(str(sip_dir), exist_ok=True)
 
     def create_or_update_codemeta(self, force=False):
         """
@@ -437,7 +433,7 @@ class CodebaseReleaseFsApi:
         :param metadata: an optional dictionary with codemeta properties
         :return:
         """
-        path = self.sip_codemeta
+        path = self.codemeta_path
         if force or not path.exists():
             with path.open(mode='w', encoding='utf-8') as codemeta_out:
                 json.dump(self.codemeta.to_dict(), codemeta_out)
@@ -456,7 +452,7 @@ class CodebaseReleaseFsApi:
 
     @property
     def codemeta_uri(self):
-        return self.sip_codemeta.relative_to(settings.LIBRARY_ROOT)
+        return self.codemeta_path.relative_to(settings.LIBRARY_ROOT)
 
     @property
     def archive_uri(self):
@@ -563,6 +559,7 @@ class CodebaseReleaseFsApi:
     def get_or_create_sip_bag(self, bagit_info):
         logger.info("creating bagit metadata")
         try:
+            fs.make_bag(str(self.sip_dir), {})
             bag = bagit.Bag(str(self.sip_dir))
             for k, v in bagit_info.items():
                 bag.info[k] = v
@@ -603,6 +600,8 @@ class CodebaseReleaseFsApi:
 
     def build_archive_at_dest(self, dest):
         logger.info("building archive")
+        # touch a codemeta.json file in the aip_dir 
+        self.create_or_update_codemeta()
         self.build_aip()
         if self.aip_contents_dir.exists():
             with zipfile.ZipFile(dest, 'w') as archive:
