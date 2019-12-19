@@ -7,7 +7,6 @@ import shutil
 
 import bagit
 import rarfile
-from PIL import Image
 from django.conf import settings
 from django.core.exceptions import SuspiciousFileOperation
 from django.core.files.images import ImageFile
@@ -39,7 +38,7 @@ def is_image(path: str):
     try:
         filetype = imghdr.what(path)
         return filetype in settings.ACCEPTED_IMAGE_TYPES
-    except:
+    except Exception:
         return None
 
 
@@ -108,9 +107,12 @@ def unrar(archive_path, dst_dir: str):
 
 def make_bag(path, info: dict):
     try:
-        return bagit.Bag(path)
+        bag = bagit.Bag(path)
+        if bag.is_valid():
+            return bag
     except bagit.BagError as e:
-        return bagit.make_bag(path, info)
+        logger.exception("unable to initialize bag, making a new one")
+    return bagit.make_bag(path, info)
 
 
 def clean_directory(path):

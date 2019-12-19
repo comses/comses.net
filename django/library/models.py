@@ -1145,10 +1145,7 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
             self.last_published_on = now
             self.live = True
             self.draft = False
-            fs_api = self.get_fs_api()
-            fs_api.get_or_create_sip_bag(self.bagit_info)
-            fs_api.build_aip()
-            fs_api.build_archive()
+            self.get_fs_api().build_published_archive(force=True)
             self.save()
             codebase = self.codebase
             codebase.latest_version = self

@@ -371,7 +371,7 @@ class CodebaseReleaseFsApi:
 
     @property
     def codemeta_path(self):
-        return self.aip_dir.joinpath('codemeta.json')
+        return self.sip_dir.joinpath('codemeta.json')
 
     @property
     def sip_contents_dir(self):
@@ -425,7 +425,8 @@ class CodebaseReleaseFsApi:
 
     def initialize(self):
         sip_dir = self.sip_dir
-        os.makedirs(str(sip_dir), exist_ok=True)
+        if not sip_dir.exists():
+            os.makedirs(sip_dir, exist_ok=True)
 
     def create_or_update_codemeta(self, force=False):
         """
@@ -437,12 +438,16 @@ class CodebaseReleaseFsApi:
         if force or not path.exists():
             with path.open(mode='w', encoding='utf-8') as codemeta_out:
                 json.dump(self.codemeta.to_dict(), codemeta_out)
-            self.build_archive(force=True)
             return True
         return False
 
     def get_codemeta_json(self):
         return self.codemeta.to_json()
+
+    def build_published_archive(self, bagit_info, force=True):
+        self.get_or_create_sip_bag(bagit_info)
+        self.build_aip()
+        self.build_archive(force=force)
 
     def build_review_archive(self):
         self.create_or_update_codemeta(force=True)
@@ -558,14 +563,13 @@ class CodebaseReleaseFsApi:
 
     def get_or_create_sip_bag(self, bagit_info):
         logger.info("creating bagit metadata")
+        sip_dir = str(self.sip_dir)
         try:
-            fs.make_bag(str(self.sip_dir), {})
-            bag = bagit.Bag(str(self.sip_dir))
-            for k, v in bagit_info.items():
-                bag.info[k] = v
+            bag = fs.make_bag(sip_dir, bagit_info)
             bag.save(manifests=True)
         except RuntimeError as e:
-            # Temporary hack to get araound a bagit error that changes
+            # FIXME: is this still needed?
+            # Temporary hack to get around a bagit error that changes
             # the working directory
             logger.exception(e)
             logger.info("creating bagit metadata failed. moving on")
@@ -600,8 +604,6 @@ class CodebaseReleaseFsApi:
 
     def build_archive_at_dest(self, dest):
         logger.info("building archive")
-        # touch a codemeta.json file in the aip_dir 
-        self.create_or_update_codemeta()
         self.build_aip()
         if self.aip_contents_dir.exists():
             with zipfile.ZipFile(dest, 'w') as archive:
