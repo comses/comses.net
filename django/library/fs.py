@@ -12,7 +12,6 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import Optional
 
-import bagit
 import rarfile
 from django.conf import settings
 from django.core.files.storage import FileSystemStorage
@@ -427,6 +426,7 @@ class CodebaseReleaseFsApi:
         sip_dir = self.sip_dir
         if not sip_dir.exists():
             os.makedirs(sip_dir, exist_ok=True)
+            fs.make_bag(str(sip_dir), {})
 
     def create_or_update_codemeta(self, force=False):
         """
