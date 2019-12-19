@@ -8,18 +8,12 @@ import shutil
 import bagit
 import rarfile
 from django.conf import settings
-from django.core.exceptions import SuspiciousFileOperation
 from django.core.files.images import ImageFile
 from wagtail.images.models import Image
 
 logger = logging.getLogger(__name__)
 
-
-def is_subpath(basepath: pathlib.Path, path: pathlib.Path):
-    if basepath not in path.parents:
-        raise SuspiciousFileOperation(
-            'The joined path ({}) is located outside of the base path '
-            'component ({})'.format(str(path), str(basepath)))
+SYSTEM_FILES = ('__macosx', '.ds_store', '.svn', '.git', '.hg', 'thumbs.db', 'cvs', '.trashes')
 
 
 def is_archive(path: str):
@@ -57,9 +51,6 @@ def is_media(path: str):
         except IOError:
             logger.exception("Path was not an image")
     return None
-
-
-SYSTEM_FILES = ('__macosx', '.ds_store', '.svn', '.git', '.hg', 'thumbs.db', 'cvs', '.trashes')
 
 
 def has_system_files(path: str) -> bool:
@@ -106,16 +97,15 @@ def unrar(archive_path, dst_dir: str):
 
 
 def make_bag(path, info: dict=None):
-    if info is None:
-        info = {}
+    # first check if there's already a bag at this path - if so, use it.
     try:
-        bag = bagit.Bag(path)
-        if bag.is_valid():
-            return bag
-        else:
-            logger.exception("Invalid bag at path %s - trying to create a new one", path)
+        return bagit.Bag(path)
     except bagit.BagError as e:
         logger.info("unable to initialize bag at %s - making a new one", path)
+
+    # unable to create a bag from an existing bag
+    if info is None:
+        info = {}
     return bagit.make_bag(path, info)
 
 

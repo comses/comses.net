@@ -583,8 +583,8 @@ class CodebaseReleaseFsApi:
         return msgs
 
     def get_or_create_sip_bag(self, bagit_info=None):
-        logger.info("creating bagit metadata")
         sip_dir = str(self.sip_dir)
+        logger.info("creating bagit metadata at %s", sip_dir)
         bag = fs.make_bag(sip_dir, bagit_info)
         bag.save(manifests=True)
         return bag
