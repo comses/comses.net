@@ -636,6 +636,7 @@ class CodebaseReleaseFsApi:
 
     def rebuild(self):
         msgs = self.build_sip()
+        self.create_or_update_codemeta(force=True)
         self.build_archive(force=True)
         return msgs
 
