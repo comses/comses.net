@@ -40,6 +40,7 @@
     "@types/jest": "^23.1.4",
     "@types/jquery": "^3.3.29",
     "@types/lodash": "^4.14.123",
+    "@types/node": "12.12.22",
     "@vue/cli-plugin-babel": "^3.5.0",
     "@vue/cli-plugin-e2e-cypress": "^3.5.0",
     "@vue/cli-plugin-typescript": "^3.5.0",
