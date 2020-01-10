@@ -7,10 +7,10 @@ from . import views
 app_name = 'home'
 
 router = SimpleRouter()
-router.register(r'tags', views.TagListView, base_name='tag')
-router.register(r'events', views.EventViewSet, base_name='event')
-router.register(r'jobs', views.JobViewSet, base_name='job')
-router.register(r'users', views.ProfileViewSet, base_name='profile')
+router.register(r'tags', views.TagListView, basename='tag')
+router.register(r'events', views.EventViewSet, basename='event')
+router.register(r'jobs', views.JobViewSet, basename='job')
+router.register(r'users', views.ProfileViewSet, basename='profile')
 
 # FIXME: replace re_path with https://docs.djangoproject.com/en/2.0/ref/urls/#django.urls.path matching, e.g., <int:pk>
 

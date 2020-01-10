@@ -16,13 +16,13 @@ router.register(r'reviewers', views.PeerReviewReviewerListView),
 router.register(r'reviews/(?P<slug>[\da-f\-]+)/editor/invitations', views.PeerReviewInvitationViewSet),
 router.register(r'reviews/(?P<slug>[\da-f\-]+)/editor/feedback', views.PeerReviewFeedbackViewSet),
 router.register(views.CodebaseReleaseFilesSipViewSet.get_url_matcher(),
-                views.CodebaseReleaseFilesSipViewSet, base_name='codebaserelease-sip-files')
+                views.CodebaseReleaseFilesSipViewSet, basename='codebaserelease-sip-files')
 router.register(views.CodebaseReleaseFilesOriginalsViewSet.get_url_matcher(),
-                views.CodebaseReleaseFilesOriginalsViewSet, base_name='codebaserelease-original-files')
-router.register(r'codebase-release', views.CodebaseReleaseShareViewSet, base_name='codebaserelease-share')
+                views.CodebaseReleaseFilesOriginalsViewSet, basename='codebaserelease-original-files')
+router.register(r'codebase-release', views.CodebaseReleaseShareViewSet, basename='codebaserelease-share')
 
 if settings.DEPLOY_ENVIRONMENT == Environment.DEVELOPMENT:
-    router.register(r'test_codebases', views.DevelopmentCodebaseDeleteView, base_name='test_codebases')
+    router.register(r'test_codebases', views.DevelopmentCodebaseDeleteView, basename='test_codebases')
 
 urlpatterns = [
     path('reviews/', TemplateView.as_view(template_name='library/review/peer-review-overview.jinja'), name='peer-review-overview'),
