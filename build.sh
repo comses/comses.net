@@ -6,6 +6,8 @@ set -o errexit
 set -o pipefail
 set -o nounset
 
+export LC_CTYPE=C
+
 # Adapted from http://lukeswart.net/2016/03/lets-deploy-part-1/
 
 function clean()
