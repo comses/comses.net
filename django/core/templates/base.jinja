@@ -183,7 +183,7 @@
     {% with social_settings=settings("core.SocialMediaSettings", use_default_site=True) %}
         <footer class="footer">
             <div class="container">
-                {% if not user.is_authenticated or not user.member_profile.full_member %}
+                {% if not user.is_authenticated -%}
                     <div class='row'>
                         <div class='col'>
                         </div>
@@ -193,7 +193,17 @@
                         <div class='col'>
                         </div>
                     </div>
-                {% endif %}
+                {% elif not user.member_profile.full_member %}
+                    <div class='row'>
+                        <div class='col'>
+                        </div>
+                        <div class='col text-center'>
+                            <a class='btn btn-primary' href='{{ profile_url }}'>Become a CoMSES Full Member</a>
+                        </div>
+                        <div class='col'>
+                        </div>
+                    </div>
+                {%- endif %}
                 <div class="row py-0">
                     <div class="col-xs-12 col-lg-3">
                         <ul class="social-media">
