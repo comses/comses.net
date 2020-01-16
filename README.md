@@ -9,9 +9,15 @@ Improvements to the computational model library are in-progress, with archived c
 
 Developer build instructions:
 -------------
-Run `bash build.sh` to build the Docker image, generate secrets, and a symlinked `docker-compose.yml` file. Then run `docker-compose up`. 
+Run `./build.sh` to build the Docker image, generate secrets, and a symlinked `docker-compose.yml` file. Then run `docker-compose up -d` to start all containers. 
 
-A debug setup exists in the `deploy/debug` folder. Files in the debug will need to be brough to this directory to work and the settings file will have to switched to the debug settings file.
+The `build.sh` script relies on
+[envsubst](https://www.gnu.org/software/gettext/manual/html_node/envsubst-Invocation.html) - to install this properly on
+OS X you may need to install [macports](https://www.macports.org/) or use [homebrew](https://brew.sh/) and `brew install
+gettext`.
+
+A debug setup exists in the `deploy/debug` folder. Files in the debug will need to be brought to this directory to work and the settings file will have to switched to the debug settings file.
+
 
 ## Import metadata and codebases
 Extract JSON data files from https://github.com/comses/docker-openabm and place them in a directory accessible to the `cms` container along with a `models/` directory pulled from the `openabm-files` root. Then run `docker-compose exec cms bash` to enter the `cms` container and run `invoke import_all` to migrate the Drupal data into Django and copy the model library filesystem data into the new archival repository format.
