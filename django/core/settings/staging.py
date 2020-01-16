@@ -27,6 +27,7 @@ ALLOWED_HOSTS = ['.comses.net']
 
 # security settings from manage.py check --deploy
 # https://docs.djangoproject.com/en/2.0/ref/settings/#secure-proxy-ssl-header
+BASE_URL = 'https://test.comses.net'
 SILENCED_SYSTEM_CHECKS = ['captcha.recaptcha_test_key_error']
 
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
