@@ -1042,10 +1042,14 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
         return Codebase.format_doi_url(self.doi)
 
     @property
+    def comses_permanent_url(self):
+        return f'{settings.BASE_URL}{self.get_absolute_url()}'
+
+    @property
     def permanent_url(self):
         if self.doi:
             return self.doi_url
-        return '{0}{1}'.format(settings.BASE_URL, self.get_absolute_url())
+        return self.comses_permanent_url
 
     @property
     def citation_text(self):

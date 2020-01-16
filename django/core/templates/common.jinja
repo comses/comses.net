@@ -202,9 +202,13 @@
     <div id="discourse-comments"></div>
     <script>
         var canonicalUrl = window.location.origin + window.location.pathname;
-        var canonicalUrlElement = document.querySelector("link[rel='canonical']");
+        var canonicalUrlElement = document.getElementById('discourseEmbedUrl');
         if (canonicalUrlElement != null) {
             canonicalUrl = canonicalUrlElement.href;
+        }
+        else {
+            // remove duplicate forward slashes
+            canonicalUrl = canonicalUrl.replace(/([^:]\/)\/+/g, "$1");
         }
         window.DiscourseEmbed = {
             discourseUrl: "{{ DISCOURSE_BASE_URL }}/",
