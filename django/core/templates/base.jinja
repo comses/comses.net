@@ -45,7 +45,7 @@
                            href="#"
                            aria-haspopup="true"
                            aria-expanded="false">
-                            <span class="fa fa-rss"></span>
+                            <span class="fas fa-rss"></span>
                             Subscribe
                         </a>
                         <div class="dropdown-menu"
@@ -69,7 +69,7 @@
                                aria-haspopup="true"
                                aria-expanded="false"
                             >
-                                <span class="fa fa-user-o"></span>
+                                <span class="fas fa-user"></span>
                                 {{ user.username }}
                                 {# FIXME: this should be cached instead #}
                                 {% if user.emailaddress_set.filter(verified=False).exists() %}
@@ -80,12 +80,12 @@
                             <div class="dropdown-menu"
                                 aria-labeledby="userDropdownMenuLink">
                                 <a class="dropdown-item" href="{{ profile_url }}">
-                                    <i class="fa fa-user-o"></i>
+                                    <i class="fas fa-user-edit"></i>
                                     Your Account
                                 </a>
                                 {% if user.has_perm('library.change_peerreview') %}
                                 <a class="dropdown-item" href="{{ url('library:peer-review-dashboard') }}">
-                                    <i class="fa fa-flask"></i>
+                                    <i class="fas fa-flask"></i>
                                     Manage Peer Reviews
                                 </a>
                                 {% endif %}
@@ -102,7 +102,7 @@
                                 <a class="dropdown-item"
                                    onclick='return submitLogout();'
                                    href="{{ logout_url }}">
-                                    <i class='fa fa-sign-out'></i>
+                                    <i class='fas fa-sign-out-alt'></i>
                                     Sign Out
                                 </a>
                             </div>
@@ -111,8 +111,8 @@
                         <li class="nav-item">
                             <a class="nav-link"
                                 href="{{ login_url }}?next={{ request.path }}">
+                                <i class="fas fa-sign-in-alt"></i>
                                 Sign In
-                                <i class="fa fa-sign-in"></i>
                             </a>
                         </li>
                         <li class="nav-item">
@@ -144,7 +144,7 @@
                     <li class="nav-item py-0">
                         <a href="{{ DISCOURSE_BASE_URL }}" class="nav-link">
                                 Forums
-                            <i class="fa fa-external-link"></i>
+                            <i class="fas fa-external-link-alt"></i>
                         </a>
                     </li>
                     <li class="nav-item py-0">
@@ -158,7 +158,7 @@
                            data-toggle="dropdown"
                            aria-expanded="false"
                            aria-haspopup="true">
-                            <i class="fa fa-search"></i>
+                            <i class="fas fa-search"></i>
                         </a>
                         <div id="header-search-form" class="p-2 dropdown-menu" aria-labelledby="search-button">
                             <form method="get" action="/search/">
@@ -211,24 +211,24 @@
                                 <a href="https://twitter.com/{{ social_settings.twitter_account }}"
                                    title="Follow us at @{{ social_settings.twitter_account }}" target="_blank">
                                 <span class="fa-stack">
-                                    <i class="fa fa-circle fa-stack-2x"></i>
-                                    <i class="fa fa-twitter fa-inverse fa-stack-1x"></i>
+                                    <i class="fas fa-circle fa-stack-2x"></i>
+                                    <i class="fab fa-twitter fa-inverse fa-stack-1x"></i>
                                 </span>
                                 </a>
                             </li>
                             <li>
                                 <a href="{{ social_settings.mailing_list_url }}" title="Email Sign Up" target="_blank">
                                 <span class="fa-stack">
-                                    <i class="fa fa-circle fa-stack-2x"></i>
-                                    <i class="fa fa-envelope fa-inverse fa-stack-1x"></i>
+                                    <i class="fas fa-circle fa-stack-2x"></i>
+                                    <i class="fas fa-envelope fa-inverse fa-stack-1x"></i>
                                 </span>
                                 </a>
                             </li>
                             <li>
                                 <a href='{{ social_settings.youtube_url }}' title='YouTube Channel' target='_blank'>
                                 <span class='fa-stack'>
-                                    <i class='fa fa-circle fa-stack-2x'></i>
-                                    <i class='fa fa-youtube-play fa-inverse fa-stack-1x'></i>
+                                    <i class='fas fa-circle fa-stack-2x'></i>
+                                    <i class='fab fa-youtube fa-inverse fa-stack-1x'></i>
                                 </span>
                                 </a>
                             </li>
@@ -276,8 +276,8 @@
                 <small>
                     <a href="https://github.com/{{ social_settings.github_account }}" title="GitHub" target="_blank">
             <span class="fa-stack">
-                <i class="fa fa-circle fa-stack-2x"></i>
-                <i class="fa fa-code-fork fa-inverse fa-stack-1x"></i>
+                <i class="fas fa-circle fa-stack-2x"></i>
+                <i class="fas fa-code-fork fa-inverse fa-stack-1x"></i>
             </span>
                     </a>
                     comses.net build: {{ release_version() }}
@@ -391,7 +391,7 @@
 {% endblock introduction_section %}
 {% if not is_production() %}
     <div class='alert alert-danger mt-3'>
-        <i class='fa fa-warning fa-2x'></i>
+        <i class='fas fa-warning fa-2x'></i>
         You are currently accessing a <b>test version of the comses.net website</b>. Information that you
         view or store here will <b>not be preserved</b> and may not be consistent.
     </div>
@@ -400,7 +400,7 @@
     <section class='messages'>
         {% for message in messages %}
             <div class='{{ message.tags }}'>
-                <i class='fa fa-info-circle'></i> {{ message }}
+                <i class='fas fa-info-circle'></i> {{ message }}
             </div>
         {% endfor %}
     </section>

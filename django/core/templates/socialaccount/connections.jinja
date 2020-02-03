@@ -12,8 +12,8 @@
     <hr>
     <p>
     Connecting your account with GitHub or ORCID carries additional benefits - you will have access to private GitHub
-    repositories (<em>eventually! currently in development</em>) and your published models with DOIs will be
-    automatically associated with your ORCID record.
+    repositories and your published models with DOIs will be
+    automatically associated with your ORCID record (<em>currently in development</em>).
 {% if form.accounts %}
     <h3>{% trans %}Your authorized external accounts{% endtrans %}</h3>
 
@@ -30,7 +30,7 @@
                         <div class='form-check'>
                             <label class='form-check-label' for="id_account_{{ base_account.id }}">
                                 <input class='form-check-input' id="id_account_{{ base_account.id }}" type="radio" name="account" value="{{ base_account.id }}"/>
-                                <span class="fa fa-{{ base_account.provider }} {{ account.get_brand().id }}"></span> {{account.get_brand().name}} -
+                                <span class="fab fa-{{ base_account.provider }} {{ account.get_brand().id }}"></span> {{account.get_brand().name}} -
                                 <a target='_blank' href='{{ account.get_profile_url() }}'>{{ account }}</a>
                             </label>
                         </div>

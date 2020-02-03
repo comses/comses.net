@@ -86,20 +86,20 @@
                          data-share-url="{{ request.build_absolute_uri(release.share_url) }}">
                         <div class='input-group-prepend'>
                             <span class='btn input-group-text'>
-                                <i class='fa fa-retweet' @click="regenerateShareUuid"></i>
+                                <i class='fab fa-retweet' @click="regenerateShareUuid"></i>
                             </span>
                         </div>
                         <input id='release-share-url' readonly class='form-control normal-readonly' :value="share_url">
                         <div class='input-group-append'>
                             <span class='btn btn-clipboard input-group-text' data-clipboard-target='#release-share-url'>
-                                <i class='fa fa-copy'></i>
+                                <i class='fas fa-copy'></i>
                             </span>
                         </div>
                     </div>
                     <small class='text-muted'>
                         Use this link to share this release privately with others. Anyone with this URL will be able to
                         access this release. Replace the private link with a new link by pressing
-                        <span class="fa fa-retweet"></span>
+                        <span class="fab fa-retweet"></span>
                     </small>
                 {% else %}
                     Hold on! This model is unpublished. Perhaps the authors are not ready for it to be cited yet.
@@ -110,7 +110,7 @@
     {% if codebase.is_replication %}
         <div class='card-metadata'>
             <div class='card-body'>
-                <h2 class='card-title'><i class='fa fa-share-alt'></i> Replication of a previously described model</h2>
+                <h2 class='card-title'><i class='fas fa-share-alt'></i> Replication of a previously described model</h2>
                 <p class='card-text'>
                     {{ codebase.replication_text|markdown }}
                 </p>
@@ -120,7 +120,7 @@
     {% if codebase.associated_publication_text %}
         <div class='card-metadata'>
             <div class='card-body'>
-                <h2 class='card-title'><i class='fa fa-book'></i> Associated Publication(s)</h2>
+                <h2 class='card-title'><i class='fas fa-book'></i> Associated Publication(s)</h2>
                 <p class='card-text'>
                     {{ codebase.associated_publication_text|markdown }}
                 </p>
@@ -130,7 +130,7 @@
     {% if codebase.references_text %}
         <div class='card-metadata'>
             <div class='card-body'>
-                <h2 class='card-title'><i class='fa fa-book'></i> References</h2>
+                <h2 class='card-title'><i class='fas fa-book'></i> References</h2>
                 <p class='card-text'>
                 {{ codebase.references_text|markdown }}
                 </p>
@@ -185,7 +185,7 @@
                             {% if has_change_perm %}
                                 <td>
                                     <a href="{{ related_release.get_edit_url() }}">
-                                        <span class="fa fa-edit"></span>
+                                        <span class="fas fa-edit"></span>
                                     </a>
                                 </td>
                             {% endif %}
@@ -234,7 +234,7 @@
 	    <p>No assigned DOI</p>
                 {% if has_change_perm %}
                     <div class='text-muted small'>
-                    <i class='text-primary fa fa-exclamation-triangle'></i>
+                    <i class='text-primary fas fa-exclamation-triangle'></i>
                         We assign DOIs to <a href='{{ url("library:peer-review-overview") }}'>peer reviewed models</a>. If you would like a DOI and your
                     model has not been reviewed yet, please request a peer review by clicking the "Request peer review"
                     button below. If your model has already been reviewed and has not yet been assigned a DOI, please 
@@ -307,7 +307,7 @@
                         <div class='modal-content'>
                             <div class='modal-header'>
                                 <h4 class='modal-title text-danger' id='confirm-peer-review-label'>
-                                    <i class='fa fa-exclamation-triangle fa-2x'></i> Peer Review Request: Important Reminders!</h4>
+                                    <i class='fas fa-exclamation-triangle fa-2x'></i> Peer Review Request: Important Reminders!</h4>
                                 <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                                     <span aria-hidden="true">&times;</span>
                                 </button>

@@ -8,7 +8,7 @@
 
 {% set sentry_id=request.sentry.id if request.sentry else ''%}
 {% block content %}
-    <h1><i class='text-gray fa fa-fire-extinguisher fa-3x'></i>{{ description }} {{ status }}<i class='text-danger fa fa-bug fa-3x'></i></h1>
+    <h1><i class='text-gray fas fa-fire-extinguisher fa-3x'></i>{{ description }} {{ status }}<i class='text-danger fas fa-bug fa-3x'></i></h1>
 
     <p>If you're curious about what the status code {{ status }} means please see <a href="https://en.wikipedia.org/wiki/List_of_HTTP_status_codes">Wikipedia</a></p>
     <p>

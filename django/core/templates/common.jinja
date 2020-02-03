@@ -4,9 +4,9 @@
 
 {% macro checkmark(value) %}
 {% if value %}
-    <span class='text-success fa fa-check-circle'></span>
+    <span class='text-success far fa-check-circle'></span>
 {% else %}
-    <span class='text-danger fa fa-times-circle'></span>
+    <span class='text-danger far fa-times-circle'></span>
 {%endif %}
 {% endmacro %}
 
@@ -48,32 +48,32 @@
             <li>
                 <a href='https://linkedin.com' title='LinkedIn' target='_blank'>
                     <span class='fa-stack'>
-                        <i class='fa fa-circle fa-stack-2x'></i>
-                        <i class='fa fa fa-linkedin fa-inverse fa-stack-1x'></i>
+                        <i class='fas fa-circle fa-stack-2x'></i>
+                        <i class='fab fa fa-linkedin fa-inverse fa-stack-1x'></i>
                     </span>
                 </a>
             </li>
             <li>
                 <a href='https://facebook.com' title='facebook' target='_blank'>
                     <span class='fa-stack'>
-                        <i class='fa fa-circle fa-stack-2x'></i>
-                        <i class='fa fa-facebook fa-inverse fa-stack-1x'></i>
+                        <i class='fas fa-circle fa-stack-2x'></i>
+                        <i class='fab fa-facebook fa-inverse fa-stack-1x'></i>
                     </span>
                 </a>
             </li>
             <li>
                 <a href='https://twitter.com' title='Twitter' target='_blank'>
                     <span class='fa-stack'>
-                        <i class='fa fa-circle fa-stack-2x'></i>
-                        <i class='fa fa-twitter fa-inverse fa-stack-1x'></i>
+                        <i class='fas fa-circle fa-stack-2x'></i>
+                        <i class='fab fa-twitter fa-inverse fa-stack-1x'></i>
                     </span>
                 </a>
             </li>
             <li>
                 <a href='#' title='Email'>
                     <span class='fa-stack'>
-                        <i class='fa fa-circle fa-stack-2x'></i>
-                        <i class='fa fa-envelope fa-inverse fa-stack-1x'></i>
+                        <i class='fas fa-circle fa-stack-2x'></i>
+                        <i class='fas fa-envelope fa-inverse fa-stack-1x'></i>
                     </span>
                 </a>
             </li>
@@ -132,7 +132,7 @@
         <div class='tag-list'>
             {% if list_state.search_terms %}
                 Searching on {% for term in list_state.search_terms %} <span class='tag'>{{ term }}</span>{% endfor %}
-                <a class='text-danger' href='{{url(url_name)}}'><span class='fa fa-times'></span> clear</a>,
+                <a class='text-danger' href='{{url(url_name)}}'><span class='fas fa-times'></span> clear</a>,
             {% endif %}
             displaying {{ list_state.num_results }} of <strong>{{ list_state.count }}</strong> results
         </div>
@@ -179,8 +179,7 @@
 {% endmacro %}
 
 {% macro render_social_profile_url(request, provider_name, profile_url, connect=False) %}
-{# FIXME: simplify this when we upgrade to fontawesome 5 https://github.com/comses/comses.net/issues/261 #}
-{% with provider_icon_class="text-orcid fab fab-orcid" if provider_name == "orcid" else "text-gray fa fa-" ~ provider_name %}
+{% with provider_icon_class="text-gray fab fa-" ~ provider_name %}
     {% if profile_url %}
         <a target='_blank' href='{{ profile_url }}'>
             <i class='{{ provider_icon_class }}'></i> {{ profile_url }}
@@ -226,7 +225,7 @@
 {% else %}
     Discourse comments are disabled.
     {% if not is_public %}
-        <em><span class='fa fa-lock'></span> (this page is private)</em>
+        <em><span class='fas fa-lock'></span> (this page is private)</em>
     {% else %}
         Currently in <em><mark>{{ deploy_environment() }}</mark></em> mode.
     {% endif %}
