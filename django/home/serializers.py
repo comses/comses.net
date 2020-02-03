@@ -111,7 +111,13 @@ class MemberProfileSerializer(serializers.ModelSerializer):
                 raise DrfValidationError({'email': e.messages})
 
             sender = self.context.get('request')
-            EmailAddress.objects.get(primary=True, user=user).change(sender, new_email, confirm=True)
+
+            if EmailAddress.objects.filter(primary=True, user=user).exists():
+                EmailAddress.objects.get(primary=True, user=user).change(sender, new_email, confirm=True)
+            else:
+                email_address = EmailAddress.objects.create(primary=True, user=user, email=new_email)
+                email_address.send_confirmation(sender)
+
             logger.warning('email change for user [pk: %s] %s -> %s, awaiting confirmation.',
                            user.id, user.email, new_email)
 
