@@ -42,7 +42,7 @@ type UploadInfo = UploadSuccess | UploadProgress | UploadFailure;
             </div>
             <div class="alert alert-danger alert-dismissable" v-if="hasErrors">
                 <button class="close" aria-label="Close" @click="clearUploadErrors">
-                    <span aria-hidden="true"><span class="fa fa-close"></span></span>
+                    <span aria-hidden="true"><span class="fas fa-window-close"></span></span>
                 </button>
                 <div v-if="fileUploadErrorMsgs.detail">
                    {{ fileUploadErrorMsgs.detail }}
@@ -59,7 +59,7 @@ type UploadInfo = UploadSuccess | UploadProgress | UploadFailure;
             <div class="list-group-item d-flex justify-content-between align-items-center" v-for="file in originals">
                 {{ file.name }}
                 <button class="btn btn-sm btn-danger pull-right" @click="deleteFile(file.identifier)">
-                    <span class="fa fa-remove"></span>
+                    <span class="fas fa-trash-alt"></span>
                 </button>
             </div>
         </div>

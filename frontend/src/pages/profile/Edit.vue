@@ -45,12 +45,12 @@
           <li class="list-group-item">
             <span v-if="github_url">
               <a :href="github_url">
-                <span class="text-gray fa fa-github"></span> {{ github_url }}
+                <span class="text-gray fab fa-github"></span> {{ github_url }}
               </a>
             </span>
             <span v-else>
               <a title="github" href="/accounts/github/login/?process=connect">
-                <span class="text-gray fa fa-github"></span> Connect your GitHub account
+                <span class="text-gray fab fa-github"></span> Connect your GitHub account
               </a>
             </span>
           </li>

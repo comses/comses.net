@@ -208,7 +208,7 @@ class EditContributor extends createFormValidator(contributorSchema) {
                         </multiselect>
                     </div>
                     <div class="col-3">
-                        <button class="btn btn-block btn-primary" @click="$emit('editContributor', state.contributor)"><i class='fa fa-plus'></i> Add a new contributor</button>
+                        <button class="btn btn-block btn-primary" @click="$emit('editContributor', state.contributor)"><i class='fas fa-plus-square'></i> Add a new contributor</button>
                     </div>
                 </div>
                 <div class="invalid-feedback" v-show="errors.contributor">
@@ -230,7 +230,7 @@ class EditContributor extends createFormValidator(contributorSchema) {
             </div>
             <div class='d-flex justify-content-end'>
               <button type="button" class="btn btn-secondary" @click="cancel" v-show="hasEdits">Cancel</button>
-              <button type="button" class="ml-auto btn btn-primary" @click="save"><i class='fa fa-user-plus'></i> Register citable contributor</button>
+              <button type="button" class="ml-auto btn btn-primary" @click="save"><i class='fas fa-user-plus'></i> Register citable contributor</button>
             </div>
         </div>
     </div>`,
@@ -330,9 +330,11 @@ class ContributorResponseHandler extends HandlerShowSuccessMessage {
     template: `<div>
         <p class='mt-3'>
             Please list the contributors that should be included in a citation for this software release. Ordering is
-            important, as is the role of the contributor. You can drag and drop release contributors via the
-            <i class='fa fa-exchange'></i> button to change the order in which they appear, edit them <i class='fa fa-edit'></i>, or
-            remove them <i class='fa fa-remove'></i>.
+            important, as is the role of the contributor. You can change contributor ordering by using
+            the <i class='fas fa-exchange-alt'></i> to drag and drop contributors. Editing 
+            <i class='fas fa-edit'></i> an existing contributor will update the form above the "Current Release
+            Contributors" area - you can make changes there and then click "Save". You can remove a contributor entirely
+            by clicking the <i class='fas fa-trash'></i> button and then Saving.
         </p>
         <p>By default, we will always add the submitter (you) as a release contributor. There must be at least one
         contributor for a given release. Make sure you click "Save" after you're done making changes. Unsaved release
@@ -341,8 +343,8 @@ class ContributorResponseHandler extends HandlerShowSuccessMessage {
         <div class='mt-2'>
             You can add new contributors via the form below. If you can't find an existing Contributor in our system,
             you can add a new one via the
-            <button class='btn btn-primary btn-sm'><i class='fa fa-plus'></i></button> button. After you've selected a contributor, click the
-            <button class='btn btn-sm btn-primary'><i class='fa fa-user-plus'></i> Register</button> button to register
+            <button class='btn btn-primary btn-sm'><i class='fas fa-plus-square'></i></button> button. After you've selected a contributor, click the
+            <button class='btn btn-sm btn-primary'><i class='fas fa-user-plus'></i> Register</button> button to register
             them as a cited contributor to this release.
         </div>
         <c-edit-release-contributor :releaseContributor="releaseContributor"
@@ -358,15 +360,15 @@ class ContributorResponseHandler extends HandlerShowSuccessMessage {
             <ul v-for="releaseContributor in state" :key="releaseContributor._id" class="list-group">
                 <li :class="['list-group-item d-flex justify-content-between', { 'list-group-item-warning': releaseContributor.edited}]">
                     <div>
-                        <span class="btn btn-sm fa fa-exchange"></span>
+                        <span class="btn btn-sm fas fa-exchange-alt"></span>
                         {{ releaseContributorLabel(releaseContributor) }}
                     </div>
                     <div v-show="matchesState(['list'])">
                         <span class="btn btn-sm" @click="editReleaseContributor(releaseContributor)">
-                            <span class="fa fa-edit"></span>
+                            <span class="fas fa-edit"></span>
                         </span>
                         <span class="btn btn-sm" @click="deleteReleaseContributor(releaseContributor._id)">
-                            <span class="fa fa-remove"></span>
+                            <span class="fas fa-trash"></span>
                         </span>
                     </div>
                 </li>

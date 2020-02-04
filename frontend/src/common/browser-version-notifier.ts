@@ -8,10 +8,10 @@ const MIN_CHROME_VERSION = 59;
     template: `<ul class="navbar-nav ml-auto">
         <li class="nav-item" v-if="!supported">
             <div class="alert alert-danger mb-0" v-if="browser">
-                <span class='fa fa-warning'></span> {{ browser_warnings[browser.name] }}
+                <span class='fas fa-exclamation-triangle'></span> {{ browser_warnings[browser.name] }}
             </div>
             <div class="alert alert-danger mb-0" v-else>
-                <span class='fa fa-warning'></span> Browser is unsupported. Some site functionality may not work.
+                <span class='fas fa-exclamation-triangle'></span> Browser is unsupported. Some site functionality may not work.
             </div>
         </li>
     </ul>`,

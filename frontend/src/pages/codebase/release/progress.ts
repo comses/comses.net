@@ -7,8 +7,8 @@ import {populateErrorsFromValidationError} from '@/pages/form';
 @Component({
     template: `<p class="card-text">
         {{ label }}:
-        <span v-if="check" class="fa fa-check text-success"></span>
-        <span v-else class="fa fa-times text-danger"></span>
+        <span v-if="check" class="fas fa-check text-success"></span>
+        <span v-else class="fas fa-times text-danger"></span>
     </p>`,
 
 })

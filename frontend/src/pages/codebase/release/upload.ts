@@ -23,10 +23,10 @@ interface Folder {
     name: 'c-file-tree',
     template: `<div>
         <div :style="indent">
-            <i class="fa fa-folder-o"></i> {{ directory.label }}
+            <i class="fas fa-folder-open"></i> {{ directory.label }}
             <div v-for="content in directory.contents">
                 <div v-if="content.contents === undefined" :style="indent">
-                    <i class="fa fa-file-o"></i> {{ content.label }}
+                    <i class="fas fa-file"></i> {{ content.label }}
                 </div>
                 <c-file-tree v-else :directory="content"></c-file-tree>
             </div>

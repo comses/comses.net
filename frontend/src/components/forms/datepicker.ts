@@ -9,7 +9,7 @@ import * as _ from 'lodash';
             <label :class="['form-control-label', requiredClass]">{{ label }}</label>
         </slot>
         <datepicker :bootstrap-styling="true" :value="dateValue" @input="updateDate" wrapper-class="comses-datepicker"
-        :format="format" :input-class="datepickerInputClass" clear-button-icon='fa fa-times' :clear-button="clearButton"
+        :format="format" :input-class="datepickerInputClass" clear-button-icon='fas fa-times' :clear-button="clearButton"
         :open-date="openDate" @cleared="cleared">
         </datepicker>
         <div v-if="isInvalid" class="invalid-feedback-always">{{ errorMessage }}</div>

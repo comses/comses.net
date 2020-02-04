@@ -67,7 +67,7 @@ export const schema = yup.object().shape({
             <multiselect v-model="license" label="name" track-by="name" placeholder="Type to find license" :options="licenseOptions">
                 <template slot="option" slot-scope="props">
                     <div>
-                         <a class='btn btn-sm btn-info' :href="props.option.url" target="_blank"><span class="fa fa-external-link"></span> view</a>
+                         <a class='btn btn-sm btn-info' :href="props.option.url" target="_blank"><span class="fas fa-external-link-alt"></span> view</a>
                          {{ props.option.name }}
                     </div>
                 </template>

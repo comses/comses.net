@@ -9,7 +9,7 @@ import {StatusMessages} from '@/store/common';
             <div v-for="m in messages" :class="m.classNames">
                 {{ m.message }}
                 <button type="button" class="close" data-dismiss="alert" aria-label="Close" @click="clear">
-                    <span aria-hidden="true" class="pull-right"><span class="fa fa-times"></span></span>
+                    <span aria-hidden="true" class="pull-right"><span class="fas fa-times"></span></span>
                 </button>
             </div>
         </div>
