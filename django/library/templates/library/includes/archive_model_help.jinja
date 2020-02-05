@@ -1,10 +1,31 @@
 <div class='alert alert-primary' role='alert'>
-    <h4 class='alert-heading'><i class='fas fa-question-circle'></i> Need help archiving a model?</h4>
+    <h4 class='alert-heading'>
+        <a class='btn btn-secondary' role='button' href='#collapseLibraryInfo' data-toggle='collapse' aria-expanded='false'
+            aria-controls='collapseLibraryInfo'><i class='fas fa-question-circle'></i>
+            about the model library
+        </a> Need help archiving a model?
+    </h4>
     <hr>
+    <div class='collapse' id='collapseLibraryInfo'>
+        <p>
+        CoMSES Net maintains cyberinfrastructure to foster <a href='https://www.nature.com/articles/sdata201618'>FAIR
+        data principles</a> for access to and (re)use of computational models. Model authors can publish their model
+        code in the Computational Model Library with documentation, metadata, and data dependencies and support these
+        FAIR data principles as well as best practices for software citation. Model authors can also request that their
+        model code be <a href='/reviews/'>peer reviewed</a> to receive a DOI. All users of models published
+        in the library must cite model authors when they use and benefit from their code. 
+        </p>
+    </div>
     <p>
     Please check out our 
     <a href='https://forum.comses.net/t/archiving-your-model-1-getting-started/7377'>model archive tutorial</a> or 
     <a href='{{ slugurl("contact") }}'>contact us</a> if you have any questions.
     </p>
+    <p class='mb-0 pb-0'>
+    We also maintain a <a href='https://catalog.comses.net'>curated database of over 7500 publications of
+    agent-based and individual based models</a> with additional metadata on availability of code and bibliometric
+    information on the landscape of ABM/IBM publications.
+    </p>
+
 </div>
 
