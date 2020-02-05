@@ -15,7 +15,6 @@ services:
     networks:
       - esnet
     environment:
-      - cluster.name=docker-cluster
       - bootstrap.memory_lock=true
       - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
     ulimits:
@@ -33,7 +32,7 @@ services:
       - IPC_LOCK
     volumes:
       - ./deploy/elasticsearch.conf.d/log4j2.properties:/usr/share/elasticsearch/config/log4j2.properties
-      - ./deploy/elasticsearch.conf.d/elasticsearch-dev.yml:/usr/share/elasticsearch/config/elasticsearch.yml
+      - ./deploy/elasticsearch.conf.d/elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml
       - esdata1:/usr/share/elasticsearch/data
 # FIXME: duplication bad
   elasticsearch2:
@@ -42,10 +41,9 @@ services:
     networks:
       - esnet
     environment:
-      - cluster.name=docker-cluster
       - bootstrap.memory_lock=true
       - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
-      - "discovery.zen.ping.unicast.hosts=elasticsearch"
+      - "discovery.seed_hosts=elasticsearch"
     ulimits:
       memlock:
         soft: -1
@@ -60,7 +58,7 @@ services:
     cap_add:
       - IPC_LOCK
     volumes:
-      - ./deploy/elasticsearch.conf.d/elasticsearch-dev.yml:/usr/share/elasticsearch/config/elasticsearch.yml
+      - ./deploy/elasticsearch.conf.d/elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml
       - ./deploy/elasticsearch.conf.d/log4j2.properties:/usr/share/elasticsearch/config/log4j2.properties
       - esdata2:/usr/share/elasticsearch/data
   ${DB_HOST}:
@@ -111,7 +109,7 @@ services:
       context: ./django
       args:
         REQUIREMENTS_FILE: requirements-dev.txt
-        UBUNTU_MIRROR: "nova.clouds.archive.ubuntu.com"
+        UBUNTU_MIRROR: "Compute.clouds.archive.ubuntu.com"
         RUN_SCRIPT: "./deploy/prod.sh"
     image: comses/cms:${RELEASE_VERSION}
     restart: always
