@@ -893,9 +893,11 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
         index.FilterField('last_modified'),
         index.FilterField('peer_reviewed'),
         index.FilterField('flagged'),
-        index.RelatedFields('platforms', [
+        index.RelatedFields('platform_tags', [
             index.SearchField('name'),
-            index.SearchField('get_all_tags'),
+        ]),
+        index.RelatedFields('programming_languages', [
+            index.SearchField('name'),
         ]),
         index.RelatedFields('contributors', [
             index.SearchField('get_aggregated_search_fields'),
