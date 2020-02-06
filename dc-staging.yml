@@ -32,7 +32,7 @@ services:
       - IPC_LOCK
     volumes:
       - ./deploy/elasticsearch.conf.d/log4j2.properties:/usr/share/elasticsearch/config/log4j2.properties
-      - ./deploy/elasticsearch.conf.d/elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml
+      - ./deploy/elasticsearch.conf.d/elasticsearch-primary.yml:/usr/share/elasticsearch/config/elasticsearch.yml
       - esdata1:/usr/share/elasticsearch/data
 # FIXME: duplication bad
   elasticsearch2:
@@ -42,8 +42,9 @@ services:
       - esnet
     environment:
       - bootstrap.memory_lock=true
+      - node.name=esnode2
+      - discovery.seed_hosts=elasticsearch
       - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
-      - "discovery.seed_hosts=elasticsearch"
     ulimits:
       memlock:
         soft: -1
@@ -58,7 +59,7 @@ services:
     cap_add:
       - IPC_LOCK
     volumes:
-      - ./deploy/elasticsearch.conf.d/elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml
+      - ./deploy/elasticsearch.conf.d/elasticsearch-node.yml:/usr/share/elasticsearch/config/elasticsearch.yml
       - ./deploy/elasticsearch.conf.d/log4j2.properties:/usr/share/elasticsearch/config/log4j2.properties
       - esdata2:/usr/share/elasticsearch/data
   ${DB_HOST}:
