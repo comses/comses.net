@@ -175,10 +175,13 @@ class GeneralSearch:
     def search(self, text, models=None, start=0, size=10):
         if models is None:
             models = self._models
+            index = ''
+        else:
+            index = ','.join(self.get_index_names(models))
 
         body = self.get_search_criteria(models, text, start, size)
-        response = self._search.es.search(self.get_index_names(models), body=body)
-        total = response['hits']['total']
+        response = self._search.es.search(index=index, body=body)
+        total = response['hits']['total']['value']
         results = response['hits']['hits']
         return self.process(results), total
 
