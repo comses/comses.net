@@ -23,23 +23,26 @@ def clean_order_by(order_by_params):
 def get_search_queryset(query, queryset, operator="or", fields=None, tags=None, criteria=None):
     if criteria is None:
         criteria = {}
+    if tags is None:
+        tags = []
+    lowercase_tags = [t.lower() for t in tags]
     if query:
-        # deal with elastic search
+        # use elasticsearch
+        # first filter by criteria
         if criteria:
             queryset = queryset.filter(**criteria)
         if tags:
-            # handle tags and built-up criteria object
-            query = '{0} {1}'.format(query, ' '.join(tags))
+            # add tags and keyword query, switch to AND operator
+            query = f'{query} {" ".join(lowercase_tags)}'
             operator = 'and'
         results = search_backend.search(query, queryset, operator=operator, fields=fields)
-        # Need get_queryset method to work on DRF viewsets
-        # DRF viewsets have permissions which require get_queryset to return something that has a model property
+        # this method is used by DRF viewsets which expect a returned queryset with a model property
         results.model = queryset.model
         return results
     else:
-        # ignore ElasticSearch, filter directly, with tags if available
+        # ignore elasticsearch, filter directly against queryset
         if tags:
-            criteria.update(tags__name__in=tags)
+            criteria.update(tags__name__in=lowercase_tags)
         if criteria:
             return queryset.filter(**criteria)
         else:

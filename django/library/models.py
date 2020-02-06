@@ -894,10 +894,10 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
         index.FilterField('peer_reviewed'),
         index.FilterField('flagged'),
         index.RelatedFields('platform_tags', [
-            index.SearchField('name'),
+            index.SearchField('name', partial_match=True),
         ]),
         index.RelatedFields('programming_languages', [
-            index.SearchField('name'),
+            index.SearchField('name', partial_match=True),
         ]),
         index.RelatedFields('contributors', [
             index.SearchField('get_aggregated_search_fields'),
