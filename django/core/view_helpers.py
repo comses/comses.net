@@ -4,6 +4,7 @@ import re
 from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 from wagtail.search.backends import get_search_backend
+from wagtail.search.models import Query
 
 logger = logging.getLogger(__name__)
 
@@ -21,32 +22,28 @@ def clean_order_by(order_by_params):
 
 
 def get_search_queryset(query, queryset, operator="or", fields=None, tags=None, criteria=None):
-    if criteria is None:
-        criteria = {}
+
+    if query is None:
+        query = ''
+
     if tags is None:
         tags = []
-    lowercase_tags = [t.lower() for t in tags]
+
+    lowercase_tags = " ".join([t.lower() for t in tags])
+    results = queryset
     if query:
-        # use elasticsearch
-        # first filter by criteria
         if criteria:
             queryset = queryset.filter(**criteria)
         if tags:
-            # add tags and keyword query, switch to AND operator
-            query = f'{query} {" ".join(lowercase_tags)}'
             operator = 'and'
+    query = f'{query} {lowercase_tags}'.strip()
+    # this method is occasionally expected to serve as an identity function.
+    # should look into refactoring at some point
+    if query:
         results = search_backend.search(query, queryset, operator=operator, fields=fields)
-        # this method is used by DRF viewsets which expect a returned queryset with a model property
-        results.model = queryset.model
-        return results
-    else:
-        # ignore elasticsearch, filter directly against queryset
-        if tags:
-            criteria.update(tags__name__in=lowercase_tags)
-        if criteria:
-            return queryset.filter(**criteria)
-        else:
-            return queryset
+        Query.get(query).add_hit()
+    results.model = queryset.model
+    return results
 
 
 def retrieve_with_perms(self, request, *args, **kwargs):

@@ -329,6 +329,14 @@ class CodebaseQuerySet(models.QuerySet):
             releases__in=updated_releases).distinct().order_by('title')
         return new_codebases, updated_codebases, releases
 
+    def get_all_release_frameworks(self, codebase):
+        return codebase.releases.exclude(platform_tags__isnull=True).values_list('platform_tags__name',
+                flat=True)
+
+    def get_all_release_programming_languages(self, codebase):
+        return codebase.releases.exclude(programming_languages__isnull=True).values_list('programming_languages__name',
+                flat=True)
+
 
 @add_to_comses_permission_whitelist
 class Codebase(index.Indexed, ClusterableModel):
@@ -402,6 +410,8 @@ class Codebase(index.Indexed, ClusterableModel):
             index.SearchField('name'),
         ]),
         index.SearchField('get_all_contributors_search_fields'),
+        index.SearchField('get_all_release_frameworks'),
+        index.SearchField('get_all_release_programming_languages'),
         index.SearchField('references_text', partial_match=True),
         index.SearchField('associated_publication_text', partial_match=True),
     ]
@@ -509,6 +519,12 @@ class Codebase(index.Indexed, ClusterableModel):
 
     def get_all_contributors_search_fields(self):
         return ' '.join([c.get_aggregated_search_fields() for c in self.all_contributors])
+
+    def get_all_release_frameworks(self):
+        return ' '.join(Codebase.objects.get_all_release_frameworks(self))
+
+    def get_all_release_programming_languages(self):
+        return ' '.join(Codebase.objects.get_all_release_programming_languages(self))
 
     def download_count(self):
         return CodebaseReleaseDownload.objects.filter(release__codebase__id=self.pk).count()
@@ -1325,7 +1341,9 @@ class PeerReviewQuerySet(models.QuerySet):
         """
 
         queryset = MemberProfile.objects.public()
-        return get_search_queryset(query, queryset)
+        if query:
+            return get_search_queryset(query, queryset)
+        return queryset
 
 
 @register_snippet

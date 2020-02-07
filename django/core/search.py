@@ -159,6 +159,8 @@ class GeneralSearch:
             }
 
     def get_search_criteria(self, models, text, start, size):
+        if models is None:
+            models = self._models
         return {
             'query': {
                 'bool': {
