@@ -330,8 +330,9 @@ class CodebaseQuerySet(models.QuerySet):
         return new_codebases, updated_codebases, releases
 
     def get_all_release_frameworks(self, codebase):
-        return codebase.releases.exclude(platform_tags__isnull=True).values_list('platform_tags__name',
-                flat=True)
+        return codebase.releases.exclude(platform_tags__isnull=True).values_list(
+            'platform_tags__name',
+            flat=True)
 
     def get_all_release_programming_languages(self, codebase):
         return codebase.releases.exclude(programming_languages__isnull=True).values_list('programming_languages__name',
@@ -398,22 +399,21 @@ class Codebase(index.Indexed, ClusterableModel):
 
     search_fields = [
         index.SearchField('title', partial_match=True, boost=10),
-        index.SearchField('description', partial_match=True),
-        index.SearchField('concatenated_tags', partial_match=True),
+        index.SearchField('description', partial_match=True, boost=5),
+        index.SearchField('concatenated_tags', partial_match=True, boost=5),
+        index.SearchField('get_all_contributors_search_fields'),
+        index.SearchField('get_all_release_frameworks'),
+        index.SearchField('get_all_release_programming_languages'),
+        index.SearchField('references_text', partial_match=True),
+        index.SearchField('associated_publication_text', partial_match=True),
+        # filter and sort fields
+        index.FilterField('last_modified'),
         index.FilterField('peer_reviewed'),
         index.FilterField('featured'),
         index.FilterField('is_replication'),
         index.FilterField('live'),
         index.FilterField('first_published_at'),
         index.FilterField('last_published_on'),
-        index.RelatedFields('tags', [
-            index.SearchField('name'),
-        ]),
-        index.SearchField('get_all_contributors_search_fields'),
-        index.SearchField('get_all_release_frameworks'),
-        index.SearchField('get_all_release_programming_languages'),
-        index.SearchField('references_text', partial_match=True),
-        index.SearchField('associated_publication_text', partial_match=True),
     ]
 
     HAS_PUBLISHED_KEY = True
@@ -695,6 +695,7 @@ class Codebase(index.Indexed, ClusterableModel):
 
     @classmethod
     def elasticsearch_query(cls, text):
+        # FIXME: this arguably belongs elsewhere
         document_type = get_search_backend().get_index_for_model(cls).mapping_class(cls).get_document_type()
         return {
             "bool": {

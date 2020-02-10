@@ -445,6 +445,7 @@ class Event(index.Indexed, ClusterableModel):
     search_fields = [
         index.SearchField('title', partial_match=True, boost=10),
         index.SearchField('description', partial_match=True),
+        index.FilterField('date_created'),
         index.FilterField('start_date'),
         index.FilterField('submission_deadline'),
         index.FilterField('early_registration_deadline'),

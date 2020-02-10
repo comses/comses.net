@@ -19,14 +19,14 @@ from django_jinja.views.generic import ListView
 from rest_framework import viewsets, generics, renderers, status, permissions, filters, mixins
 from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.exceptions import PermissionDenied as DrfPermissionDenied, ValidationError
+from rest_framework.filters import OrderingFilter
 from rest_framework.response import Response
 
 from core.models import MemberProfile
 from core.permissions import ViewRestrictedObjectPermissions
 from core.view_helpers import add_change_delete_perms, get_search_queryset
 from core.views import (CommonViewSetMixin, FormUpdateView, FormCreateView, SmallResultSetPagination,
-                        CaseInsensitiveOrderingFilter, NoDeleteViewSet,
-                        NoDeleteNoUpdateViewSet, HtmlNoDeleteViewSet)
+                        NoDeleteViewSet, NoDeleteNoUpdateViewSet, HtmlNoDeleteViewSet)
 from .forms import (PeerReviewerFeedbackReviewerForm, PeerReviewInvitationReplyForm, PeerReviewInvitationForm,
                     PeerReviewerFeedbackEditorForm, PeerReviewFilterForm)
 from .fs import FileCategoryDirectories, StagingDirectories, MessageLevels
@@ -337,11 +337,10 @@ class CodebaseViewSet(CommonViewSetMixin,
     lookup_value_regex = r'[\w\-\.]+'
     pagination_class = SmallResultSetPagination
     queryset = Codebase.objects.with_tags().with_featured_images().order_by('-first_published_at', 'title')
-    filter_backends = (CaseInsensitiveOrderingFilter, CodebaseFilter)
+    filter_backends = (OrderingFilter, CodebaseFilter)
     permission_classes = (ViewRestrictedObjectPermissions,)
     serializer_class = CodebaseSerializer
-    ordering_fields = ('first_published_at', 'title', 'last_modified', 'peer_reviewed', 'submitter__last_name',
-                       'submitter__username')
+    ordering_fields = ('first_published_at', 'peer_reviewed', 'last_modified', )
     context_list_name = 'codebases'
 
     def get_queryset(self):
@@ -378,7 +377,7 @@ class DevelopmentCodebaseDeleteView(mixins.DestroyModelMixin, CodebaseViewSet):
     lookup_value_regex = r'[\w\-\.]+'
     pagination_class = SmallResultSetPagination
     queryset = Codebase.objects.with_tags().with_featured_images().order_by('-first_published_at', 'title')
-    filter_backends = (CaseInsensitiveOrderingFilter, CodebaseFilter)
+    filter_backends = (OrderingFilter, CodebaseFilter)
     ordering_fields = ('first_published_at', 'title', 'last_modified', 'peer_reviewed', 'submitter__last_name',
                        'submitter__username')
 
