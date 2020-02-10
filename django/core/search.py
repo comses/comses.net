@@ -6,6 +6,7 @@ from django.apps import apps
 from wagtail.core.models import Page
 from wagtail.search.backends import get_search_backend
 
+# FIXME: core should not import from library
 from library.models import Codebase
 from .models import Event, Job, MemberProfile
 
