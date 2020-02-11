@@ -37,6 +37,7 @@ class ComsesGroups(Enum):
     REVIEWER = "Reviewers"
 
     @staticmethod
+    @transaction.atomic
     def initialize():
         return [Group.objects.get_or_create(name=g.value)[0] for g in ComsesGroups]
 
@@ -53,9 +54,8 @@ class ComsesGroups(Enum):
         return _group
 
 
-@transaction.atomic
 def get_sentinel_user():
-    return get_user_model().objects.get_or_create(username='openabm')[0]
+    return get_user_model().get_anonymous()
 
 
 @register_setting
