@@ -32,7 +32,6 @@ from unidecode import unidecode
 from wagtail.admin.edit_handlers import FieldPanel
 from wagtail.images.models import Image, AbstractImage, AbstractRendition, get_upload_to, ImageQuerySet
 from wagtail.search import index
-from wagtail.search.backends import get_search_backend
 from wagtail.snippets.models import register_snippet
 
 from core import fs
@@ -335,8 +334,9 @@ class CodebaseQuerySet(models.QuerySet):
             flat=True)
 
     def get_all_release_programming_languages(self, codebase):
-        return codebase.releases.exclude(programming_languages__isnull=True).values_list('programming_languages__name',
-                flat=True)
+        return codebase.releases.exclude(programming_languages__isnull=True).values_list(
+            'programming_languages__name',
+            flat=True)
 
 
 @add_to_comses_permission_whitelist
@@ -406,6 +406,9 @@ class Codebase(index.Indexed, ClusterableModel):
         index.SearchField('get_all_release_programming_languages'),
         index.SearchField('references_text', partial_match=True),
         index.SearchField('associated_publication_text', partial_match=True),
+        index.RelatedFields('tags', [
+            index.SearchField('name', partial_match=True),
+        ]),
         # filter and sort fields
         index.FilterField('last_modified'),
         index.FilterField('peer_reviewed'),
@@ -692,38 +695,6 @@ class Codebase(index.Indexed, ClusterableModel):
             self.latest_version = release
             self.save()
         return release
-
-    @classmethod
-    def elasticsearch_query(cls, text):
-        # FIXME: this arguably belongs elsewhere
-        document_type = get_search_backend().get_index_for_model(cls).mapping_class(cls).get_document_type()
-        return {
-            "bool": {
-                "must": [
-                    {
-                        "match": {
-                            "_all": text
-                        }
-                    }
-                ],
-                "filter": {
-                    "bool": {
-                        "must": [
-                            {
-                                "term": {
-                                    "live_filter": True
-                                }
-                            },
-                            {
-                                "type": {
-                                    "value": document_type
-                                }
-                            }
-                        ]
-                    }
-                }
-            }
-        }
 
     def __str__(self):
         return "{0} {1} identifier={2} live={3}".format(self.title,

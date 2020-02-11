@@ -24,8 +24,6 @@ def get_search_queryset(query, queryset, operator="or", fields=None, tags=None, 
         if tags:
             operator = 'and'
     query = f'{query} {tags}'.strip().lower()
-    # this method is occasionally expected to serve as an identity function.
-    # should look into refactoring at some point
     if query:
         order_by_relevance = not queryset.ordered
         results = search_backend.search(query,
@@ -33,8 +31,8 @@ def get_search_queryset(query, queryset, operator="or", fields=None, tags=None, 
                                         operator=operator,
                                         fields=fields,
                                         order_by_relevance=order_by_relevance)
+        results.model = queryset.model
         Query.get(query).add_hit()
-    results.model = queryset.model
     return results
 
 
