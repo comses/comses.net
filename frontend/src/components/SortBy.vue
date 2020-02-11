@@ -10,16 +10,16 @@
             </select>
         </div>
         <div class='form-check form-check-inline mx-2'>
-            <input v-model='sortByAscDesc' class='form-check-input' value='asc' type='radio' name='sort_type'
-                   id='sort_ascending' checked>
-            <label class='form-check-label' for='sort_ascending'>Sort ascending</label>
-        </div>
-        <div class='form-check form-check-inline mx-2'>
             <input v-model='sortByAscDesc' class='form-check-input' value='desc' type='radio' name='sort_type'
                    id='sort_descending'>
-            <label class='form-check-label' for='sort_descending'>Sort descending</label>
+            <label class='form-check-label' for='sort_descending'>Descending</label>
         </div>
-        <button type='button' @click="updateSortBy" class='btn btn-secondary'>Apply</button>
+        <div class='form-check form-check-inline mx-2'>
+            <input v-model='sortByAscDesc' class='form-check-input' value='asc' type='radio' name='sort_type'
+                   id='sort_ascending' checked>
+            <label class='form-check-label' for='sort_ascending'>Ascending</label>
+        </div>
+        <button type='button' @click="updateSortBy" class='btn btn-secondary'>Sort</button>
     </form>
 </template>
 
@@ -40,7 +40,7 @@
         public created() {
             const queryParams = queryString.parse(window.location.search);
             const orderingQueryParam: any = queryParams.ordering || '';
-            if (orderingQueryParam.startsWith('-')) {
+            if (orderingQueryParam === '' || orderingQueryParam.startsWith('-')) {
                 this.selectedOptionValue = orderingQueryParam.slice(1);
                 this.sortByAscDesc = 'desc';
             } else {
