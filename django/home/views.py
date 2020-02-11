@@ -8,6 +8,7 @@ from django.contrib.auth.models import User
 from django.core.cache import cache
 from django.core.files.images import ImageFile
 from django.db.models import Prefetch
+from django.http import QueryDict
 from django.shortcuts import redirect, get_object_or_404
 from django.template.loader import get_template
 from django.urls import reverse
@@ -34,6 +35,7 @@ from library.models import Codebase
 from .forms import ConferenceSubmissionForm
 from .models import FeaturedContentItem, MemberProfile, ContactPage, ConferencePage
 from .serializers import (FeaturedContentItemSerializer, UserMessageSerializer, MemberProfileSerializer)
+from .search import GeneralSearch
 
 logger = logging.getLogger(__name__)
 
@@ -210,8 +212,8 @@ class EventViewSet(CommonViewSetMixin, OnlyObjectPermissionModelViewSet):
     pagination_class = SmallResultSetPagination
     filter_backends = (OrderingFilter, EventFilter)
     permission_classes = (ViewRestrictedObjectPermissions,)
-    ordering_fields = ('date_created', 'last_modified', 'early_registration_deadline', 'submission_deadline',
-                       'start_date',)
+    ordering_fields = ('date_created', 'last_modified', 'early_registration_deadline',
+                       'submission_deadline', 'start_date',)
 
     def retrieve(self, request, *args, **kwargs):
         return retrieve_with_perms(self, request, *args, **kwargs)
@@ -307,8 +309,38 @@ class JobViewSet(CommonViewSetMixin, OnlyObjectPermissionModelViewSet):
         return retrieve_with_perms(self, request, *args, **kwargs)
 
 
+class SearchView(TemplateView):
+    template_name = 'home/search.jinja'
+
+    def get_context_data(self, **kwargs):
+        search = GeneralSearch()
+        context = super().get_context_data(**kwargs)
+
+        query = self.request.GET.get('query')
+        page = self.request.GET.get('page', 1)
+        try:
+            page = int(page)
+        except ValueError:
+            page = 1
+        if query is not None:
+            results, total = search.search(query, start=(page - 1) * 10)
+        else:
+            results, total = [], 0
+
+        pagination_context = SmallResultSetPagination.create_paginated_context_data(
+            query=query,
+            data=results,
+            current_page_number=page,
+            count=total,
+            query_params=QueryDict(query_string='query={}'.format(query)))
+        context['__all__'] = pagination_context
+        context.update(pagination_context)
+        return context
+
+
 class DigestView(TemplateView):
     template_name = 'home/digest.jinja'
+    # FIXME: these should be moved to SiteSettings
     NUMBER_OF_POSTS = 20
     ARCHIVE_URL = 'http://comses.us7.list-manage.com/generate-js/?u=35f29299716fcb07509229c1c&fid=21449&show={0}'
 

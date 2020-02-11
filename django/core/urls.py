@@ -26,7 +26,6 @@ handler500 = views.server_error
 app_name = 'core'
 
 urlpatterns = [
-    path('search/', views.SearchView.as_view(), name='search'),
     path('accounts/', include('allauth.urls')),
     path('', include(home_urls, namespace='home')),
     path('', include(library_urls, namespace='library')),

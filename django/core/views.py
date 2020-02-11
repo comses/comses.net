@@ -9,7 +9,7 @@ from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.views import redirect_to_login
 from django.core.exceptions import PermissionDenied
-from django.http import Http404, HttpResponseBadRequest, HttpResponseRedirect, QueryDict, HttpResponseServerError
+from django.http import Http404, HttpResponseBadRequest, HttpResponseRedirect, HttpResponseServerError
 from django.shortcuts import render
 from django.views.generic import DetailView, TemplateView
 from rest_framework import viewsets, mixins
@@ -21,7 +21,6 @@ from rest_framework.views import exception_handler
 
 from .discourse import build_discourse_url
 from .permissions import ViewRestrictedObjectPermissions
-from .search import GeneralSearch
 
 logger = logging.getLogger(__name__)
 
@@ -308,35 +307,6 @@ def discourse_sso(request):
     # Redirect back to Discourse
     discourse_sso_url = build_discourse_url(f'session/sso_login?{query_string}')
     return HttpResponseRedirect(discourse_sso_url)
-
-
-class SearchView(TemplateView):
-    template_name = 'core/search.jinja'
-
-    def get_context_data(self, **kwargs):
-        search = GeneralSearch()
-        context = super().get_context_data(**kwargs)
-
-        query = self.request.GET.get('query')
-        page = self.request.GET.get('page', 1)
-        try:
-            page = int(page)
-        except ValueError:
-            page = 1
-        if query is not None:
-            results, total = search.search(query, start=(page - 1) * 10)
-        else:
-            results, total = [], 0
-
-        pagination_context = SmallResultSetPagination.create_paginated_context_data(
-            query=query,
-            data=results,
-            current_page_number=page,
-            count=total,
-            query_params=QueryDict(query_string='query={}'.format(query)))
-        context['__all__'] = pagination_context
-        context.update(pagination_context)
-        return context
 
 
 class HtmlRetrieveModelMixin:

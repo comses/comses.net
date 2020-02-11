@@ -7,7 +7,7 @@
 {% block breadcrumb %}
     {{ breadcrumb([{'text': 'Computational Model Library'}]) }}
     <div class="pb-1">
-        {{ paginator('search', __all__) }}
+        {{ paginator('home:search', __all__) }}
     </div>
 {% endblock %}
 

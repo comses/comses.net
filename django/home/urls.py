@@ -12,9 +12,8 @@ router.register(r'events', views.EventViewSet, basename='event')
 router.register(r'jobs', views.JobViewSet, basename='job')
 router.register(r'users', views.ProfileViewSet, basename='profile')
 
-# FIXME: replace re_path with https://docs.djangoproject.com/en/2.0/ref/urls/#django.urls.path matching, e.g., <int:pk>
-
 urlpatterns = [
+    path('search/', views.SearchView.as_view(), name='search'),
     path('digest/', views.DigestView.as_view(), name='digest'),
     path('conference/<int:slug>/submit/', views.ConferenceSubmissionView.as_view(), name='submit-conference'),
     path('users/follow/', views.ToggleFollowUser.as_view(), name='follow-user'),

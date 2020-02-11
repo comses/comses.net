@@ -130,6 +130,63 @@ class OtherSearchResult(BaseSearchResult):
                    url=None)
 
 
+class DefaultQuery:
+
+    @classmethod
+    def get_criteria(cls, document_type, text):
+        return {
+            'bool': {
+                'must': {'match': {'_all_text': text}},
+                'filter': {'type': {'value': document_type}},
+            }
+        }
+
+
+class CodebaseQuery(DefaultQuery):
+
+    @classmethod
+    def get_criteria(cls, document_type, text):
+        return {
+            "bool": {
+                "must": [{"match": {"_all": text}}],
+                "filter": {
+                    "bool": {
+                        "must": [
+                            {"term": {"live_filter": True}},
+                            {"type": {"value": document_type}}
+                        ]
+                    }
+                }
+            }
+        }
+
+
+class EventQuery(DefaultQuery):
+
+    @classmethod
+    def get_criteria(cls, document_type, text):
+        return {
+            'bool': {
+                'must': {'match': {'_all_text': text}},
+                'filter': {'type': {'value': document_type}},
+            }
+        }
+
+
+class ElasticsearchQueryBuilder:
+
+    def __init__(self):
+        self.backend = get_search_backend()
+        self._model_query_dict = defaultdict(DefaultQuery)
+        self._model_query_dict.update({
+            Codebase: CodebaseQuery,
+        })
+
+    def build(self, model, text):
+        document_type = self.backend.get_index_for_model(model).mapping_class(model).get_document_type()
+        return self._model_query_dict[model].get_criteria(document_type, text)
+
+
 class GeneralSearch:
     """Search across content types in Elasticsearch for matching objects"""
 
@@ -138,34 +195,16 @@ class GeneralSearch:
             indexed_models = [Codebase, Event, Job, MemberProfile, Page]
         self._search = get_search_backend()
         self._models = indexed_models
-
-    def get_search_criteria_for_model(self, model, text):
-        if hasattr(model, 'elasticsearch_query'):
-            return model.elasticsearch_query(text)
-        else:
-            document_type = self._search.get_index_for_model(model).mapping_class(model).get_document_type()
-            return {
-                'bool': {
-                    'must': {
-                        'match': {
-                            '_all_text': text
-                        }
-                    },
-                    'filter': {
-                        'type': {
-                            'value': document_type
-                        }
-                    }
-                }
-            }
+        self._query_builder = ElasticsearchQueryBuilder()
 
     def get_search_criteria(self, models, text, start, size):
+        """ FIXME: should look into using elasticsearch-dsl to build these """
         if models is None:
             models = self._models
         return {
             'query': {
                 'bool': {
-                    'should': [self.get_search_criteria_for_model(model, text) for model in models]
+                    'should': [self._query_builder.build(model, text) for model in models]
                 }
             },
             'from': start,
