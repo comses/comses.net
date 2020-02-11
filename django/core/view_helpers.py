@@ -3,6 +3,7 @@ import logging
 from rest_framework.response import Response
 from wagtail.search.backends import get_search_backend
 from wagtail.search.models import Query
+from wagtail.search.query import MATCH_ALL
 
 logger = logging.getLogger(__name__)
 
@@ -17,7 +18,6 @@ def get_search_queryset(query, queryset, operator="or", fields=None, tags=None, 
     if not tags:
         tags = ''
 
-    results = queryset
     if query:
         if criteria:
             queryset = queryset.filter(**criteria)
@@ -25,14 +25,17 @@ def get_search_queryset(query, queryset, operator="or", fields=None, tags=None, 
             operator = 'and'
     query = f'{query} {tags}'.strip().lower()
     if query:
-        order_by_relevance = not queryset.ordered
-        results = search_backend.search(query,
-                                        queryset,
-                                        operator=operator,
-                                        fields=fields,
-                                        order_by_relevance=order_by_relevance)
-        results.model = queryset.model
         Query.get(query).add_hit()
+    else:
+        query = MATCH_ALL
+
+    order_by_relevance = not queryset.ordered
+    results = search_backend.search(query,
+                                    queryset,
+                                    operator=operator,
+                                    fields=fields,
+                                    order_by_relevance=order_by_relevance)
+    results.model = queryset.model
     return results
 
 
