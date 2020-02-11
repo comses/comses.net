@@ -1,8 +1,10 @@
 import logging
 from collections import defaultdict
+from textwrap import shorten
 from typing import Dict
 
 from django.apps import apps
+from elasticsearch_dsl import Search
 from wagtail.core.models import Page
 from wagtail.search.backends import get_search_backend
 
@@ -21,12 +23,13 @@ def get_content_type(result):
 
 class BaseSearchResult:
     def __init__(self, pk, description, score, title, tags, url, type):
-        if description is not None and len(description) > 400:
-            description = description[:397] + "..."
+        if description is not None:
+            description = shorten(description, width=400, placeholder='...')
         self.description = description
         self.pk = int(pk)
         self.score = score
         self.tags = tags
+        logger.error("tags: %s", tags)
         self.title = title
         self.type = type
         self.url = url
@@ -130,99 +133,28 @@ class OtherSearchResult(BaseSearchResult):
                    url=None)
 
 
-class DefaultQuery:
-
-    @classmethod
-    def get_criteria(cls, document_type, text):
-        return {
-            'bool': {
-                'must': {'match': {'_all_text': text}},
-                'filter': {'type': {'value': document_type}},
-            }
-        }
-
-
-class CodebaseQuery(DefaultQuery):
-
-    @classmethod
-    def get_criteria(cls, document_type, text):
-        return {
-            "bool": {
-                "must": [{"match": {"_all": text}}],
-                "filter": {
-                    "bool": {
-                        "must": [
-                            {"term": {"live_filter": True}},
-                            {"type": {"value": document_type}}
-                        ]
-                    }
-                }
-            }
-        }
-
-
-class EventQuery(DefaultQuery):
-
-    @classmethod
-    def get_criteria(cls, document_type, text):
-        return {
-            'bool': {
-                'must': {'match': {'_all_text': text}},
-                'filter': {'type': {'value': document_type}},
-            }
-        }
-
-
-class ElasticsearchQueryBuilder:
-
-    def __init__(self):
-        self.backend = get_search_backend()
-        self._model_query_dict = defaultdict(DefaultQuery)
-        self._model_query_dict.update({
-            Codebase: CodebaseQuery,
-        })
-
-    def build(self, model, text):
-        document_type = self.backend.get_index_for_model(model).mapping_class(model).get_document_type()
-        return self._model_query_dict[model].get_criteria(document_type, text)
-
-
 class GeneralSearch:
     """Search across content types in Elasticsearch for matching objects"""
 
-    def __init__(self, indexed_models=None):
-        if indexed_models is None:
-            indexed_models = [Codebase, Event, Job, MemberProfile, Page]
-        self._search = get_search_backend()
-        self._models = indexed_models
-        self._query_builder = ElasticsearchQueryBuilder()
+    DEFAULT_MODELS = [Codebase, Event, Job, MemberProfile, Page]
 
-    def get_search_criteria(self, models, text, start, size):
-        """ FIXME: should look into using elasticsearch-dsl to build these """
-        if models is None:
-            models = self._models
-        return {
-            'query': {
-                'bool': {
-                    'should': [self._query_builder.build(model, text) for model in models]
-                }
-            },
-            'from': start,
-            'size': size
-        }
+    def __init__(self):
+        self.backend = get_search_backend()
 
     def get_index_names(self, models):
-        return [self._search.get_index_for_model(m).name for m in models]
+        return [self.backend.get_index_for_model(m).name for m in models]
 
     def search(self, text, models=None, start=0, size=10):
         if models is None:
-            models = self._models
-            index = ''
-        else:
-            index = ','.join(self.get_index_names(models))
-
-        body = self.get_search_criteria(models, text, start, size)
-        response = self._search.es.search(index=index, body=body)
+            models = self.DEFAULT_MODELS
+        index = ','.join(self.get_index_names(models))
+        s = Search(index=index, using=self.backend.es).query(
+            'multi_match',
+            query=text,
+            type="best_fields",
+        )
+        # slice from start:start+size to match python's slicing syntax
+        response = s[start:start+size].execute()
         total = response['hits']['total']['value']
         results = response['hits']['hits']
         return self.process(results), total
