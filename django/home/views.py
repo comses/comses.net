@@ -99,12 +99,11 @@ class ProfileViewSet(CommonViewSetMixin,
                      HtmlNoDeleteViewSet):
     lookup_field = 'user__pk'
     lookup_url_kwarg = 'pk'
-    queryset = MemberProfile.objects.public().with_tags().order_by('-user__date_joined')
+    queryset = MemberProfile.objects.public().with_tags()
     pagination_class = SmallResultSetPagination
-    filter_backends = (OrderingFilter, MemberProfileFilter)
+    filter_backends = (MemberProfileFilter,)
     permission_classes = (ObjectPermissions,)
     serializer_class = MemberProfileSerializer
-    ordering_fields = ('user__date_joined', 'user__last_name', 'user__first_name',)
     context_object_name = 'profile'
     context_list_name = 'profiles'
 

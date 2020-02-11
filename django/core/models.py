@@ -195,10 +195,10 @@ class MemberProfile(index.Indexed, ClusterableModel):
     ]
 
     search_fields = [
-        index.SearchField('bio', partial_match=True, boost=5),
-        index.SearchField('research_interests', partial_match=True, boost=5),
         index.FilterField('is_active'),
         index.FilterField('username'),
+        index.SearchField('bio', partial_match=True, boost=5),
+        index.SearchField('research_interests', partial_match=True, boost=5),
         index.SearchField('degrees', partial_match=True),
         index.SearchField('name', partial_match=True, boost=5),
         index.RelatedFields('institution', [
@@ -208,6 +208,8 @@ class MemberProfile(index.Indexed, ClusterableModel):
             index.SearchField('name', partial_match=True),
         ]),
         index.RelatedFields('user', [
+            index.FilterField('date_joined'),
+            index.FilterField('last_name'),
             index.SearchField('first_name', partial_match=True),
             index.SearchField('last_name', partial_match=True, boost=3),
             index.SearchField('email', partial_match=True, boost=3),
