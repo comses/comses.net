@@ -12,12 +12,12 @@
 
 {% block top %}
     {{ breadcrumb([{'text': 'Computational Model Library'}]) }}
+    {% include "library/includes/archive_model_help.jinja" %}
     {{ paginator('library:codebase-list', paginator_data) }}
     <div id='sortby'></div>
 {% endblock %}
 
 {% block content %}
-    {% include "library/includes/archive_model_help.jinja" %}
     {% for codebase in codebases %}
         {{ render_codebase_result(codebase) }}
     {% else %}
