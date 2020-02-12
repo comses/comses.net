@@ -36,7 +36,8 @@ RUN sed -i "s|archive.ubuntu.com|${UBUNTU_MIRROR}|" /etc/apt/sources.list \
 
 COPY ${REQUIREMENTS_FILE} requirements.txt /tmp/
 RUN pip3 install -r /tmp/${REQUIREMENTS_FILE} --no-cache-dir
-COPY ./deploy/cron.daily/backup /etc/cron.daily/backup
+COPY ./deploy/cron.daily/* /etc/cron.daily/
+COPY ./deploy/cron.hourly/* /etc/cron.hourly/
 COPY ./deploy/db/autopostgresqlbackup.conf /etc/default/autopostgresqlbackup
 COPY ./deploy/db/postgresql-backup-pre /etc/
 COPY ${RUN_SCRIPT} /etc/service/django/run

@@ -4,8 +4,6 @@ import os
 
 DEPLOY_ENVIRONMENT = Environment.TEST
 
-WAGTAILSEARCH_BACKENDS['default']['AUTO_UPDATE'] = True
-
 LOGGING['loggers']['core.views'] = {
     'level': 'ERROR',
     'handlers': ['console'],

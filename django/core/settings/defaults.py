@@ -140,8 +140,8 @@ WAGTAILSEARCH_BACKENDS = {
     'default': {
         'BACKEND': 'wagtail.search.backends.elasticsearch7',
         'URLS': ['http://elasticsearch:9200'],
-        # 'ATOMIC_REBUILD': True,
-        'AUTO_UPDATE': False,
+        'ATOMIC_REBUILD': True,
+        'AUTO_UPDATE': True,
         'TIMEOUT': 10,
         'OPTIONS': {
             'max_retries': 2,

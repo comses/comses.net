@@ -1,0 +1,4 @@
+#!/bin/sh
+
+export DJANGO_SETTINGS_MODULE=${DJANGO_SETTINGS_MODULE:-"core.settings.production"}
+/code/manage.py update_index
