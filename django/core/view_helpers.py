@@ -18,18 +18,21 @@ def get_search_queryset(query, queryset, operator="or", fields=None, tags=None, 
     if not tags:
         tags = ''
 
+    order_by_relevance = not queryset.ordered
+    operator = 'or' if order_by_relevance else 'and'
+
     if query:
+        if tags:
+            criteria.update(tags__name__in=[t.lower() for t in tags])
+            operator = 'and'
         if criteria:
             queryset = queryset.filter(**criteria)
-        if tags:
-            operator = 'and'
     query = f'{query} {tags}'.strip().lower()
     if query:
         Query.get(query).add_hit()
     else:
         query = MATCH_ALL
 
-    order_by_relevance = not queryset.ordered
     results = search_backend.search(query,
                                     queryset,
                                     operator=operator,

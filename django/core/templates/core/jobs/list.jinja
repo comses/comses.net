@@ -53,7 +53,8 @@
     {{ list_page(__all__, render_job, 'home:job-detail') }}
     {% if count == 0 %}
         <div class='mt-3 alert alert-primary'>
-            Sorry, there's nothing to see here. The robots have taken all our jobs.
+            <i class='fas fa-robot fa-2x'></i>
+            Sorry, there's nothing to see here. Perhaps the robots have taken all of these jobs.
         </div>
     {% endif %}
     {% if count > 10 %}
