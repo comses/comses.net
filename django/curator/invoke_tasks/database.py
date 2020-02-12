@@ -103,13 +103,12 @@ def restore_from_dump(ctx, target_database=_DEFAULT_DATABASE, dumpfile=None, for
         if not force:
             confirm("This will destroy the database and reload it from {0}. Continue? (y/n) ".format(
                 dumpfile))
-        if dumpfile.endswith('.sql'):
-            drop(ctx, database=target_database, create=True)
-            ctx.run('psql -w -q -h db {db_name} {db_user} < {dumpfile}'.format(dumpfile=dumpfile, **db_config), echo=True)
-        elif dumpfile.endswith('.sql.gz'):
-            drop(ctx, database=target_database, create=True)
-            ctx.run('zcat {dumpfile} | psql -w -q -h db {db_name} {db_user}'.format(dumpfile=dumpfile, **db_config),
-                    echo=True)
+        cat_cmd = 'cat'
+        if dumpfile.endswith('.sql.gz'):
+            cat_cmd = 'zcat'
+        drop(ctx, database=target_database, create=True)
+        ctx.run('{cat_cmd} {dumpfile} | psql -w -q -o restore-from-dump-log.txt -h db {db_name} {db_user}'.format(
+            cat_cmd=cat_cmd, dumpfile=dumpfile, **db_config), echo=True)
         if migrate:
             run_migrations(ctx, clean=clean_migration, initial=True)
     else:
