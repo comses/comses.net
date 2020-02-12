@@ -10,10 +10,12 @@
 
 {% block introduction %}<h1>Computational Model Library</h1>{% endblock %}
 
+{% set pagination_block = paginator('library:codebase-list', paginator_data) %}
+
 {% block top %}
     {{ breadcrumb([{'text': 'Computational Model Library'}]) }}
     {% include "library/includes/archive_model_help.jinja" %}
-    {{ paginator('library:codebase-list', paginator_data) }}
+    {{ pagination_block }}
     <div id='sortby'></div>
 {% endblock %}
 
@@ -25,7 +27,9 @@
             No matching results found.
         </p>
     {% endfor %}
-    {{ paginator('library:codebase-list', paginator_data) }}
+    {% if paginator_data.count > 10 %}
+        {{ pagination_block }}
+    {% endif %}
 {% endblock %}
 
 {% block sidebar %}

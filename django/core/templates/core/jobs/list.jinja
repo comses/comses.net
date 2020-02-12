@@ -37,13 +37,14 @@
 {% block title %}Jobs and Appointments {% endblock %}
 
 {% block introduction %}<h1>Jobs &amp; Appointments </h1>{% endblock %}
+
+{% set pagination_block = paginator('home:job-list', __all__) %}
 {% block top %}
     {{ breadcrumb([
-    {'url': '/community/', 'text': 'Community'},
-    {'text': 'Jobs & Appointments' }
-    ]) 
+        {'url': '/community/', 'text': 'Community'},
+        {'text': 'Jobs & Appointments' }]) 
     }}
-    {{ paginator('home:job-list', __all__) }}
+    {{ pagination_block }}
     <div id="sortby"></div>
     <div id="app"></div>
 {% endblock %}
@@ -55,7 +56,9 @@
             Sorry, there's nothing to see here. The robots have taken all our jobs.
         </div>
     {% endif %}
-    {{ paginator('home:job-list', __all__) }}
+    {% if count > 10 %}
+        {{ pagination_block }}
+    {% endif %}
 {% endblock %}
 
 {% block sidebar %}
