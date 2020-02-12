@@ -1,7 +1,7 @@
 #!/bin/bash
 
 CLEAN_DATABASE=${CLEAN_DATABASE:-"false"}
-DJANGO_SETTINGS_MODULE="core.settings.dev"
+export DJANGO_SETTINGS_MODULE=${DJANGO_SETTINGS_MODULE:-"core.settings.dev"}
 
 chmod a+x /code/deploy/*.sh
 
