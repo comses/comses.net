@@ -1,5 +1,7 @@
 #!/bin/sh
 
+export DJANGO_SETTINGS_MODULE=core.settings.test
+
 chmod a+x /code/deploy/*.sh;
 
 initdb() {

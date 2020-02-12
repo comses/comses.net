@@ -1,6 +1,11 @@
 from .dev import *
 
+import os
+
 DEPLOY_ENVIRONMENT = Environment.TEST
+
+WAGTAILSEARCH_BACKENDS['default']['AUTO_UPDATE'] = True
+
 LOGGING['loggers']['core.views'] = {
     'level': 'ERROR',
     'handlers': ['console'],
@@ -26,4 +31,4 @@ DATABASES['dump_restore'] = {
 }
 
 
-DATABASE_ROUTERS = ['core.database_routers.DumpRestoreRouter', 'core.database_routers.DefaultRouter',]
+DATABASE_ROUTERS = ['core.database_routers.DumpRestoreRouter', 'core.database_routers.DefaultRouter']

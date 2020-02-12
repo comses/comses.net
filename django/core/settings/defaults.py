@@ -135,12 +135,11 @@ SITE_ID = 1
 
 ROOT_URLCONF = 'core.urls'
 
-# configure elasticsearch 6 wagtail backend
+# configure elasticsearch 7 wagtail backend
 WAGTAILSEARCH_BACKENDS = {
     'default': {
         'BACKEND': 'wagtail.search.backends.elasticsearch7',
         'URLS': ['http://elasticsearch:9200'],
-        'INDEX': 'wagtail',
         # 'ATOMIC_REBUILD': True,
         'AUTO_UPDATE': False,
         'TIMEOUT': 10,

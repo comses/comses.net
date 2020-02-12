@@ -1,10 +1,12 @@
-from django.test import TestCase
 from django.urls import resolve
 from guardian.shortcuts import assign_perm
 from rest_framework import status
-from rest_framework.test import APIRequestFactory, force_authenticate, APITestCase
-from core.queryset import get_viewable_objects_for_user
-from django.contrib.auth.models import AnonymousUser, User
+from rest_framework.test import APITestCase
+from django.contrib.auth.models import AnonymousUser
+
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class UrlChecker:
@@ -34,7 +36,7 @@ class SerializerChecker:
 
 
 def create_perm_str(instance, perm_name):
-    return "{}.{}_{}".format(instance._meta.app_label, perm_name, instance._meta.model_name)
+    return f"{instance._meta.app_label}.{perm_name}_{instance._meta.model_name}"
 
 
 class ViewMethod:
@@ -43,13 +45,16 @@ class ViewMethod:
         self.perm_str = create_perm_str(model, name)
 
 
-class HasPermission(Exception): pass
+class HasPermission(Exception):
+    pass
 
 
-class DoesNotHavePermission(Exception): pass
+class DoesNotHavePermission(Exception):
+    pass
 
 
-class LoginFailure(Exception): pass
+class LoginFailure(Exception):
+    pass
 
 
 class ApiAccountMixin:
