@@ -2,10 +2,10 @@
 Django settings for comses.net
 
 For more information on this file, see
-https://docs.djangoproject.com/en/2.0/topics/settings/
+https://docs.djangoproject.com/en/2.2/topics/settings/
 
 For the full list of settings and their values, see
-https://docs.djangoproject.com/en/2.0/ref/settings/
+https://docs.djangoproject.com/en/2.2/ref/settings/
 """
 
 import configparser
@@ -191,6 +191,10 @@ NOCAPTCHA = True
 SENTRY_DSN = config.get('logging', 'SENTRY_DSN', fallback='')
 
 SECRET_KEY = config.get('secrets', 'SECRET_KEY')
+
+# regular settings
+
+POST_DATE_DAYS_AGO_THRESHOLD = config.get('default', 'POST_DATE_DAYS_AGO_THRESHOLD', fallback=180)
 
 # Database configuration
 # https://docs.djangoproject.com/en/2.0/ref/settings/#databases

@@ -207,7 +207,7 @@ class EventFilter(filters.BaseFilterBackend):
 
 class EventViewSet(CommonViewSetMixin, OnlyObjectPermissionModelViewSet):
     serializer_class = EventSerializer
-    queryset = Event.objects.with_tags().with_submitter().order_by('-date_created')
+    queryset = Event.objects.upcoming().with_tags().with_submitter().order_by('-date_created')
     pagination_class = SmallResultSetPagination
     filter_backends = (OrderingFilter, EventFilter)
     permission_classes = (ViewRestrictedObjectPermissions,)
@@ -299,7 +299,7 @@ class JobFilter(filters.BaseFilterBackend):
 class JobViewSet(CommonViewSetMixin, OnlyObjectPermissionModelViewSet):
     serializer_class = JobSerializer
     pagination_class = SmallResultSetPagination
-    queryset = Job.objects.with_tags().with_submitter().order_by('-date_created')
+    queryset = Job.objects.upcoming().with_tags().with_submitter().order_by('-date_created')
     filter_backends = (OrderingFilter, JobFilter)
     permission_classes = (ViewRestrictedObjectPermissions,)
     ordering_fields = ('application_deadline', 'date_created', 'last_modified',)

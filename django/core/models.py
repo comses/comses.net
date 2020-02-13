@@ -1,4 +1,5 @@
 import pathlib
+from datetime import timedelta
 from enum import Enum
 
 from allauth.account.models import EmailAddress
@@ -414,8 +415,10 @@ class EventQuerySet(models.QuerySet):
     def with_tags(self):
         return self.prefetch_related('tagged_events__tag')
 
-    def upcoming(self):
-        return self.public().filter(start_date__gte=timezone.now())
+    def upcoming(self, **kwargs):
+        # return all events that have not yet started or already in progress (i.e., start_date < today < end_date)
+        now = timezone.now()
+        return self.filter(models.Q(start_date__gte=now) | models.Q(end_date__gte=now), **kwargs)
 
     def latest_for_feed(self, number=10):
         return self.select_related('submitter__member_profile').order_by('-date_created')[:number]
@@ -485,6 +488,7 @@ class JobTag(TaggedItemBase):
 
 
 class JobQuerySet(models.QuerySet):
+
     def with_submitter(self):
         return self.select_related('submitter')
 
@@ -493,6 +497,19 @@ class JobQuerySet(models.QuerySet):
 
     def public(self):
         return self
+
+    def upcoming(self, **kwargs):
+        ''' returns all Jobs with a non-null application_deadline after today or posted in the last 6 months '''
+        today = timezone.now()
+        post_date_days_ago_threshold = settings.POST_DATE_DAYS_AGO_THRESHOLD
+        post_date_threshold = today - timedelta(days=post_date_days_ago_threshold)
+        return self.filter(
+            models.Q(application_deadline__gte=timezone.now()) |
+            (models.Q(application_deadline__isnull=True) &
+             (models.Q(date_created__gte=post_date_threshold) |
+              models.Q(last_modified__gte=post_date_threshold))),
+            **kwargs
+        )
 
     def latest_for_feed(self, number=10):
         return self.select_related('submitter__member_profile').order_by('-date_created')[:number]

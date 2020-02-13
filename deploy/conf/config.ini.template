@@ -1,5 +1,6 @@
 [default]
 DEBUG=True
+POST_DATE_DAYS_AGO_THRESHOLD=90
 
 [database]
 DB_NAME=${DB_NAME}
