@@ -452,6 +452,7 @@ class Event(index.Indexed, ClusterableModel):
         index.SearchField('description', partial_match=True),
         index.FilterField('date_created'),
         index.FilterField('start_date'),
+        index.FilterField('end_date'),
         index.FilterField('submission_deadline'),
         index.FilterField('early_registration_deadline'),
         index.FilterField('registration_deadline'),
@@ -534,6 +535,7 @@ class Job(index.Indexed, ClusterableModel):
         index.SearchField('title', partial_match=True, boost=10),
         index.SearchField('description', partial_match=True),
         index.FilterField('date_created'),
+        index.FilterField('last_modified'),
         index.FilterField('application_deadline'),
         index.RelatedFields('tags', [
             index.SearchField('name'),
