@@ -416,7 +416,7 @@ class EventQuerySet(models.QuerySet):
         return self.prefetch_related('tagged_events__tag')
 
     def upcoming(self, **kwargs):
-        # return all events that have not yet started or already in progress (i.e., start_date < today < end_date)
+        # return all events that have not yet started or already in progress (i.e., today < start_date || today < end_date)
         now = timezone.now()
         return self.filter(models.Q(start_date__gte=now) | models.Q(end_date__gte=now), **kwargs)
 

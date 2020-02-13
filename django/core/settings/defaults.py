@@ -49,9 +49,9 @@ BASE_DIR = os.path.dirname(PROJECT_DIR)
 DEBUG = True
 
 # Quick-start development settings - make sure to properly override in prod.py
-# See https://docs.djangoproject.com/en/2.0/howto/deployment/checklist/
+# See https://docs.djangoproject.com/en/2.2/howto/deployment/checklist/
 
-# wagtail configuration: http://docs.wagtail.io/en/v2.0.1/getting_started/integrating_into_django.html
+# wagtail configuration: http://docs.wagtail.io/en/v2.8/getting_started/integrating_into_django.html
 WAGTAIL_APPS = [
     'wagtail.contrib.forms',
     'wagtail.contrib.redirects',
@@ -194,10 +194,10 @@ SECRET_KEY = config.get('secrets', 'SECRET_KEY')
 
 # regular settings
 
-POST_DATE_DAYS_AGO_THRESHOLD = config.get('default', 'POST_DATE_DAYS_AGO_THRESHOLD', fallback=180)
+POST_DATE_DAYS_AGO_THRESHOLD = config.getint('default', 'POST_DATE_DAYS_AGO_THRESHOLD', fallback=180)
 
 # Database configuration
-# https://docs.djangoproject.com/en/2.0/ref/settings/#databases
+# https://docs.djangoproject.com/en/2.2/ref/settings/#databases
 
 DATABASES = {
     'default': {
@@ -305,7 +305,7 @@ LOGGING = {
 }
 
 # Internationalization
-# https://docs.djangoproject.com/en/2.0/topics/i18n/
+# https://docs.djangoproject.com/en/2.2/topics/i18n/
 
 LANGUAGE_CODE = 'en-us'
 
@@ -318,7 +318,7 @@ USE_L10N = True
 USE_TZ = True
 
 # Static files (CSS, JavaScript, Images)
-# https://docs.djangoproject.com/en/2.0/howto/static-files/
+# https://docs.djangoproject.com/en/2.2/howto/static-files/
 
 STATICFILES_FINDERS = [
     'django.contrib.staticfiles.finders.FileSystemFinder',
@@ -376,7 +376,7 @@ REST_FRAMEWORK = {
     'PAGE_SIZE': 10
 }
 
-# add redis cache http://docs.wagtail.io/en/v2.0.1/advanced_topics/performance.html#cache
+# add redis cache http://docs.wagtail.io/en/v2.8/advanced_topics/performance.html#cache
 CACHES = {
     'default': {
         'BACKEND': 'django_redis.cache.RedisCache',
@@ -453,7 +453,7 @@ TEMPLATES = [
             },
             'auto_reload': True,
             'translation_engine': 'django.utils.translation',
-            # FIXME: https://docs.djangoproject.com/en/2.0/topics/templates/#module-django.template.backends.django
+            # FIXME: https://docs.djangoproject.com/en/2.2/topics/templates/#module-django.template.backends.django
             # context_processor usage in jinja templates is discouraged, move these over eventually
             'context_processors': [
                 'django.template.context_processors.debug',
