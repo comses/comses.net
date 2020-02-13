@@ -1,3 +1,4 @@
+from django.core.management import call_command
 from django.urls import resolve
 from guardian.shortcuts import assign_perm
 from rest_framework import status
@@ -224,6 +225,8 @@ class BaseViewSetTestCase(ApiAccountMixin, ResponseStatusCodesMixin, APITestCase
         self.check_create_permissions(self.anonymous_user, create_data)
 
     def check_list(self):
+        # ask elasticsearch to reindex before checking the list
+        call_command('update_index', verbosity=0)
         for user in self.users_able_to_login:
             self.with_logged_in(user, self.instance, self.check_list_permissions)
             assign_perm(create_perm_str(self.instance, 'view'), user_or_group=user, obj=self.instance)
