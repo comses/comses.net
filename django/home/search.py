@@ -8,8 +8,8 @@ from elasticsearch_dsl import Search
 from wagtail.core.models import Page
 from wagtail.search.backends import get_search_backend
 
-# FIXME: core should not import from library
 from library.models import Codebase
+# FIXME: eventually these should live in the `home` app
 from .models import Event, Job, MemberProfile
 
 logger = logging.getLogger(__name__)
@@ -29,7 +29,6 @@ class BaseSearchResult:
         self.pk = int(pk)
         self.score = score
         self.tags = tags
-        logger.error("tags: %s", tags)
         self.title = title
         self.type = type
         self.url = url
@@ -178,6 +177,9 @@ class GeneralSearch:
             results[id].url = pages[id].url
 
     def process(self, results):
+        # FIXME: this method and all its collaborators needs to be refactored to use elasticsearch-dsl response object
+        # which offers a much nicer syntax for iterating over the elasticsearch response see
+        # https://elasticsearch-dsl.readthedocs.io/en/latest/ for details
         data = []
         content_types = defaultdict(list)
         for i, result in enumerate(results):
