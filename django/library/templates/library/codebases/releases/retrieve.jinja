@@ -86,7 +86,7 @@
                          data-share-url="{{ request.build_absolute_uri(release.share_url) }}">
                         <div class='input-group-prepend'>
                             <span class='btn input-group-text'>
-                                <i class='fab fa-retweet' @click="regenerateShareUuid"></i>
+                                <i class='fas fa-sync-alt' @click="regenerateShareUuid"></i>
                             </span>
                         </div>
                         <input id='release-share-url' readonly class='form-control normal-readonly' :value="share_url">
@@ -99,7 +99,7 @@
                     <small class='text-muted'>
                         Use this link to share this release privately with others. Anyone with this URL will be able to
                         access this release. Replace the private link with a new link by pressing
-                        <span class="fab fa-retweet"></span>
+                        <span class="fas fa-sync-alt"></span>
                     </small>
                 {% else %}
                     Hold on! This model is unpublished. Perhaps the authors are not ready for it to be cited yet.
