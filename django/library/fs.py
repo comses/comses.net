@@ -512,7 +512,7 @@ class CodebaseReleaseFsApi:
     def list_sip_contents(self, path=None):
         if path is None:
             path = self.sip_contents_dir
-            name = 'archive'
+            name = 'archive-project-root'
         else:
             name = path.name
         contents = {'label': name, 'contents': []}
