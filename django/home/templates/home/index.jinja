@@ -8,17 +8,20 @@
             {% with site_settings=settings("core.SiteSettings", use_default_site=True) %}
                 {% if site_settings.has_banner %}
                     <div class='banner alert alert-warning' role='alert'>
-                        <h4 class='alert-heading text-muted'>
-                            {{ site_settings.last_modified.strftime('%b %-d, %Y') }}
-                        </h4>
-                        <a href='{{ site_settings.banner_destination_url }}'>
-                            <h2>
-                                <i class='fas fa-bullhorn fa-2x'>
+                        <h4 class='alert-heading'>
+                            <a href='{{ site_settings.banner_destination_url }}'>
+                                <i class='fas fa-bullhorn'>
                                 </i>
-                                {{ site_settings.banner_message }}
-                                <i class='fas fa-bullhorn fa-2x'></i>
-                            </h2>
-                        </a>
+                                CoMSES Net Notice
+                                {{ site_settings.last_modified.strftime('%b %-d, %Y') }}
+                                <i class='fas fa-bullhorn'></i>
+                            </a>
+                        </h4>
+                        <div class='text-left font-weight-bold'>
+                        {% autoescape off %}
+                            {{ site_settings.banner_message }}
+                        {% endautoescape %}
+                        </div>
                     </div>
                 {% endif %}
             {% endwith %}

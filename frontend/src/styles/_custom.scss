@@ -33,6 +33,10 @@ $font-family-base: 'Open Sans', Roboto, 'Helvetica Neue', sans-serif;
     background-color: #fff !important;
 }
 
+.banner {
+    height: 175px;
+}
+
 .badge-comses {
     @extend .badge;
     font-size: 100%;

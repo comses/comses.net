@@ -62,13 +62,13 @@ def get_sentinel_user():
 @register_setting
 class SiteSettings(BaseSetting):
     maintenance_mode = models.BooleanField(default=False)
-    banner_message = models.TextField(help_text=_("Notification message to display to all users"), blank=True)
+    banner_message = MarkdownField(help_text=_("Markdown-enabled banner notification displayed on the front page"), blank=True)
     banner_destination_url = models.URLField(help_text=_("URL to redirect to when this banner is clicked"), blank=True)
     last_modified = models.DateTimeField(auto_now=True)
 
     @property
     def has_banner(self):
-        return bool(self.banner_message.strip())
+        return bool(self.banner_message.raw.strip())
 
     def is_production(self):
         return settings.DEPLOY_ENVIRONMENT.is_production()
