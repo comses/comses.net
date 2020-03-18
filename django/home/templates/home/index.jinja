@@ -5,26 +5,6 @@
         <div class='container'>
             <h1 class='text-white'>A growing collection of resources for <br>computational model-based science.</h1>
             <h3 class='text-white'>Community cyberinfrastructure to preserve computational models &amp; their digital context<br>+ Educational resources and FAQ's on agent based modeling</h3>
-            {% with site_settings=settings("core.SiteSettings", use_default_site=True) %}
-                {% if site_settings.has_banner %}
-                    <div class='banner alert alert-warning' role='alert'>
-                        <h4 class='alert-heading'>
-                            <a href='{{ site_settings.banner_destination_url }}'>
-                                <i class='fas fa-bullhorn'>
-                                </i>
-                                CoMSES Net Notice
-                                {{ site_settings.last_modified.strftime('%b %-d, %Y') }}
-                                <i class='fas fa-bullhorn'></i>
-                            </a>
-                        </h4>
-                        <div class='text-left font-weight-bold'>
-                        {% autoescape off %}
-                            {{ site_settings.banner_message }}
-                        {% endautoescape %}
-                        </div>
-                    </div>
-                {% endif %}
-            {% endwith %}
             <div class='row'>
                 <div class='col'>
                     <a class='btn btn-primary' href='{{ url("library:codebase-list") }}'>View model library</a>
@@ -32,6 +12,28 @@
             </div>
         </div>
     </section>
+    {% with site_settings=settings("core.SiteSettings", use_default_site=True) %}
+        {% if site_settings.has_banner %}
+            <section class='banner'>
+                <div class='alert alert-warning' role='alert'>
+                    <h4 class='alert-heading text-center'>
+                        <a href='{{ site_settings.banner_destination_url }}'>
+                            <i class='fas fa-bullhorn'>
+                            </i>
+                            CoMSES Net Notice
+                            {{ site_settings.last_modified.strftime('%b %-d, %Y') }}
+                            <i class='fas fa-bullhorn'></i>
+                        </a>
+                    </h4>
+                    <div class='text-left font-weight-bold'>
+                        {% autoescape off %}
+                            {{ site_settings.banner_message }}
+                        {% endautoescape %}
+                    </div>
+                </div>
+            </section>
+        {% endif %}
+    {% endwith %}
 {% endblock %}
 {% block page %}
 <section class='mission'>
