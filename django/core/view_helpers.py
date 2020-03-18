@@ -19,7 +19,6 @@ def get_search_queryset(query, queryset, operator="or", fields=None, tags=None, 
         tags = ''
 
     order_by_relevance = not queryset.ordered
-    operator = 'or' if order_by_relevance else 'and'
 
     if query:
         if tags:
