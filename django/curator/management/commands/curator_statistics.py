@@ -74,15 +74,15 @@ class Command(BaseCommand):
                     'doi': release.doi
                 })
 
-    def export_new_and_updated_codebases(self, filters, directory):
-        new_codebases, updated_codebases, releases = Codebase.objects.recently_updated(filters)
-        max_dates_bulk = {r['codebase_id']: r['date'] for r in releases.values('codebase_id').annotate(date=Max('date_created'))}
+    def export_new_and_updated_codebases(self, directory, start_date, end_date=None):
+        new_codebases, updated_codebases, releases = Codebase.objects.updated_after(start_date=start_date, end_date=end_date)
+        max_dates_bulk = {r['codebase_id']: r['date'] for r in releases.values('codebase_id').annotate(date=Max('last_modified'))}
         for qs, filename in [(new_codebases, 'new_codebases.csv'), (updated_codebases, 'updated_codebases.csv')]:
             with open(os.path.join(directory, filename), 'w', newline='') as f:
                 fieldnames = ['url', 'title', 'date']
                 writer = csv.DictWriter(f, fieldnames=fieldnames)
                 writer.writeheader()
-                for codebase in qs.iterator():
+                for codebase in qs:
                     writer.writerow({'url': codebase.get_absolute_url(),
                                      'title': codebase.title,
                                      'date': max_dates_bulk[codebase.id]})
@@ -101,6 +101,7 @@ class Command(BaseCommand):
         """
         from_date_string = options.get('from')
         to_date_string = options.get('to')
+        directory = options['directory']
 
         default_from_date = date.today().replace(month=1, day=1)
         from_date = parse_date(from_date_string).replace(tzinfo=pytz.UTC) if from_date_string else default_from_date
@@ -110,7 +111,6 @@ class Command(BaseCommand):
             filters = dict(date_created__range=[from_date, to_date])
         else:
             filters = dict(date_created__gte=from_date)
-        directory = options['directory']
 
         os.makedirs(directory, exist_ok=True)
         downloads = CodebaseReleaseDownload.objects.filter(
@@ -129,6 +129,7 @@ class Command(BaseCommand):
                 downloads,
                 dest=os.path.join(directory, 'ip_download_counts.csv'))
         if 'new' in aggregations:
-            self.export_new_and_updated_codebases(filters=filters, directory=directory)
+            self.export_new_and_updated_codebases(directory, start_date=from_date, end_date=to_date)
+
         if 'reviewed' in aggregations:
             self.export_reviewed_codebases(filters=filters, directory=directory)

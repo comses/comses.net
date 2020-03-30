@@ -15,7 +15,7 @@ from django.core.cache import cache
 from django.core.files.images import ImageFile
 from django.core.files.storage import FileSystemStorage
 from django.db import models, transaction
-from django.db.models import Prefetch
+from django.db.models import Prefetch, Q
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.http import urlencode
@@ -280,13 +280,13 @@ class CodebaseQuerySet(models.QuerySet):
     def accessible(self, user):
         return get_viewable_objects_for_user(user=user, queryset=self.with_viewable_releases(user=user))
 
-    def with_contributors(self, release_contributor_qs=None, user=None):
+    def with_contributors(self, release_contributor_qs=None, user=None, **kwargs):
         if user is not None:
             release_qs = get_viewable_objects_for_user(user=user, queryset=CodebaseRelease.objects.all())
-            codebase_qs = get_viewable_objects_for_user(user=user, queryset=self)
+            codebase_qs = get_viewable_objects_for_user(user=user, queryset=self.filter(**kwargs))
         else:
             release_qs = CodebaseRelease.objects.public().only('id', 'codebase_id')
-            codebase_qs = self.filter(live=True)
+            codebase_qs = self.filter(live=True, **kwargs)
         return codebase_qs.prefetch_related(
             Prefetch('releases', release_qs.with_release_contributors(release_contributor_qs)))
 
@@ -301,39 +301,52 @@ class CodebaseQuerySet(models.QuerySet):
         for codebase in codebases:
             codebase.compute_contributors(force=True)
 
-    def public(self):
+    def public(self, **kwargs):
         """Returns a queryset of all live codebases and their live releases"""
-        return self.with_contributors()
+        return self.with_contributors(**kwargs)
 
     def peer_reviewed(self):
         return self.public().filter(peer_reviewed=True)
 
-    def recently_updated(self, date_filters, **kwargs):
-        """ Returns a tuple of three querysets containing new codebases, recently updated codebases, and
-        all releases matching the date filters, in order """
-        # FIXME: logic might need to be adjusted, updated releases that have been recently modified are not captured
-        # (would need to also query on last_modified I think)
-        # copy pasted from the curator_statistics.py management command
-        releases = CodebaseRelease.objects.filter(**date_filters, **kwargs)
+    def updated_after(self, start_date, end_date=None, **kwargs):
+        """
+        copy pasted and then refactored from the curator_statistics.py management command
 
-        if 'date_created__range' in date_filters:
-            updated_releases = CodebaseRelease.objects.exclude(date_created__gte=date_filters['date_created__range'][0])
+        Returns a tuple of three querysets containing new codebases, recently updated codebases, and
+        all releases matching the date filters, in that order.
+
+        Parameters are a start_date, optional end_date, and arbitrary filters placed in the kwargs (we should probably validate these)
+
+        New codebases are those with releases that were created or published after start_date and before end_date if specified
+        Updated codebases are those Codebases created outside the (start_date, end_date) interval but with new CodebaseReleases
+        all_releases are all CodebaseReleases that were created or modified within the (start_date, end_date) interval
+        """
+
+
+        # Establish initial querysets
+        # new codebases are those created or published after the given start_date
+        new_codebases = Codebase.objects.public(**kwargs).filter(Q(date_created__gte=start_date) | Q(first_published_at__gte=start_date))
+        # updated codebases are those codebases with a last_modified after the start date, sans the new codebases
+        updated_codebases = Codebase.objects.public(last_modified__gte=start_date)
+        if end_date is not None:
+            # apply end date filtering to new and updated codebases
+            new_codebases = new_codebases.filter(Q(date_created__lte=end_date) & Q(first_published_at__lte=end_date))
+            updated_codebases = updated_codebases.filter(last_modified__lte=end_date)
         else:
-            updated_releases = CodebaseRelease.objects.exclude(**date_filters)
-        new_codebases = self.public().filter(
-            releases__in=releases
-        ).exclude(releases__in=updated_releases).distinct().order_by('title')
-        updated_codebases = self.public().filter(
-            releases__in=releases).filter(
-            releases__in=updated_releases).distinct().order_by('title')
+            end_date = timezone.now()
+        # remove the new codebases from the updated codebases
+        updated_codebases = updated_codebases.difference(new_codebases)
+        releases = CodebaseRelease.objects.public().filter(Q(date_created__range=(start_date, end_date)) | Q(last_modified__range=(start_date, end_date)))
         return new_codebases, updated_codebases, releases
 
     def get_all_release_frameworks(self, codebase):
+        # FIXME: this probably just belongs on Codebase
         return codebase.releases.exclude(platform_tags__isnull=True).values_list(
             'platform_tags__name',
             flat=True)
 
     def get_all_release_programming_languages(self, codebase):
+        # FIXME: this probably just belongs on Codebase
         return codebase.releases.exclude(programming_languages__isnull=True).values_list(
             'programming_languages__name',
             flat=True)
@@ -782,8 +795,9 @@ class CodebaseReleaseQuerySet(models.QuerySet):
     def with_submitter(self):
         return self.prefetch_related('submitter')
 
-    def public(self):
-        return self.filter(draft=False).filter(live=True)
+    def public(self, **kwargs):
+        # FIXME: is there ever a time draft + live are both True?
+        return self.filter(draft=False, live=True, **kwargs)
 
     def accessible_without_codebase(self, user):
         return get_viewable_objects_for_user(user, queryset=self)
