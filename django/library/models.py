@@ -328,15 +328,16 @@ class CodebaseQuerySet(models.QuerySet):
         new_codebases = Codebase.objects.public(**kwargs).filter(Q(date_created__gte=start_date) | Q(first_published_at__gte=start_date))
         # updated codebases are those codebases with a last_modified after the start date, sans the new codebases
         updated_codebases = Codebase.objects.public(last_modified__gte=start_date)
-        if end_date is not None:
-            # apply end date filtering to new and updated codebases
+        if end_date is None:
+            # set today as the default interval end
+            end_date = timezone.now().date()
+        else:
+            # otherwise, apply the filter based on the desired end date over the new and updated codebases
             new_codebases = new_codebases.filter(Q(date_created__lte=end_date) & Q(first_published_at__lte=end_date))
             updated_codebases = updated_codebases.filter(last_modified__lte=end_date)
-        else:
-            end_date = timezone.now()
         # remove the new codebases from the updated codebases
         updated_codebases = updated_codebases.difference(new_codebases)
-        releases = CodebaseRelease.objects.public().filter(Q(date_created__range=(start_date, end_date)) | Q(last_modified__range=(start_date, end_date)))
+        releases = CodebaseRelease.objects.filter(id__in=(new_codebases.values('releases') | updated_codebases.values('releases')))
         return new_codebases, updated_codebases, releases
 
     def get_all_release_frameworks(self, codebase):
@@ -1330,6 +1331,12 @@ class PeerReviewQuerySet(models.QuerySet):
         if query:
             return get_search_queryset(query, queryset)
         return queryset
+
+    def completed(self, **kwargs):
+        return self.filter(status=ReviewStatus.complete.name, **kwargs)
+
+    def completed_releases(self, **kwargs):
+        return CodebaseRelease.objects.filter(id__in=self.completed(**kwargs))
 
 
 @register_snippet

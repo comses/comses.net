@@ -8,7 +8,7 @@ from dateutil.parser import parse as parse_date
 from django.core.management.base import BaseCommand
 from django.db.models import Count, Max
 
-from library.models import CodebaseReleaseDownload, CodebaseRelease, Codebase
+from library.models import CodebaseReleaseDownload, CodebaseRelease, Codebase, PeerReview
 
 logger = logging.getLogger(__name__)
 
@@ -59,17 +59,17 @@ class Command(BaseCommand):
             for result in results.iterator():
                 writer.writerow(result)
 
-    def export_reviewed_codebases(self, filters, directory, filename='reviewed-releases.csv'):
-        header = ['url', 'title', 'date requested', 'last modified', 'doi']
-        releases = CodebaseRelease.objects.filter(**filters, peer_reviewed=True)
+    def export_reviewed_codebases(self, directory, start_date=None, end_date=None, filename='reviewed-releases.csv'):
+        reviewed_releases = PeerReview.objects.completed_releases(last_modified__range=(start_date, end_date))
+        header = ['url', 'title', 'published date', 'last modified', 'doi']
         with open(os.path.join(directory, filename), 'w') as out:
             writer = csv.DictWriter(out, fieldnames=header)
             writer.writeheader()
-            for release in releases.iterator():
+            for release in reviewed_releases:
                 writer.writerow({
                     'url': release.get_absolute_url(),
                     'title': release.title,
-                    'date requested': release.date_created,
+                    'published date': release.first_published_at,
                     'last modified': release.last_modified,
                     'doi': release.doi
                 })
@@ -79,13 +79,14 @@ class Command(BaseCommand):
         max_dates_bulk = {r['codebase_id']: r['date'] for r in releases.values('codebase_id').annotate(date=Max('last_modified'))}
         for qs, filename in [(new_codebases, 'new_codebases.csv'), (updated_codebases, 'updated_codebases.csv')]:
             with open(os.path.join(directory, filename), 'w', newline='') as f:
-                fieldnames = ['url', 'title', 'date']
+                fieldnames = ['url', 'title', 'last modified']
                 writer = csv.DictWriter(f, fieldnames=fieldnames)
                 writer.writeheader()
                 for codebase in qs:
                     writer.writerow({'url': codebase.get_absolute_url(),
                                      'title': codebase.title,
-                                     'date': max_dates_bulk[codebase.id]})
+                                     'last modified': max_dates_bulk[codebase.id]})
+        return releases
 
     def handle(self, *args, **options):
         """
@@ -104,6 +105,7 @@ class Command(BaseCommand):
         directory = options['directory']
 
         default_from_date = date.today().replace(month=1, day=1)
+        default_to_date = date.today()
         from_date = parse_date(from_date_string).replace(tzinfo=pytz.UTC) if from_date_string else default_from_date
         to_date = parse_date(to_date_string).replace(tzinfo=pytz.UTC) if to_date_string else None
         aggregations = options['aggregations'].split(',')
@@ -111,6 +113,7 @@ class Command(BaseCommand):
             filters = dict(date_created__range=[from_date, to_date])
         else:
             filters = dict(date_created__gte=from_date)
+            to_date = default_to_date
 
         os.makedirs(directory, exist_ok=True)
         downloads = CodebaseReleaseDownload.objects.filter(
@@ -128,8 +131,10 @@ class Command(BaseCommand):
             self.export_ip_download_statistics(
                 downloads,
                 dest=os.path.join(directory, 'ip_download_counts.csv'))
+
+        all_releases = None
         if 'new' in aggregations:
             self.export_new_and_updated_codebases(directory, start_date=from_date, end_date=to_date)
 
         if 'reviewed' in aggregations:
-            self.export_reviewed_codebases(filters=filters, directory=directory)
+            self.export_reviewed_codebases(directory, start_date=from_date, end_date=to_date)
