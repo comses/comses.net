@@ -46,7 +46,7 @@ class Command(BaseCommand):
             writer.writeheader()
             for result in results.iterator():
                 codebase = codebases[result['release__codebase__id']]
-                writer.writerow({'url': codebase.get_absolute_url(),
+                writer.writerow({'url': codebase.permanent_url,
                                  'count': result['count'],
                                  'title': codebase.title})
 
@@ -61,15 +61,16 @@ class Command(BaseCommand):
 
     def export_reviewed_codebases(self, directory, start_date=None, end_date=None, filename='reviewed-releases.csv'):
         reviewed_releases = PeerReview.objects.completed_releases(last_modified__range=(start_date, end_date))
-        header = ['url', 'title', 'published date', 'last modified', 'doi']
+        header = ['url', 'title', 'date created', 'first published', 'last modified', 'doi']
         with open(os.path.join(directory, filename), 'w') as out:
             writer = csv.DictWriter(out, fieldnames=header)
             writer.writeheader()
             for release in reviewed_releases:
                 writer.writerow({
-                    'url': release.get_absolute_url(),
+                    'url': release.permanent_url,
                     'title': release.title,
-                    'published date': release.first_published_at,
+                    'date created': release.date_created,
+                    'first published': release.first_published_at,
                     'last modified': release.last_modified,
                     'doi': release.doi
                 })
@@ -79,12 +80,14 @@ class Command(BaseCommand):
         max_dates_bulk = {r['codebase_id']: r['date'] for r in releases.values('codebase_id').annotate(date=Max('last_modified'))}
         for qs, filename in [(new_codebases, 'new_codebases.csv'), (updated_codebases, 'updated_codebases.csv')]:
             with open(os.path.join(directory, filename), 'w', newline='') as f:
-                fieldnames = ['url', 'title', 'last modified']
+                fieldnames = ['url', 'title', 'date created', 'first published', 'last modified']
                 writer = csv.DictWriter(f, fieldnames=fieldnames)
                 writer.writeheader()
                 for codebase in qs:
-                    writer.writerow({'url': codebase.get_absolute_url(),
+                    writer.writerow({'url': codebase.permanent_url,
                                      'title': codebase.title,
+                                     'date created': codebase.date_created,
+                                     'first published': codebase.first_published_at,
                                      'last modified': max_dates_bulk[codebase.id]})
         return releases
 
@@ -132,7 +135,6 @@ class Command(BaseCommand):
                 downloads,
                 dest=os.path.join(directory, 'ip_download_counts.csv'))
 
-        all_releases = None
         if 'new' in aggregations:
             self.export_new_and_updated_codebases(directory, start_date=from_date, end_date=to_date)
 

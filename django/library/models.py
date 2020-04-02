@@ -558,6 +558,12 @@ class Codebase(index.Indexed, ClusterableModel):
     def format_doi_url(doi_string):
         return 'https://doi.org/{0}'.format(doi_string) if doi_string else ''
 
+    @property
+    def permanent_url(self):
+        if self.doi:
+            return self.doi_url
+        return f'{settings.BASE_URL}{self.get_absolute_url()}'
+
     def get_absolute_url(self):
         return reverse('library:codebase-detail', kwargs={'identifier': self.identifier})
 
@@ -1336,7 +1342,7 @@ class PeerReviewQuerySet(models.QuerySet):
         return self.filter(status=ReviewStatus.complete.name, **kwargs)
 
     def completed_releases(self, **kwargs):
-        return CodebaseRelease.objects.filter(id__in=self.completed(**kwargs))
+        return CodebaseRelease.objects.filter(id__in=self.completed(**kwargs).values('codebase_release'))
 
 
 @register_snippet
