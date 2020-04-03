@@ -39,8 +39,13 @@
     </div>
     <div class='content'>
         <h2>Issues</h2>
-        <script>
-        {{ mailchimp_archives_js|safe }}
-        </script>
+        {% if has_cached_mailchimp_js %}
+            <script>
+                {{ mailchimp_js|safe }}
+            </script>
+        {% else %}
+            <script src='{{ mailchimp_digest_archive_url }}'>
+            </script>
+        {% endif %}
     </div>
 {% endblock content %}

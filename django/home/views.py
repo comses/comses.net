@@ -24,7 +24,7 @@ from rest_framework.views import APIView
 from taggit.models import Tag
 from wagtail.images.models import Image
 
-from core.models import FollowUser, Event, Job
+from core.models import FollowUser, Event, Job, SiteSettings
 from core.permissions import ObjectPermissions, ViewRestrictedObjectPermissions
 from core.serializers import TagSerializer, EventSerializer, JobSerializer
 from core.utils import parse_datetime, send_markdown_email
@@ -339,29 +339,28 @@ class SearchView(TemplateView):
 
 class DigestView(TemplateView):
     template_name = 'home/digest.jinja'
-    # FIXME: these should be moved to SiteSettings
-    NUMBER_OF_POSTS = 20
-    ARCHIVE_URL = 'http://comses.us7.list-manage.com/generate-js/?u=35f29299716fcb07509229c1c&fid=21449&show={0}'
-
-    @property
-    def mailchimp_archive_url(self):
-        return self.ARCHIVE_URL.format(self.NUMBER_OF_POSTS)
-
-    @property
-    def _error_msg(self):
-        return 'Unable to contact mailchimp archive url {0}'.format(self.mailchimp_archive_url)
+    DEFAULT_ARCHIVE_URL = 'https://comses.us7.list-manage.com/generate-js/?u=35f29299716fcb07509229c1c&fid=21449&show=20'
+    DEFAULT_USER_AGENT = 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:74.0) Gecko/20100101 Firefox/74.0'
 
     def get_context_data(self, **kwargs):
         context_data = super().get_context_data(**kwargs)
-        context_data.setdefault('mailchimp_archives_js', 'document.write({})'.format(self._error_msg))
+        context_data.setdefault('has_cached_mailchimp_js', False)
+        mailchimp_digest_archive_url = SiteSettings.for_site(self.request.site).mailchimp_digest_archive_url
+        if not mailchimp_digest_archive_url:
+            mailchimp_digest_archive_url = self.DEFAULT_ARCHIVE_URL
+        context_data['mailchimp_digest_archive_url'] = mailchimp_digest_archive_url
         try:
             cache_key = 'digest:js'
-            mailchimp_archives_js = cache.get(cache_key)
-            if not mailchimp_archives_js:
-                response = requests.get(self.mailchimp_archive_url)
-                mailchimp_archives_js = response.text  # a pile of document.writes
-                cache.set(cache_key, mailchimp_archives_js, 86400)
-            context_data['mailchimp_archives_js'] = mailchimp_archives_js
+            mailchimp_js = cache.get(cache_key)
+            if not mailchimp_js:
+                response = requests.get(self.mailchimp_archive_url, headers={
+                    'User-Agent': self.DEFAULT_USER_AGENT
+                })
+                if response.status_code == 200:
+                    mailchimp_js = response.text  # a pile of document.writes
+                    cache.set(cache_key, mailchimp_js, 86400)
+                    context_data['has_cached_mailchimp_js'] = True
+            context_data['mailchimp_js'] = mailchimp_js
         except requests.exceptions.RequestException as e:
             logger.exception(e)
         return context_data
