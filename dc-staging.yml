@@ -93,6 +93,7 @@ services:
     volumes:
       - ./deploy/nginx/nginx-staging.conf:/etc/nginx/nginx.conf
       - ./deploy/nginx/uwsgi_params:/etc/nginx/uwsgi_params
+      - ./deploy/nginx/well-known:/srv/.well-known
       - ./docker/shared/logs/nginx:/var/log/nginx
       - ./docker/shared/static:/srv/static
       - ./docker/shared/media:/srv/media
