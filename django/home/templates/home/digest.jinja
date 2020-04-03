@@ -39,7 +39,7 @@
     </div>
     <div class='content'>
         <h2>Issues</h2>
-        {% if has_cached_mailchimp_js %}
+        {% if mailchimp_js %}
             <script>
                 {{ mailchimp_js|safe }}
             </script>

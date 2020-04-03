@@ -342,25 +342,30 @@ class DigestView(TemplateView):
     DEFAULT_ARCHIVE_URL = 'https://comses.us7.list-manage.com/generate-js/?u=35f29299716fcb07509229c1c&fid=21449&show=20'
     DEFAULT_USER_AGENT = 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:74.0) Gecko/20100101 Firefox/74.0'
 
+    def get_cached_mailchimp_js(self, archive_url):
+        cache_key = 'digest:mailchimpjs'
+        mailchimp_js = cache.get(cache_key)
+        if not mailchimp_js:
+            response = requests.get(archive_url, headers={
+                'User-Agent': self.DEFAULT_USER_AGENT
+            })
+            if response.status_code == 200:
+                mailchimp_js = response.text  # a pile of document.writes
+                cache.set(cache_key, mailchimp_js, 86400)
+            else:
+                return None
+        return mailchimp_js
+
     def get_context_data(self, **kwargs):
         context_data = super().get_context_data(**kwargs)
-        context_data.setdefault('has_cached_mailchimp_js', False)
         mailchimp_digest_archive_url = SiteSettings.for_site(self.request.site).mailchimp_digest_archive_url
         if not mailchimp_digest_archive_url:
             mailchimp_digest_archive_url = self.DEFAULT_ARCHIVE_URL
         context_data['mailchimp_digest_archive_url'] = mailchimp_digest_archive_url
         try:
-            cache_key = 'digest:js'
-            mailchimp_js = cache.get(cache_key)
-            if not mailchimp_js:
-                response = requests.get(self.mailchimp_archive_url, headers={
-                    'User-Agent': self.DEFAULT_USER_AGENT
-                })
-                if response.status_code == 200:
-                    mailchimp_js = response.text  # a pile of document.writes
-                    cache.set(cache_key, mailchimp_js, 86400)
-                    context_data['has_cached_mailchimp_js'] = True
-            context_data['mailchimp_js'] = mailchimp_js
+            mailchimp_js = self.get_cached_mailchimp_js(mailchimp_digest_archive_url)
+            if mailchimp_js:
+                context_data['mailchimp_js'] = mailchimp_js
         except requests.exceptions.RequestException as e:
             logger.exception(e)
         return context_data
