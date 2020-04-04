@@ -322,7 +322,6 @@ class CodebaseQuerySet(models.QuerySet):
         all_releases are all CodebaseReleases that were created or modified within the (start_date, end_date) interval
         """
 
-
         # Establish initial querysets
         # new codebases are those created or published after the given start_date
         new_codebases = Codebase.objects.public(**kwargs).filter(Q(date_created__gte=start_date) | Q(first_published_at__gte=start_date))
@@ -855,6 +854,8 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
     summary = models.CharField(max_length=1000, blank=True)
     documentation = models.FileField(null=True, help_text=_('Fulltext documentation file (PDF/PDFA)'))
     embargo_end_date = models.DateTimeField(null=True, blank=True)
+    output_data_url = models.URLField(blank=True,
+                                      help_text=_('Permanent URL to output data from this model.'))
     version_number = models.CharField(max_length=32,
                                       help_text=_('semver string, e.g., 1.0.5, see semver.org'))
 
