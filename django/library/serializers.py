@@ -56,8 +56,7 @@ class ContributorSerializer(serializers.ModelSerializer):
     def save(self, **kwargs):
         if self.instance is None:
             validated_data = dict(
-                list(self.validated_data.items()) +
-                list(kwargs.items())
+                list(self.validated_data.items()) + list(kwargs.items())
             )
             user, self.instance = self.get_existing_contributor(validated_data)
             if user:
@@ -313,6 +312,7 @@ class CodebaseReleaseSerializer(serializers.ModelSerializer):
     date_created = serializers.DateTimeField(format=YMD_DATETIME_FORMAT, read_only=True)
     first_published_at = serializers.DateTimeField(format=DATE_PUBLISHED_FORMAT, read_only=True)
     last_published_on = serializers.DateTimeField(format=DATE_PUBLISHED_FORMAT, read_only=True)
+    output_data_url = serializers.URLField()
     license = LicenseSerializer()
     live = serializers.ReadOnlyField()
     os_display = serializers.ReadOnlyField(source='get_os_display')
@@ -344,7 +344,7 @@ class CodebaseReleaseSerializer(serializers.ModelSerializer):
                   'release_notes', 'documentation', 'doi', 'download_count', 'embargo_end_date', 'first_published_at',
                   'last_modified', 'last_published_on', 'license', 'live', 'os', 'os_display', 'peer_reviewed',
                   'platforms', 'programming_languages', 'submitted_package', 'submitter', 'codebase', 'review_status',
-                  'version_number', 'id', 'share_url', 'urls',)
+                  'output_data_url', 'version_number', 'id', 'share_url', 'urls',)
 
 
 class CodebaseReleaseEditSerializer(CodebaseReleaseSerializer):
