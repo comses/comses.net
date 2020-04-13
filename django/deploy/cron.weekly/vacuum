@@ -1,0 +1,4 @@
+#!/bin/sh
+
+# perform a full vacuum + analyze db and log the results
+vacuumdb -f -a -h db -U comsesnet -v --analyze > /shared/logs/vacuum.log-$(date +%F) 2>&1

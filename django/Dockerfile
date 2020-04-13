@@ -39,6 +39,7 @@ COPY ${REQUIREMENTS_FILE} requirements.txt /tmp/
 RUN pip3 install -r /tmp/${REQUIREMENTS_FILE} --no-cache-dir
 COPY ./deploy/cron.daily/* /etc/cron.daily/
 COPY ./deploy/cron.hourly/* /etc/cron.hourly/
+COPY ./deploy/cron.weekly/* /etc/cron.weekly/
 COPY ./deploy/db/autopostgresqlbackup.conf /etc/default/autopostgresqlbackup
 COPY ./deploy/db/postgresql-backup-pre /etc/
 COPY ${RUN_SCRIPT} /etc/service/django/run
