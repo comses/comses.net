@@ -5,6 +5,5 @@ coveralls
 django-debug-toolbar
 django-debug-toolbar-request-history
 django-fixture-magic
-pgcli
 sphinx
 sphinx_rtd_theme

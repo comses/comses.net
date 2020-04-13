@@ -37,6 +37,7 @@ uwsgitop==0.11
 wagtail==2.8
 invoke
 ipython
+pgcli
 rarfile
 # CoMSES citation app - disabled until migration to django 2.0 https://github.com/comses/citation/issues/20
 # -e git+https://github.com/comses/citation.git#egg=citation
