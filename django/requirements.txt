@@ -34,7 +34,7 @@ semver==2.9.1
 sentry-sdk==0.14.3
 uwsgi==2.0.18
 uwsgitop==0.11
-wagtail==2.8
+wagtail==2.8.1
 invoke
 ipython
 pgcli
