@@ -1,7 +1,7 @@
 bagit==1.7.0
 bleach==3.1.4
 django-allauth==0.41.0
-django-anymail[mailgun]==7.0.0
+django-anymail[mailgun]==7.1.0
 django-cookie-law==2.0.3
 django-extensions==2.2.9
 django-guardian==2.2.0
@@ -28,7 +28,7 @@ elasticsearch>=7.0.0,<8.0.0
 html2text>=2016.9.19
 markdown==3.2.1
 nltk>=3.2.5,<4.0.0
-psycopg2-binary==2.8.4
+psycopg2-binary==2.8.5
 requests==2.23.0
 semver==2.9.1
 sentry-sdk==0.14.3
