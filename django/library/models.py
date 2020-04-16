@@ -315,6 +315,8 @@ class CodebaseQuerySet(models.QuerySet):
         Returns a tuple of three querysets containing new codebases, recently updated codebases, and
         all releases matching the date filters, in that order.
 
+        FIXME: can probably remove the third queryset, we no longer need all releases
+
         Parameters are a start_date, optional end_date, and arbitrary filters placed in the kwargs (we should probably validate these)
 
         New codebases are those with releases that were created or published after start_date and before end_date if specified
@@ -372,11 +374,9 @@ class Codebase(index.Indexed, ClusterableModel):
 
     date_created = models.DateTimeField(default=timezone.now)
     last_modified = models.DateTimeField(auto_now=True)
-    # FIXME: should this be a rollup of peer reviewed CodebaseReleases?
+    # set to true if any of this Codebase's releases have passed peer review
     peer_reviewed = models.BooleanField(default=False)
 
-    # FIXME: right now leaning towards identifier as the agnostic way to ID any given Codebase. It is currently set to the
-    # old Drupal NID but that means we need to come up with something on model upload
     identifier = models.CharField(max_length=128, unique=True)
     doi = models.CharField(max_length=128, unique=True, null=True)
     uuid = models.UUIDField(unique=True, default=uuid.uuid4, editable=False)
@@ -714,6 +714,10 @@ class Codebase(index.Indexed, ClusterableModel):
             self.latest_version = release
             self.save()
         return release
+
+    @classmethod
+    def get_indexed_objects(cls):
+        return cls.objects.public()
 
     def __str__(self):
         return "{0} {1} identifier={2} live={3}".format(self.title,
@@ -1197,6 +1201,10 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
         if version_number in existing_version_numbers:
             raise ValidationError({'version_number': [f"Another release has this version number {version_number}. Please select a different version number."]})
         self.version_number = version_number
+
+    @classmethod
+    def get_indexed_objects(cls):
+        return cls.objects.public()
 
     def __str__(self):
         return '{0} {1} v{2}'.format(self.codebase, self.submitter.username, self.version_number)
