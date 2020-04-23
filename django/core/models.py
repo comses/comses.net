@@ -62,6 +62,7 @@ def get_sentinel_user():
 @register_setting
 class SiteSettings(BaseSetting):
     maintenance_mode = models.BooleanField(default=False)
+    banner_message_title = models.CharField(max_length=64, blank=True, default='CoMSES Net Notice')
     banner_message = MarkdownField(help_text=_("Markdown-enabled banner notification displayed on the front page"), blank=True)
     banner_destination_url = models.URLField(help_text=_("URL to redirect to when this banner is clicked"), blank=True)
     last_modified = models.DateTimeField(auto_now=True)
