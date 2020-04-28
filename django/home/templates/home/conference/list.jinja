@@ -7,11 +7,14 @@
 {% block content %}
     {{ breadcrumb([{'url': '/community/', 'text': 'Community'}, {'text': 'CoMSES Virtual Conferences' }])}}
     {{ subnav(page.get_navigation_links()) }}
-    <p class='lead'>
-    CoMSES Net hosted its inaugural virtual conference in 2017 to provide an interactive venue for the computational
-    modeling community with video presentations and feedback provided in an asynchronous format
-    via our <a href='https://www.discourse.org/'>Discourse</a> <a href='{{ DISCOURSE_BASE_URL }}'>forum</a>.
-    </p>
+    <div class='jumbotron'>
+        <h1 class="display-5">CoMSES Virtual Conferences</h1>
+        <p class='pt-4 lead'>
+        CoMSES Net hosted its inaugural virtual conference in 2017 to provide an interactive venue for the computational
+        modeling community with video presentations and feedback provided in an asynchronous format
+        via our <a href='https://www.discourse.org/'>Discourse</a> <a target='_blank' href='{{ DISCOURSE_BASE_URL }}'>forums</a>.
+        </p>
+    </div>
     <a class='btn btn-primary' href='{{ page.get_children().live().last().url }}'>Join the latest conference</a>
     <br/>
     <br/>
