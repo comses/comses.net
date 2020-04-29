@@ -46,6 +46,7 @@ services:
       - "127.0.0.1:3000:3000"
     volumes:
       - ./frontend:/code
+      - /code/node_modules
       - ./docker/shared:/shared
       - ./deploy/conf/config.ini:/secrets/config.ini
   cms:
