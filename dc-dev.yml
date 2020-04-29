@@ -45,8 +45,7 @@ services:
     ports:
       - "127.0.0.1:3000:3000"
     volumes:
-      - ./frontend/src:/code/src
-      - ./frontend/deploy:/code/deploy
+      - ./frontend:/code
       - ./docker/shared:/shared
       - ./deploy/conf/config.ini:/secrets/config.ini
   cms:
