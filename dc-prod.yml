@@ -81,9 +81,11 @@ services:
     build: frontend
     image: comses/cmsjs:${RELEASE_VERSION}
     command: ['yarn', 'build']
+    environment:
+      NODE_ENV: "production"
     volumes:
+      - ./frontend/yarn.lock:/code/yarn.lock
       - ./frontend/src:/code/src
-      - ./frontend/deploy:/code/deploy
       - ./docker/shared/webpack:/shared/webpack
       - ./deploy/conf/config.ini:/secrets/config.ini
   maintenance:

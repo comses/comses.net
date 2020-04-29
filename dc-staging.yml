@@ -78,13 +78,14 @@ services:
   js:
     # FIXME: currently needs a second Django `./manage.py collectstatic` to move generated assets from Django into
     # static directory, seems we should be able to skip that step
-    # command: "npm run build"
     build: frontend
     image: comses/cmsjs:${RELEASE_VERSION}
     command: ['yarn', 'build']
+    environment:
+      NODE_ENV: "staging"
     volumes:
       - ./frontend/src:/code/src
-      - ./frontend/deploy:/code/deploy
+      - ./frontend/yarn.lock:/code/yarn.lock
       - ./docker/shared/webpack:/shared/webpack
       - ./deploy/conf/config.ini:/secrets/config.ini
   nginx:
