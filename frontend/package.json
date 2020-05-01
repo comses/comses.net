@@ -7,7 +7,9 @@
     "build": "vue-cli-service build",
     "lint": "vue-cli-service lint",
     "test:e2e": "vue-cli-service test:e2e",
-    "test:unit": "vue-cli-service test:unit"
+    "test:unit": "vue-cli-service test:unit",
+    "snyk-protect": "snyk protect",
+    "prepublish": "npm run snyk-protect"
   },
   "dependencies": {
     "@sentry/browser": "^5.7.0",
@@ -19,7 +21,7 @@
     "detect-browser": "^4.4.0",
     "@fortawesome/fontawesome-free": "^5.12.0",
     "fullcalendar": "^3.10.0",
-    "jquery": "~3.4.1",
+    "jquery": "~3.5.0",
     "marked": "^0.7.0",
     "moment": "^2.24.0",
     "popper.js": "^1.15.0",
@@ -34,7 +36,8 @@
     "vuedraggable": "^2.20.0",
     "vuejs-datepicker": "^1.5.4",
     "vuex": "^3.0.1",
-    "yup": "^0.27.0"
+    "yup": "^0.27.0",
+    "snyk": "^1.316.1"
   },
   "devDependencies": {
     "@types/jest": "^23.1.4",
@@ -56,5 +59,6 @@
     "typescript": "^3.2.1",
     "vue-template-compiler": "^2.5.21",
     "webpack-bundle-tracker": "^0.4.2-beta"
-  }
+  },
+  "snyk": true
 }
