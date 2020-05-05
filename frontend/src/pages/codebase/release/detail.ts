@@ -36,9 +36,10 @@ export const schema = yup.object().shape({
             outputs.
         </p>
         <c-markdown v-model="release_notes" :errorMsgs="errors.release_notes" name="releaseNotes" rows="3"
-            label="Release Notes" :required="config.release_notes">
+            label="Release Notes" help="Details about this specific release: what's new, improvements to existing features, bug fixes, etc."
+            :required="config.release_notes">
         </c-markdown>
-        <c-datepicker v-model="embargo_end_date" :errorMsgs="errors.embargo_end_date" name="embargoEndDate" :clearButton="true"
+        <c-datepicker v-if="! isPublished" v-model="embargo_end_date" :errorMsgs="errors.embargo_end_date" name="embargoEndDate" :clearButton="true"
             :required="config.embargo_end_date"
             label="Embargo End Date"
             help="The date your private release will be automatically made public">

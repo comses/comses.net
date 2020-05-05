@@ -9,6 +9,7 @@ import {UploadPage} from './upload';
 import CodebaseReleaseMetadata from './detail';
 import CodebaseEditForm from '../Edit.vue';
 import {store} from './store';
+import jQuery from 'jquery';
 import {CreateOrUpdateHandler} from '@/api/handler';
 import {CodebaseReleaseAPI, CodebaseAPI, ReviewEditorAPI} from '@/api';
 import * as _ from 'lodash';
@@ -50,7 +51,7 @@ type CodebaseTabs = 'metadata' | 'media';
                         </ul>
                         <div class="tab-content">
                             <div :class="['tab-pane fade', contentClass('metadata')]">
-                                <codebase-edit-form :_identifier="identifier" redirect="#editCodebaseModal"
+                                <codebase-edit-form ref="codebaseEditForm" :_identifier="identifier" redirect="#editCodebaseModal"
                                     @updated="$emit('updated', $event)">
                                 </codebase-edit-form>
                             </div>
@@ -124,6 +125,17 @@ class CodebaseEditFormPopup extends Vue {
     public async clear() {
         await codebaseAPI.mediaClear(this.identifier);
         this.getMediaFiles();
+    }
+
+    mounted() {
+      this.$nextTick(() => {
+        const self = this;
+        jQuery('#editCodebaseModal').on('show.bs.modal', function(e) {
+          setTimeout(() => {
+            self.$refs.codebaseEditForm.refresh();
+          }, 500);
+        });
+      });
     }
 }
 

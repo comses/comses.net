@@ -12,8 +12,9 @@
       v-model="description"
       :errorMsgs="errors.description"
       :required="config.description"
-      help="An abstract style summary of your model. There is no limit on length but please keep it as succinct as possible. "
+      help="A summary description of your model similar to an abstract. There is no limit on length but it should be kept as succinct as possible. "
       name="description"
+      ref="descriptionEditor"
       rows="3"
       label="Description (required)"
     ></c-markdown>
@@ -21,8 +22,8 @@
       v-model="replication_text"
       :errorMsgs="errors.replication_text"
       name="replication_text"
-      label="Replication of an existing model (optional)"
-      help="Is this model a replication of a prior computational model? Please enter its DOI, other permanent identifier, or citation text."
+      label="Replication of an existing model? (optional)"
+      help="Is this model a replication of a previously published computational model? Please enter a DOI or other permanent identifier to the model, or citation text. Separate multiple entries with newlines."
       rows="3"
       :required="config.replication_text"
     ></c-textarea>
@@ -31,7 +32,7 @@
       :errorMsgs="errors.associated_publication_text"
       name="associated_publication_text"
       label="Associated Publications (optional)"
-      help="Is this model associated with any publications? Please enter a DOI, other permanent identifier, or citation text."
+      help="Is this model associated with any publications? Please enter a DOI or other permanent identifier, or citation text. Separate multiple entries with newlines."
       rows="3"
       :required="config.associated_publication_text"
     ></c-textarea>
@@ -40,7 +41,7 @@
       :errorMsgs="errors.references_text"
       name="references_text"
       label="References (optional)"
-      help="References to related publications. Please enter a DOI, other permanent identifier, or citation text."
+      help="Other related publications. Please enter a DOI or other permanent identifier, or citation text. Separate multiple entries with newlines."
       rows="3"
       :required="config.references_text"
     ></c-textarea>
@@ -70,7 +71,7 @@ import { Component, Prop } from "vue-property-decorator";
 import { CodebaseAPI, CodebaseReleaseAPI } from "@/api";
 import Checkbox from "@/components/forms/checkbox";
 import Input from "@/components/forms/input";
-import MarkdownEditor from "@/components/forms/markdown";
+import Markdown from "@/components/forms/markdown";
 import MessageDisplay from "@/components/message_display";
 import Tagger from "@/components/tagger";
 import TextArea from "@/components/forms/textarea";
@@ -102,7 +103,7 @@ const releaseApi = new CodebaseReleaseAPI();
   components: {
     "c-checkbox": Checkbox,
     "c-input": Input,
-    "c-markdown": MarkdownEditor,
+    "c-markdown": Markdown,
     "c-message-display": MessageDisplay,
     "c-tagger": Tagger,
     "c-textarea": TextArea,
@@ -136,6 +137,11 @@ export default class Description extends createFormValidator(schema) {
     }
   }
 
+  public refresh() {
+    // FIXME: this is a pile of dirty hacks on hacks to properly display the CodeMirror content when it's initially hidden in a modal.
+    this.$refs.descriptionEditor.refresh();
+  }
+
   public created() {
     this.initializeForm();
   }
@@ -167,6 +173,3 @@ export default class Description extends createFormValidator(schema) {
   }
 }
 </script>
-
-<style scoped>
-</style>
