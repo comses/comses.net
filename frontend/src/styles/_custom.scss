@@ -96,6 +96,10 @@ $fa-font-path: '~@fortawesome/fontawesome-free/webfonts';
   width: 308px !important;
 }
 
+.CodeMirror-scroll {
+  max-height: 500px;
+}
+
 .main-nav {
   float: none;
   list-style-type: none;

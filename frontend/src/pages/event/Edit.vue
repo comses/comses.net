@@ -50,19 +50,15 @@
         </div>
         <c-markdown v-model="description" name="description" :errorMsgs="errors.description"
                     :required="config.description"
-                    minHeight="20em" label="Description" help="Detailed information about the event">
+                    label="Description" help="Detailed information about the event">
         </c-markdown>
         <c-markdown v-model="summary" name="summary" :errorMsgs="errors.summary" :required="config.summary"
-                    label="Summary">
-            <div slot="help">
-                <button class="btn btn-secondary btn-sm" type="button" @click="createSummaryFromDescription">
-                    Summarize
-                </button>
-                <small class="form-text text-muted">A short summary of the event for display in search results.
-                    This field can be created from the description by pressing the summarize button.
-                </small>
-            </div>
+                    label="Summary"
+                    help="A short summary of the event for display in search results. This field can be created from the description by pressing the summarize button.">
         </c-markdown>
+       <button class="btn btn-secondary btn-sm" type="button" @click="createSummaryFromDescription">
+         Summarize
+       </button>
         <c-input v-model="external_url" name="external_url" :errorMsgs="errors.external_url"
                  :required="config.external_url"
                  label="Link to event website" help="Link to a more detailed website for this event">
@@ -192,7 +188,3 @@
     export default EditEvent;
 
 </script>
-
-<style scoped>
-
-</style>

@@ -7,15 +7,10 @@
             help="Detailed information about the job" :required="config.description">
         </c-markdown>
         <c-markdown v-model="summary" name="summary" :errorMsgs="errors.summary" label="Summary"
-            :required="config.summary">
-            <div slot="help">
-                <button class="btn btn-secondary btn-sm" type="button" @click="createSummaryFromDescription">Summarize
-                </button>
-                <small class="form-text text-muted">A short summary of the job for display in search results.
-                    You can auto-create one from the description by clicking the Summarize button.
-                </small>
-            </div>
+            :required="config.summary"
+            help="A shorter summary of this job that will be displayed in search results. You can auto-create one from the description with the Auto-Summarize button.">
         </c-markdown>
+        <button class="mt-n4 btn btn-secondary btn-sm" type="button" @click="createSummaryFromDescription">Auto-Summarize Description</button>
         <c-input v-model="external_url" name="external_url" :errorMsgs="errors.external_url" :required="config.external_url"
             label="External Job URL" help="URL for this job on an external website">
         </c-input>
@@ -88,7 +83,7 @@ class EditJob extends createFormValidator(schema) {
     }
 
     public createSummaryFromDescription() {
-        this.state.summary = _.truncate(this.state.description, {length: 200, omission: '[...]'});
+        this.state.summary = _.truncate(this.state.description, {length: 500, omission: '[...]'});
     }
 
     public async createOrUpdateIfValid() {

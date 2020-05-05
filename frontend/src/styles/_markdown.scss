@@ -18,3 +18,7 @@
 .CodeMirror, .CodeMirror-scroll {
   min-height: 125px;
 }
+
+.CodeMirror-scroll {
+  max-height: 500px;
+}
