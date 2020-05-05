@@ -10,6 +10,8 @@ RUN sed -i "s|archive.ubuntu.com|${UBUNTU_MIRROR}|" /etc/apt/sources.list \
         autopostgresqlbackup \
         binutils \
         borgbackup \
+        clamav \
+        clamav-daemon \
         curl \
         gdal-bin \
         git \
@@ -30,10 +32,10 @@ RUN sed -i "s|archive.ubuntu.com|${UBUNTU_MIRROR}|" /etc/apt/sources.list \
         unzip \
         && update-alternatives --install /usr/bin/python python /usr/bin/python3 1000 \
         && apt-get upgrade -y -o Dpkg::Options::="--force-confold" \
-        && mkdir -p /etc/service/django \
-        && touch /etc/service/django/run /etc/postgresql-backup-pre \
-        && chmod a+x /etc/service/django/run /etc/postgresql-backup-pre \
-        && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+        && mkdir -p /etc/service/django /etc/service/clamav \
+        && touch /etc/service/django/run /etc/service/clamav /etc/postgresql-backup-pre \
+        && chmod a+x /etc/service/django/run /etc/service/clamav /etc/postgresql-backup-pre \
+        && apt-get autoremove -y && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 COPY ${REQUIREMENTS_FILE} requirements.txt /tmp/
 RUN pip3 install -r /tmp/${REQUIREMENTS_FILE} --no-cache-dir

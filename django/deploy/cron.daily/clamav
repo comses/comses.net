@@ -1,0 +1,6 @@
+#!/bin/sh
+
+LOGFILE=/shared/logs/clamav.log-$(date +%F)
+
+freshclam;
+clamscan -l ${LOGFILE} -i -r -v /shared/library /shared/static
