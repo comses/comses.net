@@ -30,7 +30,7 @@
     "vue-multiselect": "^2.1.4",
     "vue-property-decorator": "^8.0.0",
     "vue-router": "^3.0.1",
-    "vue-simplemde": "^0.5.1",
+    "vue-simplemde": "^1.0.4",
     "vuedraggable": "^2.20.0",
     "vuejs-datepicker": "^1.5.4",
     "vuex": "^3.0.1",
