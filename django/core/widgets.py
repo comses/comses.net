@@ -11,21 +11,20 @@ class MarkdownTextarea(WidgetWithScript, forms.widgets.Textarea):
         return 'simplemdeAttach("{0}");'.format(domId)
 
     def render(self, name, value, attrs=None, renderer=None):
-        # The raw content of markupfield needs to extracted for the MarkDown to display properly
+        # The raw content of markupfield needs to extracted for the markdown to display properly
         if hasattr(value, 'raw'):
             value = value.raw
-        # renderer isn't passed here because WidgetWithScript doesn't have that argument
-        return super().render(name, value, attrs)
+        return super().render(name, value, attrs, renderer)
 
     class Media:
         css = {
             'all': (
                 # FIXME: this hardcoded URL should instead be pulled from frontend simplemde dependencies
-                'https://cdn.jsdelivr.net/npm/inscrybmde@1.11.4/dist/inscrybmde.min.css',
+                'https://unpkg.com/easymde/dist/easymde.min.css',
             )
         }
         js = (
             # FIXME: this hardcoded URL should be instead be pulled from frontend simplemde dependencies
-            'https://cdn.jsdelivr.net/npm/inscrybmde@1.11.4/dist/inscrybmde.min.js',
-            'js/simplemde.attach.js',
+            'https://unpkg.com/easymde/dist/easymde.min.js',
+            'js/mde.attach.js',
         )

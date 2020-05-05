@@ -12,16 +12,24 @@
  */
 
 /*
- * Used to initialize Simple MDE when Markdown blocks are used in StreamFields
+ * Used to initialize Easy MDE when Markdown blocks are used in StreamFields
+ *
+ * https://github.com/Ionaru/easy-markdown-editor#toolbar-icons
+ *
  */
-function simplemdeAttach(id) {
-        var mde = new InscrybMDE({
+function mdeAttach(id) {
+        var mde = new EasyMDE({
             element: document.getElementById(id),
-            autofocus: false,
+            autosave: {
+                enabled: true,
+                delay: 3000,
+                submit_delay: 10000,
+                uniqueId: id,
+            },
             toolbar: [
                 "bold", "italic", "heading", "|",
-                "quote", "unordered-list", "ordered-list", "|",
-                "link", "image", "table", "|",
+                "quote", "code", "unordered-list", "ordered-list", "|",
+                "horizontal-rule", "link", "image", "table", "|",
                 "preview"
             ],
         });
@@ -33,11 +41,11 @@ function simplemdeAttach(id) {
 }
 
 /*
- * Used to initialize Simple MDE when MarkdownFields are used on a page.
+ * Used to initialize MDE when MarkdownFields are used on a page.
  */
 document.addEventListener("DOMContentLoaded", function() {
     var elements = document.querySelectorAll('.object.markdown textarea');
     Array.prototype.forEach.call(elements, function(element, index) {
-        simplemdeAttach(element.id);
+        mdeAttach(element.id);
     });
 });
