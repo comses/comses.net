@@ -8,9 +8,9 @@
         </c-markdown>
         <c-markdown v-model="summary" name="summary" :errorMsgs="errors.summary" label="Summary"
             :required="config.summary"
-            help="A shorter summary of this job that will be displayed in search results. You can auto-create one from the description with the Auto-Summarize button.">
+            help="A shorter summary of this job that will be displayed in search results. You can auto-create one from the description with the Summarize button.">
         </c-markdown>
-        <button class="mt-n4 btn btn-secondary btn-sm" type="button" @click="createSummaryFromDescription">Auto-Summarize Description</button>
+        <button class="mt-n4 btn btn-secondary btn-sm" type="button" @click="createSummaryFromDescription">Summarize from Description</button>
         <c-input v-model="external_url" name="external_url" :errorMsgs="errors.external_url" :required="config.external_url"
             label="External Job URL" help="URL for this job on an external website">
         </c-input>

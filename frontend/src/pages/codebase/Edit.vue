@@ -139,7 +139,7 @@ export default class Description extends createFormValidator(schema) {
 
   public refresh() {
     // FIXME: this is a pile of dirty hacks on hacks to properly display the CodeMirror content when it's initially hidden in a modal.
-    this.$refs.descriptionEditor.refresh();
+    (this.$refs.descriptionEditor as any).refresh();
   }
 
   public created() {

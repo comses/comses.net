@@ -132,7 +132,7 @@ class CodebaseEditFormPopup extends Vue {
         const self = this;
         jQuery('#editCodebaseModal').on('show.bs.modal', function(e) {
           setTimeout(() => {
-            self.$refs.codebaseEditForm.refresh();
+            (self.$refs.codebaseEditForm as any).refresh();
           }, 500);
         });
       });

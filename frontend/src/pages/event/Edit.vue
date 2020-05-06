@@ -56,9 +56,7 @@
                     label="Summary"
                     help="A short summary of the event for display in search results. This field can be created from the description by pressing the summarize button.">
         </c-markdown>
-       <button class="btn btn-secondary btn-sm" type="button" @click="createSummaryFromDescription">
-         Summarize
-       </button>
+       <button class="mt-n4 btn btn-secondary btn-sm" type="button" @click="createSummaryFromDescription">Summarize from Description</button>
         <c-input v-model="external_url" name="external_url" :errorMsgs="errors.external_url"
                  :required="config.external_url"
                  label="Link to event website" help="Link to a more detailed website for this event">
