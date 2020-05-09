@@ -122,6 +122,7 @@ class MessageGroup:
                 self.msgs += msg.msgs
             else:
                 self.msgs.append(msg)
+            logger.debug("msg: %s", msg)
             self.level = max(self.level, msg.level)
 
     def downgrade(self):
@@ -290,10 +291,12 @@ class CodebaseReleaseOriginalStorage(CodebaseReleaseStorage):
         category = get_category(name)
         if self.has_existing_archive(category):
             msgs.append(self.error(
-                'File cannot be added to directory with archive in it. Please clear category and try again.'))
+                'This file cannot be added because files have already been archived here.'
+                ' Please remove all files and try again.'))
         if os.listdir(os.path.join(self.location, category.name)) and fs.is_archive(name):
-            msgs.append([self.error('Archive cannot be added to a directory that already has files in it. '
-                                    'Please clear category and try again')])
+            msgs.append(self.error(
+                'This archive cannot be added because files have already been archived here. '
+                'Please remove all files and try again.'))
         return msgs
 
 
