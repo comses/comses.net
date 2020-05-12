@@ -83,9 +83,10 @@ class CommonViewSetMixin:
                 ts[action] = ['{0}/{1}.{2}'.format(namespace, action, file_ext)]
         if self.action in ts:
             return ts[self.action]
-        logger.warning("Unhandled action %s, we only support list / retrieve / delete. Returning list template",
-                       self.action)
-        return ts['list']
+        # FIXME: this appears to be caused by https://github.com/encode/django-rest-framework/issues/6196
+        error_message = f'Unhandled action {self.action} in namespace {namespace} - expecting list / retrieve / delete.'
+        logger.warning(error_message)
+        raise NotFound(error_message)
 
 
 class PermissionRequiredByHttpMethodMixin:
