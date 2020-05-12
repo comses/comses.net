@@ -70,12 +70,14 @@ class ContactForm(forms.Form):
     def save(self, fail_silently=False):
         if not self.is_valid():
             raise ValueError("Can't send a message from invalid contact form")
+        from_email = self.cleaned_data.get('email') or self.from_email
         send_markdown_email(
             subject=self.subject,
             template_name=self.template_name,
             context=self.get_context(),
             to=self.recipient_list,
-            reply_to=[self.cleaned_data.get('email') or self.from_email],
+            from_email=from_email,
+            reply_to=[from_email],
         )
 
 
