@@ -188,7 +188,7 @@ RECAPTCHA_PRIVATE_KEY = config.get('captcha', 'RECAPTCHA_PRIVATE_KEY', fallback=
 NOCAPTCHA = True
 
 # sentry DSN
-SENTRY_DSN = config.get('logging', 'SENTRY_DSN', fallback='')
+SENTRY_DSN = config.get('logging', 'SENTRY_DSN', fallback='https://sentry.example.com/2')
 
 SECRET_KEY = config.get('secrets', 'SECRET_KEY')
 

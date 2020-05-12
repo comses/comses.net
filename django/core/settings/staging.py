@@ -8,9 +8,10 @@ DEPLOY_ENVIRONMENT = Environment.STAGING
 
 # configure sentry
 sentry_sdk.init(
-    dsn=config.get('logging', 'SENTRY_DSN', fallback=''),
+    dsn=SENTRY_DSN,
     release=RELEASE_VERSION,
-    integrations=[DjangoIntegration()]
+    integrations=[DjangoIntegration()],
+    send_default_pii=True
 )
 
 
