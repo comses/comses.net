@@ -3,4 +3,4 @@
 LOGFILE=/shared/logs/clamav.log-$(date +%F)
 
 freshclam;
-clamscan -l ${LOGFILE} -i -r -v /shared/library /shared/static
+clamscan -l ${LOGFILE} -i -r --quiet /shared/library /shared/static
