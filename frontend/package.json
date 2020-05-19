@@ -19,7 +19,7 @@
     "detect-browser": "^4.4.0",
     "@fortawesome/fontawesome-free": "^5.12.0",
     "fullcalendar": "^3.10.0",
-    "jquery": "~3.4.1",
+    "jquery": "^3.5.1",
     "marked": "^0.7.0",
     "moment": "^2.24.0",
     "popper.js": "^1.15.0",
