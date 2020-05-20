@@ -19,7 +19,7 @@ else
     # for the compiled webpack assets to be available
     docker-compose pull db redis nginx;
     docker-compose up js;
-    SERVICES="${SERVICES} elasticsearch2"
+    SERVICES="${SERVICES} nginx elasticsearch2"
 fi
 
 docker-compose up -d cms ${SERVICES};
