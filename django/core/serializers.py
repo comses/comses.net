@@ -98,8 +98,7 @@ def set_tags(instance, related, attr: str = 'tags'):
     if not related.is_valid():
         raise serializers.ValidationError(related.errors)
     db_tags = related.save()
-    getattr(instance, attr).clear()
-    getattr(instance, attr).add(*db_tags)
+    getattr(instance, attr).set(*db_tags, clear=True)
 
 
 class MarkdownField(serializers.CharField):
