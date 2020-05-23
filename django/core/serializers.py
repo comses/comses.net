@@ -98,7 +98,8 @@ def set_tags(instance, related, attr: str = 'tags'):
     if not related.is_valid():
         raise serializers.ValidationError(related.errors)
     db_tags = related.save()
-    getattr(instance, attr).set(*db_tags, clear=True)
+    # see https://github.com/wagtail/django-modelcluster/blob/master/modelcluster/contrib/taggit.py#L64
+    getattr(instance, attr).set(*db_tags)
 
 
 class MarkdownField(serializers.CharField):
