@@ -1,17 +1,16 @@
 from django.conf import settings
 from django.contrib import admin
-from django.contrib.sitemaps.views import sitemap
 from django.urls import include, path
 from rest_framework_jwt.views import obtain_jwt_token
 from rest_framework_swagger.views import get_swagger_view
 from wagtail.admin import urls as wagtailadmin_urls
 from wagtail.core import urls as wagtail_urls
+from wagtail.contrib.sitemaps.views import sitemap
 
 from curator import wagtail_hooks, urls as curator_urls
 from home import urls as home_urls
 from library import urls as library_urls
 from . import feeds, views
-from .sitemaps import sitemaps
 
 schema_view = get_swagger_view(title='CoMSES.net API')
 
@@ -39,7 +38,8 @@ urlpatterns = [
     path('api/token/', obtain_jwt_token),
     path('api-auth/', include('rest_framework.urls')),
     # configure sitemaps and robots.txt, see https://django-robots.readthedocs.io/en/latest/
-    path('sitemap.xml', sitemap, {'sitemaps': sitemaps}, name='django.contrib.sitemaps.views.sitemap'),
+    # https://docs.wagtail.io/en/v2.9/reference/contrib/sitemaps.html
+    path('sitemap.xml', sitemap),
     path('robots.txt', include('robots.urls')),
 ]
 
