@@ -15,7 +15,7 @@ SOCIALACCOUNT_PROVIDERS.pop('orcid', None)
 # e.g. in notification emails. Don't include '/admin' or a trailing slash
 BASE_URL = DEPLOY_ENVIRONMENT.base_url()
 # set up robots + sitemaps inclusion https://django-robots.readthedocs.io/en/latest/
-ROBOT_SITEMAP_URLS = [f'{BASE_URL}/sitemap.xml']
+ROBOTS_SITEMAP_URLS = [f'{BASE_URL}/sitemap.xml']
 
 ALLOWED_HOSTS = ['206.12.90.38', '.comses.net']
 
