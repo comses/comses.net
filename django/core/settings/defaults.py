@@ -18,10 +18,13 @@ from django.contrib.messages import constants as messages
 
 
 class Environment(Enum):
-    DEVELOPMENT = 0
-    STAGING = 1
-    PRODUCTION = 2
-    TEST = 3
+    DEVELOPMENT = 'http://localhost:8000'
+    STAGING = 'https://test.comses.net'
+    PRODUCTION = 'https://www.comses.net'
+    TEST = 'http://localhost:8000'
+
+    def base_url(self):
+        return self.value
 
     def is_staging_or_production(self):
         return self in (Environment.PRODUCTION, Environment.STAGING)
@@ -47,6 +50,14 @@ PROJECT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 BASE_DIR = os.path.dirname(PROJECT_DIR)
 
 DEBUG = True
+
+# Base URL to use when referring to full URLs within the Wagtail admin backend -
+# e.g. in notification emails. Don't include '/admin' or a trailing slash
+# FIXME: needs to be overridden in staging and prod after updating DEPLOY_ENVIRONMENT which is less than ideal
+
+BASE_URL = DEPLOY_ENVIRONMENT.base_url()
+ROBOTS_SITEMAP_URLS = [f'{BASE_URL}/sitemap.xml']
+
 
 # Quick-start development settings - make sure to properly override in prod.py
 # See https://docs.djangoproject.com/en/2.2/howto/deployment/checklist/
@@ -349,10 +360,6 @@ WEBPACK_LOADER = {
         'STATS_FILE': os.path.join(WEBPACK_DIR, 'webpack-stats.json'),
     }
 }
-
-# Base URL to use when referring to full URLs within the Wagtail admin backend -
-# e.g. in notification emails. Don't include '/admin' or a trailing slash
-BASE_URL = 'https://www.comses.net'
 
 # authentication settings
 LOGIN_REDIRECT_URL = '/'

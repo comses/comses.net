@@ -38,7 +38,7 @@ urlpatterns = [
     path('api/token/', obtain_jwt_token),
     path('api-auth/', include('rest_framework.urls')),
     # configure sitemaps and robots.txt, see https://django-robots.readthedocs.io/en/latest/
-    # https://docs.wagtail.io/en/v2.9/reference/contrib/sitemaps.html
+    # https://docs.wagtail.io/en/v2.9.2/reference/contrib/sitemaps.html
     path('sitemap.xml', sitemap),
     path('robots.txt', include('robots.urls')),
 ]

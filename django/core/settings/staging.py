@@ -29,8 +29,12 @@ ALLOWED_HOSTS = ['.comses.net']
 
 # security settings from manage.py check --deploy
 # https://docs.djangoproject.com/en/2.0/ref/settings/#secure-proxy-ssl-header
-BASE_URL = 'https://test.comses.net'
+BASE_URL = DEPLOY_ENVIRONMENT.base_url()
 SILENCED_SYSTEM_CHECKS = ['captcha.recaptcha_test_key_error']
+
+# set up robots + sitemaps inclusion https://django-robots.readthedocs.io/en/latest/
+ROBOTS_SITEMAP_URLS = [ f'{BASE_URL}/sitemap.xml' ]
+
 
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 SECURE_SSL_REDIRECT = True

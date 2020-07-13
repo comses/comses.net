@@ -13,7 +13,9 @@ SOCIALACCOUNT_PROVIDERS.pop('orcid', None)
 
 # Base URL to use when referring to full URLs within the Wagtail admin backend -
 # e.g. in notification emails. Don't include '/admin' or a trailing slash
-BASE_URL = 'https://www.comses.net'
+BASE_URL = DEPLOY_ENVIRONMENT.base_url()
+# set up robots + sitemaps inclusion https://django-robots.readthedocs.io/en/latest/
+ROBOT_SITEMAP_URLS = [f'{BASE_URL}/sitemap.xml']
 
 ALLOWED_HOSTS = ['206.12.90.38', '.comses.net']
 
