@@ -2,6 +2,7 @@
 {% from "common.jinja" import breadcrumb, embed_discourse_comments, share_card, search_tag_href, member_profile_href %}
 {% from "library/review/includes/macros.jinja" import render_review_reminders %}
 
+{% set open_code_badge_url = request.build_absolute_uri(static("images/icons/open-code-badge.png")) %}
 {% set codebase = release.codebase %}
 
 {%- block title -%}{{ codebase.title }}{% endblock %}
@@ -75,10 +76,37 @@
     </div>
     <div class='card-metadata'>
         <div class='card-body'>
-            <h2 class='card-title'>Cite this Model</h2>
+            <a name='open-code-badge'><h2 class='card-title'>Cite this Model</h2></a>
             <div class='card-text'>
                 {% if release.live %}
+                    <cite id='citation-text'>
                     {{ release.citation_text|markdown }}
+                    </cite>
+<button class='btn btn-clipboard btn-outline-info' data-clipboard-target='#citation-text'>
+  <i class='fas fa-copy'></i> Copy citation text to clipboard
+</button>
+                    <hr>
+                    <h3 class='card-title'><a href='{{slugurl("open-code-badge")}}'>Open Code Badge</a> Link to this Model</h3>
+                    <div class='py-2'>
+                        You can use the following HTML or Markdown code to create an Open Code Badge link to <strong>version {{ release.version_number }}</strong> of this computational model.
+<pre><code id='open-code-badge-html'>
+&lt;a href=&quot;{{release.permanent_url}}&quot;&gt;
+  &lt;img height=&quot;100&quot; src=&quot;{{ open_code_badge_url  }}&quot; alt=&quot;Open Code Badge&quot;&gt; 
+&lt;/a&gt;
+</code></pre>
+<button class='btn btn-clipboard btn-outline-info' data-clipboard-target='#open-code-badge-html'>
+  <i class='fas fa-copy'></i> Copy HTML to clipboard
+</button>
+
+<pre><code id='open-code-badge-md'>
+[![Open Code Badge]({{ open_code_badge_url }})]({{release.permanent_url}})
+</code>
+</pre>
+<button class='btn btn-clipboard btn-outline-info' data-clipboard-target='#open-code-badge-md'>
+  <i class='fas fa-copy'></i> Copy Markdown to clipboard
+</button>
+                
+                    </div>
                 {% elif has_change_perm %}
                     This model is currently <b>unpublished</b>.
                     <div class='input-group' id="regenerate_share_uuid"
@@ -237,22 +265,12 @@
                 {% if has_change_perm %}
                     <div class='text-muted small'>
                     <i class='text-primary fas fa-exclamation-triangle'></i>
-                        We assign DOIs to <a href='{{ url("library:peer-review-overview") }}'>peer reviewed models</a>. If you would like a DOI and your
+                    We assign DOIs to <a href='{{ url("library:peer-review-overview") }}'>peer reviewed models</a>. If you would like a DOI and your
                     model has not been reviewed yet, please request a peer review by clicking the "Request peer review"
                     button below. If your model has already been reviewed and has not yet been assigned a DOI, please 
                     <a href='{{slugurl('contact')}}'>contact us</a>.
                     </div>
                 {% endif %}
-            {% endif %}
-            {% if release.peer_reviewed %}
-                <div class='py-2'>
-                  <a href='{{ release.permanent_url }}'>
-                    <img height='100' src='{{ static("images/icons/open-code-badge-html.png") }}' alt='Open Code Badge'>
-                  </a>
-                  <a id="releaseDownload" class='btn btn-primary my-1' data-name="download" rel='nofollow' href="{{ release.get_download_url() }}">
-                      <i class='fas fa-download'></i> 
-                  </a>
-                </div>
             {% endif %}
             <b class='card-title'>Model Version</b>
             <p>
@@ -293,6 +311,9 @@
         <div class='section'>
             {% if codebase.peer_reviewed or release.peer_reviewed %}
                 <img src="{{ static("images/icons/peer-reviewed.png") }}" alt="Peer Reviewed">
+                <div class='py-2'>
+                  <a href='{{ release.permanent_url }}'><img height='88' src='{{ open_code_badge_url }}' alt='Open Code Badge'></a>
+                </div>
             {% else %}
                 <b class='card-title'>
                     Peer Review
@@ -358,7 +379,7 @@
 {% endwith %}
 {% if release.live %}
     <a id="releaseDownload" class='btn btn-primary my-1 w-100' data-name="download" rel='nofollow' href="{{ release.get_download_url() }}">
-        Download Release
+        <i class='fas fa-download'></i> Download Release
     </a>
 {% else %}
     <a rel='nofollow' class='btn btn-primary my-1 w-100' href="{{ release.get_review_download_url() }}">
