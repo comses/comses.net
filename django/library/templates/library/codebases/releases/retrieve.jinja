@@ -226,12 +226,14 @@
             </p>
             <b class='card-title'>DOI</b>
             {% if release.doi %}
-            <p><a href='{{release.doi_url}}'><span class='badge badge-info'>{{ release.doi }}</span></a></p>
+              <p>
+                <a href='{{release.doi_url}}'><span class='badge badge-info'>{{ release.doi }}</span></a>
+              </p>
             {% elif codebase.doi %}
-	    <p><small>This DOI is for the parent Codebase and always points at the most recent published version of this model.</small>
+                <p><small>This DOI is for the parent Codebase and always points at the most recent published version of this model.</small>
                 <a href='{{codebase.doi_url}}'><span class='badge badge-info'>{{ codebase.doi }}</span></a></p>
             {% else %}
-	    <p>No assigned DOI</p>
+                <p>No assigned DOI</p>
                 {% if has_change_perm %}
                     <div class='text-muted small'>
                     <i class='text-primary fas fa-exclamation-triangle'></i>
@@ -241,6 +243,16 @@
                     <a href='{{slugurl('contact')}}'>contact us</a>.
                     </div>
                 {% endif %}
+            {% endif %}
+            {% if release.peer_reviewed %}
+                <div class='py-2'>
+                  <a href='{{ release.permanent_url }}'>
+                    <img height='100' src='{{ static("images/icons/open-code-badge-html.png") }}' alt='Open Code Badge'>
+                  </a>
+                  <a id="releaseDownload" class='btn btn-primary my-1' data-name="download" rel='nofollow' href="{{ release.get_download_url() }}">
+                      <i class='fas fa-download'></i> 
+                  </a>
+                </div>
             {% endif %}
             <b class='card-title'>Model Version</b>
             <p>
@@ -259,7 +271,9 @@
             <b class='card-title'>Dependencies</b> 
             <p>
             {% if release.dependencies %}
+                <code>
                 {{ release.dependencies }}
+                </code>
             {% else %}
                 None listed
             {% endif %}
@@ -344,7 +358,7 @@
 {% endwith %}
 {% if release.live %}
     <a id="releaseDownload" class='btn btn-primary my-1 w-100' data-name="download" rel='nofollow' href="{{ release.get_download_url() }}">
-        Download
+        Download Release
     </a>
 {% else %}
     <a rel='nofollow' class='btn btn-primary my-1 w-100' href="{{ release.get_review_download_url() }}">
