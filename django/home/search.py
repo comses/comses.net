@@ -192,12 +192,8 @@ class GeneralSearch:
         content_types = defaultdict(list)
         for i, result in enumerate(results):
             model = get_content_type(result)
-            processor = PROCESS_DISPATCH.get(model)
-            if processor is None:
-                data.append(OtherSearchResult.from_result(result))
-            else:
-                data.append(processor(result))
-
+            processor = PROCESS_DISPATCH.get(model, OtherSearchResult.from_result)
+            data.append(processor(result))
             content_types[model].append(i)
 
         # add urls to results that require querying the database for more information

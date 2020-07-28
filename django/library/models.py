@@ -418,6 +418,7 @@ class Codebase(index.Indexed, ClusterableModel):
         index.SearchField('get_all_release_frameworks'),
         index.SearchField('get_all_release_programming_languages'),
         index.SearchField('references_text', partial_match=True),
+        index.SearchField('permanent_url', partial_match=True),
         index.SearchField('associated_publication_text', partial_match=True),
         index.RelatedFields('tags', [
             index.SearchField('name', partial_match=True),
