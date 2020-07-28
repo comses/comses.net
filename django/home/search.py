@@ -91,6 +91,12 @@ class JobSearchResult(BaseSearchResult):
                    url=Job(pk=pk).get_absolute_url())
 
 
+class PageSearchResult(BaseSearchResult):
+    @classmethod
+    def from_result(cls, result):
+        pk = cls.get_pk(result)
+
+
 class MemberProfileSearchResult(BaseSearchResult):
     @classmethod
     def from_result(cls, result):
@@ -123,17 +129,19 @@ class OtherSearchResult(BaseSearchResult):
     @classmethod
     def from_result(cls, result):
         pk = cls.get_pk(result)
-        return cls(description=result['_source'].get('description'),
-                   pk=pk,
+        data = result['_source'].to_dict()
+        description = data.get('description', data.get('home_markdownpage__description', 'No description available'))
+        return cls(pk=pk,
+                   description=description,
                    score=cls.get_score(result),
-                   title=result['_source'].get('title', None),
+                   title=data.get('title', 'No title available'),
                    tags=[],
                    type=get_content_type(result)._meta.verbose_name,
                    url=None)
 
 
 class GeneralSearch:
-    """Search across content types in Elasticsearch for matching objects"""
+    """Search across all content types in Elasticsearch for matching objects"""
 
     DEFAULT_MODELS = [Codebase, Event, Job, MemberProfile, Page]
 
@@ -152,10 +160,10 @@ class GeneralSearch:
             query=text,
             type="best_fields",
         )
-        # slice from start:start+size to match python's slicing syntax
+        # slice from start -> start + size
         response = s[start:start+size].execute()
-        total = response['hits']['total']['value']
-        results = response['hits']['hits']
+        total = response.hits.total.value
+        results = response.hits.hits
         return self.process(results), total
 
     @classmethod

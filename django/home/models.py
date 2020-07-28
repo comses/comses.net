@@ -738,6 +738,7 @@ class FaqPage(Page, NavigationMixin):
         return '\n'.join(FaqEntry.objects.values_list('answer', flat=True))
 
     search_fields = Page.search_fields + [
+        index.SearchField('description', partial_match=True),
         index.SearchField('get_faq_entry_questions', partial_match=True),
         index.SearchField('get_faq_entry_answers', partial_match=True),
     ]
