@@ -76,37 +76,15 @@
     </div>
     <div class='card-metadata'>
         <div class='card-body'>
-            <a name='open-code-badge'><h2 class='card-title'>Cite this Model</h2></a>
+            <h2 class='card-title'>Cite this Model</h2>
             <div class='card-text'>
                 {% if release.live %}
                     <cite id='citation-text'>
                     {{ release.citation_text|markdown }}
                     </cite>
-<button class='btn btn-clipboard btn-outline-info' data-clipboard-target='#citation-text'>
-  <i class='fas fa-copy'></i> Copy citation text to clipboard
-</button>
-                    <hr>
-                    <h3 class='card-title'><a href='{{slugurl("open-code-badge")}}'>Open Code Badge</a> Link to this Model</h3>
-                    <div class='py-2'>
-                        You can use the following HTML or Markdown code to create an Open Code Badge link to <strong>version {{ release.version_number }}</strong> of this computational model.
-<pre><code id='open-code-badge-html'>
-&lt;a href=&quot;{{release.permanent_url}}&quot;&gt;
-  &lt;img height=&quot;100&quot; src=&quot;{{ open_code_badge_url  }}&quot; alt=&quot;Open Code Badge&quot;&gt; 
-&lt;/a&gt;
-</code></pre>
-<button class='btn btn-clipboard btn-outline-info' data-clipboard-target='#open-code-badge-html'>
-  <i class='fas fa-copy'></i> Copy HTML to clipboard
-</button>
-
-<pre><code id='open-code-badge-md'>
-[![Open Code Badge]({{ open_code_badge_url }})]({{release.permanent_url}})
-</code>
-</pre>
-<button class='btn btn-clipboard btn-outline-info' data-clipboard-target='#open-code-badge-md'>
-  <i class='fas fa-copy'></i> Copy Markdown to clipboard
-</button>
-                
-                    </div>
+                    <button class='btn btn-clipboard btn-outline-info' data-clipboard-target='#citation-text'>
+                        <i class='fas fa-copy'></i> Copy citation text to clipboard
+                    </button>
                 {% elif has_change_perm %}
                     This model is currently <b>unpublished</b>.
                     <div class='input-group' id="regenerate_share_uuid"
@@ -135,6 +113,41 @@
             </div>
         </div>
     </div>
+    {% if release.live or has_change_perm %}
+        <div class='card-metadata'>
+            <div class='card-body'>
+                <a name='open-code-badge'><h2 class='card-title'>Create an <a href='{{slugurl("open-code-badge")}}'>Open Code Badge</a> that links to this model</h2></a>
+                <div class='py-2'>
+                    <div class='alert alert-info'>
+                    {% if release.peer_reviewed %}
+                        This model has been reviewed by CoMSES Net and meets the <a href='{{slugurl("open-code-badge")}}'>Open Code Badge guidelines</a>.
+                    {% else %}
+                        This model has not been reviewed by CoMSES Net and should be independently reviewed to
+                        meet the <a href='{{slugurl("open-code-badge")}}'>Open Code Badge guidelines</a>.
+                    {% endif %}
+                    </div>
+                    You can use the following HTML or Markdown code to create an Open Code Badge that links to 
+                    <strong><a href='{{release.permanent_url}}'>version {{ release.version_number }}</a></strong>
+                    of this computational model.
+<pre><code id='open-code-badge-html'>
+&lt;a href=&quot;{{release.permanent_url}}&quot;&gt;
+  &lt;img height=&quot;100&quot; src=&quot;{{ open_code_badge_url  }}&quot; alt=&quot;Open Code Badge&quot;&gt; 
+&lt;/a&gt;
+</code></pre>
+<button class='btn btn-clipboard btn-outline-info' data-clipboard-target='#open-code-badge-html'>
+  <i class='fas fa-copy'></i> Copy HTML to clipboard
+</button>
+<pre><code id='open-code-badge-md'>
+[![Open Code Badge]({{ open_code_badge_url }})]({{release.permanent_url}})
+</code>
+</pre>
+<button class='btn btn-clipboard btn-outline-info' data-clipboard-target='#open-code-badge-md'>
+  <i class='fas fa-copy'></i> Copy Markdown to clipboard
+</button>
+                </div>
+            </div>
+        </div>
+    {% endif %}
     {% if codebase.is_replication %}
         <div class='card-metadata'>
             <div class='card-body'>
