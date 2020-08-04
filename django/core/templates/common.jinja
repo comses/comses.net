@@ -209,7 +209,7 @@
             // remove duplicate forward slashes
             canonicalUrl = canonicalUrl.replace(/([^:]\/)\/+/g, "$1");
         }
-        window.DiscourseEmbed = {
+        DiscourseEmbed = {
             discourseUrl: "{{ DISCOURSE_BASE_URL }}/",
             discourseUserName: "{{ submitter_username }}",
             discourseEmbedUrl: canonicalUrl
