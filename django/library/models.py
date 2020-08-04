@@ -418,7 +418,7 @@ class Codebase(index.Indexed, ClusterableModel):
         index.SearchField('get_all_release_frameworks'),
         index.SearchField('get_all_release_programming_languages'),
         index.SearchField('references_text', partial_match=True),
-        index.SearchField('permanent_url', partial_match=True),
+        index.SearchField('permanent_url'),
         index.SearchField('associated_publication_text', partial_match=True),
         index.RelatedFields('tags', [
             index.SearchField('name', partial_match=True),
@@ -900,8 +900,10 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
     objects = CodebaseReleaseQuerySet.as_manager()
 
     search_fields = [
-        index.SearchField('release_notes'),
-        index.SearchField('summary'),
+        index.SearchField('release_notes', partial_match=True),
+        index.SearchField('summary', partial_match=True),
+        index.SearchField('permanent_url'),
+        index.SearchField('identifier'),
         index.FilterField('os'),
         index.FilterField('first_published_at'),
         index.FilterField('last_published_on'),
@@ -1467,6 +1469,10 @@ class PeerReview(models.Model):
     @property
     def title(self):
         return self.codebase_release.title
+
+    @property
+    def contact_author_name(self):
+        return self.codebase_release.submitter.member_profile.name
 
     def __str__(self):
         return 'PeerReview of {} requested on {}. Status: {}, last modified {}'.format(
