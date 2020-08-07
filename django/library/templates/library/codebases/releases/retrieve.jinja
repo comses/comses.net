@@ -26,7 +26,7 @@
 {% endblock %}
 
 {% block content %}
-    <div id={{ 'discourse-content' if release.live else 'content' }}>
+    <div id="{{ 'discourse-content' if release.live else 'content' }}">
         {% if release.live %}
             {% if not release.is_latest_version %}
                 {% with latest_version=codebase.latest_version %}
