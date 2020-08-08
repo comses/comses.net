@@ -78,9 +78,9 @@
             <h2 class='card-title'>Cite this Model</h2>
             <div class='card-text'>
                 {% if release.live %}
-                    <cite id='citation-text'>
+                    <div id='citation-text'>
                     {{ release.citation_text|markdown }}
-                    </cite>
+                    </div>
                     <button class='btn btn-clipboard btn-outline-info' data-clipboard-target='#citation-text'>
                         <i class='fas fa-copy'></i> Copy citation text to clipboard
                     </button>
@@ -115,7 +115,7 @@
     {% if release.live or has_change_perm %}
         <div class='card-metadata'>
             <div class='card-body'>
-                <h2 class='card-title'><a name='open-code-badge'>Create an</a> <a href='{{slugurl("open-code-badge")}}'>Open Code Badge</a> that links to this model</h2>
+                <h2 id='open-code-badge-info' class='card-title'>Create an <a href='{{slugurl("open-code-badge")}}'>Open Code Badge</a> that links to this model</h2>
                 <div class='py-2'>
                     <div class='alert alert-info'>
                     {% if release.peer_reviewed %}
