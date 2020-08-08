@@ -33,10 +33,9 @@
 
 {% macro member_profile_href(member_profile) -%}
 <a href='{{ member_profile.profile_url }}'>{{ member_profile.name }}
-    {% if caller -%}
+    {%- if caller -%}
         {{ caller() }}
-    {%- endif %}
-</a>
+    {%- endif -%}</a>
 {%- endmacro %}
 
 {% macro share_card(url) %}
