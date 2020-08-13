@@ -531,8 +531,7 @@ class Codebase(index.Indexed, ClusterableModel):
 
     @property
     def contributor_list(self):
-        contributor_list = [c.get_full_name(family_name_first=True) for c in self.all_contributors]
-        return contributor_list
+        return [c.get_full_name(family_name_first=True) for c in self.all_contributors]
 
     def get_all_contributors_search_fields(self):
         return ' '.join([c.get_aggregated_search_fields() for c in self.all_contributors])
@@ -1075,7 +1074,11 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
         if not self.live:
             return 'This model must be published in order to be citable.'
 
-        authors = ', '.join(self.contributor_list)
+        authors = self.submitter.member_profile.name
+        if self.contributor_list:
+            authors = ', '.join(self.contributor_list)
+        else:
+            logger.warn("No contributors found for release, using default submitter name: %s", self)
         return '{authors} ({publish_date}). "{title}" (Version {version}). _{cml}_. Retrieved from: {purl}'.format(
             authors=authors,
             publish_date=self.last_published_on.strftime('%Y, %B %d'),

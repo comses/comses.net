@@ -1,11 +1,11 @@
 bagit==1.7.0
 bleach==3.1.5
 django-allauth==0.42.0
-django-anymail[mailgun]==7.1.0
+django-anymail[mailgun]==7.2.1
 django-cookie-law==2.0.3
-django-extensions==3.0.3
+django-extensions==3.0.5
 django-guardian==2.3.0
-django-ipware==2.1.0
+django-ipware==3.0.1
 django-jinja==2.6.0
 django-location-field==2.1.0
 django-markupfield==2.0.0
@@ -20,7 +20,7 @@ django-robots==4.0
 django-timezone-field==4.0
 django-waffle==1.0.0
 django-webpack-loader==0.7.0
-djangorestframework==3.11.0
+djangorestframework==3.11.1
 djangorestframework-jsonapi==3.1.0
 djangorestframework-jwt==1.11.0
 Django>=2.2.13,<3.0.0
@@ -32,10 +32,10 @@ nltk>=3.2.5,<4.0.0
 psycopg2-binary==2.8.5
 requests==2.24.0
 semver==2.10.2
-sentry-sdk==0.15.1
+sentry-sdk==0.16.3
 uwsgi==2.0.19.1
 uwsgitop==0.11
-wagtail==2.9.3
+wagtail==2.10
 invoke
 ipython
 pgcli
