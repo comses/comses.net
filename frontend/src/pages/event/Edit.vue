@@ -78,7 +78,7 @@
     import Tagger from '@/components/tagger';
     import Input from '@/components/forms/input';
     import Datepicker from '@/components/forms/datepicker';
-    import MessageDisplay from '@/components/message_display';
+    import MessageDisplay from '@/components/messages';
     import * as _ from 'lodash';
     import {Component, Prop} from 'vue-property-decorator';
     import * as yup from 'yup';

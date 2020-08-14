@@ -1,13 +1,13 @@
 import {Component, Prop} from 'vue-property-decorator';
 import BaseControl from '@/components/forms/base';
-import * as draggable from 'vuedraggable';
+import draggable from 'vuedraggable';
 
 @Component({
     template: `<div class="form-group">
         <slot name="label" :label="label">
             <label :class="['form-control-label', requiredClass]">{{ label }}</label>
         </slot>
-        <input :class="['form-control', {'is-invalid': isInvalid}]" v-model="potential_item" @keyup.enter="create" :placeholder="placeholder">
+        <input :class="['form-control', {'is-invalid': isInvalid}]" v-model="candidateItem" @keyup.enter="create" :placeholder="placeholder">
         <draggable :list="value" @start="drag=true" @end="drag=false">
             <div v-for="(item, index) in value" :key="index" class="input-group">
                 <input :value="item" @input="$emit('modify', { index, value: $event.target.value})" class="form-control">
@@ -34,10 +34,10 @@ export default class EditTextList extends BaseControl {
     public help: string;
 
     public drag: boolean = false;
-    public potential_item: string = '';
+    public candidateItem: string = '';
 
     public create() {
-        this.$emit('create', this.potential_item);
-        this.potential_item = '';
+        this.$emit('create', this.candidateItem);
+        this.candidateItem = '';
     }
 }

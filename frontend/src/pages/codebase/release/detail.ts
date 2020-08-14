@@ -4,7 +4,7 @@ import {Component, Prop, Watch} from 'vue-property-decorator';
 import Checkbox from '@/components/forms/checkbox';
 import Datepicker from '@/components/forms/DatePicker.vue';
 import Markdown from '@/components/forms/markdown';
-import MessageDisplay from '@/components/message_display';
+import MessageDisplay from '@/components/messages';
 import TextArea from '@/components/forms/textarea';
 import Input from '@/components/forms/input';
 import Multiselect from 'vue-multiselect';

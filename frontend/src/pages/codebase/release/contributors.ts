@@ -7,11 +7,11 @@ import {
 import {CodebaseReleaseAPI, ContributorAPI} from '@/api';
 import Checkbox from '@/components/forms/checkbox';
 import Input from '@/components/forms/input';
-import MessageDisplay from '@/components/message_display';
-import EditItems from '@/components/edit_items';
+import MessageDisplay from '@/components/messages';
+import EditItems from '@/components/textitem';
 import Multiselect from 'vue-multiselect';
 import Username from '@/components/username';
-import * as draggable from 'vuedraggable';
+import draggable from 'vuedraggable';
 import * as _ from 'lodash';
 import * as yup from 'yup';
 import * as _$ from 'jquery';

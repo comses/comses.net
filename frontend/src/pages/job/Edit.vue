@@ -30,7 +30,7 @@
 import Markdown from '@/components/forms/markdown';
 import Tagger from '@/components/tagger';
 import Input from '@/components/forms/input';
-import MessageDisplay from '@/components/message_display';
+import MessageDisplay from '@/components/messages';
 import DatePicker from '@/components/forms/datepicker';
 import {JobAPI} from '@/api/index';
 import * as _ from 'lodash';

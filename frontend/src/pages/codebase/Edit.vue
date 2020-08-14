@@ -72,7 +72,7 @@ import { CodebaseAPI, CodebaseReleaseAPI } from "@/api";
 import Checkbox from "@/components/forms/checkbox";
 import Input from "@/components/forms/input";
 import Markdown from "@/components/forms/markdown";
-import MessageDisplay from "@/components/message_display";
+import MessageDisplay from "@/components/messages";
 import Tagger from "@/components/tagger";
 import TextArea from "@/components/forms/textarea";
 import { createFormValidator } from "@/pages/form";

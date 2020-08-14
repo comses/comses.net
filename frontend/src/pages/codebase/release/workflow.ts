@@ -18,8 +18,8 @@ import {Progress} from '@/pages/codebase/release/progress';
 import {createFormValidator} from '@/pages/form';
 import {HandlerWithRedirect} from '@/api/handler';
 import Input from '@/components/forms/input';
-import MessageDisplay from '@/components/message_display';
-import {ConfirmationModal} from '@/components/confirmation_modal';
+import MessageDisplay from '@/components/messages';
+import {ConfirmationModal} from '@/components/confirmation';
 
 const codebaseReleaseAPI = new CodebaseReleaseAPI();
 const codebaseAPI = new CodebaseAPI();
