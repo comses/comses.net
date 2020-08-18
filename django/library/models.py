@@ -176,27 +176,29 @@ class Contributor(index.Indexed, ClusterableModel):
             return {user.first_name, user.last_name, user.username, user.email}
         return set()
 
+    @property
+    def has_name(self):
+        return any([self.given_name, self.family_name])
+
     def get_full_name(self, family_name_first=False):
         full_name = ''
         # Bah. Horrid name logic
         if self.type == 'person':
-            if family_name_first:
-                full_name = '{0}, {1} {2}'.format(self.family_name, self.given_name, self.middle_name)
-            elif self.middle_name:
-                full_name = '{0} {1} {2}'.format(self.given_name, self.middle_name, self.family_name)
-            elif self.given_name:
-                if self.family_name:
-                    full_name = '{0} {1}'.format(self.given_name, self.family_name)
+            if self.has_name:
+                if family_name_first:
+                    full_name = f'{self.family_name}, {self.given_name} {self.middle_name}'
+                elif self.middle_name:
+                    full_name = f'{self.given_name} {self.middle_name} {self.family_name}'
                 else:
-                    full_name = self.given_name
+                    full_name = f'{self.given_name} {self.family_name}'
             elif self.user:
                 full_name = self.user.member_profile.name
             else:
-                logger.warning("No usable name found for contributor %s", self.pk)
-                return 'No name'
+                logger.exception("No usable name found for contributor %s", self.pk)
         else:
+            # organizations only have given_name
             full_name = self.given_name
-        return full_name.strip()
+        return ' '.join(full_name.split())
 
     @property
     def formatted_affiliations(self):
@@ -211,7 +213,7 @@ class Contributor(index.Indexed, ClusterableModel):
 
     def __str__(self):
         if self.email:
-            return '{0} {1}'.format(self.get_full_name(), self.email)
+            return f'{self.get_full_name()} ({self.email})'
         return self.get_full_name()
 
 
@@ -531,7 +533,7 @@ class Codebase(index.Indexed, ClusterableModel):
 
     @property
     def contributor_list(self):
-        return [c.get_full_name(family_name_first=True) for c in self.all_contributors]
+        return [c.get_full_name() for c in self.all_contributors if c.has_name]
 
     def get_all_contributors_search_fields(self):
         return ' '.join([c.get_aggregated_search_fields() for c in self.all_contributors])
@@ -1070,17 +1072,20 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
         return self.comses_permanent_url
 
     @property
-    def citation_text(self):
-        if not self.live:
-            return 'This model must be published in order to be citable.'
-
+    def citation_authors(self):
         authors = self.submitter.member_profile.name
         if self.contributor_list:
             authors = ', '.join(self.contributor_list)
         else:
-            logger.warn("No contributors found for release, using default submitter name: %s", self)
+            logger.warning("No contributors found for release, using default submitter name: %s", self)
+        return authors
+
+    @property
+    def citation_text(self):
+        if not self.live:
+            return 'This model must be published in order to be citable.'
         return '{authors} ({publish_date}). "{title}" (Version {version}). _{cml}_. Retrieved from: {purl}'.format(
-            authors=authors,
+            authors=self.citation_authors,
             publish_date=self.last_published_on.strftime('%Y, %B %d'),
             title=self.codebase.title,
             version=self.version_number,
@@ -1109,7 +1114,7 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
 
     @property
     def contributor_list(self):
-        return [c.contributor.get_full_name(family_name_first=True) for c in self.index_ordered_release_contributors]
+        return [c.contributor.get_full_name() for c in self.index_ordered_release_contributors if c.has_name]
 
     @property
     def index_ordered_release_contributors(self):
