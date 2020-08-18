@@ -1114,11 +1114,11 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
 
     @property
     def contributor_list(self):
-        return [c.contributor.get_full_name() for c in self.index_ordered_release_contributors if c.has_name]
+        return [c.contributor.get_full_name() for c in self.index_ordered_release_contributors if c.contributor.has_name]
 
     @property
     def index_ordered_release_contributors(self):
-        return self.codebase_contributors.order_by('index')
+        return self.codebase_contributors.select_related('contributor').order_by('index')
 
     @property
     def bagit_info(self):
