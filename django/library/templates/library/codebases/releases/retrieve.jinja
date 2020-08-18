@@ -113,14 +113,26 @@
         </div>
     </div>
     {% if release.live or has_change_perm %}
+        <div class='accordion' id='open-code-badge-accordion'>
         <div class='card-metadata'>
+            <div class='card-header' id='open-code-badge-info'>
+                <h2 class='card-title mb-0'>
+                    <button class='btn btn-link mt-0 pt-0' type='button' data-toggle='collapse'
+                            data-target='#open-code-badge-collapse' aria-expanded='true'
+                            aria-controls='open-code-badge-collapse'>
+                        <i class='fas fa-chevron-down fa-2x'></i>
+                    </button>
+                    Create an Open Code Badge that links to this model <a class='float-right btn btn-outline-primary mt-0 mb-0' href='{{slugurl("open-code-badge")}}'><i class='fas fa-info-circle'></i> more info</a>
+                </h2>
+            </div>
+            <div id='open-code-badge-collapse' class='collapse' aria-labelledby='open-code-badge-info' data-parent='#open-code-badge-accordion'>
             <div class='card-body'>
-                <h2 id='open-code-badge-info' class='card-title'>Create an <a href='{{slugurl("open-code-badge")}}'>Open Code Badge</a> that links to this model</h2>
                 <div class='py-2'>
                     <div class='alert alert-info'>
                     {% if release.peer_reviewed %}
                         This model has been reviewed by CoMSES Net and meets the <a href='{{slugurl("open-code-badge")}}'>Open Code Badge guidelines</a>.
                     {% else %}
+                        <i class='fas fa-exclamation-circle'></i>
                         This model has not been reviewed by CoMSES Net and should be independently reviewed to
                         meet the <a href='{{slugurl("open-code-badge")}}'>Open Code Badge guidelines</a>.
                     {% endif %}
@@ -145,6 +157,9 @@
 </button>
                 </div>
             </div>
+            {# closes collapse #}
+            </div>
+        </div>
         </div>
     {% endif %}
     {% if codebase.is_replication %}
