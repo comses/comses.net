@@ -70,13 +70,13 @@ export function baseHandleOtherError(response_or_network_error): string {
 function baseHandleValidationError(responseError, component: FormComponent) {
     const response = responseError.response;
     component.statusMessages = [{classNames: 'alert alert-danger', message: 'Server side validation failed'}];
-    const data = response.data
+    const data = response.data;
     if (_.has(data, 'non_field_errors')) {
         const errors = data.non_field_errors;
         if (!_.isUndefined(errors)) {
-            component.statusMessages[0].message = `Server side validation failed: ${errors}`
+            component.statusMessages[0].message = `Server side validation failed: ${errors}`;
         }
-        delete data.non_field_errors
+        delete data.non_field_errors;
     }
     for (const field of _.keys(response.data)) {
         if (!_.isUndefined(component.errors[field])) {
@@ -146,9 +146,8 @@ export class HandlerShowSuccessMessage implements CreateOrUpdateHandler {
         const data = response.response.data;
         if (Array.isArray(data)) {
             this.updateListServerValidationMessage(data);
-        }
-        else {
-            baseHandleValidationError(response, this.component)
+        } else {
+            baseHandleValidationError(response, this.component);
         }
     }
 

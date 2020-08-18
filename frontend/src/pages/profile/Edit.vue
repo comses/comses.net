@@ -162,20 +162,20 @@
 </template>
 
 <script lang="ts">
-import { Component, Prop } from "vue-property-decorator";
-import Markdown from "@/components/forms/markdown";
-import Tagger from "@/components/tagger";
-import Input from "@/components/forms/input";
-import Datepicker from "@/components/forms/datepicker";
-import TextArea from "@/components/forms/textarea";
-import MessageDisplay from "@/components/messages";
-import EditItems from "@/components/textitem";
-import { ProfileAPI } from "@/api";
-import * as _ from "lodash";
-import { createFormValidator } from "@/pages/form";
-import { HandlerWithRedirect } from "@/api/handler";
-import * as yup from "yup";
-import Checkbox from "@/components/forms/checkbox";
+import { Component, Prop } from 'vue-property-decorator';
+import Markdown from '@/components/forms/markdown';
+import Tagger from '@/components/tagger';
+import Input from '@/components/forms/input';
+import Datepicker from '@/components/forms/datepicker';
+import TextArea from '@/components/forms/textarea';
+import MessageDisplay from '@/components/messages';
+import EditItems from '@/components/textitem';
+import { ProfileAPI } from '@/api';
+import * as _ from 'lodash';
+import { createFormValidator } from '@/pages/form';
+import { HandlerWithRedirect } from '@/api/handler';
+import * as yup from 'yup';
+import Checkbox from '@/components/forms/checkbox';
 
 export const schema = yup.object().shape({
   given_name: yup.string().required(),
@@ -203,22 +203,22 @@ export const schema = yup.object().shape({
   bio: yup.string(),
   degrees: yup.array().of(yup.string().required()),
   tags: yup.array().of(yup.object().shape({ name: yup.string().required() })),
-  full_member: yup.boolean().required()
+  full_member: yup.boolean().required(),
 });
 
 const api = new ProfileAPI();
 
 @Component({
   components: {
-    "c-checkbox": Checkbox,
-    "c-markdown": Markdown,
-    "c-message-display": MessageDisplay,
-    "c-datepicker": Datepicker,
-    "c-tagger": Tagger,
-    "c-textarea": TextArea,
-    "c-input": Input,
-    "c-edit-degrees": EditItems
-  }
+    'c-checkbox': Checkbox,
+    'c-markdown': Markdown,
+    'c-message-display': MessageDisplay,
+    'c-datepicker': Datepicker,
+    'c-tagger': Tagger,
+    'c-textarea': TextArea,
+    'c-input': Input,
+    'c-edit-degrees': EditItems,
+  },
 } as any)
 export default class EditProfile extends createFormValidator(schema) {
   @Prop()
@@ -260,7 +260,7 @@ export default class EditProfile extends createFormValidator(schema) {
   }
 
   public retrieve(pk: number) {
-    return api.retrieve(pk).then(r => {
+    return api.retrieve(pk).then((r) => {
       this.state = r.data;
       this.initial_full_member = this.state.full_member;
     });

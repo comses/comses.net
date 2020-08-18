@@ -127,7 +127,7 @@ class CodebaseEditFormPopup extends Vue {
         this.getMediaFiles();
     }
 
-    mounted() {
+    public mounted() {
       this.$nextTick(() => {
         const self = this;
         jQuery('#editCodebaseModal').on('show.bs.modal', function(e) {
@@ -156,7 +156,7 @@ export const publishSchema = yup.object().shape({
                 <div class="modal-body">
                     <p><b>Please read carefully!</b> <b>Publishing</b> a release makes it possible for anyone to view and download it. Once a
                     release is published, the files associated with the release will be <b>frozen</b> and you will no
-                    longer be able to add or remove files to the release. You will still be able to edit your model's 
+                    longer be able to add or remove files to the release. You will still be able to edit your model's
                     metadata. If you'd like to request <a href='/reviews/'>a peer review</a> of your model you
                     should do that first so you may address any concerns raised during the peer review process that may
                     include changes to the files associated with your release.

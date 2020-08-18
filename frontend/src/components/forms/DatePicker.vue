@@ -16,74 +16,73 @@
 </template>
 
 <script lang="ts">
-    import {Component, Prop} from 'vue-property-decorator';
-    import BaseControl from './base';
-    import Datepicker from "vuejs-datepicker/dist/vuejs-datepicker.esm.js";
-    import * as _ from 'lodash';
+import {Component, Prop} from 'vue-property-decorator';
+import BaseControl from './base';
+import Datepicker from 'vuejs-datepicker/dist/vuejs-datepicker.esm.js';
+import * as _ from 'lodash';
 
-    @Component({
-        components: {
-            datepicker: Datepicker,
-        },
-    })
-    export default class InputDatepicker extends BaseControl {
-        @Prop()
-        public label: string;
+@Component({
+    components: {
+        datepicker: Datepicker,
+    },
+})
+export default class InputDatepicker extends BaseControl {
+    @Prop()
+    public label: string;
 
-        @Prop()
-        public help: string;
+    @Prop()
+    public help: string;
 
-        @Prop()
-        public formatString: string;
+    @Prop()
+    public formatString: string;
 
-        @Prop({default: false})
-        public clearButton: boolean;
+    @Prop({default: false})
+    public clearButton: boolean;
 
-        @Prop()
-        public openDate: string;
+    @Prop()
+    public openDate: string;
 
-        get format() {
-            return _.isEmpty(this.formatString) ? 'yyyy-MM-dd' : this.formatString;
+    get format() {
+        return _.isEmpty(this.formatString) ? 'yyyy-MM-dd' : this.formatString;
+    }
+
+    get datepickerInputClass() {
+        return this.isInvalid ? 'is-invalid' : '';
+    }
+
+    get dateValue() {
+        // Otherwise displayed date is off by one https://github.com/charliekassel/vuejs-datepicker/issues/158
+        if (_.isEmpty(this.value)) {
+            return null;
         }
+        const [yearStr, monthStr, dayStr] = this.value.split('-');
+        const year = parseInt(yearStr);
+        const month = parseInt(monthStr) - 1; // month argument is zero indexed so 0 is January
+        const day = parseInt(dayStr.split('T')[0]);
+        return new Date(year, month, day);
+    }
 
-        get datepickerInputClass() {
-            return this.isInvalid ? 'is-invalid' : '';
-        }
-
-        get dateValue() {
-            // Otherwise displayed date is off by one https://github.com/charliekassel/vuejs-datepicker/issues/158
-            if (_.isEmpty(this.value)) {
-                return null;
+    public updateDate(value) {
+        if (_.isNil(value)) {
+            this.updateValue(value);
+        } else {
+            switch (value.constructor.name) {
+                case 'String':
+                    this.updateValue(value);
+                    break;
+                case 'Date':
+                    this.updateValue(value.toISOString());
+                    break;
+                default:
+                    throw Error(`invalid type ${value.constructor.name} in date field`);
             }
-            const [yearStr, monthStr, dayStr] = this.value.split('-');
-            const year = parseInt(yearStr);
-            const month = parseInt(monthStr) - 1; // month argument is zero indexed so 0 is January
-            const day = parseInt(dayStr.split('T')[0]);
-            return new Date(year, month, day);
-        }
-
-        public updateDate(value) {
-            if (_.isNil(value)) {
-                this.updateValue(value);
-            } else {
-                switch (value.constructor.name) {
-                    case 'String':
-                        this.updateValue(value);
-                        break;
-                    case 'Date':
-                        this.updateValue(value.toISOString());
-                        break;
-                    default:
-                        throw Error(`invalid type ${value.constructor.name} in date field`);
-                }
-            }
-        }
-
-        public cleared() {
-            this.updateValue(null);
         }
     }
 
+    public cleared() {
+        this.updateValue(null);
+    }
+}
 </script>
 <style scoped>
 </style>

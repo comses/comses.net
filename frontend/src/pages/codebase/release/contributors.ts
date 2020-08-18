@@ -16,7 +16,7 @@ import * as _ from 'lodash';
 import * as yup from 'yup';
 import * as _$ from 'jquery';
 import {createDefaultValue, createFormValidator} from '@/pages/form';
-import 'bootstrap/js/dist/modal'
+import 'bootstrap/js/dist/modal';
 import {HandlerShowSuccessMessage} from '@/api/handler';
 
 
@@ -274,7 +274,7 @@ class EditReleaseContributor extends createFormValidator(releaseContributorSchem
     }
 
      get hasEdits(): boolean {
-        return !_.isEmpty(this.candidateContributor) || !_.isEmpty((this as any).roles)
+        return !_.isEmpty(this.candidateContributor) || !_.isEmpty((this as any).roles);
     }
 
     public contributorLabel(contributor: Contributor) {
@@ -331,7 +331,7 @@ class ContributorResponseHandler extends HandlerShowSuccessMessage {
         <p class='mt-3'>
             Please list the contributors that should be included in a citation for this software release. Ordering is
             important, as is the role of the contributor. You can change contributor ordering by using
-            the <i class='fas fa-exchange-alt'></i> to drag and drop contributors. Editing 
+            the <i class='fas fa-exchange-alt'></i> to drag and drop contributors. Editing
             <i class='fas fa-edit'></i> an existing contributor will update the form above the "Current Release
             Contributors" area - you can make changes there and then click "Save". You can remove a contributor entirely
             by clicking the <i class='fas fa-trash'></i> button and then Saving.

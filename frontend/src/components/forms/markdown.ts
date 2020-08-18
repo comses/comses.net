@@ -11,7 +11,7 @@ Vue.component('vue-simplemde', VueSimplemde);
         <slot name="label" :label="label">
             <label :class="['form-control-label', requiredClass]">{{ label }}
                 <small class="ml-1 text-muted"><a href="https://en.wikipedia.org/wiki/Markdown" target="_blank">Markdown</a> styling is supported</small>
-            </label>        
+            </label>
         </slot>
         <vue-simplemde @input="emitValue" :configs="configs" :value="value" ref="markdownEditor"></vue-simplemde>
         <div v-if="isInvalid" class="invalid-feedback">{{ errorMessage }}</div>
@@ -19,7 +19,7 @@ Vue.component('vue-simplemde', VueSimplemde);
         </slot>
     </div>`,
   components: {
-    VueSimplemde
+    VueSimplemde,
   },
 })
 export default class Markdown extends BaseControl {
@@ -36,20 +36,20 @@ export default class Markdown extends BaseControl {
     return {
       placeholder: this.help,
       toolbar: [
-        "bold", "italic", "heading", "|",
-        "code", "quote", "unordered-list", "ordered-list", "|",
-        "horizontal-rule", "link", "image", "table", "|",
-        "preview", "side-by-side", "fullscreen", "|",
-        "guide"
-      ]
-    }
+        'bold', 'italic', 'heading', '|',
+        'code', 'quote', 'unordered-list', 'ordered-list', '|',
+        'horizontal-rule', 'link', 'image', 'table', '|',
+        'preview', 'side-by-side', 'fullscreen', '|',
+        'guide',
+      ],
+    };
   }
 
-  emitValue(value) {
+  public emitValue(value) {
     this.$emit('input', value);
   }
 
-  refresh() {
+  public refresh() {
     this.simplemde.codemirror.refresh();
   }
 

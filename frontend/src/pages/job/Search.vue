@@ -26,47 +26,46 @@
 </template>
 
 <script lang="ts">
-    import {Component, Prop, Vue} from 'vue-property-decorator';
-    import Search from '@/components/Search.vue';
-    import DatePicker from '@/components/forms/DatePicker.vue';
-    import Input from '@/components/forms/input';
-    import Tagger from '@/components/tagger';
-    import {JobAPI} from '@/api';
+import {Component, Prop, Vue} from 'vue-property-decorator';
+import Search from '@/components/Search.vue';
+import DatePicker from '@/components/forms/DatePicker.vue';
+import Input from '@/components/forms/input';
+import Tagger from '@/components/tagger';
+import {JobAPI} from '@/api';
 
 
-    @Component({
-        components: {
-            'c-date-picker': DatePicker,
-            'c-input': Input,
-            'c-tagger': Tagger,
-            'c-search': Search,
-        },
-    })
-    export default class SearchJobs extends Vue {
-        api = new JobAPI();
-        public fullTextSearch: string = '';
+@Component({
+    components: {
+        'c-date-picker': DatePicker,
+        'c-input': Input,
+        'c-tagger': Tagger,
+        'c-search': Search,
+    },
+})
+export default class SearchJobs extends Vue {
+    public api = new JobAPI();
+    public fullTextSearch: string = '';
 
-        public initialPostingDate = null;
-        public applicationDeadline = null;
+    public initialPostingDate = null;
+    public applicationDeadline = null;
 
-        public tags: Array<{name: string}> = [];
-        public contributors = [];
+    public tags: Array<{name: string}> = [];
+    public contributors = [];
 
-        get query() {
-            const queryObject = {
-                query: this.fullTextSearch,
-                date_created__gte: this.initialPostingDate,
-                application_deadline__gte: this.applicationDeadline,
-                tags: this.tags.map((tag) => tag.name),
-            };
-            return this.api.searchUrl(queryObject);
-        }
-
-        public search() {
-            window.location.href = this.query;
-        }
+    get query() {
+        const queryObject = {
+            query: this.fullTextSearch,
+            date_created__gte: this.initialPostingDate,
+            application_deadline__gte: this.applicationDeadline,
+            tags: this.tags.map((tag) => tag.name),
+        };
+        return this.api.searchUrl(queryObject);
     }
 
+    public search() {
+        window.location.href = this.query;
+    }
+}
 </script>
 
 <style scoped>

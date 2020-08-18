@@ -67,23 +67,23 @@
 </template>
 
 <script lang="ts">
-import { Component, Prop } from "vue-property-decorator";
-import { CodebaseAPI, CodebaseReleaseAPI } from "@/api";
-import Checkbox from "@/components/forms/checkbox";
-import Input from "@/components/forms/input";
-import Markdown from "@/components/forms/markdown";
-import MessageDisplay from "@/components/messages";
-import Tagger from "@/components/tagger";
-import TextArea from "@/components/forms/textarea";
-import { createFormValidator } from "@/pages/form";
-import * as yup from "yup";
-import * as _ from "lodash";
+import { Component, Prop } from 'vue-property-decorator';
+import { CodebaseAPI, CodebaseReleaseAPI } from '@/api';
+import Checkbox from '@/components/forms/checkbox';
+import Input from '@/components/forms/input';
+import Markdown from '@/components/forms/markdown';
+import MessageDisplay from '@/components/messages';
+import Tagger from '@/components/tagger';
+import TextArea from '@/components/forms/textarea';
+import { createFormValidator } from '@/pages/form';
+import * as yup from 'yup';
+import * as _ from 'lodash';
 import {
   HandlerWithRedirect,
   HandlerShowSuccessMessage,
-  DismissOnSuccessHandler
-} from "@/api/handler";
-import { Upload } from "@/components/upload";
+  DismissOnSuccessHandler,
+} from '@/api/handler';
+import { Upload } from '@/components/upload';
 
 export const schema = yup.object().shape({
   title: yup.string().required(),
@@ -93,7 +93,7 @@ export const schema = yup.object().shape({
   associated_publication_text: yup.string(),
   references_text: yup.string(),
   tags: yup.array().of(yup.object().shape({ name: yup.string().required() })),
-  repository_url: yup.string().url()
+  repository_url: yup.string().url(),
 });
 
 const api = new CodebaseAPI();
@@ -101,14 +101,14 @@ const releaseApi = new CodebaseReleaseAPI();
 
 @Component({
   components: {
-    "c-checkbox": Checkbox,
-    "c-input": Input,
-    "c-markdown": Markdown,
-    "c-message-display": MessageDisplay,
-    "c-tagger": Tagger,
-    "c-textarea": TextArea,
-    "c-upload": Upload
-  }
+    'c-checkbox': Checkbox,
+    'c-input': Input,
+    'c-markdown': Markdown,
+    'c-message-display': MessageDisplay,
+    'c-tagger': Tagger,
+    'c-textarea': TextArea,
+    'c-upload': Upload,
+  },
 } as any)
 export default class Description extends createFormValidator(schema) {
   @Prop({ default: null })
@@ -119,11 +119,11 @@ export default class Description extends createFormValidator(schema) {
 
   public detailPageUrl(state) {
     this.state.identifier = state.identifier;
-    const version_number = this.state.latest_version_number || "1.0.0";
+    const version_number = this.state.latest_version_number || '1.0.0';
     if (_.isNull(this._identifier)) {
       return releaseApi.editUrl({
         identifier: this.state.identifier,
-        version_number
+        version_number,
       });
     } else {
       return api.detailUrl(this.state.identifier);
@@ -147,7 +147,7 @@ export default class Description extends createFormValidator(schema) {
   }
 
   public async createOrUpdate() {
-    this.$emit("createOrUpdate");
+    this.$emit('createOrUpdate');
     let handler;
     if (_.isNull(this.redirect)) {
       handler = new HandlerWithRedirect(this);
