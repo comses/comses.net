@@ -7,7 +7,7 @@
     <h1>Job Postings</h1>
 {% endblock %}
 {%- block head -%}
-<link rel='canonical' href='{{ absolute_url }}'>
+<link rel='canonical' id='discourseEmbedUrl' href='{{ request.build_absolute_uri(absolute_url) }}'>
 {% endblock %}
 {% block top %}
     {{ breadcrumb([
