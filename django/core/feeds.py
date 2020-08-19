@@ -3,6 +3,7 @@ import re
 from itertools import chain
 from operator import attrgetter
 
+from django.conf import settings
 from django.contrib.syndication.views import Feed
 from django.urls import path
 from django.utils.feedgenerator import Atom1Feed, Rss201rev2Feed
@@ -16,7 +17,7 @@ logger = logging.getLogger(__name__)
 # https://lethain.com/stripping-illegal-characters-from-xml-in-python/
 XML_CONTROL_CHARACTERS = re.compile('[\x00-\x08\x0b-\x0c\x0e-\x1f\x7f]')
 
-SINGLE_FEED_MAX_ITEMS = 30
+SINGLE_FEED_MAX_ITEMS = settings.DEFAULT_FEED_MAX_ITEMS
 
 
 class ComsesFeed(Feed):
@@ -83,7 +84,7 @@ class AtomSiteNewsFeed(RssSiteNewsFeed):
 
 
 class RssEventFeed(ComsesFeed):
-    title = 'CoMSES Net events feed'
+    title = 'CoMSES Net Events RSS'
     link = 'https://www.comses.net/events/'
     description = 'New events posted on comses.net'
     feed_url = '/feeds/events/rss/'
@@ -99,12 +100,22 @@ class AtomEventFeed(RssEventFeed):
 
 
 class RssJobFeed(ComsesFeed):
-    title = 'CoMSES Net job feed'
+    title = 'CoMSES Net Job RSS'
     link = 'https://www.comses.net/jobs/'
     description = 'New jobs posted on comses.net'
 
     def items(self):
         return Job.objects.latest_for_feed(SINGLE_FEED_MAX_ITEMS)
+
+
+class RssCodebaseFeed(ComsesFeed):
+    title = 'CoMSES Net Computational Models Feed'
+    link = 'https://www.comses.net/codebases/'
+    description = 'New computational models posted to comses.net'
+    feed_url = '/feeds/code/rss/'
+
+    def items(self):
+        return CodebaseRelease.objects.latest_for_feed(SINGLE_FEED_MAX_ITEMS)
 
 
 class AtomJobFeed(RssJobFeed):
@@ -120,5 +131,6 @@ def urlpatterns():
         path('feeds/events/atom/', AtomEventFeed(), name='atom-events'),
         path('feeds/jobs/rss/', RssJobFeed(), name='rss-jobs'),
         path('feeds/jobs/atom/', AtomJobFeed(), name='atom-jobs'),
+        path('feeds/code/rss/', RssCodebaseFeed(), name='rss-codebases'),
         path('feeds/all/', AllFeed(), name='all'),
     ]
