@@ -112,6 +112,36 @@
             </div>
         </div>
     </div>
+    {% if codebase.is_replication %}
+        <div class='card-metadata'>
+            <div class='card-body'>
+                <h2 class='card-title'><i class='fas fa-share-alt'></i> Replication of a previously described model</h2>
+                <p class='card-text'>
+                    {{ codebase.replication_text|markdown }}
+                </p>
+            </div>
+        </div>
+    {% endif %}
+    {% if codebase.associated_publication_text %}
+        <div class='card-metadata'>
+            <div class='card-body'>
+                <h2 class='card-title'><i class='fas fa-book'></i> Associated Publication(s)</h2>
+                <p class='card-text'>
+                    {{ codebase.associated_publication_text|markdown }}
+                </p>
+            </div>
+        </div>
+    {% endif %}
+    {% if codebase.references_text %}
+        <div class='card-metadata'>
+            <div class='card-body'>
+                <h2 class='card-title'><i class='fas fa-book'></i> References</h2>
+                <p class='card-text'>
+                {{ codebase.references_text|markdown }}
+                </p>
+            </div>
+        </div>
+    {% endif %}
     {% if release.live or has_change_perm %}
         <div class='accordion' id='open-code-badge-accordion'>
         <div class='card-metadata'>
@@ -160,36 +190,6 @@
             {# closes collapse #}
             </div>
         </div>
-        </div>
-    {% endif %}
-    {% if codebase.is_replication %}
-        <div class='card-metadata'>
-            <div class='card-body'>
-                <h2 class='card-title'><i class='fas fa-share-alt'></i> Replication of a previously described model</h2>
-                <p class='card-text'>
-                    {{ codebase.replication_text|markdown }}
-                </p>
-            </div>
-        </div>
-    {% endif %}
-    {% if codebase.associated_publication_text %}
-        <div class='card-metadata'>
-            <div class='card-body'>
-                <h2 class='card-title'><i class='fas fa-book'></i> Associated Publication(s)</h2>
-                <p class='card-text'>
-                    {{ codebase.associated_publication_text|markdown }}
-                </p>
-            </div>
-        </div>
-    {% endif %}
-    {% if codebase.references_text %}
-        <div class='card-metadata'>
-            <div class='card-body'>
-                <h2 class='card-title'><i class='fas fa-book'></i> References</h2>
-                <p class='card-text'>
-                {{ codebase.references_text|markdown }}
-                </p>
-            </div>
         </div>
     {% endif %}
     <ul class='nav nav-tabs detail-tabs' role='tablist'>
