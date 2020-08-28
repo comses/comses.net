@@ -1,11 +1,12 @@
 """
-Django settings for comses.net
+Django and Wagtail settings for the comses.net CMS
 
-For more information on this file, see
-https://docs.djangoproject.com/en/2.2/topics/settings/
+Django settings reference:
+  https://docs.djangoproject.com/en/3.0/ref/settings/
 
-For the full list of settings and their values, see
-https://docs.djangoproject.com/en/2.2/ref/settings/
+Wagtail settings reference:
+  https://docs.wagtail.io/en/v2.10.1/reference/settings.html
+
 """
 
 import configparser
@@ -59,10 +60,7 @@ BASE_URL = DEPLOY_ENVIRONMENT.base_url()
 ROBOTS_SITEMAP_URLS = [f'{BASE_URL}/sitemap.xml']
 
 
-# Quick-start development settings - make sure to properly override in prod.py
-# See https://docs.djangoproject.com/en/2.2/howto/deployment/checklist/
-
-# wagtail configuration: http://docs.wagtail.io/en/v2.8/getting_started/integrating_into_django.html
+# wagtail config: https://docs.wagtail.io/en/v2.10.1/getting_started/integrating_into_django.html
 WAGTAIL_APPS = [
     'wagtail.contrib.forms',
     'wagtail.contrib.redirects',

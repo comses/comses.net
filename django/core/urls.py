@@ -1,4 +1,5 @@
 from django.conf import settings
+from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import include, path
 from rest_framework_jwt.views import obtain_jwt_token
@@ -41,16 +42,14 @@ urlpatterns = [
     # https://docs.wagtail.io/en/v2.9.2/reference/contrib/sitemaps.html
     path('sitemap.xml', sitemap),
     path('robots.txt', include('robots.urls')),
-]
+] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT) 
 
 urlpatterns += feeds.urlpatterns()
 
 if settings.DEPLOY_ENVIRONMENT.is_development():
-    from django.conf.urls.static import static
-
-    # add serve static and media files from development server
+    # serve static files from development server
     # https://docs.djangoproject.com/en/3.0/howto/static-files/#serving-static-files-during-development
-    urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT) + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+    urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
 
 if settings.DEBUG:
     import debug_toolbar
