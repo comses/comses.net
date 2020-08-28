@@ -358,7 +358,7 @@ class DigestView(TemplateView):
 
     def get_context_data(self, **kwargs):
         context_data = super().get_context_data(**kwargs)
-        mailchimp_digest_archive_url = SiteSettings.for_site(self.request.site).mailchimp_digest_archive_url
+        mailchimp_digest_archive_url = SiteSettings.for_request(self.request).mailchimp_digest_archive_url
         if not mailchimp_digest_archive_url:
             mailchimp_digest_archive_url = self.DEFAULT_ARCHIVE_URL
         context_data['mailchimp_digest_archive_url'] = mailchimp_digest_archive_url

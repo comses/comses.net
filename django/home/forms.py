@@ -45,7 +45,7 @@ class ContactForm(forms.Form):
 
     @property
     def recipient_list(self):
-        recipients = SocialMediaSettings.for_site(self.request.site).contact_form_recipients
+        recipients = SocialMediaSettings.for_request(self.request).contact_form_recipients
         if not recipients:
             recipients = [settings.EDITOR_EMAIL]
         return recipients
