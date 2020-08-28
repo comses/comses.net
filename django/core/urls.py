@@ -47,11 +47,10 @@ urlpatterns += feeds.urlpatterns()
 
 if settings.DEPLOY_ENVIRONMENT.is_development():
     from django.conf.urls.static import static
-    from django.contrib.staticfiles.urls import staticfiles_urlpatterns
 
-    # Serve static and media files from development server
-    urlpatterns += staticfiles_urlpatterns()
-    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+    # add serve static and media files from development server
+    # https://docs.djangoproject.com/en/3.0/howto/static-files/#serving-static-files-during-development
+    urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT) + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
 if settings.DEBUG:
     import debug_toolbar
