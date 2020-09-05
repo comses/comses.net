@@ -5,9 +5,11 @@ from datetime import date
 
 import pytz
 from dateutil.parser import parse as parse_date
+from django.contrib.auth import get_user_model
 from django.core.management.base import BaseCommand
 from django.db.models import Count, Max
 
+from core.models import MemberProfile, Job, Event
 from library.models import CodebaseReleaseDownload, CodebaseRelease, Codebase, PeerReview
 
 logger = logging.getLogger(__name__)
@@ -20,8 +22,8 @@ class Command(BaseCommand):
         parser.add_argument('--from', help='isoformat start date (yyyy-mm-dd) e.g., --from 2018-03-15')
         parser.add_argument('--to', help='isoformat end date (yyyy-mm-dd) e.g., --to 2018-06-01. Blank defaults to today.', default=None)
         parser.add_argument('--directory', '-d', help='directory to store statistics in', default='/shared/statistics')
-        parser.add_argument('--aggregations', '-a', default='release,codebase,ip,new,reviewed',
-                            help='comma separated list of things to aggregate, default is release, codebase, ip, new, reviewed')
+        parser.add_argument('--aggregations', '-a', default='release,codebase,ip,new,reviewed,summary',
+                            help='comma separated list of things to aggregate, default is release, codebase, ip, new, reviewed, users')
 
     def export_release_download_statistics(self, downloads, dest):
         releases = CodebaseRelease.objects.filter(id__in=downloads.values_list('release_id', flat=True)) \
@@ -91,6 +93,24 @@ class Command(BaseCommand):
                                      'last modified': max_dates_bulk[codebase.id]})
         return releases
 
+    def export_summary(self, directory, start_date, end_date=None):
+        users = get_user_model().objects.filter(date_joined__range=[start_date, end_date])
+        full_members = MemberProfile.objects.full_members(date_joined__range=[start_date, end_date])
+        jobs = Job.objects.filter(date_created__range=[start_date, end_date])
+        events = Event.objects.filter(date_created__range=[start_date, end_date])
+        with open(os.path.join(directory, 'summary.csv'), 'w', newline='') as out:
+            fieldnames = ['New Users', 'Full Members', 'Jobs', 'Events', 'Date Range']
+            writer = csv.DictWriter(out, fieldnames=fieldnames)
+            writer.writeheader()
+            writer.writerow({
+                'New Users': users.count(),
+                'Full Members': full_members.count(),
+                'Jobs': jobs.count(),
+                'Events': events.count(),
+                'Date Range': f'{start_date:%x} to {end_date:%x}'
+            })
+
+
     def handle(self, *args, **options):
         """
         Examples
@@ -140,3 +160,6 @@ class Command(BaseCommand):
 
         if 'reviewed' in aggregations:
             self.export_reviewed_codebases(directory, start_date=from_date, end_date=to_date)
+
+        if 'summary' in aggregations:
+            self.export_summary(directory, start_date=from_date, end_date=to_date)

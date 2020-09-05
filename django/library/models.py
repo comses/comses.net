@@ -9,7 +9,7 @@ from enum import Enum
 
 import semver
 from django.conf import settings
-from django.contrib.auth.models import User
+from django.contrib.auth import get_user_model
 from django.contrib.postgres.fields import JSONField, ArrayField
 from django.core.cache import cache
 from django.core.files.images import ImageFile
@@ -105,7 +105,7 @@ class Contributor(index.Indexed, ClusterableModel):
                             default='person',
                             help_text=_('organizations only use given_name'))
     email = models.EmailField(blank=True)
-    user = models.ForeignKey(User, null=True, on_delete=models.SET_NULL)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, on_delete=models.SET_NULL)
 
     search_fields = [
         index.SearchField('given_name', partial_match=True, boost=10),
@@ -235,7 +235,7 @@ class SemanticVersion:
 
 class CodebaseReleaseDownload(models.Model):
     date_created = models.DateTimeField(default=timezone.now)
-    user = models.ForeignKey(User, null=True, on_delete=models.SET_NULL)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, on_delete=models.SET_NULL)
     ip_address = models.GenericIPAddressField(blank=True, null=True)
     referrer = models.URLField(max_length=500, blank=True,
                                help_text=_("captures the HTTP_REFERER if set"))
@@ -408,7 +408,7 @@ class Codebase(index.Indexed, ClusterableModel):
     media = JSONField(default=list,
                       help_text=_("JSON metadata dict of media associated with this Codebase"))
 
-    submitter = models.ForeignKey(User, related_name='codebases', on_delete=models.PROTECT)
+    submitter = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='codebases', on_delete=models.PROTECT)
 
     objects = CodebaseQuerySet.as_manager()
 
@@ -601,7 +601,7 @@ class Codebase(index.Indexed, ClusterableModel):
     def import_release(self, submitter=None, submitter_id=None, version_number=None, submitted_package=None, **kwargs):
         if submitter_id is None:
             if submitter is None:
-                submitter = User.objects.first()
+                submitter = get_user_model().objects.first()
                 logger.warning("No submitter or submitter_id specified when creating release, using first user %s",
                                submitter)
             submitter_id = submitter.pk
@@ -880,7 +880,7 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
     programming_languages = ClusterTaggableManager(through=ProgrammingLanguage,
                                                    related_name='pl_codebase_releases')
     codebase = models.ForeignKey(Codebase, related_name='releases', on_delete=models.PROTECT)
-    submitter = models.ForeignKey(User, related_name='releases', on_delete=models.PROTECT)
+    submitter = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='releases', on_delete=models.PROTECT)
     contributors = models.ManyToManyField(Contributor, through='ReleaseContributor')
     submitted_package = models.FileField(upload_to=Codebase._release_upload_path, max_length=1000, null=True,
                                          storage=FileSystemStorage(location=settings.LIBRARY_ROOT))
