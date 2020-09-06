@@ -338,9 +338,9 @@ class NavigationMixin(object):
 
 
 class CategoryIndexPage(NavigationMixin, Page):
-    template = models.CharField(max_length=128, default='home/category_index.jinja')
-    heading = models.CharField(max_length=128, help_text=_("Short name to be placed in introduction header."))
-    summary = models.CharField(max_length=1000, help_text=_('Summary blurb for this category index page.'))
+    template = models.CharField(max_length=256, default='home/category_index.jinja')
+    heading = models.CharField(max_length=256, help_text=_("Short name to be placed in introduction header."))
+    summary = models.CharField(max_length=5000, help_text=_('Summary blurb for this category index page.'))
 
     def add_callout(self, image_path, title, caption, sort_order=None, user=None, url=''):
         if user is None:
