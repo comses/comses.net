@@ -75,41 +75,43 @@
     </div>
     <div class='card-metadata'>
         <div class='card-body'>
-            <h2 class='card-title'>Cite this Model</h2>
-            <div class='card-text'>
-                {% if release.live %}
-                    <div id='citation-text'>
-                    {{ release.citation_text|markdown }}
-                    </div>
-                    <button class='btn btn-clipboard btn-outline-info' data-clipboard-target='#citation-text'>
-                        <i class='fas fa-copy'></i> Copy citation text to clipboard
-                    </button>
-                {% elif has_change_perm %}
-                    This model is currently <b>unpublished</b>.
-                    <div class='input-group' id="regenerate_share_uuid"
-                         data-absolute-url="{{ release.get_absolute_url() }}"
-                         data-share-url="{{ request.build_absolute_uri(release.share_url) }}">
-                        <div class='input-group-prepend'>
-                            <span class='btn input-group-text'>
-                                <i class='fas fa-sync-alt' @click="regenerateShareUuid"></i>
-                            </span>
-                        </div>
-                        <input id='release-share-url' readonly class='form-control normal-readonly' :value="share_url">
-                        <div class='input-group-append'>
-                            <span class='btn btn-clipboard input-group-text' data-clipboard-target='#release-share-url'>
-                                <i class='fas fa-copy'></i>
-                            </span>
-                        </div>
-                    </div>
-                    <small class='text-muted'>
-                        Use this link to share this release privately with others. Anyone with this URL will be able to
-                        access this release. Replace the private link with a new link by pressing
-                        <span class="fas fa-sync-alt"></span>
-                    </small>
-                {% else %}
-                    Hold on! This model is unpublished. Perhaps the authors are not ready for it to be cited yet.
-                {% endif %}
+    {% if release.live %}
+        <h2 class='card-title'>Cite this Model</h2>
+        <div id='citation-text'>
+            {{ release.citation_text|markdown }}
+        </div>
+        <button class='btn btn-clipboard btn-outline-info' data-clipboard-target='#citation-text'>
+            <i class='fas fa-copy'></i> Copy citation text to clipboard
+        </button>
+    {% elif has_change_perm %}
+        <h2 class='card-title'>Share a Private Link to this Model</h2>
+        <div>
+        This model is currently <b>private</b>. You can use the unique, private link below to share it with others,
+        e.g., with reviewers of a publication in review. Please remember to return and publish your model when it is
+        ready to be public.
+        </div>
+        <div class='input-group' id="regenerate_share_uuid"
+                                 data-absolute-url="{{ release.get_absolute_url() }}"
+                                 data-share-url="{{ request.build_absolute_uri(release.share_url) }}">
+            <div class='input-group-prepend'>
+                <span class='btn input-group-text'>
+                    <i class='fas fa-sync-alt' @click="regenerateShareUuid"></i>
+                </span>
             </div>
+            <input id='release-share-url' readonly class='form-control normal-readonly' :value="shareUrl">
+            <div class='input-group-append'>
+                <span class='btn btn-clipboard input-group-text' data-clipboard-target='#release-share-url'>
+                    <i class='fas fa-copy'></i>
+                </span>
+            </div>
+        </div>
+        <small class='text-muted'>
+            Use this link to share this release privately with others. Anyone with this URL will be able to
+            access this release. You can generate a new private link by pressing <span class="fas fa-sync-alt"></span>.
+        </small>
+    {% else %}
+        Hold on! This model is currently private and cannot be cited until it has been published.
+    {% endif %}
         </div>
     </div>
     {% if codebase.is_replication %}
@@ -420,7 +422,7 @@
 
 {% block js %}
     {# FIXME: remove this if there's a better way to include npm dependencies manually in a page #}
-    {% with CLIPBOARD_JS_VERSION="2.0.0" %}
+    {% with CLIPBOARD_JS_VERSION="2.0.6" %}
         <script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/{{ CLIPBOARD_JS_VERSION }}/clipboard.min.js"></script>
     {% endwith %}
     <script>
