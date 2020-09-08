@@ -261,16 +261,16 @@ class PublishModal extends createFormValidator(publishSchema) {
             </div>
             <c-progress></c-progress>
             <ul class="nav nav-tabs justify-content-center">
+                <li class="nav-item">
+                    <router-link :to="{ name: 'detail' }" class="nav-link" active-class="active">
+                        Metadata<span class="badge badge-pill badge-danger" v-if="detailPageErrors !== 0">{{ detailPageErrors }} errors</span>
+                    </router-link>
+                </li>
                 <li class="nav-item" v-if="!isPublished" data-toggle="tooltip" data-placement="bottom" title="">
                     <router-link :to="{ name: 'upload'}" class="nav-link" active-class="active">Upload</router-link>
                 </li>
                 <li class="nav-item">
                     <router-link :to="{ name: 'contributors' }" class="nav-link" active-class="active">Contributors</router-link>
-                </li>
-                <li class="nav-item">
-                    <router-link :to="{ name: 'detail' }" class="nav-link" active-class="active">
-                        Metadata<span class="badge badge-pill badge-danger" v-if="detailPageErrors !== 0">{{ detailPageErrors }} errors</span>
-                    </router-link>
                 </li>
             </ul>
             <keep-alive>
@@ -297,10 +297,10 @@ class PublishModal extends createFormValidator(publishSchema) {
     </div>`,
     router: new VueRouter({
         routes: [
-            {path: '/', redirect: {name: 'contributors'}},
+            {path: '/', redirect: {name: 'detail'}},
+            {path: '/detail/', component: CodebaseReleaseMetadata, name: 'detail'},
             {path: '/upload', component: UploadPage, name: 'upload'},
             {path: '/contributors/', component: Contributors, name: 'contributors'},
-            {path: '/detail/', component: CodebaseReleaseMetadata, name: 'detail'},
         ],
     }),
 } as any)
