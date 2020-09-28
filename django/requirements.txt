@@ -1,9 +1,9 @@
 bagit==1.7.0
 bleach==3.1.5
 django-allauth==0.42.0
-django-anymail[mailgun]==7.2.1
+django-anymail[mailgun]==8.0
 django-cookie-law==2.0.3
-django-extensions==3.0.8
+django-extensions==3.0.9
 django-guardian==2.3.0
 django-ipware==3.0.1
 django-jinja==2.6.0
@@ -35,7 +35,7 @@ semver==2.10.2
 sentry-sdk==0.17.3
 uwsgi==2.0.19.1
 uwsgitop==0.11
-wagtail==2.10.1
+wagtail==2.10.2
 invoke
 ipython
 pgcli
