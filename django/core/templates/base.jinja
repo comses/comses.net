@@ -345,9 +345,12 @@
         <!-- End Google Tag Manager -->
     {% endif %}
     <script src="//cdnjs.cloudflare.com/ajax/libs/holder/2.9.6/holder.min.js"></script>
+    {# FIXME: always render chunk-common and chunk-vendors, this appears to have changed with vue-cli-4. See 
+    https://github.com/comses/comses.net/issues/526
+    #}
+    {{ render_bundle('chunk-common') }}
+    {{ render_bundle('chunk-vendors') }}
     {% if deploy_environment().is_staging_or_production() %}
-        {{ render_bundle('chunk-common') }}
-        {{ render_bundle('chunk-vendors') }}
         {% with SENTRYJS_VERSION='5.9.1' %}
             <script 
                 src="https://browser.sentry-cdn.com/{{SENTRYJS_VERSION}}/bundle.min.js" 
@@ -424,7 +427,6 @@
         </div>
     </section>
 {% endblock page %}
-
 {{ footer() }}
 </body>
 </html>
