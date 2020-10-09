@@ -450,6 +450,7 @@ TEMPLATES = [
             # DEFAULT_EXTENSIONS at https://github.com/niwinz/django-jinja/blob/master/django_jinja/builtins/__init__.py
             "extensions": DEFAULT_EXTENSIONS + [
                 "django_jinja.builtins.extensions.DjangoExtraFiltersExtension",
+                "webpack_loader.contrib.jinja2ext.WebpackExtension",
                 'wagtail.contrib.settings.jinja2tags.settings',
                 'wagtail.core.jinja2tags.core',
                 'wagtail.admin.jinja2tags.userbar',
