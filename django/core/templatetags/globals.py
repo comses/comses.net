@@ -13,7 +13,7 @@ from django.utils.dateparse import parse_datetime
 from django.utils.timezone import get_current_timezone
 from django_jinja import library
 from jinja2 import Markup
-from webpack_loader.templatetags import webpack_loader as wl
+# from webpack_loader.templatetags import webpack_loader as wl
 
 from core.fields import render_sanitized_markdown
 from core.serializers import FULL_DATE_FORMAT
@@ -29,9 +29,11 @@ def build_absolute_uri(relative_url):
     return absolute_url
 
 
+"""
 @library.global_function
 def render_bundle(bundle_name, extension=None, config='DEFAULT', attrs=''):
     return wl.render_bundle(bundle_name, extension, config, attrs)
+"""
 
 
 @library.global_function
