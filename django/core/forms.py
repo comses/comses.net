@@ -26,7 +26,6 @@ class SignupForm(forms.Form):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields['username'].widget.attrs.pop('autofocus')
 
     def signup(self, request, user):
         data = self.cleaned_data
