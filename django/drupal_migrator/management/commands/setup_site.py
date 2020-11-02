@@ -31,6 +31,14 @@ COMMUNITY_STATEMENT = (
     'and [forums for discussions, job postings, and events.](https://forum.comses.net). We also develop and '
     'maintain the [OpenABM Computational Model Library](/codebases/), a digital repository for code that supports '
     'discovery and good practices for software citation, reproducibility and reuse.'
+    '- [OpenABM Computational Model Library](/codebases/)'
+    '- [Resources for model-based science](/resources/)'
+    '- [FAQs for agent-based modeling](/about/faq/)'
+    '- [Guides to good practice](resources/guides-to-good-practice/)'
+    '- [Discussion Forums](https://forum.comses.net)'
+    '- [A Job Board](https://forum.comses.net/c/jobs-and-appointments/)'
+    '- [Events Calendar](https://www.comses.net/events/)'
+    '- And [YouTube channel](https://www.youtube.com/user/CoMSESNet/playlists) with video playlists related to agent-based modeling and archived videos from our virtual conferences.'
 )
 
 class AbstractSection(object):
