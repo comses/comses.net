@@ -9,7 +9,7 @@ MIDDLEWARE += ['debug_toolbar.middleware.DebugToolbarMiddleware']
 
 INSTALLED_APPS += ['debug_toolbar', 'fixture_magic', ]
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'dev.comses.asu.edu', 'cms']
+ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'cms']
 
 # IP Address inside docker container
 INTERNAL_IPS = ['172.18.0.1']
