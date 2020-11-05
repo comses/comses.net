@@ -60,107 +60,97 @@
             <div class='lead'>
                 {{ codebase.description|safe }}
             </div>
-            <div class='py-3'>
-                {% with featured_image=codebase.get_featured_image() %}
-                    {% if featured_image is not none %}
-                        {{ image(featured_image, "width-300", class='d-block img-fluid') }}
-                    {% endif %}
-                {% endwith %}
-            </div>
-            <h3><u>Release Notes</u></h3>
-            <div class='lead'>
+            {% with featured_image=codebase.get_featured_image() %}
+                {% if featured_image is not none %}
+                    <div class='py-3'>
+                    {{ image(featured_image, "width-300", class='d-block img-fluid') }}
+                    </div>
+                {% endif %}
+            {% endwith %}
+            {% if release.release_notes.raw %}
+            <h4><u>Release Notes</u></h4>
+            <p>
                 {{ release.release_notes.rendered|default("No release notes entered with this release.")|safe }}
-            </div>
+            </p>
+            {% endif %}
         </div>
     </div>
     <div class='card-metadata'>
         <div class='card-body'>
-    {% if release.live %}
-        <h2 class='card-title'>Cite this Model</h2>
-        <div id='citation-text'>
-            {{ release.citation_text|markdown }}
-        </div>
-        <button class='btn btn-clipboard btn-outline-info' data-clipboard-target='#citation-text'>
-            <i class='fas fa-copy'></i> Copy citation text to clipboard
-        </button>
-    {% elif has_change_perm %}
-        <h2 class='card-title'>Share a Private Link to this Model</h2>
-        <div>
-        This model is currently <b>private</b>. You can use the unique, private link below to share it with others,
-        e.g., with reviewers of a publication in review. Please remember to return and publish your model when it is
-        ready to be public.
-        </div>
-        <div class='input-group' id="regenerate_share_uuid"
-                                 data-absolute-url="{{ release.get_absolute_url() }}"
-                                 data-share-url="{{ request.build_absolute_uri(release.share_url) }}">
-            <div class='input-group-prepend'>
-                <span class='btn input-group-text'>
-                    <i class='fas fa-sync-alt' @click="regenerateShareUuid"></i>
-                </span>
+        {% if release.live %}
+            <h2 class='card-title'><u>Cite this Model</u></h2>
+            <div class='pb-3'>
+                <div id='citation-text'>
+                    {{ release.citation_text|markdown }}
+                </div>
+                <button class='btn btn-clipboard btn-outline-info' data-clipboard-target='#citation-text'>
+                    <i class='fas fa-copy'></i> Copy citation text to clipboard
+                </button>
             </div>
-            <input id='release-share-url' readonly class='form-control normal-readonly' :value="shareUrl">
-            <div class='input-group-append'>
-                <span class='btn btn-clipboard input-group-text' data-clipboard-target='#release-share-url'>
-                    <i class='fas fa-copy'></i>
-                </span>
+        {% elif has_change_perm %}
+            <h2 class='card-title'>Share a Private Link to this Model</h2>
+            <div>
+            This model is currently <b>private</b>. You can use the unique, private link below to share it with others,
+            e.g., with reviewers of a publication in review. Please remember to return and publish your model when it is
+            ready to be public.
             </div>
-        </div>
-        <small class='text-muted'>
-            Use this link to share this release privately with others. Anyone with this URL will be able to
-            access this release. You can generate a new private link by pressing <span class="fas fa-sync-alt"></span>.
-        </small>
-    {% else %}
-        Hold on! This model is currently private and cannot be cited until it has been published.
-    {% endif %}
-        </div>
-    </div>
-    {% if codebase.is_replication %}
-        <div class='card-metadata'>
-            <div class='card-body'>
-                <h2 class='card-title'><i class='fas fa-share-alt'></i> Replication of a previously described model</h2>
-                <p class='card-text'>
-                    {{ codebase.replication_text|markdown }}
-                </p>
+            <div class='input-group' id="regenerate_share_uuid"
+                                     data-absolute-url="{{ release.get_absolute_url() }}"
+                                     data-share-url="{{ request.build_absolute_uri(release.share_url) }}">
+                <div class='input-group-prepend'>
+                    <span class='btn input-group-text'>
+                        <i class='fas fa-sync-alt' @click="regenerateShareUuid"></i>
+                    </span>
+                </div>
+                <input id='release-share-url' readonly class='form-control normal-readonly' :value="shareUrl">
+                <div class='input-group-append'>
+                    <span class='btn btn-clipboard input-group-text' data-clipboard-target='#release-share-url'>
+                        <i class='fas fa-copy'></i>
+                    </span>
+                </div>
             </div>
+            <small class='text-muted'>
+                Use this link to share this release privately with others. Anyone with this URL will be able to
+                access this release. You can generate a new private link by pressing <span class="fas fa-sync-alt"></span>.
+            </small>
+        {% else %}
+            Hold on! This model is currently private and cannot be cited until it has been published.
+        {% endif %}
+        {% if codebase.is_replication %}
+        <div class='pt-1'>
+            <h2 class='card-title'><i class='fas fa-share-alt'></i> <u>Replication of a previously described model</u></h2>
+            <p class='card-text'>{{ codebase.replication_text|markdown }}</p>
         </div>
-    {% endif %}
-    {% if codebase.associated_publication_text %}
-        <div class='card-metadata'>
-            <div class='card-body'>
-                <h2 class='card-title'><i class='fas fa-book'></i> Associated Publication(s)</h2>
-                <p class='card-text'>
-                    {{ codebase.associated_publication_text|markdown }}
-                </p>
-            </div>
+        {% endif %}
+        {% if codebase.associated_publication_text %}
+        <div class='pt-1'>
+            <h2 class='card-title'><i class='fas fa-book'></i> <u>Associated Publication(s)</u></h2>
+            <p class='card-text'>
+                {{ codebase.associated_publication_text|markdown }}
+            </p>
         </div>
-    {% endif %}
-    {% if codebase.references_text %}
-        <div class='card-metadata'>
-            <div class='card-body'>
-                <h2 class='card-title'><i class='fas fa-book'></i> References</h2>
-                <p class='card-text'>
-                {{ codebase.references_text|markdown }}
-                </p>
-            </div>
+        {% endif %}
+        {% if codebase.references_text %}
+        <div class='pt-1'>
+            <h2 class='card-title'><i class='fas fa-book'></i> <u>References</u></h2>
+            <p class='card-text'>{{ codebase.references_text|markdown }}</p>
         </div>
-    {% endif %}
-    {% if release.live or has_change_perm %}
-        <div class='accordion' id='open-code-badge-accordion'>
-        <div class='card-metadata'>
-            <div class='card-header' id='open-code-badge-info'>
+        {% endif %}
+        {% if release.live or has_change_perm %}
+        <div class='accordion pt-1' id='open-code-badge-accordion'>
+            <div id='open-code-badge-info'>
                 <h2 class='card-title mb-0'>
+                    <i class='fas fa-certificate'></i>
+                    <u>Create an Open Code Badge that links to this model</u> <a class='float-right btn btn-outline-primary mt-0 mb-0' href='{{slugurl("open-code-badge")}}'><i class='fas fa-info-circle'></i> more info</a>
                     <button class='btn btn-link mt-0 pt-0' type='button' data-toggle='collapse'
                             data-target='#open-code-badge-collapse' aria-expanded='true'
                             aria-controls='open-code-badge-collapse'>
                         <i class='fas fa-chevron-down fa-2x'></i>
                     </button>
-                    Create an Open Code Badge that links to this model <a class='float-right btn btn-outline-primary mt-0 mb-0' href='{{slugurl("open-code-badge")}}'><i class='fas fa-info-circle'></i> more info</a>
                 </h2>
             </div>
             <div id='open-code-badge-collapse' class='collapse' aria-labelledby='open-code-badge-info' data-parent='#open-code-badge-accordion'>
-            <div class='card-body'>
-                <div class='py-2'>
-                    <div class='alert alert-info'>
+                <div class='alert alert-info'>
                     {% if release.peer_reviewed %}
                         This model has been reviewed by CoMSES Net and meets the <a href='{{slugurl("open-code-badge")}}'>Open Code Badge guidelines</a>.
                     {% else %}
@@ -168,13 +158,13 @@
                         This model has not been reviewed by CoMSES Net and should be independently reviewed to
                         meet the <a href='{{slugurl("open-code-badge")}}'>Open Code Badge guidelines</a>.
                     {% endif %}
-                    </div>
-                    You can use the following HTML or Markdown code to create an Open Code Badge that links to 
-                    <strong><a href='{{release.permanent_url}}'>version {{ release.version_number }}</a></strong>
-                    of this computational model.
+                </div>
+                You can use the following HTML or Markdown code to create an Open Code Badge that links to
+                <strong><a href='{{release.permanent_url}}'>version {{ release.version_number }}</a></strong>
+                of this computational model.
 <pre><code id='open-code-badge-html'>
 &lt;a href=&quot;{{release.permanent_url}}&quot;&gt;
-  &lt;img height=&quot;100&quot; src=&quot;{{ open_code_badge_url  }}&quot; alt=&quot;Open Code Badge&quot;&gt; 
+  &lt;img height=&quot;100&quot; src=&quot;{{ open_code_badge_url  }}&quot; alt=&quot;Open Code Badge&quot;&gt;
 &lt;/a&gt;
 </code></pre>
 <button class='btn btn-clipboard btn-outline-info' data-clipboard-target='#open-code-badge-html'>
@@ -187,88 +177,30 @@
 <button class='btn btn-clipboard btn-outline-info' data-clipboard-target='#open-code-badge-md'>
   <i class='fas fa-copy'></i> Copy Markdown to clipboard
 </button>
-                </div>
+            {# closes collapsible section #}
             </div>
-            {# closes collapse #}
-            </div>
+        {# closes accordion #}
         </div>
+        {% endif %}
         </div>
-    {% endif %}
-    <ul class='nav nav-tabs detail-tabs' role='tablist'>
-        <li class='nav-item'>
-            <a class='nav-link active' data-toggle='tab' href='#versions' role='tab'>Model Versions</a>
-        </li>
-    </ul>
-    <div class='tab-content'>
-        <div class='tab-pane active' id='versions' role='tabpanel'>
-            <table class='table table-striped'>
-                <thead>
-                <tr>
-                    <th>Version</th>
-                    <th>Submitter</th>
-                    <th>First published</th>
-                    <th>Last modified</th>
-                    <th>Status</th>
-                    {% if has_change_perm %}
-                        <th>Edit</th>
-                    {% endif %}
-                </tr>
-                </thead>
-                <tbody>
-                    {% for related_release in codebase.ordered_releases(has_change_perm) %}
-                        <tr>
-                            <td><a href='{{ related_release.get_absolute_url() }}'>{{ related_release.version_number }}</a>
-                            </td>
-                            <td>{{ member_profile_href(related_release.submitter.member_profile) }}</td>
-                            <td>{{ related_release.first_published_at|format_datetime('%c') }}</td>
-                            <td>{{ related_release.last_published_on|format_datetime('%c') }}</td>
-                            <td>
-                                {% if related_release.draft %}
-                                    <span class="badge badge-danger">Draft</span>
-                                {% elif related_release.live %}
-                                    <span class="badge badge-success">Published</span>
-                                {% else %}
-                                    <span class="badge badge-warning">Unpublished</span>
-                                {% endif %}
-                                {% if related_release.peer_reviewed %}
-                                    <span class='badge badge-info'>Peer Reviewed</span>
-                                {% endif %}
-                                {% if related_release.doi %}
-                                    <a href='{{related_release.doi_url}}'>
-                                        <span class='badge badge-info'>{{related_release.doi_url}}</span>
-                                    </a>
-                                {% endif %}
-                            </td>
-                            {% if has_change_perm %}
-                                <td>
-                                    <a href="{{ related_release.get_edit_url() }}">
-                                        <span class="fas fa-edit"></span>
-                                    </a>
-                                </td>
-                            {% endif %}
-                        </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-            <form>
-                {% csrf_token %}
-                {% if has_change_perm %}
-                    <button class="btn btn-secondary" formmethod="post" formaction="{{ codebase.get_draft_url() }}">
-                        Draft a new release
-                    </button>
-                {% endif %}
-            </form>
-        </div>
+        {# end card body #}
     </div>
-    <hr>
-    {# FIXME: only display discourse on public facing page #}
-    {% set discourse_enabled = release.live and release.get_absolute_url() in request.path %}
-    {{ embed_discourse_comments(discourse_enabled, release.submitter.username) }}
+
 {% endblock %}
 
 {% block sidebar %}
+{% if release.live %}
+    <a id="releaseDownload" class='btn btn-primary my-1 w-100' data-name="download" rel='nofollow' href="{{ release.get_download_url() }}">
+        <i class='fas fa-download'></i> Download Version {{ release.version_number }}
+    </a>
+{% else %}
+    <a rel='nofollow' class='btn btn-primary my-1 w-100' href="{{ release.get_review_download_url() }}">
+        Download for Review
+    </a>
+{% endif %}
 <div class='card-metadata'>
     <div class='card-body'>
+
         <div class='section'>
             <b class="card-title">Authors</b>
             <p class='card-text'>
@@ -406,18 +338,83 @@
         {% endif %}
     {% endif %}
 {% endwith %}
-{% if release.live %}
-    <a id="releaseDownload" class='btn btn-primary my-1 w-100' data-name="download" rel='nofollow' href="{{ release.get_download_url() }}">
-        <i class='fas fa-download'></i> Download Release
-    </a>
-{% else %}
-    <a rel='nofollow' class='btn btn-primary my-1 w-100' href="{{ release.get_review_download_url() }}">
-        Download for Review
-    </a>
-{% endif %}
+
 {# FIXME: disabled for now <button type="button" class="btn btn-primary my-1 w-100">Follow</button>
     {{ share_card(absolute_url) }}
     #}
+{% endblock %}
+
+{% block bottom %}
+    <ul class='nav nav-tabs detail-tabs' role='tablist'>
+        <li class='nav-item'>
+            <a class='nav-link active' data-toggle='tab' href='#versions' role='tab'>Model Versions</a>
+        </li>
+    </ul>
+    <div class='tab-content'>
+        <div class='tab-pane active' id='versions' role='tabpanel'>
+            <table class='table table-striped'>
+                <thead>
+                <tr>
+                    <th>Version</th>
+                    <th>Submitter</th>
+                    <th>First published</th>
+                    <th>Last modified</th>
+                    <th>Status</th>
+                    {% if has_change_perm %}
+                        <th>Edit</th>
+                    {% endif %}
+                </tr>
+                </thead>
+                <tbody>
+                    {% for related_release in codebase.ordered_releases(has_change_perm) %}
+                        <tr>
+                            <td><a href='{{ related_release.get_absolute_url() }}'>{{ related_release.version_number }}</a>
+                            </td>
+                            <td>{{ member_profile_href(related_release.submitter.member_profile) }}</td>
+                            <td>{{ related_release.first_published_at|format_datetime('%c') }}</td>
+                            <td>{{ related_release.last_published_on|format_datetime('%c') }}</td>
+                            <td>
+                                {% if related_release.draft %}
+                                    <span class="badge badge-danger">Draft</span>
+                                {% elif related_release.live %}
+                                    <span class="badge badge-success">Published</span>
+                                {% else %}
+                                    <span class="badge badge-warning">Unpublished</span>
+                                {% endif %}
+                                {% if related_release.peer_reviewed %}
+                                    <span class='badge badge-info'>Peer Reviewed</span>
+                                {% endif %}
+                                {% if related_release.doi %}
+                                    <a href='{{related_release.doi_url}}'>
+                                        <span class='badge badge-info'>{{related_release.doi_url}}</span>
+                                    </a>
+                                {% endif %}
+                            </td>
+                            {% if has_change_perm %}
+                                <td>
+                                    <a href="{{ related_release.get_edit_url() }}">
+                                        <span class="fas fa-edit"></span>
+                                    </a>
+                                </td>
+                            {% endif %}
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            <form>
+                {% csrf_token %}
+                {% if has_change_perm %}
+                    <button class="btn btn-secondary" formmethod="post" formaction="{{ codebase.get_draft_url() }}">
+                        Draft a new release
+                    </button>
+                {% endif %}
+            </form>
+        </div>
+    </div>
+    <hr>
+    {# FIXME: only display discourse on public facing page #}
+    {% set discourse_enabled = release.live and release.get_absolute_url() in request.path %}
+    {{ embed_discourse_comments(discourse_enabled, release.submitter.username) }}
 {% endblock %}
 
 {% block js %}
