@@ -2,7 +2,7 @@ bagit==1.7.0
 bleach==3.2.1
 django-allauth==0.43.0
 django-anymail[mailgun]==8.1
-django-cookie-law==2.0.3
+django-cookie-law==2.0.4
 django-extensions==3.0.9
 django-guardian==2.3.0
 django-ipware==3.0.1
@@ -20,7 +20,7 @@ django-robots==4.0
 django-timezone-field==4.0
 django-waffle==2.0.0
 django-webpack-loader==0.7.0
-djangorestframework==3.12.1
+djangorestframework==3.12.2
 djangorestframework-jwt==1.11.0
 Django>=3.0,<3.1.0
 elasticsearch-dsl>=7.0.0,<8.0.0
@@ -34,7 +34,7 @@ semver==2.13.0
 sentry-sdk==0.19.1
 uwsgi==2.0.19.1
 uwsgitop==0.11
-wagtail==2.10.2
+wagtail==2.11.1
 invoke
 ipython
 pgcli
