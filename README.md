@@ -1,6 +1,9 @@
 # Support Open Science @ CoMSES Net
 [![Build Status](https://travis-ci.org/comses/comses.net.svg?branch=master)](https://travis-ci.org/comses/comses.net)
 [![Coverage Status](https://coveralls.io/repos/github/comses/comses.net/badge.svg?branch=master)](https://coveralls.io/github/comses/comses.net?branch=master)
+<!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
+[![All Contributors](https://img.shields.io/badge/all_contributors-1-orange.svg?style=flat-square)](#contributors-)
+<!-- ALL-CONTRIBUTORS-BADGE:END -->
 
 CoMSES Net is an open, international community of researchers, educators and professionals with the common goal of improving the way we develop, document, share, and (re)use computational models in the social and ecological sciences. This repository contains the codebase for the comses.net CMS and Model Library, built with [Wagtail](https://github.com/wagtail/wagtail), [Django Rest Framework](https://www.django-rest-framework.org/), and [VueJS](https://vuejs.org/).
 
@@ -17,3 +20,26 @@ OS X you may need to install [macports](https://www.macports.org/) or use [homeb
 gettext`.
 
 @cpritcha has created an experimental debug setup lives in the `deploy/debug` folder. Files in the debug will need to be brought to this directory to work and the settings file will have to be switched to the debug settings file (please describe this more fully at some point @cpritcha).
+
+
+## Import metadata and codebases
+Extract JSON data files from https://github.com/comses/docker-openabm and place them in a directory accessible to the `cms` container along with a `models/` directory pulled from the `openabm-files` root. Then run `docker-compose exec cms bash` to enter the `cms` container and run `invoke import_all` to migrate the Drupal data into Django and copy the model library filesystem data into the new archival repository format.
+
+## Contributors ✨
+This project follows the [all-contributors](https://github.com/all-contributors/all-contributors) specification. Contributions of any kind are welcome!
+
+Contributors ([emoji key](https://allcontributors.org/docs/en/emoji-key)):
+
+<!-- ALL-CONTRIBUTORS-LIST:START - Do not remove or modify this section -->
+<!-- prettier-ignore-start -->
+<!-- markdownlint-disable -->
+<table>
+  <tr>
+    <td align="center"><a href="https://github.com/cpritcha"><img src="https://avatars0.githubusercontent.com/u/4530298?v=4?s=100" width="100px;" alt=""/><br /><sub><b>cpritcha</b></sub></a><br /><a href="https://github.com/alee/comses.net/commits?author=cpritcha" title="Code">💻</a> <a href="https://github.com/alee/comses.net/commits?author=cpritcha" title="Documentation">📖</a> <a href="https://github.com/alee/comses.net/issues?q=author%3Acpritcha" title="Bug reports">🐛</a> <a href="#maintenance-cpritcha" title="Maintenance">🚧</a> <a href="https://github.com/alee/comses.net/commits?author=cpritcha" title="Tests">⚠️</a></td>
+  </tr>
+</table>
+
+<!-- markdownlint-restore -->
+<!-- prettier-ignore-end -->
+
+<!-- ALL-CONTRIBUTORS-LIST:END -->
