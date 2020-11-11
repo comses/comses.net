@@ -37,6 +37,15 @@
         "test",
         "maintenance"
       ]
+    },
+    {
+      "login": "katrinleinweber",
+      "name": "Katrin Leinweber",
+      "avatar_url": "https://avatars2.githubusercontent.com/u/9948149?v=4",
+      "profile": "https://github.com/katrinleinweber",
+      "contributions": [
+        "code"
+      ]
     }
   ],
   "contributorsPerLine": 7,
