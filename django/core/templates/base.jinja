@@ -83,7 +83,7 @@
 
                     {# login #}
                     {% if user.is_authenticated %}
-                        <li class="nav-item dropdown py-0">
+                        <li class="nav-item dropdown py-0 pr-2">
                             <a class="pr-0 nav-link dropdown-toggle"
                                id="userDropdownMenuLink"
                                data-toggle="dropdown"
@@ -100,7 +100,7 @@
                                     <span class="sr-only">Email Unverified</span>
                                 {% endif %}
                             </a>
-                            <div class="dropdown-menu"
+                            <div class="dropdown-menu dropdown-menu-right"
                                 aria-labeledby="userDropdownMenuLink">
                                 <a class="dropdown-item" href="{{ profile_url }}">
                                     <i class="fas fa-user-edit"></i>
@@ -141,7 +141,7 @@
                     {% endif %}
                     {# end login #}
                     {# search #}
-                    <li id="search-dropdown" class="my-auto nav-item dropdown show py-0">
+                    <li id="search-dropdown" class="ml-2 my-auto nav-item dropdown show">
                         <a id="search-button"
                            onclick="focusSearch()"
                            href="#"
@@ -151,7 +151,7 @@
                            aria-haspopup="true">
                             <i class="fas fa-search"></i>
                         </a>
-                        <div id="header-search-form" class="p-2 dropdown-menu" aria-labelledby="search-button">
+                        <div id="header-search-form" class="p-2 dropdown-menu dropdown-menu-right" aria-labelledby="search-button">
                             <form method="get" action="/search/">
                                 <input id="header-search-input" type="text" name="query" class="p-2 form-control"
                                        placeholder="search entire site">
