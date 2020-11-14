@@ -6,7 +6,7 @@
 
 {% macro navbar() %}
     <div class="fixed-top bg-light">
-        <nav class="navbar navbar-expand-xl navbar-light bg-light pt-0 mt-0 mx-4 px-4">
+        <nav class="navbar navbar-expand-xl navbar-light bg-light pt-0 mt-0 mx-1">
             {# logos #}
             <div class='navbar-brand'>
                 <a href="/"><span class="logo">CoMSES Network | OpenABM</span></a>
@@ -30,55 +30,28 @@
             {# hamburger menu links #}
             <div class="navbar-collapse collapse" id="navbarLinks">
                 <ul class="navbar-nav ml-auto">
+                    <li class="nav-item py-0">
+                        <a href="/about/" class="nav-link">About</a>
+                    </li>
                     <li class="nav-item">
                         <a href="{{ url('library:codebase-list') }}" class="nav-link">Model Library</a>
                     </li>
-                    <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle"
-                           id="communityDropdownLink"
-                           data-toggle="dropdown"
-                           role="button"
-                           href="#"
-                           aria-haspopup="true"
-                           aria-expanded="false">
-                            Community
-                        </a>
-                        <div class="dropdown-menu py-0"
-                            aria-labelledby="communityDropdownLink">
-                            <a href="/community/" class="dropdown-item">Community Index</a>
-                            <div class="dropdown-divider"></div>
-                            <a href="{{ url('home:event-list') }}" class="dropdown-item">Events</a>
-                            <a href="{{ url('home:job-list') }}" class="dropdown-item">Jobs</a>
-                        </div>
+                    <li class="nav-item">
+                        <a href='{{ slugurl("community") }}' class='nav-link'>Community</a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="{{ url('home:event-list') }}" class="nav-link">Events</a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="{{ url('home:job-list') }}" class="nav-link">Jobs</a>
                     </li>
                     <li class="nav-item">
                         <a href="/resources/" class="nav-link">Resources</a>
                     </li>
-                    {# RSS subscribe #}
-                    <li class='nav-item dropdown py-0'>
-                        <a class="nav-link dropdown-toggle"
-                           id="subscribeDropdownLink"
-                           data-toggle="dropdown"
-                           role="button"
-                           href="#"
-                           aria-haspopup="true"
-                           aria-expanded="false">
-                            RSS
+                    <li class="nav-item py-0">
+                        <a href="{{ DISCOURSE_BASE_URL }}" target="_blank" class="nav-link">
+                            Forums
                         </a>
-                        <div class="dropdown-menu"
-                            aria-labelledby="subscribeDropdownLink">
-                            <a class="dropdown-item" href="{{ url('rss') }}">All</a>
-                            <div class="dropdown-divider"></div>
-                            <a class="dropdown-item" href="{{ url('rss-events') }}">Events</a>
-                            <a class="dropdown-item" href="{{ url('rss-jobs') }}">Jobs</a>
-                        </div>
-                    </li>
-                    {# end subscribe #}
-                    <li class="nav-item py-0">
-                        <a href="{{ DISCOURSE_BASE_URL }}" target="_blank" class="nav-link">Forums</a>
-                    </li>
-                    <li class="nav-item py-0">
-                        <a href="/about/" class="nav-link">About</a>
                     </li>
 
                     {# login #}
@@ -176,7 +149,7 @@
         <footer class="footer">
             <div class="container">
                 {% if not user.is_authenticated -%}
-                    <div class='row'>
+                    <div class='row pt-0 mt-0'>
                         <div class='col'>
                         </div>
                         <div class='col text-center'>
@@ -197,7 +170,7 @@
                     </div>
                 {%- endif %}
                 <div class="row py-0">
-                    <div class="col-xs-12 col-lg-3">
+                    <div class="col">
                         <ul class="social-media">
                             <li>
                                 <a href="https://twitter.com/{{ social_settings.twitter_account }}"
@@ -224,62 +197,75 @@
                                 </span>
                                 </a>
                             </li>
+                            <li>
+                                <a href='{{ url("rss") }}' title='RSS Feed'>
+                                    <span class='fa-stack'>
+                                        <i class='fas fa-circle fa-stack-2x'></i>
+                                        <i class='fas fa-rss fa-inverse fa-stack-1x'></i>
+                                    </span>
+                                </a>
+                            </li>
                         </ul>
                     </div>
-                    <div class="col-xs-12 col-lg-9">
-                        <ul class="organizations">
-                            <li>
+                </div>
+                <div class='row py-0'>
+                    <div class="col">
+                        <ul class="social-media">
+                            <li class="px-2">
                                 <a href="http://www.asu.edu/" target="_blank">
                                     <img src="{{ static("images/logo-asu.png") }}" alt="Arizona State University">
                                 </a>
                             </li>
-                            <li>
+                            <li class="px-2">
+                                <a href="http://orcid.org/" target="_blank">
+                                    <img src="{{ static("images/logo-orcid-member-170px.png") }}" alt="ORCID">
+                                </a>
+                            </li>
+                            <li class="px-2">
+                                <a href='https://sciencegateways.org' target='_blank'>
+                                    <img class='rounded' height='56'
+                                        src='https://sciencegateways.org/documents/20182/20809/sgci-new-logo-words-horiz-white.png/dca0198d-0145-4208-a71e-275c98c919fe?t=1493995638000'
+                                        alt='Science Gateways Community Institute'>
+                                </a>
+                            </li>
+
+                        </ul>
+                    </div>
+                </div>
+                <div class='row py-0'>
+                    <div class='col'>
+                        <ul class='social-media'>
+                            <li class="px-2">
                                 <a href="http://www.nsf.gov/" target="_blank">
                                     <img src="{{ static("images/logo-nsf.png") }}" alt="National Science Foundation">
                                 </a>
                             </li>
-                            <li>
-                                <a href="http://orcid.org/" target="_blank">
-                                    <img src="{{ static("images/logo-orcid-member-170px.png") }}" alt="ORCID">
+                            <li class="px-2">
+                                <a href='https://www.westgrid.ca' target='_blank'>
+                                    <img class='rounded' height='120' src='{{ static("images/logo-westgrid.png") }}'
+                                        alt='Compute Canada WestGrid'>
+                                </a>
+                            </li>
+                            <li class="px-2">
+                                <a href='https://www.computecanada.ca' target='_blank'>
+                                    <img class='rounded' height="120" src='{{ static("images/logo-compute-canada.jpg") }}'
+                                        alt='Compute Canada'>
                                 </a>
                             </li>
                         </ul>
                     </div>
                 </div>
-                <div class='py-0 row justify-content-center'>
-                    <ul class='organizations'>
-                        <li>
-                            <a href='https://www.computecanada.ca' target='_blank'>
-                                <img class='rounded' height="100" src='{{ static("images/logo-compute-canada.jpg") }}'
-                                     alt='Compute Canada'>
-                            </a>
-                        </li>
-                        <li>
-                            <a href='https://www.westgrid.ca' target='_blank'>
-                                <img class='rounded' height='100' src='{{ static("images/logo-westgrid.png") }}'
-                                     alt='Compute Canada WestGrid'>
-                            </a>
-                        </li>
-                        <li>
-                            <a href='https://sciencegateways.org' target='_blank'>
-                                <img class='rounded' height='100'
-                                     src='https://sciencegateways.org/documents/20182/20809/sgci-new-logo-words-horiz-white.png/dca0198d-0145-4208-a71e-275c98c919fe?t=1493995638000'
-                                     alt='Science Gateways Community Institute'>
-                            </a>
-                        </li>
-                    </ul>
-                </div>
             </div>
             <p class="copyright text-center">&copy; 2007 - {{ now('Y') }} CoMSES Net |
-                <a class='footer' href='{{ contact_url }}'>Contact us</a><br>
+                <a class='text-white' href='{{ contact_url }}'>Contact us</a><br>
                 <small>
                     <a href="https://github.com/{{ social_settings.github_account }}" title="CoMSES Net @ GitHub" target="_blank">
                         <span class="fa-stack">
                             <i class="fas fa-circle fa-stack-2x"></i>
-                            <i class="fas fa-code-branch fa-inverse fa-stack-1x"></i>
+                            <i class="fab fa-github fa-inverse fa-stack-1x"></i>
                         </span>
+                        <span class='text-white'>comses.net build: {{ release_version() }}</span>
                     </a>
-                    comses.net build: {{ release_version() }}
                 </small>
             </p>
         </footer>
