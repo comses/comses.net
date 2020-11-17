@@ -16,6 +16,13 @@ $font-family-base: 'Open Sans', Roboto, 'Helvetica Neue', sans-serif;
   }
 }
 
+.btn-group-xs > .btn, .btn-xs {
+  padding: .25rem .4rem;
+  font-size: .875rem;
+  line-height: .5;
+  border-radius: .2rem;
+}
+
 .comses-navbar {
     margin-right: auto;
     margin-left: auto;

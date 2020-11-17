@@ -55,10 +55,10 @@
                         </p>
                     {% endif %}
                     {% with social_connect=request.user.username == username %}
-                        <b class='card-title'>ORCID<sup><a href={{ slugurl('orcid') }}>?</a></sup></b>
+                        <b class='card-title'>ORCID <a class='btn btn-xs btn-outline-secondary' href={{ slugurl('orcid') }}>more info <i class='fas fa-info-circle'></i></a></b>
                         <p class='card-text'>{{ render_social_profile_url(request, 'orcid', profile.orcid_url, connect=social_connect) }}
                         </p>
-                        <b class='card-title'>GitHub<sup><a target='_blank' href='https://education.github.com'>?</a></sup></b>
+                        <b class='card-title'>GitHub <a class='btn btn-xs btn-outline-secondary' target='_blank' href='https://education.github.com'>more info <i class='fas fa-info-circle'></i></a></b>
                         <p class='card-text'>{{ render_social_profile_url(request, 'github', profile.github_url, connect=social_connect) }}
                         </p>
                     {% endwith %}
