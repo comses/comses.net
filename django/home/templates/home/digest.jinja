@@ -4,11 +4,26 @@
 {% block extra_css %}
     {{ super() }}
     <style type="text/css">
-{# FIXME: consider moving to frontend css #}
-<!--
-.display_archive {font-family: arial,verdana; font-size: 1.2em;}
-.campaign {line-height: 125%; margin: .3em;}
-//-->
+        {# FIXME: consider moving to frontend css #}
+        .display_archive {
+            font-family: arial, verdana;
+            font-size: 1.2em;
+        }
+
+        .campaign {
+            padding: 1rem;
+            margin-top: 1rem;
+            position: relative;
+            width: 100%;
+            min-width: 100%;
+            max-width: 100%;
+            border: black solid 0.15rem;
+            {#line-height: 125%;#}
+        }
+
+        a {
+            font-weight: bold;
+        }
     </style>
 {% endblock %}
 
@@ -20,25 +35,25 @@
     {{ breadcrumb([
     {'url': '/community/', 'text': 'Community'},
     {'text': 'CoMSES Digest Newsletter' }
-    ])
-    }}
+    ]) }}
     {{ subnav([
     {'url': '/community/', 'text': 'Community'},
     {'url': slugurl('conference'), 'text': 'Virtual Conferences'},
     {'url': url("home:digest"), 'text': 'CoMSES Digest', 'active': true},
-    ])
-    }}
+    ]) }}
     <div class='jumbotron'>
         <h1 class='display-5'>CoMSES Digest Newsletter</h1>
         <p class='pt-4 lead'>
-        The CoMSES Digest is a quarterly newsletter edited by <a href='/users/642/'>Dr. John Murphy</a> with relevant
-        comses.net community news - you can view all past issues in our archive below. CoMSES Net Full Members are
-        automatically signed up to receive the newsletter, but you can also <a href='http://eepurl.com/b8GCUv'>join our
-        mailing list</a> as a basic member.
+            The CoMSES Digest is a quarterly newsletter edited by <a href='/users/642/'>Dr. John Murphy</a> with
+            relevant
+            comses.net community news - you can view all past issues in our archive below. CoMSES Net Full Members are
+            automatically signed up to receive the newsletter, but you can also <a href='http://eepurl.com/b8GCUv'>join
+            our
+            mailing list</a> as a basic member.
         </p>
     </div>
-    <div class='content'>
-        <h2>Issues</h2>
+    <h2>Issues</h2>
+    <ul class='list-group list-order'>
         {% if mailchimp_js %}
             <script>
                 {{ mailchimp_js|safe }}
@@ -47,5 +62,5 @@
             <script src='{{ mailchimp_digest_archive_url }}'>
             </script>
         {% endif %}
-    </div>
+    </ul>
 {% endblock content %}
