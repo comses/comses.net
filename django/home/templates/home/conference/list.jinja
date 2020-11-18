@@ -48,7 +48,7 @@
     <ul class='list-group'>
         {% for conference in page.conferences() %}
             <a href='{{ conference.url }}'>
-            <li class='list-group-item'>
+            <li class='list-group-item list-group-item-action'>
                     <h5 class="conference-title">{{conference.title }}</h5>
                     <span class="conference-body">{{ conference.start_date|format_datetime }} &mdash; {{ conference.end_date|format_datetime }}</span>
             </li>
