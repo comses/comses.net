@@ -1,6 +1,32 @@
 {% extends "base.jinja" %}
 {% from "common.jinja" import breadcrumb, subnav %}
 
+{% block extra_css %}
+    {{ super() }}
+    <style type="text/css">
+        {# FIXME: consider moving to frontend css #}
+        .list-group {
+            font-family: arial, verdana;
+            font-size: 1.2em;
+        }
+
+        .list-group-item {
+            padding: 1rem;
+            margin-top: 1rem;
+            position: relative;
+            width: 100%;
+            min-width: 100%;
+            max-width: 100%;
+            border: black solid 0.15rem;
+            {#line-height: 125%;#}
+        }
+
+        a {
+            font-weight: bold;
+        }
+    </style>
+{% endblock %}
+
 {% block introduction %}
     <h1>CoMSES Virtual Conferences</h1>
 {% endblock %}
@@ -19,10 +45,10 @@
     <br/>
     <br/>
     <h2>Past Conferences</h2>
-    <ul class='list-group list-order'>
+    <ul class='list-group'>
         {% for conference in page.conferences() %}
             <a href='{{ conference.url }}'>
-            <li class='list-group-item box'>
+            <li class='list-group-item'>
                     <h5 class="conference-title">{{conference.title }}</h5>
                     <span class="conference-body">{{ conference.start_date|format_datetime }} &mdash; {{ conference.end_date|format_datetime }}</span>
             </li>
