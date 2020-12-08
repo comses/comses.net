@@ -7,11 +7,33 @@
 
 {%- block title -%}{{ codebase.title }}{% endblock %}
 
+{% block meta_description -%}
+  <meta name="description" content="{{ codebase.description }}">
+{% endblock %}
+
 {%- block head -%}
-   <script type="application/ld+json">
-       {{ release.codemeta_json|safe }}
-   </script>
-   <link id='discourseEmbedUrl' rel='canonical' href='{{release.comses_permanent_url}}'>
+  <script type="application/ld+json">
+    {{ release.codemeta_json|safe }}
+  </script>
+  <link id='discourseEmbedUrl' rel='canonical' href='{{release.comses_permanent_url}}'>
+  {# citation metadata for Google Scholar #}
+  {% for c in codebase.all_contributors -%}
+  <meta name='citation_author' content='{{ c.name }}'>
+    {% if c.email -%}
+      <meta name='citation_author_email' content='{{ c.email }}'>
+    {%- endif %}
+    {% for affiliation in c.affiliations.all() -%}
+      <meta name='citation_author_institution' content='{{ affiliation }}'>
+    {%- endfor %}
+  {%- endfor %}
+  <meta name='citation_publication_date' content='{{ release.last_published_on|format_datetime("%Y/%m/%d") }}'>
+  <meta name='citation_journal_title' content='CoMSES Computational Model Library'>
+  <meta name='citation_publisher' content='CoMSES.Net'>
+  <meta name='citation_title' content='{{ release.title }}'>
+  <meta name='citation_language' content='en'>
+  {% if release.doi -%}
+  <meta name='citation_doi' content='{{release.doi}}'>
+  {%- endif %}
 {% endblock %}
 
 {%- block introduction -%}<h1>Computational Model Library</h1>{% endblock %}
