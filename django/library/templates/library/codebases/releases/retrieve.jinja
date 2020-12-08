@@ -8,7 +8,7 @@
 {%- block title -%}{{ codebase.title }}{% endblock %}
 
 {% block meta_description -%}
-  <meta name="description" content="{{ codebase.description }}">
+  <meta name="description" content="{{codebase.description.raw|truncate(150)}}">
 {% endblock %}
 
 {%- block head -%}
@@ -27,12 +27,14 @@
     {%- endfor %}
   {%- endfor %}
   <meta name='citation_publication_date' content='{{ release.last_published_on|format_datetime("%Y/%m/%d") }}'>
+  <meta name='citation_online_date' content='{{ release.first_published_on|format_datetime("%Y/%m/%d") }}'>
   <meta name='citation_journal_title' content='CoMSES Computational Model Library'>
   <meta name='citation_publisher' content='CoMSES.Net'>
   <meta name='citation_title' content='{{ release.title }}'>
   <meta name='citation_language' content='en'>
   {% if release.doi -%}
   <meta name='citation_doi' content='{{release.doi}}'>
+  <meta name='dc.identifier' content='{{release.doi}}'>
   {%- endif %}
 {% endblock %}
 
