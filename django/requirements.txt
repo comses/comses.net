@@ -29,12 +29,12 @@ html2text>=2016.9.19
 markdown==3.3.3
 nltk>=3.2.5,<4.0.0
 psycopg2-binary==2.8.6
-requests==2.25.0
+requests==2.25.1
 semver==2.13.0
 sentry-sdk==0.19.4
 uwsgi==2.0.19.1
 uwsgitop==0.11
-wagtail==2.11.2
+wagtail==2.11.3
 invoke
 ipython
 pgcli
