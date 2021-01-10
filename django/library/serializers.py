@@ -351,7 +351,7 @@ class CodebaseReleaseEditSerializer(CodebaseReleaseSerializer):
     possible_licenses = serializers.SerializerMethodField()
 
     def get_possible_licenses(self, instance):
-        serialized = LicenseSerializer(License.objects.all(), many=True)
+        serialized = LicenseSerializer(License.objects.order_by('name').all(), many=True)
         return serialized.data
 
     def update(self, instance, validated_data):
