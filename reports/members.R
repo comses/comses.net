@@ -11,7 +11,7 @@ agg <- function(x, y, f, default) {
   f(x[order(y)])
 }
 
-df <- readr::read_csv("../docker/shared/statistics/members.csv")
+df <- readr::read_csv("/shared/statistics/members.csv")
 
 duplicated_accounts <- df %>%
   dplyr::filter(!is.na(last_name)) %>%
@@ -24,7 +24,7 @@ duplicated_accounts <- df %>%
   dplyr::summarise(n = dplyr::n(), emails = jsonlite::toJSON(purrr::compact(email))) %>%
   dplyr::filter(n > 1)
 
-readr::write_csv(duplicated_accounts, 'duplicated_accounts.csv')
+readr::write_csv(duplicated_accounts, '/shared/statistics/duplicated_accounts.csv')
 
 all_accounts <- df %>%
   dplyr::filter(!is.na(last_name)) %>%
@@ -53,7 +53,7 @@ all_accounts <- df %>%
         last_name = stringr::str_to_lower(last_name),
         first_name = stringr::str_to_lower(first_name)))
 
-readr::write_csv(all_accounts, 'all_accounts.csv')
+readr::write_csv(all_accounts, '/shared/statistics/all_accounts.csv')
 
 # need to decide what to save for reporting purposes here
                 
