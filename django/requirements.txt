@@ -1,5 +1,5 @@
 bagit==1.7.0
-bleach==3.2.1
+bleach==3.3.0
 django-allauth==0.44.0
 django-anymail[mailgun]==8.1
 django-cookie-law==2.0.4
