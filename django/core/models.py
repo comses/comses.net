@@ -185,6 +185,7 @@ class MemberProfile(index.Indexed, ClusterableModel):
     picture = models.ForeignKey(Image, null=True, help_text=_('Profile picture'), on_delete=models.SET_NULL)
     professional_url = models.URLField(blank=True)
     research_interests = MarkdownField(max_length=2048)
+    short_uuid = models.CharField(max_length=32, unique=True, null=True)
 
     objects = MemberProfileQuerySet.as_manager()
 

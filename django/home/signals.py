@@ -1,4 +1,5 @@
 import logging
+import shortuuid
 
 from django.conf import settings
 from django.contrib.auth.models import User
@@ -18,8 +19,11 @@ def sync_user_member_profiles(sender, instance: User, created, **kwargs):
     Ensure every created User has an associated MemberProfile
     """
     if created and instance.username not in EXCLUDED_USERNAMES:
-        # ignore anonymous user
-        MemberProfile.objects.get_or_create(user=instance)
+        suid = shortuuid.uuid()
+        mp, created = MemberProfile.objects.get_or_create(user=instance, defaults={'short_uuid': suid})
+        if created or not mp.short_uuid:
+            mp.short_uuid = suid
+            mp.save()
 
 
 @receiver(post_save, sender=User, dispatch_uid='discourse_user_sync')
