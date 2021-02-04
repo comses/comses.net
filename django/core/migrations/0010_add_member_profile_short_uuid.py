@@ -12,10 +12,16 @@ class Migration(migrations.Migration):
             mp.short_uuid = shortuuid.uuid()
             mp.save()
 
+    def remove_short_uuid(apps, schema_editor):
+        MemberProfile = apps.get_model('core', 'MemberProfile')
+        for mp in MemberProfile.objects.all():
+            mp.short_uuid = None
+            mp.save()
+
     dependencies = [
         ('core', '0009_memberprofile_short_uuid'),
     ]
 
     operations = [
-        migrations.RunPython(add_short_uuid)
+        migrations.RunPython(add_short_uuid, remove_short_uuid),
     ]
