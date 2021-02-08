@@ -21,7 +21,7 @@
     "fullcalendar": "^3.10.0",
     "jquery": "^3.5.1",
     "lodash": "^4.17.19",
-    "marked": "^1.1.1",
+    "marked": "^2.0.0",
     "moment": "^2.24.0",
     "popper.js": "^1.15.0",
     "query-string": "^6.4.2",
