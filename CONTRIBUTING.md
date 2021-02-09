@@ -7,7 +7,7 @@ Members are encouraged to participate in our collective effort to expand and str
 Thanks for being a part of CoMSES Net! 
 
 ### Code of Conduct
-This project and participating members is governed by the [Code of Conduct](https://github.com/openmodelingfoundation/openmodelingfoundation.github.io/blob/develop/CODE_OF_CONDUCT.md). By participating, you are expected to uphold this code. Please report unacceptable behavior to [editors@comses.net](mailto:editors@comses.net).
+This project and participating members is governed by the [Code of Conduct](https://github.com/openmodelingfoundation/openmodelingfoundation.github.io/blob/develop/CODE_OF_CONDUCT.md). By participating, you are expected to uphold this code. Please report unacceptable behavior to https://www.comses.net/about/contact/.
 
 ### Archive your Model Source Code
 
@@ -23,7 +23,7 @@ Through usability testing, we can identify design flaws and find solutions to be
 - collect qualitative and quantitative data
 - determine a participant's satisfaction with our tools
 
-If you are interested in participating in usability tests, please email us at [editors@comses.net](mailto:editors@comses.net).
+If you are interested in participating in usability tests, please [contact us](https://www.comses.net/about/contact/).
 
 ### Active Development
 
@@ -57,7 +57,7 @@ Members are encouraged to contribute to our repositories by creating a pull requ
 
 During a peer review, model code is inspected to identify possible improvements and ensure that requirements are met for software citation, reproducibility and reuse. 
 
-If you are interested in managing peer reviews, please email us at [editors@comses.net](mailto:editors@comses.net).
+If you are interested in managing peer reviews, please [contact us](https://www.comses.net/about/contact/).
 
 ### Lead and Organize Community Activities on Our Forums
 
