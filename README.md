@@ -50,7 +50,12 @@ Contributors ([emoji key](https://allcontributors.org/docs/en/emoji-key)):
 
 CoMSES Net is dedicated to fostering open and reproducible scientific computation through cyberinfrastructure and community development. Our mission is to improve the way we develop, document, and share our computational models so we can build on each other’s work more effectively and model our way to a better global future. 
 
-Members are encouraged to participate in our collective effort to expand and strengthen CoMSES Net at all levels.
+Members are encouraged to participate in our collective effort to expand and strengthen CoMSES Net at all levels. The following information details ways in which members can contribute which include include code contributions, curating resources for our community, and more. 
+
+Thanks for being a part of CoMSES Net! 
+
+### Code of Conduct
+This project and participating members is governed by the [Code of Conduct](https://github.com/openmodelingfoundation/openmodelingfoundation.github.io/blob/develop/CODE_OF_CONDUCT.md). By participating, you are expected to uphold this code. Please report unacceptable behavior to [editors@comses.net](mailto:editors@comses.net).
 
 ### Archive your Model Source Code
 
