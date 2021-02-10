@@ -78,17 +78,19 @@ Members are encouraged to contribute to our repositories by creating a pull requ
 
 [Create an issue](https://docs.github.com/en/github/managing-your-work-on-github/creating-an-issue)
 
-### Manage Peer Reviews
+###Peer Reviews
 
-During a peer review, model code is inspected to identify possible improvements and ensure that requirements are met for software citation, reproducibility and reuse. 
+The CoMSES Net Computational Model Peer Review process helps us verify that a model's source code and documentation meets baseline standards derived from [**good practices**](https://www.comses.net/resources/guides-to-good-practice/) in the software engineering and scientific communities that we serve. This process is intended to be efficient and allows us to foster higher quality models.
 
-If you are interested in managing peer reviews, [**contact us**](https://www.comses.net/about/contact/).
+As a peer reviewer, you inspect model code to identify possible improvements and ensure that requirements are met for software citation, reproducibility and reuse. If you are interested in serving as a peer reviewer for model code, please [**contact us**](https://www.comses.net/about/contact/).
 
-### Lead and Organize Community Activities on our Forums
+To learn more about peer reviews, please visit [**CoMSES Net Computational Library Peer Review**](https://www.comses.net/reviews/).
+
+###Lead and Organize Community Activities on our Forums
 
 Members of our community use **[CoMSES Net Discourse Forums](https://forum.comses.net/)** to discuss models, curate events, and more. By posting and engaging on our forums, members can collectively curate better resources for the CoMSES Community.
 
-### Update Event and Job Boards
+###Update Event and Job Boards
 
 We want to keep our community updated on current events and available academic and industry positions relevant to the CoMSES Net Community. Any registered CoMSES Net members can post information about upcoming conferences, workshops and available positions.
 
