@@ -12,7 +12,7 @@ The Computational Model Library maintains distinct submission information packag
 
 Developer setup instructions:
 -------------
-Run `./build.sh` to build the Docker image, generate secrets, and a symlinked `docker-compose.yml` file. Run `docker-compose up -d` to start all containers. 
+Run `./build.sh` to buld the Docker image, generate secrets, and a symlinked `docker-compose.yml` file. Run `docker-compose up -d` to start all containers. 
 
 The `build.sh` script relies on
 [envsubst](https://www.gnu.org/software/gettext/manual/html_node/envsubst-Invocation.html) - to install this properly on
@@ -50,7 +50,7 @@ Contributors ([emoji key](https://allcontributors.org/docs/en/emoji-key)):
 
 CoMSES Net is dedicated to fostering open and reproducible scientific computation through cyberinfrastructure and community development. Our mission is to improve the way we develop, document, and share our computational models so we can build on each other’s work more effectively and model our way to a better global future. 
 
-Members are encouraged to participate in our collective effort to expand and strengthen CoMSES Net at all levels. The following information details ways in which members can contribute which include include code contributions, curating resources for our community, and more. 
+Members are encouraged to participate in our collective effort to expand and strengthen CoMSES Net at all levels. The following information details useful resources and ways in which members can contribute which include include code contributions, curating resources for our community, and more. 
 
 Thanks for being a part of CoMSES Net! 
 
@@ -101,11 +101,13 @@ Members are encouraged to contribute to our repositories by creating a pull requ
 - [Citation](https://github.com/comses/citation)
 - [Open Modeling Foundation (OMF)](https://github.com/openmodelingfoundation/openmodelingfoundation.github.io)
 
-### Manage Peer Reviews
+###Peer Reviews
 
-During a peer review, model code is inspected to identify possible improvements and ensure that requirements are met for software citation, reproducibility and reuse. 
+The CoMSES Net Computational Model Peer Review process helps us verify that a model's source code and documentation meets baseline standards derived from [**good practices**](https://www.comses.net/resources/guides-to-good-practice/) in the software engineering and scientific communities that we serve. This process is intended to be efficient and allows us to foster higher quality models.
 
-If you are interested in managing peer reviews, please [contact us](https://www.comses.net/about/contact/).
+As a peer reviewer, you inspect model code to identify possible improvements and ensure that requirements are met for software citation, reproducibility and reuse. If you are interested in serving as a peer reviewer for model code, please [**contact us**](https://www.comses.net/about/contact/).
+
+To learn more about peer reviews, please visit [**CoMSES Net Computational Library Peer Review**](https://www.comses.net/reviews/).
 
 ### Lead and Organize Community Activities on Our Forums
 
