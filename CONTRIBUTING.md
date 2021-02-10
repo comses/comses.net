@@ -59,6 +59,7 @@ This section directs members to resources that they can use to contribute code t
 
 ###Repositories that members can contribute to:
 
+- [CoMSES Net](https://github.com/comses/comses.net/)
 - [Catalog](https://github.com/comses/catalog)
 - [Citation](https://github.com/comses/citation)
 - [Open Modeling Foundation](https://github.com/openmodelingfoundation/openmodelingfoundation.github.io)
@@ -74,6 +75,7 @@ Before submitting an issue, please go the repository's issues section to see if 
 Members are encouraged to contribute to our repositories by creating a pull request (PR) from a bug or reporting bugs by creating issues in a repository.
 
 [Create a pull request from a fork](https://docs.github.com/en/github/collaborating-with-issues-and-pull-requests/creating-a-pull-request-from-a-fork)
+
 [Create an issue](https://docs.github.com/en/github/managing-your-work-on-github/creating-an-issue)
 
 ### Manage Peer Reviews
