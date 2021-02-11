@@ -8,25 +8,83 @@
 CoMSES Net is an open, international community of researchers, educators and professionals with the common goal of improving the way we develop, document, share, and (re)use computational models in the social and ecological sciences. This repository contains the codebase for the comses.net CMS and Model Library, built with [Wagtail](https://github.com/wagtail/wagtail), [Django Rest Framework](https://www.django-rest-framework.org/), and [VueJS](https://vuejs.org/).
 
 ## Computational Model Library
-The Computational Model Library maintains distinct submission information packages (SIPs) and archival information packages (AIPs) using [bagit](https://github.com/LibraryOfCongress/bagit-python), and emits [structured, standardized metadata](https://github.com/codemeta/codemeta) on every model landing page. All computational models offer citations that adhere to the guidelines and practices set forth by the [Force 11 Software Citation Working Group](https://www.force11.org/group/software-citation-working-group). Models can also undergo [peer review](https://www.comses.net/reviews/) to receive a DOI and [open code badge](https://www.comses.net/resources/open-code-badge/). Major updates to these processes are anticipated in 2021 - stay tuned!
+The Computational Model Library maintains distinct submission information packages (SIPs) and archival information packages (AIPs) using [bagit](https://github.com/LibraryOfCongress/bagit-python), and emits [structured, standardized metadata](https://github.com/codemeta/codemeta) on every model landing page. All computational models offer citations that adhere to the guidelines and practices set forth by the [Force 11 Software Citation Working Group](https://www.force11.org/group/software-citation-working-group). Models can also undergo [peer review](https://www.comses.net/reviews/) to receive a DOI and [open code badge](https://www.comses.net/resources/open-code-badge/). Updates to these processes are anticipated in 2021 - stay tuned!
+
+## Code of Conduct
+Members who participate in this project agree to abide by the [CoMSES Net Code of Conduct](https://github.com/comses/comses.net/blob/main/CODE_OF_CONDUCT.md). By participating, you are expected to uphold this code. Please report unacceptable behavior to [editors@comses.net](mailto:editors@comses.net).
+
+## Ways to Contribute to CoMSES Net
+
+Members are encouraged to participate and we welcome contributions of all kinds to our collective effort. Here's how you can contribute:
+
+### Archive your Model Source Code
+
+We develop and maintain the CoMSES Model Library, a digital repository to archive model code that supports discovery and the FAIR Data Principles for software citation, reproducibility and reuse.
+
+Archive your model here: [https://www.comses.net/codebases/](https://www.comses.net/codebases/)
+
+### Usability Testing
+
+Usability testing helps our science gateway better serve its community, and CoMSES Net is actively working with the [Science Gateways Community Institute](https://sciencegateways.org) to improve the usability of our services. Please [let us know](https://comses.net/about/contact/) if you'd like to participate in upcoming usability studies or help us conduct usability studies in your institution or area.
+
+### Active Development
+
+Our technology stack includes:
+
+```
+Javascript: VueJS, webpack, typescript
+
+Python: Django Rest Framework, Wagtail
+
+PostgreSQL / MySQL
+
+Linux
+
+Docker
+```
+
+We accept contributions of all kinds! Pull requests, issues to request new features, enhancements, or bug reports are all welcome. Please make sure to review the [CONTRIBUTING.md](CONTRIBUTING.md) guidelines.
+
+[Create a pull request from a fork](https://docs.github.com/en/github/collaborating-with-issues-and-pull-requests/creating-a-pull-request-from-a-fork)
+
+[Create an issue](https://docs.github.com/en/github/managing-your-work-on-github/creating-an-issue)
 
 Developer setup instructions:
 -------------
-Run `./build.sh` to buld the Docker image, generate secrets, and a symlinked `docker-compose.yml` file. Run `docker-compose up -d` to start all containers. 
+Run `./build.sh` to build the Docker image and generate secrets and a symlinked `docker-compose.yml` file. Run `docker-compose up -d` to start all containers. 
 
 The `build.sh` script relies on
-[envsubst](https://www.gnu.org/software/gettext/manual/html_node/envsubst-Invocation.html) - to install this properly on
-OS X you may need to install [macports](https://www.macports.org/) or use [homebrew](https://brew.sh/) and `brew install
-gettext`.
+[envsubst](https://www.gnu.org/software/gettext/manual/html_node/envsubst-Invocation.html) and to install this on macOS you may need to install [macports](https://www.macports.org/) or use [homebrew](https://brew.sh/) and `brew install gettext`.
 
-@cpritcha has created an experimental debug setup lives in the `deploy/debug` folder. Files in the debug will need to be brought to this directory to work and the settings file will have to be switched to the debug settings file (please describe this more fully at some point @cpritcha).
+Enabling debugging is still a bit of a pain and requires custom workarounds to the Docker environment. @cpritcha should document these at some point.
 
+**Other Repositories**
 
-## Import metadata and codebases
-Extract JSON data files from https://github.com/comses/docker-openabm and place them in a directory accessible to the `cms` container along with a `models/` directory pulled from the `openabm-files` root. Then run `docker-compose exec cms bash` to enter the `cms` container and run `invoke import_all` to migrate the Drupal data into Django and copy the model library filesystem data into the new archival repository format.
+- [Catalog](https://github.com/comses/catalog) provides web services for annotating and managing publications that reference computational research objects. Developed by CoMSES Net to assess the state of open and reusable scientific computation in agent based modeling, it depends on the [citation](https://github.com/comses/citation) Django app for bibliometric metadata management. Our instance of catalog runs at https://catalog.comses.net
+- The [Open Modeling Foundation (OMF)](https://github.com/openmodelingfoundation/openmodelingfoundation.github.io) is an alliance of modeling organizations that coordinates and administers a common, community developed body of standards and best practices among diverse communities of modeling scientists. This repository hosts a [hugo site](https://gohugo.io/) and is used to collaboratively draft computational modeling standards for the OMF.
+
+### Peer Reviews
+
+The CoMSES Net Computational Model Peer Review process helps us verify that a model's source code and documentation meets baseline standards derived from [**good practices**](https://www.comses.net/resources/guides-to-good-practice/) in the software engineering and scientific communities that we serve. This process is intended to be efficient and allows us to foster higher quality models.
+
+As a peer reviewer, you inspect model code to identify possible improvements and ensure that requirements are met for software citation, reproducibility and reuse. If you are interested in serving as a peer reviewer for model code, please [**contact us**](https://www.comses.net/about/contact/).
+
+To learn more about peer reviews, please visit [**CoMSES Net Computational Library Peer Review**](https://www.comses.net/reviews/).
+
+### Lead and Organize Community Activities on Our Forums
+
+Members of our community also use [the CoMSES Net Discourse Forums](https://forum.comses.net/) to discuss models, events, jobs, ask questions, and more. If you'd like to lead a journal club or model club or coordinate any other activities on these forums, please [**contact us**](https://www.comses.net/about/contact/).
+
+### Update Event and Job Boards
+
+Part of our mission to continue serving our community is to keep them updated on relevant events and jobs. All registered CoMSES Net members can post information about upcoming conferences, workshops and job openings on our events and jobs boards.
+
+Events board: [https://www.comses.net/events/](https://www.comses.net/events/)
+
+Jobs board: [https://www.comses.net/jobs/](https://www.comses.net/jobs/)
 
 ## Contributors ✨
-This project follows the [all-contributors](https://github.com/all-contributors/all-contributors) specification. Contributions of any kind are welcome!
+This project follows the [all-contributors](https://github.com/all-contributors/all-contributors) specification. Contributions of all kinds are welcome!
 
 Contributors ([emoji key](https://allcontributors.org/docs/en/emoji-key)):
 
@@ -45,78 +103,3 @@ Contributors ([emoji key](https://allcontributors.org/docs/en/emoji-key)):
 <!-- markdownlint-enable -->
 <!-- prettier-ignore-end -->
 <!-- ALL-CONTRIBUTORS-LIST:END -->
-
-## How to Contribute
-
-CoMSES Net is dedicated to fostering open and reproducible scientific computation through cyberinfrastructure and community development. Our mission is to improve the way we develop, document, and share our computational models so we can build on each other’s work more effectively and model our way to a better global future. 
-
-Members are encouraged to participate in our collective effort to expand and strengthen CoMSES Net at all levels. The following information details useful resources and ways in which members can contribute which include include code contributions, curating resources for our community, and more. 
-
-Thanks for being a part of CoMSES Net! 
-
-### Code of Conduct
-This project and participating members is governed by the [Code of Conduct](https://github.com/openmodelingfoundation/openmodelingfoundation.github.io/blob/develop/CODE_OF_CONDUCT.md). By participating, you are expected to uphold this code. Please report unacceptable behavior to [editors@comses.net](mailto:editors@comses.net).
-
-### Archive your Model Source Code
-
-We develop and maintain the CoMSES Model Library, a digital repository to archive model code that supports discovery and the FAIR Data Principles for software citation, reproducibility and reuse.
-
-Archive your model here: [https://www.comses.net/codebases/](https://www.comses.net/codebases/)
-
-### Usability Testing
-
-Through usability testing, we can identify design flaws and find solutions to better serve our CoMSES Net community. To improve our website and tools, we are always looking for members to participate in our usability tests so we can:
-
-- diagnose usability problems
-- collect qualitative and quantitative data
-- determine a participant's satisfaction with our tools
-
-If you are interested in participating in usability tests, please [contact us](https://www.comses.net/about/contact/).
-
-### Active Development
-
-Our technology stack includes:
-
-```
-Javascript: VueJS, webpack, typescript
-
-Python: Django Rest Framework, Wagtail
-
-MySQL / PostgreSQL
-
-Linux
-
-Docker
-```
-
-Members are encouraged to contribute to our repositories by creating a pull request (PR) from a bug or reporting bugs by creating issues in a repository.
-
-[Creating a pull request from a fork](https://docs.github.com/en/github/collaborating-with-issues-and-pull-requests/creating-a-pull-request-from-a-fork)
-
-[Creating an issue](https://docs.github.com/en/github/managing-your-work-on-github/creating-an-issue)
-
-**Repositories members can contribute to:**
-
-- [Catalog](https://github.com/comses/catalog)
-- [Citation](https://github.com/comses/citation)
-- [Open Modeling Foundation (OMF)](https://github.com/openmodelingfoundation/openmodelingfoundation.github.io)
-
-###Peer Reviews
-
-The CoMSES Net Computational Model Peer Review process helps us verify that a model's source code and documentation meets baseline standards derived from [**good practices**](https://www.comses.net/resources/guides-to-good-practice/) in the software engineering and scientific communities that we serve. This process is intended to be efficient and allows us to foster higher quality models.
-
-As a peer reviewer, you inspect model code to identify possible improvements and ensure that requirements are met for software citation, reproducibility and reuse. If you are interested in serving as a peer reviewer for model code, please [**contact us**](https://www.comses.net/about/contact/).
-
-To learn more about peer reviews, please visit [**CoMSES Net Computational Library Peer Review**](https://www.comses.net/reviews/).
-
-### Lead and Organize Community Activities on Our Forums
-
-Members of our community use [CoMSES Net Discourse Forums](https://forum.comses.net/) to discuss models, curate events, and more. By posting and engaging on our forums, members can collectively curate better resources for the CoMSES Community.
-
-### Update Event and Job Boards
-
-We want to keep our community updated on current events and available academic and industry positions relevant to the CoMSES Net Community. Any registered CoMSES Net members can post information about upcoming conferences, workshops and available positions.
-
-Events board: [https://www.comses.net/events/](https://www.comses.net/events/)
-
-Jobs board: [https://www.comses.net/jobs/](https://www.comses.net/jobs/)
