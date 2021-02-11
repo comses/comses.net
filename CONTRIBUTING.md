@@ -10,90 +10,31 @@ Thanks for being a part of CoMSES Net!
 
 [Code of Conduct](#code-of-conduct)
 
-## [How to Contribute](#how-to-contribute)
+### Developer Contribution Guidelines
 
-- [Archive Your Model Source Code](#archive-your-model-source-code)
-- [Usability Testing](#usability-testing)
-- [Active Development](#active-development)
-    - [Technology stack](#our-technology-stack-includes)
-    - [Repositories that members can contribute to](#repositories-that-members-can-contribute-to)
-    - [Semantic commit messages](#semantic-commit-messages)
-    - [Bug reports and pull requests](#bug-reports-and-pull-requests)
-- [Manage Peer Reviews](#manage-peer-reviews)
-- [Lead and Organize Community Activities on our Forums](#lead-and-organize-community-activities-on-our-forums)
-- [Update Event and Job Boards](#update-event-and-job-boards)
+We encourage all CoMSES community members to report bugs and contribute to our ongoing projects. Following these guidelines helps maintainers understand bug reports or proposed changes and helps us do our best to keep the codebase and technology stack clean and consistent.
 
-### Code of Conduct
-
-This project and participating members is governed by the **[Code of Conduct](https://github.com/openmodelingfoundation/openmodelingfoundation.github.io/blob/develop/CODE_OF_CONDUCT.md)**. By participating and contributing, you are expected to uphold this code. Please report unacceptable behavior by [contacting us](https://www.comses.net/about/contact/).
-
-### How to Contribute
-
-### **Archive Your Model Source Code**
-
-We develop and maintain the CoMSES Model Library, a digital repository to archive model code that supports discovery and the FAIR Data Principles for software citation, reproducibility and reuse.
-
-Archive your model in our [**CoMSES Model Library**](https://www.comses.net/codebases/).
-
-### Usability Testing
-
-Through usability testing, we can identify design flaws and find solutions to better serve our CoMSES Net community. To improve our website and tools, we are always looking for members to participate in our usability tests so we can:
-
-- diagnose usability problems
-- collect qualitative and quantitative data
-- determine a participant's satisfaction with our tools
-
-If you are interested in participating in usability tests, [**contact us**](https://www.comses.net/about/contact/).
-
-### Active Development
-
-This section directs members to resources that they can use to contribute code to our repositories. We encourage developers in our CoMSES community to report bugs and contribute to our ongoing projects. Following the guidelines for writing semantic git commit messages and reporting bugs helps maintainers and the community understand your report, reproduce behavior, and find related information.
-
-###Our technology stack includes:
+### Current Technology Stack
 
 - Javascript: VueJS, Webpack, TypeScript
 - Python: Django Rest Framework, Wagtail
-- MySQL / PostgreSQL
+- PostgreSQL
+- Elasticsearch
 - Linux
 - Docker
 
-###Repositories that members can contribute to:
+### Semantic Commit Messages
 
-- [CoMSES Net](https://github.com/comses/comses.net/)
-- [Catalog](https://github.com/comses/catalog)
-- [Citation](https://github.com/comses/citation)
-- [Open Modeling Foundation](https://github.com/openmodelingfoundation/openmodelingfoundation.github.io)
+Please use [**semantic commit messages**](https://github.com/comses/comses.net/wiki/Semantic-Commit-Messages) in your Git commits as these standards help the maintainers and community to view and classify changes.
 
-###Semantic commit messages
-
-When push commits, we follow a guideline for **[semantic commit messages](https://github.com/comses/comses.net/wiki/Semantic-Commit-Messages)**. Establishing standard conventions for commit messages allows the maintainers and community to classify changes clearly and concisely.
-
-###Bug reports and pull requests
+### Bug reports, feature requests, and other issues
 
 Before submitting an issue, please go the repository's issues section to see if another member of our community has already submitted a similar issue.
 
-Members are encouraged to contribute to our repositories by creating a pull request (PR) from a bug or reporting bugs by creating issues in a repository.
-
-[Create a pull request from a fork](https://docs.github.com/en/github/collaborating-with-issues-and-pull-requests/creating-a-pull-request-from-a-fork)
-
 [Create an issue](https://docs.github.com/en/github/managing-your-work-on-github/creating-an-issue)
 
-###Peer Reviews
+### Submit a pull request
 
-The CoMSES Net Computational Model Peer Review process helps us verify that a model's source code and documentation meets baseline standards derived from [**good practices**](https://www.comses.net/resources/guides-to-good-practice/) in the software engineering and scientific communities that we serve. This process is intended to be efficient and allows us to foster higher quality models.
+We welcome pull requests for changes but please consider making an issue for it first to clearly describe the problem being solved with the pull request.
 
-As a peer reviewer, you inspect model code to identify possible improvements and ensure that requirements are met for software citation, reproducibility and reuse. If you are interested in serving as a peer reviewer for model code, please [**contact us**](https://www.comses.net/about/contact/).
-
-To learn more about peer reviews, please visit [**CoMSES Net Computational Library Peer Review**](https://www.comses.net/reviews/).
-
-###Lead and Organize Community Activities on our Forums
-
-Members of our community use **[CoMSES Net Discourse Forums](https://forum.comses.net/)** to discuss models, curate events, and more. By posting and engaging on our forums, members can collectively curate better resources for the CoMSES Community.
-
-###Update Event and Job Boards
-
-We want to keep our community updated on current events and available academic and industry positions relevant to the CoMSES Net Community. Any registered CoMSES Net members can post information about upcoming conferences, workshops and available positions.
-
-**[Events Board](https://www.comses.net/events/)**
-
-[**Jobs Board**](https://www.comses.net/jobs/)
+[Create a pull request from a fork](https://docs.github.com/en/github/collaborating-with-issues-and-pull-requests/creating-a-pull-request-from-a-fork)
