@@ -28,8 +28,8 @@ from modelcluster.fields import ParentalKey
 from modelcluster.models import ClusterableModel
 from rest_framework.exceptions import ValidationError, UnsupportedMediaType
 from taggit.models import TaggedItemBase
-from unidecode import unidecode
 from wagtail.admin.edit_handlers import FieldPanel
+from wagtail.core.utils import string_to_ascii
 from wagtail.images.models import Image, AbstractImage, AbstractRendition, get_upload_to, ImageQuerySet
 from wagtail.search import index
 from wagtail.snippets.models import register_snippet
@@ -748,20 +748,16 @@ class CodebaseImage(AbstractImage):
     def get_upload_to(self, filename):
         # adapted from wagtailimages/models
         folder_name = str(self.codebase.media_dir())
-        filename = self.file.field.storage.get_valid_name(filename)
-
-        # do a unidecode in the filename and then
-        # replace non-ascii characters in filename with _ , to sidestep issues with filesystem encoding
-        filename = "".join((i if ord(i) < 128 else '_') for i in unidecode(filename))
-
+        # use string_to_ascii on filename to sidestep issues with filesystem encoding
+        ascii_filename = string_to_ascii(self.file.field.storage.get_valid_name(filename))
         # Truncate filename so it fits in the 100 character limit
         # https://code.djangoproject.com/ticket/9893
-        full_path = os.path.join(folder_name, filename)
+        full_path = os.path.join(folder_name, ascii_filename)
         if len(full_path) >= 95:
             chars_to_trim = len(full_path) - 94
-            prefix, extension = os.path.splitext(filename)
-            filename = prefix[:-chars_to_trim] + extension
-            full_path = os.path.join(folder_name, filename)
+            prefix, extension = os.path.splitext(ascii_filename)
+            ascii_filename = prefix[:-chars_to_trim] + extension
+            full_path = os.path.join(folder_name, ascii_filename)
 
         return full_path
 
