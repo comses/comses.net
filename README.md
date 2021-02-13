@@ -23,9 +23,29 @@ We develop and maintain the CoMSES Model Library, a digital repository to archiv
 
 Archive your model here: [https://www.comses.net/codebases/](https://www.comses.net/codebases/)
 
+### Peer Reviews
+
+The [CoMSES Net Peer Review Process](https://www.comses.net/reviews/) helps to verify that a computational model's source code and documentation meets [baseline community standards](https://www.comses.net/resources/guides-to-good-practice/) from the software engineering and scientific communities that we serve.
+
+Peer reviewers follow a 3 item checklist and inspect model code and documentation for completeness, cleanliness, and the ability to run the computational model without errors.
+
+We're always looking for new members willing to review computational models. Feel free to submit your own computational models for peer review as well - after they pass peer review they will be eligible to be issued a DOI. 
+
+### Lead and Organize Community Activities on Our Forums
+
+Members of our community also use [the CoMSES Net Discourse Forums](https://forum.comses.net/) to discuss models, events, jobs, ask questions, and more. If you'd like to lead a journal club or model club or coordinate any other activities on these forums, please [**contact us**](https://www.comses.net/about/contact/).
+
+### Update Event and Job Boards
+
+All registered CoMSES Net members can post information about upcoming conferences, workshops and job openings on our events and jobs boards. If you would like to spread the word for new job opportunities or events, please feel free to register on our site and post it on our site!
+
+Events board: [https://www.comses.net/events/](https://www.comses.net/events/)
+
+Jobs board: [https://www.comses.net/jobs/](https://www.comses.net/jobs/)
+
 ### Usability Testing
 
-Usability testing helps our science gateway better serve its community, and CoMSES Net is actively working with the [Science Gateways Community Institute](https://sciencegateways.org) to improve the usability of our services. Please [let us know](https://comses.net/about/contact/) if you'd like to participate in upcoming usability studies or help us conduct usability studies in your institution or area.
+CoMSES Net is actively working with the [Science Gateways Community Institute](https://sciencegateways.org) to improve the usability of our services. Please [let us know](https://comses.net/about/contact/) if you'd like to participate in upcoming usability studies or help us conduct usability studies in your institution or area.
 
 ### Active Development
 
@@ -62,26 +82,6 @@ Enabling debugging is still a bit of a pain and requires custom workarounds to t
 
 - [Catalog](https://github.com/comses/catalog) provides web services for annotating and managing publications that reference computational research objects. Developed by CoMSES Net to assess the state of open and reusable scientific computation in agent based modeling, it depends on the [citation](https://github.com/comses/citation) Django app for bibliometric metadata management. Our instance of catalog runs at https://catalog.comses.net
 - The [Open Modeling Foundation (OMF)](https://github.com/openmodelingfoundation/openmodelingfoundation.github.io) is an alliance of modeling organizations that coordinates and administers a common, community developed body of standards and best practices among diverse communities of modeling scientists. This repository hosts a [hugo site](https://gohugo.io/) and is used to collaboratively draft computational modeling standards for the OMF.
-
-### Peer Reviews
-
-The CoMSES Net Computational Model Peer Review process helps us verify that a model's source code and documentation meets baseline standards derived from [**good practices**](https://www.comses.net/resources/guides-to-good-practice/) in the software engineering and scientific communities that we serve. This process is intended to be efficient and allows us to foster higher quality models.
-
-As a peer reviewer, you inspect model code to identify possible improvements and ensure that requirements are met for software citation, reproducibility and reuse. If you are interested in serving as a peer reviewer for model code, please [**contact us**](https://www.comses.net/about/contact/).
-
-To learn more about peer reviews, please visit [**CoMSES Net Computational Library Peer Review**](https://www.comses.net/reviews/).
-
-### Lead and Organize Community Activities on Our Forums
-
-Members of our community also use [the CoMSES Net Discourse Forums](https://forum.comses.net/) to discuss models, events, jobs, ask questions, and more. If you'd like to lead a journal club or model club or coordinate any other activities on these forums, please [**contact us**](https://www.comses.net/about/contact/).
-
-### Update Event and Job Boards
-
-Part of our mission to continue serving our community is to keep them updated on relevant events and jobs. All registered CoMSES Net members can post information about upcoming conferences, workshops and job openings on our events and jobs boards.
-
-Events board: [https://www.comses.net/events/](https://www.comses.net/events/)
-
-Jobs board: [https://www.comses.net/jobs/](https://www.comses.net/jobs/)
 
 ## Contributors ✨
 This project follows the [all-contributors](https://github.com/all-contributors/all-contributors) specification. Contributions of all kinds are welcome!
