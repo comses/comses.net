@@ -104,18 +104,16 @@
         tags: yup.array().of(yup.object().shape({name: yup.string().required()})),
         location: yup.string().required(),
         early_registration_deadline: yup.date().nullable().label('early registration deadline'),
-        registration_deadline: yup.date().nullable().label('registration deadline').when(
-            'early_registration_deadline',
-            dateAfterConstraint('early registration deadline', 'registration deadline'),
-        ),
+        registration_deadline: yup.date().nullable().label('registration deadline')
+            .when('early_registration_deadline', dateAfterConstraint('early registration deadline', 'registration deadline')
+            ),
         submission_deadline: yup.date().nullable().label('submission deadline'),
-        start_date: yup.date().required()
-            .when('early_registration_deadline', dateAfterConstraint('early registration deadline', 'start date'))
-            .when('registration_deadline', dateAfterConstraint('registration deadline', 'start date'))
-            .when('submission_deadline', dateAfterConstraint('submission deadline', 'start date'))
-            .label('start date'),
+        start_date: yup.date().required().label('start date'),
         end_date: yup.date().nullable()
-            .when('start_date', dateAfterConstraint('start date', 'end date')),
+            .when('start_date', dateAfterConstraint('start date', 'end date'))
+            .when('submission_deadline', dateAfterConstraint('submission_deadline', 'end_date'))
+            .when('registration_deadline', dateAfterConstraint('registration_deadline', 'end_date'))
+            .when('early_registration_deadline', dateAfterConstraint('early_registration_deadline', 'end_date')),
         external_url: yup.string().url().nullable(),
     });
 
