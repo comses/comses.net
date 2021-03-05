@@ -72,7 +72,7 @@
             {% if release.live %}
                 {{ member_profile_href(codebase.submitter.member_profile) }}
             {% else %}
-                <i class='fas fa-lock'></i> (unpublished)
+                <i class='fas fa-lock'></i> (private)
             {% endif %}
             <b class='pl-2'>Software Framework:</b>
             {%- for p in release.platform_tags.all() -%}
@@ -411,7 +411,7 @@
                                 {% if release.live %}
                                     {{ member_profile_href(related_release.submitter.member_profile) }}
                                 {% else %}
-                                    <i class='fas fa-lock'></i> (unpublished)
+                                    <i class='fas fa-lock'></i> (private)
                                 {% endif %}
                             </td>
                             <td>{{ related_release.first_published_at|format_datetime('%c') }}</td>
