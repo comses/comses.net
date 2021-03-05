@@ -68,7 +68,12 @@
         {% endif %}
         <h1 class='codebase-title pb-4'>{{ codebase.title }} <em>(version {{release.version_number}})</em></h1>
         <div class='metadata'>
-            <b>Submitted by:</b> {{ member_profile_href(codebase.submitter.member_profile) }}
+            <b>Submitted by:</b> 
+            {% if release.live %}
+                {{ member_profile_href(codebase.submitter.member_profile) }}
+            {% else %}
+                <i class='fas fa-lock'></i> (unpublished)
+            {% endif %}
             <b class='pl-2'>Software Framework:</b>
             {%- for p in release.platform_tags.all() -%}
                 {{ search_tag_href(p, category='codebases') }}
@@ -119,7 +124,7 @@
         {% elif has_change_perm %}
             <h2 class='card-title'>Share a Private Link to this Model</h2>
             <div>
-            This model is currently <b>private</b>. You can use the unique, private link below to share it with others,
+            This model is currently <b>unpublished and private</b>. You can use the unique, private link below to share it with others,
             e.g., with reviewers of a publication in review. Please remember to return and publish your model when it is
             ready to be public.
             </div>
@@ -143,7 +148,7 @@
                 access this release. You can generate a new private link by pressing <span class="fas fa-sync-alt"></span>.
             </small>
         {% else %}
-            Hold on! This model is currently private and cannot be cited until it has been published.
+            Hold on! This model is currently unpublished and cannot be cited until it has been published.
         {% endif %}
         {% if codebase.is_replication %}
         <div class='pt-1'>
@@ -233,6 +238,7 @@
         <div class='section'>
             <b class="card-title">Authors</b>
             <p class='card-text'>
+            {% if release.live %}
                 {% for c in codebase.all_contributors %}
                     {% set badge_class='badge-success' if c.user else 'badge-default' %}
                     <a href='{{ c.get_profile_url() }}'>
@@ -241,6 +247,9 @@
                         </span>
                     </a>
                 {% endfor %}
+            {% else %}
+                <b>Contributors are hidden for unpublished releases</b>
+            {% endif %}
             </p>
             <b class='card-title'>DOI</b>
             {% if release.doi %}
@@ -397,9 +406,14 @@
                 <tbody>
                     {% for related_release in codebase.ordered_releases(has_change_perm) %}
                         <tr>
-                            <td><a href='{{ related_release.get_absolute_url() }}'>{{ related_release.version_number }}</a>
+                            <td><a href='{{ related_release.get_absolute_url() }}'>{{ related_release.version_number }}</a></td>
+                            <td>
+                                {% if release.live %}
+                                    {{ member_profile_href(related_release.submitter.member_profile) }}
+                                {% else %}
+                                    <i class='fas fa-lock'></i> (unpublished)
+                                {% endif %}
                             </td>
-                            <td>{{ member_profile_href(related_release.submitter.member_profile) }}</td>
                             <td>{{ related_release.first_published_at|format_datetime('%c') }}</td>
                             <td>{{ related_release.last_published_on|format_datetime('%c') }}</td>
                             <td>
