@@ -51,7 +51,7 @@ if settings.DEPLOY_ENVIRONMENT.is_development():
     # https://docs.djangoproject.com/en/3.0/howto/static-files/#serving-static-files-during-development
     urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
 
-if settings.DEBUG:
+if not settings.DEPLOY_ENVIRONMENT.is_production():
     import debug_toolbar
     urlpatterns = [
         path('argh/', handler500, name='error'),

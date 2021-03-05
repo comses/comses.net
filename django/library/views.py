@@ -526,6 +526,9 @@ def build_archive_download_response(codebase_release, review_archive=False):
 
 
 class CodebaseReleaseShareViewSet(CommonViewSetMixin, mixins.RetrieveModelMixin, viewsets.GenericViewSet):
+    """
+    viewset supporting private codebase release share page (e.g., Download for Review)
+    """
     namespace = 'library/codebases/releases/'
     queryset = CodebaseRelease.objects.with_platforms().with_programming_languages()
     lookup_field = 'share_uuid'

@@ -12,6 +12,7 @@ sentry_sdk.init(
     dsn=SENTRY_DSN,
     release=RELEASE_VERSION,
     integrations=[DjangoIntegration(), RedisIntegration()],
+    traces_sample_rate=0.9,
     send_default_pii=True
 )
 
