@@ -160,7 +160,11 @@
         <div class='pt-1'>
             <h2 class='card-title'><i class='fas fa-book'></i> <u>Associated Publication(s)</u></h2>
             <p class='card-text'>
-                {{ codebase.associated_publication_text|markdown }}
+                {% if release.live %}
+                    {{ codebase.associated_publication_text|markdown }}
+                {% else %}
+                    <i class='fas fa-lock'>(private)</i>
+                {% endif %}
             </p>
         </div>
         {% endif %}
