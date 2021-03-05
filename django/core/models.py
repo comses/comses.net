@@ -222,24 +222,6 @@ class MemberProfile(index.Indexed, ClusterableModel):
         ]),
     ]
 
-    """
-    Returns the ORCID profile URL associated with this member profile if it exists, or None
-    """
-
-    @property
-    def orcid_url(self):
-        return self.get_social_account_profile_url('orcid')
-
-    @property
-    def avatar_url(self):
-        if self.picture:
-            return self.picture.get_rendition('fill-150x150').url
-        return None
-
-    """
-    Returns the github profile URL associated with this member profile if it exists, or None
-    """
-
     # Proxies to related user object
 
     @property
@@ -259,6 +241,22 @@ class MemberProfile(index.Indexed, ClusterableModel):
         return self.user.is_active
 
     # Urls
+    @property
+    def orcid_url(self):
+        """
+        Returns the ORCID profile URL associated with this member profile if it exists, or None
+        """
+        return self.get_social_account_profile_url('orcid')
+
+    @property
+    def avatar_url(self):
+        if self.picture:
+            return self.picture.get_rendition('fill-150x150').url
+        return None
+
+    """
+    Returns the github profile URL associated with this member profile if it exists, or None
+    """
 
     @property
     def github_url(self):

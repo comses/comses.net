@@ -283,6 +283,14 @@ class CodebaseQuerySet(models.QuerySet):
     def accessible(self, user):
         return get_viewable_objects_for_user(user=user, queryset=self.with_viewable_releases(user=user))
 
+    def filter_by_contributor(self, user):
+        try:
+            contributor = Contributor.objects.get(user=user)
+            releases = CodebaseRelease.objects.filter(pk__in=ReleaseContributor.objects.filter(contributor=contributor).values_list('release', flat=True))
+            return Codebase.objects.filter(releases__in=releases)
+        except Contributor.DoesNotExist:
+            return Codebase.objects.none()
+
     def with_contributors(self, release_contributor_qs=None, user=None, **kwargs):
         if user is not None:
             release_qs = get_viewable_objects_for_user(user=user, queryset=CodebaseRelease.objects.all())

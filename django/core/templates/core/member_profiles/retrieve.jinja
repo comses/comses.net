@@ -104,7 +104,7 @@
         </div>
         <div class='tab-pane' id='code' role='tabpanel'>
             {# FIXME: use codebase list component #}
-            {% for codebase in profile.user.codebases.all() %}
+            {% for codebase in codebases %}
                 {{ render_codebase_result(codebase) }}
             {% else %}
                 <p class='lead p-3'>

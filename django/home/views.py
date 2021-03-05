@@ -120,6 +120,8 @@ class ProfileViewSet(CommonViewSetMixin,
 
     def get_retrieve_context(self, instance):
         context = super().get_retrieve_context(instance)
+        logger.debug("Finding models for user %s", instance.user)
+        context['codebases'] = Codebase.objects.filter_by_contributor(instance.user).with_tags().with_featured_images()
         add_change_delete_perms(instance, context, self.request.user)
         return context
 
