@@ -125,6 +125,11 @@ class Contributor(index.Indexed, ClusterableModel):
 
     @staticmethod
     def from_user(user):
+        """
+        Returns a tuple of (object, created) based on the
+        https://docs.djangoproject.com/en/3.1/ref/models/querysets/#get-or-create
+        contract
+        """
         try:
             return Contributor.objects.get_or_create(
                 user=user,
@@ -136,7 +141,7 @@ class Contributor(index.Indexed, ClusterableModel):
             )
         except Contributor.MultipleObjectsReturned:
             logger.exception("Data integrity issue: found multiple Contributors with the same User %s", user)
-            return Contributor.objects.filter(user=user).first()
+            return (Contributor.objects.filter(user=user).first(), False)
 
     @property
     def name(self):
