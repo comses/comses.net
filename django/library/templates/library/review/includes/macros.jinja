@@ -24,26 +24,17 @@
         <b>Has Clean Code:</b>
         <span class="{{ displayCheck(feedback.has_clean_code) }}"></span>
     </p>
-    <p>
-        <b>Clean Code Comments:</b>
-    </p>
     {{ feedback.clean_code_comments|markdown }}
 
     <p>
         <b>Has Narrative Documentation:</b>
         <span class="{{ displayCheck(feedback.has_narrative_documentation) }}"></span>
     </p>
-    <p>
-        <b>Narrative Documentation Comments:</b>
-    </p>
     {{ feedback.narrative_documentation_comments|markdown }}
 
     <p>
         <b>Is Runnable:</b>
         <span class="{{ displayCheck(feedback.is_runnable) }}"></span>
-    </p>
-    <p>
-        <b>Runnable Comments:</b>
     </p>
     {{ feedback.runnable_comments|markdown }}
 
