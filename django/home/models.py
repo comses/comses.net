@@ -749,6 +749,12 @@ class PeopleEntryPlacementQuerySet(models.QuerySet):
     def board(self, **kwargs):
         return self.filter(category=PeopleEntryPlacement.CATEGORIES.board, **kwargs)
 
+    def digest(self, **kwargs):
+        return self.filter(category=PeopleEntryPlacement.CATEGORIES.digest, **kwargs)
+
+    def digest_member_profiles(self, **kwargs):
+        return MemberProfile.objects.filter(pk__in=self.digest(**kwargs).values_list('member_profile', flat=True))
+
     def update_sort_order_alpha(self):
         for idx, pep in enumerate(self.order_by('member_profile__user__last_name')):
             pep.sort_order = idx
