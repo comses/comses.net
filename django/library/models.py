@@ -10,7 +10,7 @@ from enum import Enum
 import semver
 from django.conf import settings
 from django.contrib.auth import get_user_model
-from django.contrib.postgres.fields import JSONField, ArrayField
+from django.contrib.postgres.fields import ArrayField
 from django.core.cache import cache
 from django.core.files.images import ImageFile
 from django.core.files.storage import FileSystemStorage
@@ -416,11 +416,11 @@ class Codebase(index.Indexed, ClusterableModel):
     tags = ClusterTaggableManager(through=CodebaseTag)
     # evaluate this JSONField as an add-anything way to record relationships between this Codebase and other entities
     # with URLs / resolvable identifiers
-    relationships = JSONField(default=list)
+    relationships = models.JSONField(default=list)
 
     # JSONField list of image metadata records with paths referring to self.media_dir()
-    media = JSONField(default=list,
-                      help_text=_("JSON metadata dict of media associated with this Codebase"))
+    media = models.JSONField(default=list,
+                             help_text=_("JSON metadata dict of media associated with this Codebase"))
 
     submitter = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='codebases', on_delete=models.PROTECT)
 
@@ -876,7 +876,7 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
                                       help_text=_('semver string, e.g., 1.0.5, see semver.org'))
 
     os = models.CharField(max_length=32, choices=OPERATING_SYSTEMS, blank=True)
-    dependencies = JSONField(
+    dependencies = models.JSONField(
         default=list,
         help_text=_('JSON list of software dependencies (identifier, name, version, packageSystem, OS, URL)')
     )
@@ -1530,7 +1530,8 @@ class PeerReviewInvitation(models.Model):
                                            on_delete=models.CASCADE)
     optional_message = MarkdownField(help_text=_("Optional markdown text to be added to the email"))
     slug = models.UUIDField(unique=True, default=uuid.uuid4, editable=False)
-    accepted = models.NullBooleanField(
+    accepted = models.BooleanField(
+        null=True,
         verbose_name=_("Invitation status"),
         choices=Choices(
             (None, _('Waiting for response')),

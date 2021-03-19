@@ -7,7 +7,7 @@ from django import forms
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group, User
-from django.contrib.postgres.fields import ArrayField, JSONField
+from django.contrib.postgres.fields import ArrayField
 from django.db import models, transaction
 from django.urls import reverse
 from django.utils import timezone
@@ -175,7 +175,7 @@ class MemberProfile(index.Indexed, ClusterableModel):
 
     timezone = TimeZoneField(blank=True)
 
-    affiliations = JSONField(default=list, help_text=_("JSON-LD list of affiliated institutions"))
+    affiliations = models.JSONField(default=list, help_text=_("JSON-LD list of affiliated institutions"))
     bio = MarkdownField(max_length=2048, help_text=_('Brief bio'))
     degrees = ArrayField(models.CharField(max_length=255), blank=True, default=list)
     institution = models.ForeignKey(Institution, null=True, on_delete=models.SET_NULL)
