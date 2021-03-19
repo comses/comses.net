@@ -11,7 +11,7 @@ addons:
 services:
   - docker
 env: 
-  - DOCKER_COMPOSE_VERSION=1.27.4
+  - DOCKER_COMPOSE_VERSION=1.28.5
 before_install:
   - curl -L https://github.com/docker/compose/releases/download/${DOCKER_COMPOSE_VERSION}/docker-compose-`uname -s`-`uname -m` > docker-compose
   - chmod a+rx docker-compose
@@ -26,8 +26,3 @@ script:
 after_success:
   - bash django/deploy/run-coveralls
   - bash frontend/deploy/run-coveralls
-  - if [[ "$TRAVIS_BRANCH" == "master" ]]; then
-      echo $DOCKERHUB_PASSWORD | docker login -u $DOCKERHUB_USERNAME --password-stdin;
-      docker push comses/cms:dev;
-      docker push comses/cmsjs:dev;
-    fi
