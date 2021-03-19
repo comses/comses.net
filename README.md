@@ -1,6 +1,6 @@
 # Support Open Science @ CoMSES Net
-[![Build Status](https://travis-ci.com/comses/comses.net.svg?branch=master)](https://travis-ci.com/comses/comses.net)
-[![Coverage Status](https://coveralls.io/repos/github/comses/comses.net/badge.svg?branch=master)](https://coveralls.io/github/comses/comses.net?branch=master)
+[![Build Status](https://travis-ci.com/comses/comses.net.svg?branch=main)](https://travis-ci.com/comses/comses.net)
+[![Coverage Status](https://coveralls.io/repos/github/comses/comses.net/badge.svg?branch=main)](https://coveralls.io/github/comses/comses.net?branch=main)
 <!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
 [![All Contributors](https://img.shields.io/badge/all_contributors-4-orange.svg?style=flat-square)](#contributors-)
 <!-- ALL-CONTRIBUTORS-BADGE:END -->
