@@ -65,7 +65,7 @@ services:
       - ./deploy/elasticsearch.conf.d/log4j2.properties:/usr/share/elasticsearch/config/log4j2.properties
       - esdata2:/usr/share/elasticsearch/data
   ${DB_HOST}:
-    image: comses/postgis:10
+    image: postgis/postgis:10-3.1
     restart: always
     volumes:
       - ./docker/shared/pgdata:/var/lib/postgresql/data
