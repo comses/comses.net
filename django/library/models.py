@@ -292,7 +292,7 @@ class CodebaseQuerySet(models.QuerySet):
         try:
             contributor = Contributor.objects.get(user=user)
             releases = CodebaseRelease.objects.filter(pk__in=ReleaseContributor.objects.filter(contributor=contributor).values_list('release', flat=True))
-            return Codebase.objects.filter(releases__in=releases)
+            return Codebase.objects.filter(releases__in=releases).distinct()
         except Contributor.DoesNotExist:
             return Codebase.objects.none()
 
