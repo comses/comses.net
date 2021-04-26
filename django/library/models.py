@@ -1829,7 +1829,7 @@ class CodeMeta():
         codebase = release.codebase
         metadata.update(
             name=codebase.title,
-            abstract=codebase.summary.raw,
+            abstract=codebase.summary,
             description=codebase.description.raw,
             version=release.version_number,
             targetProduct=cls.convert_target_product(release),
