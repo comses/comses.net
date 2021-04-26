@@ -1829,6 +1829,7 @@ class CodeMeta():
         codebase = release.codebase
         metadata.update(
             name=codebase.title,
+            abstract=codebase.summary.raw,
             description=codebase.description.raw,
             version=release.version_number,
             targetProduct=cls.convert_target_product(release),
@@ -1840,21 +1841,32 @@ class CodeMeta():
             keywords=cls.convert_keywords(release),
             runtimePlatform=cls.convert_platforms(release),
             url=release.permanent_url,
+            citation=[],
         )
         if release.live:
             metadata.update(datePublished=release.last_published_on.strftime(cls.DATE_PUBLISHED_FORMAT))
-            metadata.update(citation=release.citation_text)
             metadata.update(copyrightYear=release.last_published_on.year)
         if release.license:
             metadata.update(license=release.license.url)
         if codebase.repository_url:
             metadata.update(codeRepository=codebase.repository_url)
-        if codebase.references_text:
-            metadata.update(citation=codebase.references_text)
+        cls.add_citation_text(metadata, codebase.references_text)
+        cls.add_citation_text(metadata, codebase.replication_text)
+        cls.add_citation_text(metadata, codebase.associated_publication_text)
+
         if release.release_notes:
             metadata.update(releaseNotes=release.release_notes.raw)
         metadata['@id'] = release.permanent_url
         return CodeMeta(metadata)
+
+    @classmethod
+    def add_citation_text(cls, metadata, text):
+        if text:
+            metadata.get('citation').append(cls.to_creative_work(text))
+
+    @classmethod
+    def to_creative_work(cls, text):
+        return {"@type": "CreativeWork", "text": text}
 
     def to_json(self):
         """ Returns a JSON string of this codemeta data """
