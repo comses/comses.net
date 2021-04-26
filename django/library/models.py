@@ -1853,6 +1853,7 @@ class CodeMeta():
             metadata.update(referencePublication=codebase.references_text)
         if release.release_notes:
             metadata.update(releaseNotes=release.release_notes.raw)
+        metadata['@id'] = release.permanent_url
         return CodeMeta(metadata)
 
     def to_json(self):

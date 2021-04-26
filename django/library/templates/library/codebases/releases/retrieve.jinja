@@ -17,30 +17,33 @@
   </script>
   <link id='discourseEmbedUrl' rel='canonical' href='{{release.comses_permanent_url}}'>
   {% if release.live %}
-    {# expose citation metadata for Google Scholar if the release is public:
-    https://scholar.google.com/intl/en/scholar/inclusion.html#indexing #}
+    {# expose citation metadata to scholarly indices if the release is public
+        https://scholar.google.com/intl/en/scholar/inclusion.html#indexing 
+    #}
+    <meta name='citation_title' content='{{ release.title }}'>
     {% for c in codebase.all_contributors -%}
     <meta name='citation_author' content='{{ c.name }}'>
         {% if c.email -%}
-        <meta name='citation_author_email' content='{{ c.email }}'>
+    <meta name='citation_author_email' content='{{ c.email }}'>
         {%- endif %}
         {% for affiliation in c.affiliations.all() -%}
-        <meta name='citation_author_institution' content='{{ affiliation }}'>
+    <meta name='citation_author_institution' content='{{ affiliation }}'>
         {%- endfor %}
     {%- endfor %}
+    <meta name='citation_publication_date' content='{{ release.last_published_on|format_datetime("%Y/%m/%d") }}'>
+    <meta name='citation_online_date' content='{{ release.first_published_at|format_datetime("%Y/%m/%d") }}'>
+    <meta name='citation_journal_title' content='CoMSES Computational Model Library'>
+    <meta name='citation_publisher' content='CoMSES.Net'>
+    <meta name='citation_language' content='en'>
+    <meta name='citation_abstract' content='{{ codebase.description }}'>
+    <meta name='citation_abstract_html_url' content='{{ release.permanent_url }}'>
+    <meta name='citation_public_url' content='{{ release.permanent_url }}'>
+    {% if release.doi -%}
+    <meta name='citation_doi' content='{{release.doi}}'>
+    <meta name='dc.identifier' content='{{release.doi}}'>
+    {%- endif %}
+  {#- end release.live if -#}
   {% endif %}
-  <meta name='citation_publication_date' content='{{ release.last_published_on|format_datetime("%Y/%m/%d") }}'>
-  <meta name='citation_online_date' content='{{ release.first_published_at|format_datetime("%Y/%m/%d") }}'>
-  <meta name='citation_journal_title' content='CoMSES Computational Model Library'>
-  <meta name='citation_publisher' content='CoMSES.Net'>
-  <meta name='citation_title' content='{{ release.title }}'>
-  <meta name='citation_language' content='en'>
-  <meta name='citation_abstract' content='{{ codebase.description }}'>
-  <meta name='citation_public_url' content='{{ release.permanent_url }}'>
-  {% if release.doi -%}
-  <meta name='citation_doi' content='{{release.doi}}'>
-  <meta name='dc.identifier' content='{{release.doi}}'>
-  {%- endif %}
 {% endblock %}
 
 {%- block introduction -%}<h1>Computational Model Library</h1>{% endblock %}
