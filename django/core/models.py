@@ -101,15 +101,17 @@ class Institution(models.Model):
     name = models.CharField(max_length=200)
     url = models.URLField(blank=True)
     acronym = models.CharField(max_length=50)
+    ror_id = models.URLField(blank=True)
 
     panels = [
         FieldPanel('name'),
         FieldPanel('url'),
         FieldPanel('acronym'),
+        FieldPanel('ror_id'),
     ]
 
     def __str__(self):
-        return self.name
+        return f'{self.name} {self.ror_id}'
 
 
 class MemberProfileTag(TaggedItemBase):
@@ -341,6 +343,7 @@ class Platform(index.Indexed, ClusterableModel):
     open_source = models.BooleanField(default=False)
     featured = models.BooleanField(default=False)
     url = models.URLField(blank=True)
+    repository_url = models.URLField(blank=True)
     tags = ClusterTaggableManager(through=PlatformTag, blank=True)
 
     @staticmethod
