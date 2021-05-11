@@ -20,7 +20,7 @@
     "detect-browser": "^4.4.0",
     "fullcalendar": "^3.10.0",
     "jquery": "^3.5.1",
-    "lodash": "^4.17.19",
+    "lodash": "^4.17.21",
     "marked": "^2.0.0",
     "moment": "^2.24.0",
     "popper.js": "^1.15.0",
