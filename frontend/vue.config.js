@@ -35,7 +35,10 @@ const pages = {
 module.exports = {
     configureWebpack: {
       devtool: 'source-map',
-      mode: 'development'
+      mode: 'development',
+      plugins: [
+	new BundleTracker({ filename: '/shared/webpack/webpack-stats.json' }),
+      ],
     },
     chainWebpack: config => {
         const types = ['vue-modules', 'vue', 'normal-modules', 'normal'];
@@ -44,10 +47,12 @@ module.exports = {
         config
             .output
             .filename('js/[name].[hash].js');
+	    /*
         config
             .plugin('bundle-tracker')
             .use(BundleTracker, [{path: '/shared/webpack', filename: './webpack-stats.json'}])
             .end();
+	    */
         config
             .plugin('provide-bootstrap')
             .use(webpack.ProvidePlugin, [{
