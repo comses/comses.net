@@ -86,7 +86,7 @@ services:
     volumes:
       - ./frontend/src:/code/src
       - ./frontend/yarn.lock:/code/yarn.lock
-      - ./docker/shared/webpack:/shared/webpack
+      - ./docker/shared:/shared
       - ./deploy/conf/config.ini:/secrets/config.ini
   nginx:
     image: nginx:stable

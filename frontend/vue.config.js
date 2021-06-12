@@ -18,40 +18,32 @@ function addStyleResource(rule) {
 }
 
 const pages = {
-    codebases: './src/pages/codebase',
-    events: './src/pages/event',
-    jobs: './src/pages/job',
-    profiles: './src/pages/profile',
-    reviews: './src/pages/review',
-    releases: './src/pages/codebase/release',
-    release_regenerate_share_uuid: './src/pages/codebase/release/regenerate_share_uuid.ts',
+    home: 'src/pages/home.vue',
     codebase_list: './src/pages/codebase/list.ts',
     event_calendar: './src/pages/event/calendar.ts',
     event_list: './src/pages/event/list.ts',
     job_list: './src/pages/job/list.ts',
     profile_list: './src/pages/profile/list.ts',
+    codebases: './src/pages/codebase',
+    events: './src/pages/event',
+    jobs: './src/pages/job',
+    profiles: './src/pages/profile',
+    releases: './src/pages/codebase/release',
+    reviews: './src/pages/review',
+    release_regenerate_share_uuid: './src/pages/codebase/release/regenerate_share_uuid.ts'
 };
 
 module.exports = {
     configureWebpack: {
       devtool: 'none',
       plugins: [
-	new BundleTracker({ publicPath: '/static/bundles/', filename: '/shared/webpack/webpack-stats.json' }),
+        new BundleTracker({ filename: '/shared/webpack/webpack-stats.json' }),
       ],
     },
     chainWebpack: config => {
         const types = ['vue-modules', 'vue', 'normal-modules', 'normal'];
         types.forEach(type => addStyleResource(config.module.rule('scss').oneOf(type)));
-
-        config
-            .output
-            .filename('js/[name].[hash].js');
-	    /*
-        config
-            .plugin('bundle-tracker')
-            .use(BundleTracker, [{path: '/shared/webpack', filename: './webpack-stats.json'}])
-            .end();
-	    */
+        config.output.filename('js/[name].[hash].js');
         config
             .plugin('provide-bootstrap')
             .use(webpack.ProvidePlugin, [{
@@ -92,22 +84,8 @@ module.exports = {
     css: {
         extract: true
     },
-    outputDir: '/shared/webpack/bundles/',
-    pages: {
-        home: 'src/pages/home.vue',
-        codebase_list: './src/pages/codebase/list.ts',
-        event_calendar: './src/pages/event/calendar.ts',
-        event_list: './src/pages/event/list.ts',
-        job_list: './src/pages/job/list.ts',
-        profile_list: './src/pages/profile/list.ts',
-        codebases: './src/pages/codebase',
-        events: './src/pages/event',
-        jobs: './src/pages/job',
-        profiles: './src/pages/profile',
-        releases: './src/pages/codebase/release',
-        reviews: './src/pages/review',
-        release_regenerate_share_uuid: './src/pages/codebase/release/regenerate_share_uuid.ts'
-    },
-    publicPath: process.env.NODE_ENV === 'development' ? 'http://localhost:3000/static/' : '/static/',
+    outputDir: '/shared/webpack/bundles',
+    pages,
+    publicPath: process.env.NODE_ENV === 'development' ? 'http://localhost:3000/static/bundles/' : '/static/bundles/',
     runtimeCompiler: true
 };

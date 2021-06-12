@@ -320,12 +320,12 @@
         })(window, document, 'script', 'dataLayer', 'GTM-TLNSSCJ');</script>
         <!-- End Google Tag Manager -->
     {% endif %}
-    <script src="//cdnjs.cloudflare.com/ajax/libs/holder/2.9.6/holder.min.js"></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/holder/2.9.7/holder.min.js"></script>
     {% if deploy_environment().is_staging_or_production() %}
-        {% with SENTRYJS_VERSION='5.9.1' %}
+        {% with SENTRYJS_VERSION='6.5.1' %}
             <script 
                 src="https://browser.sentry-cdn.com/{{SENTRYJS_VERSION}}/bundle.min.js" 
-                integrity="sha384-/x1aHz0nKRd6zVUazsV6CbQvjJvr6zQL2CHbQZf3yoLkezyEtZUpqUNnOLW9Nt3v"
+                integrity="sha384-4+IdsjFHpxfo2PQYne6sV0ulAlOJbJHbeEy4vDPAt9kUmUb9t0W2HFp6I6rznkEP"
                 crossorigin="anonymous">
             </script>
             <script>
