@@ -29,13 +29,6 @@ def build_absolute_uri(relative_url):
     return absolute_url
 
 
-"""
-@library.global_function
-def render_bundle(bundle_name, extension=None, config='DEFAULT', attrs=''):
-    return wl.render_bundle(bundle_name, extension, config, attrs)
-"""
-
-
 @library.global_function
 def cookielaw(request):
     if request.COOKIES.get('cookielaw_accepted', False):

@@ -339,12 +339,13 @@ STATICFILES_FINDERS = [
 
 WEBPACK_DIR = config.get('storage', 'WEBPACK_ROOT', fallback='/shared/webpack')
 
+STATIC_ROOT = '/shared/static'
+STATIC_URL = '/static/'
+
 STATICFILES_DIRS = [
     WEBPACK_DIR
 ]
 
-STATIC_ROOT = '/shared/static'
-STATIC_URL = '/static/'
 
 MEDIA_ROOT = '/shared/media'
 MEDIA_URL = '/media/'
@@ -357,7 +358,7 @@ WAGTAIL_APPEND_SLASH = True
 
 WEBPACK_LOADER = {
     'DEFAULT': {
-        'BUNDLE_DIR_NAME': 'assets/',
+        'BUNDLE_DIR_NAME': 'bundles/',
         'STATS_FILE': os.path.join(WEBPACK_DIR, 'webpack-stats.json'),
     }
 }

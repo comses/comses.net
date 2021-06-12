@@ -34,10 +34,9 @@ const pages = {
 
 module.exports = {
     configureWebpack: {
-      devtool: 'source-map',
-      mode: 'development',
+      devtool: 'none',
       plugins: [
-	new BundleTracker({ filename: '/shared/webpack/webpack-stats.json' }),
+	new BundleTracker({ publicPath: '/static/bundles/', filename: '/shared/webpack/webpack-stats.json' }),
       ],
     },
     chainWebpack: config => {
@@ -93,7 +92,7 @@ module.exports = {
     css: {
         extract: true
     },
-    outputDir: '/shared/webpack',
+    outputDir: '/shared/webpack/bundles/',
     pages: {
         home: 'src/pages/home.vue',
         codebase_list: './src/pages/codebase/list.ts',
