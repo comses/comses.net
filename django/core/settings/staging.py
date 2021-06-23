@@ -2,7 +2,6 @@ from .defaults import *
 
 import sentry_sdk
 from sentry_sdk.integrations.django import DjangoIntegration
-from sentry_sdk.integrations.redis import RedisIntegration
 
 DEBUG = False
 DEPLOY_ENVIRONMENT = Environment.STAGING
@@ -11,8 +10,8 @@ DEPLOY_ENVIRONMENT = Environment.STAGING
 sentry_sdk.init(
     dsn=SENTRY_DSN,
     release=RELEASE_VERSION,
-    integrations=[DjangoIntegration(), RedisIntegration()],
-    traces_sample_rate=0.9,
+    integrations=[DjangoIntegration()],
+    traces_sample_rate=1.0,
     send_default_pii=True
 )
 
