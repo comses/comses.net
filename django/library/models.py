@@ -418,7 +418,7 @@ class Codebase(index.Indexed, ClusterableModel):
     # with URLs / resolvable identifiers
     relationships = models.JSONField(default=list)
 
-    # JSONField list of image metadata records with paths referring to self.media_dir()
+    # JSONField list of image metadata records with paths referring to self.relative_media_path()
     media = models.JSONField(default=list,
                              help_text=_("JSON metadata dict of media associated with this Codebase"))
 
@@ -485,10 +485,13 @@ class Codebase(index.Indexed, ClusterableModel):
 
     @property
     def upload_path(self):
-        return self.media_dir('uploads')
+        return self.relative_media_path('uploads')
 
     def media_dir(self, *args):
-        return pathlib.Path(settings.LIBRARY_ROOT, str(self.uuid), 'media', *args)
+        return pathlib.Path(settings.LIBRARY_ROOT, self.relative_media_path(*args))
+
+    def relative_media_path(self, *args):
+        return pathlib.Path(str(self.uuid), 'media', *args)
 
     @property
     def summarized_description(self):
@@ -754,13 +757,13 @@ class CodebaseImage(AbstractImage):
         storage=FileSystemStorage(location=settings.LIBRARY_ROOT)
     )
 
-    admin_form_fields = Image.admin_form_fields + ('codebase',)
+    admin_form_fields = Image.admin_form_fields + ('codebase', 'file')
 
     objects = CodebaseImageQuerySet.as_manager()
 
     def get_upload_to(self, filename):
         # adapted from wagtailimages/models
-        folder_name = str(self.codebase.media_dir())
+        folder_name = str(self.codebase.relative_media_path())
         # use string_to_ascii on filename to sidestep issues with filesystem encoding
         ascii_filename = string_to_ascii(self.file.field.storage.get_valid_name(filename))
         # Truncate filename so it fits in the 100 character limit
@@ -772,6 +775,7 @@ class CodebaseImage(AbstractImage):
             ascii_filename = prefix[:-chars_to_trim] + extension
             full_path = os.path.join(folder_name, ascii_filename)
 
+        logger.debug("codebase image full path: %s", full_path)
         return full_path
 
 
