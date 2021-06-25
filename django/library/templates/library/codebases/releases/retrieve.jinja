@@ -101,7 +101,7 @@
                 {% if featured_image is not none %}
                     <div class='py-3'>
                         <a href='#' data-toggle='modal' data-target='#featuredImageModal'>
-                            {{ image(featured_image, "width-300", class='d-block img-fluid') }}
+                            {{ image(featured_image, "width-400", class='d-block img-fluid') }}
                         </a>
                     </div>
                     <div class='modal fade' id='featuredImageModal' aria-labelledby='modalCodebaseTitle' aria-hidden='true' tab-index='-1' role='dialog'>
@@ -111,7 +111,7 @@
                                     <h5 id='modalCodebaseTitle' class='modal-title'>{{ codebase.title }}</h5>
                                 </div>
                                 <div class="modal-body text-center">
-                                    {{ image(featured_image, "scale-150", class='img-responsive') }}
+                                    {{ image(featured_image, "max-900x600", class='img-responsive') }}
                                 </div>
                                 <div class="modal-footer">
                                     <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
