@@ -155,6 +155,12 @@ class EventSerializer(serializers.ModelSerializer):
 
         msgs = []
 
+        if end_date and start_date >= end_date:
+            msgs.append('The event start date should be earlier than the event end date.')
+
+        if not end_date:
+            end_date = start_date
+
         if early_registration_deadline and registration_deadline and registration_deadline < early_registration_deadline:
             msgs.append('Early registration deadlines should be earlier than the regular registration deadline.')
 
@@ -166,9 +172,6 @@ class EventSerializer(serializers.ModelSerializer):
 
         if submission_deadline and submission_deadline > end_date:
             msgs.append('Submission deadline should be before the event end date.')
-
-        if end_date and start_date >= end_date:
-            msgs.append('The event start date should be earlier than the event end date.')
 
         if msgs:
             raise ValidationError(' '.join(s.capitalize() for s in msgs))
