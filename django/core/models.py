@@ -458,6 +458,7 @@ class Event(index.Indexed, ClusterableModel):
         index.FilterField('date_created'),
         index.FilterField('start_date'),
         index.FilterField('end_date'),
+        index.FilterField('last_modified'),
         index.FilterField('submission_deadline'),
         index.FilterField('early_registration_deadline'),
         index.FilterField('registration_deadline'),
