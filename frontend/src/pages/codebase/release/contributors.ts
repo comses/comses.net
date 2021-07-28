@@ -66,7 +66,7 @@ const roleLookup = {
     pointOfContact: 'Point of Contact',
     editor: 'Editor',
     contributor: 'Contributor',
-    collaberator: 'Collaborator',
+    collaborator: 'Collaborator',
     funder: 'Funder',
     copyrightholder: 'Copyright Holder',
 };
