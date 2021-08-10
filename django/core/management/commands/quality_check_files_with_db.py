@@ -2,7 +2,6 @@ from pathlib import Path
 
 from django.core.management.base import BaseCommand
 
-from drupal_migrator.utils import is_version_dir
 from library.models import Codebase, CodebaseRelease
 
 

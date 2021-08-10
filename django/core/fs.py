@@ -96,11 +96,11 @@ def unrar(archive_path, dst_dir: str):
         rf.extractall(dst_dir)
 
 
-def make_bag(path, info: dict=None):
+def make_bag(path, info: dict = None):
     # first check if there's already a bag at this path - if so, use it.
     try:
         return bagit.Bag(path)
-    except bagit.BagError as e:
+    except bagit.BagError:
         logger.info("unable to initialize bag at %s - making a new one", path)
 
     # unable to create a bag from an existing bag
