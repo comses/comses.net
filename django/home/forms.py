@@ -5,6 +5,7 @@ from django import forms
 from django.conf import settings
 from django.template import loader
 from django.utils.translation import ugettext_lazy as _
+from urllib.parse import urlparse
 from wagtail.core.models import Site
 
 from core.models import SocialMediaSettings
@@ -83,11 +84,12 @@ class ContactForm(forms.Form):
 
 class ConferenceSubmissionForm(forms.ModelForm):
     def clean_video_url(self):
-        video_url = self.cleaned_data['video_url']
+        video_url = self.cleaned_data['video_url'].strip()
         # This doesn't work for all youtube urls. https://gist.github.com/Glurt/ea11b690ba4b1278e049
         # if not re.match(YOUTUBE_URL, video_url):
         #    raise forms.ValidationError('Video URL must be a Youtube URL')
-        if 'youtube.com' in video_url or 'youtu.be' in video_url:
+        domain = urlparse(video_url).netloc
+        if domain in ('youtube.com', 'youtu.be'):
             return video_url
         raise forms.ValidationError('Please submit a YouTube URL - it will make our lives much easier organizing the content. Thank you!')
 

@@ -6,8 +6,7 @@ from wagtail.contrib.modeladmin.helpers import AdminURLHelper
 from curator.models import TagCleanup
 from curator.wagtail_hooks import TagCleanupAction
 
-
-class Http400(Exception): pass
+import bleach
 
 
 TAG_CLEANUP_ACTIONS = {
@@ -27,9 +26,6 @@ def process_pending_tag_cleanups(request):
     action_name = request.POST['action']
     action = TAG_CLEANUP_ACTIONS.get(action_name)
     if not action:
-        return HttpResponseBadRequest('{} not a valid action'.format(action_name))
-
+        return HttpResponseBadRequest(f'invalid action: {bleach.clean(action_name)}')
     action()
-    return HttpResponseRedirect(
-        AdminURLHelper(TagCleanup).index_url
-    )
+    return HttpResponseRedirect(AdminURLHelper(TagCleanup).index_url)
