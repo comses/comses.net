@@ -517,11 +517,17 @@ class Codebase(index.Indexed, ClusterableModel):
 
     @property
     def codebase_contributors_redis_key(self):
-        return 'codebase:contributors:{0}'.format(self.identifier)
+        return f'codebase:contributors:{self.identifier}'
+
+    def codebase_authors_redis_key(self):
+        return f'codebase:authors:{self.identifier}'
 
     def compute_contributors(self, force=False):
-        redis_key = self.codebase_contributors_redis_key
-        codebase_contributors = cache.get(redis_key) if not force else None
+        contributors_redis_key = self.codebase_contributors_redis_key
+        codebase_contributors = cache.get(contributors_redis_key) if not force else None
+        codebase_authors = None
+
+        codebase_authors_dict = OrderedDict()
 
         if codebase_contributors is None:
             codebase_contributors_dict = OrderedDict()
@@ -530,11 +536,15 @@ class Codebase(index.Indexed, ClusterableModel):
                         'contributor__user__member_profile').order_by('index'):
                     contributor = release_contributor.contributor
                     codebase_contributors_dict[contributor] = None
+                    if release_contributor.include_in_citation:
+                        codebase_authors_dict[contributor] = None
             # PEP 448 syntax to unpack dict keys into list literal
             # https://www.python.org/dev/peps/pep-0448/
             codebase_contributors = [*codebase_contributors_dict]
-            cache.set(redis_key, codebase_contributors)
-        return codebase_contributors
+            codebase_authors = [*codebase_authors_dict]
+            cache.set(contributors_redis_key, codebase_contributors)
+            cache.set(self.codebase_authors_redis_key, codebase_authors)
+        return codebase_contributors, codebase_authors
 
     @property
     def all_contributors(self):
@@ -545,9 +555,19 @@ class Codebase(index.Indexed, ClusterableModel):
         Caching contributors on _all_contributors makes it possible to ask for
         codebase_contributors in bulk"""
         if not hasattr(self, '_all_contributors'):
-            self._all_contributors = self.compute_contributors()
+            self._all_contributors, self_all_authors = self.compute_contributors()
         return self._all_contributors
 
+    @property
+    def all_authors(self):
+        if not hasattr(self, '_all_authors'):
+            self._all_contributors, self_all_authors = self.compute_contributors()
+        return self._all_authors
+
+    @property
+    def author_list(self):
+        return [c.get_full_name() for c in self.all_authors if c.has_name]
+    
     @property
     def contributor_list(self):
         return [c.get_full_name() for c in self.all_contributors if c.has_name]
@@ -1088,10 +1108,10 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
     @property
     def citation_authors(self):
         authors = self.submitter.member_profile.name
-        if self.contributor_list:
-            authors = ', '.join(self.contributor_list)
+        if self.author_list:
+            authors = ', '.join(self.author_list)
         else:
-            logger.warning("No contributors found for release, using default submitter name: %s", self)
+            logger.warning("No authors found for release, using default submitter name: %s", self.submitter)
         return authors
 
     @property
