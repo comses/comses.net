@@ -555,19 +555,23 @@ class Codebase(index.Indexed, ClusterableModel):
         Caching contributors on _all_contributors makes it possible to ask for
         codebase_contributors in bulk"""
         if not hasattr(self, '_all_contributors'):
-            self._all_contributors, self_all_authors = self.compute_contributors()
+            all_contributors, all_authors = self.compute_contributors(force=True)
+            self._all_contributors = all_contributors
+            self._all_authors = all_authors
         return self._all_contributors
 
     @property
     def all_authors(self):
         if not hasattr(self, '_all_authors'):
-            self._all_contributors, self_all_authors = self.compute_contributors()
+            all_contributors, all_authors = self.compute_contributors(force=True)
+            self._all_contributors = all_contributors
+            self._all_authors = all_authors
         return self._all_authors
 
     @property
     def author_list(self):
         return [c.get_full_name() for c in self.all_authors if c.has_name]
-    
+
     @property
     def contributor_list(self):
         return [c.get_full_name() for c in self.all_contributors if c.has_name]
@@ -1108,8 +1112,9 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
     @property
     def citation_authors(self):
         authors = self.submitter.member_profile.name
-        if self.author_list:
-            authors = ', '.join(self.author_list)
+        author_list = self.codebase.author_list
+        if author_list:
+            authors = ', '.join(author_list)
         else:
             logger.warning("No authors found for release, using default submitter name: %s", self.submitter)
         return authors
