@@ -55,6 +55,7 @@ const contributorSchema = yup.object().shape({
 
 export const releaseContributorSchema = yup.object().shape({
     contributor: yup.mixed().test('is-not-null', '${path} must have a value', (value) => !_.isNull(value)).label('this'),
+    include_in_citation: yup.boolean().required().default(true),
     roles: yup.array().of(yup.string()).min(1).label('affiliations'),
 });
 
@@ -185,7 +186,7 @@ class EditContributor extends createFormValidator(contributorSchema) {
 @Component({
     template: `<div class="card mt-2">
         <div class="card-header">
-            <h5 class='card-title'>Add or edit a Release Contributor</h5>
+            <h5 class='card-title'>Manage contributors for this release</h5>
         </div>
         <div class="card-body">
             <div :class="['form-group', errors.contributor.length === 0 ? '' : 'child-is-invalid' ]">
@@ -229,6 +230,11 @@ class EditContributor extends createFormValidator(contributorSchema) {
                 </div>
             </div>
             <div class='d-flex justify-content-end'>
+              <div class='form-check'>
+                <label class='form-check-label'>
+                  <input class='form-check-input' type='checkbox' name='include_in_citation'>
+                </label>
+              </div>
               <button type="button" class="btn btn-secondary" @click="cancel" v-show="hasEdits">Cancel</button>
               <button type="button" class="ml-auto btn btn-primary" @click="save"><i class='fas fa-user-plus'></i> Register citable contributor</button>
             </div>

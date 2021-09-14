@@ -22,6 +22,9 @@ from core.serializers import FULL_DATE_FORMAT
 
 logger = logging.getLogger(__name__)
 
+def jinja_url(viewname, *args, **kwargs):
+    return reverse(viewname, args=args, kwargs=kwargs)
+
 
 def environment(**options):
     env = Environment(**options)
@@ -34,7 +37,7 @@ def environment(**options):
     }
     env.globals.update({
         'static': static,
-        'url': reverse,
+        'url': jinja_url,
         'constants': constants,
         'build_absolute_uri': build_absolute_uri,
         'cookielaw': cookielaw,

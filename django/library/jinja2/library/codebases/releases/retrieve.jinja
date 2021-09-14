@@ -438,8 +438,8 @@
                                     <i class='fas fa-lock'></i> (private)
                                 {% endif %}
                             </td>
-                            <td>{{ related_release.first_published_at|format_datetime('%c') }}</td>
-                            <td>{{ related_release.last_published_on|format_datetime('%c') }}</td>
+                            <td>{{ format_datetime(related_release.first_published_at, '%c') }}</td>
+                            <td>{{ format_datetime(related_release.last_published_on, '%c') }}</td>
                             <td>
                                 {% if related_release.draft %}
                                     <span class="badge badge-danger">Draft</span>
