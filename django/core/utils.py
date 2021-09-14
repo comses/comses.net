@@ -7,7 +7,7 @@ from django.template.loader import get_template
 from django.template.exceptions import TemplateDoesNotExist, TemplateSyntaxError
 from django.utils import timezone
 
-from core.templatetags.globals import markdown
+from core.jinja2 import markdown
 
 import logging
 
@@ -40,9 +40,9 @@ def confirm(prompt="Continue? (y/n) ", cancel_message="Aborted."):
     return True
 
 
-def create_markdown_email(subject: str=None, to=None, template_name: str=None, context: dict=None, body: str=None,
-                          from_email: str=settings.DEFAULT_FROM_EMAIL,
-                          email_subject_prefix: str=settings.EMAIL_SUBJECT_PREFIX,
+def create_markdown_email(subject: str = None, to = None, template_name: str = None, context: dict = None, body: str = None,
+                          from_email: str = settings.DEFAULT_FROM_EMAIL,
+                          email_subject_prefix: str = settings.EMAIL_SUBJECT_PREFIX,
                           **kwargs):
     if all([template_name, context]):
         # override body if a template name and context were given to us

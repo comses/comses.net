@@ -1,0 +1,17 @@
+{% extends "base.jinja" %}
+
+{% set provider_name = account.get_provider().name %}
+
+{% block introduction %}
+    <h1>Sign Up</h1>
+{% endblock %}
+{% block content %}
+    <p>
+    Please complete the following form to create a new CoMSES Net account linked with your {{ provider_name }} account.
+    Welcome to the CoMSES Net community!
+    </p>
+    <form method="post" class='form-horizontal'>
+        {% include "includes/form.jinja" %}
+        <button type="submit" class='btn btn-primary'> Sign Up</button>
+    </form>
+{% endblock %}

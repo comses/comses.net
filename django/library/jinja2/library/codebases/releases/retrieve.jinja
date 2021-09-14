@@ -1,0 +1,498 @@
+{% extends "sidebar_layout.jinja" %}
+{% from "common.jinja" import breadcrumb, embed_discourse_comments, share_card, search_tag_href, member_profile_href %}
+{% from "library/review/includes/macros.jinja" import render_review_reminders %}
+
+{% set open_code_badge_url = request.build_absolute_uri(static("images/icons/open-code-badge.png")) %}
+{% set codebase = release.codebase %}
+
+{%- block title -%}{{ codebase.title }}{% endblock %}
+
+{% block meta_description -%}
+  <meta name="description" content="{{codebase.description.raw|truncate(150)}}">
+{% endblock %}
+
+{%- block head -%}
+  <script type="application/ld+json">
+    {{ release.codemeta_json|safe }}
+  </script>
+  <link id='discourseEmbedUrl' rel='canonical' href='{{release.comses_permanent_url}}'>
+  {% if release.live %}
+    {# expose citation metadata to scholarly indices if the release is public
+        https://scholar.google.com/intl/en/scholar/inclusion.html#indexing 
+    #}
+    <meta name='citation_title' content='{{ release.title }}'>
+    {% for c in codebase.all_contributors -%}
+    <meta name='citation_author' content='{{ c.name }}'>
+        {% if c.email -%}
+    <meta name='citation_author_email' content='{{ c.email }}'>
+        {%- endif %}
+        {% for affiliation in c.affiliations.all() -%}
+    <meta name='citation_author_institution' content='{{ affiliation }}'>
+        {%- endfor %}
+    {%- endfor %}
+    <meta name='citation_publication_date' content='{{ format_datetime(release.last_published_on, "%Y/%m/%d") }}'>
+    <meta name='citation_online_date' content='{{ format_datetime(release.first_published_at, "%Y/%m/%d") }}'>
+    <meta name='citation_journal_title' content='CoMSES Computational Model Library'>
+    <meta name='citation_publisher' content='CoMSES.Net'>
+    <meta name='citation_language' content='en'>
+    <meta name='citation_abstract' content='{{ codebase.description }}'>
+    <meta name='citation_abstract_html_url' content='{{ release.permanent_url }}'>
+    <meta name='citation_public_url' content='{{ release.permanent_url }}'>
+    {% if release.doi -%}
+    <meta name='citation_doi' content='{{release.doi}}'>
+    <meta name='dc.identifier' content='{{release.doi}}'>
+    {%- endif %}
+  {#- end release.live if -#}
+  {% endif %}
+{% endblock %}
+
+{%- block introduction -%}<h1>Computational Model Library</h1>{% endblock %}
+
+{%- block top -%}
+    {{ breadcrumb([
+    {'url': url('library:codebase-list'), 'text': 'Computational Model Library' },
+    {'url': url('library:codebase-detail', codebase.identifier), 'text': codebase.title|truncate(68) },
+    {'text': release.version_number },
+    ]) }}
+{% endblock %}
+
+{% block content %}
+    <div id="{{ 'discourse-content' if release.live else 'content' }}">
+        {% if release.live %}
+            {% if not release.is_latest_version %}
+                {% with latest_version=codebase.latest_version %}
+                    <div class="alert alert-warning mt-2">This release is out-of-date. The latest version is
+                        <a href='{{ latest_version.get_absolute_url() }}'>{{ latest_version.version_number }}</a>
+                    </div>
+                {% endwith %}
+            {% endif %}
+        {% else %}
+            <div class="alert alert-danger mt-2">The release you are viewing is currently unpublished.</div>
+        {% endif %}
+        <h1 class='codebase-title pb-4'>{{ codebase.title }} <em>(version {{release.version_number}})</em></h1>
+        <div class='metadata'>
+            <b>Submitted by:</b> 
+            {% if release.live %}
+                {{ member_profile_href(codebase.submitter.member_profile) }}
+            {% else %}
+                <i class='fas fa-lock'></i> (private)
+            {% endif %}
+            <b class='pl-2'>Software Framework:</b>
+            {%- for p in release.platform_tags.all() -%}
+                {{ search_tag_href(p, category='codebases') }}
+            {%- else -%}
+                None
+            {%- endfor -%}
+            <b class='pl-2'>Programming Language:</b>
+            {% for pl in release.programming_languages.all() %}
+                {{ search_tag_href(pl, category='codebases') }}
+            {% endfor %}
+        </div>
+        <div class='tag-list'>
+            {% for tag in codebase.tags.all() %}
+                {{ search_tag_href(tag, category='codebases') }}
+            {% endfor %}
+        </div>
+        <div class='pt-4'>
+            <div class='lead'>
+                {{ codebase.description|safe }}
+            </div>
+            {% with featured_image=codebase.get_featured_image() %}
+                {% if featured_image is not none %}
+                    <div class='py-3'>
+                        <a href='#' data-toggle='modal' data-target='#featuredImageModal'>
+                            {{ image(featured_image, "width-400", class='d-block img-fluid') }}
+                        </a>
+                    </div>
+                    <div class='modal fade' id='featuredImageModal' aria-labelledby='modalCodebaseTitle' aria-hidden='true' tab-index='-1' role='dialog'>
+                        <div class='modal-dialog modal-lg' role='document'>
+                            <div class='modal-content'>
+                                <div class='modal-header'>
+                                    <h5 id='modalCodebaseTitle' class='modal-title'>{{ codebase.title }}</h5>
+                                </div>
+                                <div class="modal-body text-center">
+                                    {{ image(featured_image, "max-900x600", class='img-responsive') }}
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                {% endif %}
+            {% endwith %}
+            {% if release.release_notes.raw %}
+            <h4><u>Release Notes</u></h4>
+            <p>
+                {{ release.release_notes.rendered|default("No release notes entered with this release.")|safe }}
+            </p>
+            {% endif %}
+        </div>
+    </div>
+    <div class='card-metadata'>
+        <div class='card-body'>
+        {% if release.live %}
+            <h2 class='card-title'><u>Cite this Model</u></h2>
+            <div class='pb-3'>
+                <div id='citation-text'>
+                    {{ markdown(release.citation_text) }}
+                </div>
+                <button class='btn btn-clipboard btn-outline-info' data-clipboard-target='#citation-text'>
+                    <i class='fas fa-copy'></i> Copy citation text to clipboard
+                </button>
+            </div>
+        {% elif has_change_perm %}
+            <h2 class='card-title'>Share a Private Link to this Model</h2>
+            <div>
+            This model is currently <b>unpublished and private</b>. You can use the unique, private link below to share it with others,
+            e.g., with reviewers of a publication in review. Please remember to return and publish your model when it is
+            ready to be public.
+            </div>
+            <div class='input-group' id="regenerate_share_uuid"
+                                     data-absolute-url="{{ release.get_absolute_url() }}"
+                                     data-share-url="{{ request.build_absolute_uri(release.share_url) }}">
+                <div class='input-group-prepend'>
+                    <span class='btn input-group-text'>
+                        <i class='fas fa-sync-alt' @click="regenerateShareUuid"></i>
+                    </span>
+                </div>
+                <input id='release-share-url' readonly class='form-control normal-readonly' :value="shareUrl">
+                <div class='input-group-append'>
+                    <span class='btn btn-clipboard input-group-text' data-clipboard-target='#release-share-url'>
+                        <i class='fas fa-copy'></i>
+                    </span>
+                </div>
+            </div>
+            <small class='text-muted'>
+                Use this link to share this release privately with others. Anyone with this URL will be able to
+                access this release. You can generate a new private link by pressing <span class="fas fa-sync-alt"></span>.
+            </small>
+        {% else %}
+            Hold on! This model is currently unpublished and cannot be cited until it has been published.
+        {% endif %}
+        {% if codebase.is_replication %}
+        <div class='pt-1'>
+            <h2 class='card-title'><i class='fas fa-share-alt'></i> <u>Replication of a previously described model</u></h2>
+            <p class='card-text'>{{ markdown(codebase.replication_text) }}</p>
+        </div>
+        {% endif %}
+        {% if codebase.associated_publication_text %}
+        <div class='pt-1'>
+            <h2 class='card-title'><i class='fas fa-book'></i> <u>Associated Publication(s)</u></h2>
+            <p class='card-text'>
+                {% if release.live %}
+                    {{ markdown(codebase.associated_publication_text) }}
+                {% else %}
+                    <i class='fas fa-lock'>(private)</i>
+                {% endif %}
+            </p>
+        </div>
+        {% endif %}
+        {% if codebase.references_text %}
+        <div class='pt-1'>
+            <h2 class='card-title'><i class='fas fa-book'></i> <u>References</u></h2>
+            <p class='card-text'>{{ markdown(codebase.references_text) }}</p>
+        </div>
+        {% endif %}
+        {% if release.live or has_change_perm %}
+        <div class='accordion pt-1' id='open-code-badge-accordion'>
+            <div id='open-code-badge-info'>
+                <h2 class='card-title mb-0'>
+                    <i class='fas fa-certificate'></i>
+                    <u>Create an Open Code Badge that links to this model</u> <a class='float-right btn btn-outline-primary mt-0 mb-0' href='{{slugurl("open-code-badge")}}'><i class='fas fa-info-circle'></i> more info</a>
+                    <button class='btn btn-link mt-0 pt-0' type='button' data-toggle='collapse'
+                            data-target='#open-code-badge-collapse' aria-expanded='true'
+                            aria-controls='open-code-badge-collapse'>
+                        <i class='fas fa-chevron-down fa-2x'></i>
+                    </button>
+                </h2>
+            </div>
+            <div id='open-code-badge-collapse' class='collapse' aria-labelledby='open-code-badge-info' data-parent='#open-code-badge-accordion'>
+                <div class='alert alert-info'>
+                    {% if release.peer_reviewed %}
+                        This model has been reviewed by CoMSES Net and meets the <a href='{{slugurl("open-code-badge")}}'>Open Code Badge guidelines</a>.
+                    {% else %}
+                        <i class='fas fa-exclamation-circle'></i>
+                        This model has not been reviewed by CoMSES Net and should be independently reviewed to
+                        meet the <a href='{{slugurl("open-code-badge")}}'>Open Code Badge guidelines</a>.
+                    {% endif %}
+                </div>
+                You can use the following HTML or Markdown code to create an Open Code Badge that links to
+                <strong><a href='{{release.permanent_url}}'>version {{ release.version_number }}</a></strong>
+                of this computational model.
+<pre><code id='open-code-badge-html'>
+&lt;a href=&quot;{{release.permanent_url}}&quot;&gt;
+  &lt;img height=&quot;100&quot; src=&quot;{{ open_code_badge_url  }}&quot; alt=&quot;Open Code Badge&quot;&gt;
+&lt;/a&gt;
+</code></pre>
+<button class='btn btn-clipboard btn-outline-info' data-clipboard-target='#open-code-badge-html'>
+  <i class='fas fa-copy'></i> Copy HTML to clipboard
+</button>
+<pre><code id='open-code-badge-md'>
+[![Open Code Badge]({{ open_code_badge_url }})]({{release.permanent_url}})
+</code>
+</pre>
+<button class='btn btn-clipboard btn-outline-info' data-clipboard-target='#open-code-badge-md'>
+  <i class='fas fa-copy'></i> Copy Markdown to clipboard
+</button>
+            {# closes collapsible section #}
+            </div>
+        {# closes accordion #}
+        </div>
+        {% endif %}
+        </div>
+        {# end card body #}
+    </div>
+
+{% endblock %}
+
+{% block sidebar %}
+{% if release.live %}
+    <a id="releaseDownload" class='btn btn-primary my-1 w-100' data-name="download" rel='nofollow' href="{{ release.get_download_url() }}">
+        <i class='fas fa-download'></i> Download Version {{ release.version_number }}
+    </a>
+{% else %}
+    <a rel='nofollow' class='btn btn-primary my-1 w-100' href="{{ release.get_review_download_url() }}">
+        Download for Review
+    </a>
+{% endif %}
+<div class='card-metadata'>
+    <div class='card-body'>
+
+        <div class='section'>
+            <b class="card-title">Authors</b>
+            <p class='card-text'>
+            {% if release.live %}
+                {% for c in codebase.all_contributors %}
+                    {% set badge_class='badge-success' if c.user else 'badge-default' %}
+                    <a href='{{ c.get_profile_url() }}'>
+                        <span class='badge {{ badge_class }}'>
+                            {{ c.name }}
+                        </span>
+                    </a>
+                {% endfor %}
+            {% else %}
+                <b>Contributors are hidden for unpublished releases</b>
+            {% endif %}
+            </p>
+            <b class='card-title'>DOI</b>
+            {% if release.doi %}
+              <p>
+                <a href='{{release.doi_url}}'><span class='badge badge-info'>{{ release.doi }}</span></a>
+              </p>
+            {% elif codebase.doi %}
+                <p><small>This DOI is for the parent Codebase and always points at the most recent published version of this model.</small>
+                <a href='{{codebase.doi_url}}'><span class='badge badge-info'>{{ codebase.doi }}</span></a></p>
+            {% else %}
+                <p>No assigned DOI</p>
+                {% if has_change_perm %}
+                    <div class='text-muted small'>
+                    <i class='text-primary fas fa-exclamation-triangle'></i>
+                    We assign DOIs to <a href='{{ url("library:peer-review-overview") }}'>peer reviewed models</a>. If you would like a DOI and your
+                    model has not been reviewed yet, please request a peer review by clicking the "Request peer review"
+                    button below. If your model has already been reviewed and has not yet been assigned a DOI, please 
+                    <a href='{{slugurl('contact')}}'>contact us</a>.
+                    </div>
+                {% endif %}
+            {% endif %}
+            <b class='card-title'>Model Version</b>
+            <p>
+            {{ release.version_number }}
+            </p>
+            <b class='card-title'>License</b>
+            <p><a href='{{ release.license.url }}'>{{ release.license.name }}</a></p>
+            <b class='card-title'>Operating System</b>
+            <p>{{ release.get_os_display() }}</p>
+            <b class='card-title'>Programming Language</b>
+            <p>
+            {% for pl in release.programming_languages.all() %}
+                {{ search_tag_href(pl, category='codebases') }}
+            {% endfor %}
+            </p>
+            <b class='card-title'>Dependencies</b> 
+            <p>
+            {% if release.dependencies %}
+                <code>
+                {{ release.dependencies }}
+                </code>
+            {% else %}
+                None listed
+            {% endif %}
+            </p>
+            <b class="card-title">Publish Date</b>
+            <p class='card-text'>
+                {{ format_datetime(release.first_published_at) }}
+            </p>
+            <b class="card-title">Last Updated</b>
+            <p class='card-text'>
+                {{ format_datetime(release.last_published_on) }}
+            </p>
+            <b class="card-title">Downloads
+                <span class='btn btn-sm btn-outline-primary disabled'>{{ codebase.download_count() }}</span>
+            </b>
+        </div>
+        <div class='section'>
+            {% if codebase.peer_reviewed or release.peer_reviewed %}
+                <img src="{{ static("images/icons/peer-reviewed.png") }}" alt="Peer Reviewed">
+                <div class='py-2'>
+                  <a href='{{ release.permanent_url }}'><img height='88' src='{{ open_code_badge_url }}' alt='Open Code Badge'></a>
+                </div>
+            {% else %}
+                <b class='card-title'>
+                    Peer Review
+                </b>
+                <p>
+                <span class='btn btn-sm btn-warning disabled'>{{ release.get_review_status_display() }}</span>
+                </p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% if has_change_perm %}
+    <a href="{{ release.get_edit_url() }}">
+        <div class="btn btn-secondary my-1 w-100">Edit metadata</div>
+    </a>
+    {% with review=release.get_review() %}
+        {% if release.is_peer_review_requestable %}
+            <form method="post" action="{{ release.get_request_peer_review_url() }}">
+                {{ csrf_input }}
+                <button type="button" data-toggle='modal' data-target='#confirm-peer-review' class='btn btn-secondary my-1 w-100'>
+                    Request peer review 
+                </button>
+                <div class='modal fade' id='confirm-peer-review' tabindex='-1' role='dialog'
+                        aria-labelledby='confirm-peer-review-label' aria-hidden='true'>
+                    <div class='modal-dialog mw-100 w-50' role='document'>
+                        <div class='modal-content'>
+                            <div class='modal-header'>
+                                <h4 class='modal-title text-danger' id='confirm-peer-review-label'>
+                                    <i class='fas fa-exclamation-triangle fa-2x'></i> Peer Review Request: Important Reminders!</h4>
+                                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                    <span aria-hidden="true">&times;</span>
+                                </button>
+                            </div>
+                            <div class='modal-body'>
+                                {{ render_review_reminders() }}
+                            </div>
+                            <div class='modal-footer'>
+                                <button type="button" class="btn btn-warning" data-dismiss="modal">Cancel</button>
+                                <button type="submit" class="btn btn-primary">Submit peer review request</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        {% elif review.is_awaiting_author_changes %}
+            <form method="post" action="{{ release.get_notify_reviewers_of_changes_url() }}">
+                {{ csrf_input }}
+                <button type="submit" class="btn btn-danger my-1 w-100">Revisions complete, request new review</button>
+            </form>
+        {% elif review is not none %}
+            <button type="button" class="btn btn-warning my-1 w-100" disabled>{{ review.get_status_display() }}</button>
+        {% endif %}
+    {% endwith %}
+    {# end has_change_perm #}
+{% endif %}
+{% with review=release.get_review() %}
+    {% if review %}
+        {% set invite = review.get_invite(request.user.member_profile) if not request.user.is_anonymous else None %}
+        {% if invite %}
+            <a class="btn btn-primary my-1 w-100" href="{{ invite.get_absolute_url() }}">My feedback</a>
+        {% endif %}
+    {% endif %}
+{% endwith %}
+
+{# FIXME: disabled for now <button type="button" class="btn btn-primary my-1 w-100">Follow</button>
+    {{ share_card(absolute_url) }}
+    #}
+{% endblock %}
+
+{% block bottom %}
+    <ul class='nav nav-tabs detail-tabs' role='tablist'>
+        <li class='nav-item'>
+            <a class='nav-link active' data-toggle='tab' href='#versions' role='tab'>Model Versions</a>
+        </li>
+    </ul>
+    <div class='tab-content'>
+        <div class='tab-pane active' id='versions' role='tabpanel'>
+            <table class='table table-striped'>
+                <thead>
+                <tr>
+                    <th>Version</th>
+                    <th>Submitter</th>
+                    <th>First published</th>
+                    <th>Last modified</th>
+                    <th>Status</th>
+                    {% if has_change_perm %}
+                        <th>Edit</th>
+                    {% endif %}
+                </tr>
+                </thead>
+                <tbody>
+                    {% for related_release in codebase.ordered_releases(has_change_perm) %}
+                        <tr>
+                            <td><a href='{{ related_release.get_absolute_url() }}'>{{ related_release.version_number }}</a></td>
+                            <td>
+                                {% if release.live %}
+                                    {{ member_profile_href(related_release.submitter.member_profile) }}
+                                {% else %}
+                                    <i class='fas fa-lock'></i> (private)
+                                {% endif %}
+                            </td>
+                            <td>{{ related_release.first_published_at|format_datetime('%c') }}</td>
+                            <td>{{ related_release.last_published_on|format_datetime('%c') }}</td>
+                            <td>
+                                {% if related_release.draft %}
+                                    <span class="badge badge-danger">Draft</span>
+                                {% elif related_release.live %}
+                                    <span class="badge badge-success">Published</span>
+                                {% else %}
+                                    <span class="badge badge-warning">Unpublished</span>
+                                {% endif %}
+                                {% if related_release.peer_reviewed %}
+                                    <span class='badge badge-info'>Peer Reviewed</span>
+                                {% endif %}
+                                {% if related_release.doi %}
+                                    <a href='{{related_release.doi_url}}'>
+                                        <span class='badge badge-info'>{{related_release.doi_url}}</span>
+                                    </a>
+                                {% endif %}
+                            </td>
+                            {% if has_change_perm %}
+                                <td>
+                                    <a href="{{ related_release.get_edit_url() }}">
+                                        <span class="fas fa-edit"></span>
+                                    </a>
+                                </td>
+                            {% endif %}
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            <form>
+                {{ csrf_input }}
+                {% if has_change_perm %}
+                    <button class="btn btn-secondary" formmethod="post" formaction="{{ codebase.get_draft_url() }}">
+                        Draft a new release
+                    </button>
+                {% endif %}
+            </form>
+        </div>
+    </div>
+    <hr>
+    {# FIXME: only display discourse on public facing page #}
+    {% set discourse_enabled = release.live and release.get_absolute_url() in request.path %}
+    {{ embed_discourse_comments(discourse_enabled, release.submitter.username) }}
+{% endblock %}
+
+{% block js %}
+    {# FIXME: remove this if there's a better way to include npm dependencies manually in a page #}
+    {% with CLIPBOARD_JS_VERSION="2.0.6" %}
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/{{ CLIPBOARD_JS_VERSION }}/clipboard.min.js"></script>
+    {% endwith %}
+    <script>
+        document.addEventListener("DOMContentLoaded", function(event) {
+            new ClipboardJS('.btn-clipboard');
+        });
+    </script>
+    {{ render_bundle('release_regenerate_share_uuid', attrs='defer') }}
+{% endblock %}

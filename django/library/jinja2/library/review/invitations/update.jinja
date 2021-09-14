@@ -1,0 +1,51 @@
+{% extends 'base.jinja' %}
+
+{% from 'library/review/includes/macros.jinja' import render_review_criteria %}
+
+{% set release = invitation.review.codebase_release %}
+{% set codebase = release.codebase %}
+
+{% block title %}
+    Peer Review Invitation
+{% endblock %}
+{% block introduction %}
+    <h1>Computational Model Library Peer Review Invitation</h1>
+{% endblock %}
+
+{% block content %}
+    <h2>Invitation to review
+        <a href="{{ release.share_url }}">{{ release.title }}</a>
+    </h2>
+    <p class='lead'>
+    Please accept or decline the invitation by <b>{{ format_datetime(invitation.expiration_date) }}</b>.
+    </p>
+
+    <section>
+        <h3>Computational Model URL</h3>
+        <p>
+        Access this computational model's source code and documentation via the following URL:
+        <ul>
+            <li><a href='{{ release.share_url }}'>{{ release.title }}</a></li>
+        </ul>
+        If this model is not published, please do not share it with anyone else.
+        </p>
+    </section>
+
+    <section>
+        <h3>Description</h3>
+        {% autoescape false %}
+            {{ release.codebase.description }}
+        {% endautoescape %}
+    </section>
+
+    <section>
+        <h3>Review criteria</h3>
+        <p>
+        {{ render_review_criteria() }}
+        </p>
+    </section>
+    <form method="post">
+        {% include 'includes/form.jinja' %}
+        <button class="btn btn-primary">Submit</button>
+    </form>
+{% endblock %}

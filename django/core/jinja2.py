@@ -3,7 +3,6 @@ from datetime import datetime
 from django.conf import settings
 from django.templatetags.static import static
 from django.urls import reverse
-from django.conf import settings
 from django.contrib.sites.models import Site
 from django.forms.widgets import CheckboxInput
 from django.template import defaultfilters
@@ -43,12 +42,13 @@ def environment(**options):
         'should_enable_discourse': should_enable_discourse,
         'is_production': is_production,
         'provider_login_url': provider_login_url,
-        'get_choices_display', get_choices_display,
+        'get_choices_display': get_choices_display,
         'markdown': markdown,
-        'add_field_css', add_field_css,
-        'format_datetime_str', format_datetime_str,
-        'format_datetime', format_datetime,
+        'add_field_css': add_field_css,
+        'format_datetime_str': format_datetime_str,
+        'format_datetime': format_datetime,
         'to_json': to_json,
+        'is_checkbox': is_checkbox,
     })
     return env
 

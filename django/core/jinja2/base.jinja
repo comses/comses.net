@@ -1,0 +1,408 @@
+{% if not user %}
+    {% set user = request.user %}
+{% endif %}
+{% set login_url = url("account_login") %}
+{% set logout_url = url("account_logout") %}
+{% set signup_url = url("account_signup") %}
+{% set contact_url = slugurl('contact') %}
+{% set profile_url = url('home:profile-detail', pk=user.pk) if user.is_authenticated else signup_url %}
+
+{% macro navbar() %}
+    <div class="fixed-top bg-light">
+        <nav class="navbar navbar-expand-xl navbar-light bg-light pt-0 mt-0 mx-1">
+            {# logos #}
+            <div class='navbar-brand'>
+                <a href="/"><span class="logo">CoMSES Network | OpenABM</span></a>
+                <a href="//westbigdatahub.org/" target="_blank">
+                     <img class="mt-4" height='70'
+                          src="{{ static("images/logo-westhub-black.png") }}"
+                          alt="US NSF West Big Data Hub">
+                </a>
+            </div>
+            {# hamburger collapse menu #}
+            <button class='navbar-toggler'
+                    data-toggle='collapse'
+                    data-target='#navbarLinks'
+                    aria-controls='navbarLinks'
+                    aria-expanded='false'
+                    aria-label='Toggle navigation'>
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            {# end hamburger collapse menu #}
+
+            {# hamburger menu links #}
+            <div class="navbar-collapse collapse" id="navbarLinks">
+                <ul class="navbar-nav ml-auto">
+                    <li class="nav-item py-0">
+                        <a href="/about/" class="nav-link">About</a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="{{ url('library:codebase-list') }}" class="nav-link">Model Library</a>
+                    </li>
+                    <li class="nav-item">
+                        <a href='{{ slugurl("community") }}' class='nav-link'>Community</a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="{{ url('home:event-list') }}" class="nav-link">Events</a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="{{ url('home:job-list') }}" class="nav-link">Jobs</a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="/resources/" class="nav-link">Resources</a>
+                    </li>
+                    <li class="nav-item py-0">
+                        <a href="{{ constants.DISCOURSE_BASE_URL }}" target="_blank" class="nav-link">
+                            Forums
+                        </a>
+                    </li>
+
+                    {# login #}
+                    {% if user.is_authenticated %}
+                        <li class="nav-item dropdown py-0 pr-2">
+                            <a class="pr-0 nav-link dropdown-toggle"
+                               id="userDropdownMenuLink"
+                               data-toggle="dropdown"
+                               role="button"
+                               href="#"
+                               aria-haspopup="true"
+                               aria-expanded="false"
+                            >
+                                <span class="fas fa-user"></span>
+                                {{ user.username }}
+                                {# FIXME: this should be cached instead #}
+                                {% if user.emailaddress_set.filter(verified=False).exists() %}
+                                    <span class="badge badge-warning">Email Unverified</span>
+                                    <span class="sr-only">Email Unverified</span>
+                                {% endif %}
+                            </a>
+                            <div class="dropdown-menu dropdown-menu-right"
+                                aria-labeledby="userDropdownMenuLink">
+                                <a class="dropdown-item" href="{{ profile_url }}">
+                                    <i class="fas fa-user-edit"></i>
+                                    Your Account
+                                </a>
+                                {% if user.has_perm('library.change_peerreview') %}
+                                <a class="dropdown-item" href="{{ url('library:peer-review-dashboard') }}">
+                                    <i class="fas fa-flask"></i>
+                                    Manage Peer Reviews
+                                </a>
+                                {% endif %}
+                                {# POST logouts, see http://django-allauth.readthedocs.io/en/latest/views.html#logout-account-logout #}
+                                <form id="logoutForm" method="post" action="{{ logout_url }}">
+                                    {{ csrf_input }}
+                                    {% if redirect_field_value %}
+                                        <input type="hidden"
+                                                name="{{ redirect_field_name }}"
+                                                value="{{ redirect_field_value }}" />
+                                    {% endif %}
+                                <input type="submit" style="display: none">
+                                </form>
+                                <a class="dropdown-item"
+                                   onclick='return submitLogout();'
+                                   href="{{ logout_url }}">
+                                    <i class='fas fa-sign-out-alt'></i>
+                                    Sign Out
+                                </a>
+                            </div>
+                        </li>
+                    {% else %}
+                        <li class="nav-item">
+                            <a class="nav-link"
+                                href="{{ login_url }}?next={{ request.path }}">
+                                <i class="fas fa-sign-in-alt"></i>
+                                Sign In
+                            </a>
+                        </li>
+                    {% endif %}
+                    {# end login #}
+                    {# search #}
+                    <li id="search-dropdown" class="ml-2 my-auto nav-item dropdown show">
+                        <a id="search-button"
+                           onclick="focusSearch()"
+                           href="#"
+                           class="dropdown-toggle"
+                           data-toggle="dropdown"
+                           aria-expanded="false"
+                           aria-haspopup="true">
+                            <i class="fas fa-search"></i>
+                        </a>
+                        <div id="header-search-form" class="p-2 dropdown-menu dropdown-menu-right" aria-labelledby="search-button">
+                            <form method="get" action="/search/">
+                                <input id="header-search-input" type="text" name="query" class="p-2 form-control"
+                                       placeholder="search entire site">
+                                {# FIXME: put back when advanced search is implemented
+                                <div class="float-right">
+                                    <small><a href="/search/advanced/">options</a></small>
+                                </div>
+                                #}
+                            </form>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+            {# end hamburger menu content #}
+        </nav>
+    </div>
+{% endmacro %}
+
+{% macro footer() %}
+    {% autoescape off %}
+        {{ cookielaw(request) }}
+    {% endautoescape %}
+    {% with social_settings=settings("core.SocialMediaSettings", use_default_site=True) %}
+        <footer class="footer">
+            <div class="container">
+                {% if not user.is_authenticated -%}
+                    <div class='row pt-0 mt-0'>
+                        <div class='col'>
+                        </div>
+                        <div class='col text-center'>
+                            <a class='btn btn-primary' href='{{ profile_url }}'>Become a member</a>
+                        </div>
+                        <div class='col'>
+                        </div>
+                    </div>
+                {% elif not user.member_profile.full_member %}
+                    <div class='row'>
+                        <div class='col'>
+                        </div>
+                        <div class='col text-center'>
+                            <a class='btn btn-primary' href='{{ profile_url }}'>Become a CoMSES Full Member</a>
+                        </div>
+                        <div class='col'>
+                        </div>
+                    </div>
+                {%- endif %}
+                <div class="row py-0">
+                    <div class="col">
+                        <ul class="social-media">
+                            <li>
+                                <a href="https://twitter.com/{{ social_settings.twitter_account }}"
+                                   title="Follow us at @{{ social_settings.twitter_account }}" target="_blank">
+                                <span class="fa-stack">
+                                    <i class="fas fa-circle fa-stack-2x"></i>
+                                    <i class="fab fa-twitter fa-inverse fa-stack-1x"></i>
+                                </span>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="{{ social_settings.mailing_list_url }}" title="Email Sign Up" target="_blank">
+                                <span class="fa-stack">
+                                    <i class="fas fa-circle fa-stack-2x"></i>
+                                    <i class="fas fa-envelope fa-inverse fa-stack-1x"></i>
+                                </span>
+                                </a>
+                            </li>
+                            <li>
+                                <a href='{{ social_settings.youtube_url }}' title='YouTube Channel' target='_blank'>
+                                <span class='fa-stack'>
+                                    <i class='fas fa-circle fa-stack-2x'></i>
+                                    <i class='fab fa-youtube fa-inverse fa-stack-1x'></i>
+                                </span>
+                                </a>
+                            </li>
+                            <li>
+                                <a href='{{ url("rss") }}' title='RSS Feed'>
+                                    <span class='fa-stack'>
+                                        <i class='fas fa-circle fa-stack-2x'></i>
+                                        <i class='fas fa-rss fa-inverse fa-stack-1x'></i>
+                                    </span>
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+                <div class='row py-0'>
+                    <div class="col">
+                        <ul class="social-media">
+                            <li class="px-2">
+                                <a href="http://www.asu.edu/" target="_blank">
+                                    <img src="{{ static("images/logo-asu.png") }}" alt="Arizona State University">
+                                </a>
+                            </li>
+                            <li class="px-2">
+                                <a href="http://orcid.org/" target="_blank">
+                                    <img src="{{ static("images/logo-orcid-member-170px.png") }}" alt="ORCID">
+                                </a>
+                            </li>
+                            <li class="px-2">
+                                <a href='https://sciencegateways.org' target='_blank'>
+                                    <img class='rounded' height='56'
+                                        src='https://sciencegateways.org/documents/20182/20809/sgci-new-logo-words-horiz-white.png/dca0198d-0145-4208-a71e-275c98c919fe?t=1493995638000'
+                                        alt='Science Gateways Community Institute'>
+                                </a>
+                            </li>
+
+                        </ul>
+                    </div>
+                </div>
+                <div class='row py-0'>
+                    <div class='col'>
+                        <ul class='social-media'>
+                            <li class="px-2">
+                                <a href="http://www.nsf.gov/" target="_blank">
+                                    <img src="{{ static("images/logo-nsf.png") }}" alt="National Science Foundation">
+                                </a>
+                            </li>
+                            <li class="px-2">
+                                <a href='https://www.westgrid.ca' target='_blank'>
+                                    <img class='rounded' height='120' src='{{ static("images/logo-westgrid.png") }}'
+                                        alt='Compute Canada WestGrid'>
+                                </a>
+                            </li>
+                            <li class="px-2">
+                                <a href='https://www.computecanada.ca' target='_blank'>
+                                    <img class='rounded' height="120" src='{{ static("images/logo-compute-canada.jpg") }}'
+                                        alt='Compute Canada'>
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <p class="copyright text-center">&copy; 2007 - {{ now('Y') }} CoMSES Net |
+                <a class='text-white' href='{{ contact_url }}'>Contact us</a><br>
+                <small>
+                    <a href="https://github.com/{{ social_settings.github_account }}" title="CoMSES Net @ GitHub" target="_blank">
+                        <span class="fa-stack">
+                            <i class="fas fa-circle fa-stack-2x"></i>
+                            <i class="fab fa-github fa-inverse fa-stack-1x"></i>
+                        </span>
+                        <span class='text-white'>comses.net build: {{ constants.RELEASE_VERSION }}</span>
+                    </a>
+                </small>
+            </p>
+        </footer>
+    {% endwith %}
+{% endmacro %}
+
+<!DOCTYPE html>
+<html lang="en" class="no-js">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    {%- if not is_production() %}
+        <meta name='robots' content='noindex'>
+    {%- endif %}
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <link rel="apple-touch-icon" sizes="144x144" href="{{ static('favicon/apple-touch-icon.png') }}">
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ static('favicon/favicon-32x32.png') }}">
+    <link rel="icon" type="image/png" sizes="16x16" href="{{ static('favicon/favicon-16x16.png') }}">
+    <link rel="manifest" href="{{ static('favicon/site.webmanifest') }}">
+    <link rel="mask-icon" href="{{ static('favicon/safari-pinned-tab.svg') }}" color="#5bbad5">
+    <meta name="msapplication-TileColor" content="#da532c">
+    <meta name="theme-color" content="#ffffff">
+    <title>
+        {% block title %}CoMSES Net{% endblock %}
+    </title>
+    {% block meta_description %}
+        <meta name="description" content="CoMSES Net is an international open research community dedicated to fostering good practices for computational / agent based modeling.">
+    {% endblock %}
+    {% block head %}
+        {# override in templates to add extra meta tags or anything else within the <head></head> #}
+    {% endblock %}
+    {# Global stylesheets #}
+    {% block extra_css %}
+        {# Override this in templates to add extra stylesheets #}
+    {% endblock %}
+    {# JS section #}
+    <script src="{{ static('cookielaw/js/cookielaw.js') }}"></script>
+    {% if is_production() %}
+        <!-- Google Tag Manager -->
+        <script>(function (w, d, s, l, i) {
+            w[l] = w[l] || [];
+            w[l].push({
+                'gtm.start':
+                    new Date().getTime(), event: 'gtm.js'
+            });
+            var f = d.getElementsByTagName(s)[0],
+                j = d.createElement(s), dl = l != 'dataLayer' ? '&l=' + l : '';
+            j.async = true;
+            j.src =
+                'https://www.googletagmanager.com/gtm.js?id=' + i + dl;
+            f.parentNode.insertBefore(j, f);
+        })(window, document, 'script', 'dataLayer', 'GTM-TLNSSCJ');</script>
+        <!-- End Google Tag Manager -->
+    {% endif %}
+    <script src="//cdnjs.cloudflare.com/ajax/libs/holder/2.9.7/holder.min.js"></script>
+    {% if constants.DEPLOY_ENVIRONMENT.is_staging_or_production() %}
+        {% with SENTRYJS_VERSION='6.5.1' %}
+            <script 
+                src="https://browser.sentry-cdn.com/{{SENTRYJS_VERSION}}/bundle.min.js" 
+                integrity="sha384-4+IdsjFHpxfo2PQYne6sV0ulAlOJbJHbeEy4vDPAt9kUmUb9t0W2HFp6I6rznkEP"
+                crossorigin="anonymous">
+            </script>
+            <script>
+                Sentry.init({
+                    dsn: "{{ constants.SENTRY_DSN }}",
+                    release: "{{ constants.RELEASE_VERSION }}"
+                })
+            </script>
+        {% endwith %}
+    {% endif %}
+    {{ render_bundle('home') }}
+    <script>
+        function submitLogout() {
+            document.getElementById('logoutForm').submit();
+            return false;
+        }
+
+        function focusSearch() {
+            setTimeout(function () {
+                document.getElementById("header-search-input").focus()
+            }, 0);
+        }
+    </script>
+
+    {% block js %}
+        {# Override this in templates to add extra javascript #}
+    {% endblock %}
+</head>
+<body class="{% block body_class %}{% endblock %}">
+<!-- Google Tag Manager (noscript) -->
+<noscript>
+    <iframe src="https://www.googletagmanager.com/ns.html?id=GTM-TLNSSCJ"
+            height="0"
+            width="0"
+            style="display:none;visibility:hidden"></iframe>
+</noscript>
+<!-- End Google Tag Manager (noscript) -->
+{{ navbar() }}
+{% block introduction_section %}
+    <section class='introduction'>
+        <div class="container">
+            {% block introduction %}
+            {% endblock %}
+        </div>
+    </section>
+{% endblock introduction_section %}
+{% if not is_production() %}
+    <div class='alert alert-danger mt-3'>
+        <i class='fas fa-warning fa-2x'></i>
+        You are currently accessing a <b>test version of the comses.net website</b>. Information that you
+        view or store here will <b>not be preserved</b> and may not be consistent.
+    </div>
+{% endif %}
+{% block page %}
+    <section class='messages'>
+        {% for message in messages %}
+            <div class='{{ message.tags }}'>
+                <i class='fas fa-info-circle'></i> {{ message }}
+            </div>
+        {% endfor %}
+    </section>
+    <section class='page'>
+        <div class="container">
+            {% block breadcrumb %}
+            {% endblock %}
+            {% block content %}
+                <div class="row">
+                </div>
+            {% endblock content %}
+        </div>
+    </section>
+{% endblock page %}
+{{ footer() }}
+</body>
+</html>
