@@ -28,7 +28,7 @@
         {% endif %}
         <hr>
         <div class='lead'>
-        {{ description|markdown }}
+        {{ markdown(description) }}
         </div>
     </div>
 {% endblock %}
@@ -43,9 +43,9 @@
                 <p class="card-text">{{ last_modified }}</p>
                 <b class="card-title">When</b>
                 <p class="card-text">
-                    {{ start_date|format_datetime_str }}
+                    {{ format_datetime_str(start_date) }}
                     {% if end_date %}
-                     - {{ end_date|format_datetime_str }}
+                     - {{ format_datetime_str(end_date) }}
                     {% endif %}
                 </p>
                 <b class="card-title">Where</b>
@@ -57,11 +57,11 @@
                     </p>
                 {% endif %}
                 <b class="card-title">Early registration deadline</b>
-                <p class="card-text">{{ early_registration_deadline|format_datetime_str }}</p>
+                <p class="card-text">{{ format_datetime_str(early_registration_deadline) }}</p>
                 <b class="card-title">Registration deadline</b>
-                <p class="card-text">{{ registration_deadline|format_datetime_str }}</p>
+                <p class="card-text">{{ format_datetime_str(registration_deadline) }}</p>
                 <b class="card-title">Submission deadline</b>
-                <p class="card-text">{{ submission_deadline|format_datetime_str }}</p>
+                <p class="card-text">{{ format_datetime_str(submission_deadline) }}</p>
             </div>
         </div>
     </div>

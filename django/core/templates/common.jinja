@@ -209,7 +209,7 @@
             canonicalUrl = canonicalUrl.replace(/([^:]\/)\/+/g, "$1");
         }
         DiscourseEmbed = {
-            discourseUrl: "{{ DISCOURSE_BASE_URL }}/",
+            discourseUrl: "{{ constants.DISCOURSE_BASE_URL }}/",
             discourseUserName: "{{ submitter_username }}",
             discourseReferrerPolicy: "no-referrer-when-downgrade",
             discourseEmbedUrl: canonicalUrl
@@ -227,7 +227,7 @@
     {% if not is_public %}
         <em><span class='fas fa-lock'></span> (this page is private)</em>
     {% else %}
-        Currently in <em><mark>{{ deploy_environment() }}</mark></em> mode.
+        Currently in <em><mark>{{ constants.DEPLOY_ENVIRONMENT }}</mark></em> mode.
     {% endif %}
 {% endif %}
 {% endmacro %}

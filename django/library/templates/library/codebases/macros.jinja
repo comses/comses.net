@@ -86,9 +86,9 @@
                         {% endfor %}
                         |
                         {% if codebase.live %}
-                            Published {{ codebase.first_published_at|format_datetime('%c') }}
+                            Published {{ format_datetime(codebase.first_published_at, '%c') }}
                             {% if codebase.first_published_at != codebase.last_published_on %}
-                                | Last modified {{ codebase.last_published_on|format_datetime('%c') }}
+                                | Last modified {{ format_datetime(codebase.last_published_on, '%c') }}
                             {% endif %}
                         {% else %}
                             Unpublished
@@ -96,7 +96,7 @@
                     </small>
                 </div>
                 <div class="summary">
-                    {{ codebase.summarized_description|markdown }}
+                    {{ markdown(codebase.summarized_description) }}
                 </div>
                 {% if codebase.tags.exists() %}
                     <div class="tag-list">

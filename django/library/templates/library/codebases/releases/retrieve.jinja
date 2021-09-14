@@ -30,8 +30,8 @@
     <meta name='citation_author_institution' content='{{ affiliation }}'>
         {%- endfor %}
     {%- endfor %}
-    <meta name='citation_publication_date' content='{{ release.last_published_on|format_datetime("%Y/%m/%d") }}'>
-    <meta name='citation_online_date' content='{{ release.first_published_at|format_datetime("%Y/%m/%d") }}'>
+    <meta name='citation_publication_date' content='{{ format_datetime(release.last_published_on, "%Y/%m/%d") }}'>
+    <meta name='citation_online_date' content='{{ format_datetime(release.first_published_at, "%Y/%m/%d") }}'>
     <meta name='citation_journal_title' content='CoMSES Computational Model Library'>
     <meta name='citation_publisher' content='CoMSES.Net'>
     <meta name='citation_language' content='en'>
@@ -135,7 +135,7 @@
             <h2 class='card-title'><u>Cite this Model</u></h2>
             <div class='pb-3'>
                 <div id='citation-text'>
-                    {{ release.citation_text|markdown }}
+                    {{ markdown(release.citation_text) }}
                 </div>
                 <button class='btn btn-clipboard btn-outline-info' data-clipboard-target='#citation-text'>
                     <i class='fas fa-copy'></i> Copy citation text to clipboard
@@ -173,7 +173,7 @@
         {% if codebase.is_replication %}
         <div class='pt-1'>
             <h2 class='card-title'><i class='fas fa-share-alt'></i> <u>Replication of a previously described model</u></h2>
-            <p class='card-text'>{{ codebase.replication_text|markdown }}</p>
+            <p class='card-text'>{{ markdown(codebase.replication_text) }}</p>
         </div>
         {% endif %}
         {% if codebase.associated_publication_text %}
@@ -181,7 +181,7 @@
             <h2 class='card-title'><i class='fas fa-book'></i> <u>Associated Publication(s)</u></h2>
             <p class='card-text'>
                 {% if release.live %}
-                    {{ codebase.associated_publication_text|markdown }}
+                    {{ markdown(codebase.associated_publication_text) }}
                 {% else %}
                     <i class='fas fa-lock'>(private)</i>
                 {% endif %}
@@ -191,7 +191,7 @@
         {% if codebase.references_text %}
         <div class='pt-1'>
             <h2 class='card-title'><i class='fas fa-book'></i> <u>References</u></h2>
-            <p class='card-text'>{{ codebase.references_text|markdown }}</p>
+            <p class='card-text'>{{ markdown(codebase.references_text) }}</p>
         </div>
         {% endif %}
         {% if release.live or has_change_perm %}
@@ -321,11 +321,11 @@
             </p>
             <b class="card-title">Publish Date</b>
             <p class='card-text'>
-                {{ release.first_published_at|format_datetime }}
+                {{ format_datetime(release.first_published_at) }}
             </p>
             <b class="card-title">Last Updated</b>
             <p class='card-text'>
-                {{ release.last_published_on|format_datetime }}
+                {{ format_datetime(release.last_published_on) }}
             </p>
             <b class="card-title">Downloads
                 <span class='btn btn-sm btn-outline-primary disabled'>{{ codebase.download_count() }}</span>

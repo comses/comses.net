@@ -13,7 +13,7 @@
             {% endif %}
             {% endcall %}
             <small class="text-muted float-right">
-                Member since: {{ member_profile.date_joined|format_datetime }}
+                Member since: {{ format_datetime(member_profile.date_joined) }}
                 {% if member_profile.full_member %}
                     <span class="badge badge-primary">Full Member</span>
                 {% endif %}
@@ -29,12 +29,12 @@
         {% endif %}
         {% if member_profile.bio %}
             <div class='bio'>
-                {{ member_profile.bio.raw|markdown }}
+                {{ markdown(member_profile.bio.raw) }}
             </div>
         {%endif %}
         {% if member_profile.research_interests %}
             <div class='research-interests'>
-                {{ member_profile.research_interests.raw|markdown }}
+                {{ markdown(member_profile.research_interests.raw) }}
             </div>
         {% endif %}
     </div>

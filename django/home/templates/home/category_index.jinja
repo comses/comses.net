@@ -13,7 +13,7 @@
    <div class='jumbotron'>
        <h1 class='display-5'>{{ page.title }}</h1>
        <div class='pt-4 lead'>
-       {{ page.summary|markdown}}
+       {{ markdown(page.summary) }}
        </div>
    </div>
    <section class='callouts'>
@@ -26,7 +26,7 @@
                            <h3>{{ item.title }}</h3>
                        {% if item.url %} </a> {% endif %}
                        <div class='caption'>
-                           {{ item.caption|markdown }}
+                           {{ markdown(item.caption) }}
                        </div>
                    </div>
                {% endfor %}

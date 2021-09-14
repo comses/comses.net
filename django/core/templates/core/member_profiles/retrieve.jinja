@@ -134,7 +134,7 @@
                                 {% else %}
                                     {{ invitation.review.title }}
                                 {% endif %}
-                                {{ invitation.date_created|format_datetime }}
+                                {{ format_datetime(invitation.date_created) }}
                                 <span class="float-right">
                                     {% if invitation.accepted is none %}
                                         <span class="badge badge-warning">Waiting for response</span>

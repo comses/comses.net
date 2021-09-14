@@ -19,7 +19,7 @@
         {% if item.summary %}
             <div class='row mt-2'>
                 <div class='col'>
-                    {{ item.summary|markdown }}
+                    {{ markdown(item.summary) }}
                 </div>
             </div>
         {% endif %}

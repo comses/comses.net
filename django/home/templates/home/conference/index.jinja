@@ -3,7 +3,7 @@
 
 {% block introduction %}
     <h1 class='pt-0 mt-4'>{{ page.title }}<br>
-        {{ page.start_date|format_datetime }} &mdash; {{ page.end_date|format_datetime }}
+        {{ format_datetime(page.start_date) }} &mdash; {{ format_datetime(page.end_date) }}
     </h1>
 {% endblock %}
 
@@ -39,7 +39,7 @@
         <a class='btn btn-lg btn-primary' href='{{ page.external_url }}'>Join the conference</a>
     {% else %}
         <div class='alert alert-info'>
-            Submissions are now closed and being evaluated. Please check back again on {{ page.start_date|format_datetime }}.
+            Submissions are now closed and being evaluated. Please check back again on {{ format_datetime(page.start_date) }}.
         </div>
     {% endif %}
     {% for theme in page.themes.order_by('category') %}

@@ -8,9 +8,9 @@
             <div class='col-8'>
                 <h3 class='title mb-0'><a href="{{ url(detail_url_name, pk=item.id) }}">{{ item.title }}</a></h3>
                 <b class='title'>
-                    {{ item.start_date|format_datetime_str }}
+                    {{ format_datetime(item.start_date) }}
                     {% if item.end_date %}
-                        - {{ item.end_date|format_datetime_str }}
+                        - {{ format_datetime(item.end_date) }}
                     {% endif %}
                 </b>
             </div>
@@ -26,19 +26,19 @@
             <div class='col-lg-3 col-md-6'>
                 <dl>
                     <dt>Early Registration Deadline</dt>
-                    <dd>{{ item.early_registration_deadline|format_datetime_str }}</dd>
+                    <dd>{{ format_datetime_str(item.early_registration_deadline) }}</dd>
                 </dl>
             </div>
             <div class='col-lg-3 col-md-6'>
                 <dl>
                     <dt>Registration Deadline</dt>
-                    <dd>{{ item.registration_deadline|format_datetime_str }}</dd>
+                    <dd>{{ format_datetime_str(item.registration_deadline) }}</dd>
                 </dl>
             </div>
             <div class='col-lg-3 col-md-6'>
                 <dl>
                     <dt>Submission Deadline</dt>
-                    <dd>{{ item.submission_deadline|format_datetime_str }}</dd>
+                    <dd>{{ format_datetime_str(item.submission_deadline) }}</dd>
                 </dl>
             </div>
             <div class='col-lg-3 col-md-6'>
@@ -51,7 +51,7 @@
         {% if item.summary %}
             <div class='row'>
                 <div class='col'>
-                    {{ item.summary|markdown }}
+                    {{ markdown(item.summary) }}
                 </div>
             </div>
         {% endif %}

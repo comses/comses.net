@@ -7,11 +7,11 @@
 {% endif %}
 {% for field in form.visible_fields() %}
     {% set error_class='has-errors' if field.errors else ''%}
-    {% if field|is_checkbox %}
+    {% if is_checkbox(field) %}
         <div class='form-group'>
             <div class='form-check'>
                 <label class='form-check-label'>
-                    {{ field|add_field_css("form-check-input") }}
+                    {{ add_field_css(field, "form-check-input") }}
                     {{ field.label }}
                     {% if field.help_text %}
                         <small class='form-text text-muted'>{{ field.help_text }}</small>
@@ -23,7 +23,7 @@
         <div class='form-row'>
             <div class='form-group col-12 {{ error_class }}'>
                 <label class='col-form-label' for='{{ field.id_for_label }}'>{{ field.label }}</label>
-                {{ field|add_field_css("form-control") }}
+                {{ add_field_css(field, "form-control") }}
                 {% if field.errors %}
                     <small class='invalid-feedback'>{{ field.errors }}</small>
                 {% endif %}

@@ -14,7 +14,6 @@ import os
 import pathlib
 from enum import Enum
 
-from django_jinja.builtins import DEFAULT_EXTENSIONS
 from django.contrib.messages import constants as messages
 
 
@@ -95,7 +94,6 @@ THIRD_PARTY_APPS = [
     'captcha',
     'cookielaw',
     'django_extensions',
-    'django_jinja',
     'guardian',
     'rest_framework',
     'rest_framework_swagger',
@@ -443,14 +441,10 @@ DISCOURSE_API_USERNAME = config.get('discourse', 'DISCOURSE_API_USERNAME', fallb
 
 TEMPLATES = [
     {
-        'BACKEND': 'django_jinja.backend.Jinja2',
+        'BACKEND': 'django.template.backends.jinja2.Jinja2',
         'APP_DIRS': True,
         'OPTIONS': {
-            'match_extension': '.jinja',
-            'newstyle_gettext': True,
-            # DEFAULT_EXTENSIONS at https://github.com/niwinz/django-jinja/blob/master/django_jinja/builtins/__init__.py
-            "extensions": DEFAULT_EXTENSIONS + [
-                "django_jinja.builtins.extensions.DjangoExtraFiltersExtension",
+            "extensions": [
                 "webpack_loader.contrib.jinja2ext.WebpackExtension",
                 'wagtail.contrib.settings.jinja2tags.settings',
                 'wagtail.core.jinja2tags.core',
@@ -458,20 +452,7 @@ TEMPLATES = [
                 'wagtail.images.jinja2tags.images',
                 'waffle.jinja.WaffleExtension',
             ],
-            'constants': {
-                'DISCOURSE_BASE_URL': DISCOURSE_BASE_URL
-            },
-            'auto_reload': True,
-            'translation_engine': 'django.utils.translation',
-            # FIXME: https://docs.djangoproject.com/en/2.2/topics/templates/#module-django.template.backends.django
-            # context_processor usage in jinja templates is discouraged, move these over eventually
-            'context_processors': [
-                'django.template.context_processors.debug',
-                'django.template.context_processors.request',
-                'django.contrib.auth.context_processors.auth',
-                'django.contrib.messages.context_processors.messages',
-            ],
-            'autoescape': True,
+            'environment': 'core.jinja2.environment',
         }
     },
     {
