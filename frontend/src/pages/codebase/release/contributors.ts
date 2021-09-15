@@ -197,7 +197,7 @@ class EditContributor extends createFormValidator(contributorSchema) {
                             :custom-label="contributorLabel"
                             label="family_name"
                             track-by="id"
-                            placeholder="Type to find a contributor previously entered in our system"
+                            placeholder="Find a contributor previously entered in our system"
                             :allow-empty="true"
                             :options="matchingContributors"
                             :loading="isLoading"
@@ -209,7 +209,7 @@ class EditContributor extends createFormValidator(contributorSchema) {
                         </multiselect>
                     </div>
                     <div class="col-3">
-                        <button class="btn btn-block btn-primary" @click="$emit('editContributor', state.contributor)"><i class='fas fa-plus-square'></i> Add a new contributor</button>
+                        <button class="btn btn-block btn-primary" @click="$emit('editContributor', state.contributor)"><i class='fas fa-plus-square'></i> Create a new contributor</button>
                     </div>
                 </div>
                 <div class="invalid-feedback" v-show="errors.contributor">
@@ -222,7 +222,7 @@ class EditContributor extends createFormValidator(contributorSchema) {
                     :multiple="true"
                     :custom-label="roleLabel"
                     :close-on-select="false"
-                    placeholder="Type to select role"
+                    placeholder="Role(s) for this contributor"
                     :options="roleOptions">
                 </multiselect>
                 <div class="invalid-feedback" v-show="errors.roles">
@@ -237,7 +237,7 @@ class EditContributor extends createFormValidator(contributorSchema) {
                 </label>
               </div>
               <button type="button" class="btn btn-secondary" @click="cancel" v-show="hasEdits">Cancel</button>
-              <button type="button" class="ml-auto btn btn-primary" @click="save"><i class='fas fa-user-plus'></i> Register citable contributor</button>
+              <button type="button" class="ml-auto btn btn-primary" @click="save"><i class='fas fa-user-plus'></i> Register contributor</button>
             </div>
         </div>
     </div>`,
@@ -337,22 +337,22 @@ class ContributorResponseHandler extends HandlerShowSuccessMessage {
     template: `<div>
         <p class='mt-3'>
             Please list the contributors that should be included in a citation for this software release. Ordering is
-            important, as is the role of the contributor. You can change contributor ordering by using
-            the <i class='fas fa-exchange-alt'></i> to drag and drop contributors. Editing
-            <i class='fas fa-edit'></i> an existing contributor will update the form above the "Current Release
-            Contributors" area - you can make changes there and then click "Save". You can remove a contributor entirely
-            by clicking the <i class='fas fa-trash'></i> button and then Saving.
+            important, as is the role of the contributor. You can change ordering by using
+            <i class='fas fa-exchange-alt'></i> to drag and drop contributors. Editing
+            <i class='fas fa-edit'></i> an existing contributor will update the "Manage contributors" form above the
+            "Current Release Contributors" area. Remove a contributor by clicking the <i class='fas fa-trash'></i> button.
+            Don't forget to click Save to apply your changes.
         </p>
         <p>By default, we will always add the submitter (you) as a release contributor. There must be at least one
-        contributor for a given release. Make sure you click "Save" after you're done making changes. Unsaved release
-        contributors display in yellow.
+        contributor for a given release. Make sure you click "Save" after you're done making changes. Unsaved changes
+        are highlighted in yellow.
         </p>
         <div class='mt-2'>
-            You can add new contributors via the form below. If you can't find an existing Contributor in our system,
-            you can add a new one via the
-            <button class='btn btn-primary btn-sm'><i class='fas fa-plus-square'></i></button> button. After you've selected a contributor, click the
-            <button class='btn btn-sm btn-primary'><i class='fas fa-user-plus'></i> Register</button> button to register
-            them as a cited contributor to this release.
+            If you can't find an existing Contributor in our system, make a new one by clicking 
+            <button class='btn btn-primary btn-sm'><i class='fas fa-plus-square'></i> Create a new contributor</button>.
+            After selecting a contributor, role, and whether they should be included in this software release's citation, click 
+            <button class='btn btn-sm btn-primary'><i class='fas fa-user-plus'></i> Register</button> to add them
+            to the release contributors list below and then Save.
         </div>
         <c-edit-release-contributor :releaseContributor="releaseContributor"
                 @save="saveReleaseContributor" @cancel="cancelReleaseContributor" ref="releaseContributor"
@@ -370,7 +370,7 @@ class ContributorResponseHandler extends HandlerShowSuccessMessage {
                         <span class="btn btn-sm fas fa-exchange-alt"></span>
                         {{ releaseContributorLabel(releaseContributor) }}
                         <span :class="['badge', releaseContributor.include_in_citation ? 'badge-secondary' : 'badge-warning']">
-                          {{ releaseContributor.include_in_citation ? 'Citable contributor' : 'Non-citable contributor' }}
+                          {{ releaseContributor.include_in_citation ? 'Citable' : 'Non-citable' }}
                         </span>
                     </div>
                     <div v-show="matchesState(['list'])">
@@ -467,7 +467,7 @@ class EditContributors extends Vue {
     public refreshStatusMessage() {
         if (!_.isEqual(this.state, this.initialState)) {
             this.statusMessages = [
-                {classNames: 'alert alert-warning', message: 'You have unsaved contributor modifications'},
+                {classNames: 'alert alert-warning', message: 'NOTE: there are unsaved changes to the contributor list. Click Save to apply these changes.'},
             ];
         } else {
             this.statusMessages = [];
