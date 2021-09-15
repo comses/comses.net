@@ -15,7 +15,7 @@ from django.views import View
 from django.views.generic.base import RedirectView
 from django.views.generic.detail import DetailView
 from django.views.generic.edit import UpdateView
-from django_jinja.views.generic import ListView
+from django.views.generic.list import ListView
 from rest_framework import viewsets, generics, renderers, status, permissions, filters, mixins
 from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.exceptions import PermissionDenied as DrfPermissionDenied, ValidationError

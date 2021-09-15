@@ -21,14 +21,10 @@ ALLOWED_HOSTS = ['206.12.90.38', '.comses.net']
 
 TEMPLATES = [
     {
-        'BACKEND': 'django_jinja.backend.Jinja2',
+        'BACKEND': 'django.template.backends.jinja2.Jinja2',
         'APP_DIRS': True,
         'OPTIONS': {
-            'match_extension': '.jinja',
-            'newstyle_gettext': True,
-            # DEFAULT_EXTENSIONS at https://github.com/niwinz/django-jinja/blob/master/django_jinja/builtins/__init__.py
-            "extensions": DEFAULT_EXTENSIONS + [
-                "django_jinja.builtins.extensions.DjangoExtraFiltersExtension",
+            "extensions": [
                 "webpack_loader.contrib.jinja2ext.WebpackExtension",
                 'wagtail.contrib.settings.jinja2tags.settings',
                 'wagtail.core.jinja2tags.core',
@@ -36,19 +32,8 @@ TEMPLATES = [
                 'wagtail.images.jinja2tags.images',
                 'waffle.jinja.WaffleExtension',
             ],
-            'constants': {
-                'DISCOURSE_BASE_URL': DISCOURSE_BASE_URL
-            },
+            'environment': 'core.jinja2.environment',
             'auto_reload': False,
-            'translation_engine': 'django.utils.translation',
-            # FIXME: https://docs.djangoproject.com/en/2.0/topics/templates/#module-django.template.backends.django
-            # context_processor usage in jinja templates is discouraged
-            'context_processors': [
-                'django.template.context_processors.request',
-                'django.contrib.auth.context_processors.auth',
-                'django.contrib.messages.context_processors.messages',
-            ],
-            'autoescape': True,
         }
     },
     {
