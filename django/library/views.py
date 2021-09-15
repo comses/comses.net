@@ -824,7 +824,7 @@ class CodebaseReleaseFormCreateView(FormCreateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['review_status_enum'] = ReviewStatus
+        context['review_status_enum_json'] = ReviewStatus.as_json()
         return context
 
 
@@ -842,7 +842,7 @@ class CodebaseReleaseFormUpdateView(FormUpdateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['review_status_enum'] = ReviewStatus
+        context['review_status_enum_json'] = ReviewStatus.as_json()
         return context
 
 

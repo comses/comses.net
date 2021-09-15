@@ -229,10 +229,11 @@ class EditContributor extends createFormValidator(contributorSchema) {
                     {{ errors.roles.join(', ') }}
                 </div>
             </div>
-            <div class='d-flex justify-content-end'>
+            <div class='form-group'>
               <div class='form-check'>
                 <label class='form-check-label'>
-                  <input class='form-check-input' type='checkbox' name='include_in_citation'>
+                  <input v-model="include_in_citation" class='form-check-input' type='checkbox'>
+                  Include in citation?
                 </label>
               </div>
               <button type="button" class="btn btn-secondary" @click="cancel" v-show="hasEdits">Cancel</button>
@@ -368,6 +369,9 @@ class ContributorResponseHandler extends HandlerShowSuccessMessage {
                     <div>
                         <span class="btn btn-sm fas fa-exchange-alt"></span>
                         {{ releaseContributorLabel(releaseContributor) }}
+                        <span :class="['badge', releaseContributor.include_in_citation ? 'badge-secondary' : 'badge-warning']">
+                          {{ releaseContributor.include_in_citation ? 'Citable contributor' : 'Non-citable contributor' }}
+                        </span>
                     </div>
                     <div v-show="matchesState(['list'])">
                         <span class="btn btn-sm" @click="editReleaseContributor(releaseContributor)">

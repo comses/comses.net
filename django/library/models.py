@@ -1337,6 +1337,10 @@ class ReviewStatus(ChoicesMixin, Enum):
     # The model review process is complete
     complete = _('Review is complete')
 
+    @classmethod
+    def as_json(cls):
+        return json.dumps([status.name for status in cls])
+
     @property
     def is_pending(self):
         return self != ReviewStatus.complete
