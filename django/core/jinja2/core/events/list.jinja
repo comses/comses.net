@@ -8,9 +8,9 @@
             <div class='col-8'>
                 <h3 class='title mb-0'><a href="{{ url(detail_url_name, pk=item.id) }}">{{ item.title }}</a></h3>
                 <b class='title'>
-                    {{ format_datetime(item.start_date) }}
+                    {{ format_datetime_str(item.start_date) }}
                     {% if item.end_date %}
-                        - {{ format_datetime(item.end_date) }}
+                        - {{ format_datetime_str(item.end_date) }}
                     {% endif %}
                 </b>
             </div>
