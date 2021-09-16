@@ -15,6 +15,6 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - name: Run local Django tests
-      run: docker-compose run --rm cms /code/deploy/test.sh
+      run: echo "1" | build.sh && docker-compose run --rm cms /code/deploy/test.sh
     - name: run coveralls
       run: bash django/deploy/run/coveralls
