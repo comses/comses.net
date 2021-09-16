@@ -144,6 +144,7 @@ class MemberProfileImageUploadView(generics.CreateAPIView):
     def create(self, request, *args, **kwargs):
         file_obj = request.data['file']
         member_profile = get_object_or_404(MemberProfile, **kwargs)
+        # FIXME: perform validity checks on the file_obj (jpg, png, etc only)
         image = Image.objects.create(title=file_obj.name, file=ImageFile(file_obj), uploaded_by_user=request.user)
         member_profile.picture = image
         member_profile.save()
