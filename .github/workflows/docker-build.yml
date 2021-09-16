@@ -1,0 +1,20 @@
+name: CoMSES Docker CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Run local Django tests
+      run: docker-compose run --rm cms /code/deploy/test.sh
+    - name: run coveralls
+      run: bash django/deploy/run/coveralls
