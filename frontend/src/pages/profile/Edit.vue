@@ -24,6 +24,7 @@
         <input
           id="profileUpload"
           type="file"
+          accept=".gif,.jpg,.jpeg,.png"
           class="d-none form-control-file"
           @change="uploadImage"
         />
