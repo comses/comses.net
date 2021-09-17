@@ -1,12 +1,13 @@
 from allauth.socialaccount import providers
 from datetime import datetime
 from django.conf import settings
-from django.templatetags.static import static
-from django.urls import reverse
 from django.contrib.sites.models import Site
+from django.contrib import messages
 from django.forms.widgets import CheckboxInput
 from django.template import defaultfilters
 from django.template.loader import render_to_string
+from django.templatetags.static import static
+from django.urls import reverse
 from django.utils.dateparse import parse_datetime
 from django.utils.timezone import get_current_timezone
 from jinja2 import Environment, Markup
@@ -52,6 +53,7 @@ def environment(**options):
         'format_datetime': format_datetime,
         'to_json': to_json,
         'is_checkbox': is_checkbox,
+        'get_messages': messages.get_messages,
     })
     return env
 

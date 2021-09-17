@@ -19,6 +19,10 @@ from library.tests.base import ReviewSetup
 from .base import CodebaseFactory, ContributorFactory, ReleaseContributorFactory, PeerReviewInvitationFactory
 from ..views import CodebaseViewSet, CodebaseReleaseViewSet
 
+import logging
+
+logger = logging.getLogger(__name__)
+
 
 class CodebaseViewSetTestCase(BaseViewSetTestCase):
     _view = CodebaseViewSet
@@ -431,7 +435,7 @@ class PeerReviewInvitationTestCase(ReviewSetup, ResponseStatusCodesMixin, TestCa
         self.assertRedirects(post_invitation_page_response, url)
 
         get_invitation_page_response_again = self.client.get(url)
-        self.assertContains(get_invitation_page_response_again, 'You previously declined this invitation')
+        self.assertContains(get_invitation_page_response_again, 'declined this invitation')
         # candidate reviewers are allowed to decline again
         post_invitation_page_response_again = self.client.post(url, data={'accepted': False})
         self.assertRedirects(post_invitation_page_response_again, url)

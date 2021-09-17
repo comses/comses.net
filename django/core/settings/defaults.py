@@ -452,7 +452,7 @@ TEMPLATES = [
                 'wagtail.images.jinja2tags.images',
                 'waffle.jinja.WaffleExtension',
             ],
-            'environment': 'core.jinja2.environment',
+            'environment': 'core.jinja_config.environment',
         }
     },
     {
