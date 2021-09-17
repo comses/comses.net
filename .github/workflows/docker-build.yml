@@ -17,4 +17,4 @@ jobs:
     - name: Run local Django tests
       run: echo "1" | ./build.sh && docker-compose run --rm cms /code/deploy/test.sh
     - name: run coveralls
-      run: bash django/deploy/run/coveralls
+      run: bash ./django/deploy/run/coveralls
