@@ -14,7 +14,15 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
-    - name: Run local Django tests
+    - name: Set up Python 3.8
+      uses: action/setup-python@v2
+      with:
+        python-version: 3.8
+      run: |
+        python -m pip install --upgrade pip
+        pip3 install coveralls coverage
+    - name: Run Django tests
       run: echo "1" | ./build.sh && docker-compose run --rm cms /code/deploy/test.sh
     - name: run coveralls
-      run: bash ./django/deploy/run/coveralls
+      run:
+        bash ./django/deploy/run-coveralls
