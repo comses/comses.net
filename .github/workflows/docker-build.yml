@@ -26,3 +26,5 @@ jobs:
     - name: run coveralls
       run:
         bash ./django/deploy/run-coveralls
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
