@@ -23,8 +23,3 @@ jobs:
         pip3 install coveralls coverage
     - name: Run Django tests
       run: echo "1" | ./build.sh && docker-compose run --rm cms /code/deploy/test.sh
-    - name: run coveralls
-      run:
-        bash ./django/deploy/run-coveralls
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
