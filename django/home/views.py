@@ -342,7 +342,7 @@ class SearchView(TemplateView):
 
 class DigestView(TemplateView):
     template_name = 'home/digest.jinja'
-    DEFAULT_ARCHIVE_URL = 'https://comses.us7.list-manage.com/generate-js/?u=35f29299716fcb07509229c1c&fid=21449&show=20'
+    DEFAULT_ARCHIVE_URL = 'https://comses.us7.list-manage.com/generate-js/?u=35f29299716fcb07509229c1c&fid=21449&show=100'
     DEFAULT_USER_AGENT = 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:74.0) Gecko/20100101 Firefox/74.0'
 
     def get_cached_mailchimp_js(self, archive_url):
