@@ -1,4 +1,5 @@
 {% extends "wagtailadmin/base.html" %}
+{% load wagtailadmin_tags %}
 {% load static i18n %}
 {% block titletag %}{% trans "Dashboard" %}{% endblock %}
 {% block bodyclass %}homepage{% endblock %}
@@ -21,9 +22,9 @@
 
     {% if panels %}
         {% for panel in panels %}
-            {{ panel.render }}
+            {% component panel fallback_render_method=True %}
         {% endfor %}
     {% else %}
-        <p>{% trans "This is your dashboard on which helpful information about content you've created will be displayed." %}</p>
+        No panels found. This is probably an error.
     {% endif %}
 {% endblock %}
