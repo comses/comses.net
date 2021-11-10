@@ -16,7 +16,7 @@
     {% if modified_releases %}
         <ul>
             {% for release in modified_releases %}
-                <li><a href="{% url 'library:codebaserelease-detail' identifier=release.codebase.identifier version_number=release.version_number %}">{{ release.codebase.title }} v{{ release.version_number }} (Modified {{ release.last_modified }})</a>. {% include 'curator/home/submitted_by.html' with obj=release %}</li>
+                <li><a href="{% url 'library:codebaserelease-detail' identifier=release.codebase.identifier version_number=release.version_number %}">{{ release.codebase.title }} v{{ release.version_number }} (Modified {{ release.last_modified }})</a>. {% include 'curator/panels/submitted_by.html' with obj=release %}</li>
             {% endfor %}
         </ul>
     {% else %}
@@ -28,7 +28,7 @@
         <ul>
             {% for event in modified_events %}
                 <li><a href="{% url 'home:event-detail' event.id %}">{{ event.title }}
-                    (Modified {{ event.last_modified }})</a>. {% include 'curator/home/submitted_by.html' with obj=event %}</li>
+                    (Modified {{ event.last_modified }})</a>. {% include 'curator/panels/submitted_by.html' with obj=event %}</li>
             {% endfor %}
         </ul>
     {% else %}
@@ -40,7 +40,7 @@
         <ul>
             {% for job in modified_jobs %}
                 <li><a href="{{ job.get_absolute_url }}">{{ job.title }}
-                    (Modified {{ job.last_modified }})</a>. {% include 'curator/home/submitted_by.html' with obj=job %}</li>
+                    (Modified {{ job.last_modified }})</a>. {% include 'curator/panels/submitted_by.html' with obj=job %}</li>
             {% endfor %}
         </ul>
     {% else %}
@@ -52,7 +52,7 @@
         <ul>
             {% for modified_review in modified_reviews %}
                 <li><a href="{{ modified_review.get_absolute_url }}">{{ modified_review.codebase_release.title }}
-                    (Modified {{ modified_review.last_modified }})</a>. {% include 'curator/home/submitted_by.html' with obj=modified_review %}</li>
+                    (Modified {{ modified_review.last_modified }})</a>. {% include 'curator/panels/submitted_by.html' with obj=modified_review %}</li>
             {% endfor %}
         </ul>
     {% else %}

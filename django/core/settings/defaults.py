@@ -169,6 +169,13 @@ RELEASE_VERSION = "v2020.06"
 # max number of items to include in rss or atom feeds
 DEFAULT_FEED_MAX_ITEMS = 120
 
+# admin dashboard defaults
+# max number of items to include in each admin dashboard recent activity category
+ADMIN_DASHBOARD_MAX_ITEMS = 15
+# size of the sliding window to filter recent activity in the admin dashboard
+# from now to 90 days ago
+ADMIN_DASHBOARD_DAYS = 90
+
 if release_version_file.is_file():
     with release_version_file.open('r') as infile:
         RELEASE_VERSION = infile.read().strip()

@@ -1,23 +1,15 @@
 from datetime import datetime, timedelta, timezone
 
 from django.conf import settings
-from django.conf.urls import url
-from django.contrib.auth.mixins import PermissionRequiredMixin
-from django.contrib.auth.models import Permission, User
-from django.forms import Media
-from django.template.loader import render_to_string
+from django.contrib.auth import get_user_model
 from django.urls import reverse
-from django.views.generic import TemplateView
 from enum import Enum
 
-from wagtail.admin.menu import MenuItem
-from wagtail.admin.navigation import get_site_for_user
-from wagtail.admin.site_summary import SiteSummaryPanel
-from wagtail.admin.views.home import UpgradeNotificationPanel, PagesForModerationPanel, RecentEditsPanel
+from wagtail.admin.ui.components import Component
 from wagtail.contrib.modeladmin.helpers import ButtonHelper, PermissionHelper
 from wagtail.contrib.modeladmin.options import ModelAdmin, modeladmin_register, WagtailRegisterable
 from wagtail.contrib.modeladmin.views import IndexView
-from wagtail.core.hooks import get_hooks
+from wagtail.core import hooks
 
 from core.models import Event, Job
 from library.models import CodebaseRelease, PeerReview
@@ -99,17 +91,21 @@ class TagCleanupAdmin(ModelAdmin):
     ordering = ('id',)
 
 
-class RecentActivityPanel:
+@hooks.register('construct_homepage_panels')
+def add_recent_activity_panel(request, panels):
+    panels.append(RecentActivityPanel())
+
+
+class RecentActivityPanel(Component):
+    template_name = 'curator/panels/recent_activity.html'
     name = 'site_recent_activity'
     order = 100
 
-    def __init__(self, request):
-        self.request = request
-
-    def render(self):
-        start_date = datetime.now(timezone.utc) - timedelta(days=90)
-        max_size = 10
-        new_accounts = User.objects.exclude(username='AnonymousUser').filter(date_joined__gt=start_date).order_by(
+    def get_context_data(self, parent_context):
+        context = super().get_context_data(parent_context)
+        max_items = settings.ADMIN_DASHBOARD_MAX_ITEMS
+        start_date = datetime.now(timezone.utc) - timedelta(days=settings.ADMIN_DASHBOARD_DAYS)
+        new_accounts = get_user_model().objects.exclude(username='AnonymousUser').filter(date_joined__gt=start_date).order_by(
             '-date_joined')
         modified_releases = CodebaseRelease.objects.filter(last_modified__gt=start_date).select_related(
             'submitter').order_by('-last_modified')
@@ -120,73 +116,21 @@ class RecentActivityPanel:
         modified_peer_reviews = PeerReview.objects.filter(last_modified__gt=start_date) \
             .select_related('codebase_release', 'submitter').order_by('-last_modified')
 
-        return render_to_string('curator/home/recent_activity.html', {
+        context.update({
             'start_date': start_date,
             'new_accounts_count': new_accounts.count(),
-            'new_accounts': new_accounts[:max_size],
-            'max_size': max_size,
+            'new_accounts': new_accounts[:max_items],
+            'max_size': max_items,
             'modified_events_count': modified_events.count(),
-            'modified_events': modified_events[:max_size],
+            'modified_events': modified_events[:max_items],
             'modified_jobs_count': modified_jobs.count(),
-            'modified_jobs': modified_jobs[:max_size],
+            'modified_jobs': modified_jobs[:max_items],
             'modified_releases_count': modified_releases.count(),
-            'modified_releases': modified_releases[:max_size],
+            'modified_releases': modified_releases[:max_items],
             'modified_reviews_count': modified_peer_reviews.count(),
-            'modified_reviews': modified_peer_reviews[:max_size]
-        }, request=self.request)
-
-
-class DashboardView(PermissionRequiredMixin, TemplateView):
-    template_name = 'curator/dashboard.html'
-    permission_required = 'wagtailadmin.access_admin'
-
-    def get_login_url(self):
-        return '{}?next={}'.format(reverse('wagtailadmin_login'), reverse('wagtailadmin_home'))
-
-    def get_context_data(self, **kwargs):
-        request = self.request
-        panels = [
-            SiteSummaryPanel(request),
-            UpgradeNotificationPanel(),
-            PagesForModerationPanel(),
-            RecentEditsPanel(),
-            RecentActivityPanel(request)
-        ]
-
-        for fn in get_hooks('construct_homepage_panels'):
-            fn(request, panels)
-
-        media = Media()
-        for panel in panels:
-            if hasattr(panel, 'media'):
-                media += panel.media
-
-        site_details = get_site_for_user(request.user)
-
-        return {
-            'root_page': site_details['root_page'],
-            'root_site': site_details['root_site'],
-            'site_name': site_details['site_name'],
-            'panels': sorted(panels, key=lambda p: p.order),
-            'user': request.user,
-            'media': media,
-        }
-
-
-class Dashboard(WagtailRegisterable):
-    add_to_settings_menu = False
-
-    def get_permissions_for_registration(self):
-        return Permission.objects.none()
-
-    def get_admin_urls_for_registration(self):
-        return [url(r'^%s/%s/$' % ('curator', 'dashboard'), view=self.dashboard_view, name='wagtailadmin_dashboard')]
-
-    def get_menu_item(self):
-        return MenuItem(label='Dashboard', url=reverse('wagtailadmin_dashboard'), order=999)
-
-    def dashboard_view(self, request):
-        return DashboardView.as_view()(request)
+            'modified_reviews': modified_peer_reviews[:max_items]
+        })
+        return context
 
 
 modeladmin_register(TagCleanupAdmin)

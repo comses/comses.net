@@ -8,7 +8,7 @@ from wagtail.admin import urls as wagtailadmin_urls
 from wagtail.core import urls as wagtail_urls
 from wagtail.contrib.sitemaps.views import sitemap
 
-from curator import wagtail_hooks, urls as curator_urls
+from curator import urls as curator_urls
 from home import urls as home_urls
 from library import urls as library_urls
 from . import feeds, views
@@ -33,7 +33,7 @@ urlpatterns = [
     path('discourse/sso', views.discourse_sso, name='discourse-sso'),
     path('django/admin/', admin.site.urls),
     # Replace the default wagtail admin home page
-    path('wagtail/admin/', view=wagtail_hooks.DashboardView.as_view(), name='wagtailadmin_home'),
+    # path('wagtail/admin/', view=wagtail_hooks.DashboardView.as_view(), name='wagtailadmin_home'),
     path('wagtail/admin/', include(wagtailadmin_urls)),
     path('api/schema/', schema_view),
     path('api/token/', obtain_jwt_token),
@@ -42,7 +42,7 @@ urlpatterns = [
     # https://docs.wagtail.io/en/v2.9.2/reference/contrib/sitemaps.html
     path('sitemap.xml', sitemap),
     path('robots.txt', include('robots.urls')),
-] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT) 
+] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
 urlpatterns += feeds.urlpatterns()
 
