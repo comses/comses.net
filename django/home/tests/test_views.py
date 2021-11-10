@@ -138,12 +138,16 @@ class WagtailAdminLoginTestCase(TestCase):
         if success:
             response = self.client.get(reverse('wagtailadmin_home'))
             self.assertEqual(response.status_code, status_code)
+            return response
         else:
             raise ValueError('login for user {} failed'.format(user))
 
     def test_regular_login(self):
         regular_user = self.user_factory.create()
-        self.assertLoginStatusCodeMatchForUser(regular_user, status.HTTP_403_FORBIDDEN)
+        # default behavior for wagtail admin login failed is a 302 redirect to the login page
+        response = self.assertLoginStatusCodeMatchForUser(regular_user, status.HTTP_302_FOUND)
+        message = response.context['message']
+        self.assertEqual(message, 'You do not have permission to access the admin')
 
     def test_superuser_login(self):
         superuser = self.user_factory.create(is_superuser=True)
@@ -151,7 +155,9 @@ class WagtailAdminLoginTestCase(TestCase):
 
     def test_staff_login(self):
         staff = self.user_factory.create(is_staff=True)
-        self.assertLoginStatusCodeMatchForUser(staff, status.HTTP_403_FORBIDDEN)
+        response = self.assertLoginStatusCodeMatchForUser(staff, status.HTTP_302_FOUND)
+        message = response.context['message']
+        self.assertEqual(message, 'You do not have permission to access the admin')
 
     def test_access_admin_login(self):
         content_type = ContentType.objects.get(model='admin')
