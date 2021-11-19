@@ -154,7 +154,7 @@
         <footer class="footer">
             <div class="container">
                 {% if not user.is_authenticated -%}
-                    <div class='row pt-0 mt-0'>
+                    <div class='row p-0 m-0'>
                         <div class='col'>
                         </div>
                         <div class='col text-center'>
@@ -164,7 +164,7 @@
                         </div>
                     </div>
                 {% elif not user.member_profile.full_member %}
-                    <div class='row'>
+                    <div class='row p-0 m-0'>
                         <div class='col'>
                         </div>
                         <div class='col text-center'>
@@ -174,7 +174,7 @@
                         </div>
                     </div>
                 {%- endif %}
-                <div class="row py-0">
+                <div class="row">
                     <div class="col">
                         <ul class="social-media">
                             <li>
@@ -213,53 +213,40 @@
                         </ul>
                     </div>
                 </div>
-                <div class='row py-0'>
+                <div class='row pt-0 d-flex justify-content-between'>
                     <div class="col">
-                        <ul class="social-media">
-                            <li class="px-2">
-                                <a href="http://www.asu.edu/" target="_blank">
-                                    <img src="{{ static("images/logo-asu.png") }}" alt="Arizona State University">
-                                </a>
-                            </li>
-                            <li class="px-2">
-                                <a href="http://orcid.org/" target="_blank">
-                                    <img src="{{ static("images/logo-orcid-member-170px.png") }}" alt="ORCID">
-                                </a>
-                            </li>
-                            <li class="px-2">
-                                <a href='https://sciencegateways.org' target='_blank'>
-                                    <img class='rounded' height='56'
-                                        src='https://sciencegateways.org/documents/20182/20809/sgci-new-logo-words-horiz-white.png/dca0198d-0145-4208-a71e-275c98c919fe?t=1493995638000'
-                                        alt='Science Gateways Community Institute'>
-                                </a>
-                            </li>
-
-                        </ul>
+                        <a href="http://www.asu.edu/" target="_blank">
+                            <img src="{{ static("images/logo-asu.png") }}" alt="Arizona State University">
+                        </a>
+                    </div>
+                    <div class="col">
+                        <a href="http://orcid.org/" target="_blank">
+                            <img src="{{ static("images/logo-orcid-member-170px.png") }}" alt="ORCID">
+                        </a>
+                    </div>
+                    <div class="col">
+                        <a href='https://sciencegateways.org' target='_blank'>
+                            <img class='rounded' height='56'
+                                 src='{{ static("images/logo-sgci.png") }}'
+                                 alt='Science Gateways Community Institute'>
+                        </a>
+                    </div>
+                    <div class="col">
+                        <a href="http://www.nsf.gov/" target="_blank">
+                            <img src="{{ static("images/logo-nsf.png") }}" alt="National Science Foundation">
+                        </a>
                     </div>
                 </div>
-                <div class='row py-0'>
-                    <div class='col'>
-                        <ul class='social-media'>
-                            <li class="px-2">
-                                <a href="http://www.nsf.gov/" target="_blank">
-                                    <img src="{{ static("images/logo-nsf.png") }}" alt="National Science Foundation">
-                                </a>
-                            </li>
-                            <li class="px-2">
-                                <a href='https://www.westgrid.ca' target='_blank'>
-                                    <img class='rounded' height='120' src='{{ static("images/logo-westgrid.png") }}'
-                                        alt='Compute Canada WestGrid'>
-                                </a>
-                            </li>
-                            <li class="px-2">
-                                <a href='https://www.computecanada.ca' target='_blank'>
-                                    <img class='rounded' height="120" src='{{ static("images/logo-compute-canada.jpg") }}'
-                                        alt='Compute Canada'>
-                                </a>
-                            </li>
-                        </ul>
-                    </div>
-                </div>
+            </div>
+            <div class='d-flex pt-0 row justify-content-center'>
+                <a class="p-3" href='https://www.westgrid.ca' target='_blank'>
+                    <img class='rounded' height="120" src='{{ static("images/logo-westgrid.png") }}'
+                        alt='Compute Canada'>
+                </a>
+                <a class="p-3" href='https://www.computecanada.ca' target='_blank'>
+                    <img class='rounded' height="120" src='{{ static("images/logo-compute-canada.png") }}'
+                        alt='Compute Canada'>
+                </a>
             </div>
             <p class="copyright text-center">&copy; 2007 - {{ now('Y') }} CoMSES Net |
                 <a class='text-white' href='{{ contact_url }}'>Contact us</a><br>
