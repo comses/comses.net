@@ -91,7 +91,7 @@ DJANGO_APPS = [
 ]
 
 THIRD_PARTY_APPS = [
-    'captcha',
+    'hcaptcha_field',
     'cookielaw',
     'django_extensions',
     'guardian',
@@ -200,9 +200,9 @@ EMAIL_SUBJECT_PREFIX = config.get('email', 'EMAIL_SUBJECT_PREFIX', fallback='[Co
 # number of days before a peer review invitation expires
 PEER_REVIEW_INVITATION_EXPIRATION = 21
 
-RECAPTCHA_PUBLIC_KEY = config.get('captcha', 'RECAPTCHA_PUBLIC_KEY', fallback='')
-RECAPTCHA_PRIVATE_KEY = config.get('captcha', 'RECAPTCHA_PRIVATE_KEY', fallback='')
-NOCAPTCHA = True
+# RECAPTCHA_PUBLIC_KEY = config.get('captcha', 'RECAPTCHA_PUBLIC_KEY', fallback='')
+# RECAPTCHA_PRIVATE_KEY = config.get('captcha', 'RECAPTCHA_PRIVATE_KEY', fallback='')
+# NOCAPTCHA = True
 
 # sentry DSN
 SENTRY_DSN = config.get('logging', 'SENTRY_DSN', fallback='https://sentry.example.com/2')

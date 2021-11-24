@@ -32,10 +32,10 @@ ALLOWED_HOSTS = ['.comses.net']
 BASE_URL = DEPLOY_ENVIRONMENT.base_url()
 # set up robots + sitemaps inclusion https://django-robots.readthedocs.io/en/latest/
 ROBOTS_SITEMAP_URLS = [f'{BASE_URL}/sitemap.xml']
-SILENCED_SYSTEM_CHECKS = ['captcha.recaptcha_test_key_error']
+# SILENCED_SYSTEM_CHECKS = ['captcha.recaptcha_test_key_error']
 
 # set up robots + sitemaps inclusion https://django-robots.readthedocs.io/en/latest/
-ROBOTS_SITEMAP_URLS = [ f'{BASE_URL}/sitemap.xml' ]
+ROBOTS_SITEMAP_URLS = [f'{BASE_URL}/sitemap.xml']
 
 
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
@@ -54,6 +54,11 @@ SESSION_COOKIE_SECURE = True
 CSRF_COOKIE_SECURE = True
 # https://docs.djangoproject.com/en/2.0/ref/clickjacking/
 X_FRAME_OPTIONS = 'DENY'
+
+
+# hcaptcha config
+HCAPTCHA_SITEKEY = config.get('captcha', 'HCAPTCHA_SITEKEY', fallback='')
+HCAPTCHA_SECRET = config.get('captcha', 'HCAPTCHA_SECRET', fallback='')
 
 WSGI_APPLICATION = 'core.wsgi.application'
 

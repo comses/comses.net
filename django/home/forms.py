@@ -1,6 +1,7 @@
 import logging
 
-from captcha.fields import ReCaptchaField
+from hcaptcha_field import hCaptchaField
+
 from django import forms
 from django.conf import settings
 from django.template import loader
@@ -24,7 +25,7 @@ class ContactForm(forms.Form):
     subject_template_name = 'home/about/contact_form_subject.txt'
     template_name = 'home/about/contact_form_email.txt'
     from_email = settings.DEFAULT_FROM_EMAIL
-    captcha = ReCaptchaField()
+    captcha = hCaptchaField()
 
     def __init__(self, request=None, initial=None, *args, **kwargs):
         if request is None:

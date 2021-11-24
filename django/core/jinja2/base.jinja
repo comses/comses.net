@@ -213,7 +213,7 @@
                         </ul>
                     </div>
                 </div>
-                <div class='row pt-0 d-flex justify-content-between'>
+                <div class='row pt-0 d-flex justify-content-center'>
                     <div class="col">
                         <a href="http://www.asu.edu/" target="_blank">
                             <img src="{{ static("images/logo-asu.png") }}" alt="Arizona State University">
@@ -314,6 +314,7 @@
     {% endif %}
     <script src="//cdnjs.cloudflare.com/ajax/libs/holder/2.9.7/holder.min.js"></script>
     {% if constants.DEPLOY_ENVIRONMENT.is_staging_or_production() %}
+
         {% with SENTRYJS_VERSION='6.5.1' %}
             <script 
                 src="https://browser.sentry-cdn.com/{{SENTRYJS_VERSION}}/bundle.min.js" 

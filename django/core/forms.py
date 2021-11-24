@@ -1,6 +1,6 @@
 import logging
 
-from captcha.fields import ReCaptchaField
+from hcaptcha_field import hCaptchaField
 from django import forms
 from django.utils.translation import ugettext_lazy as _
 
@@ -22,7 +22,7 @@ class SignupForm(forms.Form):
         required=False,
         help_text=_("By checking this box, I agree to the rights and responsibilities of CoMSES Net full membership")
     )
-    captcha = ReCaptchaField()
+    captcha = hCaptchaField()
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

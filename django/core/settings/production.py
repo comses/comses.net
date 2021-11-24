@@ -1,8 +1,8 @@
-# FIXME: probably better to have a common mixin instead of pulling all staging.py settings since this also brings in
-# INSTALLED_APPS that we might not want (like fixture_magic which is fairly specialized)
 from .staging import *
 
-INSTALLED_APPS = DJANGO_APPS + WAGTAIL_APPS + COMSES_APPS + THIRD_PARTY_APPS
+# FIXME: probably better to have a common mixin instead of pulling all staging.py settings since this also brings in
+# remove staging specific apps like fixture_magic
+INSTALLED_APPS.pop('fixture_magic')
 
 DEBUG = False
 DEPLOY_ENVIRONMENT = Environment.PRODUCTION
