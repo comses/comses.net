@@ -19,6 +19,8 @@
                 </label>
             </div>
         </div>
+    {% elif is_hcaptcha(field) %}
+        {{ field }}
     {% else %}
         <div class='form-row'>
             <div class='form-group col-12 {{ error_class }}'>

@@ -12,10 +12,12 @@ from django.utils.dateparse import parse_datetime
 from django.utils.timezone import get_current_timezone
 from jinja2 import Environment, Markup
 
+from hcaptcha_field import hCaptchaField
+from typing import Optional
+
 import json
 import logging
 
-from typing import Optional
 
 from core.fields import render_sanitized_markdown
 from core.serializers import FULL_DATE_FORMAT
@@ -53,6 +55,7 @@ def environment(**options):
         'format_datetime': format_datetime,
         'to_json': to_json,
         'is_checkbox': is_checkbox,
+        'is_hcaptcha': is_hcaptcha,
         'get_messages': messages.get_messages,
     })
     return env
@@ -114,6 +117,9 @@ def get_choices_display(selected_choice, choices):
 
 def is_checkbox(bound_field):
     return isinstance(bound_field.field.widget, CheckboxInput)
+
+def is_hcaptcha(bound_field):
+    return isinstance(bound_field.field, hCaptchaField)
 
 
 def markdown(text: str):
