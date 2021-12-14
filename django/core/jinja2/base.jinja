@@ -9,15 +9,10 @@
 
 {% macro navbar() %}
     <div class="fixed-top bg-light">
-        <nav class="navbar navbar-expand-xl navbar-light bg-light pt-0 mt-0 mx-1">
+        <nav class="navbar navbar-expand-md navbar-light bg-light pt-0 mt-0 mx-1">
             {# logos #}
             <div class='navbar-brand'>
-                <a href="/"><span class="logo">CoMSES Network | OpenABM</span></a>
-                <a href="//westbigdatahub.org/" target="_blank">
-                     <img class="mt-4" height='70'
-                          src="{{ static("images/logo-westhub-black.png") }}"
-                          alt="US NSF West Big Data Hub">
-                </a>
+                <a href="/"><span class="logo">CoMSES Network</span></a>
             </div>
             {# hamburger collapse menu #}
             <button class='navbar-toggler'
@@ -174,12 +169,36 @@
                         </div>
                     </div>
                 {%- endif %}
+                <div class='row'>
+                    <div class="col">
+                        <a href="http://www.asu.edu/" target="_blank">
+                            <img height='56' src="{{ static("images/logo-asu.png") }}" alt="Arizona State University">
+                        </a>
+                    </div>
+                    <div class="col">
+                        <a href="http://www.nsf.gov/" target="_blank">
+                            <img height='56' src="{{ static("images/logo-nsf.png") }}" alt="National Science Foundation">
+                        </a>
+                    </div>
+                    <div class="col">
+                        <a href="http://orcid.org/" target="_blank">
+                            <img height='56' src="{{ static("images/logo-orcid-member-170px.png") }}" alt="ORCID">
+                        </a>
+                    </div>
+                    <div class="col">
+                        <a href='https://sciencegateways.org' target='_blank'>
+                            <img class='rounded' height='56'
+                                 src='{{ static("images/logo-sgci.png") }}'
+                                 alt='Science Gateways Community Institute'>
+                        </a>
+                    </div>
+                </div>
                 <div class="row">
                     <div class="col">
                         <ul class="social-media">
                             <li>
                                 <a href="https://twitter.com/{{ social_settings.twitter_account }}"
-                                   title="Follow us at @{{ social_settings.twitter_account }}" target="_blank">
+                                   title="Follow us @{{ social_settings.twitter_account }}" target="_blank">
                                 <span class="fa-stack">
                                     <i class="fas fa-circle fa-stack-2x"></i>
                                     <i class="fab fa-twitter fa-inverse fa-stack-1x"></i>
@@ -187,7 +206,7 @@
                                 </a>
                             </li>
                             <li>
-                                <a href="{{ social_settings.mailing_list_url }}" title="Email Sign Up" target="_blank">
+                                <a href="{{ social_settings.mailing_list_url }}" title="Sign up for email updates" target="_blank">
                                 <span class="fa-stack">
                                     <i class="fas fa-circle fa-stack-2x"></i>
                                     <i class="fas fa-envelope fa-inverse fa-stack-1x"></i>
@@ -213,40 +232,16 @@
                         </ul>
                     </div>
                 </div>
-                <div class='row pt-0 d-flex justify-content-center'>
-                    <div class="col">
-                        <a href="http://www.asu.edu/" target="_blank">
-                            <img src="{{ static("images/logo-asu.png") }}" alt="Arizona State University">
-                        </a>
-                    </div>
-                    <div class="col">
-                        <a href="http://orcid.org/" target="_blank">
-                            <img src="{{ static("images/logo-orcid-member-170px.png") }}" alt="ORCID">
-                        </a>
-                    </div>
-                    <div class="col">
-                        <a href='https://sciencegateways.org' target='_blank'>
-                            <img class='rounded' height='56'
-                                 src='{{ static("images/logo-sgci.png") }}'
-                                 alt='Science Gateways Community Institute'>
-                        </a>
-                    </div>
-                    <div class="col">
-                        <a href="http://www.nsf.gov/" target="_blank">
-                            <img src="{{ static("images/logo-nsf.png") }}" alt="National Science Foundation">
-                        </a>
-                    </div>
+                <div class='d-flex pt-0 row justify-content-center'>
+                    <a class="px-3" href='https://www.westgrid.ca' target='_blank'>
+                        <img class='rounded' height="120" src='{{ static("images/logo-westgrid.png") }}'
+                            alt='Compute Canada'>
+                    </a>
+                    <a class="px-3" href='https://www.computecanada.ca' target='_blank'>
+                        <img class='rounded' height="120" src='{{ static("images/logo-compute-canada.png") }}'
+                            alt='Compute Canada'>
+                    </a>
                 </div>
-            </div>
-            <div class='d-flex pt-0 row justify-content-center'>
-                <a class="p-3" href='https://www.westgrid.ca' target='_blank'>
-                    <img class='rounded' height="120" src='{{ static("images/logo-westgrid.png") }}'
-                        alt='Compute Canada'>
-                </a>
-                <a class="p-3" href='https://www.computecanada.ca' target='_blank'>
-                    <img class='rounded' height="120" src='{{ static("images/logo-compute-canada.png") }}'
-                        alt='Compute Canada'>
-                </a>
             </div>
             <p class="copyright text-center">&copy; 2007 - {{ now('Y') }} CoMSES Net |
                 <a class='text-white' href='{{ contact_url }}'>Contact us</a><br>
