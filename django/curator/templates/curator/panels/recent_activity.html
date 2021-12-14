@@ -2,10 +2,16 @@
     <h2>Recent Activity ({{ start_date }} UTC to Present)</h2>
     <h3>New Accounts ({{ new_accounts_count }} Total)</h3>
     {% if new_accounts %}
-        <ul>
+        <ul class="actions">
             {% for new_account in new_accounts %}
-                <li><a href="{% url 'home:profile-detail' new_account.id %}">{{ new_account.get_full_name }}
-                    (Joined: {{ new_account.date_joined }})</a></li>
+                <li>
+                    <a class="button button-secondary button-small" href="{% url 'wagtailusers_users:edit' new_account.pk %}">edit in wagtail</a>
+                    <a class="button button-secondary button-small" href="{% url 'admin:auth_user_change' new_account.pk %}">edit in django admin</a>
+                    <a href="{% url 'home:profile-detail' new_account.id %}">{{ new_account.get_full_name }}</a>
+                    - joined 
+                        <em>{{ new_account.date_joined }}</em></a>
+
+                </li>
             {% endfor %}
         </ul>
     {% else %}
