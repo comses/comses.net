@@ -7,7 +7,7 @@
                 <li>
                     <a class="button button-secondary button-small" href="{% url 'wagtailusers_users:edit' new_account.pk %}">edit in wagtail</a>
                     <a class="button button-secondary button-small" href="{% url 'admin:auth_user_change' new_account.pk %}">edit in django admin</a>
-                    <a href="{% url 'home:profile-detail' new_account.id %}">{{ new_account.get_full_name }}</a>
+                    <a href="{% url 'home:profile-detail' new_account.id %}">{{ new_account.username }}</a>
                     - joined 
                         <em>{{ new_account.date_joined }}</em></a>
 
