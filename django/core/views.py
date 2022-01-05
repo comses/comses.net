@@ -212,7 +212,7 @@ class SmallResultSetPagination(PageNumberPagination):
 
     @staticmethod
     def _to_search_terms(query_params):
-        return [v if k == 'query' else '{0}: {1}'.format(k, v) for k, v in query_params.items()]
+        return [f'{k}: {v}' for k, v in query_params.lists()]
 
     def get_paginated_response(self, data):
         context = self.get_context_data(data)
