@@ -18,8 +18,6 @@ def get_search_queryset(query, queryset, operator="or", fields=None, tags=None, 
     if not tags:
         tags = []
 
-    logger.debug("tags: %s", tags)
-
     order_by_relevance = not queryset.ordered
 
     if tags:
