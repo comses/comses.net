@@ -16,17 +16,22 @@ def get_search_queryset(query, queryset, operator="or", fields=None, tags=None, 
         query = ''
 
     if not tags:
-        tags = ''
+        tags = []
+
+    logger.debug("tags: %s", tags)
 
     order_by_relevance = not queryset.ordered
 
-    if query:
-        if tags:
-            criteria.update(tags__name__in=[t.lower() for t in tags])
-            operator = 'and'
-        if criteria:
-            queryset = queryset.filter(**criteria)
-    query = f'{query} {tags}'.strip().lower()
+    if tags:
+        # FIXME: this won't work until RelatedFields support filtering
+        # criteria.update(tags__name__in=[t.lower() for t in tags])
+        operator = 'and'
+    if criteria:
+        logger.debug("filtering by criteria: %s", criteria)
+        queryset = queryset.filter(**criteria)
+    tags_string = ' '.join(tags)
+    query = f'{query} {tags_string}'.strip().lower()
+    logger.debug("searching on query: %s", query)
     if query:
         Query.get(query).add_hit()
     else:
