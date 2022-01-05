@@ -2,7 +2,7 @@ from .staging import *
 
 # FIXME: probably better to have a common mixin instead of pulling all staging.py settings since this also brings in
 # remove staging specific apps like fixture_magic
-INSTALLED_APPS.pop('fixture_magic')
+INSTALLED_APPS.remove('fixture_magic')
 
 DEBUG = False
 DEPLOY_ENVIRONMENT = Environment.PRODUCTION
