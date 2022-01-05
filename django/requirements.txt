@@ -21,7 +21,7 @@ django-waffle==2.2.1
 django-webpack-loader==1.4.1
 djangorestframework==3.12.4
 djangorestframework-jwt==1.11.0
-Django>=3.1.13,<3.2.0
+Django>=3.2.11,<4.0.0
 elasticsearch-dsl>=7.0.0,<8.0.0
 elasticsearch>=7.0.0,<8.0.0
 html2text>=2016.9.19

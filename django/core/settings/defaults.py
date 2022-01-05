@@ -214,7 +214,9 @@ SECRET_KEY = config.get('secrets', 'SECRET_KEY')
 POST_DATE_DAYS_AGO_THRESHOLD = config.getint('default', 'POST_DATE_DAYS_AGO_THRESHOLD', fallback=180)
 
 # Database configuration
-# https://docs.djangoproject.com/en/2.2/ref/settings/#databases
+# https://docs.djangoproject.com/en/3.2/ref/settings/#databases
+
+DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
 
 DATABASES = {
     'default': {
