@@ -109,8 +109,8 @@ class Contributor(index.Indexed, ClusterableModel):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, on_delete=models.SET_NULL)
 
     search_fields = [
-        index.SearchField('given_name', partial_match=True, boost=10),
-        index.SearchField('family_name', partial_match=True, boost=10),
+        index.SearchField('given_name', partial_match=True),
+        index.SearchField('family_name', partial_match=True),
         index.RelatedFields('affiliations', [
             index.SearchField('name', partial_match=True)
         ]),
@@ -427,8 +427,8 @@ class Codebase(index.Indexed, ClusterableModel):
     objects = CodebaseQuerySet.as_manager()
 
     search_fields = [
-        index.SearchField('title', partial_match=True, boost=10),
-        index.SearchField('description', partial_match=True, boost=5),
+        index.SearchField('title', partial_match=True),
+        index.SearchField('description', partial_match=True),
         index.SearchField('get_all_contributors_search_fields'),
         index.SearchField('get_all_release_frameworks'),
         index.SearchField('get_all_release_programming_languages'),
@@ -436,7 +436,7 @@ class Codebase(index.Indexed, ClusterableModel):
         index.SearchField('permanent_url'),
         index.SearchField('associated_publication_text', partial_match=True),
         index.RelatedFields('tags', [
-            index.SearchField('name', partial_match=True, boost=50),
+            index.SearchField('name', partial_match=True),
         ]),
         # filter and sort fields
         index.FilterField('last_modified'),

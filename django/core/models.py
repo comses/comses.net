@@ -204,10 +204,10 @@ class MemberProfile(index.Indexed, ClusterableModel):
     search_fields = [
         index.FilterField('is_active'),
         index.FilterField('username'),
-        index.SearchField('bio', partial_match=True, boost=5),
-        index.SearchField('research_interests', partial_match=True, boost=5),
+        index.SearchField('bio', partial_match=True),
+        index.SearchField('research_interests', partial_match=True),
         index.SearchField('degrees', partial_match=True),
-        index.SearchField('name', partial_match=True, boost=5),
+        index.SearchField('name', partial_match=True),
         index.RelatedFields('institution', [
             index.SearchField('name', partial_match=True),
         ]),
@@ -218,9 +218,9 @@ class MemberProfile(index.Indexed, ClusterableModel):
             index.FilterField('date_joined'),
             index.FilterField('last_name'),
             index.SearchField('first_name', partial_match=True),
-            index.SearchField('last_name', partial_match=True, boost=3),
-            index.SearchField('email', partial_match=True, boost=3),
-            index.SearchField('username', partial_match=True, boost=5),
+            index.SearchField('last_name', partial_match=True),
+            index.SearchField('email', partial_match=True),
+            index.SearchField('username', partial_match=True),
         ]),
     ]
 
@@ -455,7 +455,7 @@ class Event(index.Indexed, ClusterableModel):
     submitter = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET(get_sentinel_user))
 
     search_fields = [
-        index.SearchField('title', partial_match=True, boost=10),
+        index.SearchField('title', partial_match=True),
         index.SearchField('description', partial_match=True),
         index.FilterField('date_created'),
         index.FilterField('start_date'),
@@ -540,7 +540,7 @@ class Job(index.Indexed, ClusterableModel):
     objects = JobQuerySet.as_manager()
 
     search_fields = [
-        index.SearchField('title', partial_match=True, boost=10),
+        index.SearchField('title', partial_match=True),
         index.SearchField('description', partial_match=True),
         index.FilterField('date_created'),
         index.FilterField('last_modified'),

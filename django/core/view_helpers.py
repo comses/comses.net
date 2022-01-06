@@ -32,9 +32,9 @@ def get_search_queryset(query, queryset, operator="or", fields=None, tags=None, 
     if query:
         Query.get(query).add_hit()
         filters, query = parse_query_string(query, operator='or')
+        logger.debug("parsed query: %s and filters %s", query, filters)
         criteria.update(filters)
-
-    elif tags:
+    else:
         query = MATCH_ALL
 
     for tag in tags:
