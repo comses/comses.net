@@ -429,7 +429,6 @@ class Codebase(index.Indexed, ClusterableModel):
     search_fields = [
         index.SearchField('title', partial_match=True, boost=10),
         index.SearchField('description', partial_match=True, boost=5),
-        index.SearchField('concatenated_tags', partial_match=True, boost=5),
         index.SearchField('get_all_contributors_search_fields'),
         index.SearchField('get_all_release_frameworks'),
         index.SearchField('get_all_release_programming_languages'),
@@ -437,7 +436,7 @@ class Codebase(index.Indexed, ClusterableModel):
         index.SearchField('permanent_url'),
         index.SearchField('associated_publication_text', partial_match=True),
         index.RelatedFields('tags', [
-            index.SearchField('name', partial_match=True),
+            index.SearchField('name', partial_match=True, boost=50),
         ]),
         # filter and sort fields
         index.FilterField('last_modified'),

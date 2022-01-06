@@ -3,7 +3,8 @@ import logging
 from rest_framework.response import Response
 from wagtail.search.backends import get_search_backend
 from wagtail.search.models import Query
-from wagtail.search.query import MATCH_ALL
+from wagtail.search.query import MATCH_ALL, Phrase
+from wagtail.search.utils import parse_query_string
 
 logger = logging.getLogger(__name__)
 
@@ -20,21 +21,30 @@ def get_search_queryset(query, queryset, operator="or", fields=None, tags=None, 
 
     order_by_relevance = not queryset.ordered
 
+    """
+    # FIXME: this won't work until RelatedFields support filtering
+    # see https://docs.wagtail.io/en/stable/topics/search/indexing.html#index-relatedfields
     if tags:
-        # FIXME: this won't work until RelatedFields support filtering
-        # criteria.update(tags__name__in=[t.lower() for t in tags])
+        criteria.update(tags__name__in=[t.lower() for t in tags])
         operator = 'and'
+    """
+
+    if query:
+        Query.get(query).add_hit()
+        filters, query = parse_query_string(query, operator='or')
+        criteria.update(filters)
+
+    elif tags:
+        query = MATCH_ALL
+
+    for tag in tags:
+        query = query & Phrase(tag)
+
     if criteria:
         logger.debug("filtering by criteria: %s", criteria)
         queryset = queryset.filter(**criteria)
-    tags_string = ' '.join(tags)
-    query = f'{query} {tags_string}'.strip().lower()
-    logger.debug("searching on query: %s", query)
-    if query:
-        Query.get(query).add_hit()
-    else:
-        query = MATCH_ALL
 
+    logger.debug("parsed query: %s, filters: %s", query, criteria)
     results = search_backend.search(query,
                                     queryset,
                                     operator=operator,
