@@ -1,7 +1,10 @@
 import logging
 
+from django.core.exceptions import FieldError
+
 from rest_framework.response import Response
 from wagtail.search.backends import get_search_backend
+from wagtail.search.backends.base import FilterFieldError
 from wagtail.search.models import Query
 from wagtail.search.query import MATCH_ALL, Phrase
 from wagtail.search.utils import parse_query_string
@@ -13,11 +16,11 @@ search_backend = get_search_backend()
 
 def get_search_queryset(query, queryset, operator="or", fields=None, tags=None, criteria=None):
 
-    if not query:
-        query = ''
-
     if not tags:
         tags = []
+
+    if not criteria:
+        criteria = {}
 
     order_by_relevance = not queryset.ordered
 
@@ -32,7 +35,6 @@ def get_search_queryset(query, queryset, operator="or", fields=None, tags=None, 
     if query:
         Query.get(query).add_hit()
         filters, query = parse_query_string(query, operator='or')
-        logger.debug("parsed query: %s and filters %s", query, filters)
         criteria.update(filters)
     else:
         query = MATCH_ALL
@@ -41,8 +43,10 @@ def get_search_queryset(query, queryset, operator="or", fields=None, tags=None, 
         query = query & Phrase(tag)
 
     if criteria:
-        logger.debug("filtering by criteria: %s", criteria)
-        queryset = queryset.filter(**criteria)
+        try:
+            queryset = queryset.filter(**criteria)
+        except FieldError:
+            logger.warning("Invalid filter criteria: %s", criteria)
 
     logger.debug("parsed query: %s, filters: %s", query, criteria)
     results = search_backend.search(query,
