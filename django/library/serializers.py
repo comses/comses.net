@@ -225,7 +225,6 @@ class CodebaseSerializer(serializers.ModelSerializer, FeaturedImageMixin):
     identifier = serializers.ReadOnlyField()
     tags = TagSerializer(many=True)
 
-    # FIXME: output should be raw markdown, not rendered
     description = MarkdownField()
 
     def get_releases(self, obj):
@@ -269,10 +268,8 @@ class RelatedCodebaseSerializer(serializers.ModelSerializer, FeaturedImageMixin)
     first_published_at = serializers.DateTimeField(read_only=True, format=DATE_PUBLISHED_FORMAT)
     last_published_on = serializers.DateTimeField(read_only=True, format=DATE_PUBLISHED_FORMAT)
     summarized_description = serializers.CharField(read_only=True)
-    live = serializers.SerializerMethodField()
-
-    def get_live(self, instance):
-        return instance.live
+    live = serializers.ReadOnlyField()
+    description = MarkdownField()
 
     def create(self, validated_data):
         return create(self.Meta.model, validated_data, self.context)
@@ -283,8 +280,8 @@ class RelatedCodebaseSerializer(serializers.ModelSerializer, FeaturedImageMixin)
     class Meta:
         model = Codebase
         fields = ('all_contributors', 'tags', 'title', 'first_published_at', 'last_published_on', 'identifier',
-                  'version_number', 'featured_image', 'summarized_description', 'description', 'live', 'peer_reviewed',
-                  'repository_url',)
+                  'version_number', 'featured_image', 'summarized_description', 'description', 'live',
+                  'peer_reviewed', 'repository_url',)
 
 
 class CodebaseImageSerializer(serializers.ModelSerializer):
