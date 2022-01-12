@@ -3,13 +3,13 @@
         <c-input v-model="title" name="title" :errorMsgs="errors.title" label="Title" :required="config.title"
             help="A short title describing the job">
         </c-input>
-        <c-markdown v-model="description" name="description" :errorMsgs="errors.description" label="Description"
+        <c-textarea v-model="description" name="description" :errorMsgs="errors.description" label="Description"
             help="Detailed information about the job" :required="config.description">
-        </c-markdown>
-        <c-markdown v-model="summary" name="summary" :errorMsgs="errors.summary" label="Summary"
+        </c-textarea>
+        <c-textarea v-model="summary" name="summary" :errorMsgs="errors.summary" label="Summary"
             :required="config.summary"
             help="A shorter summary of this job that will be displayed in search results. You can auto-create one from the description with the Summarize button.">
-        </c-markdown>
+        </c-textarea>
         <button class="mt-n4 btn btn-secondary btn-sm" type="button" @click="createSummaryFromDescription">Summarize from Description</button>
         <c-input v-model="external_url" name="external_url" :errorMsgs="errors.external_url" :required="config.external_url"
             label="External Job URL" help="URL for this job on an external website">
@@ -28,6 +28,7 @@
 </template>
 <script lang="ts">
 import Markdown from '@/components/forms/markdown';
+import TextArea from '@/components/forms/textarea';
 import Tagger from '@/components/tagger';
 import Input from '@/components/forms/input';
 import MessageDisplay from '@/components/messages';
@@ -53,6 +54,7 @@ export const schema = yup.object().shape({
 @Component({
     components: {
         'c-markdown': Markdown,
+        'c-textarea': TextArea,
         'c-date-picker': DatePicker,
         'c-tagger': Tagger,
         'c-input': Input,

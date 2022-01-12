@@ -4,8 +4,6 @@ import Vue from 'vue';
 import VueEasymde from 'vue-easymde';
 import 'easymde/dist/easymde.min.css';
 
-Vue.component('vue-easymde', VueEasymde);
-
 @Component({
   template: `<div :class="['form-group', {'child-is-invalid': isInvalid }]">
         <slot name="label" :label="label">
@@ -13,13 +11,13 @@ Vue.component('vue-easymde', VueEasymde);
                 <small class="ml-1 text-muted"><a href="https://en.wikipedia.org/wiki/Markdown" target="_blank">Markdown</a> styling is supported</small>
             </label>
         </slot>
-        <vue-easymde @input="emitValue" :configs="configs" :value="value" ref="markdownEditor"></vue-easymde>
+        <vue-easymde @input="handleInput" :configs="configs" :value="value" ref="markdownEditor"></vue-easymde>
         <div v-if="isInvalid" class="invalid-feedback">{{ errorMessage }}</div>
         <slot name="help" :help="help">
         </slot>
     </div>`,
   components: {
-    VueEasymde,
+    'vue-easymde': VueEasymde,
   },
 })
 export default class Markdown extends BaseControl {
@@ -45,8 +43,25 @@ export default class Markdown extends BaseControl {
     };
   }
 
-  public emitValue(value) {
+  get easymde() {
+    return (this.$refs.markdownEditor as any).easymde;
+  }
+
+  public refresh() {
+    this.easymde.codemirror.refresh();
+  }
+
+  handleInput(value) {
+    console.log("emitting input value: ", value);
     this.$emit('input', value);
   }
+
+  mounted() {
+    const codemirror = this.easymde.codemirror;
+    codemirror.options.extraKeys.Tab = false;
+    codemirror.options.extraKeys['Shift-Tab'] = false;
+  }
+
+
 
 }

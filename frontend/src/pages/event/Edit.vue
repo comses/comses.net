@@ -48,14 +48,14 @@
                 </c-datepicker>
             </div>
         </div>
-        <c-markdown v-model="description" name="description" :errorMsgs="errors.description"
+        <c-textarea v-model="description" name="description" :errorMsgs="errors.description"
                     :required="config.description"
                     label="Description" help="Detailed information about the event">
-        </c-markdown>
-        <c-markdown v-model="summary" name="summary" :errorMsgs="errors.summary" :required="config.summary"
+        </c-textarea>
+        <c-textarea v-model="summary" name="summary" :errorMsgs="errors.summary" :required="config.summary"
                     label="Summary"
                     help="A short summary of the event for display in search results. This field can be created from the description by pressing the summarize button.">
-        </c-markdown>
+        </c-textarea>
        <button class="mt-n4 btn btn-secondary btn-sm" type="button" @click="createSummaryFromDescription">Summarize from Description</button>
         <c-input v-model="external_url" name="external_url" :errorMsgs="errors.external_url"
                  :required="config.external_url"
@@ -75,6 +75,7 @@
     import {CalendarEvent} from '@/store/common';
     import {EventAPI} from '@/api';
     import Markdown from '@/components/forms/markdown';
+    import TextArea from '@/components/forms/textarea';
     import Tagger from '@/components/tagger';
     import Input from '@/components/forms/input';
     import Datepicker from '@/components/forms/datepicker';
@@ -120,6 +121,7 @@
     @Component({
         components: {
             'c-markdown': Markdown,
+            'c-textarea': TextArea,
             'c-message-display': MessageDisplay,
             'c-datepicker': Datepicker,
             'c-tagger': Tagger,
