@@ -149,7 +149,7 @@ export default class CodebaseEditForm extends createFormValidator(schema) {
   }
 
   public async createOrUpdate() {
-    this.$emit('createOrUpdate');
+    this.$emit('create-or-update');
     let handler;
     if (_.isNull(this.redirect)) {
       handler = new HandlerWithRedirect(this);

@@ -209,7 +209,7 @@ class EditContributor extends createFormValidator(contributorSchema) {
                         </multiselect>
                     </div>
                     <div class="col-3">
-                        <button class="btn btn-block btn-primary" @click="$emit('editContributor', state.contributor)"><i class='fas fa-plus-square'></i> Create a new contributor</button>
+                        <button class="btn btn-block btn-primary" @click="$emit('edit-contributor', state.contributor)"><i class='fas fa-plus-square'></i> Create a new contributor</button>
                     </div>
                 </div>
                 <div class="invalid-feedback" v-show="errors.contributor">
@@ -356,7 +356,7 @@ class ContributorResponseHandler extends HandlerShowSuccessMessage {
         </div>
         <c-edit-release-contributor :releaseContributor="releaseContributor"
                 @save="saveReleaseContributor" @cancel="cancelReleaseContributor" ref="releaseContributor"
-                @editContributor="editContributor">
+                @edit-contributor="editContributor">
         </c-edit-release-contributor>
         <c-edit-contributor :contributor="contributor" ref="contributor"
                             @save="saveContributor" @cancel="cancelContributor">
