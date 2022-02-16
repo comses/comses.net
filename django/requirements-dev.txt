@@ -1,5 +1,6 @@
 -r requirements.txt
 # dev requirements
+black
 coverage
 coveralls
 django-debug-toolbar
