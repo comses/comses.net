@@ -18,10 +18,10 @@ from django.contrib.messages import constants as messages
 
 
 class Environment(Enum):
-    DEVELOPMENT = 'http://localhost:8000'
-    STAGING = 'https://test.comses.net'
-    PRODUCTION = 'https://www.comses.net'
-    TEST = 'http://localhost:8000'
+    DEVELOPMENT = "http://localhost:8000"
+    STAGING = "https://test.comses.net"
+    PRODUCTION = "https://www.comses.net"
+    TEST = "http://localhost:8000"
 
     def base_url(self):
         return self.value
@@ -56,103 +56,102 @@ DEBUG = True
 # FIXME: needs to be overridden in staging and prod after updating DEPLOY_ENVIRONMENT which is less than ideal
 
 BASE_URL = DEPLOY_ENVIRONMENT.base_url()
-ROBOTS_SITEMAP_URLS = [f'{BASE_URL}/sitemap.xml']
+ROBOTS_SITEMAP_URLS = [f"{BASE_URL}/sitemap.xml"]
 
 
 # wagtail config: https://docs.wagtail.io/en/v2.10.1/getting_started/integrating_into_django.html
 WAGTAIL_APPS = [
-    'wagtail.contrib.forms',
-    'wagtail.contrib.redirects',
-    'wagtail.embeds',
-    'wagtail.sites',
-    'wagtail.users',
-    'wagtail.snippets',
-    'wagtail.documents',
-    'wagtail.images',
-    'wagtail.search',
-    'wagtail.admin',
-    'wagtail.core',
-    'wagtail.contrib.modeladmin',
-    'wagtail.contrib.settings',
-    'taggit',
-    'modelcluster',
-    'search',
+    "wagtail.contrib.forms",
+    "wagtail.contrib.redirects",
+    "wagtail.embeds",
+    "wagtail.sites",
+    "wagtail.users",
+    "wagtail.snippets",
+    "wagtail.documents",
+    "wagtail.images",
+    "wagtail.search",
+    "wagtail.admin",
+    "wagtail.core",
+    "wagtail.contrib.modeladmin",
+    "wagtail.contrib.settings",
+    "taggit",
+    "modelcluster",
+    "search",
 ]
 
 DJANGO_APPS = [
-    'django.contrib.admin',
-    'django.contrib.auth',
-    'django.contrib.contenttypes',
-    'django.contrib.messages',
-    'django.contrib.sessions',
-    'django.contrib.sites',
-    'django.contrib.sitemaps',
-    'django.contrib.staticfiles',
+    "django.contrib.admin",
+    "django.contrib.auth",
+    "django.contrib.contenttypes",
+    "django.contrib.messages",
+    "django.contrib.sessions",
+    "django.contrib.sites",
+    "django.contrib.sitemaps",
+    "django.contrib.staticfiles",
 ]
 
 THIRD_PARTY_APPS = [
-    'hcaptcha_field',
-    'cookielaw',
-    'django_extensions',
-    'guardian',
-    'rest_framework',
-    'rest_framework_swagger',
-    'robots',
-    'timezone_field',
-    'webpack_loader',
-    'waffle',
-    'allauth',
-    'allauth.account',
-    'allauth.socialaccount',
-    'allauth.socialaccount.providers.github',
-    'allauth.socialaccount.providers.orcid',
+    "hcaptcha_field",
+    "cookielaw",
+    "django_extensions",
+    "guardian",
+    "rest_framework",
+    "rest_framework_swagger",
+    "robots",
+    "timezone_field",
+    "webpack_loader",
+    "waffle",
+    "allauth",
+    "allauth.account",
+    "allauth.socialaccount",
+    "allauth.socialaccount.providers.github",
+    "allauth.socialaccount.providers.orcid",
 ]
 
 COMSES_APPS = [
-    'core.apps.CoreConfig',
-    'home.apps.HomeConfig',
-    'library.apps.LibraryConfig',
-    'curator.apps.CuratorConfig',
+    "core.apps.CoreConfig",
+    "home.apps.HomeConfig",
+    "library.apps.LibraryConfig",
+    "curator.apps.CuratorConfig",
 ]
 
 INSTALLED_APPS = DJANGO_APPS + WAGTAIL_APPS + COMSES_APPS + THIRD_PARTY_APPS
 
 MIDDLEWARE = [
-    'django.contrib.sessions.middleware.SessionMiddleware',
-    'django.middleware.common.CommonMiddleware',
-    'django.middleware.csrf.CsrfViewMiddleware',
-    'django.contrib.auth.middleware.AuthenticationMiddleware',
-    'django.contrib.messages.middleware.MessageMiddleware',
-    'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'django.middleware.security.SecurityMiddleware',
-
-    'waffle.middleware.WaffleMiddleware',
-    'wagtail.contrib.redirects.middleware.RedirectMiddleware',
+    "django.contrib.sessions.middleware.SessionMiddleware",
+    "django.middleware.common.CommonMiddleware",
+    "django.middleware.csrf.CsrfViewMiddleware",
+    "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "django.contrib.messages.middleware.MessageMiddleware",
+    "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    "django.middleware.security.SecurityMiddleware",
+    "waffle.middleware.WaffleMiddleware",
+    "wagtail.contrib.redirects.middleware.RedirectMiddleware",
 ]
 
 AUTHENTICATION_BACKENDS = (
-    'allauth.account.auth_backends.AuthenticationBackend',
-    'core.backends.ComsesObjectPermissionBackend',
-    'guardian.backends.ObjectPermissionBackend'
+    "allauth.account.auth_backends.AuthenticationBackend",
+    "core.backends.ComsesObjectPermissionBackend",
+    "guardian.backends.ObjectPermissionBackend",
 )
 
 # Enable the sites framework for Wagtail + django-allauth
 SITE_ID = 1
 
-ROOT_URLCONF = 'core.urls'
+ROOT_URLCONF = "core.urls"
 
 # configure elasticsearch 7 wagtail backend
 WAGTAILSEARCH_BACKENDS = {
-    'default': {
-        'BACKEND': 'wagtail.search.backends.elasticsearch7',
-        'URLS': ['http://elasticsearch:9200'],
-        'ATOMIC_REBUILD': True,
-        'AUTO_UPDATE': True,
-        'TIMEOUT': 10,
-        'OPTIONS': {
-            'max_retries': 2,
+    "default": {
+        "BACKEND": "wagtail.search.backends.elasticsearch7",
+        "URLS": ["http://elasticsearch:9200"],
+        "ATOMIC_REBUILD": True,
+        "AUTO_UPDATE": True,
+        "TIMEOUT": 10,
+        "OPTIONS": {
+            "max_retries": 2,
         },
-        'INDEX_SETTINGS': {}
+        "INDEX_SETTINGS": {},
     }
 }
 
@@ -177,25 +176,29 @@ ADMIN_DASHBOARD_MAX_ITEMS = 15
 ADMIN_DASHBOARD_DAYS = 90
 
 if release_version_file.is_file():
-    with release_version_file.open('r') as infile:
+    with release_version_file.open("r") as infile:
         RELEASE_VERSION = infile.read().strip()
 
 config = configparser.ConfigParser()
 # FIXME: switch to docker secrets instead
-IS_IN_DOCKER = os.path.exists('/secrets/config.ini')
+IS_IN_DOCKER = os.path.exists("/secrets/config.ini")
 # FIXME: set up better shared paths
 if IS_IN_DOCKER:
-    config.read('/secrets/config.ini')
+    config.read("/secrets/config.ini")
 else:
-    config.read('../deploy/conf/config.ini.debug')
+    config.read("../deploy/conf/config.ini.debug")
 
 # default from email for various automated emails sent by Django
-DEFAULT_FROM_EMAIL = config.get('email', 'DEFAULT_FROM_EMAIL', fallback='info@comses.net')
+DEFAULT_FROM_EMAIL = config.get(
+    "email", "DEFAULT_FROM_EMAIL", fallback="info@comses.net"
+)
 # email address used for errors emails sent to ADMINS and MANAGERS
-SERVER_EMAIL = config.get('email', 'SERVER_EMAIL', fallback='editors@comses.net')
-EDITOR_EMAIL = config.get('email', 'EDITOR_EMAIL', fallback='editors@comses.net')
+SERVER_EMAIL = config.get("email", "SERVER_EMAIL", fallback="editors@comses.net")
+EDITOR_EMAIL = config.get("email", "EDITOR_EMAIL", fallback="editors@comses.net")
 # default email subject prefix
-EMAIL_SUBJECT_PREFIX = config.get('email', 'EMAIL_SUBJECT_PREFIX', fallback='[CoMSES Net]')
+EMAIL_SUBJECT_PREFIX = config.get(
+    "email", "EMAIL_SUBJECT_PREFIX", fallback="[CoMSES Net]"
+)
 
 # number of days before a peer review invitation expires
 PEER_REVIEW_INVITATION_EXPIRATION = 21
@@ -205,38 +208,48 @@ PEER_REVIEW_INVITATION_EXPIRATION = 21
 # NOCAPTCHA = True
 
 # sentry DSN
-SENTRY_DSN = config.get('logging', 'SENTRY_DSN', fallback='https://sentry.example.com/2')
+SENTRY_DSN = config.get(
+    "logging", "SENTRY_DSN", fallback="https://sentry.example.com/2"
+)
 
-SECRET_KEY = config.get('secrets', 'SECRET_KEY')
+SECRET_KEY = config.get("secrets", "SECRET_KEY")
 
 # regular settings
 
-POST_DATE_DAYS_AGO_THRESHOLD = config.getint('default', 'POST_DATE_DAYS_AGO_THRESHOLD', fallback=180)
+POST_DATE_DAYS_AGO_THRESHOLD = config.getint(
+    "default", "POST_DATE_DAYS_AGO_THRESHOLD", fallback=180
+)
 
 # Database configuration
 # https://docs.djangoproject.com/en/3.2/ref/settings/#databases
 
-DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
+DEFAULT_AUTO_FIELD = "django.db.models.AutoField"
 
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': config.get('database', 'DB_NAME'),
-        'USER': config.get('database', 'DB_USER'),
-        'PASSWORD': config.get('database', 'DB_PASSWORD'),
-        'HOST': config.get('database', 'DB_HOST'),
-        'PORT': config.get('database', 'DB_PORT'),
+    "default": {
+        "ENGINE": "django.db.backends.postgresql",
+        "NAME": config.get("database", "DB_NAME"),
+        "USER": config.get("database", "DB_USER"),
+        "PASSWORD": config.get("database", "DB_PASSWORD"),
+        "HOST": config.get("database", "DB_HOST"),
+        "PORT": config.get("database", "DB_PORT"),
     }
 }
 
-SHARE_DIR = '/shared'
-LOG_DIRECTORY = config.get('logging', 'LOG_DIRECTORY', fallback=os.path.join(BASE_DIR, 'logs'))
-LIBRARY_ROOT = config.get('storage', 'LIBRARY_ROOT', fallback=os.path.join(BASE_DIR, 'library'))
-PREVIOUS_SHARE_ROOT = os.path.join(SHARE_DIR, '.latest')
-REPOSITORY_ROOT = config.get('storage', 'REPOSITORY_ROOT', fallback=os.path.join(BASE_DIR, 'repository'))
-BORG_ROOT = '/shared/backups/repo'
-BACKUP_ROOT = '/shared/backups'
-EXTRACT_ROOT = '/shared/extract'
+SHARE_DIR = "/shared"
+LOG_DIRECTORY = config.get(
+    "logging", "LOG_DIRECTORY", fallback=os.path.join(BASE_DIR, "logs")
+)
+LIBRARY_ROOT = config.get(
+    "storage", "LIBRARY_ROOT", fallback=os.path.join(BASE_DIR, "library")
+)
+PREVIOUS_SHARE_ROOT = os.path.join(SHARE_DIR, ".latest")
+REPOSITORY_ROOT = config.get(
+    "storage", "REPOSITORY_ROOT", fallback=os.path.join(BASE_DIR, "repository")
+)
+BORG_ROOT = "/shared/backups/repo"
+BACKUP_ROOT = "/shared/backups"
+EXTRACT_ROOT = "/shared/extract"
 
 
 for d in (LOG_DIRECTORY, LIBRARY_ROOT, REPOSITORY_ROOT):
@@ -248,87 +261,87 @@ for d in (LOG_DIRECTORY, LIBRARY_ROOT, REPOSITORY_ROOT):
 
 # simple dev logging configuration
 LOGGING = {
-    'version': 1,
-    'disable_existing_loggers': True,
-    'root': {
-        'level': 'INFO',
-        'handlers': ['console', 'comsesfile'],
+    "version": 1,
+    "disable_existing_loggers": True,
+    "root": {
+        "level": "INFO",
+        "handlers": ["console", "comsesfile"],
     },
-    'formatters': {
-        'verbose': {
-            'format': '%(asctime)s %(levelname)-7s %(name)s:%(funcName)s:%(lineno)d %(message)s',
-            'datefmt': '%Y-%m-%d %H:%M:%S'
-        },
-    },
-    'handlers': {
-        'console': {
-            'class': 'logging.StreamHandler',
-            'level': 'DEBUG',
-            'formatter': 'verbose'
-        },
-        'djangofile': {
-            'level': 'DEBUG',
-            'class': 'logging.handlers.WatchedFileHandler',
-            'formatter': 'verbose',
-            'filename': os.path.join(LOG_DIRECTORY, 'django.log'),
-        },
-        'comsesfile': {
-            'level': 'DEBUG',
-            'class': 'logging.handlers.WatchedFileHandler',
-            'formatter': 'verbose',
-            'filename': os.path.join(LOG_DIRECTORY, 'comsesnet.log'),
+    "formatters": {
+        "verbose": {
+            "format": "%(asctime)s %(levelname)-7s %(name)s:%(funcName)s:%(lineno)d %(message)s",
+            "datefmt": "%Y-%m-%d %H:%M:%S",
         },
     },
-    'loggers': {
-        'bagit': {
-            'level': 'WARNING',
-            'handlers': ['console', 'comsesfile'],
-            'propagate': False
+    "handlers": {
+        "console": {
+            "class": "logging.StreamHandler",
+            "level": "DEBUG",
+            "formatter": "verbose",
         },
-        'django': {
-            'level': 'WARNING',
-            'handlers': ['djangofile'],
-            'propagate': False,
+        "djangofile": {
+            "level": "DEBUG",
+            "class": "logging.handlers.WatchedFileHandler",
+            "formatter": "verbose",
+            "filename": os.path.join(LOG_DIRECTORY, "django.log"),
         },
-        'home': {
-            'level': 'DEBUG',
-            'handlers': ['console', 'comsesfile'],
-            'propagate': False,
+        "comsesfile": {
+            "level": "DEBUG",
+            "class": "logging.handlers.WatchedFileHandler",
+            "formatter": "verbose",
+            "filename": os.path.join(LOG_DIRECTORY, "comsesnet.log"),
         },
-        'library': {
-            'level': 'DEBUG',
-            'handlers': ['console', 'comsesfile'],
-            'propagate': False,
+    },
+    "loggers": {
+        "bagit": {
+            "level": "WARNING",
+            "handlers": ["console", "comsesfile"],
+            "propagate": False,
         },
-        'core': {
-            'level': 'DEBUG',
-            'handlers': ['console', 'comsesfile'],
-            'propagate': False,
+        "django": {
+            "level": "WARNING",
+            "handlers": ["djangofile"],
+            "propagate": False,
         },
-        'invoke': {
-            'level': 'INFO',
-            'handlers': ['console', 'comsesfile'],
-            'propagate': False,
+        "home": {
+            "level": "DEBUG",
+            "handlers": ["console", "comsesfile"],
+            "propagate": False,
         },
-        'MARKDOWN': {
-            'level': 'ERROR',
-            'handlers': ['console', 'comsesfile'],
-            'propagate': False,
+        "library": {
+            "level": "DEBUG",
+            "handlers": ["console", "comsesfile"],
+            "propagate": False,
         },
-        'breadability': {
-            'level': 'ERROR',
-            'handlers': ['console', 'comsesfile'],
-            'propagate': False,
+        "core": {
+            "level": "DEBUG",
+            "handlers": ["console", "comsesfile"],
+            "propagate": False,
         },
-    }
+        "invoke": {
+            "level": "INFO",
+            "handlers": ["console", "comsesfile"],
+            "propagate": False,
+        },
+        "MARKDOWN": {
+            "level": "ERROR",
+            "handlers": ["console", "comsesfile"],
+            "propagate": False,
+        },
+        "breadability": {
+            "level": "ERROR",
+            "handlers": ["console", "comsesfile"],
+            "propagate": False,
+        },
+    },
 }
 
 # Internationalization
 # https://docs.djangoproject.com/en/2.2/topics/i18n/
 
-LANGUAGE_CODE = 'en-us'
+LANGUAGE_CODE = "en-us"
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = "UTC"
 
 USE_I18N = True
 
@@ -340,22 +353,20 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/2.2/howto/static-files/
 
 STATICFILES_FINDERS = [
-    'django.contrib.staticfiles.finders.FileSystemFinder',
-    'django.contrib.staticfiles.finders.AppDirectoriesFinder',
+    "django.contrib.staticfiles.finders.FileSystemFinder",
+    "django.contrib.staticfiles.finders.AppDirectoriesFinder",
 ]
 
-WEBPACK_DIR = config.get('storage', 'WEBPACK_ROOT', fallback='/shared/webpack')
+WEBPACK_DIR = config.get("storage", "WEBPACK_ROOT", fallback="/shared/webpack")
 
-STATIC_ROOT = '/shared/static'
-STATIC_URL = '/static/'
+STATIC_ROOT = "/shared/static"
+STATIC_URL = "/static/"
 
-STATICFILES_DIRS = [
-    WEBPACK_DIR
-]
+STATICFILES_DIRS = [WEBPACK_DIR]
 
 
-MEDIA_ROOT = '/shared/media'
-MEDIA_URL = '/media/'
+MEDIA_ROOT = "/shared/media"
+MEDIA_URL = "/media/"
 
 # Wagtail settings
 
@@ -364,131 +375,141 @@ APPEND_SLASH = True
 WAGTAIL_APPEND_SLASH = True
 
 WEBPACK_LOADER = {
-    'DEFAULT': {
-        'BUNDLE_DIR_NAME': 'bundles/',
-        'STATS_FILE': os.path.join(WEBPACK_DIR, 'webpack-stats.json'),
+    "DEFAULT": {
+        "BUNDLE_DIR_NAME": "bundles/",
+        "STATS_FILE": os.path.join(WEBPACK_DIR, "webpack-stats.json"),
     }
 }
 
 # authentication settings
-LOGIN_REDIRECT_URL = '/'
-LOGOUT_REDIRECT_URL = '/'
-WAGTAIL_FRONTEND_LOGIN_URL = 'auth_login'
+LOGIN_REDIRECT_URL = "/"
+LOGOUT_REDIRECT_URL = "/"
+WAGTAIL_FRONTEND_LOGIN_URL = "auth_login"
 
 
 REST_FRAMEWORK = {
-    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.LimitOffsetPagination',
-    'DEFAULT_PERMISSION_CLASSES': ('rest_framework.permissions.DjangoObjectPermissions',),
-    'DEFAULT_RENDERER_CLASSES': (
-        'core.renderers.RootContextHTMLRenderer',
-        'rest_framework.renderers.JSONRenderer',
+    "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.LimitOffsetPagination",
+    "DEFAULT_PERMISSION_CLASSES": (
+        "rest_framework.permissions.DjangoObjectPermissions",
     ),
-    'DEFAULT_AUTHENTICATION_CLASSES': (
-        'rest_framework.authentication.SessionAuthentication',
-        'rest_framework.authentication.BasicAuthentication',
-        'rest_framework_jwt.authentication.JSONWebTokenAuthentication',
+    "DEFAULT_RENDERER_CLASSES": (
+        "core.renderers.RootContextHTMLRenderer",
+        "rest_framework.renderers.JSONRenderer",
     ),
-    'EXCEPTION_HANDLER': 'core.views.rest_exception_handler',
-    'PAGE_SIZE': 10
+    "DEFAULT_AUTHENTICATION_CLASSES": (
+        "rest_framework.authentication.SessionAuthentication",
+        "rest_framework.authentication.BasicAuthentication",
+        "rest_framework_jwt.authentication.JSONWebTokenAuthentication",
+    ),
+    "EXCEPTION_HANDLER": "core.views.rest_exception_handler",
+    "PAGE_SIZE": 10,
 }
 
 # add redis cache http://docs.wagtail.io/en/v2.8/advanced_topics/performance.html#cache
 CACHES = {
-    'default': {
-        'BACKEND': 'django_redis.cache.RedisCache',
+    "default": {
+        "BACKEND": "django_redis.cache.RedisCache",
         # FIXME: switch to TCP in prod
-        'LOCATION': 'unix:/shared/redis/redis.sock',
-        'OPTIONS': {
-            'CLIENT_CLASS': 'django_redis.client.DefaultClient',
-        }
+        "LOCATION": "unix:/shared/redis/redis.sock",
+        "OPTIONS": {
+            "CLIENT_CLASS": "django_redis.client.DefaultClient",
+        },
     }
 }
 
 # SSO, user registration, and django-allauth configuration, see
 # https://django-allauth.readthedocs.io/en/latest/configuration.html
 # ACCOUNT_ADAPTER = 'core.adapter.AccountAdapter'
-ACCOUNT_AUTHENTICATION_METHOD = 'username_email'
+ACCOUNT_AUTHENTICATION_METHOD = "username_email"
 ACCOUNT_EMAIL_CONFIRMATION_EXPIRE_DAYS = 15
 ACCOUNT_EMAIL_REQUIRED = True
 ACCOUNT_EMAIL_VERIFICATION = "mandatory"
-ACCOUNT_SIGNUP_FORM_CLASS = 'core.forms.SignupForm'
-ACCOUNT_TEMPLATE_EXTENSION = 'jinja'
+ACCOUNT_SIGNUP_FORM_CLASS = "core.forms.SignupForm"
+ACCOUNT_TEMPLATE_EXTENSION = "jinja"
 ACCOUNT_PRESERVE_USERNAME_CASING = False
 ACCOUNT_LOGIN_ON_PASSWORD_RESET = True
 ACCOUNT_LOGIN_ON_EMAIL_CONFIRMATION = True
 
-ORCID_CLIENT_ID = config.get('secrets', 'ORCID_CLIENT_ID', fallback='')
-ORCID_CLIENT_SECRET = config.get('secrets', 'ORCID_CLIENT_SECRET', fallback='')
+ORCID_CLIENT_ID = config.get("secrets", "ORCID_CLIENT_ID", fallback="")
+ORCID_CLIENT_SECRET = config.get("secrets", "ORCID_CLIENT_SECRET", fallback="")
 
-GITHUB_CLIENT_ID = config.get('secrets', 'GITHUB_CLIENT_ID', fallback='')
-GITHUB_CLIENT_SECRET = config.get('secrets', 'GITHUB_CLIENT_SECRET', fallback='')
+GITHUB_CLIENT_ID = config.get("secrets", "GITHUB_CLIENT_ID", fallback="")
+GITHUB_CLIENT_SECRET = config.get("secrets", "GITHUB_CLIENT_SECRET", fallback="")
 
-TEST_BASIC_AUTH_PASSWORD = config.get('test', 'TEST_BASIC_AUTH_PASSWORD', fallback='test password')
-TEST_USER_ID = config.get('test', 'TEST_USER_ID', fallback=1000000)
-TEST_USERNAME = config.get('test', 'TEST_USERNAME', fallback='__test_user__')
+TEST_BASIC_AUTH_PASSWORD = config.get(
+    "test", "TEST_BASIC_AUTH_PASSWORD", fallback="test password"
+)
+TEST_USER_ID = config.get("test", "TEST_USER_ID", fallback=1000000)
+TEST_USERNAME = config.get("test", "TEST_USERNAME", fallback="__test_user__")
 
 SOCIALACCOUNT_PROVIDERS = {
     # https://developer.github.com/apps/building-integrations/setting-up-and-registering-oauth-apps/about-scopes-for-oauth-apps/
-    'github': {
-        'SCOPE': [
-            'user:email',
-            'read:org',
+    "github": {
+        "SCOPE": [
+            "user:email",
+            "read:org",
         ],
     },
     # http://django-allauth.readthedocs.io/en/latest/providers.html#orcid
     # NOTE: must be deleted in production settings
-    'orcid': {
-        'BASE_DOMAIN': 'sandbox.orcid.org',
-        'MEMBER_API': True,
+    "orcid": {
+        "BASE_DOMAIN": "sandbox.orcid.org",
+        "MEMBER_API": True,
     },
 }
 
-DISCOURSE_BASE_URL = config.get('discourse', 'DISCOURSE_BASE_URL', fallback='https://test-discourse.comses.net')
-DISCOURSE_SSO_SECRET = config.get('secrets', 'DISCOURSE_SSO_SECRET', fallback='unconfigured')
-DISCOURSE_API_KEY = config.get('secrets', 'DISCOURSE_API_KEY', fallback='unconfigured')
-DISCOURSE_API_USERNAME = config.get('discourse', 'DISCOURSE_API_USERNAME', fallback='unconfigured')
+DISCOURSE_BASE_URL = config.get(
+    "discourse", "DISCOURSE_BASE_URL", fallback="https://test-discourse.comses.net"
+)
+DISCOURSE_SSO_SECRET = config.get(
+    "secrets", "DISCOURSE_SSO_SECRET", fallback="unconfigured"
+)
+DISCOURSE_API_KEY = config.get("secrets", "DISCOURSE_API_KEY", fallback="unconfigured")
+DISCOURSE_API_USERNAME = config.get(
+    "discourse", "DISCOURSE_API_USERNAME", fallback="unconfigured"
+)
 
 TEMPLATES = [
     {
-        'BACKEND': 'django.template.backends.jinja2.Jinja2',
-        'APP_DIRS': True,
-        'OPTIONS': {
+        "BACKEND": "django.template.backends.jinja2.Jinja2",
+        "APP_DIRS": True,
+        "OPTIONS": {
             "extensions": [
                 "webpack_loader.contrib.jinja2ext.WebpackExtension",
-                'wagtail.contrib.settings.jinja2tags.settings',
-                'wagtail.core.jinja2tags.core',
-                'wagtail.admin.jinja2tags.userbar',
-                'wagtail.images.jinja2tags.images',
-                'waffle.jinja.WaffleExtension',
+                "wagtail.contrib.settings.jinja2tags.settings",
+                "wagtail.core.jinja2tags.core",
+                "wagtail.admin.jinja2tags.userbar",
+                "wagtail.images.jinja2tags.images",
+                "waffle.jinja.WaffleExtension",
             ],
-            'environment': 'core.jinja_config.environment',
-        }
+            "environment": "core.jinja_config.environment",
+        },
     },
     {
-        'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'APP_DIRS': True,
-        'OPTIONS': {
-            'context_processors': [
-                'django.template.context_processors.debug',
-                'django.template.context_processors.request',
-                'django.contrib.auth.context_processors.auth',
-                'django.contrib.messages.context_processors.messages',
-                'wagtail.contrib.settings.context_processors.settings',
+        "BACKEND": "django.template.backends.django.DjangoTemplates",
+        "APP_DIRS": True,
+        "OPTIONS": {
+            "context_processors": [
+                "django.template.context_processors.debug",
+                "django.template.context_processors.request",
+                "django.contrib.auth.context_processors.auth",
+                "django.contrib.messages.context_processors.messages",
+                "wagtail.contrib.settings.context_processors.settings",
             ],
         },
     },
 ]
 
 MESSAGE_TAGS = {
-    messages.SUCCESS: 'alert alert-success',
-    messages.DEBUG: 'alert alert-info',
-    messages.INFO: 'alert alert-info',
-    messages.WARNING: 'alert alert-warning',
-    messages.ERROR: 'alert alert-danger'
+    messages.SUCCESS: "alert alert-success",
+    messages.DEBUG: "alert alert-info",
+    messages.INFO: "alert alert-info",
+    messages.WARNING: "alert alert-warning",
+    messages.ERROR: "alert alert-danger",
 }
 
 FILE_UPLOAD_MAX_MEMORY_SIZE = 104857600
 FILE_UPLOAD_PERMISSIONS = 0o644
 FILE_UPLOAD_TEMP_DIR = "/shared/uploads/"
 
-ACCEPTED_IMAGE_TYPES = ['gif', 'jpeg', 'png']
+ACCEPTED_IMAGE_TYPES = ["gif", "jpeg", "png"]

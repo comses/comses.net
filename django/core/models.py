@@ -28,7 +28,7 @@ from wagtail.snippets.models import register_snippet
 from .backends import add_to_comses_permission_whitelist
 from .fields import MarkdownField
 
-EXCLUDED_USERNAMES = ('AnonymousUser', 'openabm')
+EXCLUDED_USERNAMES = ("AnonymousUser", "openabm")
 
 
 class ComsesGroups(Enum):
@@ -49,7 +49,7 @@ class ComsesGroups(Enum):
         return MemberProfile.objects.filter(user__in=self.users(**kwargs))
 
     def get_group(self):
-        _group = getattr(self, 'group', None)
+        _group = getattr(self, "group", None)
         if _group is None:
             _group = self.group = Group.objects.get(name=self.value)
         return _group
@@ -62,12 +62,20 @@ def get_sentinel_user():
 @register_setting
 class SiteSettings(BaseSetting):
     maintenance_mode = models.BooleanField(default=False)
-    banner_message_title = models.CharField(max_length=64, blank=True, default='CoMSES Net Notice')
-    banner_message = MarkdownField(help_text=_("Markdown-enabled banner notification displayed on the front page"), blank=True)
-    banner_destination_url = models.URLField(help_text=_("URL to redirect to when this banner is clicked"), blank=True)
+    banner_message_title = models.CharField(
+        max_length=64, blank=True, default="CoMSES Net Notice"
+    )
+    banner_message = MarkdownField(
+        help_text=_("Markdown-enabled banner notification displayed on the front page"),
+        blank=True,
+    )
+    banner_destination_url = models.URLField(
+        help_text=_("URL to redirect to when this banner is clicked"), blank=True
+    )
     last_modified = models.DateTimeField(auto_now=True)
-    mailchimp_digest_archive_url = models.URLField(help_text=_('Mailchimp Digest Campaign Archive URL'),
-                                                   blank=True)
+    mailchimp_digest_archive_url = models.URLField(
+        help_text=_("Mailchimp Digest Campaign Archive URL"), blank=True
+    )
 
     @property
     def has_banner(self):
@@ -82,18 +90,31 @@ class SiteSettings(BaseSetting):
 
 @register_setting
 class SocialMediaSettings(BaseSetting):
-    facebook_url = models.URLField(help_text=_('Facebook URL'), blank=True)
-    youtube_url = models.URLField(help_text=_('CoMSES Net YouTube Channel'), blank=True)
-    twitter_account = models.CharField(max_length=128, default='comses',
-                                       help_text=_('CoMSES Net official Twitter account'), blank=True)
-    github_account = models.CharField(max_length=128, default='comses',
-                                      help_text=_('CoMSES Net official GitHub account'), blank=True)
-    mailing_list_url = models.URLField(help_text=_('Mailing List Signup URL, i.e., MailChimp signup form'), blank=True)
+    facebook_url = models.URLField(help_text=_("Facebook URL"), blank=True)
+    youtube_url = models.URLField(help_text=_("CoMSES Net YouTube Channel"), blank=True)
+    twitter_account = models.CharField(
+        max_length=128,
+        default="comses",
+        help_text=_("CoMSES Net official Twitter account"),
+        blank=True,
+    )
+    github_account = models.CharField(
+        max_length=128,
+        default="comses",
+        help_text=_("CoMSES Net official GitHub account"),
+        blank=True,
+    )
+    mailing_list_url = models.URLField(
+        help_text=_("Mailing List Signup URL, i.e., MailChimp signup form"), blank=True
+    )
     contact_form_recipients = ArrayField(
         models.EmailField(),
-        help_text=_('Email address(es) where contact forms will be sent. Separate multiple addresses with commas,'
-                    ' e.g., `editors@comses.net,info@comses.net`'),
-        default=list)
+        help_text=_(
+            "Email address(es) where contact forms will be sent. Separate multiple addresses with commas,"
+            " e.g., `editors@comses.net,info@comses.net`"
+        ),
+        default=list,
+    )
 
 
 @register_snippet
@@ -104,45 +125,50 @@ class Institution(models.Model):
     ror_id = models.URLField(blank=True)
 
     panels = [
-        FieldPanel('name'),
-        FieldPanel('url'),
-        FieldPanel('acronym'),
-        FieldPanel('ror_id'),
+        FieldPanel("name"),
+        FieldPanel("url"),
+        FieldPanel("acronym"),
+        FieldPanel("ror_id"),
     ]
 
     def __str__(self):
-        return f'{self.name} {self.ror_id}'
+        return f"{self.name} {self.ror_id}"
 
 
 class MemberProfileTag(TaggedItemBase):
-    content_object = ParentalKey('core.MemberProfile', related_name='tagged_members')
+    content_object = ParentalKey("core.MemberProfile", related_name="tagged_members")
 
 
 class FollowUser(models.Model):
-    target = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='followers', on_delete=models.CASCADE)
-    source = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='following', on_delete=models.CASCADE)
+    target = models.ForeignKey(
+        settings.AUTH_USER_MODEL, related_name="followers", on_delete=models.CASCADE
+    )
+    source = models.ForeignKey(
+        settings.AUTH_USER_MODEL, related_name="following", on_delete=models.CASCADE
+    )
 
     def __str__(self):
-        return '{0} following {1}'.format(self.source, self.target)
+        return "{0} following {1}".format(self.source, self.target)
 
 
 class MemberProfileQuerySet(models.QuerySet):
-
     def find_by_name(self, query):
-        return self.filter(models.Q(user__username__icontains=query) |
-                           models.Q(user__last_name__icontains=query) |
-                           models.Q(user__first_name__icontains=query) |
-                           models.Q(user__contributor__given_name__icontains=query) |
-                           models.Q(user__contributor__family_name__icontains=query))
+        return self.filter(
+            models.Q(user__username__icontains=query)
+            | models.Q(user__last_name__icontains=query)
+            | models.Q(user__first_name__icontains=query)
+            | models.Q(user__contributor__given_name__icontains=query)
+            | models.Q(user__contributor__family_name__icontains=query)
+        )
 
     def with_institution(self):
-        return self.select_related('institution')
+        return self.select_related("institution")
 
     def with_user(self):
-        return self.select_related('user')
+        return self.select_related("user")
 
     def with_tags(self):
-        return self.prefetch_related('tagged_members__tag')
+        return self.prefetch_related("tagged_members__tag")
 
     def full_members(self, **kwargs):
         return ComsesGroups.FULL_MEMBER.member_profiles(**kwargs)
@@ -151,7 +177,9 @@ class MemberProfileQuerySet(models.QuerySet):
         return ComsesGroups.EDITOR.member_profiles(**kwargs)
 
     def public(self, **kwargs):
-        return self.filter(user__is_active=True, **kwargs).exclude(user__username__in=EXCLUDED_USERNAMES)
+        return self.filter(user__is_active=True, **kwargs).exclude(
+            user__username__in=EXCLUDED_USERNAMES
+        )
 
     def find_users_with_email(self, candidate_email, exclude_user=None):
         """
@@ -159,8 +187,16 @@ class MemberProfileQuerySet(models.QuerySet):
         """
         if exclude_user is None:
             exclude_user = User.get_anonymous()
-        return EmailAddress.objects.filter(email=candidate_email).exclude(user=exclude_user).values_list('user').union(
-            User.objects.filter(email=candidate_email).exclude(pk=exclude_user.pk).values_list('pk'))
+        return (
+            EmailAddress.objects.filter(email=candidate_email)
+            .exclude(user=exclude_user)
+            .values_list("user")
+            .union(
+                User.objects.filter(email=candidate_email)
+                .exclude(pk=exclude_user.pk)
+                .values_list("pk")
+            )
+        )
 
 
 @add_to_comses_permission_whitelist
@@ -170,21 +206,27 @@ class MemberProfile(index.Indexed, ClusterableModel):
     Contains additional comses.net information, possibly linked to a CoMSES Member / site account
     """
 
-    user = models.OneToOneField(User, null=True, on_delete=models.SET_NULL, related_name='member_profile')
+    user = models.OneToOneField(
+        User, null=True, on_delete=models.SET_NULL, related_name="member_profile"
+    )
 
     # FIXME: add location field eventually, with postgis
     # location = LocationField(based_fields=['city'], zoom=7)
 
     timezone = TimeZoneField(blank=True)
 
-    affiliations = models.JSONField(default=list, help_text=_("JSON-LD list of affiliated institutions"))
-    bio = MarkdownField(max_length=2048, help_text=_('Brief bio'))
+    affiliations = models.JSONField(
+        default=list, help_text=_("JSON-LD list of affiliated institutions")
+    )
+    bio = MarkdownField(max_length=2048, help_text=_("Brief bio"))
     degrees = ArrayField(models.CharField(max_length=255), blank=True, default=list)
     institution = models.ForeignKey(Institution, null=True, on_delete=models.SET_NULL)
     tags = ClusterTaggableManager(through=MemberProfileTag, blank=True)
 
     personal_url = models.URLField(blank=True)
-    picture = models.ForeignKey(Image, null=True, help_text=_('Profile picture'), on_delete=models.SET_NULL)
+    picture = models.ForeignKey(
+        Image, null=True, help_text=_("Profile picture"), on_delete=models.SET_NULL
+    )
     professional_url = models.URLField(blank=True)
     research_interests = MarkdownField(max_length=2048)
     short_uuid = models.CharField(max_length=32, unique=True, null=True)
@@ -192,36 +234,45 @@ class MemberProfile(index.Indexed, ClusterableModel):
     objects = MemberProfileQuerySet.as_manager()
 
     panels = [
-        FieldPanel('bio', widget=forms.Textarea),
-        FieldPanel('research_interests', widget=forms.Textarea),
-        FieldPanel('personal_url'),
-        FieldPanel('professional_url'),
-        FieldPanel('institution'),
-        ImageChooserPanel('picture'),
-        FieldPanel('tags'),
+        FieldPanel("bio", widget=forms.Textarea),
+        FieldPanel("research_interests", widget=forms.Textarea),
+        FieldPanel("personal_url"),
+        FieldPanel("professional_url"),
+        FieldPanel("institution"),
+        ImageChooserPanel("picture"),
+        FieldPanel("tags"),
     ]
 
     search_fields = [
-        index.FilterField('is_active'),
-        index.FilterField('username'),
-        index.SearchField('bio', partial_match=True),
-        index.SearchField('research_interests', partial_match=True),
-        index.SearchField('degrees', partial_match=True),
-        index.SearchField('name', partial_match=True),
-        index.RelatedFields('institution', [
-            index.SearchField('name', partial_match=True),
-        ]),
-        index.RelatedFields('tags', [
-            index.SearchField('name', partial_match=True),
-        ]),
-        index.RelatedFields('user', [
-            index.FilterField('date_joined'),
-            index.FilterField('last_name'),
-            index.SearchField('first_name', partial_match=True),
-            index.SearchField('last_name', partial_match=True),
-            index.SearchField('email', partial_match=True),
-            index.SearchField('username', partial_match=True),
-        ]),
+        index.FilterField("is_active"),
+        index.FilterField("username"),
+        index.SearchField("bio", partial_match=True),
+        index.SearchField("research_interests", partial_match=True),
+        index.SearchField("degrees", partial_match=True),
+        index.SearchField("name", partial_match=True),
+        index.RelatedFields(
+            "institution",
+            [
+                index.SearchField("name", partial_match=True),
+            ],
+        ),
+        index.RelatedFields(
+            "tags",
+            [
+                index.SearchField("name", partial_match=True),
+            ],
+        ),
+        index.RelatedFields(
+            "user",
+            [
+                index.FilterField("date_joined"),
+                index.FilterField("last_name"),
+                index.SearchField("first_name", partial_match=True),
+                index.SearchField("last_name", partial_match=True),
+                index.SearchField("email", partial_match=True),
+                index.SearchField("username", partial_match=True),
+            ],
+        ),
     ]
 
     # Proxies to related user object
@@ -248,12 +299,12 @@ class MemberProfile(index.Indexed, ClusterableModel):
         """
         Returns the ORCID profile URL associated with this member profile if it exists, or None
         """
-        return self.get_social_account_profile_url('orcid')
+        return self.get_social_account_profile_url("orcid")
 
     @property
     def avatar_url(self):
         if self.picture:
-            return self.picture.get_rendition('fill-150x150').url
+            return self.picture.get_rendition("fill-150x150").url
         return None
 
     """
@@ -262,7 +313,7 @@ class MemberProfile(index.Indexed, ClusterableModel):
 
     @property
     def github_url(self):
-        return self.get_social_account_profile_url('github')
+        return self.get_social_account_profile_url("github")
 
     def get_social_account_profile_url(self, provider_name):
         social_acct = self.get_social_account(provider_name)
@@ -275,27 +326,27 @@ class MemberProfile(index.Indexed, ClusterableModel):
 
     @property
     def institution_url(self):
-        return self.institution.url if self.institution else ''
+        return self.institution.url if self.institution else ""
 
     @property
     def profile_url(self):
         return self.get_absolute_url()
 
     def get_absolute_url(self):
-        return reverse('home:profile-detail', kwargs={'pk': self.user.pk})
+        return reverse("home:profile-detail", kwargs={"pk": self.user.pk})
 
     def get_edit_url(self):
-        return reverse('home:profile-edit', kwargs={'user__pk': self.user.pk})
+        return reverse("home:profile-edit", kwargs={"user__pk": self.user.pk})
 
     @classmethod
     def get_list_url(cls):
-        return reverse('home:profile-list')
+        return reverse("home:profile-list")
 
     # Other
 
     @property
     def institution_name(self):
-        return self.institution.name if self.institution else ''
+        return self.institution.name if self.institution else ""
 
     @property
     def submitter(self):
@@ -329,7 +380,7 @@ class MemberProfile(index.Indexed, ClusterableModel):
 
 
 class PlatformTag(TaggedItemBase):
-    content_object = ParentalKey('core.Platform', related_name='tagged_platforms')
+    content_object = ParentalKey("core.Platform", related_name="tagged_platforms")
 
 
 @register_snippet
@@ -349,29 +400,32 @@ class Platform(index.Indexed, ClusterableModel):
     @staticmethod
     def _upload_path(instance, filename):
         # FIXME: base in MEDIA_ROOT?
-        return pathlib.Path('platforms', instance.platform.name, filename)
+        return pathlib.Path("platforms", instance.platform.name, filename)
 
     panels = [
-        FieldPanel('name'),
-        FieldPanel('url'),
-        FieldPanel('description'),
-        FieldPanel('active'),
-        FieldPanel('open_source'),
-        FieldPanel('featured'),
-        FieldPanel('tags'),
+        FieldPanel("name"),
+        FieldPanel("url"),
+        FieldPanel("description"),
+        FieldPanel("active"),
+        FieldPanel("open_source"),
+        FieldPanel("featured"),
+        FieldPanel("tags"),
     ]
 
     def get_all_tags(self):
-        return ' '.join(self.tags.all().values_list('name', flat=True))
+        return " ".join(self.tags.all().values_list("name", flat=True))
 
     search_fields = [
-        index.SearchField('name', partial_match=True),
-        index.SearchField('description', partial_match=True),
-        index.FilterField('active'),
-        index.FilterField('open_source'),
-        index.RelatedFields('tags', [
-            index.SearchField('name'),
-        ]),
+        index.SearchField("name", partial_match=True),
+        index.SearchField("description", partial_match=True),
+        index.FilterField("active"),
+        index.FilterField("open_source"),
+        index.RelatedFields(
+            "tags",
+            [
+                index.SearchField("name"),
+            ],
+        ),
     ]
 
     def __str__(self):
@@ -392,11 +446,10 @@ class PlatformRelease(models.Model):
 
 
 class EventTag(TaggedItemBase):
-    content_object = ParentalKey('core.Event', related_name='tagged_events')
+    content_object = ParentalKey("core.Event", related_name="tagged_events")
 
 
 class EventQuerySet(models.QuerySet):
-
     def find_by_interval(self, start, end):
         """
         Returns all Events whose early registration deadline or submission deadline falls within the interval and whose
@@ -407,28 +460,35 @@ class EventQuerySet(models.QuerySet):
         """
         return self.filter(
             # early registration deadline falls between the interval
-            models.Q(early_registration_deadline__range=[start, end]) |
+            models.Q(early_registration_deadline__range=[start, end])
+            |
             # or submission deadline falls between the interval
-            models.Q(submission_deadline__range=[start, end]) |
-            models.Q(start_date__range=[start, end]) |
-            models.Q(end_date__range=[start, end])
+            models.Q(submission_deadline__range=[start, end])
+            | models.Q(start_date__range=[start, end])
+            | models.Q(end_date__range=[start, end])
         )
 
     def with_submitter(self):
-        return self.select_related('submitter')
+        return self.select_related("submitter")
 
     def with_tags(self):
-        return self.prefetch_related('tagged_events__tag')
+        return self.prefetch_related("tagged_events__tag")
 
     def upcoming(self, **kwargs):
         # return all events with start / end dates
         now = timezone.now()
         post_date_days_ago_threshold = settings.POST_DATE_DAYS_AGO_THRESHOLD
         post_date_threshold = now - timedelta(days=post_date_days_ago_threshold)
-        return self.filter(models.Q(start_date__gte=post_date_threshold) | models.Q(end_date__gte=post_date_threshold), **kwargs)
+        return self.filter(
+            models.Q(start_date__gte=post_date_threshold)
+            | models.Q(end_date__gte=post_date_threshold),
+            **kwargs,
+        )
 
     def latest_for_feed(self, number=10):
-        return self.select_related('submitter__member_profile').order_by('-date_created')[:number]
+        return self.select_related("submitter__member_profile").order_by(
+            "-date_created"
+        )[:number]
 
     def public(self):
         return self
@@ -452,27 +512,35 @@ class Event(index.Indexed, ClusterableModel):
 
     objects = EventQuerySet.as_manager()
 
-    submitter = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET(get_sentinel_user))
+    submitter = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET(get_sentinel_user)
+    )
 
     search_fields = [
-        index.SearchField('title', partial_match=True),
-        index.SearchField('description', partial_match=True),
-        index.FilterField('date_created'),
-        index.FilterField('start_date'),
-        index.FilterField('end_date'),
-        index.FilterField('last_modified'),
-        index.FilterField('submission_deadline'),
-        index.FilterField('early_registration_deadline'),
-        index.FilterField('registration_deadline'),
-        index.SearchField('location', partial_match=True),
-        index.RelatedFields('tags', [
-            index.SearchField('name'),
-        ]),
-        index.RelatedFields('submitter', [
-            index.SearchField('username'),
-            index.SearchField('email', partial_match=True),
-            index.SearchField('get_full_name', partial_match=True),
-        ]),
+        index.SearchField("title", partial_match=True),
+        index.SearchField("description", partial_match=True),
+        index.FilterField("date_created"),
+        index.FilterField("start_date"),
+        index.FilterField("end_date"),
+        index.FilterField("last_modified"),
+        index.FilterField("submission_deadline"),
+        index.FilterField("early_registration_deadline"),
+        index.FilterField("registration_deadline"),
+        index.SearchField("location", partial_match=True),
+        index.RelatedFields(
+            "tags",
+            [
+                index.SearchField("name"),
+            ],
+        ),
+        index.RelatedFields(
+            "submitter",
+            [
+                index.SearchField("username"),
+                index.SearchField("email", partial_match=True),
+                index.SearchField("get_full_name", partial_match=True),
+            ],
+        ),
     ]
 
     @property
@@ -480,79 +548,98 @@ class Event(index.Indexed, ClusterableModel):
         return True
 
     def get_absolute_url(self):
-        return reverse('home:event-detail', kwargs={'pk': self.pk})
+        return reverse("home:event-detail", kwargs={"pk": self.pk})
 
     @classmethod
     def get_list_url(cls):
-        return reverse('home:event-list')
+        return reverse("home:event-list")
 
     def __str__(self):
         return "{0} posted by {1} on {2}".format(
-            self.title, self.submitter.username, self.date_created.strftime('%c')
+            self.title, self.submitter.username, self.date_created.strftime("%c")
         )
 
 
 class JobTag(TaggedItemBase):
-    content_object = ParentalKey('core.Job', related_name='tagged_jobs')
+    content_object = ParentalKey("core.Job", related_name="tagged_jobs")
 
 
 class JobQuerySet(models.QuerySet):
-
     def with_submitter(self):
-        return self.select_related('submitter')
+        return self.select_related("submitter")
 
     def with_tags(self):
-        return self.prefetch_related('tagged_jobs__tag')
+        return self.prefetch_related("tagged_jobs__tag")
 
     def public(self):
         return self
 
     def upcoming(self, **kwargs):
-        ''' returns all Jobs with a non-null application_deadline after today or posted in the last 6 months '''
+        """returns all Jobs with a non-null application_deadline after today or posted in the last 6 months"""
         today = timezone.now()
         post_date_days_ago_threshold = settings.POST_DATE_DAYS_AGO_THRESHOLD
         post_date_threshold = today - timedelta(days=post_date_days_ago_threshold)
         return self.filter(
-            models.Q(application_deadline__gte=post_date_threshold) |
-            (models.Q(application_deadline__isnull=True) &
-             (models.Q(date_created__gte=post_date_threshold) |
-              models.Q(last_modified__gte=post_date_threshold))),
-            **kwargs
+            models.Q(application_deadline__gte=post_date_threshold)
+            | (
+                models.Q(application_deadline__isnull=True)
+                & (
+                    models.Q(date_created__gte=post_date_threshold)
+                    | models.Q(last_modified__gte=post_date_threshold)
+                )
+            ),
+            **kwargs,
         )
 
     def latest_for_feed(self, number=10):
-        return self.select_related('submitter__member_profile').order_by('-date_created')[:number]
+        return self.select_related("submitter__member_profile").order_by(
+            "-date_created"
+        )[:number]
 
 
 @add_to_comses_permission_whitelist
 class Job(index.Indexed, ClusterableModel):
-    title = models.CharField(max_length=300, help_text=_('Job posting title'))
+    title = models.CharField(max_length=300, help_text=_("Job posting title"))
     date_created = models.DateTimeField(default=timezone.now)
-    application_deadline = models.DateField(blank=True, null=True, help_text=_('Optional deadline for applications'))
+    application_deadline = models.DateField(
+        blank=True, null=True, help_text=_("Optional deadline for applications")
+    )
     last_modified = models.DateTimeField(auto_now=True)
-    summary = models.CharField(max_length=500, blank=True, help_text=_('Brief summary of job posting.'))
+    summary = models.CharField(
+        max_length=500, blank=True, help_text=_("Brief summary of job posting.")
+    )
     description = MarkdownField()
     tags = ClusterTaggableManager(through=JobTag, blank=True)
     external_url = models.URLField(blank=True)
 
-    submitter = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='jobs', on_delete=models.SET(get_sentinel_user))
+    submitter = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        related_name="jobs",
+        on_delete=models.SET(get_sentinel_user),
+    )
 
     objects = JobQuerySet.as_manager()
 
     search_fields = [
-        index.SearchField('title', partial_match=True),
-        index.SearchField('description', partial_match=True),
-        index.FilterField('date_created'),
-        index.FilterField('last_modified'),
-        index.FilterField('application_deadline'),
-        index.RelatedFields('tags', [
-            index.SearchField('name'),
-        ]),
-        index.RelatedFields('submitter', [
-            index.SearchField('username'),
-            index.SearchField('email', partial_match=True),
-            index.SearchField('get_full_name', partial_match=True),
-        ]),
+        index.SearchField("title", partial_match=True),
+        index.SearchField("description", partial_match=True),
+        index.FilterField("date_created"),
+        index.FilterField("last_modified"),
+        index.FilterField("application_deadline"),
+        index.RelatedFields(
+            "tags",
+            [
+                index.SearchField("name"),
+            ],
+        ),
+        index.RelatedFields(
+            "submitter",
+            [
+                index.SearchField("username"),
+                index.SearchField("email", partial_match=True),
+                index.SearchField("get_full_name", partial_match=True),
+            ],
+        ),
     ]
 
     @property
@@ -560,15 +647,15 @@ class Job(index.Indexed, ClusterableModel):
         return True
 
     def get_absolute_url(self):
-        return reverse('home:job-detail', kwargs={'pk': self.pk})
+        return reverse("home:job-detail", kwargs={"pk": self.pk})
 
     @classmethod
     def get_list_url(cls):
-        return reverse('home:job-list')
+        return reverse("home:job-list")
 
     def __str__(self):
         return "{0} posted by {1} on {2}".format(
-            self.title, self.submitter.username, self.date_created.strftime('%c')
+            self.title, self.submitter.username, self.date_created.strftime("%c")
         )
 
     @property

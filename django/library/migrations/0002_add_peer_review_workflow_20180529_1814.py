@@ -10,98 +10,399 @@ import uuid
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('core', '0002_platform_description_20180520_0549'),
-        ('library', '0001_initial'),
+        ("core", "0002_platform_description_20180520_0549"),
+        ("library", "0001_initial"),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='PeerReview',
+            name="PeerReview",
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('date_created', models.DateTimeField(auto_now_add=True)),
-                ('last_modified', models.DateTimeField(auto_now=True)),
-                ('status', models.CharField(choices=[('awaiting_reviewer_feedback', 'Awaiting reviewer feedback'), ('awaiting_editor_feedback', 'Awaiting editor feedback'), ('awaiting_author_changes', 'Awaiting author release changes'), ('complete', 'Review is complete')], default='awaiting_reviewer_feedback', help_text='The current status of this review.', max_length=32)),
-                ('assigned_reviewer_email', models.EmailField(blank=True, help_text='Assigned reviewer email', max_length=254)),
-                ('slug', models.UUIDField(default=uuid.uuid4, null=True, unique=True)),
-                ('assigned_reviewer', models.ForeignKey(blank=True, help_text='User assigned to perform this review', null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='reviews', to='core.MemberProfile')),
+                (
+                    "id",
+                    models.AutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("date_created", models.DateTimeField(auto_now_add=True)),
+                ("last_modified", models.DateTimeField(auto_now=True)),
+                (
+                    "status",
+                    models.CharField(
+                        choices=[
+                            (
+                                "awaiting_reviewer_feedback",
+                                "Awaiting reviewer feedback",
+                            ),
+                            ("awaiting_editor_feedback", "Awaiting editor feedback"),
+                            (
+                                "awaiting_author_changes",
+                                "Awaiting author release changes",
+                            ),
+                            ("complete", "Review is complete"),
+                        ],
+                        default="awaiting_reviewer_feedback",
+                        help_text="The current status of this review.",
+                        max_length=32,
+                    ),
+                ),
+                (
+                    "assigned_reviewer_email",
+                    models.EmailField(
+                        blank=True, help_text="Assigned reviewer email", max_length=254
+                    ),
+                ),
+                ("slug", models.UUIDField(default=uuid.uuid4, null=True, unique=True)),
+                (
+                    "assigned_reviewer",
+                    models.ForeignKey(
+                        blank=True,
+                        help_text="User assigned to perform this review",
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="reviews",
+                        to="core.MemberProfile",
+                    ),
+                ),
             ],
         ),
         migrations.CreateModel(
-            name='PeerReviewerFeedback',
+            name="PeerReviewerFeedback",
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('date_created', models.DateTimeField(auto_now_add=True)),
-                ('recommendation', models.CharField(blank=True, choices=[('accept', 'This computational model meets CoMSES Net peer review requirements.'), ('revise', 'This computational model must be revised to meet CoMSES Net peer review requirements.')], max_length=16)),
-                ('private_reviewer_notes', core.fields.MarkdownField(blank=True, help_text='Private reviewer notes to the editor.', rendered_field=True)),
-                ('private_editor_notes', core.fields.MarkdownField(blank=True, help_text='Private editor notes regarding this peer review', rendered_field=True)),
-                ('private_reviewer_notes_markup_type', models.CharField(choices=[('', '--'), ('markdown', 'markdown'), ('html', 'html'), ('plain', 'plain'), ('', '')], default='markdown', max_length=30)),
-                ('notes_to_author', core.fields.MarkdownField(blank=True, help_text='Notes to be sent to the model author', rendered_field=True)),
-                ('private_editor_notes_markup_type', models.CharField(choices=[('', '--'), ('markdown', 'markdown'), ('html', 'html'), ('plain', 'plain'), ('', '')], default='markdown', max_length=30)),
-                ('_private_reviewer_notes_rendered', models.TextField(editable=False)),
-                ('notes_to_author_markup_type', models.CharField(choices=[('', '--'), ('markdown', 'markdown'), ('html', 'html'), ('plain', 'plain'), ('', '')], default='markdown', max_length=30)),
-                ('_private_editor_notes_rendered', models.TextField(editable=False)),
-                ('has_narrative_documentation', models.BooleanField(default=False, help_text='Is there sufficiently detailed accompanying narrative documentation?')),
-                ('_notes_to_author_rendered', models.TextField(editable=False)),
-                ('narrative_documentation_comments', models.TextField(blank=True, help_text='Reviewer comments on the narrative documentation')),
-                ('has_clean_code', models.BooleanField(default=False, help_text='Is the code clean, well-written, and well-commented with consistent formatting?')),
-                ('clean_code_comments', models.TextField(blank=True, help_text='Reviewer comments on code cleanliness')),
-                ('is_runnable', models.BooleanField(default=False, help_text='Were you able to run the model with the provided instructions?')),
-                ('runnable_comments', models.TextField(blank=True, help_text='Reviewer comments on running the model with the provided instructions')),
-                ('reviewer_submitted', models.BooleanField(default=False, help_text='Whether or not feedback has been submitted by reviewer. Submitted feedback cannot be edited')),
+                (
+                    "id",
+                    models.AutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("date_created", models.DateTimeField(auto_now_add=True)),
+                (
+                    "recommendation",
+                    models.CharField(
+                        blank=True,
+                        choices=[
+                            (
+                                "accept",
+                                "This computational model meets CoMSES Net peer review requirements.",
+                            ),
+                            (
+                                "revise",
+                                "This computational model must be revised to meet CoMSES Net peer review requirements.",
+                            ),
+                        ],
+                        max_length=16,
+                    ),
+                ),
+                (
+                    "private_reviewer_notes",
+                    core.fields.MarkdownField(
+                        blank=True,
+                        help_text="Private reviewer notes to the editor.",
+                        rendered_field=True,
+                    ),
+                ),
+                (
+                    "private_editor_notes",
+                    core.fields.MarkdownField(
+                        blank=True,
+                        help_text="Private editor notes regarding this peer review",
+                        rendered_field=True,
+                    ),
+                ),
+                (
+                    "private_reviewer_notes_markup_type",
+                    models.CharField(
+                        choices=[
+                            ("", "--"),
+                            ("markdown", "markdown"),
+                            ("html", "html"),
+                            ("plain", "plain"),
+                            ("", ""),
+                        ],
+                        default="markdown",
+                        max_length=30,
+                    ),
+                ),
+                (
+                    "notes_to_author",
+                    core.fields.MarkdownField(
+                        blank=True,
+                        help_text="Notes to be sent to the model author",
+                        rendered_field=True,
+                    ),
+                ),
+                (
+                    "private_editor_notes_markup_type",
+                    models.CharField(
+                        choices=[
+                            ("", "--"),
+                            ("markdown", "markdown"),
+                            ("html", "html"),
+                            ("plain", "plain"),
+                            ("", ""),
+                        ],
+                        default="markdown",
+                        max_length=30,
+                    ),
+                ),
+                ("_private_reviewer_notes_rendered", models.TextField(editable=False)),
+                (
+                    "notes_to_author_markup_type",
+                    models.CharField(
+                        choices=[
+                            ("", "--"),
+                            ("markdown", "markdown"),
+                            ("html", "html"),
+                            ("plain", "plain"),
+                            ("", ""),
+                        ],
+                        default="markdown",
+                        max_length=30,
+                    ),
+                ),
+                ("_private_editor_notes_rendered", models.TextField(editable=False)),
+                (
+                    "has_narrative_documentation",
+                    models.BooleanField(
+                        default=False,
+                        help_text="Is there sufficiently detailed accompanying narrative documentation?",
+                    ),
+                ),
+                ("_notes_to_author_rendered", models.TextField(editable=False)),
+                (
+                    "narrative_documentation_comments",
+                    models.TextField(
+                        blank=True,
+                        help_text="Reviewer comments on the narrative documentation",
+                    ),
+                ),
+                (
+                    "has_clean_code",
+                    models.BooleanField(
+                        default=False,
+                        help_text="Is the code clean, well-written, and well-commented with consistent formatting?",
+                    ),
+                ),
+                (
+                    "clean_code_comments",
+                    models.TextField(
+                        blank=True, help_text="Reviewer comments on code cleanliness"
+                    ),
+                ),
+                (
+                    "is_runnable",
+                    models.BooleanField(
+                        default=False,
+                        help_text="Were you able to run the model with the provided instructions?",
+                    ),
+                ),
+                (
+                    "runnable_comments",
+                    models.TextField(
+                        blank=True,
+                        help_text="Reviewer comments on running the model with the provided instructions",
+                    ),
+                ),
+                (
+                    "reviewer_submitted",
+                    models.BooleanField(
+                        default=False,
+                        help_text="Whether or not feedback has been submitted by reviewer. Submitted feedback cannot be edited",
+                    ),
+                ),
             ],
         ),
         migrations.CreateModel(
-            name='PeerReviewEventLog',
+            name="PeerReviewEventLog",
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('date_created', models.DateTimeField(auto_now_add=True)),
-                ('action', models.CharField(choices=[('invitation_sent', 'Reviewer has been invited'), ('invitation_resent', 'Reviewer invitation has been resent'), ('invitation_accepted', 'Reviewer has accepted invitation'), ('invitation_declined', 'Reviewer has declined invitation'), ('reviewer_gave_feedback', 'Reviewer has given feedback'), ('author_made_changes', 'Author has made changes to the release'), ('editor_changed_review_status', 'Editor manually changed review status'), ('editor_called_for_revisions', 'Editor has asked author for release revisions'), ('editor_accepted', 'Editor has certified release')], help_text='status action requested.', max_length=32)),
-                ('message', models.CharField(blank=True, max_length=500)),
-                ('author', models.ForeignKey(help_text='User originating this action', on_delete=django.db.models.deletion.CASCADE, related_name='+', to='core.MemberProfile')),
-                ('review', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='events', to='library.PeerReview')),
+                (
+                    "id",
+                    models.AutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("date_created", models.DateTimeField(auto_now_add=True)),
+                (
+                    "action",
+                    models.CharField(
+                        choices=[
+                            ("invitation_sent", "Reviewer has been invited"),
+                            (
+                                "invitation_resent",
+                                "Reviewer invitation has been resent",
+                            ),
+                            ("invitation_accepted", "Reviewer has accepted invitation"),
+                            ("invitation_declined", "Reviewer has declined invitation"),
+                            ("reviewer_gave_feedback", "Reviewer has given feedback"),
+                            (
+                                "author_made_changes",
+                                "Author has made changes to the release",
+                            ),
+                            (
+                                "editor_changed_review_status",
+                                "Editor manually changed review status",
+                            ),
+                            (
+                                "editor_called_for_revisions",
+                                "Editor has asked author for release revisions",
+                            ),
+                            ("editor_accepted", "Editor has certified release"),
+                        ],
+                        help_text="status action requested.",
+                        max_length=32,
+                    ),
+                ),
+                ("message", models.CharField(blank=True, max_length=500)),
+                (
+                    "author",
+                    models.ForeignKey(
+                        help_text="User originating this action",
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="+",
+                        to="core.MemberProfile",
+                    ),
+                ),
+                (
+                    "review",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="events",
+                        to="library.PeerReview",
+                    ),
+                ),
             ],
         ),
         migrations.CreateModel(
-            name='PeerReviewInvitation',
+            name="PeerReviewInvitation",
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('date_created', models.DateTimeField(auto_now_add=True)),
-                ('optional_message', core.fields.MarkdownField(blank=True, help_text='Optional markdown text to be added to the email', rendered_field=True)),
-                ('slug', models.UUIDField(default=uuid.uuid4, editable=False, unique=True)),
-                ('optional_message_markup_type', models.CharField(choices=[('', '--'), ('markdown', 'markdown'), ('html', 'html'), ('plain', 'plain'), ('', '')], default='markdown', max_length=30)),
-                ('accepted', models.NullBooleanField(choices=[(None, 'Waiting for response'), (False, 'Decline invitation'), (True, 'Accept invitation')], help_text='Accept or decline a peer review invitation', verbose_name='Accept or Decline Invitation')),
-                ('_optional_message_rendered', models.TextField(editable=False)),
-                ('candidate_reviewer', models.ForeignKey(blank=True, on_delete=django.db.models.deletion.CASCADE, related_name='peer_review_invitation_set', to='core.MemberProfile')),
-                ('editor', models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, related_name='+', to='core.MemberProfile')),
-                ('review', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='invitations', to='library.PeerReview')),
+                (
+                    "id",
+                    models.AutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("date_created", models.DateTimeField(auto_now_add=True)),
+                (
+                    "optional_message",
+                    core.fields.MarkdownField(
+                        blank=True,
+                        help_text="Optional markdown text to be added to the email",
+                        rendered_field=True,
+                    ),
+                ),
+                (
+                    "slug",
+                    models.UUIDField(default=uuid.uuid4, editable=False, unique=True),
+                ),
+                (
+                    "optional_message_markup_type",
+                    models.CharField(
+                        choices=[
+                            ("", "--"),
+                            ("markdown", "markdown"),
+                            ("html", "html"),
+                            ("plain", "plain"),
+                            ("", ""),
+                        ],
+                        default="markdown",
+                        max_length=30,
+                    ),
+                ),
+                (
+                    "accepted",
+                    models.NullBooleanField(
+                        choices=[
+                            (None, "Waiting for response"),
+                            (False, "Decline invitation"),
+                            (True, "Accept invitation"),
+                        ],
+                        help_text="Accept or decline a peer review invitation",
+                        verbose_name="Accept or Decline Invitation",
+                    ),
+                ),
+                ("_optional_message_rendered", models.TextField(editable=False)),
+                (
+                    "candidate_reviewer",
+                    models.ForeignKey(
+                        blank=True,
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="peer_review_invitation_set",
+                        to="core.MemberProfile",
+                    ),
+                ),
+                (
+                    "editor",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.PROTECT,
+                        related_name="+",
+                        to="core.MemberProfile",
+                    ),
+                ),
+                (
+                    "review",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="invitations",
+                        to="library.PeerReview",
+                    ),
+                ),
             ],
             options={
-                'permissions': (('view_peerreviewinvitation', 'Can view peer review invitations'),),
+                "permissions": (
+                    ("view_peerreviewinvitation", "Can view peer review invitations"),
+                ),
             },
         ),
         migrations.AlterField(
-            model_name='codebaserelease',
-            name='submitter',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, related_name='releases', to=settings.AUTH_USER_MODEL),
+            model_name="codebaserelease",
+            name="submitter",
+            field=models.ForeignKey(
+                on_delete=django.db.models.deletion.PROTECT,
+                related_name="releases",
+                to=settings.AUTH_USER_MODEL,
+            ),
         ),
         migrations.AddField(
-            model_name='peerreviewerfeedback',
-            name='invitation',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='feedback_set', to='library.PeerReviewInvitation'),
+            model_name="peerreviewerfeedback",
+            name="invitation",
+            field=models.ForeignKey(
+                on_delete=django.db.models.deletion.CASCADE,
+                related_name="feedback_set",
+                to="library.PeerReviewInvitation",
+            ),
         ),
         migrations.AddField(
-            model_name='peerreview',
-            name='codebase_release',
-            field=models.OneToOneField(on_delete=django.db.models.deletion.PROTECT, related_name='review', to='library.CodebaseRelease'),
+            model_name="peerreview",
+            name="codebase_release",
+            field=models.OneToOneField(
+                on_delete=django.db.models.deletion.PROTECT,
+                related_name="review",
+                to="library.CodebaseRelease",
+            ),
         ),
         migrations.AddField(
-            model_name='peerreview',
-            name='submitter',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, related_name='+', to='core.MemberProfile'),
+            model_name="peerreview",
+            name="submitter",
+            field=models.ForeignKey(
+                on_delete=django.db.models.deletion.PROTECT,
+                related_name="+",
+                to="core.MemberProfile",
+            ),
         ),
         migrations.AlterUniqueTogether(
-            name='peerreviewinvitation',
-            unique_together={('review', 'candidate_reviewer')},
+            name="peerreviewinvitation",
+            unique_together={("review", "candidate_reviewer")},
         ),
     ]

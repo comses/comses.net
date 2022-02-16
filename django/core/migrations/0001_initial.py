@@ -19,223 +19,643 @@ class Migration(migrations.Migration):
     initial = True
 
     dependencies = [
-        ('wagtailimages', '0019_delete_filter'),
+        ("wagtailimages", "0019_delete_filter"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
-        ('wagtailcore', '0040_page_draft_title'),
-        ('taggit', '0002_auto_20150616_2121'),
+        ("wagtailcore", "0040_page_draft_title"),
+        ("taggit", "0002_auto_20150616_2121"),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='Event',
+            name="Event",
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('title', models.CharField(max_length=300)),
-                ('date_created', models.DateTimeField(default=django.utils.timezone.now)),
-                ('last_modified', models.DateTimeField(auto_now=True)),
-                ('summary', models.CharField(blank=True, max_length=500)),
-                ('description', core.fields.MarkdownField(blank=True, rendered_field=True)),
-                ('early_registration_deadline', models.DateTimeField(blank=True, null=True)),
-                ('description_markup_type', models.CharField(choices=[('', '--'), ('markdown', 'markdown'), ('html', 'html'), ('plain', 'plain'), ('', '')], default='markdown', max_length=30)),
-                ('registration_deadline', models.DateTimeField(blank=True, null=True)),
-                ('_description_rendered', models.TextField(editable=False)),
-                ('submission_deadline', models.DateTimeField(blank=True, null=True)),
-                ('start_date', models.DateTimeField()),
-                ('end_date', models.DateTimeField(blank=True, null=True)),
-                ('location', models.CharField(max_length=300)),
-                ('external_url', models.URLField(blank=True)),
-                ('submitter', models.ForeignKey(on_delete=models.SET(core.models.get_sentinel_user), to=settings.AUTH_USER_MODEL)),
+                (
+                    "id",
+                    models.AutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("title", models.CharField(max_length=300)),
+                (
+                    "date_created",
+                    models.DateTimeField(default=django.utils.timezone.now),
+                ),
+                ("last_modified", models.DateTimeField(auto_now=True)),
+                ("summary", models.CharField(blank=True, max_length=500)),
+                (
+                    "description",
+                    core.fields.MarkdownField(blank=True, rendered_field=True),
+                ),
+                (
+                    "early_registration_deadline",
+                    models.DateTimeField(blank=True, null=True),
+                ),
+                (
+                    "description_markup_type",
+                    models.CharField(
+                        choices=[
+                            ("", "--"),
+                            ("markdown", "markdown"),
+                            ("html", "html"),
+                            ("plain", "plain"),
+                            ("", ""),
+                        ],
+                        default="markdown",
+                        max_length=30,
+                    ),
+                ),
+                ("registration_deadline", models.DateTimeField(blank=True, null=True)),
+                ("_description_rendered", models.TextField(editable=False)),
+                ("submission_deadline", models.DateTimeField(blank=True, null=True)),
+                ("start_date", models.DateTimeField()),
+                ("end_date", models.DateTimeField(blank=True, null=True)),
+                ("location", models.CharField(max_length=300)),
+                ("external_url", models.URLField(blank=True)),
+                (
+                    "submitter",
+                    models.ForeignKey(
+                        on_delete=models.SET(core.models.get_sentinel_user),
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
             ],
             options={
-                'permissions': (('view_event', 'Can view events'),),
+                "permissions": (("view_event", "Can view events"),),
             },
             bases=(wagtail.search.index.Indexed, models.Model),
         ),
         migrations.CreateModel(
-            name='EventTag',
+            name="EventTag",
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('content_object', modelcluster.fields.ParentalKey(on_delete=django.db.models.deletion.CASCADE, related_name='tagged_events', to='core.Event')),
-                ('tag', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='core_eventtag_items', to='taggit.Tag')),
+                (
+                    "id",
+                    models.AutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "content_object",
+                    modelcluster.fields.ParentalKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="tagged_events",
+                        to="core.Event",
+                    ),
+                ),
+                (
+                    "tag",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="core_eventtag_items",
+                        to="taggit.Tag",
+                    ),
+                ),
             ],
             options={
-                'abstract': False,
+                "abstract": False,
             },
         ),
         migrations.CreateModel(
-            name='FollowUser',
+            name="FollowUser",
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('source', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='following', to=settings.AUTH_USER_MODEL)),
-                ('target', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='followers', to=settings.AUTH_USER_MODEL)),
+                (
+                    "id",
+                    models.AutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "source",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="following",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
+                (
+                    "target",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="followers",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
             ],
         ),
         migrations.CreateModel(
-            name='Institution',
+            name="Institution",
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('name', models.CharField(max_length=200)),
-                ('url', models.URLField(blank=True)),
-                ('acronym', models.CharField(max_length=50)),
+                (
+                    "id",
+                    models.AutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("name", models.CharField(max_length=200)),
+                ("url", models.URLField(blank=True)),
+                ("acronym", models.CharField(max_length=50)),
             ],
         ),
         migrations.CreateModel(
-            name='Job',
+            name="Job",
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('title', models.CharField(help_text='Job posting title', max_length=300)),
-                ('date_created', models.DateTimeField(default=django.utils.timezone.now)),
-                ('application_deadline', models.DateField(blank=True, help_text='Optional deadline for applications', null=True)),
-                ('last_modified', models.DateTimeField(auto_now=True)),
-                ('summary', models.CharField(blank=True, help_text='Brief summary of job posting.', max_length=500)),
-                ('description', core.fields.MarkdownField(blank=True, rendered_field=True)),
-                ('description_markup_type', models.CharField(choices=[('', '--'), ('markdown', 'markdown'), ('html', 'html'), ('plain', 'plain'), ('', '')], default='markdown', max_length=30)),
-                ('external_url', models.URLField(blank=True)),
-                ('_description_rendered', models.TextField(editable=False)),
-                ('submitter', models.ForeignKey(on_delete=models.SET(core.models.get_sentinel_user), related_name='jobs', to=settings.AUTH_USER_MODEL)),
+                (
+                    "id",
+                    models.AutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "title",
+                    models.CharField(help_text="Job posting title", max_length=300),
+                ),
+                (
+                    "date_created",
+                    models.DateTimeField(default=django.utils.timezone.now),
+                ),
+                (
+                    "application_deadline",
+                    models.DateField(
+                        blank=True,
+                        help_text="Optional deadline for applications",
+                        null=True,
+                    ),
+                ),
+                ("last_modified", models.DateTimeField(auto_now=True)),
+                (
+                    "summary",
+                    models.CharField(
+                        blank=True,
+                        help_text="Brief summary of job posting.",
+                        max_length=500,
+                    ),
+                ),
+                (
+                    "description",
+                    core.fields.MarkdownField(blank=True, rendered_field=True),
+                ),
+                (
+                    "description_markup_type",
+                    models.CharField(
+                        choices=[
+                            ("", "--"),
+                            ("markdown", "markdown"),
+                            ("html", "html"),
+                            ("plain", "plain"),
+                            ("", ""),
+                        ],
+                        default="markdown",
+                        max_length=30,
+                    ),
+                ),
+                ("external_url", models.URLField(blank=True)),
+                ("_description_rendered", models.TextField(editable=False)),
+                (
+                    "submitter",
+                    models.ForeignKey(
+                        on_delete=models.SET(core.models.get_sentinel_user),
+                        related_name="jobs",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
             ],
             options={
-                'permissions': (('view_job', 'Can view job'),),
+                "permissions": (("view_job", "Can view job"),),
             },
             bases=(wagtail.search.index.Indexed, models.Model),
         ),
         migrations.CreateModel(
-            name='JobTag',
+            name="JobTag",
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('content_object', modelcluster.fields.ParentalKey(on_delete=django.db.models.deletion.CASCADE, related_name='tagged_jobs', to='core.Job')),
-                ('tag', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='core_jobtag_items', to='taggit.Tag')),
+                (
+                    "id",
+                    models.AutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "content_object",
+                    modelcluster.fields.ParentalKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="tagged_jobs",
+                        to="core.Job",
+                    ),
+                ),
+                (
+                    "tag",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="core_jobtag_items",
+                        to="taggit.Tag",
+                    ),
+                ),
             ],
             options={
-                'abstract': False,
+                "abstract": False,
             },
         ),
         migrations.CreateModel(
-            name='MemberProfile',
+            name="MemberProfile",
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('timezone', timezone_field.fields.TimeZoneField(blank=True)),
-                ('affiliations', django.contrib.postgres.fields.jsonb.JSONField(default=list, help_text='JSON-LD list of affiliated institutions')),
-                ('bio', core.fields.MarkdownField(blank=True, help_text='Brief bio', max_length=512, rendered_field=True)),
-                ('bio_markup_type', models.CharField(choices=[('', '--'), ('markdown', 'markdown'), ('html', 'html'), ('plain', 'plain'), ('', '')], default='markdown', max_length=30)),
-                ('degrees', django.contrib.postgres.fields.ArrayField(base_field=models.CharField(max_length=255), blank=True, default=list, size=None)),
-                ('_bio_rendered', models.TextField(editable=False)),
-                ('personal_url', models.URLField(blank=True)),
-                ('professional_url', models.URLField(blank=True)),
-                ('research_interests', core.fields.MarkdownField(blank=True, max_length=512, rendered_field=True)),
-                ('research_interests_markup_type', models.CharField(choices=[('', '--'), ('markdown', 'markdown'), ('html', 'html'), ('plain', 'plain'), ('', '')], default='markdown', max_length=30)),
-                ('_research_interests_rendered', models.TextField(editable=False)),
-                ('institution', models.ForeignKey(null=True, on_delete=django.db.models.deletion.SET_NULL, to='core.Institution')),
-                ('picture', models.ForeignKey(help_text='Profile picture', null=True, on_delete=django.db.models.deletion.SET_NULL, to='wagtailimages.Image')),
+                (
+                    "id",
+                    models.AutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("timezone", timezone_field.fields.TimeZoneField(blank=True)),
+                (
+                    "affiliations",
+                    django.contrib.postgres.fields.jsonb.JSONField(
+                        default=list,
+                        help_text="JSON-LD list of affiliated institutions",
+                    ),
+                ),
+                (
+                    "bio",
+                    core.fields.MarkdownField(
+                        blank=True,
+                        help_text="Brief bio",
+                        max_length=512,
+                        rendered_field=True,
+                    ),
+                ),
+                (
+                    "bio_markup_type",
+                    models.CharField(
+                        choices=[
+                            ("", "--"),
+                            ("markdown", "markdown"),
+                            ("html", "html"),
+                            ("plain", "plain"),
+                            ("", ""),
+                        ],
+                        default="markdown",
+                        max_length=30,
+                    ),
+                ),
+                (
+                    "degrees",
+                    django.contrib.postgres.fields.ArrayField(
+                        base_field=models.CharField(max_length=255),
+                        blank=True,
+                        default=list,
+                        size=None,
+                    ),
+                ),
+                ("_bio_rendered", models.TextField(editable=False)),
+                ("personal_url", models.URLField(blank=True)),
+                ("professional_url", models.URLField(blank=True)),
+                (
+                    "research_interests",
+                    core.fields.MarkdownField(
+                        blank=True, max_length=512, rendered_field=True
+                    ),
+                ),
+                (
+                    "research_interests_markup_type",
+                    models.CharField(
+                        choices=[
+                            ("", "--"),
+                            ("markdown", "markdown"),
+                            ("html", "html"),
+                            ("plain", "plain"),
+                            ("", ""),
+                        ],
+                        default="markdown",
+                        max_length=30,
+                    ),
+                ),
+                ("_research_interests_rendered", models.TextField(editable=False)),
+                (
+                    "institution",
+                    models.ForeignKey(
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        to="core.Institution",
+                    ),
+                ),
+                (
+                    "picture",
+                    models.ForeignKey(
+                        help_text="Profile picture",
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        to="wagtailimages.Image",
+                    ),
+                ),
             ],
             options={
-                'abstract': False,
+                "abstract": False,
             },
             bases=(wagtail.search.index.Indexed, models.Model),
         ),
         migrations.CreateModel(
-            name='MemberProfileTag',
+            name="MemberProfileTag",
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('content_object', modelcluster.fields.ParentalKey(on_delete=django.db.models.deletion.CASCADE, related_name='tagged_members', to='core.MemberProfile')),
-                ('tag', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='core_memberprofiletag_items', to='taggit.Tag')),
+                (
+                    "id",
+                    models.AutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "content_object",
+                    modelcluster.fields.ParentalKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="tagged_members",
+                        to="core.MemberProfile",
+                    ),
+                ),
+                (
+                    "tag",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="core_memberprofiletag_items",
+                        to="taggit.Tag",
+                    ),
+                ),
             ],
             options={
-                'abstract': False,
+                "abstract": False,
             },
         ),
         migrations.CreateModel(
-            name='Platform',
+            name="Platform",
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('name', models.CharField(max_length=255)),
-                ('active', models.BooleanField(default=True)),
-                ('description', core.fields.MarkdownField(blank=True, max_length=512, rendered_field=True)),
-                ('date_created', models.DateTimeField(default=django.utils.timezone.now)),
-                ('description_markup_type', models.CharField(choices=[('', '--'), ('markdown', 'markdown'), ('html', 'html'), ('plain', 'plain'), ('', '')], default='markdown', max_length=30)),
-                ('last_modified', models.DateTimeField(auto_now=True)),
-                ('_description_rendered', models.TextField(editable=False)),
-                ('open_source', models.BooleanField(default=False)),
-                ('featured', models.BooleanField(default=False)),
-                ('url', models.URLField(blank=True)),
+                (
+                    "id",
+                    models.AutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("name", models.CharField(max_length=255)),
+                ("active", models.BooleanField(default=True)),
+                (
+                    "description",
+                    core.fields.MarkdownField(
+                        blank=True, max_length=512, rendered_field=True
+                    ),
+                ),
+                (
+                    "date_created",
+                    models.DateTimeField(default=django.utils.timezone.now),
+                ),
+                (
+                    "description_markup_type",
+                    models.CharField(
+                        choices=[
+                            ("", "--"),
+                            ("markdown", "markdown"),
+                            ("html", "html"),
+                            ("plain", "plain"),
+                            ("", ""),
+                        ],
+                        default="markdown",
+                        max_length=30,
+                    ),
+                ),
+                ("last_modified", models.DateTimeField(auto_now=True)),
+                ("_description_rendered", models.TextField(editable=False)),
+                ("open_source", models.BooleanField(default=False)),
+                ("featured", models.BooleanField(default=False)),
+                ("url", models.URLField(blank=True)),
             ],
             options={
-                'abstract': False,
+                "abstract": False,
             },
             bases=(wagtail.search.index.Indexed, models.Model),
         ),
         migrations.CreateModel(
-            name='PlatformRelease',
+            name="PlatformRelease",
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('version', models.CharField(max_length=100)),
-                ('url', models.URLField(blank=True)),
-                ('notes', models.TextField(blank=True)),
-                ('archive', models.FileField(null=True, upload_to=core.models.Platform._upload_path)),
-                ('platform', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='core.Platform')),
+                (
+                    "id",
+                    models.AutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("version", models.CharField(max_length=100)),
+                ("url", models.URLField(blank=True)),
+                ("notes", models.TextField(blank=True)),
+                (
+                    "archive",
+                    models.FileField(
+                        null=True, upload_to=core.models.Platform._upload_path
+                    ),
+                ),
+                (
+                    "platform",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE, to="core.Platform"
+                    ),
+                ),
             ],
         ),
         migrations.CreateModel(
-            name='PlatformTag',
+            name="PlatformTag",
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('content_object', modelcluster.fields.ParentalKey(on_delete=django.db.models.deletion.CASCADE, related_name='tagged_platforms', to='core.Platform')),
-                ('tag', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='core_platformtag_items', to='taggit.Tag')),
+                (
+                    "id",
+                    models.AutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "content_object",
+                    modelcluster.fields.ParentalKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="tagged_platforms",
+                        to="core.Platform",
+                    ),
+                ),
+                (
+                    "tag",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="core_platformtag_items",
+                        to="taggit.Tag",
+                    ),
+                ),
             ],
             options={
-                'abstract': False,
+                "abstract": False,
             },
         ),
         migrations.CreateModel(
-            name='SiteSettings',
+            name="SiteSettings",
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('maintenance_mode', models.BooleanField(default=False)),
-                ('site', models.OneToOneField(editable=False, on_delete=django.db.models.deletion.CASCADE, to='wagtailcore.Site')),
+                (
+                    "id",
+                    models.AutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("maintenance_mode", models.BooleanField(default=False)),
+                (
+                    "site",
+                    models.OneToOneField(
+                        editable=False,
+                        on_delete=django.db.models.deletion.CASCADE,
+                        to="wagtailcore.Site",
+                    ),
+                ),
             ],
             options={
-                'abstract': False,
+                "abstract": False,
             },
         ),
         migrations.CreateModel(
-            name='SocialMediaSettings',
+            name="SocialMediaSettings",
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('facebook_url', models.URLField(blank=True, help_text='Facebook URL')),
-                ('youtube_url', models.URLField(blank=True, help_text='CoMSES Net YouTube Channel')),
-                ('twitter_account', models.CharField(blank=True, default='comses', help_text='CoMSES Net official Twitter account', max_length=128)),
-                ('github_account', models.CharField(blank=True, default='comses', help_text='CoMSES Net official GitHub account', max_length=128)),
-                ('mailing_list_url', models.URLField(blank=True, help_text='Mailing List Signup URL, i.e., MailChimp signup form')),
-                ('contact_form_recipients', django.contrib.postgres.fields.ArrayField(base_field=models.EmailField(max_length=254), default=list, help_text='Email address(es) where contact forms will be sent. Separate multiple addresses with commas, e.g., `editors@openabm.org,info@openabm.org`', size=None)),
-                ('site', models.OneToOneField(editable=False, on_delete=django.db.models.deletion.CASCADE, to='wagtailcore.Site')),
+                (
+                    "id",
+                    models.AutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("facebook_url", models.URLField(blank=True, help_text="Facebook URL")),
+                (
+                    "youtube_url",
+                    models.URLField(blank=True, help_text="CoMSES Net YouTube Channel"),
+                ),
+                (
+                    "twitter_account",
+                    models.CharField(
+                        blank=True,
+                        default="comses",
+                        help_text="CoMSES Net official Twitter account",
+                        max_length=128,
+                    ),
+                ),
+                (
+                    "github_account",
+                    models.CharField(
+                        blank=True,
+                        default="comses",
+                        help_text="CoMSES Net official GitHub account",
+                        max_length=128,
+                    ),
+                ),
+                (
+                    "mailing_list_url",
+                    models.URLField(
+                        blank=True,
+                        help_text="Mailing List Signup URL, i.e., MailChimp signup form",
+                    ),
+                ),
+                (
+                    "contact_form_recipients",
+                    django.contrib.postgres.fields.ArrayField(
+                        base_field=models.EmailField(max_length=254),
+                        default=list,
+                        help_text="Email address(es) where contact forms will be sent. Separate multiple addresses with commas, e.g., `editors@openabm.org,info@openabm.org`",
+                        size=None,
+                    ),
+                ),
+                (
+                    "site",
+                    models.OneToOneField(
+                        editable=False,
+                        on_delete=django.db.models.deletion.CASCADE,
+                        to="wagtailcore.Site",
+                    ),
+                ),
             ],
             options={
-                'abstract': False,
+                "abstract": False,
             },
         ),
         migrations.AddField(
-            model_name='platform',
-            name='tags',
-            field=modelcluster.contrib.taggit.ClusterTaggableManager(blank=True, help_text='A comma-separated list of tags.', through='core.PlatformTag', to='taggit.Tag', verbose_name='Tags'),
+            model_name="platform",
+            name="tags",
+            field=modelcluster.contrib.taggit.ClusterTaggableManager(
+                blank=True,
+                help_text="A comma-separated list of tags.",
+                through="core.PlatformTag",
+                to="taggit.Tag",
+                verbose_name="Tags",
+            ),
         ),
         migrations.AddField(
-            model_name='memberprofile',
-            name='tags',
-            field=modelcluster.contrib.taggit.ClusterTaggableManager(blank=True, help_text='A comma-separated list of tags.', through='core.MemberProfileTag', to='taggit.Tag', verbose_name='Tags'),
+            model_name="memberprofile",
+            name="tags",
+            field=modelcluster.contrib.taggit.ClusterTaggableManager(
+                blank=True,
+                help_text="A comma-separated list of tags.",
+                through="core.MemberProfileTag",
+                to="taggit.Tag",
+                verbose_name="Tags",
+            ),
         ),
         migrations.AddField(
-            model_name='memberprofile',
-            name='user',
-            field=models.OneToOneField(null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='member_profile', to=settings.AUTH_USER_MODEL),
+            model_name="memberprofile",
+            name="user",
+            field=models.OneToOneField(
+                null=True,
+                on_delete=django.db.models.deletion.SET_NULL,
+                related_name="member_profile",
+                to=settings.AUTH_USER_MODEL,
+            ),
         ),
         migrations.AddField(
-            model_name='job',
-            name='tags',
-            field=modelcluster.contrib.taggit.ClusterTaggableManager(blank=True, help_text='A comma-separated list of tags.', through='core.JobTag', to='taggit.Tag', verbose_name='Tags'),
+            model_name="job",
+            name="tags",
+            field=modelcluster.contrib.taggit.ClusterTaggableManager(
+                blank=True,
+                help_text="A comma-separated list of tags.",
+                through="core.JobTag",
+                to="taggit.Tag",
+                verbose_name="Tags",
+            ),
         ),
         migrations.AddField(
-            model_name='event',
-            name='tags',
-            field=modelcluster.contrib.taggit.ClusterTaggableManager(blank=True, help_text='A comma-separated list of tags.', through='core.EventTag', to='taggit.Tag', verbose_name='Tags'),
+            model_name="event",
+            name="tags",
+            field=modelcluster.contrib.taggit.ClusterTaggableManager(
+                blank=True,
+                help_text="A comma-separated list of tags.",
+                through="core.EventTag",
+                to="taggit.Tag",
+                verbose_name="Tags",
+            ),
         ),
     ]

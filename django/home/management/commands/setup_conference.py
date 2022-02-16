@@ -7,7 +7,12 @@ import logging
 from django.contrib.auth.models import User
 from django.core.management.base import BaseCommand
 
-from home.models import (LandingPage, ConferenceIndexPage, ConferencePage, ConferenceTheme)
+from home.models import (
+    LandingPage,
+    ConferenceIndexPage,
+    ConferencePage,
+    ConferenceTheme,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -31,6 +36,7 @@ CoMSES Net is hosting its second virtual conference, CoMSES 2018!
 We welcome presentations dealing with agent-based modeling of social, ecological and social-ecological systems, as well as methodological issues in the context of agent-based modeling. This conference will occur online and is intended for CoMSES Net members. During the conference, which will take place over three weeks, talks will be available for viewing on the conference website, our Discourse forums. Q&A will also take place online during this period, as participants and other CoMSES members can engage with speakers on our [forum](https://forum.comses.net). We will prioritize talks that cover models that have [made their model code and documentation available](https://www.comses.net/codebases/).
 """
 
+
 class Command(BaseCommand):
 
     """
@@ -42,37 +48,39 @@ class Command(BaseCommand):
     def add_modeling_hdm_panel(self, comses_2017):
         presentations = [
             {
-                'title': 'Modeling human behavior in agent-based models of social-ecological systems',
-                'url': 'https://forum.comses.net/t/modeling-human-behavior-in-agent-based-models-of-social-ecological-systems/100',
-                'user_pk': 2022,
+                "title": "Modeling human behavior in agent-based models of social-ecological systems",
+                "url": "https://forum.comses.net/t/modeling-human-behavior-in-agent-based-models-of-social-ecological-systems/100",
+                "user_pk": 2022,
             },
             {
-                'title': 'Implications of behavioral change on the social, ecological and economic dimensions of pastoral systems – lessons from an agent-based model',
-                'url': 'https://forum.comses.net/t/implications-of-behavioral-change-on-the-social-ecological-and-economic-dimensions-of-pastoral-systems-lessons-from-an-agent-based-model/101',
-                'user_pk': 1694,
+                "title": "Implications of behavioral change on the social, ecological and economic dimensions of pastoral systems – lessons from an agent-based model",
+                "url": "https://forum.comses.net/t/implications-of-behavioral-change-on-the-social-ecological-and-economic-dimensions-of-pastoral-systems-lessons-from-an-agent-based-model/101",
+                "user_pk": 1694,
             },
             {
-                'title': 'Formalising fisher diversity in FIBE',
-                'url': 'https://forum.comses.net/t/formalising-fisher-diversity-in-fibe/102',
-                'user_pk': 514,
+                "title": "Formalising fisher diversity in FIBE",
+                "url": "https://forum.comses.net/t/formalising-fisher-diversity-in-fibe/102",
+                "user_pk": 514,
             },
             {
-                'title': 'Consumats in Lakeland: Exploring the variability in a social-ecological system caused by alternative formalizations of human decision making',
-                'url': 'https://forum.comses.net/t/consumats-in-lakeland-exploring-the-variability-in-a-social-ecological-system-caused-by-alternative-formalizations-of-human-decision-making/103',
-                'user_pk': 4,
-                'contributors': [4, 53],
+                "title": "Consumats in Lakeland: Exploring the variability in a social-ecological system caused by alternative formalizations of human decision making",
+                "url": "https://forum.comses.net/t/consumats-in-lakeland-exploring-the-variability-in-a-social-ecological-system-caused-by-alternative-formalizations-of-human-decision-making/103",
+                "user_pk": 4,
+                "contributors": [4, 53],
             },
             {
-                'title': 'Modelling human decision making and behaviour in social-ecological systems: practical lessons learned and ways forward',
-                'url': 'https://forum.comses.net/t/modelling-human-decision-making-and-behaviour-in-social-ecological-systems-practical-lessons-learned-and-ways-forward/104',
-                'user_pk': 1275,
+                "title": "Modelling human decision making and behaviour in social-ecological systems: practical lessons learned and ways forward",
+                "url": "https://forum.comses.net/t/modelling-human-decision-making-and-behaviour-in-social-ecological-systems-practical-lessons-learned-and-ways-forward/104",
+                "user_pk": 1275,
             },
         ]
         panel = ConferenceTheme.objects.create(
-            title='Modeling human decision making in social-ecological systems',
-            description=('How do we include broad interdisciplinary knowledge on decision making in simple integrated models of humans and '
-                         'their environment?'),
-            external_url='https://forum.comses.net/t/panel-modeling-human-decision-making-in-social-ecological-systems/83',
+            title="Modeling human decision making in social-ecological systems",
+            description=(
+                "How do we include broad interdisciplinary knowledge on decision making in simple integrated models of humans and "
+                "their environment?"
+            ),
+            external_url="https://forum.comses.net/t/panel-modeling-human-decision-making-in-social-ecological-systems/83",
             page=comses_2017,
         )
         panel.add_presentations(presentations)
@@ -80,35 +88,35 @@ class Command(BaseCommand):
     def add_simulation_archaeology_panel(self, comses_2017):
         presentations = [
             {
-                'title': 'Neolithic Agropastoral Expansion: An Evaluation of Theoretical Models Using an Agent-Based Model of the Neolithic Spread in the Western Mediterranean',
-                'url': 'https://forum.comses.net/t/95',
-                'user_pk': 6,
+                "title": "Neolithic Agropastoral Expansion: An Evaluation of Theoretical Models Using an Agent-Based Model of the Neolithic Spread in the Western Mediterranean",
+                "url": "https://forum.comses.net/t/95",
+                "user_pk": 6,
             },
             {
-                'title': 'Experimenting with threshold effects in a multi-resource hunter-gatherer agent-based model',
-                'url': 'https://forum.comses.net/t/96',
-                'user_pk': 1054,
+                "title": "Experimenting with threshold effects in a multi-resource hunter-gatherer agent-based model",
+                "url": "https://forum.comses.net/t/96",
+                "user_pk": 1054,
             },
             {
-                'title': 'Studying prehistoric mobility and social networks',
-                'url': 'https://forum.comses.net/t/studying-prehistoric-mobility-and-social-networks/97',
-                'user_pk': 972,
+                "title": "Studying prehistoric mobility and social networks",
+                "url": "https://forum.comses.net/t/studying-prehistoric-mobility-and-social-networks/97",
+                "user_pk": 972,
             },
             {
-                'title': 'Placing people in the environment: Coupling agent-based land-use and Earth system models',
-                'url': 'https://forum.comses.net/t/placing-people-in-the-environment-coupling-agent-based-land-use-and-earth-system-models/98',
-                'user_pk': 1999,
+                "title": "Placing people in the environment: Coupling agent-based land-use and Earth system models",
+                "url": "https://forum.comses.net/t/placing-people-in-the-environment-coupling-agent-based-land-use-and-earth-system-models/98",
+                "user_pk": 1999,
             },
             {
-                'title': 'Fire, Humans, and Landscape Change: Simulating Charcoal Proxy Records to explore Anthropogenic Fire and Neolithic Landscapes in the Western Mediterranean',
-                'url': 'https://forum.comses.net/t/99',
-                'user_pk': 1235,
+                "title": "Fire, Humans, and Landscape Change: Simulating Charcoal Proxy Records to explore Anthropogenic Fire and Neolithic Landscapes in the Western Mediterranean",
+                "url": "https://forum.comses.net/t/99",
+                "user_pk": 1235,
             },
         ]
         panel = ConferenceTheme.objects.create(
-            title='Simulation in Archaeology: New Approaches to Old Questions',
-            description='Using agent-based models to rewind the tape and explore mysteries of past human societies.',
-            external_url='https://forum.comses.net/t/panel-simulation-in-archaeology-new-approaches-to-old-questions/87',
+            title="Simulation in Archaeology: New Approaches to Old Questions",
+            description="Using agent-based models to rewind the tape and explore mysteries of past human societies.",
+            external_url="https://forum.comses.net/t/panel-simulation-in-archaeology-new-approaches-to-old-questions/87",
             page=comses_2017,
         )
         panel.add_presentations(presentations)
@@ -116,21 +124,21 @@ class Command(BaseCommand):
     def add_migration_session(self, comses_2017):
         presentations = [
             {
-                'title': 'Migration as an adaptive strategy; application to the US-Mexico corridor',
-                'url': 'https://forum.comses.net/t/85',
-                'user_pk': 1185,
+                "title": "Migration as an adaptive strategy; application to the US-Mexico corridor",
+                "url": "https://forum.comses.net/t/85",
+                "user_pk": 1185,
             },
             {
-                'title': 'Zero, Some, or Zero-Sum: Exploring Trade-Offs in Identifying Human Trafficking Among Migration Flows',
-                'url': 'https://forum.comses.net/t/90',
-                'user_pk': 1735,
-            }
+                "title": "Zero, Some, or Zero-Sum: Exploring Trade-Offs in Identifying Human Trafficking Among Migration Flows",
+                "url": "https://forum.comses.net/t/90",
+                "user_pk": 1735,
+            },
         ]
         session = ConferenceTheme.objects.create(
-            title='Session on Migration',
+            title="Session on Migration",
             category=ConferenceTheme.CATEGORIES.Session,
-            description='Breaking boundaries by using agent-based models to derive a deeper understanding human mobility.',
-            external_url='https://forum.comses.net/t/session-on-migration/86',
+            description="Breaking boundaries by using agent-based models to derive a deeper understanding human mobility.",
+            external_url="https://forum.comses.net/t/session-on-migration/86",
             page=comses_2017,
         )
         session.add_presentations(presentations)
@@ -138,22 +146,22 @@ class Command(BaseCommand):
     def add_social_systems_session(self, comses_2017):
         presentations = [
             {
-                'title': 'Simulating Macro-Level Effects from Micro-Level Observations: Combining ABM and Lab Experiments',
-                'url': 'https://forum.comses.net/t/simulating-macro-level-effects-from-micro-level-observations-combining-abm-and-lab-experiments/94',
-                'user_pk': 25,
-                'contributors': [1865, 25]
+                "title": "Simulating Macro-Level Effects from Micro-Level Observations: Combining ABM and Lab Experiments",
+                "url": "https://forum.comses.net/t/simulating-macro-level-effects-from-micro-level-observations-combining-abm-and-lab-experiments/94",
+                "user_pk": 25,
+                "contributors": [1865, 25],
             },
             {
-                'title': 'Computational Strategy Formulation for Public Administration: An Agent Based Modeling Case',
-                'url': 'https://forum.comses.net/t/computational-strategy-formulation-for-public-administration-an-agent-based-modeling-case/93',
-                'user_pk': 1934,
+                "title": "Computational Strategy Formulation for Public Administration: An Agent Based Modeling Case",
+                "url": "https://forum.comses.net/t/computational-strategy-formulation-for-public-administration-an-agent-based-modeling-case/93",
+                "user_pk": 1934,
             },
         ]
         session = ConferenceTheme.objects.create(
-            title='Session on Social Systems',
+            title="Session on Social Systems",
             category=ConferenceTheme.CATEGORIES.Session,
-            description='On the use of computational models to understand complex social systems.',
-            external_url='https://forum.comses.net/t/session-on-social-systems/84',
+            description="On the use of computational models to understand complex social systems.",
+            external_url="https://forum.comses.net/t/session-on-social-systems/84",
             page=comses_2017,
         )
         session.add_presentations(presentations)
@@ -161,21 +169,21 @@ class Command(BaseCommand):
     def add_fisheries_session(self, comses_2017):
         presentations = [
             {
-                'title': 'Spatial and sequential stock depletion through increased fisher mobility: An agent-based modeling approach',
-                'url': 'https://forum.comses.net/t/spatial-and-sequential-stock-depletion-through-increased-fisher-mobility-an-agent-based-modeling-approach/91',
-                'user_pk': 1932,
+                "title": "Spatial and sequential stock depletion through increased fisher mobility: An agent-based modeling approach",
+                "url": "https://forum.comses.net/t/spatial-and-sequential-stock-depletion-through-increased-fisher-mobility-an-agent-based-modeling-approach/91",
+                "user_pk": 1932,
             },
             {
-                'title': 'A model to simulate underwater visual surveys of fish populations',
-                'url': 'https://forum.comses.net/t/a-model-to-simulate-underwater-visual-surveys-of-fish-populations/92',
-                'user_pk': 1516,
-            }
+                "title": "A model to simulate underwater visual surveys of fish populations",
+                "url": "https://forum.comses.net/t/a-model-to-simulate-underwater-visual-surveys-of-fish-populations/92",
+                "user_pk": 1516,
+            },
         ]
         session = ConferenceTheme.objects.create(
-            title='Session on Fisheries',
+            title="Session on Fisheries",
             category=ConferenceTheme.CATEGORIES.Session,
-            description='On the not so fish models on fish and fishers.',
-            external_url='https://forum.comses.net/t/session-on-fisheries/88',
+            description="On the not so fish models on fish and fishers.",
+            external_url="https://forum.comses.net/t/session-on-fisheries/88",
             page=comses_2017,
         )
         session.add_presentations(presentations)
@@ -183,33 +191,33 @@ class Command(BaseCommand):
     def add_model_reuse_session(self, comses_2017):
         presentations = [
             {
-                'title': 'Good enough practices for reproducible and reusable computational modeling',
-                'url': 'https://forum.comses.net/t/good-enough-practices-for-reproducible-and-reusable-computational-modeling/587',
-                'user_pk': 3,
+                "title": "Good enough practices for reproducible and reusable computational modeling",
+                "url": "https://forum.comses.net/t/good-enough-practices-for-reproducible-and-reusable-computational-modeling/587",
+                "user_pk": 3,
             },
             {
-                'title': 'Lessons from implementing in parallel with 3 platforms the same didactic agent-based model ',
-                'url': 'https://forum.comses.net/t/lessons-from-implementing-in-parallel-with-3-platforms-the-same-didactic-agent-based-model/106',
-                'user_pk': 13,
+                "title": "Lessons from implementing in parallel with 3 platforms the same didactic agent-based model ",
+                "url": "https://forum.comses.net/t/lessons-from-implementing-in-parallel-with-3-platforms-the-same-didactic-agent-based-model/106",
+                "user_pk": 13,
             },
         ]
         session = ConferenceTheme.objects.create(
-            title='Session on Model Reuse',
+            title="Session on Model Reuse",
             category=ConferenceTheme.CATEGORIES.Session,
-            description='Lessons on improving the ways we develop, document, and archive our computational models so others can reuse or reproduce our work.',
-            external_url='https://forum.comses.net/t/session-on-model-reuse/89',
+            description="Lessons on improving the ways we develop, document, and archive our computational models so others can reuse or reproduce our work.",
+            external_url="https://forum.comses.net/t/session-on-model-reuse/89",
             page=comses_2017,
         )
         session.add_presentations(presentations)
 
     def build_comses_2017_page(self, conference_index_page):
         comses_2017 = ConferencePage(
-            slug='2017',
-            start_date='2017-10-02',
-            end_date='2017-10-20',
-            title='CoMSES 2017',
+            slug="2017",
+            start_date="2017-10-02",
+            end_date="2017-10-20",
+            title="CoMSES 2017",
             introduction=COMSES_2017_INTRO,
-            external_url='https://forum.comses.net/c/events/comses-2017'
+            external_url="https://forum.comses.net/c/events/comses-2017",
         )
         conference_index_page.add_child(instance=comses_2017)
         self.add_modeling_hdm_panel(comses_2017)
@@ -221,17 +229,17 @@ class Command(BaseCommand):
 
     def build_comses_2018_page(self, conference_index_page):
         comses_2018 = ConferencePage(
-            slug='2018',
-            start_date='2018-10-1',
-            end_date='2018-10-19',
-            title='CoMSES 2018',
+            slug="2018",
+            start_date="2018-10-1",
+            end_date="2018-10-19",
+            title="CoMSES 2018",
             introduction=COMSES_2018_INTRO,
-            external_url='https://forum.comses.net/c/events/comses-2018',
+            external_url="https://forum.comses.net/c/events/comses-2018",
         )
         conference_index_page.add_child(instance=comses_2018)
 
     def handle(self, *args, **options):
-        conference_index_title = 'CoMSES Virtual Conferences'
+        conference_index_title = "CoMSES Virtual Conferences"
         conference_index_page = ConferenceIndexPage(title=conference_index_title)
         try:
             cip = ConferenceIndexPage.objects.get(title=conference_index_title)
@@ -241,7 +249,9 @@ class Command(BaseCommand):
         except ConferenceIndexPage.DoesNotExist:
             landing_page = LandingPage.objects.first()
             landing_page.add_child(instance=conference_index_page)
-            revision = conference_index_page.save_revision(user=User.objects.get(pk=3), submitted_for_moderation=False)
+            revision = conference_index_page.save_revision(
+                user=User.objects.get(pk=3), submitted_for_moderation=False
+            )
             revision.publish()
         self.build_comses_2017_page(conference_index_page)
         self.build_comses_2018_page(conference_index_page)

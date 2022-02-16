@@ -8,18 +8,25 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('core', '0001_initial'),
+        ("core", "0001_initial"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='platform',
-            name='description',
-            field=core.fields.MarkdownField(blank=True, max_length=1024, rendered_field=True),
+            model_name="platform",
+            name="description",
+            field=core.fields.MarkdownField(
+                blank=True, max_length=1024, rendered_field=True
+            ),
         ),
         migrations.AlterField(
-            model_name='socialmediasettings',
-            name='contact_form_recipients',
-            field=django.contrib.postgres.fields.ArrayField(base_field=models.EmailField(max_length=254), default=list, help_text='Email address(es) where contact forms will be sent. Separate multiple addresses with commas, e.g., `editors@comses.net,info@comses.net`', size=None),
+            model_name="socialmediasettings",
+            name="contact_form_recipients",
+            field=django.contrib.postgres.fields.ArrayField(
+                base_field=models.EmailField(max_length=254),
+                default=list,
+                help_text="Email address(es) where contact forms will be sent. Separate multiple addresses with commas, e.g., `editors@comses.net,info@comses.net`",
+                size=None,
+            ),
         ),
     ]

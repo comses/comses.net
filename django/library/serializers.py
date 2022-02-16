@@ -11,21 +11,38 @@ from rest_framework.exceptions import ValidationError
 from wagtail.images.models import SourceImageIOError
 
 from core.models import MemberProfile
-from core.serializers import (YMD_DATETIME_FORMAT, DATE_PUBLISHED_FORMAT, LinkedUserSerializer, create, update,
-                              set_tags, TagSerializer, MarkdownField)
+from core.serializers import (
+    YMD_DATETIME_FORMAT,
+    DATE_PUBLISHED_FORMAT,
+    LinkedUserSerializer,
+    create,
+    update,
+    set_tags,
+    TagSerializer,
+    MarkdownField,
+)
 from home.common_serializers import RelatedMemberProfileSerializer
-from .models import (ReleaseContributor, Codebase, CodebaseRelease, Contributor, License, CodebaseImage,
-                     PeerReviewerFeedback, PeerReviewInvitation, PeerReviewEventLog)
+from .models import (
+    ReleaseContributor,
+    Codebase,
+    CodebaseRelease,
+    Contributor,
+    License,
+    CodebaseImage,
+    PeerReviewerFeedback,
+    PeerReviewInvitation,
+    PeerReviewEventLog,
+)
 
 logger = logging.getLogger(__name__)
 
 
 class LicenseSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
-        license = License.objects.filter(name=validated_data['name']).first()
+        license = License.objects.filter(name=validated_data["name"]).first()
         if license is not None:
-            if validated_data['url'] != license.url:
-                license.url = validated_data['url']
+            if validated_data["url"] != license.url:
+                license.url = validated_data["url"]
                 license.save()
         else:
             license = super().create(validated_data)
@@ -34,7 +51,10 @@ class LicenseSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = License
-        fields = ('name', 'url',)
+        fields = (
+            "name",
+            "url",
+        )
 
 
 class ContributorSerializer(serializers.ModelSerializer):
@@ -45,12 +65,18 @@ class ContributorSerializer(serializers.ModelSerializer):
     profile_url = serializers.SerializerMethodField()
 
     def get_existing_contributor(self, validated_data):
-        user = validated_data.get('user')
-        username = user.get('username') if user else None
+        user = validated_data.get("user")
+        username = user.get("username") if user else None
         if username is not None:
-            return User.objects.get(username=username), Contributor.objects.filter(user__username=username).first()
+            return (
+                User.objects.get(username=username),
+                Contributor.objects.filter(user__username=username).first(),
+            )
         else:
-            name = {'given_name': validated_data['given_name'], 'family_name': validated_data['family_name']}
+            name = {
+                "given_name": validated_data["given_name"],
+                "family_name": validated_data["family_name"],
+            }
             return None, Contributor.objects.filter(**name).first()
 
     def save(self, **kwargs):
@@ -60,8 +86,8 @@ class ContributorSerializer(serializers.ModelSerializer):
             )
             user, self.instance = self.get_existing_contributor(validated_data)
             if user:
-                kwargs['user_id'] = user.id
-        self.validated_data.pop('user')
+                kwargs["user_id"] = user.id
+        self.validated_data.pop("user")
         return super().save(**kwargs)
 
     def get_profile_url(self, instance):
@@ -69,40 +95,56 @@ class ContributorSerializer(serializers.ModelSerializer):
         if user:
             return user.member_profile.get_absolute_url()
         else:
-            return "{0}?{1}".format(reverse('home:profile-list'), urlencode({'query': instance.name}))
+            return "{0}?{1}".format(
+                reverse("home:profile-list"), urlencode({"query": instance.name})
+            )
 
     def update(self, instance, validated_data):
-        affiliations_serializer = TagSerializer(many=True, data=validated_data.pop('affiliations'))
+        affiliations_serializer = TagSerializer(
+            many=True, data=validated_data.pop("affiliations")
+        )
         instance = super().update(instance, validated_data)
-        set_tags(instance, affiliations_serializer, 'affiliations')
+        set_tags(instance, affiliations_serializer, "affiliations")
         instance.save()
         return instance
 
     def create(self, validated_data):
-        affiliations_serializer = TagSerializer(many=True, data=validated_data.pop('affiliations'))
+        affiliations_serializer = TagSerializer(
+            many=True, data=validated_data.pop("affiliations")
+        )
         instance = super().create(validated_data)
-        set_tags(instance, affiliations_serializer, 'affiliations')
+        set_tags(instance, affiliations_serializer, "affiliations")
         instance.save()
         return instance
 
     class Meta:
         model = Contributor
-        fields = ('id', 'given_name', 'middle_name', 'family_name', 'name', 'email', 'user', 'type', 'affiliations',
-                  'profile_url')
+        fields = (
+            "id",
+            "given_name",
+            "middle_name",
+            "family_name",
+            "name",
+            "email",
+            "user",
+            "type",
+            "affiliations",
+            "profile_url",
+        )
 
 
 class ListReleaseContributorSerializer(serializers.ListSerializer):
     def validate(self, attrs):
         attrs = super().validate(attrs)
-        self.check_unique_users([rc['contributor'] for rc in attrs])
+        self.check_unique_users([rc["contributor"] for rc in attrs])
         return attrs
 
     def check_unique_users(self, contributors):
         user_map = defaultdict(list)
         for contributor in contributors:
-            raw_user = contributor['user']
+            raw_user = contributor["user"]
             if raw_user:
-                username = raw_user['username']
+                username = raw_user["username"]
                 user_map[username].append(contributor)
 
         error_messages = []
@@ -112,18 +154,22 @@ class ListReleaseContributorSerializer(serializers.ListSerializer):
                 error_messages.append(
                     (
                         f'Validation Error: "{username}" was listed {related_contributor_count} times in the contributors list.'
-                        f'Please remove all duplicates and assign multiple roles to them instead.'
+                        f"Please remove all duplicates and assign multiple roles to them instead."
                     )
                 )
         if error_messages:
-            raise ValidationError({'non_field_errors': error_messages})
+            raise ValidationError({"non_field_errors": error_messages})
 
     def create(self, validated_data):
-        ReleaseContributor.objects.filter(release_id=self.context['release_id']).delete()
+        ReleaseContributor.objects.filter(
+            release_id=self.context["release_id"]
+        ).delete()
         release_contributors = []
         for i, attr in enumerate(validated_data):
-            attr['index'] = i
-            release_contributors.append(ReleaseContributorSerializer.create_unsaved(self.context, attr))
+            attr["index"] = i
+            release_contributors.append(
+                ReleaseContributorSerializer.create_unsaved(self.context, attr)
+            )
 
         ReleaseContributor.objects.bulk_create(release_contributors)
         return release_contributors
@@ -134,11 +180,11 @@ class FeaturedImageMixin(serializers.Serializer):
 
     def get_featured_image(self, instance):
         featured_image = instance.get_featured_image()
-        request = self.context.get('request')
+        request = self.context.get("request")
         if featured_image:
-            if request and request.accepted_media_type != 'text/html':
+            if request and request.accepted_media_type != "text/html":
                 try:
-                    return featured_image.get_rendition('width-780').url
+                    return featured_image.get_rendition("width-780").url
                 except SourceImageIOError as e:
                     logger.error(e)
                     return None
@@ -158,24 +204,29 @@ class ReleaseContributorSerializer(serializers.ModelSerializer):
         if user:
             return user.member_profile.get_absolute_url()
         else:
-            return "{0}?{1}".format(reverse('home:profile-list'), urlencode({'query': instance.contributor.name}))
+            return "{0}?{1}".format(
+                reverse("home:profile-list"),
+                urlencode({"query": instance.contributor.name}),
+            )
 
     @staticmethod
     def create_unsaved(context, validated_data):
-        raw_contributor = validated_data.pop('contributor')
+        raw_contributor = validated_data.pop("contributor")
         contributor_serializer = ContributorSerializer(data=raw_contributor)
         contributor_serializer.is_valid(raise_exception=True)
         contributor = contributor_serializer.save()
 
-        validated_data['release_id'] = context['release_id']
-        validated_data['contributor_id'] = contributor.id
+        validated_data["release_id"] = context["release_id"]
+        validated_data["contributor_id"] = contributor.id
         instance = ReleaseContributor(**validated_data)
         return instance
 
     def update_codebase_contributor_cache(self, contributor):
         Codebase.objects.cache_contributors(
             Codebase.objects.with_contributors().filter(
-                releases__codebase_contributors__contributor=contributor))
+                releases__codebase_contributors__contributor=contributor
+            )
+        )
 
     def create(self, validated_data):
         release_contributor = self.create_unsaved(self.context, validated_data)
@@ -191,36 +242,68 @@ class ReleaseContributorSerializer(serializers.ModelSerializer):
     class Meta:
         list_serializer_class = ListReleaseContributorSerializer
         model = ReleaseContributor
-        fields = ('contributor', 'profile_url', 'include_in_citation', 'roles', 'index',)
+        fields = (
+            "contributor",
+            "profile_url",
+            "include_in_citation",
+            "roles",
+            "index",
+        )
 
 
 class RelatedCodebaseReleaseSerializer(serializers.ModelSerializer):
-    absolute_url = serializers.URLField(source='get_absolute_url', read_only=True,
-                                        help_text=_('URL to the detail page of the codebase'))
-    release_contributors = ReleaseContributorSerializer(read_only=True, many=True,
-                                                        source='index_ordered_release_contributors', )
-    submitter = LinkedUserSerializer(read_only=True, label='Submitter')
-    first_published_at = serializers.DateTimeField(format=DATE_PUBLISHED_FORMAT, read_only=True)
-    last_published_on = serializers.DateTimeField(format=DATE_PUBLISHED_FORMAT, read_only=True)
+    absolute_url = serializers.URLField(
+        source="get_absolute_url",
+        read_only=True,
+        help_text=_("URL to the detail page of the codebase"),
+    )
+    release_contributors = ReleaseContributorSerializer(
+        read_only=True,
+        many=True,
+        source="index_ordered_release_contributors",
+    )
+    submitter = LinkedUserSerializer(read_only=True, label="Submitter")
+    first_published_at = serializers.DateTimeField(
+        format=DATE_PUBLISHED_FORMAT, read_only=True
+    )
+    last_published_on = serializers.DateTimeField(
+        format=DATE_PUBLISHED_FORMAT, read_only=True
+    )
 
     class Meta:
         model = CodebaseRelease
-        fields = ('absolute_url', 'release_contributors', 'submitter', 'first_published_at', 'last_published_on',
-                  'version_number', 'live', 'draft',)
+        fields = (
+            "absolute_url",
+            "release_contributors",
+            "submitter",
+            "first_published_at",
+            "last_published_on",
+            "version_number",
+            "live",
+            "draft",
+        )
 
 
 class CodebaseSerializer(serializers.ModelSerializer, FeaturedImageMixin):
-    absolute_url = serializers.URLField(source='get_absolute_url', read_only=True)
+    absolute_url = serializers.URLField(source="get_absolute_url", read_only=True)
     all_contributors = ContributorSerializer(many=True, read_only=True)
-    date_created = serializers.DateTimeField(read_only=True,
-                                             default=serializers.CreateOnlyDefault(timezone.now))
+    date_created = serializers.DateTimeField(
+        read_only=True, default=serializers.CreateOnlyDefault(timezone.now)
+    )
     download_count = serializers.IntegerField(read_only=True)
-    first_published_at = serializers.DateTimeField(format=DATE_PUBLISHED_FORMAT, read_only=True)
-    last_published_on = serializers.DateTimeField(format=DATE_PUBLISHED_FORMAT, read_only=True)
-    latest_version_number = serializers.ReadOnlyField(source='latest_version.version_number')
+    first_published_at = serializers.DateTimeField(
+        format=DATE_PUBLISHED_FORMAT, read_only=True
+    )
+    last_published_on = serializers.DateTimeField(
+        format=DATE_PUBLISHED_FORMAT, read_only=True
+    )
+    latest_version_number = serializers.ReadOnlyField(
+        source="latest_version.version_number"
+    )
     releases = serializers.SerializerMethodField()
-    submitter = LinkedUserSerializer(read_only=True,
-                                     default=serializers.CurrentUserDefault())
+    submitter = LinkedUserSerializer(
+        read_only=True, default=serializers.CurrentUserDefault()
+    )
     summarized_description = serializers.CharField(read_only=True)
     identifier = serializers.ReadOnlyField()
     tags = TagSerializer(many=True)
@@ -228,45 +311,73 @@ class CodebaseSerializer(serializers.ModelSerializer, FeaturedImageMixin):
     description = MarkdownField()
 
     def get_releases(self, obj):
-        request = self.context.get('request')
+        request = self.context.get("request")
         user = request.user if request else User.get_anonymous()
-        queryset = CodebaseRelease.objects.filter(codebase_id=obj.pk).accessible(user).order_by('-version_number')
+        queryset = (
+            CodebaseRelease.objects.filter(codebase_id=obj.pk)
+            .accessible(user)
+            .order_by("-version_number")
+        )
         # queryset = obj.releases.order_by('-version_number')
         return RelatedCodebaseReleaseSerializer(
             queryset, read_only=True, many=True, context=self.context
         ).data
 
     def create(self, validated_data):
-        serialized_tags = TagSerializer(many=True, data=validated_data.pop('tags'))
+        serialized_tags = TagSerializer(many=True, data=validated_data.pop("tags"))
         codebase = Codebase(**validated_data)
-        codebase.submitter = self.context['request'].user
+        codebase.submitter = self.context["request"].user
         codebase.identifier = codebase.uuid
         set_tags(codebase, serialized_tags)
         codebase.save()
         return codebase
 
     def update(self, instance, validated_data):
-        validated_data['draft'] = False
+        validated_data["draft"] = False
         return update(super().update, instance, validated_data)
 
     class Meta:
         model = Codebase
-        fields = ('absolute_url', 'all_contributors', 'date_created', 'download_count', 'featured_image',
-                  'repository_url', 'first_published_at', 'last_published_on', 'latest_version_number',
-                  'releases', 'submitter', 'summarized_description', 'tags', 'description', 'title',
-                  'doi', 'identifier', 'id', 'references_text', 'associated_publication_text',
-                  'replication_text', 'peer_reviewed',)
+        fields = (
+            "absolute_url",
+            "all_contributors",
+            "date_created",
+            "download_count",
+            "featured_image",
+            "repository_url",
+            "first_published_at",
+            "last_published_on",
+            "latest_version_number",
+            "releases",
+            "submitter",
+            "summarized_description",
+            "tags",
+            "description",
+            "title",
+            "doi",
+            "identifier",
+            "id",
+            "references_text",
+            "associated_publication_text",
+            "replication_text",
+            "peer_reviewed",
+        )
 
 
 class RelatedCodebaseSerializer(serializers.ModelSerializer, FeaturedImageMixin):
     """
     Sparse codebase serializer
     """
+
     all_contributors = ContributorSerializer(many=True, read_only=True)
     tags = TagSerializer(many=True)
-    version_number = serializers.ReadOnlyField(source='latest_version.version_number')
-    first_published_at = serializers.DateTimeField(read_only=True, format=DATE_PUBLISHED_FORMAT)
-    last_published_on = serializers.DateTimeField(read_only=True, format=DATE_PUBLISHED_FORMAT)
+    version_number = serializers.ReadOnlyField(source="latest_version.version_number")
+    first_published_at = serializers.DateTimeField(
+        read_only=True, format=DATE_PUBLISHED_FORMAT
+    )
+    last_published_on = serializers.DateTimeField(
+        read_only=True, format=DATE_PUBLISHED_FORMAT
+    )
     summarized_description = serializers.CharField(read_only=True)
     live = serializers.ReadOnlyField()
     description = MarkdownField()
@@ -279,43 +390,61 @@ class RelatedCodebaseSerializer(serializers.ModelSerializer, FeaturedImageMixin)
 
     class Meta:
         model = Codebase
-        fields = ('all_contributors', 'tags', 'title', 'first_published_at', 'last_published_on', 'identifier',
-                  'version_number', 'featured_image', 'summarized_description', 'description', 'live',
-                  'peer_reviewed', 'repository_url',)
+        fields = (
+            "all_contributors",
+            "tags",
+            "title",
+            "first_published_at",
+            "last_published_on",
+            "identifier",
+            "version_number",
+            "featured_image",
+            "summarized_description",
+            "description",
+            "live",
+            "peer_reviewed",
+            "repository_url",
+        )
 
 
 class CodebaseImageSerializer(serializers.ModelSerializer):
-    identifier = serializers.IntegerField(source='id')
-    name = serializers.CharField(source='title')
+    identifier = serializers.IntegerField(source="id")
+    name = serializers.CharField(source="title")
 
     def get_url(self, instance):
-        return instance.get_rendition('max-200x200').url
+        return instance.get_rendition("max-200x200").url
 
     class Meta:
         model = CodebaseImage
-        fields = ('identifier', 'name', 'file')
-        extra_kwargs = {
-            'file': {'write_only': True}
-        }
+        fields = ("identifier", "name", "file")
+        extra_kwargs = {"file": {"write_only": True}}
 
 
 class CodebaseReleaseSerializer(serializers.ModelSerializer):
-    absolute_url = serializers.URLField(source='get_absolute_url', read_only=True,
-                                        help_text=_('URL to the detail page of the codebase'))
+    absolute_url = serializers.URLField(
+        source="get_absolute_url",
+        read_only=True,
+        help_text=_("URL to the detail page of the codebase"),
+    )
     citation_text = serializers.ReadOnlyField()
     codebase = CodebaseSerializer(read_only=True)
-    release_contributors = ReleaseContributorSerializer(read_only=True, source='index_ordered_release_contributors',
-                                                        many=True)
+    release_contributors = ReleaseContributorSerializer(
+        read_only=True, source="index_ordered_release_contributors", many=True
+    )
     date_created = serializers.DateTimeField(format=YMD_DATETIME_FORMAT, read_only=True)
-    first_published_at = serializers.DateTimeField(format=DATE_PUBLISHED_FORMAT, read_only=True)
-    last_published_on = serializers.DateTimeField(format=DATE_PUBLISHED_FORMAT, read_only=True)
+    first_published_at = serializers.DateTimeField(
+        format=DATE_PUBLISHED_FORMAT, read_only=True
+    )
+    last_published_on = serializers.DateTimeField(
+        format=DATE_PUBLISHED_FORMAT, read_only=True
+    )
     output_data_url = serializers.URLField(required=False)
     license = LicenseSerializer()
     live = serializers.ReadOnlyField()
-    os_display = serializers.ReadOnlyField(source='get_os_display')
-    platforms = TagSerializer(many=True, source='platform_tags')
+    os_display = serializers.ReadOnlyField(source="get_os_display")
+    platforms = TagSerializer(many=True, source="platform_tags")
     programming_languages = TagSerializer(many=True)
-    submitter = LinkedUserSerializer(read_only=True, label='Submitter')
+    submitter = LinkedUserSerializer(read_only=True, label="Submitter")
     version_number = serializers.ReadOnlyField()
     release_notes = MarkdownField(max_length=2048)
     urls = serializers.SerializerMethodField()
@@ -325,11 +454,13 @@ class CodebaseReleaseSerializer(serializers.ModelSerializer):
         request_peer_review_url = instance.get_request_peer_review_url()
         review = instance.get_review()
         review_url = review.get_absolute_url() if review else None
-        notify_reviewers_of_changes_url = instance.get_notify_reviewers_of_changes_url() if review else None
+        notify_reviewers_of_changes_url = (
+            instance.get_notify_reviewers_of_changes_url() if review else None
+        )
         return {
-            'request_peer_review': request_peer_review_url,
-            'review': review_url,
-            'notify_reviewers_of_changes': notify_reviewers_of_changes_url
+            "request_peer_review": request_peer_review_url,
+            "review": review_url,
+            "notify_reviewers_of_changes": notify_reviewers_of_changes_url,
         }
 
     def get_review_status(self, instance):
@@ -337,29 +468,61 @@ class CodebaseReleaseSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = CodebaseRelease
-        fields = ('absolute_url', 'citation_text', 'release_contributors', 'date_created', 'dependencies',
-                  'release_notes', 'documentation', 'doi', 'download_count', 'embargo_end_date', 'first_published_at',
-                  'last_modified', 'last_published_on', 'license', 'live', 'os', 'os_display', 'peer_reviewed',
-                  'platforms', 'programming_languages', 'submitted_package', 'submitter', 'codebase', 'review_status',
-                  'output_data_url', 'version_number', 'id', 'share_url', 'urls',)
+        fields = (
+            "absolute_url",
+            "citation_text",
+            "release_contributors",
+            "date_created",
+            "dependencies",
+            "release_notes",
+            "documentation",
+            "doi",
+            "download_count",
+            "embargo_end_date",
+            "first_published_at",
+            "last_modified",
+            "last_published_on",
+            "license",
+            "live",
+            "os",
+            "os_display",
+            "peer_reviewed",
+            "platforms",
+            "programming_languages",
+            "submitted_package",
+            "submitter",
+            "codebase",
+            "review_status",
+            "output_data_url",
+            "version_number",
+            "id",
+            "share_url",
+            "urls",
+        )
 
 
 class CodebaseReleaseEditSerializer(CodebaseReleaseSerializer):
     possible_licenses = serializers.SerializerMethodField()
 
     def get_possible_licenses(self, instance):
-        serialized = LicenseSerializer(License.objects.order_by('name').all(), many=True)
+        serialized = LicenseSerializer(
+            License.objects.order_by("name").all(), many=True
+        )
         return serialized.data
 
     def update(self, instance, validated_data):
-        programming_languages = TagSerializer(many=True, data=validated_data.pop('programming_languages'))
-        platform_tags = TagSerializer(many=True, data=validated_data.pop('platform_tags'))
+        programming_languages = TagSerializer(
+            many=True, data=validated_data.pop("programming_languages")
+        )
+        platform_tags = TagSerializer(
+            many=True, data=validated_data.pop("platform_tags")
+        )
 
-        raw_license = validated_data.pop('license')
-        existing_license = License.objects.get(name=raw_license['name'])
+        raw_license = validated_data.pop("license")
+        existing_license = License.objects.get(name=raw_license["name"])
 
-        set_tags(instance, programming_languages, 'programming_languages')
-        set_tags(instance, platform_tags, 'platform_tags')
+        set_tags(instance, programming_languages, "programming_languages")
+        set_tags(instance, platform_tags, "platform_tags")
 
         instance = super().update(instance, validated_data)
 
@@ -369,8 +532,11 @@ class CodebaseReleaseEditSerializer(CodebaseReleaseSerializer):
 
         return instance
 
-    def save_release_contributors(self, instance: CodebaseRelease,
-                                  release_contributors_serializer: ReleaseContributorSerializer):
+    def save_release_contributors(
+        self,
+        instance: CodebaseRelease,
+        release_contributors_serializer: ReleaseContributorSerializer,
+    ):
         release_contributors_serializer.is_valid(raise_exception=True)
         release_contributors = release_contributors_serializer.save()
 
@@ -380,11 +546,11 @@ class CodebaseReleaseEditSerializer(CodebaseReleaseSerializer):
 
     class Meta:
         model = CodebaseRelease
-        fields = CodebaseReleaseSerializer.Meta.fields + ('possible_licenses',)
+        fields = CodebaseReleaseSerializer.Meta.fields + ("possible_licenses",)
 
 
 class PeerReviewFeedbackEditorSerializer(serializers.ModelSerializer):
-    editor_url = serializers.CharField(source='get_editor_url')
+    editor_url = serializers.CharField(source="get_editor_url")
     reviewer_name = serializers.SerializerMethodField()
     review_status = serializers.SerializerMethodField()
 
@@ -396,12 +562,23 @@ class PeerReviewFeedbackEditorSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = PeerReviewerFeedback
-        fields = '__all__'
-        read_only_fields = ('date_created', 'invitation', 'recommendation', 'reviewer',
-                            'private_reviewer_notes', 'notes_to_author', 'editor_url',
-                            'has_narrative_documentation', 'narrative_documentation_comments',
-                            'has_clean_code', 'clean_code_comments',
-                            'is_runnable', 'reviewer_name', 'runnable_comments')
+        fields = "__all__"
+        read_only_fields = (
+            "date_created",
+            "invitation",
+            "recommendation",
+            "reviewer",
+            "private_reviewer_notes",
+            "notes_to_author",
+            "editor_url",
+            "has_narrative_documentation",
+            "narrative_documentation_comments",
+            "has_clean_code",
+            "clean_code_comments",
+            "is_runnable",
+            "reviewer_name",
+            "runnable_comments",
+        )
 
 
 class PeerReviewReviewerSerializer(serializers.ModelSerializer):
@@ -409,25 +586,32 @@ class PeerReviewReviewerSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = MemberProfile
-        fields = ('id', 'avatar_url', 'degrees', 'name', 'tags',)
+        fields = (
+            "id",
+            "avatar_url",
+            "degrees",
+            "name",
+            "tags",
+        )
 
 
 class PeerReviewInvitationSerializer(serializers.ModelSerializer):
     """Serialize review invitations. Build for list, detail and create routes
     (updating a peer review invitation may not make sense since an email has
     already been sent)"""
-    url = serializers.ReadOnlyField(source='get_absolute_url')
+
+    url = serializers.ReadOnlyField(source="get_absolute_url")
 
     candidate_reviewer = PeerReviewReviewerSerializer(read_only=True)
 
     class Meta:
         model = PeerReviewInvitation
-        fields = '__all__'
-        read_only_fields = ('date_created',)
+        fields = "__all__"
+        read_only_fields = ("date_created",)
 
 
 class RelatedPeerReviewInvitationSerializer(serializers.ModelSerializer):
-    url = serializers.ReadOnlyField(source='get_absolute_url')
+    url = serializers.ReadOnlyField(source="get_absolute_url")
     latest_feedback_url = serializers.SerializerMethodField()
     codebase_release_title = serializers.SerializerMethodField()
     status = serializers.SerializerMethodField()
@@ -439,30 +623,43 @@ class RelatedPeerReviewInvitationSerializer(serializers.ModelSerializer):
         release = instance.review.codebase_release
         version_number = release.version_number
         title = release.codebase.title
-        return '{} {}'.format(title, version_number)
+        return "{} {}".format(title, version_number)
 
     def get_status(self, instance):
         return instance.review.get_status_display()
 
     class Meta:
         model = PeerReviewInvitation
-        fields = ('date_created', 'optional_message', 'accepted',
-                  'url', 'latest_feedback_url', 'codebase_release_title', 'status')
-        read_only_fields = ('date_created',)
+        fields = (
+            "date_created",
+            "optional_message",
+            "accepted",
+            "url",
+            "latest_feedback_url",
+            "codebase_release_title",
+            "status",
+        )
+        read_only_fields = ("date_created",)
 
 
 class AuthorSerializer(serializers.ModelSerializer):
-    absolute_url = serializers.URLField(source='get_absolute_url')
+    absolute_url = serializers.URLField(source="get_absolute_url")
 
     class Meta:
         model = MemberProfile
-        fields = ('name', 'absolute_url')
+        fields = ("name", "absolute_url")
 
 
 class PeerReviewEventLogSerializer(serializers.ModelSerializer):
     author = AuthorSerializer()
-    date_created = serializers.DateTimeField(format='%I:%M%p %b %d, %Y')
+    date_created = serializers.DateTimeField(format="%I:%M%p %b %d, %Y")
 
     class Meta:
         model = PeerReviewEventLog
-        fields = ('date_created', 'review', 'action', 'author', 'message',)
+        fields = (
+            "date_created",
+            "review",
+            "action",
+            "author",
+            "message",
+        )

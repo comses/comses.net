@@ -6,13 +6,15 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('library', '0013_references_pub_help_text_update'),
+        ("library", "0013_references_pub_help_text_update"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='codebaserelease',
-            name='output_data_url',
-            field=models.URLField(blank=True, help_text='Permanent URL to output data from this model.'),
+            model_name="codebaserelease",
+            name="output_data_url",
+            field=models.URLField(
+                blank=True, help_text="Permanent URL to output data from this model."
+            ),
         ),
     ]

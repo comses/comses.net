@@ -6,23 +6,28 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('home', '0012_update_resource_index_page_callouts'),
+        ("home", "0012_update_resource_index_page_callouts"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='categoryindexpage',
-            name='heading',
-            field=models.CharField(help_text='Short name to be placed in introduction header.', max_length=256),
+            model_name="categoryindexpage",
+            name="heading",
+            field=models.CharField(
+                help_text="Short name to be placed in introduction header.",
+                max_length=256,
+            ),
         ),
         migrations.AlterField(
-            model_name='categoryindexpage',
-            name='summary',
-            field=models.CharField(help_text='Summary blurb for this category index page.', max_length=5000),
+            model_name="categoryindexpage",
+            name="summary",
+            field=models.CharField(
+                help_text="Summary blurb for this category index page.", max_length=5000
+            ),
         ),
         migrations.AlterField(
-            model_name='categoryindexpage',
-            name='template',
-            field=models.CharField(default='home/category_index.jinja', max_length=256),
+            model_name="categoryindexpage",
+            name="template",
+            field=models.CharField(default="home/category_index.jinja", max_length=256),
         ),
     ]

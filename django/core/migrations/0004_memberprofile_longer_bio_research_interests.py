@@ -7,18 +7,22 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('core', '0003_auto_20181025_0352'),
+        ("core", "0003_auto_20181025_0352"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='memberprofile',
-            name='bio',
-            field=core.fields.MarkdownField(blank=True, help_text='Brief bio', max_length=2048, rendered_field=True),
+            model_name="memberprofile",
+            name="bio",
+            field=core.fields.MarkdownField(
+                blank=True, help_text="Brief bio", max_length=2048, rendered_field=True
+            ),
         ),
         migrations.AlterField(
-            model_name='memberprofile',
-            name='research_interests',
-            field=core.fields.MarkdownField(blank=True, max_length=2048, rendered_field=True),
+            model_name="memberprofile",
+            name="research_interests",
+            field=core.fields.MarkdownField(
+                blank=True, max_length=2048, rendered_field=True
+            ),
         ),
     ]

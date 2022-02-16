@@ -2,21 +2,24 @@
 
 from django.db import migrations
 
+
 def update_subnavigation_links(apps, schema_editor):
-    SubNavigationLink = apps.get_model('home', 'SubNavigationLink')
-    Breadcrumb = apps.get_model('home', 'Breadcrumb')
+    SubNavigationLink = apps.get_model("home", "SubNavigationLink")
+    Breadcrumb = apps.get_model("home", "Breadcrumb")
     Page = apps.get_model("wagtailcore", "Page")
-    Page.objects.filter(slug='modeling-platforms').update(slug='modeling-frameworks')
-    Breadcrumb.objects.filter(url__contains='modeling-platforms').update(url='/resources/modeling-frameworks/',
-                                                                         title='Modeling Frameworks')
-    SubNavigationLink.objects.filter(url__contains='modeling-platforms').update(url='/resources/modeling-frameworks/',
-                                                                                title='Modeling Frameworks')
+    Page.objects.filter(slug="modeling-platforms").update(slug="modeling-frameworks")
+    Breadcrumb.objects.filter(url__contains="modeling-platforms").update(
+        url="/resources/modeling-frameworks/", title="Modeling Frameworks"
+    )
+    SubNavigationLink.objects.filter(url__contains="modeling-platforms").update(
+        url="/resources/modeling-frameworks/", title="Modeling Frameworks"
+    )
 
 
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('library', '0008_release_notes_length'),
+        ("library", "0008_release_notes_length"),
     ]
 
     operations = [

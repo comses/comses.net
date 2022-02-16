@@ -3,10 +3,10 @@ from django.db import transaction
 from .models import TagCleanup, TagCuratorProxy
 
 acronyms = [
-    ('cellular automata', 'ca'),
-    ('complex adaptive system', 'cas'),
-    ('genetic algorithm', 'ga'),
-    ('belief desire intention', 'bdi')
+    ("cellular automata", "ca"),
+    ("complex adaptive system", "cas"),
+    ("genetic algorithm", "ga"),
+    ("belief desire intention", "bdi"),
 ]
 
 
@@ -18,31 +18,48 @@ def load_initial_data():
 
     TagCleanup.objects.bulk_create(TagCleanup.find_groups_by_porter_stemmer())
     bad_translations = [
-        ('dynamic systems', 'system dynamics'),
-        ('effect size', 'size effect'),
-        ('from', 'other')
+        ("dynamic systems", "system dynamics"),
+        ("effect size", "size effect"),
+        ("from", "other"),
     ]
     for bad_translation in bad_translations:
-        TagCleanup.objects.get(new_name=bad_translation[0], old_name=bad_translation[1]).delete()
+        TagCleanup.objects.get(
+            new_name=bad_translation[0], old_name=bad_translation[1]
+        ).delete()
     TagCleanup.objects.process()
 
     TagCleanup.objects.bulk_create(TagCleanup.find_groups_by_platform_and_language())
     TagCleanup.objects.process()
 
     # Ad Hoc Deletions
-    regexes = [r'^jdk', r'^(?:ms|microsoft v)', r'^\.net', r'^version', r'^visual s', 'r^jbuilder', r'^\d+\.?',
-               r'^length>', r'^from$', r'^other$', r'[<=>]+\s+\d+', r'^jbulider', '^window', '^ubuntu']
+    regexes = [
+        r"^jdk",
+        r"^(?:ms|microsoft v)",
+        r"^\.net",
+        r"^version",
+        r"^visual s",
+        "r^jbuilder",
+        r"^\d+\.?",
+        r"^length>",
+        r"^from$",
+        r"^other$",
+        r"[<=>]+\s+\d+",
+        r"^jbulider",
+        "^window",
+        "^ubuntu",
+    ]
     for regex in regexes:
-        TagCleanup.objects.bulk_create(TagCuratorProxy.objects.filter(name__iregex=regex).to_tag_cleanups())
+        TagCleanup.objects.bulk_create(
+            TagCuratorProxy.objects.filter(name__iregex=regex).to_tag_cleanups()
+        )
 
     # Couldn't figure out what this abm platform is
-    TagCleanup.objects.create(new_name='LPL', old_name='LPL 5.55')
+    TagCleanup.objects.create(new_name="LPL", old_name="LPL 5.55")
 
     TagCleanup.objects.process()
 
     # Query related data
-    pgcli_command = \
-        """
+    pgcli_command = """
         \copy (select name, count(*) as tag_count
         from
             (select tag.name as name, codebase.id as codebase_id

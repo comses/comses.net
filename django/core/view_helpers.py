@@ -14,7 +14,9 @@ logger = logging.getLogger(__name__)
 search_backend = get_search_backend()
 
 
-def get_search_queryset(query, queryset, operator="or", fields=None, tags=None, criteria=None):
+def get_search_queryset(
+    query, queryset, operator="or", fields=None, tags=None, criteria=None
+):
 
     if not tags:
         tags = []
@@ -34,7 +36,7 @@ def get_search_queryset(query, queryset, operator="or", fields=None, tags=None, 
 
     if query:
         Query.get(query).add_hit()
-        filters, query = parse_query_string(query, operator='or')
+        filters, query = parse_query_string(query, operator="or")
         criteria.update(filters)
     else:
         query = MATCH_ALL
@@ -49,11 +51,13 @@ def get_search_queryset(query, queryset, operator="or", fields=None, tags=None, 
             logger.warning("Invalid filter criteria: %s", criteria)
 
     logger.debug("parsed query: %s, filters: %s", query, criteria)
-    results = search_backend.search(query,
-                                    queryset,
-                                    operator=operator,
-                                    fields=fields,
-                                    order_by_relevance=order_by_relevance)
+    results = search_backend.search(
+        query,
+        queryset,
+        operator=operator,
+        fields=fields,
+        order_by_relevance=order_by_relevance,
+    )
     results.model = queryset.model
     return results
 
@@ -67,6 +71,12 @@ def retrieve_with_perms(self, request, *args, **kwargs):
 
 
 def add_change_delete_perms(instance, data, user):
-    data['has_change_perm'] = user.has_perm('{}.change_{}'.format(instance._meta.app_label, instance._meta.model_name), instance)
-    data['has_delete_perm'] = user.has_perm('{}.delete_{}'.format(instance._meta.app_label, instance._meta.model_name), instance)
+    data["has_change_perm"] = user.has_perm(
+        "{}.change_{}".format(instance._meta.app_label, instance._meta.model_name),
+        instance,
+    )
+    data["has_delete_perm"] = user.has_perm(
+        "{}.delete_{}".format(instance._meta.app_label, instance._meta.model_name),
+        instance,
+    )
     return data

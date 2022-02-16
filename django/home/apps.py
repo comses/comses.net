@@ -6,8 +6,8 @@ logger = logging.getLogger(__name__)
 
 
 class HomeConfig(AppConfig):
-    name = 'home'
-    verbose_name = 'Wagtail related Django application module'
+    name = "home"
+    verbose_name = "Wagtail related Django application module"
 
     def ready(self):
         """
@@ -16,4 +16,5 @@ class HomeConfig(AppConfig):
         :return:
         """
         from . import signals
+
         logger.debug("fully loaded signals: %s", signals)

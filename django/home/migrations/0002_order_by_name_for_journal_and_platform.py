@@ -7,28 +7,36 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('home', '0001_initial'),
+        ("home", "0001_initial"),
     ]
 
     operations = [
         migrations.AlterModelOptions(
-            name='journalsnippetplacement',
-            options={'ordering': ('journal__name',), 'verbose_name': 'journal placement', 'verbose_name_plural': 'journal placements'},
+            name="journalsnippetplacement",
+            options={
+                "ordering": ("journal__name",),
+                "verbose_name": "journal placement",
+                "verbose_name_plural": "journal placements",
+            },
         ),
         migrations.AlterModelOptions(
-            name='platformsnippetplacement',
-            options={'ordering': ('platform__name',), 'verbose_name': 'platform placement', 'verbose_name_plural': 'platform placements'},
+            name="platformsnippetplacement",
+            options={
+                "ordering": ("platform__name",),
+                "verbose_name": "platform placement",
+                "verbose_name_plural": "platform placements",
+            },
         ),
         migrations.RemoveField(
-            model_name='faqentryplacement',
-            name='sort_order',
+            model_name="faqentryplacement",
+            name="sort_order",
         ),
         migrations.RemoveField(
-            model_name='journalsnippetplacement',
-            name='sort_order',
+            model_name="journalsnippetplacement",
+            name="sort_order",
         ),
         migrations.RemoveField(
-            model_name='platformsnippetplacement',
-            name='sort_order',
-        )
+            model_name="platformsnippetplacement",
+            name="sort_order",
+        ),
     ]

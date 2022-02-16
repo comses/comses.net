@@ -10,9 +10,9 @@ class JobFactory:
 
     def get_default_data(self):
         return {
-            'title': 'PostDoc in ABM',
-            'description': 'PostDoc in ABM at ASU',
-            'submitter': self.submitter
+            "title": "PostDoc in ABM",
+            "description": "PostDoc in ABM at ASU",
+            "submitter": self.submitter,
         }
 
     def create(self, **overrides):
@@ -36,11 +36,11 @@ class EventFactory:
 
     def get_default_data(self):
         return {
-            'title': 'CoMSES Conference',
-            'description': 'Online Conference',
-            'location': 'Your computer',
-            'submitter': self.submitter,
-            'start_date': datetime.now() + timedelta(days=1)
+            "title": "CoMSES Conference",
+            "description": "Online Conference",
+            "location": "Your computer",
+            "submitter": self.submitter,
+            "start_date": datetime.now() + timedelta(days=1),
         }
 
     def create(self, **overrides):

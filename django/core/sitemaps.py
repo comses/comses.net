@@ -5,6 +5,7 @@ from .models import Event, Job
 
 # set up sitemap ala https://docs.djangoproject.com/en/1.11/ref/contrib/sitemaps/
 
+
 class BaseSitemap(Sitemap):
 
     changefreq = "never"
@@ -14,6 +15,7 @@ class BaseSitemap(Sitemap):
 
     def lastmod(self, obj):
         return obj.last_modified
+
 
 class EventSitemap(BaseSitemap):
 
@@ -32,8 +34,8 @@ class LibrarySitemap(Sitemap):
 """
 
 sitemaps = {
-#    'events': EventSitemap,
-#    'jobs': JobSitemap,
+    #    'events': EventSitemap,
+    #    'jobs': JobSitemap,
     # 'library': LibrarySitemap,
     # 'community': CommunitySitemap,
 }

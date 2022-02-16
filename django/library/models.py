@@ -30,7 +30,13 @@ from rest_framework.exceptions import ValidationError, UnsupportedMediaType
 from taggit.models import TaggedItemBase
 from wagtail.admin.edit_handlers import FieldPanel
 from wagtail.core.utils import string_to_ascii
-from wagtail.images.models import Image, AbstractImage, AbstractRendition, get_upload_to, ImageQuerySet
+from wagtail.images.models import (
+    Image,
+    AbstractImage,
+    AbstractRendition,
+    get_upload_to,
+    ImageQuerySet,
+)
 from wagtail.search import index
 from wagtail.snippets.models import register_snippet
 
@@ -41,54 +47,67 @@ from core.models import Platform, MemberProfile
 from core.queryset import get_viewable_objects_for_user
 from core.utils import send_markdown_email
 from core.view_helpers import get_search_queryset
-from .fs import CodebaseReleaseFsApi, StagingDirectories, FileCategoryDirectories, MessageLevels
+from .fs import (
+    CodebaseReleaseFsApi,
+    StagingDirectories,
+    FileCategoryDirectories,
+    MessageLevels,
+)
 
 logger = logging.getLogger(__name__)
 
 # Cherry picked from
 # https://www.ngdc.noaa.gov/metadata/published/xsd/schema/resources/Codelist/gmxCodelists.xml#CI_RoleCode
 ROLES = Choices(
-    ('author', _('Author')),
-    ('publisher', _('Publisher')),
-    ('custodian', _('Custodian')),
-    ('resourceProvider', _('Resource Provider')),
-    ('maintainer', _('Maintainer')),
-    ('pointOfContact', _('Point of contact')),
-    ('editor', _('Editor')),
-    ('contributor', _('Contributor')),
-    ('collaborator', _('Collaborator')),
-    ('funder', _('Funder')),
-    ('copyrightHolder', _("Copyright holder")),
+    ("author", _("Author")),
+    ("publisher", _("Publisher")),
+    ("custodian", _("Custodian")),
+    ("resourceProvider", _("Resource Provider")),
+    ("maintainer", _("Maintainer")),
+    ("pointOfContact", _("Point of contact")),
+    ("editor", _("Editor")),
+    ("contributor", _("Contributor")),
+    ("collaborator", _("Collaborator")),
+    ("funder", _("Funder")),
+    ("copyrightHolder", _("Copyright holder")),
 )
 
 OPERATING_SYSTEMS = Choices(
-    ('other', _('Other')),
-    ('linux', _('Unix/Linux')),
-    ('macos', _('Mac OS')),
-    ('windows', _('Windows')),
-    ('platform_independent', _('Operating System Independent')),
+    ("other", _("Other")),
+    ("linux", _("Unix/Linux")),
+    ("macos", _("Mac OS")),
+    ("windows", _("Windows")),
+    ("platform_independent", _("Operating System Independent")),
 )
 
 
 class CodebaseTag(TaggedItemBase):
-    content_object = ParentalKey('library.Codebase', related_name='tagged_codebases')
+    content_object = ParentalKey("library.Codebase", related_name="tagged_codebases")
 
 
 class ProgrammingLanguage(TaggedItemBase):
-    content_object = ParentalKey('library.CodebaseRelease', related_name='tagged_release_languages')
+    content_object = ParentalKey(
+        "library.CodebaseRelease", related_name="tagged_release_languages"
+    )
 
 
 class CodebaseReleasePlatformTag(TaggedItemBase):
-    content_object = ParentalKey('library.CodebaseRelease', related_name='tagged_release_platforms')
+    content_object = ParentalKey(
+        "library.CodebaseRelease", related_name="tagged_release_platforms"
+    )
 
 
 class ContributorAffiliation(TaggedItemBase):
-    content_object = ParentalKey('library.Contributor', related_name='tagged_contributors')
+    content_object = ParentalKey(
+        "library.Contributor", related_name="tagged_contributors"
+    )
 
 
 @register_snippet
 class License(models.Model):
-    name = models.CharField(max_length=200, help_text=_('SPDX license code from https://spdx.org/licenses/'))
+    name = models.CharField(
+        max_length=200, help_text=_("SPDX license code from https://spdx.org/licenses/")
+    )
     url = models.URLField(blank=True)
 
     def __str__(self):
@@ -96,31 +115,39 @@ class License(models.Model):
 
 
 class Contributor(index.Indexed, ClusterableModel):
-    given_name = models.CharField(max_length=100, blank=True,
-                                  help_text=_('Also doubles as organizational name'))
+    given_name = models.CharField(
+        max_length=100, blank=True, help_text=_("Also doubles as organizational name")
+    )
     middle_name = models.CharField(max_length=100, blank=True)
     family_name = models.CharField(max_length=100, blank=True)
     affiliations = ClusterTaggableManager(through=ContributorAffiliation)
-    type = models.CharField(max_length=16,
-                            choices=(('person', 'person'), ('organization', 'organization')),
-                            default='person',
-                            help_text=_('organizations only use given_name'))
+    type = models.CharField(
+        max_length=16,
+        choices=(("person", "person"), ("organization", "organization")),
+        default="person",
+        help_text=_("organizations only use given_name"),
+    )
     email = models.EmailField(blank=True)
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, on_delete=models.SET_NULL)
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, null=True, on_delete=models.SET_NULL
+    )
 
     search_fields = [
-        index.SearchField('given_name', partial_match=True),
-        index.SearchField('family_name', partial_match=True),
-        index.RelatedFields('affiliations', [
-            index.SearchField('name', partial_match=True)
-        ]),
-        index.SearchField('email', partial_match=True),
-        index.RelatedFields('user', [
-            index.SearchField('first_name'),
-            index.SearchField('last_name'),
-            index.SearchField('email'),
-            index.SearchField('username'),
-        ]),
+        index.SearchField("given_name", partial_match=True),
+        index.SearchField("family_name", partial_match=True),
+        index.RelatedFields(
+            "affiliations", [index.SearchField("name", partial_match=True)]
+        ),
+        index.SearchField("email", partial_match=True),
+        index.RelatedFields(
+            "user",
+            [
+                index.SearchField("first_name"),
+                index.SearchField("last_name"),
+                index.SearchField("email"),
+                index.SearchField("username"),
+            ],
+        ),
     ]
 
     @staticmethod
@@ -134,13 +161,16 @@ class Contributor(index.Indexed, ClusterableModel):
             return Contributor.objects.get_or_create(
                 user=user,
                 defaults={
-                    'given_name': user.first_name,
-                    'family_name': user.last_name,
-                    'email': user.email
-                }
+                    "given_name": user.first_name,
+                    "family_name": user.last_name,
+                    "email": user.email,
+                },
             )
         except Contributor.MultipleObjectsReturned:
-            logger.exception("Data integrity issue: found multiple Contributors with the same User %s", user)
+            logger.exception(
+                "Data integrity issue: found multiple Contributors with the same User %s",
+                user,
+            )
             return (Contributor.objects.filter(user=user).first(), False)
 
     @property
@@ -161,20 +191,22 @@ class Contributor(index.Indexed, ClusterableModel):
 
     def to_codemeta(self):
         codemeta = {
-            '@type': 'Person',
-            'givenName': self.given_name,
-            'familyName': self.family_name,
+            "@type": "Person",
+            "givenName": self.given_name,
+            "familyName": self.family_name,
         }
         if self.orcid_url:
-            codemeta['@id'] = self.orcid_url
+            codemeta["@id"] = self.orcid_url
         if self.affiliations.exists():
-            codemeta['affiliation'] = self.formatted_affiliations
+            codemeta["affiliation"] = self.formatted_affiliations
         if self.email:
-            codemeta['email'] = self.email
+            codemeta["email"] = self.email
         return codemeta
 
     def get_aggregated_search_fields(self):
-        return ' '.join({self.given_name, self.family_name, self.email} | self._get_user_fields())
+        return " ".join(
+            {self.given_name, self.family_name, self.email} | self._get_user_fields()
+        )
 
     def _get_user_fields(self):
         if self.user:
@@ -187,16 +219,20 @@ class Contributor(index.Indexed, ClusterableModel):
         return any([self.given_name, self.family_name])
 
     def get_full_name(self, family_name_first=False):
-        full_name = ''
+        full_name = ""
         # Bah. Horrid name logic
-        if self.type == 'person':
+        if self.type == "person":
             if self.has_name:
                 if family_name_first:
-                    full_name = f'{self.family_name}, {self.given_name} {self.middle_name}'
+                    full_name = (
+                        f"{self.family_name}, {self.given_name} {self.middle_name}"
+                    )
                 elif self.middle_name:
-                    full_name = f'{self.given_name} {self.middle_name} {self.family_name}'
+                    full_name = (
+                        f"{self.given_name} {self.middle_name} {self.family_name}"
+                    )
                 else:
-                    full_name = f'{self.given_name} {self.family_name}'
+                    full_name = f"{self.given_name} {self.family_name}"
             elif self.user:
                 full_name = self.user.member_profile.name
             else:
@@ -204,29 +240,31 @@ class Contributor(index.Indexed, ClusterableModel):
         else:
             # organizations only have given_name
             full_name = self.given_name
-        return ' '.join(full_name.split())
+        return " ".join(full_name.split())
 
     @property
     def formatted_affiliations(self):
-        return ', '.join(self.affiliations.values_list('name', flat=True))
+        return ", ".join(self.affiliations.values_list("name", flat=True))
 
     def get_profile_url(self):
         user = self.user
         if user:
             return user.member_profile.get_absolute_url()
         else:
-            return "{0}?{1}".format(reverse('home:profile-list'), urlencode({'query': self.name}))
+            return "{0}?{1}".format(
+                reverse("home:profile-list"), urlencode({"query": self.name})
+            )
 
     def __str__(self):
         if self.email:
-            return f'{self.get_full_name()} ({self.email})'
+            return f"{self.get_full_name()} ({self.email})"
         return self.get_full_name()
 
 
 class SemanticVersion:
-    ALPHA = semver.parse_version_info('0.0.1')
-    BETA = semver.parse_version_info('0.1.0')
-    DEFAULT = semver.parse_version_info('1.0.0')
+    ALPHA = semver.parse_version_info("0.0.1")
+    BETA = semver.parse_version_info("0.1.0")
+    DEFAULT = semver.parse_version_info("1.0.0")
 
     @staticmethod
     def possible_next_versions(version_number, minor_only=False):
@@ -235,34 +273,42 @@ class SemanticVersion:
         except ValueError:
             version_info = SemanticVersion.DEFAULT
         if minor_only:
-            return {version_info.bump_minor(), }
-        return {version_info.bump_major(), version_info.bump_minor(), version_info.bump_patch()}
+            return {
+                version_info.bump_minor(),
+            }
+        return {
+            version_info.bump_major(),
+            version_info.bump_minor(),
+            version_info.bump_patch(),
+        }
 
 
 class CodebaseReleaseDownload(models.Model):
     date_created = models.DateTimeField(default=timezone.now)
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, on_delete=models.SET_NULL)
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, null=True, on_delete=models.SET_NULL
+    )
     ip_address = models.GenericIPAddressField(blank=True, null=True)
-    referrer = models.URLField(max_length=500, blank=True,
-                               help_text=_("captures the HTTP_REFERER if set"))
-    release = models.ForeignKey('library.CodebaseRelease', related_name='downloads', on_delete=models.CASCADE)
+    referrer = models.URLField(
+        max_length=500, blank=True, help_text=_("captures the HTTP_REFERER if set")
+    )
+    release = models.ForeignKey(
+        "library.CodebaseRelease", related_name="downloads", on_delete=models.CASCADE
+    )
 
     def __str__(self):
         return "{0}: downloaded {1}".format(self.ip_address, self.release)
 
     class Meta:
-        indexes = [
-            models.Index(fields=['date_created'])
-        ]
+        indexes = [models.Index(fields=["date_created"])]
 
 
 class CodebaseQuerySet(models.QuerySet):
-
     def update_publish_date(self):
         for codebase in self.all():
             if codebase.releases.exists():
-                first_release = codebase.releases.order_by('first_published_at').first()
-                last_release = codebase.releases.order_by('-last_published_on').first()
+                first_release = codebase.releases.order_by("first_published_at").first()
+                last_release = codebase.releases.order_by("-last_published_on").first()
                 codebase.first_published_at = first_release.first_published_at
                 codebase.last_published_on = last_release.last_published_on
                 codebase.save()
@@ -273,38 +319,53 @@ class CodebaseQuerySet(models.QuerySet):
             codebase.save()
 
     def with_viewable_releases(self, user):
-        queryset = get_viewable_objects_for_user(user=user, queryset=CodebaseRelease.objects.all())
-        return self.prefetch_related(Prefetch('releases', queryset=queryset))
+        queryset = get_viewable_objects_for_user(
+            user=user, queryset=CodebaseRelease.objects.all()
+        )
+        return self.prefetch_related(Prefetch("releases", queryset=queryset))
 
     def with_tags(self):
-        return self.prefetch_related('tagged_codebases__tag')
+        return self.prefetch_related("tagged_codebases__tag")
 
     def with_featured_images(self):
-        return self.prefetch_related('featured_images')
+        return self.prefetch_related("featured_images")
 
     def with_submitter(self):
-        return self.select_related('submitter')
+        return self.select_related("submitter")
 
     def accessible(self, user):
-        return get_viewable_objects_for_user(user=user, queryset=self.with_viewable_releases(user=user))
+        return get_viewable_objects_for_user(
+            user=user, queryset=self.with_viewable_releases(user=user)
+        )
 
     def filter_by_contributor(self, user):
         try:
             contributor = Contributor.objects.get(user=user)
-            releases = CodebaseRelease.objects.filter(pk__in=ReleaseContributor.objects.filter(contributor=contributor).values_list('release', flat=True))
+            releases = CodebaseRelease.objects.filter(
+                pk__in=ReleaseContributor.objects.filter(
+                    contributor=contributor
+                ).values_list("release", flat=True)
+            )
             return Codebase.objects.filter(releases__in=releases).distinct()
         except Contributor.DoesNotExist:
             return Codebase.objects.none()
 
     def with_contributors(self, release_contributor_qs=None, user=None, **kwargs):
         if user is not None:
-            release_qs = get_viewable_objects_for_user(user=user, queryset=CodebaseRelease.objects.all())
-            codebase_qs = get_viewable_objects_for_user(user=user, queryset=self.filter(**kwargs))
+            release_qs = get_viewable_objects_for_user(
+                user=user, queryset=CodebaseRelease.objects.all()
+            )
+            codebase_qs = get_viewable_objects_for_user(
+                user=user, queryset=self.filter(**kwargs)
+            )
         else:
-            release_qs = CodebaseRelease.objects.public().only('id', 'codebase_id')
+            release_qs = CodebaseRelease.objects.public().only("id", "codebase_id")
             codebase_qs = self.filter(live=True, **kwargs)
         return codebase_qs.prefetch_related(
-            Prefetch('releases', release_qs.with_release_contributors(release_contributor_qs)))
+            Prefetch(
+                "releases", release_qs.with_release_contributors(release_contributor_qs)
+            )
+        )
 
     @staticmethod
     def cache_contributors(codebases):
@@ -312,7 +373,7 @@ class CodebaseQuerySet(models.QuerySet):
 
         Returns a list so that it is impossible to call queryset methods on the result and destroy the
         all_contributors property. Should be called after with_contributors for query efficiency. `with_contributors`
-        is a seperate function """
+        is a seperate function"""
 
         for codebase in codebases:
             codebase.compute_contributors(force=True)
@@ -342,7 +403,9 @@ class CodebaseQuerySet(models.QuerySet):
 
         # Establish initial querysets
         # new codebases are those created or published after the given start_date
-        new_codebases = Codebase.objects.public(**kwargs).filter(Q(date_created__gte=start_date) | Q(first_published_at__gte=start_date))
+        new_codebases = Codebase.objects.public(**kwargs).filter(
+            Q(date_created__gte=start_date) | Q(first_published_at__gte=start_date)
+        )
         # updated codebases are those codebases with a last_modified after the start date, sans the new codebases
         updated_codebases = Codebase.objects.public(last_modified__gte=start_date)
         if end_date is None:
@@ -350,24 +413,30 @@ class CodebaseQuerySet(models.QuerySet):
             end_date = timezone.now().date()
         else:
             # otherwise, apply the filter based on the desired end date over the new and updated codebases
-            new_codebases = new_codebases.filter(Q(date_created__lte=end_date) & Q(first_published_at__lte=end_date))
+            new_codebases = new_codebases.filter(
+                Q(date_created__lte=end_date) & Q(first_published_at__lte=end_date)
+            )
             updated_codebases = updated_codebases.filter(last_modified__lte=end_date)
         # remove the new codebases from the updated codebases
         updated_codebases = updated_codebases.difference(new_codebases)
-        releases = CodebaseRelease.objects.filter(id__in=(new_codebases.values('releases') | updated_codebases.values('releases')))
+        releases = CodebaseRelease.objects.filter(
+            id__in=(
+                new_codebases.values("releases") | updated_codebases.values("releases")
+            )
+        )
         return new_codebases, updated_codebases, releases
 
     def get_all_release_frameworks(self, codebase):
         # FIXME: this probably just belongs on Codebase
         return codebase.releases.exclude(platform_tags__isnull=True).values_list(
-            'platform_tags__name',
-            flat=True)
+            "platform_tags__name", flat=True
+        )
 
     def get_all_release_programming_languages(self, codebase):
         # FIXME: this probably just belongs on Codebase
-        return codebase.releases.exclude(programming_languages__isnull=True).values_list(
-            'programming_languages__name',
-            flat=True)
+        return codebase.releases.exclude(
+            programming_languages__isnull=True
+        ).values_list("programming_languages__name", flat=True)
 
 
 @add_to_comses_permission_whitelist
@@ -375,6 +444,7 @@ class Codebase(index.Indexed, ClusterableModel):
     """
     Metadata applicable across a set of CodebaseReleases
     """
+
     # shortname = models.CharField(max_length=128, unique=True)
     title = models.CharField(max_length=300)
     description = MarkdownField()
@@ -397,55 +467,76 @@ class Codebase(index.Indexed, ClusterableModel):
     doi = models.CharField(max_length=128, unique=True, null=True)
     uuid = models.UUIDField(unique=True, default=uuid.uuid4, editable=False)
 
-    latest_version = models.ForeignKey('CodebaseRelease', null=True, related_name='latest_version',
-                                       on_delete=models.SET_NULL)
+    latest_version = models.ForeignKey(
+        "CodebaseRelease",
+        null=True,
+        related_name="latest_version",
+        on_delete=models.SET_NULL,
+    )
 
-    repository_url = models.URLField(blank=True,
-                                     help_text=_('URL to code repository, e.g., https://github.com/comses/wolf-sheep'))
-    replication_text = models.TextField(blank=True,
-                                        help_text=_('URL / DOI / citation for the original model being replicated'))
+    repository_url = models.URLField(
+        blank=True,
+        help_text=_(
+            "URL to code repository, e.g., https://github.com/comses/wolf-sheep"
+        ),
+    )
+    replication_text = models.TextField(
+        blank=True,
+        help_text=_("URL / DOI / citation for the original model being replicated"),
+    )
     # FIXME: original Drupal data was stored as text fields -
     # after catalog integration remove these / replace with M2M relationships to Publication entities
     # publication metadata
     references_text = models.TextField(
         blank=True,
-        help_text=_("References to related publications (DOIs or citation text"))
+        help_text=_("References to related publications (DOIs or citation text"),
+    )
     associated_publication_text = models.TextField(
         blank=True,
-        help_text=_("DOI, Permanent URL, or citation to a publication associated with this codebase."))
+        help_text=_(
+            "DOI, Permanent URL, or citation to a publication associated with this codebase."
+        ),
+    )
     tags = ClusterTaggableManager(through=CodebaseTag)
     # evaluate this JSONField as an add-anything way to record relationships between this Codebase and other entities
     # with URLs / resolvable identifiers
     relationships = models.JSONField(default=list)
 
     # JSONField list of image metadata records with paths referring to self.relative_media_path()
-    media = models.JSONField(default=list,
-                             help_text=_("JSON metadata dict of media associated with this Codebase"))
+    media = models.JSONField(
+        default=list,
+        help_text=_("JSON metadata dict of media associated with this Codebase"),
+    )
 
-    submitter = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='codebases', on_delete=models.PROTECT)
+    submitter = models.ForeignKey(
+        settings.AUTH_USER_MODEL, related_name="codebases", on_delete=models.PROTECT
+    )
 
     objects = CodebaseQuerySet.as_manager()
 
     search_fields = [
-        index.SearchField('title', partial_match=True),
-        index.SearchField('description', partial_match=True),
-        index.SearchField('get_all_contributors_search_fields'),
-        index.SearchField('get_all_release_frameworks'),
-        index.SearchField('get_all_release_programming_languages'),
-        index.SearchField('references_text', partial_match=True),
-        index.SearchField('permanent_url'),
-        index.SearchField('associated_publication_text', partial_match=True),
-        index.RelatedFields('tags', [
-            index.SearchField('name', partial_match=True),
-        ]),
+        index.SearchField("title", partial_match=True),
+        index.SearchField("description", partial_match=True),
+        index.SearchField("get_all_contributors_search_fields"),
+        index.SearchField("get_all_release_frameworks"),
+        index.SearchField("get_all_release_programming_languages"),
+        index.SearchField("references_text", partial_match=True),
+        index.SearchField("permanent_url"),
+        index.SearchField("associated_publication_text", partial_match=True),
+        index.RelatedFields(
+            "tags",
+            [
+                index.SearchField("name", partial_match=True),
+            ],
+        ),
         # filter and sort fields
-        index.FilterField('last_modified'),
-        index.FilterField('peer_reviewed'),
-        index.FilterField('featured'),
-        index.FilterField('is_replication'),
-        index.FilterField('live'),
-        index.FilterField('first_published_at'),
-        index.FilterField('last_published_on'),
+        index.FilterField("last_modified"),
+        index.FilterField("peer_reviewed"),
+        index.FilterField("featured"),
+        index.FilterField("is_replication"),
+        index.FilterField("live"),
+        index.FilterField("first_published_at"),
+        index.FilterField("last_published_on"),
     ]
 
     HAS_PUBLISHED_KEY = True
@@ -456,7 +547,7 @@ class Codebase(index.Indexed, ClusterableModel):
 
     @property
     def concatenated_tags(self):
-        return ' '.join(self.tags.values_list('name', flat=True))
+        return " ".join(self.tags.values_list("name", flat=True))
 
     @property
     def deletable(self):
@@ -484,13 +575,13 @@ class Codebase(index.Indexed, ClusterableModel):
 
     @property
     def upload_path(self):
-        return self.relative_media_path('uploads')
+        return self.relative_media_path("uploads")
 
     def media_dir(self, *args):
         return pathlib.Path(settings.LIBRARY_ROOT, self.relative_media_path(*args))
 
     def relative_media_path(self, *args):
-        return pathlib.Path(str(self.uuid), 'media', *args)
+        return pathlib.Path(str(self.uuid), "media", *args)
 
     @property
     def summarized_description(self):
@@ -500,9 +591,7 @@ class Codebase(index.Indexed, ClusterableModel):
         max_lines = 6
         if len(lines) > max_lines:
             # FIXME: add a "more.." link, is this type of summarization more appropriate in JS?
-            return "{0} \n...".format(
-                "\n".join(lines[:max_lines])
-            )
+            return "{0} \n...".format("\n".join(lines[:max_lines]))
         return self.description.raw
 
     @property
@@ -516,10 +605,10 @@ class Codebase(index.Indexed, ClusterableModel):
 
     @property
     def codebase_contributors_redis_key(self):
-        return f'codebase:contributors:{self.identifier}'
+        return f"codebase:contributors:{self.identifier}"
 
     def codebase_authors_redis_key(self):
-        return f'codebase:authors:{self.identifier}'
+        return f"codebase:authors:{self.identifier}"
 
     def compute_contributors(self, force=False):
         contributors_redis_key = self.codebase_contributors_redis_key
@@ -530,9 +619,12 @@ class Codebase(index.Indexed, ClusterableModel):
 
         if codebase_contributors is None:
             codebase_contributors_dict = OrderedDict()
-            for release in self.releases.prefetch_related('codebase_contributors').all():
+            for release in self.releases.prefetch_related(
+                "codebase_contributors"
+            ).all():
                 for release_contributor in release.codebase_contributors.select_related(
-                        'contributor__user__member_profile').order_by('index'):
+                    "contributor__user__member_profile"
+                ).order_by("index"):
                     contributor = release_contributor.contributor
                     codebase_contributors_dict[contributor] = None
                     if release_contributor.include_in_citation:
@@ -553,7 +645,7 @@ class Codebase(index.Indexed, ClusterableModel):
 
         Caching contributors on _all_contributors makes it possible to ask for
         codebase_contributors in bulk"""
-        if not hasattr(self, '_all_contributors'):
+        if not hasattr(self, "_all_contributors"):
             all_contributors, all_authors = self.compute_contributors(force=True)
             self._all_contributors = all_contributors
             self._all_authors = all_authors
@@ -561,7 +653,7 @@ class Codebase(index.Indexed, ClusterableModel):
 
     @property
     def all_authors(self):
-        if not hasattr(self, '_all_authors'):
+        if not hasattr(self, "_all_authors"):
             all_contributors, all_authors = self.compute_contributors(force=True)
             self._all_contributors = all_contributors
             self._all_authors = all_authors
@@ -576,91 +668,122 @@ class Codebase(index.Indexed, ClusterableModel):
         return [c.get_full_name() for c in self.all_contributors if c.has_name]
 
     def get_all_contributors_search_fields(self):
-        return ' '.join([c.get_aggregated_search_fields() for c in self.all_contributors])
+        return " ".join(
+            [c.get_aggregated_search_fields() for c in self.all_contributors]
+        )
 
     def get_all_release_frameworks(self):
-        return ' '.join(Codebase.objects.get_all_release_frameworks(self))
+        return " ".join(Codebase.objects.get_all_release_frameworks(self))
 
     def get_all_release_programming_languages(self):
-        return ' '.join(Codebase.objects.get_all_release_programming_languages(self))
+        return " ".join(Codebase.objects.get_all_release_programming_languages(self))
 
     def download_count(self):
-        return CodebaseReleaseDownload.objects.filter(release__codebase__id=self.pk).count()
+        return CodebaseReleaseDownload.objects.filter(
+            release__codebase__id=self.pk
+        ).count()
 
     def ordered_releases(self, has_change_perm=False, **kwargs):
-        releases = self.releases.order_by('-version_number').filter(**kwargs)
+        releases = self.releases.order_by("-version_number").filter(**kwargs)
         return releases if has_change_perm else releases.exclude(live=False)
 
     @classmethod
     def get_list_url(cls):
-        return reverse('library:codebase-list')
+        return reverse("library:codebase-list")
 
     @staticmethod
     def format_doi_url(doi_string):
-        return 'https://doi.org/{0}'.format(doi_string) if doi_string else ''
+        return "https://doi.org/{0}".format(doi_string) if doi_string else ""
 
     @property
     def permanent_url(self):
         if self.doi:
             return self.doi_url
-        return f'{settings.BASE_URL}{self.get_absolute_url()}'
+        return f"{settings.BASE_URL}{self.get_absolute_url()}"
 
     def get_absolute_url(self):
-        return reverse('library:codebase-detail', kwargs={'identifier': self.identifier})
+        return reverse(
+            "library:codebase-detail", kwargs={"identifier": self.identifier}
+        )
 
     def get_draft_url(self):
-        return reverse('library:codebaserelease-draft', kwargs={'identifier': self.identifier})
+        return reverse(
+            "library:codebaserelease-draft", kwargs={"identifier": self.identifier}
+        )
 
     def media_url(self, name):
-        return '{0}/media/{1}'.format(self.get_absolute_url(), name)
+        return "{0}/media/{1}".format(self.get_absolute_url(), name)
 
     @property
     def doi_url(self):
         return Codebase.format_doi_url(self.doi)
 
     def latest_accessible_release(self, user):
-        return CodebaseRelease.objects.accessible(user).filter(codebase=self).order_by('-last_modified').first()
+        return (
+            CodebaseRelease.objects.accessible(user)
+            .filter(codebase=self)
+            .order_by("-last_modified")
+            .first()
+        )
 
     def get_all_next_possible_version_numbers(self, minor_only=False):
         if self.releases.exists():
             possible_version_numbers = set()
             all_releases = self.releases.all()
             for release in all_releases:
-                possible_version_numbers.update(release.possible_next_versions(minor_only))
+                possible_version_numbers.update(
+                    release.possible_next_versions(minor_only)
+                )
             for release in all_releases:
                 possible_version_numbers.discard(release.version_info)
             return possible_version_numbers
         else:
-            return {SemanticVersion.DEFAULT, }
+            return {
+                SemanticVersion.DEFAULT,
+            }
 
     def next_version_number(self, minor_only=True):
-        possible_version_numbers = self.get_all_next_possible_version_numbers(minor_only=minor_only)
+        possible_version_numbers = self.get_all_next_possible_version_numbers(
+            minor_only=minor_only
+        )
         next_version_number = max(possible_version_numbers)
         return str(next_version_number)
 
-    def import_release(self, submitter=None, submitter_id=None, version_number=None, submitted_package=None, **kwargs):
+    def import_release(
+        self,
+        submitter=None,
+        submitter_id=None,
+        version_number=None,
+        submitted_package=None,
+        **kwargs,
+    ):
         if submitter_id is None:
             if submitter is None:
                 submitter = get_user_model().objects.first()
-                logger.warning("No submitter or submitter_id specified when creating release, using first user %s",
-                               submitter)
+                logger.warning(
+                    "No submitter or submitter_id specified when creating release, using first user %s",
+                    submitter,
+                )
             submitter_id = submitter.pk
         if version_number is None:
             version_number = self.next_version_number()
 
-        identifier = kwargs.pop('identifier', None)
-        if 'draft' not in kwargs:
-            kwargs['draft'] = False
-        if 'live' not in kwargs:
-            kwargs['live'] = True
+        identifier = kwargs.pop("identifier", None)
+        if "draft" not in kwargs:
+            kwargs["draft"] = False
+        if "live" not in kwargs:
+            kwargs["live"] = True
         release = CodebaseRelease.objects.create(
             submitter_id=submitter_id,
             version_number=version_number,
             identifier=identifier,
             codebase=self,
-            **kwargs)
+            **kwargs,
+        )
         if submitted_package:
-            release.submitted_package.save(submitted_package.name, submitted_package, save=False)
+            release.submitted_package.save(
+                submitted_package.name, submitted_package, save=False
+            )
         if release.is_published:
             self.latest_version = release
             self.save()
@@ -677,35 +800,38 @@ class Codebase(index.Indexed, ClusterableModel):
 
         path = self.media_dir(name)
         os.makedirs(str(path.parent), exist_ok=True)
-        with path.open('wb') as f:
+        with path.open("wb") as f:
             f.write(fileobj.read())
 
         is_image = fs.is_image(str(path))
         if not is_image and images_only:
-            logger.info('removing non image file: %s', path)
+            logger.info("removing non image file: %s", path)
             path.unlink()
             raise UnsupportedMediaType(
                 fs.mimetypes.guess_type(name)[0],
-                detail=f'{name} has the wrong file type. You can only upload {settings.ACCEPTED_IMAGE_TYPES} files')
+                detail=f"{name} has the wrong file type. You can only upload {settings.ACCEPTED_IMAGE_TYPES} files",
+            )
         image_metadata = {
-            'name': name,
-            'path': str(self.media_dir()),
-            'mimetype': fs.mimetypes.guess_type(str(path)),
-            'url': self.media_url(name),
-            'featured': is_image,
+            "name": name,
+            "path": str(self.media_dir()),
+            "mimetype": fs.mimetypes.guess_type(str(path)),
+            "url": self.media_url(name),
+            "featured": is_image,
         }
 
-        logger.info('featured image: %s', image_metadata)
-        if image_metadata['featured']:
-            filename = image_metadata['name']
-            path = pathlib.Path(image_metadata['path'], filename)
-            image = CodebaseImage(codebase=self,
-                                  title=title,
-                                  file=ImageFile(path.open('rb')),
-                                  uploaded_by_user=user)
+        logger.info("featured image: %s", image_metadata)
+        if image_metadata["featured"]:
+            filename = image_metadata["name"]
+            path = pathlib.Path(image_metadata["path"], filename)
+            image = CodebaseImage(
+                codebase=self,
+                title=title,
+                file=ImageFile(path.open("rb")),
+                uploaded_by_user=user,
+            )
             image.save()
             self.featured_images.add(image)
-            logger.info('added featured image')
+            logger.info("added featured image")
             return image
         else:
             self.media.append(image_metadata)
@@ -730,9 +856,10 @@ class Codebase(index.Indexed, ClusterableModel):
             identifier=None,
             live=False,
             draft=True,
-            share_uuid=uuid.uuid4())
+            share_uuid=uuid.uuid4(),
+        )
         if previous_release is None:
-            release_metadata['codebase'] = self
+            release_metadata["codebase"] = self
             release_metadata.update(overrides)
             release = CodebaseRelease.objects.create(**release_metadata)
             # add submitter as a release contributor automatically
@@ -740,7 +867,9 @@ class Codebase(index.Indexed, ClusterableModel):
             release.add_contributor(self.submitter)
         else:
             # copy previous release metadata
-            previous_release_contributors = ReleaseContributor.objects.filter(release_id=previous_release.id)
+            previous_release_contributors = ReleaseContributor.objects.filter(
+                release_id=previous_release.id
+            )
             previous_release.id = None
             release = previous_release
             for k, v in release_metadata.items():
@@ -762,10 +891,9 @@ class Codebase(index.Indexed, ClusterableModel):
         return cls.objects.public()
 
     def __str__(self):
-        return "{0} {1} identifier={2} live={3}".format(self.title,
-                                                        self.date_created,
-                                                        str(self.identifier),
-                                                        self.live)
+        return "{0} {1} identifier={2} live={3}".format(
+            self.title, self.date_created, str(self.identifier), self.live
+        )
 
 
 class CodebaseImageQuerySet(ImageQuerySet):
@@ -774,13 +902,18 @@ class CodebaseImageQuerySet(ImageQuerySet):
 
 
 class CodebaseImage(AbstractImage):
-    codebase = models.ForeignKey(Codebase, related_name='featured_images', on_delete=models.CASCADE)
+    codebase = models.ForeignKey(
+        Codebase, related_name="featured_images", on_delete=models.CASCADE
+    )
     file = models.ImageField(
-        verbose_name=_('file'), upload_to=get_upload_to, width_field='width', height_field='height',
-        storage=FileSystemStorage(location=settings.LIBRARY_ROOT)
+        verbose_name=_("file"),
+        upload_to=get_upload_to,
+        width_field="width",
+        height_field="height",
+        storage=FileSystemStorage(location=settings.LIBRARY_ROOT),
     )
 
-    admin_form_fields = Image.admin_form_fields + ('codebase', 'file')
+    admin_form_fields = Image.admin_form_fields + ("codebase", "file")
 
     objects = CodebaseImageQuerySet.as_manager()
 
@@ -788,7 +921,9 @@ class CodebaseImage(AbstractImage):
         # adapted from wagtailimages/models
         folder_name = str(self.codebase.relative_media_path())
         # use string_to_ascii on filename to sidestep issues with filesystem encoding
-        ascii_filename = string_to_ascii(self.file.field.storage.get_valid_name(filename))
+        ascii_filename = string_to_ascii(
+            self.file.field.storage.get_valid_name(filename)
+        )
         # Truncate filename so it fits in the 100 character limit
         # https://code.djangoproject.com/ticket/9893
         full_path = os.path.join(folder_name, ascii_filename)
@@ -803,12 +938,12 @@ class CodebaseImage(AbstractImage):
 
 
 class CodebaseRendition(AbstractRendition):
-    image = models.ForeignKey(CodebaseImage, related_name='renditions', on_delete=models.CASCADE)
+    image = models.ForeignKey(
+        CodebaseImage, related_name="renditions", on_delete=models.CASCADE
+    )
 
     class Meta:
-        unique_together = (
-            ('image', 'filter_spec', 'focal_point_key'),
-        )
+        unique_together = (("image", "filter_spec", "focal_point_key"),)
 
 
 """ FIXME: disabled until citation migrates to django 2.0
@@ -823,26 +958,36 @@ class CodebasePublication(models.Model):
 class CodebaseReleaseQuerySet(models.QuerySet):
     def with_release_contributors(self, release_contributor_qs=None, user=None):
         if release_contributor_qs is None:
-            release_contributor_qs = ReleaseContributor.objects.only('id', 'contributor_id', 'release_id')
+            release_contributor_qs = ReleaseContributor.objects.only(
+                "id", "contributor_id", "release_id"
+            )
 
-        contributor_qs = Contributor.objects.prefetch_related('user').prefetch_related('tagged_contributors__tag')
+        contributor_qs = Contributor.objects.prefetch_related("user").prefetch_related(
+            "tagged_contributors__tag"
+        )
         release_contributor_qs = release_contributor_qs.prefetch_related(
-            Prefetch('contributor', contributor_qs))
+            Prefetch("contributor", contributor_qs)
+        )
 
-        return self.prefetch_related(Prefetch('codebase_contributors', release_contributor_qs))
+        return self.prefetch_related(
+            Prefetch("codebase_contributors", release_contributor_qs)
+        )
 
     def with_platforms(self):
-        return self.prefetch_related('tagged_release_platforms__tag')
+        return self.prefetch_related("tagged_release_platforms__tag")
 
     def with_programming_languages(self):
-        return self.prefetch_related('tagged_release_languages__tag')
+        return self.prefetch_related("tagged_release_languages__tag")
 
     def with_codebase(self):
         return self.prefetch_related(
-            models.Prefetch('codebase', Codebase.objects.with_tags().with_featured_images()))
+            models.Prefetch(
+                "codebase", Codebase.objects.with_tags().with_featured_images()
+            )
+        )
 
     def with_submitter(self):
-        return self.prefetch_related('submitter')
+        return self.prefetch_related("submitter")
 
     def public(self, **kwargs):
         # FIXME: is there ever a time draft + live are both True?
@@ -855,9 +1000,12 @@ class CodebaseReleaseQuerySet(models.QuerySet):
         return get_viewable_objects_for_user(user, queryset=self)
 
     def latest_for_feed(self, number=10, include_all=False):
-        qs = self.public().select_related('codebase', 'submitter__member_profile').annotate(
-            description=models.F('codebase__description')
-        ).order_by('-date_created')
+        qs = (
+            self.public()
+            .select_related("codebase", "submitter__member_profile")
+            .annotate(description=models.F("codebase__description"))
+            .order_by("-date_created")
+        )
         if include_all:
             return qs
         return qs[:number]
@@ -879,9 +1027,14 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
     date_created = models.DateTimeField(default=timezone.now)
     last_modified = models.DateTimeField(auto_now=True)
 
-    live = models.BooleanField(default=False, help_text=_("Signifies that this release is public."))
+    live = models.BooleanField(
+        default=False, help_text=_("Signifies that this release is public.")
+    )
     # there should only be one draft CodebaseRelease ever
-    draft = models.BooleanField(default=False, help_text=_("Signifies that this release is currently being edited."))
+    draft = models.BooleanField(
+        default=False,
+        help_text=_("Signifies that this release is currently being edited."),
+    )
     first_published_at = models.DateTimeField(null=True, blank=True)
     last_published_on = models.DateTimeField(null=True, blank=True)
 
@@ -891,36 +1044,54 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
     identifier = models.CharField(max_length=128, unique=True, null=True)
     doi = models.CharField(max_length=128, unique=True, null=True)
     license = models.ForeignKey(License, null=True, on_delete=models.SET_NULL)
-    release_notes = MarkdownField(blank=True,
-                                  max_length=2048,
-                                  help_text=_('Markdown formattable text, e.g., run conditions'))
+    release_notes = MarkdownField(
+        blank=True,
+        max_length=2048,
+        help_text=_("Markdown formattable text, e.g., run conditions"),
+    )
     summary = models.CharField(max_length=1000, blank=True)
-    documentation = models.FileField(null=True, help_text=_('Fulltext documentation file (PDF/PDFA)'))
+    documentation = models.FileField(
+        null=True, help_text=_("Fulltext documentation file (PDF/PDFA)")
+    )
     embargo_end_date = models.DateTimeField(null=True, blank=True)
-    output_data_url = models.URLField(blank=True,
-                                      help_text=_('Permanent URL to output data from this model.'))
-    version_number = models.CharField(max_length=32,
-                                      help_text=_('semver string, e.g., 1.0.5, see semver.org'))
+    output_data_url = models.URLField(
+        blank=True, help_text=_("Permanent URL to output data from this model.")
+    )
+    version_number = models.CharField(
+        max_length=32, help_text=_("semver string, e.g., 1.0.5, see semver.org")
+    )
 
     os = models.CharField(max_length=32, choices=OPERATING_SYSTEMS, blank=True)
     dependencies = models.JSONField(
         default=list,
-        help_text=_('JSON list of software dependencies (identifier, name, version, packageSystem, OS, URL)')
+        help_text=_(
+            "JSON list of software dependencies (identifier, name, version, packageSystem, OS, URL)"
+        ),
     )
-    '''
+    """
     platform and programming language tags are also dependencies that can reference additional metadata in the
     dependencies JSONField
-    '''
-    platform_tags = ClusterTaggableManager(through=CodebaseReleasePlatformTag,
-                                           related_name='platform_codebase_releases')
+    """
+    platform_tags = ClusterTaggableManager(
+        through=CodebaseReleasePlatformTag, related_name="platform_codebase_releases"
+    )
     platforms = models.ManyToManyField(Platform)
-    programming_languages = ClusterTaggableManager(through=ProgrammingLanguage,
-                                                   related_name='pl_codebase_releases')
-    codebase = models.ForeignKey(Codebase, related_name='releases', on_delete=models.PROTECT)
-    submitter = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='releases', on_delete=models.PROTECT)
-    contributors = models.ManyToManyField(Contributor, through='ReleaseContributor')
-    submitted_package = models.FileField(upload_to=Codebase._release_upload_path, max_length=1000, null=True,
-                                         storage=FileSystemStorage(location=settings.LIBRARY_ROOT))
+    programming_languages = ClusterTaggableManager(
+        through=ProgrammingLanguage, related_name="pl_codebase_releases"
+    )
+    codebase = models.ForeignKey(
+        Codebase, related_name="releases", on_delete=models.PROTECT
+    )
+    submitter = models.ForeignKey(
+        settings.AUTH_USER_MODEL, related_name="releases", on_delete=models.PROTECT
+    )
+    contributors = models.ManyToManyField(Contributor, through="ReleaseContributor")
+    submitted_package = models.FileField(
+        upload_to=Codebase._release_upload_path,
+        max_length=1000,
+        null=True,
+        storage=FileSystemStorage(location=settings.LIBRARY_ROOT),
+    )
     # M2M relationships for publications, disabled until citation migrates to django 2.0
     # https://github.com/comses/citation/issues/20
     """
@@ -938,25 +1109,34 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
     objects = CodebaseReleaseQuerySet.as_manager()
 
     search_fields = [
-        index.SearchField('release_notes', partial_match=True),
-        index.SearchField('summary', partial_match=True),
-        index.SearchField('permanent_url'),
-        index.SearchField('identifier'),
-        index.FilterField('os'),
-        index.FilterField('first_published_at'),
-        index.FilterField('last_published_on'),
-        index.FilterField('last_modified'),
-        index.FilterField('peer_reviewed'),
-        index.FilterField('flagged'),
-        index.RelatedFields('platform_tags', [
-            index.SearchField('name', partial_match=True),
-        ]),
-        index.RelatedFields('programming_languages', [
-            index.SearchField('name', partial_match=True),
-        ]),
-        index.RelatedFields('contributors', [
-            index.SearchField('get_aggregated_search_fields'),
-        ]),
+        index.SearchField("release_notes", partial_match=True),
+        index.SearchField("summary", partial_match=True),
+        index.SearchField("permanent_url"),
+        index.SearchField("identifier"),
+        index.FilterField("os"),
+        index.FilterField("first_published_at"),
+        index.FilterField("last_published_on"),
+        index.FilterField("last_modified"),
+        index.FilterField("peer_reviewed"),
+        index.FilterField("flagged"),
+        index.RelatedFields(
+            "platform_tags",
+            [
+                index.SearchField("name", partial_match=True),
+            ],
+        ),
+        index.RelatedFields(
+            "programming_languages",
+            [
+                index.SearchField("name", partial_match=True),
+            ],
+        ),
+        index.RelatedFields(
+            "contributors",
+            [
+                index.SearchField("get_aggregated_search_fields"),
+            ],
+        ),
     ]
 
     def regenerate_share_uuid(self):
@@ -964,42 +1144,72 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
         self.save()
 
     def get_edit_url(self):
-        return reverse('library:codebaserelease-edit', kwargs={'identifier': self.codebase.identifier,
-                                                               'version_number': self.version_number})
+        return reverse(
+            "library:codebaserelease-edit",
+            kwargs={
+                "identifier": self.codebase.identifier,
+                "version_number": self.version_number,
+            },
+        )
 
     def get_list_url(self):
-        return reverse('library:codebaserelease-list', kwargs={'identifier': self.codebase.identifier})
+        return reverse(
+            "library:codebaserelease-list",
+            kwargs={"identifier": self.codebase.identifier},
+        )
 
     def get_absolute_url(self):
-        return reverse('library:codebaserelease-detail',
-                       kwargs={'identifier': self.codebase.identifier, 'version_number': self.version_number})
+        return reverse(
+            "library:codebaserelease-detail",
+            kwargs={
+                "identifier": self.codebase.identifier,
+                "version_number": self.version_number,
+            },
+        )
 
     def get_request_peer_review_url(self):
-        return reverse('library:codebaserelease-request-peer-review',
-                       kwargs={'identifier': self.codebase.identifier, 'version_number': self.version_number})
+        return reverse(
+            "library:codebaserelease-request-peer-review",
+            kwargs={
+                "identifier": self.codebase.identifier,
+                "version_number": self.version_number,
+            },
+        )
 
     def get_download_url(self):
-        return reverse('library:codebaserelease-download',
-                       kwargs={'identifier': self.codebase.identifier, 'version_number': self.version_number})
+        return reverse(
+            "library:codebaserelease-download",
+            kwargs={
+                "identifier": self.codebase.identifier,
+                "version_number": self.version_number,
+            },
+        )
 
     def get_notify_reviewers_of_changes_url(self):
-        return reverse('library:codebaserelease-notify-reviewers-of-changes',
-                       kwargs={'identifier': self.codebase.identifier,
-                               'version_number': self.version_number})
+        return reverse(
+            "library:codebaserelease-notify-reviewers-of-changes",
+            kwargs={
+                "identifier": self.codebase.identifier,
+                "version_number": self.version_number,
+            },
+        )
 
     def get_review(self):
-        return getattr(self, 'review', None)
+        return getattr(self, "review", None)
 
     def get_review_status_display(self):
         review = self.get_review()
         if review:
             return review.get_simplified_status_display()
-        return 'Unreviewed'
+        return "Unreviewed"
 
     def get_review_download_url(self):
         if not self.share_uuid:
             self.regenerate_share_uuid()
-        return reverse('library:codebaserelease-share-download', kwargs={'share_uuid': self.share_uuid})
+        return reverse(
+            "library:codebaserelease-share-download",
+            kwargs={"share_uuid": self.share_uuid},
+        )
 
     def validate_publishable(self):
         self.validate_metadata()
@@ -1019,13 +1229,23 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
 
         # naive check for metadata being present (i.e., None or false-y values)
         if not self.license:
-            errors.append(ValidationError(_('Please specify a software license.')))
+            errors.append(ValidationError(_("Please specify a software license.")))
         if not self.programming_languages.exists():
-            errors.append(ValidationError(_('Please list at least one programming language used to implement this model.')))
+            errors.append(
+                ValidationError(
+                    _(
+                        "Please list at least one programming language used to implement this model."
+                    )
+                )
+            )
         if not self.os:
-            errors.append(ValidationError(_('Please specify compatible operating systems for this model.')))
+            errors.append(
+                ValidationError(
+                    _("Please specify compatible operating systems for this model.")
+                )
+            )
         if not self.contributors.exists():
-            errors.append(ValidationError(_('Please add at least one contributor.')))
+            errors.append(ValidationError(_("Please add at least one contributor.")))
         if errors:
             raise ValidationError(errors)
         return True
@@ -1035,7 +1255,7 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
         storage = fs_api.get_stage_storage(StagingDirectories.sip)
         code_msg = self.check_files(storage, FileCategoryDirectories.code)
         docs_msg = self.check_files(storage, FileCategoryDirectories.docs)
-        msg = ' '.join(m for m in [code_msg, docs_msg] if m)
+        msg = " ".join(m for m in [code_msg, docs_msg] if m)
         if msg:
             raise ValidationError(msg)
         return True
@@ -1048,9 +1268,9 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
         else:
             uploaded_files = []
         if not uploaded_files:
-            return 'Must have at least one {} file.'.format(category.name)
+            return "Must have at least one {} file.".format(category.name)
         else:
-            return ''
+            return ""
 
     @property
     def version_info(self):
@@ -1065,13 +1285,20 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
     def share_url(self):
         if not self.share_uuid:
             self.regenerate_share_uuid()
-        return reverse('library:codebaserelease-share-detail', kwargs={'share_uuid': self.share_uuid})
+        return reverse(
+            "library:codebaserelease-share-detail",
+            kwargs={"share_uuid": self.share_uuid},
+        )
 
     @property
     def regenerate_share_url(self):
-        return reverse('library:codebaserelease-regenerate-share-uuid',
-                       kwargs={'identifier': self.codebase.identifier,
-                               'version_number': self.version_number})
+        return reverse(
+            "library:codebaserelease-regenerate-share-uuid",
+            kwargs={
+                "identifier": self.codebase.identifier,
+                "version_number": self.version_number,
+            },
+        )
 
     @property
     def is_peer_review_requestable(self):
@@ -1100,7 +1327,7 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
 
     @property
     def comses_permanent_url(self):
-        return f'{settings.BASE_URL}{self.get_absolute_url()}'
+        return f"{settings.BASE_URL}{self.get_absolute_url()}"
 
     @property
     def permanent_url(self):
@@ -1113,22 +1340,25 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
         authors = self.submitter.member_profile.name
         author_list = self.codebase.author_list
         if author_list:
-            authors = ', '.join(author_list)
+            authors = ", ".join(author_list)
         else:
-            logger.warning("No authors found for release, using default submitter name: %s", self.submitter)
+            logger.warning(
+                "No authors found for release, using default submitter name: %s",
+                self.submitter,
+            )
         return authors
 
     @property
     def citation_text(self):
         if not self.live:
-            return 'This model must be published in order to be citable.'
+            return "This model must be published in order to be citable."
         return '{authors} ({publish_date}). "{title}" (Version {version}). _{cml}_. Retrieved from: {purl}'.format(
             authors=self.citation_authors,
-            publish_date=self.last_published_on.strftime('%Y, %B %d'),
+            publish_date=self.last_published_on.strftime("%Y, %B %d"),
             title=self.codebase.title,
             version=self.version_number,
-            cml='CoMSES Computational Model Library',
-            purl=self.permanent_url
+            cml="CoMSES Computational Model Library",
+            purl=self.permanent_url,
         )
 
     def download_count(self):
@@ -1136,43 +1366,48 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
 
     @transaction.atomic
     def record_download(self, request):
-        referrer = request.META.get('HTTP_REFERER', '')
+        referrer = request.META.get("HTTP_REFERER", "")
         client_ip, is_routable = get_client_ip(request)
         user = request.user if request.user.is_authenticated else None
         self.downloads.create(user=user, referrer=referrer, ip_address=client_ip)
 
     @property
     def title(self):
-        return '{} v{}'.format(self.codebase.title,
-                               self.version_number)
+        return "{} v{}".format(self.codebase.title, self.version_number)
 
     @property
     def archive_filename(self):
-        return '{0}_v{1}.zip'.format(slugify(self.codebase.title), self.version_number)
+        return "{0}_v{1}.zip".format(slugify(self.codebase.title), self.version_number)
 
     @property
     def contributor_list(self):
-        return [c.contributor.get_full_name() for c in self.index_ordered_release_contributors if c.contributor.has_name]
+        return [
+            c.contributor.get_full_name()
+            for c in self.index_ordered_release_contributors
+            if c.contributor.has_name
+        ]
 
     @property
     def index_ordered_release_contributors(self):
-        return self.codebase_contributors.select_related('contributor').order_by('index')
+        return self.codebase_contributors.select_related("contributor").order_by(
+            "index"
+        )
 
     @property
     def bagit_info(self):
         return {
-            'Contact-Name': self.submitter.get_full_name(),
-            'Contact-Email': self.submitter.email,
-            'Author': self.codebase.contributor_list,
-            'Version-Number': self.version_number,
-            'Codebase-DOI': str(self.codebase.doi),
-            'DOI': str(self.doi),
+            "Contact-Name": self.submitter.get_full_name(),
+            "Contact-Email": self.submitter.email,
+            "Author": self.codebase.contributor_list,
+            "Version-Number": self.version_number,
+            "Codebase-DOI": str(self.codebase.doi),
+            "DOI": str(self.doi),
             # FIXME: check codemeta for additional metadata
         }
 
     @property
     def codemeta(self):
-        ''' Returns a CodeMeta object that can be dumped to json '''
+        """Returns a CodeMeta object that can be dumped to json"""
         return CodeMeta.build(self)
 
     @property
@@ -1186,12 +1421,18 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
     def create_or_update_codemeta(self, force=True):
         return self.get_fs_api().create_or_update_codemeta(force=force)
 
-    def get_fs_api(self, mimetype_mismatch_message_level=MessageLevels.error) -> CodebaseReleaseFsApi:
-        return CodebaseReleaseFsApi.initialize(self, mimetype_mismatch_message_level=mimetype_mismatch_message_level)
+    def get_fs_api(
+        self, mimetype_mismatch_message_level=MessageLevels.error
+    ) -> CodebaseReleaseFsApi:
+        return CodebaseReleaseFsApi.initialize(
+            self, mimetype_mismatch_message_level=mimetype_mismatch_message_level
+        )
 
     def add_contributor(self, submitter):
         contributor, created = Contributor.from_user(submitter)
-        self.codebase_contributors.create(contributor=contributor, roles=[ROLES.author], index=0)
+        self.codebase_contributors.create(
+            contributor=contributor, roles=[ROLES.author], index=0
+        )
 
     @transaction.atomic
     def publish(self):
@@ -1234,21 +1475,42 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
 
     def get_allowed_version_numbers(self):
         codebase = Codebase.objects.prefetch_related(
-            Prefetch('releases', CodebaseRelease.objects.exclude(id=self.id))
+            Prefetch("releases", CodebaseRelease.objects.exclude(id=self.id))
         ).get(id=self.codebase_id)
         return codebase.get_all_next_possible_version_numbers()
 
     def set_version_number(self, version_number):
         if self.is_published:
-            raise ValidationError({'non_field_errors': ['You cannot set the version number on a published release.']})
+            raise ValidationError(
+                {
+                    "non_field_errors": [
+                        "You cannot set the version number on a published release."
+                    ]
+                }
+            )
         try:
             semver.parse(version_number)
         except ValueError:
-            raise ValidationError({'version_number': [f'The version number {version_number} is not a valid semantic version string.']})
-        existing_version_numbers = self.codebase.releases.exclude(pk=self.pk).order_by('version_number').values_list(
-            'version_number', flat=True)
+            raise ValidationError(
+                {
+                    "version_number": [
+                        f"The version number {version_number} is not a valid semantic version string."
+                    ]
+                }
+            )
+        existing_version_numbers = (
+            self.codebase.releases.exclude(pk=self.pk)
+            .order_by("version_number")
+            .values_list("version_number", flat=True)
+        )
         if version_number in existing_version_numbers:
-            raise ValidationError({'version_number': [f"Another release has this version number {version_number}. Please select a different version number."]})
+            raise ValidationError(
+                {
+                    "version_number": [
+                        f"Another release has this version number {version_number}. Please select a different version number."
+                    ]
+                }
+            )
         self.version_number = version_number
 
     @classmethod
@@ -1256,14 +1518,15 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
         return cls.objects.public()
 
     def __str__(self):
-        return '{0} {1} v{2}'.format(self.codebase, self.submitter.username, self.version_number)
+        return "{0} {1} v{2}".format(
+            self.codebase, self.submitter.username, self.version_number
+        )
 
     class Meta:
-        unique_together = ('codebase', 'version_number')
+        unique_together = ("codebase", "version_number")
 
 
 class ReleaseContributorQuerySet(models.QuerySet):
-
     def copy_to(self, release: CodebaseRelease):
         release_contributors = list(self)
         for release_contributor in release_contributors:
@@ -1272,23 +1535,34 @@ class ReleaseContributorQuerySet(models.QuerySet):
         return self.bulk_create(release_contributors)
 
     def authors(self, release):
-        qs = self.select_related('contributor').filter(
-            release=release, include_in_citation=True, roles__contains='{author}'
+        qs = self.select_related("contributor").filter(
+            release=release, include_in_citation=True, roles__contains="{author}"
         )
-        return qs.order_by('index')
+        return qs.order_by("index")
 
 
 class ReleaseContributor(models.Model):
-    release = models.ForeignKey(CodebaseRelease, on_delete=models.CASCADE, related_name='codebase_contributors')
-    contributor = models.ForeignKey(Contributor, on_delete=models.CASCADE, related_name='codebase_contributors')
+    release = models.ForeignKey(
+        CodebaseRelease, on_delete=models.CASCADE, related_name="codebase_contributors"
+    )
+    contributor = models.ForeignKey(
+        Contributor, on_delete=models.CASCADE, related_name="codebase_contributors"
+    )
     include_in_citation = models.BooleanField(default=True)
-    roles = ArrayField(models.CharField(
-        max_length=100, choices=ROLES, default=ROLES.author,
-        help_text=_(
-            'Roles from https://www.ngdc.noaa.gov/metadata/published/xsd/schema/resources/Codelist/gmxCodelists.xml#CI_RoleCode'
-        )
-    ), default=list)
-    index = models.PositiveSmallIntegerField(help_text=_('Ordering field for codebase contributors'))
+    roles = ArrayField(
+        models.CharField(
+            max_length=100,
+            choices=ROLES,
+            default=ROLES.author,
+            help_text=_(
+                "Roles from https://www.ngdc.noaa.gov/metadata/published/xsd/schema/resources/Codelist/gmxCodelists.xml#CI_RoleCode"
+            ),
+        ),
+        default=list,
+    )
+    index = models.PositiveSmallIntegerField(
+        help_text=_("Ordering field for codebase contributors")
+    )
 
     objects = ReleaseContributorQuerySet.as_manager()
 
@@ -1314,8 +1588,10 @@ class ChoicesMixin(Enum):
 
 
 class ReviewerRecommendation(ChoicesMixin, Enum):
-    accept = _('This computational model meets CoMSES Net peer review requirements.')
-    revise = _('This computational model must be revised to meet CoMSES Net peer review requirements.')
+    accept = _("This computational model meets CoMSES Net peer review requirements.")
+    revise = _(
+        "This computational model must be revised to meet CoMSES Net peer review requirements."
+    )
 
 
 class ReviewStatus(ChoicesMixin, Enum):
@@ -1326,15 +1602,15 @@ class ReviewStatus(ChoicesMixin, Enum):
     """
 
     # No reviewer has given feedback
-    awaiting_reviewer_feedback = _('Awaiting reviewer feedback')
+    awaiting_reviewer_feedback = _("Awaiting reviewer feedback")
     # At least one reviewer has provided feedback on a model and an editor has not requested changes
     # to the model
-    awaiting_editor_feedback = _('Awaiting editor feedback')
+    awaiting_editor_feedback = _("Awaiting editor feedback")
     # An editor has requested changes to a model. The author has either not given changes or
     # given changes that the editor has not approved of yet or has asked further revisions on
-    awaiting_author_changes = _('Awaiting author release changes')
+    awaiting_author_changes = _("Awaiting author release changes")
     # The model review process is complete
-    complete = _('Review is complete')
+    complete = _("Review is complete")
 
     @classmethod
     def as_json(cls):
@@ -1358,7 +1634,7 @@ class ReviewStatus(ChoicesMixin, Enum):
 
     @property
     def simple_display_message(self):
-        return 'Peer review in process' if self.is_pending else 'Peer reviewed'
+        return "Peer review in process" if self.is_pending else "Peer reviewed"
 
 
 class PeerReviewEvent(ChoicesMixin, Enum):
@@ -1368,19 +1644,20 @@ class PeerReviewEvent(ChoicesMixin, Enum):
     Used by the editor to understand the history of changes applied to the models
     """
 
-    invitation_sent = _('Reviewer has been invited')
-    invitation_resent = _('Reviewer invitation has been resent')
-    invitation_accepted = _('Reviewer has accepted invitation')
-    invitation_declined = _('Reviewer has declined invitation')
-    reviewer_feedback_submitted = _('Reviewer has given feedback')
-    author_resubmitted = _('Author has resubmitted release for review')
-    review_status_updated = _('Editor manually changed review status')
-    revisions_requested = _('Editor has requested revisions to this release')
-    release_certified = _('Editor has taken reviewer feedback into account and certified this release as peer reviewed')
+    invitation_sent = _("Reviewer has been invited")
+    invitation_resent = _("Reviewer invitation has been resent")
+    invitation_accepted = _("Reviewer has accepted invitation")
+    invitation_declined = _("Reviewer has declined invitation")
+    reviewer_feedback_submitted = _("Reviewer has given feedback")
+    author_resubmitted = _("Author has resubmitted release for review")
+    review_status_updated = _("Editor manually changed review status")
+    revisions_requested = _("Editor has requested revisions to this release")
+    release_certified = _(
+        "Editor has taken reviewer feedback into account and certified this release as peer reviewed"
+    )
 
 
 class PeerReviewQuerySet(models.QuerySet):
-
     def find_candidate_reviewers(self, query=None):
         # TODO: return a MemberProfile queryset annotated with number of invitations, accepted invitations, and completed
         # reviews
@@ -1404,25 +1681,33 @@ class PeerReviewQuerySet(models.QuerySet):
         return self.filter(status=ReviewStatus.complete.name, **kwargs)
 
     def completed_releases(self, **kwargs):
-        return CodebaseRelease.objects.filter(id__in=self.completed(**kwargs).values('codebase_release'))
+        return CodebaseRelease.objects.filter(
+            id__in=self.completed(**kwargs).values("codebase_release")
+        )
 
 
 @register_snippet
 class PeerReview(models.Model):
     date_created = models.DateTimeField(auto_now_add=True)
     last_modified = models.DateTimeField(auto_now=True)
-    status = models.CharField(choices=ReviewStatus.to_choices(),
-                              default=ReviewStatus.awaiting_reviewer_feedback.name,
-                              help_text=_("The current status of this review."),
-                              max_length=32)
-    codebase_release = models.OneToOneField(CodebaseRelease, related_name='review', on_delete=models.PROTECT)
-    submitter = models.ForeignKey(MemberProfile, related_name='+', on_delete=models.PROTECT)
+    status = models.CharField(
+        choices=ReviewStatus.to_choices(),
+        default=ReviewStatus.awaiting_reviewer_feedback.name,
+        help_text=_("The current status of this review."),
+        max_length=32,
+    )
+    codebase_release = models.OneToOneField(
+        CodebaseRelease, related_name="review", on_delete=models.PROTECT
+    )
+    submitter = models.ForeignKey(
+        MemberProfile, related_name="+", on_delete=models.PROTECT
+    )
     slug = models.UUIDField(default=uuid.uuid4, unique=True, null=True)
 
     objects = PeerReviewQuerySet.as_manager()
 
     panels = [
-        FieldPanel('status'),
+        FieldPanel("status"),
     ]
 
     @property
@@ -1444,7 +1729,7 @@ class PeerReview(models.Model):
         return self.get_status().simple_display_message
 
     def get_edit_url(self):
-        return reverse('library:profile-edit', kwargs={'user_pk': self.user.pk})
+        return reverse("library:profile-edit", kwargs={"user_pk": self.user.pk})
 
     def get_invite(self, member_profile):
         return self.invitation_set.filter(candidate_reviewer=member_profile).first()
@@ -1454,10 +1739,10 @@ class PeerReview(models.Model):
         if not self.slug:
             self.slug = uuid.uuid4()
             self.save()
-        return reverse('library:peer-review-detail', kwargs={'slug': self.slug})
+        return reverse("library:peer-review-detail", kwargs={"slug": self.slug})
 
     def get_event_list_url(self):
-        return reverse('library:peer-review-event-list', kwargs={'slug': self.slug})
+        return reverse("library:peer-review-event-list", kwargs={"slug": self.slug})
 
     @transaction.atomic
     def set_complete_status(self, editor: MemberProfile):
@@ -1466,7 +1751,7 @@ class PeerReview(models.Model):
         self.log(
             author=editor,
             action=PeerReviewEvent.release_certified,
-            message='Model has been certified as peer reviewed'
+            message="Model has been certified as peer reviewed",
         )
         self.codebase_release.peer_reviewed = True
         self.codebase_release.save()
@@ -1475,11 +1760,11 @@ class PeerReview(models.Model):
 
         # FIXME: consider moving this into explicit send_model_certified_email()
         send_markdown_email(
-            subject='Peer review completed',
-            template_name='library/review/email/model_certified.jinja',
-            context={'review': self},
+            subject="Peer review completed",
+            template_name="library/review/email/model_certified.jinja",
+            context={"review": self},
             to=[self.submitter.email],
-            bcc=[editor.email]
+            bcc=[editor.email],
         )
 
     def log(self, message: str, action: PeerReviewEvent, author: MemberProfile):
@@ -1490,15 +1775,21 @@ class PeerReview(models.Model):
 
     def author_resubmitted_changes(self, changes_made=None):
         author = self.submitter
-        self.log(message='Release has been resubmitted for review: {}'.format(changes_made),
-                 action=PeerReviewEvent.author_resubmitted,
-                 author=author)
+        self.log(
+            message="Release has been resubmitted for review: {}".format(changes_made),
+            action=PeerReviewEvent.author_resubmitted,
+            author=author,
+        )
         self.send_author_updated_content_email()
 
     def send_author_updated_content_email(self):
         qs = self.invitation_set.filter(accepted=True)
         # if there are no currently accepted invitations, status should be set to awaiting editor feedback
-        _status = ReviewStatus.awaiting_reviewer_feedback if qs.exists() else ReviewStatus.awaiting_editor_feedback
+        _status = (
+            ReviewStatus.awaiting_reviewer_feedback
+            if qs.exists()
+            else ReviewStatus.awaiting_editor_feedback
+        )
         self.set_status(_status)
         for invitation in qs:
             invitation.send_author_resubmitted_email()
@@ -1506,15 +1797,18 @@ class PeerReview(models.Model):
 
     def send_author_requested_peer_review_email(self):
         send_markdown_email(
-            subject='Peer review: New request',
-            template_name='library/review/email/review_requested.jinja',
-            context={'review': self},
-            to=[settings.EDITOR_EMAIL]
+            subject="Peer review: New request",
+            template_name="library/review/email/review_requested.jinja",
+            context={"review": self},
+            to=[settings.EDITOR_EMAIL],
         )
 
     @property
     def status_levels(self):
-        return [{'value': choice[0], 'label': str(choice[1])} for choice in ReviewStatus.to_choices()]
+        return [
+            {"value": choice[0], "label": str(choice[1])}
+            for choice in ReviewStatus.to_choices()
+        ]
 
     @property
     def title(self):
@@ -1525,16 +1819,12 @@ class PeerReview(models.Model):
         return self.codebase_release.submitter.member_profile.name
 
     def __str__(self):
-        return 'PeerReview of {} requested on {}. Status: {}, last modified {}'.format(
-            self.title,
-            self.date_created,
-            self.get_status_display(),
-            self.last_modified
+        return "PeerReview of {} requested on {}. Status: {}, last modified {}".format(
+            self.title, self.date_created, self.get_status_display(), self.last_modified
         )
 
 
 class PeerReviewInvitationQuerySet(models.QuerySet):
-
     def accepted(self, **kwargs):
         return self.filter(accepted=True, **kwargs)
 
@@ -1546,31 +1836,45 @@ class PeerReviewInvitationQuerySet(models.QuerySet):
 
     def candidate_reviewers(self, **kwargs):
         # FIXME: fairly horribly inefficient
-        return MemberProfile.objects.filter(pk__in=self.values_list('candidate_reviewer', flat=True))
+        return MemberProfile.objects.filter(
+            pk__in=self.values_list("candidate_reviewer", flat=True)
+        )
 
     def with_reviewer_statistics(self):
-        return self.prefetch_related(models.Prefetch('candidate_reviewer', PeerReview.objects.find_candidate_reviewers()))
+        return self.prefetch_related(
+            models.Prefetch(
+                "candidate_reviewer", PeerReview.objects.find_candidate_reviewers()
+            )
+        )
 
 
 @register_snippet
 class PeerReviewInvitation(models.Model):
     date_created = models.DateTimeField(auto_now_add=True)
-    review = models.ForeignKey(PeerReview, related_name='invitation_set', on_delete=models.CASCADE)
-    editor = models.ForeignKey(MemberProfile, related_name='+', on_delete=models.PROTECT)
-    candidate_reviewer = models.ForeignKey(MemberProfile,
-                                           related_name='peer_review_invitation_set',
-                                           on_delete=models.CASCADE)
-    optional_message = MarkdownField(help_text=_("Optional markdown text to be added to the email"))
+    review = models.ForeignKey(
+        PeerReview, related_name="invitation_set", on_delete=models.CASCADE
+    )
+    editor = models.ForeignKey(
+        MemberProfile, related_name="+", on_delete=models.PROTECT
+    )
+    candidate_reviewer = models.ForeignKey(
+        MemberProfile,
+        related_name="peer_review_invitation_set",
+        on_delete=models.CASCADE,
+    )
+    optional_message = MarkdownField(
+        help_text=_("Optional markdown text to be added to the email")
+    )
     slug = models.UUIDField(unique=True, default=uuid.uuid4, editable=False)
     accepted = models.BooleanField(
         null=True,
         verbose_name=_("Invitation status"),
         choices=Choices(
-            (None, _('Waiting for response')),
-            (False, _('Decline')),
-            (True, _('Accept')),
+            (None, _("Waiting for response")),
+            (False, _("Decline")),
+            (True, _("Accept")),
         ),
-        help_text=_('Accept or decline this peer review invitation')
+        help_text=_("Accept or decline this peer review invitation"),
     )
 
     objects = PeerReviewInvitationQuerySet.as_manager()
@@ -1583,7 +1887,9 @@ class PeerReviewInvitation(models.Model):
 
     @property
     def expiration_date(self):
-        return self.date_created + timedelta(days=settings.PEER_REVIEW_INVITATION_EXPIRATION)
+        return self.date_created + timedelta(
+            days=settings.PEER_REVIEW_INVITATION_EXPIRATION
+        )
 
     @property
     def is_expired(self):
@@ -1608,15 +1914,17 @@ class PeerReviewInvitation(models.Model):
     @transaction.atomic
     def send_author_resubmitted_email(self):
         if not self.accepted:
-            logger.error("Trying to send an author resubmitted notification to an unaccepted invitation - ignoring.")
+            logger.error(
+                "Trying to send an author resubmitted notification to an unaccepted invitation - ignoring."
+            )
             return
         send_markdown_email(
-            subject=f'Peer review: updates to release {self.review.title}',
-            template_name='library/review/email/author_updated_content_for_reviewer_email.jinja',
+            subject=f"Peer review: updates to release {self.review.title}",
+            template_name="library/review/email/author_updated_content_for_reviewer_email.jinja",
             context={
-                'invitation': self,
+                "invitation": self,
                 # create a fresh feedback object for the reviewer to edit
-                'feedback': self.feedback_set.create()
+                "feedback": self.feedback_set.create(),
             },
             to=[self.reviewer_email],
             cc=[self.editor_email],
@@ -1625,16 +1933,18 @@ class PeerReviewInvitation(models.Model):
     @transaction.atomic
     def send_candidate_reviewer_email(self, resend=False):
         send_markdown_email(
-            subject='Peer review: request to review a computational model',
-            template_name='library/review/email/review_invitation.jinja',
-            context={'invitation': self},
+            subject="Peer review: request to review a computational model",
+            template_name="library/review/email/review_invitation.jinja",
+            context={"invitation": self},
             to=[self.reviewer_email],
-            cc=[self.editor_email]
+            cc=[self.editor_email],
         )
         self.review.log(
-            action=PeerReviewEvent.invitation_sent if resend else PeerReviewEvent.invitation_resent,
+            action=PeerReviewEvent.invitation_sent
+            if resend
+            else PeerReviewEvent.invitation_resent,
             author=self.editor,
-            message=f'{self.editor} sent an invitation to candidate reviewer {self.candidate_reviewer}'
+            message=f"{self.editor} sent an invitation to candidate reviewer {self.candidate_reviewer}",
         )
 
     @transaction.atomic
@@ -1642,13 +1952,15 @@ class PeerReviewInvitation(models.Model):
         self.accepted = True
         self.save()
         feedback = self.latest_feedback
-        self.review.log(action=PeerReviewEvent.invitation_accepted,
-                        author=self.candidate_reviewer,
-                        message=f'Invitation accepted by {self.candidate_reviewer}')
+        self.review.log(
+            action=PeerReviewEvent.invitation_accepted,
+            author=self.candidate_reviewer,
+            message=f"Invitation accepted by {self.candidate_reviewer}",
+        )
         send_markdown_email(
-            subject='Peer review: accepted invitation to review model',
-            template_name='library/review/email/review_invitation_accepted.jinja',
-            context={'invitation': self, 'feedback': feedback},
+            subject="Peer review: accepted invitation to review model",
+            template_name="library/review/email/review_invitation_accepted.jinja",
+            context={"invitation": self, "feedback": feedback},
             to=[self.reviewer_email, self.editor.email],
         )
         return feedback
@@ -1657,70 +1969,98 @@ class PeerReviewInvitation(models.Model):
     def decline(self):
         self.accepted = False
         self.save()
-        self.review.log(action=PeerReviewEvent.invitation_declined,
-                        author=self.candidate_reviewer,
-                        message=f'Invitation declined by {self.candidate_reviewer}')
+        self.review.log(
+            action=PeerReviewEvent.invitation_declined,
+            author=self.candidate_reviewer,
+            message=f"Invitation declined by {self.candidate_reviewer}",
+        )
         send_markdown_email(
-            subject='Peer review: declined invitation to review model',
-            template_name='library/review/email/review_invitation_declined.jinja',
-            context={'invitation': self},
+            subject="Peer review: declined invitation to review model",
+            template_name="library/review/email/review_invitation_declined.jinja",
+            context={"invitation": self},
             to=[self.editor.email],
         )
 
     def get_absolute_url(self):
-        return reverse('library:peer-review-invitation', kwargs=dict(slug=self.slug))
+        return reverse("library:peer-review-invitation", kwargs=dict(slug=self.slug))
 
     class Meta:
-        unique_together = (('review', 'candidate_reviewer'),)
+        unique_together = (("review", "candidate_reviewer"),)
 
 
 @register_snippet
 class PeerReviewerFeedback(models.Model):
     date_created = models.DateTimeField(auto_now_add=True)
     last_modified = models.DateTimeField(auto_now=True)
-    invitation = models.ForeignKey(PeerReviewInvitation, related_name='feedback_set', on_delete=models.CASCADE)
-    recommendation = models.CharField(choices=ReviewerRecommendation.to_choices(), max_length=16, blank=True)
-    private_reviewer_notes = MarkdownField(
-        help_text=_('Private reviewer notes to be sent to and viewed by the CoMSES review editors only.'),
-        blank=True
+    invitation = models.ForeignKey(
+        PeerReviewInvitation, related_name="feedback_set", on_delete=models.CASCADE
     )
-    private_editor_notes = MarkdownField(help_text=_('Private editor notes regarding this peer review'), blank=True)
-    notes_to_author = MarkdownField(help_text=_("Editor's notes to be sent to the model author, manually compiled from other reviewer comments."),
-                                    blank=True)
+    recommendation = models.CharField(
+        choices=ReviewerRecommendation.to_choices(), max_length=16, blank=True
+    )
+    private_reviewer_notes = MarkdownField(
+        help_text=_(
+            "Private reviewer notes to be sent to and viewed by the CoMSES review editors only."
+        ),
+        blank=True,
+    )
+    private_editor_notes = MarkdownField(
+        help_text=_("Private editor notes regarding this peer review"), blank=True
+    )
+    notes_to_author = MarkdownField(
+        help_text=_(
+            "Editor's notes to be sent to the model author, manually compiled from other reviewer comments."
+        ),
+        blank=True,
+    )
     has_narrative_documentation = models.BooleanField(
         default=False,
-        help_text=_('Is there sufficiently detailed accompanying narrative documentation? (A checked box indicates that the model has narrative documentation)')
+        help_text=_(
+            "Is there sufficiently detailed accompanying narrative documentation? (A checked box indicates that the model has narrative documentation)"
+        ),
     )
     narrative_documentation_comments = models.TextField(
-        help_text=_('Reviewer comments on the narrative documentation'), blank=True
+        help_text=_("Reviewer comments on the narrative documentation"), blank=True
     )
     has_clean_code = models.BooleanField(
         default=False,
-        help_text=_('Is the code clean, well-written, and well-commented with consistent formatting? (A checked box indicates that the model code is clean)')
+        help_text=_(
+            "Is the code clean, well-written, and well-commented with consistent formatting? (A checked box indicates that the model code is clean)"
+        ),
     )
     clean_code_comments = models.TextField(
-        help_text=_('Reviewer comments on code cleanliness'), blank=True
+        help_text=_("Reviewer comments on code cleanliness"), blank=True
     )
     is_runnable = models.BooleanField(
         default=False,
-        help_text=_('Were you able to run the model with the provided instructions? (A checked box indicates that the model is runnable)')
+        help_text=_(
+            "Were you able to run the model with the provided instructions? (A checked box indicates that the model is runnable)"
+        ),
     )
     runnable_comments = models.TextField(
-        help_text=_('Reviewer comments on running the model with the provided instructions'),
-        blank=True
+        help_text=_(
+            "Reviewer comments on running the model with the provided instructions"
+        ),
+        blank=True,
     )
     reviewer_submitted = models.BooleanField(
-        help_text=_('Internal field, set to True when the reviewer has finalized their feedback and is ready for an editor to check their submission.'),
-        default=False
+        help_text=_(
+            "Internal field, set to True when the reviewer has finalized their feedback and is ready for an editor to check their submission."
+        ),
+        default=False,
     )
 
     def get_absolute_url(self):
-        return reverse('library:peer-review-feedback-edit',
-                       kwargs={'slug': self.invitation.slug, 'feedback_id': self.id})
+        return reverse(
+            "library:peer-review-feedback-edit",
+            kwargs={"slug": self.invitation.slug, "feedback_id": self.id},
+        )
 
     def get_editor_url(self):
-        return reverse('library:peer-review-feedback-editor-edit',
-                       kwargs={'slug': self.invitation.slug, 'feedback_id': self.id})
+        return reverse(
+            "library:peer-review-feedback-editor-edit",
+            kwargs={"slug": self.invitation.slug, "feedback_id": self.id},
+        )
 
     @transaction.atomic
     def reviewer_completed(self):
@@ -1737,18 +2077,18 @@ class PeerReviewerFeedback(models.Model):
         review.log(
             action=PeerReviewEvent.reviewer_feedback_submitted,
             author=reviewer,
-            message=f'Reviewer {reviewer} provided feedback'
+            message=f"Reviewer {reviewer} provided feedback",
         )
         send_markdown_email(
-            subject='Peer review: reviewer submitted, editor action needed',
-            template_name='library/review/email/reviewer_submitted.jinja',
-            context={'review': review, 'invitation': self.invitation},
+            subject="Peer review: reviewer submitted, editor action needed",
+            template_name="library/review/email/reviewer_submitted.jinja",
+            context={"review": review, "invitation": self.invitation},
             to=[self.invitation.editor_email],
         )
         send_markdown_email(
-            subject='Peer review: feedback submitted',
-            template_name='library/review/email/reviewer_submitted_thanks.jinja',
-            context={'review': review, 'invitation': self.invitation},
+            subject="Peer review: feedback submitted",
+            template_name="library/review/email/reviewer_submitted_thanks.jinja",
+            context={"review": review, "invitation": self.invitation},
             to=[reviewer.email],
         )
 
@@ -1765,35 +2105,37 @@ class PeerReviewerFeedback(models.Model):
         review.log(
             action=PeerReviewEvent.revisions_requested,
             author=editor,
-            message=f'Editor {editor} called for revisions'
+            message=f"Editor {editor} called for revisions",
         )
         review.set_status(ReviewStatus.awaiting_author_changes)
         review.save()
         recipients = {review.submitter.email, review.codebase_release.submitter.email}
         send_markdown_email(
-            subject='Peer review: revisions requested',
-            template_name='library/review/email/model_revisions_requested.jinja',
-            context={'review': review, 'feedback': self},
+            subject="Peer review: revisions requested",
+            template_name="library/review/email/model_revisions_requested.jinja",
+            context={"review": review, "feedback": self},
             to=recipients,
-            bcc=[editor.email]
+            bcc=[editor.email],
         )
 
     def __str__(self):
         invitation = self.invitation
-        return 'Peer Review Feedback by {}. (submitted? {}) (recommendation: {})'.format(
-            invitation.candidate_reviewer,
-            self.reviewer_submitted,
-            self.get_recommendation_display()
+        return (
+            "Peer Review Feedback by {}. (submitted? {}) (recommendation: {})".format(
+                invitation.candidate_reviewer,
+                self.reviewer_submitted,
+                self.get_recommendation_display(),
+            )
         )
 
 
-class CodeMeta():
-    DATE_PUBLISHED_FORMAT = '%Y-%m-%d'
+class CodeMeta:
+    DATE_PUBLISHED_FORMAT = "%Y-%m-%d"
     COMSES_ORGANIZATION = {
         "@id": "https://www.comses.net",
         "@type": "Organization",
         "name": "CoMSES Net",
-        "url": "https://www.comses.net"
+        "url": "https://www.comses.net",
     }
     INITIAL_DATA = {
         "@context": "http://schema.org",
@@ -1806,17 +2148,20 @@ class CodeMeta():
             "url": "https://www.comses.net/codebases",
         },
         "publisher": COMSES_ORGANIZATION,
-        "provider": COMSES_ORGANIZATION
+        "provider": COMSES_ORGANIZATION,
     }
 
     def __init__(self, metadata: dict):
         if not metadata:
-            raise ValueError("Initialize with a base dictionary with codemeta terms mapped to JSON-serializable values")
+            raise ValueError(
+                "Initialize with a base dictionary with codemeta terms mapped to JSON-serializable values"
+            )
         self.metadata = metadata
 
     @classmethod
     def convert_target_product(cls, codebase_release: CodebaseRelease):
         from wagtail.images.views.serve import generate_image_url
+
         target_product = {
             "@type": "SoftwareApplication",
             "operatingSystem": codebase_release.os,
@@ -1824,7 +2169,7 @@ class CodeMeta():
         }
         if codebase_release.live:
             target_product.update(
-                downloadUrl=f'{settings.BASE_URL}{codebase_release.get_download_url()}',
+                downloadUrl=f"{settings.BASE_URL}{codebase_release.get_download_url()}",
                 releaseNotes=codebase_release.release_notes.raw,
                 softwareVersion=codebase_release.version_number,
                 identifier=codebase_release.permanent_url,
@@ -1833,10 +2178,11 @@ class CodeMeta():
         featured_image = codebase_release.codebase.get_featured_image()
         if featured_image:
             relative_screenshot_url = generate_image_url(
-                featured_image,
-                'fill-205x115',
-                viewname='home:wagtailimages_serve')
-            target_product.update(screenshot=f'{settings.BASE_URL}{relative_screenshot_url}')
+                featured_image, "fill-205x115", viewname="home:wagtailimages_serve"
+            )
+            target_product.update(
+                screenshot=f"{settings.BASE_URL}{relative_screenshot_url}"
+            )
         return target_product
 
     @classmethod
@@ -1849,11 +2195,17 @@ class CodeMeta():
 
     @classmethod
     def convert_authors(cls, codebase_release: CodebaseRelease):
-        return [author.contributor.to_codemeta() for author in ReleaseContributor.objects.authors(codebase_release)]
+        return [
+            author.contributor.to_codemeta()
+            for author in ReleaseContributor.objects.authors(codebase_release)
+        ]
 
     @classmethod
     def convert_programming_languages(cls, codebase_release: CodebaseRelease):
-        return [{'@type': 'ComputerLanguage', 'name': pl.name} for pl in codebase_release.programming_languages.all()]
+        return [
+            {"@type": "ComputerLanguage", "name": pl.name}
+            for pl in codebase_release.programming_languages.all()
+        ]
 
     @classmethod
     def build(cls, release: CodebaseRelease):
@@ -1876,7 +2228,11 @@ class CodeMeta():
             citation=[],
         )
         if release.live:
-            metadata.update(datePublished=release.last_published_on.strftime(cls.DATE_PUBLISHED_FORMAT))
+            metadata.update(
+                datePublished=release.last_published_on.strftime(
+                    cls.DATE_PUBLISHED_FORMAT
+                )
+            )
             metadata.update(copyrightYear=release.last_published_on.year)
         if release.license:
             metadata.update(license=release.license.url)
@@ -1888,20 +2244,20 @@ class CodeMeta():
 
         if release.release_notes:
             metadata.update(releaseNotes=release.release_notes.raw)
-        metadata['@id'] = release.permanent_url
+        metadata["@id"] = release.permanent_url
         return CodeMeta(metadata)
 
     @classmethod
     def add_citation_text(cls, metadata, text):
         if text:
-            metadata.get('citation').append(cls.to_creative_work(text))
+            metadata.get("citation").append(cls.to_creative_work(text))
 
     @classmethod
     def to_creative_work(cls, text):
         return {"@type": "CreativeWork", "text": text}
 
     def to_json(self):
-        """ Returns a JSON string of this codemeta data """
+        """Returns a JSON string of this codemeta data"""
         # FIXME: should ideally validate metadata as well
         return json.dumps(self.metadata)
 
@@ -1912,15 +2268,24 @@ class CodeMeta():
 @register_snippet
 class PeerReviewEventLog(models.Model):
     date_created = models.DateTimeField(auto_now_add=True)
-    review = models.ForeignKey(PeerReview, related_name='event_set', on_delete=models.CASCADE)
-    action = models.CharField(choices=PeerReviewEvent.to_choices(), help_text=_("status action requested."),
-                              max_length=32)
-    author = models.ForeignKey(MemberProfile, related_name='+', on_delete=models.CASCADE,
-                               help_text=_('User originating this action'))
+    review = models.ForeignKey(
+        PeerReview, related_name="event_set", on_delete=models.CASCADE
+    )
+    action = models.CharField(
+        choices=PeerReviewEvent.to_choices(),
+        help_text=_("status action requested."),
+        max_length=32,
+    )
+    author = models.ForeignKey(
+        MemberProfile,
+        related_name="+",
+        on_delete=models.CASCADE,
+        help_text=_("User originating this action"),
+    )
     message = models.CharField(blank=True, max_length=500)
 
     def add_message(self, message):
         if self.message:
-            self.message += '\n\n{}'.format(message)
+            self.message += "\n\n{}".format(message)
         else:
             self.message = message

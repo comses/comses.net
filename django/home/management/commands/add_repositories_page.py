@@ -29,16 +29,18 @@ This is not an exhaustive list and consists of DOI or other permanent identifier
 
 """
 
+
 class Command(BaseCommand):
 
     """
     Create CoMSES trusted digital repository landing page and add it as a child to the /resources/ CategoryIndexPage
     """
+
     def handle(self, *args, **options):
-        title = 'Trusted Digital Repositories'
+        title = "Trusted Digital Repositories"
         slug = slugify(title)
         repositories_page = MarkdownPage(title=title, slug=slug)
-        resources_page = CategoryIndexPage.objects.get(slug='resources')
+        resources_page = CategoryIndexPage.objects.get(slug="resources")
         try:
             repositories_page = MarkdownPage.objects.get(title=title, slug=slug)
             repositories_page.get_children().delete()
@@ -46,12 +48,16 @@ class Command(BaseCommand):
         except MarkdownPage.DoesNotExist:
             resources_page.add_child(instance=repositories_page)
 
-        repositories_page.heading = 'Trusted Digital Repositories'
+        repositories_page.heading = "Trusted Digital Repositories"
         repositories_page.description = DESCRIPTION
         repositories_page.body = CONTENT
         repositories_page.add_breadcrumbs(
-            (('Resources', '/resources/'),
-             ('Trusted Repositories', '/resources/trusted-digital-repositories/'),)
+            (
+                ("Resources", "/resources/"),
+                ("Trusted Repositories", "/resources/trusted-digital-repositories/"),
+            )
         )
-        revision = repositories_page.save_revision(user=User.objects.get(pk=3), submitted_for_moderation=False)
+        revision = repositories_page.save_revision(
+            user=User.objects.get(pk=3), submitted_for_moderation=False
+        )
         revision.publish()

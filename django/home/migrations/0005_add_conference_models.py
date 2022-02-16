@@ -9,98 +9,249 @@ import modelcluster.fields
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('wagtailcore', '0040_page_draft_title'),
-        ('library', '0001_initial'),
-        ('core', '0001_initial'),
-        ('home', '0004_auto_20180421_0144'),
+        ("wagtailcore", "0040_page_draft_title"),
+        ("library", "0001_initial"),
+        ("core", "0001_initial"),
+        ("home", "0004_auto_20180421_0144"),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='ConferenceIndexPage',
+            name="ConferenceIndexPage",
             fields=[
-                ('page_ptr', models.OneToOneField(auto_created=True, on_delete=django.db.models.deletion.CASCADE, parent_link=True, primary_key=True, serialize=False, to='wagtailcore.Page')),
+                (
+                    "page_ptr",
+                    models.OneToOneField(
+                        auto_created=True,
+                        on_delete=django.db.models.deletion.CASCADE,
+                        parent_link=True,
+                        primary_key=True,
+                        serialize=False,
+                        to="wagtailcore.Page",
+                    ),
+                ),
             ],
             options={
-                'abstract': False,
+                "abstract": False,
             },
-            bases=('wagtailcore.page',),
+            bases=("wagtailcore.page",),
         ),
         migrations.CreateModel(
-            name='ConferencePage',
+            name="ConferencePage",
             fields=[
-                ('page_ptr', models.OneToOneField(auto_created=True, on_delete=django.db.models.deletion.CASCADE, parent_link=True, primary_key=True, serialize=False, to='wagtailcore.Page')),
-                ('introduction', core.fields.MarkdownField(blank=True, help_text='Lead introduction to the conference', rendered_field=True)),
-                ('content', core.fields.MarkdownField(blank=True, help_text='Conference main body content markdown text', rendered_field=True)),
-                ('introduction_markup_type', models.CharField(choices=[('', '--'), ('markdown', 'markdown'), ('html', 'html'), ('plain', 'plain'), ('', '')], default='markdown', max_length=30)),
-                ('content_markup_type', models.CharField(choices=[('', '--'), ('markdown', 'markdown'), ('html', 'html'), ('plain', 'plain'), ('', '')], default='markdown', max_length=30)),
-                ('start_date', models.DateField()),
-                ('_introduction_rendered', models.TextField(editable=False)),
-                ('_content_rendered', models.TextField(editable=False)),
-                ('end_date', models.DateField()),
-                ('external_url', models.URLField(help_text='URL to the top-level Discourse category topic for this conference.')),
-                ('submission_deadline', models.DateField(null=True, blank=True)),
+                (
+                    "page_ptr",
+                    models.OneToOneField(
+                        auto_created=True,
+                        on_delete=django.db.models.deletion.CASCADE,
+                        parent_link=True,
+                        primary_key=True,
+                        serialize=False,
+                        to="wagtailcore.Page",
+                    ),
+                ),
+                (
+                    "introduction",
+                    core.fields.MarkdownField(
+                        blank=True,
+                        help_text="Lead introduction to the conference",
+                        rendered_field=True,
+                    ),
+                ),
+                (
+                    "content",
+                    core.fields.MarkdownField(
+                        blank=True,
+                        help_text="Conference main body content markdown text",
+                        rendered_field=True,
+                    ),
+                ),
+                (
+                    "introduction_markup_type",
+                    models.CharField(
+                        choices=[
+                            ("", "--"),
+                            ("markdown", "markdown"),
+                            ("html", "html"),
+                            ("plain", "plain"),
+                            ("", ""),
+                        ],
+                        default="markdown",
+                        max_length=30,
+                    ),
+                ),
+                (
+                    "content_markup_type",
+                    models.CharField(
+                        choices=[
+                            ("", "--"),
+                            ("markdown", "markdown"),
+                            ("html", "html"),
+                            ("plain", "plain"),
+                            ("", ""),
+                        ],
+                        default="markdown",
+                        max_length=30,
+                    ),
+                ),
+                ("start_date", models.DateField()),
+                ("_introduction_rendered", models.TextField(editable=False)),
+                ("_content_rendered", models.TextField(editable=False)),
+                ("end_date", models.DateField()),
+                (
+                    "external_url",
+                    models.URLField(
+                        help_text="URL to the top-level Discourse category topic for this conference."
+                    ),
+                ),
+                ("submission_deadline", models.DateField(null=True, blank=True)),
             ],
             options={
-                'abstract': False,
+                "abstract": False,
             },
-            bases=('wagtailcore.page',),
+            bases=("wagtailcore.page",),
         ),
         migrations.CreateModel(
-            name='ConferencePresentation',
+            name="ConferencePresentation",
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('title', models.CharField(help_text='Title of this presentation', max_length=512)),
-                ('external_url', models.URLField(help_text="URL to this presentation's Discourse topic")),
-                ('contributors', models.ManyToManyField(related_name='conference_presentation_contributors', to='library.Contributor')),
-                ('submitter', models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, to='core.MemberProfile')),
+                (
+                    "id",
+                    models.AutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "title",
+                    models.CharField(
+                        help_text="Title of this presentation", max_length=512
+                    ),
+                ),
+                (
+                    "external_url",
+                    models.URLField(
+                        help_text="URL to this presentation's Discourse topic"
+                    ),
+                ),
+                (
+                    "contributors",
+                    models.ManyToManyField(
+                        related_name="conference_presentation_contributors",
+                        to="library.Contributor",
+                    ),
+                ),
+                (
+                    "submitter",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.PROTECT,
+                        to="core.MemberProfile",
+                    ),
+                ),
             ],
         ),
         migrations.CreateModel(
-            name='ConferenceTheme',
+            name="ConferenceTheme",
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('title', models.CharField(max_length=512)),
-                ('category', models.CharField(choices=[('Panel', 'Panel'), ('Session', 'Session')], default='Panel', max_length=16)),
-                ('description', core.fields.MarkdownField(blank=True, rendered_field=True)),
-                ('description_markup_type', models.CharField(choices=[('', '--'), ('markdown', 'markdown'), ('html', 'html'), ('plain', 'plain'), ('', '')], default='markdown', max_length=30)),
-                ('external_url', models.URLField(help_text="URL to this conference theme's (panel / session) Discourse topic")),
-                ('_description_rendered', models.TextField(editable=False)),
-                ('page', modelcluster.fields.ParentalKey(on_delete=django.db.models.deletion.CASCADE, related_name='themes', to='home.ConferencePage')),
+                (
+                    "id",
+                    models.AutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("title", models.CharField(max_length=512)),
+                (
+                    "category",
+                    models.CharField(
+                        choices=[("Panel", "Panel"), ("Session", "Session")],
+                        default="Panel",
+                        max_length=16,
+                    ),
+                ),
+                (
+                    "description",
+                    core.fields.MarkdownField(blank=True, rendered_field=True),
+                ),
+                (
+                    "description_markup_type",
+                    models.CharField(
+                        choices=[
+                            ("", "--"),
+                            ("markdown", "markdown"),
+                            ("html", "html"),
+                            ("plain", "plain"),
+                            ("", ""),
+                        ],
+                        default="markdown",
+                        max_length=30,
+                    ),
+                ),
+                (
+                    "external_url",
+                    models.URLField(
+                        help_text="URL to this conference theme's (panel / session) Discourse topic"
+                    ),
+                ),
+                ("_description_rendered", models.TextField(editable=False)),
+                (
+                    "page",
+                    modelcluster.fields.ParentalKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="themes",
+                        to="home.ConferencePage",
+                    ),
+                ),
             ],
         ),
         migrations.AlterModelOptions(
-            name='journalsnippetplacement',
-            options={'ordering': ['journal'], 'verbose_name': 'journal placement', 'verbose_name_plural': 'journal placements'},
+            name="journalsnippetplacement",
+            options={
+                "ordering": ["journal"],
+                "verbose_name": "journal placement",
+                "verbose_name_plural": "journal placements",
+            },
         ),
         migrations.AlterModelOptions(
-            name='platformsnippetplacement',
-            options={'ordering': ['platform'], 'verbose_name': 'platform placement', 'verbose_name_plural': 'platform placements'},
+            name="platformsnippetplacement",
+            options={
+                "ordering": ["platform"],
+                "verbose_name": "platform placement",
+                "verbose_name_plural": "platform placements",
+            },
         ),
         migrations.AlterField(
-            model_name='journal',
-            name='description',
-            field=core.fields.MarkdownField(blank=True, max_length=1024, rendered_field=True),
+            model_name="journal",
+            name="description",
+            field=core.fields.MarkdownField(
+                blank=True, max_length=1024, rendered_field=True
+            ),
         ),
         migrations.AddField(
-            model_name='conferencepresentation',
-            name='theme',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='presentations', to='home.ConferenceTheme'),
+            model_name="conferencepresentation",
+            name="theme",
+            field=models.ForeignKey(
+                on_delete=django.db.models.deletion.CASCADE,
+                related_name="presentations",
+                to="home.ConferenceTheme",
+            ),
         ),
         migrations.RenameField(
-            model_name='markdownpage',
-            old_name='date',
-            new_name='post_date',
+            model_name="markdownpage",
+            old_name="date",
+            new_name="post_date",
         ),
         migrations.RenameField(
-            model_name='newspage',
-            old_name='date',
-            new_name='post_date',
+            model_name="newspage",
+            old_name="date",
+            new_name="post_date",
         ),
         migrations.RenameField(
-            model_name='streampage',
-            old_name='date',
-            new_name='post_date',
+            model_name="streampage",
+            old_name="date",
+            new_name="post_date",
         ),
-
     ]

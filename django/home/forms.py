@@ -17,13 +17,13 @@ logger = logging.getLogger(__name__)
 
 
 class ContactForm(forms.Form):
-    name = forms.CharField(max_length=100, label=_('Your name'))
-    email = forms.EmailField(max_length=255, label=_('Your email address'))
-    subject_text = forms.CharField(max_length=100, label=_('Message subject'))
-    body = forms.CharField(widget=forms.Textarea, label=_('Your message'))
+    name = forms.CharField(max_length=100, label=_("Your name"))
+    email = forms.EmailField(max_length=255, label=_("Your email address"))
+    subject_text = forms.CharField(max_length=100, label=_("Message subject"))
+    body = forms.CharField(widget=forms.Textarea, label=_("Your message"))
 
-    subject_template_name = 'home/about/contact_form_subject.txt'
-    template_name = 'home/about/contact_form_email.txt'
+    subject_template_name = "home/about/contact_form_subject.txt"
+    template_name = "home/about/contact_form_email.txt"
     from_email = settings.DEFAULT_FROM_EMAIL
     captcha = hCaptchaField()
 
@@ -35,8 +35,7 @@ class ContactForm(forms.Form):
         self.request = request
         if request.user.is_authenticated:
             user = request.user
-            initial.update(name=user.member_profile.name,
-                           email=user.email)
+            initial.update(name=user.member_profile.name, email=user.email)
         super().__init__(initial=initial, *args, **kwargs)
 
     def get_context(self):
@@ -47,7 +46,9 @@ class ContactForm(forms.Form):
 
     @property
     def recipient_list(self):
-        recipients = SocialMediaSettings.for_request(self.request).contact_form_recipients
+        recipients = SocialMediaSettings.for_request(
+            self.request
+        ).contact_form_recipients
         if not recipients:
             recipients = [settings.EDITOR_EMAIL]
         return recipients
@@ -57,7 +58,7 @@ class ContactForm(forms.Form):
         subject = loader.render_to_string(
             self.subject_template_name, self.get_context(), request=self.request
         )
-        return ''.join(subject.splitlines())
+        return "".join(subject.splitlines())
 
     @property
     def message(self):
@@ -72,7 +73,7 @@ class ContactForm(forms.Form):
     def save(self, fail_silently=False):
         if not self.is_valid():
             raise ValueError("Can't send a message from invalid contact form")
-        from_email = self.cleaned_data.get('email') or self.from_email
+        from_email = self.cleaned_data.get("email") or self.from_email
         send_markdown_email(
             subject=self.subject,
             template_name=self.template_name,
@@ -85,15 +86,23 @@ class ContactForm(forms.Form):
 
 class ConferenceSubmissionForm(forms.ModelForm):
     def clean_video_url(self):
-        video_url = self.cleaned_data['video_url'].strip()
+        video_url = self.cleaned_data["video_url"].strip()
         # This doesn't work for all youtube urls. https://gist.github.com/Glurt/ea11b690ba4b1278e049
         # if not re.match(YOUTUBE_URL, video_url):
         #    raise forms.ValidationError('Video URL must be a Youtube URL')
         domain = urlparse(video_url).netloc
-        if domain in ('youtube.com', 'youtu.be'):
+        if domain in ("youtube.com", "youtu.be"):
             return video_url
-        raise forms.ValidationError('Please submit a YouTube URL - it will make our lives much easier organizing the content. Thank you!')
+        raise forms.ValidationError(
+            "Please submit a YouTube URL - it will make our lives much easier organizing the content. Thank you!"
+        )
 
     class Meta:
         model = ConferenceSubmission
-        fields = ('id', 'title', 'abstract', 'video_url', 'model_url',)
+        fields = (
+            "id",
+            "title",
+            "abstract",
+            "video_url",
+            "model_url",
+        )

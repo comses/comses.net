@@ -25,6 +25,7 @@ from core.serializers import FULL_DATE_FORMAT
 
 logger = logging.getLogger(__name__)
 
+
 def jinja_url(viewname, *args, **kwargs):
     return reverse(viewname, args=args, kwargs=kwargs)
 
@@ -32,45 +33,48 @@ def jinja_url(viewname, *args, **kwargs):
 def environment(**options):
     env = Environment(**options)
     constants = {
-        'DISCOURSE_BASE_URL': settings.DISCOURSE_BASE_URL,
-        'DEBUG': settings.DEBUG,
-        'RELEASE_VERSION': settings.RELEASE_VERSION,
-        'SENTRY_DSN': settings.SENTRY_DSN,
-        'DEPLOY_ENVIRONMENT': settings.DEPLOY_ENVIRONMENT,
+        "DISCOURSE_BASE_URL": settings.DISCOURSE_BASE_URL,
+        "DEBUG": settings.DEBUG,
+        "RELEASE_VERSION": settings.RELEASE_VERSION,
+        "SENTRY_DSN": settings.SENTRY_DSN,
+        "DEPLOY_ENVIRONMENT": settings.DEPLOY_ENVIRONMENT,
     }
-    env.globals.update({
-        'static': static,
-        'url': jinja_url,
-        'constants': constants,
-        'build_absolute_uri': build_absolute_uri,
-        'cookielaw': cookielaw,
-        'now': now,
-        'should_enable_discourse': should_enable_discourse,
-        'is_production': is_production,
-        'provider_login_url': provider_login_url,
-        'get_choices_display': get_choices_display,
-        'markdown': markdown,
-        'add_field_css': add_field_css,
-        'format_datetime_str': format_datetime_str,
-        'format_datetime': format_datetime,
-        'to_json': to_json,
-        'is_checkbox': is_checkbox,
-        'is_hcaptcha': is_hcaptcha,
-        'get_messages': messages.get_messages,
-    })
+    env.globals.update(
+        {
+            "static": static,
+            "url": jinja_url,
+            "constants": constants,
+            "build_absolute_uri": build_absolute_uri,
+            "cookielaw": cookielaw,
+            "now": now,
+            "should_enable_discourse": should_enable_discourse,
+            "is_production": is_production,
+            "provider_login_url": provider_login_url,
+            "get_choices_display": get_choices_display,
+            "markdown": markdown,
+            "add_field_css": add_field_css,
+            "format_datetime_str": format_datetime_str,
+            "format_datetime": format_datetime,
+            "to_json": to_json,
+            "is_checkbox": is_checkbox,
+            "is_hcaptcha": is_hcaptcha,
+            "get_messages": messages.get_messages,
+        }
+    )
     return env
+
 
 def build_absolute_uri(relative_url):
     domain = Site.objects.get_current().domain
-    protocol = 'https' if settings.SECURE_SSL_REDIRECT else 'http'
-    absolute_url = '{}://{}{}'.format(protocol, domain, relative_url)
+    protocol = "https" if settings.SECURE_SSL_REDIRECT else "http"
+    absolute_url = "{}://{}{}".format(protocol, domain, relative_url)
     return absolute_url
 
 
 def cookielaw(request):
-    if request.COOKIES.get('cookielaw_accepted', False):
-        return ''
-    return render_to_string('cookielaw/cookielaw.jinja', request=request)
+    if request.COOKIES.get("cookielaw_accepted", False):
+        return ""
+    return render_to_string("cookielaw/cookielaw.jinja", request=request)
 
 
 def now(format_string):
@@ -97,9 +101,9 @@ def is_production():
 
 def provider_login_url(request, provider_id, **kwargs):
     provider = providers.registry.by_id(provider_id, request)
-    next_url = request.GET.get('next', None)
+    next_url = request.GET.get("next", None)
     if next_url:
-        kwargs['next'] = next_url
+        kwargs["next"] = next_url
     return provider.get_login_url(request, **kwargs)
 
 
@@ -118,6 +122,7 @@ def get_choices_display(selected_choice, choices):
 def is_checkbox(bound_field):
     return isinstance(bound_field.field.widget, CheckboxInput)
 
+
 def is_hcaptcha(bound_field):
     return isinstance(bound_field.field, hCaptchaField)
 
@@ -133,10 +138,10 @@ def markdown(text: str):
 
 def add_field_css(field, css_classes: str):
     if field.errors:
-        css_classes += ' is-invalid'
+        css_classes += " is-invalid"
     css_classes = field.css_classes(css_classes)
-    deduped_css_classes = ' '.join(set(css_classes.split(' ')))
-    return field.as_widget(attrs={'class': deduped_css_classes})
+    deduped_css_classes = " ".join(set(css_classes.split(" ")))
+    return field.as_widget(attrs={"class": deduped_css_classes})
 
 
 def format_datetime_str(text: Optional[str], format_string=FULL_DATE_FORMAT):
@@ -154,6 +159,7 @@ def format_datetime(date_obj, format_string=FULL_DATE_FORMAT):
 
 def to_json(value):
     return json.dumps(value)
+
 
 # # http://stackoverflow.com/questions/6453652/how-to-add-the-current-query-string-to-an-url-in-a-django-template
 # @register.simple_tag

@@ -27,16 +27,18 @@ Journals participating in the Open Code program award Open Code badges to select
 These badges are derived from the [“Badges to Acknowledge Open Practices” project from the Open Science Framework](https://osf.io/tvyxz/) and are similarly licensed via the [CC-By Attribution 4.0](https://creativecommons.org/licenses/by/4.0/).
 """
 
+
 class Command(BaseCommand):
 
     """
     Create CoMSES trusted digital repository landing page and add it as a child to the /resources/ CategoryIndexPage
     """
+
     def handle(self, *args, **options):
-        title = 'Open Code Badge'
+        title = "Open Code Badge"
         slug = slugify(title)
         open_code_page = MarkdownPage(title=title, slug=slug)
-        resources_page = CategoryIndexPage.objects.get(slug='resources')
+        resources_page = CategoryIndexPage.objects.get(slug="resources")
         try:
             open_code_page = MarkdownPage.objects.get(title=title, slug=slug)
             open_code_page.get_children().delete()
@@ -44,12 +46,16 @@ class Command(BaseCommand):
         except MarkdownPage.DoesNotExist:
             resources_page.add_child(instance=open_code_page)
 
-        open_code_page.heading = 'Open Science = Open Code'
+        open_code_page.heading = "Open Science = Open Code"
         open_code_page.description = DESCRIPTION
         open_code_page.body = CONTENT
         open_code_page.add_breadcrumbs(
-            (('Resources', '/resources/'),
-             ('Open Code Badge', f'/resources/{slug}'),)
+            (
+                ("Resources", "/resources/"),
+                ("Open Code Badge", f"/resources/{slug}"),
+            )
         )
-        revision = open_code_page.save_revision(user=User.objects.get(pk=3), submitted_for_moderation=False)
+        revision = open_code_page.save_revision(
+            user=User.objects.get(pk=3), submitted_for_moderation=False
+        )
         revision.publish()

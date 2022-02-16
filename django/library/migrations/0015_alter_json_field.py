@@ -6,28 +6,43 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('library', '0014_output_data_url'),
+        ("library", "0014_output_data_url"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='codebase',
-            name='media',
-            field=models.JSONField(default=list, help_text='JSON metadata dict of media associated with this Codebase'),
+            model_name="codebase",
+            name="media",
+            field=models.JSONField(
+                default=list,
+                help_text="JSON metadata dict of media associated with this Codebase",
+            ),
         ),
         migrations.AlterField(
-            model_name='codebase',
-            name='relationships',
+            model_name="codebase",
+            name="relationships",
             field=models.JSONField(default=list),
         ),
         migrations.AlterField(
-            model_name='codebaserelease',
-            name='dependencies',
-            field=models.JSONField(default=list, help_text='JSON list of software dependencies (identifier, name, version, packageSystem, OS, URL)'),
+            model_name="codebaserelease",
+            name="dependencies",
+            field=models.JSONField(
+                default=list,
+                help_text="JSON list of software dependencies (identifier, name, version, packageSystem, OS, URL)",
+            ),
         ),
         migrations.AlterField(
-            model_name='peerreviewinvitation',
-            name='accepted',
-            field=models.BooleanField(choices=[(None, 'Waiting for response'), (False, 'Decline'), (True, 'Accept')], help_text='Accept or decline this peer review invitation', null=True, verbose_name='Invitation status'),
+            model_name="peerreviewinvitation",
+            name="accepted",
+            field=models.BooleanField(
+                choices=[
+                    (None, "Waiting for response"),
+                    (False, "Decline"),
+                    (True, "Accept"),
+                ],
+                help_text="Accept or decline this peer review invitation",
+                null=True,
+                verbose_name="Invitation status",
+            ),
         ),
     ]

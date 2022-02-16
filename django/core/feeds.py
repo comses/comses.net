@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 
 # Match invalid xml characters such as form feed
 # https://lethain.com/stripping-illegal-characters-from-xml-in-python/
-XML_CONTROL_CHARACTERS = re.compile('[\x00-\x08\x0b-\x0c\x0e-\x1f\x7f]')
+XML_CONTROL_CHARACTERS = re.compile("[\x00-\x08\x0b-\x0c\x0e-\x1f\x7f]")
 
 SINGLE_FEED_MAX_ITEMS = settings.DEFAULT_FEED_MAX_ITEMS
 
@@ -24,10 +24,10 @@ class ComsesFeed(Feed):
     feed_type = Rss201rev2Feed
 
     def item_title(self, item):
-        return re.sub(XML_CONTROL_CHARACTERS, '', item.title)
+        return re.sub(XML_CONTROL_CHARACTERS, "", item.title)
 
     def item_description(self, item):
-        return re.sub(XML_CONTROL_CHARACTERS, '', str(item.description))
+        return re.sub(XML_CONTROL_CHARACTERS, "", str(item.description))
 
     def item_link(self, item):
         return item.get_absolute_url()
@@ -49,70 +49,77 @@ class ComsesFeed(Feed):
 
 
 class AllFeed(ComsesFeed):
-    title = 'All CoMSES jobs, events, and codebase releases'
-    link = 'https://www.comses.net'
-    description = 'All jobs, events, and codebase releases for initial consumption by Discourse'
-    feed_url = '/feeds/all/'
+    title = "All CoMSES jobs, events, and codebase releases"
+    link = "https://www.comses.net"
+    description = (
+        "All jobs, events, and codebase releases for initial consumption by Discourse"
+    )
+    feed_url = "/feeds/all/"
 
     def items(self):
         releases = CodebaseRelease.objects.latest_for_feed(include_all=True)
         jobs = Job.objects.all()
         events = Event.objects.all()
-        return sorted(chain(releases, jobs, events), key=attrgetter('date_created'), reverse=True)
+        return sorted(
+            chain(releases, jobs, events), key=attrgetter("date_created"), reverse=True
+        )
 
     def item_author_name(self, item):
         return item.submitter.username
 
 
 class RssSiteNewsFeed(ComsesFeed):
-    title = 'CoMSES jobs, events and codebase releases'
-    link = 'https://www.comses.net/'
-    description = 'New jobs, events and codebase releases (last 120 days)'
-    feed_url = '/feeds/rss/'
+    title = "CoMSES jobs, events and codebase releases"
+    link = "https://www.comses.net/"
+    description = "New jobs, events and codebase releases (last 120 days)"
+    feed_url = "/feeds/rss/"
 
     def items(self):
         releases = CodebaseRelease.objects.latest_for_feed()
         jobs = Job.objects.latest_for_feed()
         events = Event.objects.latest_for_feed()
-        return sorted(chain(releases, jobs, events), key=attrgetter('date_created'), reverse=True)
+        return sorted(
+            chain(releases, jobs, events), key=attrgetter("date_created"), reverse=True
+        )
 
 
 class AtomSiteNewsFeed(RssSiteNewsFeed):
     feed_type = Atom1Feed
-    feed_url = '/feeds/atom/'
+    feed_url = "/feeds/atom/"
     subtitle = RssSiteNewsFeed.description
 
 
 class RssEventFeed(ComsesFeed):
-    title = 'CoMSES Net Events RSS'
-    link = 'https://www.comses.net/events/'
-    description = 'New events posted on comses.net'
-    feed_url = '/feeds/events/rss/'
+    title = "CoMSES Net Events RSS"
+    link = "https://www.comses.net/events/"
+    description = "New events posted on comses.net"
+    feed_url = "/feeds/events/rss/"
 
     def items(self):
         # FIXME: lift magic constants or make it configurable
         return Event.objects.latest_for_feed(SINGLE_FEED_MAX_ITEMS)
 
+
 class AtomEventFeed(RssEventFeed):
     feed_type = Atom1Feed
     subtitle = RssEventFeed.description
-    feed_url = '/feeds/events/atom/'
+    feed_url = "/feeds/events/atom/"
 
 
 class RssJobFeed(ComsesFeed):
-    title = 'CoMSES Net Job RSS'
-    link = 'https://www.comses.net/jobs/'
-    description = 'New jobs posted on comses.net'
+    title = "CoMSES Net Job RSS"
+    link = "https://www.comses.net/jobs/"
+    description = "New jobs posted on comses.net"
 
     def items(self):
         return Job.objects.latest_for_feed(SINGLE_FEED_MAX_ITEMS)
 
 
 class RssCodebaseFeed(ComsesFeed):
-    title = 'CoMSES Net Computational Models Feed'
-    link = 'https://www.comses.net/codebases/'
-    description = 'New computational models posted to comses.net'
-    feed_url = '/feeds/code/rss/'
+    title = "CoMSES Net Computational Models Feed"
+    link = "https://www.comses.net/codebases/"
+    description = "New computational models posted to comses.net"
+    feed_url = "/feeds/code/rss/"
 
     def items(self):
         return CodebaseRelease.objects.latest_for_feed(SINGLE_FEED_MAX_ITEMS)
@@ -125,12 +132,12 @@ class AtomJobFeed(RssJobFeed):
 
 def urlpatterns():
     return [
-        path('feeds/rss/', RssSiteNewsFeed(), name='rss'),
-        path('feeds/atom/', AtomSiteNewsFeed(), name='atom'),
-        path('feeds/events/rss/', RssEventFeed(), name='rss-events'),
-        path('feeds/events/atom/', AtomEventFeed(), name='atom-events'),
-        path('feeds/jobs/rss/', RssJobFeed(), name='rss-jobs'),
-        path('feeds/jobs/atom/', AtomJobFeed(), name='atom-jobs'),
-        path('feeds/code/rss/', RssCodebaseFeed(), name='rss-codebases'),
-        path('feeds/all/', AllFeed(), name='all'),
+        path("feeds/rss/", RssSiteNewsFeed(), name="rss"),
+        path("feeds/atom/", AtomSiteNewsFeed(), name="atom"),
+        path("feeds/events/rss/", RssEventFeed(), name="rss-events"),
+        path("feeds/events/atom/", AtomEventFeed(), name="atom-events"),
+        path("feeds/jobs/rss/", RssJobFeed(), name="rss-jobs"),
+        path("feeds/jobs/atom/", AtomJobFeed(), name="atom-jobs"),
+        path("feeds/code/rss/", RssCodebaseFeed(), name="rss-codebases"),
+        path("feeds/all/", AllFeed(), name="all"),
     ]

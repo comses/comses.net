@@ -10,34 +10,38 @@ from django.contrib.auth.models import User
 logger = logging.getLogger(__name__)
 
 
-def make_user(username='test_user', password='default.testing.password', email='comses.test@mailinator.com'):
+def make_user(
+    username="test_user",
+    password="default.testing.password",
+    email="comses.test@mailinator.com",
+):
     factory = UserFactory()
     return factory.create(username=username, password=password, email=email), factory
 
 
 class UserFactory:
     def __init__(self, **defaults):
-        if not defaults.get('password'):
-            defaults['password'] = 'test'
+        if not defaults.get("password"):
+            defaults["password"] = "test"
         self.id = 0
-        self.password = defaults.get('password')
+        self.password = defaults.get("password")
         self.defaults = {}
-        username = defaults.get('username')
+        username = defaults.get("username")
         if username:
-            self.defaults.update({'username': username})
-        email = defaults.get('email')
+            self.defaults.update({"username": username})
+        email = defaults.get("email")
         if email:
-            self.defaults.update({'email': email})
+            self.defaults.update({"email": email})
 
     def extract_password(self, overrides):
-        if overrides.get('password'):
-            return overrides.pop('password')
+        if overrides.get("password"):
+            return overrides.pop("password")
         else:
             return self.password
 
     def get_default_data(self):
         defaults = self.defaults.copy()
-        defaults['username'] = defaults.get('username', 'submitter{}'.format(self.id))
+        defaults["username"] = defaults.get("username", "submitter{}".format(self.id))
         self.id += 1
         return defaults
 
@@ -50,8 +54,8 @@ class UserFactory:
         password = self.extract_password(overrides)
         kwargs = self.get_default_data()
         kwargs.update(overrides)
-        if not kwargs.get('email'):
-            kwargs['email'] = '{}@gmail.com'.format(kwargs['username'])
+        if not kwargs.get("email"):
+            kwargs["email"] = "{}@gmail.com".format(kwargs["username"])
         user = User(**kwargs)
         if password:
             user.set_password(password)
@@ -59,10 +63,18 @@ class UserFactory:
 
 
 def initialize_test_shared_folders():
-    for d in [settings.LIBRARY_ROOT, settings.REPOSITORY_ROOT, settings.BACKUP_ROOT, settings.MEDIA_ROOT]:
+    for d in [
+        settings.LIBRARY_ROOT,
+        settings.REPOSITORY_ROOT,
+        settings.BACKUP_ROOT,
+        settings.MEDIA_ROOT,
+    ]:
         os.makedirs(d, exist_ok=True)
 
-    subprocess.run(shlex.split('borg init --encryption=none {}'.format(settings.BORG_ROOT)), check=True)
+    subprocess.run(
+        shlex.split("borg init --encryption=none {}".format(settings.BORG_ROOT)),
+        check=True,
+    )
 
 
 def destroy_test_shared_folders():

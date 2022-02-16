@@ -24,266 +24,778 @@ class Migration(migrations.Migration):
 
     dependencies = [
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
-        ('core', '0001_initial'),
-        ('wagtailcore', '0040_page_draft_title'),
-        ('taggit', '0002_auto_20150616_2121'),
+        ("core", "0001_initial"),
+        ("wagtailcore", "0040_page_draft_title"),
+        ("taggit", "0002_auto_20150616_2121"),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='Codebase',
+            name="Codebase",
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('title', models.CharField(max_length=300)),
-                ('description', core.fields.MarkdownField(blank=True, rendered_field=True)),
-                ('summary', models.CharField(blank=True, max_length=500)),
-                ('description_markup_type', models.CharField(choices=[('', '--'), ('markdown', 'markdown'), ('html', 'html'), ('plain', 'plain'), ('', '')], default='markdown', max_length=30)),
-                ('featured', models.BooleanField(default=False)),
-                ('_description_rendered', models.TextField(editable=False)),
-                ('live', models.BooleanField(default=False)),
-                ('first_published_at', models.DateTimeField(blank=True, null=True)),
-                ('last_published_on', models.DateTimeField(blank=True, null=True)),
-                ('date_created', models.DateTimeField(default=django.utils.timezone.now)),
-                ('last_modified', models.DateTimeField(auto_now=True)),
-                ('is_replication', models.BooleanField(default=False, help_text='Is this model a replication of another model?')),
-                ('peer_reviewed', models.BooleanField(default=False)),
-                ('identifier', models.CharField(max_length=128, unique=True)),
-                ('doi', models.CharField(max_length=128, null=True, unique=True)),
-                ('uuid', models.UUIDField(default=uuid.uuid4, editable=False, unique=True)),
-                ('repository_url', models.URLField(blank=True, help_text='URL to code repository, e.g., https://github.com/comses/wolf-sheep')),
-                ('replication_text', models.TextField(blank=True, help_text='URL / DOI / citation for the original model being replicated')),
-                ('references_text', models.TextField(blank=True, help_text='Reference DOI / Citations')),
-                ('associated_publication_text', models.TextField(blank=True, help_text='DOI / URL / citation to publication associated with this codebase.')),
-                ('relationships', django.contrib.postgres.fields.jsonb.JSONField(default=list)),
-                ('media', django.contrib.postgres.fields.jsonb.JSONField(default=list, help_text='JSON metadata dict of media associated with this Codebase')),
+                (
+                    "id",
+                    models.AutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("title", models.CharField(max_length=300)),
+                (
+                    "description",
+                    core.fields.MarkdownField(blank=True, rendered_field=True),
+                ),
+                ("summary", models.CharField(blank=True, max_length=500)),
+                (
+                    "description_markup_type",
+                    models.CharField(
+                        choices=[
+                            ("", "--"),
+                            ("markdown", "markdown"),
+                            ("html", "html"),
+                            ("plain", "plain"),
+                            ("", ""),
+                        ],
+                        default="markdown",
+                        max_length=30,
+                    ),
+                ),
+                ("featured", models.BooleanField(default=False)),
+                ("_description_rendered", models.TextField(editable=False)),
+                ("live", models.BooleanField(default=False)),
+                ("first_published_at", models.DateTimeField(blank=True, null=True)),
+                ("last_published_on", models.DateTimeField(blank=True, null=True)),
+                (
+                    "date_created",
+                    models.DateTimeField(default=django.utils.timezone.now),
+                ),
+                ("last_modified", models.DateTimeField(auto_now=True)),
+                (
+                    "is_replication",
+                    models.BooleanField(
+                        default=False,
+                        help_text="Is this model a replication of another model?",
+                    ),
+                ),
+                ("peer_reviewed", models.BooleanField(default=False)),
+                ("identifier", models.CharField(max_length=128, unique=True)),
+                ("doi", models.CharField(max_length=128, null=True, unique=True)),
+                (
+                    "uuid",
+                    models.UUIDField(default=uuid.uuid4, editable=False, unique=True),
+                ),
+                (
+                    "repository_url",
+                    models.URLField(
+                        blank=True,
+                        help_text="URL to code repository, e.g., https://github.com/comses/wolf-sheep",
+                    ),
+                ),
+                (
+                    "replication_text",
+                    models.TextField(
+                        blank=True,
+                        help_text="URL / DOI / citation for the original model being replicated",
+                    ),
+                ),
+                (
+                    "references_text",
+                    models.TextField(blank=True, help_text="Reference DOI / Citations"),
+                ),
+                (
+                    "associated_publication_text",
+                    models.TextField(
+                        blank=True,
+                        help_text="DOI / URL / citation to publication associated with this codebase.",
+                    ),
+                ),
+                (
+                    "relationships",
+                    django.contrib.postgres.fields.jsonb.JSONField(default=list),
+                ),
+                (
+                    "media",
+                    django.contrib.postgres.fields.jsonb.JSONField(
+                        default=list,
+                        help_text="JSON metadata dict of media associated with this Codebase",
+                    ),
+                ),
             ],
             options={
-                'permissions': (('view_codebase', 'Can view codebase'),),
+                "permissions": (("view_codebase", "Can view codebase"),),
             },
             bases=(wagtail.search.index.Indexed, models.Model),
         ),
         migrations.CreateModel(
-            name='CodebaseImage',
+            name="CodebaseImage",
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('title', models.CharField(max_length=255, verbose_name='title')),
-                ('width', models.IntegerField(editable=False, verbose_name='width')),
-                ('height', models.IntegerField(editable=False, verbose_name='height')),
-                ('created_at', models.DateTimeField(auto_now_add=True, db_index=True, verbose_name='created at')),
-                ('focal_point_x', models.PositiveIntegerField(blank=True, null=True)),
-                ('focal_point_y', models.PositiveIntegerField(blank=True, null=True)),
-                ('focal_point_width', models.PositiveIntegerField(blank=True, null=True)),
-                ('focal_point_height', models.PositiveIntegerField(blank=True, null=True)),
-                ('file_size', models.PositiveIntegerField(editable=False, null=True)),
-                ('file', models.ImageField(height_field='height', storage=django.core.files.storage.FileSystemStorage(location='/shared/library'), upload_to=wagtail.images.models.get_upload_to, verbose_name='file', width_field='width')),
-                ('codebase', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='featured_images', to='library.Codebase')),
-                ('collection', models.ForeignKey(default=wagtail.core.models.get_root_collection_id, on_delete=django.db.models.deletion.CASCADE, related_name='+', to='wagtailcore.Collection', verbose_name='collection')),
-                ('tags', taggit.managers.TaggableManager(blank=True, help_text=None, through='taggit.TaggedItem', to='taggit.Tag', verbose_name='tags')),
-                ('uploaded_by_user', models.ForeignKey(blank=True, editable=False, null=True, on_delete=django.db.models.deletion.SET_NULL, to=settings.AUTH_USER_MODEL, verbose_name='uploaded by user')),
+                (
+                    "id",
+                    models.AutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("title", models.CharField(max_length=255, verbose_name="title")),
+                ("width", models.IntegerField(editable=False, verbose_name="width")),
+                ("height", models.IntegerField(editable=False, verbose_name="height")),
+                (
+                    "created_at",
+                    models.DateTimeField(
+                        auto_now_add=True, db_index=True, verbose_name="created at"
+                    ),
+                ),
+                ("focal_point_x", models.PositiveIntegerField(blank=True, null=True)),
+                ("focal_point_y", models.PositiveIntegerField(blank=True, null=True)),
+                (
+                    "focal_point_width",
+                    models.PositiveIntegerField(blank=True, null=True),
+                ),
+                (
+                    "focal_point_height",
+                    models.PositiveIntegerField(blank=True, null=True),
+                ),
+                ("file_size", models.PositiveIntegerField(editable=False, null=True)),
+                (
+                    "file",
+                    models.ImageField(
+                        height_field="height",
+                        storage=django.core.files.storage.FileSystemStorage(
+                            location="/shared/library"
+                        ),
+                        upload_to=wagtail.images.models.get_upload_to,
+                        verbose_name="file",
+                        width_field="width",
+                    ),
+                ),
+                (
+                    "codebase",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="featured_images",
+                        to="library.Codebase",
+                    ),
+                ),
+                (
+                    "collection",
+                    models.ForeignKey(
+                        default=wagtail.core.models.get_root_collection_id,
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="+",
+                        to="wagtailcore.Collection",
+                        verbose_name="collection",
+                    ),
+                ),
+                (
+                    "tags",
+                    taggit.managers.TaggableManager(
+                        blank=True,
+                        help_text=None,
+                        through="taggit.TaggedItem",
+                        to="taggit.Tag",
+                        verbose_name="tags",
+                    ),
+                ),
+                (
+                    "uploaded_by_user",
+                    models.ForeignKey(
+                        blank=True,
+                        editable=False,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        to=settings.AUTH_USER_MODEL,
+                        verbose_name="uploaded by user",
+                    ),
+                ),
             ],
             options={
-                'abstract': False,
+                "abstract": False,
             },
             bases=(wagtail.search.index.Indexed, models.Model),
         ),
         migrations.CreateModel(
-            name='CodebaseRelease',
+            name="CodebaseRelease",
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('date_created', models.DateTimeField(default=django.utils.timezone.now)),
-                ('last_modified', models.DateTimeField(auto_now=True)),
-                ('live', models.BooleanField(default=False, help_text='Signifies that this release is public.')),
-                ('draft', models.BooleanField(default=False, help_text='Signifies that this release is currently being edited.')),
-                ('first_published_at', models.DateTimeField(blank=True, null=True)),
-                ('last_published_on', models.DateTimeField(blank=True, null=True)),
-                ('peer_reviewed', models.BooleanField(default=False)),
-                ('flagged', models.BooleanField(default=False)),
-                ('share_uuid', models.UUIDField(blank=True, default=None, null=True, unique=True)),
-                ('identifier', models.CharField(max_length=128, null=True, unique=True)),
-                ('doi', models.CharField(max_length=128, null=True, unique=True)),
-                ('release_notes', core.fields.MarkdownField(blank=True, help_text='Markdown formattable text, e.g., run conditions', rendered_field=True)),
-                ('release_notes_markup_type', models.CharField(choices=[('', '--'), ('markdown', 'markdown'), ('html', 'html'), ('plain', 'plain'), ('', '')], default='markdown', max_length=30)),
-                ('summary', models.CharField(blank=True, max_length=500)),
-                ('_release_notes_rendered', models.TextField(editable=False)),
-                ('documentation', models.FileField(help_text='Fulltext documentation file (PDF/PDFA)', null=True, upload_to='')),
-                ('embargo_end_date', models.DateTimeField(blank=True, null=True)),
-                ('version_number', models.CharField(help_text='semver string, e.g., 1.0.5, see semver.org', max_length=32)),
-                ('os', models.CharField(blank=True, choices=[('other', 'Other'), ('linux', 'Unix/Linux'), ('macos', 'Mac OS'), ('windows', 'Windows'), ('platform_independent', 'Platform Independent')], max_length=32)),
-                ('dependencies', django.contrib.postgres.fields.jsonb.JSONField(default=list, help_text='JSON list of software dependencies (identifier, name, version, packageSystem, OS, URL)')),
-                ('submitted_package', models.FileField(max_length=1000, null=True, storage=django.core.files.storage.FileSystemStorage(location='/shared/library'), upload_to=library.models.Codebase._release_upload_path)),
-                ('codebase', models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, related_name='releases', to='library.Codebase')),
+                (
+                    "id",
+                    models.AutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "date_created",
+                    models.DateTimeField(default=django.utils.timezone.now),
+                ),
+                ("last_modified", models.DateTimeField(auto_now=True)),
+                (
+                    "live",
+                    models.BooleanField(
+                        default=False,
+                        help_text="Signifies that this release is public.",
+                    ),
+                ),
+                (
+                    "draft",
+                    models.BooleanField(
+                        default=False,
+                        help_text="Signifies that this release is currently being edited.",
+                    ),
+                ),
+                ("first_published_at", models.DateTimeField(blank=True, null=True)),
+                ("last_published_on", models.DateTimeField(blank=True, null=True)),
+                ("peer_reviewed", models.BooleanField(default=False)),
+                ("flagged", models.BooleanField(default=False)),
+                (
+                    "share_uuid",
+                    models.UUIDField(blank=True, default=None, null=True, unique=True),
+                ),
+                (
+                    "identifier",
+                    models.CharField(max_length=128, null=True, unique=True),
+                ),
+                ("doi", models.CharField(max_length=128, null=True, unique=True)),
+                (
+                    "release_notes",
+                    core.fields.MarkdownField(
+                        blank=True,
+                        help_text="Markdown formattable text, e.g., run conditions",
+                        rendered_field=True,
+                    ),
+                ),
+                (
+                    "release_notes_markup_type",
+                    models.CharField(
+                        choices=[
+                            ("", "--"),
+                            ("markdown", "markdown"),
+                            ("html", "html"),
+                            ("plain", "plain"),
+                            ("", ""),
+                        ],
+                        default="markdown",
+                        max_length=30,
+                    ),
+                ),
+                ("summary", models.CharField(blank=True, max_length=500)),
+                ("_release_notes_rendered", models.TextField(editable=False)),
+                (
+                    "documentation",
+                    models.FileField(
+                        help_text="Fulltext documentation file (PDF/PDFA)",
+                        null=True,
+                        upload_to="",
+                    ),
+                ),
+                ("embargo_end_date", models.DateTimeField(blank=True, null=True)),
+                (
+                    "version_number",
+                    models.CharField(
+                        help_text="semver string, e.g., 1.0.5, see semver.org",
+                        max_length=32,
+                    ),
+                ),
+                (
+                    "os",
+                    models.CharField(
+                        blank=True,
+                        choices=[
+                            ("other", "Other"),
+                            ("linux", "Unix/Linux"),
+                            ("macos", "Mac OS"),
+                            ("windows", "Windows"),
+                            ("platform_independent", "Platform Independent"),
+                        ],
+                        max_length=32,
+                    ),
+                ),
+                (
+                    "dependencies",
+                    django.contrib.postgres.fields.jsonb.JSONField(
+                        default=list,
+                        help_text="JSON list of software dependencies (identifier, name, version, packageSystem, OS, URL)",
+                    ),
+                ),
+                (
+                    "submitted_package",
+                    models.FileField(
+                        max_length=1000,
+                        null=True,
+                        storage=django.core.files.storage.FileSystemStorage(
+                            location="/shared/library"
+                        ),
+                        upload_to=library.models.Codebase._release_upload_path,
+                    ),
+                ),
+                (
+                    "codebase",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.PROTECT,
+                        related_name="releases",
+                        to="library.Codebase",
+                    ),
+                ),
             ],
             options={
-                'permissions': (('view_codebaserelease', 'Can view codebase release'),),
+                "permissions": (("view_codebaserelease", "Can view codebase release"),),
             },
             bases=(wagtail.search.index.Indexed, models.Model),
         ),
         migrations.CreateModel(
-            name='CodebaseReleaseDownload',
+            name="CodebaseReleaseDownload",
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('date_created', models.DateTimeField(default=django.utils.timezone.now)),
-                ('ip_address', models.GenericIPAddressField(blank=True, null=True)),
-                ('referrer', models.URLField(blank=True, help_text='captures the HTTP_REFERER if set', max_length=500)),
-                ('release', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='downloads', to='library.CodebaseRelease')),
-                ('user', models.ForeignKey(null=True, on_delete=django.db.models.deletion.SET_NULL, to=settings.AUTH_USER_MODEL)),
+                (
+                    "id",
+                    models.AutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "date_created",
+                    models.DateTimeField(default=django.utils.timezone.now),
+                ),
+                ("ip_address", models.GenericIPAddressField(blank=True, null=True)),
+                (
+                    "referrer",
+                    models.URLField(
+                        blank=True,
+                        help_text="captures the HTTP_REFERER if set",
+                        max_length=500,
+                    ),
+                ),
+                (
+                    "release",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="downloads",
+                        to="library.CodebaseRelease",
+                    ),
+                ),
+                (
+                    "user",
+                    models.ForeignKey(
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
             ],
         ),
         migrations.CreateModel(
-            name='CodebaseReleasePlatformTag',
+            name="CodebaseReleasePlatformTag",
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('content_object', modelcluster.fields.ParentalKey(on_delete=django.db.models.deletion.CASCADE, related_name='tagged_release_platforms', to='library.CodebaseRelease')),
-                ('tag', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='library_codebasereleaseplatformtag_items', to='taggit.Tag')),
+                (
+                    "id",
+                    models.AutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "content_object",
+                    modelcluster.fields.ParentalKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="tagged_release_platforms",
+                        to="library.CodebaseRelease",
+                    ),
+                ),
+                (
+                    "tag",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="library_codebasereleaseplatformtag_items",
+                        to="taggit.Tag",
+                    ),
+                ),
             ],
             options={
-                'abstract': False,
+                "abstract": False,
             },
         ),
         migrations.CreateModel(
-            name='CodebaseRendition',
+            name="CodebaseRendition",
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('filter_spec', models.CharField(db_index=True, max_length=255)),
-                ('file', models.ImageField(height_field='height', upload_to=wagtail.images.models.get_rendition_upload_to, width_field='width')),
-                ('width', models.IntegerField(editable=False)),
-                ('height', models.IntegerField(editable=False)),
-                ('focal_point_key', models.CharField(blank=True, default='', editable=False, max_length=16)),
-                ('image', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='renditions', to='library.CodebaseImage')),
+                (
+                    "id",
+                    models.AutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("filter_spec", models.CharField(db_index=True, max_length=255)),
+                (
+                    "file",
+                    models.ImageField(
+                        height_field="height",
+                        upload_to=wagtail.images.models.get_rendition_upload_to,
+                        width_field="width",
+                    ),
+                ),
+                ("width", models.IntegerField(editable=False)),
+                ("height", models.IntegerField(editable=False)),
+                (
+                    "focal_point_key",
+                    models.CharField(
+                        blank=True, default="", editable=False, max_length=16
+                    ),
+                ),
+                (
+                    "image",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="renditions",
+                        to="library.CodebaseImage",
+                    ),
+                ),
             ],
         ),
         migrations.CreateModel(
-            name='CodebaseTag',
+            name="CodebaseTag",
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('content_object', modelcluster.fields.ParentalKey(on_delete=django.db.models.deletion.CASCADE, related_name='tagged_codebases', to='library.Codebase')),
-                ('tag', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='library_codebasetag_items', to='taggit.Tag')),
+                (
+                    "id",
+                    models.AutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "content_object",
+                    modelcluster.fields.ParentalKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="tagged_codebases",
+                        to="library.Codebase",
+                    ),
+                ),
+                (
+                    "tag",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="library_codebasetag_items",
+                        to="taggit.Tag",
+                    ),
+                ),
             ],
             options={
-                'abstract': False,
+                "abstract": False,
             },
         ),
         migrations.CreateModel(
-            name='Contributor',
+            name="Contributor",
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('given_name', models.CharField(blank=True, help_text='Also doubles as organizational name', max_length=100)),
-                ('middle_name', models.CharField(blank=True, max_length=100)),
-                ('family_name', models.CharField(blank=True, max_length=100)),
-                ('type', models.CharField(choices=[('person', 'person'), ('organization', 'organization')], default='person', help_text='organizations only use given_name', max_length=16)),
-                ('email', models.EmailField(blank=True, max_length=254)),
+                (
+                    "id",
+                    models.AutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "given_name",
+                    models.CharField(
+                        blank=True,
+                        help_text="Also doubles as organizational name",
+                        max_length=100,
+                    ),
+                ),
+                ("middle_name", models.CharField(blank=True, max_length=100)),
+                ("family_name", models.CharField(blank=True, max_length=100)),
+                (
+                    "type",
+                    models.CharField(
+                        choices=[
+                            ("person", "person"),
+                            ("organization", "organization"),
+                        ],
+                        default="person",
+                        help_text="organizations only use given_name",
+                        max_length=16,
+                    ),
+                ),
+                ("email", models.EmailField(blank=True, max_length=254)),
             ],
             options={
-                'abstract': False,
+                "abstract": False,
             },
             bases=(wagtail.search.index.Indexed, models.Model),
         ),
         migrations.CreateModel(
-            name='ContributorAffiliation',
+            name="ContributorAffiliation",
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('content_object', modelcluster.fields.ParentalKey(on_delete=django.db.models.deletion.CASCADE, related_name='tagged_contributors', to='library.Contributor')),
-                ('tag', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='library_contributoraffiliation_items', to='taggit.Tag')),
+                (
+                    "id",
+                    models.AutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "content_object",
+                    modelcluster.fields.ParentalKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="tagged_contributors",
+                        to="library.Contributor",
+                    ),
+                ),
+                (
+                    "tag",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="library_contributoraffiliation_items",
+                        to="taggit.Tag",
+                    ),
+                ),
             ],
             options={
-                'abstract': False,
+                "abstract": False,
             },
         ),
         migrations.CreateModel(
-            name='License',
+            name="License",
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('name', models.CharField(help_text='SPDX license code from https://spdx.org/licenses/', max_length=200)),
-                ('url', models.URLField(blank=True)),
+                (
+                    "id",
+                    models.AutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "name",
+                    models.CharField(
+                        help_text="SPDX license code from https://spdx.org/licenses/",
+                        max_length=200,
+                    ),
+                ),
+                ("url", models.URLField(blank=True)),
             ],
         ),
         migrations.CreateModel(
-            name='ProgrammingLanguage',
+            name="ProgrammingLanguage",
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('content_object', modelcluster.fields.ParentalKey(on_delete=django.db.models.deletion.CASCADE, related_name='tagged_release_languages', to='library.CodebaseRelease')),
-                ('tag', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='library_programminglanguage_items', to='taggit.Tag')),
+                (
+                    "id",
+                    models.AutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "content_object",
+                    modelcluster.fields.ParentalKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="tagged_release_languages",
+                        to="library.CodebaseRelease",
+                    ),
+                ),
+                (
+                    "tag",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="library_programminglanguage_items",
+                        to="taggit.Tag",
+                    ),
+                ),
             ],
             options={
-                'abstract': False,
+                "abstract": False,
             },
         ),
         migrations.CreateModel(
-            name='ReleaseContributor',
+            name="ReleaseContributor",
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('include_in_citation', models.BooleanField(default=True)),
-                ('roles', django.contrib.postgres.fields.ArrayField(base_field=models.CharField(choices=[('author', 'Author'), ('publisher', 'Publisher'), ('custodian', 'Custodian'), ('resourceProvider', 'Resource Provider'), ('maintainer', 'Maintainer'), ('pointOfContact', 'Point of contact'), ('editor', 'Editor'), ('contributor', 'Contributor'), ('collaborator', 'Collaborator'), ('funder', 'Funder'), ('copyrightHolder', 'Copyright holder')], default='author', help_text='Roles from https://www.ngdc.noaa.gov/metadata/published/xsd/schema/resources/Codelist/gmxCodelists.xml#CI_RoleCode', max_length=100), default=list, size=None)),
-                ('index', models.PositiveSmallIntegerField(help_text='Ordering field for codebase contributors')),
-                ('contributor', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='codebase_contributors', to='library.Contributor')),
-                ('release', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='codebase_contributors', to='library.CodebaseRelease')),
+                (
+                    "id",
+                    models.AutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("include_in_citation", models.BooleanField(default=True)),
+                (
+                    "roles",
+                    django.contrib.postgres.fields.ArrayField(
+                        base_field=models.CharField(
+                            choices=[
+                                ("author", "Author"),
+                                ("publisher", "Publisher"),
+                                ("custodian", "Custodian"),
+                                ("resourceProvider", "Resource Provider"),
+                                ("maintainer", "Maintainer"),
+                                ("pointOfContact", "Point of contact"),
+                                ("editor", "Editor"),
+                                ("contributor", "Contributor"),
+                                ("collaborator", "Collaborator"),
+                                ("funder", "Funder"),
+                                ("copyrightHolder", "Copyright holder"),
+                            ],
+                            default="author",
+                            help_text="Roles from https://www.ngdc.noaa.gov/metadata/published/xsd/schema/resources/Codelist/gmxCodelists.xml#CI_RoleCode",
+                            max_length=100,
+                        ),
+                        default=list,
+                        size=None,
+                    ),
+                ),
+                (
+                    "index",
+                    models.PositiveSmallIntegerField(
+                        help_text="Ordering field for codebase contributors"
+                    ),
+                ),
+                (
+                    "contributor",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="codebase_contributors",
+                        to="library.Contributor",
+                    ),
+                ),
+                (
+                    "release",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="codebase_contributors",
+                        to="library.CodebaseRelease",
+                    ),
+                ),
             ],
         ),
         migrations.AddField(
-            model_name='contributor',
-            name='affiliations',
-            field=modelcluster.contrib.taggit.ClusterTaggableManager(help_text='A comma-separated list of tags.', through='library.ContributorAffiliation', to='taggit.Tag', verbose_name='Tags'),
+            model_name="contributor",
+            name="affiliations",
+            field=modelcluster.contrib.taggit.ClusterTaggableManager(
+                help_text="A comma-separated list of tags.",
+                through="library.ContributorAffiliation",
+                to="taggit.Tag",
+                verbose_name="Tags",
+            ),
         ),
         migrations.AddField(
-            model_name='contributor',
-            name='user',
-            field=models.ForeignKey(null=True, on_delete=django.db.models.deletion.SET_NULL, to=settings.AUTH_USER_MODEL),
+            model_name="contributor",
+            name="user",
+            field=models.ForeignKey(
+                null=True,
+                on_delete=django.db.models.deletion.SET_NULL,
+                to=settings.AUTH_USER_MODEL,
+            ),
         ),
         migrations.AddField(
-            model_name='codebaserelease',
-            name='contributors',
-            field=models.ManyToManyField(through='library.ReleaseContributor', to='library.Contributor'),
+            model_name="codebaserelease",
+            name="contributors",
+            field=models.ManyToManyField(
+                through="library.ReleaseContributor", to="library.Contributor"
+            ),
         ),
         migrations.AddField(
-            model_name='codebaserelease',
-            name='license',
-            field=models.ForeignKey(null=True, on_delete=django.db.models.deletion.SET_NULL, to='library.License'),
+            model_name="codebaserelease",
+            name="license",
+            field=models.ForeignKey(
+                null=True,
+                on_delete=django.db.models.deletion.SET_NULL,
+                to="library.License",
+            ),
         ),
         migrations.AddField(
-            model_name='codebaserelease',
-            name='platform_tags',
-            field=modelcluster.contrib.taggit.ClusterTaggableManager(help_text='A comma-separated list of tags.', related_name='platform_codebase_releases', through='library.CodebaseReleasePlatformTag', to='taggit.Tag', verbose_name='Tags'),
+            model_name="codebaserelease",
+            name="platform_tags",
+            field=modelcluster.contrib.taggit.ClusterTaggableManager(
+                help_text="A comma-separated list of tags.",
+                related_name="platform_codebase_releases",
+                through="library.CodebaseReleasePlatformTag",
+                to="taggit.Tag",
+                verbose_name="Tags",
+            ),
         ),
         migrations.AddField(
-            model_name='codebaserelease',
-            name='platforms',
-            field=models.ManyToManyField(to='core.Platform'),
+            model_name="codebaserelease",
+            name="platforms",
+            field=models.ManyToManyField(to="core.Platform"),
         ),
         migrations.AddField(
-            model_name='codebaserelease',
-            name='programming_languages',
-            field=modelcluster.contrib.taggit.ClusterTaggableManager(help_text='A comma-separated list of tags.', related_name='pl_codebase_releases', through='library.ProgrammingLanguage', to='taggit.Tag', verbose_name='Tags'),
+            model_name="codebaserelease",
+            name="programming_languages",
+            field=modelcluster.contrib.taggit.ClusterTaggableManager(
+                help_text="A comma-separated list of tags.",
+                related_name="pl_codebase_releases",
+                through="library.ProgrammingLanguage",
+                to="taggit.Tag",
+                verbose_name="Tags",
+            ),
         ),
         migrations.AddField(
-            model_name='codebaserelease',
-            name='submitter',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, to=settings.AUTH_USER_MODEL),
+            model_name="codebaserelease",
+            name="submitter",
+            field=models.ForeignKey(
+                on_delete=django.db.models.deletion.PROTECT, to=settings.AUTH_USER_MODEL
+            ),
         ),
         migrations.AddField(
-            model_name='codebase',
-            name='latest_version',
-            field=models.ForeignKey(null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='latest_version', to='library.CodebaseRelease'),
+            model_name="codebase",
+            name="latest_version",
+            field=models.ForeignKey(
+                null=True,
+                on_delete=django.db.models.deletion.SET_NULL,
+                related_name="latest_version",
+                to="library.CodebaseRelease",
+            ),
         ),
         migrations.AddField(
-            model_name='codebase',
-            name='submitter',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, related_name='codebases', to=settings.AUTH_USER_MODEL),
+            model_name="codebase",
+            name="submitter",
+            field=models.ForeignKey(
+                on_delete=django.db.models.deletion.PROTECT,
+                related_name="codebases",
+                to=settings.AUTH_USER_MODEL,
+            ),
         ),
         migrations.AddField(
-            model_name='codebase',
-            name='tags',
-            field=modelcluster.contrib.taggit.ClusterTaggableManager(help_text='A comma-separated list of tags.', through='library.CodebaseTag', to='taggit.Tag', verbose_name='Tags'),
+            model_name="codebase",
+            name="tags",
+            field=modelcluster.contrib.taggit.ClusterTaggableManager(
+                help_text="A comma-separated list of tags.",
+                through="library.CodebaseTag",
+                to="taggit.Tag",
+                verbose_name="Tags",
+            ),
         ),
         migrations.AlterUniqueTogether(
-            name='codebaserendition',
-            unique_together={('image', 'filter_spec', 'focal_point_key')},
+            name="codebaserendition",
+            unique_together={("image", "filter_spec", "focal_point_key")},
         ),
         migrations.AddIndex(
-            model_name='codebasereleasedownload',
-            index=models.Index(fields=['date_created'], name='library_cod_date_cr_83d59c_idx'),
+            model_name="codebasereleasedownload",
+            index=models.Index(
+                fields=["date_created"], name="library_cod_date_cr_83d59c_idx"
+            ),
         ),
         migrations.AlterUniqueTogether(
-            name='codebaserelease',
-            unique_together={('codebase', 'version_number')},
+            name="codebaserelease",
+            unique_together={("codebase", "version_number")},
         ),
     ]

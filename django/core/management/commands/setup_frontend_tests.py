@@ -12,12 +12,15 @@ class Command(BaseCommand):
         user, created = User.objects.get_or_create(
             pk=settings.TEST_USER_ID,
             username=settings.TEST_USERNAME,
-            defaults=dict(first_name='Test', last_name='User', email='a@b.com'))
+            defaults=dict(first_name="Test", last_name="User", email="a@b.com"),
+        )
         ComsesGroups.initialize()
         user.set_password(settings.TEST_BASIC_AUTH_PASSWORD)
         user.save()
         mp, created = MemberProfile.objects.get_or_create(user=user)
-        mp.institution = Institution.objects.get_or_create(name='ASU', url='https://www.asu.edu')[0]
+        mp.institution = Institution.objects.get_or_create(
+            name="ASU", url="https://www.asu.edu"
+        )[0]
         mp.save()
         ea, created = EmailAddress.objects.get_or_create(user=user, email=user.email)
         ea.verified = True

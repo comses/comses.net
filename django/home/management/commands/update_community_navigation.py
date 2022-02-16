@@ -10,6 +10,7 @@ from home.models import CategoryIndexPage, ConferenceIndexPage
 
 logger = logging.getLogger(__name__)
 
+
 class Command(BaseCommand):
 
     """
@@ -20,11 +21,11 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         COMMUNITY_NAVIGATION_LINKS = (
-            ('Community', '/community/'),
-            ('Virtual Conferences', '/conference/'),
-            ('CoMSES Digest', '/digest/')
+            ("Community", "/community/"),
+            ("Virtual Conferences", "/conference/"),
+            ("CoMSES Digest", "/digest/"),
         )
-        community_page = CategoryIndexPage.objects.get(slug='community')
+        community_page = CategoryIndexPage.objects.get(slug="community")
         community_page.navigation_links.all().delete()
         # existing navigation link structure
         # 0 = Community

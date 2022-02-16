@@ -5,7 +5,11 @@ from django.contrib.auth.models import Permission
 from django.core.exceptions import PermissionDenied
 from guardian.shortcuts import get_perms
 
-from core.queryset import PUBLISHED_ATTRIBUTE_KEY, DELETABLE_ATTRIBUTE_KEY, OWNER_ATTRIBUTE_KEY
+from core.queryset import (
+    PUBLISHED_ATTRIBUTE_KEY,
+    DELETABLE_ATTRIBUTE_KEY,
+    OWNER_ATTRIBUTE_KEY,
+)
 
 """
 Custom permission checking for models
@@ -24,7 +28,7 @@ def is_object_action(perm: str):
     :param perm: string permission
     :return: Returns True if the permission makes sense on an object
     """
-    return 'change_' in perm or 'delete_' in perm or 'view_' in perm
+    return "change_" in perm or "delete_" in perm or "view_" in perm
 
 
 def is_view_action(perm: str):
@@ -33,20 +37,22 @@ def is_view_action(perm: str):
     :return: Returns True if string permission defined by the perms_map in ComsesPermission corresponds to
     a GET request (e.g., contains "view_"), False otherwise
     """
-    return 'view_' in perm
+    return "view_" in perm
 
 
 def is_delete_action(perm: str):
-    return 'delete_' in perm
+    return "delete_" in perm
 
 
 def get_model(perm):
     try:
-        app_label, codename = perm.split('.')
+        app_label, codename = perm.split(".")
     except ValueError:
-        logger.error('Failed to split {}'.format(perm))
+        logger.error("Failed to split {}".format(perm))
         raise
-    permission = Permission.objects.get(content_type__app_label=app_label, codename=codename)
+    permission = Permission.objects.get(
+        content_type__app_label=app_label, codename=codename
+    )
     return permission.content_type.model_class()
 
 
@@ -112,7 +118,7 @@ class ComsesObjectPermissionBackend:
     - allow viewing of published models to everyone
     """
 
-    HANDLED_PERMS = re.compile('add_|change_|delete_|view_')
+    HANDLED_PERMS = re.compile("add_|change_|delete_|view_")
 
     def authenticate(self, request, username, password, **kwargs):
         return None
@@ -127,10 +133,12 @@ class ComsesObjectPermissionBackend:
 
         model = get_model(perm)
         if model in HANDLED_MODELS and re.search(self.HANDLED_PERMS, perm):
-            return has_authenticated_model_permission(user, perm, obj) or \
-                   has_delete_permission(perm, obj) or \
-                   has_view_permission(perm, user, obj) or \
-                   has_submitter_permission(user, obj)
+            return (
+                has_authenticated_model_permission(user, perm, obj)
+                or has_delete_permission(perm, obj)
+                or has_view_permission(perm, user, obj)
+                or has_submitter_permission(user, obj)
+            )
         else:
             # Unhandled permissions are handled by the next permissions backend
             return False

@@ -6,12 +6,12 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('library', '0011_update_replication_text'),
+        ("library", "0011_update_replication_text"),
     ]
 
     operations = [
         migrations.RemoveField(
-            model_name='codebase',
-            name='is_replication',
+            model_name="codebase",
+            name="is_replication",
         ),
     ]

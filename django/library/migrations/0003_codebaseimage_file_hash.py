@@ -6,13 +6,13 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('library', '0002_add_peer_review_workflow_20180529_1814'),
+        ("library", "0002_add_peer_review_workflow_20180529_1814"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='codebaseimage',
-            name='file_hash',
+            model_name="codebaseimage",
+            name="file_hash",
             field=models.CharField(blank=True, editable=False, max_length=40),
         ),
     ]

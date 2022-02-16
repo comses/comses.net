@@ -7,18 +7,23 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('home', '0010_people_page_description_markdown'),
+        ("home", "0010_people_page_description_markdown"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='journal',
-            name='description',
+            model_name="journal",
+            name="description",
             field=core.fields.MarkdownField(blank=True, rendered_field=True),
         ),
         migrations.AlterField(
-            model_name='markdownpage',
-            name='description',
-            field=core.fields.MarkdownField(blank=True, help_text='Markdown-enabled summary text placed below the heading and title.', max_length=1024, rendered_field=True),
+            model_name="markdownpage",
+            name="description",
+            field=core.fields.MarkdownField(
+                blank=True,
+                help_text="Markdown-enabled summary text placed below the heading and title.",
+                max_length=1024,
+                rendered_field=True,
+            ),
         ),
     ]

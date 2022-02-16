@@ -6,16 +6,16 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('core', '0002_platform_description_20180520_0549'),
+        ("core", "0002_platform_description_20180520_0549"),
     ]
 
     operations = [
         migrations.AlterModelOptions(
-            name='event',
+            name="event",
             options={},
         ),
         migrations.AlterModelOptions(
-            name='job',
+            name="job",
             options={},
         ),
     ]

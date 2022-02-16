@@ -18,21 +18,21 @@ def fsck(queryset):
 def pretty_print_fsck_results(results):
     for id, result in results.items():
         release, errors = result
-        print('ID: {}'.format(id))
-        print('Release: {}'.format(release))
-        print('Errors')
+        print("ID: {}".format(id))
+        print("Release: {}".format(release))
+        print("Errors")
         for error in errors:
             if isinstance(error, FileNotFoundError):
-                error_msg = 'FileNotFoundError({})'.format(repr(error.filename))
+                error_msg = "FileNotFoundError({})".format(repr(error.filename))
             else:
                 error_msg = error
-            print('  {}'.format(error_msg))
-        print('\n')
+            print("  {}".format(error_msg))
+        print("\n")
 
 
 def hash_file(path, chunk_size=65536):
     sha256 = hashlib.sha256()
-    with open(path, 'rb') as f:
+    with open(path, "rb") as f:
         while True:
             data = f.read(chunk_size)
             if not data:
@@ -55,10 +55,10 @@ class CodebaseReleaseFileConsistencyChecker:
         # generate archive.zip into temporary location and compare hashes
         if self.release.is_published:
             with TemporaryDirectory() as d:
-                new_archive_path = os.path.join(d, 'archive.zip')
+                new_archive_path = os.path.join(d, "archive.zip")
                 aip_exists = self.fs_api.build_archive_at_dest(new_archive_path)
                 if not aip_exists:
-                    raise IOError('AIP directory does not exist')
+                    raise IOError("AIP directory does not exist")
                 new_archive_hash = hash_file(new_archive_path)
                 old_archive_hash = hash_file(str(self.fs_api.archivepath))
                 return new_archive_hash.hexdigest() == old_archive_hash.hexdigest()

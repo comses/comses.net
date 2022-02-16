@@ -6,13 +6,15 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('core', '0010_add_member_profile_short_uuid'),
+        ("core", "0010_add_member_profile_short_uuid"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='memberprofile',
-            name='affiliations',
-            field=models.JSONField(default=list, help_text='JSON-LD list of affiliated institutions'),
+            model_name="memberprofile",
+            name="affiliations",
+            field=models.JSONField(
+                default=list, help_text="JSON-LD list of affiliated institutions"
+            ),
         ),
     ]

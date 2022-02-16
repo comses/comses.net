@@ -6,7 +6,7 @@ import logging
 
 from django.core.management.base import BaseCommand
 
-from home.models import (ConferenceIndexPage, ConferencePage)
+from home.models import ConferenceIndexPage, ConferencePage
 
 logger = logging.getLogger(__name__)
 
@@ -53,26 +53,30 @@ COMSES_2019_SUBMISSION_INFO = """
 [Submit video presentation](submit).
 """
 
+
 class Command(BaseCommand):
 
     """
     Create CoMSES 2019 virtual conference conference landing page
     """
+
     def build_comses_2019_page(self, conference_index_page):
         comses_2019 = ConferencePage(
-            slug='2019',
-            start_date='2019-10-7',
-            end_date='2019-10-25',
-            title='CoMSES 2019',
+            slug="2019",
+            start_date="2019-10-7",
+            end_date="2019-10-25",
+            title="CoMSES 2019",
             introduction=COMSES_2019_INTRO,
             content=COMSES_2019_CONTENT,
             submission_information=COMSES_2019_SUBMISSION_INFO,
-            external_url='https://forum.comses.net/c/events/comses-2019',
-            submission_deadline='2019-9-30',
+            external_url="https://forum.comses.net/c/events/comses-2019",
+            submission_deadline="2019-9-30",
         )
         conference_index_page.add_child(instance=comses_2019)
 
     def handle(self, *args, **options):
-        conference_index_title = 'CoMSES Virtual Conferences'
-        conference_index_page = ConferenceIndexPage.objects.get(title=conference_index_title)
+        conference_index_title = "CoMSES Virtual Conferences"
+        conference_index_page = ConferenceIndexPage.objects.get(
+            title=conference_index_title
+        )
         self.build_comses_2019_page(conference_index_page)

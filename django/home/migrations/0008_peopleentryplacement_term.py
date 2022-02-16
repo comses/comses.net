@@ -6,13 +6,17 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('home', '0007_conferencesubmission'),
+        ("home", "0007_conferencesubmission"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='peopleentryplacement',
-            name='term',
-            field=models.CharField(blank=True, help_text='The term for a given board member (e.g., 2016-2018)', max_length=32),
+            model_name="peopleentryplacement",
+            name="term",
+            field=models.CharField(
+                blank=True,
+                help_text="The term for a given board member (e.g., 2016-2018)",
+                max_length=32,
+            ),
         ),
     ]

@@ -60,21 +60,23 @@ class MessageLevels(Enum):
         return MessageLevels(max(self.value - 1, minimum))
 
 
-mimetypes.add_type('text/x-rst', '.rst')
-mimetypes.add_type('text/x-netlogo', '.nls')
-mimetypes.add_type('text/x-netlogo', '.nlogo')
-mimetypes.add_type('text/markdown', '.md')
-mimetypes.add_type('text/x-r-source', '.r')
+mimetypes.add_type("text/x-rst", ".rst")
+mimetypes.add_type("text/x-netlogo", ".nls")
+mimetypes.add_type("text/x-netlogo", ".nlogo")
+mimetypes.add_type("text/markdown", ".md")
+mimetypes.add_type("text/x-r-source", ".r")
 
-ACCEPT_ALL_REGEX = re.compile(r'.*')
+ACCEPT_ALL_REGEX = re.compile(r".*")
 
 MIMETYPE_MATCHER = {
     FileCategoryDirectories.code: ACCEPT_ALL_REGEX,
     FileCategoryDirectories.data: ACCEPT_ALL_REGEX,
-    FileCategoryDirectories.docs: re.compile(r'text/markdown|application/pdf|text/plain|text/x-rtf|application/vnd.oasis.opendocument.text'),
-    FileCategoryDirectories.media: re.compile(r'image/.*|video/.*'),
+    FileCategoryDirectories.docs: re.compile(
+        r"text/markdown|application/pdf|text/plain|text/x-rtf|application/vnd.oasis.opendocument.text"
+    ),
+    FileCategoryDirectories.media: re.compile(r"image/.*|video/.*"),
     FileCategoryDirectories.originals: ACCEPT_ALL_REGEX,
-    FileCategoryDirectories.results: ACCEPT_ALL_REGEX
+    FileCategoryDirectories.results: ACCEPT_ALL_REGEX,
 }
 
 
@@ -83,8 +85,11 @@ def get_category(name) -> FileCategoryDirectories:
     try:
         return FileCategoryDirectories[category_name]
     except KeyError:
-        raise ValidationError('Target folder name {} invalid. Must be one of {}'.format(category_name, list(
-            d.name for d in FileCategoryDirectories)))
+        raise ValidationError(
+            "Target folder name {} invalid. Must be one of {}".format(
+                category_name, list(d.name for d in FileCategoryDirectories)
+            )
+        )
 
 
 def get_mimetype_matcher(name):
@@ -114,7 +119,7 @@ class MessageGroup:
         return len(self.msgs) > 0
 
     def __repr__(self):
-        return '<MessageGroup {0}>'.format(repr(self.msgs))
+        return "<MessageGroup {0}>".format(repr(self.msgs))
 
     def append(self, msg: Optional):
         if msg is not None and msg:
@@ -151,7 +156,7 @@ class Message:
         return repr(self.serialize())
 
     def serialize(self):
-        return {'level': self.level.name, 'msg': self.msg}
+        return {"level": self.level.name, "msg": self.msg}
 
     @property
     def has_errors(self):
@@ -159,18 +164,26 @@ class Message:
 
 
 def create_fs_message(detail, stage: StagingDirectories, level: MessageLevels):
-    return Message({'detail': str(detail), 'stage': stage.name}, level=level)
+    return Message({"detail": str(detail), "stage": stage.name}, level=level)
 
 
 class CodebaseReleaseStorage(FileSystemStorage):
     stage = None
 
-    def __init__(self, mimetype_mismatch_message_level,
-                 location=None, base_url=None, file_permissions_mode=None,
-                 directory_permissions_mode=None):
-        super().__init__(location=location, base_url=base_url,
-                         file_permissions_mode=file_permissions_mode,
-                         directory_permissions_mode=directory_permissions_mode)
+    def __init__(
+        self,
+        mimetype_mismatch_message_level,
+        location=None,
+        base_url=None,
+        file_permissions_mode=None,
+        directory_permissions_mode=None,
+    ):
+        super().__init__(
+            location=location,
+            base_url=base_url,
+            file_permissions_mode=file_permissions_mode,
+            directory_permissions_mode=directory_permissions_mode,
+        )
         self.mimetype_mismatch_message_level = mimetype_mismatch_message_level
 
     def validate_system_file(self, name, content) -> Optional[Message]:
@@ -182,10 +195,13 @@ class CodebaseReleaseStorage(FileSystemStorage):
     def validate_mimetype(self, name):
         mimetype_matcher = get_mimetype_matcher(name)
         mimetype = mimetypes.guess_type(name)[0]
-        mimetype = mimetype if mimetype else '*/*'
+        mimetype = mimetype if mimetype else "*/*"
         if not mimetype_matcher.match(mimetype):
-            return create_fs_message("Ignored file '{}'. File type mismatch.".format(name), self.stage,
-                                     self.mimetype_mismatch_message_level)
+            return create_fs_message(
+                "Ignored file '{}'. File type mismatch.".format(name),
+                self.stage,
+                self.mimetype_mismatch_message_level,
+            )
         return None
 
     def validate_file(self, name, content):
@@ -206,7 +222,7 @@ class CodebaseReleaseStorage(FileSystemStorage):
         path = Path(self.location)
         if category is not None:
             path = path.joinpath(category.name)
-        for p in path.rglob('*'):
+        for p in path.rglob("*"):
             if p.is_file():
                 if absolute:
                     yield p
@@ -215,9 +231,7 @@ class CodebaseReleaseStorage(FileSystemStorage):
 
     def get_available_name(self, name, max_length=None):
         if self.exists(name):
-            raise ValueError(
-                'Storage filename "%s" already taken' % name
-            )
+            raise ValueError('Storage filename "%s" already taken' % name)
         return name
 
     def info(self, msg):
@@ -281,7 +295,7 @@ class CodebaseReleaseOriginalStorage(CodebaseReleaseStorage):
     def has_existing_archive(self, category):
         path = Path(self.location, category.name)
         os.makedirs(str(path), exist_ok=True)
-        for subpath in path.glob('*'):
+        for subpath in path.glob("*"):
             if subpath.is_file() and fs.is_archive(str(subpath)):
                 return True
         return False
@@ -290,13 +304,21 @@ class CodebaseReleaseOriginalStorage(CodebaseReleaseStorage):
         msgs = super().validate_file(name, content)
         category = get_category(name)
         if self.has_existing_archive(category):
-            msgs.append(self.error(
-                'This file cannot be added because files have already been archived here.'
-                ' Please remove all files and try again.'))
-        if os.listdir(os.path.join(self.location, category.name)) and fs.is_archive(name):
-            msgs.append(self.error(
-                'This archive cannot be added because files have already been archived here. '
-                'Please remove all files and try again.'))
+            msgs.append(
+                self.error(
+                    "This file cannot be added because files have already been archived here."
+                    " Please remove all files and try again."
+                )
+            )
+        if os.listdir(os.path.join(self.location, category.name)) and fs.is_archive(
+            name
+        ):
+            msgs.append(
+                self.error(
+                    "This archive cannot be added because files have already been archived here. "
+                    "Please remove all files and try again."
+                )
+            )
         return msgs
 
 
@@ -327,9 +349,12 @@ class CodebaseReleaseFsApi:
     hold
     """
 
-    def __init__(self, codebase_release,
-                 system_file_presence_message_level=MessageLevels.error,
-                 mimetype_mismatch_message_level=MessageLevels.error):
+    def __init__(
+        self,
+        codebase_release,
+        system_file_presence_message_level=MessageLevels.error,
+        mimetype_mismatch_message_level=MessageLevels.error,
+    ):
         self.uuid = str(codebase_release.codebase.uuid)
         self.identifier = codebase_release.codebase.identifier
         self.version_number = codebase_release.version_number
@@ -339,65 +364,71 @@ class CodebaseReleaseFsApi:
         self.mimetype_mismatch_message_level = mimetype_mismatch_message_level
 
     def logfilename(self):
-        return self.rootdir.joinpath('audit.log')
+        return self.rootdir.joinpath("audit.log")
 
     @property
     def lockfilename(self):
-        return self.rootdir.joinpath('lock')
+        return self.rootdir.joinpath("lock")
 
     @property
     def archivepath(self):
-        return self.rootdir.joinpath('archive.zip')
+        return self.rootdir.joinpath("archive.zip")
 
     @property
     def review_archivepath(self):
-        return self.rootdir.joinpath('review_archive.zip')
+        return self.rootdir.joinpath("review_archive.zip")
 
     @property
     def rootdir(self):
-        return Path(settings.LIBRARY_ROOT, str(self.uuid), 'releases', str(self.release_id)).absolute()
+        return Path(
+            settings.LIBRARY_ROOT, str(self.uuid), "releases", str(self.release_id)
+        ).absolute()
 
     @property
     def aip_dir(self):
-        return self.rootdir.joinpath('aip')
+        return self.rootdir.joinpath("aip")
 
     @property
     def aip_contents_dir(self):
-        return self.aip_dir.joinpath('data')
+        return self.aip_dir.joinpath("data")
 
     @property
     def originals_dir(self):
-        return self.rootdir.joinpath('originals')
+        return self.rootdir.joinpath("originals")
 
     @property
     def sip_dir(self):
-        return self.rootdir.joinpath('sip')
+        return self.rootdir.joinpath("sip")
 
     @property
     def codemeta_path(self):
-        return self.sip_contents_dir.joinpath('codemeta.json')
+        return self.sip_contents_dir.joinpath("codemeta.json")
 
     @property
     def sip_contents_dir(self):
-        return self.sip_dir.joinpath('data')
+        return self.sip_dir.joinpath("data")
 
     def get_originals_storage(self, originals_dir=None):
         if originals_dir is None:
             originals_dir = self.originals_dir
         return CodebaseReleaseOriginalStorage(
             mimetype_mismatch_message_level=self.mimetype_mismatch_message_level,
-            location=str(originals_dir)
+            location=str(originals_dir),
         )
 
     def get_sip_storage(self, mimetype_mismatch_message_level=None):
         if mimetype_mismatch_message_level is None:
             mimetype_mismatch_message_level = self.mimetype_mismatch_message_level
-        return CodebaseReleaseSipStorage(mimetype_mismatch_message_level=mimetype_mismatch_message_level,
-                                         location=str(self.sip_contents_dir))
+        return CodebaseReleaseSipStorage(
+            mimetype_mismatch_message_level=mimetype_mismatch_message_level,
+            location=str(self.sip_contents_dir),
+        )
 
     def get_aip_storage(self):
-        return CodebaseReleaseAipStorage(mimetype_mismatch_message_level=self.mimetype_mismatch_message_level,
-                                         location=str(self.aip_contents_dir))
+        return CodebaseReleaseAipStorage(
+            mimetype_mismatch_message_level=self.mimetype_mismatch_message_level,
+            location=str(self.aip_contents_dir),
+        )
 
     def get_stage_storage(self, stage: StagingDirectories):
         if stage == StagingDirectories.originals:
@@ -407,22 +438,38 @@ class CodebaseReleaseFsApi:
         elif stage == StagingDirectories.aip:
             return self.get_aip_storage()
         else:
-            raise ValueError('StageDirectories values {} not valid'.format(stage))
+            raise ValueError("StageDirectories values {} not valid".format(stage))
 
     def get_sip_list_url(self, category: FileCategoryDirectories):
-        return reverse('library:codebaserelease-sip-files-list',
-                       kwargs={'identifier': str(self.identifier), 'version_number': self.version_number,
-                               'category': category.name})
+        return reverse(
+            "library:codebaserelease-sip-files-list",
+            kwargs={
+                "identifier": str(self.identifier),
+                "version_number": self.version_number,
+                "category": category.name,
+            },
+        )
 
     def get_originals_list_url(self, category: FileCategoryDirectories):
-        return reverse('library:codebaserelease-original-files-list',
-                       kwargs={'identifier': str(self.identifier), 'version_number': self.version_number,
-                               'category': category.name})
+        return reverse(
+            "library:codebaserelease-original-files-list",
+            kwargs={
+                "identifier": str(self.identifier),
+                "version_number": self.version_number,
+                "category": category.name,
+            },
+        )
 
     def get_absolute_url(self, category: FileCategoryDirectories, relpath: Path):
-        return reverse('library:codebaserelease-original-files-detail',
-                       kwargs={'identifier': str(self.identifier), 'version_number': self.version_number,
-                               'category': category.name, 'relpath': str(relpath)})
+        return reverse(
+            "library:codebaserelease-original-files-detail",
+            kwargs={
+                "identifier": str(self.identifier),
+                "version_number": self.version_number,
+                "category": category.name,
+                "relpath": str(relpath),
+            },
+        )
 
     def _create_msg_group(self):
         return MessageGroup()
@@ -438,14 +485,18 @@ class CodebaseReleaseFsApi:
             logger.info("path %s with md5 %s", path, fixity)
 
     @classmethod
-    def initialize(cls, codebase_release,
-                   system_file_presence_message_level=MessageLevels.error,
-                   mimetype_mismatch_message_level=MessageLevels.error,
-                   bagit_info=None):
+    def initialize(
+        cls,
+        codebase_release,
+        system_file_presence_message_level=MessageLevels.error,
+        mimetype_mismatch_message_level=MessageLevels.error,
+        bagit_info=None,
+    ):
         fs_api = CodebaseReleaseFsApi(
             codebase_release,
             system_file_presence_message_level=system_file_presence_message_level,
-            mimetype_mismatch_message_level=mimetype_mismatch_message_level)
+            mimetype_mismatch_message_level=mimetype_mismatch_message_level,
+        )
         sip_dir = fs_api.sip_dir
         if not sip_dir.exists():
             os.makedirs(sip_dir, exist_ok=True)
@@ -460,7 +511,7 @@ class CodebaseReleaseFsApi:
         """
         path = self.codemeta_path
         if force or not path.exists():
-            with path.open(mode='w', encoding='utf-8') as codemeta_out:
+            with path.open(mode="w", encoding="utf-8") as codemeta_out:
                 json.dump(self.codemeta.to_dict(), codemeta_out)
             return True
         return False
@@ -476,8 +527,11 @@ class CodebaseReleaseFsApi:
 
     def build_review_archive(self):
         self.create_or_update_codemeta(force=True)
-        shutil.make_archive(str(self.review_archivepath.with_suffix('')),
-                            format='zip', root_dir=str(self.sip_contents_dir))
+        shutil.make_archive(
+            str(self.review_archivepath.with_suffix("")),
+            format="zip",
+            root_dir=str(self.sip_contents_dir),
+        )
         return self.review_archivepath
 
     @property
@@ -486,12 +540,12 @@ class CodebaseReleaseFsApi:
 
     @property
     def archive_uri(self):
-        """ returns the internal URI used by nginx to access this release's official archive package """
+        """returns the internal URI used by nginx to access this release's official archive package"""
         return self.archivepath.relative_to(settings.LIBRARY_ROOT)
 
     @property
     def review_archive_uri(self):
-        """ returns the internal uri used by nginx to access this release's review archive package """
+        """returns the internal uri used by nginx to access this release's review archive package"""
         return self.review_archivepath.relative_to(settings.LIBRARY_ROOT)
 
     @property
@@ -508,25 +562,32 @@ class CodebaseReleaseFsApi:
         sip_storage = self.get_sip_storage()
         sip_storage.clear_category(category)
 
-    def list(self, stage: StagingDirectories, category: Optional[FileCategoryDirectories]):
+    def list(
+        self, stage: StagingDirectories, category: Optional[FileCategoryDirectories]
+    ):
         stage_storage = self.get_stage_storage(stage)
         return [str(p) for p in stage_storage.list(category)]
 
     def list_sip_contents(self, path=None):
         if path is None:
             path = self.sip_contents_dir
-            name = 'archive-project-root'
+            name = "archive-project-root"
         else:
             name = path.name
-        contents = {'label': name, 'contents': []}
+        contents = {"label": name, "contents": []}
         for p in path.iterdir():
             if p.is_dir():
-                contents['contents'].append(self.list_sip_contents(p))
+                contents["contents"].append(self.list_sip_contents(p))
             else:
-                contents['contents'].append({'label': p.name})
+                contents["contents"].append({"label": p.name})
         return contents
 
-    def retrieve(self, stage: StagingDirectories, category: FileCategoryDirectories, relpath: Path):
+    def retrieve(
+        self,
+        stage: StagingDirectories,
+        category: FileCategoryDirectories,
+        relpath: Path,
+    ):
         stage_storage = self.get_stage_storage(stage)
         relpath = Path(category.name, relpath)
         return stage_storage.open(str(relpath))
@@ -540,8 +601,13 @@ class CodebaseReleaseFsApi:
             self.clear_category(category)
         else:
             if not originals_storage.exists(str(relpath)):
-                logs.append(create_fs_message('No file at path {} to delete'.format(str(relpath)),
-                                              StagingDirectories.originals, MessageLevels.error))
+                logs.append(
+                    create_fs_message(
+                        "No file at path {} to delete".format(str(relpath)),
+                        StagingDirectories.originals,
+                        MessageLevels.error,
+                    )
+                )
                 return logs
             logs.append(sip_storage.log_delete(str(relpath)))
             logs.append(originals_storage.log_delete(str(relpath)))
@@ -565,7 +631,7 @@ class CodebaseReleaseFsApi:
                 filename = os.path.join(dirpath, filename)
                 name = os.path.join(category.name, str(Path(filename).relative_to(src)))
                 logger.debug("adding file {}".format(name))
-                with open(filename, 'rb') as content:
+                with open(filename, "rb") as content:
                     msgs.append(originals_storage.log_save(name, content))
         return msgs
 
@@ -606,8 +672,10 @@ class CodebaseReleaseFsApi:
             path = self.originals_dir.joinpath(name)
             logger.debug("adding file: {}".format(path.relative_to(self.originals_dir)))
             category = get_category(Path(name).parts[0])
-            with File(path.open('rb')) as f:
-                msgs.append(self._add_to_sip(name=str(name), content=f, category=category))
+            with File(path.open("rb")) as f:
+                msgs.append(
+                    self._add_to_sip(name=str(name), content=f, category=category)
+                )
 
         return msgs
 
@@ -622,11 +690,14 @@ class CodebaseReleaseFsApi:
         logger.info("building archive")
         self.build_aip()
         if self.aip_contents_dir.exists():
-            with zipfile.ZipFile(dest, 'w') as archive:
+            with zipfile.ZipFile(dest, "w") as archive:
                 for root_path, dirs, file_paths in os.walk(str(self.aip_contents_dir)):
                     for file_path in file_paths:
                         path = Path(root_path, file_path)
-                        archive.write(str(path), arcname=str(path.relative_to(self.aip_contents_dir)))
+                        archive.write(
+                            str(path),
+                            arcname=str(path.relative_to(self.aip_contents_dir)),
+                        )
             logger.info("building archive succeeded")
             return True
         else:
@@ -650,23 +721,25 @@ class ArchiveExtractor:
 
     def extractall(self, unpack_destination, filename):
         mimetype = mimetypes.guess_type(filename)[0]
-        if mimetype == 'application/zip':
-            with zipfile.ZipFile(filename, 'r') as z:
+        if mimetype == "application/zip":
+            with zipfile.ZipFile(filename, "r") as z:
                 z.extractall(path=unpack_destination)
 
-        elif mimetype == 'application/x-tar':
-            with tarfile.TarFile(filename, 'r') as t:
+        elif mimetype == "application/x-tar":
+            with tarfile.TarFile(filename, "r") as t:
                 t.extractall(path=unpack_destination)
 
-        elif mimetype == 'application/rar':
-            if hasattr(filename, 'name'):
-                raise TypeError('RAR archives cannot be extracted from file objects. Requires string filename')
+        elif mimetype == "application/rar":
+            if hasattr(filename, "name"):
+                raise TypeError(
+                    "RAR archives cannot be extracted from file objects. Requires string filename"
+                )
 
-            with rarfile.RarFile(filename, 'r') as r:
+            with rarfile.RarFile(filename, "r") as r:
                 r.extractall(path=unpack_destination)
 
         else:
-            return Message('Archive {} is unsupported'.format(filename))
+            return Message("Archive {} is unsupported".format(filename))
 
     def find_root_directory(self, basedir):
         for dirpath, dirnames, filenames in os.walk(basedir):
@@ -680,33 +753,49 @@ class ArchiveExtractor:
                 try:
                     msg = self.extractall(unpack_destination=d, filename=filename)
                 except zipfile.BadZipFile as e:
-                    msg = create_fs_message(e, StagingDirectories.sip, MessageLevels.error)
+                    msg = create_fs_message(
+                        e, StagingDirectories.sip, MessageLevels.error
+                    )
                 except tarfile.TarError as e:
-                    msg = create_fs_message(e, StagingDirectories.sip, MessageLevels.error)
+                    msg = create_fs_message(
+                        e, StagingDirectories.sip, MessageLevels.error
+                    )
                 except Exception as e:
                     logger.exception("Error unpacking archive")
-                    msg = create_fs_message(e, StagingDirectories.sip, MessageLevels.error)
+                    msg = create_fs_message(
+                        e, StagingDirectories.sip, MessageLevels.error
+                    )
 
                 if msg is not None:
                     return msg
 
                 rootdir = self.find_root_directory(d)
-                for unpacked_file in Path(rootdir).rglob('*'):
+                for unpacked_file in Path(rootdir).rglob("*"):
                     if unpacked_file.is_file():
-                        with File(unpacked_file.open('rb')) as unpacked_fileobj:
-                            relpath = Path(category.name, unpacked_file.relative_to(rootdir))
-                            msgs.append(self.sip_storage.log_save(name=str(relpath), content=unpacked_fileobj))
+                        with File(unpacked_file.open("rb")) as unpacked_fileobj:
+                            relpath = Path(
+                                category.name, unpacked_file.relative_to(rootdir)
+                            )
+                            msgs.append(
+                                self.sip_storage.log_save(
+                                    name=str(relpath), content=unpacked_fileobj
+                                )
+                            )
                 msgs.downgrade()
         except Exception as e:
-            msgs.append(create_fs_message(str(e), StagingDirectories.sip, MessageLevels.error))
+            msgs.append(
+                create_fs_message(str(e), StagingDirectories.sip, MessageLevels.error)
+            )
         return msgs
 
 
 def import_archive(codebase_release, nestedcode_folder_name, fs_api=None):
     if fs_api is None:
         fs_api = codebase_release.get_fs_api()
-    archive_name = '{}.zip'.format(nestedcode_folder_name)
-    shutil.make_archive(nestedcode_folder_name, 'zip', nestedcode_folder_name)
-    with open(archive_name, 'rb') as f:
-        msgs = fs_api.add(FileCategoryDirectories.code, content=f, name="nestedcode.zip")
+    archive_name = "{}.zip".format(nestedcode_folder_name)
+    shutil.make_archive(nestedcode_folder_name, "zip", nestedcode_folder_name)
+    with open(archive_name, "rb") as f:
+        msgs = fs_api.add(
+            FileCategoryDirectories.code, content=f, name="nestedcode.zip"
+        )
     return msgs

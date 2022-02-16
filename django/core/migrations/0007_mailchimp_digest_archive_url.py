@@ -6,13 +6,15 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('core', '0006_banner_message_markdown'),
+        ("core", "0006_banner_message_markdown"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='sitesettings',
-            name='mailchimp_digest_archive_url',
-            field=models.URLField(blank=True, help_text='Mailchimp Digest Campaign Archive URL'),
+            model_name="sitesettings",
+            name="mailchimp_digest_archive_url",
+            field=models.URLField(
+                blank=True, help_text="Mailchimp Digest Campaign Archive URL"
+            ),
         ),
     ]

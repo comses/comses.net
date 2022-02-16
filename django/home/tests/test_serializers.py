@@ -38,8 +38,8 @@ class MemberProfileSerializerTestCase(TestCase):
     def setUp(self):
         self.user_factory = UserFactory()
         self.user = self.user_factory.create()
-        self.user.first_name = 'Foo'
-        self.user.last_name = 'Bar'
+        self.user.first_name = "Foo"
+        self.user.last_name = "Bar"
         ComsesGroups.initialize()
 
     def test_email_address_update(self):
@@ -47,11 +47,13 @@ class MemberProfileSerializerTestCase(TestCase):
         other_email = other_user.email
 
         member_profile = self.user.member_profile
-        institution = Institution(url='https://foo.org', name='Foo Institute')
+        institution = Institution(url="https://foo.org", name="Foo Institute")
         institution.save()
         member_profile.institution = institution
         member_profile.save()
-        email_address = EmailAddress.objects.create(user=self.user, email=self.user.email)
+        email_address = EmailAddress.objects.create(
+            user=self.user, email=self.user.email
+        )
         email_address.set_as_primary()
 
         data = MemberProfileSerializer(member_profile).data
@@ -63,14 +65,14 @@ class MemberProfileSerializerTestCase(TestCase):
         self.assertEqual(EmailAddress.objects.count(), 1)
 
         # acceptable address
-        data['email'] = 'foo2@email.com'
+        data["email"] = "foo2@email.com"
         serializer = MemberProfileSerializer(instance=member_profile, data=data)
         serializer.is_valid(raise_exception=True)
         serializer.save()
-        self.assertTrue(EmailAddress.objects.filter(email=data['email']).exists())
+        self.assertTrue(EmailAddress.objects.filter(email=data["email"]).exists())
 
         # conflicting address
-        data['email'] = other_email
+        data["email"] = other_email
         serializer = MemberProfileSerializer(instance=member_profile, data=data)
         serializer.is_valid(raise_exception=True)
         with self.assertRaises(ValidationError):
@@ -80,25 +82,27 @@ class MemberProfileSerializerTestCase(TestCase):
         membership_profile = self.user.member_profile
         self.assertFalse(membership_profile.full_member)
 
-        institution = Institution(url='https://foo.org', name='Foo Institute')
+        institution = Institution(url="https://foo.org", name="Foo Institute")
         institution.save()
         membership_profile.institution = institution
         membership_profile.save()
         membership_profile_data = MemberProfileSerializer(membership_profile).data
 
         # Make user a full down member
-        membership_profile_data['full_member'] = True
-        serializer = MemberProfileSerializer(instance=membership_profile,
-                                             data=membership_profile_data)
+        membership_profile_data["full_member"] = True
+        serializer = MemberProfileSerializer(
+            instance=membership_profile, data=membership_profile_data
+        )
         serializer.is_valid(raise_exception=True)
         serializer.save()
         membership_profile = MemberProfile.objects.get(id=membership_profile.id)
         self.assertTrue(membership_profile.full_member)
 
         # Unsuccessfully attempt to downgrade membership status
-        membership_profile_data['full_member'] = False
-        serializer = MemberProfileSerializer(instance=membership_profile,
-                                             data=membership_profile_data)
+        membership_profile_data["full_member"] = False
+        serializer = MemberProfileSerializer(
+            instance=membership_profile, data=membership_profile_data
+        )
         serializer.is_valid(raise_exception=True)
         serializer.save()
         membership_profile = MemberProfile.objects.get(id=membership_profile.id)

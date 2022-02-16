@@ -10,7 +10,12 @@ from django.core.management.base import BaseCommand
 from django.db.models import Count, Max
 
 from core.models import MemberProfile, Job, Event
-from library.models import CodebaseReleaseDownload, CodebaseRelease, Codebase, PeerReview
+from library.models import (
+    CodebaseReleaseDownload,
+    CodebaseRelease,
+    Codebase,
+    PeerReview,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -19,97 +24,187 @@ class Command(BaseCommand):
     help = "Export download statistics CSV for a given time period"
 
     def add_arguments(self, parser):
-        parser.add_argument('--from', help='isoformat start date (yyyy-mm-dd) e.g., --from 2018-03-15')
-        parser.add_argument('--to', help='isoformat end date (yyyy-mm-dd) e.g., --to 2018-06-01. Blank defaults to today.', default=None)
-        parser.add_argument('--directory', '-d', help='directory to store statistics in', default='/shared/statistics')
-        parser.add_argument('--aggregations', '-a', default='release,codebase,ip,new,reviewed,summary',
-                            help='comma separated list of things to aggregate, default is release, codebase, ip, new, reviewed, users')
+        parser.add_argument(
+            "--from", help="isoformat start date (yyyy-mm-dd) e.g., --from 2018-03-15"
+        )
+        parser.add_argument(
+            "--to",
+            help="isoformat end date (yyyy-mm-dd) e.g., --to 2018-06-01. Blank defaults to today.",
+            default=None,
+        )
+        parser.add_argument(
+            "--directory",
+            "-d",
+            help="directory to store statistics in",
+            default="/shared/statistics",
+        )
+        parser.add_argument(
+            "--aggregations",
+            "-a",
+            default="release,codebase,ip,new,reviewed,summary",
+            help="comma separated list of things to aggregate, default is release, codebase, ip, new, reviewed, users",
+        )
 
     def export_release_download_statistics(self, downloads, dest):
-        releases = CodebaseRelease.objects.filter(id__in=downloads.values_list('release_id', flat=True)) \
-            .prefetch_related('codebase').only('version_number', 'codebase__identifier').in_bulk()
-        results = downloads.values('release_id').annotate(count=Count('*')).order_by('-count')
-        with open(dest, 'w', newline='') as f:
-            fieldnames = ['url', 'count', 'authors']
+        releases = (
+            CodebaseRelease.objects.filter(
+                id__in=downloads.values_list("release_id", flat=True)
+            )
+            .prefetch_related("codebase")
+            .only("version_number", "codebase__identifier")
+            .in_bulk()
+        )
+        results = (
+            downloads.values("release_id").annotate(count=Count("*")).order_by("-count")
+        )
+        with open(dest, "w", newline="") as f:
+            fieldnames = ["url", "count", "authors"]
             writer = csv.DictWriter(f, fieldnames=fieldnames)
             writer.writeheader()
             for result in results.iterator():
-                release = releases[result.get('release_id')]
-                authors = ', '.join([c.contributor.get_full_name() for c in release.index_ordered_release_contributors])
-                writer.writerow({'url': release.get_absolute_url(), 'count': result['count'], 'authors': authors})
+                release = releases[result.get("release_id")]
+                authors = ", ".join(
+                    [
+                        c.contributor.get_full_name()
+                        for c in release.index_ordered_release_contributors
+                    ]
+                )
+                writer.writerow(
+                    {
+                        "url": release.get_absolute_url(),
+                        "count": result["count"],
+                        "authors": authors,
+                    }
+                )
 
     def export_codebase_download_statistics(self, downloads, dest):
-        codebases = Codebase.objects.filter(releases__id__in=downloads.values_list('release_id', flat=True)) \
-            .prefetch_related('releases').only('identifier', 'title').in_bulk()
-        results = downloads.values('release__codebase__id').annotate(count=Count('*')).order_by('-count')
-        with open(dest, 'w', newline='') as f:
-            fieldnames = ['url', 'count', 'title']
+        codebases = (
+            Codebase.objects.filter(
+                releases__id__in=downloads.values_list("release_id", flat=True)
+            )
+            .prefetch_related("releases")
+            .only("identifier", "title")
+            .in_bulk()
+        )
+        results = (
+            downloads.values("release__codebase__id")
+            .annotate(count=Count("*"))
+            .order_by("-count")
+        )
+        with open(dest, "w", newline="") as f:
+            fieldnames = ["url", "count", "title"]
             writer = csv.DictWriter(f, fieldnames=fieldnames)
             writer.writeheader()
             for result in results.iterator():
-                codebase = codebases[result['release__codebase__id']]
-                writer.writerow({'url': codebase.permanent_url,
-                                 'count': result['count'],
-                                 'title': codebase.title})
+                codebase = codebases[result["release__codebase__id"]]
+                writer.writerow(
+                    {
+                        "url": codebase.permanent_url,
+                        "count": result["count"],
+                        "title": codebase.title,
+                    }
+                )
 
     def export_ip_download_statistics(self, downloads, dest):
-        results = downloads.values('ip_address').annotate(count=Count('*')).order_by('-count')
-        with open(dest, 'w', newline='') as f:
-            fieldnames = ['ip_address', 'count']
+        results = (
+            downloads.values("ip_address").annotate(count=Count("*")).order_by("-count")
+        )
+        with open(dest, "w", newline="") as f:
+            fieldnames = ["ip_address", "count"]
             writer = csv.DictWriter(f, fieldnames=fieldnames)
             writer.writeheader()
             for result in results.iterator():
                 writer.writerow(result)
 
-    def export_reviewed_codebases(self, directory, start_date=None, end_date=None, filename='reviewed-releases.csv'):
-        reviewed_releases = PeerReview.objects.completed_releases(last_modified__range=(start_date, end_date))
-        header = ['url', 'title', 'date created', 'first published', 'last modified', 'doi']
-        with open(os.path.join(directory, filename), 'w') as out:
+    def export_reviewed_codebases(
+        self,
+        directory,
+        start_date=None,
+        end_date=None,
+        filename="reviewed-releases.csv",
+    ):
+        reviewed_releases = PeerReview.objects.completed_releases(
+            last_modified__range=(start_date, end_date)
+        )
+        header = [
+            "url",
+            "title",
+            "date created",
+            "first published",
+            "last modified",
+            "doi",
+        ]
+        with open(os.path.join(directory, filename), "w") as out:
             writer = csv.DictWriter(out, fieldnames=header)
             writer.writeheader()
             for release in reviewed_releases:
-                writer.writerow({
-                    'url': release.permanent_url,
-                    'title': release.title,
-                    'date created': release.date_created,
-                    'first published': release.first_published_at,
-                    'last modified': release.last_modified,
-                    'doi': release.doi
-                })
+                writer.writerow(
+                    {
+                        "url": release.permanent_url,
+                        "title": release.title,
+                        "date created": release.date_created,
+                        "first published": release.first_published_at,
+                        "last modified": release.last_modified,
+                        "doi": release.doi,
+                    }
+                )
 
     def export_new_and_updated_codebases(self, directory, start_date, end_date=None):
-        new_codebases, updated_codebases, releases = Codebase.objects.updated_after(start_date=start_date, end_date=end_date)
-        max_dates_bulk = {r['codebase_id']: r['date'] for r in releases.values('codebase_id').annotate(date=Max('last_modified'))}
-        for qs, filename in [(new_codebases, 'new_codebases.csv'), (updated_codebases, 'updated_codebases.csv')]:
-            with open(os.path.join(directory, filename), 'w', newline='') as f:
-                fieldnames = ['url', 'title', 'date created', 'first published', 'last modified']
+        new_codebases, updated_codebases, releases = Codebase.objects.updated_after(
+            start_date=start_date, end_date=end_date
+        )
+        max_dates_bulk = {
+            r["codebase_id"]: r["date"]
+            for r in releases.values("codebase_id").annotate(date=Max("last_modified"))
+        }
+        for qs, filename in [
+            (new_codebases, "new_codebases.csv"),
+            (updated_codebases, "updated_codebases.csv"),
+        ]:
+            with open(os.path.join(directory, filename), "w", newline="") as f:
+                fieldnames = [
+                    "url",
+                    "title",
+                    "date created",
+                    "first published",
+                    "last modified",
+                ]
                 writer = csv.DictWriter(f, fieldnames=fieldnames)
                 writer.writeheader()
                 for codebase in qs:
-                    writer.writerow({'url': codebase.permanent_url,
-                                     'title': codebase.title,
-                                     'date created': codebase.date_created,
-                                     'first published': codebase.first_published_at,
-                                     'last modified': max_dates_bulk[codebase.id]})
+                    writer.writerow(
+                        {
+                            "url": codebase.permanent_url,
+                            "title": codebase.title,
+                            "date created": codebase.date_created,
+                            "first published": codebase.first_published_at,
+                            "last modified": max_dates_bulk[codebase.id],
+                        }
+                    )
         return releases
 
     def export_summary(self, directory, start_date, end_date=None):
-        users = get_user_model().objects.filter(date_joined__range=[start_date, end_date])
-        full_members = MemberProfile.objects.full_members(date_joined__range=[start_date, end_date])
+        users = get_user_model().objects.filter(
+            date_joined__range=[start_date, end_date]
+        )
+        full_members = MemberProfile.objects.full_members(
+            date_joined__range=[start_date, end_date]
+        )
         jobs = Job.objects.filter(date_created__range=[start_date, end_date])
         events = Event.objects.filter(date_created__range=[start_date, end_date])
-        with open(os.path.join(directory, 'summary.csv'), 'w', newline='') as out:
-            fieldnames = ['New Users', 'Full Members', 'Jobs', 'Events', 'Date Range']
+        with open(os.path.join(directory, "summary.csv"), "w", newline="") as out:
+            fieldnames = ["New Users", "Full Members", "Jobs", "Events", "Date Range"]
             writer = csv.DictWriter(out, fieldnames=fieldnames)
             writer.writeheader()
-            writer.writerow({
-                'New Users': users.count(),
-                'Full Members': full_members.count(),
-                'Jobs': jobs.count(),
-                'Events': events.count(),
-                'Date Range': f'{start_date:%x} to {end_date:%x}'
-            })
-
+            writer.writerow(
+                {
+                    "New Users": users.count(),
+                    "Full Members": full_members.count(),
+                    "Jobs": jobs.count(),
+                    "Events": events.count(),
+                    "Date Range": f"{start_date:%x} to {end_date:%x}",
+                }
+            )
 
     def handle(self, *args, **options):
         """
@@ -123,15 +218,23 @@ class Command(BaseCommand):
         ./manage.py curator_statistics --from 2016-05-06
         ```
         """
-        from_date_string = options.get('from')
-        to_date_string = options.get('to')
-        directory = options['directory']
+        from_date_string = options.get("from")
+        to_date_string = options.get("to")
+        directory = options["directory"]
 
         default_from_date = date.today().replace(month=1, day=1)
         default_to_date = date.today()
-        from_date = parse_date(from_date_string).replace(tzinfo=pytz.UTC) if from_date_string else default_from_date
-        to_date = parse_date(to_date_string).replace(tzinfo=pytz.UTC) if to_date_string else None
-        aggregations = options['aggregations'].split(',')
+        from_date = (
+            parse_date(from_date_string).replace(tzinfo=pytz.UTC)
+            if from_date_string
+            else default_from_date
+        )
+        to_date = (
+            parse_date(to_date_string).replace(tzinfo=pytz.UTC)
+            if to_date_string
+            else None
+        )
+        aggregations = options["aggregations"].split(",")
         if to_date:
             filters = dict(date_created__range=[from_date, to_date])
         else:
@@ -140,26 +243,30 @@ class Command(BaseCommand):
 
         os.makedirs(directory, exist_ok=True)
         downloads = CodebaseReleaseDownload.objects.filter(
-            release__in=CodebaseRelease.objects.public()).filter(
-            **filters)
-        if 'codebase' in aggregations:
+            release__in=CodebaseRelease.objects.public()
+        ).filter(**filters)
+        if "codebase" in aggregations:
             self.export_codebase_download_statistics(
-                downloads,
-                dest=os.path.join(directory, 'codebase_download_counts.csv'))
-        if 'release' in aggregations:
+                downloads, dest=os.path.join(directory, "codebase_download_counts.csv")
+            )
+        if "release" in aggregations:
             self.export_release_download_statistics(
-                downloads,
-                dest=os.path.join(directory, 'release_download_counts.csv'))
-        if 'ip' in aggregations:
+                downloads, dest=os.path.join(directory, "release_download_counts.csv")
+            )
+        if "ip" in aggregations:
             self.export_ip_download_statistics(
-                downloads,
-                dest=os.path.join(directory, 'ip_download_counts.csv'))
+                downloads, dest=os.path.join(directory, "ip_download_counts.csv")
+            )
 
-        if 'new' in aggregations:
-            self.export_new_and_updated_codebases(directory, start_date=from_date, end_date=to_date)
+        if "new" in aggregations:
+            self.export_new_and_updated_codebases(
+                directory, start_date=from_date, end_date=to_date
+            )
 
-        if 'reviewed' in aggregations:
-            self.export_reviewed_codebases(directory, start_date=from_date, end_date=to_date)
+        if "reviewed" in aggregations:
+            self.export_reviewed_codebases(
+                directory, start_date=from_date, end_date=to_date
+            )
 
-        if 'summary' in aggregations:
+        if "summary" in aggregations:
             self.export_summary(directory, start_date=from_date, end_date=to_date)

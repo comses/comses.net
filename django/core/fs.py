@@ -13,7 +13,16 @@ from wagtail.images.models import Image
 
 logger = logging.getLogger(__name__)
 
-SYSTEM_FILES = ('__macosx', '.ds_store', '.svn', '.git', '.hg', 'thumbs.db', 'cvs', '.trashes')
+SYSTEM_FILES = (
+    "__macosx",
+    ".ds_store",
+    ".svn",
+    ".git",
+    ".hg",
+    "thumbs.db",
+    "cvs",
+    ".trashes",
+)
 
 
 def is_archive(path: str):
@@ -23,7 +32,7 @@ def is_archive(path: str):
     :return: archive's mimetype string (based on file extension, not inspecting the contents) or None if not an archive
     """
     mimetype = mimetypes.guess_type(path)
-    if mimetype[0] and mimetype[0].endswith(('tar', 'zip', 'rar')):
+    if mimetype[0] and mimetype[0].endswith(("tar", "zip", "rar")):
         return mimetype[0]
     return None
 
@@ -42,7 +51,7 @@ def is_media(path: str):
     :return: media mimetype string / format or None
     """
     mimetype = mimetypes.guess_type(path)
-    if mimetype[0] and mimetype[0].startswith(('image', 'video')):
+    if mimetype[0] and mimetype[0].startswith(("image", "video")):
         return mimetype[0]
     else:
         try:
@@ -66,7 +75,12 @@ def is_system_file(filename: str) -> bool:
     :return: True if filename is a osx system file or appears to be a backup file
     """
     if filename:
-        return filename.lower() in SYSTEM_FILES or filename.startswith('~') or filename.endswith('~') or filename.startswith('._')
+        return (
+            filename.lower() in SYSTEM_FILES
+            or filename.startswith("~")
+            or filename.endswith("~")
+            or filename.startswith("._")
+        )
     logger.warning("tried to check if an empty string is a system file")
     return False
 
@@ -123,7 +137,6 @@ def get_canonical_image(title, path, user):
         _image = Image.objects.get(title=title)
     else:
         _image = Image.objects.create(
-            title=title,
-            file=ImageFile(_image_path.open('rb')),
-            uploaded_by_user=user)
+            title=title, file=ImageFile(_image_path.open("rb")), uploaded_by_user=user
+        )
     return _image

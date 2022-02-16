@@ -6,18 +6,31 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('home', '0008_peopleentryplacement_term'),
+        ("home", "0008_peopleentryplacement_term"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='peopleentryplacement',
-            name='category',
-            field=models.PositiveIntegerField(choices=[(1, 'Directorate'), (2, 'Executive Board'), (3, 'CoMSES Digest Editors'), (4, 'Infrastructure Group'), (5, 'Executive Board Alumni')], default=2),
+            model_name="peopleentryplacement",
+            name="category",
+            field=models.PositiveIntegerField(
+                choices=[
+                    (1, "Directorate"),
+                    (2, "Executive Board"),
+                    (3, "CoMSES Digest Editors"),
+                    (4, "Infrastructure Group"),
+                    (5, "Executive Board Alumni"),
+                ],
+                default=2,
+            ),
         ),
         migrations.AlterField(
-            model_name='peopleentryplacement',
-            name='term',
-            field=models.CharField(blank=True, help_text='The term for a given board member (e.g., 2016-2018 or 2008-2010, 2014-2016)', max_length=64),
+            model_name="peopleentryplacement",
+            name="term",
+            field=models.CharField(
+                blank=True,
+                help_text="The term for a given board member (e.g., 2016-2018 or 2008-2010, 2014-2016)",
+                max_length=64,
+            ),
         ),
     ]

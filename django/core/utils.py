@@ -33,17 +33,27 @@ def confirm(prompt="Continue? (y/n) ", cancel_message="Aborted."):
     try:
         response_as_bool = strtobool(response)
     except ValueError:
-        print("Invalid response ", response_as_bool, ". Please confirm with yes (y) or no (n).")
+        print(
+            "Invalid response ",
+            response_as_bool,
+            ". Please confirm with yes (y) or no (n).",
+        )
         confirm(prompt, cancel_message)
     if not response_as_bool:
         raise RuntimeError(cancel_message)
     return True
 
 
-def create_markdown_email(subject: str = None, to=None, template_name: str = None, context: dict = None, body: str = None,
-                          from_email: str = settings.DEFAULT_FROM_EMAIL,
-                          email_subject_prefix: str = settings.EMAIL_SUBJECT_PREFIX,
-                          **kwargs):
+def create_markdown_email(
+    subject: str = None,
+    to=None,
+    template_name: str = None,
+    context: dict = None,
+    body: str = None,
+    from_email: str = settings.DEFAULT_FROM_EMAIL,
+    email_subject_prefix: str = settings.EMAIL_SUBJECT_PREFIX,
+    **kwargs,
+):
     if all([template_name, context]):
         # override body if a template name and context were given to us
         try:
@@ -55,12 +65,18 @@ def create_markdown_email(subject: str = None, to=None, template_name: str = Non
             logger.error("invalid template %s", template_name)
     required_fields = [subject, to, body, from_email]
     if all(required_fields):
-        subject = f'{email_subject_prefix} {subject}'
-        email = EmailMultiAlternatives(subject=subject, body=body, to=to, from_email=from_email, **kwargs)
-        email.attach_alternative(markdown(body), 'text/html')
+        subject = f"{email_subject_prefix} {subject}"
+        email = EmailMultiAlternatives(
+            subject=subject, body=body, to=to, from_email=from_email, **kwargs
+        )
+        email.attach_alternative(markdown(body), "text/html")
         return email
     else:
-        raise ValueError("Ignoring request to create a markdown email with missing required content {}".format(required_fields))
+        raise ValueError(
+            "Ignoring request to create a markdown email with missing required content {}".format(
+                required_fields
+            )
+        )
 
 
 def send_markdown_email(**kwargs):

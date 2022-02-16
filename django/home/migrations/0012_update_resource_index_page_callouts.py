@@ -5,14 +5,14 @@ from django.conf import settings
 
 
 def add_catalog_blurb_to_resource_index_page(apps, schema_editor):
-    CategoryIndexPage = apps.get_model('home', 'CategoryIndexPage')
+    CategoryIndexPage = apps.get_model("home", "CategoryIndexPage")
 
     if settings.DEPLOY_ENVIRONMENT.is_staging_or_production():
-        cip = CategoryIndexPage.objects.get(slug='resources')
-        events_callout = cip.callouts.get(url='/events/')
-        events_callout.url = 'https://catalog.comses.net'
-        events_callout.title = 'Curated Publications'
-        events_callout.caption = '''A [curated database](https://catalog.comses.net) of over 7500 publications of agent-based and individual based models with additional metadata on availability of code and bibliometric information on the landscape of ABM/IBM publications.'''
+        cip = CategoryIndexPage.objects.get(slug="resources")
+        events_callout = cip.callouts.get(url="/events/")
+        events_callout.url = "https://catalog.comses.net"
+        events_callout.title = "Curated Publications"
+        events_callout.caption = """A [curated database](https://catalog.comses.net) of over 7500 publications of agent-based and individual based models with additional metadata on availability of code and bibliometric information on the landscape of ABM/IBM publications."""
         events_callout.save()
     # also modify associated wagtail image but need to do so in a management command or at the shell
     # from core.fs import get_canonical_image
@@ -24,7 +24,7 @@ def add_catalog_blurb_to_resource_index_page(apps, schema_editor):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('home', '0011_increase_journal_description_length'),
+        ("home", "0011_increase_journal_description_length"),
     ]
 
     operations = [

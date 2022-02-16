@@ -6,18 +6,24 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('library', '0012_remove_is_replication'),
+        ("library", "0012_remove_is_replication"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='codebase',
-            name='associated_publication_text',
-            field=models.TextField(blank=True, help_text='DOI, Permanent URL, or citation to a publication associated with this codebase.'),
+            model_name="codebase",
+            name="associated_publication_text",
+            field=models.TextField(
+                blank=True,
+                help_text="DOI, Permanent URL, or citation to a publication associated with this codebase.",
+            ),
         ),
         migrations.AlterField(
-            model_name='codebase',
-            name='references_text',
-            field=models.TextField(blank=True, help_text='References to related publications (DOIs or citation text'),
+            model_name="codebase",
+            name="references_text",
+            field=models.TextField(
+                blank=True,
+                help_text="References to related publications (DOIs or citation text",
+            ),
         ),
     ]

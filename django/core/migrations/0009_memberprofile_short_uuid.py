@@ -6,13 +6,13 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('core', '0008_sitesettings_banner_message_title'),
+        ("core", "0008_sitesettings_banner_message_title"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='memberprofile',
-            name='short_uuid',
+            model_name="memberprofile",
+            name="short_uuid",
             field=models.CharField(max_length=32, null=True, unique=True),
         ),
     ]

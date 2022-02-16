@@ -63,8 +63,8 @@ class ApiAccountMixin:
         # Inactive users cannot login so are not included
         if not user_factory:
             user_factory = self.user_factory
-        self.regular_user = user_factory.create(username='regular')
-        self.superuser = user_factory.create(username='superuser', is_superuser=True)
+        self.regular_user = user_factory.create(username="regular")
+        self.superuser = user_factory.create(username="superuser", is_superuser=True)
         self.anonymous_user = AnonymousUser()
         self.submitter = submitter
 
@@ -85,45 +85,70 @@ class ApiAccountMixin:
 class ResponseStatusCodesMixin:
     def responseErrorMessage(self, response, name):
         user = response.wsgi_request.user
-        user_msg = '<{} is_superuser={} is_active={} is_anonymous={}>'.format(
-            user.username, user.is_superuser, user.is_active, user.is_anonymous)
-        data = getattr(response, 'data', None)
-        msg = 'Response not {} for user {}'.format(name, user_msg)
+        user_msg = "<{} is_superuser={} is_active={} is_anonymous={}>".format(
+            user.username, user.is_superuser, user.is_active, user.is_anonymous
+        )
+        data = getattr(response, "data", None)
+        msg = "Response not {} for user {}".format(name, user_msg)
         if data is not None:
-            msg += '. Got {}'.format(data)
+            msg += ". Got {}".format(data)
         return msg
 
     def assertResponseOk(self, response):
-        self.assertEqual(response.status_code, status.HTTP_200_OK,
-                         msg=self.responseErrorMessage(response, 'OK'))
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK,
+            msg=self.responseErrorMessage(response, "OK"),
+        )
 
     def assertResponseCreated(self, response):
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED,
-                         msg=self.responseErrorMessage(response, 'CREATED'))
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_201_CREATED,
+            msg=self.responseErrorMessage(response, "CREATED"),
+        )
 
     def assertResponseAccepted(self, response):
-        self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED,
-                         msg=self.responseErrorMessage(response, 'ACCEPTED'))
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_202_ACCEPTED,
+            msg=self.responseErrorMessage(response, "ACCEPTED"),
+        )
 
     def assertResponseFound(self, response):
-        self.assertEqual(response.status_code, status.HTTP_302_FOUND,
-                         msg=self.responseErrorMessage(response, 'FOUND'))
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_302_FOUND,
+            msg=self.responseErrorMessage(response, "FOUND"),
+        )
 
     def assertResponseDeleted(self, response):
-        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT,
-                         msg=self.responseErrorMessage(response, 'NO_CONTENT'))
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_204_NO_CONTENT,
+            msg=self.responseErrorMessage(response, "NO_CONTENT"),
+        )
 
     def assertResponsePermissionDenied(self, response):
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN,
-                         msg=self.responseErrorMessage(response, 'FORBIDDEN'))
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_403_FORBIDDEN,
+            msg=self.responseErrorMessage(response, "FORBIDDEN"),
+        )
 
     def assertResponseNotFound(self, response):
-        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND,
-                         msg=self.responseErrorMessage(response, 'NOT FOUND'))
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_404_NOT_FOUND,
+            msg=self.responseErrorMessage(response, "NOT FOUND"),
+        )
 
     def assertResponseMethodNotAllowed(self, response):
-        self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED,
-                         msg=self.responseErrorMessage(response, 'METHOD NOT ALLOWED'))
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_405_METHOD_NOT_ALLOWED,
+            msg=self.responseErrorMessage(response, "METHOD NOT ALLOWED"),
+        )
 
 
 class BaseViewSetTestCase(ApiAccountMixin, ResponseStatusCodesMixin, APITestCase):
@@ -144,17 +169,25 @@ class BaseViewSetTestCase(ApiAccountMixin, ResponseStatusCodesMixin, APITestCase
     def check_retrieve_permissions(self, user, instance):
         """Validate view permissions against a user with no initial guardian permissions.
         Does not handle being inside a collection of another model"""
-        response = self.client.get(instance.get_absolute_url(), HTTP_ACCEPT='application/json', format='json')
-        has_perm = user.has_perm(create_perm_str(self.model_class(), 'view'), obj=instance)
+        response = self.client.get(
+            instance.get_absolute_url(), HTTP_ACCEPT="application/json", format="json"
+        )
+        has_perm = user.has_perm(
+            create_perm_str(self.model_class(), "view"), obj=instance
+        )
         if has_perm:
             self.assertResponseOk(response)
         else:
             self.assertResponsePermissionDenied(response)
 
     def check_create_permissions(self, user, create_data):
-        response = self.client.post(self.model_class().get_list_url(), create_data, HTTP_ACCEPT='application/json',
-                                    format='json')
-        has_perm = user.has_perm(create_perm_str(self.model_class(), 'add'))
+        response = self.client.post(
+            self.model_class().get_list_url(),
+            create_data,
+            HTTP_ACCEPT="application/json",
+            format="json",
+        )
+        has_perm = user.has_perm(create_perm_str(self.model_class(), "add"))
         if has_perm:
             self.assertResponseCreated(response)
         else:
@@ -162,17 +195,23 @@ class BaseViewSetTestCase(ApiAccountMixin, ResponseStatusCodesMixin, APITestCase
 
     def check_update_permissions(self, user, instance):
         serialized = self.serializer_class(instance)
-        response = self.client.put(instance.get_absolute_url(), serialized.data, HTTP_ACCEPT='application/json',
-                                   format='json')
-        has_perm = user.has_perm(create_perm_str(instance, 'change'), obj=instance)
+        response = self.client.put(
+            instance.get_absolute_url(),
+            serialized.data,
+            HTTP_ACCEPT="application/json",
+            format="json",
+        )
+        has_perm = user.has_perm(create_perm_str(instance, "change"), obj=instance)
         if has_perm:
             self.assertResponseOk(response)
         else:
             self.assertResponsePermissionDenied(response)
 
     def check_destroy_permissions(self, user, instance):
-        response = self.client.delete(instance.get_absolute_url(), HTTP_ACCEPT='application/json', format='json')
-        has_perm = user.has_perm(create_perm_str(instance, 'delete'), obj=instance)
+        response = self.client.delete(
+            instance.get_absolute_url(), HTTP_ACCEPT="application/json", format="json"
+        )
+        has_perm = user.has_perm(create_perm_str(instance, "delete"), obj=instance)
         if has_perm:
             self.assertResponseDeleted(response)
         else:
@@ -180,10 +219,14 @@ class BaseViewSetTestCase(ApiAccountMixin, ResponseStatusCodesMixin, APITestCase
 
     def check_list_permissions(self, user, instance):
         """A user has list view permissions on an instance if the instance is public"""
-        list_response = self.client.get(instance.get_list_url(), HTTP_ACCEPT='application/json', format='json')
+        list_response = self.client.get(
+            instance.get_list_url(), HTTP_ACCEPT="application/json", format="json"
+        )
         self.assertResponseOk(list_response)
-        is_visible_in_list = len(list_response.data['results']) > 0
-        is_instance_public = instance._meta.model.objects.public().filter(pk=instance.pk).exists()
+        is_visible_in_list = len(list_response.data["results"]) > 0
+        is_instance_public = (
+            instance._meta.model.objects.public().filter(pk=instance.pk).exists()
+        )
         self.assertEqual(is_visible_in_list, is_instance_public)
 
     def with_logged_in(self, user, instance, method):
@@ -194,7 +237,11 @@ class BaseViewSetTestCase(ApiAccountMixin, ResponseStatusCodesMixin, APITestCase
     def check_retrieve(self):
         for user in self.users_able_to_login:
             self.with_logged_in(user, self.instance, self.check_retrieve_permissions)
-            assign_perm(create_perm_str(self.instance, 'view'), user_or_group=user, obj=self.instance)
+            assign_perm(
+                create_perm_str(self.instance, "view"),
+                user_or_group=user,
+                obj=self.instance,
+            )
             self.with_logged_in(user, self.instance, self.check_retrieve_permissions)
         self.check_retrieve_permissions(self.anonymous_user, self.instance)
 
@@ -203,7 +250,11 @@ class BaseViewSetTestCase(ApiAccountMixin, ResponseStatusCodesMixin, APITestCase
             instance = self.instance_factory.create()
             self.with_logged_in(user, instance, self.check_destroy_permissions)
             other_instance = self.instance_factory.create()
-            assign_perm(create_perm_str(other_instance, 'delete'), user_or_group=user, obj=other_instance)
+            assign_perm(
+                create_perm_str(other_instance, "delete"),
+                user_or_group=user,
+                obj=other_instance,
+            )
             self.with_logged_in(user, other_instance, self.check_destroy_permissions)
         instance = self.instance_factory.create()
         self.check_destroy_permissions(self.anonymous_user, instance)
@@ -212,7 +263,11 @@ class BaseViewSetTestCase(ApiAccountMixin, ResponseStatusCodesMixin, APITestCase
         for user in self.users_able_to_login:
             instance = self.instance_factory.create()
             self.with_logged_in(user, instance, self.check_update_permissions)
-            assign_perm(create_perm_str(self.instance, 'change'), user_or_group=user, obj=instance)
+            assign_perm(
+                create_perm_str(self.instance, "change"),
+                user_or_group=user,
+                obj=instance,
+            )
             self.with_logged_in(user, instance, self.check_update_permissions)
         instance = self.instance_factory.create()
         self.check_update_permissions(self.anonymous_user, instance)
@@ -226,9 +281,13 @@ class BaseViewSetTestCase(ApiAccountMixin, ResponseStatusCodesMixin, APITestCase
 
     def check_list(self):
         # ask elasticsearch to reindex before checking the list
-        call_command('update_index', verbosity=0)
+        call_command("update_index", verbosity=0)
         for user in self.users_able_to_login:
             self.with_logged_in(user, self.instance, self.check_list_permissions)
-            assign_perm(create_perm_str(self.instance, 'view'), user_or_group=user, obj=self.instance)
+            assign_perm(
+                create_perm_str(self.instance, "view"),
+                user_or_group=user,
+                obj=self.instance,
+            )
             self.with_logged_in(user, self.instance, self.check_list_permissions)
         self.check_list_permissions(self.anonymous_user, self.instance)

@@ -7,33 +7,53 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('home', '0003_add_markdown_field_to_journal_description'),
+        ("home", "0003_add_markdown_field_to_journal_description"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='markdownpage',
-            name='body',
-            field=core.fields.MarkdownField(blank=True, help_text='Markdown-enabled main content pane for this page.', rendered_field=True),
+            model_name="markdownpage",
+            name="body",
+            field=core.fields.MarkdownField(
+                blank=True,
+                help_text="Markdown-enabled main content pane for this page.",
+                rendered_field=True,
+            ),
         ),
         migrations.AlterField(
-            model_name='markdownpage',
-            name='description',
-            field=core.fields.MarkdownField(blank=True, help_text='Markdown-enabled summary text placed below the heading and title.', max_length=512, rendered_field=True),
+            model_name="markdownpage",
+            name="description",
+            field=core.fields.MarkdownField(
+                blank=True,
+                help_text="Markdown-enabled summary text placed below the heading and title.",
+                max_length=512,
+                rendered_field=True,
+            ),
         ),
         migrations.AlterField(
-            model_name='markdownpage',
-            name='heading',
-            field=models.CharField(blank=True, help_text='Large heading text placed on the blue background introduction header', max_length=128),
+            model_name="markdownpage",
+            name="heading",
+            field=models.CharField(
+                blank=True,
+                help_text="Large heading text placed on the blue background introduction header",
+                max_length=128,
+            ),
         ),
         migrations.AlterField(
-            model_name='markdownpage',
-            name='jumbotron',
-            field=models.BooleanField(default=True, help_text='Mark as true if this page should display its title and description in a jumbotron'),
+            model_name="markdownpage",
+            name="jumbotron",
+            field=models.BooleanField(
+                default=True,
+                help_text="Mark as true if this page should display its title and description in a jumbotron",
+            ),
         ),
         migrations.AlterField(
-            model_name='markdownpage',
-            name='template',
-            field=models.CharField(default='home/markdown_page.jinja', help_text='Relative filesystem path to the template file to be used for this page (advanced usage only - the template must exist on the filesystem). If you change this, help text suggestions on placement of elements may no longer apply.', max_length=128),
+            model_name="markdownpage",
+            name="template",
+            field=models.CharField(
+                default="home/markdown_page.jinja",
+                help_text="Relative filesystem path to the template file to be used for this page (advanced usage only - the template must exist on the filesystem). If you change this, help text suggestions on placement of elements may no longer apply.",
+                max_length=128,
+            ),
         ),
     ]
