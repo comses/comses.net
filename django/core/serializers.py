@@ -98,15 +98,17 @@ class EditableSerializerMixin(serializers.Serializer):
         return request.user.has_perm("{}.change_{}".format(app_label, model_name), obj)
 
 
-def set_tags(instance, related, attr: str = "tags"):
+def set_tags(instance, related, attr="tags"):
     """Associate taggit tags with an instance.
 
     Instance must be saved afterward for associations to be saved in the db"""
     if not related.is_valid():
         raise serializers.ValidationError(related.errors)
     db_tags = related.save()
-    # see https://github.com/wagtail/django-modelcluster/blob/master/modelcluster/contrib/taggit.py#L64
-    getattr(instance, attr).set(*db_tags)
+    # TaggableManager.set now accepts a list of tags as a single argument instead of a variable number of arguments as
+    # of django-taggit 2.x and wagtail 2.16+
+
+    getattr(instance, attr).set(db_tags)
 
 
 class MarkdownField(serializers.CharField):
