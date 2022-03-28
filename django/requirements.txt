@@ -1,8 +1,8 @@
 bagit==1.8.1
 bleach==4.1.0
-django-allauth==0.48.0
+django-allauth==0.49.0
 django-anymail[mailgun]==8.5
-django-cookie-law==2.1.1
+django-cookie-law==2.2.0
 django-extensions==3.1.5
 django-guardian==2.4.0
 django-hcaptcha-field==1.2.1
@@ -16,7 +16,7 @@ django-rest-swagger==2.2.0
 django-reversion==4.0.2
 django-robots==5.0
 django-timezone-field==5.0
-django-waffle==2.3.0
+django-waffle==2.4.1
 django-webpack-loader==1.4.1
 djangorestframework==3.13.1
 djangorestframework-jwt==1.11.0
