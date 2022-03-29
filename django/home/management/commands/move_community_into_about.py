@@ -5,7 +5,13 @@ migrate community page from top level CategoryIndexPage into a child of the Abou
 from django.core.management.base import BaseCommand
 import logging
 
-from home.models import (CategoryIndexPage, ConferenceIndexPage, FaqPage, PeoplePage, ContactPage)
+from home.models import (
+    CategoryIndexPage,
+    ConferenceIndexPage,
+    FaqPage,
+    PeoplePage,
+    ContactPage,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -36,46 +42,35 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         community_page = CategoryIndexPage.objects.get(slug="community")
-        community_page.navigation_links.all().delete()
         conference_page = ConferenceIndexPage.objects.first()
         # remove all subnav links for conference page
         conference_page.navigation_links.all().delete()
         # update conference breadcrumb trail to about -> community -> conference
         conference_page.breadcrumbs.all().delete()
         conference_page.add_breadcrumbs(
-            (('About', '/about/'), ('Community', '/about/community/'))
+            (("About", "/about/"), ("Community", "/about/community/"))
         )
         community_page.breadcrumbs.all().delete()
 
-        about_page = CategoryIndexPage.objects.get(slug='about')
-        community_page.move(about_page, pos='last-child')
-        community_page.heading = 'CoMSES Net Community'
+        about_page = CategoryIndexPage.objects.get(slug="about")
+        community_page.move(about_page, pos="last-child")
+        community_page.heading = "CoMSES Net Community"
         community_page.description = DESCRIPTION
-        community_page.add_navigation_links(ABOUT_NAVIGATION_LINKS)
-        community_page.save()
+        community_page.replace_navigation_links(ABOUT_NAVIGATION_LINKS)
+        community_page.url_path = "/home/about/community/"
         # need to set navigation_links in every subsidiary page of the about page,
         # annoyingly. There should be a better way to do this in wagtail perhaps
         # using wagtailmenus
-        about_page.navigation_links.all().delete()
-        about_page.add_navigation_links(
-            ABOUT_NAVIGATION_LINKS
-        )
-        about_page.save()
+        about_page.replace_navigation_links(ABOUT_NAVIGATION_LINKS)
         # adjust navlinks for /about/people/
         people_page = PeoplePage.objects.first()
-        people_page.navigation_links.all().delete()
-        people_page.add_navigation_links(
-            ABOUT_NAVIGATION_LINKS
-        )
-        people_page.save()
+        people_page.replace_navigation_links(ABOUT_NAVIGATION_LINKS)
         # FAQs
         faq_page = FaqPage.objects.first()
-        faq_page.navigation_links.all().delete()
-        faq_page.add_navigation_links(ABOUT_NAVIGATION_LINKS)
-        faq_page.save()
+        faq_page.replace_navigation_links(ABOUT_NAVIGATION_LINKS)
         # contact
         contact_page = ContactPage.objects.first()
-        contact_page.navigation_links.all().delete()
-        contact_page.add_navigation_links(ABOUT_NAVIGATION_LINKS)
-        contact_page.save()
+        contact_page.replace_navigation_links(ABOUT_NAVIGATION_LINKS)
 
+        for page in (community_page, about_page, people_page, faq_page, contact_page):
+            page.save()

@@ -352,6 +352,10 @@ class NavigationMixin(object):
         for idx, (title, url) in enumerate(tuples):
             related_manager.add(cls(title=title, url=url, sort_order=idx))
 
+    def replace_navigation_links(self, navigation_tuples):
+        self.navigation_links.all().delete()
+        self.add_navigation_links(navigation_tuples)
+
     def add_navigation_links(self, navigation_tuples):
         """
         Takes an ordered list of tuples and adds them as navigation links.

@@ -44,7 +44,7 @@ class Command(BaseCommand):
             else User.objects.filter(**criteria).exclude(pk=anonymous_user.pk)
         )
         cvs_writer = csv.writer(sys.stdout)
-        csv_writer.writerow(['First name', 'Last name', 'Institution', 'Email'])
+        csv_writer.writerow(["First name", "Last name", "Institution", "Email"])
         for user in qs:
             cvs_writer.writerow(
                 [
