@@ -1,4 +1,4 @@
-FROM node:lts-buster
+FROM node:lts-bullseye
 
 # Install Google Chrome for tests
 RUN wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key add -
@@ -19,5 +19,5 @@ RUN set -ex; \
     fi
 RUN yarn global add @vue/cli && yarn cache clean
 # Separating to ensure that changes to the below files won't cause dependency reinstall
-COPY babel.config.js cypress.json jest.config.js postcss.config.js tsconfig.json tslint.json vue.config.js /code/
+COPY babel.config.js jest.config.js postcss.config.js tsconfig.json tslint.json vue.config.js /code/
 CMD ["yarn", "serve", "--port", "3000", "--host", "0.0.0.0"]
