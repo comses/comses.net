@@ -37,20 +37,17 @@
 
 {% block content %}
     {{ breadcrumb([
-    {'url': '/community/', 'text': 'Community'},
+    {'url': '/about/', 'text': 'About'},
+    {'url': '/about/community/', 'text': 'Community'},
     {'text': 'CoMSES Digest Newsletter' }
-    ]) }}
-    {{ subnav([
-    {'url': '/community/', 'text': 'Community'},
-    {'url': slugurl('conference'), 'text': 'Virtual Conferences'},
-    {'url': url("home:digest"), 'text': 'CoMSES Digest', 'active': true},
-    ]) }}
+    ])
+    }}
     <div class='jumbotron'>
         <h1 class='display-5'>CoMSES Digest Newsletter</h1>
         <p class='pt-4 lead'>
             The CoMSES Digest is a quarterly newsletter with relevant CoMSES Net community news - past
             issues can be viewed below. Full Members are automatically subscribed to the newsletter,
-            but you can also <a href='http://eepurl.com/b8GCUv'>manually subscribe</a> as a basic member.
+            but you can also <a href='http://eepurl.com/b8GCUv'>sign up</a> as a basic member.
         </p>
     </div>
     <h2>Issues</h2>
