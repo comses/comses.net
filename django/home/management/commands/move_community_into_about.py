@@ -53,11 +53,9 @@ class Command(BaseCommand):
         community_page.breadcrumbs.all().delete()
 
         about_page = CategoryIndexPage.objects.get(slug="about")
-        community_page.move(about_page, pos="last-child")
         community_page.heading = "CoMSES Net Community"
-        community_page.description = DESCRIPTION
+        community_page.summary = DESCRIPTION
         community_page.replace_navigation_links(ABOUT_NAVIGATION_LINKS)
-        community_page.url_path = "/home/about/community/"
         # need to set navigation_links in every subsidiary page of the about page,
         # annoyingly. There should be a better way to do this in wagtail perhaps
         # using wagtailmenus
@@ -71,6 +69,7 @@ class Command(BaseCommand):
         # contact
         contact_page = ContactPage.objects.first()
         contact_page.replace_navigation_links(ABOUT_NAVIGATION_LINKS)
-
+        # move community page under about page
+        community_page.move(about_page, pos="last-child")
         for page in (community_page, about_page, people_page, faq_page, contact_page):
             page.save()
