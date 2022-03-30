@@ -384,7 +384,7 @@ WEBPACK_LOADER = {
 # authentication settings
 LOGIN_REDIRECT_URL = "/"
 LOGOUT_REDIRECT_URL = "/"
-WAGTAIL_FRONTEND_LOGIN_URL = "auth_login"
+WAGTAIL_FRONTEND_LOGIN_URL = "account_login"
 
 
 REST_FRAMEWORK = {
