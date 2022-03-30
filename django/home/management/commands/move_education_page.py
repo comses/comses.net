@@ -76,7 +76,7 @@ class Command(BaseCommand):
         education_page.move(home_page, pos="last-child")
         education_page.breadcrumbs.all().delete()
         education_page.navigation_links.all().delete()
-        education_page.add_breadcrumbs((("Educational Resources", "/education/"),))
+        education_page.add_breadcrumbs((("Educational Resources", ""),))
         # remove education from resources subnavigation links
         resources_page = CategoryIndexPage.objects.get(slug="resources")
         resources_page.replace_navigation_links(RESOURCES_NAVIGATION_LINKS)

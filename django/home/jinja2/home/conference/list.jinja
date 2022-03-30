@@ -31,7 +31,7 @@
     <h1>CoMSES Virtual Conferences</h1>
 {% endblock %}
 {% block content %}
-    {{ breadcrumb([{'url': '/community/', 'text': 'Community'}, {'text': 'CoMSES Virtual Conferences' }])}}
+    {{ breadcrumb(page.get_breadcrumbs())}}
     {{ subnav(page.get_navigation_links()) }}
     <div class='jumbotron'>
         <h1 class="display-5">CoMSES Virtual Conferences</h1>
