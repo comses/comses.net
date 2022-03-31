@@ -1,14 +1,23 @@
 <div class="row">
     <div class='col-6'>
-        <a class='text-left btn btn-lg btn-outline-primary' href="{{ provider_login_url(request, 'github') }}"><i class='fab fa-github text-gray'></i> Sign in with GitHub</a>
-        <p><small>GitHub is a web-based hosting service for the Git version control system that offers unlimited
-            public repositories and collaborators. Sign up at <a href='https://github.com/join'>GitHub</a></small></p>
-    </div>
+        <form action="{{ provider_login_url(request, 'github') }}" method="POST">
+            {{ csrf_input }}
+            <button type="submit" class='text-left btn btn-lg btn-outline-primary'>
+                <i class='fab fa-github text-gray'></i> Sign in with GitHub
+            </button>
+            <p><small>
+                GitHub is a web-based hosting service for the Git version control system that offers unlimited public repositories and collaborators. Sign up at <a href='https://github.com/join'>GitHub</a>
+            </small></p>
+        </form>
+   </div>
     <div class='col-6'>
-        <a class='text-left btn btn-lg btn-outline-primary' href="{{ provider_login_url(request, 'orcid') }}">
+        <form action="{{ provider_login_url(request, 'orcid') }}" method="POST">
+            {{ csrf_input }}
+        <button type="submit" class='text-left btn btn-lg btn-outline-primary' href="{{ provider_login_url(request, 'orcid') }}">
             <i class='fab fa-orcid text-orcid'></i> Create or connect your ORCID iD
-        </a>
+        </button>
         <p><small><a href='/about/orcid/'>Why do we ask for your ORCID?</a> ORCID provides a persistent digital identifier that distinguishes you from other researchers. Learn more at <a href='//orcid.org'>orcid.org</a></small></p>
+        </form>
     </div>
 </div>
 
