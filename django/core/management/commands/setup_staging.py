@@ -33,7 +33,7 @@ class Command(BaseCommand):
         site.hostname = (
             "localhost:8000"
             if settings.DEPLOY_ENVIRONMENT.is_development()
-            else "test.comses.net"
+            else "staging.comses.net"
         )
         site.save()
         # set up robots.txt to deny all

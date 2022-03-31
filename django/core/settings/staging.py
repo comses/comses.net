@@ -25,7 +25,7 @@ MAILGUN_SENDER_DOMAIN = config.get(
     "email", "MAILGUN_SENDER_DOMAIN", fallback="mg.comses.net"
 )
 EMAIL_SUBJECT_PREFIX = config.get(
-    "email", "EMAIL_SUBJECT_PREFIX", fallback="[test.comses.net]"
+    "email", "EMAIL_SUBJECT_PREFIX", fallback="[staging.comses.net]"
 )
 EMAIL_USE_TLS = True
 

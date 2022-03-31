@@ -48,12 +48,14 @@ class Command(BaseCommand):
         # update conference breadcrumb trail to about -> community -> conference
         conference_page.breadcrumbs.all().delete()
         conference_page.add_breadcrumbs(
-            (("About", "/about/"), ("Community", "/about/community/"), ("CoMSES Virtual Conferences", ""))
+            (
+                ("About", "/about/"),
+                ("Community", "/about/community/"),
+                ("CoMSES Virtual Conferences", ""),
+            )
         )
         community_page.breadcrumbs.all().delete()
-        community_page.add_breadcrumbs(
-            (("About", "/about/"), ("Community", ""))
-        )
+        community_page.add_breadcrumbs((("About", "/about/"), ("Community", "")))
 
         about_page = CategoryIndexPage.objects.get(slug="about")
         community_page.heading = "CoMSES Net Community"
@@ -74,5 +76,12 @@ class Command(BaseCommand):
         contact_page.replace_navigation_links(ABOUT_NAVIGATION_LINKS)
         # move community page under about page
         community_page.move(about_page, pos="last-child")
-        for page in (community_page, conference_page, about_page, people_page, faq_page, contact_page):
+        for page in (
+            community_page,
+            conference_page,
+            about_page,
+            people_page,
+            faq_page,
+            contact_page,
+        ):
             page.save()

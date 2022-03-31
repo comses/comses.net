@@ -19,7 +19,7 @@ from django.contrib.messages import constants as messages
 
 class Environment(Enum):
     DEVELOPMENT = "http://localhost:8000"
-    STAGING = "https://test.comses.net"
+    STAGING = "https://staging.comses.net"
     PRODUCTION = "https://www.comses.net"
     TEST = "http://localhost:8000"
 

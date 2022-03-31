@@ -1,0 +1,16 @@
+{% extends "base.jinja" %}
+
+{% set provider_name = account.get_provider().name %}
+
+{% block introduction %}
+    <h1>Sign In</h1>
+{% endblock %}
+{% block content %}
+    <p>
+    You are about to sign in using a third party account from {{ provider_name }}.
+    </p>
+    <form method="post" class='form-horizontal'>
+        {% include "includes/form.jinja" %}
+        <button type="submit" class='btn btn-primary'> Sign In</button>
+    </form>
+{% endblock %}
