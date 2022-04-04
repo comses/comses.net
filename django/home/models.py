@@ -36,7 +36,8 @@ from core.discourse import build_discourse_url
 from core.fields import MarkdownField
 from core.fs import get_canonical_image
 from core.models import MemberProfile, Platform, Event, Job
-from library.models import Codebase, Contributor
+# FIXME: should these models be pushed into core..
+from library.models import Codebase, CodebaseRelease, Contributor
 
 logger = logging.getLogger(__name__)
 
@@ -278,6 +279,26 @@ class LandingPage(Page):
         return Event.objects.upcoming().order_by("start_date")[
             : self.MAX_CALLOUT_ENTRIES
         ]
+
+    def get_sitemap_urls(self, request):
+        sitemap_urls = super().get_sitemap_urls(request)
+        # manually add list index urls to the existing sitemap
+        codebases_url = request.build_absolute_uri("/codebases/")
+        jobs_url = request.build_absolute_uri("/jobs/")
+        events_url = request.build_absolute_uri("/events/")
+        digest_url = request.build_absolute_uri("/digest/")
+        sitemap_urls.extend(
+            [
+                {
+                    "location": codebases_url,
+                    "lastmod": CodebaseRelease.objects.public().last().last_modified,
+                },
+                {"location": jobs_url, "lastmod": Job.objects.last().last_modified},
+                {"location": events_url, "lastmod": Event.objects.last().last_modified},
+                {"location": digest_url},
+            ]
+        )
+        return sitemap_urls
 
     def get_context(self, request, *args, **kwargs):
         context = super(LandingPage, self).get_context(request, *args, **kwargs)
