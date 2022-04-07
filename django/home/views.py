@@ -7,7 +7,6 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.models import User
 from django.core.cache import cache
 from django.core.files.images import ImageFile
-from django.db.models import Prefetch
 from django.http import QueryDict
 from django.shortcuts import redirect, get_object_or_404
 from django.template.loader import get_template
@@ -134,20 +133,7 @@ class ProfileViewSet(CommonViewSetMixin, HtmlNoDeleteViewSet):
             # FIXME: queries like this should live in the MemberProfileQuerySet / models layer, not the view.
             return (
                 self.queryset.prefetch_related("institution")
-                .prefetch_related(
-                    Prefetch(
-                        "user",
-                        User.objects.prefetch_related(
-                            Prefetch(
-                                "codebases",
-                                Codebase.objects.with_tags()
-                                .with_featured_images()
-                                .with_contributors(user=self.request.user)
-                                .order_by("-date_created"),
-                            )
-                        ),
-                    )
-                )
+                .prefetch_related("user")
                 .prefetch_related(
                     "peer_review_invitation_set__review__codebase_release__codebase"
                 )
@@ -156,13 +142,15 @@ class ProfileViewSet(CommonViewSetMixin, HtmlNoDeleteViewSet):
 
     def get_retrieve_context(self, instance):
         context = super().get_retrieve_context(instance)
+        accessing_user = self.request.user
         logger.debug("Finding models for user %s", instance.user)
         context["codebases"] = (
-            Codebase.objects.filter_by_contributor(instance.user)
+            Codebase.objects.accessible(accessing_user)
+            .filter_by_contributor(instance.user)
             .with_tags()
             .with_featured_images()
         )
-        add_change_delete_perms(instance, context, self.request.user)
+        add_change_delete_perms(instance, context, accessing_user)
         return context
 
     @action(detail=True, methods=["post"])

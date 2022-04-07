@@ -36,6 +36,7 @@ from core.discourse import build_discourse_url
 from core.fields import MarkdownField
 from core.fs import get_canonical_image
 from core.models import MemberProfile, Platform, Event, Job
+
 # FIXME: should these models be pushed into core..
 from library.models import Codebase, CodebaseRelease, Contributor
 

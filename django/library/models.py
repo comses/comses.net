@@ -341,14 +341,15 @@ class CodebaseQuerySet(models.QuerySet):
     def filter_by_contributor(self, user):
         try:
             contributor = Contributor.objects.get(user=user)
+            # FIXME: naive bad ORM query, optimize at some point
             releases = CodebaseRelease.objects.filter(
                 pk__in=ReleaseContributor.objects.filter(
                     contributor=contributor
                 ).values_list("release", flat=True)
             )
-            return Codebase.objects.filter(releases__in=releases).distinct()
+            return self.filter(releases__in=releases).distinct()
         except Contributor.DoesNotExist:
-            return Codebase.objects.none()
+            return self.filter(submitter=user)
 
     def with_contributors(self, release_contributor_qs=None, user=None, **kwargs):
         if user is not None:
