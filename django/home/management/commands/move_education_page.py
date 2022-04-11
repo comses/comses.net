@@ -38,22 +38,22 @@ Eligible users will receive a certificate of completion and digital badge after 
 EDUCATION_PAGE_BODY = """
 # Tutorials
 
-## [Responsible Practices for Scientific Software](/education/good-practices/)
+#### [Responsible Practices for Scientific Software](/education/good-practices/)
 [This tutorial](/education/good-practices/) provides an introduction to the FAIR principles for research software and concrete practices to help you make your computational models more FAIR.
 
-## Introduction to Git and GitHub
+#### Introduction to Git and GitHub
 
 [Join this GitHub classroom](https://classroom.github.com/a/SF1_14wJ) and complete the assignments to familiarize yourself with Git and GitHub. To join the classroom, click the link and associate your GitHub account with a GitHub classroom student roster entry.
 
 If you are new to Git please download [GitHub Desktop](https://desktop.github.com/) to follow along with the GitHub Classroom assignments. We will use a NetLogo model as an example. You will also need a plain text editor like [Atom](https://atom.io/) or [Visual Studio Code](https://code.visualstudio.com/) to resolve git merge conflicts in NetLogo code as NetLogo will not be able to open those files.
 
-## Introduction to Containerization
+#### Introduction to Containerization
 
 [This tutorial](https://classroom.github.com/a/AIdYi37i) introduces the concept of _containerization_ and provides step-by-step guidance on how to containerize an example NetLogo model with transparency and longevity in mind.
 
 # Team Modeling Examples
 
-## GitHub Community Model
+#### GitHub Community Model
 
 This urban vulnerability project has been used in several CoMSES Winter Schools. Learn to collaborate with other researchers on GitHub for a computational model of governance and vulnerability in an urban setting.
 
@@ -76,13 +76,14 @@ Info on Open Code Badge: https://www.comses.net/resources/open-code-badge
 [Watch the FAIR Principles Video](https://mediaplus.asu.edu/lti/embedded?id=03a53683-eae9-4da8-9cac-ec7dfefa73d0&siteId=61e0606e-415d-4001-8206-ffde48430c64)
 
 More information about the FAIR Principles:
-* The first publication in 2016: Wilkinson, M. D., Dumontier, M., Aalbersberg, I. J., Appleton, G., Axton, M., Baak, A., ... & Mons, B. (2016). The FAIR Guiding Principles for scientific data management and stewardship. Scientific data, 3(1), 1-9. https://doi.org/10.1038/sdata.2016.18
-* Further details about the implementation of FAIR Principles for research software: Lamprecht, A. L., Garcia, L., Kuzak, M., Martinez, C., Arcila, R., Martin Del Pico, E., ... & Capella-Gutierrez, S. (2020). Towards FAIR principles for research software. Data Science, 3(1), 37-59. https://doi.org/10.3233/DS-190026
-* Research Data Alliance Working Group to establish FAIR Principles for research software: https://www.rd-alliance.org/group/fair-research-software-fair4rs-wg/outcomes/fair-principles-research-software-fair4rs
+
+- The first publication in 2016: Wilkinson, M. D., Dumontier, M., Aalbersberg, I. J., Appleton, G., Axton, M., Baak, A., ... & Mons, B. (2016). The FAIR Guiding Principles for scientific data management and stewardship. Scientific data, 3(1), 1-9. https://doi.org/10.1038/sdata.2016.18
+- Further details about the implementation of FAIR Principles for research software: Lamprecht, A. L., Garcia, L., Kuzak, M., Martinez, C., Arcila, R., Martin Del Pico, E., ... & Capella-Gutierrez, S. (2020). Towards FAIR principles for research software. Data Science, 3(1), 37-59. https://doi.org/10.3233/DS-190026
+- Research Data Alliance Working Group to establish FAIR Principles for research software: https://www.rd-alliance.org/group/fair-research-software-fair4rs-wg/outcomes/fair-principles-research-software-fair4rs
 
 ## 3. Metadata
 
-[Watch the Video on Metadata] (https://mediaplus.asu.edu/lti/embedded?id=e1a89d74-71a3-426c-a760-c883df5e7d61&siteId=61e0606e-415d-4001-8206-ffde48430c64)
+[Watch the Video on Metadata](https://mediaplus.asu.edu/lti/embedded?id=e1a89d74-71a3-426c-a760-c883df5e7d61&siteId=61e0606e-415d-4001-8206-ffde48430c64)
 
 CodeMeta website: https://codemeta.github.io/index.html
 
@@ -102,9 +103,8 @@ More information about UML: https://www.tutorialspoint.com/uml/index.htm
 
 More information on the ODD protocol
  
-* Grimm, V., Berger, U., Bastiansen, F., Eliassen, S., Ginot, V., Giske, J., Goss-Custard, J., Grand, T., Heinz, S., Huse, G., Huth, A., Jepsen, J. U., Jørgensen, C., Mooij, W. M., Müller, B., Pe'er, G., Piou, C., Railsback, S. F., Robbins, A. M., Robbins, M. M., Rossmanith, E., Rüger, N., Strand, E., Souissi, S., Stillman, R. A., Vabø, R., Visser, U., & DeAngelis, D. L. (2006). A standard protocol for describing individual-based and agent-based models. Ecological Modelling, 198, 115-126. https://doi.org/10.1016/j.ecolmodel.2006.04.023
-
-* Grimm, V., S.F. Railsback, C.E. Vincenot, U. Berger, C. Gallagher, D.L. DeAngelis, B. Edmonds, J. Ge, J. Giske, J. Groeneveld, A.S.A. Johnston, A. Milles, J. Nabe-Nielsen, J. Gareth Polhill, V. Radchuk, M.-S. Rohwäder, R.A. Stillman, J.C. Thiele, and D. Ayllón (2020) The ODD Protocol for Describing Agent-Based and Other Simulation Models: A Second Update to Improve Clarity, Replication, and Structural Realism, Journal of Artificial Societies and Social Simulation 23(2) 7, Doi: 10.18564/jasss.4259 Url: http://jasss.soc.surrey.ac.uk/23/2/7.html
+- Grimm, V., Berger, U., Bastiansen, F., Eliassen, S., Ginot, V., Giske, J., Goss-Custard, J., Grand, T., Heinz, S., Huse, G., Huth, A., Jepsen, J. U., Jørgensen, C., Mooij, W. M., Müller, B., Pe'er, G., Piou, C., Railsback, S. F., Robbins, A. M., Robbins, M. M., Rossmanith, E., Rüger, N., Strand, E., Souissi, S., Stillman, R. A., Vabø, R., Visser, U., & DeAngelis, D. L. (2006). A standard protocol for describing individual-based and agent-based models. Ecological Modelling, 198, 115-126. https://doi.org/10.1016/j.ecolmodel.2006.04.023
+- Grimm, V., S.F. Railsback, C.E. Vincenot, U. Berger, C. Gallagher, D.L. DeAngelis, B. Edmonds, J. Ge, J. Giske, J. Groeneveld, A.S.A. Johnston, A. Milles, J. Nabe-Nielsen, J. Gareth Polhill, V. Radchuk, M.-S. Rohwäder, R.A. Stillman, J.C. Thiele, and D. Ayllón (2020) The ODD Protocol for Describing Agent-Based and Other Simulation Models: A Second Update to Improve Clarity, Replication, and Structural Realism, Journal of Artificial Societies and Social Simulation 23(2) 7, Doi: 10.18564/jasss.4259 Url: http://jasss.soc.surrey.ac.uk/23/2/7.html
 
 ## 7. Licenses
 
@@ -117,11 +117,14 @@ Resources for Choosing a License
 - https://choosealicense.com/
 - https://www.gnu.org/licenses/license-recommendations.en.html
 
-## Once you have completed the tutorial, please complete the following assessment.
+## Final Assessment
 
-Model for use with the assessment: https://www.comses.net/codebase-release/872baf53-09f9-49f2-a430-2d29f5e3445e/
+Once you have finished the above tutorials, please complete the following assessment.
 
-Assessment: https://forms.gle/5WjshdE2QXXpRhRh9
+Assessment Companion Model: https://www.comses.net/codebase-release/872baf53-09f9-49f2-a430-2d29f5e3445e/
+
+[Take the final assessment](https://forms.gle/5WjshdE2QXXpRhRh9)
+
 """
 
 
