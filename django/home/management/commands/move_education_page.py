@@ -39,7 +39,7 @@ EDUCATION_PAGE_BODY = """
 # Tutorials
 
 #### [Responsible Practices for Scientific Software](/education/good-practices/)
-[This tutorial](/education/good-practices/) provides an introduction to the FAIR principles for research software and concrete practices to help you make your computational models more FAIR.
+[This set of videos](/education/good-practices/) provides an introduction to the FAIR principles for research software and concrete practices to help you make your computational models more FAIR.
 
 #### Introduction to Git and GitHub
 
@@ -49,7 +49,7 @@ If you are new to Git please download [GitHub Desktop](https://desktop.github.co
 
 #### Introduction to Containerization
 
-[This tutorial](https://classroom.github.com/a/AIdYi37i) introduces the concept of _containerization_ and provides step-by-step guidance on how to containerize an example NetLogo model with transparency and longevity in mind.
+[Join this GitHub Classroom](https://classroom.github.com/a/AIdYi37i) to learn about _containerization_, a way to bundle and archive your code in a reproducible manner. Follow step-by-step guidance on how to containerize an example NetLogo model with transparency and longevity in mind.
 
 # Team Modeling Examples
 
