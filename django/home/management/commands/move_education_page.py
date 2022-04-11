@@ -158,11 +158,9 @@ class Command(BaseCommand):
         # good practices page
         try:
             good_practices_page = MarkdownPage.objects.get(slug="good-practices")
-            good_practices.breadcrumbs.all().delete()
-            good_practices_page_created = False
+            good_practices_page.breadcrumbs.all().delete()
         except MarkdownPage.DoesNotExist:
             good_practices_page = MarkdownPage(slug="good-practices")
-            good_practices_page_created = True
 
         good_practices_page.add_breadcrumbs(
             (
