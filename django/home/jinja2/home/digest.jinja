@@ -5,12 +5,9 @@
     {{ super() }}
     <style type="text/css">
         {# FIXME: consider moving to frontend css #}
-        .display_archive {
+        .campaign {
             font-family: arial, verdana;
             font-size: 1.2em;
-        }
-
-        .campaign {
             padding: 1rem;
             margin-top: 1rem;
             position: relative;
@@ -18,6 +15,7 @@
             min-width: 100%;
             max-width: 100%;
             border: #dfdfdf solid 0.1rem;
+            list-style: none;
             {#line-height: 125%;#}
         }
 
@@ -52,6 +50,10 @@
     </div>
     <h2>Issues</h2>
     <ul class='list-group list-order'>
+        <li class="campaign">
+            03/15/2022 - <a href='{{ static("digest/2022-03-15-v10-n1.pdf") }}'>CoMSES Digest: Spring 2022 Vol. 10 No. 1</a>
+        </li>
+
         {% if mailchimp_js %}
             <script>
                 {{ mailchimp_js|safe }}
