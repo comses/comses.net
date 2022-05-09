@@ -248,6 +248,7 @@
 
 {% block sidebar %}
 {% if release.live %}
+    {# {{ render_bundle('request_download', defer=True) }} #}
     <a id="releaseDownload" class='btn btn-primary my-1 w-100' data-name="download" rel='nofollow' href="{{ release.get_download_url() }}">
         <i class='fas fa-download'></i> Download Version {{ release.version_number }}
     </a>

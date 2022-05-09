@@ -26,6 +26,7 @@ from .models import (
     ReleaseContributor,
     Codebase,
     CodebaseRelease,
+    CodebaseReleaseDownload,
     Contributor,
     License,
     CodebaseImage,
@@ -418,6 +419,14 @@ class CodebaseImageSerializer(serializers.ModelSerializer):
         model = CodebaseImage
         fields = ("identifier", "name", "file")
         extra_kwargs = {"file": {"write_only": True}}
+
+
+class DownloadRequestSerializer(serializers.ModelSerializer):
+    # customize save functionality to validate and record a new CodebaseReleaseDownload
+
+    class Meta:
+        model = CodebaseReleaseDownload
+        fields = ("referrer", "industry", "affiliation", "reason", "client_ip")
 
 
 class CodebaseReleaseSerializer(serializers.ModelSerializer):

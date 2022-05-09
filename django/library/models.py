@@ -1367,6 +1367,10 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
 
     @transaction.atomic
     def record_download(self, request):
+        """
+        FIXME: remove this method + dependencies when
+        DownloadRequestSerializer is finished
+        """
         referrer = request.META.get("HTTP_REFERER", "")
         client_ip, is_routable = get_client_ip(request)
         user = request.user if request.user.is_authenticated else None

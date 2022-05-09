@@ -16,6 +16,7 @@ from django.views.generic.base import RedirectView
 from django.views.generic.detail import DetailView
 from django.views.generic.edit import UpdateView
 from django.views.generic.list import ListView
+from ipware import get_client_ip
 from rest_framework import (
     viewsets,
     generics,
@@ -68,6 +69,7 @@ from .serializers import (
     CodebaseSerializer,
     CodebaseReleaseSerializer,
     ContributorSerializer,
+    DownloadRequestSerializer,
     ReleaseContributorSerializer,
     CodebaseReleaseEditSerializer,
     CodebaseImageSerializer,
@@ -661,6 +663,9 @@ class CodebaseReleaseShareViewSet(
 
     @action(detail=True, methods=["get"])
     def download(self, request, *args, **kwargs):
+        """
+        Download this model archive for review (no need for an interstitial survey)
+        """
         codebase_release = self.get_object()
         if codebase_release.live:
             raise Http404("Cannot download review archive on published release")
@@ -833,9 +838,46 @@ class CodebaseReleaseViewSet(CommonViewSetMixin, NoDeleteViewSet):
                 status=status.HTTP_200_OK,
             )
 
+    @action(detail=True, methods=["post"])
+    @transaction.atomic
+    def request_download(self, request, **kwargs):
+        # FIXME: figure out how to require authentication in this framework
+        download_request = request.data
+        codebase_release = self.get_object()
+        referrer = request.META.get("HTTP_REFERER", "")
+        client_ip, is_routable = get_client_ip(request)
+        user = request.user if request.user.is_authenticated else None
+        download_request.update(
+            client_ip=client_ip,
+            referrer=referrer,
+            user=user,
+            codebase_release=codebase_release,
+        )
+        serializer = DownloadRequestSerializer(data=download_request)
+
+        if not serializer.is_valid(raise_exception=True):
+            raise ValidationError(f"Invalid download request: {download_request}")
+
+        try:
+            response = build_archive_download_response(codebase_release)
+            serializer.save()  # records the download + metadata
+            # codebase_release.record_download(request)
+        except FileNotFoundError:
+            logger.error(
+                "Unable to find archive for codebase release %s (%s)",
+                codebase_release.pk,
+                codebase_release.get_absolute_url(),
+            )
+            raise Http404
+        return response
+
+
     @action(detail=True, methods=["get"])
     @transaction.atomic
     def download(self, request, **kwargs):
+        """
+        Download the published model archive
+        """
         codebase_release = self.get_object()
         try:
             response = build_archive_download_response(codebase_release)
