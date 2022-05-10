@@ -23,18 +23,17 @@ export class Check extends Vue {
 @Component({
     template: `<div class="container-fluid px-0">
         <div class="row">
-            <div class="col-sm-12 col-md-6 col-lg-4" v-if="!published">
+            <div :class="cardClass">
                 <div class="card">
                     <div class="card-header">
-                        <h5 class='card-title'>Upload</h5>
+                        <h5 class='card-title'>Metadata</h5>
                     </div>
                     <div class="card-body">
-                        <p class="card-text">
-                            <c-check label="At least one code file" :check="uploadProgress.code"></c-check>
-                            <c-check label="At least one narrative documentation file" :check="uploadProgress.docs"></c-check>
-                            <c-check label="At least one input data file (optional)" :check="uploadProgress.data"></c-check>
-                            <c-check label="At least one result file (optional)" :check="uploadProgress.results"></c-check>
-                        </p>
+                        <c-check label="Release notes" :check="detailProgress.release_notes"></c-check>
+                        <c-check label="Operating system" :check="detailProgress.os"></c-check>
+                        <c-check label="Software Framework" :check="detailProgress.platforms"></c-check>
+                        <c-check label="Programming language" :check="detailProgress.programming_languages"></c-check>
+                        <c-check label="License" :check="detailProgress.license"></c-check>
                     </div>
                 </div>
             </div>
@@ -48,17 +47,18 @@ export class Check extends Vue {
                     </div>
                 </div>
             </div>
-            <div :class="cardClass">
+            <div class="col-sm-12 col-md-6 col-lg-4" v-if="!published">
                 <div class="card">
                     <div class="card-header">
-                        <h5 class='card-title'>Metadata</h5>
+                        <h5 class='card-title'>Upload</h5>
                     </div>
                     <div class="card-body">
-                        <c-check label="Release notes" :check="detailProgress.release_notes"></c-check>
-                        <c-check label="Operating system" :check="detailProgress.os"></c-check>
-                        <c-check label="Software Framework" :check="detailProgress.platforms"></c-check>
-                        <c-check label="Programming language" :check="detailProgress.programming_languages"></c-check>
-                        <c-check label="License" :check="detailProgress.license"></c-check>
+                        <p class="card-text">
+                            <c-check label="At least one code file" :check="uploadProgress.code"></c-check>
+                            <c-check label="At least one narrative documentation file" :check="uploadProgress.docs"></c-check>
+                            <c-check label="At least one input data file (optional)" :check="uploadProgress.data"></c-check>
+                            <c-check label="At least one result file (optional)" :check="uploadProgress.results"></c-check>
+                        </p>
                     </div>
                 </div>
             </div>

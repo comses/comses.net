@@ -266,13 +266,13 @@ class PublishModal extends createFormValidator(publishSchema) {
                         Metadata<span class="badge badge-pill badge-danger" v-if="detailPageErrors !== 0">{{ detailPageErrors }} errors</span>
                     </router-link>
                 </li>
-                <li class="nav-item" v-if="!isPublished" data-toggle="tooltip" data-placement="bottom" title="">
-                    <router-link :to="{ name: 'upload'}" class="nav-link" active-class="active">Upload</router-link>
-                </li>
                 <li class="nav-item">
                     <router-link :to="{ name: 'contributors' }" class="nav-link" active-class="active">Contributors</router-link>
                 </li>
-            </ul>
+                 <li class="nav-item" v-if="!isPublished" data-toggle="tooltip" data-placement="bottom" title="">
+                    <router-link :to="{ name: 'upload'}" class="nav-link" active-class="active">Upload</router-link>
+                </li>
+           </ul>
             <keep-alive>
                 <router-view :initialData="initialData"></router-view>
             </keep-alive>
