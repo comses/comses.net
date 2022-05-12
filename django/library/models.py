@@ -1765,7 +1765,7 @@ class PeerReview(models.Model):
             template_name="library/review/email/model_certified.jinja",
             context={"review": self},
             to=[self.submitter.email],
-            bcc=[editor.email],
+            cc=[settings.REVIEW_EDITOR_EMAIL],
         )
 
     def log(self, message: str, action: PeerReviewEvent, author: MemberProfile):
@@ -1801,7 +1801,7 @@ class PeerReview(models.Model):
             subject="Peer review: New request",
             template_name="library/review/email/review_requested.jinja",
             context={"review": self},
-            to=[settings.EDITOR_EMAIL],
+            to=[settings.REVIEW_EDITOR_EMAIL],
         )
 
     @property
@@ -1928,7 +1928,7 @@ class PeerReviewInvitation(models.Model):
                 "feedback": self.feedback_set.create(),
             },
             to=[self.reviewer_email],
-            cc=[self.editor_email],
+            cc=[settings.REVIEW_EDITOR_EMAIL],
         )
 
     @transaction.atomic
@@ -1938,7 +1938,7 @@ class PeerReviewInvitation(models.Model):
             template_name="library/review/email/review_invitation.jinja",
             context={"invitation": self},
             to=[self.reviewer_email],
-            cc=[self.editor_email],
+            cc=[settings.REVIEW_EDITOR_EMAIL],
         )
         self.review.log(
             action=PeerReviewEvent.invitation_sent
@@ -1962,7 +1962,8 @@ class PeerReviewInvitation(models.Model):
             subject="Peer review: accepted invitation to review model",
             template_name="library/review/email/review_invitation_accepted.jinja",
             context={"invitation": self, "feedback": feedback},
-            to=[self.reviewer_email, self.editor.email],
+            to=[self.reviewer_email],
+            cc=[settings.REVIEW_EDITOR_EMAIL],
         )
         return feedback
 
@@ -1979,7 +1980,7 @@ class PeerReviewInvitation(models.Model):
             subject="Peer review: declined invitation to review model",
             template_name="library/review/email/review_invitation_declined.jinja",
             context={"invitation": self},
-            to=[self.editor.email],
+            to=[settings.REVIEW_EDITOR_EMAIL],
         )
 
     def get_absolute_url(self):
@@ -2081,16 +2082,17 @@ class PeerReviewerFeedback(models.Model):
             message=f"Reviewer {reviewer} provided feedback",
         )
         send_markdown_email(
-            subject="Peer review: reviewer submitted, editor action needed",
+            subject="[CoMSES Peer Review]: reviewer feedback submitted, editor action needed",
             template_name="library/review/email/reviewer_submitted.jinja",
             context={"review": review, "invitation": self.invitation},
-            to=[self.invitation.editor_email],
+            to=[settings.REVIEW_EDITOR_EMAIL],
         )
         send_markdown_email(
             subject="Peer review: feedback submitted",
             template_name="library/review/email/reviewer_submitted_thanks.jinja",
             context={"review": review, "invitation": self.invitation},
             to=[reviewer.email],
+            bcc=[settings.REVIEW_EDITOR_EMAIL],
         )
 
     @transaction.atomic
@@ -2116,7 +2118,7 @@ class PeerReviewerFeedback(models.Model):
             template_name="library/review/email/model_revisions_requested.jinja",
             context={"review": review, "feedback": self},
             to=recipients,
-            bcc=[editor.email],
+            bcc=[settings.REVIEW_EDITOR_EMAIL],
         )
 
     def __str__(self):
