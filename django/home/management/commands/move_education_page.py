@@ -43,7 +43,7 @@ EDUCATION_PAGE_BODY = """
 
 #### Introduction to Git and GitHub
 
-[Join this GitHub classroom](https://classroom.github.com/a/SF1_14wJ) and complete the assignments to familiarize yourself with Git and GitHub. To join the classroom, click the link and associate your GitHub account with a GitHub classroom student roster entry.
+[Join this GitHub classroom](https://classroom.github.com/a/bLyjPEf6) and complete the assignments to familiarize yourself with Git and GitHub. To join the classroom, click the link and associate your GitHub account with a GitHub classroom student roster entry.
 
 If you are new to Git please download [GitHub Desktop](https://desktop.github.com/) to follow along with the GitHub Classroom assignments. We will use a NetLogo model as an example. You will also need a plain text editor like [Atom](https://atom.io/) or [Visual Studio Code](https://code.visualstudio.com/) to resolve git merge conflicts in NetLogo code as NetLogo will not be able to open those files.
 
