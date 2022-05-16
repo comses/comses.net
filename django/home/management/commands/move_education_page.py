@@ -28,18 +28,18 @@ RESOURCES_NAVIGATION_LINKS = (
 )
 
 EDUCATION_PAGE_DESCRIPTION = """
-These CoMSES Net tutorials provide hands-on training in best practices for computational modeling and concrete guidance on tools and techniques to share your work and develop advanced data analysis workflows in accordance with the [FAIR principles for research software](https://doi.org/10.15497/RDA00068).
+These CoMSES Net training modules provide instruction on current best practices for computational modeling with concrete guidance for developing data analysis workflows and sharing your work in accordance with the [FAIR principles for research software](https://doi.org/10.15497/RDA00068).
 
-You must be logged in as a COMSES Net member to access these tutorials and have an up-to-date CoMSES Profile.
+You must be logged in as a COMSES Net member to access these modules and have an up-to-date CoMSES user profile.
 
-Eligible users will receive a certificate of completion and digital badge after successfully completing a tutorial and its accompanying assessment.
+Eligible users can receive a certificate of completion and digital badge after successfully completing a tutorial and its accompanying assessment.
 """
 
 EDUCATION_PAGE_BODY = """
-# Tutorials
+# Training Modules
 
 #### [Responsible Practices for Scientific Software](/education/good-practices/)
-[This set of videos](/education/good-practices/) provides an introduction to the FAIR principles for research software and concrete practices to help you make your computational models more FAIR.
+[Watch these videos](/education/good-practices/) for an introduction to the FAIR principles for research software and practices to help you make your computational models more FAIR.
 
 #### Introduction to Git and GitHub
 
@@ -65,9 +65,9 @@ Responsible practices for developing and publishing FAIR+ computational models i
 """
 
 GOOD_PRACTICES_BODY = """
-## 1. Tutorial Introduction
+## 1. Introduction
 
-[Watch the Tutorial Introduction](https://mediaplus.asu.edu/lti/embedded?id=bf90390a-a917-4992-858a-acff6178ac4e&siteId=61e0606e-415d-4001-8206-ffde48430c64)
+[Watch the Introduction](https://mediaplus.asu.edu/lti/embedded?id=bf90390a-a917-4992-858a-acff6178ac4e&siteId=61e0606e-415d-4001-8206-ffde48430c64)
 
 Info on Open Code Badge: https://www.comses.net/resources/open-code-badge
 
@@ -119,9 +119,7 @@ Resources for Choosing a License
 
 ## Final Assessment
 
-Once you have finished the above tutorials, please complete the following assessment.
-
-Assessment Companion Model: https://www.comses.net/codebase-release/872baf53-09f9-49f2-a430-2d29f5e3445e/
+Once you have finished the above modules, please complete the following assessment.
 
 [Take the final assessment](https://forms.gle/5WjshdE2QXXpRhRh9)
 
