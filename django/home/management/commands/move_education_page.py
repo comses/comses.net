@@ -101,9 +101,15 @@ More information about the FAIR Principles:
 
 [Watch the Video on Model Documentation](https://mediaplus.asu.edu/lti/embedded?id=68c653e7-e780-4bf2-bd28-33771586df1c&siteId=61e0606e-415d-4001-8206-ffde48430c64)
 
-More information about UML: https://www.tutorialspoint.com/uml/index.htm 
+### Additional Resources
 
-More information on the ODD protocol
+UML and visual documentation of code:
+
+- An in-depth overview of UML by Ray Toal: https://cs.lmu.edu/~ray/notes/umloverview/
+- An overview of different kinds of visualization to help understand code:
+  https://www.lucidchart.com/blog/visualize-code-documentation
+
+More information on the ODD protocol:
  
 - Grimm, V., Berger, U., Bastiansen, F., Eliassen, S., Ginot, V., Giske, J., Goss-Custard, J., Grand, T., Heinz, S., Huse, G., Huth, A., Jepsen, J. U., Jørgensen, C., Mooij, W. M., Müller, B., Pe'er, G., Piou, C., Railsback, S. F., Robbins, A. M., Robbins, M. M., Rossmanith, E., Rüger, N., Strand, E., Souissi, S., Stillman, R. A., Vabø, R., Visser, U., & DeAngelis, D. L. (2006). A standard protocol for describing individual-based and agent-based models. Ecological Modelling, 198, 115-126. https://doi.org/10.1016/j.ecolmodel.2006.04.023
 - Grimm, V., S.F. Railsback, C.E. Vincenot, U. Berger, C. Gallagher, D.L. DeAngelis, B. Edmonds, J. Ge, J. Giske, J. Groeneveld, A.S.A. Johnston, A. Milles, J. Nabe-Nielsen, J. Gareth Polhill, V. Radchuk, M.-S. Rohwäder, R.A. Stillman, J.C. Thiele, and D. Ayllón (2020) The ODD Protocol for Describing Agent-Based and Other Simulation Models: A Second Update to Improve Clarity, Replication, and Structural Realism, Journal of Artificial Societies and Social Simulation 23(2) 7, Doi: 10.18564/jasss.4259 Url: http://jasss.soc.surrey.ac.uk/23/2/7.html
@@ -139,7 +145,7 @@ class Command(BaseCommand):
 
         home_page = Page.objects.get(slug="home")
         education_page.title = "Educational Resources"
-        education_page.heading = "Educational Resources"
+        education_page.heading = "Training Modules"
         education_page.description = EDUCATION_PAGE_DESCRIPTION
         education_page.body.raw = EDUCATION_PAGE_BODY
         education_page.move(home_page, pos="last-child")
