@@ -45,11 +45,11 @@ EDUCATION_PAGE_BODY = """
 
 [Join this GitHub classroom](https://classroom.github.com/a/bLyjPEf6) and complete the assignments to familiarize yourself with Git and GitHub. To join the classroom, click the link and associate your GitHub account with a GitHub classroom student roster entry.
 
-If you are new to Git please download [GitHub Desktop](https://desktop.github.com/) to follow along with the GitHub Classroom assignments. We will use a NetLogo model as an example. You will also need a plain text editor like [Atom](https://atom.io/) or [Visual Studio Code](https://code.visualstudio.com/) to resolve git merge conflicts in NetLogo code as NetLogo will not be able to open those files.
+If you are new to Git please download [GitHub Desktop](https://desktop.github.com/) to follow along with the GitHub Classroom assignments. We will use a [NetLogo](https://ccl.northwestern.edu/netlogo/) model as an example. You will also need a plain text editor like [Atom](https://atom.io/) or [Visual Studio Code](https://code.visualstudio.com/) to resolve git merge conflicts in NetLogo code as NetLogo will report an error if you try to open files with merge conflicts within them.
 
 #### Introduction to Containerization
 
-[Join this GitHub Classroom](https://classroom.github.com/a/AIdYi37i) to learn about _containerization_, a way to bundle and archive your code in a reproducible manner. Follow step-by-step guidance on how to containerize an example NetLogo model with transparency and longevity in mind.
+[Join this GitHub classroom](https://classroom.github.com/a/AIdYi37i) to learn about _containerization_, a way to bundle and archive your code in a reproducible manner. Follow step-by-step guidance on how to containerize an example NetLogo model with transparency and longevity in mind.
 
 # Team Modeling Examples
 
@@ -85,7 +85,9 @@ More information about the FAIR Principles:
 
 [Watch the Video on Metadata](https://mediaplus.asu.edu/lti/embedded?id=e1a89d74-71a3-426c-a760-c883df5e7d61&siteId=61e0606e-415d-4001-8206-ffde48430c64)
 
-CodeMeta website: https://codemeta.github.io/index.html
+- For more information on CodeMeta: https://codemeta.github.io/index.html
+- GitHub [now supports](https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-citation-files) software citation via [CITATION.cff files](https://citation-file-format.github.io/), YAML formatted files that provide clarity and guidance on how to cite the code in a given GitHub repository.
+
 
 ## 4. Code Management
 
@@ -110,7 +112,7 @@ More information on the ODD protocol
 
 [Watch the Video on Software Licenses](https://mediaplus.asu.edu/lti/embedded?id=61b8db6e-8fec-4b56-8fc3-d98ee7b7a81e&siteId=61e0606e-415d-4001-8206-ffde48430c64)
 
-Resources for Choosing a License
+Resources for choosing a license:
 
 - https://ufal.github.io/public-license-selector/
 - https://fossa.com/blog/how-choose-right-open-source-license/
@@ -119,9 +121,9 @@ Resources for Choosing a License
 
 ## Final Assessment
 
-Once you have finished the above modules, please complete the following assessment.
+Once you have finished the above modules, please complete the following assessment. You will receive a certificate of completion and digital badge after successfully passing the assessment.
 
-[Take the final assessment](https://forms.gle/5WjshdE2QXXpRhRh9)
+[Complete the final assessment](https://forms.gle/5WjshdE2QXXpRhRh9)
 
 """
 
