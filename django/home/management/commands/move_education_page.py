@@ -49,7 +49,7 @@ If you are new to Git please download [GitHub Desktop](https://desktop.github.co
 
 #### Introduction to Containerization
 
-[Join this GitHub classroom](https://classroom.github.com/a/AIdYi37i) to learn about _containerization_, a way to bundle and archive your code in a reproducible manner. Follow step-by-step guidance on how to containerize an example NetLogo model with transparency and longevity in mind.
+[Join this GitHub classroom](https://classroom.github.com/a/WuDb62qc) to learn about _containerization_, a way to bundle and archive your code in a reproducible manner. Follow step-by-step guidance on how to containerize an example NetLogo model with transparency and longevity in mind.
 
 # Team Modeling Examples
 
