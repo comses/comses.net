@@ -315,7 +315,7 @@ def discourse_sso(request):
         "nonce": qs["nonce"][0],
         "email": user.email,
         "external_id": user.id,
-        "username": user.username,
+        "username": user.member_profile.discourse_username,
         "require_activation": "false",
         "name": user.get_full_name(),
     }

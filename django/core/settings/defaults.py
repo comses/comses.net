@@ -195,7 +195,9 @@ DEFAULT_FROM_EMAIL = config.get(
 # email address used for errors emails sent to ADMINS and MANAGERS
 SERVER_EMAIL = config.get("email", "SERVER_EMAIL", fallback="editors@comses.net")
 EDITOR_EMAIL = config.get("email", "EDITOR_EMAIL", fallback="editors@comses.net")
-REVIEW_EDITOR_EMAIL = config.get("email", "REVIEW_EDITOR_EMAIL", fallback="reviews@comses.net")
+REVIEW_EDITOR_EMAIL = config.get(
+    "email", "REVIEW_EDITOR_EMAIL", fallback="reviews@comses.net"
+)
 # default email subject prefix
 EMAIL_SUBJECT_PREFIX = config.get(
     "email", "EMAIL_SUBJECT_PREFIX", fallback="[CoMSES Net]"

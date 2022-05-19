@@ -26,6 +26,7 @@ from wagtail.search import index
 from wagtail.snippets.models import register_snippet
 
 from .backends import add_to_comses_permission_whitelist
+from .discourse import sanitize_username
 from .fields import MarkdownField
 
 EXCLUDED_USERNAMES = ("AnonymousUser", "openabm")
@@ -288,6 +289,10 @@ class MemberProfile(index.Indexed, ClusterableModel):
     @property
     def username(self):
         return self.user.username
+
+    @property
+    def discourse_username(self):
+        return sanitize_username(self.username)
 
     @property
     def is_active(self):
