@@ -9,6 +9,7 @@ from django.template.loader import render_to_string
 from django.templatetags.static import static
 from django.urls import reverse
 from django.utils.dateparse import parse_datetime
+from django.utils.text import slugify
 from django.utils.timezone import get_current_timezone
 from jinja2 import Environment, Markup
 
@@ -43,6 +44,7 @@ def environment(**options):
         {
             "static": static,
             "url": jinja_url,
+            "slugify": slugify,
             "constants": constants,
             "build_absolute_uri": build_absolute_uri,
             "cookielaw": cookielaw,
@@ -79,7 +81,8 @@ def cookielaw(request):
 
 def now(format_string):
     """
-    Simulates the Django https://docs.djangoproject.com/en/dev/ref/templates/builtins/#now default templatetag
+    Simulates the Django https://docs.djangoproject.com/en/dev/ref/templates/builtins/#now
+    default templatetag
     Usage: {{ now('Y') }}
     """
     tzinfo = get_current_timezone() if settings.USE_TZ else None
@@ -88,15 +91,14 @@ def now(format_string):
 
 def should_enable_discourse(is_public: bool):
     """
-    Returns True if we are not in DEBUG mode and the detail object (the wagtail Page or django Model, e.g.,
-    Codebase/CodebaseRelease/Event/Job) is public. If there is no 'live' attribute, default to True as it is public by
-    default.
+    Returns True if we are not in DEBUG mode and the detail object (wagtail Page or django
+    Model, e.g., Codebase/CodebaseRelease/Event/Job) is public.
     """
-    return is_public and not settings.DEPLOY_ENVIRONMENT.is_development()
+    return is_public and not settings.DEPLOY_ENVIRONMENT.is_development
 
 
 def is_production():
-    return settings.DEPLOY_ENVIRONMENT.is_production() and not settings.DEBUG
+    return settings.DEPLOY_ENVIRONMENT.is_production and not settings.DEBUG
 
 
 def provider_login_url(request, provider_id, **kwargs):
