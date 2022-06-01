@@ -17,8 +17,10 @@
         </div>
     </div>
     {% for category, group_list in page.people_entry_placements.all()|sort(attribute='category')|groupby('category') %}
-        <div id='{{ category }}' class='pt-3 people {{ category }}'>
-            <h2 class='people'>{{ get_choices_display(category, people_categories) }}</h2>
+    {% with category_name = get_choices_display(category, people_categories) %}
+        <div id='{{ slugify(category_name) }}' class='pt-3 people-section {{ category }}'>
+            <h2>{{ category_name }}</h2>
+    {% endwith %}
             {% for placement in group_list %}
                 {% with member_profile=placement.member_profile %}
                 <div class='card'>
