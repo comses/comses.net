@@ -21,13 +21,24 @@
           </button>
         </div>
         <div class="modal-body">
-          <form>
-            <div class="form-group">
-              <label for="inputEmail">Email</label>
+          <form class="gy-2 gx-3 align-items-center">
+            <div class="row mb-3">
+              <label for="inputEmail" class="col-sm-2 col-form-label"
+                >Email</label
+              >
+              <div class="col-sm-10">
+                <input type="email" class="form-control" id="inputEmail3" />
+              </div>
             </div>
-            <div class="form-group">
+
+            <div class="row mb-3">
               <label for="downloadReason">Reason for Download</label>
-              <select class="form-control" id="downloadReason"></select>
+              <select class="form-select" id="downloadReason">
+                <option selected>Choose...</option>
+                <option value="1">One</option>
+                <option value="2">Two</option>
+                <option value="3">Three</option>
+              </select>
             </div>
           </form>
         </div>
