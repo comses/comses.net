@@ -309,7 +309,7 @@
         <!-- End Google Tag Manager -->
     {% endif %}
     <script src="//cdnjs.cloudflare.com/ajax/libs/holder/2.9.7/holder.min.js"></script>
-    {% if constants.DEPLOY_ENVIRONMENT.is_staging_or_production() %}
+    {% if constants.DEPLOY_ENVIRONMENT.is_staging_or_production %}
 
         {% with SENTRYJS_VERSION='6.5.1' %}
             <script 

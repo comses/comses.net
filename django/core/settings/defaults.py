@@ -23,21 +23,27 @@ class Environment(Enum):
     PRODUCTION = "https://www.comses.net"
     TEST = "http://localhost:8000"
 
+    @property
     def base_url(self):
         return self.value
 
+    @property
     def is_staging_or_production(self):
         return self in (Environment.PRODUCTION, Environment.STAGING)
 
+    @property
     def is_production(self):
         return self == Environment.PRODUCTION
 
+    @property
     def is_staging(self):
         return self == Environment.STAGING
 
+    @property
     def is_development(self):
         return self == Environment.DEVELOPMENT
 
+    @property
     def is_test(self):
         return self == Environment.TEST
 
@@ -55,7 +61,7 @@ DEBUG = True
 # e.g. in notification emails. Don't include '/admin' or a trailing slash
 # FIXME: needs to be overridden in staging and prod after updating DEPLOY_ENVIRONMENT which is less than ideal
 
-BASE_URL = DEPLOY_ENVIRONMENT.base_url()
+BASE_URL = DEPLOY_ENVIRONMENT.base_url
 ROBOTS_SITEMAP_URLS = [f"{BASE_URL}/sitemap.xml"]
 
 

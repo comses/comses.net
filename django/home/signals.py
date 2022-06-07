@@ -19,26 +19,22 @@ def sync_user_member_profiles(sender, instance: User, created, **kwargs):
     """
     Ensure every created User has an associated MemberProfile
     """
-    if created and instance.username not in EXCLUDED_USERNAMES:
+    if instance.username in EXCLUDED_USERNAMES:
+        return
+    if created:
         suid = shortuuid.uuid()
-        mp, created = MemberProfile.objects.get_or_create(
+        mp, mp_created = MemberProfile.objects.get_or_create(
             user=instance, defaults={"short_uuid": suid}
         )
-        if created or not mp.short_uuid:
+        if mp_created and not mp.short_uuid:
             mp.short_uuid = suid
             mp.save()
-
-
-@receiver(post_save, sender=User, dispatch_uid="discourse_user_sync")
-def sync_discourse_user(sender, instance: User, created, **kwargs):
-    """Create a discourse user account when a user is created"""
-    # to test discourse synchronization locally eliminate the DEPLOY_ENVIRONMENT check
-    # but this will produce many test accounts if enabled in testing
-    if (
-        created
-        and instance.username not in EXCLUDED_USERNAMES
-        and settings.DEPLOY_ENVIRONMENT.is_staging_or_production()
-    ):
+        """Create a discourse user account when a user is created"""
+        # sync with discourse
+        # to test discourse synchronization locally eliminate the DEPLOY_ENVIRONMENT check
+        # but this will produce many test accounts if enabled in testing
+        if not settings.DEPLOY_ENVIRONMENT.is_staging_or_production:
+            return
         response = create_discourse_user(instance)
         response.raise_for_status()
         data = response.json()
@@ -54,7 +50,7 @@ def sync_discourse_user(sender, instance: User, created, **kwargs):
 def sync_wagtail_django_sites(sender, instance: WagtailSite, created: bool, **kwargs):
     """
     Keep default django.contrib.sites.models.Site in sync with the wagtail.wagtailcore.models.Site instance.
-    This is one-way only, so changes should typically be made to the WagtailSite model.
+    This is one-way only, so changes should only be made to the WagtailSite model.
     """
     if instance.is_default_site and all([instance.site_name, instance.hostname]):
         site = Site.objects.first()

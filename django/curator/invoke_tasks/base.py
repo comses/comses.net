@@ -12,7 +12,7 @@ def setup_site(ctx, site_name="CoRe @ CoMSES Net", site_domain="www.comses.net")
         "This is a destructive process and will remove all existing root pages. Are you sure you want to run this? (y/n) "
     )
     dj(ctx, f'setup_site --site-name="{site_name}" --site-domain="{site_domain}"')
-    if not settings.DEPLOY_ENVIRONMENT.is_production():
+    if not settings.DEPLOY_ENVIRONMENT.is_production:
         deny_robots(ctx)
 
 

@@ -222,7 +222,7 @@ class LandingPage(Page):
     def get_recent_forum_activity(self):
         # FIXME: refactor and clean up logic to form a more sensible discourse api
         # Discourse API endpoint documented at http://docs.discourse.org/#tag/Topics%2Fpaths%2F~1latest.json%2Fget
-        if settings.DEPLOY_ENVIRONMENT.is_development():
+        if settings.DEPLOY_ENVIRONMENT.is_development:
             return self.get_canned_forum_activity()
         recent_forum_activity = cache.get("recent_forum_activity")
         if recent_forum_activity:

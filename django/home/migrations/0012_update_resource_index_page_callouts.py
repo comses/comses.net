@@ -7,7 +7,7 @@ from django.conf import settings
 def add_catalog_blurb_to_resource_index_page(apps, schema_editor):
     CategoryIndexPage = apps.get_model("home", "CategoryIndexPage")
 
-    if settings.DEPLOY_ENVIRONMENT.is_staging_or_production():
+    if settings.DEPLOY_ENVIRONMENT.is_staging_or_production:
         cip = CategoryIndexPage.objects.get(slug="resources")
         events_callout = cip.callouts.get(url="/events/")
         events_callout.url = "https://catalog.comses.net"

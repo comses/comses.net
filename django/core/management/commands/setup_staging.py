@@ -25,14 +25,14 @@ class Command(BaseCommand):
         github.client_id = settings.GITHUB_CLIENT_ID
         github.secret = settings.GITHUB_CLIENT_SECRET
         github.save()
-        if settings.DEPLOY_ENVIRONMENT.is_production():
+        if settings.DEPLOY_ENVIRONMENT.is_production:
             confirm("Update staging Site objects and robots.txt? (y/n) ")
         # set Django Site object metadata appropriately
         site = Site.objects.first()
         site.site_name = "CoMSES Net Test Site"
         site.hostname = (
             "localhost:8000"
-            if settings.DEPLOY_ENVIRONMENT.is_development()
+            if settings.DEPLOY_ENVIRONMENT.is_development
             else "staging.comses.net"
         )
         site.save()

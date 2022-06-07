@@ -83,7 +83,7 @@ class SiteSettings(BaseSetting):
         return bool(self.banner_message.raw.strip())
 
     def is_production(self):
-        return settings.DEPLOY_ENVIRONMENT.is_production()
+        return settings.DEPLOY_ENVIRONMENT.is_production
 
     def deploy_environment(self):
         return settings.DEPLOY_ENVIRONMENT
