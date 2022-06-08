@@ -38,8 +38,8 @@ Eligible users can receive a certificate of completion and digital badge after s
 EDUCATION_PAGE_BODY = """
 # Training Modules
 
-#### [Responsible Practices for Scientific Software](/education/good-practices/)
-[Watch these videos](/education/good-practices/) for an introduction to the FAIR principles for research software and practices to help you make your computational models more FAIR.
+#### Responsible Practices for Scientific Software
+[Begin this Training Module](/education/responsible-practices/) for an introduction to the FAIR principles for research software and practices to help you make your computational models more FAIR.
 
 #### Introduction to Git and GitHub
 
@@ -60,11 +60,11 @@ This urban vulnerability project has been used in several CoMSES Winter Schools.
 https://github.com/comses/urban-vulnerability 
 """
 
-GOOD_PRACTICES_DESCRIPTION = """
+RESPONSIBLE_PRACTICES_DESCRIPTION = """
 Responsible practices for developing and publishing FAIR+ computational models in efforts to be more transparent, interoperable, and reusable in our work.
 """
 
-GOOD_PRACTICES_BODY = """
+RESPONSIBLE_PRACTICES_BODY = """
 ## 1. Introduction
 
 [Watch the Introduction](https://mediaplus.asu.edu/lti/embedded?id=bf90390a-a917-4992-858a-acff6178ac4e&siteId=61e0606e-415d-4001-8206-ffde48430c64)
@@ -101,9 +101,7 @@ More information about the FAIR Principles:
 
 [Watch the Video on Model Documentation](https://mediaplus.asu.edu/lti/embedded?id=68c653e7-e780-4bf2-bd28-33771586df1c&siteId=61e0606e-415d-4001-8206-ffde48430c64)
 
-### Additional Resources
-
-UML and visual documentation of code:
+More information on UML and visual documentation of code:
 
 - An in-depth overview of UML by Ray Toal: https://cs.lmu.edu/~ray/notes/umloverview/
 - An overview of different kinds of visualization to help understand code:
@@ -164,27 +162,27 @@ class Command(BaseCommand):
         # standards
         standards_page = MarkdownPage.objects.get(slug="standards")
         standards_page.replace_navigation_links(RESOURCES_NAVIGATION_LINKS)
-        # good practices page
+        # responsible practices page
         try:
-            good_practices_page = MarkdownPage.objects.get(slug="good-practices")
-            good_practices_page.breadcrumbs.all().delete()
+            responsible_practices_page = MarkdownPage.objects.get(slug="responsible-practices")
+            responsible_practices_page.breadcrumbs.all().delete()
         except MarkdownPage.DoesNotExist:
-            good_practices_page = MarkdownPage(slug="good-practices")
+            responsible_practices_page = MarkdownPage(slug="responsible-practices")
 
-        good_practices_page.add_breadcrumbs(
+        responsible_practices_page.add_breadcrumbs(
             (
                 ("Educational Resources", "/education/"),
-                ("Good Practices Tutorial", ""),
+                ("Responsible Practices Tutorial", ""),
             )
         )
-        good_practices_page.title = "Scientific Software Good Practices"
-        good_practices_page.heading = (
+        responsible_practices_page.title = "Scientific Software Responsible Practices"
+        responsible_practices_page.heading = (
             "Responsible Practices for Scientific Software Development"
         )
-        good_practices_page.description = GOOD_PRACTICES_DESCRIPTION
-        good_practices_page.body.raw = GOOD_PRACTICES_BODY
-        if not good_practices_page.is_child_of(education_page):
-            education_page.add_child(instance=good_practices_page)
+        responsible_practices_page.description = RESPONSIBLE_PRACTICES_DESCRIPTION
+        responsible_practices_page.body.raw = RESPONSIBLE_PRACTICES_BODY
+        if not responsible_practices_page.is_child_of(education_page):
+            education_page.add_child(instance=responsible_practices_page)
 
         for page in (
             education_page,
@@ -192,9 +190,9 @@ class Command(BaseCommand):
             frameworks_page,
             journals_page,
             standards_page,
-            good_practices_page,
+            responsible_practices_page,
         ):
             page.save()
 
 
-# add good practices to education
+# add responsible practices to education
