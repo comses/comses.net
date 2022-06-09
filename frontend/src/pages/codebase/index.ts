@@ -1,5 +1,5 @@
 import '@/pages/sentry';
-import EditCodebase from './Edit.vue';
+import EditCodebase from '@/components/Edit.vue';
 
 function extractUrlParams(pathname: string) {
     const match = pathname.match(/\/codebases\/([\w-]+)\/edit\//);

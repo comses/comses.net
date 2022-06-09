@@ -1,14 +1,14 @@
-import '@/pages/sentry';
-import Edit from './Edit.vue';
+import "@/pages/sentry";
+import Edit from "@/components/Edit.vue";
 
 function matchUpdateUrl(pathname) {
-    let match = pathname.match(/\/jobs\/([0-9]+)\/edit\//);
-    if (match !== null) {
-        match = match[1];
-    }
-    return match;
+  let match = pathname.match(/\/jobs\/([0-9]+)\/edit\//);
+  if (match !== null) {
+    match = match[1];
+  }
+  return match;
 }
 
 const _id = matchUpdateUrl(window.location.pathname);
 
-const job = new Edit({ propsData: { _id }}).$mount('#app');
+const job = new Edit({ propsData: { _id } }).$mount("#app");
