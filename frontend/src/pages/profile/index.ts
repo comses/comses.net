@@ -1,5 +1,5 @@
 import "@/pages/sentry";
-import EditProfile from "@/components/Edit.vue";
+import EditProfile from "@/components/profile/Edit.vue";
 
 function extractParams() {
   const el = document.getElementById("app");

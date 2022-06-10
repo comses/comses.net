@@ -7,7 +7,7 @@ import Contributors from './contributors';
 import {Upload} from '@/components/upload';
 import {UploadPage} from './upload';
 import CodebaseReleaseMetadata from './detail';
-import CodebaseEditForm from '@/components/Edit.vue';
+import CodebaseEditForm from '@/components/codebase/Edit.vue';
 import {store} from './store';
 import jQuery from 'jquery';
 import {CreateOrUpdateHandler} from '@/api/handler';

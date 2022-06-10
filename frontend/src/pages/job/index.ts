@@ -1,5 +1,5 @@
 import "@/pages/sentry";
-import Edit from "@/components/Edit.vue";
+import Edit from "@/components/job/Edit.vue";
 
 function matchUpdateUrl(pathname) {
   let match = pathname.match(/\/jobs\/([0-9]+)\/edit\//);
