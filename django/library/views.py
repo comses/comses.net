@@ -871,7 +871,6 @@ class CodebaseReleaseViewSet(CommonViewSetMixin, NoDeleteViewSet):
             raise Http404
         return response
 
-
     @action(detail=True, methods=["get"])
     @transaction.atomic
     def download(self, request, **kwargs):

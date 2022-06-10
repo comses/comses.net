@@ -200,6 +200,21 @@ class MemberProfileQuerySet(models.QuerySet):
         )
 
 
+@register_snippet
+class Industry(models.Model):
+    name = models.CharField(max_length=100)
+    user_entered = models.BooleanField(default=False)
+    description = models.CharField(max_length=300, blank=True)
+
+    panels = [
+        FieldPanel("name"),
+        FieldPanel("user_entered"),
+        FieldPanel("description"),
+    ]
+
+    def __str__(self):
+        return self.name
+
 @add_to_comses_permission_whitelist
 @register_snippet
 class MemberProfile(index.Indexed, ClusterableModel):
@@ -219,6 +234,7 @@ class MemberProfile(index.Indexed, ClusterableModel):
     affiliations = models.JSONField(
         default=list, help_text=_("JSON-LD list of affiliated institutions")
     )
+    industry = models.ForeignKey(Industry, null=True, on_delete=models.SET_NULL)
     bio = MarkdownField(max_length=2048, help_text=_("Brief bio"))
     degrees = ArrayField(models.CharField(max_length=255), blank=True, default=list)
     institution = models.ForeignKey(Institution, null=True, on_delete=models.SET_NULL)
@@ -240,6 +256,7 @@ class MemberProfile(index.Indexed, ClusterableModel):
         FieldPanel("personal_url"),
         FieldPanel("professional_url"),
         FieldPanel("institution"),
+        FieldPanel("industry"),
         ImageChooserPanel("picture"),
         FieldPanel("tags"),
     ]

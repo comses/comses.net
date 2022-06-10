@@ -295,6 +295,7 @@ class CodebaseReleaseDownload(models.Model):
     release = models.ForeignKey(
         "library.CodebaseRelease", related_name="downloads", on_delete=models.CASCADE
     )
+    reason = models.CharField(max_length=500, blank=True)
 
     def __str__(self):
         return "{0}: downloaded {1}".format(self.ip_address, self.release)
