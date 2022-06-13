@@ -7,7 +7,7 @@ from django.db import transaction
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError as DrfValidationError
 
-from core.models import Institution, MemberProfile
+from core.models import Institution, MemberProfile, Industry
 from core.serializers import TagSerializer, MarkdownField
 from library.serializers import RelatedCodebaseSerializer
 from .models import FeaturedContentItem, UserMessage
@@ -74,6 +74,13 @@ class MemberProfileListSerializer(serializers.ModelSerializer):
         )
 
 
+class IndustrySerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Industry
+        fields = ['name', 'user_entered']
+
+
 class MemberProfileSerializer(serializers.ModelSerializer):
     """
     FIXME: references library.Codebase, keeping in home for now to avoid circular dependencies in core
@@ -98,8 +105,12 @@ class MemberProfileSerializer(serializers.ModelSerializer):
     )
 
     # Institution
+    # institution = InstitutionSerializer()
     institution_name = serializers.CharField(allow_blank=True)
     institution_url = serializers.URLField(allow_blank=True)
+
+    # Industry
+    industry = IndustrySerializer()
 
     # MemberProfile
     avatar = (
@@ -184,6 +195,7 @@ class MemberProfileSerializer(serializers.ModelSerializer):
             "name": validated_data.pop("institution_name"),
             "url": validated_data.pop("institution_url"),
         }
+        # FIXME: needs to be refactored for proper RORID integration
         institution = instance.institution
         if institution:
             institution.name = raw_institution.get("name")
@@ -228,6 +240,8 @@ class MemberProfileSerializer(serializers.ModelSerializer):
             "follower_count",
             "following_count",
             "codebases",
+            # industry
+            "industry",
             # institution
             "institution_name",
             "institution_url",
