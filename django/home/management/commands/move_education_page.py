@@ -61,7 +61,7 @@ https://github.com/comses/urban-vulnerability
 """
 
 RESPONSIBLE_PRACTICES_DESCRIPTION = """
-Responsible practices for developing and publishing FAIR+ computational models in efforts to be more transparent, interoperable, and reusable in our work.
+A collection of responsible practices for developing and publishing FAIR+ computational models in efforts to be more transparent, interoperable, and reusable in our work. Community input and feedback is welcome on our [Education forums](https://forum.comses.net/c/education/28).
 """
 
 RESPONSIBLE_PRACTICES_BODY = """
@@ -164,6 +164,8 @@ class Command(BaseCommand):
         standards_page.replace_navigation_links(RESOURCES_NAVIGATION_LINKS)
         # responsible practices page
         try:
+            # first check for existence of a good-practices page
+            MarkdownPage.objects.filter(slug="good-practices").update(slug="responsible-practices")
             responsible_practices_page = MarkdownPage.objects.get(slug="responsible-practices")
             responsible_practices_page.breadcrumbs.all().delete()
         except MarkdownPage.DoesNotExist:
@@ -175,7 +177,7 @@ class Command(BaseCommand):
                 ("Responsible Practices Tutorial", ""),
             )
         )
-        responsible_practices_page.title = "Scientific Software Responsible Practices"
+        responsible_practices_page.title = "Responsible Scientific Software Practices"
         responsible_practices_page.heading = (
             "Responsible Practices for Scientific Software Development"
         )
