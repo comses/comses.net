@@ -7,7 +7,7 @@ from django.db import transaction
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError as DrfValidationError
 
-from core.models import Institution, MemberProfile, Industry
+from core.models import Institution, MemberProfile
 from core.serializers import TagSerializer, MarkdownField
 from library.serializers import RelatedCodebaseSerializer
 from .models import FeaturedContentItem, UserMessage
@@ -74,13 +74,6 @@ class MemberProfileListSerializer(serializers.ModelSerializer):
         )
 
 
-class IndustrySerializer(serializers.ModelSerializer):
-
-    class Meta:
-        model = Industry
-        fields = ['name', 'user_entered']
-
-
 class MemberProfileSerializer(serializers.ModelSerializer):
     """
     FIXME: references library.Codebase, keeping in home for now to avoid circular dependencies in core
@@ -108,9 +101,6 @@ class MemberProfileSerializer(serializers.ModelSerializer):
     # institution = InstitutionSerializer()
     institution_name = serializers.CharField(allow_blank=True)
     institution_url = serializers.URLField(allow_blank=True)
-
-    # Industry
-    industry = IndustrySerializer()
 
     # MemberProfile
     avatar = (
@@ -211,6 +201,8 @@ class MemberProfileSerializer(serializers.ModelSerializer):
         else:
             validated_data["full_member"] = bool(self.initial_data["full_member"])
 
+        logger.debug("validated data in member profile serializer: %s", validated_data)
+
         obj = super().update(instance, validated_data)
         self.save_tags(instance, raw_tags)
         self.save_email(user, new_email)
@@ -240,7 +232,6 @@ class MemberProfileSerializer(serializers.ModelSerializer):
             "follower_count",
             "following_count",
             "codebases",
-            # industry
             "industry",
             # institution
             "institution_name",

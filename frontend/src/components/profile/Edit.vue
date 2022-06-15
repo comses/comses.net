@@ -4,7 +4,7 @@
       <div class="form-group col-3">
         <h3>Profile image</h3>
         <label
-          style="cursor: pointer; margin-top: -20px;"
+          style="cursor: pointer; margin-top: -20px"
           for="profileUpload"
           class="form-control-label"
         >
@@ -35,12 +35,15 @@
         <ul class="list-group">
           <li class="list-group-item">
             <span v-if="orcid_url">
-              <a :href="orcid_url"><span class="text-gray fab fa-orcid"></span> {{ orcid_url }}</a>
+              <a :href="orcid_url"
+                ><span class="text-gray fab fa-orcid"></span> {{ orcid_url }}</a
+              >
             </span>
             <span v-else>
-              <a title="orcid"
-                 href="/accounts/orcid/login/?process=connect"
-              ><span class="text-gray fab fa-orcid"></span> Connect your ORCID account</a>
+              <a title="orcid" href="/accounts/orcid/login/?process=connect"
+                ><span class="text-gray fab fa-orcid"></span> Connect your ORCID
+                account</a
+              >
             </span>
           </li>
           <li class="list-group-item">
@@ -51,7 +54,8 @@
             </span>
             <span v-else>
               <a title="github" href="/accounts/github/login/?process=connect">
-                <span class="text-gray fab fa-github"></span> Connect your GitHub account
+                <span class="text-gray fab fa-github"></span> Connect your
+                GitHub account
               </a>
             </span>
           </li>
@@ -62,12 +66,17 @@
               name="full_member"
               :errorMsgs="errors.full_member"
               label="Full Member"
-              >
+            >
               <div class="form-text text-muted" slot="help">
                 By checking this box, I agree to the
-                <a href="#" data-toggle="modal" data-target="#rightsAndResponsibilities">
+                <a
+                  href="#"
+                  data-toggle="modal"
+                  data-target="#rightsAndResponsibilities"
+                >
                   rights and responsibilities
-                </a> of CoMSES Net Full Membership.
+                </a>
+                of CoMSES Net Full Membership.
               </div>
             </c-checkbox>
           </li>
@@ -97,7 +106,14 @@
       :required="config.email"
       help="Email changes require reverification of your new email address by acknowledging a confirmation email"
     ></c-input>
-    <c-textarea v-model="bio" name="bio" :errorMsgs="errors.bio" help="A brief description of your research career" label="Biography" :required="config.bio"></c-textarea>
+    <c-textarea
+      v-model="bio"
+      name="bio"
+      :errorMsgs="errors.bio"
+      help="A brief description of your research career"
+      label="Biography"
+      :required="config.bio"
+    ></c-textarea>
     <c-textarea
       v-model="research_interests"
       name="research_interests"
@@ -124,6 +140,22 @@
       help="A link to your institutional or professional profile page."
       :required="config.professional_url"
     ></c-input>
+    <label for="industry">Industry</label>
+    <br />
+    <select
+      v-model="industry"
+      name="industry"
+      :errorMsgs="errors.industry"
+      help="The industry you are currently working in."
+      :required="config.industry"
+    >
+      <option
+        v-for="industry in industryOptions"
+        :key="industry"
+        :label="industry"
+        :value="industry"
+      ></option>
+    </select>
     <c-input
       v-model="institution_name"
       name="institution_name"
@@ -158,49 +190,44 @@
       :required="config.tags"
     ></c-tagger>
     <c-message-display :messages="statusMessages"></c-message-display>
-    <button type="button" class="mt-3 btn btn-primary" @click="createOrUpdateIfValid">Save</button>
+    <button
+      type="button"
+      class="mt-3 btn btn-primary"
+      @click="createOrUpdateIfValid"
+    >
+      Save
+    </button>
   </form>
 </template>
 
 <script lang="ts">
-import { Component, Prop } from 'vue-property-decorator';
-import Markdown from '@/components/forms/markdown';
-import Tagger from '@/components/tagger';
-import Input from '@/components/forms/input';
-import Datepicker from '@/components/forms/datepicker';
-import TextArea from '@/components/forms/textarea';
-import MessageDisplay from '@/components/messages';
-import EditItems from '@/components/textitem';
-import { ProfileAPI } from '@/api';
-import * as _ from 'lodash';
-import { createFormValidator } from '@/pages/form';
-import { HandlerWithRedirect } from '@/api/handler';
-import * as yup from 'yup';
-import Checkbox from '@/components/forms/checkbox';
+import { Component, Prop } from "vue-property-decorator";
+import Markdown from "@/components/forms/markdown";
+import Tagger from "@/components/tagger";
+import Input from "@/components/forms/input";
+import Datepicker from "@/components/forms/datepicker";
+import TextArea from "@/components/forms/textarea";
+import MessageDisplay from "@/components/messages";
+import EditItems from "@/components/textitem";
+import { ProfileAPI } from "@/api";
+import * as _ from "lodash";
+import { createFormValidator } from "@/pages/form";
+import { HandlerWithRedirect } from "@/api/handler";
+import * as yup from "yup";
+import Checkbox from "@/components/forms/checkbox";
 
 export const schema = yup.object().shape({
   given_name: yup.string().required(),
   family_name: yup.string().required(),
-  email: yup
-    .string()
-    .email()
-    .required(),
+  email: yup.string().email().required(),
   research_interests: yup.string(),
-  orcid_url: yup
-    .string()
-    .url()
-    .nullable(),
-  github_url: yup
-    .string()
-    .url()
-    .nullable(),
+  orcid_url: yup.string().url().nullable(),
+  github_url: yup.string().url().nullable(),
   personal_url: yup.string().url(),
   professional_url: yup.string().url(),
+  industry: yup.string().nullable(),
   institution_name: yup.string().nullable(),
-  institution_url: yup
-    .string()
-    .url()
-    .nullable(),
+  institution_url: yup.string().url().nullable(),
   bio: yup.string(),
   degrees: yup.array().of(yup.string().required()),
   tags: yup.array().of(yup.object().shape({ name: yup.string().required() })),
@@ -211,14 +238,14 @@ const api = new ProfileAPI();
 
 @Component({
   components: {
-    'c-checkbox': Checkbox,
-    'c-markdown': Markdown,
-    'c-message-display': MessageDisplay,
-    'c-datepicker': Datepicker,
-    'c-tagger': Tagger,
-    'c-textarea': TextArea,
-    'c-input': Input,
-    'c-edit-degrees': EditItems,
+    "c-checkbox": Checkbox,
+    "c-markdown": Markdown,
+    "c-message-display": MessageDisplay,
+    "c-datepicker": Datepicker,
+    "c-tagger": Tagger,
+    "c-textarea": TextArea,
+    "c-input": Input,
+    "c-edit-degrees": EditItems,
   },
 } as any)
 export default class EditProfile extends createFormValidator(schema) {
@@ -276,8 +303,20 @@ export default class EditProfile extends createFormValidator(schema) {
   get uploadImageURL() {
     return `${window.location.href}picture/`;
   }
+
+  get industryOptions() {
+    // FIXME: this should be pulled from the server side either as a data attribute (like PK or from the api)
+    return [
+      "private",
+      "college/university",
+      "government",
+      "non-profit",
+      "student",
+      "K-12 educator",
+      "other",
+    ];
+  }
 }
 </script>
 
-<style scoped>
-</style>
+<style scoped></style>

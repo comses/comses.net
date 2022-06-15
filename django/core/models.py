@@ -15,6 +15,7 @@ from django.utils.translation import ugettext_lazy as _
 from modelcluster.contrib.taggit import ClusterTaggableManager
 from modelcluster.fields import ParentalKey
 from modelcluster.models import ClusterableModel
+from model_utils import Choices
 from taggit.models import TaggedItemBase
 from timezone_field import TimeZoneField
 from wagtail.admin.panels import FieldPanel
@@ -200,27 +201,21 @@ class MemberProfileQuerySet(models.QuerySet):
         )
 
 
-@register_snippet
-class Industry(models.Model):
-    name = models.CharField(max_length=100)
-    user_entered = models.BooleanField(default=False)
-    description = models.CharField(max_length=300, blank=True)
-
-    panels = [
-        FieldPanel("name"),
-        FieldPanel("user_entered"),
-        FieldPanel("description"),
-    ]
-
-    def __str__(self):
-        return self.name
-
 @add_to_comses_permission_whitelist
 @register_snippet
 class MemberProfile(index.Indexed, ClusterableModel):
     """
     Contains additional comses.net information, possibly linked to a CoMSES Member / site account
     """
+    INDUSTRY_OPTIONS = Choices(
+        "college/university", 
+        "K-12 educator", 
+        "government", 
+        "private", 
+        "non-profit", 
+        "student",
+        "other",
+    )
 
     user = models.OneToOneField(
         User, null=True, on_delete=models.SET_NULL, related_name="member_profile"
@@ -234,7 +229,7 @@ class MemberProfile(index.Indexed, ClusterableModel):
     affiliations = models.JSONField(
         default=list, help_text=_("JSON-LD list of affiliated institutions")
     )
-    industry = models.ForeignKey(Industry, null=True, on_delete=models.SET_NULL)
+    industry = models.CharField(blank=True, max_length=255, choices=INDUSTRY_OPTIONS)
     bio = MarkdownField(max_length=2048, help_text=_("Brief bio"))
     degrees = ArrayField(models.CharField(max_length=255), blank=True, default=list)
     institution = models.ForeignKey(Institution, null=True, on_delete=models.SET_NULL)

@@ -117,6 +117,7 @@ class MemberProfileFilter(filters.BaseFilterBackend):
         return get_search_queryset(qs, queryset, tags=tags)
 
 
+# FIXME: rename to MemberProfileViewSet
 class ProfileViewSet(CommonViewSetMixin, HtmlNoDeleteViewSet):
     lookup_field = "user__pk"
     lookup_url_kwarg = "pk"
