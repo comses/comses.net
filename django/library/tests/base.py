@@ -118,7 +118,7 @@ class CodebaseReleaseFactory:
         codebase = kwargs.pop("codebase")
         submitter = kwargs.pop("submitter")
 
-        codebase_release = codebase.import_release(submitter=submitter)
+        codebase_release = codebase.create_release(submitter=submitter)
         for k, v in kwargs.items():
             if hasattr(codebase_release, k):
                 setattr(codebase_release, k, v)

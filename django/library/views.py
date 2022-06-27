@@ -32,6 +32,7 @@ from rest_framework.exceptions import (
     ValidationError,
 )
 from rest_framework.filters import OrderingFilter
+from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from rest_framework.response import Response
 
 from core.models import MemberProfile
@@ -603,6 +604,7 @@ class NestedCodebaseReleasePermission(permissions.BasePermission):
 
 class NestedCodebaseReleaseUnpublishedFilesPermission(permissions.BasePermission):
     def has_object_permission(self, request, view, obj):
+        # FIXME: figure out the rationale of this boolean logic
         if obj.live:
             raise DrfPermissionDenied(
                 "Cannot access unpublished files of published release"
@@ -692,6 +694,7 @@ class CodebaseReleaseViewSet(CommonViewSetMixin, NoDeleteViewSet):
     queryset = CodebaseRelease.objects.with_platforms().with_programming_languages()
     pagination_class = SmallResultSetPagination
     permission_classes = (
+        IsAuthenticatedOrReadOnly,
         NestedCodebaseReleasePermission,
         ViewRestrictedObjectPermissions,
     )
@@ -841,17 +844,18 @@ class CodebaseReleaseViewSet(CommonViewSetMixin, NoDeleteViewSet):
     @action(detail=True, methods=["post"])
     @transaction.atomic
     def request_download(self, request, **kwargs):
-        # FIXME: figure out how to require authentication in this framework
+        user = request.user if request.user.is_authenticated else None
+        if user is None:
+            raise ValidationError("You must be signed in to download this file.")
         download_request = request.data
         codebase_release = self.get_object()
         referrer = request.META.get("HTTP_REFERER", "")
         client_ip, is_routable = get_client_ip(request)
-        user = request.user if request.user.is_authenticated else None
         download_request.update(
-            client_ip=client_ip,
+            ip_address=client_ip,
             referrer=referrer,
             user=user,
-            codebase_release=codebase_release,
+            release=codebase_release,
         )
         serializer = DownloadRequestSerializer(data=download_request)
 
@@ -861,7 +865,6 @@ class CodebaseReleaseViewSet(CommonViewSetMixin, NoDeleteViewSet):
         try:
             response = build_archive_download_response(codebase_release)
             serializer.save()  # records the download + metadata
-            # codebase_release.record_download(request)
         except FileNotFoundError:
             logger.error(
                 "Unable to find archive for codebase release %s (%s)",

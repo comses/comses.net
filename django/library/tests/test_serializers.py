@@ -3,7 +3,7 @@ import rest_framework.exceptions as rf
 
 from .base import BaseModelTestCase
 from ..models import Codebase
-from ..serializers import ContributorSerializer, ReleaseContributorSerializer
+from ..serializers import (ContributorSerializer, ReleaseContributorSerializer, DownloadRequestSerializer)
 
 
 class SerializerTestCase(BaseModelTestCase):
@@ -39,6 +39,18 @@ class SerializerTestCase(BaseModelTestCase):
             raw_release_contributor["index"] = index
             return raw_release_contributor
 
+    def create_codebase(self, user=None, title="Test codebase", description="Test codebase description", identifier="0xdeadbeef"):
+        if user is None:
+            user = self.user
+        codebase = Codebase.objects.create(
+            title=title,
+            description=description,
+            identifier=identifier,
+            submitter=user
+        )
+        codebase.create_release(submitter=user)
+        return codebase
+
     def test_contributor_save(self):
         raw_contributor = self.create_raw_contributor(self.create_raw_user())
         contributor_serializer = ContributorSerializer(data=raw_contributor)
@@ -47,13 +59,8 @@ class SerializerTestCase(BaseModelTestCase):
         self.assertEqual(contributor.email, raw_contributor["email"])
 
     def test_release_contributor_save(self):
-        codebase = Codebase.objects.create(
-            title="Test codebase",
-            description="Test codebase description",
-            identifier="1",
-            submitter=self.user,
-        )
-        codebase_release = codebase.import_release(submitter=self.user)
+        codebase = self.create_codebase(identifier="1")
+        codebase_release = codebase.releases.last()
 
         raw_release_contributor = self.create_raw_release_contributor(
             raw_contributor=self.create_raw_contributor(self.create_raw_user()), index=0
@@ -98,6 +105,31 @@ class SerializerTestCase(BaseModelTestCase):
 
         self.assertEqual(release_contributors[0].index, 0)
         self.assertEqual(release_contributors[1].index, 1)
+
+    def test_download_request_create(self):
+        codebase = self.create_codebase(title="Download Request Codebase")
+        release = codebase.releases.last()
+        user = self.user
+        data = { 
+            'ip_address': '127.0.0.1', 
+            'referrer': 'https://comses.net', 
+            'user': user.pk,
+            'release': release.pk,
+            'reason': 'policy', 
+            'industry': 'education', 
+            'affiliation': 'https://ror.org/0xyz' 
+            }
+        download_request = DownloadRequestSerializer(data=data)
+        download_request.is_valid()
+        crs = download_request.save()
+        # should set industry + affiliation data on user.member_profile
+        user.refresh_from_db()
+        self.assertEqual(data['industry'], user.member_profile.industry)
+        self.assertTrue(data['affiliation'] in user.member_profile.affiliations)
+        for attr in ('ip_address', 'referrer', 'reason'):
+            self.assertEqual(data[attr], getattr(crs, attr))
+        self.assertEqual(user, crs.user)
+        self.assertEqual(release, crs.release)
 
     def test_multiple_release_contributor_same_user_raises_validation_error(self):
         codebase = Codebase.objects.create(

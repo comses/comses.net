@@ -191,7 +191,7 @@ class CodebaseReleaseViewSetTestCase(BaseViewSetTestCase):
         path = self.codebase_release.get_absolute_url()
 
         response = self.client.delete(path=path)
-        self.assertResponseMethodNotAllowed(response)
+        self.assertResponsePermissionDenied(response)
 
         self.client.login(
             username=self.other_user.username, password=self.user_factory.password

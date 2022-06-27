@@ -248,10 +248,12 @@
 
 {% block sidebar %}
 {% if release.live %}
-    {# {{ render_bundle('request_download', defer=True) }} #}
+    <div id='download-request-form' data-version-number="{{ release.version_number }}"></div>
+    {#
     <a id="releaseDownload" class='btn btn-primary my-1 w-100' data-name="download" rel='nofollow' href="{{ release.get_download_url() }}">
         <i class='fas fa-download'></i> Download Version {{ release.version_number }}
     </a>
+    #}
 {% else %}
     <a rel='nofollow' class='btn btn-primary my-1 w-100' href="{{ release.get_review_download_url() }}">
         Download for Review
@@ -496,4 +498,5 @@
         });
     </script>
     {{ render_bundle('release_regenerate_share_uuid', attrs='defer') }}
+    {{ render_bundle('download_request_form', attrs='defer') }}
 {% endblock %}
