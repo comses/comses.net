@@ -4,28 +4,28 @@ import { api } from "@/api/connection";
 import * as _ from "lodash";
 
 @Component({
-  template: `<a
-      id="releaseDownload"
+  template: `<div>
+    <button
       class="btn btn-primary my-1 w-100"
-      data-name="download"
       rel="nofollow"
       data-toggle="modal"
-      data-target="#formModal"
+      data-target="#downloadSurvey"
     >
       <i class="fas fa-download"></i> Download Version {{ version_number }}
-    </a>
-  
-  <div
-      class="modal-fade"
-      :id="modalId"
+    </button>
+
+    <div
+      class="modal fade"
+      id="downloadSurvey"
+      tab-index="-1"
       role="dialog"
-      :aria-labelledby="modalLabelId"
+      aria-labelledby="modalLabelId"
       aria-hidden="true"
     >
       <div class="modal-dialog" role="document">
         <div class="modal-content">
           <div class="modal-header">
-            <h5 class="modal-title" :id="modalLabelId">{{ title }}</h5>
+            <h5 class="modal-title" :id="modalLabelId">Demographic Survey</h5>
             <button
               type="button"
               class="close"
@@ -38,38 +38,71 @@ import * as _ from "lodash";
           <div class="modal-body">
             <slot name="body"></slot>
             <div>
-              <form class="gy-2 gx-3 align-items-center">
-                <div class="row mb-3">
-                  <label for="inputEmail" class="col-sm-2 col-form-label"
-                    >Email</label
-                  >
-                  <div class="col-sm-10">
-                    <input type="email" class="form-control" id="inputEmail3" />
-                  </div>
+              <form class="align-items-center">
+                <div class="my-3">
+                  <label for="inputEmail" class="form-label">Email</label>
+                  <input
+                    v-model="email"
+                    type="email"
+                    class="form-control"
+                    id="inputEmail"
+                    placeholder="name@example.com"
+                  />
                 </div>
 
-                <div class="row mb-3">
-                  <label for="downloadReason">Reason for Download</label>
-                  <select class="form-select" id="downloadReason">
+                <div class="mb-3">
+                  <label for="downloadReason" class="form-label"
+                    >Reason for Download</label
+                  >
+                  <select
+                    v-model="reason"
+                    class="form-select"
+                    id="downloadReason"
+                    style="display: inline;"
+                  >
                     <option selected>Choose...</option>
                     <option value="1">One</option>
                     <option value="2">Two</option>
                     <option value="3">Three</option>
+                    <option value="customOption">Other</option>
                   </select>
                 </div>
               </form>
             </div>
           </div>
           <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-dismiss="modal">Clear/button>
-            <button type="button" class="btn btn-danger" data-dismiss="modal" @click="submit" v-if="ajax_submit">Submit</button>
+            <button
+              type="button"
+              class="btn btn-secondary"
+              data-dismiss="modal"
+            >
+              Clear
+            </button>
+            <button
+              type="button"
+              class="btn btn-danger"
+              data-dismiss="modal"
+              @click="submit"
+              v-if="ajax_submit"
+            >
+              Submit
+            </button>
             <form v-else>
-                <button type="submit" class="btn btn-danger" data-dismiss="modal" formmethod="post" :formaction="url">Submit</button>
+              <button
+                type="submit"
+                class="btn btn-danger"
+                data-dismiss="modal"
+                formmethod="post"
+                :formaction="url"
+              >
+                Submit
+              </button>
             </form>
           </div>
         </div>
       </div>
-    </div>`,
+    </div>
+  </div>`,
 })
 export class DownloadRequestFormModal extends Vue {
   @Prop({ default: true })
