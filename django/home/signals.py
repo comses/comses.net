@@ -6,7 +6,7 @@ from django.contrib.auth.models import User
 from django.contrib.sites.models import Site
 from django.db.models.signals import post_save
 from django.dispatch import receiver
-from wagtail.core.models import Site as WagtailSite
+from wagtail.models import Site as WagtailSite
 
 from core.discourse import create_discourse_user
 from core.models import MemberProfile, EXCLUDED_USERNAMES
@@ -49,7 +49,7 @@ def sync_user_member_profiles(sender, instance: User, created, **kwargs):
 @receiver(post_save, sender=WagtailSite, dispatch_uid="wagtail_site_sync")
 def sync_wagtail_django_sites(sender, instance: WagtailSite, created: bool, **kwargs):
     """
-    Keep default django.contrib.sites.models.Site in sync with the wagtail.wagtailcore.models.Site instance.
+    Keep default django.contrib.sites.models.Site in sync with the wagtail.models.Site instance.
     This is one-way only, so changes should only be made to the WagtailSite model.
     """
     if instance.is_default_site and all([instance.site_name, instance.hostname]):

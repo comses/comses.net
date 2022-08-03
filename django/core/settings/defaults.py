@@ -61,7 +61,7 @@ DEBUG = True
 # e.g. in notification emails. Don't include '/admin' or a trailing slash
 # FIXME: needs to be overridden in staging and prod after updating DEPLOY_ENVIRONMENT which is less than ideal
 
-BASE_URL = DEPLOY_ENVIRONMENT.base_url
+WAGTAILADMIN_BASE_URL = BASE_URL = DEPLOY_ENVIRONMENT.base_url
 ROBOTS_SITEMAP_URLS = [f"{BASE_URL}/sitemap.xml"]
 
 
@@ -77,7 +77,7 @@ WAGTAIL_APPS = [
     "wagtail.images",
     "wagtail.search",
     "wagtail.admin",
-    "wagtail.core",
+    "wagtail",
     "wagtail.contrib.modeladmin",
     "wagtail.contrib.settings",
     "taggit",
@@ -486,7 +486,7 @@ TEMPLATES = [
             "extensions": [
                 "webpack_loader.contrib.jinja2ext.WebpackExtension",
                 "wagtail.contrib.settings.jinja2tags.settings",
-                "wagtail.core.jinja2tags.core",
+                "wagtail.jinja2tags.core",
                 "wagtail.admin.jinja2tags.userbar",
                 "wagtail.images.jinja2tags.images",
                 "waffle.jinja.WaffleExtension",

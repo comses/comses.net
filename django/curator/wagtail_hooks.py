@@ -13,7 +13,7 @@ from wagtail.contrib.modeladmin.options import (
     WagtailRegisterable,
 )
 from wagtail.contrib.modeladmin.views import IndexView
-from wagtail.core import hooks
+from wagtail import hooks
 
 from core.models import Event, Job
 from library.models import CodebaseRelease, PeerReview

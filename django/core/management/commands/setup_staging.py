@@ -3,7 +3,7 @@ from django.core.management.base import BaseCommand
 
 from allauth.socialaccount.models import SocialApp
 from django.conf import settings
-from wagtail.core.models import Site
+from wagtail.models import Site
 from core.utils import confirm
 
 import logging

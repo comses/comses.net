@@ -5,7 +5,7 @@ from django.urls import include, path
 from rest_framework_jwt.views import obtain_jwt_token
 from rest_framework_swagger.views import get_swagger_view
 from wagtail.admin import urls as wagtailadmin_urls
-from wagtail.core import urls as wagtail_urls
+from wagtail import urls as wagtail_urls
 from wagtail.contrib.sitemaps.views import sitemap
 
 from curator import urls as curator_urls

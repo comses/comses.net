@@ -16,16 +16,16 @@ from modelcluster.fields import ParentalKey
 from modelcluster.models import ClusterableModel
 from taggit.managers import TaggableManager
 from taggit.models import TaggedItemBase
-from wagtail.admin.edit_handlers import (
+from wagtail.admin.panels import (
     FieldPanel,
     InlinePanel,
     PageChooserPanel,
     MultiFieldPanel,
     StreamFieldPanel,
 )
-from wagtail.core import blocks
-from wagtail.core.fields import RichTextField, StreamField
-from wagtail.core.models import Page, Orderable
+from wagtail import blocks
+from wagtail.fields import RichTextField, StreamField
+from wagtail.models import Page, Orderable
 from wagtail.images.blocks import ImageChooserBlock
 from wagtail.images.edit_handlers import ImageChooserPanel
 from wagtail.search import index
