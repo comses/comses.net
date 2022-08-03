@@ -7,7 +7,7 @@ from django.conf import settings
 from django.template import loader
 from django.utils.translation import ugettext_lazy as _
 from urllib.parse import urlparse
-from wagtail.core.models import Site
+from wagtail.models import Site
 
 from core.models import SocialMediaSettings
 from core.utils import send_markdown_email

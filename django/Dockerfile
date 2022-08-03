@@ -1,4 +1,4 @@
-FROM comses/base:focal
+FROM comses/base:jammy
 
 ARG REQUIREMENTS_FILE=requirements-dev.txt
 ARG RUN_SCRIPT=./deploy/dev.sh

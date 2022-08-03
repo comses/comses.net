@@ -13,7 +13,7 @@ import modelcluster.contrib.taggit
 import modelcluster.fields
 import taggit.managers
 import uuid
-import wagtail.core.models
+import wagtail.models
 import wagtail.images.models
 import wagtail.search.index
 
@@ -183,7 +183,7 @@ class Migration(migrations.Migration):
                 (
                     "collection",
                     models.ForeignKey(
-                        default=wagtail.core.models.get_root_collection_id,
+                        default=wagtail.models.get_root_collection_id,
                         on_delete=django.db.models.deletion.CASCADE,
                         related_name="+",
                         to="wagtailcore.Collection",

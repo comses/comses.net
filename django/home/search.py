@@ -5,7 +5,7 @@ from typing import Dict
 
 from django.apps import apps
 from elasticsearch_dsl import Search
-from wagtail.core.models import Page
+from wagtail.models import Page
 from wagtail.search.backends import get_search_backend
 
 from library.models import Codebase

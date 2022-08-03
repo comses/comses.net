@@ -28,8 +28,8 @@ from modelcluster.fields import ParentalKey
 from modelcluster.models import ClusterableModel
 from rest_framework.exceptions import ValidationError, UnsupportedMediaType
 from taggit.models import TaggedItemBase
-from wagtail.admin.edit_handlers import FieldPanel
-from wagtail.core.utils import string_to_ascii
+from wagtail.admin.panels import FieldPanel
+from wagtail.coreutils import string_to_ascii
 from wagtail.images.models import (
     Image,
     AbstractImage,

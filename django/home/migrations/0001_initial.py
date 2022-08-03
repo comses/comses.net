@@ -8,8 +8,8 @@ import django.utils.timezone
 import home.models
 import modelcluster.fields
 import taggit.managers
-import wagtail.core.blocks
-import wagtail.core.fields
+import wagtail.blocks
+import wagtail.fields
 import wagtail.images.blocks
 import wagtail.search.index
 
@@ -569,7 +569,7 @@ class Migration(migrations.Migration):
                         to="wagtailcore.Page",
                     ),
                 ),
-                ("body", wagtail.core.fields.RichTextField()),
+                ("body", wagtail.fields.RichTextField()),
                 ("date", models.DateField(verbose_name="Post date")),
                 (
                     "feed_image",
@@ -769,15 +769,15 @@ class Migration(migrations.Migration):
                 ("description", models.CharField(blank=True, max_length=512)),
                 (
                     "body",
-                    wagtail.core.fields.StreamField(
+                    wagtail.fields.StreamField(
                         (
                             (
                                 "heading",
-                                wagtail.core.blocks.CharBlock(classname="full title"),
+                                wagtail.blocks.CharBlock(classname="full title"),
                             ),
-                            ("paragraph", wagtail.core.blocks.RichTextBlock()),
+                            ("paragraph", wagtail.blocks.RichTextBlock()),
                             ("image", wagtail.images.blocks.ImageChooserBlock()),
-                            ("url", wagtail.core.blocks.URLBlock(required=False)),
+                            ("url", wagtail.blocks.URLBlock(required=False)),
                         )
                     ),
                 ),
