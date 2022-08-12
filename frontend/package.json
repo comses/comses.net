@@ -22,7 +22,7 @@
     "jquery": "^3.5.1",
     "lodash": "^4.17.21",
     "marked": "^4.0.10",
-    "moment": "^2.24.0",
+    "moment": "^2.29.4",
     "popper.js": "^1.15.0",
     "query-string": "^6.4.2",
     "simplemde-theme-base": "^0.2.1",
