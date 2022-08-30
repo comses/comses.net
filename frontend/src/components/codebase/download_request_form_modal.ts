@@ -104,7 +104,7 @@ import * as _ from "lodash";
     </div>
   </div>`,
 })
-export class DownloadRequestFormModal extends Vue {
+export default class DownloadRequestFormModal extends Vue {
   @Prop({ default: true })
   public ajax_submit: boolean;
 

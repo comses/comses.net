@@ -1,15 +1,12 @@
 import Vue from "vue";
 import { Component, Prop } from "vue-property-decorator";
-import { DownloadRequestForm } from "@/components/codebase/DownloadRequestFormModal.ts";
 
-import Vue from "vue";
-import { Component, Prop } from "vue-property-decorator";
 import { api } from "@/api/connection";
-import { DownloadRequestFormModal } from "@/components/codebase/DownloadRequestFormModal.ts";
+import DownloadRequestFormModal from "@/components/codebase/download_request_form_modal";
 
 @Component({
   components: {
-    "c-download-request-form": DownloadRequestForm,
+    "c-download-request-form": DownloadRequestFormModal,
   },
 })
 class DownloadRequestForm extends Vue {
