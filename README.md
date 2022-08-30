@@ -47,20 +47,16 @@ Jobs board: [https://www.comses.net/jobs/](https://www.comses.net/jobs/)
 
 CoMSES Net is actively working with the [Science Gateways Community Institute](https://sciencegateways.org) to improve the usability of our services. Please [let us know](https://comses.net/about/contact/) if you'd like to participate in upcoming usability studies or help us conduct usability studies in your institution or area.
 
-### Active Development
+### Development 
 
 Our technology stack includes:
 
 ```
-Javascript: VueJS, webpack, typescript
+Javascript: VueJS, typescript
 
 Python: Django Rest Framework, Wagtail
 
-PostgreSQL / MySQL
-
-Linux
-
-Docker
+Linux, PostgreSQL, Redis, Elasticsearch, Docker
 ```
 
 We accept contributions of all kinds! Pull requests, issues to request new features, enhancements, or bug reports are all welcome. Please make sure to review the [CONTRIBUTING.md](CONTRIBUTING.md) guidelines.
@@ -71,12 +67,16 @@ We accept contributions of all kinds! Pull requests, issues to request new featu
 
 Developer setup instructions:
 -------------
+1. [Install Docker](https://docs.docker.com/engine/install/) ([Ubuntu-specific install instructions](https://docs.docker.com/desktop/install/ubuntu/))
+2. After installing the `% apt install -y docker-compose-plugin` provides a `docker compose ...` command that replaces the old `docker-compose ...` invocations
+
+
 Run `./build.sh` to build the Docker image and generate secrets and a symlinked `docker-compose.yml` file. Run `docker-compose up -d` to start all containers. 
 
 The `build.sh` script relies on
-[envsubst](https://www.gnu.org/software/gettext/manual/html_node/envsubst-Invocation.html) and to install this on macOS you may need to install [macports](https://www.macports.org/) or use [homebrew](https://brew.sh/) and `brew install gettext`.
+[envsubst](https://www.gnu.org/software/gettext/manual/html_node/envsubst-Invocation.html). To install this on macOS you may need to install [macports](https://www.macports.org/) or use [homebrew](https://brew.sh/) and `brew install gettext`.
 
-Enabling debugging is still a bit of a pain and requires custom workarounds to the Docker environment. @cpritcha should document these at some point.
+Enabling debugging is still a bit of a pain and requires custom workarounds to the Docker environment. Visual Studio Code has a container environment that can be useful: https://code.visualstudio.com/docs/remote/containers
 
 **Other Repositories**
 
