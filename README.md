@@ -69,7 +69,7 @@ Developer setup instructions:
 -------------
 1. [Install Docker](https://docs.docker.com/engine/install/) ([Ubuntu-specific install instructions](https://docs.docker.com/desktop/install/ubuntu/))
 2. After installing the `% apt install -y docker-compose-plugin` provides a `docker compose ...` command that replaces the old `docker-compose ...` invocations
-
+3. Add `vm.max_map_count=262144` to `/etc/sysctl.d/99-docker.conf` for elasticsearch
 
 Run `./build.sh` to build the Docker image and generate secrets and a symlinked `docker-compose.yml` file. Run `docker-compose up -d` to start all containers. 
 
