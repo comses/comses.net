@@ -49,7 +49,74 @@ import * as _ from "lodash";
                     placeholder="name@example.com"
                   />
                 </div>
+                
+                <div class="my-3">
+                  <label for="inputIndustry" class="form-label">Industry</label>
+                  <select 
+                    v-model="selectedIndustry"
+                    @change="updateIndustry()"
+                    class="form-control"
+                    id="inputIndustry"
+                    placeholder=""
+                    >
+                    <option
+                      :value="industryOption.value"
+                      :selected="industryOption.value === selectedIndustry"
+                      v-for="industryOption in industryOptions">
+                      {{ industryOption.label }}
+                    </option>
+                  </select>
 
+                  <div v-if="selectedIndustry === ''">
+                    <label for="inputIndustryCustom" class="form-label"></label>
+                      <input
+                        v-model="industry"
+                        class="form-control"
+                        id="inputIndustryCustom"
+                        placeholder=""
+                      />
+                  </div>
+                </div>
+
+                <div class="my-3">
+                  <label for="inputAffiliation" class="form-label">Affiliation</label>
+                  <input
+                    v-model="affiliation"
+                    class="form-control"
+                    id="inputAffiliation"
+                    placeholder=""
+                  />
+                </div>
+
+                <div class="my-3">
+                  <label for="inputReason" class="form-label">Reason For Downloading</label>
+                  <select 
+                    v-model="selectedReason"
+                    @change="updateReason()"
+                    class="form-control"
+                    id="inputReason"
+                    placeholder=""
+                    >
+                    <option
+                      :value="reasonOption.value"
+                      :selected="reasonOption.value === selectedReason"
+                      v-for="reasonOption in reasonOptions">
+                      {{ reasonOption.label }}
+                    </option>
+                  </select>
+
+                  <div v-if="selectedReason === ''">
+                    <label for="inputReasonCustom" class="form-label"></label>
+                      <input
+                        v-model="reason"
+                        class="form-control"
+                        id="inputReasonCustom"
+                        placeholder=""
+                      />
+                  </div>
+                </div>
+
+                <!--
                 <div class="mb-3">
                   <label for="downloadReason" class="form-label"
                     >Reason for Download</label
@@ -58,7 +125,7 @@ import * as _ from "lodash";
                     v-model="reason"
                     class="form-select"
                     id="downloadReason"
-                    style="display: inline;"
+                    style="display: block;"
                   >
                     <option selected>Choose...</option>
                     <option value="1">One</option>
@@ -67,7 +134,19 @@ import * as _ from "lodash";
                     <option value="customOption">Other</option>
                   </select>
                 </div>
+                -->
+
               </form>
+
+              <!-- debug info -->
+              <code>
+              <p> email: {{ email }} </p>
+              <p> industry: {{ industry }} </p>
+              <p> affiliation: {{ affiliation }} </p>
+              <p> reason: {{ reason }} </p>
+              </code>
+              <!-- -->
+
             </div>
           </div>
           <div class="modal-footer">
@@ -104,6 +183,7 @@ import * as _ from "lodash";
     </div>
   </div>`,
 })
+
 export default class DownloadRequestFormModal extends Vue {
   @Prop({ default: true })
   public ajax_submit: boolean;
@@ -118,6 +198,38 @@ export default class DownloadRequestFormModal extends Vue {
   public base_name: string;
 
   public errors: string[] = [];
+
+  public industryOptions: Array<{ value: string, label: string}>  = [
+      { value: 'university', label: 'College/University' },
+      { value: 'k12educator', label: 'K-12 Educator' },
+      { value: 'government', label: 'Government'},
+      { value: 'private', label: 'Private Use'},
+      { value: 'nonprofit', label: 'Non-profit'},
+      { value: '', label: 'Other (Enter Below)'},
+  ];
+  public selectedIndustry = 'none';
+
+  public updateIndustry() {
+    this.industry = this.selectedIndustry;
+  }
+
+  public reasonOptions: Array<{ value: string, label: string}>  = [
+      { value: 'research', label: 'Research' },
+      { value: 'education', label: 'Education' },
+      { value: 'commercial', label: 'Commercial'},
+      { value: 'policy/planning', label: 'Policy/Planning'},
+      { value: '', label: 'Other (Enter Below)'},
+  ];
+  public selectedReason = 'none';
+
+  public updateReason() {
+    this.reason = this.selectedReason;
+  }
+
+  public email: string;
+  public industry: string;
+  public affiliation: string;
+  public reason: string;
 
   get modalId() {
     return this.base_name;
