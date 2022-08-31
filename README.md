@@ -8,7 +8,7 @@
 CoMSES Net is an open, international community of researchers, educators and professionals with the common goal of improving the way we develop, document, share, and (re)use computational models in the social and ecological sciences. This repository contains the codebase for the comses.net CMS and Model Library, built with [Wagtail](https://github.com/wagtail/wagtail), [Django Rest Framework](https://www.django-rest-framework.org/), and [VueJS](https://vuejs.org/).
 
 ## Computational Model Library
-The Computational Model Library maintains distinct submission information packages (SIPs) and archival information packages (AIPs) using [bagit](https://github.com/LibraryOfCongress/bagit-python), and emits [structured, standardized metadata](https://github.com/codemeta/codemeta) on every model landing page. All computational models offer citations that adhere to the guidelines and practices set forth by the [Force 11 Software Citation Working Group](https://www.force11.org/group/software-citation-working-group). Models can also undergo [peer review](https://www.comses.net/reviews/) to receive a DOI and [open code badge](https://www.comses.net/resources/open-code-badge/). Updates to these processes are anticipated in 2021 - stay tuned!
+The Computational Model Library maintains distinct submission information packages (SIPs) and archival information packages (AIPs) using [bagit](https://github.com/LibraryOfCongress/bagit-python), and emits [structured, standardized metadata](https://github.com/codemeta/codemeta) on every model landing page. All computational models offer citations that adhere to the guidelines and practices set forth by the [Force 11 Software Citation Working Group](https://www.force11.org/group/software-citation-working-group). Models can also undergo [peer review](https://www.comses.net/reviews/) to receive a DOI and [open code badge](https://www.comses.net/resources/open-code-badge/).
 
 ## Code of Conduct
 Members who participate in this project agree to abide by the [CoMSES Net Code of Conduct](https://github.com/comses/comses.net/blob/main/CODE_OF_CONDUCT.md). By participating, you are expected to uphold this code. Please report unacceptable behavior to [editors@comses.net](mailto:editors@comses.net).
@@ -45,11 +45,11 @@ Jobs board: [https://www.comses.net/jobs/](https://www.comses.net/jobs/)
 
 ### Usability Testing
 
-CoMSES Net is actively working with the [Science Gateways Community Institute](https://sciencegateways.org) to improve the usability of our services. Please [let us know](https://comses.net/about/contact/) if you'd like to participate in upcoming usability studies or help us conduct usability studies in your institution or area.
+CoMSES Net is actively working with the [Science Gateways Community Institute](https://sciencegateways.org) to improve the usability of our services. Please [let us know](https://comses.net/about/contact/) if you'd like to participate in upcoming usability studies, help us conduct usability studies in your institution or area. If you encounter any usability issues while using CoMSES Net we'd love to hear your feedback too! You can use the GitHub issues here or send us a private note through the contact form.
 
 ### Development 
 
-Our technology stack includes:
+#### Technology Stack
 
 ```
 Javascript: VueJS, typescript
@@ -59,29 +59,31 @@ Python: Django Rest Framework, Wagtail
 Linux, PostgreSQL, Redis, Elasticsearch, Docker
 ```
 
-We accept contributions of all kinds! Pull requests, issues to request new features, enhancements, or bug reports are all welcome. Please make sure to review the [CONTRIBUTING.md](CONTRIBUTING.md) guidelines.
+Pull requests, issues to request new features, enhancements, or bug reports are all welcome. Please make sure to review the [CONTRIBUTING.md](CONTRIBUTING.md) guidelines.
 
 [Create a pull request from a fork](https://docs.github.com/en/github/collaborating-with-issues-and-pull-requests/creating-a-pull-request-from-a-fork)
 
 [Create an issue](https://docs.github.com/en/github/managing-your-work-on-github/creating-an-issue)
 
-Developer setup instructions:
+#### Development Environment Setup
 -------------
 1. [Install Docker](https://docs.docker.com/engine/install/) ([Ubuntu-specific install instructions](https://docs.docker.com/desktop/install/ubuntu/))
-2. After installing the `% apt install -y docker-compose-plugin` provides a `docker compose ...` command that replaces the old `docker-compose ...` invocations
+2. The new `docker-compose-plugin` (e.g., `% apt install -y docker-compose-plugin`) provides a `docker compose ...` command that replaces old `docker-compose ...` invocations
 3. Add `vm.max_map_count=262144` to `/etc/sysctl.d/99-docker.conf` for elasticsearch
 
-Run `./build.sh` to build the Docker image and generate secrets and a symlinked `docker-compose.yml` file. Run `docker-compose up -d` to start all containers. 
+Run `./build.sh` to build the Docker image and generate secrets and a symlinked `docker-compose.yml` file. Run `docker-compose up -d` to start all containers. The site will have no data or Pages however without a data dump to restore via `inv borg.restore`.
 
 The `build.sh` script relies on
 [envsubst](https://www.gnu.org/software/gettext/manual/html_node/envsubst-Invocation.html). To install this on macOS you may need to install [macports](https://www.macports.org/) or use [homebrew](https://brew.sh/) and `brew install gettext`.
 
-Enabling debugging is still a bit of a pain and requires custom workarounds to the Docker environment. Visual Studio Code has a container environment that can be useful: https://code.visualstudio.com/docs/remote/containers
+Enabling debugging can be a bit of a pain and requires custom workarounds to the Docker environment. Visual Studio Code has a container environment that can be useful though: https://code.visualstudio.com/docs/remote/containers
 
-**Other Repositories**
+### Other CoMSES Projects
 
-- [Catalog](https://github.com/comses/catalog) provides web services for annotating and managing publications that reference computational research objects. Developed by CoMSES Net to assess the state of open and reusable scientific computation in agent based modeling, it depends on the [citation](https://github.com/comses/citation) Django app for bibliometric metadata management. Our instance of catalog runs at https://catalog.comses.net
-- The [Open Modeling Foundation (OMF)](https://github.com/openmodelingfoundation/openmodelingfoundation.github.io) is an alliance of modeling organizations that coordinates and administers a common, community developed body of standards and best practices among diverse communities of modeling scientists. This repository hosts a [hugo site](https://gohugo.io/) and is used to collaboratively draft computational modeling standards for the OMF.
+- [Catalog](https://github.com/comses/catalog) provides web services for annotating and managing publications that reference computational research objects. Developed by CoMSES Net to assess the state of open and reusable scientific computation in agent based modeling, it depends on the [citation](https://github.com/comses/citation) Django app for bibliometric metadata management. A paper with the key findings is available at [Environmental Modelling & Software: On code sharing and model documentation of published individual and agent-based models](https://doi.org/10.1016/j.envsoft.2020.104873).
+- The [Open Modeling Foundation (OMF)](https://openmodelingfoundation.github.io/) is an alliance of modeling organizations that coordinates and administers a common, community developed body of standards and best practices among diverse communities of modeling scientists. This repository hosts a [hugo site](https://gohugo.io/) and is used to collaboratively draft computational modeling standards for the OMF.
+- Open training modules, educational outreach initiatives, and example FAIR+ computational models that can be run on the [Open Science Grid](https://opensciencegrid.org/) are being developed at https://github.com/comses-education
+
 
 ## Contributors ✨
 This project follows the [all-contributors](https://github.com/all-contributors/all-contributors) specification. Contributions of all kinds are welcome!
