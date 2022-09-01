@@ -2,7 +2,7 @@ import Vue from "vue";
 import { Component, Prop } from "vue-property-decorator";
 
 import { api } from "@/api/connection";
-import DownloadRequestFormModal from "@/components/codebase/download_request_form_modal";
+import DownloadRequestFormModal from "@/components/codebase/DownloadRequestFormModal.vue";
 
 @Component({
   components: {

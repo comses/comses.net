@@ -1,10 +1,5 @@
-import { Component, Prop } from "vue-property-decorator";
-import Vue from "vue";
-import { api } from "@/api/connection";
-import * as _ from "lodash";
-
-@Component({
-  template: `<div>
+<template>
+  <div>
     <button
       class="btn btn-primary my-1 w-100"
       rel="nofollow"
@@ -13,7 +8,7 @@ import * as _ from "lodash";
     >
       <i class="fas fa-download"></i> Download Version {{ version_number }}
     </button>
-
+<!-- TODO: look into what ARIA stuff is doing -->
     <div
       class="modal fade"
       id="downloadSurvey"
@@ -39,25 +34,25 @@ import * as _ from "lodash";
             <slot name="body"></slot>
             <div>
               <form class="align-items-center">
-                <div class="my-3">
-                  <label for="inputEmail" class="form-label">Email</label>
-                  <input
+                <div v-if="anonymousUser">
+                  <c-input
                     v-model="email"
-                    type="email"
-                    class="form-control"
-                    id="inputEmail"
-                    placeholder="name@example.com"
-                  />
+                    name="email"
+                    label="Email"
+                    :errorMsgs="errors.email"
+                    :required="config.email"
+                  ></c-input>
                 </div>
-                
                 <div class="my-3">
                   <label for="inputIndustry" class="form-label">Industry</label>
+                  <!-- TODO: inline bootstrap validation errors for selections (class="invalid-feedback")-->
                   <select 
                     v-model="selectedIndustry"
                     @change="updateIndustry()"
                     class="form-control"
                     id="inputIndustry"
                     placeholder=""
+                    :required="config.industry"
                     >
                     <option
                       :value="industryOption.value"
@@ -66,36 +61,34 @@ import * as _ from "lodash";
                       {{ industryOption.label }}
                     </option>
                   </select>
-
                   <div v-if="selectedIndustry === ''">
                     <label for="inputIndustryCustom" class="form-label"></label>
                       <input
                         v-model="industry"
                         class="form-control"
                         id="inputIndustryCustom"
-                        placeholder=""
+                        placeholder="Other Industry"
+                        :required="config.industry"
                       />
                   </div>
                 </div>
-
-                <div class="my-3">
-                  <label for="inputAffiliation" class="form-label">Affiliation</label>
-                  <input
-                    v-model="affiliation"
-                    class="form-control"
-                    id="inputAffiliation"
-                    placeholder=""
-                  />
-                </div>
-
+                <c-input
+                  v-model="affiliation"
+                  name="affiliation"
+                  label="Affiliation"
+                  :errorMsgs="errors.affiliation"
+                  :required="config.affiliation"
+                ></c-input>
                 <div class="my-3">
                   <label for="inputReason" class="form-label">Reason For Downloading</label>
+                  <!-- TODO: inline bootstrap validation errors for selections (class="invalid-feedback")-->
                   <select 
                     v-model="selectedReason"
                     @change="updateReason()"
                     class="form-control"
                     id="inputReason"
                     placeholder=""
+                    :required="config.reason"
                     >
                     <option
                       :value="reasonOption.value"
@@ -104,38 +97,16 @@ import * as _ from "lodash";
                       {{ reasonOption.label }}
                     </option>
                   </select>
-
                   <div v-if="selectedReason === ''">
                     <label for="inputReasonCustom" class="form-label"></label>
                       <input
                         v-model="reason"
                         class="form-control"
                         id="inputReasonCustom"
-                        placeholder=""
+                        placeholder="Reason for downloading"
                       />
                   </div>
                 </div>
-
-                <!--
-                <div class="mb-3">
-                  <label for="downloadReason" class="form-label"
-                    >Reason for Download</label
-                  >
-                  <select
-                    v-model="reason"
-                    class="form-select"
-                    id="downloadReason"
-                    style="display: block;"
-                  >
-                    <option selected>Choose...</option>
-                    <option value="1">One</option>
-                    <option value="2">Two</option>
-                    <option value="3">Three</option>
-                    <option value="customOption">Other</option>
-                  </select>
-                </div>
-                -->
-
               </form>
 
               <!-- debug info -->
@@ -149,6 +120,10 @@ import * as _ from "lodash";
 
             </div>
           </div>
+          <c-message-display
+            :messages="statusMessages"
+            @clear="statusMessages = []"
+          ></c-message-display>
           <div class="modal-footer">
             <button
               type="button"
@@ -160,13 +135,12 @@ import * as _ from "lodash";
             <button
               type="button"
               class="btn btn-danger"
-              data-dismiss="modal"
               @click="submit"
               v-if="ajax_submit"
             >
               Submit
             </button>
-            <form v-else>
+            <!-- <form v-else>
               <button
                 type="submit"
                 class="btn btn-danger"
@@ -176,15 +150,40 @@ import * as _ from "lodash";
               >
                 Submit
               </button>
-            </form>
+            </form> -->
           </div>
         </div>
       </div>
     </div>
-  </div>`,
+  </div>
+</template>
+
+<script lang="ts">
+import { Component, Prop } from "vue-property-decorator";
+import Vue from "vue";
+import { api } from "@/api/connection";
+import { createFormValidator } from "@/pages/form";
+import Input from "@/components/forms/input";
+import MessageDisplay from "@/components/messages";
+import * as _ from "lodash";
+import * as yup from "yup";
+
+// FIXME: error message doesn't change on field update, validate on change, works in profile/Edit.vue
+export const schema = yup.object().shape({
+  email: yup.string().email().required(),
+  industry: yup.string().required(),
+  affiliation: yup.string().required(),
+  reason: yup.string().required(),
 })
 
-export default class DownloadRequestFormModal extends Vue {
+@Component({
+  components: {
+    "c-input": Input,
+    "c-message-display": MessageDisplay,
+  },
+})
+
+export default class DownloadRequestFormModal extends createFormValidator(schema) {
   @Prop({ default: true })
   public ajax_submit: boolean;
 
@@ -197,8 +196,14 @@ export default class DownloadRequestFormModal extends Vue {
   @Prop()
   public base_name: string;
 
+  // TODO: redo props
+  @Prop({ default: true })
+  public anonymousUser: boolean;
+  
   public errors: string[] = [];
 
+
+  // TODO: presumably grab these options from the server
   public industryOptions: Array<{ value: string, label: string}>  = [
       { value: 'university', label: 'College/University' },
       { value: 'k12educator', label: 'K-12 Educator' },
@@ -213,6 +218,7 @@ export default class DownloadRequestFormModal extends Vue {
     this.industry = this.selectedIndustry;
   }
 
+  // TODO: presumably grab these options from the server
   public reasonOptions: Array<{ value: string, label: string}>  = [
       { value: 'research', label: 'Research' },
       { value: 'education', label: 'Education' },
@@ -226,11 +232,6 @@ export default class DownloadRequestFormModal extends Vue {
     this.reason = this.selectedReason;
   }
 
-  public email: string;
-  public industry: string;
-  public affiliation: string;
-  public reason: string;
-
   get modalId() {
     return this.base_name;
   }
@@ -239,19 +240,35 @@ export default class DownloadRequestFormModal extends Vue {
     return `${this.base_name}Label`;
   }
 
+  public async initializeForm() {
+    // TODO: retrieve + populate with user data
+  }
+
+  public async createOrUpdate() {
+    // TODO: submit data
+  }
+
   public async submit() {
+    // DEBUG
+    console.log(this.config.industry);
     try {
+      const self: any = this;
+      await self.validate();
       const response = await api.axios.post(this.url);
       this.errors = [];
       this.$emit("success", response.data);
-      ($ as any)(`#${this.modalId}`).modal("hide");
+      //($ as any)(`#${this.modalId}`).modal("hide");
     } catch (e) {
-      if (_.isArray(_.get(e, "response.data"))) {
-        this.errors = e.response.data;
-      } else {
-        this.$emit("error", e);
-        this.errors = ["Submission failed"];
+      if (!(e instanceof yup.ValidationError)) {
+        if (_.isArray(_.get(e, "response.data"))) {
+          this.errors = e.response.data;
+        } else {
+          this.$emit("error", e);
+          this.errors = ["Submission failed"];
+        }
+        throw e;
       }
     }
   }
 }
+</script>
