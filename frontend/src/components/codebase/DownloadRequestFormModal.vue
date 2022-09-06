@@ -5,30 +5,23 @@
       rel="nofollow"
       data-toggle="modal"
       data-target="#downloadSurvey"
+      @click="showEmail = anonymousUser"
     >
       <i class="fas fa-download"></i> Download Version {{ version_number }}
     </button>
-<!-- TODO: look into what ARIA stuff is doing -->
     <div
       class="modal fade"
       id="downloadSurvey"
-      tab-index="-1"
-      role="dialog"
-      aria-labelledby="modalLabelId"
-      aria-hidden="true"
     >
-      <div class="modal-dialog" role="document">
+      <div class="modal-dialog">
         <div class="modal-content">
           <div class="modal-header">
             <h5 class="modal-title" :id="modalLabelId">Demographic Survey</h5>
-            <button
-              type="button"
-              class="close"
-              data-dismiss="modal"
-              aria-label="Close"
-            >
-              <span aria-hidden="true">&times;</span>
-            </button>
+              <button
+                type="button"
+                class="close"
+                data-dismiss="modal"
+              >&times;</button>
           </div>
           <div class="modal-body">
             <slot name="body"></slot>
@@ -43,35 +36,15 @@
                     :required="config.email"
                   ></c-input>
                 </div>
-                <div class="my-3">
-                  <label for="inputIndustry" class="form-label">Industry</label>
-                  <!-- TODO: inline bootstrap validation errors for selections (class="invalid-feedback")-->
-                  <select 
-                    v-model="selectedIndustry"
-                    @change="updateIndustry()"
-                    class="form-control"
-                    id="inputIndustry"
-                    placeholder=""
-                    :required="config.industry"
-                    >
-                    <option
-                      :value="industryOption.value"
-                      :selected="industryOption.value === selectedIndustry"
-                      v-for="industryOption in industryOptions">
-                      {{ industryOption.label }}
-                    </option>
-                  </select>
-                  <div v-if="selectedIndustry === ''">
-                    <label for="inputIndustryCustom" class="form-label"></label>
-                      <input
-                        v-model="industry"
-                        class="form-control"
-                        id="inputIndustryCustom"
-                        placeholder="Other Industry"
-                        :required="config.industry"
-                      />
-                  </div>
-                </div>
+                <c-select
+                  v-model="industry"
+                  name="industry"
+                  label="Industry"
+                  :options="industryOptions"
+                  customOption="other"
+                  :errorMsgs="errors.industry"
+                  :required="config.industry"
+                ></c-select>
                 <c-input
                   v-model="affiliation"
                   name="affiliation"
@@ -79,34 +52,15 @@
                   :errorMsgs="errors.affiliation"
                   :required="config.affiliation"
                 ></c-input>
-                <div class="my-3">
-                  <label for="inputReason" class="form-label">Reason For Downloading</label>
-                  <!-- TODO: inline bootstrap validation errors for selections (class="invalid-feedback")-->
-                  <select 
-                    v-model="selectedReason"
-                    @change="updateReason()"
-                    class="form-control"
-                    id="inputReason"
-                    placeholder=""
-                    :required="config.reason"
-                    >
-                    <option
-                      :value="reasonOption.value"
-                      :selected="reasonOption.value === selectedReason"
-                      v-for="reasonOption in reasonOptions">
-                      {{ reasonOption.label }}
-                    </option>
-                  </select>
-                  <div v-if="selectedReason === ''">
-                    <label for="inputReasonCustom" class="form-label"></label>
-                      <input
-                        v-model="reason"
-                        class="form-control"
-                        id="inputReasonCustom"
-                        placeholder="Reason for downloading"
-                      />
-                  </div>
-                </div>
+                <c-select
+                  v-model="reason"
+                  name="reason"
+                  label="Reason For Downloading"
+                  :options="reasonOptions"
+                  customOption="other"
+                  :errorMsgs="errors.reason"
+                  :required="config.reason"
+                ></c-select>
               </form>
 
               <!-- debug info -->
@@ -130,7 +84,7 @@
               class="btn btn-secondary"
               data-dismiss="modal"
             >
-              Clear
+              Close
             </button>
             <button
               type="button"
@@ -138,19 +92,8 @@
               @click="submit"
               v-if="ajax_submit"
             >
-              Submit
+              Submit and Download
             </button>
-            <!-- <form v-else>
-              <button
-                type="submit"
-                class="btn btn-danger"
-                data-dismiss="modal"
-                formmethod="post"
-                :formaction="url"
-              >
-                Submit
-              </button>
-            </form> -->
           </div>
         </div>
       </div>
@@ -162,15 +105,20 @@
 import { Component, Prop } from "vue-property-decorator";
 import Vue from "vue";
 import { api } from "@/api/connection";
+import DismissOnSuccessHandler from "@/api/handler"
 import { createFormValidator } from "@/pages/form";
 import Input from "@/components/forms/input";
+import Select from "@/components/forms/select";
 import MessageDisplay from "@/components/messages";
 import * as _ from "lodash";
 import * as yup from "yup";
 
-// FIXME: error message doesn't change on field update, validate on change, works in profile/Edit.vue
 export const schema = yup.object().shape({
-  email: yup.string().email().required(),
+  showEmail: yup.boolean(),
+  email: yup.string().email().when("showEmail", {
+    is: true,
+    then: yup.string().required()
+  }),
   industry: yup.string().required(),
   affiliation: yup.string().required(),
   reason: yup.string().required(),
@@ -179,6 +127,7 @@ export const schema = yup.object().shape({
 @Component({
   components: {
     "c-input": Input,
+    "c-select": Select,
     "c-message-display": MessageDisplay,
   },
 })
@@ -193,44 +142,33 @@ export default class DownloadRequestFormModal extends createFormValidator(schema
   @Prop()
   version_number: number;
 
-  @Prop()
+  // FIXME: placeholder
+  @Prop({ default: "downloadSurvey" })
   public base_name: string;
 
-  // TODO: redo props
+  // TODO: 
   @Prop({ default: true })
   public anonymousUser: boolean;
-  
+
   public errors: string[] = [];
 
-
-  // TODO: presumably grab these options from the server
-  public industryOptions: Array<{ value: string, label: string}>  = [
-      { value: 'university', label: 'College/University' },
-      { value: 'k12educator', label: 'K-12 Educator' },
-      { value: 'government', label: 'Government'},
-      { value: 'private', label: 'Private Use'},
-      { value: 'nonprofit', label: 'Non-profit'},
-      { value: '', label: 'Other (Enter Below)'},
+  public industryOptions = [
+    "private",
+    "college/university",
+    "government",
+    "non-profit",
+    "student",
+    "K-12 educator",
+    "other",
   ];
-  public selectedIndustry = 'none';
 
-  public updateIndustry() {
-    this.industry = this.selectedIndustry;
-  }
-
-  // TODO: presumably grab these options from the server
-  public reasonOptions: Array<{ value: string, label: string}>  = [
-      { value: 'research', label: 'Research' },
-      { value: 'education', label: 'Education' },
-      { value: 'commercial', label: 'Commercial'},
-      { value: 'policy/planning', label: 'Policy/Planning'},
-      { value: '', label: 'Other (Enter Below)'},
+  public reasonOptions = [
+    "research",
+    "education",
+    "commercial",
+    "policy/planning",
+    "other",
   ];
-  public selectedReason = 'none';
-
-  public updateReason() {
-    this.reason = this.selectedReason;
-  }
 
   get modalId() {
     return this.base_name;
@@ -246,18 +184,23 @@ export default class DownloadRequestFormModal extends createFormValidator(schema
 
   public async createOrUpdate() {
     // TODO: submit data
+    // this.$emit('create-or-update');
+    // let handler = new DismissOnSuccessHandler(this, this.modalId);
+    // if (_.isNil(this.state.identifier)) {
+    //   return api.create(handler);
+    // } else {
+    //   return api.update(this.state.identifier, handler);
+    // }
   }
 
   public async submit() {
-    // DEBUG
-    console.log(this.config.industry);
     try {
       const self: any = this;
       await self.validate();
-      const response = await api.axios.post(this.url);
-      this.errors = [];
-      this.$emit("success", response.data);
-      //($ as any)(`#${this.modalId}`).modal("hide");
+      // const response = await api.axios.post(this.url);
+      // this.errors = [];
+      // this.$emit("success", response.data);
+      // ($ as any)(`#${this.modalId}`).modal("hide");
     } catch (e) {
       if (!(e instanceof yup.ValidationError)) {
         if (_.isArray(_.get(e, "response.data"))) {

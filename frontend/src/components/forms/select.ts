@@ -7,7 +7,7 @@ import BaseControl from './base';
         <slot name="label">
             <label :for='controlId' :class="['form-control-label', requiredClass]">{{ label }}</label>
         </slot>
-        <select :id='controlId' :type="type" :name="name" :class="['form-control', {'is-invalid': isInvalid}]" 
+        <select :id='controlId' :name="name" :class="['form-control', {'is-invalid': isInvalid}]" 
                 :value="value" @change="updateValue($event.target.value)" v-model="selectedOption">
             <option :value="option" :selected="option === selectedOption" v-for="option in options">
                 {{ option }}
@@ -29,9 +29,6 @@ import BaseControl from './base';
 class Input extends BaseControl {
     @Prop({ default: ''})
     public validate: string;
-
-    @Prop({ default: 'text'})
-    public type: string;
 
     @Prop({default: ''})
     public label: string;
