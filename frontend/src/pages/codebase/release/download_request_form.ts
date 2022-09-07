@@ -27,10 +27,15 @@ class DownloadRequestForm extends Vue {
 
 const el = document.getElementById("download-request-form");
 if (el) {
-  const industry = el.getAttribute("data-industry");
-  const affiliation = el.getAttribute("data-affiliation");
-  const version_number = el.getAttribute("data-version-number");
+  const userData = JSON.parse(el.getAttribute("data-user-data"));
+  const versionNumber = el.getAttribute("data-version-number");
   new DownloadRequestFormModal({
-    propsData: { version_number, industry, affiliation },
+    propsData: {
+      versionNumber,
+      userAffiliation: userData.affiliation, // FIXME: does this ever have data?
+      userIndustry: userData.industry,
+      userEmail: userData.email,
+      authenticatedUser: !! userData.email, // for now, if no email in user data, assume not logged in
+    },
   }).$mount(el);
 }

@@ -47,6 +47,16 @@ class Input extends BaseControl {
 
     public selectedOption = '';
 
+    public created() {
+        this.setSelectedOption();
+    }
+
+    public setSelectedOption() {
+        if (this.value) {
+            this.selectedOption = this.value;
+        }
+    }
+
     public customSelected() {
         return (this.customOption === this.selectedOption);
     }

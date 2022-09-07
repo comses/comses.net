@@ -5,9 +5,9 @@
       rel="nofollow"
       data-toggle="modal"
       data-target="#downloadSurvey"
-      @click="showEmail = anonymousUser"
+      @click="showEmail = !authenticatedUser"
     >
-      <i class="fas fa-download"></i> Download Version {{ version_number }}
+      <i class="fas fa-download"></i> Download Version {{ versionNumber }}
     </button>
     <div
       class="modal fade"
@@ -27,7 +27,7 @@
             <slot name="body"></slot>
             <div>
               <form class="align-items-center">
-                <div v-if="anonymousUser">
+                <div v-if="showEmail">
                   <c-input
                     v-model="email"
                     name="email"
@@ -90,7 +90,6 @@
               type="button"
               class="btn btn-danger"
               @click="submit"
-              v-if="ajax_submit"
             >
               Submit and Download
             </button>
@@ -133,25 +132,31 @@ export const schema = yup.object().shape({
 })
 
 export default class DownloadRequestFormModal extends createFormValidator(schema) {
-  @Prop({ default: true })
-  public ajax_submit: boolean;
-
   @Prop()
   public url: string;
 
   @Prop()
-  version_number: number;
+  public userAffiliation: string;
 
-  // FIXME: placeholder
+  @Prop()
+  public userIndustry: string;
+
+  @Prop()
+  public userEmail: string;
+
+  @Prop()
+  public versionNumber: number;
+
+  // FIXME: temp
   @Prop({ default: "downloadSurvey" })
   public base_name: string;
 
-  // TODO: 
-  @Prop({ default: true })
-  public anonymousUser: boolean;
+  @Prop()
+  public authenticatedUser: boolean;
 
   public errors: string[] = [];
 
+  // FIXME: temp
   public industryOptions = [
     "private",
     "college/university",
@@ -178,21 +183,19 @@ export default class DownloadRequestFormModal extends createFormValidator(schema
     return `${this.base_name}Label`;
   }
 
+  public created() {
+    this.initializeForm();
+  }
+
   public async initializeForm() {
-    // TODO: retrieve + populate with user data
+    if (this.authenticatedUser) {
+      this.state.affiliation = this.userAffiliation ?? "";
+      this.state.industry = this.userIndustry ?? "";
+      this.state.email = this.userEmail ?? "";
+    }
   }
 
-  public async createOrUpdate() {
-    // TODO: submit data
-    // this.$emit('create-or-update');
-    // let handler = new DismissOnSuccessHandler(this, this.modalId);
-    // if (_.isNil(this.state.identifier)) {
-    //   return api.create(handler);
-    // } else {
-    //   return api.update(this.state.identifier, handler);
-    // }
-  }
-
+  // TODO: post data, close modal, and redirect to download
   public async submit() {
     try {
       const self: any = this;
