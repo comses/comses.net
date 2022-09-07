@@ -687,6 +687,9 @@ class CodebaseReleaseShareViewSet(
 
 
 class CodebaseReleaseViewSet(CommonViewSetMixin, NoDeleteViewSet):
+    """
+    Handles DRF requests to view, edit, or download the archival information packages for a specific codebase release
+    """
     namespace = "library/codebases/releases"
     lookup_field = "version_number"
     lookup_value_regex = r"\d+\.\d+\.\d+"
@@ -845,6 +848,7 @@ class CodebaseReleaseViewSet(CommonViewSetMixin, NoDeleteViewSet):
     @transaction.atomic
     def request_download(self, request, **kwargs):
         user = request.user if request.user.is_authenticated else None
+        # FIXME: clarify if anonymous downloads are allowed
         if user is None:
             raise ValidationError("You must be signed in to download this file.")
         download_request = request.data

@@ -392,6 +392,15 @@ class MemberProfile(index.Indexed, ClusterableModel):
     def is_messageable(self, user):
         return user.is_authenticated and user != self.user
 
+    def get_download_request_metadata(self):
+        """ Returns a dictionary of metadata to be included in the download request modal form if available """
+        return {
+            "affiliations": self.affiliations,
+            "industry": self.industry,
+            "email": self.email,
+            # add more here as needed
+        }
+
     def __str__(self):
         return str(self.user)
 
