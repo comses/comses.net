@@ -199,6 +199,15 @@ export class CodebaseReleaseAPI {
         return `${this.detailUrl({identifier, version_number})}contributors/`;
     }
 
+    public downloadRequestUrl({identifier, version_number}) {
+        return `${this.baseUrl()}${identifier}/releases/${version_number}/request_download/`;
+    }
+
+    // FIXME: remove when download URL guarding is implemented
+    public downloadUrl({identifier, version_number}) {
+        return `${this.baseUrl()}${identifier}/releases/${version_number}/download/`
+    }
+
     public publish({identifier, version_number}, publish_component) {
         return api.post(`${this.detailUrl({identifier, version_number})}publish/`, publish_component);
     }
@@ -241,6 +250,10 @@ export class CodebaseReleaseAPI {
 
     public updateContributors({identifier, version_number}, contributors) {
         return api.put(this.updateContributorUrl({identifier, version_number}), contributors);
+    }
+
+    public requestDownload({identifier, version_number}, handler: CreateOrUpdateHandler) {
+        return api.post(this.downloadRequestUrl({identifier, version_number}), handler);
     }
 }
 

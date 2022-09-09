@@ -858,8 +858,8 @@ class CodebaseReleaseViewSet(CommonViewSetMixin, NoDeleteViewSet):
         download_request.update(
             ip_address=client_ip,
             referrer=referrer,
-            user=user,
-            release=codebase_release,
+            user=user.id,
+            release=codebase_release.id,
         )
         serializer = DownloadRequestSerializer(data=download_request)
 

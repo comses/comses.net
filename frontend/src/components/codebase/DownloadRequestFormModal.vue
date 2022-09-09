@@ -4,22 +4,23 @@
       class="btn btn-primary my-1 w-100"
       rel="nofollow"
       data-toggle="modal"
-      data-target="#downloadSurvey"
+      data-target="#downloadRequestForm"
       @click="showEmail = !authenticatedUser"
     >
       <i class="fas fa-download"></i> Download Version {{ versionNumber }}
     </button>
     <div
       class="modal fade"
-      id="downloadSurvey"
+      id="downloadRequestForm"
     >
       <div class="modal-dialog">
         <div class="modal-content">
           <div class="modal-header">
-            <h5 class="modal-title" :id="modalLabelId">Demographic Survey</h5>
+            <h5 class="modal-title">Demographic Survey</h5>
               <button
                 type="button"
                 class="close"
+                id="closeDownloadRequestFormModal"
                 data-dismiss="modal"
               >&times;</button>
           </div>
@@ -103,8 +104,8 @@
 <script lang="ts">
 import { Component, Prop } from "vue-property-decorator";
 import Vue from "vue";
-import { api } from "@/api/connection";
-import DismissOnSuccessHandler from "@/api/handler"
+import { DismissOnSuccessHandler, HandlerWithRedirect } from "@/api/handler"
+import { CodebaseReleaseAPI } from "@/api";
 import { createFormValidator } from "@/pages/form";
 import Input from "@/components/forms/input";
 import Select from "@/components/forms/select";
@@ -123,6 +124,8 @@ export const schema = yup.object().shape({
   reason: yup.string().required(),
 })
 
+const api  = new CodebaseReleaseAPI();
+
 @Component({
   components: {
     "c-input": Input,
@@ -133,7 +136,7 @@ export const schema = yup.object().shape({
 
 export default class DownloadRequestFormModal extends createFormValidator(schema) {
   @Prop()
-  public url: string;
+  public identifier: string;
 
   @Prop()
   public userAffiliation: string;
@@ -147,16 +150,10 @@ export default class DownloadRequestFormModal extends createFormValidator(schema
   @Prop()
   public versionNumber: number;
 
-  // FIXME: temp
-  @Prop({ default: "downloadSurvey" })
-  public base_name: string;
-
   @Prop()
   public authenticatedUser: boolean;
 
-  public errors: string[] = [];
-
-  // FIXME: temp
+  // FIXME: temp, get options from the server
   public industryOptions = [
     "private",
     "college/university",
@@ -175,12 +172,8 @@ export default class DownloadRequestFormModal extends createFormValidator(schema
     "other",
   ];
 
-  get modalId() {
-    return this.base_name;
-  }
-
-  get modalLabelId() {
-    return `${this.base_name}Label`;
+  public detailPageUrl(state) {
+    return api.downloadUrl({identifier: this.identifier, version_number: this.versionNumber});
   }
 
   public created() {
@@ -195,26 +188,26 @@ export default class DownloadRequestFormModal extends createFormValidator(schema
     }
   }
 
-  // TODO: post data, close modal, and redirect to download
   public async submit() {
     try {
-      const self: any = this;
-      await self.validate();
-      // const response = await api.axios.post(this.url);
-      // this.errors = [];
-      // this.$emit("success", response.data);
-      // ($ as any)(`#${this.modalId}`).modal("hide");
+      await this.validate();
+      // FIXME: temporary modal bug workaround
+      document.getElementById("closeDownloadRequestFormModal").click();
+      return this.create();
     } catch (e) {
+      console.log(e);
       if (!(e instanceof yup.ValidationError)) {
-        if (_.isArray(_.get(e, "response.data"))) {
-          this.errors = e.response.data;
-        } else {
-          this.$emit("error", e);
-          this.errors = ["Submission failed"];
-        }
         throw e;
       }
     }
+  }
+
+  public async create() {
+    this.$emit("create");
+    const handler = new HandlerWithRedirect(this);
+    // TODO:  investigate why the server isn't creating new codebasereleasedownload rows.
+    //        memberprofile is being updated, however.
+    return api.requestDownload({identifier: this.identifier,version_number: this.versionNumber}, handler);
   }
 }
 </script>
