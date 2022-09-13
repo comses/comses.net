@@ -440,6 +440,7 @@ class DownloadRequestSerializer(serializers.ModelSerializer):
             if affiliation not in member_profile.affiliations:
                 member_profile.affiliations.append(affiliation)
             member_profile.save()
+        instance.save()
         return instance
 
     class Meta:

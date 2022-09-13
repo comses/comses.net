@@ -304,6 +304,8 @@ class CodebaseReleaseDownload(models.Model):
         "library.CodebaseRelease", related_name="downloads", on_delete=models.CASCADE
     )
     reason = models.CharField(max_length=500, choices=Reason.choices, blank=True)
+    affiliation = models.JSONField()
+    industry = models.CharField(max_length=255, choices=MemberProfile.Industry.choices)
 
     def __str__(self):
         return "{0}: downloaded {1}".format(self.ip_address, self.release)
@@ -1333,17 +1335,6 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
 
     def download_count(self):
         return self.downloads.count()
-
-    @transaction.atomic
-    def record_download(self, request):
-        """
-        FIXME: remove this method + dependencies when
-        DownloadRequestSerializer is finished
-        """
-        referrer = request.META.get("HTTP_REFERER", "")
-        client_ip, is_routable = get_client_ip(request)
-        user = request.user if request.user.is_authenticated else None
-        self.downloads.create(user=user, referrer=referrer, ip_address=client_ip)
 
     @property
     def title(self):

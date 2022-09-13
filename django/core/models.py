@@ -200,22 +200,20 @@ class MemberProfileQuerySet(models.QuerySet):
             )
         )
 
-
 @add_to_comses_permission_whitelist
 @register_snippet
 class MemberProfile(index.Indexed, ClusterableModel):
     """
     Contains additional comses.net information, possibly linked to a CoMSES Member / site account
     """
-    INDUSTRY_OPTIONS = Choices(
-        "college/university", 
-        "K-12 educator", 
-        "government", 
-        "private", 
-        "non-profit", 
-        "student",
-        "other",
-    )
+    class Industry(models.TextChoices):
+        COLLEGE_UNIVERSITY = 'university', _('College/University')
+        EDUCATOR = 'educator', _('K-12 Educator')
+        GOVERNMENT = 'government', _('Government')
+        PRIVATE = 'private', _('Private')
+        NON_PROFIT = 'nonprofit', _('Non-Profit')
+        STUDENT = 'student', _('Student')
+        OTHER = 'other', _('Other, please specify below')
 
     user = models.OneToOneField(
         User, null=True, on_delete=models.SET_NULL, related_name="member_profile"
@@ -229,7 +227,7 @@ class MemberProfile(index.Indexed, ClusterableModel):
     affiliations = models.JSONField(
         default=list, help_text=_("JSON-LD list of affiliated institutions")
     )
-    industry = models.CharField(blank=True, max_length=255, choices=INDUSTRY_OPTIONS)
+    industry = models.CharField(blank=True, max_length=255, choices=Industry.choices)
     bio = MarkdownField(max_length=2048, help_text=_("Brief bio"))
     degrees = ArrayField(models.CharField(max_length=255), blank=True, default=list)
     institution = models.ForeignKey(Institution, null=True, on_delete=models.SET_NULL)

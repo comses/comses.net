@@ -26,7 +26,7 @@ import BaseControl from './base';
         </slot>
     </div>`, 
 })
-class Input extends BaseControl {
+class Select extends BaseControl {
     @Prop({ default: ''})
     public validate: string;
 
@@ -62,4 +62,4 @@ class Input extends BaseControl {
     }
 }
 
-export default Input;
+export default Select;
