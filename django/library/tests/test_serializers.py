@@ -116,7 +116,7 @@ class SerializerTestCase(BaseModelTestCase):
             'user': user.pk,
             'release': release.pk,
             'reason': 'policy', 
-            'industry': 'education', 
+            'industry': 'university', 
             'affiliation': '{"name" : "ASU", "url" : "https://asu.edu/"}',
             }
         download_request = DownloadRequestSerializer(data=data)
