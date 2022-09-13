@@ -424,21 +424,17 @@ class CodebaseImageSerializer(serializers.ModelSerializer):
 class DownloadRequestSerializer(serializers.ModelSerializer):
     # customize save functionality to validate and record a new CodebaseReleaseDownload
 
-    industry = serializers.CharField()
-    affiliation = serializers.CharField()
-
     def create(self, validated_data):
         logger.debug("creating download request serializer from: %s", validated_data)
-        industry = validated_data.pop('industry')
-        affiliation = validated_data.pop('affiliation')
+        user_industry = validated_data.get('industry')
+        user_affiliation = validated_data.get('affiliation')
         instance = CodebaseReleaseDownload(**validated_data)
         instance.user = validated_data.get('user')
-        # FIXME: this should only overwrite member_profile if there is data
-        if industry or affiliation:
+        if instance.user:
             member_profile = instance.user.member_profile
-            member_profile.industry = industry
-            if affiliation not in member_profile.affiliations:
-                member_profile.affiliations.append(affiliation)
+            member_profile.industry = user_industry
+            if user_affiliation not in member_profile.affiliations:
+                member_profile.affiliations.append(user_affiliation)
             member_profile.save()
         instance.save()
         return instance

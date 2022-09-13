@@ -5,7 +5,6 @@
       rel="nofollow"
       data-toggle="modal"
       data-target="#downloadRequestForm"
-      @click="showEmail = !authenticatedUser"
     >
       <i class="fas fa-download"></i> Download Version {{ versionNumber }}
     </button>
@@ -13,7 +12,7 @@
       class="modal fade"
       id="downloadRequestForm"
     >
-      <div class="modal-dialog">
+      <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
           <div class="modal-header">
             <h5 class="modal-title">Demographic Survey</h5>
@@ -28,15 +27,6 @@
             <slot name="body"></slot>
             <div>
               <form class="align-items-center">
-                <div v-if="showEmail">
-                  <c-input
-                    v-model="email"
-                    name="email"
-                    label="Email"
-                    :errorMsgs="errors.email"
-                    :required="config.email"
-                  ></c-input>
-                </div>
                 <c-select
                   v-model="industry"
                   name="industry"
@@ -47,7 +37,7 @@
                   :required="config.industry"
                 ></c-select>
                 <c-input
-                  v-model="affiliation"
+                  v-model="affiliation.name"
                   name="affiliation"
                   label="Affiliation"
                   :errorMsgs="errors.affiliation"
@@ -66,9 +56,8 @@
 
               <!-- debug info -->
               <code>
-              <p> email: {{ email }} </p>
               <p> industry: {{ industry }} </p>
-              <p> affiliation: {{ affiliation }} </p>
+              <p> affiliation: {{ affiliation.name }} </p>
               <p> reason: {{ reason }} </p>
               </code>
               <!-- -->
@@ -114,14 +103,12 @@ import * as _ from "lodash";
 import * as yup from "yup";
 
 export const schema = yup.object().shape({
-  showEmail: yup.boolean(),
-  email: yup.string().email().when("showEmail", {
-    is: true,
-    then: yup.string().required()
-  }),
   industry: yup.string().required(),
-  affiliation: yup.string().required(),
   reason: yup.string().required(),
+  affiliation: yup.object({
+    name: yup.string().required(),
+    url: yup.string().url().nullable(),
+  }).required(),
 })
 
 const api  = new CodebaseReleaseAPI();
@@ -131,6 +118,7 @@ const api  = new CodebaseReleaseAPI();
     "c-input": Input,
     "c-select": Select,
     "c-message-display": MessageDisplay,
+    "c-institution-select": InstitutionSelect,
   },
 })
 
@@ -145,22 +133,20 @@ export default class DownloadRequestFormModal extends createFormValidator(schema
   public userIndustry: string;
 
   @Prop()
-  public userEmail: string;
-
-  @Prop()
   public versionNumber: number;
 
   @Prop()
   public authenticatedUser: boolean;
 
-  // FIXME: temp, get options from the server
+  // FIXME: get choices from server
+  // OR remove entirely since choices with the option to have a custom entry doesn't make much sense
   public industryOptions = [
     "private",
-    "college/university",
+    "university",
     "government",
-    "non-profit",
+    "nonprofit",
     "student",
-    "K-12 educator",
+    "educator",
     "other",
   ];
 
@@ -168,7 +154,7 @@ export default class DownloadRequestFormModal extends createFormValidator(schema
     "research",
     "education",
     "commercial",
-    "policy/planning",
+    "policy",
     "other",
   ];
 
@@ -182,16 +168,16 @@ export default class DownloadRequestFormModal extends createFormValidator(schema
 
   public async initializeForm() {
     if (this.authenticatedUser) {
-      this.state.affiliation = this.userAffiliation ?? "";
+      // FIXME: get whole affiliation object and update state
+      this.state.affiliation.name = this.userAffiliation ?? "";
       this.state.industry = this.userIndustry ?? "";
-      this.state.email = this.userEmail ?? "";
     }
   }
 
   public async submit() {
     try {
       await this.validate();
-      // FIXME: temporary modal bug workaround
+      // temporary modal bug workaround
       document.getElementById("closeDownloadRequestFormModal").click();
       return this.create();
     } catch (e) {
@@ -205,8 +191,6 @@ export default class DownloadRequestFormModal extends createFormValidator(schema
   public async create() {
     this.$emit("create");
     const handler = new HandlerWithRedirect(this);
-    // TODO:  investigate why the server isn't creating new codebasereleasedownload rows.
-    //        memberprofile is being updated, however.
     return api.requestDownload({identifier: this.identifier,version_number: this.versionNumber}, handler);
   }
 }

@@ -887,7 +887,6 @@ class CodebaseReleaseViewSet(CommonViewSetMixin, NoDeleteViewSet):
         codebase_release = self.get_object()
         try:
             response = build_archive_download_response(codebase_release)
-            codebase_release.record_download(request)
         except FileNotFoundError:
             logger.error(
                 "Unable to find archive for codebase release %s (%s)",

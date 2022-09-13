@@ -393,7 +393,7 @@ class MemberProfile(index.Indexed, ClusterableModel):
     def get_download_request_metadata(self):
         """ Returns a dictionary of metadata to be included in the download request modal form if available """
         return {
-            "affiliations": self.affiliations,
+            "institution": self.institution_name,
             "industry": self.industry,
             "email": self.email,
             # add more here as needed
