@@ -117,12 +117,11 @@ class SerializerTestCase(BaseModelTestCase):
             'release': release.pk,
             'reason': 'policy', 
             'industry': 'education', 
-            'affiliation': 'https://ror.org/0xyz' 
+            'affiliation': '{"name" : "ASU", "url" : "https://asu.edu/"}',
             }
         download_request = DownloadRequestSerializer(data=data)
         download_request.is_valid()
         crs = download_request.save()
-        # should set industry + affiliation data on user.member_profile
         user.refresh_from_db()
         self.assertEqual(data['industry'], user.member_profile.industry)
         self.assertTrue(data['affiliation'] in user.member_profile.affiliations)
