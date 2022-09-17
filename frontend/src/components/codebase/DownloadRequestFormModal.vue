@@ -15,7 +15,14 @@
       <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
           <div class="modal-header">
-            <h5 class="modal-title">Demographic Survey</h5>
+            <h5 class="modal-title">
+              Please complete a brief survey
+              <button type="button" class="btn" data-bs-toggle="tooltip" data-bs-placement="top"
+                title="This information helps us understand our community to better serve it.
+                       Some answers are pre-filled from your profile.">
+                <i class="text-info fas fa-question-circle"></i>
+              </button>
+            </h5>
               <button
                 type="button"
                 class="close"
@@ -30,38 +37,36 @@
                 <c-select
                   v-model="industry"
                   name="industry"
-                  label="Industry"
+                  label="What industry do you work in?"
                   :options="industryOptions"
-                  customOption="other"
                   :errorMsgs="errors.industry"
                   :required="config.industry"
                 ></c-select>
                 <c-input
                   v-model="affiliation.name"
                   name="affiliation"
-                  label="Affiliation"
+                  label="What is your institutional affiliation?"
                   :errorMsgs="errors.affiliation"
                   :required="config.affiliation"
                 ></c-input>
                 <c-select
                   v-model="reason"
                   name="reason"
-                  label="Reason For Downloading"
+                  label="What do you plan on using this model for?"
                   :options="reasonOptions"
-                  customOption="other"
                   :errorMsgs="errors.reason"
                   :required="config.reason"
                 ></c-select>
+                <!-- <c-institution-select
+                  label="test component"
+                ></c-institution-select> -->
+                <!-- <div class="form-check" v-if="authenticatedUser">
+                  <input class="form-check-input" type="checkbox" v-model="saveToProfile" id="checkSaveToProfile">
+                  <label class="form-check-label text-break" for="checkSaveToProfile">
+                    <small>Save this information to my profile</small>
+                  </label>
+                </div> -->
               </form>
-
-              <!-- debug info -->
-              <code>
-              <p> industry: {{ industry }} </p>
-              <p> affiliation: {{ affiliation.name }} </p>
-              <p> reason: {{ reason }} </p>
-              </code>
-              <!-- -->
-
             </div>
           </div>
           <c-message-display
@@ -69,13 +74,7 @@
             @clear="statusMessages = []"
           ></c-message-display>
           <div class="modal-footer">
-            <button
-              type="button"
-              class="btn btn-secondary"
-              data-dismiss="modal"
-            >
-              Close
-            </button>
+            
             <button
               type="button"
               class="btn btn-danger"
@@ -98,6 +97,7 @@ import { CodebaseReleaseAPI } from "@/api";
 import { createFormValidator } from "@/pages/form";
 import Input from "@/components/forms/input";
 import Select from "@/components/forms/select";
+import InstitutionSelect from "@/components/forms/institution_select";
 import MessageDisplay from "@/components/messages";
 import * as _ from "lodash";
 import * as yup from "yup";
@@ -109,6 +109,7 @@ export const schema = yup.object().shape({
     name: yup.string().required(),
     url: yup.string().url().nullable(),
   }).required(),
+  // saveToProfile: yup.boolean().required(),
 })
 
 const api  = new CodebaseReleaseAPI();
@@ -138,25 +139,23 @@ export default class DownloadRequestFormModal extends createFormValidator(schema
   @Prop()
   public authenticatedUser: boolean;
 
-  // FIXME: get choices from server
-  // OR remove entirely since choices with the option to have a custom entry doesn't make much sense
   public industryOptions = [
-    "private",
-    "university",
-    "government",
-    "nonprofit",
-    "student",
-    "educator",
-    "other",
+    {value: 'university', label: 'College/University'},
+    {value: 'educator', label: 'K-12 Educator'},
+    {value: 'government', label: 'Government'},
+    {value: 'private', label: 'Private'},
+    {value: 'nonprofit', label: 'Non-Profit'},
+    {value: 'student', label: 'Student'},
+    {value: 'other', label: 'Other'},
   ];
 
   public reasonOptions = [
-    "research",
-    "education",
-    "commercial",
-    "policy",
-    "other",
-  ];
+    {value: "research", label: 'Research'},
+    {value: "education", label: 'Education'},
+    {value: "commercial", label: 'Commercial'},
+    {value: "policy", label: 'Policy / Planning'},
+    {value: "other", label: 'Other'},
+  ];                   
 
   public detailPageUrl(state) {
     return api.downloadUrl({identifier: this.identifier, version_number: this.versionNumber});
@@ -168,8 +167,7 @@ export default class DownloadRequestFormModal extends createFormValidator(schema
 
   public async initializeForm() {
     if (this.authenticatedUser) {
-      // FIXME: get whole affiliation object and update state
-      this.state.affiliation.name = this.userAffiliation ?? "";
+      this.state.affiliation = this.userAffiliation ?? "";
       this.state.industry = this.userIndustry ?? "";
     }
   }
@@ -177,11 +175,11 @@ export default class DownloadRequestFormModal extends createFormValidator(schema
   public async submit() {
     try {
       await this.validate();
+      const response = await this.create();
       // temporary modal bug workaround
       document.getElementById("closeDownloadRequestFormModal").click();
-      return this.create();
+      return response;
     } catch (e) {
-      console.log(e);
       if (!(e instanceof yup.ValidationError)) {
         throw e;
       }

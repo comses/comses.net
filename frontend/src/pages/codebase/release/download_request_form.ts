@@ -11,9 +11,8 @@ if (el) {
     propsData: {
       identifier,
       versionNumber,
-      userAffiliation: userData.institution, // FIXME: does this ever have data?
+      userAffiliation: userData.institution, // for now, this is the user's primary institution
       userIndustry: userData.industry,
-      userEmail: userData.email,
       authenticatedUser: !! userData.email, // for now, if no email in user data, assume not logged in
     },
   }).$mount(el);

@@ -33,6 +33,7 @@ from rest_framework.exceptions import (
 )
 from rest_framework.filters import OrderingFilter
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
+from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 
 from core.models import MemberProfile
@@ -844,13 +845,10 @@ class CodebaseReleaseViewSet(CommonViewSetMixin, NoDeleteViewSet):
                 status=status.HTTP_200_OK,
             )
 
-    @action(detail=True, methods=["post"])
-    @transaction.atomic
+    @action(detail=True, methods=["post"], permission_classes=[AllowAny]) # override viewset permissions to allow
+    @transaction.atomic                                                   # anonymous downloads
     def request_download(self, request, **kwargs):
         user = request.user if request.user.is_authenticated else None
-        # FIXME: clarify if anonymous downloads are allowed
-        if user is None:
-            raise ValidationError("You must be signed in to download this file.")
         download_request = request.data
         codebase_release = self.get_object()
         referrer = request.META.get("HTTP_REFERER", "")
@@ -858,7 +856,7 @@ class CodebaseReleaseViewSet(CommonViewSetMixin, NoDeleteViewSet):
         download_request.update(
             ip_address=client_ip,
             referrer=referrer,
-            user=user.id,
+            user=user.id if user else None,
             release=codebase_release.id,
         )
         serializer = DownloadRequestSerializer(data=download_request)

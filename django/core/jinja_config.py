@@ -31,7 +31,7 @@ logger = logging.getLogger(__name__)
 def get_download_request_metadata(user):
     """ FIXME: this doesn't quite fit here, too specialized """
     EMPTY_DOWNLOAD_REQUEST_METADATA = {
-        "affiliations": [],
+        "institution": {},
         "industry": "",
         "email": "",
     }

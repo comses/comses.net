@@ -9,13 +9,13 @@ import BaseControl from './base';
         </slot>
         <select :id='controlId' :name="name" :class="['form-control', {'is-invalid': isInvalid}]" 
                 :value="value" @change="updateValue($event.target.value)" v-model="selectedOption">
-            <option :value="option" :selected="option === selectedOption" v-for="option in options">
-                {{ option }}
+            <option :value="option.value" :selected="option.value === selectedOption" v-for="option in options">
+                {{ option.label }}
             </option>
         </select>
         <div v-if="customSelected()">
             <label for="inputCustom" class="form-label"></label>
-            <input :value="value" class="form-control" id="inputCustom" :placeholder="customPlaceholder"
+            <input :value="value" class="form-control" :id="customInputId" :placeholder="customPlaceholder"
             @input="updateValue($event.target.value)"/>
         </div>
         <div class="invalid-feedback">
@@ -36,8 +36,8 @@ class Select extends BaseControl {
     @Prop({ default: ''})
     public help: string;
 
-    @Prop({ default: ['']})
-    public options: string[];
+    @Prop()
+    public options: [{value: string, label: string}];
 
     @Prop({ default: null})
     public customOption: string | null;
@@ -47,8 +47,24 @@ class Select extends BaseControl {
 
     public selectedOption = '';
 
+    get customInputId() {
+        return `${this.name}CustomInput`;
+    }
+
     public created() {
         this.setSelectedOption();
+    }
+
+    public updated() {
+        if (this.value === this.customOption) {
+            this.selectInputText();
+        }
+    }
+
+    public selectInputText() {
+        const input = document.getElementById(this.customInputId) as HTMLInputElement;
+        input.focus();
+        input.select();
     }
 
     public setSelectedOption() {
