@@ -29,11 +29,12 @@ logger = logging.getLogger(__name__)
 
 
 def get_download_request_metadata(user):
-    """ FIXME: this doesn't quite fit here, too specialized """
+    """ FIXME: this doesn't quite fit here, too specialized, possibly get_context_data()? """
     EMPTY_DOWNLOAD_REQUEST_METADATA = {
+        "authenticated": False,
         "institution": {},
         "industry": "",
-        "email": "",
+        "id": None
     }
     # start with base download request metadata
     metadata = EMPTY_DOWNLOAD_REQUEST_METADATA

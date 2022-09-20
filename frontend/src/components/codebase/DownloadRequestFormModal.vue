@@ -34,6 +34,7 @@
             <slot name="body"></slot>
             <div>
               <form class="align-items-center">
+                <!-- TODO: consider making these multiselects for ui consistency -->
                 <c-select
                   v-model="industry"
                   name="industry"
@@ -42,13 +43,18 @@
                   :errorMsgs="errors.industry"
                   :required="config.industry"
                 ></c-select>
-                <c-input
+                <!-- <c-input
                   v-model="affiliation.name"
                   name="affiliation"
                   label="What is your institutional affiliation?"
                   :errorMsgs="errors.affiliation"
                   :required="config.affiliation"
-                ></c-input>
+                ></c-input> -->
+                <c-organization-search name="username" v-model="affiliation"
+                  :errorMsgs="errors.affiliation"
+                  :required="config.affiliation"
+                  label="What is your institutional affiliation?" help="">
+                </c-organization-search>
                 <c-select
                   v-model="reason"
                   name="reason"
@@ -57,15 +63,12 @@
                   :errorMsgs="errors.reason"
                   :required="config.reason"
                 ></c-select>
-                <!-- <c-institution-select
-                  label="test component"
-                ></c-institution-select> -->
-                <!-- <div class="form-check" v-if="authenticatedUser">
+                <div class="form-check" v-if="authenticatedUser">
                   <input class="form-check-input" type="checkbox" v-model="saveToProfile" id="checkSaveToProfile">
                   <label class="form-check-label text-break" for="checkSaveToProfile">
                     <small>Save this information to my profile</small>
                   </label>
-                </div> -->
+                </div>
               </form>
             </div>
           </div>
@@ -74,10 +77,9 @@
             @clear="statusMessages = []"
           ></c-message-display>
           <div class="modal-footer">
-            
             <button
               type="button"
-              class="btn btn-danger"
+              class="btn btn-success"
               @click="submit"
             >
               Submit and Download
@@ -93,11 +95,12 @@
 import { Component, Prop } from "vue-property-decorator";
 import Vue from "vue";
 import { DismissOnSuccessHandler, HandlerWithRedirect } from "@/api/handler"
-import { CodebaseReleaseAPI } from "@/api";
+import { CodebaseReleaseAPI, ProfileAPI } from "@/api";
+import { api } from '@/api/connection';
 import { createFormValidator } from "@/pages/form";
 import Input from "@/components/forms/input";
 import Select from "@/components/forms/select";
-import InstitutionSelect from "@/components/forms/institution_select";
+import OrganizationSearch from "@/components/forms/organization";
 import MessageDisplay from "@/components/messages";
 import * as _ from "lodash";
 import * as yup from "yup";
@@ -108,24 +111,33 @@ export const schema = yup.object().shape({
   affiliation: yup.object({
     name: yup.string().required(),
     url: yup.string().url().nullable(),
+    acronym: yup.string().nullable(),
+    rorid: yup.string().nullable(),
   }).required(),
-  // saveToProfile: yup.boolean().required(),
+  saveToProfile: yup.boolean().required().default(false),
 })
 
-const api  = new CodebaseReleaseAPI();
+const codebaseReleaseAPI  = new CodebaseReleaseAPI();
+const profileAPI = new ProfileAPI();
 
+// TODO: allow user to enter custom affiliation if not in ROR database -> ../forms/organization.ts
+// TODO: make DRSerializer only update profile if saveToProfile flag is true -> /django/library/serializers.py
+// TODO: fix up schema for institution -> /django/core/models.py etc..
 @Component({
   components: {
     "c-input": Input,
     "c-select": Select,
     "c-message-display": MessageDisplay,
-    "c-institution-select": InstitutionSelect,
+    "c-organization-search": OrganizationSearch,
   },
 })
 
 export default class DownloadRequestFormModal extends createFormValidator(schema) {
   @Prop()
   public identifier: string;
+
+  @Prop()
+  public userId: number;
 
   @Prop()
   public userAffiliation: string;
@@ -158,7 +170,7 @@ export default class DownloadRequestFormModal extends createFormValidator(schema
   ];                   
 
   public detailPageUrl(state) {
-    return api.downloadUrl({identifier: this.identifier, version_number: this.versionNumber});
+    return codebaseReleaseAPI.downloadUrl({identifier: this.identifier, version_number: this.versionNumber});
   }
 
   public created() {
@@ -176,6 +188,10 @@ export default class DownloadRequestFormModal extends createFormValidator(schema
     try {
       await this.validate();
       const response = await this.create();
+      // if (this.state.saveToProfile) {
+      //   this.updateProfile();
+      // }
+
       // temporary modal bug workaround
       document.getElementById("closeDownloadRequestFormModal").click();
       return response;
@@ -186,10 +202,16 @@ export default class DownloadRequestFormModal extends createFormValidator(schema
     }
   }
 
+  // public async updateProfile() {
+  //   const response = await profileAPI.retrieve(this.userId);
+  //   response.data.industry = this.state.industry;
+  //   return api.axios.put(profileAPI.detailUrl(this.userId), response.data);
+  // } 
+
   public async create() {
     this.$emit("create");
     const handler = new HandlerWithRedirect(this);
-    return api.requestDownload({identifier: this.identifier,version_number: this.versionNumber}, handler);
+    return codebaseReleaseAPI.requestDownload({identifier: this.identifier,version_number: this.versionNumber}, handler);
   }
 }
 </script>

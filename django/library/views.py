@@ -845,8 +845,8 @@ class CodebaseReleaseViewSet(CommonViewSetMixin, NoDeleteViewSet):
                 status=status.HTTP_200_OK,
             )
 
-    @action(detail=True, methods=["post"], permission_classes=[AllowAny]) # override viewset permissions to allow
-    @transaction.atomic                                                   # anonymous downloads
+    @action(detail=True, methods=["post"], permission_classes=[AllowAny])
+    @transaction.atomic
     def request_download(self, request, **kwargs):
         user = request.user if request.user.is_authenticated else None
         download_request = request.data

@@ -1,5 +1,3 @@
-// Mounts DownloadRequestFormModal button + modal form into the DOM, probably a better way to do this
-
 import DownloadRequestFormModal from "@/components/codebase/DownloadRequestFormModal.vue";
 
 const el = document.getElementById("download-request-form");
@@ -11,9 +9,10 @@ if (el) {
     propsData: {
       identifier,
       versionNumber,
-      userAffiliation: userData.institution, // for now, this is the user's primary institution
+      userId: userData.id,
+      userAffiliation: userData.institution, // prefill with user's primary institution
       userIndustry: userData.industry,
-      authenticatedUser: !! userData.email, // for now, if no email in user data, assume not logged in
+      authenticatedUser: userData.authenticated,
     },
   }).$mount(el);
 }

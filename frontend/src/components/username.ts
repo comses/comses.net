@@ -15,6 +15,7 @@ const debounceFetchMatchingUsers = _.debounce(async (self: UsernameSearch, query
         self.isLoading = true;
         const response = await profileAPI.search({query, page: 1});
         self.matchingUsers = response.data.results;
+        console.log(self.matchingUsers)
         self.isLoading = false;
     } catch (err) {
         self.localErrors = 'Error fetching tags';
