@@ -11,7 +11,8 @@ from django.urls import reverse
 from django.utils.dateparse import parse_datetime
 from django.utils.text import slugify
 from django.utils.timezone import get_current_timezone
-from jinja2 import Environment, Markup
+from jinja2 import Environment
+from markupsafe import Markup
 
 from hcaptcha_field import hCaptchaField
 from typing import Optional
