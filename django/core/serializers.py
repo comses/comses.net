@@ -275,10 +275,10 @@ class JobSerializer(serializers.ModelSerializer):
 
 
 class InstitutionSerializer(serializers.ModelSerializer):
-    name = serializers.CharField()
-    url = serializers.URLField()
-    acronym = serializers.CharField()
-    ror_id = serializers.URLField()
+    name = serializers.CharField(allow_blank=False)
+    url = serializers.URLField(allow_blank=True)
+    acronym = serializers.CharField(allow_blank=True)
+    ror_id = serializers.URLField(allow_blank=True)
 
     class Meta:
         model = Institution
