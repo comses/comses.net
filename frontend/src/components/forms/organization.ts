@@ -39,8 +39,7 @@ const debounceFetchOrgs = _.debounce(async (self: OrganizationSearch, query: str
                 :multiple="multiple"
                 label="name"
                 track-by="name"
-                :custom-label="displayInfo"
-                :allow-empty="false"
+                :allow-empty="multiple"
                 deselect-label=""
                 placeholder="Type to find your organization"
                 :options="orgs"
@@ -50,6 +49,15 @@ const debounceFetchOrgs = _.debounce(async (self: OrganizationSearch, query: str
                 :options-limit="50"
                 :limit="20"
                 @search-change="fetchOrgs">
+            <template slot="singleLabel" slot-scope="props">
+                <span class="option__title">{{ props.option.name }}</span></span>
+            </template>
+            <template slot="option" slot-scope="props">
+                <div class="option__desc"><span class="option__title">{{ props.option.name }}</span>
+                <br>
+                <span class="text-muted"><small>{{ props.option.url }}</small></span></div>
+
+            </template>
         </multiselect>
         <div v-if="isInvalid" class="invalid-feedback">
             {{ [errorMessage, localErrors].filter(msg => msg !== '').join(', ') }}
@@ -71,6 +79,8 @@ const debounceFetchOrgs = _.debounce(async (self: OrganizationSearch, query: str
         Multiselect,
     },
 })
+
+// TODO: style multiselect components to be consistent with other bootstrap selects
 export default class OrganizationSearch extends BaseControl {
     @Prop({default: ''})
     public label: string;
@@ -84,14 +94,6 @@ export default class OrganizationSearch extends BaseControl {
     public isLoading = false;
     public orgs = [];
     public localErrors: string = '';
-
-    public displayInfo(org) {
-        if (!org.name) {
-            return null;
-        } else {
-            return `${org.name} (${org.url})`;
-        }
-    }
 
     public fetchOrgs(query) {
         if (query.length > 5) {

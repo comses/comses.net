@@ -42,7 +42,7 @@
                   :errorMsgs="errors.industry"
                   :required="config.industry"
                 ></c-select>
-                <c-organization-search name="username" v-model="affiliation"
+                <c-organization-search name="affiliation" v-model="affiliation"
                   :errorMsgs="errors.affiliation"
                   :required="config.affiliation"
                   label="What is your institutional affiliation?" help="">

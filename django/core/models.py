@@ -123,7 +123,7 @@ class SocialMediaSettings(BaseSetting):
 class Institution(models.Model):
     name = models.CharField(max_length=200)
     url = models.URLField(blank=True)
-    acronym = models.CharField(max_length=50)
+    acronym = models.CharField(max_length=50, blank=True)
     ror_id = models.URLField(blank=True)
 
     panels = [

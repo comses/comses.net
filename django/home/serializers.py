@@ -8,7 +8,7 @@ from rest_framework import serializers
 from rest_framework.exceptions import ValidationError as DrfValidationError
 
 from core.models import Institution, MemberProfile
-from core.serializers import TagSerializer, MarkdownField
+from core.serializers import InstitutionSerializer, TagSerializer, MarkdownField
 from library.serializers import RelatedCodebaseSerializer
 from .models import FeaturedContentItem, UserMessage
 
@@ -97,10 +97,9 @@ class MemberProfileSerializer(serializers.ModelSerializer):
         source="user.codebases", many=True, read_only=True
     )
 
-    # Institution
-    # institution = InstitutionSerializer()
-    institution_name = serializers.CharField(allow_blank=True)
-    institution_url = serializers.URLField(allow_blank=True)
+    # Institution/Affiliation
+    institution = InstitutionSerializer()
+    affiliations = serializers.JSONField()
 
     # MemberProfile
     avatar = (
@@ -180,20 +179,12 @@ class MemberProfileSerializer(serializers.ModelSerializer):
         user.save()
 
         new_email = self.initial_data["email"]
+        
+        user_institution = validated_data.pop("institution")
+        institution = Institution.objects.create(**user_institution)
+        instance.institution = institution
 
-        raw_institution = {
-            "name": validated_data.pop("institution_name"),
-            "url": validated_data.pop("institution_url"),
-        }
-        # FIXME: needs to be refactored for proper RORID integration
-        institution = instance.institution
-        if institution:
-            institution.name = raw_institution.get("name")
-            institution.url = raw_institution.get("url")
-            institution.save()
-        else:
-            institution = Institution.objects.create(**raw_institution)
-            instance.institution = institution
+        instance.affiliations = validated_data.get("affiliation")
 
         # Full members cannot downgrade their status
         if instance.full_member:
@@ -233,9 +224,6 @@ class MemberProfileSerializer(serializers.ModelSerializer):
             "following_count",
             "codebases",
             "industry",
-            # institution
-            "institution_name",
-            "institution_url",
             # MemberProfile
             "avatar",
             "bio",
@@ -250,5 +238,7 @@ class MemberProfileSerializer(serializers.ModelSerializer):
             "professional_url",
             "profile_url",
             "research_interests",
+            "institution",
+            "affiliations",
             "name",
         )

@@ -43,7 +43,7 @@
                         <b class='card-title'>Affiliations</b>
                         <p class='card-text'>
                     {% for affiliation in profile.affiliations %}
-                        <a href='{{ affiliation.url }}' target='_blank'>{{ affiliation.name }}, </a>
+                        <a href='{{ affiliation.url }}' target='_blank'>{{ affiliation.name }}</a>{{ ", " if not loop.last else "" }}
                     {% endfor %}
                         </p>
                     {% endif %}

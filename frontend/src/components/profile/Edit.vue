@@ -140,22 +140,7 @@
       help="A link to your institutional or professional profile page."
       :required="config.professional_url"
     ></c-input>
-    <!-- <label for="industry">Industry</label>
-    <br />
-    <select
-      v-model="industry"
-      name="industry"
-      :errorMsgs="errors.industry"
-      help="The industry you are currently working in."
-      :required="config.industry"
-    >
-      <option
-        v-for="industry in industryOptions"
-        :key="industry"
-        :label="industry"
-        :value="industry"
-      ></option>
-    </select> -->
+    <!-- FIXME: industry value isnt initalizing properly on here -->
     <c-select
       v-model="industry"
       name="industry"
@@ -165,35 +150,24 @@
       :errorMsgs="errors.industry"
       :required="config.industry"
     ></c-select>
-    <c-organization-search name="username" v-model="institution"
+    <c-organization-search
+      name="institution"
+      v-model="institution"
       :errorMsgs="errors.institution"
       :required="config.institution"
       label="Primary Institution"
       :multiple="false"
       help="Your primary institutional affiliation of place of work">
     </c-organization-search>
-    <c-organization-search name="username" v-model="affiliations"
+    <c-organization-search
+      name="affiliations"
+      v-model="affiliations"
       :errorMsgs="errors.affiliations"
       :required="config.affiliations"
       label="Affiliations"
       :multiple="true"
       help="A list of other organizations that you are affiliated with">
     </c-organization-search>
-    <!-- <c-input
-      v-model="institution_name"
-      name="institution_name"
-      :errorMsgs="errors.institution_name"
-      label="Institution"
-      help="Your primary institutional affiliation or place of work"
-      :required="config.institution_name"
-    ></c-input>
-    <c-input
-      v-model="institution_url"
-      name="institution_url"
-      :errorMsgs="errors.institution_url"
-      label="Institution URL"
-      :required="config.institution_url"
-    ></c-input> -->
     <c-edit-degrees
       :value="degrees"
       @create="degrees.push($event)"
@@ -263,8 +237,6 @@ export const schema = yup.object().shape({
     acronym: yup.string().nullable(),
     ror_id: yup.string().nullable(),
   })).nullable(),
-  // institution_name: yup.string().nullable(),
-  // institution_url: yup.string().url().nullable(),
   bio: yup.string(),
   degrees: yup.array().of(yup.string().required()),
   tags: yup.array().of(yup.object().shape({ name: yup.string().required() })),
