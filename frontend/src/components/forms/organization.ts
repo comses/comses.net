@@ -34,7 +34,6 @@ const debounceFetchOrgs = _.debounce(async (self: OrganizationSearch, query: str
             <label class="form-control-label">{{ label }}</label>
         </slot>
         <multiselect
-                v-model="selectedOrgs"
                 :value="value"
                 @input="updateValue"
                 :multiple="multiple"
@@ -50,7 +49,6 @@ const debounceFetchOrgs = _.debounce(async (self: OrganizationSearch, query: str
                 :internal-search="false"
                 :options-limit="50"
                 :limit="20"
-                :disabled="showCustom"
                 @search-change="fetchOrgs">
         </multiselect>
         <div v-if="isInvalid" class="invalid-feedback">
@@ -59,6 +57,7 @@ const debounceFetchOrgs = _.debounce(async (self: OrganizationSearch, query: str
         <slot name="help" :help="help">
             <small class="form-text text-muted">{{ help }}</small>
         </slot>
+        <!-- TODO: remove or figure out how add custom org functionality -->
         <!-- <button type="button" class="btn btn-link p-0" @click="showCustom = !showCustom">
             <small class="form-text">
                 <i class="fas fa-chevron-down" v-if="!showCustom"></i>
@@ -66,9 +65,7 @@ const debounceFetchOrgs = _.debounce(async (self: OrganizationSearch, query: str
                  Can't find your organization?
             </small>
         </button>
-        <div v-if="showCustom">
-            <input class="form-control" placeholder="Enter the name of your organization"></input>
-        </div> -->
+        -->
     </div>`,
     components: {
         Multiselect,
@@ -86,10 +83,7 @@ export default class OrganizationSearch extends BaseControl {
 
     public isLoading = false;
     public orgs = [];
-    // public selectedOrgs = [];
     public localErrors: string = '';
-
-    // public showCustom = false;
 
     public displayInfo(org) {
         if (!org.name) {
