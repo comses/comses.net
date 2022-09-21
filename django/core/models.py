@@ -223,14 +223,16 @@ class MemberProfile(index.Indexed, ClusterableModel):
     # location = LocationField(based_fields=['city'], zoom=7)
 
     timezone = TimeZoneField(blank=True)
-
-    affiliations = models.JSONField(
-        default=list, help_text=_("JSON-LD list of affiliated institutions")
-    )
     industry = models.CharField(blank=True, max_length=255, choices=Industry.choices)
     bio = MarkdownField(max_length=2048, help_text=_("Brief bio"))
     degrees = ArrayField(models.CharField(max_length=255), blank=True, default=list)
+    # user's primary institution
     institution = models.ForeignKey(Institution, null=True, on_delete=models.SET_NULL)
+    # additional institutional affiliations, could potentially refactor to be a list of
+    # Institution models but for now we are just validating on the client side
+    affiliations = models.JSONField(
+        default=list, help_text=_("JSON-LD list of affiliated institutions")
+    )
     tags = ClusterTaggableManager(through=MemberProfileTag, blank=True)
 
     personal_url = models.URLField(blank=True)

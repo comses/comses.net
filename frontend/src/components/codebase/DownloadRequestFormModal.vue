@@ -34,7 +34,6 @@
             <slot name="body"></slot>
             <div>
               <form class="align-items-center">
-                <!-- TODO: consider making these multiselects for ui consistency -->
                 <c-select
                   v-model="industry"
                   name="industry"
@@ -43,13 +42,6 @@
                   :errorMsgs="errors.industry"
                   :required="config.industry"
                 ></c-select>
-                <!-- <c-input
-                  v-model="affiliation.name"
-                  name="affiliation"
-                  label="What is your institutional affiliation?"
-                  :errorMsgs="errors.affiliation"
-                  :required="config.affiliation"
-                ></c-input> -->
                 <c-organization-search name="username" v-model="affiliation"
                   :errorMsgs="errors.affiliation"
                   :required="config.affiliation"
@@ -64,7 +56,7 @@
                   :required="config.reason"
                 ></c-select>
                 <div class="form-check" v-if="authenticatedUser">
-                  <input class="form-check-input" type="checkbox" v-model="saveToProfile" id="checkSaveToProfile">
+                  <input class="form-check-input" type="checkbox" v-model="save_to_profile" id="checkSaveToProfile">
                   <label class="form-check-label text-break" for="checkSaveToProfile">
                     <small>Save this information to my profile</small>
                   </label>
@@ -112,17 +104,14 @@ export const schema = yup.object().shape({
     name: yup.string().required(),
     url: yup.string().url().nullable(),
     acronym: yup.string().nullable(),
-    rorid: yup.string().nullable(),
+    ror_id: yup.string().nullable(),
   }).required(),
-  saveToProfile: yup.boolean().required().default(false),
+  save_to_profile: yup.boolean().required().default(false),
 })
 
 const codebaseReleaseAPI  = new CodebaseReleaseAPI();
 const profileAPI = new ProfileAPI();
 
-// TODO: allow user to enter custom affiliation if not in ROR database -> ../forms/organization.ts
-// TODO: make DRSerializer only update profile if saveToProfile flag is true -> /django/library/serializers.py
-// TODO: fix up schema for institution -> /django/core/models.py etc..
 @Component({
   components: {
     "c-input": Input,
@@ -179,7 +168,7 @@ export default class DownloadRequestFormModal extends createFormValidator(schema
 
   public async initializeForm() {
     if (this.authenticatedUser) {
-      this.state.affiliation = this.userAffiliation ?? "";
+      this.state.affiliation = this.userAffiliation;
       this.state.industry = this.userIndustry ?? "";
     }
   }
@@ -188,10 +177,6 @@ export default class DownloadRequestFormModal extends createFormValidator(schema
     try {
       await this.validate();
       const response = await this.create();
-      // if (this.state.saveToProfile) {
-      //   this.updateProfile();
-      // }
-
       // temporary modal bug workaround
       document.getElementById("closeDownloadRequestFormModal").click();
       return response;
@@ -201,12 +186,6 @@ export default class DownloadRequestFormModal extends createFormValidator(schema
       }
     }
   }
-
-  // public async updateProfile() {
-  //   const response = await profileAPI.retrieve(this.userId);
-  //   response.data.industry = this.state.industry;
-  //   return api.axios.put(profileAPI.detailUrl(this.userId), response.data);
-  // } 
 
   public async create() {
     this.$emit("create");

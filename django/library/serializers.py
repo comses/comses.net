@@ -423,25 +423,29 @@ class CodebaseImageSerializer(serializers.ModelSerializer):
 
 class DownloadRequestSerializer(serializers.ModelSerializer):
     # customize save functionality to validate and record a new CodebaseReleaseDownload
+    save_to_profile = serializers.BooleanField()
 
     def create(self, validated_data):
         logger.debug("creating download request serializer from: %s", validated_data)
-        user_industry = validated_data.get('industry')
-        user_affiliation = validated_data.get('affiliation')
+        save_to_profile = validated_data.pop("save_to_profile")
+        industry = validated_data.get("industry")
+        affiliation = validated_data.get("affiliation")
         instance = CodebaseReleaseDownload(**validated_data)
-        instance.user = validated_data.get('user')
-        if instance.user:
+        instance.user = validated_data.get("user")
+        # update user's profile to reflect information provided
+        if instance.user and save_to_profile:
             member_profile = instance.user.member_profile
-            member_profile.industry = user_industry
-            if user_affiliation not in member_profile.affiliations:
-                member_profile.affiliations.append(user_affiliation)
+            member_profile.industry = industry
+            # FIXME: check if one already exists by comparing name or rorid instead of the whole object
+            if affiliation not in member_profile.affiliations:
+                member_profile.affiliations.append(affiliation)
             member_profile.save()
         instance.save()
         return instance
 
     class Meta:
         model = CodebaseReleaseDownload
-        fields = ("referrer", "reason", "ip_address", "user", "industry", "affiliation", "release")
+        fields = ("save_to_profile", "referrer", "reason", "ip_address", "user", "industry", "affiliation", "release")
 
 
 class CodebaseReleaseSerializer(serializers.ModelSerializer):

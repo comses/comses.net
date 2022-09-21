@@ -275,9 +275,16 @@ class JobSerializer(serializers.ModelSerializer):
 
 
 class InstitutionSerializer(serializers.ModelSerializer):
+    name = serializers.CharField()
+    url = serializers.URLField()
+    acronym = serializers.CharField()
+    ror_id = serializers.URLField()
+
     class Meta:
         model = Institution
         fields = (
-            "url",
             "name",
+            "url",
+            "acronym",
+            "ror_id",
         )

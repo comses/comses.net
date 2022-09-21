@@ -140,7 +140,7 @@
       help="A link to your institutional or professional profile page."
       :required="config.professional_url"
     ></c-input>
-    <label for="industry">Industry</label>
+    <!-- <label for="industry">Industry</label>
     <br />
     <select
       v-model="industry"
@@ -155,8 +155,31 @@
         :label="industry"
         :value="industry"
       ></option>
-    </select>
-    <c-input
+    </select> -->
+    <c-select
+      v-model="industry"
+      name="industry"
+      label="Industry"
+      help="Your primary field of work"
+      :options="industryOptions"
+      :errorMsgs="errors.industry"
+      :required="config.industry"
+    ></c-select>
+    <c-organization-search name="username" v-model="institution"
+      :errorMsgs="errors.institution"
+      :required="config.institution"
+      label="Primary Institution"
+      :multiple="false"
+      help="Your primary institutional affiliation of place of work">
+    </c-organization-search>
+    <c-organization-search name="username" v-model="affiliations"
+      :errorMsgs="errors.affiliations"
+      :required="config.affiliations"
+      label="Affiliations"
+      :multiple="true"
+      help="A list of other organizations that you are affiliated with">
+    </c-organization-search>
+    <!-- <c-input
       v-model="institution_name"
       name="institution_name"
       :errorMsgs="errors.institution_name"
@@ -170,7 +193,7 @@
       :errorMsgs="errors.institution_url"
       label="Institution URL"
       :required="config.institution_url"
-    ></c-input>
+    ></c-input> -->
     <c-edit-degrees
       :value="degrees"
       @create="degrees.push($event)"
@@ -207,6 +230,8 @@ import Tagger from "@/components/tagger";
 import Input from "@/components/forms/input";
 import Datepicker from "@/components/forms/datepicker";
 import TextArea from "@/components/forms/textarea";
+import Select from "@/components/forms/select";
+import OrganizationSearch from "@/components/forms/organization";
 import MessageDisplay from "@/components/messages";
 import EditItems from "@/components/textitem";
 import { ProfileAPI } from "@/api";
@@ -226,8 +251,20 @@ export const schema = yup.object().shape({
   personal_url: yup.string().url(),
   professional_url: yup.string().url(),
   industry: yup.string().nullable(),
-  institution_name: yup.string().nullable(),
-  institution_url: yup.string().url().nullable(),
+  institution: yup.object({
+    name: yup.string().required(),
+    url: yup.string().url().nullable(),
+    acronym: yup.string().nullable(),
+    ror_id: yup.string().nullable(),
+  }).nullable(),
+  affiliations: yup.array().of(yup.object({
+    name: yup.string().required(),
+    url: yup.string().url().nullable(),
+    acronym: yup.string().nullable(),
+    ror_id: yup.string().nullable(),
+  })).nullable(),
+  // institution_name: yup.string().nullable(),
+  // institution_url: yup.string().url().nullable(),
   bio: yup.string(),
   degrees: yup.array().of(yup.string().required()),
   tags: yup.array().of(yup.object().shape({ name: yup.string().required() })),
@@ -245,6 +282,8 @@ const api = new ProfileAPI();
     "c-tagger": Tagger,
     "c-textarea": TextArea,
     "c-input": Input,
+    "c-select": Select,
+    "c-organization-search": OrganizationSearch,
     "c-edit-degrees": EditItems,
   },
 } as any)
@@ -253,6 +292,16 @@ export default class EditProfile extends createFormValidator(schema) {
   public _pk: number | null;
 
   public initial_full_member: boolean = true;
+
+  public industryOptions = [
+    {value: 'university', label: 'College/University'},
+    {value: 'educator', label: 'K-12 Educator'},
+    {value: 'government', label: 'Government'},
+    {value: 'private', label: 'Private'},
+    {value: 'nonprofit', label: 'Non-Profit'},
+    {value: 'student', label: 'Student'},
+    {value: 'other', label: 'Other'},
+  ];
 
   public detailPageUrl(state) {
     return api.detailUrl(state.user_pk);
@@ -302,19 +351,6 @@ export default class EditProfile extends createFormValidator(schema) {
 
   get uploadImageURL() {
     return `${window.location.href}picture/`;
-  }
-
-  get industryOptions() {
-    // FIXME: this should be pulled from the server side either as a data attribute (like PK or from the api)
-    return [
-      "private",
-      "college/university",
-      "government",
-      "non-profit",
-      "student",
-      "K-12 educator",
-      "other",
-    ];
   }
 }
 </script>

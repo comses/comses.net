@@ -33,13 +33,18 @@
                     {% for degree in degrees %}
                         <p class='card-text'>{{ profile.degree }}</p>
                     {% endfor %}
-                    {% for affiliation in profile.affiliations %}
-                        <p class='card-text'>{{ affiliation }}</p>
-                    {% endfor %}
                     {% if profile.institution %}
-                        <b class='card-title'>Institution</b>
+                        <b class='card-title'>Primary Institution</b>
                         <p class='card-text'>
                         {{ institution_href(profile.institution) }}
+                        </p>
+                    {% endif %}
+                    {% if profile.affiliations %}
+                        <b class='card-title'>Affiliations</b>
+                        <p class='card-text'>
+                    {% for affiliation in profile.affiliations %}
+                        <a href='{{ affiliation.url }}' target='_blank'>{{ affiliation.name }}, </a>
+                    {% endfor %}
                         </p>
                     {% endif %}
                     {% if profile.personal_url %}
