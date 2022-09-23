@@ -30,7 +30,7 @@
     "vue-class-component": "^6.0.0",
     "vue-easymde": "^2.0.0",
     "vue-multiselect": "^2.1.4",
-    "vue-property-decorator": "^8.0.0",
+    "vue-property-decorator": "^9.1.2",
     "vue-router": "^3.0.1",
     "vuedraggable": "^2.20.0",
     "vuejs-datepicker": "^1.5.4",

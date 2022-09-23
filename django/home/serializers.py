@@ -98,7 +98,7 @@ class MemberProfileSerializer(serializers.ModelSerializer):
     )
 
     # Institution/Affiliation
-    institution = InstitutionSerializer()
+    institution = InstitutionSerializer(allow_null=True)
     affiliations = serializers.JSONField()
 
     # MemberProfile
@@ -181,8 +181,11 @@ class MemberProfileSerializer(serializers.ModelSerializer):
         new_email = self.initial_data["email"]
         
         user_institution = validated_data.pop("institution")
-        institution = Institution.objects.create(**user_institution)
-        instance.institution = institution
+        if user_institution:
+            institution = Institution.objects.create(**user_institution)
+            instance.institution = institution
+        else:
+            instance.institution = None
 
         instance.affiliations = validated_data.get("affiliation")
 

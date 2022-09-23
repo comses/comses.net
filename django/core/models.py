@@ -366,6 +366,15 @@ class MemberProfile(index.Indexed, ClusterableModel):
         return self.institution.name if self.institution else ""
 
     @property
+    def institution_acronym(self):
+        return self.institution.acronym if self.institution else ""
+
+    @property
+    def institution_ror_id(self):
+        return self.institution.ror_id if self.institution else ""
+
+
+    @property
     def submitter(self):
         return self.user
 
@@ -394,15 +403,19 @@ class MemberProfile(index.Indexed, ClusterableModel):
 
     def get_download_request_metadata(self):
         """ Returns a dictionary of metadata to be included in the download request modal form if available """
-        return {
+        user_metadata = {
             "authenticated": self.user.is_authenticated,
-            "institution": {
-                "name": self.institution_name,
-                "url": self.institution_url,
-            },
             "industry": self.industry,
-            "id": self.user.id,
+            "id": self.user.id
         }
+        if self.institution:
+            user_metadata["institution"] = {
+               "name": self.institution_name,
+                "url": self.institution_url,
+                "acronym": self.institution_acronym,
+                "ror_id": self.institution_ror_id, 
+            }
+        return user_metadata
 
     def __str__(self):
         return str(self.user)

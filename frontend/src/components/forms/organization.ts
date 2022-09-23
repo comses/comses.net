@@ -1,5 +1,5 @@
 import BaseControl from '../forms/base';
-import {Component, Prop} from 'vue-property-decorator';
+import { Component, Prop, ModelSync } from 'vue-property-decorator';
 import * as queryString from 'query-string';
 import * as _ from 'lodash';
 
@@ -34,39 +34,41 @@ const debounceFetchOrgs = _.debounce(async (self: OrganizationSearch, query: str
             <label class="form-control-label">{{ label }}</label>
         </slot>
         <multiselect
-                :value="value"
+                v-model="selectedLocal"
                 @input="updateValue"
                 :multiple="multiple"
                 label="name"
                 track-by="name"
-                :allow-empty="multiple"
-                deselect-label=""
+                :allow-empty="true"
                 placeholder="Type to find your organization"
                 :options="orgs"
                 :loading="isLoading"
                 :searchable="true"
                 :internal-search="false"
                 :options-limit="50"
+                :close-on-select="!multiple"
+                :max="20"
                 :limit="20"
                 @search-change="fetchOrgs">
-            <template slot="singleLabel" slot-scope="props">
-                <span class="option__title">{{ props.option.name }}</span></span>
+            <template slot="clear" slot-scope="props" v-if="selectedLocal">
+                <div class="multiselect__clear" title="Clear selection" @mousedown.prevent.stop="selectedLocal=null">
+                    &times;
+                </div>
             </template>
             <template slot="option" slot-scope="props">
                 <div class="option__desc"><span class="option__title">{{ props.option.name }}</span>
                 <br>
                 <span class="text-muted"><small>{{ props.option.url }}</small></span></div>
-
             </template>
         </multiselect>
         <div v-if="isInvalid" class="invalid-feedback">
-            {{ [errorMessage, localErrors].filter(msg => msg !== '').join(', ') }}
+            {{ localErrors ? localErrors : "Affiliation is a required field" }}
         </div>
         <slot name="help" :help="help">
             <small class="form-text text-muted">{{ help }}</small>
         </slot>
         <!-- TODO: remove or figure out how add custom org functionality -->
-        <!-- <button type="button" class="btn btn-link p-0" @click="showCustom = !showCustom">
+        <!-- <button type="button" class="btn btn-link align-baseline p-0" @click="showCustom = !showCustom">
             <small class="form-text">
                 <i class="fas fa-chevron-down" v-if="!showCustom"></i>
                 <i class="fas fa-chevron-up" v-else></i>
@@ -91,9 +93,19 @@ export default class OrganizationSearch extends BaseControl {
     @Prop({default: false})
     public multiple: boolean;
 
+    @Prop()
+    public selectedOrgs: any;
+
+    @ModelSync('selectedOrgs', 'input')
+    readonly selectedLocal!: any;
+
     public isLoading = false;
     public orgs = [];
     public localErrors: string = '';
+
+    public clearAll() {
+        this.selectedOrgs = [];
+    }
 
     public fetchOrgs(query) {
         if (query.length > 5) {

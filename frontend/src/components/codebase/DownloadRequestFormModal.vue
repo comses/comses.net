@@ -45,6 +45,8 @@
                 <c-organization-search name="affiliation" v-model="affiliation"
                   :errorMsgs="errors.affiliation"
                   :required="config.affiliation"
+                  :multiple="false"
+                  :allowCustomInput="true"
                   label="What is your institutional affiliation?" help="">
                 </c-organization-search>
                 <c-select
@@ -169,7 +171,7 @@ export default class DownloadRequestFormModal extends createFormValidator(schema
   public async initializeForm() {
     if (this.authenticatedUser) {
       this.state.affiliation = this.userAffiliation;
-      this.state.industry = this.userIndustry ?? "";
+      this.state.industry = this.userIndustry;
     }
   }
 

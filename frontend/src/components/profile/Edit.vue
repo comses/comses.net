@@ -140,7 +140,6 @@
       help="A link to your institutional or professional profile page."
       :required="config.professional_url"
     ></c-input>
-    <!-- FIXME: industry value isnt initalizing properly on here -->
     <c-select
       v-model="industry"
       name="industry"
@@ -157,7 +156,8 @@
       :required="config.institution"
       label="Primary Institution"
       :multiple="false"
-      help="Your primary institutional affiliation of place of work">
+      :allowCustomInput="true"
+      help="Your primary institutional affiliation or place of work">
     </c-organization-search>
     <c-organization-search
       name="affiliations"

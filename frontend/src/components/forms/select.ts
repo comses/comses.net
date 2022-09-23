@@ -1,14 +1,15 @@
 // TODO: consider refactoring form components to .vue SFCs
-import { Component, Prop } from 'vue-property-decorator';
+import { Component, Prop, ModelSync } from 'vue-property-decorator';
 import BaseControl from './base';
 
+// FIXME: redo custom input
 @Component({
     template: `<div class="form-group">
         <slot name="label">
             <label :for='controlId' :class="['form-control-label', requiredClass]">{{ label }}</label>
         </slot>
         <select :id='controlId' :name="name" :class="['form-control', {'is-invalid': isInvalid}]" 
-                :value="value" @change="updateValue($event.target.value)" v-model="selectedOption">
+                @change="updateValue($event.target.value)" v-model="selectedLocal">
             <option :value="option.value" :selected="option.value === selectedOption" v-for="option in options">
                 {{ option.label }}
             </option>
@@ -27,25 +28,29 @@ import BaseControl from './base';
     </div>`, 
 })
 class Select extends BaseControl {
-    @Prop({ default: ''})
+    @Prop({default: ''})
     public validate: string;
 
     @Prop({default: ''})
     public label: string;
 
-    @Prop({ default: ''})
+    @Prop({default: ''})
     public help: string;
 
     @Prop()
     public options: [{value: string, label: string}];
 
-    @Prop({ default: null})
+    @Prop({default: null})
     public customOption: string | null;
 
-    @Prop({ default: ''})
+    @Prop({default: ''})
     public customPlaceholder: string;
 
-    public selectedOption = '';
+    @Prop({default: '' })
+    public selectedOption: string;
+
+    @ModelSync('selectedOption', 'input', { type: String })
+    readonly selectedLocal!: string;
 
     get customInputId() {
         return `${this.name}CustomInput`;
