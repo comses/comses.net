@@ -118,6 +118,7 @@ class SerializerTestCase(BaseModelTestCase):
             'reason': 'policy', 
             'industry': 'university', 
             'affiliation': '{"name" : "ASU", "url" : "https://asu.edu/"}',
+            'save_to_profile': True,
             }
         download_request = DownloadRequestSerializer(data=data)
         download_request.is_valid()

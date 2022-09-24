@@ -1,23 +1,26 @@
 import BaseControl from '../forms/base';
 import { Component, Prop, ModelSync } from 'vue-property-decorator';
 import * as queryString from 'query-string';
+import axios from 'axios';
 import * as _ from 'lodash';
 
 import Multiselect from 'vue-multiselect';
 
-// TODO: fix missing CORS header
 const debounceFetchOrgs = _.debounce(async (self: OrganizationSearch, query: string) => {
     try {
         self.isLoading = true;
         let encoded = encodeURIComponent(query);
-        const response = await fetch("https://api.ror.org/organizations?affiliation=" + encoded);
-        const data = await response.json();
+        // note: ror rest api has a rate limit of 2000 requests / 5 minute period
+        // this should be fine unless things really slow down with periods of high traffic
+        // options: self host the rest api, diy it with their data dump + our elasticsearch
+        const response = await axios.get("https://api.ror.org/organizations?query=" + encoded);
+        const data = response.data;
         const orgs = data.items.map((item: any) => {
             return {
-                name: item.organization.name,
-                url: item.organization.links[0],
-                acronym: item.organization.acronyms[0],
-                ror_id: item.organization.id,
+                name: item.name,
+                url: item.links[0],
+                acronym: item.acronyms[0],
+                ror_id: item.id,
             }
         });
         self.orgs = orgs;
@@ -33,6 +36,10 @@ const debounceFetchOrgs = _.debounce(async (self: OrganizationSearch, query: str
         <slot name="label" :label="label">
             <label class="form-control-label">{{ label }}</label>
         </slot>
+        <button type="button" class="btn btn-link p-0 float-right" 
+                @mousedown.prevent.stop="selectedLocal = multiple ? [] : null">
+            <small>clear</small>
+        </button>
         <multiselect
                 v-model="selectedLocal"
                 @input="updateValue"
@@ -46,15 +53,17 @@ const debounceFetchOrgs = _.debounce(async (self: OrganizationSearch, query: str
                 :searchable="true"
                 :internal-search="false"
                 :options-limit="50"
-                :close-on-select="!multiple"
+                :close-on-select="true"
                 :max="20"
                 :limit="20"
-                @search-change="fetchOrgs">
-            <template slot="clear" slot-scope="props" v-if="selectedLocal">
-                <div class="multiselect__clear" title="Clear selection" @mousedown.prevent.stop="selectedLocal=null">
-                    &times;
-                </div>
-            </template>
+                @search-change="fetchOrgs"
+            >
+            <template slot="noOptions">No results found.</template>
+            <template v-slot:caret="{toggle}">
+                <span class="multiselect__search-toggle">
+                    <i class="fas fa-search" @mousedown.prevent.stop="toggle"/>
+                </span>
+            </template> 
             <template slot="option" slot-scope="props">
                 <div class="option__desc"><span class="option__title">{{ props.option.name }}</span>
                 <br>
@@ -82,7 +91,6 @@ const debounceFetchOrgs = _.debounce(async (self: OrganizationSearch, query: str
     },
 })
 
-// TODO: style multiselect components to be consistent with other bootstrap selects
 export default class OrganizationSearch extends BaseControl {
     @Prop({default: ''})
     public label: string;
@@ -94,7 +102,7 @@ export default class OrganizationSearch extends BaseControl {
     public multiple: boolean;
 
     @Prop()
-    public selectedOrgs: any;
+    public selectedOrgs: [] | object;
 
     @ModelSync('selectedOrgs', 'input')
     readonly selectedLocal!: any;
@@ -103,12 +111,16 @@ export default class OrganizationSearch extends BaseControl {
     public orgs = [];
     public localErrors: string = '';
 
-    public clearAll() {
-        this.selectedOrgs = [];
+    public clearAll(selected) {
+        if (this.multiple) {
+            selected = [];
+        } else {
+            selected = null;
+        }
     }
 
     public fetchOrgs(query) {
-        if (query.length > 5) {
+        if (query.length > 1) {
             debounceFetchOrgs.cancel();
             debounceFetchOrgs(this, query);
         }

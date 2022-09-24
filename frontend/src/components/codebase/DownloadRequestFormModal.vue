@@ -107,7 +107,7 @@ export const schema = yup.object().shape({
     url: yup.string().url().nullable(),
     acronym: yup.string().nullable(),
     ror_id: yup.string().nullable(),
-  }).required(),
+  }).required().default(null),
   save_to_profile: yup.boolean().required().default(false),
 })
 

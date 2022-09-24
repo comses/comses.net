@@ -2,47 +2,24 @@
 
 .multiselect__tags {
   border-radius: 0;
+  border: 1px solid #ced4da;
 }
 
 .multiselect--above .multiselect__content-wrapper {
   z-index: 3;
 }
 
+.multiselect__search-toggle {
+  position: absolute;
+  right: 0px;
+  padding: 10px;
+  color: #8f8f8f;
+  cursor: pointer;
+  font-size: .8rem; 
+}
+
 .multiselect__option {
   white-space: normal;
-}
-
-.single__tag {
-  @extend .multiselect__tag;
-  background: $white;
-  color: #495047;
-  display: block;
-  border-radius: 0px;
-  padding-left: 4px;
-  font-size: 1rem;
-}
-
-.single__remove {
-  @extend .multiselect__tag-icon;
-}
-
-.single__remove:hover {
-  background: $red;
-}
-
-.multiselect__clear {
-  position: absolute;
-  right: 50px;
-  top: -10px;
-  display: block;
-  cursor: pointer;
-  z-index: 3;
-  color: #a5a5a5;
-  font-size: 40px;
-}
-
-.multiselect__clear:hover {
-  color: #495047;
 }
 
 .child-is-invalid {
