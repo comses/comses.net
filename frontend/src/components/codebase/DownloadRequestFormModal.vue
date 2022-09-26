@@ -17,11 +17,17 @@
           <div class="modal-header">
             <h5 class="modal-title">
               Please complete a brief survey
-              <button type="button" class="btn" data-bs-toggle="tooltip" data-bs-placement="top"
-                title="This information helps us understand our community to better serve it.
-                       Some answers are pre-filled from your profile.">
-                <i class="text-info fas fa-question-circle"></i>
-              </button>
+            <c-popper placement="bottom">  
+              <span slot-scope="{ isOpen, open, close }"
+                   @mouseover="open" @mouseleave="close">
+                <i data-trigger class="text-info fas fa-question-circle"></i>
+                <div id="tooltip" v-show="isOpen" data-popper>
+                  We use this information to gain a better understanding of our community.
+                  If you are signed in and have an industry and primary institution on your profile
+                  those answers will be pre-filled each time you download a model.
+                </div>
+              </span>
+            </c-popper> 
             </h5>
               <button
                 type="button"
@@ -60,7 +66,7 @@
                 <div class="form-check" v-if="authenticatedUser">
                   <input class="form-check-input" type="checkbox" v-model="save_to_profile" id="checkSaveToProfile">
                   <label class="form-check-label text-break" for="checkSaveToProfile">
-                    <small>Save this information to my profile</small>
+                    <small>Save this information for next time</small>
                   </label>
                 </div>
               </form>
@@ -96,6 +102,7 @@ import Input from "@/components/forms/input";
 import Select from "@/components/forms/select";
 import OrganizationSearch from "@/components/forms/organization";
 import MessageDisplay from "@/components/messages";
+import MyPopper from "@/components/popper"
 import * as _ from "lodash";
 import * as yup from "yup";
 
@@ -120,6 +127,7 @@ const profileAPI = new ProfileAPI();
     "c-select": Select,
     "c-message-display": MessageDisplay,
     "c-organization-search": OrganizationSearch,
+    "c-popper": MyPopper,
   },
 })
 

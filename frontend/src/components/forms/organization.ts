@@ -111,14 +111,6 @@ export default class OrganizationSearch extends BaseControl {
     public orgs = [];
     public localErrors: string = '';
 
-    public clearAll(selected) {
-        if (this.multiple) {
-            selected = [];
-        } else {
-            selected = null;
-        }
-    }
-
     public fetchOrgs(query) {
         if (query.length > 1) {
             debounceFetchOrgs.cancel();
