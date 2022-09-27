@@ -156,9 +156,36 @@
       :required="config.institution"
       label="Primary Institution"
       :multiple="false"
+      :disabled="disabledSearch"
       :allowCustomInput="true"
       help="Your primary institutional affiliation or place of work">
     </c-organization-search>
+    <div class="form-check mt-n2 mb-3">
+      <input class="form-check-input" type="checkbox" v-model="otherAffiliation" id="checkOtherAffiliation"
+             @change="switchOtherAffiliation()">
+      <label class="form-check-label text-break" for="checkOtherAffiliation">
+        <small>Not listed</small>
+      </label>
+    </div>
+    <div v-if="otherAffiliation">
+      <c-input
+        v-model="institution.name"
+        name="institution_name"
+        :errorMsgs="errors.institution"
+        label="Institution Name"
+        help=""
+        :required="config.institution"
+      ></c-input>
+      <c-input
+        type="url"
+        v-model="institution.url"
+        name="institution_url"
+        :errorMsgs="errors.institution"
+        label="Institution URL"
+        help=""
+        :required="config.institution"
+      ></c-input>
+    </div>
     <c-organization-search
       name="affiliations"
       v-model="affiliations"
@@ -274,6 +301,18 @@ export default class EditProfile extends createFormValidator(schema) {
     {value: 'student', label: 'Student'},
     {value: 'other', label: 'Other'},
   ];
+
+  public disabledSearch = false;
+  public otherAffiliation = false;
+  public switchOtherAffiliation() {
+    if (this.otherAffiliation) {
+      this.state.institution = {name: "", url: ""};
+      this.disabledSearch = true;
+    } else {
+      this.state.institution = null;
+      this.disabledSearch = false;
+    }
+  }
 
   public detailPageUrl(state) {
     return api.detailUrl(state.user_pk);

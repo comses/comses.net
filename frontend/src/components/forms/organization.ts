@@ -36,7 +36,7 @@ const debounceFetchOrgs = _.debounce(async (self: OrganizationSearch, query: str
         <slot name="label" :label="label">
             <label class="form-control-label">{{ label }}</label>
         </slot>
-        <button type="button" class="btn btn-link p-0 float-right" 
+        <button v-show="selectedLocal && !disabled" type="button" class="btn btn-link p-0 float-right" 
                 @mousedown.prevent.stop="selectedLocal = multiple ? [] : null">
             <small>clear</small>
         </button>
@@ -49,6 +49,7 @@ const debounceFetchOrgs = _.debounce(async (self: OrganizationSearch, query: str
                 :allow-empty="true"
                 placeholder="Type to find your organization"
                 :options="orgs"
+                :disabled="disabled"
                 :loading="isLoading"
                 :searchable="true"
                 :internal-search="false"
@@ -76,15 +77,6 @@ const debounceFetchOrgs = _.debounce(async (self: OrganizationSearch, query: str
         <slot name="help" :help="help">
             <small class="form-text text-muted">{{ help }}</small>
         </slot>
-        <!-- TODO: remove or figure out how add custom org functionality -->
-        <!-- <button type="button" class="btn btn-link align-baseline p-0" @click="showCustom = !showCustom">
-            <small class="form-text">
-                <i class="fas fa-chevron-down" v-if="!showCustom"></i>
-                <i class="fas fa-chevron-up" v-else></i>
-                 Can't find your organization?
-            </small>
-        </button>
-        -->
     </div>`,
     components: {
         Multiselect,
@@ -100,6 +92,9 @@ export default class OrganizationSearch extends BaseControl {
 
     @Prop({default: false})
     public multiple: boolean;
+
+    @Prop({default: false})
+    public disabled: boolean;
 
     @Prop()
     public selectedOrgs: [] | object;

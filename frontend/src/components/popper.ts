@@ -5,8 +5,9 @@ import Popper from 'popper.js';
 @Component
 export default class MyPopper extends Vue {
     @Prop({default: 'bottom'})
-    public placement: string;
+    public placement: any;
 
+    public popper: any;
     public isOpen = false;
     public triggerEl = null;
     public popperEl = null;

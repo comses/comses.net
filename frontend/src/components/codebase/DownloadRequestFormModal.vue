@@ -52,9 +52,18 @@
                   :errorMsgs="errors.affiliation"
                   :required="config.affiliation"
                   :multiple="false"
+                  :disabled="disabledSearch"
                   :allowCustomInput="true"
                   label="What is your institutional affiliation?" help="">
                 </c-organization-search>
+                <!-- this checkbox could just not exist, since it effectively does the same thing as leaving it blank -->
+                <div class="form-check mt-n2 mb-3">
+                  <input class="form-check-input" type="checkbox" v-model="otherOrNone" id="checkOtherAffiliation"
+                         @change="switchOtherOrNone()">
+                  <label class="form-check-label text-break" for="checkOtherAffiliation">
+                    <small>Not listed or none</small>
+                  </label>
+                </div>
                 <c-select
                   v-model="reason"
                   name="reason"
@@ -114,7 +123,7 @@ export const schema = yup.object().shape({
     url: yup.string().url().nullable(),
     acronym: yup.string().nullable(),
     ror_id: yup.string().nullable(),
-  }).required().default(null),
+  }).nullable().default(null),
   save_to_profile: yup.boolean().required().default(false),
 })
 
@@ -166,7 +175,18 @@ export default class DownloadRequestFormModal extends createFormValidator(schema
     {value: "commercial", label: 'Commercial'},
     {value: "policy", label: 'Policy / Planning'},
     {value: "other", label: 'Other'},
-  ];                   
+  ];
+
+  public disabledSearch = false;
+  public otherOrNone = false;
+  public switchOtherOrNone() {
+    if (this.otherOrNone) {
+      this.state.affiliation = null;
+      this.disabledSearch = true;
+    } else {
+      this.disabledSearch = false;
+    }
+  }
 
   public detailPageUrl(state) {
     return codebaseReleaseAPI.downloadUrl({identifier: this.identifier, version_number: this.versionNumber});
@@ -187,6 +207,8 @@ export default class DownloadRequestFormModal extends createFormValidator(schema
     try {
       await this.validate();
       const response = await this.create();
+      // FIXME: have the handler handle this
+      if (response.status !== 200) throw response.data;
       // temporary modal bug workaround
       document.getElementById("closeDownloadRequestFormModal").click();
       return response;
@@ -197,7 +219,7 @@ export default class DownloadRequestFormModal extends createFormValidator(schema
     }
   }
 
-  public async create() {
+  public create() {
     this.$emit("create");
     const handler = new HandlerWithRedirect(this);
     return codebaseReleaseAPI.requestDownload({identifier: this.identifier,version_number: this.versionNumber}, handler);
