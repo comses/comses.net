@@ -1,5 +1,5 @@
 import BaseControl from '../forms/base';
-import { Component, Prop, ModelSync } from 'vue-property-decorator';
+import { Component, Prop } from 'vue-property-decorator';
 import * as queryString from 'query-string';
 import axios from 'axios';
 import * as _ from 'lodash';
@@ -32,18 +32,14 @@ const debounceFetchOrgs = _.debounce(async (self: OrganizationSearch, query: str
 }, 600);
 
 @Component({
-    template: `<div :class="['form-group', {'child-is-invalid': isInvalid }]">
-        <slot name="label" :label="label">
+    template: `<div :class="{ 'child-is-invalid': isInvalid }">
+        <slot v-if="label" name="label" :label="label">
             <label class="form-control-label">{{ label }}</label>
         </slot>
-        <button v-show="selectedLocal && !disabled" type="button" class="btn btn-link p-0 float-right" 
-                @mousedown.prevent.stop="selectedLocal = multiple ? [] : null">
-            <small>clear</small>
-        </button>
         <multiselect
-                v-model="selectedLocal"
+                :value="value"
                 @input="updateValue"
-                :multiple="multiple"
+                :multiple="false"
                 label="name"
                 track-by="name"
                 :allow-empty="true"
@@ -55,8 +51,7 @@ const debounceFetchOrgs = _.debounce(async (self: OrganizationSearch, query: str
                 :internal-search="false"
                 :options-limit="50"
                 :close-on-select="true"
-                :max="20"
-                :limit="20"
+                :limit="50"
                 @search-change="fetchOrgs"
             >
             <template slot="noOptions">No results found.</template>
@@ -72,9 +67,9 @@ const debounceFetchOrgs = _.debounce(async (self: OrganizationSearch, query: str
             </template>
         </multiselect>
         <div v-if="isInvalid" class="invalid-feedback">
-            {{ localErrors ? localErrors : "Affiliation is a required field" }}
+            {{ localErrors }}
         </div>
-        <slot name="help" :help="help">
+        <slot v-if="help" name="help" :help="help">
             <small class="form-text text-muted">{{ help }}</small>
         </slot>
     </div>`,
@@ -91,16 +86,9 @@ export default class OrganizationSearch extends BaseControl {
     public help: string;
 
     @Prop({default: false})
-    public multiple: boolean;
-
-    @Prop({default: false})
     public disabled: boolean;
 
-    @Prop()
-    public selectedOrgs: [] | object;
-
-    @ModelSync('selectedOrgs', 'input')
-    readonly selectedLocal!: any;
+    public selected: [] | object;
 
     public isLoading = false;
     public orgs = [];

@@ -57,7 +57,7 @@
                   label="What is your institutional affiliation?" help="">
                 </c-organization-search>
                 <!-- this checkbox could just not exist, since it effectively does the same thing as leaving it blank -->
-                <div class="form-check mt-n2 mb-3">
+                <div class="form-check mb-3">
                   <input class="form-check-input" type="checkbox" v-model="otherOrNone" id="checkOtherAffiliation"
                          @change="switchOtherOrNone()">
                   <label class="form-check-label text-break" for="checkOtherAffiliation">
@@ -109,7 +109,7 @@ import { api } from '@/api/connection';
 import { createFormValidator } from "@/pages/form";
 import Input from "@/components/forms/input";
 import Select from "@/components/forms/select";
-import OrganizationSearch from "@/components/forms/organization";
+import OrganizationSearch from "@/components/forms/orgsearch";
 import MessageDisplay from "@/components/messages";
 import MyPopper from "@/components/popper"
 import * as _ from "lodash";
@@ -207,11 +207,10 @@ export default class DownloadRequestFormModal extends createFormValidator(schema
     try {
       await this.validate();
       const response = await this.create();
-      // FIXME: have the handler handle this
-      if (response.status !== 200) throw response.data;
       // temporary modal bug workaround
-      document.getElementById("closeDownloadRequestFormModal").click();
-      return response;
+      if (response && response.status === 200) {
+        document.getElementById("closeDownloadRequestFormModal").click();
+      }
     } catch (e) {
       if (!(e instanceof yup.ValidationError)) {
         throw e;

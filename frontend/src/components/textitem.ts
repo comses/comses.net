@@ -9,9 +9,9 @@ import draggable from 'vuedraggable';
         </slot>
         <input :class="['form-control', {'is-invalid': isInvalid}]" v-model="candidateItem" @keyup.enter="create" :placeholder="placeholder">
         <draggable :list="value" @start="drag=true" @end="drag=false">
-            <div v-for="(item, index) in value" :key="index" class="input-group">
+            <div v-for="(item, index) in value" :key="index" class="input-group my-1">
                 <input :value="item" @input="$emit('modify', { index, value: $event.target.value})" class="form-control">
-                <button type="button" class="input-group-addon" tabindex="-1" @click="$emit('remove', index)">Delete</button>
+                <button type="button" class="btn btn-delete-item" tabindex="-1" @click="$emit('remove', index)">&times;</button>
             </div>
         </draggable>
         <div v-if="isInvalid" class="invalid-feedback">

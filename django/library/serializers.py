@@ -436,8 +436,8 @@ class DownloadRequestSerializer(serializers.ModelSerializer):
         if instance.user and save_to_profile:
             member_profile = instance.user.member_profile
             member_profile.industry = industry
-            # FIXME: check if one already exists by comparing name or rorid instead of the whole object
-            if affiliation not in member_profile.affiliations:
+            # check if affiliation with this name already exists in member_profile
+            if not any(mem_aff["name"] == affiliation["name"] for mem_aff in member_profile.affiliations):
                 member_profile.affiliations.append(affiliation)
             member_profile.save()
         instance.save()

@@ -149,52 +149,17 @@
       :errorMsgs="errors.industry"
       :required="config.industry"
     ></c-select>
-    <c-organization-search
-      name="institution"
-      v-model="institution"
-      :errorMsgs="errors.institution"
-      :required="config.institution"
-      label="Primary Institution"
-      :multiple="false"
-      :disabled="disabledSearch"
-      :allowCustomInput="true"
-      help="Your primary institutional affiliation or place of work">
-    </c-organization-search>
-    <div class="form-check mt-n2 mb-3">
-      <input class="form-check-input" type="checkbox" v-model="otherAffiliation" id="checkOtherAffiliation"
-             @change="switchOtherAffiliation()">
-      <label class="form-check-label text-break" for="checkOtherAffiliation">
-        <small>Not listed</small>
-      </label>
-    </div>
-    <div v-if="otherAffiliation">
-      <c-input
-        v-model="institution.name"
-        name="institution_name"
-        :errorMsgs="errors.institution"
-        label="Institution Name"
-        help=""
-        :required="config.institution"
-      ></c-input>
-      <c-input
-        type="url"
-        v-model="institution.url"
-        name="institution_url"
-        :errorMsgs="errors.institution"
-        label="Institution URL"
-        help=""
-        :required="config.institution"
-      ></c-input>
-    </div>
-    <c-organization-search
+    <c-edit-affiliations
+      :value="affiliations"
+      @create="affiliations.push($event)"
+      @remove="affiliations.splice($event, 1)"
+      @makePrimary="affiliations.splice($event.index, 1); affiliations.unshift($event.value)"
       name="affiliations"
-      v-model="affiliations"
-      :errorMsgs="errors.affiliations"
-      :required="config.affiliations"
       label="Affiliations"
-      :multiple="true"
-      help="A list of other organizations that you are affiliated with">
-    </c-organization-search>
+      help="A list of organizations that you are affiliated with"
+      :required="config.affiliations"
+      :errorMsgs="errors.affiliations"
+    ></c-edit-affiliations>
     <c-edit-degrees
       :value="degrees"
       @create="degrees.push($event)"
@@ -232,7 +197,7 @@ import Input from "@/components/forms/input";
 import Datepicker from "@/components/forms/datepicker";
 import TextArea from "@/components/forms/textarea";
 import Select from "@/components/forms/select";
-import OrganizationSearch from "@/components/forms/organization";
+import EditOrgList from "@/components/forms/orgitems";
 import MessageDisplay from "@/components/messages";
 import EditItems from "@/components/textitem";
 import { ProfileAPI } from "@/api";
@@ -282,7 +247,7 @@ const api = new ProfileAPI();
     "c-textarea": TextArea,
     "c-input": Input,
     "c-select": Select,
-    "c-organization-search": OrganizationSearch,
+    "c-edit-affiliations": EditOrgList,
     "c-edit-degrees": EditItems,
   },
 } as any)
