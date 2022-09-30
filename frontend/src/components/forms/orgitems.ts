@@ -88,12 +88,12 @@ export default class EditOrgList extends BaseControl {
 
     public createCustom() {
         if (this.validate()) {
-            const customItem = {
-                name: this.customName,
-                url: this.customUrl,
-                acronym: '',
-                ror_id: '',
+            type item = {
+                name: string;
+                url?: string; 
             };
+            const customItem: item = { name: this.customName }
+            this.customUrl && (customItem.url = this.customUrl)
             this.$emit('create', customItem);
             this.customName = null;
             this.customUrl = null;
@@ -106,7 +106,7 @@ export default class EditOrgList extends BaseControl {
             this.localErrors.name = 'Affiliation name is required';
             valid = false;
         }
-        const schema = yup.object().shape({ url: yup.string().url().required() });
+        const schema = yup.object().shape({ url: yup.string().url() });
         if (!schema.isValidSync({ url: this.customUrl })) {
             console.log("its invalid");
             this.localErrors.url = 'Affiliation URL must be a valid URL';

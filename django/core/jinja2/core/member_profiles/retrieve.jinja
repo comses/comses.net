@@ -33,17 +33,20 @@
                     {% for degree in degrees %}
                         <p class='card-text'>{{ profile.degree }}</p>
                     {% endfor %}
+                    {#
                     {% if profile.institution %}
                         <b class='card-title'>Primary Institution</b>
                         <p class='card-text'>
                         {{ institution_href(profile.institution) }}
                         </p>
                     {% endif %}
+                    #}
+                    {# consider marking primary institution #}
                     {% if profile.affiliations %}
                         <b class='card-title'>Affiliations</b>
                         <p class='card-text'>
                     {% for affiliation in profile.affiliations %}
-                        <a href='{{ affiliation.url }}' target='_blank'>{{ affiliation.name }}</a>{{ ", " if not loop.last else "" }}
+                        {{ institution_href(affiliation) }}{{ ", " if not loop.last else "" }}
                     {% endfor %}
                         </p>
                     {% endif %}

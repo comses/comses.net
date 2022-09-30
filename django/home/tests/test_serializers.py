@@ -78,6 +78,62 @@ class MemberProfileSerializerTestCase(TestCase):
         with self.assertRaises(ValidationError):
             serializer.save()
 
+    def test_save_affiliation(self):
+        member_profile = self.user.member_profile
+        member_profile.save()
+        member_profile_data = MemberProfileSerializer(member_profile).data
+
+        # allowed affiliations
+        member_profile_data["affiliations"] = [
+            {
+                "name": "Foo University",
+            },
+            {
+                "name": "Bar College",
+                "url": "http://bar.org"
+            },
+            {
+                "name": "FooBar Network",
+                "url": "https://foobar.net",
+                "acronym": "FBN",
+                "ror_id": "https://ror.org/foobar1"
+            }
+        ]
+        serializer = MemberProfileSerializer(instance=member_profile, data=member_profile_data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+
+        # disallowed affiliations
+        member_profile_data["affiliations"] = [
+            {
+                "name": "Foo College",
+                "url": "www.foo.edu",
+                "ror_id": "foo8j8sd"
+            }
+        ]
+        serializer = MemberProfileSerializer(instance=member_profile, data=member_profile_data)
+        with self.assertRaises(ValidationError):
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+
+        # conflicting afffiliations
+        member_profile_data["affiliations"] = [
+            {
+                "name": "Bar College",
+                "url": "http://bar.org"
+            },
+            {
+                "name": "Bar College",
+                "url": "https://foobar.net",
+                "acronym": "BN",
+                "ror_id": "https://ror.org/foobar1"
+            }
+        ]
+        serializer = MemberProfileSerializer(instance=member_profile, data=member_profile_data)
+        with self.assertRaises(ValidationError):
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+
     def test_cannot_downgrade_membership(self):
         membership_profile = self.user.member_profile
         self.assertFalse(membership_profile.full_member)

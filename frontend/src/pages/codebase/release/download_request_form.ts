@@ -10,7 +10,7 @@ if (el) {
       identifier,
       versionNumber,
       userId: userData.id,
-      userAffiliation: userData.institution, // prefill with user's primary institution
+      userAffiliation: userData.affiliation,
       userIndustry: userData.industry,
       authenticatedUser: userData.authenticated,
     },

@@ -433,12 +433,14 @@ class DownloadRequestSerializer(serializers.ModelSerializer):
         instance = CodebaseReleaseDownload(**validated_data)
         instance.user = validated_data.get("user")
         # update user's profile to reflect information provided
+        # FIXME? does this logic belong here?
         if instance.user and save_to_profile:
             member_profile = instance.user.member_profile
             member_profile.industry = industry
-            # check if affiliation with this name already exists in member_profile
-            if not any(mem_aff["name"] == affiliation["name"] for mem_aff in member_profile.affiliations):
-                member_profile.affiliations.append(affiliation)
+            if affiliation:
+                # check if affiliation with this name already exists in member_profile
+                if not any(mem_aff["name"] == affiliation["name"] for mem_aff in member_profile.affiliations):
+                    member_profile.affiliations.append(affiliation)
             member_profile.save()
         instance.save()
         return instance

@@ -304,7 +304,7 @@ class CodebaseReleaseDownload(models.Model):
         "library.CodebaseRelease", related_name="downloads", on_delete=models.CASCADE
     )
     reason = models.CharField(max_length=500, choices=Reason.choices)
-    affiliation = models.JSONField(default=dict)
+    affiliation = models.JSONField(default=None, null=True)
     industry = models.CharField(max_length=255, choices=MemberProfile.Industry.choices)
 
     def __str__(self):

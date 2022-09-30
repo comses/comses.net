@@ -23,8 +23,8 @@
                 <i data-trigger class="text-info fas fa-question-circle"></i>
                 <div id="tooltip" v-show="isOpen" data-popper>
                   We use this information to gain a better understanding of our community.
-                  If you are signed in and have an industry and primary institution on your profile
-                  those answers will be pre-filled each time you download a model.
+                  If you are signed in, industry and affiliation will be pre-filled from your
+                  profile.
                 </div>
               </span>
             </c-popper> 
@@ -51,7 +51,6 @@
                 <c-organization-search name="affiliation" v-model="affiliation"
                   :errorMsgs="errors.affiliation"
                   :required="config.affiliation"
-                  :multiple="false"
                   :disabled="disabledSearch"
                   :allowCustomInput="true"
                   label="What is your institutional affiliation?" help="">

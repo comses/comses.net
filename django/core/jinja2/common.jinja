@@ -23,13 +23,13 @@
 
 {% macro institution_href(institution) %}
 {% if institution %}
-    {% if institution.url %}
+    {%- if institution.url -%}
         <a href='{{ institution.url }}' target='_blank'>{{ institution.name }}</a>
-    {% else %}
+    {%- else -%}
         {{ institution.name }}
-    {% endif %}
+    {%- endif -%}
 {% endif %}
-{% endmacro %}
+{%- endmacro -%}
 
 {% macro member_profile_href(member_profile) -%}
 <a href='{{ member_profile.profile_url }}'>{{ member_profile.name }}
