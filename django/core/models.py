@@ -213,7 +213,7 @@ class MemberProfile(index.Indexed, ClusterableModel):
         PRIVATE = 'private', _('Private')
         NON_PROFIT = 'nonprofit', _('Non-Profit')
         STUDENT = 'student', _('Student')
-        OTHER = 'other', _('Other, please specify below')
+        OTHER = 'other', _('Other')
 
     user = models.OneToOneField(
         User, null=True, on_delete=models.SET_NULL, related_name="member_profile"
@@ -251,6 +251,7 @@ class MemberProfile(index.Indexed, ClusterableModel):
         FieldPanel("personal_url"),
         FieldPanel("professional_url"),
         FieldPanel("institution"),
+        FieldPanel("affiliations"),
         FieldPanel("industry"),
         ImageChooserPanel("picture"),
         FieldPanel("tags"),
@@ -346,6 +347,10 @@ class MemberProfile(index.Indexed, ClusterableModel):
         return self.institution.url if self.institution else ""
 
     @property
+    def primary_affiliation_url(self):
+        return self.affiliations[0].url if self.affiliations else ""
+
+    @property
     def profile_url(self):
         return self.get_absolute_url()
 
@@ -364,6 +369,10 @@ class MemberProfile(index.Indexed, ClusterableModel):
     @property
     def institution_name(self):
         return self.institution.name if self.institution else ""
+    
+    @property
+    def primary_affiliation_name(self):
+        return self.affiliations[0].name if self.affiliations else ""
 
     @property
     def submitter(self):

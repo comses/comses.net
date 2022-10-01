@@ -41,8 +41,7 @@ export interface MemberProfile extends UndefinedWithId {
     following_count: number;
     full_member: boolean;
     given_name: string;
-    institution_name: string;
-    institution_url: string;
+    affiliations: Array<{ name: string, url?: string, acronym?: string, ror_id?: string }>;
     keywords: Array<{ name: string }>;
     orcid: string;
     orcid_url: string;

@@ -38,6 +38,8 @@ tzdata==2022.1
 uwsgi==2.0.20
 uwsgitop==0.11
 wagtail==3.0.3
+# used for institution -> affiliation data migration, unused afterwards
+fuzzywuzzy==0.18.0
 invoke
 ipython
 pgcli

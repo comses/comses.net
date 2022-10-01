@@ -217,12 +217,6 @@ export const schema = yup.object().shape({
   personal_url: yup.string().url(),
   professional_url: yup.string().url(),
   industry: yup.string().nullable(),
-  institution: yup.object({
-    name: yup.string().required(),
-    url: yup.string().url().nullable(),
-    acronym: yup.string().nullable(),
-    ror_id: yup.string().nullable(),
-  }).nullable(),
   affiliations: yup.array().of(yup.object({
     name: yup.string().required(),
     url: yup.string().url().nullable(),
@@ -266,18 +260,6 @@ export default class EditProfile extends createFormValidator(schema) {
     {value: 'student', label: 'Student'},
     {value: 'other', label: 'Other'},
   ];
-
-  public disabledSearch = false;
-  public otherAffiliation = false;
-  public switchOtherAffiliation() {
-    if (this.otherAffiliation) {
-      this.state.institution = {name: "", url: ""};
-      this.disabledSearch = true;
-    } else {
-      this.state.institution = null;
-      this.disabledSearch = false;
-    }
-  }
 
   public detailPageUrl(state) {
     return api.detailUrl(state.user_pk);

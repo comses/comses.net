@@ -98,7 +98,7 @@ class MemberProfileSerializer(serializers.ModelSerializer):
         source="user.codebases", many=True, read_only=True
     )
 
-    # Institution/Affiliation
+    # Affiliations
     institution = InstitutionSerializer(allow_null=True)
     affiliations = serializers.JSONField()
 
@@ -207,15 +207,6 @@ class MemberProfileSerializer(serializers.ModelSerializer):
 
         new_email = self.initial_data["email"]
         
-        user_institution = validated_data.pop("institution")
-        if user_institution:
-            institution = Institution.objects.create(**user_institution)
-            instance.institution = institution
-        else:
-            instance.institution = None
-
-        instance.affiliations = validated_data.get("affiliation")
-
         # Full members cannot downgrade their status
         if instance.full_member:
             validated_data["full_member"] = True

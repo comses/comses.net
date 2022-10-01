@@ -433,17 +433,21 @@ class DownloadRequestSerializer(serializers.ModelSerializer):
         instance = CodebaseReleaseDownload(**validated_data)
         instance.user = validated_data.get("user")
         # update user's profile to reflect information provided
-        # FIXME? does this logic belong here?
         if instance.user and save_to_profile:
-            member_profile = instance.user.member_profile
-            member_profile.industry = industry
-            if affiliation:
-                # check if affiliation with this name already exists in member_profile
-                if not any(mem_aff["name"] == affiliation["name"] for mem_aff in member_profile.affiliations):
-                    member_profile.affiliations.append(affiliation)
-            member_profile.save()
+            self.update_profile(instance, industry, affiliation)
         instance.save()
         return instance
+
+    def update_profile(self, instance, industry, affiliation):
+        # FIXME: this should probably be handled elsewhere since there is no
+        # (server side) validation happening
+        member_profile = instance.user.member_profile
+        member_profile.industry = industry
+        if affiliation:
+            # check if affiliation with this name already exists in member_profile
+            if not any(mem_aff["name"] == affiliation["name"] for mem_aff in member_profile.affiliations):
+                member_profile.affiliations.append(affiliation)
+        member_profile.save()
 
     class Meta:
         model = CodebaseReleaseDownload

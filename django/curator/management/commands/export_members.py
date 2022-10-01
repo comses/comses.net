@@ -51,7 +51,6 @@ class Command(BaseCommand):
                 "email",
                 "date_joined",
                 "bio",
-                "institution",
                 "degrees",
                 "orcid_url",
                 "github_url",
@@ -70,9 +69,8 @@ class Command(BaseCommand):
                     "date_joined": user.date_joined,
                     "bio": mp.bio,
                     "research_interests": mp.research_interests,
-                    "institution": mp.institution,
                     "degrees": mp.degrees,
-                    "affiliations": mp.affiliations,
+                    "affiliations": mp.affiliations, # FIXME: format affiliations
                     "orcid_url": mp.orcid_url,
                     "github_url": mp.github_url,
                 }

@@ -290,7 +290,7 @@ class CodebaseReleaseDownload(models.Model):
         EDUCATION = 'education', _('Education')
         COMMERCIAL = 'commercial', _('Commercial')
         POLICY = 'policy', _('Policy / Planning')
-        OTHER = 'other', _('Other, please specify below')
+        OTHER = 'other', _('Other')
 
     date_created = models.DateTimeField(default=timezone.now)
     user = models.ForeignKey(

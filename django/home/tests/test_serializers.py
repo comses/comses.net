@@ -47,9 +47,7 @@ class MemberProfileSerializerTestCase(TestCase):
         other_email = other_user.email
 
         member_profile = self.user.member_profile
-        institution = Institution(url="https://foo.org", name="Foo Institute")
-        institution.save()
-        member_profile.institution = institution
+        member_profile.affiliations = [{ "name": "Foo Institute", "url": "http://foo.org" }]
         member_profile.save()
         email_address = EmailAddress.objects.create(
             user=self.user, email=self.user.email
@@ -138,9 +136,7 @@ class MemberProfileSerializerTestCase(TestCase):
         membership_profile = self.user.member_profile
         self.assertFalse(membership_profile.full_member)
 
-        institution = Institution(url="https://foo.org", name="Foo Institute")
-        institution.save()
-        membership_profile.institution = institution
+        membership_profile.affiliations = [{ "name": "Foo Institute", "url": "http://foo.org" }]
         membership_profile.save()
         membership_profile_data = MemberProfileSerializer(membership_profile).data
 

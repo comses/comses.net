@@ -43,14 +43,14 @@ class Command(BaseCommand):
             if full_member
             else User.objects.filter(**criteria).exclude(pk=anonymous_user.pk)
         )
-        cvs_writer = csv.writer(sys.stdout)
-        csv_writer.writerow(["First name", "Last name", "Institution", "Email"])
+        csv_writer = csv.writer(sys.stdout)
+        csv_writer.writerow(["First name", "Last name", "Affiliation", "Email"])
         for user in qs:
-            cvs_writer.writerow(
+            csv_writer.writerow(
                 [
                     user.first_name,
                     user.last_name,
-                    user.member_profile.institution,
+                    user.member_profile.primary_affiliation_name,
                     user.email,
                 ]
             )
