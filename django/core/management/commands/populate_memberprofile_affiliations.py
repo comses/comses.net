@@ -3,7 +3,6 @@ from fuzzywuzzy import fuzz
 import re
 import requests
 import time
-import json
 import logging
 
 from core.models import MemberProfile
@@ -11,59 +10,60 @@ from core.models import MemberProfile
 logger = logging.getLogger(__name__)
 
 class Command(BaseCommand):
-    help = """Migrate data from MemberProfile.institution to MemberProfile.affiliations with
-    an attempt to add more data from ROR database"""
+    help = """Migrate data from MemberProfile.institution to MemberProfile.affiliations
+    with an attempt to add more data from ROR database"""
 
     def add_arguments(self, parser):
         parser.add_argument(
-            "--cached",
-            type=str
+            "-r", "--ratio",
+            type=int,
+            choices=range(1,100),
+            metavar="[1-100]",
+            default=75,
+            help="ratio threshold used in fuzzy matching, defaults to 75"
         )
 
     def handle(self, *args, **options):
-        # if options["cached"]:
-        #     with open(options["cached"]) as file:
-        #         data = json.load(file)
+        session = requests.Session()
 
-        for mp in MemberProfile.objects.all().order_by('user_id'):
-            if mp.institution:
-                new_affil = {}
+        for mp in MemberProfile.objects.all().order_by("user_id"):
+            if not (mp.institution and mp.institution.name):
+                continue
 
-                if mp.institution.name:
-                    new_affil["name"] = mp.institution.name
-                    best_match = self.lookup(mp.institution.name)
+            new_affil = {}
+            new_affil["name"] = mp.institution.name
+            best_match = self.lookup(session, mp.institution.name)
 
-                    if best_match:
-                        if (best_match["score"] >= 1.0 and fuzz.partial_ratio(
-                            best_match["organization"]["name"], mp.institution.name) >= 75):
-                            # add ror_id if we have a confident enough match
-                            new_affil["ror_id"] = best_match["organization"]["id"]
-                            # add acronym
-                            if best_match["organization"]["acronyms"]:
-                                new_affil["acronym"] = best_match["organization"]["acronyms"][0]
-                            # add link from the response if the user doesn't have one
-                            if not mp.institution.url and best_match["organization"]["links"]:
-                                new_affil["url"] = best_match["organization"]["links"][0]
+            if best_match and self.is_good_match(
+                score=best_match["score"],
+                name=mp.institution.name,
+                match_name=best_match["organization"]["name"],
+                ratio=options["ratio"]
+            ):
+                # ror_id is guaranteed to exist in the lookup
+                new_affil["ror_id"] = best_match["organization"]["id"]
+                # acronyms and links are not guaranteed to exist
+                if best_match["organization"]["acronyms"]:
+                    new_affil["acronym"] = best_match["organization"]["acronyms"][0]
+                if best_match["organization"]["links"]:
+                    new_affil["url"] = best_match["organization"]["links"][0]
 
-                    if mp.institution.url:
-                        # fix up urls by adding a default http scheme
-                        new_url = mp.institution.url
-                        if not re.match(r"^https?://", mp.institution.url):
-                            new_url = "http://" + mp.institution.url
-                        new_affil["url"] = new_url
-               
-                    logger.info("adding %s to member %d", new_affil, mp.id)
-                    mp.affiliations = [new_affil]
-                    mp.save()
+            elif mp.institution.url:
+                # fix up urls if there wasn't a match and one exists on the profile
+                new_affil["url"] = self.fix_url(mp.institution.url)
 
-    def lookup(self, name):
+            logger.info("adding %s to member %d", new_affil, mp.user_id)
+            mp.affiliations = [new_affil]
+            mp.save()
+
+    def lookup(self, session, name):
         # lookup the name with the affiliations parameter in the ror db
         connected = False
         ror_url = "https://api.ror.org/organizations?affiliation="
         res = None
         while not connected:
             try:
-                res = requests.get(ror_url + name, timeout=10)
+                res = session.get(ror_url + name, timeout=10)
                 connected = True
                 e = None
             except Exception as e:
@@ -73,3 +73,14 @@ class Command(BaseCommand):
                 time.sleep(2)
         items = res.json()["items"]
         return items[0] if items else None
+
+    def is_good_match(self, score, name, match_name, ratio):
+        # returns True if we have high confidence in name matching
+        return score >= 1.0 and fuzz.partial_ratio(match_name, name) >= ratio
+
+    def fix_url(self, url):
+        new_url = url
+        if not re.match(r"^https?://", url):
+            new_url = "http://" + url
+        return new_url
+ 
