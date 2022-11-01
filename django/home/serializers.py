@@ -10,6 +10,7 @@ from rest_framework.exceptions import ValidationError as DrfValidationError
 
 from core.models import Institution, MemberProfile
 from core.serializers import InstitutionSerializer, TagSerializer, MarkdownField
+from core.validators import validate_affiliations
 from library.serializers import RelatedCodebaseSerializer
 from .models import FeaturedContentItem, UserMessage
 
@@ -114,30 +115,7 @@ class MemberProfileSerializer(serializers.ModelSerializer):
     research_interests = MarkdownField()
 
     def validate_affiliations(self, value):
-        AFFILIATIONS_SCHEMA = {
-            "$schema": "http://json-schema.org/draft-07/schema#",
-            "type": "array",
-            "items": {
-                "type": "object",
-                "properties": {
-                    "name": { "type": "string" },
-                    "url": { "type": "string", "format": "uri", "pattern": "^https?://" },
-                    "acronym": { "type": "string" },
-                    "ror_id": { "type": "string", "format": "uri", "pattern": "^https?://ror.org/" }
-                },
-                "required": [ "name" ]
-            }
-        }
-
-        try:
-            jsonschema.validate(value, AFFILIATIONS_SCHEMA)
-            # make sure all affiliation names are unique
-            if not len(set([affil["name"] for affil in value])) == len(value):
-                raise ValidationError("Affiliation name must be unique")
-        except Exception as e:
-            # FIXME: give a better error message
-            raise ValidationError(e)
-        return value
+        return validate_affiliations(value)
 
     def get_email(self, instance):
         request = self.context.get("request")

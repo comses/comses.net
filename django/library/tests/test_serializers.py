@@ -117,7 +117,7 @@ class SerializerTestCase(BaseModelTestCase):
             'release': release.pk,
             'reason': 'policy', 
             'industry': 'university', 
-            'affiliation': '{"name" : "ASU", "url" : "https://asu.edu/"}',
+            'affiliation': {"name" : "ASU", "url" : "https://asu.edu/"},
             'save_to_profile': True,
             }
         download_request = DownloadRequestSerializer(data=data)
@@ -130,6 +130,25 @@ class SerializerTestCase(BaseModelTestCase):
             self.assertEqual(data[attr], getattr(crs, attr))
         self.assertEqual(user, crs.user)
         self.assertEqual(release, crs.release)
+
+    def test_invalid_download_request_raises_validation_error(self):
+        codebase = self.create_codebase(title="Download Request Codebase 2")
+        release = codebase.releases.last()
+        user = self.user
+        data = { 
+            'ip_address': '127.0.0.1', 
+            'referrer': 'https://comses.net', 
+            'user': user.pk,
+            'release': release.pk,
+            'reason': 'policy', 
+            'industry': 'university', 
+            'affiliation': {"name" : "ASU", "url" : "www.foo.org", "ror_id": "foo8j8sd"},
+            'save_to_profile': True,
+            }
+        download_request = DownloadRequestSerializer(data=data)
+        download_request.is_valid()
+        with self.assertRaises(rf.ValidationError):
+            download_request.save()
 
     def test_multiple_release_contributor_same_user_raises_validation_error(self):
         codebase = Codebase.objects.create(
