@@ -9,7 +9,7 @@ RUN apt-get update \
 WORKDIR /code
 ENV NODE_OPTIONS=--openssl-legacy-provider
 COPY package.json yarn.lock /code/
-RUN set -ex; yarn config set ignore-engines true; \
+RUN set -ex; \
     if [ "$NODE_ENV" = "production" ]; then \
         yarn install --no-cache --frozen-lockfile --production; \
     elif [ "$NODE_ENV" = "test" ]; then \
