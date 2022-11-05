@@ -5,6 +5,7 @@ RUN apt-get update \
     && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 WORKDIR /code
+ENV NODE_OPTIONS=--openssl-legacy-provider
 COPY package.json yarn.lock /code/
 RUN set -ex; \
     if [ "$NODE_ENV" = "production" ]; then \
