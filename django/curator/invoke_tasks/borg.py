@@ -16,14 +16,25 @@ DEFAULT_MEDIA_BASENAME = os.path.basename(settings.MEDIA_ROOT)
 @task(aliases=["init"])
 def initialize_repo(ctx):
     if not os.path.exists(settings.BORG_ROOT):
-        ctx.run("borg init --encryption=none {}".format(settings.BORG_ROOT), echo=True)
+        ctx.run(f"borg init --encryption=none {settings.BORG_ROOT}", echo=True)
 
 
 @task(aliases=["list", "l"])
 def borg_list(ctx):
     ctx.run(
-        "borg list {repo}".format(repo=settings.BORG_ROOT), echo=True, env=environment()
+        f"borg list {settings.BORG_ROOT}", echo=True, env=environment()
     )
+
+
+@task(aliases=["prune", "p"])
+def borg_prune(ctx):
+    # FIXME: provide cli override of these defaults
+    daily = 14
+    weekly = 4
+    monthly = 12
+    yearly = -1
+    ctx.run(f"borg prune --verbose --list --keep-daily {daily} --keep-weekly {weekly} --keep-monthly {monthly} --keep-yearly {yearly} {settings.BORG_ROOT}", echo=True, env=environment())
+    ctx.run(f"borg compact --verbose {settings.BORG_ROOT}")
 
 
 @task(aliases=["b"])
@@ -44,19 +55,13 @@ def backup(ctx):
         os.path.join(settings.BACKUP_ROOT, "latest"),
     ):
         if not os.path.exists(p):
-            error_msgs.append("Path {} does not exist.".format(p))
+            error_msgs.append(f"Path {p} does not exist.")
     if error_msgs:
         raise IOError("Create archive failed. {}".format(" ".join(error_msgs)))
 
     with ctx.cd(share):
         ctx.run(
-            'borg create --progress --compression lz4 {repo}::"{archive}" {library} {media} {database}'.format(
-                repo=repo,
-                archive=archive,
-                library=library,
-                media=media,
-                database=database,
-            ),
+            f'borg create --progress --compression lz4 {repo}::"{archive}" {library} {media} {database}',
             echo=True,
             env=environment(),
         )
