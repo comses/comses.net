@@ -1,0 +1,47 @@
+{% extends "base.jinja" %}
+{% from "common.jinja" import subnav, breadcrumb, search_tag_href %}
+
+{% block title %}{{ page.title }}{% endblock %}
+
+{% block introduction %}
+    <h1>{{ page.heading }}</h1>
+{% endblock %}
+
+{% block content %}
+    {{ breadcrumb(page.get_breadcrumbs()) }}
+    {{ subnav(page.get_navigation_links()) }}
+    <div class='jumbotron'>
+        <h1 class='display-5'>{{ page.heading }}</h1>
+        <div class='pt-4 lead'>
+        {{ markdown(page.summary) }}
+        </div>
+   </div>
+   <div class="card-page">
+        <section class="cards mb-5">
+            <h1 class="mb-3">Tutorials</h1>
+            {% for batched_cards in page.cards.all()|batch(3) %}
+                <div class="row mb-4">
+                    {% for card in batched_cards %}
+                        <div class="col-sm-4 col-12 d-flex align-items-stretch">
+                            <div class="tutorial-card w-100">
+                                {{ image(card.thumbnail_image, "fill-640x360", class='card-image-top card-thumbnail') }}
+                                <div class="card-body">
+                                    <h2 class="card-title">{{ card.title }}</h5>
+                                    <p class="card-text">{{ markdown(card.summary) }}</p>
+                                    <a href="{{ card.url }}" class="stretched-link"></a>
+                                </div>
+                                {% if card.tags.all() %}
+                                    <div class='tag-list p-3'>
+                                        {% for tag in card.tags.all() %}
+                                            {{ search_tag_href(tag) }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endfor %}
+        </section>
+   </div>
+{% endblock %}

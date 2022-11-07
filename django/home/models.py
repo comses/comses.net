@@ -14,6 +14,7 @@ from django.utils.translation import ugettext_lazy as _
 from model_utils import Choices
 from modelcluster.fields import ParentalKey
 from modelcluster.models import ClusterableModel
+from modelcluster.contrib.taggit import ClusterTaggableManager
 from taggit.managers import TaggableManager
 from taggit.models import TaggedItemBase
 from wagtail.admin.panels import (
@@ -438,6 +439,64 @@ class CategoryIndexPage(NavigationMixin, Page):
     search_fields = Page.search_fields + [
         index.SearchField("summary", partial_match=True)
     ]
+
+
+class EducationPage(NavigationMixin, Page):
+    """Education page indexes Tutorial pages and external tutorials"""
+    template = models.CharField(max_length=256, default="home/education.jinja")
+    heading = models.CharField(
+        max_length=256, help_text=_("Short name to be placed in introduction header.")
+    )
+    summary = models.CharField(
+        max_length=5000, help_text=_("Markdown-enabled summary blurb for this page.")
+    )
+
+    content_panels = Page.content_panels + [
+        FieldPanel("heading"),
+        FieldPanel("summary", widget=forms.Textarea),
+        InlinePanel("cards", label=_("Tutorial Cards")),
+    ]
+
+
+class TutorialTag(TaggedItemBase):
+    content_object = ParentalKey("TutorialCard", related_name="tagged_items")
+
+
+class TutorialCard(Orderable, ClusterableModel):
+    """Cards displayed in the Education Page"""
+    page = ParentalKey("home.EducationPage", related_name="cards")
+    url = models.CharField(
+        "Relative path, absolute path, or URL", max_length=200
+    )
+    title = models.CharField(max_length=256)
+    summary = models.CharField(
+        max_length=1000, help_text=_("Markdown-enabled summary for this tutorial card"), blank=True
+    )
+    thumbnail_image = models.ForeignKey(
+        "wagtailimages.Image",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="+",
+    )
+    tags = ClusterTaggableManager(through=TutorialTag, blank=True)
+    
+    panels = [
+        FieldPanel("url"),
+        FieldPanel("title"),
+        FieldPanel("summary", widget=forms.Textarea),
+        ImageChooserPanel("thumbnail_image"),
+        FieldPanel("tags"),
+    ]
+
+    def __str__(self):
+        return "{0} {1}".format(self.title, self.url)
+
+
+# class TutorialDetailPage(Page):
+    # """Tutorial page with tutorial contents"""
+    # template = models.CharField(max_length=128, default="home/tutorial.jinja")
+    # use markdown or streamfields
 
 
 class StreamPage(Page, NavigationMixin):
