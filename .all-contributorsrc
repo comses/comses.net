@@ -65,6 +65,17 @@
         "security",
         "test"
       ]
+    },
+    {
+      "login": "sgfost",
+      "name": "sgfost",
+      "avatar_url": "https://avatars.githubusercontent.com/u/46429375?v=4",
+      "profile": "https://github.com/sgfost",
+      "contributions": [
+        "code",
+        "design",
+        "test"
+      ]
     }
   ],
   "contributorsPerLine": 7,
