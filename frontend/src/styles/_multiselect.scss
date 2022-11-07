@@ -1,11 +1,21 @@
-@import '~vue-multiselect/dist/vue-multiselect.min.css';
+@use '../../node_modules/vue-multiselect/dist/vue-multiselect.min.css';
 
 .multiselect__tags {
   border-radius: 0;
+  border: 1px solid #ced4da;
 }
 
 .multiselect--above .multiselect__content-wrapper {
   z-index: 3;
+}
+
+.multiselect__search-toggle {
+  position: absolute;
+  right: 0px;
+  padding: 10px;
+  color: #8f8f8f;
+  cursor: pointer;
+  font-size: .8rem; 
 }
 
 .multiselect__option {

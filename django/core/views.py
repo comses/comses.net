@@ -88,7 +88,7 @@ class CommonViewSetMixin:
         if not ts:
             for action in self.ALLOWED_ACTIONS:
                 # by convention, templates should be named <action>.<file-ext> and discovered in TEMPLATE_DIRS under
-                # `django/<app-name>/templates/<namespace>/<action>.<file_ext>`.
+                # `django/<app-name>/jinja2/<namespace>/<action>.<file_ext>`.
                 ts[action] = ["{0}/{1}.{2}".format(namespace, action, file_ext)]
         if self.action in ts:
             return ts[self.action]

@@ -275,9 +275,18 @@ class JobSerializer(serializers.ModelSerializer):
 
 
 class InstitutionSerializer(serializers.ModelSerializer):
+    # Not sure why these need required and allow blank, should have correct defaults
+    # from blank=True in the model
+    name = serializers.CharField(allow_blank=False)
+    url = serializers.URLField(required=False, allow_blank=True)
+    acronym = serializers.CharField(required=False, allow_blank=True)
+    ror_id = serializers.URLField(required=False, allow_blank=True)
+
     class Meta:
         model = Institution
         fields = (
-            "url",
             "name",
+            "url",
+            "acronym",
+            "ror_id",
         )

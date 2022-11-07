@@ -15,6 +15,7 @@ from django.utils.translation import ugettext_lazy as _
 from modelcluster.contrib.taggit import ClusterTaggableManager
 from modelcluster.fields import ParentalKey
 from modelcluster.models import ClusterableModel
+from model_utils import Choices
 from taggit.models import TaggedItemBase
 from timezone_field import TimeZoneField
 from wagtail.admin.panels import FieldPanel
@@ -122,7 +123,7 @@ class SocialMediaSettings(BaseSetting):
 class Institution(models.Model):
     name = models.CharField(max_length=200)
     url = models.URLField(blank=True)
-    acronym = models.CharField(max_length=50)
+    acronym = models.CharField(max_length=50, blank=True)
     ror_id = models.URLField(blank=True)
 
     panels = [
@@ -199,13 +200,20 @@ class MemberProfileQuerySet(models.QuerySet):
             )
         )
 
-
 @add_to_comses_permission_whitelist
 @register_snippet
 class MemberProfile(index.Indexed, ClusterableModel):
     """
     Contains additional comses.net information, possibly linked to a CoMSES Member / site account
     """
+    class Industry(models.TextChoices):
+        COLLEGE_UNIVERSITY = 'university', _('College/University')
+        EDUCATOR = 'educator', _('K-12 Educator')
+        GOVERNMENT = 'government', _('Government')
+        PRIVATE = 'private', _('Private')
+        NON_PROFIT = 'nonprofit', _('Non-Profit')
+        STUDENT = 'student', _('Student')
+        OTHER = 'other', _('Other')
 
     user = models.OneToOneField(
         User, null=True, on_delete=models.SET_NULL, related_name="member_profile"
@@ -215,13 +223,15 @@ class MemberProfile(index.Indexed, ClusterableModel):
     # location = LocationField(based_fields=['city'], zoom=7)
 
     timezone = TimeZoneField(blank=True)
-
+    industry = models.CharField(blank=True, max_length=255, choices=Industry.choices)
+    bio = MarkdownField(max_length=2048, help_text=_("Brief bio"))
+    degrees = ArrayField(models.CharField(max_length=255), blank=True, default=list)
+    # deprecated primary institution
+    institution = models.ForeignKey(Institution, null=True, on_delete=models.SET_NULL)
+    # user's institutional affiliations
     affiliations = models.JSONField(
         default=list, help_text=_("JSON-LD list of affiliated institutions")
     )
-    bio = MarkdownField(max_length=2048, help_text=_("Brief bio"))
-    degrees = ArrayField(models.CharField(max_length=255), blank=True, default=list)
-    institution = models.ForeignKey(Institution, null=True, on_delete=models.SET_NULL)
     tags = ClusterTaggableManager(through=MemberProfileTag, blank=True)
 
     personal_url = models.URLField(blank=True)
@@ -240,6 +250,8 @@ class MemberProfile(index.Indexed, ClusterableModel):
         FieldPanel("personal_url"),
         FieldPanel("professional_url"),
         FieldPanel("institution"),
+        FieldPanel("affiliations"),
+        FieldPanel("industry"),
         ImageChooserPanel("picture"),
         FieldPanel("tags"),
     ]
@@ -334,6 +346,10 @@ class MemberProfile(index.Indexed, ClusterableModel):
         return self.institution.url if self.institution else ""
 
     @property
+    def primary_affiliation_url(self):
+        return self.affiliations[0].url if self.affiliations else ""
+
+    @property
     def profile_url(self):
         return self.get_absolute_url()
 
@@ -352,6 +368,10 @@ class MemberProfile(index.Indexed, ClusterableModel):
     @property
     def institution_name(self):
         return self.institution.name if self.institution else ""
+    
+    @property
+    def primary_affiliation_name(self):
+        return self.affiliations[0].name if self.affiliations else ""
 
     @property
     def submitter(self):
@@ -379,6 +399,17 @@ class MemberProfile(index.Indexed, ClusterableModel):
 
     def is_messageable(self, user):
         return user.is_authenticated and user != self.user
+
+    def get_download_request_metadata(self):
+        """ Returns a dictionary of metadata to be included in the download request modal form if available """
+        user_metadata = {
+            "authenticated": self.user.is_authenticated,
+            "industry": self.industry,
+            "id": self.user.id
+        }
+        if self.affiliations:
+            user_metadata["affiliation"] = self.affiliations[0];
+        return user_metadata
 
     def __str__(self):
         return str(self.user)

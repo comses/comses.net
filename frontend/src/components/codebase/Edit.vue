@@ -62,7 +62,7 @@
       :required="config.repository_url"
     ></c-input>
     <c-message-display :messages="statusMessages" @clear="statusMessages = []"></c-message-display>
-    <button class="btn btn-primary" data-dismiss="modal" type="button" @click="save()">Next</button>
+    <button class="btn btn-primary" type="button" @click="save()">Next</button>
   </div>
 </template>
 
@@ -155,6 +155,8 @@ export default class CodebaseEditForm extends createFormValidator(schema) {
       handler = new HandlerWithRedirect(this);
     } else {
       handler = new DismissOnSuccessHandler(this, this.redirect);
+      // FIXME: temporary modal bug workaround
+      document.getElementById("closeEditCodebaseModal").click();
     }
     if (_.isNil(this.state.identifier)) {
       return api.create(handler);

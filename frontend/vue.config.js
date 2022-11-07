@@ -25,12 +25,13 @@ const pages = {
     job_list: './src/pages/job/list.ts',
     profile_list: './src/pages/profile/list.ts',
     codebases: './src/pages/codebase',
+    download_request_form: './src/pages/codebase/release/download_request_form.ts',
     events: './src/pages/event',
     jobs: './src/pages/job',
     profiles: './src/pages/profile',
     releases: './src/pages/codebase/release',
+    release_regenerate_share_uuid: './src/pages/codebase/release/regenerate_share_uuid.ts',
     reviews: './src/pages/review',
-    release_regenerate_share_uuid: './src/pages/codebase/release/regenerate_share_uuid.ts'
 };
 
 module.exports = {

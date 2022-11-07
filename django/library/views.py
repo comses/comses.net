@@ -16,6 +16,7 @@ from django.views.generic.base import RedirectView
 from django.views.generic.detail import DetailView
 from django.views.generic.edit import UpdateView
 from django.views.generic.list import ListView
+from ipware import get_client_ip
 from rest_framework import (
     viewsets,
     generics,
@@ -31,6 +32,8 @@ from rest_framework.exceptions import (
     ValidationError,
 )
 from rest_framework.filters import OrderingFilter
+from rest_framework.permissions import IsAuthenticatedOrReadOnly
+from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 
 from core.models import MemberProfile
@@ -68,6 +71,7 @@ from .serializers import (
     CodebaseSerializer,
     CodebaseReleaseSerializer,
     ContributorSerializer,
+    DownloadRequestSerializer,
     ReleaseContributorSerializer,
     CodebaseReleaseEditSerializer,
     CodebaseImageSerializer,
@@ -601,6 +605,7 @@ class NestedCodebaseReleasePermission(permissions.BasePermission):
 
 class NestedCodebaseReleaseUnpublishedFilesPermission(permissions.BasePermission):
     def has_object_permission(self, request, view, obj):
+        # FIXME: figure out the rationale of this boolean logic
         if obj.live:
             raise DrfPermissionDenied(
                 "Cannot access unpublished files of published release"
@@ -661,6 +666,9 @@ class CodebaseReleaseShareViewSet(
 
     @action(detail=True, methods=["get"])
     def download(self, request, *args, **kwargs):
+        """
+        Download this model archive for review (no need for an interstitial survey)
+        """
         codebase_release = self.get_object()
         if codebase_release.live:
             raise Http404("Cannot download review archive on published release")
@@ -680,6 +688,9 @@ class CodebaseReleaseShareViewSet(
 
 
 class CodebaseReleaseViewSet(CommonViewSetMixin, NoDeleteViewSet):
+    """
+    Handles DRF requests to view, edit, or download the archival information packages for a specific codebase release
+    """
     namespace = "library/codebases/releases"
     lookup_field = "version_number"
     lookup_value_regex = r"\d+\.\d+\.\d+"
@@ -687,6 +698,7 @@ class CodebaseReleaseViewSet(CommonViewSetMixin, NoDeleteViewSet):
     queryset = CodebaseRelease.objects.with_platforms().with_programming_languages()
     pagination_class = SmallResultSetPagination
     permission_classes = (
+        IsAuthenticatedOrReadOnly,
         NestedCodebaseReleasePermission,
         ViewRestrictedObjectPermissions,
     )
@@ -833,13 +845,46 @@ class CodebaseReleaseViewSet(CommonViewSetMixin, NoDeleteViewSet):
                 status=status.HTTP_200_OK,
             )
 
+    @action(detail=True, methods=["post"], permission_classes=[AllowAny])
+    @transaction.atomic
+    def request_download(self, request, **kwargs):
+        user = request.user if request.user.is_authenticated else None
+        download_request = request.data
+        codebase_release = self.get_object()
+        referrer = request.META.get("HTTP_REFERER", "")
+        client_ip, is_routable = get_client_ip(request)
+        download_request.update(
+            ip_address=client_ip,
+            referrer=referrer,
+            user=user.id if user else None,
+            release=codebase_release.id,
+        )
+        serializer = DownloadRequestSerializer(data=download_request)
+
+        if not serializer.is_valid(raise_exception=True):
+            raise ValidationError(f"Invalid download request: {download_request}")
+
+        try:
+            response = build_archive_download_response(codebase_release)
+            serializer.save()  # records the download + metadata
+        except FileNotFoundError:
+            logger.error(
+                "Unable to find archive for codebase release %s (%s)",
+                codebase_release.pk,
+                codebase_release.get_absolute_url(),
+            )
+            raise Http404
+        return response
+
     @action(detail=True, methods=["get"])
     @transaction.atomic
     def download(self, request, **kwargs):
+        """
+        Download the published model archive
+        """
         codebase_release = self.get_object()
         try:
             response = build_archive_download_response(codebase_release)
-            codebase_release.record_download(request)
         except FileNotFoundError:
             logger.error(
                 "Unable to find archive for codebase release %s (%s)",

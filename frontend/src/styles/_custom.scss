@@ -543,3 +543,41 @@ html {
   content:  "*";
   color: red;
 }
+
+.btn-delete-item {
+  @extend .btn-outline-dark;
+  border-color: #ced4da;
+  border-left: 0px;
+  &:hover {
+    background-color: $red;
+    border-color: $red;
+  }
+}
+
+.primary-group-button {
+  width: 6.5rem;
+}
+
+.btn-is-primary {
+  @extend .btn-secondary;
+  &:hover {
+    cursor: default !important;
+    background-color: $secondary-color;
+    border-color: $secondary-color;
+  }
+}
+
+.btn-make-primary {
+  @extend .btn-outline-dark;
+  color: $secondary-color;
+  border-color: #ced4da;
+  border-right: 0px;
+  &:hover {
+    background-color: $secondary-color;
+    border-color: $secondary-color;
+  }
+}
+
+.read-only-white[readonly] {
+  background-color: $white;
+}

@@ -175,7 +175,7 @@ export class DismissOnSuccessHandler implements CreateOrUpdateHandler {
         let msg;
         if (!_.isUndefined(response_or_network_error.response)) {
             switch (response_or_network_error.response.status) {
-                case 403: msg = 'Server Forbidden Error (tried to readm create or modify something you do not have permission to)'; break;
+                case 403: msg = 'Server Forbidden Error (tried to read, create or modify something you do not have permission to)'; break;
                 case 404: msg = 'Server Resource Not Found Error (tried to read, create or modify something that does not exist)'; break;
                 case 500: msg = 'Internal Server Error (server has a bug)'; break;
                 default: msg = `HTTP Error (${response_or_network_error.response.status})`; break;

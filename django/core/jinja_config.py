@@ -28,6 +28,21 @@ from core.serializers import FULL_DATE_FORMAT
 logger = logging.getLogger(__name__)
 
 
+def get_download_request_metadata(user):
+    """ FIXME: this doesn't quite fit here, too specialized, possibly get_context_data()? """
+    EMPTY_DOWNLOAD_REQUEST_METADATA = {
+        "authenticated": False,
+        "affiliation": {},
+        "industry": "",
+        "id": None
+    }
+    # start with base download request metadata
+    metadata = EMPTY_DOWNLOAD_REQUEST_METADATA
+    if user is not None and user.is_authenticated:
+        metadata = user.member_profile.get_download_request_metadata()
+    return json.dumps(metadata)
+
+
 def jinja_url(viewname, *args, **kwargs):
     return reverse(viewname, args=args, kwargs=kwargs)
 
@@ -54,6 +69,7 @@ def environment(**options):
             "is_production": is_production,
             "provider_login_url": provider_login_url,
             "get_choices_display": get_choices_display,
+            "get_download_request_metadata": get_download_request_metadata,
             "markdown": markdown,
             "add_field_css": add_field_css,
             "format_datetime_str": format_datetime_str,

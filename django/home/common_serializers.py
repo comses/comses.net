@@ -10,11 +10,12 @@ logger = logging.getLogger(__name__)
 
 class RelatedMemberProfileSerializer(serializers.ModelSerializer):
     name = serializers.SerializerMethodField()
+    # TODO: refactor contributor's use of institution/affiliation
     institution_name = serializers.CharField(
-        source="member_profile.institution.name", read_only=True
+        source="member_profile.primary_affiliation_name", read_only=True
     )
     institution_url = serializers.URLField(
-        source="member_profile.institution.url", read_only=True
+        source="member_profile.primary_affiliation_url", read_only=True
     )
     profile_url = serializers.URLField(
         source="member_profile.get_absolute_url", read_only=True

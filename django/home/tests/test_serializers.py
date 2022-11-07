@@ -47,9 +47,7 @@ class MemberProfileSerializerTestCase(TestCase):
         other_email = other_user.email
 
         member_profile = self.user.member_profile
-        institution = Institution(url="https://foo.org", name="Foo Institute")
-        institution.save()
-        member_profile.institution = institution
+        member_profile.affiliations = [{ "name": "Foo Institute", "url": "http://foo.org" }]
         member_profile.save()
         email_address = EmailAddress.objects.create(
             user=self.user, email=self.user.email
@@ -78,13 +76,67 @@ class MemberProfileSerializerTestCase(TestCase):
         with self.assertRaises(ValidationError):
             serializer.save()
 
+    def test_save_affiliation(self):
+        member_profile = self.user.member_profile
+        member_profile.save()
+        member_profile_data = MemberProfileSerializer(member_profile).data
+
+        # allowed affiliations
+        member_profile_data["affiliations"] = [
+            {
+                "name": "Foo University",
+            },
+            {
+                "name": "Bar College",
+                "url": "http://bar.org"
+            },
+            {
+                "name": "FooBar Network",
+                "url": "https://foobar.net",
+                "acronym": "FBN",
+                "ror_id": "https://ror.org/foobar1"
+            }
+        ]
+        serializer = MemberProfileSerializer(instance=member_profile, data=member_profile_data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+
+        # disallowed affiliations
+        member_profile_data["affiliations"] = [
+            {
+                "name": "Foo College",
+                "url": "www.foo.edu",
+                "ror_id": "foo8j8sd"
+            }
+        ]
+        serializer = MemberProfileSerializer(instance=member_profile, data=member_profile_data)
+        with self.assertRaises(ValidationError):
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+
+        # conflicting afffiliations
+        member_profile_data["affiliations"] = [
+            {
+                "name": "Bar College",
+                "url": "http://bar.org"
+            },
+            {
+                "name": "Bar College",
+                "url": "https://foobar.net",
+                "acronym": "BN",
+                "ror_id": "https://ror.org/foobar1"
+            }
+        ]
+        serializer = MemberProfileSerializer(instance=member_profile, data=member_profile_data)
+        with self.assertRaises(ValidationError):
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+
     def test_cannot_downgrade_membership(self):
         membership_profile = self.user.member_profile
         self.assertFalse(membership_profile.full_member)
 
-        institution = Institution(url="https://foo.org", name="Foo Institute")
-        institution.save()
-        membership_profile.institution = institution
+        membership_profile.affiliations = [{ "name": "Foo Institute", "url": "http://foo.org" }]
         membership_profile.save()
         membership_profile_data = MemberProfileSerializer(membership_profile).data
 

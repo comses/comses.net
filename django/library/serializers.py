@@ -11,6 +11,7 @@ from rest_framework.exceptions import ValidationError
 from wagtail.images.models import SourceImageIOError
 
 from core.models import MemberProfile
+from core.validators import validate_affiliations
 from core.serializers import (
     YMD_DATETIME_FORMAT,
     DATE_PUBLISHED_FORMAT,
@@ -26,6 +27,7 @@ from .models import (
     ReleaseContributor,
     Codebase,
     CodebaseRelease,
+    CodebaseReleaseDownload,
     Contributor,
     License,
     CodebaseImage,
@@ -418,6 +420,43 @@ class CodebaseImageSerializer(serializers.ModelSerializer):
         model = CodebaseImage
         fields = ("identifier", "name", "file")
         extra_kwargs = {"file": {"write_only": True}}
+
+
+class DownloadRequestSerializer(serializers.ModelSerializer):
+    # customize save functionality to validate and record a new CodebaseReleaseDownload
+    save_to_profile = serializers.BooleanField()
+
+    def create(self, validated_data):
+        logger.debug("creating download request serializer from: %s", validated_data)
+        save_to_profile = validated_data.pop("save_to_profile")
+        industry = validated_data.get("industry")
+        affiliation = validated_data.get("affiliation")
+        instance = CodebaseReleaseDownload(**validated_data)
+        instance.user = validated_data.get("user")
+        # update user's profile to reflect information provided
+        if instance.user and save_to_profile:
+            self.update_profile(instance, industry, affiliation)
+        instance.save()
+        return instance
+
+    def update_profile(self, instance, industry, affiliation):
+        member_profile = instance.user.member_profile
+        member_profile.industry = industry
+        if affiliation:
+            # check if affiliation with this name already exists in member_profile
+            if not any(mem_aff["name"] == affiliation["name"] for mem_aff in member_profile.affiliations):
+                member_profile.affiliations.append(affiliation)
+        # run validation on updated member_profile
+        try:
+            validate_affiliations(member_profile.affiliations)
+        except Exception as e:
+            raise ValidationError(e.messages)
+        else:
+            member_profile.save()
+
+    class Meta:
+        model = CodebaseReleaseDownload
+        fields = ("save_to_profile", "referrer", "reason", "ip_address", "user", "industry", "affiliation", "release")
 
 
 class CodebaseReleaseSerializer(serializers.ModelSerializer):

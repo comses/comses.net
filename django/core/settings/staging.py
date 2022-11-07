@@ -31,9 +31,10 @@ EMAIL_USE_TLS = True
 
 ALLOWED_HOSTS = [".comses.net"]
 
+WAGTAILADMIN_BASE_URL = BASE_URL = DEPLOY_ENVIRONMENT.base_url
+
 # security settings from manage.py check --deploy
 # https://docs.djangoproject.com/en/2.0/ref/settings/#secure-proxy-ssl-header
-WAGTAILADMIN_BASE_URL = BASE_URL = DEPLOY_ENVIRONMENT.base_url
 # set up robots + sitemaps inclusion https://django-robots.readthedocs.io/en/latest/
 ROBOTS_SITEMAP_URLS = [f"{BASE_URL}/sitemap.xml"]
 # SILENCED_SYSTEM_CHECKS = ['captcha.recaptcha_test_key_error']

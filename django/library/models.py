@@ -284,6 +284,14 @@ class SemanticVersion:
 
 
 class CodebaseReleaseDownload(models.Model):
+
+    class Reason(models.TextChoices):
+        RESEARCH = 'research', _('Research')
+        EDUCATION = 'education', _('Education')
+        COMMERCIAL = 'commercial', _('Commercial')
+        POLICY = 'policy', _('Policy / Planning')
+        OTHER = 'other', _('Other')
+
     date_created = models.DateTimeField(default=timezone.now)
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL, null=True, on_delete=models.SET_NULL
@@ -295,6 +303,9 @@ class CodebaseReleaseDownload(models.Model):
     release = models.ForeignKey(
         "library.CodebaseRelease", related_name="downloads", on_delete=models.CASCADE
     )
+    reason = models.CharField(max_length=500, choices=Reason.choices)
+    affiliation = models.JSONField(default=None, null=True)
+    industry = models.CharField(max_length=255, choices=MemberProfile.Industry.choices)
 
     def __str__(self):
         return "{0}: downloaded {1}".format(self.ip_address, self.release)
@@ -749,46 +760,6 @@ class Codebase(index.Indexed, ClusterableModel):
         )
         next_version_number = max(possible_version_numbers)
         return str(next_version_number)
-
-    def import_release(
-        self,
-        submitter=None,
-        submitter_id=None,
-        version_number=None,
-        submitted_package=None,
-        **kwargs,
-    ):
-        if submitter_id is None:
-            if submitter is None:
-                submitter = get_user_model().objects.first()
-                logger.warning(
-                    "No submitter or submitter_id specified when creating release, using first user %s",
-                    submitter,
-                )
-            submitter_id = submitter.pk
-        if version_number is None:
-            version_number = self.next_version_number()
-
-        identifier = kwargs.pop("identifier", None)
-        if "draft" not in kwargs:
-            kwargs["draft"] = False
-        if "live" not in kwargs:
-            kwargs["live"] = True
-        release = CodebaseRelease.objects.create(
-            submitter_id=submitter_id,
-            version_number=version_number,
-            identifier=identifier,
-            codebase=self,
-            **kwargs,
-        )
-        if submitted_package:
-            release.submitted_package.save(
-                submitted_package.name, submitted_package, save=False
-            )
-        if release.is_published:
-            self.latest_version = release
-            self.save()
-        return release
 
     def import_media(self, fileobj, user=None, title=None, images_only=True):
         if user is None:
@@ -1364,13 +1335,6 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
 
     def download_count(self):
         return self.downloads.count()
-
-    @transaction.atomic
-    def record_download(self, request):
-        referrer = request.META.get("HTTP_REFERER", "")
-        client_ip, is_routable = get_client_ip(request)
-        user = request.user if request.user.is_authenticated else None
-        self.downloads.create(user=user, referrer=referrer, ip_address=client_ip)
 
     @property
     def title(self):

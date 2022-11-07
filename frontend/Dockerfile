@@ -1,5 +1,7 @@
 FROM node:lts-bullseye
 
+ENV NODE_OPTIONS=--openssl-legacy-provider
+
 RUN apt-get update \
     && apt-get install -y nasm libjpeg-turbo-progs vim \
     && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
@@ -7,7 +9,7 @@ RUN apt-get update \
 WORKDIR /code
 ENV NODE_OPTIONS=--openssl-legacy-provider
 COPY package.json yarn.lock /code/
-RUN set -ex; \
+RUN set -ex; yarn config set ignore-engines true; \
     if [ "$NODE_ENV" = "production" ]; then \
         yarn install --no-cache --frozen-lockfile --production; \
     elif [ "$NODE_ENV" = "test" ]; then \

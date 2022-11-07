@@ -1,4 +1,5 @@
 import logging
+import jsonschema
 
 from allauth.account.models import EmailAddress
 from django.core.exceptions import ValidationError
@@ -8,7 +9,8 @@ from rest_framework import serializers
 from rest_framework.exceptions import ValidationError as DrfValidationError
 
 from core.models import Institution, MemberProfile
-from core.serializers import TagSerializer, MarkdownField
+from core.serializers import InstitutionSerializer, TagSerializer, MarkdownField
+from core.validators import validate_affiliations
 from library.serializers import RelatedCodebaseSerializer
 from .models import FeaturedContentItem, UserMessage
 
@@ -97,9 +99,9 @@ class MemberProfileSerializer(serializers.ModelSerializer):
         source="user.codebases", many=True, read_only=True
     )
 
-    # Institution
-    institution_name = serializers.CharField(allow_blank=True)
-    institution_url = serializers.URLField(allow_blank=True)
+    # Affiliations
+    institution = InstitutionSerializer(allow_null=True)
+    affiliations = serializers.JSONField()
 
     # MemberProfile
     avatar = (
@@ -111,6 +113,9 @@ class MemberProfileSerializer(serializers.ModelSerializer):
     profile_url = serializers.URLField(source="get_absolute_url", read_only=True)
     bio = MarkdownField()
     research_interests = MarkdownField()
+
+    def validate_affiliations(self, value):
+        return validate_affiliations(value)
 
     def get_email(self, instance):
         request = self.context.get("request")
@@ -179,25 +184,14 @@ class MemberProfileSerializer(serializers.ModelSerializer):
         user.save()
 
         new_email = self.initial_data["email"]
-
-        raw_institution = {
-            "name": validated_data.pop("institution_name"),
-            "url": validated_data.pop("institution_url"),
-        }
-        institution = instance.institution
-        if institution:
-            institution.name = raw_institution.get("name")
-            institution.url = raw_institution.get("url")
-            institution.save()
-        else:
-            institution = Institution.objects.create(**raw_institution)
-            instance.institution = institution
-
+        
         # Full members cannot downgrade their status
         if instance.full_member:
             validated_data["full_member"] = True
         else:
             validated_data["full_member"] = bool(self.initial_data["full_member"])
+
+        logger.debug("validated data in member profile serializer: %s", validated_data)
 
         obj = super().update(instance, validated_data)
         self.save_tags(instance, raw_tags)
@@ -228,9 +222,7 @@ class MemberProfileSerializer(serializers.ModelSerializer):
             "follower_count",
             "following_count",
             "codebases",
-            # institution
-            "institution_name",
-            "institution_url",
+            "industry",
             # MemberProfile
             "avatar",
             "bio",
@@ -245,5 +237,7 @@ class MemberProfileSerializer(serializers.ModelSerializer):
             "professional_url",
             "profile_url",
             "research_interests",
+            "institution",
+            "affiliations",
             "name",
         )
