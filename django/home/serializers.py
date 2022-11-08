@@ -100,7 +100,7 @@ class MemberProfileSerializer(serializers.ModelSerializer):
     )
 
     # Affiliations
-    institution = InstitutionSerializer(allow_null=True)
+    institution = InstitutionSerializer(read_only=True, allow_null=True)
     affiliations = serializers.JSONField()
 
     # MemberProfile
