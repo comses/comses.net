@@ -457,6 +457,16 @@ class EducationPage(NavigationMixin, Page):
         InlinePanel("cards", label=_("Tutorial Cards")),
     ]
 
+    def get_context(self, request, *args, **kwargs):
+        context = super().get_context(request, *args, **kwargs)
+        cards = TutorialCard.objects.all()
+        tag = request.GET.get("tag")
+        if tag:
+            cards = cards.filter(tags__name=tag)
+            context["cards"] = cards.filter(tags__name=tag)
+        context["cards"] = cards
+        return context
+
 
 class TutorialTag(TaggedItemBase):
     content_object = ParentalKey("TutorialCard", related_name="tagged_items")

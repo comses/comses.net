@@ -1,5 +1,5 @@
 {% extends "base.jinja" %}
-{% from "common.jinja" import subnav, breadcrumb, search_tag_href %}
+{% from "common.jinja" import breadcrumb %}
 
 {% block title %}{{ page.title }}{% endblock %}
 
@@ -9,7 +9,6 @@
 
 {% block content %}
     {{ breadcrumb(page.get_breadcrumbs()) }}
-    {{ subnav(page.get_navigation_links()) }}
     <div class='jumbotron'>
         <h1 class='display-5'>{{ page.heading }}</h1>
         <div class='pt-4 lead'>
@@ -19,7 +18,14 @@
    <div class="card-page">
         <section class="cards mb-5">
             <h1 class="mb-3">Tutorials</h1>
-            {% for batched_cards in page.cards.all()|batch(3) %}
+            {% set display_tag = request.GET.get("tag") %}
+            {% if display_tag %}
+                <div class="tag-display mb-3">
+                    <a href="{{ request.path }}"><span class="fas fa-times"></span></a>
+                    <span>{{ display_tag }}</span>
+                </div>
+            {% endif %}
+            {% for batched_cards in cards.all()|batch(3) %}
                 <div class="row mb-4">
                     {% for card in batched_cards %}
                         <div class="col-sm-4 col-12 d-flex align-items-stretch">
@@ -31,9 +37,11 @@
                                     <a href="{{ card.url }}" class="stretched-link"></a>
                                 </div>
                                 {% if card.tags.all() %}
-                                    <div class='tag-list p-3'>
+                                    <div class="tag-list p-3">
                                         {% for tag in card.tags.all() %}
-                                            {{ search_tag_href(tag) }}
+                                            <a class="tag" href="{{ request.path }}?tag={{ tag.name }}">
+                                                {{ tag.name }}
+                                            </a>
                                         {% endfor %}
                                     </div>
                                 {% endif %}

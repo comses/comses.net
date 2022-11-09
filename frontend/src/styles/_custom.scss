@@ -441,6 +441,19 @@ a.footer {
   }
 }
 
+.tag-display {
+  @extend .btn-lg;
+  padding: 0.25rem 0.5rem;
+  display: inline-block;
+  background-color: $rules-color;
+  a {
+    color: $text-color;
+    &:hover {
+      color: $red;
+    }
+  }
+}
+
 .codebase-title {
   font-family: 'Alte-DIN-1451-Mittelschrift', 'Open Sans', sans-serif;
   color: $text-color;
@@ -506,6 +519,10 @@ a.footer {
   transition: 0.25s ease;
   .card-image-top {
     border-bottom: 1px solid rgba(0, 0, 0, 0.125);
+  }
+  .tag {
+    position: relative;
+    z-index: 2;
   }
   &:hover {
     border-color: $link-color;
