@@ -6,6 +6,7 @@ from django.utils.html import linebreaks, escape
 from jinja2.utils import urlize
 from markupfield.fields import MarkupField
 
+from core.markdown_embed import VideoEmbedExtension
 from .widgets import MarkdownTextarea
 
 logger = logging.getLogger(__name__)
@@ -23,6 +24,7 @@ ALLOWED_TAGS = bleach.ALLOWED_TAGS + [
     "div",
     "span",
     "footer",
+    "iframe",
     "img",
     "table",
     "thead",
@@ -36,7 +38,11 @@ ALLOWED_TAGS = bleach.ALLOWED_TAGS + [
 ]
 
 ALLOWED_ATTRIBUTES = dict(
-    bleach.ALLOWED_ATTRIBUTES, **{"*": ["name", "id", "class"], "img": ["alt", "src"]}
+    bleach.ALLOWED_ATTRIBUTES, **{
+        "*": ["name", "id", "class"],
+        "img": ["alt", "src"],
+        "iframe": ["alt", "src", "allowfullscreen"]
+        }
 )
 
 DEFAULT_MARKDOWN_EXTENSIONS = [
@@ -46,6 +52,7 @@ DEFAULT_MARKDOWN_EXTENSIONS = [
     "markdown.extensions.sane_lists",
     "markdown.extensions.smarty",
     "markdown.extensions.toc",
+    VideoEmbedExtension(),
     #    'markdown.extensions.wikilinks',
 ]
 
