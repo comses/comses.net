@@ -347,7 +347,7 @@ class MemberProfile(index.Indexed, ClusterableModel):
 
     @property
     def primary_affiliation_url(self):
-        return self.affiliations[0].url if self.affiliations else ""
+        return self.affiliations[0].get('url') if self.affiliations else ""
 
     @property
     def profile_url(self):
@@ -368,10 +368,10 @@ class MemberProfile(index.Indexed, ClusterableModel):
     @property
     def institution_name(self):
         return self.institution.name if self.institution else ""
-    
+
     @property
     def primary_affiliation_name(self):
-        return self.affiliations[0].name if self.affiliations else ""
+        return self.affiliations[0].get('name') if self.affiliations else ""
 
     @property
     def submitter(self):
