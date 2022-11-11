@@ -503,10 +503,52 @@ class TutorialCard(Orderable, ClusterableModel):
         return "{0} {1}".format(self.title, self.url)
 
 
-# class TutorialDetailPage(Page):
-    # """Tutorial page with tutorial contents"""
-    # template = models.CharField(max_length=128, default="home/tutorial.jinja")
-    # use markdown or streamfields
+class TutorialDetailPage(NavigationMixin, Page):
+    """Tutorial page with tutorial contents rendered in markdown"""
+    heading = models.CharField(
+        max_length=128,
+        blank=True,
+        help_text=_(
+            "Large heading text placed on the blue background introduction header"
+        ),
+    )
+    template = models.CharField( max_length=128, default="home/tutorial.jinja")
+    post_date = models.DateField("Post date", default=timezone.now)
+    description = MarkdownField(
+        max_length=1024,
+        blank=True,
+        help_text=_(
+            "Markdown-enabled summary text placed below the heading and title."
+        ),
+    )
+    # FIXME: decouple regular markdownfield from tutorial template markdown
+    # FIXME: markdown editor widget doesn't seem to be working properly
+    body = MarkdownField(
+        blank=True, help_text=_("Markdown-enabled main content pane for this page.")
+    )
+    jumbotron = models.BooleanField(
+        default=True,
+        help_text=_(
+            "Mark as true if this page should display its title and description in a jumbotron"
+        ),
+    )
+
+    content_panels = Page.content_panels + [
+        FieldPanel("post_date"),
+        FieldPanel("jumbotron"),
+        FieldPanel("heading"),
+        FieldPanel("description"),
+        FieldPanel("body"),
+        FieldPanel("template"),
+        InlinePanel("navigation_links", label=_("Subnavigation Links")),
+    ]
+
+    search_fields = Page.search_fields + [
+        index.FilterField("post_date"),
+        index.SearchField("description", partial_match=True),
+        index.SearchField("body", partial_match=True),
+        index.SearchField("heading", partial_match=True),
+    ]
 
 
 class StreamPage(Page, NavigationMixin):
@@ -514,14 +556,12 @@ class StreamPage(Page, NavigationMixin):
     post_date = models.DateField("Post date", default=timezone.now)
     description = models.CharField(max_length=512, blank=True)
 
-    body = StreamField(
-        [
-            ("heading", blocks.CharBlock(classname="full title")),
-            ("paragraph", blocks.RichTextBlock()),
-            ("image", ImageChooserBlock()),
-            ("url", blocks.URLBlock(required=False)),
-        ]
-    )
+    body = StreamField([
+        ("heading", blocks.CharBlock(classname="full title")),
+        ("paragraph", blocks.RichTextBlock()),
+        ("image", ImageChooserBlock()),
+        ("url", blocks.URLBlock(required=False)),
+    ])
 
     content_panels = Page.content_panels + [
         FieldPanel("post_date"),

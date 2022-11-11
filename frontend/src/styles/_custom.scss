@@ -513,6 +513,45 @@ a.footer {
   }
 }
 
+.tutorial {
+  padding-bottom: 2rem;
+  h1, h2, h3, h4, h5, h6 {
+    margin-top: 24px;
+    margin-bottom: 16px;
+    font-weight: bold;
+  }
+  .toc {
+    > ul {
+      padding-left: 0;
+    }
+    li::marker {
+      content: "";
+    }
+  }
+  .admonition.prereqs {
+    @extend .alert;
+    @extend .alert-primary;
+  }
+  .admonition.info {
+    @extend .alert;
+    @extend .alert-info;
+  }
+  .admonition.warning {
+    @extend .alert;
+    @extend .alert-danger;
+  }
+  .admonition-title {
+      font-size: 1.1em;
+      font-weight: bold;
+    }
+  :target::before { // account for header when using anchor links
+    content: "";
+    display: block;
+    height: 90px;
+    margin-top: -90px;
+  }
+}
+
 .tutorial-card {
   @extend .card;
   border-radius: 0;

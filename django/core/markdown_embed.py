@@ -1,5 +1,5 @@
 # FIXME: this may not make a whole lot of sense sitting in the root of core,
-# finnd out elsewhere to put this
+# find elsewhere to put this
 import logging
 
 from markdown import Extension
@@ -29,7 +29,8 @@ class VideoEmbedExtension(Extension):
   """
   def extendMarkdown(self, md):
     link_pattern = VideoEmbedInlineProcessor(VIDEO_PATTERN, md)
-    # priority level 175 is a total guess, shouldn't run into any issues with img's though
+    # priority level 175 is arbitrary. there shouldn't be any conflicts with image
+    # embeds, but if there are, it can be adjusted
     md.inlinePatterns.register(link_pattern, "video_embed", 175)
 
 class VideoEmbedInlineProcessor(InlineProcessor):
@@ -43,9 +44,12 @@ class VideoEmbedInlineProcessor(InlineProcessor):
     return el, m.start(0), m.end(0)
 
   def create_el(self, provider, video_id, alt):
+    wrapper = etree.Element("div")
+    wrapper.set("class", "embed-wrapper embed-responsive embed-responsive-16by9")
     el = etree.Element("iframe")
-    el.set("class", provider)
+    el.set("class", provider + " embed-responsive embed-responsive-16by9" )
     el.set("src", PROVIDERS[provider]["embed"] % video_id.strip())
     el.set("alt", alt)
     el.set("allowfullscreen", "true")
-    return el
+    wrapper.append(el)
+    return wrapper

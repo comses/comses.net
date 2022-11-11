@@ -46,6 +46,7 @@ ALLOWED_ATTRIBUTES = dict(
 )
 
 DEFAULT_MARKDOWN_EXTENSIONS = [
+    "markdown.extensions.admonition",
     "markdown.extensions.extra",
     "markdown.extensions.codehilite",
     "markdown.extensions.nl2br",
@@ -53,7 +54,6 @@ DEFAULT_MARKDOWN_EXTENSIONS = [
     "markdown.extensions.smarty",
     "markdown.extensions.toc",
     VideoEmbedExtension(),
-    #    'markdown.extensions.wikilinks',
 ]
 
 
@@ -70,6 +70,7 @@ def sanitize_html(html: str):
     )
 
 
+# FIXME: decouple regular markdownfield from tutorial template markdown
 class MarkdownField(MarkupField):
 
     CUSTOM_RENDERERS = (
