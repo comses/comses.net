@@ -515,35 +515,78 @@ a.footer {
 
 .tutorial {
   padding-bottom: 2rem;
+
   h1, h2, h3, h4, h5, h6 {
     margin-top: 24px;
     margin-bottom: 16px;
     font-weight: bold;
   }
+
+  .embed-responsive {
+    width: 70%;
+  }
+
+  img {
+    max-width: 100%;
+    box-sizing: content-box;
+  }
+
   .toc {
+    float: right;
+    background-color: #e9ecef;
+    border: 1px solid #d8dbdf;
+    padding: 0.75rem 1.25rem;
+    margin: 1rem 0 2rem 2rem;
+    max-width: 25%;
+    line-height: 1.75;
+    &:before {
+      content: "Table of Contents";
+      font-size: 1.1em;
+      font-weight: bold;
+      display: block;
+      margin-bottom: 0.75rem;
+    }
     > ul {
       padding-left: 0;
     }
+    > ul ul {
+      padding-left: 1.5rem;
+    }
+    
     li::marker {
       content: "";
     }
   }
+
+  pre {
+    padding: 1rem;
+    background-color: #e9ecef;
+    border: 1px solid #d8dbdf;
+    code {
+      line-height: 1.25;
+    }
+  }
+
   .admonition.prereqs {
     @extend .alert;
     @extend .alert-primary;
   }
+
   .admonition.info {
     @extend .alert;
     @extend .alert-info;
   }
+
   .admonition.warning {
     @extend .alert;
     @extend .alert-danger;
   }
+
   .admonition-title {
       font-size: 1.1em;
       font-weight: bold;
-    }
+  }
+
   :target::before { // account for header when using anchor links
     content: "";
     display: block;

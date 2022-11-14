@@ -34,7 +34,7 @@ from wagtail.snippets.edit_handlers import SnippetChooserPanel
 from wagtail.snippets.models import register_snippet
 
 from core.discourse import build_discourse_url
-from core.fields import MarkdownField
+from core.fields import MarkdownField, TutorialMarkdownField
 from core.fs import get_canonical_image
 from core.models import MemberProfile, Platform, Event, Job
 
@@ -521,9 +521,8 @@ class TutorialDetailPage(NavigationMixin, Page):
             "Markdown-enabled summary text placed below the heading and title."
         ),
     )
-    # FIXME: decouple regular markdownfield from tutorial template markdown
     # FIXME: markdown editor widget doesn't seem to be working properly
-    body = MarkdownField(
+    body = TutorialMarkdownField(
         blank=True, help_text=_("Markdown-enabled main content pane for this page.")
     )
     jumbotron = models.BooleanField(

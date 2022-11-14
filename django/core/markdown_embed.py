@@ -1,5 +1,4 @@
-# FIXME: this may not make a whole lot of sense sitting in the root of core,
-# find elsewhere to put this
+# FIXME: consider moving this elsewhere
 import logging
 
 from markdown import Extension
@@ -47,7 +46,7 @@ class VideoEmbedInlineProcessor(InlineProcessor):
     wrapper = etree.Element("div")
     wrapper.set("class", "embed-wrapper embed-responsive embed-responsive-16by9")
     el = etree.Element("iframe")
-    el.set("class", provider + " embed-responsive embed-responsive-16by9" )
+    el.set("class", provider)
     el.set("src", PROVIDERS[provider]["embed"] % video_id.strip())
     el.set("alt", alt)
     el.set("allowfullscreen", "true")
