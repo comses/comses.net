@@ -521,7 +521,6 @@ class TutorialDetailPage(NavigationMixin, Page):
             "Markdown-enabled summary text placed below the heading and title."
         ),
     )
-    # FIXME: markdown editor widget doesn't seem to be working properly
     body = TutorialMarkdownField(
         blank=True, help_text=_("Markdown-enabled main content pane for this page.")
     )
