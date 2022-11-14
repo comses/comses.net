@@ -6,28 +6,34 @@ import xml.etree.ElementTree as etree
 
 PROVIDERS = {
     "youtube": {
-        "re": r'youtube\.com/watch\?\S*v=(?P<youtube>[A-Za-z0-9_&=-]+)',
-        "embed": "//www.youtube.com/embed/%s"
+        "re": r"youtube\.com/watch\?\S*v=(?P<youtube>[A-Za-z0-9_&=-]+)",
+        "embed": "//www.youtube.com/embed/%s",
     },
     "vimeo": {
-        "re": r'vimeo\.com/(?P<vimeo>\d+)',
-        "embed": "//player.vimeo.com/video/%s"
-    }
+        "re": r"vimeo\.com/(?P<vimeo>\d+)",
+        "embed": "//player.vimeo.com/video/%s",
+    },
 }
 
-VIDEO_PATTERN = r'\!\[(?P<alt>[^\]]*)\]\((https?://(www\.|)({0}|{1})\S*)' \
-                 r'(?<!png)(?<!jpg)(?<!jpeg)(?<!gif)\)'\
-                  .format(PROVIDERS["youtube"]["re"], PROVIDERS["vimeo"]["re"])
+VIDEO_PATTERN = (
+    r"\!\[(?P<alt>[^\]]*)\]\((https?://(www\.|)({0}|{1})\S*)"
+    r"(?<!png)(?<!jpg)(?<!jpeg)(?<!gif)\)".format(
+        PROVIDERS["youtube"]["re"], PROVIDERS["vimeo"]["re"]
+    )
+)
+
 
 class VideoEmbedExtension(Extension):
     """
     Embed videos in markdown by using ![alt text](url), supports youtube and vimeo
     """
+
     def extendMarkdown(self, md):
         link_pattern = VideoEmbedInlineProcessor(VIDEO_PATTERN, md)
         # priority level 175 is arbitrary. there shouldn't be any conflicts with image
         # embeds, but if there are, it can be adjusted
         md.inlinePatterns.register(link_pattern, "video_embed", 175)
+
 
 class VideoEmbedInlineProcessor(InlineProcessor):
     def handleMatch(self, m, data):

@@ -37,7 +37,8 @@ ALLOWED_TAGS = bleach.ALLOWED_TAGS + [
 ]
 
 ALLOWED_ATTRIBUTES = dict(
-    bleach.ALLOWED_ATTRIBUTES, **{
+    bleach.ALLOWED_ATTRIBUTES,
+    **{
         "*": ["name", "id", "class"],
         "img": ["alt", "src"],
     }
@@ -96,9 +97,7 @@ class MarkdownField(MarkupField):
 TUTORIAL_ALLOWED_TAGS = ALLOWED_TAGS + ["iframe"]
 
 TUTORIAL_ALLOWED_ATTRIBUTES = dict(
-    ALLOWED_ATTRIBUTES, **{
-        "iframe": ["alt", "src", "allowfullscreen"]
-    }
+    ALLOWED_ATTRIBUTES, **{"iframe": ["alt", "src", "allowfullscreen"]}
 )
 
 TUTORIAL_MARKDOWN_EXTENSIONS = DEFAULT_MARKDOWN_EXTENSIONS + [VideoEmbedExtension()]
@@ -113,7 +112,9 @@ def render_sanitized_tutorial_markdown(md_text: str, extensions=None):
 
 def sanitize_tutorial_html(html: str):
     return bleach.clean(
-        bleach.linkify(html), tags=TUTORIAL_ALLOWED_TAGS, attributes=TUTORIAL_ALLOWED_ATTRIBUTES
+        bleach.linkify(html),
+        tags=TUTORIAL_ALLOWED_TAGS,
+        attributes=TUTORIAL_ALLOWED_ATTRIBUTES,
     )
 
 

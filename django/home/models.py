@@ -443,6 +443,7 @@ class CategoryIndexPage(NavigationMixin, Page):
 
 class EducationPage(NavigationMixin, Page):
     """Education page indexes Tutorial pages and external tutorials"""
+
     template = models.CharField(max_length=256, default="home/education.jinja")
     heading = models.CharField(
         max_length=256, help_text=_("Short name to be placed in introduction header.")
@@ -474,13 +475,14 @@ class TutorialTag(TaggedItemBase):
 
 class TutorialCard(Orderable, ClusterableModel):
     """Cards displayed in the Education Page"""
+
     page = ParentalKey("home.EducationPage", related_name="cards")
-    url = models.CharField(
-        "Relative path, absolute path, or URL", max_length=200
-    )
+    url = models.CharField("Relative path, absolute path, or URL", max_length=200)
     title = models.CharField(max_length=256)
     summary = models.CharField(
-        max_length=1000, help_text=_("Markdown-enabled summary for this tutorial card"), blank=True
+        max_length=1000,
+        help_text=_("Markdown-enabled summary for this tutorial card"),
+        blank=True,
     )
     thumbnail_image = models.ForeignKey(
         "wagtailimages.Image",
@@ -490,7 +492,7 @@ class TutorialCard(Orderable, ClusterableModel):
         related_name="+",
     )
     tags = ClusterTaggableManager(through=TutorialTag, blank=True)
-    
+
     panels = [
         FieldPanel("url"),
         FieldPanel("title"),
@@ -505,6 +507,7 @@ class TutorialCard(Orderable, ClusterableModel):
 
 class TutorialDetailPage(NavigationMixin, Page):
     """Tutorial page with tutorial contents rendered in markdown"""
+
     heading = models.CharField(
         max_length=128,
         blank=True,
@@ -512,7 +515,7 @@ class TutorialDetailPage(NavigationMixin, Page):
             "Large heading text placed on the blue background introduction header"
         ),
     )
-    template = models.CharField( max_length=128, default="home/tutorial.jinja")
+    template = models.CharField(max_length=128, default="home/tutorial.jinja")
     post_date = models.DateField("Post date", default=timezone.now)
     description = MarkdownField(
         max_length=1024,
@@ -554,12 +557,14 @@ class StreamPage(Page, NavigationMixin):
     post_date = models.DateField("Post date", default=timezone.now)
     description = models.CharField(max_length=512, blank=True)
 
-    body = StreamField([
-        ("heading", blocks.CharBlock(classname="full title")),
-        ("paragraph", blocks.RichTextBlock()),
-        ("image", ImageChooserBlock()),
-        ("url", blocks.URLBlock(required=False)),
-    ])
+    body = StreamField(
+        [
+            ("heading", blocks.CharBlock(classname="full title")),
+            ("paragraph", blocks.RichTextBlock()),
+            ("image", ImageChooserBlock()),
+            ("url", blocks.URLBlock(required=False)),
+        ]
+    )
 
     content_panels = Page.content_panels + [
         FieldPanel("post_date"),
