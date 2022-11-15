@@ -442,7 +442,7 @@ class CategoryIndexPage(NavigationMixin, Page):
 
 
 class EducationPage(NavigationMixin, Page):
-    """Education page indexes Tutorial pages and external tutorials"""
+    """Education page that indexes external or internal links to tutorial pages"""
 
     template = models.CharField(max_length=256, default="home/education.jinja")
     heading = models.CharField(
@@ -506,7 +506,7 @@ class TutorialCard(Orderable, ClusterableModel):
 
 
 class TutorialDetailPage(NavigationMixin, Page):
-    """Tutorial page with tutorial contents rendered in markdown"""
+    """Tutorial page that contains a body formatted with markdown"""
 
     heading = models.CharField(
         max_length=128,
