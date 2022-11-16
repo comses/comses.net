@@ -26,7 +26,7 @@ from home.models import (
 logger = logging.getLogger(__name__)
 
 EDUCATION_CONTENT_DIR = "core/static/education/"
-EDUCATION_PAGE_SLUG = "test-edu-page"
+EDUCATION_PAGE_SLUG = "education"
 EDUCATION_PAGE_TITLE = "Educational Resources"
 EDUCATION_PAGE_HEADING = "Training Modules"
 EDUCATION_PAGE_DESCRIPTION = """
