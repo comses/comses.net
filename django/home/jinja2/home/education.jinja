@@ -4,7 +4,7 @@
 {% block title %}{{ page.title }}{% endblock %}
 
 {% block introduction %}
-    <h1>{{ page.heading }}</h1>
+    <h1>{{ page.title }}</h1>
 {% endblock %}
 
 {% block content %}
@@ -24,7 +24,7 @@
                     <span>{{ display_tag }}</span>
                 </div>
             {% endif %}
-            {% for batched_cards in cards.all()|batch(3) %}
+            {% for batched_cards in page.cards.all()|batch(3) %}
                 <div class="row mb-4">
                     {% for card in batched_cards %}
                         <div class="col-sm-4 col-12 d-flex align-items-stretch">

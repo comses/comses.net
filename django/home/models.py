@@ -452,6 +452,25 @@ class EducationPage(NavigationMixin, Page):
         max_length=5000, help_text=_("Markdown-enabled summary blurb for this page.")
     )
 
+    def add_card(
+        self, image_path, title, summary, tags=None, sort_order=None, user=None, url=""
+    ):
+        if self.cards.filter(title=title):
+            return
+        if user is None:
+            user = User.objects.get(username="alee")
+        _image = get_canonical_image(title=title, path=image_path, user=user) if image_path else None
+        card = TutorialCard(
+            title=title,
+            sort_order=sort_order,
+            summary=summary,
+            thumbnail_image=_image,
+            url=url
+        )
+        for tag in tags:
+            card.tags.add(tag)
+        self.cards.add(card)
+
     content_panels = Page.content_panels + [
         FieldPanel("heading"),
         FieldPanel("summary", widget=forms.Textarea),
