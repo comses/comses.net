@@ -608,8 +608,6 @@ a.footer {
   }
   &:hover {
     border-color: $link-color;
-    transform: translate(5px, -5px);
-    box-shadow: -5px 5px rgba(0, 0, 0, 0.125);
   }
 }
 
