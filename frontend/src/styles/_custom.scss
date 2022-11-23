@@ -515,6 +515,10 @@ a.footer {
 
 .tutorial {
   padding-bottom: 2rem;
+  @media (min-width: 1200px) {
+    width: 800px;
+    position: relative;
+  }
 
   h1, h2, h3, h4, h5, h6 {
     margin-top: 24px;
@@ -522,9 +526,9 @@ a.footer {
     font-weight: bold;
   }
 
-  .embed-responsive {
-    width: 70%;
-  }
+  // .embed-responsive {
+  //   width: 70%;
+  // }
 
   img {
     max-width: 100%;
@@ -532,12 +536,19 @@ a.footer {
   }
 
   .toc {
-    float: right;
+    @media (min-width: 1200px) {
+      position: sticky;
+      top: 115px;
+      margin-right: -310px;
+      float: right;
+      width: 285px;
+    }
+    display: inline-block;
+    max-width: fit-content(35%);
     background-color: #e9ecef;
     border: 1px solid #d8dbdf;
     padding: 0.75rem 1.25rem;
-    margin: 1rem 0 2rem 2rem;
-    max-width: 25%;
+    // margin: 1rem 0 2rem 2rem;
     line-height: 1.75;
     &:before {
       content: "Table of Contents";
@@ -599,6 +610,9 @@ a.footer {
   @extend .card;
   border-radius: 0;
   transition: 0.25s ease;
+  .card-title {
+    color: $link-color;
+  }
   .card-image-top {
     border-bottom: 1px solid rgba(0, 0, 0, 0.125);
   }

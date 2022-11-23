@@ -1,8 +1,8 @@
 """
 management command to create or update education index page and tutorial detail pages
-from markdown formatted files in core/static/education
+from markdown formatted files in home/static/education
 
-core/static/education/
+home/static/education/
 |--index.json (list of tutorial)
 |--content/
 |  |- *.md (markdown formatted files with tutorial body content)
@@ -25,7 +25,7 @@ from home.models import (
 
 logger = logging.getLogger(__name__)
 
-EDUCATION_CONTENT_DIR = "core/static/education/"
+EDUCATION_CONTENT_DIR = "home/static/education/"
 EDUCATION_PAGE_SLUG = "education"
 EDUCATION_PAGE_TITLE = "Educational Resources"
 EDUCATION_PAGE_HEADING = "Training Modules"
@@ -46,23 +46,29 @@ class Command(BaseCommand):
         self.create_or_update_tut_pages(index, education_page)
 
     def create_or_update_education_page(self, index):
-        # create or update education page
+        # delete the old page if it exists
         try:
             education_page = MarkdownPage.objects.get(slug=EDUCATION_PAGE_SLUG)
             education_page.delete()
         except:
             try:
                 education_page = EducationPage.objects.get(slug=EDUCATION_PAGE_SLUG)
+                education_page.delete()
             except:
-                education_page = EducationPage(slug=EDUCATION_PAGE_SLUG)
-                education_page.breadcrumbs.all().delete()
-
+                pass
+        # create new page
+        education_page = EducationPage(slug=EDUCATION_PAGE_SLUG)
+        try:
+            education_page.breadcrumbs.all().delete()
+        except:
+            pass
         education_page.add_breadcrumbs(
-            ((EDUCATION_PAGE_TITLE, "/{}/".format(EDUCATION_PAGE_SLUG)),)
+            ((EDUCATION_PAGE_TITLE, ""),)
         )
         education_page.title = EDUCATION_PAGE_TITLE
         education_page.heading = EDUCATION_PAGE_HEADING
         education_page.summary = EDUCATION_PAGE_DESCRIPTION
+        count = 0
         for tut in index:
             education_page.add_card(
                 image_path=tut["thumbnail"],
@@ -70,7 +76,10 @@ class Command(BaseCommand):
                 summary=tut["description"],
                 tags=tut["tags"],
                 url=tut["slug"] if not tut["external"] else tut["link"],
+                sort_order=count
             )
+            count += 1
+
         home_page = Page.objects.get(slug="home")
         if not education_page.is_child_of(home_page):
             logger.debug(education_page.is_child_of(home_page))
@@ -113,10 +122,10 @@ class Command(BaseCommand):
         # load page content from markdown text files
         for tut in index:
             # get image paths
-            try:
-                file = Path(dir, "thumbnails/", tut["slug"] + ".png")
+            file = Path(dir, "thumbnails/", tut["slug"] + ".png")
+            if file.is_file():
                 tut["thumbnail"] = str(file)
-            except:
+            else:
                 tut["thumbnail"] = None
             # get body content if not external link
             if not tut["external"]:
