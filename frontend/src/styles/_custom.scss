@@ -515,10 +515,6 @@ a.footer {
 
 .tutorial {
   padding-bottom: 2rem;
-  @media (min-width: 1200px) {
-    width: 800px;
-    position: relative;
-  }
 
   h1, h2, h3, h4, h5, h6 {
     margin-top: 24px;
@@ -526,47 +522,13 @@ a.footer {
     font-weight: bold;
   }
 
-  // .embed-responsive {
-  //   width: 70%;
-  // }
+  h1, h2 {
+    margin-top: 5rem;
+  }
 
   img {
     max-width: 100%;
     box-sizing: content-box;
-  }
-
-  .toc {
-    @media (min-width: 1200px) {
-      position: sticky;
-      top: 115px;
-      margin-right: -310px;
-      float: right;
-      width: 285px;
-    }
-    display: inline-block;
-    max-width: fit-content(35%);
-    background-color: #e9ecef;
-    border: 1px solid #d8dbdf;
-    padding: 0.75rem 1.25rem;
-    // margin: 1rem 0 2rem 2rem;
-    line-height: 1.75;
-    &:before {
-      content: "Table of Contents";
-      font-size: 1.1em;
-      font-weight: bold;
-      display: block;
-      margin-bottom: 0.75rem;
-    }
-    > ul {
-      padding-left: 0;
-    }
-    > ul ul {
-      padding-left: 1.5rem;
-    }
-    
-    li::marker {
-      content: "";
-    }
   }
 
   pre {
@@ -596,13 +558,6 @@ a.footer {
   .admonition-title {
       font-size: 1.1em;
       font-weight: bold;
-  }
-
-  :target::before { // account for header when using anchor links
-    content: "";
-    display: block;
-    height: 90px;
-    margin-top: -90px;
   }
 }
 
