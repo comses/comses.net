@@ -515,10 +515,21 @@ a.footer {
 
 .tutorial {
   padding-bottom: 2rem;
+  :target::before { // scroll-margin not working for some reason
+    content: "";
+    display: block;
+    height: 90px;
+    margin-top: -90px;
+  }
+
+  @media (min-width: 1200px) {
+    width: 800px;
+    position: relative;
+  }
 
   h1, h2, h3, h4, h5, h6 {
-    margin-top: 24px;
-    margin-bottom: 16px;
+    margin-top: 2rem;
+    margin-bottom: 1rem;
     font-weight: bold;
   }
 
@@ -529,6 +540,39 @@ a.footer {
   img {
     max-width: 100%;
     box-sizing: content-box;
+  }
+  
+  .toc {
+    @media (min-width: 1200px) {
+      position: sticky;
+      top: 115px;
+      margin-right: -310px;
+      float: right;
+      width: 250px;
+      display: inline-block;
+      border-left: 1px solid #d8dbdf;
+      padding: 0.75rem 1.25rem;
+      line-height: 1.75;
+      font-size: 0.8rem;
+      &:before {
+        content: "Table of Contents";
+        font-size: 1.1rem;
+        font-weight: bold;
+        display: block;
+        margin-bottom: 0.75rem;
+      }
+      > ul {
+        padding-left: 0;
+      }
+      > ul ul {
+        padding-left: 1.5rem;
+      }
+
+      li::marker {
+        content: "";
+      }
+    }
+    display: none;
   }
 
   pre {
