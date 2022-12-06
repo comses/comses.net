@@ -9,8 +9,8 @@
   {
     "external": false,
     "slug": "intro-to-git-github",
-    "title": "Introduction to Git and Github",
-    "description": "Familiarize yourself with Git and Github by taking part in a small interactive course hosted on Github classrooms.",
+    "title": "Introduction to Git and GitHub",
+    "description": "Familiarize yourself with Git and GitHub by taking part in a small interactive course hosted on Github classrooms.",
     "tags": ["git", "github"]
   },
   {
@@ -18,31 +18,7 @@
     "link": "https://classroom.github.com/a/WuDb62qc",
     "slug": "intro-to-containerization",
     "title": "Introduction to Containerization",
-    "description": "Join this GitHub classroom to learn about containerization, a way to bundle and archive your code in a reproducible manner. Follow step-by-step guidance on how to containerize an example NetLogo model with transparency and longevity in mind.",
+    "description": "Join this GitHub classroom to learn about containerization, a way to bundle and archive your code in a reproducible manner.",
     "tags": ["containerization", "docker"]
-  },
-  {
-    "external": true,
-    "link": "https://forum.comses.net/t/containerizing-your-r-model-on-rstudio",
-    "slug": "containerization-rstudio",
-    "title": "Containerizing your R Model on RStudio",
-    "description": "Learn how to containerize an R model in a Docker image and use RStudio within the container.",
-    "tags": ["containerization", "docker"]
-  },
-  {
-    "external": true,
-    "link": "https://forum.comses.net/t/containerizing-a-netlogo-model-in-headless-mode/8162",
-    "slug": "containerization-netlogo-headless",
-    "title": "Containerizing a NetLogo Model in Headless Mode",
-    "description": "Learn how to containerize a NetLogo model in a Docker image in headless mode (without a graphical interface).",
-    "tags": ["containerization", "docker"]
-  },
-  {
-    "external": true,
-    "link": "https://forum.comses.net/t/archiving-your-model-1-getting-started/7377",
-    "slug": "archiving-on-comses",
-    "title": "Archiving your Model on CoMSES Net",
-    "description": "A step-by-step walkthrough of archiving a model in our Computational Model Library.",
-    "tags": ["CoMSES"]
   }
 ]

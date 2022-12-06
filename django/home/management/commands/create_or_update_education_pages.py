@@ -19,6 +19,7 @@ from wagtail.models import Page
 
 from home.models import (
     MarkdownPage,
+    CategoryIndexPage,
     EducationPage,
     TutorialDetailPage,
 )
@@ -29,9 +30,9 @@ EDUCATION_CONTENT_DIR = "home/static/education/"
 EDUCATION_PAGE_SLUG = "education"
 EDUCATION_PAGE_TITLE = "Educational Resources"
 EDUCATION_PAGE_HEADING = "Training Modules"
-EDUCATION_PAGE_DESCRIPTION = """
-These CoMSES Net training modules provide instruction on current best practices for computational modeling with concrete guidance for developing data analysis workflows and sharing your work in accordance with the [FAIR principles for research software](https://doi.org/10.15497/RDA00068).
-"""
+EDUCATION_PAGE_DESCRIPTION = """These CoMSES Net training modules provide instruction on current best practices for computational modeling with concrete guidance for developing data analysis workflows and sharing your work in accordance with the [FAIR principles for research software](https://doi.org/10.15497/RDA00068).
+
+Additionally, see our [Educational Resources](https://forum.comses.net/t/educational-resources/9159/2) on the CoMSES Net forums."""
 
 
 class Command(BaseCommand):
@@ -44,6 +45,7 @@ class Command(BaseCommand):
         index = self.load_page_content(EDUCATION_CONTENT_DIR)
         education_page = self.create_or_update_education_page(index)
         self.create_or_update_tut_pages(index, education_page)
+        self.update_resources_link()
 
     def create_or_update_education_page(self, index):
         # delete the old page if it exists
@@ -136,3 +138,16 @@ class Command(BaseCommand):
                     logger.fatal("%s markdown file does not exist", tut["slug"])
 
         return index
+
+    def update_resources_link(self):
+        # update link to education page on /resources
+        try:
+            resources_page = CategoryIndexPage.objects.get(slug="resources")
+            education_card = resources_page.callouts.get(title="Education")
+            education_card.url = "/{}/".format(EDUCATION_PAGE_SLUG)
+            education_card.save()
+            logger.info("updated resources link to education page")
+        except Exception as e:
+            logger.fatal("failed to update resources link to education page")
+            logger.debug(e)
+            pass

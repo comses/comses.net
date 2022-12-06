@@ -27,7 +27,7 @@
             {% for batched_cards in cards.all()|batch(3) %}
                 <div class="row">
                     {% for card in batched_cards %}
-                        <div class="col-sm-6 col-lg-4 col-12 d-flex align-items-stretch" style="margin-bottom: 30px;">
+                        <div class="col-md-4 col-12 d-flex align-items-stretch" style="margin-bottom: 30px;">
                             <div class="tutorial-card w-100">
                                 {{ image(card.thumbnail_image, "fill-426x240", class='card-image-top card-thumbnail') }}
                                 <div class="card-body">
