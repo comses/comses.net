@@ -252,11 +252,20 @@
     {% if review %}
         {% set invite = review.get_invite(request.user.member_profile) if not request.user.is_anonymous else None %}
     {% endif %}
-    {% if release.live and not invite %}
-        <div id='download-request-form' data-user-data="{{ get_download_request_metadata(request.user) }}"
-         data-version-number="{{ release.version_number }}"
-         data-identifier="{{ codebase.identifier }}"></div>
+    {% if release.live %}
+        {% if invite %}
+            {# direct release download #}
+            <a id="releaseDownload" class='btn btn-primary my-1 w-100' data-name="download" rel='nofollow' href="{{ release.get_download_url() }}">
+                <i class='fas fa-download'></i> Download Version {{ release.version_number }}
+            </a>
+        {% else %}
+            {# use survey form #}
+            <div id='download-request-form' data-user-data="{{ get_download_request_metadata(request.user) }}"
+             data-version-number="{{ release.version_number }}"
+             data-identifier="{{ codebase.identifier }}"></div>
+        {% endif %}
     {% else %}
+        {# direct review archive download #}
         <a rel='nofollow' class='btn btn-primary my-1 w-100' href="{{ release.get_review_download_url() }}">
             Download for Review
         </a>
