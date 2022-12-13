@@ -419,7 +419,7 @@ CACHES = {
     "default": {
         "BACKEND": "django_redis.cache.RedisCache",
         # FIXME: switch to TCP in prod
-        "LOCATION": "unix:/shared/redis/redis.sock",
+        "LOCATION": "unix:///shared/redis/redis.sock",
         "OPTIONS": {
             "CLIENT_CLASS": "django_redis.client.DefaultClient",
         },
