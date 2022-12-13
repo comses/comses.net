@@ -2099,7 +2099,7 @@ class PeerReviewerFeedback(models.Model):
 class CodeMeta:
     DATE_PUBLISHED_FORMAT = "%Y-%m-%d"
     COMSES_ORGANIZATION = {
-        "@id": "https://www.comses.net",
+        "@id": "https://ror.org/015bsfc29",
         "@type": "Organization",
         "name": "CoMSES Net",
         "url": "https://www.comses.net",
