@@ -6,6 +6,7 @@ from django.utils.html import linebreaks, escape
 from jinja2.utils import urlize
 from markupfield.fields import MarkupField
 
+from core.markdown_embed import VideoEmbedExtension
 from .widgets import MarkdownTextarea
 
 logger = logging.getLogger(__name__)
@@ -36,17 +37,21 @@ ALLOWED_TAGS = bleach.ALLOWED_TAGS + [
 ]
 
 ALLOWED_ATTRIBUTES = dict(
-    bleach.ALLOWED_ATTRIBUTES, **{"*": ["name", "id", "class"], "img": ["alt", "src"]}
+    bleach.ALLOWED_ATTRIBUTES,
+    **{
+        "*": ["name", "id", "class"],
+        "img": ["alt", "src"],
+    }
 )
 
 DEFAULT_MARKDOWN_EXTENSIONS = [
+    "markdown.extensions.admonition",
     "markdown.extensions.extra",
     "markdown.extensions.codehilite",
     "markdown.extensions.nl2br",
     "markdown.extensions.sane_lists",
     "markdown.extensions.smarty",
     "markdown.extensions.toc",
-    #    'markdown.extensions.wikilinks',
 ]
 
 
@@ -87,3 +92,44 @@ class MarkdownField(MarkupField):
         defaults = {"widget": MarkdownTextarea}
         defaults.update(kwargs)
         return super(MarkupField, self).formfield(**defaults)
+
+
+TUTORIAL_ALLOWED_TAGS = ALLOWED_TAGS + ["iframe"]
+
+TUTORIAL_ALLOWED_ATTRIBUTES = dict(
+    ALLOWED_ATTRIBUTES, **{"iframe": ["alt", "src", "allowfullscreen"]}
+)
+
+TUTORIAL_MARKDOWN_EXTENSIONS = DEFAULT_MARKDOWN_EXTENSIONS + [VideoEmbedExtension()]
+
+def render_sanitized_tutorial_markdown(md_text: str, extensions=None):
+    if extensions is None:
+        extensions = TUTORIAL_MARKDOWN_EXTENSIONS
+    html = markdown.markdown(md_text, extensions=extensions)
+    return sanitize_tutorial_html(html)
+
+
+def sanitize_tutorial_html(html: str):
+    return bleach.clean(
+        bleach.linkify(html),
+        tags=TUTORIAL_ALLOWED_TAGS,
+        attributes=TUTORIAL_ALLOWED_ATTRIBUTES,
+    )
+
+
+class TutorialMarkdownField(MarkdownField):
+
+    CUSTOM_RENDERERS = (
+        ("markdown", render_sanitized_tutorial_markdown),
+        ("html", sanitize_tutorial_html),
+        ("plain", lambda markup: linebreaks(urlize(escape(markup)))),
+        ("", lambda markup: markup),
+    )
+
+    def __init__(self, **kwargs):
+        kwargs.setdefault("blank", True)
+        kwargs.update(
+            default_markup_type="markdown",
+            markup_choices=TutorialMarkdownField.CUSTOM_RENDERERS,
+        )
+        super(MarkdownField, self).__init__(**kwargs)

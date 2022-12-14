@@ -14,6 +14,7 @@ from django.utils.translation import ugettext_lazy as _
 from model_utils import Choices
 from modelcluster.fields import ParentalKey
 from modelcluster.models import ClusterableModel
+from modelcluster.contrib.taggit import ClusterTaggableManager
 from taggit.managers import TaggableManager
 from taggit.models import TaggedItemBase
 from wagtail.admin.panels import (
@@ -33,7 +34,7 @@ from wagtail.snippets.edit_handlers import SnippetChooserPanel
 from wagtail.snippets.models import register_snippet
 
 from core.discourse import build_discourse_url
-from core.fields import MarkdownField
+from core.fields import MarkdownField, TutorialMarkdownField
 from core.fs import get_canonical_image
 from core.models import MemberProfile, Platform, Event, Job
 
@@ -437,6 +438,136 @@ class CategoryIndexPage(NavigationMixin, Page):
 
     search_fields = Page.search_fields + [
         index.SearchField("summary", partial_match=True)
+    ]
+
+
+class EducationPage(NavigationMixin, Page):
+    """Education page that indexes external or internal links to tutorial pages"""
+
+    template = models.CharField(max_length=256, default="home/education.jinja")
+    heading = models.CharField(
+        max_length=256, help_text=_("Short name to be placed in introduction header.")
+    )
+    summary = models.CharField(
+        max_length=5000, help_text=_("Markdown-enabled summary blurb for this page.")
+    )
+
+    def add_card(
+        self, image_path, title, summary, tags=None, sort_order=None, user=None, url=""
+    ):
+        if self.cards.filter(title=title):
+            return
+        if user is None:
+            user = User.objects.get(username="alee")
+        _image = get_canonical_image(title=title, path=image_path, user=user) if image_path else None
+        card = TutorialCard(
+            title=title,
+            sort_order=sort_order,
+            summary=summary,
+            thumbnail_image=_image,
+            url=url
+        )
+        for tag in tags:
+            card.tags.add(tag)
+        self.cards.add(card)
+
+    content_panels = Page.content_panels + [
+        FieldPanel("heading"),
+        FieldPanel("summary", widget=forms.Textarea),
+        InlinePanel("cards", label=_("Tutorial Cards")),
+    ]
+
+    def get_context(self, request, *args, **kwargs):
+        context = super().get_context(request, *args, **kwargs)
+        cards = TutorialCard.objects.all()
+        tag = request.GET.get("tag")
+        if tag:
+            cards = cards.filter(tags__name=tag)
+            context["cards"] = cards.filter(tags__name=tag)
+        context["cards"] = cards
+        return context
+
+
+class TutorialTag(TaggedItemBase):
+    content_object = ParentalKey("TutorialCard", related_name="tagged_items")
+
+
+class TutorialCard(Orderable, ClusterableModel):
+    """Cards displayed in the Education Page"""
+
+    page = ParentalKey("home.EducationPage", related_name="cards")
+    url = models.CharField("Relative path, absolute path, or URL", max_length=200)
+    title = models.CharField(max_length=256)
+    summary = models.CharField(
+        max_length=1000,
+        help_text=_("Markdown-enabled summary for this tutorial card"),
+        blank=True,
+    )
+    thumbnail_image = models.ForeignKey(
+        "wagtailimages.Image",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="+",
+    )
+    tags = ClusterTaggableManager(through=TutorialTag, blank=True)
+
+    panels = [
+        FieldPanel("url"),
+        FieldPanel("title"),
+        FieldPanel("summary", widget=forms.Textarea),
+        ImageChooserPanel("thumbnail_image"),
+        FieldPanel("tags"),
+    ]
+
+    def __str__(self):
+        return "{0} {1}".format(self.title, self.url)
+
+
+class TutorialDetailPage(NavigationMixin, Page):
+    """Tutorial page that contains a body formatted with markdown"""
+
+    heading = models.CharField(
+        max_length=128,
+        blank=True,
+        help_text=_(
+            "Large heading text placed on the blue background introduction header"
+        ),
+    )
+    template = models.CharField(max_length=128, default="home/tutorial.jinja")
+    post_date = models.DateField("Post date", default=timezone.now)
+    description = MarkdownField(
+        max_length=1024,
+        blank=True,
+        help_text=_(
+            "Markdown-enabled summary text placed below the heading and title."
+        ),
+    )
+    body = TutorialMarkdownField(
+        blank=True, help_text=_("Markdown-enabled main content pane for this page.")
+    )
+    jumbotron = models.BooleanField(
+        default=True,
+        help_text=_(
+            "Mark as true if this page should display its title and description in a jumbotron"
+        ),
+    )
+
+    content_panels = Page.content_panels + [
+        FieldPanel("post_date"),
+        FieldPanel("jumbotron"),
+        FieldPanel("heading"),
+        FieldPanel("description"),
+        FieldPanel("body"),
+        FieldPanel("template"),
+        InlinePanel("navigation_links", label=_("Subnavigation Links")),
+    ]
+
+    search_fields = Page.search_fields + [
+        index.FilterField("post_date"),
+        index.SearchField("description", partial_match=True),
+        index.SearchField("body", partial_match=True),
+        index.SearchField("heading", partial_match=True),
     ]
 
 

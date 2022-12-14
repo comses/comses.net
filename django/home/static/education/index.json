@@ -1,0 +1,24 @@
+[
+  {
+    "external": false,
+    "slug": "responsible-practices",
+    "title": "Responsible Practices for Scientific Software",
+    "description": "A collection of responsible practices for developing and publishing FAIR+ computational models in efforts to be more transparent, interoperable, and reusable in our work.",
+    "tags": ["FAIR"]
+  },
+  {
+    "external": false,
+    "slug": "intro-to-git-github",
+    "title": "Introduction to Git and GitHub",
+    "description": "Familiarize yourself with Git and GitHub by taking part in a small interactive course hosted on Github classrooms.",
+    "tags": ["git", "github"]
+  },
+  {
+    "external": true,
+    "link": "https://classroom.github.com/a/WuDb62qc",
+    "slug": "intro-to-containerization",
+    "title": "Introduction to Containerization",
+    "description": "Join this GitHub classroom to learn about containerization, a way to bundle and archive your code in a reproducible manner.",
+    "tags": ["containerization", "docker"]
+  }
+]

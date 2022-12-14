@@ -1,0 +1,54 @@
+{% extends "base.jinja" %}
+{% from "common.jinja" import breadcrumb %}
+
+{% block title %}{{ page.title }}{% endblock %}
+
+{% block introduction %}
+    <h1>{{ page.title }}</h1>
+{% endblock %}
+
+{% block content %}
+    {{ breadcrumb(page.get_breadcrumbs()) }}
+    <div class='jumbotron'>
+        <h1 class='display-5'>{{ page.heading }}</h1>
+        <div class='pt-4 lead'>
+        {{ markdown(page.summary) }}
+        </div>
+   </div>
+   <div class="card-page">
+        <section class="cards mb-5">
+            {% set display_tag = request.GET.get("tag") %}
+            {% if display_tag %}
+                <div class="tag-display mb-3">
+                    <a href="{{ request.path }}"><span class="fas fa-times"></span></a>
+                    <span>{{ display_tag }}</span>
+                </div>
+            {% endif %}
+            {% for batched_cards in cards.all()|batch(3) %}
+                <div class="row">
+                    {% for card in batched_cards %}
+                        <div class="col-md-4 col-12 d-flex align-items-stretch" style="margin-bottom: 30px;">
+                            <div class="tutorial-card w-100">
+                                {{ image(card.thumbnail_image, "fill-426x240", class='card-image-top card-thumbnail') }}
+                                <div class="card-body">
+                                    <h2 class="card-title">{{ card.title }}</h5>
+                                    <p class="card-text">{{ markdown(card.summary) }}</p>
+                                    <a href="{{ card.url }}" class="stretched-link"></a>
+                                </div>
+                                {% if card.tags.all() %}
+                                    <div class="tag-list p-3">
+                                        {% for tag in card.tags.all() %}
+                                            <a class="tag" href="{{ request.path }}?tag={{ tag.name }}">
+                                                {{ tag.name }}
+                                            </a>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endfor %}
+        </section>
+   </div>
+{% endblock %}
