@@ -459,13 +459,17 @@ class EducationPage(NavigationMixin, Page):
             return
         if user is None:
             user = User.objects.get(username="alee")
-        _image = get_canonical_image(title=title, path=image_path, user=user) if image_path else None
+        _image = (
+            get_canonical_image(title=title, path=image_path, user=user)
+            if image_path
+            else None
+        )
         card = TutorialCard(
             title=title,
             sort_order=sort_order,
             summary=summary,
             thumbnail_image=_image,
-            url=url
+            url=url,
         )
         for tag in tags:
             card.tags.add(tag)

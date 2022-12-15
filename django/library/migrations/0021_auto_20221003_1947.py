@@ -6,18 +6,38 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('library', '0020_alter_codebasereleasedownload_affiliation'),
+        ("library", "0020_alter_codebasereleasedownload_affiliation"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='codebasereleasedownload',
-            name='industry',
-            field=models.CharField(choices=[('university', 'College/University'), ('educator', 'K-12 Educator'), ('government', 'Government'), ('private', 'Private'), ('nonprofit', 'Non-Profit'), ('student', 'Student'), ('other', 'Other')], max_length=255),
+            model_name="codebasereleasedownload",
+            name="industry",
+            field=models.CharField(
+                choices=[
+                    ("university", "College/University"),
+                    ("educator", "K-12 Educator"),
+                    ("government", "Government"),
+                    ("private", "Private"),
+                    ("nonprofit", "Non-Profit"),
+                    ("student", "Student"),
+                    ("other", "Other"),
+                ],
+                max_length=255,
+            ),
         ),
         migrations.AlterField(
-            model_name='codebasereleasedownload',
-            name='reason',
-            field=models.CharField(choices=[('research', 'Research'), ('education', 'Education'), ('commercial', 'Commercial'), ('policy', 'Policy / Planning'), ('other', 'Other')], max_length=500),
+            model_name="codebasereleasedownload",
+            name="reason",
+            field=models.CharField(
+                choices=[
+                    ("research", "Research"),
+                    ("education", "Education"),
+                    ("commercial", "Commercial"),
+                    ("policy", "Policy / Planning"),
+                    ("other", "Other"),
+                ],
+                max_length=500,
+            ),
         ),
     ]

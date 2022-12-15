@@ -21,9 +21,7 @@ def initialize_repo(ctx):
 
 @task(aliases=["list", "l"])
 def borg_list(ctx):
-    ctx.run(
-        f"borg list {settings.BORG_ROOT}", echo=True, env=environment()
-    )
+    ctx.run(f"borg list {settings.BORG_ROOT}", echo=True, env=environment())
 
 
 @task(aliases=["prune", "p"])
@@ -33,7 +31,11 @@ def borg_prune(ctx):
     weekly = 4
     monthly = 12
     yearly = -1
-    ctx.run(f"borg prune --verbose --list --keep-daily {daily} --keep-weekly {weekly} --keep-monthly {monthly} --keep-yearly {yearly} {settings.BORG_ROOT}", echo=True, env=environment())
+    ctx.run(
+        f"borg prune --verbose --list --keep-daily {daily} --keep-weekly {weekly} --keep-monthly {monthly} --keep-yearly {yearly} {settings.BORG_ROOT}",
+        echo=True,
+        env=environment(),
+    )
     ctx.run(f"borg compact --verbose {settings.BORG_ROOT}")
 
 

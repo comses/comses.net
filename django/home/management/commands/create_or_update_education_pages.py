@@ -64,9 +64,7 @@ class Command(BaseCommand):
             education_page.breadcrumbs.all().delete()
         except:
             pass
-        education_page.add_breadcrumbs(
-            ((EDUCATION_PAGE_TITLE, ""),)
-        )
+        education_page.add_breadcrumbs(((EDUCATION_PAGE_TITLE, ""),))
         education_page.title = EDUCATION_PAGE_TITLE
         education_page.heading = EDUCATION_PAGE_HEADING
         education_page.summary = EDUCATION_PAGE_DESCRIPTION
@@ -78,7 +76,7 @@ class Command(BaseCommand):
                 summary=tut["description"],
                 tags=tut["tags"],
                 url=tut["slug"] if not tut["external"] else tut["link"],
-                sort_order=count
+                sort_order=count,
             )
             count += 1
 

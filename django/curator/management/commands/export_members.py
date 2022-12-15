@@ -70,7 +70,7 @@ class Command(BaseCommand):
                     "bio": mp.bio,
                     "research_interests": mp.research_interests,
                     "degrees": mp.degrees,
-                    "affiliations": mp.affiliations, # FIXME: format affiliations
+                    "affiliations": mp.affiliations,  # FIXME: format affiliations
                     "orcid_url": mp.orcid_url,
                     "github_url": mp.github_url,
                 }

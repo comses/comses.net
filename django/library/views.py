@@ -691,6 +691,7 @@ class CodebaseReleaseViewSet(CommonViewSetMixin, NoDeleteViewSet):
     """
     Handles DRF requests to view, edit, or download the archival information packages for a specific codebase release
     """
+
     namespace = "library/codebases/releases"
     lookup_field = "version_number"
     lookup_value_regex = r"\d+\.\d+\.\d+"

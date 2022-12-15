@@ -284,13 +284,12 @@ class SemanticVersion:
 
 
 class CodebaseReleaseDownload(models.Model):
-
     class Reason(models.TextChoices):
-        RESEARCH = 'research', _('Research')
-        EDUCATION = 'education', _('Education')
-        COMMERCIAL = 'commercial', _('Commercial')
-        POLICY = 'policy', _('Policy / Planning')
-        OTHER = 'other', _('Other')
+        RESEARCH = "research", _("Research")
+        EDUCATION = "education", _("Education")
+        COMMERCIAL = "commercial", _("Commercial")
+        POLICY = "policy", _("Policy / Planning")
+        OTHER = "other", _("Other")
 
     date_created = models.DateTimeField(default=timezone.now)
     user = models.ForeignKey(

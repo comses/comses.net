@@ -18,10 +18,7 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument(
-            "--full-member-only",
-            "-u",
-            action="store_true",
-            dest="full_member_only"
+            "--full-member-only", "-u", action="store_true", dest="full_member_only"
         )
         parser.add_argument(
             "--after",

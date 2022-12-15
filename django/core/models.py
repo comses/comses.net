@@ -200,20 +200,22 @@ class MemberProfileQuerySet(models.QuerySet):
             )
         )
 
+
 @add_to_comses_permission_whitelist
 @register_snippet
 class MemberProfile(index.Indexed, ClusterableModel):
     """
     Contains additional comses.net information, possibly linked to a CoMSES Member / site account
     """
+
     class Industry(models.TextChoices):
-        COLLEGE_UNIVERSITY = 'university', _('College/University')
-        EDUCATOR = 'educator', _('K-12 Educator')
-        GOVERNMENT = 'government', _('Government')
-        PRIVATE = 'private', _('Private')
-        NON_PROFIT = 'nonprofit', _('Non-Profit')
-        STUDENT = 'student', _('Student')
-        OTHER = 'other', _('Other')
+        COLLEGE_UNIVERSITY = "university", _("College/University")
+        EDUCATOR = "educator", _("K-12 Educator")
+        GOVERNMENT = "government", _("Government")
+        PRIVATE = "private", _("Private")
+        NON_PROFIT = "nonprofit", _("Non-Profit")
+        STUDENT = "student", _("Student")
+        OTHER = "other", _("Other")
 
     user = models.OneToOneField(
         User, null=True, on_delete=models.SET_NULL, related_name="member_profile"
@@ -347,7 +349,7 @@ class MemberProfile(index.Indexed, ClusterableModel):
 
     @property
     def primary_affiliation_url(self):
-        return self.affiliations[0].get('url') if self.affiliations else ""
+        return self.affiliations[0].get("url") if self.affiliations else ""
 
     @property
     def profile_url(self):
@@ -371,7 +373,7 @@ class MemberProfile(index.Indexed, ClusterableModel):
 
     @property
     def primary_affiliation_name(self):
-        return self.affiliations[0].get('name') if self.affiliations else ""
+        return self.affiliations[0].get("name") if self.affiliations else ""
 
     @property
     def submitter(self):
@@ -401,14 +403,14 @@ class MemberProfile(index.Indexed, ClusterableModel):
         return user.is_authenticated and user != self.user
 
     def get_download_request_metadata(self):
-        """ Returns a dictionary of metadata to be included in the download request modal form if available """
+        """Returns a dictionary of metadata to be included in the download request modal form if available"""
         user_metadata = {
             "authenticated": self.user.is_authenticated,
             "industry": self.industry,
-            "id": self.user.id
+            "id": self.user.id,
         }
         if self.affiliations:
-            user_metadata["affiliation"] = self.affiliations[0];
+            user_metadata["affiliation"] = self.affiliations[0]
         return user_metadata
 
     def __str__(self):

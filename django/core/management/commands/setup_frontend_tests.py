@@ -18,10 +18,9 @@ class Command(BaseCommand):
         user.set_password(settings.TEST_BASIC_AUTH_PASSWORD)
         user.save()
         mp, created = MemberProfile.objects.get_or_create(user=user)
-        mp.affiliations = [{
-            "name": "Arizona State University",
-            "url": "https://www.asu.edu"
-        }]
+        mp.affiliations = [
+            {"name": "Arizona State University", "url": "https://www.asu.edu"}
+        ]
         mp.save()
         ea, created = EmailAddress.objects.get_or_create(user=user, email=user.email)
         ea.verified = True

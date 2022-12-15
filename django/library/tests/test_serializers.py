@@ -3,7 +3,11 @@ import rest_framework.exceptions as rf
 
 from .base import BaseModelTestCase
 from ..models import Codebase
-from ..serializers import (ContributorSerializer, ReleaseContributorSerializer, DownloadRequestSerializer)
+from ..serializers import (
+    ContributorSerializer,
+    ReleaseContributorSerializer,
+    DownloadRequestSerializer,
+)
 
 
 class SerializerTestCase(BaseModelTestCase):
@@ -39,14 +43,17 @@ class SerializerTestCase(BaseModelTestCase):
             raw_release_contributor["index"] = index
             return raw_release_contributor
 
-    def create_codebase(self, user=None, title="Test codebase", description="Test codebase description", identifier="0xdeadbeef"):
+    def create_codebase(
+        self,
+        user=None,
+        title="Test codebase",
+        description="Test codebase description",
+        identifier="0xdeadbeef",
+    ):
         if user is None:
             user = self.user
         codebase = Codebase.objects.create(
-            title=title,
-            description=description,
-            identifier=identifier,
-            submitter=user
+            title=title, description=description, identifier=identifier, submitter=user
         )
         codebase.create_release(submitter=user)
         return codebase
@@ -110,23 +117,23 @@ class SerializerTestCase(BaseModelTestCase):
         codebase = self.create_codebase(title="Download Request Codebase")
         release = codebase.releases.last()
         user = self.user
-        data = { 
-            'ip_address': '127.0.0.1', 
-            'referrer': 'https://comses.net', 
-            'user': user.pk,
-            'release': release.pk,
-            'reason': 'policy', 
-            'industry': 'university', 
-            'affiliation': {"name" : "ASU", "url" : "https://asu.edu/"},
-            'save_to_profile': True,
-            }
+        data = {
+            "ip_address": "127.0.0.1",
+            "referrer": "https://comses.net",
+            "user": user.pk,
+            "release": release.pk,
+            "reason": "policy",
+            "industry": "university",
+            "affiliation": {"name": "ASU", "url": "https://asu.edu/"},
+            "save_to_profile": True,
+        }
         download_request = DownloadRequestSerializer(data=data)
         download_request.is_valid()
         crs = download_request.save()
         user.refresh_from_db()
-        self.assertEqual(data['industry'], user.member_profile.industry)
-        self.assertTrue(data['affiliation'] in user.member_profile.affiliations)
-        for attr in ('ip_address', 'referrer', 'reason'):
+        self.assertEqual(data["industry"], user.member_profile.industry)
+        self.assertTrue(data["affiliation"] in user.member_profile.affiliations)
+        for attr in ("ip_address", "referrer", "reason"):
             self.assertEqual(data[attr], getattr(crs, attr))
         self.assertEqual(user, crs.user)
         self.assertEqual(release, crs.release)
@@ -135,16 +142,16 @@ class SerializerTestCase(BaseModelTestCase):
         codebase = self.create_codebase(title="Download Request Codebase 2")
         release = codebase.releases.last()
         user = self.user
-        data = { 
-            'ip_address': '127.0.0.1', 
-            'referrer': 'https://comses.net', 
-            'user': user.pk,
-            'release': release.pk,
-            'reason': 'policy', 
-            'industry': 'university', 
-            'affiliation': {"name" : "ASU", "url" : "www.foo.org", "ror_id": "foo8j8sd"},
-            'save_to_profile': True,
-            }
+        data = {
+            "ip_address": "127.0.0.1",
+            "referrer": "https://comses.net",
+            "user": user.pk,
+            "release": release.pk,
+            "reason": "policy",
+            "industry": "university",
+            "affiliation": {"name": "ASU", "url": "www.foo.org", "ror_id": "foo8j8sd"},
+            "save_to_profile": True,
+        }
         download_request = DownloadRequestSerializer(data=data)
         download_request.is_valid()
         with self.assertRaises(rf.ValidationError):

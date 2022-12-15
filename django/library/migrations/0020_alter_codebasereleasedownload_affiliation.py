@@ -6,13 +6,13 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('library', '0019_auto_20220913_1848'),
+        ("library", "0019_auto_20220913_1848"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='codebasereleasedownload',
-            name='affiliation',
+            model_name="codebasereleasedownload",
+            name="affiliation",
             field=models.JSONField(default=None, null=True),
         ),
     ]

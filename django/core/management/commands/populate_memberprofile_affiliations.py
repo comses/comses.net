@@ -9,18 +9,20 @@ from core.models import MemberProfile
 
 logger = logging.getLogger(__name__)
 
+
 class Command(BaseCommand):
     help = """Migrate data from MemberProfile.institution to MemberProfile.affiliations
     with an attempt to add more data from ROR database"""
 
     def add_arguments(self, parser):
         parser.add_argument(
-            "-r", "--ratio",
+            "-r",
+            "--ratio",
             type=int,
-            choices=range(1,100),
+            choices=range(1, 100),
             metavar="[1-100]",
             default=75,
-            help="ratio threshold used in fuzzy matching, defaults to 75"
+            help="ratio threshold used in fuzzy matching, defaults to 75",
         )
 
     def handle(self, *args, **options):
@@ -38,7 +40,7 @@ class Command(BaseCommand):
                 score=best_match["score"],
                 name=mp.institution.name,
                 match_name=best_match["organization"]["name"],
-                ratio=options["ratio"]
+                ratio=options["ratio"],
             ):
                 # ror_id is guaranteed to exist in the lookup
                 new_affil["ror_id"] = best_match["organization"]["id"]
@@ -83,4 +85,3 @@ class Command(BaseCommand):
         if not re.match(r"^https?://", url):
             new_url = "http://" + url
         return new_url
- 

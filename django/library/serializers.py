@@ -444,7 +444,10 @@ class DownloadRequestSerializer(serializers.ModelSerializer):
         member_profile.industry = industry
         if affiliation:
             # check if affiliation with this name already exists in member_profile
-            if not any(mem_aff["name"] == affiliation["name"] for mem_aff in member_profile.affiliations):
+            if not any(
+                mem_aff["name"] == affiliation["name"]
+                for mem_aff in member_profile.affiliations
+            ):
                 member_profile.affiliations.append(affiliation)
         # run validation on updated member_profile
         try:
@@ -456,7 +459,16 @@ class DownloadRequestSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = CodebaseReleaseDownload
-        fields = ("save_to_profile", "referrer", "reason", "ip_address", "user", "industry", "affiliation", "release")
+        fields = (
+            "save_to_profile",
+            "referrer",
+            "reason",
+            "ip_address",
+            "user",
+            "industry",
+            "affiliation",
+            "release",
+        )
 
 
 class CodebaseReleaseSerializer(serializers.ModelSerializer):

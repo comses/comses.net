@@ -184,7 +184,7 @@ class MemberProfileSerializer(serializers.ModelSerializer):
         user.save()
 
         new_email = self.initial_data["email"]
-        
+
         # Full members cannot downgrade their status
         if instance.full_member:
             validated_data["full_member"] = True

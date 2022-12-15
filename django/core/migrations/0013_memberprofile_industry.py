@@ -6,13 +6,25 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('core', '0012_ror_id_and_platform_repository_url'),
+        ("core", "0012_ror_id_and_platform_repository_url"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='memberprofile',
-            name='industry',
-            field=models.CharField(blank=True, choices=[('college/university', 'college/university'), ('K-12 educator', 'K-12 educator'), ('government', 'government'), ('private', 'private'), ('non-profit', 'non-profit'), ('student', 'student'), ('other', 'other')], max_length=255),
+            model_name="memberprofile",
+            name="industry",
+            field=models.CharField(
+                blank=True,
+                choices=[
+                    ("college/university", "college/university"),
+                    ("K-12 educator", "K-12 educator"),
+                    ("government", "government"),
+                    ("private", "private"),
+                    ("non-profit", "non-profit"),
+                    ("student", "student"),
+                    ("other", "other"),
+                ],
+                max_length=255,
+            ),
         ),
     ]

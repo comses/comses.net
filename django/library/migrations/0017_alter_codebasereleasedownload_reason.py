@@ -6,13 +6,23 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('library', '0016_codebasereleasedownload_reason'),
+        ("library", "0016_codebasereleasedownload_reason"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='codebasereleasedownload',
-            name='reason',
-            field=models.CharField(blank=True, choices=[('research', 'Research'), ('education', 'Education'), ('commercial', 'Commercial'), ('policy', 'Policy / Planning'), ('other', 'Other, please specify below')], max_length=500),
+            model_name="codebasereleasedownload",
+            name="reason",
+            field=models.CharField(
+                blank=True,
+                choices=[
+                    ("research", "Research"),
+                    ("education", "Education"),
+                    ("commercial", "Commercial"),
+                    ("policy", "Policy / Planning"),
+                    ("other", "Other, please specify below"),
+                ],
+                max_length=500,
+            ),
         ),
     ]

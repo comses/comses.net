@@ -6,24 +6,45 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('library', '0018_alter_codebaseimage_file_hash'),
+        ("library", "0018_alter_codebaseimage_file_hash"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='codebasereleasedownload',
-            name='affiliation',
+            model_name="codebasereleasedownload",
+            name="affiliation",
             field=models.JSONField(default=dict),
         ),
         migrations.AddField(
-            model_name='codebasereleasedownload',
-            name='industry',
-            field=models.CharField(choices=[('university', 'College/University'), ('educator', 'K-12 Educator'), ('government', 'Government'), ('private', 'Private'), ('nonprofit', 'Non-Profit'), ('student', 'Student'), ('other', 'Other, please specify below')], default='', max_length=255),
+            model_name="codebasereleasedownload",
+            name="industry",
+            field=models.CharField(
+                choices=[
+                    ("university", "College/University"),
+                    ("educator", "K-12 Educator"),
+                    ("government", "Government"),
+                    ("private", "Private"),
+                    ("nonprofit", "Non-Profit"),
+                    ("student", "Student"),
+                    ("other", "Other, please specify below"),
+                ],
+                default="",
+                max_length=255,
+            ),
             preserve_default=False,
         ),
         migrations.AlterField(
-            model_name='codebasereleasedownload',
-            name='reason',
-            field=models.CharField(choices=[('research', 'Research'), ('education', 'Education'), ('commercial', 'Commercial'), ('policy', 'Policy / Planning'), ('other', 'Other, please specify below')], max_length=500),
+            model_name="codebasereleasedownload",
+            name="reason",
+            field=models.CharField(
+                choices=[
+                    ("research", "Research"),
+                    ("education", "Education"),
+                    ("commercial", "Commercial"),
+                    ("policy", "Policy / Planning"),
+                    ("other", "Other, please specify below"),
+                ],
+                max_length=500,
+            ),
         ),
     ]

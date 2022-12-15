@@ -102,6 +102,7 @@ TUTORIAL_ALLOWED_ATTRIBUTES = dict(
 
 TUTORIAL_MARKDOWN_EXTENSIONS = DEFAULT_MARKDOWN_EXTENSIONS + [VideoEmbedExtension()]
 
+
 def render_sanitized_tutorial_markdown(md_text: str, extensions=None):
     if extensions is None:
         extensions = TUTORIAL_MARKDOWN_EXTENSIONS

@@ -19,9 +19,7 @@ INTERNAL_IPS = ["172.18.0.1"]
 
 # Fix for debug toolbar not showing up with dynamic docker IP
 # (https://stackoverflow.com/a/50492036)
-DEBUG_TOOLBAR_CONFIG = {
-    'SHOW_TOOLBAR_CALLBACK': lambda _request: DEBUG
-}
+DEBUG_TOOLBAR_CONFIG = {"SHOW_TOOLBAR_CALLBACK": lambda _request: DEBUG}
 
 DEBUG_TOOLBAR_PANELS = [
     "debug_toolbar.panels.versions.VersionsPanel",

@@ -1,6 +1,7 @@
 from django.core.exceptions import ValidationError
 import jsonschema
 
+
 def validate_affiliations(value):
     AFFILIATIONS_SCHEMA = {
         "$schema": "http://json-schema.org/draft-07/schema#",
@@ -8,13 +9,17 @@ def validate_affiliations(value):
         "items": {
             "type": "object",
             "properties": {
-                "name": { "type": "string" },
-                "url": { "type": "string", "format": "uri", "pattern": "^https?://" },
-                "acronym": { "type": "string" },
-                "ror_id": { "type": "string", "format": "uri", "pattern": "^https?://ror.org/" }
+                "name": {"type": "string"},
+                "url": {"type": "string", "format": "uri", "pattern": "^https?://"},
+                "acronym": {"type": "string"},
+                "ror_id": {
+                    "type": "string",
+                    "format": "uri",
+                    "pattern": "^https?://ror.org/",
+                },
             },
-            "required": [ "name" ]
-        }
+            "required": ["name"],
+        },
     }
 
     try:
