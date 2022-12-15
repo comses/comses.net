@@ -30,9 +30,9 @@ EDUCATION_CONTENT_DIR = "home/static/education/"
 EDUCATION_PAGE_SLUG = "education"
 EDUCATION_PAGE_TITLE = "Educational Resources"
 EDUCATION_PAGE_HEADING = "Training Modules"
-EDUCATION_PAGE_DESCRIPTION = """These CoMSES Net training modules provide instruction on current best practices for computational modeling with concrete guidance for developing data analysis workflows and sharing your work in accordance with the [FAIR principles for research software](https://doi.org/10.15497/RDA00068).
+EDUCATION_PAGE_DESCRIPTION = """CoMSES Net training modules provide concrete guidance on current best practices for computational modeling and sharing your work in accordance with the [FAIR principles for research software (FAIR4RS)](https://doi.org/10.15497/RDA00068) and [FORCE11 Software Citation Principles](https://doi.org/10.7717/peerj-cs.86).
 
-Additionally, see our [Educational Resources](https://forum.comses.net/t/educational-resources/9159/2) on the CoMSES Net forums."""
+Our [education forum](https://forum.comses.net/c/education) hosts our [community curated list of additional educational resources](https://forum.comses.net/t/educational-resources/9159/2) and can be used to discuss, collaborate, and share additional educational resources."""
 
 
 class Command(BaseCommand):
