@@ -2,7 +2,7 @@
 
 # Introduction
 
-This tutorial is aimed at familiarizing you with the current standards for developing and publishing [FAIR](#the-fair-principles) computational models in order to make your research more transparent, interoperable and reusable.
+This tutorial is aimed at familiarizing you with the current standards for developing and publishing [FAIR](#the-fair-principles) computational models that make your research more transparent, interoperable and reusable.
 
 ![Watch the Introduction](https://www.youtube.com/watch?v=Am3aNtXQWec)
 
@@ -17,10 +17,8 @@ The FAIR principles are a collection of four desireable characteristics (**Finda
 [The first publication from 2016](https://doi.org/10.1038/sdata.2016.18)
 Wilkinson, M. D., Dumontier, M., Aalbersberg, I. J., Appleton, G., Axton, M., Baak, A., ... & Mons, B. (2016). The FAIR Guiding Principles for scientific data management and stewardship. Scientific data, 3(1), 1-9. https://doi.org/10.1038/sdata.2016.18
 
-[Further details about the implementation of FAIR Principles for research software](https://doi.org/10.3233/DS-190026)
-Lamprecht, A. L., Garcia, L., Kuzak, M., Martinez, C., Arcila, R., Martin Del Pico, E., ... & Capella-Gutierrez, S. (2020). Towards FAIR principles for research software. Data Science, 3(1), 37-59. https://doi.org/10.3233/DS-190026
-
-[Research Data Alliance Working Group to establish FAIR Principles for research software](https://www.rd-alliance.org/group/fair-research-software-fair4rs-wg/outcomes/fair-principles-research-software-fair4rs)
+[FAIR Principles for Research Software](https://doi.org/10.15497/RDA00068)
+Chue Hong, Neil P., Katz, Daniel S., Barker, Michelle, Lamprecht, Anna-Lena, Martinez, Carlos, Psomopoulos, Fotis E., Harrow, Jen, Castro, Leyla Jael, Gruenpeter, Morane, Martinez, Paula Andrea, Honeyman, Tom, Struck, Alexander, Lee, Allen, Loewe, Axel, van Werkhoven, Ben, Jones, Catherine, Garijo, Daniel, Plomp, Esther, Genova, Francoise, … RDA FAIR4RS WG. (2022). FAIR Principles for Research Software (FAIR4RS Principles) (1.0). https://doi.org/10.15497/RDA00068
 
 # Metadata
 
@@ -69,3 +67,7 @@ Grimm, V., S.F. Railsback, C.E. Vincenot, U. Berger, C. Gallagher, D.L. DeAngeli
 Once you have finished the above modules, please complete the following assessment. You will receive a certificate of completion and digital badge after successfully passing the assessment.
 
 [Complete the final assessment](https://forms.gle/5WjshdE2QXXpRhRh9)
+
+# Feedback
+
+Please use our [education forums](https://forum.comses.net/c/education) to ask questions or provide feedback on this course. Thanks!
