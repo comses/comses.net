@@ -14,7 +14,8 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument(
-            "--from", help="isoformat start date (yyyy-mm-dd) e.g., --from 2018-03-15",
+            "--from",
+            help="isoformat start date (yyyy-mm-dd) e.g., --from 2018-03-15",
             default=None,
         )
         parser.add_argument(
@@ -32,11 +33,14 @@ class Command(BaseCommand):
             "--selections",
             "-s",
             help="selected data tables to dump ",
-            default="codebase,download,release,user"
-
+            default="codebase,download,release,user",
         )
 
-    def _export(self, filename, table_name, select_statement=None):
+    def _export(self, filename, table_name=None, select_statement=None):
+        if not any([table_name, select_statement]):
+            raise ValueError(
+                "Must pass a valid table_name or select_statement parameter"
+            )
         if select_statement is None:
             select_statement = f"SELECT * FROM {table_name} ORDER BY id"
         destination_path = Path(self.directory) / filename
@@ -46,16 +50,16 @@ class Command(BaseCommand):
             )
 
     def export_codebases(self):
-        self._export('codebases.csv', 'library_codebase')
+        self._export("codebases.csv", "library_codebase")
 
     def export_releases(self):
-        self._export('releases.csv', 'library_codebaserelease')
+        self._export("releases.csv", "library_codebaserelease")
 
     def export_downloads(self):
-        self._export('downloads.csv', 'library_codebasereleasedownload')
+        self._export("downloads.csv", "library_codebasereleasedownload")
 
     def export_users(self):
-        select_statement = """
+        join_user_member_profile_select = """
         SELECT 
         u.id, u.last_login, u.is_superuser, u.username, u.first_name, u.last_name, u.email, u.date_joined, u.is_active,
         mp.affiliations, mp.bio, mp.degrees, mp.personal_url, mp.professional_url, mp.research_interests, mp.timezone,
@@ -63,7 +67,7 @@ class Command(BaseCommand):
         FROM auth_user u INNER JOIN core_memberprofile mp ON u.id=mp.user_id
         ORDER BY u.id
         """
-        self._export('users.csv', '', select_statement)
+        self._export("users.csv", select_statement=join_user_member_profile_select)
 
     def handle(self, *args, **options):
         """
