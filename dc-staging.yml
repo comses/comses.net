@@ -63,7 +63,7 @@ services:
       - ./deploy/elasticsearch.conf.d/log4j2.properties:/usr/share/elasticsearch/config/log4j2.properties
       - esdata2:/usr/share/elasticsearch/data
   ${DB_HOST}:
-    image: postgis/postgis:10-3.1
+    image: postgis/postgis:15-3.3
     restart: always
     networks:
       - db
