@@ -18,9 +18,11 @@ from django.core.management.base import BaseCommand
 from wagtail.models import Page
 
 from home.models import (
-    MarkdownPage,
     CategoryIndexPage,
     EducationPage,
+    JournalIndexPage,
+    MarkdownPage,
+    PlatformIndexPage,
     TutorialDetailPage,
 )
 
@@ -30,9 +32,18 @@ EDUCATION_CONTENT_DIR = "home/static/education/"
 EDUCATION_PAGE_SLUG = "education"
 EDUCATION_PAGE_TITLE = "Educational Resources"
 EDUCATION_PAGE_HEADING = "Training Modules"
-EDUCATION_PAGE_DESCRIPTION = """CoMSES Net training modules provide concrete guidance on current best practices for computational modeling and sharing your work in accordance with the [FAIR principles for research software (FAIR4RS)](https://doi.org/10.15497/RDA00068) and [FORCE11 Software Citation Principles](https://doi.org/10.7717/peerj-cs.86).
+EDUCATION_PAGE_DESCRIPTION = """CoMSES Net training modules provide guidance on good practices for computational modeling and sharing your work with [FAIR principles for research software (FAIR4RS)](https://doi.org/10.15497/RDA00068) and [FORCE11 Software Citation Principles](https://doi.org/10.7717/peerj-cs.86) in mind.
 
-Our [education forum](https://forum.comses.net/c/education) hosts our [community curated list of additional educational resources](https://forum.comses.net/t/educational-resources/9159/2) and can be used to discuss, collaborate, and share additional educational resources."""
+Our [education forum](https://forum.comses.net/c/education) also hosts a [community curated list of additional educational resources](https://forum.comses.net/t/educational-resources/9159/2) and can be freely used to discuss, collaborate, and share additional educational resources."""
+
+RESOURCES_PAGE_NAVIGATION_LINKS = (
+    ("Resources", "/resources/"),
+    ("Modeling Frameworks", "/resources/modeling-frameworks/"),
+    ("Journals", "/resources/journals/"),
+    ("Standards", "/resources/standards/"),
+    ("Videos", "https://www.youtube.com/user/comsesnet/playlists"),
+    ("Bibliometrics", "https://catalog.comses.net"),
+)
 
 
 class Command(BaseCommand):
@@ -141,11 +152,22 @@ class Command(BaseCommand):
         # update link to education page on /resources
         try:
             resources_page = CategoryIndexPage.objects.get(slug="resources")
+            # replace navigation links (secondary tabs)
+            resources_page.replace_navigation_links(RESOURCES_PAGE_NAVIGATION_LINKS)
+            # frameworks
+            frameworks_page = PlatformIndexPage.objects.first()
+            frameworks_page.replace_navigation_links(RESOURCES_PAGE_NAVIGATION_LINKS)
+            # journals
+            journals_page = JournalIndexPage.objects.first()
+            journals_page.replace_navigation_links(RESOURCES_PAGE_NAVIGATION_LINKS)
+            # standards
+            standards_page = MarkdownPage.objects.get(slug="standards")
+            standards_page.replace_navigation_links(RESOURCES_PAGE_NAVIGATION_LINKS)
+            # update education card callout
             education_card = resources_page.callouts.get(title="Education")
-            education_card.url = "/{}/".format(EDUCATION_PAGE_SLUG)
+            education_card.url = f"/{EDUCATION_PAGE_SLUG}/"
             education_card.save()
             logger.info("updated resources link to education page")
         except Exception as e:
             logger.fatal("failed to update resources link to education page")
             logger.debug(e)
-            pass
