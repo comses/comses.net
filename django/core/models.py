@@ -15,13 +15,10 @@ from django.utils.translation import ugettext_lazy as _
 from modelcluster.contrib.taggit import ClusterTaggableManager
 from modelcluster.fields import ParentalKey
 from modelcluster.models import ClusterableModel
-from model_utils import Choices
 from taggit.models import TaggedItemBase
 from timezone_field import TimeZoneField
 from wagtail.admin.panels import FieldPanel
-from wagtail.contrib.settings.models import BaseSetting
-from wagtail.contrib.settings.registry import register_setting
-from wagtail.images.edit_handlers import ImageChooserPanel
+from wagtail.contrib.settings.models import BaseSiteSetting, register_setting
 from wagtail.images.models import Image
 from wagtail.search import index
 from wagtail.snippets.models import register_snippet
@@ -62,7 +59,7 @@ def get_sentinel_user():
 
 
 @register_setting
-class SiteSettings(BaseSetting):
+class SiteSettings(BaseSiteSetting):
     maintenance_mode = models.BooleanField(default=False)
     banner_message_title = models.CharField(
         max_length=64, blank=True, default="CoMSES Net Notice"
@@ -91,7 +88,7 @@ class SiteSettings(BaseSetting):
 
 
 @register_setting
-class SocialMediaSettings(BaseSetting):
+class SocialMediaSettings(BaseSiteSetting):
     facebook_url = models.URLField(help_text=_("Facebook URL"), blank=True)
     youtube_url = models.URLField(help_text=_("CoMSES Net YouTube Channel"), blank=True)
     twitter_account = models.CharField(
@@ -254,7 +251,7 @@ class MemberProfile(index.Indexed, ClusterableModel):
         FieldPanel("institution"),
         FieldPanel("affiliations"),
         FieldPanel("industry"),
-        ImageChooserPanel("picture"),
+        FieldPanel("picture"),
         FieldPanel("tags"),
     ]
 

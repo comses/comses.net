@@ -1,7 +1,7 @@
 bagit==1.8.1
 bleach==5.0.1
-django-allauth==0.51.0
-django-anymail[mailgun]==8.6
+django-allauth==0.52.0
+django-anymail[mailgun]==9.0
 django-cookie-law==2.2.0
 django-extensions==3.2.1
 django-guardian==2.4.0
@@ -20,7 +20,7 @@ django-waffle==3.0.0
 django-webpack-loader==1.8.0
 djangorestframework==3.14.0
 djangorestframework-jwt==1.11.0
-Django>=3.2.11,<4.0.0
+Django>=3.2,<4.0.0
 elasticsearch-dsl>=7.0.0,<8.0.0
 elasticsearch>=7.0.0,<8.0.0
 html2text>=2016.9.19
@@ -37,7 +37,7 @@ shortuuid==1.0.11
 tzdata==2022.7
 uwsgi==2.0.21
 uwsgitop==0.11
-wagtail==3.0.3
+wagtail==4.1.1
 # used for institution -> affiliation data migration, unused afterwards
 fuzzywuzzy==0.18.0
 invoke

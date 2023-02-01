@@ -22,15 +22,12 @@ from wagtail.admin.panels import (
     InlinePanel,
     PageChooserPanel,
     MultiFieldPanel,
-    StreamFieldPanel,
 )
 from wagtail import blocks
 from wagtail.fields import RichTextField, StreamField
 from wagtail.models import Page, Orderable
 from wagtail.images.blocks import ImageChooserBlock
-from wagtail.images.edit_handlers import ImageChooserPanel
 from wagtail.search import index
-from wagtail.snippets.edit_handlers import SnippetChooserPanel
 from wagtail.snippets.models import register_snippet
 
 from core.discourse import build_discourse_url
@@ -121,8 +118,8 @@ class CarouselItem(LinkFields):
     summary = models.TextField(max_length=600, blank=True)
     title = models.CharField(max_length=255)
     panels = [
-        ImageChooserPanel("image"),
-        ImageChooserPanel("codebase_image"),
+        FieldPanel("image"),
+        FieldPanel("codebase_image"),
         FieldPanel("embed_url"),
         FieldPanel("caption"),
         FieldPanel("title"),
@@ -520,7 +517,7 @@ class TutorialCard(Orderable, ClusterableModel):
         FieldPanel("url"),
         FieldPanel("title"),
         FieldPanel("summary", widget=forms.Textarea),
-        ImageChooserPanel("thumbnail_image"),
+        FieldPanel("thumbnail_image"),
         FieldPanel("tags"),
     ]
 
@@ -586,13 +583,14 @@ class StreamPage(Page, NavigationMixin):
             ("paragraph", blocks.RichTextBlock()),
             ("image", ImageChooserBlock()),
             ("url", blocks.URLBlock(required=False)),
-        ]
+        ],
+        use_json_field=True
     )
 
     content_panels = Page.content_panels + [
         FieldPanel("post_date"),
         FieldPanel("description"),
-        StreamFieldPanel("body"),
+        FieldPanel("body"),
         InlinePanel("navigation_links", label=_("Subnavigation Links")),
     ]
 
@@ -682,7 +680,7 @@ class PlatformSnippetPlacement(models.Model):
     platform = models.ForeignKey(Platform, related_name="+", on_delete=models.CASCADE)
 
     panels = [
-        SnippetChooserPanel("platform"),
+        FieldPanel("platform"),
     ]
 
     def __str__(self):
@@ -763,7 +761,7 @@ class JournalSnippetPlacement(models.Model):
     journal = models.ForeignKey(Journal, related_name="+", on_delete=models.CASCADE)
 
     panels = [
-        SnippetChooserPanel("journal"),
+        FieldPanel("journal"),
     ]
 
     class Meta:
@@ -980,7 +978,7 @@ class FaqEntryPlacement(models.Model):
     faq_entry = models.ForeignKey(FaqEntry, related_name="+", on_delete=models.CASCADE)
 
     panels = [
-        SnippetChooserPanel("faq_entry"),
+        FieldPanel("faq_entry"),
     ]
 
     class Meta:
@@ -1059,7 +1057,7 @@ class PeopleEntryPlacement(Orderable, models.Model):
     objects = PeopleEntryPlacementQuerySet.as_manager()
 
     panels = [
-        SnippetChooserPanel("member_profile"),
+        FieldPanel("member_profile"),
         FieldPanel("category"),
         FieldPanel("term"),
     ]
@@ -1141,7 +1139,7 @@ class NewsPage(Page):
 
     promote_panels = [
         MultiFieldPanel(Page.promote_panels, "Common page configuration"),
-        ImageChooserPanel("feed_image"),
+        FieldPanel("feed_image"),
     ]
 
     # Parent page / subpage type rules
