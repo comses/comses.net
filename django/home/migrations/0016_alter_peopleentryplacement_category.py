@@ -4,15 +4,23 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('home', '0015_alter_streampage_body'),
+        ("home", "0015_alter_streampage_body"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='peopleentryplacement',
-            name='category',
-            field=models.PositiveIntegerField(choices=[(1, 'Directorate'), (2, 'Executive Board'), (3, 'Digest Editors'), (4, 'Infrastructure Group'), (5, 'Executive Board Alumni')], default=2),
+            model_name="peopleentryplacement",
+            name="category",
+            field=models.PositiveIntegerField(
+                choices=[
+                    (1, "Directorate"),
+                    (2, "Executive Board"),
+                    (3, "Digest Editors"),
+                    (4, "Infrastructure Group"),
+                    (5, "Executive Board Alumni"),
+                ],
+                default=2,
+            ),
         ),
     ]

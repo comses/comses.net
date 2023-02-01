@@ -4,13 +4,13 @@
     "slug": "responsible-practices",
     "title": "Responsible Practices for Scientific Software",
     "description": "A collection of responsible practices for developing and publishing FAIR+ computational models in efforts to be more transparent, interoperable, and reusable in our work.",
-    "tags": ["FAIR"]
+    "tags": ["FAIR4RS"]
   },
   {
     "external": false,
     "slug": "intro-to-git-github",
     "title": "Introduction to Git and GitHub",
-    "description": "Familiarize yourself with Git and GitHub by taking part in a small interactive course hosted on Github classrooms.",
+    "description": "Familiarize yourself with Git and GitHub by working through a interactive introductory course hosted on GitHub classrooms.",
     "tags": ["git", "github"]
   },
   {
