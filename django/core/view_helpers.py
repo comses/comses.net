@@ -17,7 +17,6 @@ search_backend = get_search_backend()
 def get_search_queryset(
     query, queryset, operator="or", fields=None, tags=None, criteria=None
 ):
-
     if not tags:
         tags = []
 

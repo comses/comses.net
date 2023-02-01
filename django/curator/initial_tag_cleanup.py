@@ -12,7 +12,7 @@ acronyms = [
 
 @transaction.atomic
 def load_initial_data():
-    for (r, l) in acronyms:
+    for r, l in acronyms:
         TagCleanup.objects.create(new_name=r, old_name=l)
     TagCleanup.objects.process()
 

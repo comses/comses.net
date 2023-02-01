@@ -8,7 +8,6 @@ import uuid
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("core", "0002_platform_description_20180520_0549"),
         ("library", "0001_initial"),

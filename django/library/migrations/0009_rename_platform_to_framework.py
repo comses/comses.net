@@ -17,7 +17,6 @@ def update_subnavigation_links(apps, schema_editor):
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("library", "0008_release_notes_length"),
     ]
