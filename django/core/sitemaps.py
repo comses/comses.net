@@ -7,7 +7,6 @@ from .models import Event, Job
 
 
 class BaseSitemap(Sitemap):
-
     changefreq = "never"
 
     def items(self):
@@ -18,12 +17,10 @@ class BaseSitemap(Sitemap):
 
 
 class EventSitemap(BaseSitemap):
-
     model = Event
 
 
 class JobSitemap(Sitemap):
-
     model = Job
 
 

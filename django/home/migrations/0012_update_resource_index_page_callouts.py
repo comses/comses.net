@@ -22,7 +22,6 @@ def add_catalog_blurb_to_resource_index_page(apps, schema_editor):
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("home", "0011_increase_journal_description_length"),
     ]

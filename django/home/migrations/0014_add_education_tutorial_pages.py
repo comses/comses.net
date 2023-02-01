@@ -10,7 +10,6 @@ import modelcluster.fields
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("wagtailimages", "0024_index_image_file_hash"),
         ("home", "0013_increase_summary_length"),

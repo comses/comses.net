@@ -858,7 +858,6 @@ class ConferencePresentation(models.Model):
 
 
 class ConferencePage(Page):
-
     template = "home/conference/index.jinja"
     introduction = MarkdownField(help_text=_("Lead introduction to the conference"))
     content = MarkdownField(help_text=_("Conference main body content markdown text"))
@@ -903,7 +902,6 @@ class ConferencePage(Page):
 
 
 class ConferenceIndexPage(Page, NavigationMixin):
-
     template = "home/conference/list.jinja"
 
     def __init__(self, *args, **kwargs):

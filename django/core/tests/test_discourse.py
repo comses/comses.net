@@ -8,7 +8,6 @@ logger = logging.getLogger(__name__)
 
 
 class DiscourseTestCase(TestCase):
-
     VALID_USERNAMES = [
         "ab-cd.123_ABC-xYz",
         "xyzzy",
@@ -40,7 +39,6 @@ class DiscourseTestCase(TestCase):
     ]
 
     def test_sanitize_username(self):
-
         for username in self.VALID_USERNAMES:
             logger.debug("comparing %s <-> %s", username, sanitize_username(username))
             self.assertEqual(username, sanitize_username(username))

@@ -210,7 +210,8 @@ class CodebaseReleaseUnpublishedFilesTestCase(
     ApiAccountMixin, ResponseStatusCodesMixin, TestCase
 ):
     """Test file handling for creating a release. Only user with change permission on a unpublished release should be
-    able to list, destroy or create files. No user should be able to create or destroy files from a published release"""
+    able to list, destroy or create files. No user should be able to create or destroy files from a published release
+    """
 
     def setUp(self):
         self.user_factory = UserFactory()

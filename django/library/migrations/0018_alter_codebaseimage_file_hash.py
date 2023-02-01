@@ -4,7 +4,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("library", "0017_alter_codebasereleasedownload_reason"),
     ]

@@ -69,7 +69,6 @@ def sanitize_html(html: str):
 
 
 class MarkdownField(MarkupField):
-
     CUSTOM_RENDERERS = (
         ("markdown", render_sanitized_markdown),
         ("html", sanitize_html),
@@ -119,7 +118,6 @@ def sanitize_tutorial_html(html: str):
 
 
 class TutorialMarkdownField(MarkdownField):
-
     CUSTOM_RENDERERS = (
         ("markdown", render_sanitized_tutorial_markdown),
         ("html", sanitize_tutorial_html),

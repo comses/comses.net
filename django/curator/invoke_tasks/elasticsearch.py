@@ -4,7 +4,6 @@ from invoke import task
 
 @task(aliases=["ul"])
 def update_license(ctx, license_path=None):
-
     es_hosts = ["elasticsearch"]
     if settings.DEPLOY_ENVIRONMENT.is_production:
         es_hosts.append("elasticsearch2")
