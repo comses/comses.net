@@ -41,8 +41,9 @@ RESOURCES_PAGE_NAVIGATION_LINKS = (
     ("Modeling Frameworks", "/resources/modeling-frameworks/"),
     ("Journals", "/resources/journals/"),
     ("Standards", "/resources/standards/"),
-    ("Videos", "https://www.youtube.com/user/comsesnet/playlists"),
-    ("Bibliometrics", "https://catalog.comses.net"),
+    # FIXME: commenting these out for now, poor UI/UX to have a tab link go to a different website
+    #     ("Videos", "https://www.youtube.com/user/comsesnet/playlists"),
+    #     ("Bibliometrics", "https://catalog.comses.net"),
 )
 
 
@@ -163,6 +164,15 @@ class Command(BaseCommand):
             # standards
             standards_page = MarkdownPage.objects.get(slug="standards")
             standards_page.replace_navigation_links(RESOURCES_PAGE_NAVIGATION_LINKS)
+
+            for page in (
+                resources_page,
+                frameworks_page,
+                journals_page,
+                standards_page,
+            ):
+                page.save()
+
             # update education card callout
             education_card = resources_page.callouts.get(title="Education")
             education_card.url = f"/{EDUCATION_PAGE_SLUG}/"
