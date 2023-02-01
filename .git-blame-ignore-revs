@@ -1,0 +1,3 @@
+# .git-blame-ignore-revs
+# run upgraded black==23.1.0
+90d176f65ec2212a3c15d80c2dbbeb04f1c77c97
