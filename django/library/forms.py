@@ -95,7 +95,7 @@ class PeerReviewerFeedbackReviewerForm(CheckCharFieldLengthMixin, forms.ModelFor
         reviewer_submitted = cleaned_data.get("reviewer_submitted")
         if (
             reviewer_submitted
-            and cleaned_data.get("recommendation") == ReviewerRecommendation.accept.name
+            and cleaned_data.get("recommendation") == ReviewerRecommendation.ACCEPT.name
         ):
             has_narrative_documentation = cleaned_data["has_narrative_documentation"]
             has_clean_code = cleaned_data["has_clean_code"]
@@ -171,6 +171,7 @@ class PeerReviewerFeedbackEditorForm(CheckCharFieldLengthMixin, forms.ModelForm)
     def __init__(self, **kwargs):
         if "instance" in kwargs:
             feedback = kwargs["instance"]
+            logger.debug("feedback %s", feedback.invitation.review.status)
             kwargs["initial"]["accept"] = feedback.invitation.review.is_complete
         super().__init__(**kwargs)
 

@@ -128,14 +128,10 @@ def provider_login_url(request, provider_id, **kwargs):
 
 def get_choices_display(selected_choice, choices):
     """
-    Takes a model_utils.Choices key entry alongside its parent set of Choices and returns the display value for that
-    particular selected_choice. Tries a pair tuple first ("foo", "Display value for foo") and then the triple
-    (<numeric_id>, "foo", "Display value for foo")
+    Takes a Choices enum string key alongside its parent Choices Enum class and returns the display label for that
+    particular selected_choice.
     """
-    try:
-        return choices[selected_choice]
-    except:
-        return choices[getattr(choices, selected_choice)]
+    return choices(selected_choice).label
 
 
 def is_checkbox(bound_field):

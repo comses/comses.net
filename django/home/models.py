@@ -11,7 +11,6 @@ from django.db import models
 from django.shortcuts import redirect, render
 from django.utils import timezone
 from django.utils.translation import ugettext_lazy as _
-from model_utils import Choices
 from modelcluster.fields import ParentalKey
 from modelcluster.models import ClusterableModel
 from modelcluster.contrib.taggit import ClusterTaggableManager
@@ -584,7 +583,7 @@ class StreamPage(Page, NavigationMixin):
             ("image", ImageChooserBlock()),
             ("url", blocks.URLBlock(required=False)),
         ],
-        use_json_field=True
+        use_json_field=True,
     )
 
     content_panels = Page.content_panels + [
@@ -783,12 +782,13 @@ class JournalIndexPage(NavigationMixin, Page):
 
 @register_snippet
 class ConferenceTheme(models.Model):
-
-    CATEGORIES = Choices("Panel", "Session")
+    class Categories(models.TextChoices):
+        PANEL = "Panel", _("Panel")
+        SESSION = "Session", _("Session")
 
     title = models.CharField(max_length=512)
     category = models.CharField(
-        choices=CATEGORIES, default=CATEGORIES.Panel, max_length=16
+        choices=Categories.choices, default=Categories.PANEL, max_length=16
     )
     description = MarkdownField()
     external_url = models.URLField(
@@ -943,13 +943,13 @@ class ConferenceSubmission(models.Model):
 
 @register_snippet
 class FaqEntry(index.Indexed, models.Model):
-    FAQ_CATEGORIES = Choices(
-        ("abm", _("Agent-based Modeling Questions")),
-        ("general", _("General CoMSES Net Questions")),
-        ("model-library", _("Computational Model Library Questions")),
-    )
+    class Categories(models.TextChoices):
+        ABM = "abm", _("Agent-based Modeling Questions")
+        GENERAL = "general", _("General CoMSES Net Questions")
+        MODEL_LIBRARY = "model-library", _("Computational Model Library Questions")
+
     category = models.CharField(
-        max_length=32, choices=FAQ_CATEGORIES, default=FAQ_CATEGORIES.general
+        max_length=32, choices=Categories.choices, default=Categories.GENERAL
     )
     question = models.CharField(max_length=128, help_text=_("Short question"))
     answer = models.TextField(help_text=_("Markdown formatted answer"))
@@ -993,7 +993,7 @@ class FaqPage(Page, NavigationMixin):
         context = super().get_context(request, *args, **kwargs)
         # FIXME: add pagination
         context["faq_entries"] = FaqEntry.objects.all()
-        context["faq_categories"] = FaqEntry.FAQ_CATEGORIES
+        context["faq_categories"] = FaqEntry.Categories
         return context
 
     content_panels = Page.content_panels + [
@@ -1016,10 +1016,12 @@ class FaqPage(Page, NavigationMixin):
 
 class PeopleEntryPlacementQuerySet(models.QuerySet):
     def board(self, **kwargs):
-        return self.filter(category=PeopleEntryPlacement.CATEGORIES.board, **kwargs)
+        return self.filter(
+            category=PeopleEntryPlacement.Categories.EXECUTIVE_BOARD, **kwargs
+        )
 
     def digest(self, **kwargs):
-        return self.filter(category=PeopleEntryPlacement.CATEGORIES.digest, **kwargs)
+        return self.filter(category=PeopleEntryPlacement.Categories.DIGEST, **kwargs)
 
     def digest_member_profiles(self, **kwargs):
         return MemberProfile.objects.filter(
@@ -1034,18 +1036,20 @@ class PeopleEntryPlacementQuerySet(models.QuerySet):
 
 @register_snippet
 class PeopleEntryPlacement(Orderable, models.Model):
-    CATEGORIES = Choices(
-        (1, "directorate", _("Directorate")),
-        (2, "board", _("Executive Board")),
-        (3, "digest", _("CoMSES Digest Editors")),
-        (4, "infrastructure", _("Infrastructure Group")),
-        (5, "alumni", _("Executive Board Alumni")),
-    )
+    class Categories(models.IntegerChoices):
+        DIRECTORATE = 1
+        EXECUTIVE_BOARD = 2
+        DIGEST_EDITORS = 3
+        INFRASTRUCTURE_GROUP = 4
+        EXECUTIVE_BOARD_ALUMNI = 5
+
     page = ParentalKey("home.PeoplePage", related_name="people_entry_placements")
     member_profile = models.ForeignKey(
         "core.MemberProfile", related_name="+", on_delete=models.CASCADE
     )
-    category = models.PositiveIntegerField(choices=CATEGORIES, default=CATEGORIES.board)
+    category = models.PositiveIntegerField(
+        choices=Categories.choices, default=Categories.EXECUTIVE_BOARD
+    )
     term = models.CharField(
         blank=True,
         max_length=64,
@@ -1064,11 +1068,14 @@ class PeopleEntryPlacement(Orderable, models.Model):
 
     @property
     def is_board_member(self):
-        return self.category in (self.CATEGORIES.board, self.CATEGORIES.alumni)
+        return self.category in {
+            self.Categories.EXECUTIVE_BOARD,
+            self.Categories.EXECUTIVE_BOARD_ALUMNI,
+        }
 
     def __str__(self):
         return "{0}: {1} {2}".format(
-            self.sort_order, self.member_profile, self.category
+            self.sort_order, self.member_profile, self.category.label
         )
 
     class Meta:
@@ -1097,7 +1104,7 @@ class PeoplePage(Page, NavigationMixin):
 
     def get_context(self, request, *args, **kwargs):
         context = super().get_context(request, *args, **kwargs)
-        context["people_categories"] = PeopleEntryPlacement.CATEGORIES
+        context["people_categories"] = PeopleEntryPlacement.Categories
         return context
 
     content_panels = Page.content_panels + [

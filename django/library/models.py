@@ -5,11 +5,9 @@ import pathlib
 import uuid
 from collections import OrderedDict
 from datetime import timedelta
-from enum import Enum
 
 import semver
 from django.conf import settings
-from django.contrib.auth import get_user_model
 from django.contrib.postgres.fields import ArrayField
 from django.core.cache import cache
 from django.core.files.images import ImageFile
@@ -21,8 +19,6 @@ from django.utils import timezone
 from django.utils.http import urlencode
 from django.utils.text import slugify
 from django.utils.translation import ugettext_lazy as _
-from ipware import get_client_ip
-from model_utils import Choices
 from modelcluster.contrib.taggit import ClusterTaggableManager
 from modelcluster.fields import ParentalKey
 from modelcluster.models import ClusterableModel
@@ -58,27 +54,26 @@ logger = logging.getLogger(__name__)
 
 # Cherry picked from
 # https://www.ngdc.noaa.gov/metadata/published/xsd/schema/resources/Codelist/gmxCodelists.xml#CI_RoleCode
-ROLES = Choices(
-    ("author", _("Author")),
-    ("publisher", _("Publisher")),
-    ("custodian", _("Custodian")),
-    ("resourceProvider", _("Resource Provider")),
-    ("maintainer", _("Maintainer")),
-    ("pointOfContact", _("Point of contact")),
-    ("editor", _("Editor")),
-    ("contributor", _("Contributor")),
-    ("collaborator", _("Collaborator")),
-    ("funder", _("Funder")),
-    ("copyrightHolder", _("Copyright holder")),
-)
+class Role(models.TextChoices):
+    AUTHOR = "author", _("Author")
+    PUBLISHER = "publisher", _("Publisher")
+    CUSTODIAN = "custodian", _("Custodian")
+    RESOURCE_PROVIDER = "resourceProvider", _("Resource Provider")
+    MAINTAINER = "maintainer", _("Maintainer")
+    POINT_OF_CONTACT = "pointOfContact", _("Point of contact")
+    EDITOR = "editor", _("Editor")
+    CONTRIBUTOR = "contributor", _("Contributor")
+    COLLABORATOR = "collaborator", _("Collaborator")
+    FUNDER = "funder", _("Funder")
+    COPYRIGHT_HOLDER = "copyrightHolder", _("Copyright holder")
 
-OPERATING_SYSTEMS = Choices(
-    ("other", _("Other")),
-    ("linux", _("Unix/Linux")),
-    ("macos", _("Mac OS")),
-    ("windows", _("Windows")),
-    ("platform_independent", _("Operating System Independent")),
-)
+
+class OS(models.TextChoices):
+    OTHER = "other", _("Other")
+    LINUX = "linux", _("Unix/Linux")
+    MACOS = "macos", _("Mac OS")
+    WINDOWS = "windows", _("Windows")
+    PLATFORM_INDEPENDENT = "platform_independent", _("Operating System Independent")
 
 
 class CodebaseTag(TaggedItemBase):
@@ -1032,7 +1027,7 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
         max_length=32, help_text=_("semver string, e.g., 1.0.5, see semver.org")
     )
 
-    os = models.CharField(max_length=32, choices=OPERATING_SYSTEMS, blank=True)
+    os = models.CharField(max_length=32, choices=OS.choices, blank=True)
     dependencies = models.JSONField(
         default=list,
         help_text=_(
@@ -1395,7 +1390,7 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
     def add_contributor(self, submitter):
         contributor, created = Contributor.from_user(submitter)
         self.codebase_contributors.create(
-            contributor=contributor, roles=[ROLES.author], index=0
+            contributor=contributor, roles=[Role.AUTHOR], index=0
         )
 
     @transaction.atomic
@@ -1516,8 +1511,8 @@ class ReleaseContributor(models.Model):
     roles = ArrayField(
         models.CharField(
             max_length=100,
-            choices=ROLES,
-            default=ROLES.author,
+            choices=Role.choices,
+            default=Role.AUTHOR,
             help_text=_(
                 "Roles from https://www.ngdc.noaa.gov/metadata/published/xsd/schema/resources/Codelist/gmxCodelists.xml#CI_RoleCode"
             ),
@@ -1534,31 +1529,16 @@ class ReleaseContributor(models.Model):
         return "{0} contributor {1}".format(self.release, self.contributor)
 
 
-class ChoicesMixin(Enum):
-    @classmethod
-    def to_choices(cls, extra=None):
-        return Choices(*cls.to_dict(extra).items())
-
-    @classmethod
-    def to_dict(cls, extra=None):
-        d = {level.name: str(level.value) for level in cls}
-        if extra:
-            d.update(extra)
-        return d
-
-    @classmethod
-    def to_json(cls, extra=None):
-        return json.dumps(cls.to_dict(extra))
-
-
-class ReviewerRecommendation(ChoicesMixin, Enum):
-    accept = _("This computational model meets CoMSES Net peer review requirements.")
-    revise = _(
+class ReviewerRecommendation(models.TextChoices):
+    ACCEPT = "accept", _(
+        "This computational model meets CoMSES Net peer review requirements."
+    )
+    REVISE = "revise", _(
         "This computational model must be revised to meet CoMSES Net peer review requirements."
     )
 
 
-class ReviewStatus(ChoicesMixin, Enum):
+class ReviewStatus(models.TextChoices):
     """
     Review status represents the aggregate status of the review.
 
@@ -1566,15 +1546,19 @@ class ReviewStatus(ChoicesMixin, Enum):
     """
 
     # No reviewer has given feedback
-    awaiting_reviewer_feedback = _("Awaiting reviewer feedback")
+    AWAITING_REVIEWER_FEEDBACK = "awaiting_reviewer_feedback", _(
+        "Awaiting reviewer feedback"
+    )
     # At least one reviewer has provided feedback on a model and an editor has not requested changes
     # to the model
-    awaiting_editor_feedback = _("Awaiting editor feedback")
+    AWAITING_EDITOR_FEEDBACK = "awaiting_editor_feedback", _("Awaiting editor feedback")
     # An editor has requested changes to a model. The author has either not given changes or
     # given changes that the editor has not approved of yet or has asked further revisions on
-    awaiting_author_changes = _("Awaiting author release changes")
+    AWAITING_AUTHOR_CHANGES = "awaiting_author_changes", _(
+        "Awaiting author release changes"
+    )
     # The model review process is complete
-    complete = _("Review is complete")
+    COMPLETE = "complete", _("Review is complete")
 
     @classmethod
     def as_json(cls):
@@ -1582,41 +1566,35 @@ class ReviewStatus(ChoicesMixin, Enum):
 
     @property
     def is_pending(self):
-        return self != ReviewStatus.complete
-
-    @property
-    def is_complete(self):
-        return self == ReviewStatus.complete
-
-    @property
-    def is_awaiting_author_changes(self):
-        return self == ReviewStatus.awaiting_author_changes
-
-    @property
-    def is_awaiting_editor_feedback(self):
-        return self == ReviewStatus.awaiting_editor_feedback
+        return self != ReviewStatus.COMPLETE
 
     @property
     def simple_display_message(self):
         return "Peer review in process" if self.is_pending else "Peer reviewed"
 
 
-class PeerReviewEvent(ChoicesMixin, Enum):
+class PeerReviewEvent(models.TextChoices):
     """
     The review event represents events that have occurred on a review.
 
     Used by the editor to understand the history of changes applied to the models
     """
 
-    invitation_sent = _("Reviewer has been invited")
-    invitation_resent = _("Reviewer invitation has been resent")
-    invitation_accepted = _("Reviewer has accepted invitation")
-    invitation_declined = _("Reviewer has declined invitation")
-    reviewer_feedback_submitted = _("Reviewer has given feedback")
-    author_resubmitted = _("Author has resubmitted release for review")
-    review_status_updated = _("Editor manually changed review status")
-    revisions_requested = _("Editor has requested revisions to this release")
-    release_certified = _(
+    INVITATION_SENT = "invitation_sent", _("Reviewer has been invited")
+    INVITATION_RESENT = "invitation_resent", _("Reviewer invitation has been resent")
+    INVITATION_ACCEPTED = "invitation_accepted", _("Reviewer has accepted invitation")
+    INVITATION_DECLINED = "invitation_declined", _("Reviewer has declined invitation")
+    REVIEWER_FEEDBACK_SUBMITTED = "feedback_submitted", _("Reviewer has given feedback")
+    AUTHOR_RESUBMITTED = "author_resubmitted", _(
+        "Author has resubmitted release for review"
+    )
+    REVIEW_STATUS_UPDATED = "review_status_updated", _(
+        "Editor manually changed review status"
+    )
+    REVISIONS_REQUESTED = "revisions_requested", _(
+        "Editor has requested revisions to this release"
+    )
+    RELEASE_CERTIFIED = "release_certified", _(
         "Editor has taken reviewer feedback into account and certified this release as peer reviewed"
     )
 
@@ -1642,7 +1620,7 @@ class PeerReviewQuerySet(models.QuerySet):
         return queryset
 
     def completed(self, **kwargs):
-        return self.filter(status=ReviewStatus.complete.name, **kwargs)
+        return self.filter(status=ReviewStatus.COMPLETE, **kwargs)
 
     def completed_releases(self, **kwargs):
         return CodebaseRelease.objects.filter(
@@ -1655,8 +1633,8 @@ class PeerReview(models.Model):
     date_created = models.DateTimeField(auto_now_add=True)
     last_modified = models.DateTimeField(auto_now=True)
     status = models.CharField(
-        choices=ReviewStatus.to_choices(),
-        default=ReviewStatus.awaiting_reviewer_feedback.name,
+        choices=ReviewStatus.choices,
+        default=ReviewStatus.AWAITING_REVIEWER_FEEDBACK,
         help_text=_("The current status of this review."),
         max_length=32,
     )
@@ -1676,21 +1654,18 @@ class PeerReview(models.Model):
 
     @property
     def is_complete(self):
-        return self.get_status().is_complete
+        return self.status == ReviewStatus.COMPLETE
 
     @property
     def is_awaiting_author_changes(self):
-        return self.get_status().is_awaiting_author_changes
+        return self.status == ReviewStatus.AWAITING_AUTHOR_CHANGES
 
     @property
-    def is_awaiting_reviewer_changes(self):
-        return self.get_status().is_awaiting_reviewer_changes
-
-    def get_status(self):
-        return ReviewStatus[self.status]
+    def is_awaiting_reviewer_feedback(self):
+        return self.status == ReviewStatus.AWAITING_REVIEWER_FEEDBACK
 
     def get_simplified_status_display(self):
-        return self.get_status().simple_display_message
+        return ReviewStatus(self.status).simple_display_message
 
     def get_edit_url(self):
         return reverse("library:profile-edit", kwargs={"user_pk": self.user.pk})
@@ -1710,11 +1685,11 @@ class PeerReview(models.Model):
 
     @transaction.atomic
     def set_complete_status(self, editor: MemberProfile):
-        self.set_status(ReviewStatus.complete)
+        self.status = ReviewStatus.COMPLETE
         self.save()
         self.log(
             author=editor,
-            action=PeerReviewEvent.release_certified,
+            action=PeerReviewEvent.RELEASE_CERTIFIED,
             message="Model has been certified as peer reviewed",
         )
         self.codebase_release.peer_reviewed = True
@@ -1734,14 +1709,20 @@ class PeerReview(models.Model):
     def log(self, message: str, action: PeerReviewEvent, author: MemberProfile):
         return self.event_set.create(message=message, action=action.name, author=author)
 
-    def set_status(self, status: ReviewStatus):
-        self.status = status.name
+    def editor_change_review_status(self, editor: MemberProfile, status: ReviewStatus):
+        self.log(
+            author=editor,
+            action=PeerReviewEvent.REVIEW_STATUS_UPDATED,
+            message=f"Editor changed peer review status: {self.status} -> {status}",
+        )
+        self.status = status
+        self.save()
 
     def author_resubmitted_changes(self, changes_made=None):
         author = self.submitter
         self.log(
             message="Release has been resubmitted for review: {}".format(changes_made),
-            action=PeerReviewEvent.author_resubmitted,
+            action=PeerReviewEvent.AUTHOR_RESUBMITTED,
             author=author,
         )
         self.send_author_updated_content_email()
@@ -1749,12 +1730,11 @@ class PeerReview(models.Model):
     def send_author_updated_content_email(self):
         qs = self.invitation_set.filter(accepted=True)
         # if there are no currently accepted invitations, status should be set to awaiting editor feedback
-        _status = (
-            ReviewStatus.awaiting_reviewer_feedback
+        self.status = (
+            ReviewStatus.AWAITING_REVIEWER_FEEDBACK
             if qs.exists()
-            else ReviewStatus.awaiting_editor_feedback
+            else ReviewStatus.AWAITING_EDITOR_FEEDBACK
         )
-        self.set_status(_status)
         for invitation in qs:
             invitation.send_author_resubmitted_email()
         self.save()
@@ -1768,11 +1748,13 @@ class PeerReview(models.Model):
         )
 
     @property
-    def status_levels(self):
-        return [
-            {"value": choice[0], "label": str(choice[1])}
-            for choice in ReviewStatus.to_choices()
-        ]
+    def review_status_json(self):
+        return json.dumps(
+            [
+                {"value": choice[0], "label": str(choice[1])}
+                for choice in ReviewStatus.choices
+            ]
+        )
 
     @property
     def title(self):
@@ -1784,7 +1766,7 @@ class PeerReview(models.Model):
 
     def __str__(self):
         return "PeerReview of {} requested on {}. Status: {}, last modified {}".format(
-            self.title, self.date_created, self.get_status_display(), self.last_modified
+            self.title, self.date_created, self.status, self.last_modified
         )
 
 
@@ -1833,7 +1815,7 @@ class PeerReviewInvitation(models.Model):
     accepted = models.BooleanField(
         null=True,
         verbose_name=_("Invitation status"),
-        choices=Choices(
+        choices=(
             (None, _("Waiting for response")),
             (False, _("Decline")),
             (True, _("Accept")),
@@ -1904,9 +1886,9 @@ class PeerReviewInvitation(models.Model):
             cc=[settings.REVIEW_EDITOR_EMAIL],
         )
         self.review.log(
-            action=PeerReviewEvent.invitation_sent
+            action=PeerReviewEvent.INVITATION_SENT
             if resend
-            else PeerReviewEvent.invitation_resent,
+            else PeerReviewEvent.INVITATION_RESENT,
             author=self.editor,
             message=f"{self.editor} sent an invitation to candidate reviewer {self.candidate_reviewer}",
         )
@@ -1917,7 +1899,7 @@ class PeerReviewInvitation(models.Model):
         self.save()
         feedback = self.latest_feedback
         self.review.log(
-            action=PeerReviewEvent.invitation_accepted,
+            action=PeerReviewEvent.INVITATION_ACCEPTED,
             author=self.candidate_reviewer,
             message=f"Invitation accepted by {self.candidate_reviewer}",
         )
@@ -1935,7 +1917,7 @@ class PeerReviewInvitation(models.Model):
         self.accepted = False
         self.save()
         self.review.log(
-            action=PeerReviewEvent.invitation_declined,
+            action=PeerReviewEvent.INVITATION_DECLINED,
             author=self.candidate_reviewer,
             message=f"Invitation declined by {self.candidate_reviewer}",
         )
@@ -1961,7 +1943,7 @@ class PeerReviewerFeedback(models.Model):
         PeerReviewInvitation, related_name="feedback_set", on_delete=models.CASCADE
     )
     recommendation = models.CharField(
-        choices=ReviewerRecommendation.to_choices(), max_length=16, blank=True
+        choices=ReviewerRecommendation.choices, max_length=16, blank=True
     )
     private_reviewer_notes = MarkdownField(
         help_text=_(
@@ -2036,11 +2018,11 @@ class PeerReviewerFeedback(models.Model):
         reviewer updated feedback
         """
         review = self.invitation.review
-        review.set_status(ReviewStatus.awaiting_editor_feedback)
+        review.status = ReviewStatus.AWAITING_EDITOR_FEEDBACK
         review.save()
         reviewer = self.invitation.candidate_reviewer
         review.log(
-            action=PeerReviewEvent.reviewer_feedback_submitted,
+            action=PeerReviewEvent.REVIEWER_FEEDBACK_SUBMITTED,
             author=reviewer,
             message=f"Reviewer {reviewer} provided feedback",
         )
@@ -2069,11 +2051,11 @@ class PeerReviewerFeedback(models.Model):
         review = self.invitation.review
         editor = self.invitation.editor
         review.log(
-            action=PeerReviewEvent.revisions_requested,
+            action=PeerReviewEvent.REVISIONS_REQUESTED,
             author=editor,
             message=f"Editor {editor} called for revisions",
         )
-        review.set_status(ReviewStatus.awaiting_author_changes)
+        review.status = ReviewStatus.AWAITING_AUTHOR_CHANGES
         review.save()
         recipients = {review.submitter.email, review.codebase_release.submitter.email}
         send_markdown_email(
@@ -2238,7 +2220,7 @@ class PeerReviewEventLog(models.Model):
         PeerReview, related_name="event_set", on_delete=models.CASCADE
     )
     action = models.CharField(
-        choices=PeerReviewEvent.to_choices(),
+        choices=PeerReviewEvent.choices,
         help_text=_("status action requested."),
         max_length=32,
     )

@@ -17,7 +17,7 @@
     </p>
 
     <div id="app" data-review-slug="{{ review.slug }}"
-                  data-status-levels="{{ to_json(review.status_levels) }}"
+                  data-status-levels="{{ review.review_status_json }}"
                   data-status="{{ review.status }}"
                   data-event-list-url="{{ review.get_event_list_url() }}">
     </div>

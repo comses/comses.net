@@ -151,7 +151,7 @@
                                     {% elif not invitation.accepted %}
                                         <span class="badge badge-secondary">Declined review request</span>
                                     {% else %}
-                                        {% set badge_class="badge-warning" if invitation.review.is_awaiting_reviewer_changes else "badge-info" %}
+                                        {% set badge_class="badge-warning" if invitation.review.is_awaiting_reviewer_feedback else "badge-info" %}
                                         <span class="badge {{badge_class}}">{{ invitation.review.get_status_display() }}</span>
                                     {% endif %}
                                 </span>
