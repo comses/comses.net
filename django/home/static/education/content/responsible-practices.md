@@ -2,34 +2,41 @@
 
 # Introduction
 
-This tutorial is aimed at familiarizing you with the current standards for developing and publishing [FAIR](#the-fair-principles) computational models that make your research more transparent, interoperable and reusable.
+This tutorial introduces emerging practices and community standards for developing and publishing [FAIR](#the-fair-principles) computational models. This will help your research be more transparent, interoperable, reusable, and increase its longevity and impact.
 
 ![Watch the Introduction](https://www.youtube.com/watch?v=Am3aNtXQWec)
 
 # The FAIR Principles
 
-The FAIR principles are a collection of four desireable characteristics (**Findable**, **Accessible**, **Interoperable** and **Reusable**) as well as the steps needed to achieve each, that help researchers maximize the impact of their software and data outputs.
+!!! info ""
+    The FAIR principles are a set of guidelines to make digital assets more **Findable**, **Accessible**, **Interoperable** and **Reusable** - in our case, the digital assets are computational models that examine social-ecological systems. The principles were initially published in 2016 and aimed generally at scientific data: CSVs, shapefiles, Excel sheets, relational databases, graph databases, etc. These FAIR data principles were later refined with additional guidance for Research Software by a Research Data Alliance working group and published as the FAIR for Research Software Principles in 2022.
 
 ![Watch the FAIR Principles Video](https://www.youtube.com/watch?v=cQz6_c6VsKo)
 
-#### More information about the FAIR Principles
+#### Publications about the FAIR Principles
 
-[The first publication from 2016](https://doi.org/10.1038/sdata.2016.18)
+[FAIR Guiding Principles for scientific data management and stewardship (2016)](https://doi.org/10.1038/sdata.2016.18)
 Wilkinson, M. D., Dumontier, M., Aalbersberg, I. J., Appleton, G., Axton, M., Baak, A., ... & Mons, B. (2016). The FAIR Guiding Principles for scientific data management and stewardship. Scientific data, 3(1), 1-9. https://doi.org/10.1038/sdata.2016.18
 
-[FAIR Principles for Research Software](https://doi.org/10.15497/RDA00068)
+[FAIR Principles for Research Software (2022)](https://doi.org/10.15497/RDA00068)
 Chue Hong, Neil P., Katz, Daniel S., Barker, Michelle, Lamprecht, Anna-Lena, Martinez, Carlos, Psomopoulos, Fotis E., Harrow, Jen, Castro, Leyla Jael, Gruenpeter, Morane, Martinez, Paula Andrea, Honeyman, Tom, Struck, Alexander, Lee, Allen, Loewe, Axel, van Werkhoven, Ben, Jones, Catherine, Garijo, Daniel, Plomp, Esther, Genova, Francoise, … RDA FAIR4RS WG. (2022). FAIR Principles for Research Software (FAIR4RS Principles) (1.0). https://doi.org/10.15497/RDA00068
 
 # Metadata
 
+!!! info ""
+    Metadata is **data about data**: a collection of data attributes that describe some *other data*. In this case, our *other data* is a computational model, and the metadata are the descriptive fields, the structured and semi-structured text, the human and machine-readable **things** we annotate them with so others can more easily Find, Evaluate, or Reuse our model. 
+
+
 ![Watch the Video on Metadata](https://www.youtube.com/watch?v=UaWwHv5O2Pc)
 
-#### More information about software metadata
-
-[The CodeMeta Project](https://codemeta.github.io/index.html)
+#### Software metadata resources and links
 
 !!! info ""
-    GitHub [now supports](https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-citation-files) software citation via [CITATION.cff files](https://citation-file-format.github.io/), YAML formatted files that provide clarity and guidance on how to cite the code in a given GitHub repository.
+    GitHub [now supports](https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-citation-files) software citation via [CITATION.cff files](https://citation-file-format.github.io/). CITATION.cff files are plain old YAML files that follow a schema which supports good software citation practices.
+
+
+- [OntoSoft: A distributed semantic registry for scientific software](https://ieeexplore.ieee.org/document/7870916)
+- [CodeMeta: A minimal metadata schema for science software and code in JSON and XML](https://codemeta.github.io/)
 
 # Code Management
 
@@ -53,13 +60,21 @@ Grimm, V., S.F. Railsback, C.E. Vincenot, U. Berger, C. Gallagher, D.L. DeAngeli
 
 # Licenses
 
+!!! info ""
+    Our general recommendation is to use the [MIT License](https://spdx.org/licenses/MIT.html) for an easy to understand, permissive license that supports maximal reuse with a protective liability clause.
+
+Please also note that the [Creative Commons does NOT recommend using their licenses for software](https://creativecommons.org/faq/#can-i-apply-a-creative-commons-license-to-software).
+
+
 ![Watch the Video on Software Licenses](https://www.youtube.com/watch?v=-OMLPF8ZFf4)
 
-#### Resources for choosing a license
+#### Additional guidance on choosing an open source license
 
-- [ChooseALicense.com](https://choosealicense.com/) by [GitHub](https://github.com/)
+- [opensource.guide recommendations for OSS licensing](https://opensource.guide/legal/#which-open-source-license-is-appropriate-for-my-project)
+- [choosealicense.com](https://choosealicense.com/) by [GitHub](https://github.com/)
+- [UK Software Sustainability Institute's Guide to Choosing an Open Source License](https://www.software.ac.uk/resources/guides/choosing-open-source-licence)
 - [Public License Selector](https://ufal.github.io/public-license-selector/) from the [Institute of Formal and Applied Linguistics](https://ufal.mff.cuni.cz/)
-- [How to Choose the Right Open Source License](https://fossa.com/blog/how-choose-right-open-source-license/) by [FOSSA](https://fossa.com/blog/how-choose-right-open-source-license/)
+- [How to Choose the Right Open Source License](https://fossa.com/blog/how-choose-right-open-source-license/) by [FOSSA](https://fossa.com/)
 - [GNU License Recommendations](https://www.gnu.org/licenses/license-recommendations.en.html) from the [Free Software Foundation](https://www.fsf.org/)
 
 # Final Assessment
