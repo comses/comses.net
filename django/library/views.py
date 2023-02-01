@@ -133,19 +133,19 @@ class PeerReviewDashboardView(PermissionRequiredMixin, ListView):
         if requires_editor_input:
             filters |= (
                 Q(n_accepted_invites=0)
-                | Q(status=ReviewStatus.awaiting_editor_feedback.name)
+                | Q(status=ReviewStatus.AWAITING_EDITOR_FEEDBACK.name)
                 | (
                     Q(last_modified__lt=datetime.now() - timedelta(days=25))
-                    & Q(status=ReviewStatus.awaiting_editor_feedback.name)
+                    & Q(status=ReviewStatus.AWAITING_EDITOR_FEEDBACK.name)
                 )
             )
         if include_dated_author_change_requests:
             filters |= Q(last_modified__lt=datetime.now() - timedelta(days=25)) & Q(
-                status=ReviewStatus.awaiting_author_changes.name
+                status=ReviewStatus.AWAITING_AUTHOR_CHANGES.name
             )
         if include_dated_reviewer_feedback_requests:
             filters |= Q(last_modified__lt=datetime.now() - timedelta(days=25)) & Q(
-                status=ReviewStatus.awaiting_reviewer_feedback.name
+                status=ReviewStatus.AWAITING_REVIEWER_FEEDBACK.name
             )
         if filters:
             reviews = reviews.filter(filters)
@@ -222,9 +222,9 @@ def _change_peer_review_status(request):
 
     raw_status = request.data["status"]
     try:
-        new_status = ReviewStatus[raw_status]
-    except KeyError:
-        raise ValidationError("status {} not valid".format(raw_status))
+        new_status = ReviewStatus(raw_status)
+    except ValueError:
+        raise ValidationError(f"status {raw_status} not valid")
     review.editor_change_review_status(request.user.member_profile, new_status)
 
     return Response(data={"status": new_status.name}, status=status.HTTP_200_OK)

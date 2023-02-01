@@ -19,8 +19,8 @@ logger = logging.getLogger(__name__)
 
 
 class ContactForm(forms.Form):
-    SPAM_PATTERNS = r'(xevil|captchas)'
-    SPAM_EMAIL_DOMAINS = ('qq.com',)
+    SPAM_PATTERNS = r"(xevil|captchas)"
+    SPAM_EMAIL_DOMAINS = ("qq.com",)
     name = forms.CharField(max_length=100, label=_("Your name"))
     email = forms.EmailField(max_length=255, label=_("Your email address"))
     subject_text = forms.CharField(max_length=100, label=_("Message subject"))
@@ -49,14 +49,16 @@ class ContactForm(forms.Form):
         return dict(self.cleaned_data, site=site)
 
     def clean_email(self):
-        data = self.cleaned_data['email']
+        data = self.cleaned_data["email"]
         for spam_domain in self.SPAM_EMAIL_DOMAINS:
             if spam_domain in data:
-                raise ValidationError("Please try sending email from a supported email provider")
+                raise ValidationError(
+                    "Please try sending email from a supported email provider"
+                )
         return data
 
     def clean_body(self):
-        data = self.cleaned_data['body']
+        data = self.cleaned_data["body"]
         if re.search(self.SPAM_PATTERNS, data, re.IGNORECASE):
             raise ValidationError("Your message was deemed invalid.")
         return data
