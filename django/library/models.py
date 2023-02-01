@@ -52,6 +52,7 @@ from .fs import (
 
 logger = logging.getLogger(__name__)
 
+
 # Cherry picked from
 # https://www.ngdc.noaa.gov/metadata/published/xsd/schema/resources/Codelist/gmxCodelists.xml#CI_RoleCode
 class Role(models.TextChoices):
@@ -1584,7 +1585,9 @@ class PeerReviewEvent(models.TextChoices):
     INVITATION_RESENT = "invitation_resent", _("Reviewer invitation has been resent")
     INVITATION_ACCEPTED = "invitation_accepted", _("Reviewer has accepted invitation")
     INVITATION_DECLINED = "invitation_declined", _("Reviewer has declined invitation")
-    REVIEWER_FEEDBACK_SUBMITTED = "feedback_submitted", _("Reviewer has given feedback")
+    REVIEWER_FEEDBACK_SUBMITTED = "reviewer_feedback_submitted", _(
+        "Reviewer has given feedback"
+    )
     AUTHOR_RESUBMITTED = "author_resubmitted", _(
         "Author has resubmitted release for review"
     )
