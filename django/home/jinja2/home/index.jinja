@@ -35,8 +35,8 @@
                     </h1>
 
                     <div class='mx-5'>
-                        Posted: {{ site_settings.last_modified.strftime('%B %-d, %Y') }}
-                        <div class='text-left font-weight-bold'>
+                        <em>Posted {{ site_settings.last_modified.strftime('%B %-d, %Y') }}</em>
+                        <div class='text-left font-weight-bold my-2'>
                             {% autoescape off %}
                                 {{ site_settings.banner_message }}
                             {% endautoescape %}
@@ -49,13 +49,10 @@
 {% endblock %}
 {% block page %}
 <section class='mission'>
-    <div class='container'>
-        <div class='row'>
-            <div class='col'>
-                {{ page.mission_statement }}
-                <a href='{{ slugurl("about") }}'>Learn more</a>
-            </div>
-        </div>
+    <div class='mx-2'>
+        {{ page.mission_statement }}
+        <br>
+        <a href='{{ slugurl("about") }}'>Learn more</a>
     </div>
 </section>
 <div class='container'>
