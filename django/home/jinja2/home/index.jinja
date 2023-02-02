@@ -29,15 +29,18 @@
                         <a href='{{ site_settings.banner_destination_url }}'>
                             <i class='fas fa-bullhorn'>
                             </i>
-                            {{ site_settings.last_modified.strftime('%B %-d, %Y') }}:
                             {{ site_settings.banner_message_title }}
                             <i class='fas fa-bullhorn'></i>
                         </a>
                     </h1>
-                    <div class='text-left font-weight-bold'>
-                        {% autoescape off %}
-                            {{ site_settings.banner_message }}
-                        {% endautoescape %}
+
+                    <div class='mx-5'>
+                        Posted: {{ site_settings.last_modified.strftime('%B %-d, %Y') }}
+                        <div class='text-left font-weight-bold'>
+                            {% autoescape off %}
+                                {{ site_settings.banner_message }}
+                            {% endautoescape %}
+                        </div>
                     </div>
                 </div>
             </section>
