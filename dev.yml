@@ -1,0 +1,15 @@
+services:
+  js:
+    ports:
+      - "127.0.0.1:3000:3000"
+    volumes:
+      - ./frontend:/code
+  cms:
+    image: comses/cms:dev
+    volumes:
+      - ./django:/code
+      - ./docs:/docs
+    environment:
+      DJANGO_SETTINGS_MODULE: "core.settings.dev"
+    ports:
+      - "127.0.0.1:8000:8000"

@@ -1,4 +1,3 @@
-version: '3'
 services:
   redis:
     image: redis:6-alpine
@@ -30,22 +29,20 @@ services:
       - ./deploy/elasticsearch.conf.d/log4j2.properties:/usr/share/elasticsearch/config/log4j2.properties
       - ./deploy/elasticsearch.conf.d/elasticsearch-primary.yml:/usr/share/elasticsearch/config/elasticsearch.yml
       - esdata:/usr/share/elasticsearch/data
-  ${DB_HOST}:
+  db:
     image: postgis/postgis:15-3.3
     volumes:
       - ./docker/shared/pgdata:/var/lib/postgresql/data
+      - ./deploy/secrets/db_password:/run/secrets/db_password
     environment:
       # FIXME: replace with init sql script, see https://github.com/docker/docker/issues/13490
       POSTGRES_USER: "${DB_USER}"
-      POSTGRES_PASSWORD: "${DB_PASSWORD}"
       POSTGRES_DB: "${DB_NAME}"
+      POSTGRES_PASSWORD_FILE: /run/secrets/db_password
   js:
     build: frontend
-    image: comses/cmsjs:dev
-    ports:
-      - "127.0.0.1:3000:3000"
+    image: comses/cmsjs
     volumes:
-      - ./frontend:/code
       - /code/node_modules
       - ./docker/shared:/shared
       - ./deploy/conf/config.ini:/secrets/config.ini
@@ -53,25 +50,20 @@ services:
     build: django
     image: comses/cms:dev
     volumes:
-      - ./django:/code
-      - ./docs:/docs
       - ./deploy/conf/config.ini:/secrets/config.ini
       - ./deploy/elasticsearch.conf.d:/etc/elasticsearch
       - ./docker/shared:/shared
     depends_on:
-      - ${DB_HOST}
+      - db
       - js
       - elasticsearch
       - redis
     environment:
-      DJANGO_SETTINGS_MODULE: "core.settings.dev"
       DB_USER: ${DB_USER}
-      DB_HOST: ${DB_HOST}
+      DB_HOST: db
       DB_NAME: ${DB_NAME}
       DB_PORT: ${DB_PORT}
       CLEAN_DATABASE: "false"
-    ports:
-      - "127.0.0.1:8000:8000"
 volumes:
   esdata:
     driver: local

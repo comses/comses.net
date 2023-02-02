@@ -8,7 +8,7 @@ release-version.txt
 # Docker
 docker
 docker-compose.yml
-generated-*.yml
+deploy/secrets
 config.ini
 *.backup
 # backup / metadata / tmp files

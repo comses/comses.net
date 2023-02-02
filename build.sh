@@ -19,13 +19,13 @@ function clean()
 }
 
 DEPLOY=${DEPLOY:-"dev"} # allowed values: (dev | staging | prod)
-DEFAULT_COMPOSE_TEMPLATE="dc-${DEPLOY}.yml"
+DEFAULT_COMPOSE_TEMPLATE="${DEPLOY}.yml"
 DOCKER_COMPOSE_TEMPLATE=${1:-$DEFAULT_COMPOSE_TEMPLATE}
 CONFIG_INI=./deploy/conf/config.ini
 BACKUP_CONFIG_INI=/tmp/comsesnet.${RANDOM}.ini
 
 echo "Templating ${DOCKER_COMPOSE_TEMPLATE}"
-echo "For improved security, consider creating a local 'comses' user with uid/gid of 2718, otherwise you'll need to run root inside the container."
+echo "For improved security, consider creating a local 'comses' user with uid/gid of 2718, otherwise you'll need to run as root inside the container."
 
 set -a
 . ./deploy/conf/docker.env
@@ -40,17 +40,19 @@ if [[ -f "${CONFIG_INI}" ]]; then
         esac
     done
 fi
-DB_PASSWORD=$(head /dev/urandom | tr -dc '[:alnum:]' | head -c42)
-DJANGO_SECRET_KEY=$(head /dev/urandom | base64 | head -c60)
-TEST_BASIC_AUTH_PASSWORD=$(head /dev/urandom | tr -dc '[:alnum:]' | head -c42)
+DB_PASSWORD=$(openssl rand -base64 48)
+DB_PASSWORD_PATH=deploy/secrets/db_password
+DJANGO_SECRET_KEY=$(openssl rand -base64 60)
+TEST_BASIC_AUTH_PASSWORD=$(openssl rand -base64 42)
 TEST_USER_ID=10000000
 TEST_USERNAME=__test_user__
 
 echo "Running env substitution for DB_PASSWORD ${DB_PASSWORD} and DJANGO_SECRET_KEY ${DJANGO_SECRET_KEY}"
+mkdir -p deploy/secrets
+echo "${DB_PASSWORD}" > ${DB_PASSWORD_PATH}
 
 cat "${CONFIG_INI}".template | envsubst > "${CONFIG_INI}"
-cat "${DOCKER_COMPOSE_TEMPLATE}" | envsubst > generated-"${DOCKER_COMPOSE_TEMPLATE}"
-ln -sf generated-"${DOCKER_COMPOSE_TEMPLATE}" docker-compose.yml
+docker compose -f base.yml -f ${DEPLOY}.yml config | envsubst > docker-compose.yml
 
 # Templating for integration testing frontend and backend
 
