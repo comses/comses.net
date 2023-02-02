@@ -24,7 +24,7 @@ Chue Hong, Neil P., Katz, Daniel S., Barker, Michelle, Lamprecht, Anna-Lena, Mar
 # Metadata
 
 !!! info ""
-    Metadata is **data about data**: a collection of data attributes that describe some *other data*. In this case, our *other data* is a computational model, and the metadata are the descriptive fields, the structured and semi-structured text, the human and machine-readable **things** we annotate them with so others can more easily Find, Evaluate, or Reuse our model. 
+    Metadata, **data about data**, a collection of data that describes some *other data*. In this case, our *other data* is a computational model, and the metadata are the descriptive fields, structured data, narrative prose text, etc., the **human and machine-readable things** we use to annotate our computational models so others can more easily Find, Evaluate, or Reuse them. Some examples of metadata: keywords, contributors, sponsors, a durable graph of provenance, the semantic version for a specific snapshot of code, an abstract or description, links and permanent identifiers to related resources and references, links and permanent identifiers to semantic ontologies that provide rigorous details on a computational model's inputs and outputs
 
 
 ![Watch the Video on Metadata](https://www.youtube.com/watch?v=UaWwHv5O2Pc)
