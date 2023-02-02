@@ -1,28 +1,28 @@
-import {Component, Prop} from 'vue-property-decorator';
-import {api} from '@/api/connection';
-import Vue from 'vue';
-import * as _ from 'lodash';
+import { Component, Prop } from "vue-property-decorator";
+import { api } from "@/api/connection";
+import Vue from "vue";
+import * as _ from "lodash";
 
 interface UploadSuccess {
-    kind: 'success';
-    msg: string;
+  kind: "success";
+  msg: string;
 }
 
 interface UploadProgress {
-    kind: 'progress';
-    percentCompleted: number;
-    size: number;
+  kind: "progress";
+  percentCompleted: number;
+  size: number;
 }
 
 interface UploadFailure {
-    kind: 'failure';
-    msgs: Array<{ level: string, msg: { detail: string, stage: string } }>;
+  kind: "failure";
+  msgs: Array<{ level: string; msg: { detail: string; stage: string } }>;
 }
 
 type UploadInfo = UploadSuccess | UploadProgress | UploadFailure;
 
 @Component({
-    template: `<div>
+  template: `<div>
         <h3 class="mt-4">{{ title }}</h3>
         <slot name="label"></slot>
         <div class="text-muted" v-if="instructions">{{ instructions }}</div>
@@ -69,78 +69,87 @@ type UploadInfo = UploadSuccess | UploadProgress | UploadFailure;
     </div>`,
 } as any)
 export class Upload extends Vue {
-    @Prop()
-    public uploadUrl: string;
+  @Prop()
+  public uploadUrl: string;
 
-    public fileUploadErrorMsgs: { [name: string]: UploadInfo } = {};
-    public fileUploadProgressMsgs: { [name: string]: UploadProgress } = {};
+  public fileUploadErrorMsgs: { [name: string]: UploadInfo } = {};
+  public fileUploadProgressMsgs: { [name: string]: UploadProgress } = {};
 
-    @Prop()
-    public title: string;
+  @Prop()
+  public title: string;
 
-    @Prop({default: ''})
-    public instructions: string;
+  @Prop({ default: "" })
+  public instructions: string;
 
-    @Prop({default: ''})
-    public acceptedFileTypes: string;
+  @Prop({ default: "" })
+  public acceptedFileTypes: string;
 
-    @Prop({default: ''})
-    public originalInstructions: string;
+  @Prop({ default: "" })
+  public originalInstructions: string;
 
-    @Prop()
-    public originals: any[];
+  @Prop()
+  public originals: any[];
 
-    get uploadId() {
-        return `upload_${_.uniqueId()}`;
+  get uploadId() {
+    return `upload_${_.uniqueId()}`;
+  }
+
+  public displayStage(stage) {
+    if (stage === "sip") {
+      return "During archive unpack";
+    } else {
+      return "During upload";
     }
+  }
 
-    public displayStage(stage) {
-        if (stage === 'sip') {
-            return 'During archive unpack';
-        } else {
-            return 'During upload';
+  public async handleFiles(event) {
+    const file = event.target.files[0];
+    const formData = new FormData();
+    formData.append("file", file);
+
+    const onUploadProgress = progressEvent => {
+      const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+      this.$set(this.fileUploadProgressMsgs, file.name, {
+        kind: "progress",
+        percentCompleted,
+        size: file.size,
+      });
+    };
+    _.delay(() => this.$delete(this.fileUploadProgressMsgs, file.name), 6000);
+    try {
+      await api.postForm(this.uploadUrl, formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+        onUploadProgress,
+      });
+    } catch (error) {
+      if (error.response) {
+        const response = error.response;
+        if (response.data.detail) {
+          this.fileUploadErrorMsgs = response.data;
         }
+        this.$set(this.fileUploadErrorMsgs, file.name, {
+          kind: "failure",
+          msgs: error.response.data,
+        });
+      }
     }
+    event.target.value = null;
+    this.$emit("doneUpload");
+  }
 
-    public async handleFiles(event) {
-        const file = event.target.files[0];
-        const formData = new FormData();
-        formData.append('file', file);
+  public clearUploadErrors() {
+    this.fileUploadErrorMsgs = {};
+  }
 
-        const onUploadProgress = (progressEvent) => {
-            const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
-            this.$set(this.fileUploadProgressMsgs, file.name, {kind: 'progress', percentCompleted, size: file.size});
-        };
-        _.delay(() => this.$delete(this.fileUploadProgressMsgs, file.name), 6000);
-        try {
-            await api.postForm(this.uploadUrl, formData,
-                {headers: {'Content-Type': 'multipart/form-data'}, onUploadProgress});
-        } catch (error) {
-            if (error.response) {
-                const response = error.response;
-                if (response.data.detail) {
-                    this.fileUploadErrorMsgs = response.data;
-                }
-                this.$set(this.fileUploadErrorMsgs, file.name, {kind: 'failure', msgs: error.response.data});
-            }
-        }
-        event.target.value = null;
-        this.$emit('doneUpload');
-    }
+  get hasErrors() {
+    return !_.isEmpty(this.fileUploadErrorMsgs);
+  }
 
-    public clearUploadErrors() {
-        this.fileUploadErrorMsgs = {};
-    }
+  public deleteFile(identifier: string) {
+    this.$emit("deleteFile", identifier);
+  }
 
-    get hasErrors() {
-        return !_.isEmpty(this.fileUploadErrorMsgs);
-    }
-
-    public deleteFile(identifier: string) {
-        this.$emit('deleteFile', identifier);
-    }
-
-    public clear() {
-        this.$emit('clear');
-    }
+  public clear() {
+    this.$emit("clear");
+  }
 }

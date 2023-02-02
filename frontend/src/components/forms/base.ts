@@ -1,41 +1,41 @@
-import Vue from 'vue';
-import {Component, Prop} from 'vue-property-decorator';
-import * as _ from 'lodash';
+import Vue from "vue";
+import { Component, Prop } from "vue-property-decorator";
+import * as _ from "lodash";
 
 @Component
 export default class BaseControl extends Vue {
-    @Prop({default: true})
-    public required;
+  @Prop({ default: true })
+  public required;
 
-    @Prop()
-    public value;
+  @Prop()
+  public value;
 
-    @Prop()
-    public name: string;
+  @Prop()
+  public name: string;
 
-    @Prop()
-    public customId;
+  @Prop()
+  public customId;
 
-    @Prop({default: () => []})
-    public errorMsgs: string[];
+  @Prop({ default: () => [] })
+  public errorMsgs: string[];
 
-    get requiredClass() {
-        return {required: this.required};
-    }
+  get requiredClass() {
+    return { required: this.required };
+  }
 
-    get controlId() {
-        return _.isUndefined(this.customId) ? _.uniqueId(this.name) : this.customId;
-    }
+  get controlId() {
+    return _.isUndefined(this.customId) ? _.uniqueId(this.name) : this.customId;
+  }
 
-    get isInvalid() {
-        return this.errorMsgs.length > 0;
-    }
+  get isInvalid() {
+    return this.errorMsgs.length > 0;
+  }
 
-    get errorMessage() {
-        return this.errorMsgs.join(', ');
-    }
+  get errorMessage() {
+    return this.errorMsgs.join(", ");
+  }
 
-    public updateValue(value: any) {
-        this.$emit('input', value);
-    }
+  public updateValue(value: any) {
+    this.$emit("input", value);
+  }
 }

@@ -1,33 +1,38 @@
-import { Component, Prop } from 'vue-property-decorator';
-import BaseControl from './base';
+import { Component, Prop } from "vue-property-decorator";
+import BaseControl from "./base";
 
 // FIXME: redo custom input
 @Component({
-    template: `<div class="form-group">
-        <slot name="label">
-            <label :for='controlId' :class="['form-control-label', requiredClass]">{{ label }}</label>
-        </slot>
-        <select :id='controlId' :name="name" :class="['form-control', {'is-invalid': isInvalid}]" 
-                @change="updateValue($event.target.value)" :value="value">
-            <option :value="option.value" :selected="option.value === value" v-for="option in options">
-                {{ option.label }}
-            </option>
-        </select>
-        <div class="invalid-feedback">
-            {{ errorMessage }}
-        </div>
-        <slot name="help">
-            <small :aria-describedby='controlId' class="form-text text-muted">{{ help }}</small>
-        </slot>
-    </div>`, 
+  template: `<div class="form-group">
+    <slot name="label">
+      <label :for="controlId" :class="['form-control-label', requiredClass]">{{ label }}</label>
+    </slot>
+    <select
+      :id="controlId"
+      :name="name"
+      :class="['form-control', {'is-invalid': isInvalid}]"
+      @change="updateValue($event.target.value)"
+      :value="value"
+    >
+      <option :value="option.value" :selected="option.value === value" v-for="option in options">
+        {{ option.label }}
+      </option>
+    </select>
+    <div class="invalid-feedback">
+      {{ errorMessage }}
+    </div>
+    <slot name="help">
+      <small :aria-describedby="controlId" class="form-text text-muted">{{ help }}</small>
+    </slot>
+  </div>`,
 })
 export default class Select extends BaseControl {
-    @Prop({default: ''})
-    public label: string;
+  @Prop({ default: "" })
+  public label: string;
 
-    @Prop({default: ''})
-    public help: string;
+  @Prop({ default: "" })
+  public help: string;
 
-    @Prop()
-    public options: [{value: string, label: string}];
+  @Prop()
+  public options: [{ value: string; label: string }];
 }

@@ -1,76 +1,72 @@
 <template>
-    <div>
-        <a class="text-white" href="/accounts/signup/" v-if="!is_authenticated">
-            <div class="btn btn-primary w-100" tabindex="0">
-                Become a member
-            </div>
-        </a>
-        <div class="card-metadata">
-            <h1 class="title">Search</h1>
-            <div class="card-body">
-                    <span @keyup.enter="search">
-                        <c-input type="text" v-model="fullTextSearch" name="fullTextSearch" label="By Name"
-                                 :required="false">
-                        </c-input>
-                    </span>
-                <c-tagger v-model="tags" :required="false" placeholder="Type to add tags" label="Keywords">
-                </c-tagger>
-            </div>
-        </div>
-        <a class="text-white" :href="query">
-            <div class="btn btn-primary w-100" tabindex="0">
-                Search
-            </div>
-        </a>
+  <div>
+    <a class="text-white" href="/accounts/signup/" v-if="!is_authenticated">
+      <div class="btn btn-primary w-100" tabindex="0">Become a member</div>
+    </a>
+    <div class="card-metadata">
+      <h1 class="title">Search</h1>
+      <div class="card-body">
+        <span @keyup.enter="search">
+          <c-input
+            type="text"
+            v-model="fullTextSearch"
+            name="fullTextSearch"
+            label="By Name"
+            :required="false"
+          >
+          </c-input>
+        </span>
+        <c-tagger v-model="tags" :required="false" placeholder="Type to add tags" label="Keywords">
+        </c-tagger>
+      </div>
     </div>
+    <a class="text-white" :href="query">
+      <div class="btn btn-primary w-100" tabindex="0">Search</div>
+    </a>
+  </div>
 </template>
 
 <script lang="ts">
-    import {Component, Prop} from 'vue-property-decorator';
-    import Search from '@/components/Search.vue';
-    import Vue from 'vue';
-    import DatePicker from '@/components/forms/datepicker';
-    import Input from '@/components/forms/input';
-    import ProfileTagger from '@/components/tagger';
-    import * as queryString from 'query-string';
-    import * as _ from 'lodash';
-    import {ProfileAPI} from '@/api';
+import { Component, Prop } from "vue-property-decorator";
+import Search from "@/components/Search.vue";
+import Vue from "vue";
+import DatePicker from "@/components/forms/datepicker";
+import Input from "@/components/forms/input";
+import ProfileTagger from "@/components/tagger";
+import * as queryString from "query-string";
+import * as _ from "lodash";
+import { ProfileAPI } from "@/api";
 
+@Component({
+  components: {
+    "c-date-picker": DatePicker,
+    "c-input": Input,
+    "c-tagger": ProfileTagger,
+    "c-search": Search,
+  },
+} as any)
+export default class SearchProfiles extends Vue {
+  get query() {
+    const queryObject = {
+      query: this.fullTextSearch,
+      tags: this.tags.map(keyword => keyword.name),
+      page: 1,
+    };
+    return this.api.searchUrl(queryObject);
+  }
 
-    @Component({
-        components: {
-            'c-date-picker': DatePicker,
-            'c-input': Input,
-            'c-tagger': ProfileTagger,
-            'c-search': Search,
-        },
-    } as any)
-    export default class SearchProfiles extends Vue {
+  @Prop()
+  public is_authenticated: boolean;
+  public fullTextSearch: string = "";
 
-        get query() {
-            const queryObject = {
-                query: this.fullTextSearch,
-                tags: this.tags.map((keyword) => keyword.name),
-                page: 1,
-            };
-            return this.api.searchUrl(queryObject);
-        }
+  public tags: Array<{ name: string }> = [];
 
-        @Prop()
-        public is_authenticated: boolean;
-        public fullTextSearch: string = '';
+  private api = new ProfileAPI();
 
-        public tags: Array<{ name: string }> = [];
-
-        private api = new ProfileAPI();
-
-        public search() {
-            window.location.href = this.query;
-        }
-    }
-
+  public search() {
+    window.location.href = this.query;
+  }
+}
 </script>
 
-<style scoped>
-
-</style>
+<style scoped></style>
