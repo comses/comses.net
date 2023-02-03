@@ -18,5 +18,5 @@ RUN set -ex; yarn config set ignore-engines true; \
     fi
 RUN yarn global add @vue/cli && yarn cache clean
 # Separating to ensure that changes to the below files won't cause dependency reinstall
-COPY babel.config.js jest.config.js postcss.config.js tsconfig.json tslint.json vue.config.js /code/
+COPY babel.config.js jest.config.js postcss.config.js tsconfig.json .eslintrc.js .prettierrc vue.config.js /code/
 CMD ["yarn", "serve", "--port", "3000", "--host", "0.0.0.0"]
