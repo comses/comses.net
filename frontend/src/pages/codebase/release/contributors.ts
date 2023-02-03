@@ -1,13 +1,6 @@
 import { Prop, Component, Watch } from "vue-property-decorator";
 import Vue from "vue";
-import {
-  CalendarEvent,
-  CodebaseContributor,
-  Contributor,
-  emptyContributor,
-  emptyReleaseContributor,
-  User,
-} from "@/store/common";
+import { CodebaseContributor, Contributor } from "@/store/common";
 import { CodebaseReleaseAPI, ContributorAPI } from "@/api";
 import Checkbox from "@/components/forms/checkbox";
 import Input from "@/components/forms/input";
@@ -37,14 +30,6 @@ const listContributors = _.debounce(async (state, self) => {
     console.error(e);
   }
 }, 800);
-
-const userSchema = yup.object().shape({
-  name: yup.string(),
-  institution_name: yup.string(),
-  institution_url: yup.string(),
-  profile_url: yup.string(),
-  username: yup.string(),
-});
 
 const contributorSchema = yup.object().shape({
   user: yup.mixed().nullable(),

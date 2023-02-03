@@ -1,7 +1,6 @@
 import * as _ from "lodash";
 import * as yup from "yup";
 import Vue from "vue";
-import { VueClass } from "vue-class-component/lib/declarations";
 import { Component } from "vue-property-decorator";
 
 const yupDefaultFormDispatch = {
@@ -166,7 +165,7 @@ export function createFormValidator(schema) {
 
     public async validate() {
       try {
-        const state = await schema.validate(this.state, { abortEarly: false });
+        await schema.validate(this.state, { abortEarly: false });
       } catch (validationErrors) {
         populateErrorsFromValidationError(this, validationErrors);
         throw validationErrors;

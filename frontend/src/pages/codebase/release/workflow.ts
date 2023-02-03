@@ -10,8 +10,7 @@ import CodebaseReleaseMetadata from "./detail";
 import CodebaseEditForm from "@/components/codebase/Edit.vue";
 import { store } from "./store";
 import jQuery from "jquery";
-import { CreateOrUpdateHandler } from "@/api/handler";
-import { CodebaseReleaseAPI, CodebaseAPI, ReviewEditorAPI } from "@/api";
+import { CodebaseReleaseAPI, CodebaseAPI } from "@/api";
 import * as _ from "lodash";
 import * as yup from "yup";
 import { Progress } from "@/pages/codebase/release/progress";
@@ -23,7 +22,6 @@ import { ConfirmationModal } from "@/components/confirmation";
 
 const codebaseReleaseAPI = new CodebaseReleaseAPI();
 const codebaseAPI = new CodebaseAPI();
-const reviewAPI = new ReviewEditorAPI();
 
 Vue.use(Vuex);
 Vue.use(VueRouter);

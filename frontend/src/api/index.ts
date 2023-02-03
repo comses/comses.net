@@ -1,4 +1,3 @@
-import { AxiosRequestConfig, AxiosResponse } from "axios";
 import * as queryString from "query-string";
 import { api } from "@/api/connection";
 import { CreateOrUpdateHandler } from "@/api/handler";

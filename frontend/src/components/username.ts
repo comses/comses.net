@@ -1,7 +1,5 @@
 import BaseControl from "./forms/base";
 import { Component, Prop } from "vue-property-decorator";
-
-import * as queryString from "query-string";
 import * as _ from "lodash";
 import { ProfileAPI } from "@/api";
 

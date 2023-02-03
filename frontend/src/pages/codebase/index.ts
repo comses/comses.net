@@ -9,6 +9,6 @@ function extractUrlParams(pathname: string) {
   return { _identifier: null };
 }
 
-const editCodebase = new EditCodebase({
+new EditCodebase({
   propsData: extractUrlParams(window.location.pathname),
 }).$mount("#app");

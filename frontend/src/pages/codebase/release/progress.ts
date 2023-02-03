@@ -1,8 +1,6 @@
 import Vue from "vue";
 import { Component, Prop } from "vue-property-decorator";
-import { schema } from "./detail";
 import * as _ from "lodash";
-import { populateErrorsFromValidationError } from "@/pages/form";
 
 @Component({
   template: `<p class="card-text">

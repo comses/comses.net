@@ -1,9 +1,7 @@
-<template></template>
-
 <script>
 import "bootstrap";
 export default {
-  name: "home",
+  name: "HomePage",
 };
 </script>
 

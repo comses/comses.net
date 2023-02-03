@@ -7,6 +7,7 @@
           v-for="sortOption in sortOptions"
           :value="sortOption.value"
           :selected="sortOption.value === selectedOptionValue"
+          :key="sortOption.value"
         >
           {{ sortOption.label }}
         </option>
@@ -67,7 +68,7 @@ export default class SortBy extends Vue {
     }
   }
 
-  get orderingParameter() {
+  public getOrderingParam() {
     if (this.sortByAscDesc === "desc") {
       return "-" + this.selectedOptionValue;
     }
@@ -76,10 +77,10 @@ export default class SortBy extends Vue {
 
   public updateSortBy() {
     const queryParams: any = queryString.parse(window.location.search);
-    if (this.orderingParameter === "") {
+    if (this.getOrderingParam() === "") {
       delete queryParams.ordering;
     } else {
-      queryParams.ordering = this.orderingParameter;
+      queryParams.ordering = this.getOrderingParam();
     }
     window.location.search = queryString.stringify(queryParams);
   }

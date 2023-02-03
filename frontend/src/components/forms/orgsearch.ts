@@ -1,6 +1,5 @@
 import BaseControl from "../forms/base";
 import { Component, Prop } from "vue-property-decorator";
-import * as queryString from "query-string";
 import axios from "axios";
 import * as _ from "lodash";
 
@@ -9,7 +8,7 @@ import Multiselect from "vue-multiselect";
 const debounceFetchOrgs = _.debounce(async (self: OrganizationSearch, query: string) => {
   try {
     self.isLoading = true;
-    let encoded = encodeURIComponent(query);
+    const encoded = encodeURIComponent(query);
     // note: ror rest api has a rate limit of 2000 requests / 5 minute period
     // this should be fine unless things really slow down with periods of high traffic
     // options: self host the rest api, diy it with their data dump + our elasticsearch

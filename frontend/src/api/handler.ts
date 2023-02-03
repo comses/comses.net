@@ -21,12 +21,6 @@ export function getCookie(name) {
   return cookieValue;
 }
 
-enum StatusMessageCode {
-  danger,
-  warning,
-  success,
-}
-
 function changePage(url: string) {
   window.location.href = url;
 }

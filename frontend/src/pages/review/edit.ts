@@ -2,12 +2,9 @@ import { Component, Prop } from "vue-property-decorator";
 import Vue from "vue";
 import { Invitations } from "./invitations";
 import { Feedback } from "./feedback";
-import { ReviewEditorAPI } from "@/api";
 import { api } from "@/api/connection";
 import { EventLog } from "./event_log";
 import * as _ from "lodash";
-
-const reviewApi = new ReviewEditorAPI();
 
 @Component({
   template: `<div class="row">
@@ -28,7 +25,7 @@ const reviewApi = new ReviewEditorAPI();
 })
 export class EditorReviewDetail extends Vue {
   @Prop()
-  public status_levels: Array<{ value: string; label: string }>;
+  public status_levels!: Array<{ value: string; label: string }>;
 
   public status: string = this.status_levels[0].value;
 

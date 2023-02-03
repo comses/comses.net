@@ -7,6 +7,8 @@ module.exports = {
   rules: {
     "no-useless-constructor": "off",
     "no-empty-function": "off",
+    "no-unused-vars": "off",
+    "@typescript-eslint/no-unused-vars": ["warn", { "args": "none" }],
     "import/prefer-default-export": "off",
   },
   ignorePatterns: ["node_modules/*", "public/*", "dist/*"],

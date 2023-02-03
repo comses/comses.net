@@ -108,17 +108,14 @@
 
 <script lang="ts">
 import { Component, Prop } from "vue-property-decorator";
-import Vue from "vue";
-import { DismissOnSuccessHandler, HandlerWithRedirect } from "@/api/handler";
-import { CodebaseReleaseAPI, ProfileAPI } from "@/api";
-import { api } from "@/api/connection";
+import { HandlerWithRedirect } from "@/api/handler";
+import { CodebaseReleaseAPI } from "@/api";
 import { createFormValidator } from "@/pages/form";
 import Input from "@/components/forms/input";
 import Select from "@/components/forms/select";
 import OrganizationSearch from "@/components/forms/orgsearch";
 import MessageDisplay from "@/components/messages";
 import MyPopper from "@/components/popper";
-import * as _ from "lodash";
 import * as yup from "yup";
 
 export const schema = yup.object().shape({
@@ -137,7 +134,6 @@ export const schema = yup.object().shape({
 });
 
 const codebaseReleaseAPI = new CodebaseReleaseAPI();
-const profileAPI = new ProfileAPI();
 
 @Component({
   components: {

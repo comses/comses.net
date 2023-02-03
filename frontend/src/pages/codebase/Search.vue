@@ -46,6 +46,7 @@
               :value="prOpt.value"
               :selected="prOpt.value === selectedPeerReviewStatus"
               v-for="prOpt in peerReviewOptions"
+              :key="prOpt.value"
             >
               {{ prOpt.label }}
             </option>
@@ -57,7 +58,7 @@
 </template>
 
 <script lang="ts">
-import { Component, Prop, Vue } from "vue-property-decorator";
+import { Component, Vue } from "vue-property-decorator";
 import Search from "@/components/Search.vue";
 import DatePicker from "@/components/forms/datepicker";
 import Input from "@/components/forms/input";

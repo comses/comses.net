@@ -190,7 +190,6 @@ import EditOrgList from "@/components/forms/orgitems";
 import MessageDisplay from "@/components/messages";
 import EditItems from "@/components/textitem";
 import { ProfileAPI } from "@/api";
-import * as _ from "lodash";
 import { createFormValidator } from "@/pages/form";
 import { HandlerWithRedirect } from "@/api/handler";
 import * as yup from "yup";

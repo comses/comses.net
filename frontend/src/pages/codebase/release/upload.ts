@@ -3,7 +3,6 @@ import Vue from "vue";
 import Vuex from "vuex";
 import { CodebaseReleaseAPI } from "@/api/index";
 import { Upload } from "@/components/upload";
-import * as _ from "lodash";
 
 const codebaseReleaseAPI = new CodebaseReleaseAPI();
 

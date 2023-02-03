@@ -33,8 +33,6 @@ import Vue from "vue";
 import DatePicker from "@/components/forms/datepicker";
 import Input from "@/components/forms/input";
 import ProfileTagger from "@/components/tagger";
-import * as queryString from "query-string";
-import * as _ from "lodash";
 import { ProfileAPI } from "@/api";
 
 @Component({

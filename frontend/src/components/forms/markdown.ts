@@ -1,6 +1,5 @@
 import BaseControl from "@/components/forms/base";
 import { Component, Prop } from "vue-property-decorator";
-import Vue from "vue";
 import VueEasymde from "vue-easymde";
 import "easymde/dist/easymde.min.css";
 

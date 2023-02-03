@@ -132,7 +132,6 @@
 </template>
 
 <script lang="ts">
-import { CalendarEvent } from "@/store/common";
 import { EventAPI } from "@/api";
 import Markdown from "@/components/forms/markdown";
 import TextArea from "@/components/forms/textarea";
@@ -143,7 +142,7 @@ import MessageDisplay from "@/components/messages";
 import * as _ from "lodash";
 import { Component, Prop } from "vue-property-decorator";
 import * as yup from "yup";
-import { createFormValidator, reachRelated } from "@/pages/form";
+import { createFormValidator } from "@/pages/form";
 import { HandlerWithRedirect } from "@/api/handler";
 
 const api = new EventAPI();

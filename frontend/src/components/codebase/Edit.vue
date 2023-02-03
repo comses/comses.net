@@ -78,11 +78,7 @@ import TextArea from "@/components/forms/textarea";
 import { createFormValidator } from "@/pages/form";
 import * as yup from "yup";
 import * as _ from "lodash";
-import {
-  HandlerWithRedirect,
-  HandlerShowSuccessMessage,
-  DismissOnSuccessHandler,
-} from "@/api/handler";
+import { HandlerWithRedirect, DismissOnSuccessHandler } from "@/api/handler";
 import { Upload } from "@/components/upload";
 
 export const schema = yup.object().shape({

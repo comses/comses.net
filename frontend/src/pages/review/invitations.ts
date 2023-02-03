@@ -2,7 +2,6 @@ import { Component, Prop } from "vue-property-decorator";
 import Vue from "vue";
 import { ReviewEditorAPI } from "@/api/index";
 import { ReviewerFinder } from "./reviewer_finder";
-import { api } from "@/api/connection";
 import { holder } from "@/pages/review/directives";
 import * as _ from "lodash";
 
@@ -134,10 +133,7 @@ export class Invitations extends Vue {
   }
 
   public async sendEmail() {
-    const response = await reviewApi.sendInvitation(
-      { review_uuid: this.review_slug },
-      this.candidate_reviewer
-    );
+    await reviewApi.sendInvitation({ review_uuid: this.review_slug }, this.candidate_reviewer);
 
     this.candidate_reviewer = null;
     this.refresh();
@@ -145,7 +141,7 @@ export class Invitations extends Vue {
   }
 
   public async resendEmail(invitation_slug) {
-    const response = await reviewApi.resendInvitation({ slug: this.review_slug, invitation_slug });
+    await reviewApi.resendInvitation({ slug: this.review_slug, invitation_slug });
     this.$emit("pollEvents");
   }
 }

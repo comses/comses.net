@@ -1,6 +1,6 @@
 import * as _ from "lodash";
 import { CodebaseReleaseAPI } from "@/api";
-import { Component, Prop, Watch } from "vue-property-decorator";
+import { Component } from "vue-property-decorator";
 import Checkbox from "@/components/forms/checkbox";
 import Datepicker from "@/components/forms/DatePicker.vue";
 import Markdown from "@/components/forms/markdown";
@@ -165,7 +165,7 @@ export default class Detail extends createFormValidator(schema) {
       const { identifier, version_number } = this.identity;
       const self: any = this;
       await self.validate();
-      const response = await codebaseReleaseAPI.updateDetail(
+      await codebaseReleaseAPI.updateDetail(
         {
           identifier,
           version_number,

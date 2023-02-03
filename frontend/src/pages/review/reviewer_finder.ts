@@ -1,12 +1,11 @@
 import { Component, Prop } from "vue-property-decorator";
 import Vue from "vue";
 import Multiselect from "vue-multiselect";
-import { ProfileAPI, ReviewEditorAPI } from "@/api";
+import { ReviewEditorAPI } from "@/api";
 import * as _ from "lodash";
 import { holder } from "@/pages/review/directives";
 
 const reviewApi = new ReviewEditorAPI();
-const profileApi = new ProfileAPI();
 
 const debounceFetchMatchingUsers = _.debounce(async (self: ReviewerFinder, query: string) => {
   try {

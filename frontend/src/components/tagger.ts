@@ -69,7 +69,6 @@ export default class Tagger extends BaseControl {
   }
 
   public updateValue(value) {
-    const self: any = this;
     this.$emit("input", value);
     this.$emit("clear", this.name);
   }
