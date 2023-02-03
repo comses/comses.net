@@ -1,3 +1,6 @@
 # .git-blame-ignore-revs
 # run upgraded black==23.1.0
 90d176f65ec2212a3c15d80c2dbbeb04f1c77c97
+
+# format frontend code with prettier 02-02-2023
+40f3912d43c84434b53cc200f418d61edd1d9ae7
