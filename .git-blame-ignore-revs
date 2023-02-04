@@ -1,6 +1,16 @@
 # .git-blame-ignore-revs
-# run upgraded black==23.1.0
-90d176f65ec2212a3c15d80c2dbbeb04f1c77c97
+#
+# add commit hashes to ignore in a git blame
+#
+# https://docs.github.com/en/repositories/working-with-files/using-files/viewing-a-file#ignore-commits-in-the-blame-view
+#
+# place new entries at the top with a prefix comment + optional date
+#
+#
 
-# format frontend code with prettier 02-02-2023
+
+# format frontend code with prettier 2023-02-02
 40f3912d43c84434b53cc200f418d61edd1d9ae7
+
+# style: run black==23.1.0
+116a3951b3a78b7f70b9dce65c14403bca68ab4f
