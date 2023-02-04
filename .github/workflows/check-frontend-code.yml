@@ -22,7 +22,7 @@ jobs:
       with:
         node-version: '18'
     - name: Clean install
-      run: yarn install --frozen-lockfile
+      run: yarn config set ignore-engines true && yarn install --frozen-lockfile
     - name: Lint
       run: yarn lint
     - name: Check formatting
