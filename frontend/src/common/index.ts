@@ -1,1 +1,1 @@
-import 'common/browser-version-notifier';
+import "common/browser-version-notifier";

@@ -67,23 +67,19 @@
 </template>
 
 <script lang="ts">
-import { Component, Prop } from 'vue-property-decorator';
-import { CodebaseAPI, CodebaseReleaseAPI } from '@/api';
-import Checkbox from '@/components/forms/checkbox';
-import Input from '@/components/forms/input';
-import Markdown from '@/components/forms/markdown';
-import MessageDisplay from '@/components/messages';
-import Tagger from '@/components/tagger';
-import TextArea from '@/components/forms/textarea';
-import { createFormValidator } from '@/pages/form';
-import * as yup from 'yup';
-import * as _ from 'lodash';
-import {
-  HandlerWithRedirect,
-  HandlerShowSuccessMessage,
-  DismissOnSuccessHandler,
-} from '@/api/handler';
-import { Upload } from '@/components/upload';
+import { Component, Prop } from "vue-property-decorator";
+import { CodebaseAPI, CodebaseReleaseAPI } from "@/api";
+import Checkbox from "@/components/forms/checkbox";
+import Input from "@/components/forms/input";
+import Markdown from "@/components/forms/markdown";
+import MessageDisplay from "@/components/messages";
+import Tagger from "@/components/tagger";
+import TextArea from "@/components/forms/textarea";
+import { createFormValidator } from "@/pages/form";
+import * as yup from "yup";
+import * as _ from "lodash";
+import { HandlerWithRedirect, DismissOnSuccessHandler } from "@/api/handler";
+import { Upload } from "@/components/upload";
 
 export const schema = yup.object().shape({
   title: yup.string().required(),
@@ -101,13 +97,13 @@ const releaseApi = new CodebaseReleaseAPI();
 
 @Component({
   components: {
-    'c-checkbox': Checkbox,
-    'c-input': Input,
-    'c-markdown': Markdown,
-    'c-message-display': MessageDisplay,
-    'c-tagger': Tagger,
-    'c-textarea': TextArea,
-    'c-upload': Upload,
+    "c-checkbox": Checkbox,
+    "c-input": Input,
+    "c-markdown": Markdown,
+    "c-message-display": MessageDisplay,
+    "c-tagger": Tagger,
+    "c-textarea": TextArea,
+    "c-upload": Upload,
   },
 } as any)
 export default class CodebaseEditForm extends createFormValidator(schema) {
@@ -119,7 +115,7 @@ export default class CodebaseEditForm extends createFormValidator(schema) {
 
   public detailPageUrl(state) {
     this.state.identifier = state.identifier;
-    const version_number = this.state.latest_version_number || '1.0.0';
+    const version_number = this.state.latest_version_number || "1.0.0";
     if (_.isNull(this._identifier)) {
       return releaseApi.editUrl({
         identifier: this.state.identifier,
@@ -149,7 +145,7 @@ export default class CodebaseEditForm extends createFormValidator(schema) {
   }
 
   public async createOrUpdate() {
-    this.$emit('create-or-update');
+    this.$emit("create-or-update");
     let handler;
     if (_.isNull(this.redirect)) {
       handler = new HandlerWithRedirect(this);

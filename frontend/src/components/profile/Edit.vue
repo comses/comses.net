@@ -35,14 +35,11 @@
         <ul class="list-group">
           <li class="list-group-item">
             <span v-if="orcid_url">
-              <a :href="orcid_url"
-                ><span class="text-gray fab fa-orcid"></span> {{ orcid_url }}</a
-              >
+              <a :href="orcid_url"><span class="text-gray fab fa-orcid"></span> {{ orcid_url }}</a>
             </span>
             <span v-else>
               <a title="orcid" href="/accounts/orcid/login/?process=connect"
-                ><span class="text-gray fab fa-orcid"></span> Connect your ORCID
-                account</a
+                ><span class="text-gray fab fa-orcid"></span> Connect your ORCID account</a
               >
             </span>
           </li>
@@ -54,8 +51,7 @@
             </span>
             <span v-else>
               <a title="github" href="/accounts/github/login/?process=connect">
-                <span class="text-gray fab fa-github"></span> Connect your
-                GitHub account
+                <span class="text-gray fab fa-github"></span> Connect your GitHub account
               </a>
             </span>
           </li>
@@ -69,11 +65,7 @@
             >
               <div class="form-text text-muted" slot="help">
                 By checking this box, I agree to the
-                <a
-                  href="#"
-                  data-toggle="modal"
-                  data-target="#rightsAndResponsibilities"
-                >
+                <a href="#" data-toggle="modal" data-target="#rightsAndResponsibilities">
                   rights and responsibilities
                 </a>
                 of CoMSES Net Full Membership.
@@ -153,7 +145,10 @@
       :value="affiliations"
       @create="affiliations.push($event)"
       @remove="affiliations.splice($event, 1)"
-      @makePrimary="affiliations.splice($event.index, 1); affiliations.unshift($event.value)"
+      @makePrimary="
+        affiliations.splice($event.index, 1);
+        affiliations.unshift($event.value);
+      "
       name="affiliations"
       label="Affiliations"
       help="A list of organizations that you are affiliated with"
@@ -179,13 +174,7 @@
       :required="config.tags"
     ></c-tagger>
     <c-message-display :messages="statusMessages"></c-message-display>
-    <button
-      type="button"
-      class="mt-3 btn btn-primary"
-      @click="createOrUpdateIfValid"
-    >
-      Save
-    </button>
+    <button type="button" class="mt-3 btn btn-primary" @click="createOrUpdateIfValid">Save</button>
   </form>
 </template>
 
@@ -201,7 +190,6 @@ import EditOrgList from "@/components/forms/orgitems";
 import MessageDisplay from "@/components/messages";
 import EditItems from "@/components/textitem";
 import { ProfileAPI } from "@/api";
-import * as _ from "lodash";
 import { createFormValidator } from "@/pages/form";
 import { HandlerWithRedirect } from "@/api/handler";
 import * as yup from "yup";
@@ -217,12 +205,17 @@ export const schema = yup.object().shape({
   personal_url: yup.string().url(),
   professional_url: yup.string().url(),
   industry: yup.string().nullable(),
-  affiliations: yup.array().of(yup.object({
-    name: yup.string().required(),
-    url: yup.string().url().nullable(),
-    acronym: yup.string().nullable(),
-    ror_id: yup.string().nullable(),
-  })).nullable(),
+  affiliations: yup
+    .array()
+    .of(
+      yup.object({
+        name: yup.string().required(),
+        url: yup.string().url().nullable(),
+        acronym: yup.string().nullable(),
+        ror_id: yup.string().nullable(),
+      })
+    )
+    .nullable(),
   bio: yup.string(),
   degrees: yup.array().of(yup.string().required()),
   tags: yup.array().of(yup.object().shape({ name: yup.string().required() })),
@@ -252,13 +245,13 @@ export default class EditProfile extends createFormValidator(schema) {
   public initial_full_member: boolean = true;
 
   public industryOptions = [
-    {value: 'university', label: 'College/University'},
-    {value: 'educator', label: 'K-12 Educator'},
-    {value: 'government', label: 'Government'},
-    {value: 'private', label: 'Private'},
-    {value: 'nonprofit', label: 'Non-Profit'},
-    {value: 'student', label: 'Student'},
-    {value: 'other', label: 'Other'},
+    { value: "university", label: "College/University" },
+    { value: "educator", label: "K-12 Educator" },
+    { value: "government", label: "Government" },
+    { value: "private", label: "Private" },
+    { value: "nonprofit", label: "Non-Profit" },
+    { value: "student", label: "Student" },
+    { value: "other", label: "Other" },
   ];
 
   public detailPageUrl(state) {
@@ -295,7 +288,7 @@ export default class EditProfile extends createFormValidator(schema) {
   }
 
   public retrieve(pk: number) {
-    return api.retrieve(pk).then((r) => {
+    return api.retrieve(pk).then(r => {
       this.state = r.data;
       this.initial_full_member = this.state.full_member;
     });

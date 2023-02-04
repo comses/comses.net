@@ -1,23 +1,30 @@
-import BaseControl from '@/components/forms/base';
-import { Component, Prop } from 'vue-property-decorator';
-import Vue from 'vue';
-import VueEasymde from 'vue-easymde';
-import 'easymde/dist/easymde.min.css';
+import BaseControl from "@/components/forms/base";
+import { Component, Prop } from "vue-property-decorator";
+import VueEasymde from "vue-easymde";
+import "easymde/dist/easymde.min.css";
 
 @Component({
   template: `<div :class="['form-group', {'child-is-invalid': isInvalid }]">
-        <slot name="label" :label="label">
-            <label :class="['form-control-label', requiredClass]">{{ label }}
-                <small class="ml-1 text-muted"><a href="https://en.wikipedia.org/wiki/Markdown" target="_blank">Markdown</a> styling is supported</small>
-            </label>
-        </slot>
-        <vue-easymde @input="handleInput" :configs="configs" :value="value" ref="markdownEditor"></vue-easymde>
-        <div v-if="isInvalid" class="invalid-feedback">{{ errorMessage }}</div>
-        <slot name="help" :help="help">
-        </slot>
-    </div>`,
+    <slot name="label" :label="label">
+      <label :class="['form-control-label', requiredClass]"
+        >{{ label }}
+        <small class="ml-1 text-muted"
+          ><a href="https://en.wikipedia.org/wiki/Markdown" target="_blank">Markdown</a> styling is
+          supported</small
+        >
+      </label>
+    </slot>
+    <vue-easymde
+      @input="handleInput"
+      :configs="configs"
+      :value="value"
+      ref="markdownEditor"
+    ></vue-easymde>
+    <div v-if="isInvalid" class="invalid-feedback">{{ errorMessage }}</div>
+    <slot name="help" :help="help"> </slot>
+  </div>`,
   components: {
-    'vue-easymde': VueEasymde,
+    "vue-easymde": VueEasymde,
   },
 })
 export default class Markdown extends BaseControl {
@@ -34,11 +41,25 @@ export default class Markdown extends BaseControl {
     return {
       placeholder: this.help,
       toolbar: [
-        'bold', 'italic', 'heading', '|',
-        'code', 'quote', 'unordered-list', 'ordered-list', '|',
-        'horizontal-rule', 'link', 'image', 'table', '|',
-        'preview', 'side-by-side', 'fullscreen', '|',
-        'guide',
+        "bold",
+        "italic",
+        "heading",
+        "|",
+        "code",
+        "quote",
+        "unordered-list",
+        "ordered-list",
+        "|",
+        "horizontal-rule",
+        "link",
+        "image",
+        "table",
+        "|",
+        "preview",
+        "side-by-side",
+        "fullscreen",
+        "|",
+        "guide",
       ],
     };
   }
@@ -53,15 +74,12 @@ export default class Markdown extends BaseControl {
 
   handleInput(value) {
     console.log("emitting input value: ", value);
-    this.$emit('input', value);
+    this.$emit("input", value);
   }
 
   mounted() {
     const codemirror = this.easymde.codemirror;
     codemirror.options.extraKeys.Tab = false;
-    codemirror.options.extraKeys['Shift-Tab'] = false;
+    codemirror.options.extraKeys["Shift-Tab"] = false;
   }
-
-
-
 }

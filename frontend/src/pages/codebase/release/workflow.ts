@@ -1,244 +1,280 @@
-import {Component, Prop, Watch} from 'vue-property-decorator';
-import Vue from 'vue';
-import Vuex from 'vuex';
-import VueRouter from 'vue-router';
+import { Component, Prop, Watch } from "vue-property-decorator";
+import Vue from "vue";
+import Vuex from "vuex";
+import VueRouter from "vue-router";
 
-import Contributors from './contributors';
-import {Upload} from '@/components/upload';
-import {UploadPage} from './upload';
-import CodebaseReleaseMetadata from './detail';
-import CodebaseEditForm from '@/components/codebase/Edit.vue';
-import {store} from './store';
-import jQuery from 'jquery';
-import {CreateOrUpdateHandler} from '@/api/handler';
-import {CodebaseReleaseAPI, CodebaseAPI, ReviewEditorAPI} from '@/api';
-import * as _ from 'lodash';
-import * as yup from 'yup';
-import {Progress} from '@/pages/codebase/release/progress';
-import {createFormValidator} from '@/pages/form';
-import {HandlerWithRedirect} from '@/api/handler';
-import Input from '@/components/forms/input';
-import MessageDisplay from '@/components/messages';
-import {ConfirmationModal} from '@/components/confirmation';
+import Contributors from "./contributors";
+import { Upload } from "@/components/upload";
+import { UploadPage } from "./upload";
+import CodebaseReleaseMetadata from "./detail";
+import CodebaseEditForm from "@/components/codebase/Edit.vue";
+import { store } from "./store";
+import jQuery from "jquery";
+import { CodebaseReleaseAPI, CodebaseAPI } from "@/api";
+import * as _ from "lodash";
+import * as yup from "yup";
+import { Progress } from "@/pages/codebase/release/progress";
+import { createFormValidator } from "@/pages/form";
+import { HandlerWithRedirect } from "@/api/handler";
+import Input from "@/components/forms/input";
+import MessageDisplay from "@/components/messages";
+import { ConfirmationModal } from "@/components/confirmation";
 
 const codebaseReleaseAPI = new CodebaseReleaseAPI();
 const codebaseAPI = new CodebaseAPI();
-const reviewAPI = new ReviewEditorAPI();
 
 Vue.use(Vuex);
 Vue.use(VueRouter);
 
-type CodebaseTabs = 'metadata' | 'media';
+type CodebaseTabs = "metadata" | "media";
 
 @Component({
-    template: `<div class="modal fade" id="editCodebaseModal" role='dialog'>
-            <div class="modal-dialog modal-lg" role="document">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title">Edit Codebase</h5>
-                        <button type="button" id="closeEditCodebaseModal" class="close" data-dismiss="modal" aria-label="Close">
-                            <span aria-hidden="true">&times;</span>
-                        </button>
-                    </div>
-                    <div class="modal-body">
-                        <ul class="nav nav-tabs">
-                            <li class="nav-item">
-                                <a :class="['nav-link', tabClass('metadata')]" @click="setActive('metadata')">Metadata</a>
-                            </li>
-                            <li class="nav-item">
-                                <a :class="['nav-link', tabClass('media')]" @click="setActive('media')">Media</a>
-                            </li>
-                        </ul>
-                        <div class="tab-content">
-                            <div :class="['tab-pane fade', contentClass('metadata')]">
-                                <codebase-edit-form ref="codebaseEditForm" :_identifier="identifier" redirect="#editCodebaseModal"
-                                    @updated="$emit('updated', $event)">
-                                </codebase-edit-form>
-                            </div>
-                            <div :class="['tab-pane fade', contentClass('media')]">
-                                <c-upload :uploadUrl="uploadUrl" title="Upload Media"
-                                    instructions="Upload featured media files here. Images are displayed on the release detail page of every release. GIF, JPEG and PNG files only."
-                                    originalInstructions="Current media files" :originals="files" @doneUpload="getMediaFiles"
-                                    acceptedFileTypes="image/gif, image/jpeg, image/png"
-                                    @deleteFile="deleteFile" @clear="clear">
-                                </c-upload>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+  template: `<div class="modal fade" id="editCodebaseModal" role="dialog">
+    <div class="modal-dialog modal-lg" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Edit Codebase</h5>
+          <button
+            type="button"
+            id="closeEditCodebaseModal"
+            class="close"
+            data-dismiss="modal"
+            aria-label="Close"
+          >
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <div class="modal-body">
+          <ul class="nav nav-tabs">
+            <li class="nav-item">
+              <a :class="['nav-link', tabClass('metadata')]" @click="setActive('metadata')"
+                >Metadata</a
+              >
+            </li>
+            <li class="nav-item">
+              <a :class="['nav-link', tabClass('media')]" @click="setActive('media')">Media</a>
+            </li>
+          </ul>
+          <div class="tab-content">
+            <div :class="['tab-pane fade', contentClass('metadata')]">
+              <codebase-edit-form
+                ref="codebaseEditForm"
+                :_identifier="identifier"
+                redirect="#editCodebaseModal"
+                @updated="$emit('updated', $event)"
+              >
+              </codebase-edit-form>
             </div>
-        </div>`,
-    components: {
-        'codebase-edit-form': CodebaseEditForm,
-        'c-upload': Upload,
-    },
+            <div :class="['tab-pane fade', contentClass('media')]">
+              <c-upload
+                :uploadUrl="uploadUrl"
+                title="Upload Media"
+                instructions="Upload featured media files here. Images are displayed on the release detail page of every release. GIF, JPEG and PNG files only."
+                originalInstructions="Current media files"
+                :originals="files"
+                @doneUpload="getMediaFiles"
+                acceptedFileTypes="image/gif, image/jpeg, image/png"
+                @deleteFile="deleteFile"
+                @clear="clear"
+              >
+              </c-upload>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>`,
+  components: {
+    "codebase-edit-form": CodebaseEditForm,
+    "c-upload": Upload,
+  },
 })
 class CodebaseEditFormPopup extends Vue {
-    @Prop()
-    public identifier: string;
+  @Prop()
+  public identifier: string;
 
-    @Prop()
-    public redirect: boolean;
+  @Prop()
+  public redirect: boolean;
 
-    @Prop()
-    public files: Array<{ name: string, identifier: any }>;
+  @Prop()
+  public files: Array<{ name: string; identifier: any }>;
 
-    get uploadUrl() {
-        return codebaseAPI.mediaListUrl(this.identifier);
+  get uploadUrl() {
+    return codebaseAPI.mediaListUrl(this.identifier);
+  }
+
+  public active: CodebaseTabs = "metadata";
+
+  public isActive(name: CodebaseTabs) {
+    return name == this.active;
+  }
+
+  public setActive(name: CodebaseTabs) {
+    this.active = name;
+  }
+
+  public tabClass(name: CodebaseTabs) {
+    if (name === this.active) {
+      return "active";
+    } else {
+      return "";
     }
+  }
 
-    public active: CodebaseTabs = 'metadata';
-
-    public isActive(name: CodebaseTabs) {
-        return name == this.active;
+  public contentClass(name: CodebaseTabs) {
+    if (name === this.active) {
+      return "show active";
+    } else {
+      return "";
     }
+  }
 
-    public setActive(name: CodebaseTabs) {
-        this.active = name;
-    }
+  public getMediaFiles() {
+    this.$store.dispatch("getMediaFiles");
+  }
 
-    public tabClass(name: CodebaseTabs) {
-        if (name === this.active) {
-            return 'active';
-        } else {
-            return '';
-        }
-    }
+  public async deleteFile(image_id) {
+    await codebaseAPI.mediaDelete(this.identifier, image_id);
+    this.getMediaFiles();
+  }
 
-    public contentClass(name: CodebaseTabs) {
-        if (name === this.active) {
-            return 'show active';
-        } else {
-            return '';
-        }
-    }
+  public async clear() {
+    await codebaseAPI.mediaClear(this.identifier);
+    this.getMediaFiles();
+  }
 
-    public getMediaFiles() {
-        this.$store.dispatch('getMediaFiles');
-    }
-
-    public async deleteFile(image_id) {
-        await codebaseAPI.mediaDelete(this.identifier, image_id);
-        this.getMediaFiles();
-    }
-
-    public async clear() {
-        await codebaseAPI.mediaClear(this.identifier);
-        this.getMediaFiles();
-    }
-
-    public mounted() {
-      this.$nextTick(() => {
-        const self = this;
-        jQuery('#editCodebaseModal').on('show.bs.modal', function(e) {
-          setTimeout(() => {
-            (self.$refs.codebaseEditForm as any).refresh();
-          }, 500);
-        });
+  public mounted() {
+    this.$nextTick(() => {
+      const self = this;
+      jQuery("#editCodebaseModal").on("show.bs.modal", function (e) {
+        setTimeout(() => {
+          (self.$refs.codebaseEditForm as any).refresh();
+        }, 500);
       });
-    }
+    });
+  }
 }
 
 export const publishSchema = yup.object().shape({
-   version_number: yup.string().required().matches(/\d+\.\d+\.\d+/, 'Not a valid semantic version string. Must be in MAJOR.MINOR.PATCH format.'),
+  version_number: yup
+    .string()
+    .required()
+    .matches(
+      /\d+\.\d+\.\d+/,
+      "Not a valid semantic version string. Must be in MAJOR.MINOR.PATCH format."
+    ),
 });
 
 @Component({
-    template: `<div class="modal fade" id="publishCodebaseReleaseModal">
-        <div class="modal-dialog" role="document">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h4 class="modal-title">Publish Codebase Release {{ _version_number }}</h4>
-                    <button type="button" data-dismiss='modal' class="close" @click="close" aria-label="Close">
-                        <span aria-hidden="true">&times;</span>
-                    </button>
-                </div>
-                <div class="modal-body">
-                    <p><b>Please read carefully!</b> <b>Publishing</b> a release makes it possible for anyone to view and download it. Once a
-                    release is published, the files associated with the release will be <b>frozen</b> and you will no
-                    longer be able to add or remove files to the release. You will still be able to edit your model's
-                    metadata. If you'd like to request <a href='/reviews/'>a peer review</a> of your model you
-                    should do that first so you may address any concerns raised during the peer review process that may
-                    include changes to the files associated with your release.
-                    </p>
-                    <p>Please assign a semantic version number to this release. CoMSES Net currently uses the
-                    <a target='_blank' href='https://semver.org'>semantic versioning</a> standard, which splits a
-                    version number into three parts: major, minor and patch. For example, version 2.7.18 has major
-                    version 2, minor version 7, and patch version 18. You should increase the <i>major</i> version
-                    (leftmost number) if this new release is backwards incompatible with the previous release. You
-                    should increase the <i>minor</i> version (middle number) if this release introduced new features but
-                    remains backwards compatible. And finally, you should increase the <i>patch</i> version (rightmost
-                    number) if this release only contains bug fixes and remains backwards compatible (sans the bugs of
-                    course!).
-                    </p>
-                    <c-input v-model="version_number" name="version_number" :errorMsgs="errors.version_number"
-                        label="Version Number">
-                        <small class="form-text text-muted" slot="help">
-                            <a target='_blank' href="https://semver.org/">more info on semantic versioning</a>
-                        </small>
-                    </c-input>
-                    <p>
-                        Publishing a release cannot be undone. Do you want to continue?
-                    </p>
-                </div>
-                <c-message-display :messages="statusMessages" @clear="clear">
-                </c-message-display>
-                <div class="modal-footer">
-                    <button class="btn btn-secondary" data-dismiss='modal' @click="close">Cancel</button>
-                    <button class="btn btn-danger ml-auto" @click="publish"><i class='fas fa-share-alt'></i> Publish</button>
-                </div>
-            </div>
+  template: `<div class="modal fade" id="publishCodebaseReleaseModal">
+    <div class="modal-dialog" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h4 class="modal-title">Publish Codebase Release {{ _version_number }}</h4>
+          <button
+            type="button"
+            data-dismiss="modal"
+            class="close"
+            @click="close"
+            aria-label="Close"
+          >
+            <span aria-hidden="true">&times;</span>
+          </button>
         </div>
-    </div>`,
-    components: {
-        'c-input': Input,
-        'c-message-display': MessageDisplay,
-    },
+        <div class="modal-body">
+          <p>
+            <b>Please read carefully!</b> <b>Publishing</b> a release makes it possible for anyone
+            to view and download it. Once a release is published, the files associated with the
+            release will be <b>frozen</b> and you will no longer be able to add or remove files to
+            the release. You will still be able to edit your model's metadata. If you'd like to
+            request <a href="/reviews/">a peer review</a> of your model you should do that first so
+            you may address any concerns raised during the peer review process that may include
+            changes to the files associated with your release.
+          </p>
+          <p>
+            Please assign a semantic version number to this release. CoMSES Net currently uses the
+            <a target="_blank" href="https://semver.org">semantic versioning</a> standard, which
+            splits a version number into three parts: major, minor and patch. For example, version
+            2.7.18 has major version 2, minor version 7, and patch version 18. You should increase
+            the <i>major</i> version (leftmost number) if this new release is backwards incompatible
+            with the previous release. You should increase the <i>minor</i> version (middle number)
+            if this release introduced new features but remains backwards compatible. And finally,
+            you should increase the <i>patch</i> version (rightmost number) if this release only
+            contains bug fixes and remains backwards compatible (sans the bugs of course!).
+          </p>
+          <c-input
+            v-model="version_number"
+            name="version_number"
+            :errorMsgs="errors.version_number"
+            label="Version Number"
+          >
+            <small class="form-text text-muted" slot="help">
+              <a target="_blank" href="https://semver.org/">more info on semantic versioning</a>
+            </small>
+          </c-input>
+          <p>Publishing a release cannot be undone. Do you want to continue?</p>
+        </div>
+        <c-message-display :messages="statusMessages" @clear="clear"> </c-message-display>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" data-dismiss="modal" @click="close">Cancel</button>
+          <button class="btn btn-danger ml-auto" @click="publish">
+            <i class="fas fa-share-alt"></i> Publish
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>`,
+  components: {
+    "c-input": Input,
+    "c-message-display": MessageDisplay,
+  },
 })
 class PublishModal extends createFormValidator(publishSchema) {
-    @Prop()
-    public identifier: string;
+  @Prop()
+  public identifier: string;
 
-    @Prop()
-    public _version_number: number;
+  @Prop()
+  public _version_number: number;
 
-    @Prop()
-    public absolute_url: string;
+  @Prop()
+  public absolute_url: string;
 
-    @Watch('_version_number', {immediate: true})
-    public setVersionNumber() {
-        (this as any).version_number = _.clone(this._version_number);
-    }
+  @Watch("_version_number", { immediate: true })
+  public setVersionNumber() {
+    (this as any).version_number = _.clone(this._version_number);
+  }
 
-    public clear() {
-        this.statusMessages = [];
-    }
+  public clear() {
+    this.statusMessages = [];
+  }
 
-    public close() {
-        ($('#publishCodebaseReleaseModal') as any).modal('hide');
-        this.clear();
-    }
+  public close() {
+    ($("#publishCodebaseReleaseModal") as any).modal("hide");
+    this.clear();
+  }
 
-    public detailPageUrl(version_number) {
-        return codebaseReleaseAPI.detailUrl({identifier: this.identifier, version_number});
-    }
+  public detailPageUrl(version_number) {
+    return codebaseReleaseAPI.detailUrl({ identifier: this.identifier, version_number });
+  }
 
-    public publish() {
-        this.clear();
-        return codebaseReleaseAPI.publish({identifier: this.identifier, version_number: this._version_number},
-            new HandlerWithRedirect(this));
-    }
+  public publish() {
+    this.clear();
+    return codebaseReleaseAPI.publish(
+      { identifier: this.identifier, version_number: this._version_number },
+      new HandlerWithRedirect(this)
+    );
+  }
 }
 
 @Component({
-    store: new Vuex.Store(store),
-    components: {
-        'c-confirmation-modal': ConfirmationModal,
-        'c-publish-modal': PublishModal,
-        'c-codebase-edit-form-popup': CodebaseEditFormPopup,
-        'c-progress': Progress,
-    },
-    template: `<div>
+  store: new Vuex.Store(store),
+  components: {
+    "c-confirmation-modal": ConfirmationModal,
+    "c-publish-modal": PublishModal,
+    "c-codebase-edit-form-popup": CodebaseEditFormPopup,
+    "c-progress": Progress,
+  },
+  template: `<div>
         <div v-if="isInitialized">
             <h1>
             <span v-if='! isPublished' title='This release is currently private and unpublished.' class="disabled btn btn-warning"><i class='fas fa-lock'></i> Private</span>
@@ -295,101 +331,103 @@ class PublishModal extends createFormValidator(publishSchema) {
             </template>
         </c-confirmation-modal>
     </div>`,
-    router: new VueRouter({
-        routes: [
-            {path: '/', redirect: {name: 'detail'}},
-            {path: '/detail/', component: CodebaseReleaseMetadata, name: 'detail'},
-            {path: '/upload', component: UploadPage, name: 'upload'},
-            {path: '/contributors/', component: Contributors, name: 'contributors'},
-        ],
-    }),
+  router: new VueRouter({
+    routes: [
+      { path: "/", redirect: { name: "detail" } },
+      { path: "/detail/", component: CodebaseReleaseMetadata, name: "detail" },
+      { path: "/upload", component: UploadPage, name: "upload" },
+      { path: "/contributors/", component: Contributors, name: "contributors" },
+    ],
+  }),
 } as any)
 class Workflow extends Vue {
-    @Prop()
-    public identifier: string;
+  @Prop()
+  public identifier: string;
 
-    @Prop()
-    public version_number: string;
+  @Prop()
+  public version_number: string;
 
-    @Prop()
-    public review_status_enum: object;
+  @Prop()
+  public review_status_enum: object;
 
-    public isInitialized: boolean = false;
+  public isInitialized: boolean = false;
 
-    get requestPeerReviewUrl() {
-        return this.$store.state.release.urls.request_peer_review;
+  get requestPeerReviewUrl() {
+    return this.$store.state.release.urls.request_peer_review;
+  }
+
+  get notifyReviewersOfChangesUrl() {
+    return this.$store.state.release.urls.notify_reviewers_of_changes;
+  }
+
+  get isAwaitingAuthorChanges() {
+    return this.$store.state.release.review_status === "awaiting_author_changes";
+  }
+
+  get hasReview() {
+    return !_.isNull(this.$store.state.release.review_status);
+  }
+
+  get reviewStatus() {
+    const status = this.$store.state.release.review_status;
+    if (_.isNull(status)) {
+      return "Unreviewed";
     }
+    return this.review_status_enum[this.$store.state.release.review_status];
+  }
 
-    get notifyReviewersOfChangesUrl() {
-        return this.$store.state.release.urls.notify_reviewers_of_changes;
-    }
+  get absolute_url() {
+    return this.$store.state.release.absolute_url;
+  }
 
-    get isAwaitingAuthorChanges() {
-        return this.$store.state.release.review_status === 'awaiting_author_changes';
-    }
+  get isPublished() {
+    return this.$store.state.release.live;
+  }
 
-    get hasReview() {
-        return !_.isNull(this.$store.state.release.review_status);
+  get initialData() {
+    switch (this.$route.name) {
+      case "contributors":
+        return this.$store.getters.release_contributors;
+      case "detail":
+        return this.$store.getters.detail;
+      default:
+        return {};
     }
+  }
 
-    get reviewStatus() {
-        const status = this.$store.state.release.review_status;
-        if (_.isNull(status)) {
-            return 'Unreviewed';
-        }
-        return this.review_status_enum[this.$store.state.release.review_status];
-    }
+  get detailPageErrors() {
+    return 0;
+  }
 
-    get absolute_url() {
-        return this.$store.state.release.absolute_url;
+  public created() {
+    if (this.identifier && this.version_number) {
+      this.$store
+        .dispatch("initialize", {
+          identifier: this.identifier,
+          version_number: this.version_number,
+        })
+        .then(response => (this.isInitialized = true));
+    } else {
+      this.isInitialized = true;
     }
+  }
 
-    get isPublished() {
-        return this.$store.state.release.live;
-    }
+  public setCodebase(codebase) {
+    this.$store.commit("setCodebase", codebase);
+  }
 
-    get initialData() {
-        switch (this.$route.name) {
-            case 'contributors':
-                return this.$store.getters.release_contributors;
-            case 'detail':
-                return this.$store.getters.detail;
-            default:
-                return {};
-        }
-    }
+  public setReviewStatus(review_status) {
+    this.$store.commit("setReviewStatus", review_status);
+  }
 
-    get detailPageErrors() {
-        return 0;
-    }
+  public setUrls(urls) {
+    this.$store.commit("setUrls", urls);
+  }
 
-    public created() {
-        if (this.identifier && this.version_number) {
-            this.$store.dispatch('initialize', {
-                identifier: this.identifier,
-                version_number: this.version_number,
-            }).then((response) => this.isInitialized = true);
-        } else {
-            this.isInitialized = true;
-        }
-    }
-
-    public setCodebase(codebase) {
-        this.$store.commit('setCodebase', codebase);
-    }
-
-    public setReviewStatus(review_status) {
-        this.$store.commit('setReviewStatus', review_status);
-    }
-
-    public setUrls(urls) {
-        this.$store.commit('setUrls', urls);
-    }
-
-    public handlePeerReviewCreation(data) {
-        this.setReviewStatus(data.review_status);
-        this.setUrls(data.urls);
-    }
+  public handlePeerReviewCreation(data) {
+    this.setReviewStatus(data.review_status);
+    this.setUrls(data.urls);
+  }
 }
 
 export default Workflow;

@@ -1,13 +1,10 @@
-<template>
-</template>
-
 <script>
-    import 'bootstrap'
-    export default {
-        name: "home"
-    }
+import "bootstrap";
+export default {
+  name: "HomePage",
+};
 </script>
 
 <style lang="scss">
-    @import '@/styles/index.scss';
+@import "@/styles/index.scss";
 </style>

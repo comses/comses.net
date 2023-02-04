@@ -1,10 +1,10 @@
-import Vue from 'vue';
-import * as Sentry from '@sentry/browser';
-import * as Integrations from '@sentry/integrations';
+import Vue from "vue";
+import * as Sentry from "@sentry/browser";
+import * as Integrations from "@sentry/integrations";
 
-if (process.env.NODE_ENV !== 'development') {
+if (process.env.NODE_ENV !== "development") {
   Sentry.init({
-      dsn: process.env.SENTRY_DSN,
-      integrations: [new Integrations.Vue({Vue, attachProps: true})],
+    dsn: process.env.SENTRY_DSN,
+    integrations: [new Integrations.Vue({ Vue, attachProps: true })],
   });
 }
