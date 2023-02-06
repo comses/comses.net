@@ -79,7 +79,7 @@ Please also note that the [Creative Commons does NOT recommend using their licen
 
 # Final Assessment
 
-Once you have finished the above modules, please complete the following assessment. You will receive a certificate of completion and digital badge after successfully passing the assessment.
+Once you have finished the above modules, please complete the following assessment. You will receive a certificate of completion after successfully passing the assessment.
 
 [Complete the final assessment](https://forms.gle/5WjshdE2QXXpRhRh9)
 
