@@ -7,7 +7,6 @@ services:
       - bootstrap.memory_lock=true
       - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
       - esdata1:/usr/share/elasticsearch/data
-# FIXME: duplication bad
   elasticsearch2:
     image: docker.elastic.co/elasticsearch/elasticsearch:${ES_VERSION}
     restart: always
@@ -36,25 +35,10 @@ services:
       - ./deploy/elasticsearch.conf.d/log4j2.properties:/usr/share/elasticsearch/config/log4j2.properties
       - esdata2:/usr/share/elasticsearch/data
   db:
-    image: postgis/postgis:15-3.3
     restart: always
-    networks:
-      - db
-    volumes:
-      - ./docker/shared/pgdata:/var/lib/postgresql/data
   js:
-    # FIXME: currently needs a second Django `./manage.py collectstatic` to move generated assets from Django into
-    # static directory, seems we should be able to skip that step
-    build: frontend
-    image: comses/cmsjs:${RELEASE_VERSION}
-    command: ['yarn', 'build']
     environment:
       NODE_ENV: "production"
-    volumes:
-      - ./frontend/src:/code/src
-      - ./frontend/yarn.lock:/code/yarn.lock
-      - ./docker/shared:/shared
-      - ./deploy/conf/config.ini:/secrets/config.ini
   nginx:
     image: nginx:stable
     restart: always

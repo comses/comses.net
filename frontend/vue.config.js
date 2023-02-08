@@ -5,7 +5,7 @@ const path = require('path');
 const ini = require('ini');
 const fs = require('fs');
 
-const projectSettings = ini.decode(fs.readFileSync('/secrets/config.ini', 'utf8'));
+const projectSettings = ini.decode(fs.readFileSync('/run/secrets/config.ini', 'utf8'));
 
 function addStyleResource(rule) {
     rule.use('style-resource')

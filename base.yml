@@ -1,6 +1,6 @@
 services:
   redis:
-    image: redis:6-alpine
+    image: redis:7-alpine
     command: ["redis-server", "/usr/local/etc/redis/redis.conf"]
     volumes:
       - ./deploy/conf/redis.conf:/usr/local/etc/redis/redis.conf
@@ -33,24 +33,23 @@ services:
     image: postgis/postgis:15-3.3
     volumes:
       - ./docker/shared/pgdata:/var/lib/postgresql/data
-      - ./deploy/secrets/db_password:/run/secrets/db_password
+      - ./build/secrets/db_password:/run/secrets/db_password
     environment:
-      # FIXME: replace with init sql script, see https://github.com/docker/docker/issues/13490
       POSTGRES_USER: "${DB_USER}"
       POSTGRES_DB: "${DB_NAME}"
       POSTGRES_PASSWORD_FILE: /run/secrets/db_password
   js:
     build: frontend
-    image: comses/cmsjs
+    image: comses/comsesnet-js
     volumes:
       - /code/node_modules
       - ./docker/shared:/shared
-      - ./deploy/conf/config.ini:/secrets/config.ini
-  cms:
+      - ./build/secrets/config.ini:/run/secrets/config.ini
+  server:
     build: django
-    image: comses/cms:dev
+    image: comses/server
     volumes:
-      - ./deploy/conf/config.ini:/secrets/config.ini
+      - ./build/secrets:/run/secrets
       - ./deploy/elasticsearch.conf.d:/etc/elasticsearch
       - ./docker/shared:/shared
     depends_on:
@@ -59,10 +58,6 @@ services:
       - elasticsearch
       - redis
     environment:
-      DB_USER: ${DB_USER}
-      DB_HOST: db
-      DB_NAME: ${DB_NAME}
-      DB_PORT: ${DB_PORT}
       CLEAN_DATABASE: "false"
 volumes:
   esdata:

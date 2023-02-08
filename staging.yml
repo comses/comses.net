@@ -6,6 +6,7 @@ services:
     environment:
       - bootstrap.memory_lock=true
       - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    volumes:
       - esdata1:/usr/share/elasticsearch/data
 # FIXME: duplication bad
   elasticsearch2:
@@ -35,18 +36,11 @@ services:
       - ./deploy/elasticsearch.conf.d/elasticsearch-node.yml:/usr/share/elasticsearch/config/elasticsearch.yml
       - ./deploy/elasticsearch.conf.d/log4j2.properties:/usr/share/elasticsearch/config/log4j2.properties
       - esdata2:/usr/share/elasticsearch/data
-  db:
-    image: postgis/postgis:15-3.3
-    restart: always
-    networks:
-      - db
-    volumes:
-      - ./docker/shared/pgdata:/var/lib/postgresql/data
   js:
     # FIXME: currently needs a second Django `./manage.py collectstatic` to move generated assets from Django into
     # static directory, seems we should be able to skip that step
     build: frontend
-    image: comses/cmsjs:${RELEASE_VERSION}
+    image: comses/comsesnet-js:${RELEASE_VERSION}
     command: ['yarn', 'build']
     environment:
       NODE_ENV: "staging"
@@ -54,7 +48,7 @@ services:
       - ./frontend/src:/code/src
       - ./frontend/yarn.lock:/code/yarn.lock
       - ./docker/shared:/shared
-      - ./deploy/conf/config.ini:/secrets/config.ini
+      - ./build/secrets/config.ini:/secrets/config.ini
   nginx:
     image: nginx:stable
     restart: always
@@ -69,22 +63,22 @@ services:
       - sockets:/shared/sockets
     command: ["nginx", "-g", "daemon off;"]
     networks:
-      - cms
+      - server
     ports:
       - "80:80"
     depends_on:
-      - cms
-  cms:
+      - server
+  server:
     build:
       context: ./django
       args:
         REQUIREMENTS_FILE: requirements-dev.txt
         UBUNTU_MIRROR: "mirror.it.ubc.ca"
         RUN_SCRIPT: "./deploy/prod.sh"
-    image: comses/cms:${RELEASE_VERSION}
+    image: comses/server:${RELEASE_VERSION}
     restart: always
     networks:
-      - cms
+      - server
       - esnet
       - db
     volumes:
@@ -94,23 +88,12 @@ services:
       - sockets:/shared/sockets
     environment:
       DJANGO_SETTINGS_MODULE: "core.settings.staging"
-      DB_USER: ${DB_USER}
-      DB_HOST: db
-      DB_NAME: ${DB_NAME}
-      DB_PORT: ${DB_PORT}
     ports:
       - "127.0.0.1:9191:9191" # uWSGI stats server
     depends_on:
       - db
       - elasticsearch
       - redis
-networks:
-  esnet:
-    driver: bridge
-  cms:
-    driver: bridge
-  db:
-    driver: bridge
 volumes:
   sockets:
     driver: local

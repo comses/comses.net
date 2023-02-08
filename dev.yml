@@ -4,8 +4,8 @@ services:
       - "127.0.0.1:3000:3000"
     volumes:
       - ./frontend:/code
-  cms:
-    image: comses/cms:dev
+  server:
+    image: comses/server:dev
     volumes:
       - ./django:/code
       - ./docs:/docs

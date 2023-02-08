@@ -1,7 +1,9 @@
 # app specific
+build
 incoming
 logs
 release-version.txt
+config.mk
 
 # coveralls
 .coveralls.yml
