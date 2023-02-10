@@ -215,7 +215,7 @@ export default class DownloadRequestFormModal extends createFormValidator(schema
       await this.validate();
       const response = await this.create();
       // temporary modal bug workaround
-      if (response && response.status === 200) {
+      if (response && response.status === 201) {
         document.getElementById("closeDownloadRequestFormModal").click();
       }
     } catch (e) {

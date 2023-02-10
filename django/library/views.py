@@ -849,6 +849,9 @@ class CodebaseReleaseViewSet(CommonViewSetMixin, NoDeleteViewSet):
     @action(detail=True, methods=["post"], permission_classes=[AllowAny])
     @transaction.atomic
     def request_download(self, request, **kwargs):
+        """
+        Save a download request form and redirect to the download URL
+        """
         user = request.user if request.user.is_authenticated else None
         download_request = request.data
         codebase_release = self.get_object()
@@ -866,7 +869,7 @@ class CodebaseReleaseViewSet(CommonViewSetMixin, NoDeleteViewSet):
             raise ValidationError(f"Invalid download request: {download_request}")
 
         try:
-            response = build_archive_download_response(codebase_release)
+            response = Response(status=status.HTTP_201_CREATED)
             serializer.save()  # records the download + metadata
         except FileNotFoundError:
             logger.error(
