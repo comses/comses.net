@@ -34,6 +34,7 @@ services:
     volumes:
       - ./docker/shared/pgdata:/var/lib/postgresql/data
       - ./build/secrets/db_password:/run/secrets/db_password
+      - ./build/secrets/.pgpass:~/.pgpass
     environment:
       POSTGRES_USER: "${DB_USER}"
       POSTGRES_DB: "${DB_NAME}"

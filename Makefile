@@ -1,7 +1,7 @@
 include config.mk
 include .env
 
-DEPLOY_ENVIRONMENT := dev
+DEPLOY_ENVIRONMENT = dev
 DB_USER=comsesnet
 DB_DATA_PATH=docker/data
 BACKUPS_PATH=docker/backups
@@ -29,7 +29,7 @@ build: docker-compose.yml
 
 
 config.mk:
-	DEPLOY_ENVIRONMENT=${DEPLOY_ENVIRONMENT} envsubst < config.mk.template > config.mk
+	DEPLOY_ENVIRONMENT=${DEPLOY_ENVIRONMENT} envsubst < ${DEPLOY_CONF_DIR}/config.mk.template > config.mk
 
 
 ${SECRETS_DIR}:
@@ -75,6 +75,11 @@ $(CONFIG_INI_PATH): .env $(DB_PASSWORD_PATH) ${CONFIG_INI_TEMPLATE}
 	TEST_USERNAME=___test_user___ TEST_BASIC_AUTH_PASSWORD=$$(openssl rand -base64 42) \
 	TEST_USER_ID=1111111 BUILD_ID=${BUILD_ID} \
 	envsubst < ${CONFIG_INI_TEMPLATE} > ${CONFIG_INI_PATH}
+	# FIXME: should reset the db password too...
+
+.PHONY: set-db-password
+set-db-password: $(DB_PASSWORD_PATH) $(CONFIG_INI_PATH)
+	docker compose run --rm server psql -h db -U comsesnet comsesnet -c "ALTER USER ${DB_USER} with password '$(shell cat ${DB_PASSWORD_PATH})';"
 
 .PHONY: secrets
 secrets: $(SECRETS_DIR) $(SECRETS)

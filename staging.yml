@@ -1,8 +1,6 @@
 services:
   elasticsearch:
     restart: always
-    networks:
-      - esnet
     environment:
       - bootstrap.memory_lock=true
       - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
@@ -12,8 +10,6 @@ services:
   elasticsearch2:
     image: docker.elastic.co/elasticsearch/elasticsearch:${ES_VERSION}
     restart: always
-    networks:
-      - esnet
     environment:
       - bootstrap.memory_lock=true
       - node.name=esnode2
@@ -62,8 +58,6 @@ services:
       - ./docker/shared/library:/library
       - sockets:/shared/sockets
     command: ["nginx", "-g", "daemon off;"]
-    networks:
-      - server
     ports:
       - "80:80"
     depends_on:
@@ -77,10 +71,6 @@ services:
         RUN_SCRIPT: "./deploy/prod.sh"
     image: comses/server:${RELEASE_VERSION}
     restart: always
-    networks:
-      - server
-      - esnet
-      - db
     volumes:
       - ./deploy/conf/config.ini:/secrets/config.ini
       - ./deploy/elasticsearch.conf.d:/etc/elasticsearch
