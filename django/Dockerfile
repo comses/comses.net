@@ -39,7 +39,7 @@ RUN sed -i "s|archive.ubuntu.com|${UBUNTU_MIRROR}|" /etc/apt/sources.list \
         && pip3 install -U pip \
         && touch /etc/service/django/run /etc/postgresql-backup-pre \
         && chmod a+x /etc/service/django/run /etc/postgresql-backup-pre \
-        && ln -sf /run/secrets/.pgpass ~/.pgpass \
+        && ln -sf /run/secrets/.pgpass /root/.pgpass \
         && apt-get autoremove -y && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 COPY ${REQUIREMENTS_FILE} requirements.txt /tmp/
