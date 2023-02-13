@@ -1,0 +1,50 @@
+services:
+  js:
+    environment:
+      NODE_ENV: "production"
+  nginx:
+    image: nginx:stable
+    restart: always
+    volumes:
+      - ./deploy/nginx/nginx-haproxy.conf:/etc/nginx/nginx.conf
+      - ./deploy/nginx/uwsgi_params:/etc/nginx/uwsgi_params
+      - ./deploy/nginx/well-known:/srv/.well-known
+      - ./docker/shared/logs/nginx:/var/log/nginx
+      - ./docker/shared/static:/srv/static
+      - ./docker/shared/media:/srv/media
+      - ./docker/shared/library:/library
+      - sockets:/shared/sockets
+    command: ["nginx", "-g", "daemon off;"]
+    ports:
+      - "80:80"
+    depends_on:
+      - server
+  server:
+    build:
+      context: ./django
+      args:
+        REQUIREMENTS_FILE: requirements.txt
+        UBUNTU_MIRROR: "mirror.it.ubc.ca"
+        RUN_SCRIPT: "./deploy/prod.sh"
+    image: comses/server:${RELEASE_VERSION}
+    restart: always
+    volumes:
+      - ./deploy/conf/config.ini:/secrets/config.ini
+      - ./deploy/elasticsearch.conf.d:/etc/elasticsearch
+      - ./docker/shared:/shared
+      - sockets:/shared/sockets
+    environment:
+      DJANGO_SETTINGS_MODULE: "core.settings.production"
+    ports:
+      - "127.0.0.1:9191:9191" # uWSGI stats server
+    depends_on:
+      - db
+      - elasticsearch
+      - redis
+volumes:
+  sockets:
+    driver: local
+  esdata1:
+    driver: local
+  esdata2:
+    driver: local

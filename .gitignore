@@ -1,14 +1,16 @@
 # app specific
+build
 incoming
 logs
 release-version.txt
+config.mk
 
 # coveralls
 .coveralls.yml
 # Docker
 docker
 docker-compose.yml
-generated-*.yml
+deploy/secrets
 config.ini
 *.backup
 # backup / metadata / tmp files

@@ -74,9 +74,17 @@ Pull requests, issues to request new features, enhancements, or bug reports are 
 Run `./build.sh` to build the Docker image and generate secrets and a symlinked `docker-compose.yml` file. Run `docker-compose up -d` to start all containers. The site will have no data or Pages however without a data dump to restore via `inv borg.restore`.
 
 The `build.sh` script relies on
-[envsubst](https://www.gnu.org/software/gettext/manual/html_node/envsubst-Invocation.html). To install this on macOS you may need to install [macports](https://www.macports.org/) or use [homebrew](https://brew.sh/) and `brew install gettext`.
+[envsubst](https://www.gnu.org/software/gettext/manual/html_node/envsubst-Invocation.html). To install this on macOS you may need to install [macports](https://www.macports.org/) and run `sudo port install gettext` or use [homebrew](https://brew.sh/) and `brew install gettext`.
 
-Enabling debugging can be a bit of a pain and requires custom workarounds to the Docker environment. Visual Studio Code has a container environment that can be useful though: https://code.visualstudio.com/docs/remote/containers
+#### Apple Silicon + Docker workarounds
+
+For the M1/M2 chipset you will need to set `export DOCKER_DEFAULT_PLATFORM=linux/amd64` to properly build the images. This is
+best placed in a shell startup file like `.bashrc` | `.profile` | `.zshrc` | `.zprofile` so it will run every time you
+open an interactive shell.
+
+Enabling debugging is still a pain and requires custom workarounds to make the Docker environment accessible to your
+local system and IDEs. Visual Studio Code has a container environment that can be useful though:
+https://code.visualstudio.com/docs/remote/containers
 
 ### Other CoMSES Projects
 
