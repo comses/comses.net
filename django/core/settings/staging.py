@@ -42,6 +42,27 @@ ROBOTS_SITEMAP_URLS = [f"{BASE_URL}/sitemap.xml"]
 # set up robots + sitemaps inclusion https://django-robots.readthedocs.io/en/latest/
 ROBOTS_SITEMAP_URLS = [f"{BASE_URL}/sitemap.xml"]
 
+#########################################################
+# Content Security Policy support provided via django-csp
+#
+# https://django-csp.readthedocs.io/en/latest/index.html
+#
+# Full CSP Spec: https://www.w3.org/TR/CSP/
+CSP_DEFAULT_SRC = ("'self'", "test.comses.net", "staging.comses.net")
+CSP_SCRIPT_SRC = (
+    "'self'",
+    "cdnjs.cloudflare.com",
+    "browser.sentry-cdn.com",
+    "www.googletagmanager.com",
+    "test-discourse.comses.net",
+    "forum.comses.net",
+)
+
+CSP_FONT_SRC = ("'self'", "fonts.googleapis.com", "fonts.gstatic.com")
+CSP_STYLE_SRC = ("'self'", "fonts.googleapis.com")
+CSP_IMG_SRC = ("'self'", "data:")
+CSP_FRAME_SRC = ("'self'", "forum.comses.net", "test-discourse.comses.net")
+CSP_INCLUDE_NONCE_IN = ["script-src"]
 
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 SECURE_SSL_REDIRECT = True
