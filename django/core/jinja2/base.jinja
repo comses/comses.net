@@ -319,12 +319,14 @@
                 integrity="sha384-4+IdsjFHpxfo2PQYne6sV0ulAlOJbJHbeEy4vDPAt9kUmUb9t0W2HFp6I6rznkEP"
                 crossorigin="anonymous">
             </script>
+            {% script async=True %}
             <script>
                 Sentry.init({
                     dsn: "{{ constants.SENTRY_DSN }}",
                     release: "{{ constants.RELEASE_VERSION }}"
                 })
             </script>
+            {% endscript %}
         {% endwith %}
     {% endif %}
     {{ render_bundle('home') }}

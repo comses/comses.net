@@ -58,9 +58,11 @@
         </li>
 
         {% if mailchimp_js %}
+            {% script async=True %}
             <script>
                 {{ mailchimp_js|safe }}
             </script>
+            {% endscript %}
         {% else %}
             <script src='{{ mailchimp_digest_archive_url }}'>
             </script>
