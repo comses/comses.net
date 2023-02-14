@@ -1,7 +1,4 @@
-include config.mk
-include .env
-
-DEPLOY_ENVIRONMENT = dev
+DEPLOY_ENVIRONMENT := dev
 DB_USER=comsesnet
 DOCKER_SHARED_DIR=docker/shared
 DOCKER_DB_DATA_DIR=docker/pgdata
@@ -20,6 +17,9 @@ MAIL_API_KEY_PATH=${SECRETS_DIR}/mail_api_key
 SECRETS=$(MAIL_API_KEY_PATH) $(DB_PASSWORD_PATH) $(CONFIG_INI_PATH) $(PGPASS_PATH) $(SENTRY_DSN_PATH) $(SECRET_KEY_PATH) .env
 SHARED_CONFIG_PATH=shared/src/assets/config.ts
 BUILD_ID=$(shell git describe --tags --abbrev=1)
+
+include config.mk
+include .env
 
 .PHONY: build
 build: docker-compose.yml secrets $(DOCKER_SHARED_DIR)
@@ -78,10 +78,9 @@ $(SECRET_KEY_PATH): | ${SECRETS_DIR}
 	SECRET_KEY=$$(openssl rand -base64 48); \
 	echo $${SECRET_KEY} > $(SECRET_KEY_PATH)
 
-docker-compose.yml: base.yml staging.yml $(DEPLOY_ENVIRONMENT).yml config.mk $(PGPASS_PATH)
+docker-compose.yml: base.yml dev.yml staging.yml prod.yml config.mk $(PGPASS_PATH)
 	case "$(DEPLOY_ENVIRONMENT)" in \
-	  dev) docker compose -f base.yml -f $(DEPLOY_ENVIRONMENT).yml config > docker-compose.yml;; \
-	  staging) docker compose -f base.yml -f $(DEPLOY_ENVIRONMENT).yml config > docker-compose.yml;; \
+	  dev|staging) docker compose -f base.yml -f $(DEPLOY_ENVIRONMENT).yml config > docker-compose.yml;; \
 	  prod) docker compose -f base.yml -f staging.yml -f $(DEPLOY_ENVIRONMENT).yml config > docker-compose.yml;; \
 	  *) echo "invalid environment. must be either dev, staging or prod" 1>&2; exit 1;; \
 	esac

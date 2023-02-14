@@ -1,1 +1,2 @@
-DEPLOY_ENVIRONMENT=${DEPLOY_ENVIRONMENT} # dev|staging|test|prod
+# dev|staging|test|prod
+DEPLOY_ENVIRONMENT=${DEPLOY_ENVIRONMENT}

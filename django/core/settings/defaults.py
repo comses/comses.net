@@ -150,18 +150,21 @@ AUTHENTICATION_BACKENDS = (
 
 
 # basic development settings, override with more paranoid in staging/prod
-CSP_DEFAULT_SRC = ("'self'", 'localhost:*', 'ws:')
-CSP_SCRIPT_SRC = ("'self'", 'localhost:*',
-                  'cdnjs.cloudflare.com', 'browser.sentry-cdn.com',
-                  'www.googletagmanager.com', 'forum.comses.net',
-                  "'unsafe-eval'", # unsafe-eval only for dev mode
+CSP_DEFAULT_SRC = ("'self'", "localhost:*", "ws:")
+CSP_SCRIPT_SRC = (
+    "'self'",
+    "localhost:*",
+    "cdnjs.cloudflare.com",
+    "browser.sentry-cdn.com",
+    "www.googletagmanager.com",
+    "forum.comses.net",
+    "'unsafe-eval'",  # unsafe-eval only for dev mode
+)
 
-                  )
-
-CSP_FONT_SRC = ("'self'", "fonts.googleapis.com", "fonts.gstatic.com", 'localhost:*')
+CSP_FONT_SRC = ("'self'", "fonts.googleapis.com", "fonts.gstatic.com", "localhost:*")
 CSP_STYLE_SRC = ("'self'", "fonts.googleapis.com", "localhost:*", "'unsafe-inline'")
-CSP_IMG_SRC = ("'self'", "data:", 'localhost:*')
-CSP_FRAME_SRC = ("'self'", 'forum.comses.net')
+CSP_IMG_SRC = ("'self'", "data:", "localhost:*")
+CSP_FRAME_SRC = ("'self'", "forum.comses.net")
 CSP_INCLUDE_NONCE_IN = ["script-src"]
 
 
