@@ -9,9 +9,34 @@ DEPLOY_ENVIRONMENT = Environment.PRODUCTION
 EMAIL_SUBJECT_PREFIX = config.get(
     "email", "EMAIL_SUBJECT_PREFIX", fallback="[comses.net]"
 )
-# http://django-allauth.readthedocs.io/en/latest/providers.html#orcid
-# remove sandbox orcid provider
+# See http://django-allauth.readthedocs.io/en/latest/providers.html#orcid for more context.
+#
+# staging settings include a customized sandbox orcid provider that we remove in production. In production, the ORCID
+# provider works out of the box without any additional configuration.
+#
+# remove sandbox orcid provider from SOCIALACCOUNT_PROVIDERS
 SOCIALACCOUNT_PROVIDERS.pop("orcid", None)
+
+#########################################################
+# Content Security Policy support provided via django-csp
+#
+# https://django-csp.readthedocs.io/en/latest/index.html
+#
+# Full CSP Spec: https://www.w3.org/TR/CSP/
+CSP_DEFAULT_SRC = ("'self'", "www.comses.net")
+CSP_SCRIPT_SRC = (
+    "'self'",
+    "cdnjs.cloudflare.com",
+    "browser.sentry-cdn.com",
+    "www.googletagmanager.com",
+    "forum.comses.net",
+)
+
+CSP_FONT_SRC = ("'self'", "fonts.googleapis.com", "fonts.gstatic.com")
+CSP_STYLE_SRC = ("'self'", "fonts.googleapis.com")
+CSP_IMG_SRC = ("'self'", "data:", "i.ytimg.com")
+CSP_FRAME_SRC = ("'self'", "forum.comses.net", "youtube.com", "www.youtube.com", "youtu.be" )
+CSP_INCLUDE_NONCE_IN = ["script-src"]
 
 # Base URL to use when referring to full URLs within the Wagtail admin backend -
 # e.g. in notification emails. Don't include '/admin' or a trailing slash

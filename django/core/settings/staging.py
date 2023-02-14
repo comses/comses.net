@@ -60,8 +60,8 @@ CSP_SCRIPT_SRC = (
 
 CSP_FONT_SRC = ("'self'", "fonts.googleapis.com", "fonts.gstatic.com")
 CSP_STYLE_SRC = ("'self'", "fonts.googleapis.com")
-CSP_IMG_SRC = ("'self'", "data:")
-CSP_FRAME_SRC = ("'self'", "forum.comses.net", "test-discourse.comses.net")
+CSP_IMG_SRC = ("'self'", "data:", "i.ytimg.com")
+CSP_FRAME_SRC = ("'self'", "forum.comses.net", "test-discourse.comses.net", "youtube.com", "www.youtube.com", "youtu.be" )
 CSP_INCLUDE_NONCE_IN = ["script-src"]
 
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
