@@ -94,11 +94,15 @@ secrets: $(SECRETS_DIR) $(SECRETS)
 
 .PHONY: deploy
 deploy: build
+	docker compose pull db redis elasticsearch
+	ifneq ($(DEPLOY_ENVIRONMENT),dev)
+		docker compose pull nginx
+	endif
 	docker compose up -d 
 
+# consider deleting build entirely but would lose generated secrets
 .PHONY: clean
 clean:
-# consider deleting build entirely but would lose generated secrets
 	rm config.mk .env 
 
 .PHONY: test
