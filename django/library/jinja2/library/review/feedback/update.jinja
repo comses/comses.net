@@ -64,6 +64,7 @@
             <button id="save" class="btn btn-secondary">Save</button>
             <button id="submitReview" class="btn btn-primary">Submit to Editor</button>
         </form>
+        {% script async=False %}
         <script>
             document.getElementById('submitReview').addEventListener('click', function(ev) {
                 ev.preventDefault();
@@ -77,5 +78,6 @@
                 ev.target.form.submit();
              })
         </script>
+        {% endscript %}
     {% endif %}
 {% endblock %}

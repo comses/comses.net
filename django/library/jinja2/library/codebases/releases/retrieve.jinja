@@ -505,11 +505,13 @@
     {% with CLIPBOARD_JS_VERSION="2.0.6" %}
         <script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/{{ CLIPBOARD_JS_VERSION }}/clipboard.min.js"></script>
     {% endwith %}
+    {% script async=False %}
     <script>
         document.addEventListener("DOMContentLoaded", function(event) {
             new ClipboardJS('.btn-clipboard');
         });
     </script>
+    {% endscript %}
     {{ render_bundle('release_regenerate_share_uuid', attrs='defer') }}
     {{ render_bundle('download_request_form', attrs='defer') }}
 {% endblock %}

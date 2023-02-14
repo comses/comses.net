@@ -292,6 +292,7 @@
     {# JS section #}
     <script src="{{ static('cookielaw/js/cookielaw.js') }}"></script>
     {% if is_production() %}
+        {% script async=False %}
         <!-- Google Tag Manager -->
         <script>(function (w, d, s, l, i) {
             w[l] = w[l] || [];
@@ -307,6 +308,7 @@
             f.parentNode.insertBefore(j, f);
         })(window, document, 'script', 'dataLayer', 'GTM-TLNSSCJ');</script>
         <!-- End Google Tag Manager -->
+        {% endscript %}
     {% endif %}
     <script src="//cdnjs.cloudflare.com/ajax/libs/holder/2.9.7/holder.min.js"></script>
     {% if constants.DEPLOY_ENVIRONMENT.is_staging_or_production %}
@@ -326,6 +328,7 @@
         {% endwith %}
     {% endif %}
     {{ render_bundle('home') }}
+    {% script async=False %}
     <script>
         function submitLogout() {
             document.getElementById('logoutForm').submit();
@@ -338,7 +341,7 @@
             }, 0);
         }
     </script>
-
+    {% endscript %}
     {% block js %}
         {# Override this in templates to add extra javascript #}
     {% endblock %}

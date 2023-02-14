@@ -130,6 +130,7 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "django.middleware.security.SecurityMiddleware",
+    "csp.middleware.CSPMiddleware",
     "waffle.middleware.WaffleMiddleware",
     "wagtail.contrib.redirects.middleware.RedirectMiddleware",
 ]
@@ -139,6 +140,30 @@ AUTHENTICATION_BACKENDS = (
     "core.backends.ComsesObjectPermissionBackend",
     "guardian.backends.ObjectPermissionBackend",
 )
+
+#########################################################
+# Content Security Policy support provided via django-csp
+#
+# https://django-csp.readthedocs.io/en/latest/index.html
+#
+# Full CSP Spec: https://www.w3.org/TR/CSP/
+
+
+# basic development settings, override with more paranoid in staging/prod
+CSP_DEFAULT_SRC = ("'self'", 'localhost:*', 'ws:')
+CSP_SCRIPT_SRC = ("'self'", 'localhost:*',
+                  'cdnjs.cloudflare.com', 'browser.sentry-cdn.com',
+                  'www.googletagmanager.com', 'forum.comses.net',
+                  "'unsafe-eval'", # unsafe-eval only for dev mode
+
+                  )
+
+CSP_FONT_SRC = ("'self'", "fonts.googleapis.com", "fonts.gstatic.com", 'localhost:*')
+CSP_STYLE_SRC = ("'self'", "fonts.googleapis.com", "localhost:*", "'unsafe-inline'")
+CSP_IMG_SRC = ("'self'", "data:", 'localhost:*')
+CSP_FRAME_SRC = ("'self'", 'forum.comses.net')
+CSP_INCLUDE_NONCE_IN = ["script-src"]
+
 
 # Enable the sites framework for Wagtail + django-allauth
 SITE_ID = 1
@@ -474,6 +499,7 @@ TEMPLATES = [
                 "wagtail.jinja2tags.core",
                 "wagtail.admin.jinja2tags.userbar",
                 "wagtail.images.jinja2tags.images",
+                "csp.extensions.NoncedScript",
                 "waffle.jinja.WaffleExtension",
             ],
             "environment": "core.jinja_config.environment",

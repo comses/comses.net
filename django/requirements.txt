@@ -3,6 +3,7 @@ bleach==5.0.1
 django-allauth==0.52.0
 django-anymail[mailgun]==9.0
 django-cookie-law==2.2.0
+django-csp[jinja2]==3.6
 django-extensions==3.2.1
 django-guardian==2.4.0
 django-hcaptcha-field==1.4.0
