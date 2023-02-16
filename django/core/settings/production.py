@@ -57,6 +57,7 @@ TEMPLATES = [
                 "wagtail.jinja2tags.core",
                 "wagtail.admin.jinja2tags.userbar",
                 "wagtail.images.jinja2tags.images",
+                "csp.extensions.NoncedScript",
                 "waffle.jinja.WaffleExtension",
             ],
             "environment": "core.jinja_config.environment",

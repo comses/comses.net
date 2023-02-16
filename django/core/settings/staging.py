@@ -35,12 +35,7 @@ WAGTAILADMIN_BASE_URL = BASE_URL = DEPLOY_ENVIRONMENT.base_url
 
 # security settings from manage.py check --deploy
 # https://docs.djangoproject.com/en/2.0/ref/settings/#secure-proxy-ssl-header
-# set up robots + sitemaps inclusion https://django-robots.readthedocs.io/en/latest/
-ROBOTS_SITEMAP_URLS = [f"{BASE_URL}/sitemap.xml"]
 # SILENCED_SYSTEM_CHECKS = ['captcha.recaptcha_test_key_error']
-
-# set up robots + sitemaps inclusion https://django-robots.readthedocs.io/en/latest/
-ROBOTS_SITEMAP_URLS = [f"{BASE_URL}/sitemap.xml"]
 
 #########################################################
 # Content Security Policy support provided via django-csp
@@ -55,10 +50,11 @@ CSP_SCRIPT_SRC = (
     "browser.sentry-cdn.com",
     "www.googletagmanager.com",
     "*.comses.net",
+    "'unsafe-eval'",
 )
 
 CSP_FONT_SRC = ("'self'", "fonts.googleapis.com", "fonts.gstatic.com")
-CSP_STYLE_SRC = ("'self'", "fonts.googleapis.com")
+CSP_STYLE_SRC = ("'self'", "fonts.googleapis.com", "'unsafe-inline'",)
 CSP_IMG_SRC = ("'self'", "data:", "i.ytimg.com")
 CSP_FRAME_SRC = ("'self'", "*.comses.net", "youtube.com", "www.youtube.com", "youtu.be" )
 CSP_INCLUDE_NONCE_IN = ["script-src"]

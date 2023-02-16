@@ -2,10 +2,10 @@
 Django and Wagtail settings for the comses.net CMS
 
 Django settings reference:
-  https://docs.djangoproject.com/en/3.0/ref/settings/
+  https://docs.djangoproject.com/en/3.2/topics/settings/
 
 Wagtail settings reference:
-  https://docs.wagtail.io/en/v2.10.1/reference/settings.html
+  https://docs.wagtail.org/en/stable/reference/contrib/settings.html
 
 """
 
@@ -61,8 +61,8 @@ DEBUG = True
 # FIXME: needs to be overridden in staging and prod after updating DEPLOY_ENVIRONMENT which is less than ideal
 
 WAGTAILADMIN_BASE_URL = BASE_URL = DEPLOY_ENVIRONMENT.base_url
+# set up robots + sitemaps inclusion https://django-robots.readthedocs.io/en/latest/
 ROBOTS_SITEMAP_URLS = [f"{BASE_URL}/sitemap.xml"]
-
 
 # wagtail config: https://docs.wagtail.io/en/v2.10.1/getting_started/integrating_into_django.html
 WAGTAIL_APPS = [
@@ -491,6 +491,7 @@ DISCOURSE_API_USERNAME = config.get(
     "discourse", "DISCOURSE_API_USERNAME", fallback="unconfigured"
 )
 
+# https://docs.djangoproject.com/en/3.2/ref/settings/#templates
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.jinja2.Jinja2",
@@ -517,8 +518,12 @@ TEMPLATES = [
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
+                "csp.context_processors.nonce",
                 "wagtail.contrib.settings.context_processors.settings",
             ],
+            "libraries": {
+                "csp": "csp.templatetags.csp",
+            }
         },
     },
 ]
