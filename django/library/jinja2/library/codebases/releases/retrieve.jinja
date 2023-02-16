@@ -497,7 +497,7 @@
     <hr>
     {# FIXME: only display discourse on public facing page #}
     {% set discourse_enabled = release.live and release.get_absolute_url() in request.path %}
-    {{ embed_discourse_comments(discourse_enabled, release.submitter.username) }}
+    {{ embed_discourse_comments(discourse_enabled, release.submitter.username, request.csp_nonce) }}
 {% endblock %}
 
 {% block js %}

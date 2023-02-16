@@ -193,13 +193,12 @@
 {% endwith %}
 {% endmacro %}
 
-{% macro embed_discourse_comments(is_public, submitter_username) %}
+{% macro embed_discourse_comments(is_public, submitter_username, nonce) %}
 {# See https://meta.discourse.org/t/embedding-discourse-comments-via-javascript/31963 for details #}
 {% if should_enable_discourse(is_public) %}
     <h3>Discussion</h3>
     <div id="discourse-comments"></div>
-    {% script async=True %}
-    <script>
+    <script nonce="{{ nonce }}">
         // FIXME: see if wagtail fullpageurl
         // (https://docs.wagtail.org/en/stable/topics/writing_templates.html#fullpageurl)
         // obviates this
@@ -226,7 +225,6 @@
             (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(d);
         })();
     </script>
-    {% endscript %}
 {% else %}
     Discourse comments are disabled.
     {% if not is_public %}

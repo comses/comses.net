@@ -72,6 +72,6 @@
 
 {% block bottom %}
     <div class='col-12'>
-        {{ embed_discourse_comments(true, submitter.username) }}
+        {{ embed_discourse_comments(true, submitter.username, request.csp_nonce) }}
     </div>
 {% endblock %}
