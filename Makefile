@@ -99,6 +99,8 @@ ifneq ($(DEPLOY_ENVIRONMENT),dev)
 	docker compose pull nginx
 endif
 	docker compose up -d 
+	sleep 20
+	docker compose exec server inv prepare
 
 # consider deleting build entirely but would lose generated secrets
 .PHONY: clean
