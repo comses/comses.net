@@ -1,4 +1,8 @@
 services:
+  db:
+    restart: always
+  redis:
+    restart: always
   elasticsearch:
     restart: always
     environment:
