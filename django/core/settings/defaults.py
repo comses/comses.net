@@ -166,6 +166,7 @@ CSP_STYLE_SRC = ("'self'", "fonts.googleapis.com", "localhost:*", "'unsafe-inlin
 CSP_IMG_SRC = ("'self'", "data:", "localhost:*", "i.ytimg.com")
 CSP_FRAME_SRC = ("'self'", "forum.comses.net", "youtube.com", "www.youtube.com", "youtu.be")
 CSP_INCLUDE_NONCE_IN = ["script-src"]
+CSP_EXCLUDE_URL_PREFIXES = ('/wagtail/admin', '/django/admin')
 
 
 # Enable the sites framework for Wagtail + django-allauth
@@ -389,12 +390,13 @@ STATICFILES_DIRS = [WEBPACK_DIR]
 
 MEDIA_ROOT = "/shared/media"
 MEDIA_URL = "/media/"
+APPEND_SLASH = True
 
-# Wagtail settings
+# Wagtail specific settings
 
 WAGTAIL_SITE_NAME = "CoMSES Net"
-APPEND_SLASH = True
 WAGTAIL_APPEND_SLASH = True
+WAGTAIL_GRAVATAR_PROVIDER_URL = None
 
 WEBPACK_LOADER = {
     "DEFAULT": {
