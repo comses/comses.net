@@ -23,7 +23,7 @@ SOCIALACCOUNT_PROVIDERS.pop("orcid", None)
 # https://django-csp.readthedocs.io/en/latest/index.html
 #
 # Full CSP Spec: https://www.w3.org/TR/CSP/
-CSP_DEFAULT_SRC = ("'self'", "*.comses.net")
+CSP_DEFAULT_SRC = ("'self'", "*.comses.net", "www.google-analytics.com")
 CSP_SCRIPT_SRC = (
     "'self'",
     "cdnjs.cloudflare.com",
@@ -33,7 +33,7 @@ CSP_SCRIPT_SRC = (
 )
 
 CSP_FONT_SRC = ("'self'", "fonts.googleapis.com", "fonts.gstatic.com")
-CSP_STYLE_SRC = ("'self'", "fonts.googleapis.com")
+CSP_STYLE_SRC = ("'self'", "fonts.googleapis.com", "'unsafe-inline'")
 CSP_IMG_SRC = ("'self'", "data:", "i.ytimg.com")
 CSP_FRAME_SRC = ("'self'", "*.comses.net", "youtube.com", "www.youtube.com", "youtu.be" )
 CSP_INCLUDE_NONCE_IN = ["script-src"]
