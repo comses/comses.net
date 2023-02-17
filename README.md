@@ -68,12 +68,15 @@ Pull requests, issues to request new features, enhancements, or bug reports are 
 #### Development Environment Setup
 -------------
 1. [Install Docker](https://docs.docker.com/engine/install/) ([Ubuntu-specific install instructions](https://docs.docker.com/desktop/install/ubuntu/))
-2. The new `docker-compose-plugin` (e.g., `% apt install -y docker-compose-plugin`) provides a `docker compose ...` command that replaces old `docker-compose ...` invocations
+2. The new `docker-compose-plugin` (e.g., `$ apt install -y docker-compose-plugin`) provides a `docker compose ...` command that replaces old `docker-compose ...` invocations
 3. Add `vm.max_map_count=262144` to `/etc/sysctl.d/99-docker.conf` for elasticsearch
 
-Run `./build.sh` to build the Docker image and generate secrets and a symlinked `docker-compose.yml` file. Run `docker-compose up -d` to start all containers. The site will have no data or Pages however without a data dump to restore via `inv borg.restore`.
+These instructions assume a Linux CLI with dependencies on `make`, `openssl`, and `gettext`.
 
-The `build.sh` script relies on
+After cloning the repository, run `$ make deploy`. You'll have a base wagtail site with no content. (FIXME: adjust these instructions after synthetic / anonymized data is available)
+
+
+The `Makefile` relies on
 [envsubst](https://www.gnu.org/software/gettext/manual/html_node/envsubst-Invocation.html). To install this on macOS you may need to install [macports](https://www.macports.org/) and run `sudo port install gettext` or use [homebrew](https://brew.sh/) and `brew install gettext`.
 
 #### Apple Silicon + Docker workarounds
