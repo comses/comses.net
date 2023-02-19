@@ -54,16 +54,14 @@ CSP_STYLE_SRC = (
 CSP_IMG_SRC = ("'self'", "data:", "i.ytimg.com", "www.google-analytics.com")
 CSP_FRAME_SRC = (
     "'self'",
-    "comses.net",
-    "forum.comses.net",
-    "catalog.comses.net",
-    "www.comses.net",
+    "https://comses.net",
+    "https://*.comses.net",
     "youtube.com",
-    "www.youtube.com",
+    "*.youtube.com",
     "https://hcaptcha.com",
-    "https://*.captcha.com",
+    "https://*.hcaptcha.com",
 )
-CSP_FRAME_ANCESTORS = ("'self'", "forum.comses.net", "www.youtube.com")
+CSP_FRAME_ANCESTORS = ("'self'", "*.comses.net", "www.youtube.com")
 CSP_INCLUDE_NONCE_IN = ["script-src"]
 
 # Base URL to use when referring to full URLs within the Wagtail admin backend -
