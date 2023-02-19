@@ -7,7 +7,12 @@
             our use of cookies.
         </div>
         <div class='col-sm-12 col-md-1'>
-            <a class="btn btn-primary pull-right" href="javascript:Cookielaw.accept();">Accept</a>
+            <a id="accept-cookie-law-btn" class="btn btn-primary pull-right">Accept</a>
+            {% script %}
+            document.addEventListener("DOMContentLoaded", function() {
+                document.getElementById("accept-cookie-law-btn").addEventListener("click", function() { Cookielaw.accept() });
+            });
+            {% endscript %}
         </div>
     </div>
 </div>
