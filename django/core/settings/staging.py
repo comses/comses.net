@@ -43,20 +43,41 @@ WAGTAILADMIN_BASE_URL = BASE_URL = DEPLOY_ENVIRONMENT.base_url
 # https://django-csp.readthedocs.io/en/latest/index.html
 #
 # Full CSP Spec: https://www.w3.org/TR/CSP/
-CSP_DEFAULT_SRC = ("'self'", "*.comses.net")
+CSP_DEFAULT_SRC = (
+    "'self'",
+    "https://*.comses.net",
+    "https://hcaptcha.com",
+    "https://*.hcaptcha.com",
+)
 CSP_SCRIPT_SRC = (
     "'self'",
     "cdnjs.cloudflare.com",
     "browser.sentry-cdn.com",
     "www.googletagmanager.com",
-    "*.comses.net",
+    "https://comses.net",
+    "https://*.comses.net",
+    "https://hcaptcha.com",
+    "https://*.hcaptcha.com",
     "'unsafe-eval'",
 )
 
 CSP_FONT_SRC = ("'self'", "fonts.googleapis.com", "fonts.gstatic.com")
-CSP_STYLE_SRC = ("'self'", "fonts.googleapis.com", "'unsafe-inline'",)
+CSP_STYLE_SRC = (
+    "'self'",
+    "fonts.googleapis.com",
+    "https://hcaptcha.com",
+    "https://*.hcaptcha.com",
+    "'unsafe-inline'",
+)
 CSP_IMG_SRC = ("'self'", "data:", "i.ytimg.com")
-CSP_FRAME_SRC = ("'self'", "*.comses.net", "youtube.com", "www.youtube.com", "youtu.be" )
+CSP_FRAME_SRC = (
+    "'self'",
+    "*.comses.net",
+    "youtube.com",
+    "www.youtube.com",
+    "https://hcaptcha.com",
+    "https://*.hcaptcha.com",
+)
 CSP_INCLUDE_NONCE_IN = ["script-src"]
 
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")

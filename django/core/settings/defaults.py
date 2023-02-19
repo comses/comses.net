@@ -157,16 +157,21 @@ CSP_SCRIPT_SRC = (
     "cdnjs.cloudflare.com",
     "browser.sentry-cdn.com",
     "www.googletagmanager.com",
-    "forum.comses.net",
+    "https://*.comses.net",
     "'unsafe-eval'",  # unsafe-eval only for dev mode
 )
 
 CSP_FONT_SRC = ("'self'", "fonts.googleapis.com", "fonts.gstatic.com", "localhost:*")
 CSP_STYLE_SRC = ("'self'", "fonts.googleapis.com", "localhost:*", "'unsafe-inline'")
 CSP_IMG_SRC = ("'self'", "data:", "localhost:*", "i.ytimg.com")
-CSP_FRAME_SRC = ("'self'", "forum.comses.net", "youtube.com", "www.youtube.com", "youtu.be")
+CSP_FRAME_SRC = (
+    "'self'",
+    "forum.comses.net",
+    "youtube.com",
+    "www.youtube.com",
+)
 CSP_INCLUDE_NONCE_IN = ["script-src"]
-CSP_EXCLUDE_URL_PREFIXES = ('/wagtail/admin', '/django/admin')
+CSP_EXCLUDE_URL_PREFIXES = ("/wagtail/admin", "/django/admin")
 
 
 # Enable the sites framework for Wagtail + django-allauth
@@ -525,7 +530,7 @@ TEMPLATES = [
             ],
             "libraries": {
                 "csp": "csp.templatetags.csp",
-            }
+            },
         },
     },
 ]

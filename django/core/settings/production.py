@@ -23,23 +23,46 @@ SOCIALACCOUNT_PROVIDERS.pop("orcid", None)
 # https://django-csp.readthedocs.io/en/latest/index.html
 #
 # Full CSP Spec: https://www.w3.org/TR/CSP/
-CSP_DEFAULT_SRC = ("'self'", "comses.net", "www.comses.net", "forum.comses.net", "sentry.comses.net", "www.google-analytics.com")
+CSP_DEFAULT_SRC = (
+    "'self'",
+    "https://comses.net",
+    "https://*.comses.net",
+    "www.google-analytics.com",
+    "https://hcaptcha.com",
+    "https://*.hcaptcha.com",
+)
 CSP_SCRIPT_SRC = (
     "'self'",
     "cdnjs.cloudflare.com",
     "browser.sentry-cdn.com",
     "www.googletagmanager.com",
     "www.google-analytics.com",
-    "forum.comses.net",
-    "www.comses.net",
-    "comses.net",
-    "sentry.comses.net",
+    "https://comses.net",
+    "https://*.comses.net",
+    "https://hcaptcha.com",
+    "https://*.hcaptcha.com",
 )
 
 CSP_FONT_SRC = ("'self'", "fonts.googleapis.com", "fonts.gstatic.com")
-CSP_STYLE_SRC = ("'self'", "fonts.googleapis.com", "'unsafe-inline'")
+CSP_STYLE_SRC = (
+    "'self'",
+    "fonts.googleapis.com",
+    "https://hcaptcha.com",
+    "https://*.hcaptcha.com",
+    "'unsafe-inline'",
+)
 CSP_IMG_SRC = ("'self'", "data:", "i.ytimg.com", "www.google-analytics.com")
-CSP_FRAME_SRC = ("'self'", "comses.net", "forum.comses.net", "catalog.comses.net", "www.comses.net", "youtube.com", "www.youtube.com", "youtu.be" )
+CSP_FRAME_SRC = (
+    "'self'",
+    "comses.net",
+    "forum.comses.net",
+    "catalog.comses.net",
+    "www.comses.net",
+    "youtube.com",
+    "www.youtube.com",
+    "https://hcaptcha.com",
+    "https://*.captcha.com",
+)
 CSP_FRAME_ANCESTORS = ("'self'", "forum.comses.net", "www.youtube.com")
 CSP_INCLUDE_NONCE_IN = ["script-src"]
 
