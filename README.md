@@ -69,7 +69,7 @@ Pull requests, issues to request new features, enhancements, or bug reports are 
 -------------
 1. [Install Docker](https://docs.docker.com/engine/install/) ([Ubuntu-specific install instructions](https://docs.docker.com/desktop/install/ubuntu/))
 2. The new `docker-compose-plugin` (e.g., `$ apt install -y docker-compose-plugin`) provides a `docker compose ...` command that replaces old `docker-compose ...` invocations
-3. Add `vm.max_map_count=262144` to `/etc/sysctl.d/99-docker.conf` for elasticsearch. Access the file with the command : (`$ sudo nano /etc/sysctl.d/99-docker.conf`).
+3. Add `vm.max_map_count=262144` to `/etc/sysctl.d/99-docker.conf` for elasticsearch. Access the file with the command : (`$ sudo nano /etc/sysctl.d/99-docker.conf`). More info on (https://www.elastic.co/guide/en/elasticsearch/reference/current/vm-max-map-count.html)
 
 These instructions assume a Linux CLI with dependencies on `make`, `openssl`, and `gettext`.
 
