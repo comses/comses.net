@@ -112,11 +112,13 @@ endif
 .PHONY: restore
 restore: build $(SPARSE_REPO_PATH)
 	# create repo directory if it doesn't exist
+	sudo chown -R ${USER}: docker/shared/backups
 	mkdir -p docker/shared/backups/repo
 	# regardless of it existed, back it up to tmp dir
 	@echo "Backing repo to /tmp directory"
 	sudo mv docker/shared/backups/repo $(shell mktemp -d)
 	tar -Jxf $(SPARSE_REPO_PATH) -C docker/shared/backups/
+	docker compose up -d
 	docker compose exec server inv borg.restore
 
 .PHONY: clean
