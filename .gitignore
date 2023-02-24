@@ -5,6 +5,10 @@ logs
 release-version.txt
 config.mk
 
+# vscode
+.devcontainer
+.vscode
+
 # coveralls
 .coveralls.yml
 # Docker
