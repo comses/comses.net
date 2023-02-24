@@ -2,7 +2,8 @@ DEPLOY_ENVIRONMENT := dev
 DB_USER=comsesnet
 DOCKER_SHARED_DIR=docker/shared
 DOCKER_DB_DATA_DIR=docker/pgdata
-SECRETS_DIR=build/secrets
+BUILD_DIR=build
+SECRETS_DIR=${BUILD_DIR}/secrets
 DB_PASSWORD_PATH=${SECRETS_DIR}/db_password
 PGPASS_PATH=${SECRETS_DIR}/.pgpass
 SECRET_KEY_PATH=${SECRETS_DIR}/secret_key
@@ -17,6 +18,8 @@ MAIL_API_KEY_PATH=${SECRETS_DIR}/mail_api_key
 SECRETS=$(MAIL_API_KEY_PATH) $(DB_PASSWORD_PATH) $(CONFIG_INI_PATH) $(PGPASS_PATH) $(SENTRY_DSN_PATH) $(SECRET_KEY_PATH) .env
 SHARED_CONFIG_PATH=shared/src/assets/config.ts
 BUILD_ID=$(shell git describe --tags --abbrev=1)
+SPARSE_REPO_URL=${SPARSE_REPO_URL}
+SPARSE_REPO_PATH=${BUILD_DIR}/sparse-repo.tar.xz
 
 include config.mk
 include .env
@@ -24,6 +27,9 @@ include .env
 .PHONY: build
 build: docker-compose.yml secrets $(DOCKER_SHARED_DIR)
 	docker compose build --pull
+
+$(SPARSE_REPO_PATH):
+	wget $(SPARSE_REPO_URL) -P ${BUILD_DIR}
 
 config.mk:
 	DEPLOY_ENVIRONMENT=${DEPLOY_ENVIRONMENT} envsubst < ${DEPLOY_CONF_DIR}/config.mk.template > config.mk
@@ -102,10 +108,20 @@ endif
 	sleep 20
 	docker compose exec server inv prepare
 
-# consider deleting build entirely but would lose generated secrets
+
+.PHONY: restore
+restore: build $(SPARSE_REPO_PATH)
+	# create repo directory if it doesn't exist
+	mkdir -p docker/shared/backups/repo
+	# regardless of it existed, back it up to tmp dir
+	@echo "Backing repo to /tmp directory"
+	sudo mv docker/shared/backups/repo $(shell mktemp -d)
+	tar -Jxf $(SPARSE_REPO_PATH) -C docker/shared/backups/
+	docker compose exec server inv borg.restore
+
 .PHONY: clean
 clean:
-	rm config.mk .env 
+	rm config.mk .env docker-compose.yml
 
 .PHONY: test
 test: build
