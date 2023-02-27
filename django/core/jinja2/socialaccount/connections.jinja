@@ -19,7 +19,7 @@
         {{ csrf_input }}
 
         {% if form.non_field_errors() %}
-            <div id="errorMsg">{{ form.non_field_errors }}</div>
+            <div id="errorMsg">{{ form.non_field_errors() }}</div>
         {% endif %}
         <div class='form-group row'>
             <div class='col-10'>
@@ -47,10 +47,10 @@
     <div class='card-block'>
         <ul class="list-group list-group-flush">
             <li class='list-group-item'>
-                {{ render_social_profile_url(request, 'github', request.user.member_profile.github_url, connect=True) }}
+                {{ render_social_profile_url(request, 'github', request.user.member_profile.github_url, connect=True, csrf_input=csrf_input) }}
             </li>
             <li class='list-group-item'>
-                {{ render_social_profile_url(request, 'orcid', request.user.member_profile.orcid_url, connect=True) }}
+                {{ render_social_profile_url(request, 'orcid', request.user.member_profile.orcid_url, connect=True, csrf_input=csrf_input) }}
             </li>
         </ul>
     </div>

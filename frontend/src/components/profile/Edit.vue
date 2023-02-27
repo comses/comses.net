@@ -35,12 +35,17 @@
         <ul class="list-group">
           <li class="list-group-item">
             <span v-if="orcid_url">
-              <a :href="orcid_url"><span class="text-gray fab fa-orcid"></span> {{ orcid_url }}</a>
+              <a :href="orcid_url">
+                <span class="text-gray fab fa-orcid"></span> {{ orcid_url }}
+              </a>
+              <a title="Edit connection" :href="socialConnectionsURL">
+                <i class="float-right fas fa-edit"></i>
+              </a>
             </span>
             <span v-else>
-              <a title="orcid" href="/accounts/orcid/login/?process=connect"
-                ><span class="text-gray fab fa-orcid"></span> Connect your ORCID account</a
-              >
+              <a title="github" :href="socialConnectionsURL">
+                <span class="text-gray fab fa-orcid"></span> Connect your ORCID account
+              </a>
             </span>
           </li>
           <li class="list-group-item">
@@ -48,9 +53,12 @@
               <a :href="github_url">
                 <span class="text-gray fab fa-github"></span> {{ github_url }}
               </a>
+              <a title="Edit connection" :href="socialConnectionsURL"
+                ><i class="float-right fas fa-edit"></i>
+              </a>
             </span>
             <span v-else>
-              <a title="github" href="/accounts/github/login/?process=connect">
+              <a title="github" :href="socialConnectionsURL">
                 <span class="text-gray fab fa-github"></span> Connect your GitHub account
               </a>
             </span>
@@ -302,6 +310,10 @@ export default class EditProfile extends createFormValidator(schema) {
 
   get uploadImageURL() {
     return `${window.location.href}picture/`;
+  }
+
+  get socialConnectionsURL() {
+    return "/accounts/social/connections";
   }
 }
 </script>
