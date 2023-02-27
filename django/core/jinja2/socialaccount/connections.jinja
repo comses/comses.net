@@ -37,6 +37,13 @@
             </div>
         </div>
         <button type="submit" class='btn btn-sm btn-primary'><span class='fa fa-trash'></span> Remove</button>
+        {% if form.accounts|length == 1 and not request.user.has_usable_password() %}     
+            <p class='text-muted'>
+                You must
+                <a href="{{ url('account_reset_password') }}">set a password</a>
+                before you can remove your only connected account.
+            </p>
+        {% endif %}
     </form>
 {% else %}
     <p>No connected accounts.</p>
