@@ -66,28 +66,33 @@ Pull requests, issues to request new features, enhancements, or bug reports are 
 [Create an issue](https://docs.github.com/en/github/managing-your-work-on-github/creating-an-issue)
 
 #### Development Environment Setup
+
+For more detailed development environment instructions, refer to the [CoMSES Developer Guide](https://github.com/comses/infra/wiki/Developer-Guide).
+
+Dependencies
 -------------
 1. [Install Docker](https://docs.docker.com/engine/install/) ([Ubuntu-specific install instructions](https://docs.docker.com/desktop/install/ubuntu/))
 2. The new `docker-compose-plugin` (e.g., `$ apt install -y docker-compose-plugin`) provides a `docker compose ...` command that replaces old `docker-compose ...` invocations
-3. Create or update a file, /etc/sysctl.d/99-docker.conf with the line vm.max_map_count=262144 so elasticsearch can run properly. You can create / access the file with an invocation like $ sudo nano /etc/sysctl.d/99-docker.conf and following the in-terminal instructions to save and exit.
-
-These instructions assume a Linux CLI with dependencies on `make`, `openssl`, and `gettext`.
-
-After cloning the repository, run `$ make deploy`. You'll have a base wagtail site with no content. (FIXME: adjust these instructions after synthetic / anonymized data is available)
-
-
-The `Makefile` relies on
-[envsubst](https://www.gnu.org/software/gettext/manual/html_node/envsubst-Invocation.html). To install this on macOS you may need to install [macports](https://www.macports.org/) and run `sudo port install gettext` or use [homebrew](https://brew.sh/) and `brew install gettext`.
+3. Create or update the file `/etc/sysctl.d/99-docker.conf` and add a line `vm.max_map_count=262144` so [elasticsearch can run properly](https://www.elastic.co/guide/en/elasticsearch/reference/current/vm-max-map-count.html). You can create / access the file with any plaintext editor like nano e.g., `$ sudo nano /etc/sysctl.d/99-docker.conf` - follow the in-terminal nano instructions to save and exit.
 
 #### Apple Silicon + Docker workarounds
 
-For the M1/M2 chipset you will need to set `export DOCKER_DEFAULT_PLATFORM=linux/amd64` to properly build the images. This is
-best placed in a shell startup file like `.bashrc` | `.profile` | `.zshrc` | `.zprofile` so it will run every time you
-open an interactive shell.
+Our `Makefile` relies on [envsubst](https://www.gnu.org/software/gettext/manual/html_node/envsubst-Invocation.html) which is generally included in the GNU `gettext` package. To install this on macOS you can install [macports](https://www.macports.org/) and run `$ sudo port install gettext` or use [homebrew](https://brew.sh/) and `$ brew install gettext`.
 
-Enabling debugging is still a pain and requires custom workarounds to make the Docker environment accessible to your
-local system and IDEs. Visual Studio Code has a container environment that can be useful though:
-https://code.visualstudio.com/docs/remote/containers
+For M1/M2 chipsets you must have `export DOCKER_DEFAULT_PLATFORM=linux/amd64` set to properly build the Docker images from the command-line. Place this environment variable setting in a shell startup file e.g., `.bashrc` | `.profile` | `.zshrc` | `.zprofile` so that it will be automatically set when you open an interactive CLI shell to initiate a Docker build.
+
+Building and installing from a fresh clone of the repository can be done by:
+
+1. `$ make build`
+2. Edit the generated `config.mk` file and set `SPARSE_REPO_URL` to the URL of a sparse content repo
+3. `$ make restore`
+
+### Debugging
+
+Enabling debugging requires custom workarounds to make the Docker environment accessible to your local system and IDEs. Visual Studio Code has a container environment that can be useful: https://code.visualstudio.com/docs/remote/containers
+
+You can also install project dependencies into your local system. Maintaining isolation with [Python](https://docs.python.org/3/library/venv.html) and [JavaScript](https://pypi.org/project/nodeenv/) virtual environments is **strongly recommended**.    
+
 
 ### Other CoMSES Projects
 
