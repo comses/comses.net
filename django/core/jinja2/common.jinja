@@ -188,12 +188,12 @@
             {% if csrf_input %}
                 {{ csrf_input }}
             {% endif %}
-            <button type="submit" title="{{ provider_name }}" class="btn btn-link p-0">
-                <i class='{{ provider_icon_class }}'></i> Connect your {{ provider_name }} account
+            <button type="submit" class="btn btn-link p-0">
+                <i class='{{ provider_icon_class }}'></i> Connect your {{ provider_display_name(provider_name) }} account
             </button>
         </form>
     {% else %}
-        No associated {{ provider_name }} account.
+        No associated {{ provider_display_name(provider_name) }} account.
     {% endif %}
 {% endwith %}
 {% endmacro %}

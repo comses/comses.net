@@ -68,6 +68,7 @@ def environment(**options):
             "should_enable_discourse": should_enable_discourse,
             "is_production": is_production,
             "provider_login_url": provider_login_url,
+            "provider_display_name": provider_display_name,
             "get_choices_display": get_choices_display,
             "get_download_request_metadata": get_download_request_metadata,
             "markdown": markdown,
@@ -124,6 +125,15 @@ def provider_login_url(request, provider_id, **kwargs):
     if next_url:
         kwargs["next"] = next_url
     return provider.get_login_url(request, **kwargs)
+
+
+def provider_display_name(provider_name):
+    if provider_name == "github":
+        return "GitHub"
+    elif provider_name == "orcid":
+        return "ORCID"
+    else:
+        return provider_name
 
 
 def get_choices_display(selected_choice, choices):
