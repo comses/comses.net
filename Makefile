@@ -20,6 +20,7 @@ SHARED_CONFIG_PATH=shared/src/assets/config.ts
 BUILD_ID=$(shell git describe --tags --abbrev=1)
 SPARSE_REPO_URL=${SPARSE_REPO_URL}
 SPARSE_REPO_PATH=${BUILD_DIR}/sparse-repo.tar.xz
+REPO_BACKUPS_PATH=docker/shared/backups
 
 include config.mk
 include .env
@@ -108,16 +109,21 @@ endif
 	sleep 20
 	docker compose exec server inv prepare
 
+$(REPO_BACKUPS_PATH):
+	@echo "$(REPO_BACKUPS_PATH) did not exist, creating now"
+	mkdir -p $(REPO_BACKUPS_PATH)
 
 .PHONY: restore
-restore: build $(SPARSE_REPO_PATH)
+restore: build $(SPARSE_REPO_PATH) | $(REPO_BACKUPS_PATH)
+	# take ownership of the repo path as it may have been created by root / docker
+	# FIXME: this should get fixed if we do proper user management inside our server container
+	sudo chown -R ${USER}: $(REPO_BACKUPS_PATH)
 	# create repo directory if it doesn't exist
-	sudo chown -R ${USER}: docker/shared/backups
-	mkdir -p docker/shared/backups/repo
+	mkdir -p $(REPO_BACKUPS_PATH)/repo
 	# regardless of it existed, back it up to tmp dir
 	@echo "Backing repo to /tmp directory"
-	sudo mv docker/shared/backups/repo $(shell mktemp -d)
-	tar -Jxf $(SPARSE_REPO_PATH) -C docker/shared/backups/
+	sudo mv $(REPO_BACKUPS_PATH)/repo $(shell mktemp -d)
+	tar -Jxf $(SPARSE_REPO_PATH) -C $(REPO_BACKUPS_PATH)
 	docker compose up -d
 	docker compose exec server inv borg.restore
 
