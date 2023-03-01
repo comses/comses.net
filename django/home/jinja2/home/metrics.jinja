@@ -1,0 +1,11 @@
+{% extends 'base.jinja' %}
+
+{% block introduction %}<h1>Metrics</h1>{% endblock %}
+
+{% block content %}
+<div id="app"></div>
+{% endblock %}
+
+{% block js %}
+{{ render_bundle('metrics', attrs='defer') }}
+{% endblock %}

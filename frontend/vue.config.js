@@ -28,6 +28,7 @@ const pages = {
     download_request_form: './src/pages/codebase/release/download_request_form.ts',
     events: './src/pages/event',
     jobs: './src/pages/job',
+    metrics: './src/pages/metrics',
     profiles: './src/pages/profile',
     releases: './src/pages/codebase/release',
     release_regenerate_share_uuid: './src/pages/codebase/release/regenerate_share_uuid.ts',

@@ -383,6 +383,10 @@ class JobViewSet(CommonViewSetMixin, OnlyObjectPermissionModelViewSet):
         return retrieve_with_perms(self, request, *args, **kwargs)
 
 
+class MetricsView(TemplateView):
+    template_name = "home/metrics.jinja"
+
+
 class SearchView(TemplateView):
     template_name = "home/search.jinja"
 
