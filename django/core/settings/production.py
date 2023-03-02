@@ -46,6 +46,7 @@ CSP_SCRIPT_SRC = (
 CSP_FONT_SRC = ("'self'", "fonts.googleapis.com", "fonts.gstatic.com")
 CSP_STYLE_SRC = (
     "'self'",
+    "cdnjs.cloudflare.com",
     "fonts.googleapis.com",
     "https://hcaptcha.com",
     "https://*.hcaptcha.com",

@@ -162,7 +162,13 @@ CSP_SCRIPT_SRC = (
 )
 
 CSP_FONT_SRC = ("'self'", "fonts.googleapis.com", "fonts.gstatic.com", "localhost:*")
-CSP_STYLE_SRC = ("'self'", "fonts.googleapis.com", "localhost:*", "'unsafe-inline'")
+CSP_STYLE_SRC = (
+    "'self'",
+    "cdnjs.cloudflare.com",
+    "fonts.googleapis.com",
+    "localhost:*",
+    "'unsafe-inline'",
+)
 CSP_IMG_SRC = ("'self'", "data:", "localhost:*", "i.ytimg.com")
 CSP_FRAME_SRC = (
     "'self'",
