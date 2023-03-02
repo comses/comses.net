@@ -98,22 +98,22 @@
       :required="config.email"
       help="Email changes require reverification of your new email address by acknowledging a confirmation email"
     ></c-input>
-    <c-textarea
+    <c-markdown
       v-model="bio"
       name="bio"
       :errorMsgs="errors.bio"
       help="A brief description of your research career"
       label="Biography"
       :required="config.bio"
-    ></c-textarea>
-    <c-textarea
+    ></c-markdown>
+    <c-markdown
       v-model="research_interests"
       name="research_interests"
       :errorMsgs="errors.research_interests"
-      label="Research Interests"
       help="A brief description of your research interests"
+      label="Research Interests"
       :required="config.research_interests"
-    ></c-textarea>
+    ></c-markdown>
     <c-input
       type="url"
       v-model="personal_url"

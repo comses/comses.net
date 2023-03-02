@@ -85,15 +85,14 @@
         </c-datepicker>
       </div>
     </div>
-    <c-textarea
+    <c-markdown
       v-model="description"
-      name="description"
       :errorMsgs="errors.description"
       :required="config.description"
-      label="Description"
       help="Detailed information about the event"
-    >
-    </c-textarea>
+      name="description"
+      label="Description"
+    ></c-markdown>
     <c-textarea
       v-model="summary"
       name="summary"

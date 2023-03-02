@@ -9,15 +9,14 @@
       help="A short title describing the job"
     >
     </c-input>
-    <c-textarea
+    <c-markdown
       v-model="description"
-      name="description"
       :errorMsgs="errors.description"
-      label="Description"
-      help="Detailed information about the job"
       :required="config.description"
-    >
-    </c-textarea>
+      help="Detailed information about the job"
+      name="description"
+      label="Description"
+    ></c-markdown>
     <c-textarea
       v-model="summary"
       name="summary"
