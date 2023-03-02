@@ -76,7 +76,6 @@ services:
     image: comses/server:${RELEASE_VERSION}
     restart: always
     volumes:
-      - ./deploy/conf/config.ini:/secrets/config.ini
       - ./deploy/elasticsearch.conf.d:/etc/elasticsearch
       - ./docker/shared:/shared
       - sockets:/shared/sockets
