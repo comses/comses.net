@@ -7,7 +7,7 @@ class MarkdownTextarea(WidgetWithScript, forms.widgets.Textarea):
         super().__init__(**kwargs)
 
     def render_js_init(self, domId, name, value):
-        return 'simplemdeAttach("{0}");'.format(domId)
+        return 'mdeAttach("{0}");'.format(domId)
 
     def render(self, name, value, attrs=None, renderer=None):
         # The raw content of markupfield needs to extracted for the markdown to display properly
