@@ -1,4 +1,5 @@
 from core.models import MemberProfile, ComsesGroups
+from library.models import Codebase, CodebaseRelease, CodebaseReleaseDownload
 
 from django.core.cache import cache
 from django.db.models import Count, F
@@ -27,6 +28,7 @@ class Metrics:
             MemberProfile.objects.public()
             .values(year=F("user__date_joined__year"))
             .annotate(total=Count("year"))
+            .order_by("year")
         )
         full_member_counts = (
             ComsesGroups.FULL_MEMBER.users()
@@ -38,6 +40,7 @@ class Metrics:
             for tc in total_counts:
                 if tc["year"] == mc["year"]:
                     tc.update(mc)
+
         return total_counts
 
     def cache_all(self):
@@ -73,11 +76,22 @@ class Metrics:
         """
         all_data = {}
         all_data.update(members_by_year=self.get_members_by_year())
+        all_data.update(codebases_by_year=self.get_codebases_by_year())
+        all_data.update(downloads_by_year=self.get_downloads_by_year())
         # FIXME: consider TTL cache timeout
         cache.set(Metrics.REDIS_METRICS_KEY, all_data)
 
-    def get_codebases_by_year():
-        pass
+    def get_codebases_by_year(self):
+        return list(
+            CodebaseRelease.objects.public()
+            .values(year=F("first_published_at__year"))
+            .annotate(total=Count("year"))
+            .order_by("year")
+        )
 
-    def get_downloads_by_year():
-        pass
+    def get_downloads_by_year(self):
+        return list(
+            CodebaseReleaseDownload.objects.values(year=F("date_created__year"))
+            .annotate(total=Count("year"))
+            .order_by("year")
+        )
