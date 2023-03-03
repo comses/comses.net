@@ -488,7 +488,7 @@ SOCIALACCOUNT_PROVIDERS = {
 }
 
 DISCOURSE_BASE_URL = config.get(
-    "discourse", "DISCOURSE_BASE_URL", fallback="https://test-discourse.comses.net"
+    "discourse", "DISCOURSE_BASE_URL", fallback="https://staging-discourse.comses.net"
 )
 DISCOURSE_SSO_SECRET = config.get(
     "secrets", "DISCOURSE_SSO_SECRET", fallback="unconfigured"
