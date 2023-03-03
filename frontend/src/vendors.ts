@@ -11,3 +11,4 @@ import "vue-property-decorator";
 import "vue-router";
 import "vuex";
 import "yup";
+// import "highcharts-vue";
