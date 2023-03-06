@@ -43,7 +43,7 @@ services:
     image: comses/comsesnet-js:${RELEASE_VERSION}
     command: ['yarn', 'build']
     environment:
-      NODE_ENV: "staging"
+      NODE_ENV: "production"
     volumes:
       - ./frontend/src:/code/src
       - ./frontend/yarn.lock:/code/yarn.lock
