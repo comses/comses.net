@@ -49,6 +49,17 @@ services:
       - ./frontend/yarn.lock:/code/yarn.lock
       - ./docker/shared:/shared
       - ./build/secrets/config.ini:/secrets/config.ini
+  vite:
+    build: frontend-next
+    image: comses/comsesnet-vite:${RELEASE_VERSION}
+    command: ['yarn', 'build']
+    environment:
+      NODE_ENV: "production"
+    volumes:
+      - ./frontend-next/src:/code/src
+      - ./frontend-next/yarn.lock:/code/yarn.lock
+      - ./docker/shared:/shared
+      - ./build/secrets/config.ini:/secrets/config.ini
   nginx:
     image: nginx:stable
     restart: always

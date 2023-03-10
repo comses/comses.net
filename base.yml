@@ -45,6 +45,13 @@ services:
       - /code/node_modules
       - ./docker/shared:/shared
       - ./build/secrets/config.ini:/run/secrets/config.ini
+  vite:
+    build: frontend-next
+    image: comses/comsesnet-vite
+    volumes:
+      - /code/node_modules
+      - ./docker/shared:/shared
+      - ./build/secrets/config.ini:/run/secrets/config.ini
   server:
     build: django
     image: comses/server
@@ -55,6 +62,7 @@ services:
     depends_on:
       - db
       - js
+      - vite
       - elasticsearch
       - redis
     environment:
