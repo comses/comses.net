@@ -47,7 +47,7 @@ config.mk:
 
 
 $(DOCKER_SHARED_DIR):
-	for d in webpack logs library media static ; do \
+	for d in webpack vite logs library media static ; do \
 		mkdir -p ${DOCKER_SHARED_DIR}/$$d ; \
 	done
 	mkdir -p ${DOCKER_DB_DATA_DIR}
