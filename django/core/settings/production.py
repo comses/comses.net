@@ -27,7 +27,6 @@ CSP_DEFAULT_SRC = (
     "'self'",
     "https://comses.net",
     "https://*.comses.net",
-    "www.google-analytics.com",
     "https://hcaptcha.com",
     "https://*.hcaptcha.com",
 )
@@ -41,16 +40,6 @@ CSP_SCRIPT_SRC = (
     "https://*.comses.net",
     "https://hcaptcha.com",
     "https://*.hcaptcha.com",
-)
-
-CSP_FONT_SRC = ("'self'", "fonts.googleapis.com", "fonts.gstatic.com")
-CSP_STYLE_SRC = (
-    "'self'",
-    "cdnjs.cloudflare.com",
-    "fonts.googleapis.com",
-    "https://hcaptcha.com",
-    "https://*.hcaptcha.com",
-    "'unsafe-inline'",
 )
 CSP_IMG_SRC = ("'self'", "data:", "i.ytimg.com", "www.google-analytics.com")
 CSP_FRAME_SRC = (
