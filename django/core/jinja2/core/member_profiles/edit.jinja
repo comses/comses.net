@@ -16,7 +16,7 @@
             </div>
         </div>
     </div>
-    <div id="app" data-user-pk='{{ object.user.id }}'></div>
+    <div id="app" data-user-pk="{{ object.user.id }}" data-connections-url="{{ url('socialaccount_connections') }}"></div>
 {% endblock %}
 
 {% block js %}

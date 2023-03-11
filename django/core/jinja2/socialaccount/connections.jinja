@@ -19,7 +19,7 @@
         {{ csrf_input }}
 
         {% if form.non_field_errors() %}
-            <div id="errorMsg">{{ form.non_field_errors }}</div>
+            <div id="errorMsg">{{ form.non_field_errors() }}</div>
         {% endif %}
         <div class='form-group row'>
             <div class='col-10'>
@@ -37,6 +37,13 @@
             </div>
         </div>
         <button type="submit" class='btn btn-sm btn-primary'><span class='fa fa-trash'></span> Remove</button>
+        {% if form.accounts|length == 1 and not request.user.has_usable_password() %}     
+            <p class='text-muted'>
+                You must
+                <a href="{{ url('account_reset_password') }}">set a password</a>
+                before you can remove your only connected account.
+            </p>
+        {% endif %}
     </form>
 {% else %}
     <p>No connected accounts.</p>
@@ -47,10 +54,10 @@
     <div class='card-block'>
         <ul class="list-group list-group-flush">
             <li class='list-group-item'>
-                {{ render_social_profile_url(request, 'github', request.user.member_profile.github_url, connect=True) }}
+                {{ render_social_profile_url(request, 'github', request.user.member_profile.github_url, connect=True, csrf_input=csrf_input) }}
             </li>
             <li class='list-group-item'>
-                {{ render_social_profile_url(request, 'orcid', request.user.member_profile.orcid_url, connect=True) }}
+                {{ render_social_profile_url(request, 'orcid', request.user.member_profile.orcid_url, connect=True, csrf_input=csrf_input) }}
             </li>
         </ul>
     </div>

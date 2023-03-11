@@ -177,18 +177,23 @@
 {% endif %}
 {% endmacro %}
 
-{% macro render_social_profile_url(request, provider_name, profile_url, connect=False) %}
+{% macro render_social_profile_url(request, provider_name, profile_url, connect=False, csrf_input=None) %}
 {% with provider_icon_class="text-gray fab fa-" ~ provider_name %}
     {% if profile_url %}
         <a target='_blank' href='{{ profile_url }}'>
             <i class='{{ provider_icon_class }}'></i> {{ profile_url }}
         </a>
     {% elif connect %}
-        <a title="{{ provider_name }}" href="{{ provider_login_url(request, provider_name, process="connect") }}">
-             <i class='{{ provider_icon_class }}'></i> Connect your {{ provider_name }} account
-        </a>
+        <form action="{{ provider_login_url(request, provider_name, process='connect') }}" method="POST">
+            {% if csrf_input %}
+                {{ csrf_input }}
+            {% endif %}
+            <button type="submit" class="btn btn-link p-0">
+                <i class='{{ provider_icon_class }}'></i> Connect your {{ provider_display_name(provider_name) }} account
+            </button>
+        </form>
     {% else %}
-        No associated {{ provider_name }} account.
+        No associated {{ provider_display_name(provider_name) }} account.
     {% endif %}
 {% endwith %}
 {% endmacro %}

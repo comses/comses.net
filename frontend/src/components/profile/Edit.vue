@@ -34,24 +34,28 @@
         <h3>Social Authentication and Membership</h3>
         <ul class="list-group">
           <li class="list-group-item">
-            <span v-if="orcid_url">
-              <a :href="orcid_url"><span class="text-gray fab fa-orcid"></span> {{ orcid_url }}</a>
-            </span>
-            <span v-else>
-              <a title="orcid" href="/accounts/orcid/login/?process=connect"
-                ><span class="text-gray fab fa-orcid"></span> Connect your ORCID account</a
-              >
-            </span>
-          </li>
-          <li class="list-group-item">
             <span v-if="github_url">
-              <a :href="github_url">
-                <span class="text-gray fab fa-github"></span> {{ github_url }}
+              <a :href="github_url"><i class="text-gray fab fa-github"></i> {{ github_url }}</a>
+              <a :href="connectionsUrl" title="Manage connected GitHub account">
+                <i class="float-right fas fa-edit"></i>
               </a>
             </span>
             <span v-else>
-              <a title="github" href="/accounts/github/login/?process=connect">
-                <span class="text-gray fab fa-github"></span> Connect your GitHub account
+              <a :href="connectionsUrl">
+                <i class="text-gray fab fa-github"></i> Connect your GitHub account
+              </a>
+            </span>
+          </li>
+          <li class="list-group-item">
+            <span v-if="orcid_url">
+              <a :href="orcid_url"><i class="text-gray fab fa-orcid"></i> {{ orcid_url }}</a>
+              <a :href="connectionsUrl" title="Manage connected ORCID account">
+                <i class="float-right fas fa-edit"></i>
+              </a>
+            </span>
+            <span v-else>
+              <a :href="connectionsUrl">
+                <i class="text-gray fab fa-orcid"></i> Connect your ORCID account
               </a>
             </span>
           </li>
@@ -241,6 +245,9 @@ const api = new ProfileAPI();
 export default class EditProfile extends createFormValidator(schema) {
   @Prop()
   public _pk: number | null;
+
+  @Prop()
+  public connectionsUrl: string;
 
   public initial_full_member: boolean = true;
 
