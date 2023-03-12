@@ -62,7 +62,12 @@ CSP_SCRIPT_SRC = (
     "'unsafe-eval'",
 )
 
-CSP_FONT_SRC = ("'self'", "fonts.googleapis.com", "fonts.gstatic.com")
+CSP_FONT_SRC = (
+    "'self'",
+    "fonts.googleapis.com",
+    "fonts.gstatic.com",
+    "maxcdn.bootstrapcdn.com",
+)
 CSP_STYLE_SRC = (
     "'self'",
     "cdnjs.cloudflare.com",
