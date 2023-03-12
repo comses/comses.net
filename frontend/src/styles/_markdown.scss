@@ -1,5 +1,22 @@
 @import '~simplemde-theme-base/dist/simplemde-theme-base.min.css';
 
+.editor-toolbar {
+  border-radius: 0 !important;
+  &:before {
+    margin-bottom: 0 !important;
+  }
+  &:after {
+    margin-top: 0 !important;
+  }
+  button {
+    color: $input-color;
+  }
+}
+
+.EasyMDEContainer .CodeMirror {
+  border-radius: 0 !important;
+}
+
 // Needed to make full screen mode visible
 .editor-toolbar.fullscreen, .editor-preview-side, .CodeMirror-fullscreen {
   z-index: $zindex-modal;
@@ -16,7 +33,7 @@
 }
 
 .CodeMirror, .CodeMirror-scroll {
-  min-height: 125px;
+  min-height: 200px !important;
 }
 
 .CodeMirror-scroll {

@@ -54,6 +54,7 @@ CSP_SCRIPT_SRC = (
     "cdnjs.cloudflare.com",
     "browser.sentry-cdn.com",
     "www.googletagmanager.com",
+    "www.google-analytics.com",
     "https://comses.net",
     "https://*.comses.net",
     "https://hcaptcha.com",
@@ -61,9 +62,16 @@ CSP_SCRIPT_SRC = (
     "'unsafe-eval'",
 )
 
-CSP_FONT_SRC = ("'self'", "fonts.googleapis.com", "fonts.gstatic.com")
+CSP_FONT_SRC = (
+    "'self'",
+    "fonts.googleapis.com",
+    "fonts.gstatic.com",
+    "maxcdn.bootstrapcdn.com",
+)
 CSP_STYLE_SRC = (
     "'self'",
+    "cdnjs.cloudflare.com",
+    "maxcdn.bootstrapcdn.com",
     "fonts.googleapis.com",
     "https://hcaptcha.com",
     "https://*.hcaptcha.com",

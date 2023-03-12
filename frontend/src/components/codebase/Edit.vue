@@ -8,16 +8,14 @@
       label="Title (required)"
       help="A short title describing this computational model, limited to 300 characters."
     ></c-input>
-    <c-textarea
+    <c-markdown
       v-model="description"
       :errorMsgs="errors.description"
       :required="config.description"
       help="A summary description of your model similar to an abstract. There is no limit on length but it should be kept as succinct as possible. "
       name="description"
-      ref="descriptionField"
-      rows="3"
       label="Description (required)"
-    ></c-textarea>
+    ></c-markdown>
     <c-textarea
       v-model="replication_text"
       :errorMsgs="errors.replication_text"
@@ -132,12 +130,6 @@ export default class CodebaseEditForm extends createFormValidator(schema) {
       console.log("response: ", response);
       this.state = response.data;
     }
-  }
-
-  public refresh() {
-    // FIXME: this is a pile of dirty hacks on hacks to properly display the CodeMirror content when it's initially hidden in a modal.
-    // ask the description markdown component to refresh itself.
-    // (this.$refs.descriptionField as any).refresh();
   }
 
   public created() {

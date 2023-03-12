@@ -6,22 +6,22 @@ import "easymde/dist/easymde.min.css";
 @Component({
   template: `<div :class="['form-group', {'child-is-invalid': isInvalid }]">
     <slot name="label" :label="label">
-      <label :class="['form-control-label', requiredClass]"
-        >{{ label }}
-        <small class="ml-1 text-muted"
-          ><a href="https://en.wikipedia.org/wiki/Markdown" target="_blank">Markdown</a> styling is
-          supported</small
-        >
+      <label :class="['form-control-label', requiredClass]">
+        {{ label }}
       </label>
     </slot>
     <vue-easymde
-      @input="handleInput"
+      @update:modelValue="updateValue"
       :configs="configs"
-      :value="value"
+      :modelValue="value"
       ref="markdownEditor"
     ></vue-easymde>
     <div v-if="isInvalid" class="invalid-feedback">{{ errorMessage }}</div>
-    <slot name="help" :help="help"> </slot>
+    <slot name="help">
+      <small :aria-describedby="controlId" class="form-text text-muted">
+        {{ help }}
+      </small>
+    </slot>
   </div>`,
   components: {
     "vue-easymde": VueEasymde,
@@ -34,12 +34,10 @@ export default class Markdown extends BaseControl {
   @Prop()
   public help: string;
 
-  @Prop()
-  public value: string;
-
   get configs() {
     return {
-      placeholder: this.help,
+      placeholder: "Markdown formatting is supported",
+      status: false,
       toolbar: [
         "bold",
         "italic",
@@ -53,11 +51,8 @@ export default class Markdown extends BaseControl {
         "horizontal-rule",
         "link",
         "image",
-        "table",
         "|",
         "preview",
-        "side-by-side",
-        "fullscreen",
         "|",
         "guide",
       ],
@@ -70,11 +65,6 @@ export default class Markdown extends BaseControl {
 
   public refresh() {
     this.easymde.codemirror.refresh();
-  }
-
-  handleInput(value) {
-    console.log("emitting input value: ", value);
-    this.$emit("input", value);
   }
 
   mounted() {
