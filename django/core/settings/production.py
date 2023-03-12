@@ -42,16 +42,6 @@ CSP_SCRIPT_SRC = (
     "https://*.hcaptcha.com",
 )
 CSP_IMG_SRC = ("'self'", "data:", "i.ytimg.com", "www.google-analytics.com")
-CSP_FRAME_SRC = (
-    "'self'",
-    "https://comses.net",
-    "https://*.comses.net",
-    "youtube.com",
-    "*.youtube.com",
-    "https://hcaptcha.com",
-    "https://*.hcaptcha.com",
-)
-CSP_FRAME_ANCESTORS = ("'self'", "*.comses.net", "www.youtube.com")
 CSP_INCLUDE_NONCE_IN = ["script-src"]
 
 # Base URL to use when referring to full URLs within the Wagtail admin backend -

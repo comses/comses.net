@@ -180,7 +180,7 @@ CSP_STYLE_SRC = (
 CSP_IMG_SRC = ("'self'", "data:", "localhost:*", "i.ytimg.com")
 CSP_FRAME_SRC = (
     "'self'",
-    "forum.comses.net",
+    "*.comses.net",
     "youtube.com",
     "www.youtube.com",
 )
