@@ -165,8 +165,9 @@ CSP_CONNECT_SRC = (
     "localhost:*",
     "ws:",  # websockets
     "api.ror.org",  # RoR affiliations dropdown support
-    "cdn.jsdelivr.net",  # for codemirror spell checker
-    "*.comses.net",  # sentry.comses.net
+    "cdn.jsdelivr.net",  # codemirror spell checker
+    "*.comses.net",  # sentry.comses.net / forum.comses.net
+    "www.google-analytics.com",  # google analytics
 )
 CSP_FONT_SRC = ("'self'", "fonts.googleapis.com", "fonts.gstatic.com", "localhost:*")
 CSP_STYLE_SRC = (
