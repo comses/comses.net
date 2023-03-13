@@ -8,12 +8,15 @@ config.mk
 # vscode
 .devcontainer
 .vscode
+volar.config.[jt]s
+vetur.config.[jt]s
 
 # coveralls
 .coveralls.yml
 # Docker
 docker
 docker-compose.yml
+generated-dc-dev.yml
 deploy/secrets
 config.ini
 *.backup
