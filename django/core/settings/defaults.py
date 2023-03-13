@@ -404,10 +404,13 @@ STATICFILES_FINDERS = [
 WEBPACK_DIR = config.get("storage", "WEBPACK_ROOT", fallback="/shared/webpack")
 
 # django-vite settings
-DJANGO_VITE_ASSETS_PATH = config.get("storage", "WEBPACK_ROOT", fallback="/shared/vite")
+DJANGO_VITE_ASSETS_PATH = config.get("storage", "VITE_ROOT", fallback="/shared/vite")
 DJANGO_VITE_STATIC_URL_PREFIX = "bundles"
 DJANGO_VITE_DEV_MODE = DEBUG
 DJANGO_VITE_DEV_SERVER_PORT = 5000
+DJANG_VITE_MANIFEST_PATH = os.path.join(
+    DJANGO_VITE_ASSETS_PATH, DJANGO_VITE_STATIC_URL_PREFIX, "manifest.json"
+)
 
 STATIC_ROOT = "/shared/static"
 STATIC_URL = "/static/"

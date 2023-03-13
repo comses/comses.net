@@ -1,0 +1,8 @@
+.comses-datepicker {
+    .form-control {
+        z-index: 0;
+    }
+    .form-control[readonly] {
+        background-color: $white;
+    }
+}
