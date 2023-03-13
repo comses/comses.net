@@ -31,6 +31,8 @@ $button-color-primary: #92c02e;
 // see #363
 $enable-rounded: false;
 
+$font-family-base: 'Open Sans', Roboto, 'Helvetica Neue', sans-serif;
+
 // // Font Size Overrides
 $h1-font-size: 1.8rem;
 $h2-font-size: 1.6rem;
@@ -42,6 +44,16 @@ $h6-font-size: 1.0rem;
 // Links
 
 $link-color: $secondary-color;
+$link-decoration: none;
+$link-hover-decoration: underline;
+
+// don't use xxl for now
+$container-max-widths: (
+  sm: 540px,
+  md: 720px,
+  lg: 960px,
+  xl: 1140px
+);
 
 // Pagination
 
