@@ -5,8 +5,6 @@ $text-color: #6d6c71;
 $mission-color: #ced9ee;
 $rules-color: lighten(#ced9ee, 5%);
 
-$font-family-base: 'Open Sans', Roboto, 'Helvetica Neue', sans-serif;
-
 .btn-primary {
   @include button-variant($button-color-primary, $button-color-primary);
   color: $white;
