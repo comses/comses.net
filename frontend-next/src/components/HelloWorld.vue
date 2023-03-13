@@ -5,9 +5,13 @@
 </template>
 
 <script setup lang="ts">
+import { useCount } from "@/composables/count";
+
 const msg = "Hello world";
+const { count, increment } = useCount();
 
 function log() {
-  console.log(msg);
+  increment();
+  console.log(msg, count.value);
 }
 </script>

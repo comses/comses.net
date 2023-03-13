@@ -16,8 +16,8 @@
             </div>
             {# hamburger collapse menu #}
             <button class='navbar-toggler'
-                    data-toggle='collapse'
-                    data-target='#navbarLinks'
+                    data-bs-toggle='collapse'
+                    data-bs-target='#navbarLinks'
                     aria-controls='navbarLinks'
                     aria-expanded='false'
                     aria-label='Toggle navigation'>
@@ -57,7 +57,7 @@
                         <li class="nav-item dropdown py-0 pr-2">
                             <a class="pr-0 nav-link dropdown-toggle"
                                id="userDropdownMenuLink"
-                               data-toggle="dropdown"
+                               data-bs-toggle="dropdown"
                                role="button"
                                href="#"
                                aria-haspopup="true"
@@ -117,7 +117,7 @@
                            onclick="focusSearch()"
                            href="#"
                            class="dropdown-toggle"
-                           data-toggle="dropdown"
+                           data-bs-toggle="dropdown"
                            aria-expanded="false"
                            aria-haspopup="true">
                             <i class="fas fa-search"></i>
@@ -262,7 +262,6 @@
 <!DOCTYPE html>
 <html lang="en" class="no-js">
 <head>
-    {{ vite_hmr_client() }}
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
     {%- if not is_production() %}
@@ -329,7 +328,9 @@
             {% endscript %}
         {% endwith %}
     {% endif %}
-    {{ render_bundle('home') }}
+    {# {{ render_bundle('home') }} #}
+    {{ vite_hmr_client() }}
+    {{ vite_asset('apps/main.ts') }}
     {% script async=False %}
     <script>
         function submitLogout() {
