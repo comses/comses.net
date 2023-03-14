@@ -15,10 +15,10 @@
             <small class="text-muted float-right">
                 Member since: {{ format_datetime(member_profile.date_joined) }}
                 {% if member_profile.full_member %}
-                    <span class="badge badge-primary">Full Member</span>
+                    <span class="badge bg-success">Full Member</span>
                 {% endif %}
                 {% if member_profile.is_reviewer %}
-                    <span class="badge badge-success">Reviewer</span>
+                    <span class="badge bg-success">Reviewer</span>
                 {% endif %}
             </small>
         </h1>

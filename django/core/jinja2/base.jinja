@@ -67,7 +67,7 @@
                                 {{ user.username }}
                                 {# FIXME: this should be cached instead #}
                                 {% if user.emailaddress_set.filter(verified=False).exists() %}
-                                    <span class="badge badge-warning">Email Unverified</span>
+                                    <span class="badge bg-warning">Email Unverified</span>
                                     <span class="sr-only">Email Unverified</span>
                                 {% endif %}
                             </a>

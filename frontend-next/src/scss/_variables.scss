@@ -1,5 +1,6 @@
 // Theme colors
 
+$white:  #fff !default;
 $gray-100: #f8f9fa !default;
 $gray-800: #343a40 !default;
 
@@ -60,6 +61,5 @@ $container-max-widths: (
 $pagination-active-border-color: $button-color-primary;
 $pagination-active-bg: $button-color-primary;
 
-// Badges
-
-$badge-color: $gray-800;
+// Text/Background Contrast
+$min-contrast-ratio: 2;

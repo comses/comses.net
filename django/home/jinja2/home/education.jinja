@@ -10,7 +10,7 @@
 {% block content %}
     {{ breadcrumb(page.get_breadcrumbs()) }}
     <div class='jumbotron'>
-        <h1 class='display-5'>{{ page.heading }}</h1>
+        <h1>{{ page.heading }}</h1>
         <div class='pt-4 lead'>
         {{ markdown(page.summary) }}
         </div>

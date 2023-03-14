@@ -26,7 +26,7 @@ export default defineConfig({
     extensions: [".js", ".ts", ".scss", ".vue"],
     alias: {
       "@": resolvePath("./src"),
-      "~bootstrap": resolvePath("./node_modules/bootstrap"),
+      "~": resolvePath("./node_modules"),
     },
   },
   build: {
