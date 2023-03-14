@@ -69,7 +69,7 @@
             >
               <div class="form-text text-muted" slot="help">
                 By checking this box, I agree to the
-                <a href="#" data-toggle="modal" data-target="#rightsAndResponsibilities">
+                <a href="#" data-bs-toggle="modal" data-bs-target="#rightsAndResponsibilities">
                   rights and responsibilities
                 </a>
                 of CoMSES Net Full Membership.
