@@ -5,6 +5,16 @@ $text-color: #6d6c71;
 $mission-color: #ced9ee;
 $rules-color: lighten(#ced9ee, 5%);
 
+.jumbotron {
+  padding: 2rem 1rem;
+  margin-bottom: 2rem;
+  background-color: #e9ecef;
+
+  @include media-breakpoint-up(sm) {
+    padding: 4rem 2rem;
+  }
+}
+
 .btn-primary {
   @include button-variant($button-color-primary, $button-color-primary);
   color: $white;
@@ -14,7 +24,8 @@ $rules-color: lighten(#ced9ee, 5%);
   }
 }
 
-.btn-group-xs > .btn, .btn-xs {
+.btn-group-xs>.btn,
+.btn-xs {
   padding: .25rem .4rem;
   font-size: .875rem;
   line-height: .5;
@@ -22,48 +33,35 @@ $rules-color: lighten(#ced9ee, 5%);
 }
 
 .comses-navbar {
-    margin-right: auto;
-    margin-left: auto;
-    max-width: 1200px;
+  margin-right: auto;
+  margin-left: auto;
+  max-width: 1200px;
 }
 
 .fc-toolbar {
-    .btn-primary {
-        @include button-variant($blue, $blue);
-        color: $white;
-    }
+  .btn-primary {
+    @include button-variant($blue, $blue);
+    color: $white;
+  }
 }
 
 .normal-readonly {
-    background-color: #fff !important;
+  background-color: #fff !important;
 }
 
 .banner {
-    height: 80%;
+  height: 80%;
 }
 
-.badge-comses {
-    @extend .badge;
-    font-size: 100%;
-}
-
-.badge-primary {
-  // FIXME: idk if this works 
-  // @import badge-variant($green);
-    @extend .badge;
-    background-color: $green;
-}
-
-.badge-secondary {
-    @extend .badge;
-    background-color: $blue;
+a.badge {
+  color: $white;
 }
 
 a.anchor {
-    display: block;
-    position: relative;
-    top: -200px;
-    visibility:hidden;
+  display: block;
+  position: relative;
+  top: -200px;
+  visibility: hidden;
 }
 
 .text-gray {
@@ -84,9 +82,9 @@ $fa-font-path: '@fortawesome/fontawesome-free/webfonts';
 @font-face {
   font-family: 'Alte-DIN-1451-Mittelschrift';
   src: url('../assets/fonts/Alte-DIN-1451-Mittelschrift.ttf.woff') format('woff'),
-  url('../assets/fonts/Alte-DIN-1451-Mittelschrift.ttf.svg#Alte-DIN-1451-Mittelschrift') format('svg'),
-  url('../assets/fonts/Alte-DIN-1451-Mittelschrift.ttf.eot'),
-  url('../assets/fonts/Alte-DIN-1451-Mittelschrift.ttf.eot?#iefix') format('embedded-opentype');
+    url('../assets/fonts/Alte-DIN-1451-Mittelschrift.ttf.svg#Alte-DIN-1451-Mittelschrift') format('svg'),
+    url('../assets/fonts/Alte-DIN-1451-Mittelschrift.ttf.eot'),
+    url('../assets/fonts/Alte-DIN-1451-Mittelschrift.ttf.eot?#iefix') format('embedded-opentype');
   font-weight: normal;
   font-style: normal;
 }
@@ -118,16 +116,20 @@ $fa-font-path: '@fortawesome/fontawesome-free/webfonts';
   list-style: none;
   padding-left: 0;
   text-align: center;
+
   li {
     display: inline-block;
   }
+
   a {
     font-size: 2.4rem;
   }
+
   a .fa-stack {
     color: #6f717a;
     font-size: 0.75em;
   }
+
   a .fa-stack:hover {
     color: #7b7d87;
   }
@@ -146,7 +148,7 @@ h2.people {
 }
 
 .people-section {
-    scroll-margin-top: 80px;
+  scroll-margin-top: 80px;
 }
 
 h2.discourse-comments {
@@ -157,9 +159,11 @@ h2.discourse-comments {
 .social-media-sm {
   @extend .social-media;
   text-align: left;
+
   a {
     font-size: 0.9rem !important;
   }
+
   li {
     padding-right: 0.4rem;
   }
@@ -167,6 +171,7 @@ h2.discourse-comments {
 
 .detail-tabs {
   padding-top: 3em;
+
   a.nav-link {
     letter-spacing: 0.15rem;
     color: $link-color;
@@ -176,6 +181,7 @@ h2.discourse-comments {
     font-weight: 600;
     font-size: 1rem;
   }
+
   a.nav-link.active {
     color: $text-color;
   }
@@ -199,17 +205,24 @@ h2.discourse-comments {
   padding-bottom: 60px;
   text-align: center;
   height: 480px;
-  h1, h2, h3, h4 {
+
+  h1,
+  h2,
+  h3,
+  h4 {
     font-family: 'Alte-DIN-1451-Mittelschrift', 'Open Sans', sans-serif;
     font-weight: 400;
   }
+
   h1 {
     padding-top: 40px;
     font-size: 3.5rem;
   }
+
   h2 {
-      font-size: 1.5rem;
+    font-size: 1.5rem;
   }
+
   h3 {
     font-size: 1rem;
     font-family: 'Open Sans', sans-serif;
@@ -230,12 +243,16 @@ h2.discourse-comments {
    We could polyfill position:sticky for Chrome instead
    */
 
-  h1, h2, h3, h4 {
+  h1,
+  h2,
+  h3,
+  h4 {
     padding-top: 45px;
     font-family: 'Alte-DIN-1451-Mittelschrift', 'Open Sans', sans-serif;
     color: $white;
     font-weight: 200;
   }
+
   a {
     padding: 20px;
   }
@@ -257,11 +274,13 @@ ol.breadcrumb {
 
 .callouts {
   padding-top: 50px;
+
   img {
     display: block;
     margin: auto;
     height: 50px;
   }
+
   h3 {
     text-align: center;
     padding: 1em;
@@ -272,10 +291,12 @@ ol.breadcrumb {
 .community {
   padding-top: $default-padding;
   padding-bottom: $default-padding;
+
   h1 {
     text-align: center;
     padding-bottom: 1.5rem;
   }
+
   .row {
     padding-top: 30px;
     padding-bottom: 30px;
@@ -318,16 +339,20 @@ div.activity {
     height: 350px;
     overflow: visible;
   }
+
   .carousel-text {
     margin-left: -200px;
   }
+
   .carousel-item {
     height: 320px;
   }
+
   .carousel-caption {
     position: initial !important;
     text-align: left;
   }
+
   .row {
     height: 320px;
   }
@@ -367,9 +392,11 @@ div.activity {
 
 nav {
   background-color: $white;
+
   .nav-link {
-      color: $text-color;
+    color: $text-color;
   }
+
   .nav-link:hover {
     text-decoration: underline;
   }
@@ -379,6 +406,7 @@ footer.footer {
   padding: 75px 0;
   background-image: url("../assets/images/background-footer.png");
   color: $white;
+
   .row {
     padding-top: 20px;
     padding-bottom: 20px;
@@ -400,9 +428,11 @@ a.footer {
 
 .search-result {
   @extend .card;
+
   h1 {
     font-size: 1em;
   }
+
   border-left: none;
   border-right: none;
   padding-top: 2em;
@@ -436,6 +466,7 @@ a.footer {
     font-size: 0.9rem;
     margin-top: 0.5rem;
   }
+
   .btn-tag {
     @extend .btn-sm;
     padding: 0.25rem 0.25rem;
@@ -448,8 +479,10 @@ a.footer {
   padding: 0.25rem 0.5rem;
   display: inline-block;
   background-color: $rules-color;
+
   a {
     color: $text-color;
+
     &:hover {
       color: $red;
     }
@@ -486,6 +519,7 @@ a.footer {
 
   .section {
     padding-bottom: 2rem;
+
     .card-text {
       padding-top: 0.3rem;
       font-size: 0.9rem;
@@ -517,7 +551,9 @@ a.footer {
 
 .tutorial {
   padding-bottom: 2rem;
-  :target::before { // scroll-margin not working for some reason
+
+  :target::before {
+    // scroll-margin not working for some reason
     content: "";
     display: block;
     height: 90px;
@@ -529,13 +565,19 @@ a.footer {
     position: relative;
   }
 
-  h1, h2, h3, h4, h5, h6 {
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
     margin-top: 2rem;
     margin-bottom: 1rem;
     font-weight: bold;
   }
 
-  h1, h2 {
+  h1,
+  h2 {
     margin-top: 5rem;
   }
 
@@ -543,7 +585,7 @@ a.footer {
     max-width: 100%;
     box-sizing: content-box;
   }
-  
+
   .toc {
     @media (min-width: 1200px) {
       position: sticky;
@@ -556,6 +598,7 @@ a.footer {
       padding: 0.75rem 1.25rem;
       line-height: 1.75;
       font-size: 0.8rem;
+
       &:before {
         content: "Table of Contents";
         font-size: 1.1rem;
@@ -563,10 +606,12 @@ a.footer {
         display: block;
         margin-bottom: 0.75rem;
       }
-      > ul {
+
+      >ul {
         padding-left: 0;
       }
-      > ul ul {
+
+      >ul ul {
         padding-left: 1.5rem;
       }
 
@@ -574,6 +619,7 @@ a.footer {
         content: "";
       }
     }
+
     display: none;
   }
 
@@ -581,6 +627,7 @@ a.footer {
     padding: 1rem;
     background-color: #e9ecef;
     border: 1px solid #d8dbdf;
+
     code {
       line-height: 1.25;
     }
@@ -602,8 +649,8 @@ a.footer {
   }
 
   .admonition-title {
-      font-size: 1.1em;
-      font-weight: bold;
+    font-size: 1.1em;
+    font-weight: bold;
   }
 }
 
@@ -611,16 +658,20 @@ a.footer {
   @extend .card;
   border-radius: 0;
   transition: 0.25s ease;
+
   .card-title {
     color: $link-color;
   }
+
   .card-image-top {
     border-bottom: 1px solid rgba(0, 0, 0, 0.125);
   }
+
   .tag {
     position: relative;
     z-index: 2;
   }
+
   &:hover {
     border-color: $link-color;
   }
@@ -671,7 +722,7 @@ html {
 }
 
 .required::after {
-  content:  "*";
+  content: "*";
   color: red;
 }
 
@@ -679,6 +730,7 @@ html {
   @extend .btn-outline-dark;
   border-color: #ced4da;
   border-left: 0px;
+
   &:hover {
     background-color: $red;
     border-color: $red;
@@ -691,6 +743,7 @@ html {
 
 .btn-is-primary {
   @extend .btn-secondary;
+
   &:hover {
     cursor: default !important;
     background-color: $secondary-color;
@@ -703,6 +756,7 @@ html {
   color: $secondary-color;
   border-color: #ced4da;
   border-right: 0px;
+
   &:hover {
     background-color: $secondary-color;
     border-color: $secondary-color;

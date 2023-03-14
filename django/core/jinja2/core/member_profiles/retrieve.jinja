@@ -145,13 +145,13 @@
                                 {{ format_datetime(invitation.date_created) }}
                                 <span class="float-right">
                                     {% if invitation.accepted is none %}
-                                        <span class="badge badge-warning">Waiting for response</span>
+                                        <span class="badge bg-warning">Waiting for response</span>
                                     {% elif invitation.review.is_complete %}
-                                        <span class="badge badge-light">Review complete</span>
+                                        <span class="badge bg-light">Review complete</span>
                                     {% elif not invitation.accepted %}
-                                        <span class="badge badge-secondary">Declined review request</span>
+                                        <span class="badge bg-primary">Declined review request</span>
                                     {% else %}
-                                        {% set badge_class="badge-warning" if invitation.review.is_awaiting_reviewer_feedback else "badge-info" %}
+                                        {% set badge_class="bg-warning" if invitation.review.is_awaiting_reviewer_feedback else "bg-info" %}
                                         <span class="badge {{badge_class}}">{{ invitation.review.get_status_display() }}</span>
                                     {% endif %}
                                 </span>
@@ -216,12 +216,12 @@
             </p>
             <p class="card-text">
                 {% if profile.full_member %}
-                    <span class="badge badge-primary">Full Member</span>
+                    <span class="badge bg-success">Full Member</span>
                 {% else %}
-                    <span class="badge badge-secondary">Basic Member</span>
+                    <span class="badge bg-primary">Basic Member</span>
                 {% endif %}
                 {% if profile.is_reviewer %}
-                    <span class="badge badge-primary">Reviewer</span>
+                    <span class="badge bg-success">Reviewer</span>
                 {% endif %}
             </p>
         </div>

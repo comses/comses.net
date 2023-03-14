@@ -45,7 +45,7 @@
     {% for theme in page.themes.order_by('category') %}
         <div class='card my-3'>
             <h3 class='card-header'>
-                <span class='p-1 badge-comses badge-secondary'>{{theme.category}}</span>
+                <span class='p-1 badge-comses bg-primary'>{{theme.category}}</span>
                 <a href='{{theme.external_url}}'>{{ theme.title }}</a>
             </h3>
             <div class='card-body'>
@@ -55,7 +55,7 @@
                 <ul>
                     {% for presentation in theme.presentations.all() %}
                         <li>{% for contributor in presentation.contributors.all() -%}
-                                <a class='badge badge-success contributor' href='{{contributor.member_profile_url}}'>{{ contributor.get_full_name() }}</a>
+                                <a class='badge bg-success contributor' href='{{contributor.member_profile_url}}'>{{ contributor.get_full_name() }}</a>
                             {% endfor -%}
                             <a class='text-gray' href='{{ presentation.external_url }}'><em>{{ presentation.title }}</em></a></li>
                     {% endfor %}
