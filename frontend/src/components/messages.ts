@@ -8,13 +8,11 @@ import Vue from "vue";
         {{ m.message }}
         <button
           type="button"
-          class="close"
+          class="btn-close"
           data-bs-dismiss="alert"
           aria-label="Close"
           @click="clear"
-        >
-          <span aria-hidden="true" class="pull-right"><span class="fas fa-times"></span></span>
-        </button>
+        ></button>
       </div>
     </div>
   </div>`,
