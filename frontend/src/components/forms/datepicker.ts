@@ -4,9 +4,9 @@ import Datepicker from "vuejs-datepicker";
 import * as _ from "lodash";
 
 @Component({
-  template: `<div class="form-group">
+  template: `<div class="mb-3">
     <slot name="label">
-      <label :class="['form-control-label', requiredClass]">{{ label }}</label>
+      <label :class="['form-label', requiredClass]">{{ label }}</label>
     </slot>
     <datepicker
       :bootstrap-styling="true"

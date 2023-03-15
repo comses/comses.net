@@ -1,13 +1,9 @@
 <template>
   <form v-cloak>
     <div class="row">
-      <div class="form-group col-3">
+      <div class="mb-3 col-3">
         <h3>Profile image</h3>
-        <label
-          style="cursor: pointer; margin-top: -20px"
-          for="profileUpload"
-          class="form-control-label"
-        >
+        <label style="cursor: pointer; margin-top: -20px" for="profileUpload" class="form-label">
           <img
             class="mt-3 d-block rounded img-fluid img-thumbnail"
             alt="Profile Image"
@@ -30,14 +26,14 @@
         />
       </div>
 
-      <div class="form-group col-9">
+      <div class="mb-3 col-9">
         <h3>Social Authentication and Membership</h3>
         <ul class="list-group">
           <li class="list-group-item">
             <span v-if="github_url">
               <a :href="github_url"><i class="text-gray fab fa-github"></i> {{ github_url }}</a>
               <a :href="connectionsUrl" title="Manage connected GitHub account">
-                <i class="float-right fas fa-edit"></i>
+                <i class="float-end fas fa-edit"></i>
               </a>
             </span>
             <span v-else>
@@ -50,7 +46,7 @@
             <span v-if="orcid_url">
               <a :href="orcid_url"><i class="text-gray fab fa-orcid"></i> {{ orcid_url }}</a>
               <a :href="connectionsUrl" title="Manage connected ORCID account">
-                <i class="float-right fas fa-edit"></i>
+                <i class="float-end fas fa-edit"></i>
               </a>
             </span>
             <span v-else>

@@ -3,14 +3,14 @@ import BaseControl from "./base";
 
 // FIXME: redo custom input
 @Component({
-  template: `<div class="form-group">
+  template: `<div class="mb-3">
     <slot name="label">
-      <label :for="controlId" :class="['form-control-label', requiredClass]">{{ label }}</label>
+      <label :for="controlId" :class="['form-label', requiredClass]">{{ label }}</label>
     </slot>
     <select
       :id="controlId"
       :name="name"
-      :class="['form-control', {'is-invalid': isInvalid}]"
+      :class="['form-control', 'form-select', {'is-invalid': isInvalid}]"
       @change="updateValue($event.target.value)"
       :value="value"
     >

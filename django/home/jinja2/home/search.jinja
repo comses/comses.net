@@ -12,12 +12,10 @@
 {% endblock %}
 
 {% block content %}
-    <form class="form-inline pb-2" action="/search/" method="get">
-        <div class="form-group">
-            <label class="sr-only" for="search">Search</label>
-            <input id="search" class="form-control" name="query" type="text" value="{{ query }}">
-            <button type="submit" class="btn btn-primary">Submit</button>
-        </div>
+    <form class="d-inline-flex flex-row align-items-center mb-4" action="/search/" method="get">
+        <label class="sr-only" for="search">Search</label>
+        <input id="search" class="form-control" name="query" type="text" value="{{ query }}">
+        <button type="submit" class="btn btn-primary">Submit</button>
     </form>
     {% for result in results %}
         <div class="card">

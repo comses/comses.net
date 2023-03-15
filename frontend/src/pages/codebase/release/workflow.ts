@@ -282,11 +282,11 @@ class PublishModal extends createFormValidator(publishSchema) {
             </h1>
             <h5 class="text-muted">
             Peer Review Status: {{ reviewStatus }} | <a :href='absolute_url'>View Live</a>
-            <a class='float-right' href='//forum.comses.net/t/archiving-your-model-1-getting-started/7377'><i class='fas fa-question-circle'></i> Need help? Check out our archiving tutorial</a>
+            <a class='float-end' href='//forum.comses.net/t/archiving-your-model-1-getting-started/7377'><i class='fas fa-question-circle'></i> Need help? Check out our archiving tutorial</a>
             </h5>
             <div class='pb-2'>
                 <span class="btn btn-primary" data-bs-target="#editCodebaseModal" data-bs-toggle="modal"><i class='fas fa-edit'></i> Edit Common Metadata | Add Images &amp; Media</span>
-                <div class='float-right'>
+                <div class='float-end'>
                     <span class="btn btn-outline-danger" v-if="!hasReview" data-bs-target="#peerReviewModal" data-bs-toggle="modal">Request Peer Review</span>
                     <span class="btn btn-outline-danger" v-else-if="isAwaitingAuthorChanges" data-bs-target="#notifyReviewersModal" data-bs-toggle="modal">Notify Reviewers of Changes</span>
                     <span class="disabled btn btn-info" v-if="isPublished"><i class='fas fa-share-alt'></i> Published</span>

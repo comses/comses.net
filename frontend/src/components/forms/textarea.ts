@@ -2,9 +2,9 @@ import { Component, Prop } from "vue-property-decorator";
 import BaseControl from "./base";
 
 @Component({
-  template: `<div class="form-group">
+  template: `<div class="mb-3">
     <slot name="label" :label="label">
-      <label :for="controlId" class="form-control-label">{{ label }}</label>
+      <label :for="controlId" class="form-label">{{ label }}</label>
     </slot>
     <textarea
       :id="controlId"

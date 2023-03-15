@@ -78,7 +78,7 @@
           :errorMsgs="errors.submission_deadline"
           :clearButton="true"
         >
-          <label class="form-control-label" slot="label">Submission Deadline</label>
+          <label class="form-label" slot="label">Submission Deadline</label>
           <small class="form-text text-muted" slot="help"
             >The last day to make a submission for the event (inclusive)
           </small>

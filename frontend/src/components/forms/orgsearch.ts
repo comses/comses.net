@@ -33,7 +33,7 @@ const debounceFetchOrgs = _.debounce(async (self: OrganizationSearch, query: str
 @Component({
   template: `<div :class="{ 'child-is-invalid': isInvalid }">
     <slot v-if="label" name="label" :label="label">
-      <label class="form-control-label">{{ label }}</label>
+      <label class="form-label">{{ label }}</label>
     </slot>
     <multiselect
       :value="value"
