@@ -41,9 +41,7 @@ type UploadInfo = UploadSuccess | UploadProgress | UploadFailure;
                 File upload {{ name }} is <b>{{ info.percentCompleted }}%</b> complete
             </div>
             <div class="alert alert-danger alert-dismissable" v-if="hasErrors">
-                <button class="close" aria-label="Close" @click="clearUploadErrors">
-                    <span aria-hidden="true"><span class="fas fa-window-close"></span></span>
-                </button>
+                <button class="btn-close" aria-label="Close" @click="clearUploadErrors"></button>
                 <div v-if="fileUploadErrorMsgs.detail">
                    {{ fileUploadErrorMsgs.detail }}
                 </div>

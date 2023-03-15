@@ -26,12 +26,10 @@
             </h5>
             <button
               type="button"
-              class="close"
+              class="btn-close"
               id="closeDownloadRequestFormModal"
               data-bs-dismiss="modal"
-            >
-              &times;
-            </button>
+            ></button>
           </div>
           <div class="modal-body">
             <slot name="body"></slot>

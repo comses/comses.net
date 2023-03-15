@@ -37,12 +37,10 @@ type CodebaseTabs = "metadata" | "media";
           <button
             type="button"
             id="closeEditCodebaseModal"
-            class="close"
+            class="btn-close"
             data-bs-dismiss="modal"
             aria-label="Close"
-          >
-            <span aria-hidden="true">&times;</span>
-          </button>
+          ></button>
         </div>
         <div class="modal-body">
           <ul class="nav nav-tabs">
@@ -174,12 +172,10 @@ export const publishSchema = yup.object().shape({
           <button
             type="button"
             data-bs-dismiss="modal"
-            class="close"
+            class="btn-close"
             @click="close"
             aria-label="Close"
-          >
-            <span aria-hidden="true">&times;</span>
-          </button>
+          ></button>
         </div>
         <div class="modal-body">
           <p>
