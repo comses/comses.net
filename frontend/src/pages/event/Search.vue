@@ -20,10 +20,10 @@
             </c-input>
           </span>
           <c-datepicker v-model="submissionDeadline" name="submissionDeadline" :clearButton="true">
-            <label class="form-control-label" slot="label">Submission Deadline</label>
+            <label class="form-label" slot="label">Submission Deadline</label>
           </c-datepicker>
           <c-datepicker v-model="startDate" name="startDate" :clearButton="true">
-            <label class="form-control-label" slot="label">Event Start Date</label>
+            <label class="form-label" slot="label">Event Start Date</label>
           </c-datepicker>
           <c-tagger v-model="tags" :required="false" placeholder="Type to add tags" label="Tags">
           </c-tagger>

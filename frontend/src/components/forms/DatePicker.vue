@@ -1,7 +1,7 @@
 <template>
-  <div class="form-group">
+  <div class="mb-3">
     <slot name="label">
-      <label :class="['form-control-label', requiredClass]">{{ label }}</label>
+      <label :class="['form-label', requiredClass]">{{ label }}</label>
     </slot>
     <datepicker
       :bootstrap-styling="true"

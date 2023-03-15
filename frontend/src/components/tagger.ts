@@ -5,9 +5,9 @@ import Multiselect from "vue-multiselect";
 import { TagAPI } from "@/api";
 
 @Component({
-  template: `<div :class="['form-group', {'child-is-invalid': isInvalid }]">
+  template: `<div :class="['mb-3', {'child-is-invalid': isInvalid }]">
     <slot name="label" :label="label">
-      <label :class="['form-control-label', requiredClass]">{{ label }}</label>
+      <label :class="['form-label', requiredClass]">{{ label }}</label>
     </slot>
     <multiselect
       :value="value"

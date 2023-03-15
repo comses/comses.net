@@ -118,10 +118,10 @@ function displayContributorLabel(contributor: Contributor) {
                         label="Affiliations"
                         help="The institution(s) this contributor is affiliated with. You must press enter to add an affiliation.">
                     </c-edit-affiliations>
-                    <label for="contributorType" class="form-control-label">
+                    <label for="contributorType" class="form-label">
                         Contributor Type
                     </label>
-                    <select name="type" v-model="type" class="form-control" id="contributorType">
+                    <select name="type" v-model="type" class="form-control form-select" id="contributorType">
                         <option>person</option>
                         <option>organization</option>
                     </select>
@@ -182,7 +182,7 @@ class EditContributor extends createFormValidator(contributorSchema) {
             <h5 class='card-title'>Manage contributors for this release</h5>
         </div>
         <div class="card-body">
-            <div :class="['form-group', errors.contributor.length === 0 ? '' : 'child-is-invalid' ]">
+            <div :class="['mb-3', errors.contributor.length === 0 ? '' : 'child-is-invalid' ]">
                 <div class="row">
                     <div class="col-9">
                         <multiselect
@@ -209,7 +209,7 @@ class EditContributor extends createFormValidator(contributorSchema) {
                     {{ errors.contributor.join(', ') }}
                 </div>
             </div>
-            <div :class="['form-group', errors.roles.length === 0 ? '' : 'child-is-invalid' ]">
+            <div :class="['mb-3', errors.roles.length === 0 ? '' : 'child-is-invalid' ]">
                 <multiselect name="roles"
                     v-model="roles"
                     :multiple="true"
@@ -222,7 +222,7 @@ class EditContributor extends createFormValidator(contributorSchema) {
                     {{ errors.roles.join(', ') }}
                 </div>
             </div>
-            <div class='form-group'>
+            <div class='mb-3'>
               <div class='form-check'>
                 <label class='form-check-label'>
                   <input v-model="include_in_citation" class='form-check-input' type='checkbox'>
@@ -360,7 +360,7 @@ class ContributorResponseHandler extends HandlerShowSuccessMessage {
                             @save="saveContributor" @cancel="cancelContributor">
         </c-edit-contributor>
         <hr>
-        <label class="form-control-label required">Current Release Contributors</label>
+        <label class="form-label required">Current Release Contributors</label>
         <draggable v-model="state" v-if="state.length > 0" @end="refreshStatusMessage">
             <ul v-for="releaseContributor in state" :key="releaseContributor._id" class="list-group">
                 <li :class="['list-group-item d-flex justify-content-between', { 'list-group-item-warning': releaseContributor.edited}]">

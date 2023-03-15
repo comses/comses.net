@@ -3,9 +3,9 @@ import BaseControl from "@/components/forms/base";
 import draggable from "vuedraggable";
 
 @Component({
-  template: `<div class="form-group">
+  template: `<div class="mb-3">
     <slot name="label" :label="label">
-      <label :class="['form-control-label', requiredClass]">{{ label }}</label>
+      <label :class="['form-label', requiredClass]">{{ label }}</label>
     </slot>
     <input
       :class="['form-control', {'is-invalid': isInvalid}]"

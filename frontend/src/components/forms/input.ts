@@ -2,9 +2,9 @@ import { Component, Prop } from "vue-property-decorator";
 import BaseControl from "./base";
 
 @Component({
-  template: `<div class="form-group">
+  template: `<div class="mb-3">
     <slot name="label">
-      <label :for="controlId" :class="['form-control-label', requiredClass]">{{ label }}</label>
+      <label :for="controlId" :class="['form-label', requiredClass]">{{ label }}</label>
     </slot>
     <input
       :id="controlId"

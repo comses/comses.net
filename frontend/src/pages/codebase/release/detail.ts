@@ -58,8 +58,8 @@ export const schema = yup.object().shape({
             label="Embargo End Date"
             help="The date your private release will be automatically made public">
         </c-datepicker>
-        <div :class="['form-group', {'child-is-invalid': errors.os.length > 0}]">
-            <label :class="['form-control-label', {'required': config.os}]">Operating System</label>
+        <div :class="['mb-3', {'child-is-invalid': errors.os.length > 0}]">
+            <label :class="['form-label', {'required': config.os}]">Operating System</label>
             <multiselect
                 :value="osOption"
                 @input="updateOs"
@@ -77,8 +77,8 @@ export const schema = yup.object().shape({
         <c-tagger v-model="programming_languages" placeholder="Programming languages used by this model" :required="config.programming_languages"
             label="Programming Languages" help="Programming languages used in this model" :errorMsgs="errors.programming_languages">
         </c-tagger>
-        <div :class="['form-group', {'child-is-invalid': errors.license.length > 0}]">
-            <label :class="['form-control-label', {'required': config.license }]">License</label>
+        <div :class="['mb-3', {'child-is-invalid': errors.license.length > 0}]">
+            <label :class="['form-label', {'required': config.license }]">License</label>
             <multiselect v-model="license" label="name" track-by="name" placeholder="Type to find license" :options="licenseOptions">
                 <template slot="option" slot-scope="props">
                     <div>
