@@ -1,7 +1,5 @@
 FROM node:lts-bullseye-slim
 
-ENV NODE_OPTIONS=--openssl-legacy-provider
-
 RUN apt-get update \
     && apt-get install -y nasm libjpeg-turbo-progs vim \
     && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
