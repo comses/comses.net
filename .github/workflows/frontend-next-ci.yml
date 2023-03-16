@@ -1,0 +1,39 @@
+name: Frontend CI [vite/vue3 frontend]
+
+on:
+  push:
+    branches: [ main ]
+    paths: [ 'frontend-next/**' ]
+  pull_request:
+    branches: [ main ]
+    paths: [ 'frontend-next/**' ]
+
+jobs:
+
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: set up docker buildx
+      uses: docker/setup-buildx-action@v2
+
+    - name: build container
+      run: |
+        make docker-compose.yml
+        docker compose build vite --pull
+        docker compose up vite -d
+
+    - name: Lint
+      run: docker compose exec vite yarn lint
+
+    - name: Check formatting
+      if: ${{ success() || failure() }} # run regardless of previous step's success
+      run: docker compose exec vite yarn style
+
+    - name: Unit tests
+      if: ${{ success() || failure() }}
+      run: docker compose exec vite yarn test:unit
+
+    - name: bring down container
+      run: docker compose down
