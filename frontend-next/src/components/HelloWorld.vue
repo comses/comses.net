@@ -1,6 +1,6 @@
 <template>
   <h1>Vue 3 Component</h1>
-  <p>Vue 3 with Vite HMR proof of concept</p>
+  <p>Vue 3 with Vite HMR proof of concept, count: {{ count }}</p>
   <button @click="log">click me to say hello</button>
 </template>
 
