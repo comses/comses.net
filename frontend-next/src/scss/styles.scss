@@ -1,11 +1,16 @@
 @import "variables";
 
-// import all bootstrap styles
-@import "~/bootstrap/scss/bootstrap";
+@import "~/bootstrap/scss/bootstrap"; // import bootstrap AFTER custom variables
 
-@import "custom";
-@import "markdown";
-@import "multiselect";
-@import "datepicker";
-@import "conference";
-@import "tooltip";
+@import "global";
+
+@import "pages/base";
+@import "pages/conference";
+@import "pages/education";
+@import "pages/home";
+
+@import "components/calendar";
+@import "components/datepicker";
+@import "components/markdown";
+@import "components/multiselect";
+@import "components/tooltip";

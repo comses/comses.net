@@ -1,0 +1,134 @@
+/* Education page/training modules stylesheet */
+
+.tutorial {
+  padding-bottom: 2rem;
+
+  :target::before {
+    // scroll-margin not working for some reason
+    content: "";
+    display: block;
+    height: 90px;
+    margin-top: -90px;
+  }
+
+  @include media-breakpoint-up(xl) {
+    width: 800px;
+    position: relative;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    margin-top: 2rem;
+    margin-bottom: 1rem;
+    font-weight: bold;
+  }
+
+  h1,
+  h2 {
+    margin-top: 5rem;
+  }
+
+  img {
+    max-width: 100%;
+    box-sizing: content-box;
+  }
+
+  .toc {
+    @include media-breakpoint-up(xl) {
+      position: sticky;
+      top: 115px;
+      margin-right: -310px;
+      float: right;
+      width: 250px;
+      display: inline-block;
+      border-left: 1px solid #d8dbdf;
+      padding: 0.75rem 1.25rem;
+      line-height: 1.75;
+      font-size: 0.8rem;
+
+      &:before {
+        content: "Table of Contents";
+        font-size: 1.1rem;
+        font-weight: bold;
+        display: block;
+        margin-bottom: 0.75rem;
+      }
+
+      >ul {
+        padding-left: 0;
+      }
+
+      >ul ul {
+        padding-left: 1.5rem;
+      }
+
+      li::marker {
+        content: "";
+      }
+    }
+
+    display: none;
+  }
+
+  pre {
+    padding: 1rem;
+    background-color: #e9ecef;
+    border: 1px solid #d8dbdf;
+
+    code {
+      line-height: 1.25;
+    }
+  }
+
+  .admonition.prereqs {
+    @extend .alert;
+    @extend .alert-primary;
+  }
+
+  .admonition.info {
+    @extend .alert;
+    @extend .alert-info;
+  }
+
+  .admonition.warning {
+    @extend .alert;
+    @extend .alert-danger;
+  }
+
+  .admonition-title {
+    font-size: 1.1em;
+    font-weight: bold;
+  } 
+}
+
+.tutorial-card {
+  @extend .card;
+  border-radius: 0;
+  transition: 0.25s ease;
+
+  .card-title {
+    color: $link-color;
+  }
+
+  .card-image-top {
+    border-bottom: 1px solid rgba(0, 0, 0, 0.125);
+  }
+
+  .tag {
+    position: relative;
+    z-index: 2;
+  }
+
+  &:hover {
+    border-color: $link-color;
+  }
+}
+
+.card-thumbnail {
+  width: auto;
+  height: auto;
+}
