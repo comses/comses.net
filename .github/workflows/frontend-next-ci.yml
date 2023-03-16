@@ -28,12 +28,13 @@ jobs:
       run: docker compose exec vite yarn lint
 
     - name: Check formatting
-      if: ${{ success() || failure() }} # run regardless of previous step's success
+      if: ${{ success() || failure() }}
       run: docker compose exec vite yarn style
 
     - name: Unit tests
       if: ${{ success() || failure() }}
-      run: docker compose exec vite yarn test:unit
+      run: docker compose exec vite yarn test
 
     - name: bring down container
+      if: ${{ always() }}
       run: docker compose down
