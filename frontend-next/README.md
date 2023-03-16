@@ -1,52 +1,47 @@
 # frontend-next
 
-This template should help get you started developing with Vue 3 in Vite.
+CoMSES Net frontend components with Vue 3/Typescript/Vite. Work in progress that will eventually replace the current vue 2 frontend components/service.
+
+## Structure
+
+- `src/` - source code
+  - `apps/` - entry points that mount widgets, optionally reading data attributes
+  - `components/` - components - use flat directory structure with naming prefixes for organization
+  - `composables/` - reusable composition functions
+  - `stores/` - pinia stores
+  - `scss/` - global sass stylesheets
+  - `assets/` - static assets
+  - `vite.config.ts` - vite configuration - new 'apps' must be added to `build.rollupOptions.input`
 
 ## Recommended IDE Setup
 
-[VSCode](https://code.visualstudio.com/) + [Volar](https://marketplace.visualstudio.com/items?itemName=Vue.volar) (and disable Vetur) + [TypeScript Vue Plugin (Volar)](https://marketplace.visualstudio.com/items?itemName=Vue.vscode-typescript-vue-plugin).
+[VSCode](https://code.visualstudio.com/) + [Volar](https://marketplace.visualstudio.com/items?itemName=Vue.volar) (disable vetur and [enable volar takeover mode](https://vuejs.org/guide/typescript/overview.html#volar-takeover-mode))
 
-## Type Support for `.vue` Imports in TS
+## Operations
 
-TypeScript cannot handle type information for `.vue` imports by default, so we replace the `tsc` CLI with `vue-tsc` for type checking. In editors, we need [TypeScript Vue Plugin (Volar)](https://marketplace.visualstudio.com/items?itemName=Vue.vscode-typescript-vue-plugin) to make the TypeScript language service aware of `.vue` types.
-
-If the standalone TypeScript plugin doesn't feel fast enough to you, Volar has also implemented a [Take Over Mode](https://github.com/johnsoncodehk/volar/discussions/471#discussioncomment-1361669) that is more performant. You can enable it by the following steps:
-
-1. Disable the built-in TypeScript Extension
-    1) Run `Extensions: Show Built-in Extensions` from VSCode's command palette
-    2) Find `TypeScript and JavaScript Language Features`, right click and select `Disable (Workspace)`
-2. Reload the VSCode window by running `Developer: Reload Window` from the command palette.
-
-## Customize configuration
-
-See [Vite Configuration Reference](https://vitejs.dev/config/).
-
-## Project Setup
+### Build and deploy all containers (including hot-reloading vite dev server)
 
 ```sh
-yarn
-```
-
-### Compile and Hot-Reload for Development
-
-```sh
-yarn dev
-```
-
-### Type-Check, Compile and Minify for Production
-
-```sh
-yarn build
+make deploy
 ```
 
 ### Run Unit Tests with [Vitest](https://vitest.dev/)
 
 ```sh
-yarn test:unit
+docker compose exec vite yarn test # run all tests once
+# OR
+docker compose exec vite yarn yarn test:watch # run all tests watching for file changes
 ```
 
-### Lint with [ESLint](https://eslint.org/)
+### Run type-checker
 
 ```sh
-yarn lint
+docker compose exec vite yarn type-check
+```
+
+### Linting/formatting
+
+```sh
+docker compose exec vite yarn lint # lint:fix to attempt to fix linting errors
+docker compose exec vite yarn format # format:fix to fix formatting errors
 ```
