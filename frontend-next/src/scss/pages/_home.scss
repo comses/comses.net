@@ -1,0 +1,141 @@
+/* Home/Landing page stylesheet */
+
+.banner {
+  height: 80%;
+}
+
+.mission {
+  background-color: $mission-color;
+  text-align: center;
+  vertical-align: middle;
+  padding-top: $default-padding;
+  padding-bottom: $default-padding;
+}
+
+.landing-page-introduction {
+  overflow: hidden;
+  margin-top: 105px;
+  background: url("../assets/images/background-introduction.png") repeat top center;
+  padding-top: 40px;
+  padding-bottom: 60px;
+  text-align: center;
+  height: 480px;
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-family: 'Alte-DIN-1451-Mittelschrift', 'Open Sans', sans-serif;
+    font-weight: 400;
+  }
+
+  h1 {
+    padding-top: 40px;
+    font-size: 3.5rem;
+  }
+
+  h2 {
+    font-size: 1.5rem;
+  }
+
+  h3 {
+    font-size: 1rem;
+    font-family: 'Open Sans', sans-serif;
+    text-transform: uppercase;
+    padding-bottom: 30px;
+  }
+}
+
+div.activity {
+  padding: 10px 5px 10px 5px;
+}
+
+.featured-content {
+  background: url("../assets/images/background-featured-content.png") repeat top center;
+  overflow: hidden;
+  padding-top: 40px;
+  padding-bottom: 40px;
+  vertical-align: middle;
+  margin-top: 105px;
+  font-family: 'Open Sans', sans-serif;
+  color: $white;
+  font-weight: 300;
+
+  #featured-content-carousel {
+    height: 350px;
+  }
+
+  h1 {
+    text-align: center;
+  }
+
+  .carousel-inner {
+    height: 350px;
+    overflow: visible;
+  }
+
+  .carousel-text {
+    margin-left: -200px;
+  }
+
+  .carousel-item {
+    height: 320px;
+  }
+
+  .carousel-caption {
+    position: initial !important;
+    text-align: left;
+  }
+
+  .row {
+    height: 320px;
+  }
+}
+
+.community {
+  padding-top: $default-padding;
+  padding-bottom: $default-padding;
+
+  h1 {
+    text-align: center;
+    padding-bottom: 1.5rem;
+  }
+
+  .row {
+    padding-top: 30px;
+    padding-bottom: 30px;
+  }
+}
+
+#search-dropdown {
+  .dropdown-toggle::after {
+    display: none;
+  }
+}
+
+#search-button {
+  font-size: 1.2rem;
+  color: $text-color;
+  margin-top: 1rem;
+}
+
+#header-search-form {
+  left: -20rem;
+  width: 22rem;
+}
+
+footer.footer {
+  padding: 75px 0;
+  background-image: url("@/assets/images/background-footer.png");
+  color: $white;
+
+  .row {
+    padding-top: 20px;
+    padding-bottom: 20px;
+  }
+}
+
+a.footer {
+  color: $white;
+  text-decoration: underline;
+}

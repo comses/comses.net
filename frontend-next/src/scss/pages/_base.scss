@@ -1,0 +1,47 @@
+/* base template stylesheet (navbar, footer, etc.) */
+
+.page {
+  padding-top: $default-padding;
+  padding-bottom: $default-padding;
+}
+
+.logo {
+  color: transparent;
+  text-shadow: none;
+  background-color: transparent;
+  border: 0;
+  background-image: url("@/assets/images/comses-logo.png");
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: 181px 70px;
+  display: inline-block;
+  height: 70px !important;
+  width: 181px !important;
+}
+
+.introduction {
+  overflow: hidden;
+  margin-top: 105px;
+  background: url("../assets/images/background-introduction-200.png") repeat top center;
+  text-align: left;
+  vertical-align: middle;
+  height: 125px;
+  /*
+   Move introduction below header
+   We could polyfill position:sticky for Chrome instead
+   */
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    padding-top: 45px;
+    font-family: 'Alte-DIN-1451-Mittelschrift', 'Open Sans', sans-serif;
+    color: $white;
+    font-weight: 200;
+  }
+
+  a {
+    padding: 20px;
+  }
+}

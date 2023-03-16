@@ -1,0 +1,88 @@
+/* Contains all sass variables including bootstrap overrides */
+
+// CoMSES theme colors
+$white:     #ffffff !default;
+$gray-100:  #f8f9fa !default;
+$gray-800:  #343a40 !default;
+
+$blue:      #007bff !default;
+$red:       #dc3545 !default;
+$yellow:    #ffc107 !default;
+$green:     #28a745 !default;
+$teal:      #20c997 !default;
+$cyan:      #17a2b8 !default;
+
+$secondary-color: #22b1e6;
+$text-color: #6d6c71;
+$mission-color: #ced9ee;
+$rules-color: lighten(#ced9ee, 5%);
+
+// bootstrap theme color overrides
+$primary: $blue !default;
+$secondary: $secondary-color !default;
+$success: $green !default;
+$info: $cyan !default;
+$warning: $yellow !default;
+$danger: $red !default;
+$light: $gray-100 !default;
+$dark: $gray-800 !default;
+
+$button-color-primary: #92c02e;
+
+// Border Radius Override
+// FIXME: consider leaving this enabled and instead override the specific elements that need squareness to have no
+// border-radius - otherwise this appears to prevent all border-radius from badges buttons etc
+// see #363
+// $enable-rounded: false;
+
+$default-padding: 60px;
+
+// Header Size Overrides
+$h1-font-size: 1.8rem;
+$h2-font-size: 1.6rem;
+$h3-font-size: 1.4rem;
+$h4-font-size: 1.2rem;
+$h5-font-size: 1.1rem;
+$h6-font-size: 1.0rem;
+
+// Include Alte DIN 1451 Mittelschrift
+@font-face {
+  font-family: 'Alte-DIN-1451-Mittelschrift';
+  src: url('@/assets/fonts/Alte-DIN-1451-Mittelschrift.ttf.woff') format('woff'),
+    url('@/assets/fonts/Alte-DIN-1451-Mittelschrift.ttf.svg#Alte-DIN-1451-Mittelschrift') format('svg'),
+    url('@/assets/fonts/Alte-DIN-1451-Mittelschrift.ttf.eot'),
+    url('@/assets/fonts/Alte-DIN-1451-Mittelschrift.ttf.eot?#iefix') format('embedded-opentype');
+  font-weight: normal;
+  font-style: normal;
+}
+
+// Include font-awesome
+$fa-font-path: '@fortawesome/fontawesome-free/webfonts';
+@import '@fortawesome/fontawesome-free/scss/fontawesome.scss';
+@import '@fortawesome/fontawesome-free/scss/solid.scss';
+@import '@fortawesome/fontawesome-free/scss/regular.scss';
+@import '@fortawesome/fontawesome-free/scss/brands.scss';
+
+// Use Open Sans as base font
+@import url('https://fonts.googleapis.com/css?family=Open+Sans');
+$font-family-base: 'Open Sans', Roboto, 'Helvetica Neue', sans-serif;
+
+// Links
+$link-color: $secondary-color;
+$link-decoration: none;
+$link-hover-decoration: underline;
+
+// don't use xxl for now
+$container-max-widths: (
+  sm: 540px,
+  md: 720px,
+  lg: 960px,
+  xl: 1140px
+);
+
+// Pagination
+$pagination-active-border-color: $button-color-primary;
+$pagination-active-bg: $button-color-primary;
+
+// Text/Background Contrast for buttons, etc.
+$min-contrast-ratio: 2;

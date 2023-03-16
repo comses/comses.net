@@ -1,0 +1,6 @@
+.fc-toolbar {
+  .btn-primary {
+    @include button-variant($blue, $blue);
+    color: $white;
+  }
+}
