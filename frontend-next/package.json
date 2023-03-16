@@ -9,8 +9,10 @@
     "test:unit": "vitest",
     "build-only": "vite build",
     "type-check": "vue-tsc --noEmit -p tsconfig.vitest.json --composite false",
-    "lint": "eslint . --ext .vue,.js,.jsx,.cjs,.mjs,.ts,.tsx,.cts,.mts --fix --ignore-path .gitignore",
-    "style": "prettier --write src/"
+    "lint": "eslint . --ext .vue,.js,.ts --fix --ignore-path .gitignore",
+    "lint:fix": "eslint --fix . --ext .vue,.js,.ts --fix --ignore-path .gitignore",
+    "style": "prettier --check src/",
+    "style:fix": "prettier --write src/"
   },
   "dependencies": {
     "@fortawesome/fontawesome-free": "^5.12.0",

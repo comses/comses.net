@@ -1,7 +1,9 @@
 // @import '~simplemde-theme-base/dist/simplemde-theme-base.min.css';
 
 // Needed to make full screen mode visible
-.editor-toolbar.fullscreen, .editor-preview-side, .CodeMirror-fullscreen {
+.editor-toolbar.fullscreen,
+.editor-preview-side,
+.CodeMirror-fullscreen {
   z-index: $zindex-modal;
 }
 
@@ -15,7 +17,8 @@
   }
 }
 
-.CodeMirror, .CodeMirror-scroll {
+.CodeMirror,
+.CodeMirror-scroll {
   min-height: 125px;
 }
 

@@ -2,7 +2,7 @@
 
 blockquote {
   font-size: 1.1rem;
-  border-width: .2rem;
+  border-width: 0.2rem;
   border: solid #f7f7f9;
   padding: 1rem;
   color: $text-color;
@@ -62,18 +62,18 @@ a.anchor {
   }
 }
 
-.btn-group-xs>.btn,
+.btn-group-xs > .btn,
 .btn-xs {
-  padding: .25rem .4rem;
-  font-size: .875rem;
-  line-height: .5;
-  border-radius: .2rem;
+  padding: 0.25rem 0.4rem;
+  font-size: 0.875rem;
+  line-height: 0.5;
+  border-radius: 0.2rem;
 }
 
 .invalid-feedback-always {
   display: block;
-  margin-top: .25rem;
-  font-size: .875rem;
+  margin-top: 0.25rem;
+  font-size: 0.875rem;
   color: $form-feedback-invalid-color;
 }
 
@@ -297,9 +297,8 @@ nav {
   }
 
   .summary {
-    padding: 1rem 0 .5rem 0;
+    padding: 1rem 0 0.5rem 0;
   }
-
 }
 
 .tag-list {
@@ -335,7 +334,7 @@ nav {
 }
 
 .codebase-title {
-  font-family: 'Alte-DIN-1451-Mittelschrift', 'Open Sans', sans-serif;
+  font-family: "Alte-DIN-1451-Mittelschrift", "Open Sans", sans-serif;
   color: $text-color;
   font-weight: 300;
 }

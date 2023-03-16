@@ -1,10 +1,10 @@
 #tooltip {
-    padding: 5px;
-    color: $dark;
-    background-color: #fff;
-    border-radius: 5px;
-    border: 1px solid rgb(223, 223, 223);
-    font-size: .8rem;
-    box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2);
-    z-index: $zindex-tooltip;
+  padding: 5px;
+  color: $dark;
+  background-color: #fff;
+  border-radius: 5px;
+  border: 1px solid rgb(223, 223, 223);
+  font-size: 0.8rem;
+  box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2);
+  z-index: $zindex-tooltip;
 }
