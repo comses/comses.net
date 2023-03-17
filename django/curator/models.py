@@ -149,7 +149,7 @@ PLATFORM_AND_LANGUAGE_MATCHERS = [
     Matcher("Objective-C", pl_regex(r"objective(:?[-\s]+)?c")),
     Matcher("Pandora", pl_regex("pandora")),
     Matcher("Powersim Studio", pl_regex("powersim\s+studio")),
-    Matcher("Python", pl_regex("python")),
+    Matcher("Python", pl_regex(r"ironpython|python")),
     Matcher("R", pl_regex("r")),
     Matcher("Repast", pl_regex("repast")),
     Matcher("ReLogo", pl_regex("relogo")),
