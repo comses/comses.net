@@ -150,7 +150,7 @@ PLATFORM_AND_LANGUAGE_MATCHERS = [
     Matcher("Pandora", pl_regex("pandora")),
     Matcher("Powersim Studio", pl_regex("powersim\s+studio")),
     Matcher("Python", pl_regex(r"ironpython|python")),
-    Matcher("R", pl_regex("r")),
+    Matcher("R", pl_regex(r"r(?![0-9])")),
     Matcher("Repast", pl_regex("repast")),
     Matcher("ReLogo", pl_regex("relogo")),
     Matcher("SciLab", pl_regex("scilab")),
