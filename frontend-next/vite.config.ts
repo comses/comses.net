@@ -34,7 +34,7 @@ export default defineConfig({
     manifest: true,
     rollupOptions: {
       input: {
-        main: resolvePath("./src/main.ts"),
+        main: resolvePath("./src/apps/main.ts"),
         helloworld: resolvePath("./src/apps/helloworld.ts"),
         // add more entry points here
       },
