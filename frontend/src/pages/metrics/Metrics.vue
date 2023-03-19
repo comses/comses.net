@@ -162,7 +162,7 @@ export default class MetricsPage extends Vue {
     console.log("updateChartOptions");
     switch (this.picked){
       case "Members":
-        this.chartOptions["tile"]["text"]
+        this.chartOptions["title"]["text"] = "Members";
         if (this.selectedFullMembers) {
           this.chartOptions["series"] = [this.dataMembersTotal, this.dataMembersFull];
         } else {
@@ -170,6 +170,7 @@ export default class MetricsPage extends Vue {
         }
         break;
       case "Codebases":
+        this.chartOptions["title"]["text"] = "Codebases";
         if (this.selectedLanguage) {
           this.chartOptions["series"] = this.seriesCodebasesLangs;
         } else if (this.selectedPeerReview) {
@@ -179,6 +180,7 @@ export default class MetricsPage extends Vue {
         }
         break;
       case "Downloads":
+        this.chartOptions["title"]["text"] = "Downloads";
         this.chartOptions["series"] = [this.dataDownloadsTotal];
         break;
       default:
