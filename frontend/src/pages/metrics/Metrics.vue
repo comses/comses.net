@@ -1,13 +1,11 @@
 <template>
   <div>
-    <highcharts :options="chartOptions"></highcharts>
-
     <!-- Box 1 -->
     <div class="metrics-box1">
       <div class="metrics-group">
         <div>
           <div class="radio-button">
-            <input type="radio" id="members" value="Members" v-model="picked" />
+            <input type="radio" id="members" value="Members" v-model="picked" selected/>
             <label for="members" class="radio-label"> Members by year</label>
             <div class="checkbox">
               <input type="checkbox" id="fullMembers" v-model="selectedFullMembers" />
@@ -56,7 +54,7 @@
         </button>
       </div>
       <div v-if="selectedTab === 'graph'">
-        <!-- Graph content  -->
+        <highcharts :options="chartOptions"></highcharts>
       </div>
       <div v-if="selectedTab === 'data'">
         <!-- Data content -->
@@ -67,10 +65,10 @@
   </div>
 </template>
 
-<script>
-import { Component, Vue } from "vue-property-decorator";
-import { HighchartsVue } from "highcharts-vue";
+<script lang="ts">
+import { Component, Vue, Prop, Watch } from "vue-property-decorator";
 import { Chart } from "highcharts-vue";
+// import { Watch } from "fs";
 
 @Component({
   // language=Vue
@@ -79,27 +77,122 @@ import { Chart } from "highcharts-vue";
   },
 })
 export default class MetricsPage extends Vue {
-  chartOptions = {
-    // chart: {
-    //   type: 'spline'
-    // },
-    // title: {
-    //   text: 'Entire title'
-    // },
-    series: [
-      {
-        data: [10, 0, 8, 2, 6, 4, 5, 5],
-      },
-    ],
+  public picked = "Members";
+  public selectedLanguage = false;
+  public selectedPeerReview = false;
+  public selectedFullMembers = false;
+  public selectedTab = "graph";
+  public title: string = "Members";
+  // mock data
+  public dataMembersTotal: Object = {
+      name: "total members",
+      data: [90, 100, 110, 120, 130],
   };
+  public dataMembersFull: Object = {
+      name: "full members",
+      data: [70, 80, 90, 100, 110],
+  };
+  public dataCodebasesTotal: Object = {
+      name: "total codebases",
+      data: [100, 110, 120, 130, 140]
+  };
+  public dataCodebasesReviewed: Object = {
+      name: "reviewed codebases",
+      data: [70, 80, 90, 100, 110]
+  };
+  public seriesCodebasesLangs: Array<Object> = [
+    {
+      name: "Netlog",
+      data: [40, 30, 30, 40, 40]
+    },
+    {
+      name: "Python",
+      data: [20, 30, 30, 30, 40]
+    },
+    {
+      name: "Julia",
+      data: [20, 30, 30, 30, 30]
+    },
+    {
+      name: "C",
+      data: [20, 20, 30, 30, 30]
+    },
+  ]
+  // public seriesCodebasesPlatform: Array = []
+  public dataDownloadsTotal: Object = {
+      name: "total downloads",
+      data: [50, 60, 70, 80, 90]
+  };
+  public chartOptions: Object = {
+      // chart: {
+      //   type: 'spline'
+      // },
+      title: {
+          text: "Members", // default
+          align: 'left'
+      },
+      yAxis: {
+          title: {
+              text: 'Members'
+          }
+      },
+      xAxis: {
+          accessibility: {
+              rangeDescription: 'Range: 2019 to 2023'
+          }
+      },
+      plotOptions: {
+          series: {
+              label: {
+                  connectorAllowed: false
+              },
+              pointStart: 2019
+          }
+      },
+      series: [
+        this.dataMembersTotal // default data
+      ],
+    };
+
+  @Watch('picked')
+  @Watch('selectedFullMembers')
+  @Watch('selectedLanguage')
+  @Watch('selectedPeerReview')
+  updateChartOptions() {
+    console.log("updateChartOptions");
+    switch (this.picked){
+      case "Members":
+        this.chartOptions["tile"]["text"]
+        if (this.selectedFullMembers) {
+          this.chartOptions["series"] = [this.dataMembersTotal, this.dataMembersFull];
+        } else {
+          this.chartOptions["series"] = [this.dataMembersTotal];
+        }
+        break;
+      case "Codebases":
+        if (this.selectedLanguage) {
+          this.chartOptions["series"] = this.seriesCodebasesLangs;
+        } else if (this.selectedPeerReview) {
+          this.chartOptions["series"] = [this.dataCodebasesTotal, this.dataCodebasesReviewed];
+        } else {
+          this.chartOptions["series"] = [this.dataCodebasesTotal];
+        }
+        break;
+      case "Downloads":
+        this.chartOptions["series"] = [this.dataDownloadsTotal];
+        break;
+      default:
+    }
+  }
+
 
   data() {
     return {
-      picked: null,
-      selectedLanguage: false,
-      selectedPeerReview: false,
-      selectedFullMembers: false,
-      selectedTab: "graph",
+      // picked: "Members",
+      // selectedLanguage: false,
+      // selectedPeerReview: false,
+      // selectedFullMembers: false,
+      // selectedTab: "graph",
     };
   }
 }
