@@ -3,8 +3,8 @@
 
 {% block extra_css %}
     {{ super() }}
+    {# FIXME:(awaiting vue3) consider moving to frontend css #}
     <style type="text/css">
-        {# FIXME: consider moving to frontend css #}
         .campaign {
             font-family: arial, verdana;
             font-size: 1.2em;
@@ -16,7 +16,6 @@
             max-width: 100%;
             border: #dfdfdf solid 0.1rem;
             list-style: none;
-            {#line-height: 125%;#}
         }
 
         .campaign:hover {
@@ -35,37 +34,25 @@
 
 {% block content %}
     {{ breadcrumb([
-    {'url': '/about/', 'text': 'About'},
-    {'url': '/about/community/', 'text': 'Community'},
-    {'text': 'CoMSES Digest Newsletter' }
-    ])
-    }}
-    <div class='jumbotron'>
-        <h1 class='display-5'>CoMSES Digest Newsletter</h1>
-        <p class='pt-4 lead'>
+        {"url": "/about/", "text": "About"},
+        {"url": "/about/community/", "text": "Community"},
+        {"text": "CoMSES Digest Newsletter" }
+    ])}}
+    <div class="jumbotron">
+        <h1 class="display-5">CoMSES Digest Newsletter</h1>
+        <p class="pt-4 lead">
             The CoMSES Digest is a quarterly newsletter with relevant CoMSES Net community news - past
             issues can be viewed below. Full Members are automatically subscribed to the newsletter,
-            but you can also <a href='http://eepurl.com/b8GCUv'>sign up</a> as a basic member.
+            but you can also <a href="http://eepurl.com/b8GCUv">sign up</a> as a basic member.
+            {# FIXME: add salesforce signup link if it exists #}
         </p>
     </div>
     <h2>Issues</h2>
-    <ul class='list-group list-order'>
+    <ul class="list-group list-order">
+        {% for digest in digests %}
         <li class="campaign">
-            06/15/2022 - <a href='{{ static("digest/2022-06-15-v10-n2.pdf") }}'>CoMSES Digest: Summer 2022 Vol. 10 No. 2</a>
+            <a href="{{ static(digest.static_path) }}">{{ digest }}</a>
         </li>
-        <li class="campaign">
-            03/15/2022 - <a href='{{ static("digest/2022-03-15-v10-n1.pdf") }}'>CoMSES Digest: Spring 2022 Vol. 10 No. 1</a>
-        </li>
-
-        {% if mailchimp_js %}
-            {% script async=True %}
-            <script>
-                {{ mailchimp_js|safe }}
-            </script>
-            {% endscript %}
-        {% else %}
-            <script src='{{ mailchimp_digest_archive_url }}'>
-            </script>
-        {% endif %}
+        {% endfor %}
     </ul>
 {% endblock content %}

@@ -940,6 +940,32 @@ class ConferenceSubmission(models.Model):
         return "submission {} by {}".format(self.title, self.submitter)
 
 
+class DigestArchive(index.Indexed, models.Model):
+    """
+    represents a single issue of the quarterly digest with a pdf archive in the static directory
+    """
+
+    class Seasons(models.IntegerChoices):
+        SPRING = 1, _("Spring")
+        SUMMER = 2, _("Summer")
+        FALL = 3, _("Fall")
+        WINTER = 4, _("Winter")
+
+    year_published = models.IntegerField()
+    season = models.IntegerField(choices=Seasons.choices)
+    volume = models.IntegerField()
+    number = models.IntegerField()
+    static_path = models.CharField(max_length=128, unique=True)
+
+    def __str__(self):
+        return "CoMSES Digest Vol. {} No. {} - {} {}".format(
+            self.volume, self.number, self.get_season_display(), self.year_published
+        )
+
+    class Meta:
+        ordering = ["-volume", "-number"]
+
+
 @register_snippet
 class FaqEntry(index.Indexed, models.Model):
     class Categories(models.TextChoices):
