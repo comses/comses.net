@@ -1290,7 +1290,9 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
 
     @property
     def doi_url(self):
-        return Codebase.format_doi_url(self.doi)
+        if self.doi:
+            return Codebase.format_doi_url(self.doi)
+        return self.comses_permanent_url
 
     @property
     def comses_permanent_url(self):
@@ -2115,6 +2117,7 @@ class CodeMeta:
 
         target_product = {
             "@type": "SoftwareApplication",
+            "name": codebase_release.title,
             "operatingSystem": codebase_release.os,
             "applicationCategory": "Computational Model",
         }
@@ -2124,7 +2127,7 @@ class CodeMeta:
                 releaseNotes=codebase_release.release_notes.raw,
                 softwareVersion=codebase_release.version_number,
                 identifier=codebase_release.permanent_url,
-                sameAs=codebase_release.permanent_url,
+                sameAs=codebase_release.comses_permanent_url,
             )
         featured_image = codebase_release.codebase.get_featured_image()
         if featured_image:
