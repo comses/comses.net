@@ -23,7 +23,10 @@ SPARSE_REPO_PATH=${BUILD_DIR}/sparse-repo.tar.xz
 REPO_BACKUPS_PATH=docker/shared/backups
 
 include config.mk
-include .env
+ifneq (,$(wildcard ./.env))
+	include .env
+	export
+endif
 
 .PHONY: build
 build: docker-compose.yml secrets $(DOCKER_SHARED_DIR)
@@ -52,7 +55,8 @@ $(DB_PASSWORD_PATH): | ${SECRETS_DIR}
 	then \
 	  cp "$(DB_PASSWORD_PATH)" "$(DB_PASSWORD_PATH)_$$TODAY"; \
 	fi; \
-	echo "$${DB_PASSWORD}" > $(DB_PASSWORD_PATH)
+	@echo "Set db password at $(DB_PASSWORD_PATH), may need to manually reset existing db password"
+	@echo "$${DB_PASSWORD}" > $(DB_PASSWORD_PATH)
 
 $(SERVER_ENV): $(SERVER_ENV_TEMPLATE) $(SECRETS)
 	POM_BASE_URL=${POM_BASE_URL} \
@@ -79,7 +83,6 @@ $(CONFIG_INI_PATH): .env $(DB_PASSWORD_PATH) $(CONFIG_INI_TEMPLATE) $(SECRET_KEY
 	TEST_USERNAME=___test_user___ TEST_BASIC_AUTH_PASSWORD=$$(openssl rand -base64 42) \
 	TEST_USER_ID=1111111 BUILD_ID=${BUILD_ID} \
 	envsubst < ${CONFIG_INI_TEMPLATE} > ${CONFIG_INI_PATH}
-	# FIXME: should reset the db password too...
 
 $(SECRET_KEY_PATH): | ${SECRETS_DIR}
 	SECRET_KEY=$$(openssl rand -base64 48); \
