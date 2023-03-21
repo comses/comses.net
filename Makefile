@@ -55,7 +55,7 @@ $(DB_PASSWORD_PATH): | ${SECRETS_DIR}
 	then \
 	  cp "$(DB_PASSWORD_PATH)" "$(DB_PASSWORD_PATH)_$$TODAY"; \
 	fi; \
-	@echo "$${DB_PASSWORD}" > $(DB_PASSWORD_PATH)
+	echo "$${DB_PASSWORD}" > $(DB_PASSWORD_PATH)
 	@echo "db password at $(DB_PASSWORD_PATH) was reset, may need to manually update existing db password"
 
 $(SERVER_ENV): $(SERVER_ENV_TEMPLATE) $(SECRETS)
