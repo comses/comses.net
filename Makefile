@@ -23,10 +23,6 @@ SPARSE_REPO_PATH=${BUILD_DIR}/sparse-repo.tar.xz
 REPO_BACKUPS_PATH=docker/shared/backups
 
 include config.mk
-ifneq (,$(wildcard ./.env))
-	include .env
-	export
-endif
 
 .PHONY: build
 build: docker-compose.yml secrets $(DOCKER_SHARED_DIR)
@@ -58,10 +54,6 @@ $(DB_PASSWORD_PATH): | ${SECRETS_DIR}
 	echo "$${DB_PASSWORD}" > $(DB_PASSWORD_PATH)
 	@echo "db password at $(DB_PASSWORD_PATH) was reset, may need to manually update existing db password"
 
-$(SERVER_ENV): $(SERVER_ENV_TEMPLATE) $(SECRETS)
-	POM_BASE_URL=${POM_BASE_URL} \
-		envsubst < $(SERVER_ENV_TEMPLATE) > $(SERVER_ENV)
-	
 $(PGPASS_PATH): $(DB_PASSWORD_PATH) $(PGPASS_TEMPLATE) | ${SECRETS_DIR}
 	DB_PASSWORD=$$(cat $(DB_PASSWORD_PATH)); \
 	sed -e "s|DB_PASSWORD|$$DB_PASSWORD|" -e "s|DB_HOST|${DB_HOST}|" \
@@ -76,6 +68,10 @@ $(SENTRY_DSN_PATH): | ${SECRETS_DIR}
 
 .env: $(DOCKER_ENV_PATH)
 	cp ${DOCKER_ENV_PATH} .env
+ifneq (,$(wildcard ./.env))
+	include .env
+	export
+endif
 
 $(CONFIG_INI_PATH): .env $(DB_PASSWORD_PATH) $(CONFIG_INI_TEMPLATE) $(SECRET_KEY_PATH)
 	DB_HOST=${DB_HOST} DB_NAME=${DB_NAME} DB_PASSWORD=$$(cat ${DB_PASSWORD_PATH}) \
@@ -86,7 +82,7 @@ $(CONFIG_INI_PATH): .env $(DB_PASSWORD_PATH) $(CONFIG_INI_TEMPLATE) $(SECRET_KEY
 
 $(SECRET_KEY_PATH): | ${SECRETS_DIR}
 	SECRET_KEY=$$(openssl rand -base64 48); \
-	echo $${SECRET_KEY} > $(SECRET_KEY_PATH)
+	echo "$${SECRET_KEY}" > $(SECRET_KEY_PATH)
 
 docker-compose.yml: base.yml dev.yml staging.yml prod.yml config.mk $(PGPASS_PATH) .env
 	case "$(DEPLOY_ENVIRONMENT)" in \
