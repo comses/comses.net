@@ -88,7 +88,7 @@ $(SECRET_KEY_PATH): | ${SECRETS_DIR}
 	SECRET_KEY=$$(openssl rand -base64 48); \
 	echo $${SECRET_KEY} > $(SECRET_KEY_PATH)
 
-docker-compose.yml: base.yml dev.yml staging.yml prod.yml config.mk $(PGPASS_PATH)
+docker-compose.yml: base.yml dev.yml staging.yml prod.yml config.mk $(PGPASS_PATH) .env
 	case "$(DEPLOY_ENVIRONMENT)" in \
 	  dev|staging) docker compose -f base.yml -f $(DEPLOY_ENVIRONMENT).yml config > docker-compose.yml;; \
 	  prod) docker compose -f base.yml -f staging.yml -f $(DEPLOY_ENVIRONMENT).yml config > docker-compose.yml;; \
