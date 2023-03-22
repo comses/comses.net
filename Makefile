@@ -23,6 +23,7 @@ SPARSE_REPO_PATH=${BUILD_DIR}/sparse-repo.tar.xz
 REPO_BACKUPS_PATH=docker/shared/backups
 
 include config.mk
+include .env
 
 .PHONY: build
 build: docker-compose.yml secrets $(DOCKER_SHARED_DIR)
@@ -68,10 +69,6 @@ $(SENTRY_DSN_PATH): | ${SECRETS_DIR}
 
 .env: $(DOCKER_ENV_PATH)
 	cp ${DOCKER_ENV_PATH} .env
-ifneq (,$(wildcard ./.env))
-	include .env
-	export
-endif
 
 $(CONFIG_INI_PATH): .env $(DB_PASSWORD_PATH) $(CONFIG_INI_TEMPLATE) $(SECRET_KEY_PATH)
 	DB_HOST=${DB_HOST} DB_NAME=${DB_NAME} DB_PASSWORD=$$(cat ${DB_PASSWORD_PATH}) \
