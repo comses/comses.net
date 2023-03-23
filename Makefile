@@ -23,10 +23,7 @@ SPARSE_REPO_PATH=${BUILD_DIR}/sparse-repo.tar.xz
 REPO_BACKUPS_PATH=docker/shared/backups
 
 include config.mk
-ifneq (,$(wildcard ./.env))
-	include .env
-	export
-endif
+include .env
 
 .PHONY: build
 build: docker-compose.yml secrets $(DOCKER_SHARED_DIR)
@@ -58,10 +55,6 @@ $(DB_PASSWORD_PATH): | ${SECRETS_DIR}
 	echo "$${DB_PASSWORD}" > $(DB_PASSWORD_PATH)
 	@echo "db password at $(DB_PASSWORD_PATH) was reset, may need to manually update existing db password"
 
-$(SERVER_ENV): $(SERVER_ENV_TEMPLATE) $(SECRETS)
-	POM_BASE_URL=${POM_BASE_URL} \
-		envsubst < $(SERVER_ENV_TEMPLATE) > $(SERVER_ENV)
-	
 $(PGPASS_PATH): $(DB_PASSWORD_PATH) $(PGPASS_TEMPLATE) | ${SECRETS_DIR}
 	DB_PASSWORD=$$(cat $(DB_PASSWORD_PATH)); \
 	sed -e "s|DB_PASSWORD|$$DB_PASSWORD|" -e "s|DB_HOST|${DB_HOST}|" \
@@ -86,9 +79,9 @@ $(CONFIG_INI_PATH): .env $(DB_PASSWORD_PATH) $(CONFIG_INI_TEMPLATE) $(SECRET_KEY
 
 $(SECRET_KEY_PATH): | ${SECRETS_DIR}
 	SECRET_KEY=$$(openssl rand -base64 48); \
-	echo $${SECRET_KEY} > $(SECRET_KEY_PATH)
+	echo "$${SECRET_KEY}" > $(SECRET_KEY_PATH)
 
-docker-compose.yml: base.yml dev.yml staging.yml prod.yml config.mk $(PGPASS_PATH)
+docker-compose.yml: base.yml dev.yml staging.yml prod.yml config.mk $(PGPASS_PATH) .env
 	case "$(DEPLOY_ENVIRONMENT)" in \
 	  dev|staging) docker compose -f base.yml -f $(DEPLOY_ENVIRONMENT).yml config > docker-compose.yml;; \
 	  prod) docker compose -f base.yml -f staging.yml -f $(DEPLOY_ENVIRONMENT).yml config > docker-compose.yml;; \
@@ -109,7 +102,7 @@ ifneq ($(DEPLOY_ENVIRONMENT),dev)
 	docker compose pull nginx
 endif
 	docker compose up -d 
-	sleep 20
+	sleep 42
 	docker compose exec server inv prepare
 
 $(REPO_BACKUPS_PATH):
@@ -132,7 +125,8 @@ restore: build $(SPARSE_REPO_PATH) | $(REPO_BACKUPS_PATH)
 
 .PHONY: clean
 clean:
-	rm config.mk .env docker-compose.yml
+	@echo "Backing up generated files to /tmp directory"
+	mv .env config.mk docker-compose.yml $(CONFIG_INI_PATH) $(shell mktemp -d)
 
 .PHONY: test
 test: build
