@@ -940,6 +940,7 @@ class ConferenceSubmission(models.Model):
         return "submission {} by {}".format(self.title, self.submitter)
 
 
+@register_snippet
 class ComsesDigest(index.Indexed, models.Model):
     """
     represents a single issue of the quarterly digest that points to a static pdf file
@@ -952,7 +953,7 @@ class ComsesDigest(index.Indexed, models.Model):
         WINTER = 4, _("Winter")
 
     contributors = models.ManyToManyField(Contributor)
-    doi = models.CharField(max_length=128, unique=True, null=True)
+    doi = models.CharField(max_length=128, unique=True, blank=True, null=True)
     season = models.IntegerField(choices=Seasons.choices)
     volume = models.IntegerField()
     issue_number = models.IntegerField()

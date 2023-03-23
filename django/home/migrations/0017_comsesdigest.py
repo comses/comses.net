@@ -16,7 +16,7 @@ class Migration(migrations.Migration):
             name='ComsesDigest',
             fields=[
                 ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('doi', models.CharField(max_length=128, null=True, unique=True)),
+                ('doi', models.CharField(max_length=128, blank=True, null=True, unique=True)),
                 ('season', models.IntegerField(choices=[(1, 'Spring'), (2, 'Summer'), (3, 'Fall'), (4, 'Winter')])),
                 ('volume', models.IntegerField()),
                 ('issue_number', models.IntegerField()),
