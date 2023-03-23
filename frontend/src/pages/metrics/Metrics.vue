@@ -5,7 +5,7 @@
       <div class="metrics-group">
         <div>
           <div class="radio-button">
-            <input type="radio" id="members" value="Members" v-model="picked" selected/>
+            <input type="radio" id="members" value="Members" v-model="picked" selected />
             <label for="members" class="radio-label"> Members by year</label>
             <div class="checkbox">
               <input type="checkbox" id="fullMembers" v-model="selectedFullMembers" />
@@ -85,82 +85,82 @@ export default class MetricsPage extends Vue {
   public title: string = "Members";
   // mock data
   public dataMembersTotal: Object = {
-      name: "total members",
-      data: [90, 100, 110, 120, 130],
+    name: "total members",
+    data: [90, 100, 110, 120, 130],
   };
   public dataMembersFull: Object = {
-      name: "full members",
-      data: [70, 80, 90, 100, 110],
+    name: "full members",
+    data: [70, 80, 90, 100, 110],
   };
   public dataCodebasesTotal: Object = {
-      name: "total codebases",
-      data: [100, 110, 120, 130, 140]
+    name: "total codebases",
+    data: [100, 110, 120, 130, 140],
   };
   public dataCodebasesReviewed: Object = {
-      name: "reviewed codebases",
-      data: [70, 80, 90, 100, 110]
+    name: "reviewed codebases",
+    data: [70, 80, 90, 100, 110],
   };
   public seriesCodebasesLangs: Array<Object> = [
     {
       name: "Netlog",
-      data: [40, 30, 30, 40, 40]
+      data: [40, 30, 30, 40, 40],
     },
     {
       name: "Python",
-      data: [20, 30, 30, 30, 40]
+      data: [20, 30, 30, 30, 40],
     },
     {
       name: "Julia",
-      data: [20, 30, 30, 30, 30]
+      data: [20, 30, 30, 30, 30],
     },
     {
       name: "C",
-      data: [20, 20, 30, 30, 30]
+      data: [20, 20, 30, 30, 30],
     },
-  ]
+  ];
   // public seriesCodebasesPlatform: Array = []
   public dataDownloadsTotal: Object = {
-      name: "total downloads",
-      data: [50, 60, 70, 80, 90]
+    name: "total downloads",
+    data: [50, 60, 70, 80, 90],
   };
   public chartOptions: Object = {
-      // chart: {
-      //   type: 'spline'
-      // },
+    // chart: {
+    //   type: 'spline'
+    // },
+    title: {
+      text: "Members", // default
+      align: "left",
+    },
+    yAxis: {
       title: {
-          text: "Members", // default
-          align: 'left'
+        text: "Members",
       },
-      yAxis: {
-          title: {
-              text: 'Members'
-          }
+    },
+    xAxis: {
+      accessibility: {
+        rangeDescription: "Range: 2019 to 2023",
       },
-      xAxis: {
-          accessibility: {
-              rangeDescription: 'Range: 2019 to 2023'
-          }
+    },
+    plotOptions: {
+      series: {
+        label: {
+          connectorAllowed: false,
+        },
+        pointStart: 2019,
       },
-      plotOptions: {
-          series: {
-              label: {
-                  connectorAllowed: false
-              },
-              pointStart: 2019
-          }
-      },
-      series: [
-        this.dataMembersTotal // default data
-      ],
-    };
+    },
+    series: [
+      this.dataMembersTotal, // default data
+    ],
+  };
 
-  @Watch('picked')
-  @Watch('selectedFullMembers')
-  @Watch('selectedLanguage')
-  @Watch('selectedPeerReview')
+  @Watch("picked")
+  @Watch("selectedFullMembers")
+  @Watch("selectedLanguage")
+  @Watch("selectedPeerReview")
   updateChartOptions() {
     console.log("updateChartOptions");
-    switch (this.picked){
+    switch (this.picked) {
       case "Members":
         this.chartOptions["title"]["text"] = "Members";
         if (this.selectedFullMembers) {
@@ -186,7 +186,6 @@ export default class MetricsPage extends Vue {
       default:
     }
   }
-
 
   data() {
     return {
@@ -234,22 +233,24 @@ export default class MetricsPage extends Vue {
 
 .tab {
   display: flex;
-  margin-bottom: 10px;
-  
+  border-bottom: 1px solid #dee2e6;
 }
 
 .tab-button {
-  border: none;
-  outline: none;
-  background-color: white;
+  color: #22b1e6;
+  text-decoration: none;
+  background-color: transparent;
   cursor: pointer;
-  padding: 5px;
-  margin-right: 10px;
+  border: 1px solid transparent;
+  display: block;
+  padding: 0.5rem 1rem;
 }
 
 .tab-button.active {
-  background-color: #269abc;
-  color: white;
-  border-radius: 3px;
+  color: #495057;
+  background-color: #fff;
+  border-color: #dee2e6 #dee2e6 #fff;
+  box-sizing: border-box;
+  margin-bottom: -1px;
 }
 </style>
