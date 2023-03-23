@@ -102,7 +102,7 @@ ifneq ($(DEPLOY_ENVIRONMENT),dev)
 	docker compose pull nginx
 endif
 	docker compose up -d 
-	sleep 20
+	sleep 42
 	docker compose exec server inv prepare
 
 $(REPO_BACKUPS_PATH):
@@ -125,7 +125,8 @@ restore: build $(SPARSE_REPO_PATH) | $(REPO_BACKUPS_PATH)
 
 .PHONY: clean
 clean:
-	rm config.mk .env docker-compose.yml
+	@echo "Backing up generated files to /tmp directory"
+	mv .env config.mk docker-compose.yml $(CONFIG_INI_PATH) $(shell mktemp -d)
 
 .PHONY: test
 test: build
