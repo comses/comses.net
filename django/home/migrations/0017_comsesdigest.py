@@ -7,25 +7,47 @@ import wagtail.search.index
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('library', '0022_alter_codebaserendition_file'),
-        ('home', '0016_alter_peopleentryplacement_category'),
+        ("home", "0016_alter_peopleentryplacement_category"),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='ComsesDigest',
+            name="ComsesDigest",
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('doi', models.CharField(max_length=128, blank=True, null=True, unique=True)),
-                ('season', models.IntegerField(choices=[(1, 'Spring'), (2, 'Summer'), (3, 'Fall'), (4, 'Winter')])),
-                ('volume', models.IntegerField()),
-                ('issue_number', models.IntegerField()),
-                ('publication_date', models.DateField()),
-                ('static_path', models.CharField(max_length=128, unique=True)),
-                ('contributors', models.ManyToManyField(to='library.Contributor')),
+                (
+                    "id",
+                    models.AutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "doi",
+                    models.CharField(
+                        max_length=128, blank=True, null=True, unique=True
+                    ),
+                ),
+                (
+                    "season",
+                    models.IntegerField(
+                        choices=[
+                            (1, "Spring"),
+                            (2, "Summer"),
+                            (3, "Fall"),
+                            (4, "Winter"),
+                        ]
+                    ),
+                ),
+                ("volume", models.IntegerField()),
+                ("issue_number", models.IntegerField()),
+                ("publication_date", models.DateField()),
+                ("static_path", models.CharField(max_length=128, unique=True)),
+                ("contributors", models.ManyToManyField(to="library.Contributor")),
             ],
             options={
-                'ordering': ['-volume', '-issue_number'],
+                "ordering": ["-volume", "-issue_number"],
             },
             bases=(wagtail.search.index.Indexed, models.Model),
         ),
