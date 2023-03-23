@@ -8,8 +8,10 @@ e.g. vol11_no3_Spring_2023.pdf
 import logging
 import os
 import re
+from datetime import datetime
 from django.core.management.base import BaseCommand
-from home.models import DigestArchive
+
+from home.models import ComsesDigest
 
 logger = logging.getLogger(__name__)
 
@@ -20,7 +22,7 @@ class Command(BaseCommand):
     help = "Update CoMSES digest archives page based on the contents of home/static/digest/"
 
     def handle(self, *args, **options):
-        DigestArchive.objects.all().delete()
+        ComsesDigest.objects.all().delete()
         err_msg = ""
 
         for file_name in os.listdir(DIGEST_STATIC_DIR):
@@ -44,22 +46,23 @@ class Command(BaseCommand):
 
     def add_digest_archive(self, file_name):
         volume = int(re.search(r"vol(\d+)", file_name, re.IGNORECASE).group(1))
-        number = int(re.search(r"no(\d+)", file_name, re.IGNORECASE).group(1))
-        year_published = int(re.search(r"(20\d{2})", file_name).group(1))
+        issue_number = int(re.search(r"no(\d+)", file_name, re.IGNORECASE).group(1))
+        date_str = re.search(r"(\d{2}-\d{2}-\d{4})", file_name).group(1)
+        publication_date = datetime.strptime(date_str, "%m-%d-%Y").date()
         season_str = (
             re.search(r"(spring|summer|fall|winter)", file_name, re.IGNORECASE)
             .group(1)
             .lower()
         )
-        for _season, label in DigestArchive.Seasons.choices:
+        for _season, label in ComsesDigest.Seasons.choices:
             if season_str == label.lower():
                 season = _season
                 break
 
-        digest = DigestArchive(
+        digest = ComsesDigest(
             volume=volume,
-            number=number,
-            year_published=year_published,
+            issue_number=issue_number,
+            publication_date=publication_date,
             season=season,
             static_path="digest/" + file_name,
         )

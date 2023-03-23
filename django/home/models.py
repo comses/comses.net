@@ -940,9 +940,9 @@ class ConferenceSubmission(models.Model):
         return "submission {} by {}".format(self.title, self.submitter)
 
 
-class DigestArchive(index.Indexed, models.Model):
+class ComsesDigest(index.Indexed, models.Model):
     """
-    represents a single issue of the quarterly digest with a pdf archive in the static directory
+    represents a single issue of the quarterly digest that points to a static pdf file
     """
 
     class Seasons(models.IntegerChoices):
@@ -951,19 +951,36 @@ class DigestArchive(index.Indexed, models.Model):
         FALL = 3, _("Fall")
         WINTER = 4, _("Winter")
 
-    year_published = models.IntegerField()
+    contributors = models.ManyToManyField(Contributor)
+    doi = models.CharField(max_length=128, unique=True, null=True)
     season = models.IntegerField(choices=Seasons.choices)
     volume = models.IntegerField()
-    number = models.IntegerField()
+    issue_number = models.IntegerField()
+    publication_date = models.DateField()
     static_path = models.CharField(max_length=128, unique=True)
 
-    def __str__(self):
-        return "CoMSES Digest Vol. {} No. {} - {} {}".format(
-            self.volume, self.number, self.get_season_display(), self.year_published
+    @property
+    def year_published(self):
+        return self.publication_date.year
+
+    @property
+    def title(self):
+        return "CoMSES Digest: {} {}".format(
+            self.get_season_display(),
+            self.year_published,
         )
 
+    def get_volume_issue_display(self):
+        return "Vol. {}, No. {}".format(self.volume, self.issue_number)
+
+    def get_formatted_publication_date(self):
+        return self.publication_date.strftime("%B %d, %Y")
+
+    def __str__(self):
+        return self.title + ", " + self.get_volume_issue_display()
+
     class Meta:
-        ordering = ["-volume", "-number"]
+        ordering = ["-volume", "-issue_number"]
 
 
 @register_snippet

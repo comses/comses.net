@@ -52,7 +52,7 @@ from core.views import (
 from library.models import Codebase
 from .forms import ConferenceSubmissionForm
 from .models import (
-    DigestArchive,
+    ComsesDigest,
     FeaturedContentItem,
     MemberProfile,
     ContactPage,
@@ -417,11 +417,11 @@ class SearchView(TemplateView):
 
 class DigestView(ListView):
     template_name = "home/digest.jinja"
-    model = DigestArchive
+    model = ComsesDigest
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["digests"] = DigestArchive.objects.all()
+        context["digests"] = ComsesDigest.objects.all()
         return context
 
 
