@@ -1,0 +1,13 @@
+{
+  "name": "e2e",
+  "version": "0.0.1",
+  "description": "CoMSES Net e2e/integration tests",
+  "main": "index.ts",
+  "scripts": {
+    "test": "./wait-for-it.sh server:8000 -t 45 -- cypress run"
+  },
+  "devDependencies": {
+    "cypress": "^12.8.1",
+    "typescript": "~4.8.4"
+  }
+}

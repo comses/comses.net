@@ -4,11 +4,15 @@ import os
 
 DEPLOY_ENVIRONMENT = Environment.TEST
 
+ALLOWED_HOSTS = ["localhost", "127.0.0.1", "server"]
+
 LOGGING["loggers"]["core.views"] = {
     "level": "ERROR",
     "handlers": ["console"],
     "propagate": False,
 }
+
+DJANGO_VITE_DEV_MODE = False
 
 SHARE_DIR = os.path.realpath("library/tests/tmp")
 LIBRARY_ROOT = os.path.join(SHARE_DIR, "library")

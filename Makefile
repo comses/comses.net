@@ -93,7 +93,7 @@ $(SECRET_KEY_PATH): | ${SECRETS_DIR}
 
 docker-compose.yml: base.yml dev.yml staging.yml prod.yml config.mk $(PGPASS_PATH) .env
 	case "$(DEPLOY_ENVIRONMENT)" in \
-	  dev|staging) docker compose -f base.yml -f $(DEPLOY_ENVIRONMENT).yml config > docker-compose.yml;; \
+	  dev|staging|test) docker compose -f base.yml -f $(DEPLOY_ENVIRONMENT).yml config > docker-compose.yml;; \
 	  prod) docker compose -f base.yml -f staging.yml -f $(DEPLOY_ENVIRONMENT).yml config > docker-compose.yml;; \
 	  *) echo "invalid environment. must be either dev, staging or prod" 1>&2; exit 1;; \
 	esac
@@ -141,3 +141,9 @@ clean:
 .PHONY: test
 test: build
 	docker compose run --rm server /code/deploy/test.sh
+
+.PHONY: e2e
+e2e: DEPLOY_ENVIRONMENT=test
+e2e: build
+	docker compose run --rm e2e yarn test
+	docker compose down
