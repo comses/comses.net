@@ -13,7 +13,7 @@ router.register(r"jobs", views.JobViewSet, basename="job")
 router.register(r"users", views.ProfileViewSet, basename="profile")
 
 urlpatterns = [
-    path("metrics/", views.MetricsView.as_view(), name="metrics"),
+    path("about/metrics/", views.MetricsView.as_view(), name="metrics"),
     path("search/", views.SearchView.as_view(), name="search"),
     path("digest/", views.DigestView.as_view(), name="digest"),
     path(

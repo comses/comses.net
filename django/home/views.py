@@ -1,4 +1,5 @@
 import logging
+import json
 
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
@@ -49,6 +50,7 @@ from core.views import (
 )
 from library.models import Codebase
 from .forms import ConferenceSubmissionForm
+from .metrics import Metrics
 from .models import (
     ComsesDigest,
     FeaturedContentItem,
@@ -62,6 +64,7 @@ from .serializers import (
     MemberProfileSerializer,
 )
 from .search import GeneralSearch
+
 
 logger = logging.getLogger(__name__)
 
@@ -384,7 +387,13 @@ class JobViewSet(CommonViewSetMixin, OnlyObjectPermissionModelViewSet):
 
 
 class MetricsView(TemplateView):
-    template_name = "home/metrics.jinja"
+    template_name = "home/about/metrics.jinja"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        metrics_data_json = json.dumps(Metrics().get_all_data())
+        context["all_metrics_data_json"] = metrics_data_json
+        return context
 
 
 class SearchView(TemplateView):
