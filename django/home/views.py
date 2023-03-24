@@ -1,11 +1,9 @@
 import logging
 
-import requests
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.models import User
-from django.core.cache import cache
 from django.core.files.images import ImageFile
 from django.http import QueryDict
 from django.shortcuts import redirect, get_object_or_404
@@ -32,7 +30,7 @@ from rest_framework.views import APIView
 from taggit.models import Tag
 from wagtail.images.models import Image
 
-from core.models import FollowUser, Event, Job, SiteSettings
+from core.models import FollowUser, Event, Job
 from core.permissions import ObjectPermissions, ViewRestrictedObjectPermissions
 from core.serializers import TagSerializer, EventSerializer, JobSerializer
 from core.utils import parse_datetime, send_markdown_email
@@ -418,11 +416,7 @@ class SearchView(TemplateView):
 class DigestView(ListView):
     template_name = "home/digest.jinja"
     model = ComsesDigest
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context["digests"] = ComsesDigest.objects.all()
-        return context
+    context_object_name = "digests"
 
 
 class ConferenceSubmissionView(LoginRequiredMixin, CreateView):

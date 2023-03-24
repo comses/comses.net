@@ -5,7 +5,6 @@ import wagtail.search.index
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("home", "0016_alter_peopleentryplacement_category"),
     ]
