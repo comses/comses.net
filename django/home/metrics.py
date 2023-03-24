@@ -8,6 +8,12 @@ from django.db.models import Count, F
 class Metrics:
     REDIS_METRICS_KEY = "all_comses_metrics"
 
+    def get_all_data(self):
+        data = cache.get(Metrics.REDIS_METRICS_KEY)
+        if not data:
+            return self.cache_all()
+        return data
+
     def get_members_by_year(self):
         """
         Sample JSON schema
@@ -63,25 +69,47 @@ class Metrics:
             ...
         }
         """
-        os_metrics = list(CodebaseRelease.objects.public().values(operating_systems=F('os'), year=F(
-            "first_published_at__year")).annotate(count=Count("year")).order_by("year"))
-        platform_metrics = list(CodebaseRelease.objects.public().values(platform=F(
-            'platform_tags__name'), year=F("first_published_at__year")).annotate(count=Count("year")).order_by("year"))
-        programming_language_metrics = list(CodebaseRelease.objects.public().values(programming_language_names=F(
-            'programming_languages__name'), year=F("first_published_at__year")).annotate(count=Count("year")).order_by("year"))
-        review_metrics = list(CodebaseRelease.objects.values(year=F('first_published_at__year')).annotate(count=Count("review")))
+        os_metrics = list(
+            CodebaseRelease.objects.public()
+            .values(operating_systems=F("os"), year=F("first_published_at__year"))
+            .annotate(count=Count("year"))
+            .order_by("year")
+        )
+        platform_metrics = list(
+            CodebaseRelease.objects.public()
+            .values(
+                platform=F("platform_tags__name"), year=F("first_published_at__year")
+            )
+            .annotate(count=Count("year"))
+            .order_by("year")
+        )
+        programming_language_metrics = list(
+            CodebaseRelease.objects.public()
+            .values(
+                programming_language_names=F("programming_languages__name"),
+                year=F("first_published_at__year"),
+            )
+            .annotate(count=Count("year"))
+            .order_by("year")
+        )
+        review_metrics = list(
+            CodebaseRelease.objects.values(year=F("first_published_at__year")).annotate(
+                count=Count("review")
+            )
+        )
 
         codebase_metrics = {}
         codebase_metrics.update(os_metrics=os_metrics)
         codebase_metrics.update(platform_metrics=platform_metrics)
-        codebase_metrics.update(programming_language_metrics=programming_language_metrics)
+        codebase_metrics.update(
+            programming_language_metrics=programming_language_metrics
+        )
         codebase_metrics.update(review_metrics=review_metrics)
         return codebase_metrics
 
     def get_downloads_by_year(self):
         return list(
-            CodebaseReleaseDownload.objects.values(
-                year=F("date_created__year"))
+            CodebaseReleaseDownload.objects.values(year=F("date_created__year"))
             .annotate(total=Count("year"))
             .order_by("year")
         )
@@ -125,3 +153,4 @@ class Metrics:
         all_data.update(downloads_by_year=self.get_downloads_by_year())
         # FIXME: consider TTL cache timeout
         cache.set(Metrics.REDIS_METRICS_KEY, all_data)
+        return all_data

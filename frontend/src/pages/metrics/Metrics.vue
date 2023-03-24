@@ -60,7 +60,6 @@
         <!-- Data content -->
       </div>
     </div>
-
     <div class="clearfix" style="clear: both"></div>
   </div>
 </template>
@@ -76,7 +75,11 @@ import { Chart } from "highcharts-vue";
     highcharts: Chart,
   },
 })
+
 export default class MetricsPage extends Vue {
+  @Prop()
+  private metricsData = {};
+
   public picked = "Members";
   public selectedLanguage = false;
   public selectedPeerReview = false;
@@ -102,7 +105,7 @@ export default class MetricsPage extends Vue {
   };
   public seriesCodebasesLangs: Array<Object> = [
     {
-      name: "Netlog",
+      name: "Netlogo",
       data: [40, 30, 30, 40, 40],
     },
     {
@@ -154,6 +157,12 @@ export default class MetricsPage extends Vue {
       this.dataMembersTotal, // default data
     ],
   };
+
+  toHighChartsData() {
+    // FIXME: manipulate metrics data into a form suitable for highcharts
+    // validate data against yup schema
+    return this.metricsData;
+  }
 
   @Watch("picked")
   @Watch("selectedFullMembers")
