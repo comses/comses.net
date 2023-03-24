@@ -1,14 +1,14 @@
 bagit==1.8.1
 bleach==5.0.1
-django-allauth==0.52.0
-django-anymail[mailgun]==9.0
+django-allauth==0.53.1
+django-anymail[mailgun]==9.1
 django-cookie-law==2.2.0
-django-csp[jinja2]==3.6
+django-csp[jinja2]==3.7
 django-extensions==3.2.1
 django-guardian==2.4.0
 django-hcaptcha-field==1.4.0
-django-ipware==4.0.2
-django-location-field==2.1.0
+django-ipware==5.0.0
+django-location-field==2.7.0
 django-markupfield==2.0.1
 django-model-utils==4.3.1
 django-redis==5.2.0
@@ -18,7 +18,7 @@ django-reversion==5.0.4
 django-robots==5.0
 django-timezone-field==5.0
 django-waffle==3.0.0
-django-webpack-loader==1.8.0
+django-webpack-loader==1.8.1
 djangorestframework==3.14.0
 djangorestframework-jwt==1.11.0
 Django>=3.2.17, == 3.2.*
@@ -27,19 +27,19 @@ elasticsearch>=7.0.0,<8.0.0
 html2text>=2016.9.19
 jinja2==3.1.2
 jsonschema==4.16.0
-markdown==3.4.1
+markdown==3.4.3
 nltk>=3.2.5,<4.0.0
 psycopg2-binary==2.9.5
-pytz==2022.6
-redis==4.4.2
-requests==2.28.1
+pytz==2022.7.1
+redis==4.5.3
+requests==2.28.2
 semver==2.13.0
-sentry-sdk==1.11.1
+sentry-sdk==1.17.0
 shortuuid==1.0.11
 tzdata==2022.7
 uwsgi==2.0.21
 uwsgitop==0.11
-wagtail==4.2
+wagtail==4.2.1
 # used for institution -> affiliation data migration, unused afterwards
 fuzzywuzzy==0.18.0
 invoke
