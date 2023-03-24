@@ -966,19 +966,16 @@ class ComsesDigest(index.Indexed, models.Model):
 
     @property
     def title(self):
-        return "CoMSES Digest: {} {}".format(
-            self.get_season_display(),
-            self.year_published,
-        )
+        return f"CoMSES Digest: {self.get_season_display()} {self.year_published}"
 
     def get_volume_issue_display(self):
-        return "Vol. {}, No. {}".format(self.volume, self.issue_number)
+        return f"Vol. {self.volume}, No. {self.issue_number}"
 
     def get_formatted_publication_date(self):
         return self.publication_date.strftime("%B %d, %Y")
 
     def __str__(self):
-        return self.title + ", " + self.get_volume_issue_display()
+        return f"{self.title}, {self.get_volume_issue_display()}"
 
     class Meta:
         ordering = ["-volume", "-issue_number"]
