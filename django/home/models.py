@@ -941,6 +941,47 @@ class ConferenceSubmission(models.Model):
 
 
 @register_snippet
+class ComsesDigest(index.Indexed, models.Model):
+    """
+    represents a single issue of the quarterly digest that points to a static pdf file
+    """
+
+    class Seasons(models.IntegerChoices):
+        SPRING = 1, _("Spring")
+        SUMMER = 2, _("Summer")
+        FALL = 3, _("Fall")
+        WINTER = 4, _("Winter")
+
+    contributors = models.ManyToManyField(Contributor)
+    doi = models.CharField(max_length=128, unique=True, blank=True, null=True)
+    season = models.IntegerField(choices=Seasons.choices)
+    volume = models.IntegerField()
+    issue_number = models.IntegerField()
+    publication_date = models.DateField()
+    static_path = models.CharField(max_length=128, unique=True)
+
+    @property
+    def year_published(self):
+        return self.publication_date.year
+
+    @property
+    def title(self):
+        return f"CoMSES Digest: {self.get_season_display()} {self.year_published}"
+
+    def get_volume_issue_display(self):
+        return f"Vol. {self.volume}, No. {self.issue_number}"
+
+    def get_formatted_publication_date(self):
+        return self.publication_date.strftime("%B %d, %Y")
+
+    def __str__(self):
+        return f"{self.title}, {self.get_volume_issue_display()}"
+
+    class Meta:
+        ordering = ["-volume", "-issue_number"]
+
+
+@register_snippet
 class FaqEntry(index.Indexed, models.Model):
     class Categories(models.TextChoices):
         ABM = "abm", _("Agent-based Modeling Questions")
