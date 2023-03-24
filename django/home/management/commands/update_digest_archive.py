@@ -45,6 +45,7 @@ class Command(BaseCommand):
             logger.info(f"\n\nSuccessfully indexed all pdfs in {DIGEST_STATIC_DIR}")
 
     def add_digest_archive(self, file_name):
+        # FIXME: consider rolling all these regex searches into a single-pass regex monstrosity
         volume = int(re.search(r"vol(\d+)", file_name, re.IGNORECASE).group(1))
         issue_number = int(re.search(r"no(\d+)", file_name, re.IGNORECASE).group(1))
         date_str = re.search(r"(\d{2}-\d{2}-\d{4})", file_name).group(1)
@@ -52,19 +53,13 @@ class Command(BaseCommand):
         season_str = (
             re.search(r"(spring|summer|fall|winter)", file_name, re.IGNORECASE)
             .group(1)
-            .lower()
+            .upper()
         )
-        for _season, label in ComsesDigest.Seasons.choices:
-            if season_str == label.lower():
-                season = _season
-                break
-
-        digest = ComsesDigest(
+        season = ComsesDigest.Seasons[season_str]
+        digest = ComsesDigest.objects.create(
             volume=volume,
             issue_number=issue_number,
             publication_date=publication_date,
             season=season,
             static_path="digest/" + file_name,
         )
-
-        digest.save()
