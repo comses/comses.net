@@ -1,5 +1,5 @@
 from core.models import MemberProfile, ComsesGroups
-from library.models import Codebase, CodebaseRelease, CodebaseReleaseDownload
+from library.models import CodebaseRelease, CodebaseReleaseDownload
 
 from django.core.cache import cache
 from django.db.models import Count, F
@@ -63,11 +63,11 @@ class Metrics:
             ...
         }
         """
-        os_metrics = list(CodebaseRelease.objects.public().values(os=F('os'), year=F(
+        os_metrics = list(CodebaseRelease.objects.public().values(operating_systems=F('os'), year=F(
             "first_published_at__year")).annotate(count=Count("year")).order_by("year"))
         platform_metrics = list(CodebaseRelease.objects.public().values(platform=F(
-            'platform__name'), year=F("first_published_at__year")).annotate(count=Count("year")).order_by("year"))
-        programming_language_metrics = list(CodebaseRelease.objects.public().values(programming_languages=F(
+            'platform_tags__name'), year=F("first_published_at__year")).annotate(count=Count("year")).order_by("year"))
+        programming_language_metrics = list(CodebaseRelease.objects.public().values(programming_language_names=F(
             'programming_languages__name'), year=F("first_published_at__year")).annotate(count=Count("year")).order_by("year"))
         review_metrics = list(CodebaseRelease.objects.values(year=F('first_published_at__year')).annotate(count=Count("review")))
 
