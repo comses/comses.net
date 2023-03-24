@@ -8,7 +8,7 @@
             <input type="radio" id="members" value="Members" v-model="picked" selected />
             <label for="members" class="radio-label"> Members by year</label>
             <div class="checkbox">
-              <input type="checkbox" id="fullMembers" v-model="selectedFullMembers" />
+              <input type="checkbox" id="fullMembers" v-model="selectedFullMembers" :disabled="picked!='Members'"/>
               <label for="fullMembers" style="margin-left: 5px">Full Members</label>
             </div>
           </div>
@@ -18,11 +18,11 @@
             <label for="codebases" class="radio-label"> Codebases by year</label>
 
             <div class="checkbox">
-              <input type="checkbox" id="language" v-model="selectedLanguage" />
+              <input type="checkbox" id="language" v-model="selectedLanguage" :disabled="picked!='Codebases' || selectedPeerReview == true"/>
               <label for="language" style="margin-left: 5px">By language</label>
               <br style="display: block; margin: 5px 0" />
 
-              <input type="checkbox" id="peer" v-model="selectedPeerReview" />
+              <input type="checkbox" id="peer" v-model="selectedPeerReview" :disabled="picked!='Codebases' || selectedLanguage == true"/>
               <label for="peer" style="margin-left: 5px">Peer reviewed</label>
             </div>
           </div>
@@ -147,6 +147,7 @@ export default class MetricsPage extends Vue {
           connectorAllowed: false,
         },
         pointStart: 2019,
+        stacking: undefined,
       },
     },
     series: [
@@ -163,6 +164,7 @@ export default class MetricsPage extends Vue {
     switch (this.picked) {
       case "Members":
         this.chartOptions["title"]["text"] = "Members";
+        this.chartOptions["plotOptions"]["series"]["stacking"] = undefined;
         if (this.selectedFullMembers) {
           this.chartOptions["series"] = [this.dataMembersTotal, this.dataMembersFull];
         } else {
@@ -171,8 +173,10 @@ export default class MetricsPage extends Vue {
         break;
       case "Codebases":
         this.chartOptions["title"]["text"] = "Codebases";
+        this.chartOptions["plotOptions"]["series"]["stacking"] = undefined;
         if (this.selectedLanguage) {
           this.chartOptions["series"] = this.seriesCodebasesLangs;
+          this.chartOptions["plotOptions"]["series"]["stacking"] = "normal";
         } else if (this.selectedPeerReview) {
           this.chartOptions["series"] = [this.dataCodebasesTotal, this.dataCodebasesReviewed];
         } else {
@@ -182,6 +186,7 @@ export default class MetricsPage extends Vue {
       case "Downloads":
         this.chartOptions["title"]["text"] = "Downloads";
         this.chartOptions["series"] = [this.dataDownloadsTotal];
+        this.chartOptions["plotOptions"]["series"]["stacking"] = undefined;
         break;
       default:
     }
