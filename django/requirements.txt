@@ -31,7 +31,7 @@ markdown==3.4.3
 nltk>=3.2.5,<4.0.0
 psycopg2-binary==2.9.5
 pytz==2022.7.1
-redis==4.5.3
+redis==4.4.2
 requests==2.28.2
 semver==2.13.0
 sentry-sdk==1.17.0
