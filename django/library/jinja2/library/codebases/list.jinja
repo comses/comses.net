@@ -17,6 +17,9 @@
     {% include "library/includes/archive_model_help.jinja" %}
     {{ pagination_block }}
     <div id='sortby'></div>
+    {# django vite test #}
+    <div id="app"></div>
+    {{ vite_asset('apps/helloworld.ts') }}
 {% endblock %}
 
 {% block content %}

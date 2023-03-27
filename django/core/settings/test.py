@@ -12,8 +12,6 @@ LOGGING["loggers"]["core.views"] = {
     "propagate": False,
 }
 
-DJANGO_VITE_DEV_MODE = False
-
 SHARE_DIR = os.path.realpath("library/tests/tmp")
 LIBRARY_ROOT = os.path.join(SHARE_DIR, "library")
 LIBRARY_PREVIOUS_ROOT = os.path.join(SHARE_DIR, ".latest")
