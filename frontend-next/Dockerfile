@@ -9,7 +9,7 @@ COPY package.json yarn.lock /code/
 RUN set -ex; yarn config set ignore-engines true; \
     if [ "$NODE_ENV" = "production" ]; then \
         yarn install --no-cache --frozen-lockfile --production; \
-    elif [ "$NODE_ENV" = "test" ]; then \
+    elif [ "$NODE_ENV" = "test" ] || [ "$NODE_ENV" = "e2e" ]; then \
         yarn install --no-cache --frozen-lockfile; \
     else \
         yarn install; \

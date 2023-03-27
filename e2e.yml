@@ -17,7 +17,7 @@ services:
       - ./frontend:/code
     command: ["yarn", "build"]
     environment:
-      NODE_ENV: "test"
+      NODE_ENV: "e2e"
   vite:
     ports:
       - "127.0.0.1:5000:5000"
@@ -25,13 +25,13 @@ services:
       - ./frontend-next:/code
     command: ["yarn", "build"]
     environment:
-      NODE_ENV: "test"
+      NODE_ENV: "e2e"
   server:
     image: comses/server:dev
     volumes:
       - ./django:/code
       - ./docs:/docs
     environment:
-      DJANGO_SETTINGS_MODULE: "core.settings.test"
+      DJANGO_SETTINGS_MODULE: "core.settings.e2e"
     ports:
       - "127.0.0.1:8000:8000"
