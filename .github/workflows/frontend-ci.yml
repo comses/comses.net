@@ -1,4 +1,4 @@
-name: Check Code Style/Lint [Vue/TS]
+name: Frontend CI (Vue2)
 
 on:
   push:
