@@ -1,0 +1,17 @@
+name: Django CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - name: build containers and run cypress e2e tests
+    # TODO: this should fail, we need to seed the database
+      run: make e2e
