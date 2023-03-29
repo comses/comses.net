@@ -45,7 +45,7 @@ $(BUILD_ID_PATH):
 config.mk:
 	DEPLOY_ENVIRONMENT=${DEPLOY_ENVIRONMENT} envsubst < ${DEPLOY_CONF_DIR}/config.mk.template > config.mk
 
-
+.PHONY: $(DOCKER_SHARED_DIR)
 $(DOCKER_SHARED_DIR):
 	for d in webpack vite logs library media static ; do \
 		mkdir -p ${DOCKER_SHARED_DIR}/$$d ; \
