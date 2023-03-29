@@ -11,16 +11,12 @@ services:
     depends_on:
       - server
   js:
-    ports:
-      - "127.0.0.1:3000:3000"
     volumes:
       - ./frontend:/code
     command: ["yarn", "build"]
     environment:
       NODE_ENV: "e2e"
   vite:
-    ports:
-      - "127.0.0.1:5000:5000"
     volumes:
       - ./frontend-next:/code
     command: ["yarn", "build"]
