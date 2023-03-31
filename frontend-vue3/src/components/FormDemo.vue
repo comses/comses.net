@@ -1,5 +1,5 @@
 <template>
-  <CForm :schema="schema" :initial-values="initialValues" @submit="onSubmit">
+  <FormContext :schema="schema" :initial-values="initialValues" @submit="onSubmit">
     <FormTextInput class="mb-3" name="text" label="Text" help="Enter some text" required />
     <FormTextInput class="mb-3" name="email" label="Email" help="Your primary email" />
     <FormCheckbox class="mb-3" name="terms" label="Accept terms and conditions" />
@@ -10,23 +10,26 @@
       help="Choose one"
       :options="numOptions"
     ></FormSelect>
+    <FormDatePicker class="mb-3" name="date" label="Date" help="Choose a date" />
     <button type="submit" class="mb-3 btn btn-primary">Submit</button>
-  </CForm>
+  </FormContext>
 </template>
 
 <script setup lang="ts">
 import * as yup from "yup";
-import CForm from "@/components/form/CForm.vue";
+import FormContext from "@/components/form/FormContext.vue";
 import FormTextInput from "@/components/form/FormTextInput.vue";
 import FormSelect from "@/components/form/FormSelect.vue";
 import FormCheckbox from "@/components/form/FormCheckbox.vue";
+import FormDatePicker from "@/components/form/FormDatePicker.vue";
 import type { SelectOptions } from "@/components/form/FormSelect.vue";
 
 const schema = yup.object().shape({
   text: yup.string().required().label("Text o"),
   email: yup.string().email().label("Test Email"),
   terms: yup.boolean().oneOf([true], "You must accept"),
-  number: yup.number().required().oneOf([2,3], "Must be 2 or 3").label("Number")
+  number: yup.number().required().oneOf([2,3], "Must be 2 or 3").label("Number"),
+  date: yup.date().required().label("Date"),
 });
 
 const numOptions: SelectOptions = [
@@ -41,6 +44,7 @@ interface FieldValues {
   email: string;
   terms: boolean;
   number?: number;
+  date?: Date;
 }
 
 const initialValues: FieldValues = {
