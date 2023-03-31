@@ -18,12 +18,17 @@
   "dependencies": {
     "@fortawesome/fontawesome-free": "^5.12.0",
     "@popperjs/core": "^2.11.6",
+    "@types/yup": "^0.32.0",
+    "@vorms/core": "^1.1.0",
+    "@vorms/resolvers": "^1.1.0",
+    "@vuepic/vue-datepicker": "^4.2.3",
     "bootstrap": "5.0.2",
     "pinia": "^2.0.32",
     "sass": "^1.58.3",
     "vue": "^3.2.47",
     "vue-multiselect": "^3.0.0-beta.1",
-    "vue-router": "^4.1.6"
+    "vue-router": "^4.1.6",
+    "yup": "^1.0.2"
   },
   "devDependencies": {
     "@rushstack/eslint-patch": "^1.2.0",

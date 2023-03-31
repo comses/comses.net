@@ -35,7 +35,7 @@ export default defineConfig({
     rollupOptions: {
       input: {
         main: resolvePath("./src/apps/main.ts"),
-        helloworld: resolvePath("./src/apps/helloworld.ts"),
+        formdemo: resolvePath("./src/apps/formdemo.ts"),
         // add more entry points here
       },
     },
