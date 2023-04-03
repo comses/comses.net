@@ -15,3 +15,8 @@ export function useFormField(props: any, fieldName: string) {
     ...field,
   };
 }
+
+// TODO: generic field props, add placeholder?
+export interface FormFieldProps {
+
+}
