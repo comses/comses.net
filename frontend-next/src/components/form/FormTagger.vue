@@ -9,6 +9,7 @@
       v-bind="attrs"
       :multiple="true"
       track-by="name"
+      label="name"
       :options="matchingTags"
       :loading="isLoading"
       :searchable="true"
@@ -16,6 +17,7 @@
       :clear-on-select="false"
       :close-on-select="false"
       :options-limit="50"
+      :taggable="true"
       :limit="20"
       @tag="addTag"
       @search-change="fetchMatchingTags"
@@ -26,7 +28,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from "vue";
+import { ref, reactive } from "vue";
 import VueMultiSelect from "vue-multiselect"
 import { useFormField } from "@/composables/formfield";
 import FormLabel from "@/components/form/FormLabel.vue";
@@ -51,13 +53,13 @@ const isLoading = ref(false);
 async function fetchMatchingTags(search: string) {
   // FIXME: temporary, should be in the requests API w/ axios
   isLoading.value = true;
-  const response = await fetch(`/api/tags?search=${search}`); // add type param
+  const response = await fetch(`/tags/?page=1&query=${search}&type=`);
   const data = await response.json();
   matchingTags.value = data.results;
   isLoading.value = false;
 }
 
 async function addTag(name: string) {
-
+  value.value.push({ name });
 }
 </script>

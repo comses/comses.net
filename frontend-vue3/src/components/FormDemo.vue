@@ -11,6 +11,7 @@
       :options="numOptions"
     ></FormSelect>
     <FormDatePicker class="mb-3" name="date" label="Date" help="Choose a date" />
+    <FormTagger class="mb-3" name="tags" label="Tags" help="Press enter to select" />
     <button type="submit" class="mb-3 btn btn-primary">Submit</button>
   </FormContext>
 </template>
@@ -22,6 +23,7 @@ import FormTextInput from "@/components/form/FormTextInput.vue";
 import FormSelect from "@/components/form/FormSelect.vue";
 import FormCheckbox from "@/components/form/FormCheckbox.vue";
 import FormDatePicker from "@/components/form/FormDatePicker.vue";
+import FormTagger from "@/components/form/FormTagger.vue";
 import type { SelectOptions } from "@/components/form/FormSelect.vue";
 
 const schema = yup.object().shape({
