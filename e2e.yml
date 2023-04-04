@@ -18,7 +18,7 @@ services:
       NODE_ENV: "e2e"
   vite:
     volumes:
-      - ./frontend-next:/code
+      - ./frontend-vue3:/code
     command: ["yarn", "build"]
     environment:
       NODE_ENV: "e2e"

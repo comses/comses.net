@@ -10,7 +10,7 @@ services:
     ports:
       - "127.0.0.1:5000:5000"
     volumes:
-      - ./frontend-next:/code
+      - ./frontend-vue3:/code
     environment:
       NODE_ENV: "development"
   server:
