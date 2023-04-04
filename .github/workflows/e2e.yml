@@ -1,10 +1,10 @@
 name: E2E Tests
 
-on:
-  push:
-    branches: [ vue3 ]
-  pull_request:
-    branches: [ vue3 ]
+on: workflow_dispatch # disabled pending db seeding
+  # push:
+  #   branches: [ vue3 ]
+  # pull_request:
+  #   branches: [ vue3 ]
 
 jobs:
 
@@ -14,4 +14,4 @@ jobs:
     - uses: actions/checkout@v3
     - name: build containers and run cypress e2e tests
     # TODO: seed the database with a sparse(r) dump so there are pages to test..
-      # run: make e2e
+      run: make e2e
