@@ -12,7 +12,7 @@ from .widgets import MarkdownTextarea
 logger = logging.getLogger(__name__)
 
 
-ALLOWED_TAGS = bleach.ALLOWED_TAGS + [
+ALLOWED_TAGS = frozenset(list(bleach.ALLOWED_TAGS) + [
     "p",
     "h1",
     "h2",
@@ -34,7 +34,7 @@ ALLOWED_TAGS = bleach.ALLOWED_TAGS + [
     "th",
     "tr",
     "td",
-]
+])
 
 ALLOWED_ATTRIBUTES = dict(
     bleach.ALLOWED_ATTRIBUTES,
@@ -93,7 +93,7 @@ class MarkdownField(MarkupField):
         return super(MarkupField, self).formfield(**defaults)
 
 
-TUTORIAL_ALLOWED_TAGS = ALLOWED_TAGS + ["iframe"]
+TUTORIAL_ALLOWED_TAGS = frozenset(list(ALLOWED_TAGS) + ["iframe"])
 
 TUTORIAL_ALLOWED_ATTRIBUTES = dict(
     ALLOWED_ATTRIBUTES, **{"iframe": ["alt", "src", "allowfullscreen"]}
