@@ -56,7 +56,7 @@ services:
       - ./docker/shared:/shared
       - ./build/secrets/config.ini:/run/secrets/config.ini
   vite:
-    build: frontend-next
+    build: frontend-vue3
     image: comses/comsesnet-vite
     volumes:
       - /code/node_modules

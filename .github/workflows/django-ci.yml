@@ -2,9 +2,9 @@ name: Django CI
 
 on:
   push:
-    branches: [ main ]
+    branches: [ vue3 ]
   pull_request:
-    branches: [ main ]
+    branches: [ vue3 ]
 
 jobs:
 
