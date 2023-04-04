@@ -47,7 +47,7 @@ class VideoEmbedInlineProcessor(InlineProcessor):
 
     def create_el(self, provider, video_id, alt):
         wrapper = etree.Element("div")
-        wrapper.set("class", "embed-wrapper embed-responsive embed-responsive-16by9")
+        wrapper.set("class", "ratio ratio-16x9")
         el = etree.Element("iframe")
         el.set("class", provider)
         el.set("src", PROVIDERS[provider]["embed"] % video_id.strip())

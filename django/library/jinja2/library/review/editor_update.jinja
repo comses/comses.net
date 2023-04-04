@@ -10,9 +10,9 @@
     <p class='lead'>
     Requested by <a href="{{ review.submitter.get_absolute_url() }}">{{ review.submitter.name }}</a>
     {% if review.is_complete %}
-        <span class="badge badge-primary">{{ review.get_status_display() }}</span>
+        <span class="badge bg-success">{{ review.get_status_display() }}</span>
     {% else %}
-        <span class="badge badge-warning">{{ review.get_status_display() }}</span>
+        <span class="badge bg-warning">{{ review.get_status_display() }}</span>
     {% endif %}
     </p>
 

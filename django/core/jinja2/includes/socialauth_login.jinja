@@ -2,7 +2,7 @@
     <div class='col-6'>
         <form action="{{ provider_login_url(request, 'github') }}" method="POST">
             {{ csrf_input }}
-            <button type="submit" class='text-left btn btn-lg btn-outline-primary'>
+            <button type="submit" class='text-start btn btn-lg btn-outline-primary'>
                 <i class='fab fa-github text-gray'></i> Sign in with GitHub
             </button>
             <p><small>
@@ -13,7 +13,7 @@
     <div class='col-6'>
         <form action="{{ provider_login_url(request, 'orcid') }}" method="POST">
             {{ csrf_input }}
-        <button type="submit" class='text-left btn btn-lg btn-outline-primary' href="{{ provider_login_url(request, 'orcid') }}">
+        <button type="submit" class='text-start btn btn-lg btn-outline-primary' href="{{ provider_login_url(request, 'orcid') }}">
             <i class='fab fa-orcid text-orcid'></i> Create or connect your ORCID iD
         </button>
         <p><small><a href='/about/orcid/'>Why do we ask for your ORCID?</a> ORCID provides a persistent digital identifier that distinguishes you from other researchers. Learn more at <a href='//orcid.org'>orcid.org</a></small></p>

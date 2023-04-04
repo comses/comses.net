@@ -8,7 +8,7 @@
 {% for field in form.visible_fields() %}
     {% set error_class='has-errors' if field.errors else ''%}
     {% if is_checkbox(field) %}
-        <div class='form-group'>
+        <div class='mb-3'>
             <div class='form-check'>
                 <label class='form-check-label'>
                     {{ add_field_css(field, "form-check-input") }}
@@ -22,8 +22,8 @@
     {% elif is_hcaptcha(field) %}
         {{ field }}
     {% else %}
-        <div class='form-row'>
-            <div class='form-group col-12 {{ error_class }}'>
+        <div class='row'>
+            <div class='col-12 {{ error_class }} mb-3'>
                 <label class='col-form-label' for='{{ field.id_for_label }}'>{{ field.label }}</label>
                 {{ add_field_css(field, "form-control") }}
                 {% if field.errors %}

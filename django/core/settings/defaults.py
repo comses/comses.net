@@ -99,6 +99,7 @@ THIRD_PARTY_APPS = [
     "hcaptcha_field",
     "cookielaw",
     "django_extensions",
+    "django_vite",
     "guardian",
     "rest_framework",
     "rest_framework_swagger",
@@ -402,11 +403,19 @@ STATICFILES_FINDERS = [
 
 WEBPACK_DIR = config.get("storage", "WEBPACK_ROOT", fallback="/shared/webpack")
 
+# django-vite settings
+DJANGO_VITE_ASSETS_PATH = config.get("storage", "VITE_ROOT", fallback="/shared/vite")
+DJANGO_VITE_STATIC_URL_PREFIX = "bundles"
+DJANGO_VITE_DEV_MODE = DEBUG
+DJANGO_VITE_DEV_SERVER_PORT = 5000
+DJANG_VITE_MANIFEST_PATH = os.path.join(
+    DJANGO_VITE_ASSETS_PATH, DJANGO_VITE_STATIC_URL_PREFIX, "manifest.json"
+)
+
 STATIC_ROOT = "/shared/static"
 STATIC_URL = "/static/"
 
-STATICFILES_DIRS = [WEBPACK_DIR]
-
+STATICFILES_DIRS = [WEBPACK_DIR, DJANGO_VITE_ASSETS_PATH]
 
 MEDIA_ROOT = "/shared/media"
 MEDIA_URL = "/media/"
@@ -520,6 +529,7 @@ TEMPLATES = [
         "APP_DIRS": True,
         "OPTIONS": {
             "extensions": [
+                "core.jinja2ext.ViteExtension",
                 "webpack_loader.contrib.jinja2ext.WebpackExtension",
                 "wagtail.contrib.settings.jinja2tags.settings",
                 "wagtail.jinja2tags.core",

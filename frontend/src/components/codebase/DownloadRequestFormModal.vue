@@ -3,8 +3,8 @@
     <button
       class="btn btn-primary my-1 w-100"
       rel="nofollow"
-      data-toggle="modal"
-      data-target="#downloadRequestForm"
+      data-bs-toggle="modal"
+      data-bs-target="#downloadRequestForm"
     >
       <i class="fas fa-download"></i> Download Version {{ versionNumber }}
     </button>
@@ -16,8 +16,8 @@
               Please complete a brief survey
               <c-popper placement="bottom">
                 <span slot-scope="{ isOpen, open, close }" @mouseover="open" @mouseleave="close">
-                  <i data-trigger class="text-info fas fa-question-circle"></i>
-                  <div id="tooltip" v-show="isOpen" data-popper>
+                  <i data-bs-trigger class="text-info fas fa-question-circle"></i>
+                  <div id="tooltip" v-show="isOpen" data-bs-popper>
                     We use this information to gain a better understanding of our community. If you
                     are signed in, industry and affiliation will be pre-filled from your profile.
                   </div>
@@ -26,12 +26,10 @@
             </h5>
             <button
               type="button"
-              class="close"
+              class="btn-close"
               id="closeDownloadRequestFormModal"
-              data-dismiss="modal"
-            >
-              &times;
-            </button>
+              data-bs-dismiss="modal"
+            ></button>
           </div>
           <div class="modal-body">
             <slot name="body"></slot>

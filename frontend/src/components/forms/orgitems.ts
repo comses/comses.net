@@ -5,11 +5,11 @@ import draggable from "vuedraggable";
 import * as yup from "yup";
 
 @Component({
-  template: `<div class="form-group">
+  template: `<div class="mb-3">
     <slot name="label" :label="label">
-      <label :class="['form-control-label', requiredClass]">{{ label }}</label>
+      <label :class="['form-label', requiredClass]">{{ label }}</label>
     </slot>
-    <div class="form-check-inline ml-3">
+    <div class="form-check-inline ms-3">
       <label class="form-check-label">
         <input type="checkbox" class="form-check-input" v-model="customInput" />
         <small>Enter manually</small>
@@ -49,13 +49,11 @@ import * as yup from "yup";
     <draggable :list="value" @start="drag=true" @end="drag=false">
       <div v-for="(item, index) in value" :key="index" class="input-group my-1">
         <span class="primary-group-button">
-          <button v-if="index === 0" type="button" class="btn btn-is-primary btn-block">
-            Primary
-          </button>
+          <button v-if="index === 0" type="button" class="btn btn-is-primary w-100">Primary</button>
           <button
             v-else
             type="button"
-            class="btn btn-make-primary btn-block"
+            class="btn btn-make-primary w-100"
             @click="$emit('makePrimary', {'value':item, 'index':index})"
           >
             <small>Set primary</small>

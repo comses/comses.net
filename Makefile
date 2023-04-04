@@ -35,9 +35,9 @@ $(SPARSE_REPO_PATH):
 config.mk:
 	DEPLOY_ENVIRONMENT=${DEPLOY_ENVIRONMENT} envsubst < ${DEPLOY_CONF_DIR}/config.mk.template > config.mk
 
-
+.PHONY: $(DOCKER_SHARED_DIR)
 $(DOCKER_SHARED_DIR):
-	for d in webpack logs library media static ; do \
+	for d in webpack vite logs library media static ; do \
 		mkdir -p $(DOCKER_SHARED_DIR)/$$d ; \
 	done
 	mkdir -p $(DOCKER_DB_DATA_DIR)
@@ -81,9 +81,10 @@ $(SECRET_KEY_PATH): | ${SECRETS_DIR}
 	SECRET_KEY=$$(openssl rand -base64 48); \
 	echo "$${SECRET_KEY}" > $(SECRET_KEY_PATH)
 
+.PHONY: docker-compose.yml
 docker-compose.yml: base.yml dev.yml staging.yml prod.yml config.mk $(PGPASS_PATH) .env
 	case "$(DEPLOY_ENVIRONMENT)" in \
-	  dev|staging) docker compose -f base.yml -f $(DEPLOY_ENVIRONMENT).yml config > docker-compose.yml;; \
+	  dev|staging|e2e) docker compose -f base.yml -f $(DEPLOY_ENVIRONMENT).yml config > docker-compose.yml;; \
 	  prod) docker compose -f base.yml -f staging.yml -f $(DEPLOY_ENVIRONMENT).yml config > docker-compose.yml;; \
 	  *) echo "invalid environment. must be either dev, staging or prod" 1>&2; exit 1;; \
 	esac
@@ -131,3 +132,10 @@ clean:
 .PHONY: test
 test: build
 	docker compose run --rm server /code/deploy/test.sh
+
+.PHONY: e2e
+e2e: DEPLOY_ENVIRONMENT=e2e
+e2e: build
+	docker compose run server inv collectstatic
+	docker compose run --rm e2e yarn test
+	docker compose down

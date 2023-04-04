@@ -39,9 +39,13 @@
         </c-datepicker>
         <c-tagger v-model="tags" :required="false" placeholder="Type to add tags" label="Tags">
         </c-tagger>
-        <div class="form-group">
-          <label for="peerReviewed">Peer Review Status</label>
-          <select class="form-control" id="peerReviewed" v-model="selectedPeerReviewStatus">
+        <div class="mb-3">
+          <label for="peerReviewed" class="form-label">Peer Review Status</label>
+          <select
+            class="form-control form-select"
+            id="peerReviewed"
+            v-model="selectedPeerReviewStatus"
+          >
             <option
               :value="prOpt.value"
               :selected="prOpt.value === selectedPeerReviewStatus"

@@ -9,15 +9,15 @@
 
 {% macro navbar() %}
     <div class="fixed-top bg-light">
-        <nav class="navbar navbar-expand-md navbar-light bg-light pt-0 mt-0 mx-1">
+        <nav class="navbar navbar-expand-md navbar-light bg-light pt-0 px-3 mt-0 mx-1">
             {# logos #}
             <div class='navbar-brand'>
                 <a href="/"><span class="logo">CoMSES Network</span></a>
             </div>
             {# hamburger collapse menu #}
             <button class='navbar-toggler'
-                    data-toggle='collapse'
-                    data-target='#navbarLinks'
+                    data-bs-toggle='collapse'
+                    data-bs-target='#navbarLinks'
                     aria-controls='navbarLinks'
                     aria-expanded='false'
                     aria-label='Toggle navigation'>
@@ -27,7 +27,7 @@
 
             {# hamburger menu links #}
             <div class="navbar-collapse collapse" id="navbarLinks">
-                <ul class="navbar-nav ml-auto">
+                <ul class="navbar-nav ms-auto">
                     <li class="nav-item py-0">
                         <a href="/about/" class="nav-link">About</a>
                     </li>
@@ -54,10 +54,10 @@
 
                     {# login #}
                     {% if user.is_authenticated %}
-                        <li class="nav-item dropdown py-0 pr-2">
-                            <a class="pr-0 nav-link dropdown-toggle"
+                        <li class="nav-item dropdown py-0 pe-2">
+                            <a class="pe-0 nav-link dropdown-toggle"
                                id="userDropdownMenuLink"
-                               data-toggle="dropdown"
+                               data-bs-toggle="dropdown"
                                role="button"
                                href="#"
                                aria-haspopup="true"
@@ -67,11 +67,11 @@
                                 {{ user.username }}
                                 {# FIXME: this should be cached instead #}
                                 {% if user.emailaddress_set.filter(verified=False).exists() %}
-                                    <span class="badge badge-warning">Email Unverified</span>
+                                    <span class="badge bg-warning">Email Unverified</span>
                                     <span class="sr-only">Email Unverified</span>
                                 {% endif %}
                             </a>
-                            <div class="dropdown-menu dropdown-menu-right"
+                            <div class="dropdown-menu dropdown-menu-end"
                                 aria-labeledby="userDropdownMenuLink">
                                 <a class="dropdown-item" href="{{ profile_url }}">
                                     <i class="fas fa-user-edit"></i>
@@ -112,12 +112,12 @@
                     {% endif %}
                     {# end login #}
                     {# search #}
-                    <li id="search-dropdown" class="ml-2 my-auto nav-item dropdown show">
+                    <li id="search-dropdown" class="ms-2 my-auto nav-item dropdown show">
                         <a id="search-button"
                            onclick="focusSearch()"
                            href="#"
                            class="dropdown-toggle"
-                           data-toggle="dropdown"
+                           data-bs-toggle="dropdown"
                            aria-expanded="false"
                            aria-haspopup="true">
                             <i class="fas fa-search"></i>
@@ -127,7 +127,7 @@
                                 <input id="header-search-input" type="text" name="query" class="p-2 form-control"
                                        placeholder="search entire site">
                                 {# FIXME: put back when advanced search is implemented
-                                <div class="float-right">
+                                <div class="float-end">
                                     <small><a href="/search/advanced/">options</a></small>
                                 </div>
                                 #}
@@ -169,23 +169,25 @@
                         </div>
                     </div>
                 {%- endif %}
-                <div class='d-flex py-1 row justify-content-center'>
-                    <a href="http://www.asu.edu/" target="_blank">
-                        <img height='60' src="{{ static("images/logo-asu.png") }}" alt="Arizona State University">
-                    </a>
-                    <a href="http://www.nsf.gov/" target="_blank">
-                        <img height='60' src="{{ static("images/logo-nsf.png") }}" alt="National Science Foundation">
-                    </a>
-                    <a href="//datacite.org" target="_blank">
-                        <img height="60"
-                            src="{{ static("images/logo-datacite.svg") }}"
-                            alt="DataCite member">
-                    </a>
-                    <a href='https://sciencegateways.org' target='_blank'>
-                        <img height='60'
-                                src='{{ static("images/logo-sgci.png") }}'
-                                alt='Science Gateways Community Institute'>
-                    </a>
+                <div class='row'>
+                    <div class="col text-center">
+                        <a class="px-3" href="http://www.asu.edu/" target="_blank">
+                            <img height='60' src="{{ static("images/logo-asu.png") }}" alt="Arizona State University">
+                        </a>
+                        <a class="px-3" href="http://www.nsf.gov/" target="_blank">
+                            <img height='60' src="{{ static("images/logo-nsf.png") }}" alt="National Science Foundation">
+                        </a>
+                        <a class="px-3" href="//datacite.org" target="_blank">
+                            <img height="60"
+                                src="{{ static("images/logo-datacite.svg") }}"
+                                alt="DataCite member">
+                        </a>
+                        <a class="px-3" href='https://sciencegateways.org' target='_blank'>
+                            <img height='60'
+                                 src='{{ static("images/logo-sgci.png") }}'
+                                 alt='Science Gateways Community Institute'>
+                        </a>
+                    </div>
                 </div>
                 <div class="row">
                     <div class="col">
@@ -228,20 +230,31 @@
                         </ul>
                     </div>
                 </div>
-                <div class='d-flex pt-0 row justify-content-center'>
-                    <a href="//westbigdatahub.org/" target="_blank">
-                        <img height='60'
-                             src="{{ static("images/logo-westhub-black.png") }}"
-                             alt="US NSF West Big Data Hub">
-                    </a>
-                    <a class="mx-3" href='https://alliancecan.ca/en' target='_blank'>
-                        <img height="60" src='{{ static("images/logo-drac.svg") }}'
-                            alt='Digital Research Alliance of Canada'>
-                    </a>
-                    <a href="http://orcid.org/" target="_blank">
-                        <img height="60" src="{{ static("images/logo-orcid.png") }}" alt="ORCID Member">
-                    </a>
-               </div>
+                <div class='d-flex pt-0 row'>
+                    <div class="col text-center">
+                        <a class="px-3" href="//westbigdatahub.org/" target="_blank">
+                            <img height='60'
+                                 src="{{ static("images/logo-westhub-black.png") }}"
+                                 alt="US NSF West Big Data Hub">
+                        </a>
+                        <a class="px-3" href='https://alliancecan.ca/en' target='_blank'>
+                            <img height="60" src='{{ static("images/logo-drac.svg") }}'
+                                alt='Digital Research Alliance of Canada'>
+                        </a>
+                        <a class="px-3" href="http://orcid.org/" target="_blank">
+                            <img height="60" src="{{ static("images/logo-orcid.png") }}" alt="ORCID Member">
+                        </a>
+                        {# <a href="//westbigdatahub.org/" target="_blank">
+                            <img height='120'
+                                src="{{ static("images/logo-westhub-black.png") }}"
+                                alt="US NSF West Big Data Hub">
+                        </a>
+                        <a class="px-3" href='https://www.westgrid.ca' target='_blank'>
+                            <img class='rounded' height="120" src='{{ static("images/logo-westgrid.png") }}'
+                                alt='WestGrid - Digital Research Alliance of Canada'>
+                        </a> #}
+                    </div>
+                </div>
             </div>
             <p class="copyright text-center">&copy; 2007 - {{ now('Y') }} CoMSES Net |
                 <a class='text-white' href='{{ contact_url }}'>Contact us</a> | 
@@ -328,7 +341,9 @@
             {% endscript %}
         {% endwith %}
     {% endif %}
-    {{ render_bundle('home') }}
+    {# {{ render_bundle('home') }} #}
+    {{ vite_hmr_client() }}
+    {{ vite_asset('apps/main.ts') }}
     {% script async=False %}
     <script>
         function submitLogout() {

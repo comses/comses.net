@@ -18,8 +18,8 @@ export default class MyPopper extends Vue {
   }
 
   public mounted() {
-    this.triggerEl = this.$el.querySelector("[data-trigger]");
-    this.popperEl = this.$el.querySelector("[data-popper]");
+    this.triggerEl = this.$el.querySelector("[data-bs-trigger]");
+    this.popperEl = this.$el.querySelector("[data-bs-popper]");
   }
 
   public open() {

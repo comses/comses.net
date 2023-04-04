@@ -21,9 +21,9 @@ const debounceFetchMatchingUsers = _.debounce(async (self: UsernameSearch, query
 }, 600);
 
 @Component({
-  template: `<div :class="['form-group', {'child-is-invalid': isInvalid }]">
+  template: `<div :class="['mb-3', {'child-is-invalid': isInvalid }]">
     <slot name="label" :label="label">
-      <label class="form-control-label">{{ label }}</label>
+      <label class="form-label">{{ label }}</label>
     </slot>
     <multiselect
       :value="value"
