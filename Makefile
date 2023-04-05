@@ -16,8 +16,8 @@ CONFIG_INI_PATH=${SECRETS_DIR}/config.ini
 SENTRY_DSN=$(shell cat $(SENTRY_DSN_PATH))
 MAIL_API_KEY_PATH=${SECRETS_DIR}/mail_api_key
 SECRETS=$(MAIL_API_KEY_PATH) $(DB_PASSWORD_PATH) $(CONFIG_INI_PATH) $(PGPASS_PATH) $(SENTRY_DSN_PATH) $(SECRET_KEY_PATH) .env
-SHARED_CONFIG_PATH=shared/src/assets/config.ts
 BUILD_ID=$(shell git describe --tags --abbrev=1)
+BUILD_ID_PATH=${SECRETS_DIR}/.build-id.txt
 SPARSE_REPO_URL=${SPARSE_REPO_URL}
 SPARSE_REPO_PATH=${BUILD_DIR}/sparse-repo.tar.xz
 REPO_BACKUPS_PATH=docker/shared/backups
@@ -26,11 +26,15 @@ include config.mk
 include .env
 
 .PHONY: build
-build: docker-compose.yml secrets $(DOCKER_SHARED_DIR)
+build: docker-compose.yml secrets $(DOCKER_SHARED_DIR) $(BUILD_ID_PATH)
 	docker compose build --pull
 
 $(SPARSE_REPO_PATH):
-	wget $(SPARSE_REPO_URL) -P ${BUILD_DIR}
+	wget ${SPARSE_REPO_URL} -P ${BUILD_DIR}
+
+$(BUILD_ID_PATH):
+	BUILD_ID=${BUILD_ID} \
+	echo "$${BUILD_ID}" > ${BUILD_ID_PATH}
 
 config.mk:
 	DEPLOY_ENVIRONMENT=${DEPLOY_ENVIRONMENT} envsubst < ${DEPLOY_CONF_DIR}/config.mk.template > config.mk
@@ -38,9 +42,9 @@ config.mk:
 
 $(DOCKER_SHARED_DIR):
 	for d in webpack logs library media static ; do \
-		mkdir -p $(DOCKER_SHARED_DIR)/$$d ; \
+		mkdir -p ${DOCKER_SHARED_DIR}/$$d ; \
 	done
-	mkdir -p $(DOCKER_DB_DATA_DIR)
+	mkdir -p ${DOCKER_DB_DATA_DIR}
 
 ${SECRETS_DIR}:
 	mkdir -p ${SECRETS_DIR}
@@ -70,7 +74,7 @@ $(SENTRY_DSN_PATH): | ${SECRETS_DIR}
 .env: $(DOCKER_ENV_PATH)
 	cp ${DOCKER_ENV_PATH} .env
 
-$(CONFIG_INI_PATH): .env $(DB_PASSWORD_PATH) $(CONFIG_INI_TEMPLATE) $(SECRET_KEY_PATH)
+$(CONFIG_INI_PATH): .env $(DB_PASSWORD_PATH) $(CONFIG_INI_TEMPLATE) $(SECRET_KEY_PATH) $(BUILD_ID_PATH)
 	DB_HOST=${DB_HOST} DB_NAME=${DB_NAME} DB_PASSWORD=$$(cat ${DB_PASSWORD_PATH}) \
 	DB_USER=${DB_USER} DB_PORT=${DB_PORT} DJANGO_SECRET_KEY=$$(cat ${SECRET_KEY_PATH}) \
 	TEST_USERNAME=___test_user___ TEST_BASIC_AUTH_PASSWORD=$$(openssl rand -base64 42) \
