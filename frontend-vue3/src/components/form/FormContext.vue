@@ -12,7 +12,7 @@ export type Values = Record<string, any>;
 
 export interface FormProps {
   initialValues: Values;
-  schema: any;
+  schema?: any;
 }
 
 interface FormEvent {
@@ -29,4 +29,5 @@ const { handleSubmit, handleReset } = useForm({
     emit("submit", values);
   },
 });
+console.log(props.initialValues);
 </script>

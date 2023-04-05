@@ -1,7 +1,7 @@
 <template>
   <div>
     <slot name= "label">
-      <FormLabel :label="label" :id-for="id" :required="required"></FormLabel>
+      <FormLabel v-if="label" :label="label" :id-for="id" :required="required" />
     </slot>
     <VueMultiSelect
       v-model="value"
@@ -10,6 +10,7 @@
       :multiple="true"
       track-by="name"
       label="name"
+      :placeholder="placeholder"
       :options="matchingTags"
       :loading="isLoading"
       :searchable="true"
@@ -23,23 +24,30 @@
       @search-change="fetchMatchingTags"
       :class="{ 'is-invalid': error }"
     ></VueMultiSelect>
-    <FormHelpErrors :help="help" :id-for="id" :error="error"></FormHelpErrors>
+    <slot name="help">
+      <FormHelp v-if="help" :help="help" :id-for="id" :error="error" />
+    </slot>
+    <slot name="error">
+      <FormError v-if="error" :error="error" :id-for="id" />
+    </slot>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, reactive } from "vue";
+import { ref } from "vue";
 import VueMultiSelect from "vue-multiselect"
-import { useFormField } from "@/composables/formfield";
+import { useFormField } from "@/composables/form";
 import FormLabel from "@/components/form/FormLabel.vue";
-import FormHelpErrors from "@/components/form/FormHelpErrors.vue";
+import FormHelp from "@/components/form/FormHelp.vue";
+import FormError from "@/components/form/FormError.vue";
 
 export type Tags = { name: string }[];
 
 export interface TextInputProps {
   name: string;
-  label: string;
+  label?: string;
   help?: string;
+  placeholder?: string;
   required?: boolean;
 }
 
@@ -60,6 +68,6 @@ async function fetchMatchingTags(search: string) {
 }
 
 async function addTag(name: string) {
-  value.value.push({ name });
+  (value as any).value.push({ name });
 }
 </script>
