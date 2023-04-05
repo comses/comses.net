@@ -20,7 +20,7 @@
 </template>
 
 <script setup lang="ts">
-import { useFormField } from "@/composables/form";
+import { useField } from "@/composables/form";
 import FormLabel from "@/components/form/FormLabel.vue";
 import FormHelp from "@/components/form/FormHelp.vue";
 import FormError from "@/components/form/FormError.vue";
@@ -37,5 +37,5 @@ const props = withDefaults(defineProps<CheckboxProps>(), {
   help: "",
 });
 
-const { id, value, attrs, error } = useFormField(props, "name");
+const { id, value, attrs, error } = useField(props, "name");
 </script>

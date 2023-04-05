@@ -36,7 +36,7 @@
 <script setup lang="ts">
 import { ref } from "vue";
 import VueMultiSelect from "vue-multiselect"
-import { useFormField } from "@/composables/form";
+import { useField } from "@/composables/form";
 import FormLabel from "@/components/form/FormLabel.vue";
 import FormHelp from "@/components/form/FormHelp.vue";
 import FormError from "@/components/form/FormError.vue";
@@ -51,9 +51,11 @@ export interface TextInputProps {
   required?: boolean;
 }
 
-const props = defineProps<TextInputProps>();
+const props = withDefaults(defineProps<TextInputProps>(), {
+  placeholder: "Type to add tags",
+});
 
-const { id, value, attrs, error } = useFormField(props, "name");
+const { id, value, attrs, error } = useField(props, "name");
 
 const matchingTags = ref<Tags>([]);
 const isLoading = ref(false);
