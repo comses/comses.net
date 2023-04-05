@@ -24,7 +24,7 @@
 import VueDatePicker from "@vuepic/vue-datepicker";
 import "@vuepic/vue-datepicker/dist/main.css" // TODO: use scss in global styles
                                              // https://vue3datepicker.com/props/look-and-feel/
-import { useFormField } from "@/composables/form";
+import { useField } from "@/composables/form";
 import FormLabel from "@/components/form/FormLabel.vue";
 import FormHelp from "@/components/form/FormHelp.vue";
 import FormError from "@/components/form/FormError.vue";
@@ -41,5 +41,5 @@ export interface TextInputProps {
 
 const props = defineProps<TextInputProps>();
 
-const { id, value, attrs, error } = useFormField(props, "name");
+const { id, value, attrs, error } = useField(props, "name");
 </script>
