@@ -1,7 +1,7 @@
 <template>
   <div>
     <slot name="label">
-      <FormLabel :label="label" :id-for="id" :required="required"></FormLabel>
+      <FormLabel v-if="label" :label="label" :id-for="id" :required="required" />
     </slot>
     <select
       v-model="value"
@@ -9,25 +9,37 @@
       v-bind="attrs"
       :class="{ 'form-select': true, 'is-invalid': error }"
     >
-      <option v-for="option in options" :key="option.value" :value="option.value">
+      <option
+        v-for="option in options"
+        :key="option.value"
+        :value="option.value"
+        :selected="option.value === value"
+      >
         {{ option.label }}
       </option>
     </select>
-    <FormHelpErrors :help="help" :id-for="id" :error="error"></FormHelpErrors>
+    <slot name="help">
+      <FormHelp v-if="help" :help="help" :id-for="id" :error="error" />
+    </slot>
+    <slot name="error">
+      <FormError v-if="error" :error="error" :id-for="id" />
+    </slot>
   </div>
 </template>
 
 <script setup lang="ts">
-import { useFormField } from "@/composables/formfield";
+import { useFormField } from "@/composables/form";
 import FormLabel from "@/components/form/FormLabel.vue";
-import FormHelpErrors from "@/components/form/FormHelpErrors.vue";
+import FormHelp from "@/components/form/FormHelp.vue";
+import FormError from "@/components/form/FormError.vue";
 
 export type SelectOptions = { value: any; label: string }[];
 
 export interface TextInputProps {
   name: string;
-  label: string;
+  label?: string;
   help?: string;
+  placeholder?: string;
   required?: boolean;
   options: SelectOptions;
 }
