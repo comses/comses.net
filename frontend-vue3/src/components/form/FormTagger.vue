@@ -41,7 +41,7 @@ import FormLabel from "@/components/form/FormLabel.vue";
 import FormHelp from "@/components/form/FormHelp.vue";
 import FormError from "@/components/form/FormError.vue";
 import { useTagsAPI } from "@/composables/api/tags";
-import type { Tags } from "@/composables/api/tags";
+import type { Tags, TagType } from "@/composables/api/tags";
 
 export interface TextInputProps {
   name: string;
@@ -49,7 +49,7 @@ export interface TextInputProps {
   help?: string;
   placeholder?: string;
   required?: boolean;
-  type?: "" | "Event" | "Codebase" | "Job" | "Profile";
+  type?: TagType;
 }
 
 const props = withDefaults(defineProps<TextInputProps>(), {
@@ -64,9 +64,9 @@ const isLoading = ref(false);
 
 const { list } = useTagsAPI();
 
-async function fetchMatchingTags(search: string) {
+async function fetchMatchingTags(query: string) {
   isLoading.value = true;
-  const response = await list(search, props.type);
+  const response = await list({ query, type: props.type });
   matchingTags.value = response.data.results;
   isLoading.value = false;
 }
