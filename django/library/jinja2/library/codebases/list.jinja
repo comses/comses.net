@@ -17,9 +17,6 @@
     {% include "library/includes/archive_model_help.jinja" %}
     {{ pagination_block }}
     <div id='sortby'></div>
-    {# django vite test/demo #}
-    <div id="app"></div>
-    {{ vite_asset('apps/formdemo.ts') }}
 {% endblock %}
 
 {% block content %}
@@ -36,7 +33,6 @@
 {% endblock %}
 
 {% block sidebar %}
-    <div id="sidebar"></div>
     <div id="search"></div>
     {{ vite_asset('apps/codebaselist.ts') }}
 {% endblock %}

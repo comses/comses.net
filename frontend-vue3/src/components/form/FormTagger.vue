@@ -40,8 +40,8 @@ import { useField } from "@/composables/form";
 import FormLabel from "@/components/form/FormLabel.vue";
 import FormHelp from "@/components/form/FormHelp.vue";
 import FormError from "@/components/form/FormError.vue";
-
-export type Tags = { name: string }[];
+import { useTagsAPI } from "@/composables/api/tags";
+import type { Tags } from "@/composables/api/tags";
 
 export interface TextInputProps {
   name: string;
@@ -49,9 +49,11 @@ export interface TextInputProps {
   help?: string;
   placeholder?: string;
   required?: boolean;
+  type?: "" | "Event" | "Codebase" | "Job" | "Profile";
 }
 
 const props = withDefaults(defineProps<TextInputProps>(), {
+  type: "",
   placeholder: "Type to add tags",
 });
 
@@ -60,12 +62,12 @@ const { id, value, attrs, error } = useField(props, "name");
 const matchingTags = ref<Tags>([]);
 const isLoading = ref(false);
 
+const { list } = useTagsAPI();
+
 async function fetchMatchingTags(search: string) {
-  // FIXME: temporary, should be in the requests API w/ axios
   isLoading.value = true;
-  const response = await fetch(`/tags/?page=1&query=${search}&type=`);
-  const data = await response.json();
-  matchingTags.value = data.results;
+  const response = await list(search, props.type);
+  matchingTags.value = response.data.results;
   isLoading.value = false;
 }
 

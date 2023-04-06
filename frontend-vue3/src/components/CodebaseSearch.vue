@@ -13,7 +13,7 @@
             <FormTextInput class="mb-3" name="keywords" label="Keywords" />
             <FormDatePicker class="mb-3" name="startDate" label="Published After" />
             <FormDatePicker class="mb-3" name="endDate" label="Published Before" />
-            <FormTagger class="mb-3" name="tags" label="Tags" />
+            <FormTagger class="mb-3" name="tags" label="Tags" type="Codebase" />
             <FormSelect
               class="mb-3"
               name="peerReviewStatus"
@@ -36,12 +36,14 @@ import FormSelect from "@/components/form/FormSelect.vue";
 import FormDatePicker from "@/components/form/FormDatePicker.vue";
 import FormTagger from "@/components/form/FormTagger.vue";
 import { useForm } from "@/composables/form";
+import { useCodebaseAPI } from "@/composables/api/codebase";
+import type { Tags } from "@/composables/api/tags";
 
 interface SearchFields {
   keywords: string;
   startDate: Date;
   endDate: Date;
-  tags: string[];
+  tags: Tags;
   peerReviewStatus: string;
 }
 
@@ -69,15 +71,15 @@ const { handleSubmit, values } = useForm<SearchFields>({
   },
 });
 
+const { searchUrl } = useCodebaseAPI();
+
 const query = computed(() => {
-  // const params = new URLSearchParams();
-  // params.append("text", initialValues.text);
-  // params.append("email", initialValues.email);
-  // params.append("terms", initialValues.terms);
-  // params.append("number", initialValues.number);
-  // params.append("date", initialValues.date);
-  // params.append("tags", initialValues.tags);
-  // return `/codebases/search/?${params.toString()}`;
-  return `/codebases/search/?${values.keywords}`;
+  return searchUrl({
+    query: values.keywords,
+    published_after: values.startDate?.toISOString(),
+    published_before: values.endDate?.toISOString(),
+    tags: values.tags?.map(tag => tag.name),
+    peer_review_status: values.peerReviewStatus,
+  });
 });
 </script>
