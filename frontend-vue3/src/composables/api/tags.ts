@@ -2,11 +2,11 @@ import queryString from "query-string";
 import { useAxios } from "@/composables/api/axios";
 
 export type Tags = { name: string }[];
-
+export type TagType = "" | "Event" | "Codebase" | "Job" | "Profile";
 interface TagQueryParams {
-  query: string;
-  type: string;
-  page: number;
+  query?: string;
+  type?: TagType;
+  page?: number;
 }
 
 export function useTagsAPI() {
@@ -16,15 +16,10 @@ export function useTagsAPI() {
    */
 
   const baseUrl = "/tags/";
-  const { api } = useAxios(baseUrl);
+  const { get, searchUrl } = useAxios(baseUrl);
 
-  function listUrl(params: TagQueryParams) {
-    const qs = queryString.stringify(params);
-    return `?${qs}`;
-  }
-
-  async function list(query: string, type="", page=1) {
-    return api.get(listUrl({ query, type, page }));
+  async function list(params: TagQueryParams) {
+    return get(searchUrl({ type: "", ...params, page: 1 }));
   }
 
   return {
