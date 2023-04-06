@@ -18,8 +18,9 @@ MAIL_API_KEY_PATH=${SECRETS_DIR}/mail_api_key
 SECRETS=$(MAIL_API_KEY_PATH) $(DB_PASSWORD_PATH) $(CONFIG_INI_PATH) $(PGPASS_PATH) $(SENTRY_DSN_PATH) $(SECRET_KEY_PATH) .env
 BUILD_ID=$(shell git describe --tags --abbrev=1)
 BUILD_ID_PATH=${SECRETS_DIR}/.build-id.txt
-SPARSE_REPO_URL=${SPARSE_REPO_URL}
-SPARSE_REPO_PATH=${BUILD_DIR}/sparse-repo.tar.xz
+# assumes a .tar.xz file
+BORG_REPO_URL := https://example.com/repo.tar.xz
+BORG_REPO_PATH=${BUILD_DIR}/sparse-repo.tar.xz
 REPO_BACKUPS_PATH=docker/shared/backups
 
 include config.mk
@@ -34,8 +35,8 @@ include .env
 build: docker-compose.yml secrets $(DOCKER_SHARED_DIR) $(BUILD_ID_PATH)
 	docker compose build --pull
 
-$(SPARSE_REPO_PATH):
-	wget ${SPARSE_REPO_URL} -P ${BUILD_DIR}
+$(BORG_REPO_PATH):
+	wget ${BORG_REPO_URL} -P ${BUILD_DIR}
 
 $(BUILD_ID_PATH):
 	BUILD_ID=${BUILD_ID} \
@@ -119,16 +120,16 @@ $(REPO_BACKUPS_PATH):
 	mkdir -p $(REPO_BACKUPS_PATH)
 
 .PHONY: restore
-restore: build $(SPARSE_REPO_PATH) | $(REPO_BACKUPS_PATH)
+restore: build $(BORG_REPO_PATH) | $(REPO_BACKUPS_PATH)
 	# take ownership of the repo path as it may have been created by root / docker
-	# FIXME: this should get fixed if we do proper user management inside our server container
+	# FIXME: this should be fixed if we have proper user management inside our server container
 	sudo chown -R ${USER}: $(REPO_BACKUPS_PATH)
 	# create repo directory if it doesn't exist
 	mkdir -p $(REPO_BACKUPS_PATH)/repo
 	# regardless of it existed, back it up to tmp dir
-	@echo "Backing repo to /tmp directory"
+	@echo "Backing existing ${REPO_BACKUPS_PATH}/repo to fresh mktemp directory in /tmp"
 	sudo mv $(REPO_BACKUPS_PATH)/repo $(shell mktemp -d)
-	tar -Jxf $(SPARSE_REPO_PATH) -C $(REPO_BACKUPS_PATH)
+	tar -Jxf $(BORG_REPO_PATH) -C $(REPO_BACKUPS_PATH)
 	docker compose up -d
 	docker compose exec server inv borg.restore
 

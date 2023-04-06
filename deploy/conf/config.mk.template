@@ -1,4 +1,4 @@
 # dev|staging|test|prod
 DEPLOY_ENVIRONMENT=${DEPLOY_ENVIRONMENT}
 # replace with url to actual sparse / anonymized repo
-SPARSE_REPO_URL=https://example.com/repo.tar.xz
+BORG_REPO_URL=https://example.com/repo.tar.xz
