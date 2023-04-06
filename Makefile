@@ -25,6 +25,11 @@ REPO_BACKUPS_PATH=docker/shared/backups
 include config.mk
 include .env
 
+# export all variables
+# https://unix.stackexchange.com/questions/235223/makefile-include-env-file
+# https://www.gnu.org/software/make/manual/html_node/Variables_002fRecursion.html
+.EXPORT_ALL_VARIABLES:
+
 .PHONY: build
 build: docker-compose.yml secrets $(DOCKER_SHARED_DIR) $(BUILD_ID_PATH)
 	docker compose build --pull

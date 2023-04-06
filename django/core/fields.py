@@ -12,29 +12,32 @@ from .widgets import MarkdownTextarea
 logger = logging.getLogger(__name__)
 
 
-ALLOWED_TAGS = frozenset(list(bleach.ALLOWED_TAGS) + [
-    "p",
-    "h1",
-    "h2",
-    "h3",
-    "h4",
-    "pre",
-    "br",
-    "hr",
-    "div",
-    "span",
-    "footer",
-    "img",
-    "table",
-    "thead",
-    "tbody",
-    "tfoot",
-    "col",
-    "colgroup",
-    "th",
-    "tr",
-    "td",
-])
+ALLOWED_TAGS = frozenset(
+    list(bleach.ALLOWED_TAGS)
+    + [
+        "p",
+        "h1",
+        "h2",
+        "h3",
+        "h4",
+        "pre",
+        "br",
+        "hr",
+        "div",
+        "span",
+        "footer",
+        "img",
+        "table",
+        "thead",
+        "tbody",
+        "tfoot",
+        "col",
+        "colgroup",
+        "th",
+        "tr",
+        "td",
+    ]
+)
 
 ALLOWED_ATTRIBUTES = dict(
     bleach.ALLOWED_ATTRIBUTES,
