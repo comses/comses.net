@@ -7,7 +7,6 @@ interface ProfileQueryParams {
 }
 
 export function useProfileAPI() {
-
   const baseUrl = "/users/";
   const { state, get, postForm, put, detailUrl, searchUrl } = useAxios(baseUrl);
 
@@ -38,5 +37,5 @@ export function useProfileAPI() {
     update,
     uploadProfilePicture,
     searchUrl: searchUrl<ProfileQueryParams>,
-  }
+  };
 }

@@ -11,4 +11,3 @@ export interface ErrorProps {
 
 const props = defineProps<ErrorProps>();
 </script>
-

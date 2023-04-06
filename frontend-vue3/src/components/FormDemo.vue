@@ -18,7 +18,7 @@ import FormSelect from "@/components/form/FormSelect.vue";
 import FormCheckbox from "@/components/form/FormCheckbox.vue";
 import FormDatePicker from "@/components/form/FormDatePicker.vue";
 import FormTagger from "@/components/form/FormTagger.vue";
-import type { Tags } from "@/composables/api/tags"
+import type { Tags } from "@/composables/api/tags";
 
 interface DemoFields {
   text: string;

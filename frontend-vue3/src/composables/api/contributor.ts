@@ -7,7 +7,6 @@ interface ContributorQueryParams {
 }
 
 export function useContributorAPI() {
-
   const baseUrl = "/contributors/";
   const { state, get, searchUrl } = useAxios(baseUrl);
 

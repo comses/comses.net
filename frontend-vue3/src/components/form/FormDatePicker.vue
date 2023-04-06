@@ -22,8 +22,8 @@
 
 <script setup lang="ts">
 import VueDatePicker from "@vuepic/vue-datepicker";
-import "@vuepic/vue-datepicker/dist/main.css" // TODO: use scss in global styles
-                                             // https://vue3datepicker.com/props/look-and-feel/
+import "@vuepic/vue-datepicker/dist/main.css"; // TODO: use scss in global styles
+// https://vue3datepicker.com/props/look-and-feel/
 import { useField } from "@/composables/form";
 import FormLabel from "@/components/form/FormLabel.vue";
 import FormHelp from "@/components/form/FormHelp.vue";
