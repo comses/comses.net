@@ -9,7 +9,6 @@ interface JobQueryParams {
 }
 
 export function useEventAPI() {
-
   const baseUrl = "/jobs/";
   const { state, get, post, put, del, detailUrl, searchUrl } = useAxios(baseUrl);
 
@@ -36,6 +35,5 @@ export function useEventAPI() {
     create,
     delete: _delete,
     searchUrl: searchUrl<JobQueryParams>,
-  }
+  };
 }
-

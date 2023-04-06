@@ -9,7 +9,6 @@ interface EventQueryParams {
 }
 
 export function useEventAPI() {
-
   const baseUrl = "/events/";
   const { state, get, post, put, del, detailUrl, searchUrl } = useAxios(baseUrl);
 
@@ -36,5 +35,5 @@ export function useEventAPI() {
     create,
     delete: _delete,
     searchUrl: searchUrl<EventQueryParams>,
-  }
+  };
 }

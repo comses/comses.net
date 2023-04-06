@@ -7,7 +7,7 @@
 
 <script setup lang="ts">
 /**
- * 
+ *
  */
 export interface LabelProps {
   label: string;

@@ -1,6 +1,6 @@
 <template>
   <div>
-    <slot name= "label">
+    <slot name="label">
       <FormLabel v-if="label" :label="label" :id-for="id" :required="required" />
     </slot>
     <VueMultiSelect
@@ -35,7 +35,7 @@
 
 <script setup lang="ts">
 import { ref } from "vue";
-import VueMultiSelect from "vue-multiselect"
+import VueMultiSelect from "vue-multiselect";
 import { useField } from "@/composables/form";
 import FormLabel from "@/components/form/FormLabel.vue";
 import FormHelp from "@/components/form/FormHelp.vue";
