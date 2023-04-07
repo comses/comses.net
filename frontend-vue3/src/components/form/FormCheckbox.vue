@@ -37,5 +37,5 @@ const props = withDefaults(defineProps<CheckboxProps>(), {
   help: "",
 });
 
-const { id, value, attrs, error } = useField(props, "name");
+const { id, value, attrs, error } = useField<boolean>(props, "name");
 </script>

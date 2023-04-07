@@ -4,7 +4,8 @@
       <FormLabel v-if="label" :label="label" :id-for="id" :required="required" />
     </slot>
     <VueDatePicker
-      v-model="(value as Date)"
+      v-model="value"
+      model-type="yyyy-MM-dd"
       :id="id"
       v-bind="attrs"
       :class="{ 'is-invalid': error }"
@@ -41,5 +42,5 @@ export interface TextInputProps {
 
 const props = defineProps<TextInputProps>();
 
-const { id, value, attrs, error } = useField(props, "name");
+const { id, value, attrs, error } = useField<string>(props, "name");
 </script>

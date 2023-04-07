@@ -46,5 +46,5 @@ export interface TextInputProps {
 
 const props = defineProps<TextInputProps>();
 
-const { id, value, attrs, error } = useField(props, "name");
+const { id, value, attrs, error } = useField<any>(props, "name");
 </script>

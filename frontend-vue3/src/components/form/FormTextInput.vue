@@ -38,5 +38,5 @@ const props = withDefaults(defineProps<TextInputProps>(), {
   type: "text",
 });
 
-const { id, value, attrs, error } = useField(props, "name");
+const { id, value, attrs, error } = useField<string>(props, "name");
 </script>
