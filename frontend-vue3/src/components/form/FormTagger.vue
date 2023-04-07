@@ -57,7 +57,7 @@ const props = withDefaults(defineProps<TextInputProps>(), {
   placeholder: "Type to add tags",
 });
 
-const { id, value, attrs, error } = useField(props, "name");
+const { id, value, attrs, error } = useField<Tags>(props, "name");
 
 const matchingTags = ref<Tags>([]);
 const isLoading = ref(false);

@@ -41,8 +41,8 @@ import type { Tags } from "@/composables/api/tags";
 
 interface SearchFields {
   keywords: string;
-  startDate: Date;
-  endDate: Date;
+  startDate: string;
+  endDate: string;
   tags: Tags;
   peerReviewStatus: string;
 }
@@ -76,8 +76,8 @@ const { searchUrl } = useCodebaseAPI();
 const query = computed(() => {
   return searchUrl({
     query: values.keywords,
-    published_after: values.startDate?.toISOString(),
-    published_before: values.endDate?.toISOString(),
+    published_after: values.startDate,
+    published_before: values.endDate,
     tags: values.tags?.map(tag => tag.name),
     peer_review_status: values.peerReviewStatus,
   });
