@@ -37,7 +37,7 @@
       <template #noOptions>No matching tags found.</template>
     </VueMultiSelect>
     <slot name="help">
-      <FormHelp v-if="help" :help="help" :id-for="id" :error="error" />
+      <FormHelp v-if="help" :help="help" :id-for="id" />
     </slot>
     <slot name="error">
       <FormError v-if="error" :error="error" :id-for="id" />
@@ -55,7 +55,7 @@ import FormError from "@/components/form/FormError.vue";
 import { useTagsAPI } from "@/composables/api/tags";
 import type { Tags, TagType } from "@/composables/api/tags";
 
-export interface TextInputProps {
+export interface TaggerProps {
   name: string;
   label?: string;
   help?: string;
@@ -64,7 +64,7 @@ export interface TextInputProps {
   type?: TagType;
 }
 
-const props = withDefaults(defineProps<TextInputProps>(), {
+const props = withDefaults(defineProps<TaggerProps>(), {
   type: "",
   placeholder: "Type to add tags",
 });
@@ -74,7 +74,7 @@ const { id, value, attrs, error } = useField<Tags>(props, "name");
 const matchingTags = ref<Tags>([]);
 const isLoading = ref(false);
 
-const { list } = useTagsAPI();
+const { search } = useTagsAPI();
 
 onBeforeMount(() => {
   // force the inital value to be an empty array
@@ -83,7 +83,7 @@ onBeforeMount(() => {
 
 async function fetchMatchingTags(query: string) {
   isLoading.value = true;
-  const response = await list({ query, type: props.type });
+  const response = await search({ query, type: props.type });
   matchingTags.value = response.data.results;
   isLoading.value = false;
 }

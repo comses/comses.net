@@ -11,7 +11,7 @@
       :class="{ 'form-control': true, 'is-invalid': error }"
     />
     <slot name="help">
-      <FormHelp v-if="help" :help="help" :id-for="id" :error="error" />
+      <FormHelp v-if="help" :help="help" :id-for="id" />
     </slot>
     <slot name="error">
       <FormError v-if="error" :error="error" :id-for="id" />
