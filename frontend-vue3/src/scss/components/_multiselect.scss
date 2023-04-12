@@ -7,14 +7,18 @@
 }
 
 .multiselect__tag {
-  background-color: $success;
+  background-color: $secondary;
   margin-top: 5px;
   margin-bottom: 0px;
 }
 
 .multiselect__tag-icon {
+  border-radius: 0px;
   &:after {
-    color: $gray-400;
+    color: $white;
+  }
+  &:hover {
+    background-color: $danger;
   }
 }
 
@@ -41,6 +45,13 @@
   color: lighten($input-color, 20%);
   cursor: pointer;
   font-size: 0.75rem;
+}
+
+.multiselect__clear {
+  @extend .multiselect__search-toggle;
+  top: 10px;
+  margin-right: 12px;
+  font-size: 1.5rem;
 }
 
 .multiselect__option {

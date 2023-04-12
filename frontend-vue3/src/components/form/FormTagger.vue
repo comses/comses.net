@@ -24,11 +24,17 @@
       @search-change="fetchMatchingTags"
       :class="{ 'is-invalid': error }"
     >
+      <template #clear v-if="value?.length">
+        <div class="multiselect__clear">
+          <span @mousedown.prevent.stop="value = []">&times;</span>
+        </div>
+      </template>
       <template #caret="{ toggle }">
-        <div class="multiselect__search-toggle">
+        <div :class="{ 'multiselect__search-toggle': true, 'd-none': value?.length }">
           <i class="fas fa-search" @mousedown.prevent.stop="toggle" />
         </div>
       </template>
+      <template #noOptions>No matching tags found.</template>
     </VueMultiSelect>
     <slot name="help">
       <FormHelp v-if="help" :help="help" :id-for="id" :error="error" />
@@ -40,7 +46,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from "vue";
+import { ref, onBeforeMount } from "vue";
 import VueMultiSelect from "vue-multiselect";
 import { useField } from "@/composables/form";
 import FormLabel from "@/components/form/FormLabel.vue";
@@ -70,6 +76,11 @@ const isLoading = ref(false);
 
 const { list } = useTagsAPI();
 
+onBeforeMount(() => {
+  // force the inital value to be an empty array
+  value.value = [];
+});
+
 async function fetchMatchingTags(query: string) {
   isLoading.value = true;
   const response = await list({ query, type: props.type });
@@ -78,6 +89,6 @@ async function fetchMatchingTags(query: string) {
 }
 
 async function addTag(name: string) {
-  (value as any).value.push({ name });
+  value.value.push({ name });
 }
 </script>
