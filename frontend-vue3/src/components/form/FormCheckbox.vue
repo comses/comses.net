@@ -11,7 +11,7 @@
       <FormLabel v-if="label" :label="label" :id-for="id" :required="required" />
     </div>
     <slot name="help">
-      <FormHelp v-if="help" :help="help" :id-for="id" :error="error" />
+      <FormHelp v-if="help" :help="help" :id-for="id" />
     </slot>
     <slot name="error">
       <FormError v-if="error" :error="error" :id-for="id" />

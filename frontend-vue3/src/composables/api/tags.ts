@@ -18,11 +18,11 @@ export function useTagsAPI() {
   const baseUrl = "/tags/";
   const { get, searchUrl } = useAxios(baseUrl);
 
-  async function list(params: TagQueryParams) {
+  async function search(params: TagQueryParams) {
     return get(searchUrl({ type: "", ...params, page: 1 }));
   }
 
   return {
-    list,
+    search,
   };
 }

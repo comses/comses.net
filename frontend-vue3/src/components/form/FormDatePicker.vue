@@ -17,7 +17,7 @@
       :enable-time-picker="false"
     ></VueDatePicker>
     <slot name="help">
-      <FormHelp v-if="help" :help="help" :id-for="id" :error="error" />
+      <FormHelp v-if="help" :help="help" :id-for="id" />
     </slot>
     <slot name="error">
       <FormError v-if="error" :error="error" :id-for="id" />
@@ -34,7 +34,7 @@ import FormError from "@/components/form/FormError.vue";
 
 export type SelectOptions = { value: any; label: string }[];
 
-export interface TextInputProps {
+export interface DatePickerProps {
   name: string;
   label?: string;
   help?: string;
@@ -42,7 +42,7 @@ export interface TextInputProps {
   required?: boolean;
 }
 
-const props = defineProps<TextInputProps>();
+const props = defineProps<DatePickerProps>();
 
 const { id, value, attrs, error } = useField<string>(props, "name");
 </script>

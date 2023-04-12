@@ -19,7 +19,7 @@
       </option>
     </select>
     <slot name="help">
-      <FormHelp v-if="help" :help="help" :id-for="id" :error="error" />
+      <FormHelp v-if="help" :help="help" :id-for="id" />
     </slot>
     <slot name="error">
       <FormError v-if="error" :error="error" :id-for="id" />
@@ -35,7 +35,7 @@ import FormError from "@/components/form/FormError.vue";
 
 export type SelectOptions = { value: any; label: string }[];
 
-export interface TextInputProps {
+export interface SelectProps {
   name: string;
   label?: string;
   help?: string;
@@ -44,7 +44,7 @@ export interface TextInputProps {
   options: SelectOptions;
 }
 
-const props = defineProps<TextInputProps>();
+const props = defineProps<SelectProps>();
 
 const { id, value, attrs, error } = useField<any>(props, "name");
 </script>
