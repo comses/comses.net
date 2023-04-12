@@ -9,6 +9,12 @@ interface EventQueryParams {
 }
 
 export function useEventAPI() {
+  /**
+   * Composable function for making requests to the events API
+   *
+   * @returns - An object containing reactive state of the request and helper functions for API requests
+   */
+
   const baseUrl = "/events/";
   const { state, get, post, put, del, detailUrl, searchUrl } = useAxios(baseUrl);
 
