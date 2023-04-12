@@ -6,9 +6,13 @@
     <VueDatePicker
       v-model="value"
       model-type="yyyy-MM-dd"
+      format="yyyy-MM-dd"
       :id="id"
       v-bind="attrs"
       :class="{ 'is-invalid': error }"
+      input-class-name="custom-dp__input"
+      menu-class-name="custom-dp__menu"
+      :hide-input-icon="true"
       :auto-apply="true"
       :enable-time-picker="false"
     ></VueDatePicker>
@@ -23,8 +27,6 @@
 
 <script setup lang="ts">
 import VueDatePicker from "@vuepic/vue-datepicker";
-import "@vuepic/vue-datepicker/dist/main.css"; // TODO: use scss in global styles
-// https://vue3datepicker.com/props/look-and-feel/
 import { useField } from "@/composables/form";
 import FormLabel from "@/components/form/FormLabel.vue";
 import FormHelp from "@/components/form/FormHelp.vue";

@@ -23,7 +23,13 @@
       @tag="addTag"
       @search-change="fetchMatchingTags"
       :class="{ 'is-invalid': error }"
-    ></VueMultiSelect>
+    >
+      <template #caret="{ toggle }">
+        <div class="multiselect__search-toggle">
+          <i class="fas fa-search" @mousedown.prevent.stop="toggle" />
+        </div>
+      </template>
+    </VueMultiSelect>
     <slot name="help">
       <FormHelp v-if="help" :help="help" :id-for="id" :error="error" />
     </slot>

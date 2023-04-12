@@ -1,9 +1,62 @@
-// FIXME: remove this when datepicker is fully replaced
+// FIXME: vue 2 datepicker class: remove this when fully replaced
 .comses-datepicker {
   .form-control {
     z-index: 0;
   }
   .form-control[readonly] {
     background-color: $white;
+  }
+}
+
+@import "~/@vuepic/vue-datepicker/src/VueDatePicker/style/main.scss";
+
+// TODO: add .error class
+
+.custom-dp__input {
+  border: 1px solid $input-border-color;
+  border-radius: 0.25rem;
+  padding: 0.375rem 2.25rem 0.375rem 0.75rem;
+  color: $input-color;
+  cursor: text;
+  font-family: $font-family-base !important;
+  &:hover {
+    border-color: $input-border-color;
+  }
+}
+
+.dp__icon {
+  color: $input-color;
+}
+
+.dp__input_focus {
+  border-color: $input-focus-border-color;
+  box-shadow: $input-focus-box-shadow;
+}
+
+.custom-dp__menu {
+  border: 1px solid $input-border-color;
+  border-radius: 0.25rem;
+  border-radius: 0px;
+  color: $input-color;
+  font-family: $font-family-base !important;
+}
+
+.dp__cell {
+  border-radius: 0.25rem;
+}
+
+.dp__today {
+  border-color: $input-border-color;
+}
+
+.dp__active_date,
+.dp__overlay_cell_active {
+  background-color: $secondary;
+}
+
+.dp__date_hover {
+  &:hover {
+    background-color: $input-bg;
+    border-color: $secondary;
   }
 }
