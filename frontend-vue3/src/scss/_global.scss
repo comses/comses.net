@@ -84,7 +84,7 @@ a.anchor {
 
 .btn-delete-item {
   @extend .btn-outline-dark;
-  border-color: #ced4da;
+  border-color: $input-border-color;
   border-left: 0px;
 
   &:hover {
@@ -110,7 +110,7 @@ a.anchor {
 .btn-make-primary {
   @extend .btn-outline-dark;
   color: $secondary-color;
-  border-color: #ced4da;
+  border-color: $input-border-color;
   border-right: 0px;
 
   &:hover {

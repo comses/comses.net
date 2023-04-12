@@ -34,9 +34,9 @@
 
 {% block sidebar %}
     <div id="search"></div>
-    {{ vite_asset('apps/codebaselist.ts') }}
 {% endblock %}
 
 {% block js %}
     {{ render_bundle('codebase_list', attrs='defer') }}
+    {{ vite_asset('apps/codebaselist.ts') }}
 {% endblock %}

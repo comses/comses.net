@@ -1,8 +1,32 @@
 @import "~/vue-multiselect/dist/vue3-multiselect.css";
 
 .multiselect__tags {
-  border-radius: 0;
-  border: 1px solid #ced4da;
+  border: 1px solid $input-border-color;
+  border-radius: 0.25rem;
+  padding: 0.375rem 2.25rem 0.375rem 0.75rem;
+}
+
+.multiselect__tag {
+  background-color: $success;
+  margin-top: 5px;
+  margin-bottom: 0px;
+}
+
+.multiselect__tag-icon {
+  &:after {
+    color: $gray-400;
+  }
+}
+
+.multiselect--active .multiselect__tags {
+  border-color: $input-focus-border-color;
+  border-bottom-color: $input-border-color;
+  box-shadow: $input-focus-box-shadow;
+}
+
+.multiselect__input,
+.multiselect__placeholder {
+  margin-bottom: 0px;
 }
 
 .multiselect--above .multiselect__content-wrapper {
@@ -12,14 +36,29 @@
 .multiselect__search-toggle {
   position: absolute;
   right: 0px;
-  padding: 10px;
-  color: #8f8f8f;
+  top: 0.675rem;
+  margin-right: 0.9rem;
+  color: lighten($input-color, 20%);
   cursor: pointer;
-  font-size: 0.8rem;
+  font-size: 0.75rem;
 }
 
 .multiselect__option {
   white-space: normal;
+}
+
+.multiselect__option--highlight {
+  background-color: $primary;
+  &:after {
+    background-color: $primary;
+  }
+}
+
+.multiselect__option--selected {
+  display: none;
+  &:after {
+    display: none;
+  }
 }
 
 .child-is-invalid {
