@@ -48,7 +48,7 @@ const numberOptions = [
   { value: 4, label: "Four" },
 ];
 
-const { handleSubmit, values } = useForm<DemoFields>({
+const { handleSubmit } = useForm<DemoFields>({
   initialValues,
   schema,
   onSubmit: values => {

@@ -10,7 +10,10 @@ module.exports = {
     '@vue/eslint-config-prettier/skip-formatting'
   ],
   rules: {
-    '@typescript-eslint/no-unused-vars': 'off',
+    '@typescript-eslint/no-unused-vars': [
+      'warn',
+      { 'varsIgnorePattern': "props" }
+    ],
   },
   parserOptions: {
     ecmaVersion: 'latest'

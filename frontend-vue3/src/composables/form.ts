@@ -5,8 +5,8 @@ import {
   useField as useVField,
   useForm as useVForm,
   type UseFormOptions,
-  type UseFormReturn,
-  type UseFormRegisterReturn,
+  type UseFormReturn, // eslint-disable-line @typescript-eslint/no-unused-vars
+  type UseFormRegisterReturn, // eslint-disable-line @typescript-eslint/no-unused-vars
 } from "@vorms/core";
 
 export function useField<Value>(props: any, fieldNameProp: string = "name") {
