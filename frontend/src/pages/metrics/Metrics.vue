@@ -5,30 +5,44 @@
       <div class="metrics-group">
         <div>
           <div class="radio-button">
-            <input type="radio" id="members" value="Members" v-model="picked" selected />
+            <input type="radio" id="members" value="Members" 
+              v-model="picked" 
+              @change="updateChartOptions" selected />
             <label for="members" class="radio-label"> Members by year</label>
             <div class="checkbox">
-              <input type="checkbox" id="fullMembers" v-model="selectedFullMembers" :disabled="picked!='Members'"/>
+              <input type="checkbox" id="fullMembers" 
+                v-model="selectedFullMembers" 
+                @change="updateChartOptions" 
+                :disabled="picked!='Members'"/>
               <label for="fullMembers" style="margin-left: 5px">Full Members</label>
             </div>
           </div>
 
           <div class="radio-button">
-            <input type="radio" id="codebases" value="Codebases" v-model="picked" />
+            <input type="radio" id="codebases" value="Codebases" 
+              v-model="picked" @change="updateChartOptions"/>
             <label for="codebases" class="radio-label"> Codebases by year</label>
 
             <div class="checkbox">
-              <input type="checkbox" id="language" v-model="selectedLanguage" :disabled="picked!='Codebases' || selectedPeerReview == true"/>
+              <input type="checkbox" id="language" 
+                v-model="selectedLanguage" 
+                @change="updateChartOptions"
+                :disabled="picked!='Codebases' || selectedPeerReview == true"/>
               <label for="language" style="margin-left: 5px">By language</label>
               <br style="display: block; margin: 5px 0" />
 
-              <input type="checkbox" id="peer" v-model="selectedPeerReview" :disabled="picked!='Codebases' || selectedLanguage == true"/>
+              <input type="checkbox" id="peer" 
+                v-model="selectedPeerReview" 
+                @change="updateChartOptions"
+                :disabled="picked!='Codebases' || selectedLanguage == true"/>
               <label for="peer" style="margin-left: 5px">Peer reviewed</label>
             </div>
           </div>
 
           <div class="radio-button">
-            <input type="radio" id="downloads" value="Downloads" v-model="picked" />
+            <input type="radio" id="downloads" value="Downloads" 
+              v-model="picked"
+              @change="updateChartOptions" />
             <label for="downloads" class="radio-label"> Downloads by year</label>
           </div>
         </div>
@@ -78,7 +92,21 @@ import { Chart } from "highcharts-vue";
 
 export default class MetricsPage extends Vue {
   @Prop()
-  private metricsData = {};
+  public dataMembersTotal;
+  @Prop()
+  public dataMembersFull;
+  @Prop()
+  public seriesCodebasesOS;
+  @Prop()
+  public seriesCodebasesPlatform;
+  @Prop()
+  public seriesCodebasesLangs;
+  @Prop()
+  dataCodebasesReviewed;
+  @Prop()
+  public dataDownloadsTotal;
+  @Prop()
+  public chartOptions;
 
   public picked = "Members";
   public selectedLanguage = false;
@@ -86,94 +114,19 @@ export default class MetricsPage extends Vue {
   public selectedFullMembers = false;
   public selectedTab = "graph";
   public title: string = "Members";
-  // mock data
-  public dataMembersTotal: Object = {
-    name: "total members",
-    data: [90, 100, 110, 120, 130],
-  };
-  public dataMembersFull: Object = {
-    name: "full members",
-    data: [70, 80, 90, 100, 110],
-  };
+
   public dataCodebasesTotal: Object = {
     name: "total codebases",
     data: [100, 110, 120, 130, 140],
-  };
-  public dataCodebasesReviewed: Object = {
-    name: "reviewed codebases",
-    data: [70, 80, 90, 100, 110],
-  };
-  public seriesCodebasesLangs: Array<Object> = [
-    {
-      name: "Netlogo",
-      data: [40, 30, 30, 40, 40],
-    },
-    {
-      name: "Python",
-      data: [20, 30, 30, 30, 40],
-    },
-    {
-      name: "Julia",
-      data: [20, 30, 30, 30, 30],
-    },
-    {
-      name: "C",
-      data: [20, 20, 30, 30, 30],
-    },
-  ];
-  // public seriesCodebasesPlatform: Array = []
-  public dataDownloadsTotal: Object = {
-    name: "total downloads",
-    data: [50, 60, 70, 80, 90],
-  };
-  public chartOptions: Object = {
-    // chart: {
-    //   type: 'spline'
-    // },
-    title: {
-      text: "Members", // default
-      align: "left",
-    },
-    yAxis: {
-      title: {
-        text: "Members",
-      },
-    },
-    xAxis: {
-      accessibility: {
-        rangeDescription: "Range: 2019 to 2023",
-      },
-    },
-    plotOptions: {
-      series: {
-        label: {
-          connectorAllowed: false,
-        },
-        pointStart: 2019,
-        stacking: undefined,
-      },
-    },
-    series: [
-      this.dataMembersTotal, // default data
-    ],
+    start_year: 2008,
   };
 
-  toHighChartsData() {
-    // FIXME: manipulate metrics data into a form suitable for highcharts
-    // validate data against yup schema
-    return this.metricsData;
-  }
-
-  @Watch("picked")
-  @Watch("selectedFullMembers")
-  @Watch("selectedLanguage")
-  @Watch("selectedPeerReview")
   updateChartOptions() {
-    console.log("updateChartOptions");
     switch (this.picked) {
       case "Members":
         this.chartOptions["title"]["text"] = "Members";
         this.chartOptions["plotOptions"]["series"]["stacking"] = undefined;
+        this.chartOptions["plotOptions"]["series"]["pointStart"] = this.dataMembersTotal.start_year;
         if (this.selectedFullMembers) {
           this.chartOptions["series"] = [this.dataMembersTotal, this.dataMembersFull];
         } else {
@@ -183,10 +136,13 @@ export default class MetricsPage extends Vue {
       case "Codebases":
         this.chartOptions["title"]["text"] = "Codebases";
         this.chartOptions["plotOptions"]["series"]["stacking"] = undefined;
+        this.chartOptions["plotOptions"]["series"]["pointStart"] = this.dataCodebasesTotal["start_year"];
         if (this.selectedLanguage) {
           this.chartOptions["series"] = this.seriesCodebasesLangs;
           this.chartOptions["plotOptions"]["series"]["stacking"] = "normal";
+          this.chartOptions["plotOptions"]["series"]["pointStart"] = this.seriesCodebasesLangs[0].start_year;
         } else if (this.selectedPeerReview) {
+          this.chartOptions["plotOptions"]["series"]["pointStart"] = this.dataCodebasesReviewed.start_year;
           this.chartOptions["series"] = [this.dataCodebasesTotal, this.dataCodebasesReviewed];
         } else {
           this.chartOptions["series"] = [this.dataCodebasesTotal];
@@ -203,11 +159,7 @@ export default class MetricsPage extends Vue {
 
   data() {
     return {
-      // picked: "Members",
-      // selectedLanguage: false,
-      // selectedPeerReview: false,
-      // selectedFullMembers: false,
-      // selectedTab: "graph",
+
     };
   }
 }
