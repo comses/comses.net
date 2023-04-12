@@ -173,7 +173,7 @@ class TagCleanupTransaction(models.Model):
         return "{}".format(self.date_created.strftime("%c"))
 
 
-class TagCleanup(models.Model):
+class TagCleanup(models.Model): # Here!!!
     new_name = models.CharField(max_length=300, blank=True)
     old_name = models.CharField(max_length=300)
     transaction = models.ForeignKey(
