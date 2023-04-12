@@ -388,13 +388,14 @@ class JobViewSet(CommonViewSetMixin, OnlyObjectPermissionModelViewSet):
 
 class MetricsView(TemplateView):
     template_name = "home/about/metrics.jinja"
-    
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        metrics_data_json = json.dumps(Metrics().get_all_data())
-        reformed_metrics_data_json = json.dumps(Metrics().get_all_reformed_data())
-        context["all_metrics_data_json"] = metrics_data_json
-        context["reformed_metrics_data_json"] = reformed_metrics_data_json
+        m = Metrics()
+        # metrics_data_json = json.dumps(metrics.get_all_data())
+        highcharts_metrics_data_json = json.dumps(m.get_highcharts_data())
+        # context["all_metrics_data_json"] = metrics_data_json
+        context["metrics_data_json"] = highcharts_metrics_data_json
         return context
 
 
