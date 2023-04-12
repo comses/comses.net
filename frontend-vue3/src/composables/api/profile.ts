@@ -7,11 +7,11 @@ interface ProfileQueryParams {
 }
 
 export function useProfileAPI() {
-/**
- * Composable function for making requests to the profile API
- * 
- * @returns - An object containing reactive state of the request and helper functions for API requests
- */
+  /**
+   * Composable function for making requests to the profile API
+   *
+   * @returns - An object containing reactive state of the request and helper functions for API requests
+   */
 
   const baseUrl = "/users/";
   const { state, get, postForm, put, detailUrl, searchUrl } = useAxios(baseUrl);

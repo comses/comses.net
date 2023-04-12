@@ -63,7 +63,7 @@ export function useReleaseAPI() {
    */
 
   const baseUrl = "/codebases/";
-  const { state, get, post, postForm, put, del, searchUrl } = useAxios(baseUrl);
+  const { state, get, post, postForm, put, del } = useAxios(baseUrl);
 
   // urls
   // FIXME: this seems overly verbose, we may not even need many of these
@@ -153,7 +153,7 @@ export function useReleaseAPI() {
   async function requestDownload(identifier: string, version_number: string) {
     return post(downloadRequestUrl(identifier, version_number));
   }
-  
+
   return {
     ...toRefs(state),
     detailUrl,

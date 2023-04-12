@@ -120,7 +120,7 @@ export function useAxios(baseUrl?: string, config?: AxiosRequestConfig) {
 }
 
 function getCookie(name: string) {
-  /** 
+  /**
    * utility function for getting a cookie's value by name
    */
   return document.cookie.split("; ").reduce((r, v) => {

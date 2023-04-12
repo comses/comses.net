@@ -28,7 +28,6 @@
 </template>
 
 <script setup lang="ts">
-import * as yup from "yup";
 import { computed } from "vue";
 import BaseSearch from "@/components/BaseSearch.vue";
 import FormTextInput from "@/components/form/FormTextInput.vue";
@@ -51,12 +50,6 @@ const initialValues: Partial<SearchFields> = {
   peerReviewStatus: "",
 };
 
-const schema = yup.object({
-  keywords: yup.string().required(),
-  startDate: yup.string(),
-  peerReviewStatus: yup.string(),
-});
-
 const peerReviewOptions = [
   { value: "reviewed", label: "Reviewed" },
   { value: "not_reviewed", label: "Not Reviewed" },
@@ -65,7 +58,6 @@ const peerReviewOptions = [
 
 const { handleSubmit, values } = useForm<SearchFields>({
   initialValues,
-  schema,
   onSubmit: values => {
     console.log(values);
   },
