@@ -9,6 +9,12 @@ interface JobQueryParams {
 }
 
 export function useEventAPI() {
+  /**
+   * Composable function for making requests to the jobs API
+   * 
+   * @returns - An object containing reactive state of the request and helper functions for API requests
+   */
+
   const baseUrl = "/jobs/";
   const { state, get, post, put, del, detailUrl, searchUrl } = useAxios(baseUrl);
 

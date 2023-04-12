@@ -10,6 +10,12 @@ interface CodebaseQueryParams {
 }
 
 export function useCodebaseAPI() {
+  /**
+   * Composable function for making requests to the codebase API
+   *
+   * @returns - An object containing reactive state of the request and helper functions for API requests
+   */
+
   const baseUrl = "/codebases/";
   const { state, get, post, put, del, detailUrl, searchUrl } = useAxios(baseUrl);
 
@@ -50,10 +56,18 @@ export function useCodebaseAPI() {
 }
 
 export function useReleaseAPI() {
+  /**
+   * Composable function for making requests to the codebase release API
+   *
+   * @returns - An object containing reactive state of the request and helper functions for API requests
+   */
+
   const baseUrl = "/codebases/";
   const { state, get, post, postForm, put, del, searchUrl } = useAxios(baseUrl);
 
   // urls
+  // FIXME: this seems overly verbose, we may not even need many of these
+  // revisit when implementing components that use this
   function detailUrl(identifier: string, version_number: string) {
     return `${baseUrl}${identifier}/releases/${version_number}/`;
   }
@@ -139,4 +153,28 @@ export function useReleaseAPI() {
   async function requestDownload(identifier: string, version_number: string) {
     return post(downloadRequestUrl(identifier, version_number));
   }
+  
+  return {
+    ...toRefs(state),
+    detailUrl,
+    editUrl,
+    detailEditUrl,
+    listOriginalsFileUrl,
+    clearCategoryUrl,
+    downloadPreviewUrl,
+    downloadUrl,
+    downloadRequestUrl,
+    updateContributorUrl,
+    retrieve,
+    publish,
+    update,
+    clearCategory,
+    updateContributors,
+    listOriginalFiles,
+    uploadFile,
+    deleteFile,
+    downloadPreview,
+    download,
+    requestDownload,
+  };
 }

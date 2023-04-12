@@ -9,10 +9,12 @@ interface TagQueryParams {
   page?: number;
 }
 
+
 export function useTagsAPI() {
   /**
-   * Tags API retrieves a list of tags for a given query
-   * type is one of Event, Job, Codebase, Profile, or empty string for all
+   * Composable function for making requests to the tags API
+   * 
+   * @returns - An object containing reactive state of the request and helper functions for API requests
    */
 
   const baseUrl = "/tags/";

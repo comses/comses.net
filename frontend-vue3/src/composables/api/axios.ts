@@ -11,6 +11,14 @@ interface AxiosRequestState {
 }
 
 export function useAxios(baseUrl?: string, config?: AxiosRequestConfig) {
+  /**
+   * Composable API for making requests with axios
+   *
+   * @param baseUrl - Base URL for API requests. Optional.
+   * @param config - Optional axios configuration. Optional.
+   * @returns - An object containing the axios instance, request state, and helper functions for API requests
+   */
+
   const instance = axios.create({
     headers: { "Content-Type": "application/json" },
     baseURL: window.location.origin,
@@ -112,16 +120,11 @@ export function useAxios(baseUrl?: string, config?: AxiosRequestConfig) {
 }
 
 function getCookie(name: string) {
-  let cookieValue = null;
-  if (document.cookie && document.cookie !== "") {
-    const cookies = document.cookie.split(";");
-    for (let i = 0; i < cookies.length; i++) {
-      const cookie = cookies[i].trim();
-      if (cookie.substring(0, name.length + 1) === name + "=") {
-        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-        break;
-      }
-    }
-  }
-  return cookieValue;
+  /** 
+   * utility function for getting a cookie's value by name
+   */
+  return document.cookie.split("; ").reduce((r, v) => {
+    const [n, ...val] = v.split("=");
+    return n === name ? decodeURIComponent(val.join("=")) : r;
+  }, "");
 }
