@@ -25,6 +25,7 @@ export function useAxios(baseUrl?: string, config?: AxiosRequestConfig) {
     ...config,
   });
 
+  // add CSRF token to all requests
   instance.interceptors.request.use(
     config => {
       const csrfToken = getCookie("csrftoken");
@@ -32,6 +33,17 @@ export function useAxios(baseUrl?: string, config?: AxiosRequestConfig) {
         config.headers["X-CSRFToken"] = csrfToken;
       }
       return config;
+    },
+    error => Promise.reject(error)
+  );
+
+  // convert date strings to Date objects in response data
+  instance.interceptors.response.use(
+    response => {
+      if (response.data) {
+        convertDates(response.data);
+      }
+      return response;
     },
     error => Promise.reject(error)
   );
@@ -119,12 +131,32 @@ export function useAxios(baseUrl?: string, config?: AxiosRequestConfig) {
   };
 }
 
+/**
+ * Utility functions
+ */
 function getCookie(name: string) {
-  /**
-   * utility function for getting a cookie's value by name
-   */
   return document.cookie.split("; ").reduce((r, v) => {
     const [n, ...val] = v.split("=");
     return n === name ? decodeURIComponent(val.join("=")) : r;
   }, "");
+}
+
+const ISODateFormat = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d*)?(?:[-+]\d{2}:?\d{2}|Z)?$/;
+
+function isISODateString(value: any) {
+  return value && typeof value === "string" && ISODateFormat.test(value);
+}
+
+function convertDates(body: any) {
+  if (body === null || body === undefined || typeof body !== "object") {
+    return body;
+  }
+  for (const key of Object.keys(body)) {
+    const value = body[key];
+    if (isISODateString(value)) {
+      body[key] = new Date(value);
+    } else if (typeof value === "object") {
+      convertDates(value);
+    }
+  }
 }

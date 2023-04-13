@@ -36,7 +36,8 @@ export default defineConfig({
       input: {
         main: resolvePath("./src/apps/main.ts"),
         formdemo: resolvePath("./src/apps/formdemo.ts"),
-        codebaselist: resolvePath("./src/apps/codebaselist.ts"),
+        codebase_list: resolvePath("./src/apps/codebase_list.ts"),
+        event_edit: resolvePath("./src/apps/event_edit.ts"),
         // add more entry points here
       },
     },

@@ -8,8 +8,8 @@
     <template #form>
       <form @submit="handleSubmit">
         <FormTextInput class="mb-3" name="keywords" label="Keywords" @keyup.enter="search" />
-        <FormDatePicker class="mb-3" name="startDate" label="Published After" />
-        <FormDatePicker class="mb-3" name="endDate" label="Published Before" />
+        <FormDatePicker class="mb-3" name="startDate" label="Published After" string />
+        <FormDatePicker class="mb-3" name="endDate" label="Published Before" string />
         <FormTagger class="mb-3" name="tags" label="Tags" type="Codebase" />
         <FormSelect
           class="mb-3"
