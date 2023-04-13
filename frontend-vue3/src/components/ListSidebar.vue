@@ -1,11 +1,16 @@
 <template>
   <div>
-    <a class="text-white" :href="submitUrl">
+    <a v-if="createUrl && createLabel" class="text-white" :href="createUrl">
       <div class="btn btn-secondary w-100" tabindex="0">
-        {{ submitLabel }}
+        {{ createLabel }}
       </div>
     </a>
-    <slot name="form"></slot>
+    <div class="card-metadata">
+      <h2 class="title">Search</h2>
+      <div class="card-body">
+        <slot name="form" />
+      </div>
+    </div>
     <a class="text-white" :href="searchUrl">
       <div class="btn btn-primary w-100" tabindex="0">
         {{ searchLabel }}
@@ -15,8 +20,8 @@
 </template>
 <script setup lang="ts">
 export interface SearchProps {
-  submitLabel: string;
-  submitUrl: string;
+  createLabel?: string;
+  createUrl?: string;
   searchLabel: string;
   searchUrl: string;
 }

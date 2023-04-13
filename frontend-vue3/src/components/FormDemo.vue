@@ -18,28 +18,6 @@ import FormSelect from "@/components/form/FormSelect.vue";
 import FormCheckbox from "@/components/form/FormCheckbox.vue";
 import FormDatePicker from "@/components/form/FormDatePicker.vue";
 import FormTagger from "@/components/form/FormTagger.vue";
-import type { Tags } from "@/composables/api/tags";
-
-interface DemoFields {
-  text: string;
-  email: string;
-  terms: boolean;
-  number: number;
-  date: Date;
-  tags: Tags;
-}
-
-const initialValues: Partial<DemoFields> = {
-  terms: false,
-};
-
-const schema = yup.object({
-  text: yup.string().required(),
-  email: yup.string().email(),
-  terms: yup.boolean().oneOf([true], "You must accept"),
-  date: yup.date(),
-  number: yup.number().required().oneOf([2, 3], "Must be 2 or 3").label("Number"),
-});
 
 const numberOptions = [
   { value: 1, label: "One" },
@@ -48,8 +26,18 @@ const numberOptions = [
   { value: 4, label: "Four" },
 ];
 
+const schema = yup.object({
+  text: yup.string().required(),
+  email: yup.string().email(),
+  terms: yup.boolean().oneOf([true], "You must accept"),
+  date: yup.date(),
+  number: yup.number().required().oneOf([2, 3], "Must be 2 or 3").label("Number"),
+  tags: yup.array().of(yup.object().shape({ name: yup.string().required() })),
+});
+type DemoFields = yup.InferType<typeof schema>;
+
 const { handleSubmit } = useForm<DemoFields>({
-  initialValues,
+  initialValues: { terms: false },
   schema,
   onSubmit: values => {
     console.log(values);

@@ -1,6 +1,6 @@
 import "vite/modulepreload-polyfill";
 
 import { createApp } from "vue";
-import CodebaseSearch from "@/components/CodebaseSearch.vue";
+import CodebaseListSidebar from "@/components/CodebaseListSidebar.vue";
 
-createApp(CodebaseSearch).mount("#search");
+createApp(CodebaseListSidebar).mount("#search");
