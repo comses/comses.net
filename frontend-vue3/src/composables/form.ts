@@ -42,7 +42,7 @@ export type UseFormValidationOptions<Values> = UseFormOptions<Partial<Values>> &
 
 export function useForm<Values>(options: UseFormValidationOptions<Values>) {
   /**
-   * Wrapper for @vorms/core useForm that handles validation with yup
+   * Wrapper for @vorms/core useForm that passes a yup schema into the validation resolver
    * https://vorms.mini-ghost.dev/api/use-form.html
    *
    * Creates a form context and returns handler callbacks and reactive state of the whole form
@@ -52,8 +52,11 @@ export function useForm<Values>(options: UseFormValidationOptions<Values>) {
    * @returns {UseFormReturn<Values>} - {@link UseFormReturn}
    */
 
+  // if schema is provided, pass validate: yupResolver(schema), otherwise do not define validate
+  const optionalValidate = options.schema ? { validate: yupResolver(options.schema) } : {};
+
   return useVForm({
     ...options,
-    validate: yupResolver(options.schema),
+    ...optionalValidate,
   });
 }
