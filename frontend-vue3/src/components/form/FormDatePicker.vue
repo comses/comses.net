@@ -5,10 +5,11 @@
     </slot>
     <VueDatePicker
       v-model="value"
-      model-type="yyyy-MM-dd"
+      :model-type="string ? 'yyyy-MM-dd' : undefined"
       format="yyyy-MM-dd"
       :id="id"
       v-bind="attrs"
+      :placeholder="placeholder"
       :class="{ 'is-invalid': error }"
       input-class-name="custom-dp__input"
       menu-class-name="custom-dp__menu"
@@ -32,17 +33,18 @@ import FormLabel from "@/components/form/FormLabel.vue";
 import FormHelp from "@/components/form/FormHelp.vue";
 import FormError from "@/components/form/FormError.vue";
 
-export type SelectOptions = { value: any; label: string }[];
-
 export interface DatePickerProps {
   name: string;
   label?: string;
   help?: string;
   placeholder?: string;
   required?: boolean;
+  string?: boolean; // whether to use string or date for the model value
 }
 
-const props = defineProps<DatePickerProps>();
+const props = withDefaults(defineProps<DatePickerProps>(), {
+  string: false,
+});
 
-const { id, value, attrs, error } = useField<string>(props, "name");
+const { id, value, attrs, error } = useField<Date | string>(props, "name");
 </script>

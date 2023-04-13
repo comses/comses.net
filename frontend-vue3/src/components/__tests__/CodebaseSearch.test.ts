@@ -1,16 +1,16 @@
 import { mount } from "@vue/test-utils";
-import CodebaseSearch from "@/components/CodebaseSearch.vue";
-import BaseSearch from "@/components/BaseSearch.vue";
+import CodebaseListSidebar from "@/components/CodebaseListSidebar.vue";
+import ListSidebar from "@/components/ListSidebar.vue";
 import FormTextInput from "@/components/form/FormTextInput.vue";
 import FormDatePicker from "@/components/form/FormDatePicker.vue";
 import FormTagger from "@/components/form/FormTagger.vue";
 import FormSelect from "@/components/form/FormSelect.vue";
 
-describe("CodebaseSearch.vue", () => {
+describe("CodebaseListSidebar.vue", () => {
   it("renders the form field components", async () => {
-    const wrapper = mount(CodebaseSearch);
+    const wrapper = mount(CodebaseListSidebar);
 
-    const baseSearch = wrapper.findComponent(BaseSearch);
+    const baseSearch = wrapper.findComponent(ListSidebar);
     expect(baseSearch.exists()).toBe(true);
 
     const formTextInput = wrapper.findComponent(FormTextInput);
@@ -28,14 +28,14 @@ describe("CodebaseSearch.vue", () => {
   });
 
   it("updates the query computed value based on form inputs", async () => {
-    const wrapper = mount(CodebaseSearch);
+    const wrapper = mount(CodebaseListSidebar);
 
     const formTextInput = wrapper.findComponent(FormTextInput);
     const formTextInputElement = formTextInput.find("input");
     formTextInputElement.element.value = "test keyword";
     await formTextInputElement.trigger("input");
     await wrapper.vm.$nextTick();
-    const baseSearch = wrapper.findComponent(BaseSearch);
+    const baseSearch = wrapper.findComponent(ListSidebar);
     const searchUrl = baseSearch.props("searchUrl");
     expect(searchUrl).toContain("query=test%20keyword");
   });
