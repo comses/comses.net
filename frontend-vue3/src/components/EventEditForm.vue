@@ -5,14 +5,14 @@
       name="title"
       label="Title"
       help="A short title describing the event"
-      required
+      indicate-required
     />
     <FormTextInput
       class="mb-3"
       name="location"
       label="Location"
       help="The city and country where the event takes place"
-      required
+      indicate-required
     />
     <div class="row">
       <div class="col-6">
@@ -21,7 +21,7 @@
           name="start_date"
           label="Start Date"
           help="The date the event begins"
-          required
+          indicate-required
         />
       </div>
       <div class="col-6">
@@ -65,7 +65,7 @@
       name="description"
       label="Description"
       help="Detailed information about the event"
-      required
+      indicate-required
     />
     <!-- FIXME: use markdown field when implemented -->
     <FormTextArea
@@ -73,7 +73,7 @@
       name="summary"
       label="Summary"
       help="A short summary of the event for display in search results. This field can be created from the description by pressing the summarize button."
-      required
+      indicate-required
     />
     <FormTextInput
       class="mb-3"
