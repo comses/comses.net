@@ -41,8 +41,8 @@ const peerReviewOptions = [
 
 const schema = yup.object({
   keywords: yup.string(),
-  startDate: yup.string(),
-  endDate: yup.string(),
+  startDate: yup.date(),
+  endDate: yup.date(),
   tags: yup.array().of(yup.object().shape({ name: yup.string().required() })),
   peerReviewStatus: yup.string(),
 });
@@ -61,8 +61,8 @@ const { searchUrl } = useCodebaseAPI();
 const query = computed(() => {
   return searchUrl({
     query: values.keywords,
-    published_after: values.startDate,
-    published_before: values.endDate,
+    published_after: values.startDate?.toISOString(),
+    published_before: values.endDate?.toISOString(),
     tags: values.tags?.map(tag => tag.name),
     peer_review_status: values.peerReviewStatus,
   });

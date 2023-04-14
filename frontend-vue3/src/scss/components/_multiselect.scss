@@ -28,6 +28,16 @@
   box-shadow: $input-focus-box-shadow;
 }
 
+.is-invalid {
+  .multiselect__tags {
+    border-color: $form-feedback-invalid-color;
+  }
+  &.multiselect--active .multiselect__tags {
+    box-shadow: 0 0 $input-btn-focus-blur $input-focus-width
+      rgba($form-feedback-invalid-color, $input-btn-focus-color-opacity);
+  }
+}
+
 .multiselect__input,
 .multiselect__placeholder {
   margin-bottom: 0px;
