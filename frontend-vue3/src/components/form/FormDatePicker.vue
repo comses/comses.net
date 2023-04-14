@@ -48,7 +48,7 @@ export interface DatePickerProps {
 
 const props = defineProps<DatePickerProps>();
 
-const { id, value, attrs, error } = useField<Date | string>(props, "name");
+const { id, value, attrs, error } = useField<Date>(props, "name");
 
 const showPlaceholder = inject("showPlaceholder", false);
 </script>

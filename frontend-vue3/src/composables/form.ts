@@ -1,4 +1,4 @@
-import { toRef } from "vue";
+import { toRef, provide, type Ref } from "vue";
 import type { WritableComputedRef } from "vue";
 import { yupResolver } from "@vorms/resolvers/yup";
 import {
@@ -38,7 +38,10 @@ export function useField<Value>(props: any, fieldNameProp: string = "name") {
   };
 }
 
-export type UseFormValidationOptions<Values> = UseFormOptions<Partial<Values>> & { schema?: any };
+export type UseFormValidationOptions<Values> = UseFormOptions<Partial<Values>> & {
+  schema?: any;
+  showPlaceholder?: Ref<boolean>;
+};
 
 export function useForm<Values>(options: UseFormValidationOptions<Values>) {
   /**
@@ -54,6 +57,12 @@ export function useForm<Values>(options: UseFormValidationOptions<Values>) {
 
   // if schema is provided, pass validate: yupResolver(schema), otherwise do not define validate
   const optionalValidate = options.schema ? { validate: yupResolver(options.schema) } : {};
+  // FIXME: revalidation on input/blur etc is not working for fields w/ non-primitive values
+  options.reValidateMode = "submit";
+
+  if (options.showPlaceholder) {
+    provide("showPlaceholder", options.showPlaceholder);
+  }
 
   return useVForm({
     ...options,
