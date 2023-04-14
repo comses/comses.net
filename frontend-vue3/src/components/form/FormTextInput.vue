@@ -31,6 +31,8 @@ export interface TextInputProps {
   help?: string;
   placeholder?: string;
   required?: boolean;
+  // generally it is better to leave type="text" for url/email/etc. inputs so that the browser
+  // does not perform any validation before the form/yup does leading to visual inconsistency
   type?: "text" | "email" | "password" | "number" | "tel" | "url" | "search";
 }
 
