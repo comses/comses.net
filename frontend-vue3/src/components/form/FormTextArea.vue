@@ -1,9 +1,11 @@
 <template>
   <div>
     <slot name="label">
-      <FormLabel v-if="label" :label="label" :id-for="id" :required="required" />
+      <FormLabel v-if="label" :label="label" :id-for="id" :required="indicateRequired" />
     </slot>
+    <FormPlaceholder v-if="showPlaceholder" :rows="rows" />
     <textarea
+      v-else
       v-model="value"
       :rows="rows"
       :id="id"
@@ -24,13 +26,15 @@ import { useField } from "@/composables/form";
 import FormLabel from "@/components/form/FormLabel.vue";
 import FormHelp from "@/components/form/FormHelp.vue";
 import FormError from "@/components/form/FormError.vue";
+import FormPlaceholder from "@/components/form/FormPlaceholder.vue";
+import { inject } from "vue";
 
 export interface TextInputProps {
   name: string;
   label?: string;
   help?: string;
   placeholder?: string;
-  required?: boolean;
+  indicateRequired?: boolean;
   rows?: number;
 }
 
@@ -39,4 +43,6 @@ const props = withDefaults(defineProps<TextInputProps>(), {
 });
 
 const { id, value, attrs, error } = useField<string>(props, "name");
+
+const showPlaceholder = inject("showPlaceholder", false);
 </script>

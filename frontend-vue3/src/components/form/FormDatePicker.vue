@@ -1,7 +1,7 @@
 <template>
   <div>
     <slot name="label">
-      <FormLabel v-if="label" :label="label" :id-for="id" :required="required" />
+      <FormLabel v-if="label" :label="label" :id-for="id" :required="indicateRequired" />
     </slot>
     <FormPlaceholder v-if="showPlaceholder" />
     <VueDatePicker
@@ -42,7 +42,7 @@ export interface DatePickerProps {
   label?: string;
   help?: string;
   placeholder?: string;
-  required?: boolean;
+  indicateRequired?: boolean;
   minDate?: Date;
 }
 

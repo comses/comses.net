@@ -1,9 +1,11 @@
 <template>
   <div>
     <slot name="label">
-      <FormLabel v-if="label" :label="label" :id-for="id" :required="required" />
+      <FormLabel v-if="label" :label="label" :id-for="id" :required="indicateRequired" />
     </slot>
+    <FormPlaceholder v-if="showPlaceholder" />
     <select
+      v-else
       v-model="value"
       :id="id"
       v-bind="attrs"
@@ -32,6 +34,8 @@ import { useField } from "@/composables/form";
 import FormLabel from "@/components/form/FormLabel.vue";
 import FormHelp from "@/components/form/FormHelp.vue";
 import FormError from "@/components/form/FormError.vue";
+import FormPlaceholder from "@/components/form/FormPlaceholder.vue";
+import { inject } from "vue";
 
 export type SelectOptions = { value: any; label: string }[];
 
@@ -40,11 +44,13 @@ export interface SelectProps {
   label?: string;
   help?: string;
   placeholder?: string;
-  required?: boolean;
+  indicateRequired?: boolean;
   options: SelectOptions;
 }
 
 const props = defineProps<SelectProps>();
 
 const { id, value, attrs, error } = useField<any>(props, "name");
+
+const showPlaceholder = inject("showPlaceholder", false);
 </script>

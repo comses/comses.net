@@ -8,7 +8,7 @@
         v-bind="attrs"
         :class="{ 'form-check-input': true, 'is-invalid': error }"
       />
-      <FormLabel v-if="label" :label="label" :id-for="id" :required="required" />
+      <FormLabel v-if="label" :label="label" :id-for="id" :required="indicateRequired" />
     </div>
     <slot name="help">
       <FormHelp v-if="help" :help="help" :id-for="id" />
@@ -30,7 +30,7 @@ export interface CheckboxProps {
   label?: string;
   help?: string;
   placeholder?: string;
-  required?: boolean;
+  indicateRequired?: boolean;
 }
 
 const props = withDefaults(defineProps<CheckboxProps>(), {

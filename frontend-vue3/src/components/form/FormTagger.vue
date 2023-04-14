@@ -1,9 +1,11 @@
 <template>
   <div>
     <slot name="label">
-      <FormLabel v-if="label" :label="label" :id-for="id" :required="required" />
+      <FormLabel v-if="label" :label="label" :id-for="id" :required="indicateRequired" />
     </slot>
+    <FormPlaceholder v-if="showPlaceholder" />
     <VueMultiSelect
+      v-else
       v-model="value"
       :id="id"
       v-bind="attrs"
@@ -46,12 +48,13 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onBeforeMount } from "vue";
+import { ref, onBeforeMount, inject } from "vue";
 import VueMultiSelect from "vue-multiselect";
 import { useField } from "@/composables/form";
 import FormLabel from "@/components/form/FormLabel.vue";
 import FormHelp from "@/components/form/FormHelp.vue";
 import FormError from "@/components/form/FormError.vue";
+import FormPlaceholder from "@/components/form/FormPlaceholder.vue";
 import { useTagsAPI } from "@/composables/api/tags";
 import type { Tags, TagType } from "@/composables/api/tags";
 
@@ -60,7 +63,7 @@ export interface TaggerProps {
   label?: string;
   help?: string;
   placeholder?: string;
-  required?: boolean;
+  indicateRequired?: boolean;
   type?: TagType;
 }
 
@@ -70,6 +73,8 @@ const props = withDefaults(defineProps<TaggerProps>(), {
 });
 
 const { id, value, attrs, error } = useField<Tags>(props, "name");
+
+const showPlaceholder = inject("showPlaceholder", false);
 
 const matchingTags = ref<Tags>([]);
 const isLoading = ref(false);
