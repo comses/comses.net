@@ -392,3 +392,8 @@ nav {
     @extend .card-title;
   }
 }
+
+.form-placeholder {
+  @extend .placeholder;
+  background-color: $gray-400;
+}
