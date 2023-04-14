@@ -29,6 +29,9 @@ $dark: $gray-800 !default;
 
 $button-color-primary: #92c02e;
 
+$placeholder-opacity-max: 0.5;
+$placeholder-opacity-min: 0.2;
+
 // Border Radius Override
 // FIXME: consider leaving this enabled and instead override the specific elements that need squareness to have no
 // border-radius - otherwise this appears to prevent all border-radius from badges buttons etc
