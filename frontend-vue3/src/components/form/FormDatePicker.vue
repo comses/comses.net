@@ -18,6 +18,7 @@
       :auto-apply="true"
       :enable-time-picker="false"
       :min-date="minDate"
+      :max-date="maxDate"
     ></VueDatePicker>
     <slot name="help">
       <FormHelp v-if="help" :help="help" :id-for="id" />
@@ -44,6 +45,7 @@ export interface DatePickerProps {
   placeholder?: string;
   indicateRequired?: boolean;
   minDate?: Date;
+  maxDate?: Date;
 }
 
 const props = defineProps<DatePickerProps>();
