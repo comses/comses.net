@@ -1,13 +1,19 @@
 import { reactive } from "vue";
-import axios, { AxiosError, type AxiosRequestConfig } from "axios";
+import axios, { AxiosError, type AxiosRequestConfig, type AxiosResponse } from "axios";
 import queryString from "query-string";
 
-interface AxiosRequestState {
+export interface AxiosRequestState {
   response: any;
   data: any;
   error: any;
   isLoading: boolean;
   isFinished: boolean;
+}
+
+export interface RequestOptions {
+  config?: AxiosRequestConfig;
+  onSuccess?: (response: AxiosResponse) => void;
+  onError?: (error: AxiosError) => void;
 }
 
 export function useAxios(baseUrl?: string, config?: AxiosRequestConfig) {
@@ -56,7 +62,8 @@ export function useAxios(baseUrl?: string, config?: AxiosRequestConfig) {
     isFinished: false,
   });
 
-  async function request(url: string, method: string, data: any, config?: AxiosRequestConfig) {
+  async function request(url: string, method: string, data: any, options: RequestOptions = {}) {
+    const { config, onSuccess, onError } = options;
     state.isLoading = true;
     try {
       const response = await instance({ url, method, data, ...config });
@@ -64,12 +71,18 @@ export function useAxios(baseUrl?: string, config?: AxiosRequestConfig) {
       state.data = response.data;
       state.error = null;
       state.isFinished = true;
+      if (onSuccess) {
+        onSuccess(response);
+      }
       return response;
     } catch (error: unknown) {
       state.error = error;
       if (error instanceof AxiosError && error.response) {
         state.response = error.response;
         state.isFinished = true;
+        if (onError) {
+          onError(error);
+        }
         return error.response;
       }
       state.isFinished = true;
@@ -79,24 +92,24 @@ export function useAxios(baseUrl?: string, config?: AxiosRequestConfig) {
     }
   }
 
-  async function get(url: string, config?: AxiosRequestConfig) {
-    return request(url, "GET", null, config);
+  async function get(url: string, options?: RequestOptions) {
+    return request(url, "GET", null, options);
   }
 
-  async function post(url: string, data?: any, config?: AxiosRequestConfig) {
-    return request(url, "POST", data, config);
+  async function post(url: string, data?: any, options?: RequestOptions) {
+    return request(url, "POST", data, options);
   }
 
-  async function postForm(url: string, formData: FormData, config?: AxiosRequestConfig) {
-    return request(url, "POST", formData, config);
+  async function postForm(url: string, formData: FormData, options?: RequestOptions) {
+    return request(url, "POST", formData, options);
   }
 
-  async function put(url: string, data: any, config?: AxiosRequestConfig) {
-    return request(url, "PUT", data, config);
+  async function put(url: string, data: any, options?: RequestOptions) {
+    return request(url, "PUT", data, options);
   }
 
-  async function del(url: string, config?: AxiosRequestConfig) {
-    return request(url, "DELETE", null, config);
+  async function del(url: string, options?: RequestOptions) {
+    return request(url, "DELETE", null, options);
   }
 
   function detailUrl(id: string | number) {

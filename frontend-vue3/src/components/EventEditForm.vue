@@ -122,7 +122,7 @@ const schema = yup.object().shape({
 });
 type EventEditFields = yup.InferType<typeof schema>;
 
-const { data, error, create, retrieve, update, isLoading } = useEventAPI();
+const { data, error, create, retrieve, update, isLoading, detailUrl } = useEventAPI();
 
 const { handleSubmit, values, setValues } = useForm<EventEditFields>({
   schema,
@@ -145,10 +145,13 @@ onMounted(async () => {
 });
 
 async function createOrUpdate() {
+  const onSuccess = (response: any) => {
+    window.location.href = detailUrl(response.data.id);
+  };
   if (props.eventId) {
-    await update(props.eventId, values);
+    await update(props.eventId, values, { onSuccess });
   } else {
-    await create(values);
+    await create(values, { onSuccess });
   }
 }
 

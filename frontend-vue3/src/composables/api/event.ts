@@ -1,5 +1,5 @@
 import { toRefs } from "vue";
-import { useAxios } from "@/composables/api/axios";
+import { useAxios, type RequestOptions } from "@/composables/api/axios";
 
 interface EventQueryParams {
   query?: string;
@@ -22,12 +22,12 @@ export function useEventAPI() {
     return get(detailUrl(id));
   }
 
-  async function update(id: string | number, data: any) {
-    return put(detailUrl(id), data);
+  async function update(id: string | number, data: any, options?: RequestOptions) {
+    return put(detailUrl(id), data, options);
   }
 
-  async function create(data: any) {
-    return post(baseUrl, data);
+  async function create(data: any, options?: RequestOptions) {
+    return post(baseUrl, data, options);
   }
 
   async function _delete(id: string | number) {
@@ -40,6 +40,7 @@ export function useEventAPI() {
     update,
     create,
     delete: _delete,
+    detailUrl,
     searchUrl: searchUrl<EventQueryParams>,
   };
 }
