@@ -5,7 +5,7 @@ import queryString from "query-string";
 export interface AxiosRequestState {
   response: any;
   data: any;
-  error: any;
+  serverErrors: string[];
   isLoading: boolean;
   isFinished: boolean;
 }
@@ -57,7 +57,7 @@ export function useAxios(baseUrl?: string, config?: AxiosRequestConfig) {
   const state = reactive<AxiosRequestState>({
     response: null,
     data: undefined,
-    error: null,
+    serverErrors: [],
     isLoading: false,
     isFinished: false,
   });
@@ -69,21 +69,26 @@ export function useAxios(baseUrl?: string, config?: AxiosRequestConfig) {
       const response = await instance({ url, method, data, ...config });
       state.response = response;
       state.data = response.data;
-      state.error = null;
       state.isFinished = true;
       if (onSuccess) {
         onSuccess(response);
       }
       return response;
     } catch (error: unknown) {
-      state.error = error;
       if (error instanceof AxiosError && error.response) {
         state.response = error.response;
         state.isFinished = true;
         if (onError) {
           onError(error);
         }
+        if (error.response.status === 400) {
+          state.serverErrors = describeValidationError(error.response);
+        } else {
+          state.serverErrors = describeNonValidationError(error.response);
+        }
         return error.response;
+      } else {
+        state.serverErrors.push("An unexpected error occurred.");
       }
       state.isFinished = true;
       throw error;
@@ -147,6 +152,36 @@ export function useAxios(baseUrl?: string, config?: AxiosRequestConfig) {
 /**
  * Utility functions
  */
+
+function describeNonValidationError(errorResponse: AxiosResponse): string[] {
+  switch (errorResponse.status) {
+    case 403:
+      return [
+        "Server Forbidden Error (tried to read, create or modify something you do not have permission to)",
+      ];
+    case 404:
+      return [
+        "Server Resource Not Found Error (tried to read, create or modify something that does not exist)",
+      ];
+    case 500:
+      return ["Internal Server Error (server has a bug)"];
+    default:
+      return [`HTTP Error (${errorResponse.status})`];
+  }
+}
+
+function describeValidationError(errorResponse: AxiosResponse): string[] {
+  const errors = [];
+  for (const e in errorResponse.data) {
+    if (e === "non_field_errors") {
+      errors.push(...errorResponse.data[e]);
+    } else {
+      errors.push(`${e}: ${errorResponse.data[e].join(", ")}`);
+    }
+  }
+  return errors;
+}
+
 function getCookie(name: string) {
   return document.cookie.split("; ").reduce((r, v) => {
     const [n, ...val] = v.split("=");
