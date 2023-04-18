@@ -47,6 +47,7 @@ if (el) {
     propsData: {
       dataMembersTotal,
       dataMembersFull,
+      dataCodebasesTotal,
       seriesCodebasesOS,
       seriesCodebasesPlatform,
       seriesCodebasesLangs,

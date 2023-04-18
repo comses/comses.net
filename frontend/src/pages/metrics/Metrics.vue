@@ -6,42 +6,82 @@
         <div>
           <div class="radio-button">
             <input type="radio" id="members" value="Members" 
-              v-model="picked" 
+              v-model="dataSelection" 
               @change="updateChartOptions" selected />
             <label for="members" class="radio-label"> Members by year</label>
             <div class="checkbox">
               <input type="checkbox" id="fullMembers" 
                 v-model="selectedFullMembers" 
                 @change="updateChartOptions" 
-                :disabled="picked!='Members'"/>
+                :disabled="dataSelection!='Members'"/>
               <label for="fullMembers" style="margin-left: 5px">Full Members</label>
             </div>
           </div>
 
           <div class="radio-button">
             <input type="radio" id="codebases" value="Codebases" 
-              v-model="picked" @change="updateChartOptions"/>
+              v-model="dataSelection" @change="updateChartOptions"/>
             <label for="codebases" class="radio-label"> Codebases by year</label>
 
-            <div class="checkbox">
+            <div class="codebase-subsection">
+              <!-- <input type="radio" id="total" value="total" 
+                v-model="codebaseDataSelection" @change="updateChartOptions" selected/>
+              <label for="os" style="margin-left: 5px">Total</label>
+              <br style="display: block; margin: 5px 0" />
+
+              <input type="radio" id="os" value="os" 
+                v-model="codebaseDataSelection" @change="updateChartOptions"/>
+              <label for="os" style="margin-left: 5px">By OS</label>
+              <br style="display: block; margin: 5px 0" />
+
+              <input type="radio" id="platform" value="platform" 
+                v-model="codebaseDataSelection" @change="updateChartOptions"/>
+              <label for="platform" style="margin-left: 5px">By Platform</label>
+              <br style="display: block; margin: 5px 0" />
+
+              <input type="radio" id="language" value="language" 
+                v-model="codebaseDataSelection" @change="updateChartOptions"/>
+              <label for="language" style="margin-left: 5px">By Language</label>
+              <br style="display: block; margin: 5px 0" />
+
+              <input type="radio" id="reviewed" value="reviewed" 
+                v-model="codebaseDataSelection" @change="updateChartOptions"/>
+              <label for="reviewed" style="margin-left: 5px">Peer reviewed</label>
+              <br style="display: block; margin: 5px 0" /> -->
+
+              <input type="checkbox" id="os" 
+                v-model="selectedOS" 
+                @change="updateChartOptions"
+                :disabled="dataSelection!='Codebases' || selectedPeerReview==true || selectedPlatform==true || selectedLanguage==true"/>
+              <label for="os" style="margin-left: 5px">By OS</label>
+              <br style="display: block; margin: 5px 0" />
+
+              <input type="checkbox" id="platform" 
+                v-model="selectedPlatform" 
+                @change="updateChartOptions"
+                :disabled="dataSelection!='Codebases' || selectedPeerReview==true || selectedOS==true || selectedLanguage==true"/>
+              <label for="platform" style="margin-left: 5px">By Platform</label>
+              <br style="display: block; margin: 5px 0" />
+
               <input type="checkbox" id="language" 
                 v-model="selectedLanguage" 
                 @change="updateChartOptions"
-                :disabled="picked!='Codebases' || selectedPeerReview == true"/>
+                :disabled="dataSelection!='Codebases' || selectedPeerReview == true || selectedOS==true || selectedPlatform==true"/>
               <label for="language" style="margin-left: 5px">By language</label>
               <br style="display: block; margin: 5px 0" />
 
-              <input type="checkbox" id="peer" 
+              <input type="checkbox" id="reviewed" 
                 v-model="selectedPeerReview" 
                 @change="updateChartOptions"
-                :disabled="picked!='Codebases' || selectedLanguage == true"/>
-              <label for="peer" style="margin-left: 5px">Peer reviewed</label>
+                :disabled="dataSelection!='Codebases' || selectedLanguage == true || selectedOS==true || selectedPlatform==true"/>
+              <label for="reviewed" style="margin-left: 5px">Peer reviewed</label>
+
             </div>
           </div>
 
           <div class="radio-button">
             <input type="radio" id="downloads" value="Downloads" 
-              v-model="picked"
+              v-model="dataSelection"
               @change="updateChartOptions" />
             <label for="downloads" class="radio-label"> Downloads by year</label>
           </div>
@@ -81,7 +121,6 @@
 <script lang="ts">
 import { Component, Vue, Prop, Watch } from "vue-property-decorator";
 import { Chart } from "highcharts-vue";
-// import { Watch } from "fs";
 
 @Component({
   // language=Vue
@@ -96,6 +135,8 @@ export default class MetricsPage extends Vue {
   @Prop()
   public dataMembersFull;
   @Prop()
+  public dataCodebasesTotal;
+  @Prop()
   public seriesCodebasesOS;
   @Prop()
   public seriesCodebasesPlatform;
@@ -108,21 +149,19 @@ export default class MetricsPage extends Vue {
   @Prop()
   public chartOptions;
 
-  public picked = "Members";
+  public dataSelection = "Members"; // Members, Codebases, Downloads
+  public codebaseDataSelection = "Total"; // Total, ByOS, ByLang, ByPlatform, Reviewed
+
+  public selectedOS = false;
+  public selectedPlatform = false;
   public selectedLanguage = false;
   public selectedPeerReview = false;
   public selectedFullMembers = false;
   public selectedTab = "graph";
   public title: string = "Members";
 
-  public dataCodebasesTotal: Object = {
-    name: "total codebases",
-    data: [100, 110, 120, 130, 140],
-    start_year: 2008,
-  };
-
   updateChartOptions() {
-    switch (this.picked) {
+    switch (this.dataSelection) {
       case "Members":
         this.chartOptions["title"]["text"] = "Members";
         this.chartOptions["plotOptions"]["series"]["stacking"] = undefined;
@@ -133,21 +172,60 @@ export default class MetricsPage extends Vue {
           this.chartOptions["series"] = [this.dataMembersTotal];
         }
         break;
+
       case "Codebases":
         this.chartOptions["title"]["text"] = "Codebases";
         this.chartOptions["plotOptions"]["series"]["stacking"] = undefined;
         this.chartOptions["plotOptions"]["series"]["pointStart"] = this.dataCodebasesTotal["start_year"];
+
+        // switch (this.codebaseDataSelection) {
+        //     case "os":
+        //         this.chartOptions["series"] = this.seriesCodebasesLangs;
+        //         this.chartOptions["plotOptions"]["series"]["stacking"] = "normal";
+        //         this.chartOptions["plotOptions"]["series"]["pointStart"] = this.seriesCodebasesLangs[0].start_year;
+        //         break;
+        //     case "language":
+        //         this.chartOptions["series"] = this.seriesCodebasesOS;
+        //         this.chartOptions["plotOptions"]["series"]["stacking"] = "normal";
+        //         this.chartOptions["plotOptions"]["series"]["pointStart"] = this.seriesCodebasesOS[0].start_year;
+        //         break;
+        //     case "platform":
+        //         this.chartOptions["series"] = this.seriesCodebasesPlatform;
+        //         this.chartOptions["plotOptions"]["series"]["stacking"] = "normal";
+        //         this.chartOptions["plotOptions"]["series"]["pointStart"] = this.seriesCodebasesPlatform[0].start_year;
+        //         break;
+        //     case "reviewed":
+        //         this.chartOptions["plotOptions"]["series"]["pointStart"] = this.dataCodebasesReviewed.start_year;
+        //         this.chartOptions["series"] = [this.dataCodebasesTotal, this.dataCodebasesReviewed];
+        //         break;
+        //     default: // Total
+        //         this.chartOptions["series"] = [this.dataCodebasesTotal];
+
+        // }
         if (this.selectedLanguage) {
-          this.chartOptions["series"] = this.seriesCodebasesLangs;
-          this.chartOptions["plotOptions"]["series"]["stacking"] = "normal";
-          this.chartOptions["plotOptions"]["series"]["pointStart"] = this.seriesCodebasesLangs[0].start_year;
+              this.chartOptions["series"] = this.seriesCodebasesLangs;
+              this.chartOptions["plotOptions"]["series"]["stacking"] = "normal";
+              this.chartOptions["plotOptions"]["series"]["pointStart"] = this.seriesCodebasesLangs[0].start_year;
+
+        } else if (this.selectedOS) {
+              this.chartOptions["series"] = this.seriesCodebasesOS;
+              this.chartOptions["plotOptions"]["series"]["stacking"] = "normal";
+              this.chartOptions["plotOptions"]["series"]["pointStart"] = this.seriesCodebasesOS[0].start_year;
+
+        } else if (this.selectedPlatform) {
+              this.chartOptions["series"] = this.seriesCodebasesPlatform;
+              this.chartOptions["plotOptions"]["series"]["stacking"] = "normal";
+              this.chartOptions["plotOptions"]["series"]["pointStart"] = this.seriesCodebasesPlatform[0].start_year;
+
         } else if (this.selectedPeerReview) {
-          this.chartOptions["plotOptions"]["series"]["pointStart"] = this.dataCodebasesReviewed.start_year;
-          this.chartOptions["series"] = [this.dataCodebasesTotal, this.dataCodebasesReviewed];
+              this.chartOptions["plotOptions"]["series"]["pointStart"] = this.dataCodebasesReviewed.start_year;
+              this.chartOptions["series"] = [this.dataCodebasesTotal, this.dataCodebasesReviewed];
+
         } else {
-          this.chartOptions["series"] = [this.dataCodebasesTotal];
+              this.chartOptions["series"] = [this.dataCodebasesTotal];
         }
         break;
+
       case "Downloads":
         this.chartOptions["title"]["text"] = "Downloads";
         this.chartOptions["series"] = [this.dataDownloadsTotal];
@@ -179,6 +257,10 @@ export default class MetricsPage extends Vue {
 }
 .radio-button {
   margin-left: 0px;
+}
+
+.codebase-subsection {
+  margin-left: 20px;
 }
 
 .radio-label {
