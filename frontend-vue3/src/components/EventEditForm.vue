@@ -22,6 +22,7 @@
           label="Start Date"
           help="The date the event begins"
           indicate-required
+          :max-date="(values.end_date as Date)"
         />
       </div>
       <div class="col-6">
@@ -41,6 +42,7 @@
           name="early_registration_deadline"
           label="Early Registration Deadline"
           help="The last day for early registration of the event (inclusive)"
+          :max-date="(values.start_date as Date)"
         />
       </div>
       <div class="col-6 d-inline">
@@ -50,6 +52,7 @@
           label="Registration Deadline"
           help="The last day for registration of the event (inclusive)"
           :min-date="(values.early_registration_deadline as Date)"
+          :max-date="(values.end_date as Date)"
         />
       </div>
     </div>
@@ -59,7 +62,9 @@
       label="Submission Deadline"
       help="The last day to make a submission for the event (inclusive)"
       :min-date="(values.start_date as Date)"
+      :max-date="(values.end_date as Date)"
     />
+    <!-- FIXME: markdown field -->
     <FormTextArea
       class="mb-3"
       name="description"
@@ -67,7 +72,7 @@
       help="Detailed information about the event"
       indicate-required
     />
-    <!-- FIXME: use markdown field when implemented -->
+    <!-- FIXME: markdown field -->
     <FormTextArea
       class="mb-3"
       name="summary"
@@ -87,6 +92,7 @@
       label="Tags"
       help="A list of tags to associate with an event. Tags help people search for events."
     />
+    <FormAlert :validation-errors="Object.values(errors)" :server-errors="serverErrors" />
     <button type="submit" class="btn btn-primary" :disabled="isLoading">
       {{ props.eventId ? "Update" : "Create" }}
     </button>
@@ -100,6 +106,7 @@ import FormTextInput from "@/components/form/FormTextInput.vue";
 import FormTextArea from "@/components/form/FormTextArea.vue";
 import FormDatePicker from "@/components/form/FormDatePicker.vue";
 import FormTagger from "@/components/form/FormTagger.vue";
+import FormAlert from "@/components/form/FormAlert.vue";
 import { useForm } from "@/composables/form";
 import { useEventAPI } from "@/composables/api/event";
 
@@ -108,23 +115,26 @@ const props = defineProps<{
 }>();
 
 const schema = yup.object().shape({
-  description: yup.string().required(),
-  summary: yup.string().required(),
-  title: yup.string().required(),
-  tags: yup.array().of(yup.object().shape({ name: yup.string().required() })),
-  location: yup.string().required(),
-  early_registration_deadline: yup.date().nullable().label("early registration deadline"),
+  description: yup.string().required().label("Description"),
+  summary: yup.string().required().label("Summary"),
+  title: yup.string().required().label("Title"),
+  tags: yup
+    .array()
+    .of(yup.object().shape({ name: yup.string().required() }))
+    .label("Tags"),
+  location: yup.string().required().label("Location"),
+  early_registration_deadline: yup.date().nullable().label("Early registration deadline"),
   registration_deadline: yup.date().nullable().label("Registration Deadline"),
-  submission_deadline: yup.date().nullable().label("submission deadline"),
-  start_date: yup.date().required().label("start date"),
-  end_date: yup.date().nullable(),
-  external_url: yup.string().url().nullable(),
+  submission_deadline: yup.date().nullable().label("Submission deadline"),
+  start_date: yup.date().required().label("Start date"),
+  end_date: yup.date().nullable().label("End date"),
+  external_url: yup.string().url().nullable().label("External URL"),
 });
 type EventEditFields = yup.InferType<typeof schema>;
 
-const { data, error, create, retrieve, update, isLoading, detailUrl } = useEventAPI();
+const { data, serverErrors, create, retrieve, update, isLoading, detailUrl } = useEventAPI();
 
-const { handleSubmit, values, setValues } = useForm<EventEditFields>({
+const { errors, handleSubmit, values, setValues } = useForm<EventEditFields>({
   schema,
   initialValues: {},
   showPlaceholder: isLoading,
@@ -136,11 +146,7 @@ const { handleSubmit, values, setValues } = useForm<EventEditFields>({
 onMounted(async () => {
   if (props.eventId) {
     await retrieve(props.eventId);
-    if (error.value) {
-      console.error(error.value);
-    } else {
-      setValues(data.value);
-    }
+    setValues(data.value);
   }
 });
 
