@@ -3,7 +3,8 @@ from library.models import CodebaseRelease, CodebaseReleaseDownload
 
 from django.core.cache import cache
 from django.db.models import Count, F
-
+import pandas as pd
+import numpy as np
 
 class Metrics:
     REDIS_METRICS_KEY = "all_comses_metrics"
@@ -37,26 +38,26 @@ class Metrics:
                 {
                     name: "Windows",
                     data: [40, 30, 30, 40, 40],
-                    startYear: 2008,
+                    start_year: 2008,
                 }
             ],
             series_codebases_platform : [
                 {
                     name: "Ubuntu Mate",
                     data: [40, 30, 30, 40, 40],
-                    startYear: 2008,
+                    start_year: 2008,
                 }, ...
             ],
             series_codebases_langs : [
                 {
                     name: "Netlogo",
                     data: [40, 30, 30, 40, 40],
-                    startYear: 2008,
+                    start_year: 2008,
                 },
                 {
                     name: "Python",
                     data: [20, 30, 30, 30, 40],
-                    startYear: 2008,
+                    start_year: 2008,
                 }, ....
             ],
             data_codebases_reviewed : {
@@ -72,325 +73,21 @@ class Metrics:
 
         }
         """
-
-        metrics_data = self.get_all_data()
-        member_by_year = metrics_data["members_by_year"]
-        codebases_by_year = metrics_data["codebases_by_year"]
-        downloads_by_year = metrics_data["downloads_by_year"]
-
         member_metrics = self.get_members_by_year_timeseries()
         codebase_metrics = self.get_codebase_metrics_timeseries()
 
-        series_codebases_langs = []
-        series_codebases_os = []
-        series_codebases_platform = []
-        data_downloads_total = {"name": "total downloads", "data": [], "start_year": 0}
-
-        # Update members data
-        start_year = 100000
-        end_year = 0
-        year_list = []
-        for item in member_by_year:
-            if item["year"] < start_year:
-                start_year = item["year"]
-            if item["year"] > end_year:
-                end_year = item["year"]
-
-        year_list = [*range(start_year, end_year + 1, 1)]
-
-        # Update downloads data
-        start_year = 100000
-        end_year = 0
-        year_list = []
-        for item in downloads_by_year:
-            if item["year"] < start_year:
-                start_year = item["year"]
-            if item["year"] > end_year:
-                end_year = item["year"]
-        year_list = [*range(start_year, end_year + 1, 1)]
-        data_downloads_total["start_year"] = start_year
-
-        for year in year_list:
-            target = next(
-                (item for item in downloads_by_year if item["year"] == year), None
-            )
-            if target is not None:
-                if "total" in target:
-                    data_downloads_total["data"].append(target["total"])
-            else:
-                # if no data for the year is found, data = 0.
-                data_downloads_total["data"].append(0)
-
-        # Update codebases data (os, langs, platform)
-        os_list = []
-        plat_list = []
-        lang_list = []
-        other_os_list = []
-        other_plat_list = []
-        other_lang_list = []
-        os_year_list = []
-        plat_year_list = []
-        lang_year_list = []
-
-        start_year = 100000
-        end_year = 0
-        temp_count = []
-        for item in codebases_by_year["os_metrics"]:
-            if item["year"] < start_year:
-                start_year = item["year"]
-            if item["year"] > end_year:
-                end_year = item["year"]
-
-            name = item["operating_systems"]
-            if (name not in os_list) and ("count" in item):
-                count = item["count"]
-                if count <= 10:
-                    if name in other_os_list:
-                        idx = other_os_list.index(name)
-                        if count > temp_count[idx]:
-                            # Update the best count
-                            temp_count[idx] = count
-                    else:
-                        other_os_list.append(name)
-                        temp_count.append(count)
-                else:
-                    if name in other_os_list:
-                        # Delete the item from other list
-                        idx = other_os_list.index(name)
-                        other_os_list.pop(idx)
-                        temp_count.pop(idx)
-                    # Add to actual list
-                    os_list.append(name)
-        os_year_list = [*range(start_year, end_year + 1, 1)]
-
-        start_year = 100000
-        end_year = 0
-        temp_count = []
-        for item in codebases_by_year["platform_metrics"]:
-            if item["year"] < start_year:
-                start_year = item["year"]
-            if item["year"] > end_year:
-                end_year = item["year"]
-
-            name = item["platform"]
-            if (name not in plat_list) and ("count" in item):
-                count = item["count"]
-                if count <= 10:
-                    if name in other_plat_list:
-                        idx = other_plat_list.index(name)
-                        if count > temp_count[idx]:
-                            # Update the best count
-                            temp_count[idx] = count
-                    else:
-                        other_plat_list.append(name)
-                        temp_count.append(count)
-                else:
-                    if name in other_plat_list:
-                        # Delete the item from other list
-                        idx = other_plat_list.index(name)
-                        other_plat_list.pop(idx)
-                        temp_count.pop(idx)
-                    # Add to actual list
-                    plat_list.append(name)
-        plat_year_list = [*range(start_year, end_year + 1, 1)]
-
-        start_year = 100000
-        end_year = 0
-        temp_count = []
-        for item in codebases_by_year["programming_language_metrics"]:
-            if item["year"] < start_year:
-                start_year = item["year"]
-            if item["year"] > end_year:
-                end_year = item["year"]
-
-            name = item["programming_language_names"]
-            if (name not in lang_list) and ("count" in item):
-                count = item["count"]
-                if count <= 10:
-                    if name in other_lang_list:
-                        idx = other_lang_list.index(name)
-                        if count > temp_count[idx]:
-                            # Update the best count
-                            temp_count[idx] = count
-                    else:
-                        other_lang_list.append(name)
-                        temp_count.append(count)
-                else:
-                    if name in other_lang_list:
-                        # Delete the item from other list
-                        idx = other_lang_list.index(name)
-                        other_lang_list.pop(idx)
-                        temp_count.pop(idx)
-                    # Add to actual list
-                    lang_list.append(name)
-        lang_year_list = [*range(start_year, end_year + 1, 1)]
-
-        # print(os_list)
-        # print(other_os_list)
-        # print("os list has intersection :", (set(os_list)&set(other_os_list)))
-        # print(plat_list)
-        # print(other_plat_list)
-        # print("plat list has intersection :", (set(plat_list)&set(other_plat_list)))
-        # print(lang_list)
-        # print(other_lang_list)
-        # print("lang list has intersection :", set(lang_list)&set(other_lang_list))
-
-        # Create OS data
-        for os in os_list:
-            series_dict = {"name": os, "data": [], "start_year": os_year_list[0]}
-            for year in os_year_list:
-                target = next(
-                    (
-                        item
-                        for item in codebases_by_year["os_metrics"]
-                        if (item["year"] == year) and (item["operating_systems"] == os)
-                    ),
-                    None,
-                )
-                if target is not None:
-                    series_dict["data"].append(target["count"])
-                else:
-                    series_dict["data"].append(0)
-            series_codebases_os.append(series_dict)
-
-        # Data for os with less than 5 counts
-        other_data = []
-        for year in os_year_list:
-            year_total = 0
-            for other_os in other_os_list:
-                target = next(
-                    (
-                        item
-                        for item in codebases_by_year["os_metrics"]
-                        if (item["year"] == year)
-                        and (item["operating_systems"] == other_os)
-                    ),
-                    None,
-                )
-                if target is not None:
-                    year_total += target["count"]
-            other_data.append(year_total)
-        series_codebases_os.append(
-            {"name": "Others", "data": other_data, "start_year": os_year_list[0]}
-        )
-
-        # Create Platform data
-        for plat in plat_list:
-            series_dict = {"name": plat, "data": [], "start_year": plat_year_list[0]}
-            for year in plat_year_list:
-                target = next(
-                    (
-                        item
-                        for item in codebases_by_year["platform_metrics"]
-                        if (item["year"] == year) and (item["platform"] == plat)
-                    ),
-                    None,
-                )
-                if target is not None:
-                    series_dict["data"].append(target["count"])
-                else:
-                    series_dict["data"].append(0)
-            series_codebases_platform.append(series_dict)
-
-        # Data for Platform with less than 5 counts
-        other_data = []
-        for year in plat_year_list:
-            year_total = 0
-            for other_plat in other_plat_list:
-                target = next(
-                    (
-                        item
-                        for item in codebases_by_year["platform_metrics"]
-                        if (item["year"] == year) and (item["platform"] == other_plat)
-                    ),
-                    None,
-                )
-                if target is not None:
-                    year_total += target["count"]
-            other_data.append(year_total)
-        series_codebases_platform.append(
-            {"name": "Others", "data": other_data, "start_year": plat_year_list[0]}
-        )
-
-        # Create language data
-        for lang in lang_list:
-            series_dict = {
-                "name": lang,
-                "data": [],
-                "start_year": lang_year_list[0],
-            }
-            for year in lang_year_list:
-                target = next(
-                    (
-                        item
-                        for item in codebases_by_year["programming_language_metrics"]
-                        if (item["year"] == year)
-                        and (item["programming_language_names"] == lang)
-                    ),
-                    None,
-                )
-                if target is not None:
-                    # if "count" in target:
-                    series_dict["data"].append(target["count"])
-                else:
-                    series_dict["data"].append(0)
-            series_codebases_langs.append(series_dict)
-
-        # Data for language with less than 10 counts
-        other_data = []
-        for year in lang_year_list:
-            year_total = 0
-            for other_lang in other_lang_list:
-                target = next(
-                    (
-                        item
-                        for item in codebases_by_year["programming_language_metrics"]
-                        if (item["year"] == year)
-                        and (item["programming_language_names"] == other_lang)
-                    ),
-                    None,
-                )
-                if target is not None:
-                    year_total += target["count"]
-            other_data.append(year_total)
-        series_codebases_langs.append(
-            {"name": "Others", "data": other_data, "start_year": lang_year_list[0]}
-        )
-
-        # Create data for reviewed metrics
-        filtered_review_metrics = list(
-            filter(
-                lambda item: item["year"] != None, codebases_by_year["review_metrics"]
-            )
-        )
-        filtered_review_metrics.sort(key=lambda item: item["year"])
-        start_year = 100000
-        end_year = 0
-        year_list = []
-        for item in filtered_review_metrics:
-            if item["year"] < start_year:
-                start_year = item["year"]
-            if item["year"] > end_year:
-                end_year = item["year"]
-        year_list = [*range(start_year, end_year + 1, 1)]
-
-        for year in year_list:
-            target = next(
-                (item for item in filtered_review_metrics if item["year"] == year), None
-            )
-
-        reformed_data = {
+        highcharts_data = {
             "data_members_total": member_metrics["data_members_total"],
             "data_members_full": member_metrics["data_members_full"],
             "data_codebases_total": codebase_metrics["data_codebases_total"],
-            "series_codebases_os": series_codebases_os,
-            "series_codebases_platform": series_codebases_platform,
-            "series_codebases_langs": series_codebases_langs,
+            "series_codebases_os": codebase_metrics["series_codebases_os"],
+            "series_codebases_platform": codebase_metrics["series_codebases_platform"],
+            "series_codebases_langs": codebase_metrics["series_codebases_langs"],
             "data_codebases_reviewed": codebase_metrics["data_codebases_reviewed"],
-            "data_downloads_total": data_downloads_total,
+            "data_downloads_total": codebase_metrics["data_downloads_total"],
         }
-        # print(json.dumps(reformed_data, indent = 3))
-        return reformed_data
+
+        return highcharts_data
 
     def get_members_by_year_timeseries(self):
         """
@@ -478,24 +175,26 @@ class Metrics:
             "data": [40, 30, 30, 40, 40],
             "start_year": 0
         },
-        data_downloads_total = {
-            "name": "total downloads",
-            "data": [40, 30, 30, 40, 40],
-            "start_year": 0
-        }
         """
         total_codebases_by_year = list(
             CodebaseRelease.objects.public()
             .values(year=F("first_published_at__year"))
             .annotate(count=Count("year"))
+            .order_by("year")
         )
         reviewed_codebases_by_year = list(
             CodebaseRelease.objects.public(peer_reviewed=True)
             .values(year=F("first_published_at__year"))
             .annotate(count=Count("year"))
+            .order_by("year")
         )
-        metrics_data = {}
+        codebase_downloads = list(
+            CodebaseReleaseDownload.objects.values(year=F("date_created__year"))
+            .annotate(count=Count("year"))
+            .order_by("year")
+        )
 
+        metrics_data = {}
         metrics_data["data_codebases_total"] = {
             "name": "Total Codebases",
             "data": [item["count"] for item in total_codebases_by_year],
@@ -506,8 +205,128 @@ class Metrics:
             "data": [item["count"] for item in reviewed_codebases_by_year],
             "start_year": reviewed_codebases_by_year[0]["year"],
         }
-        # FIXME: include series for each platform, language, and os
+        metrics_data["data_downloads_total"] = {
+            "name": "Codebase Downloads",
+            "data": [item["count"] for item in codebase_downloads],
+            "start_year": codebase_downloads[0]["year"],
+        }
+        metrics_data["series_codebases_os"] = self.get_codebase_os_timeseries()
+        metrics_data["series_codebases_platform"] = self.get_codebase_platform_timeseries()
+        metrics_data["series_codebases_langs"] = self.get_codebase_programming_language_timeseries()
         return metrics_data
+
+
+    def convert_codebase_metrics_to_timeseries(self, metrics, category):
+        """
+            The data may be sparse however, and we have to account for
+            missing years filling them with 0 using fillna(0)
+
+                    Year 2008  2009    2010 2011 2012 2013
+            Windows        1   Nan->0   15   22   15     ..  
+            macOS   
+
+        """
+        df = pd.DataFrame.from_records(metrics)
+        df.replace([None], 'None', inplace=True)
+
+        # Pivot table into the form whose column is year 
+        # and row is category (os, platform, lang).
+        tmp_df = df.pivot_table(values='count', index=category, columns='year', aggfunc='first')
+        tmp_df = tmp_df.fillna(0).apply(np.int64)
+
+        # Extract rows whose max values are less than 10, 
+        # and integrate into 'others' row
+        bool_mask1 = (tmp_df.max(axis=1) >= 10)
+        bool_mask2 = (tmp_df.max(axis=1) < 10)
+        result_df = tmp_df.loc[bool_mask1]
+        result_df.loc['others'] = tmp_df.loc[bool_mask2].sum(axis=0)
+
+        # Conver df into a list of hichart objects
+        year_list = df['year'].drop_duplicates().tolist()
+        category_list = result_df.index.drop_duplicates().tolist()
+        category_data_list = []
+        for category in category_list:
+            category_data_list.append({
+                "name" : category,
+                "data" : result_df.loc[category].tolist(),
+                "start_year": year_list[0]
+            })
+        return category_data_list
+
+    def get_codebase_os_timeseries(self):
+        """
+        Generate timeseries data for each possible codebase OS option
+
+        Platform independent, macos, linux, windows, other
+
+        series_codebases_os : [
+            {
+                name: "Windows",
+                data: [40, 30, 30, 40, 40],
+                start_year: 2008,
+            },
+            {
+                name: "Mac",
+                data: [30, 10, 17, 29],
+                start_year: 2008,
+            }
+        ],
+        """
+        os_metrics = list(
+            CodebaseRelease.objects.public()
+            .values(operating_systems=F("os"), year=F("first_published_at__year"))
+            .annotate(count=Count("year"))
+            .order_by("year")
+        )
+
+        os_data_list = self.convert_codebase_metrics_to_timeseries(os_metrics, 'operating_systems')
+        return os_data_list
+        
+    def get_codebase_platform_timeseries(self):
+        """
+        series_codebases_platform : [
+            {
+                name: "Ubuntu Mate",
+                data: [40, 30, 30, 40, 40],
+                start_year: 2008,
+            }, ...
+        ],
+        series_codebases_langs : [
+            {
+                name: "Netlogo",
+                data: [40, 30, 30, 40, 40],
+                start_year: 2008,
+            },
+            {
+                name: "Python",
+                data: [20, 30, 30, 30, 40],
+                start_year: 2008,
+            }, ....
+        ],
+        """
+        platform_metrics = list(
+            CodebaseRelease.objects.public()
+            .values(
+                platform=F("platform_tags__name"), year=F("first_published_at__year")
+            )
+            .annotate(count=Count("year"))
+            .order_by("year")
+        )
+        platform_data_list = self.convert_codebase_metrics_to_timeseries(platform_metrics, 'platform')
+        return platform_data_list
+
+    def get_codebase_programming_language_timeseries(self):   
+        programming_language_metrics = list(
+            CodebaseRelease.objects.public()
+            .values(
+                programming_language_names=F("programming_languages__name"),
+                year=F("first_published_at__year"),
+            )
+            .annotate(count=Count("year"))
+            .order_by("year")
+        )
+        programming_language_data_list = self.convert_codebase_metrics_to_timeseries(programming_language_metrics, 'programming_language_names')
+        return programming_language_data_list
 
     def get_codebases_by_year(self):
         """
