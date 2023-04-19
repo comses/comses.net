@@ -29,7 +29,7 @@ import FormError from "@/components/form/FormError.vue";
 import FormPlaceholder from "@/components/form/FormPlaceholder.vue";
 import { inject } from "vue";
 
-export interface TextInputProps {
+export interface TextAreaProps {
   name: string;
   label?: string;
   help?: string;
@@ -38,7 +38,7 @@ export interface TextInputProps {
   rows?: number;
 }
 
-const props = withDefaults(defineProps<TextInputProps>(), {
+const props = withDefaults(defineProps<TextAreaProps>(), {
   rows: 10,
 });
 
