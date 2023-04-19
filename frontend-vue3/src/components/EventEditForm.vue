@@ -77,9 +77,17 @@
       class="mb-3"
       name="summary"
       label="Summary"
+      :rows="5"
       help="A short summary of the event for display in search results. This field can be created from the description by pressing the summarize button."
       indicate-required
-    />
+    >
+      <template #label>
+        <FormLabel label="Summary" id-for="summary" required />
+        <button type="button" class="btn btn-sm btn-link float-end p-0 mb-2" @click="summarize">
+          Summarize from Description
+        </button>
+      </template>
+    </FormTextArea>
     <FormTextInput
       class="mb-3"
       name="external_url"
@@ -107,6 +115,7 @@ import FormTextArea from "@/components/form/FormTextArea.vue";
 import FormDatePicker from "@/components/form/FormDatePicker.vue";
 import FormTagger from "@/components/form/FormTagger.vue";
 import FormAlert from "@/components/form/FormAlert.vue";
+import FormLabel from "@/components/form/FormLabel.vue";
 import { useForm } from "@/composables/form";
 import { useEventAPI } from "@/composables/api/event";
 
@@ -158,6 +167,13 @@ async function createOrUpdate() {
     await update(props.eventId, values, { onSuccess });
   } else {
     await create(values, { onSuccess });
+  }
+}
+
+function summarize() {
+  values.summary = values.description?.slice(0, 200);
+  if (values.summary && values.summary.length >= 200) {
+    values.summary += "...";
   }
 }
 
