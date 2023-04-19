@@ -1,4 +1,4 @@
-import { useAxios } from "@/composables/api/axios";
+import { useAxios, type RequestOptions } from "@/composables/api/axios";
 import { toRefs } from "vue";
 
 interface ProfileQueryParams {
@@ -24,15 +24,17 @@ export function useProfileAPI() {
     return get(detailUrl(id));
   }
 
-  async function update(id: string | number, data: any) {
-    return put(detailUrl(id), data);
+  async function update(id: string | number, data: any, options?: RequestOptions) {
+    return put(detailUrl(id), data, options);
   }
 
   async function uploadProfilePicture(id: string | number, file: any) {
     const formData = new FormData();
     formData.append("file", file);
     return postForm(`${detailUrl(id)}upload_picture/`, formData, {
-      headers: { "Content-Type": "multipart/form-data" },
+      config: {
+        headers: { "Content-Type": "multipart/form-data" },
+      },
     });
   }
 
@@ -42,6 +44,7 @@ export function useProfileAPI() {
     retrieve,
     update,
     uploadProfilePicture,
+    detailUrl,
     searchUrl: searchUrl<ProfileQueryParams>,
   };
 }

@@ -38,6 +38,7 @@ export default defineConfig({
         formdemo: resolvePath("./src/apps/formdemo.ts"),
         codebase_list: resolvePath("./src/apps/codebase_list.ts"),
         event_edit: resolvePath("./src/apps/event_edit.ts"),
+        profile_edit: resolvePath("./src/apps/profile_edit.ts"),
         // add more entry points here
       },
     },
