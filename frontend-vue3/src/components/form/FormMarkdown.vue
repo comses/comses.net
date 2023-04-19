@@ -17,6 +17,7 @@
       title="Markdown formatting is supported"
       href="https://www.markdownguide.org/basic-syntax/"
       target="_blank"
+      tabindex="-1"
     />
     <slot name="help">
       <FormHelp v-if="help" :help="help" :id-for="id" />
