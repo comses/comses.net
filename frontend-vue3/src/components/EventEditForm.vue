@@ -64,16 +64,14 @@
       :min-date="(values.start_date as Date)"
       :max-date="(values.end_date as Date)"
     />
-    <!-- FIXME: markdown field -->
-    <FormTextArea
+    <FormMarkdown
       class="mb-3"
       name="description"
       label="Description"
       help="Detailed information about the event"
       indicate-required
     />
-    <!-- FIXME: markdown field -->
-    <FormTextArea
+    <FormMarkdown
       class="mb-3"
       name="summary"
       label="Summary"
@@ -87,7 +85,7 @@
           Summarize from Description
         </button>
       </template>
-    </FormTextArea>
+    </FormMarkdown>
     <FormTextInput
       class="mb-3"
       name="external_url"
@@ -111,7 +109,7 @@
 import * as yup from "yup";
 import { computed, onMounted } from "vue";
 import FormTextInput from "@/components/form/FormTextInput.vue";
-import FormTextArea from "@/components/form/FormTextArea.vue";
+import FormMarkdown from "@/components/form/FormMarkdown.vue";
 import FormDatePicker from "@/components/form/FormDatePicker.vue";
 import FormTagger from "@/components/form/FormTagger.vue";
 import FormAlert from "@/components/form/FormAlert.vue";
