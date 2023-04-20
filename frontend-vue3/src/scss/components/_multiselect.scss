@@ -6,6 +6,13 @@
   padding: 0.375rem 2.25rem 0.375rem 0.75rem;
 }
 
+.multiselect__single {
+  padding: 0;
+  line-height: 1.5;
+  margin-bottom: 0;
+  color: $input-color;
+}
+
 .multiselect__tag {
   background-color: $secondary;
   margin-top: 5px;
@@ -59,19 +66,28 @@
 
 .multiselect__clear {
   @extend .multiselect__search-toggle;
-  top: 10px;
-  margin-right: 12px;
+  height: 100%;
+  top: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
   font-size: 1.5rem;
 }
 
 .multiselect__option {
   white-space: normal;
+  .option--desc {
+    @extend .text-muted;
+  }
 }
 
 .multiselect__option--highlight {
   background-color: $primary;
   &:after {
     background-color: $primary;
+  }
+  .option--desc {
+    color: $gray-300 !important;
   }
 }
 
