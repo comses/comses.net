@@ -132,8 +132,10 @@ export function useReleaseAPI() {
     const formData = new FormData();
     formData.append("file", file);
     return postForm(listOriginalsFileUrl(identifier, version_number, category), formData, {
-      headers: { "Content-Type": "multipart/form-data" },
-      onUploadProgress,
+      config: {
+        headers: { "Content-Type": "multipart/form-data" },
+        onUploadProgress,
+      },
     });
   }
 
