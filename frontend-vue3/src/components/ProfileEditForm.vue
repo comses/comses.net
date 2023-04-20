@@ -129,7 +129,12 @@
       help="Your primary field of work"
       :options="industryOptions"
     />
-    <!-- TODO: affiliations -->
+    <FormOrgItems
+      class="mb-3"
+      name="affiliations"
+      label="Affiliations"
+      help="A list of organizations that you are affiliated with"
+    />
     <FormTextItems
       class="mb-3"
       name="degrees"
@@ -151,6 +156,7 @@ import FormTextItems from "@/components/form/FormTextItems.vue";
 import FormSelect from "@/components/form/FormSelect.vue";
 import FormMarkdown from "@/components/form/FormMarkdown.vue";
 import FormTagger from "@/components/form/FormTagger.vue";
+import FormOrgItems from "@/components/form/FormOrgItems.vue";
 import FormAlert from "@/components/form/FormAlert.vue";
 import { useForm } from "@/composables/form";
 import { useProfileAPI } from "@/composables/api/profile";

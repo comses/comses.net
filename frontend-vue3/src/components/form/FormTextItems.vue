@@ -13,11 +13,10 @@
         v-bind="attrs"
         :class="{ 'form-control': true, 'is-invalid': error, 'border-end-0': !!candidateItem }"
         @keydown.enter.prevent="create"
-        @blur="create"
       />
-      <span v-if="candidateItem" class="input-group-text bg-white text-gray"
-        ><small>Press enter to add</small></span
-      >
+      <button type="button" v-if="candidateItem" class="btn btn-outline-secondary" @click="create">
+        <small>Press enter to add</small>
+      </button>
     </div>
     <Sortable :list="value" :item-key="item => item" @end="sort($event)">
       <template #item="{ element, index }">

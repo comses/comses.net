@@ -99,7 +99,8 @@ a.anchor {
 
 .btn-is-primary {
   @extend .btn-secondary;
-
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
   &:hover {
     cursor: default !important;
     background-color: $secondary-color;
@@ -112,7 +113,8 @@ a.anchor {
   color: $secondary-color;
   border-color: $input-border-color;
   border-right: 0px;
-
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
   &:hover {
     background-color: $secondary-color;
     border-color: $secondary-color;
