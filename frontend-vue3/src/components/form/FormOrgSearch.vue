@@ -22,6 +22,7 @@
       :close-on-select="true"
       :options-limit="10"
       @search-change="fetchMatchingOrgs"
+      @select="handleSelect"
       :class="{ 'is-invalid': error }"
     >
       <template #clear v-if="value">
@@ -79,12 +80,15 @@ export interface OrgSearchProps {
   placeholder?: string;
   required?: boolean;
   disabled?: boolean;
+  clearOnSelect: boolean;
 }
 
 const props = withDefaults(defineProps<OrgSearchProps>(), {
   placeholder: "Type to find your organization",
   disabled: false,
+  clearOnSelect: false,
 });
+const emit = defineEmits(["select"]);
 
 const { id, value, attrs, error } = useField<Organization | null>(props, "name");
 
@@ -94,6 +98,13 @@ const matchingOrgs = ref<Organization[]>([]);
 const isLoading = ref(false);
 
 const { serverErrors, search } = useRORAPI();
+
+function handleSelect(event: Event) {
+  emit("select", event);
+  if (props.clearOnSelect) {
+    value.value = null;
+  }
+}
 
 const fetchMatchingOrgs = useDebounceFn(async (query: string) => {
   if (query) {
