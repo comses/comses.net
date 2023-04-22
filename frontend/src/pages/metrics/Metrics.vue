@@ -5,22 +5,35 @@
       <div class="metrics-group">
         <div>
           <div class="radio-button">
-            <input type="radio" id="members" value="Members" 
-              v-model="dataSelection" 
-              @change="updateChartOptions" selected />
+            <input
+              type="radio"
+              id="members"
+              value="Members"
+              v-model="dataSelection"
+              @change="updateChartOptions"
+              selected
+            />
             <label for="members" class="radio-label"> Members by year</label>
             <div class="checkbox">
-              <input type="checkbox" id="fullMembers" 
-                v-model="selectedFullMembers" 
-                @change="updateChartOptions" 
-                :disabled="dataSelection!='Members'"/>
+              <input
+                type="checkbox"
+                id="fullMembers"
+                v-model="selectedFullMembers"
+                @change="updateChartOptions"
+                :disabled="dataSelection != 'Members'"
+              />
               <label for="fullMembers" style="margin-left: 5px">Full Members</label>
             </div>
           </div>
 
           <div class="radio-button">
-            <input type="radio" id="codebases" value="Codebases" 
-              v-model="dataSelection" @change="updateChartOptions"/>
+            <input
+              type="radio"
+              id="codebases"
+              value="Codebases"
+              v-model="dataSelection"
+              @change="updateChartOptions"
+            />
             <label for="codebases" class="radio-label"> Codebases by year</label>
 
             <div class="codebase-subsection">
@@ -49,40 +62,75 @@
               <label for="reviewed" style="margin-left: 5px">Peer reviewed</label>
               <br style="display: block; margin: 5px 0" /> -->
 
-              <input type="checkbox" id="os" 
-                v-model="selectedOS" 
+              <input
+                type="checkbox"
+                id="os"
+                v-model="selectedOS"
                 @change="updateChartOptions"
-                :disabled="dataSelection!='Codebases' || selectedPeerReview==true || selectedPlatform==true || selectedLanguage==true"/>
+                :disabled="
+                  dataSelection != 'Codebases' ||
+                  selectedPeerReview == true ||
+                  selectedPlatform == true ||
+                  selectedLanguage == true
+                "
+              />
               <label for="os" style="margin-left: 5px">By OS</label>
               <br style="display: block; margin: 5px 0" />
 
-              <input type="checkbox" id="platform" 
-                v-model="selectedPlatform" 
+              <input
+                type="checkbox"
+                id="platform"
+                v-model="selectedPlatform"
                 @change="updateChartOptions"
-                :disabled="dataSelection!='Codebases' || selectedPeerReview==true || selectedOS==true || selectedLanguage==true"/>
+                :disabled="
+                  dataSelection != 'Codebases' ||
+                  selectedPeerReview == true ||
+                  selectedOS == true ||
+                  selectedLanguage == true
+                "
+              />
               <label for="platform" style="margin-left: 5px">By Platform</label>
               <br style="display: block; margin: 5px 0" />
 
-              <input type="checkbox" id="language" 
-                v-model="selectedLanguage" 
+              <input
+                type="checkbox"
+                id="language"
+                v-model="selectedLanguage"
                 @change="updateChartOptions"
-                :disabled="dataSelection!='Codebases' || selectedPeerReview == true || selectedOS==true || selectedPlatform==true"/>
+                :disabled="
+                  dataSelection != 'Codebases' ||
+                  selectedPeerReview == true ||
+                  selectedOS == true ||
+                  selectedPlatform == true
+                "
+              />
               <label for="language" style="margin-left: 5px">By language</label>
               <br style="display: block; margin: 5px 0" />
 
-              <input type="checkbox" id="reviewed" 
-                v-model="selectedPeerReview" 
+              <input
+                type="checkbox"
+                id="reviewed"
+                v-model="selectedPeerReview"
                 @change="updateChartOptions"
-                :disabled="dataSelection!='Codebases' || selectedLanguage == true || selectedOS==true || selectedPlatform==true"/>
+                :disabled="
+                  dataSelection != 'Codebases' ||
+                  selectedLanguage == true ||
+                  selectedOS == true ||
+                  selectedPlatform == true
+                "
+              />
               <label for="reviewed" style="margin-left: 5px">Peer reviewed</label>
-
             </div>
           </div>
 
           <div class="radio-button">
-            <input type="radio" id="downloads" value="Downloads" 
+            <input
+              type="radio"
+              id="downloads"
+              value="Downloads"
               v-model="dataSelection"
-              @change="updateChartOptions" />
+              @change="updateChartOptions"
+            />
             <label for="downloads" class="radio-label"> Downloads by year</label>
           </div>
         </div>
@@ -128,7 +176,6 @@ import { Chart } from "highcharts-vue";
     highcharts: Chart,
   },
 })
-
 export default class MetricsPage extends Vue {
   @Prop()
   public dataMembersTotal;
@@ -176,7 +223,8 @@ export default class MetricsPage extends Vue {
       case "Codebases":
         this.chartOptions["title"]["text"] = "Codebases";
         this.chartOptions["plotOptions"]["series"]["stacking"] = undefined;
-        this.chartOptions["plotOptions"]["series"]["pointStart"] = this.dataCodebasesTotal["start_year"];
+        this.chartOptions["plotOptions"]["series"]["pointStart"] =
+          this.dataCodebasesTotal["start_year"];
 
         // switch (this.codebaseDataSelection) {
         //     case "os":
@@ -203,26 +251,26 @@ export default class MetricsPage extends Vue {
 
         // }
         if (this.selectedLanguage) {
-              this.chartOptions["series"] = this.seriesCodebasesLangs;
-              this.chartOptions["plotOptions"]["series"]["stacking"] = "normal";
-              this.chartOptions["plotOptions"]["series"]["pointStart"] = this.seriesCodebasesLangs[0].start_year;
-
+          this.chartOptions["series"] = this.seriesCodebasesLangs;
+          this.chartOptions["plotOptions"]["series"]["stacking"] = "normal";
+          this.chartOptions["plotOptions"]["series"]["pointStart"] =
+            this.seriesCodebasesLangs[0].start_year;
         } else if (this.selectedOS) {
-              this.chartOptions["series"] = this.seriesCodebasesOS;
-              this.chartOptions["plotOptions"]["series"]["stacking"] = "normal";
-              this.chartOptions["plotOptions"]["series"]["pointStart"] = this.seriesCodebasesOS[0].start_year;
-
+          this.chartOptions["series"] = this.seriesCodebasesOS;
+          this.chartOptions["plotOptions"]["series"]["stacking"] = "normal";
+          this.chartOptions["plotOptions"]["series"]["pointStart"] =
+            this.seriesCodebasesOS[0].start_year;
         } else if (this.selectedPlatform) {
-              this.chartOptions["series"] = this.seriesCodebasesPlatform;
-              this.chartOptions["plotOptions"]["series"]["stacking"] = "normal";
-              this.chartOptions["plotOptions"]["series"]["pointStart"] = this.seriesCodebasesPlatform[0].start_year;
-
+          this.chartOptions["series"] = this.seriesCodebasesPlatform;
+          this.chartOptions["plotOptions"]["series"]["stacking"] = "normal";
+          this.chartOptions["plotOptions"]["series"]["pointStart"] =
+            this.seriesCodebasesPlatform[0].start_year;
         } else if (this.selectedPeerReview) {
-              this.chartOptions["plotOptions"]["series"]["pointStart"] = this.dataCodebasesReviewed.start_year;
-              this.chartOptions["series"] = [this.dataCodebasesTotal, this.dataCodebasesReviewed];
-
+          this.chartOptions["plotOptions"]["series"]["pointStart"] =
+            this.dataCodebasesReviewed.start_year;
+          this.chartOptions["series"] = [this.dataCodebasesTotal, this.dataCodebasesReviewed];
         } else {
-              this.chartOptions["series"] = [this.dataCodebasesTotal];
+          this.chartOptions["series"] = [this.dataCodebasesTotal];
         }
         break;
 
@@ -236,9 +284,7 @@ export default class MetricsPage extends Vue {
   }
 
   data() {
-    return {
-
-    };
+    return {};
   }
 }
 </script>
