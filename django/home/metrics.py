@@ -6,8 +6,10 @@ from django.db.models import Count, F
 import pandas as pd
 import numpy as np
 
+
 class Metrics:
     REDIS_METRICS_KEY = "all_comses_metrics"
+    MINIMUM_CATEGORY_COUNT = 10  # the threshold at which we group all other nominal values into an "other" category
 
     def get_all_data(self):
         data = cache.get(Metrics.REDIS_METRICS_KEY)
@@ -211,46 +213,82 @@ class Metrics:
             "start_year": codebase_downloads[0]["year"],
         }
         metrics_data["series_codebases_os"] = self.get_codebase_os_timeseries()
-        metrics_data["series_codebases_platform"] = self.get_codebase_platform_timeseries()
-        metrics_data["series_codebases_langs"] = self.get_codebase_programming_language_timeseries()
+        metrics_data[
+            "series_codebases_platform"
+        ] = self.get_codebase_platform_timeseries()
+        metrics_data[
+            "series_codebases_langs"
+        ] = self.get_codebase_programming_language_timeseries()
         return metrics_data
 
-
-    def convert_codebase_metrics_to_timeseries(self, metrics, category):
+    def convert_codebase_metrics_to_timeseries(self, metrics, category=None):
         """
-            The data may be sparse however, and we have to account for
-            missing years filling them with 0 using fillna(0)
+        metrics are a list of dicts with the following schema:
+        [
+          ...
+          {'operating_systems': 'macos', 'year': 2018, 'count': 18},
+          {'operating_systems': 'windows', 'year': 2018, 'count': 54},
+          {'operating_systems': 'linux', 'year': 2019, 'count': 8},
+          {'operating_systems': 'windows', 'year': 2019, 'count': 75},
+          {'operating_systems': 'platform_independent', 'year': 2019, 'count': 92},
+          ...
+        ]
+        category is the column index to pivot on, if not set it is assumed to be the first column name
 
-                    Year 2008  2009    2010 2011 2012 2013
-            Windows        1   Nan->0   15   22   15     ..  
-            macOS   
+        The data may be sparse however, and we have to account for
+        missing years, filling them with 0
 
+                Year 2008  2009    2010 2011 2012 2013
+        Windows        1   Nan->0   15   22   15     ..
+        macOS
         """
         df = pd.DataFrame.from_records(metrics)
-        df.replace([None], 'None', inplace=True)
+        df.replace([None], "None", inplace=True)
+        if category is None:
+            category = df.columns[0]
 
-        # Pivot table into the form whose column is year 
-        # and row is category (os, platform, lang).
-        tmp_df = df.pivot_table(values='count', index=category, columns='year', aggfunc='first')
-        tmp_df = tmp_df.fillna(0).apply(np.int64)
+        # set up a pivot table with year columns and row categories (os, platform, lang)
+        #
+        categories_by_year = df.pivot_table(
+            values="count",
+            index=category,
+            columns="year",
+            aggfunc="first",
+            fill_value=0,
+        )
+        full_date_range = pd.date_range(
+            str(df["year"].min()), str(df["year"].max()), freq="YS"
+        )
+        categories_by_year = categories_by_year.reindex(
+            columns=full_date_range.year, fill_value=0
+        )
 
-        # Extract rows whose max values are less than 10, 
-        # and integrate into 'others' row
-        bool_mask1 = (tmp_df.max(axis=1) >= 10)
-        bool_mask2 = (tmp_df.max(axis=1) < 10)
-        result_df = tmp_df.loc[bool_mask1]
-        result_df.loc['others'] = tmp_df.loc[bool_mask2].sum(axis=0)
+        # Extract rows whose max values are less than 10,
+        # and integrate into an 'other' row
+        included_categories_mask = (
+            categories_by_year.max(axis=1) >= Metrics.MINIMUM_CATEGORY_COUNT
+        )
+        other_categories_mask = (
+            categories_by_year.max(axis=1) < Metrics.MINIMUM_CATEGORY_COUNT
+        )
+        # build a new dataframe with the included categories and an 'other' row
+        result_df = categories_by_year.loc[included_categories_mask]
+        result_df.loc["other"] = categories_by_year.loc[other_categories_mask].sum(
+            axis=0
+        )
 
-        # Conver df into a list of hichart objects
-        year_list = df['year'].drop_duplicates().tolist()
+        # Convert result data frame into a list of hichart objects
+        start_year = categories_by_year.columns[0]
         category_list = result_df.index.drop_duplicates().tolist()
         category_data_list = []
         for category in category_list:
-            category_data_list.append({
-                "name" : category,
-                "data" : result_df.loc[category].tolist(),
-                "start_year": year_list[0]
-            })
+            category_data_list.append(
+                {
+                    "name": category,
+                    "data": result_df.loc[category].tolist(),
+                    "start_year": start_year,
+                }
+            )
         return category_data_list
 
     def get_codebase_os_timeseries(self):
@@ -279,9 +317,10 @@ class Metrics:
             .order_by("year")
         )
 
-        os_data_list = self.convert_codebase_metrics_to_timeseries(os_metrics, 'operating_systems')
-        return os_data_list
-        
+        return self.convert_codebase_metrics_to_timeseries(
+            os_metrics, "operating_systems"
+        )
+
     def get_codebase_platform_timeseries(self):
         """
         series_codebases_platform : [
@@ -312,10 +351,9 @@ class Metrics:
             .annotate(count=Count("year"))
             .order_by("year")
         )
-        platform_data_list = self.convert_codebase_metrics_to_timeseries(platform_metrics, 'platform')
-        return platform_data_list
+        return self.convert_codebase_metrics_to_timeseries(platform_metrics, "platform")
 
-    def get_codebase_programming_language_timeseries(self):   
+    def get_codebase_programming_language_timeseries(self):
         programming_language_metrics = list(
             CodebaseRelease.objects.public()
             .values(
@@ -325,8 +363,9 @@ class Metrics:
             .annotate(count=Count("year"))
             .order_by("year")
         )
-        programming_language_data_list = self.convert_codebase_metrics_to_timeseries(programming_language_metrics, 'programming_language_names')
-        return programming_language_data_list
+        return self.convert_codebase_metrics_to_timeseries(
+            programming_language_metrics, "programming_language_names"
+        )
 
     def get_codebases_by_year(self):
         """
