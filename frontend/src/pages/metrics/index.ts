@@ -4,14 +4,14 @@ import MetricsPage from "@/pages/metrics/Metrics.vue";
 const el = document.getElementById("app");
 if (el) {
   // const metricsData = JSON.parse(el.getAttribute("data-all-metrics-data"))
-  const metricsData = JSON.parse(el.getAttribute("data-metrics-data"))
+  const metricsData = JSON.parse(el.getAttribute("data-metrics-data"));
 
   console.log("metricsData");
   console.log(JSON.stringify(metricsData, null, 4));
 
   const dataMembersTotal = metricsData.data_members_total;
   const dataMembersFull = metricsData.data_members_full;
-  const dataCodebasesTotal = metricsData.data_codebases_total // TODO
+  const dataCodebasesTotal = metricsData.data_codebases_total; // TODO
   const dataCodebasesReviewed = metricsData.data_codebases_reviewed;
   const seriesCodebasesOS = metricsData.series_codebases_os;
   const seriesCodebasesPlatform = metricsData.series_codebases_platform;
@@ -53,8 +53,7 @@ if (el) {
       seriesCodebasesLangs,
       dataCodebasesReviewed,
       dataDownloadsTotal,
-      chartOptions
-    }
+      chartOptions,
+    },
   }).$mount("#app");
 }
-
