@@ -392,10 +392,8 @@ class MetricsView(TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         m = Metrics()
-        # metrics_data_json = json.dumps(metrics.get_all_data())
-        highcharts_metrics_data_json = json.dumps(m.get_highcharts_data())
-        # context["all_metrics_data_json"] = metrics_data_json
-        context["metrics_data_json"] = highcharts_metrics_data_json
+        metrics_data_json = json.dumps(m.get_all_data())
+        context["metrics_data_json"] = metrics_data_json
         return context
 
 

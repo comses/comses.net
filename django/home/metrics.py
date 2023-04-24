@@ -4,7 +4,6 @@ from library.models import CodebaseRelease, CodebaseReleaseDownload
 from django.core.cache import cache
 from django.db.models import Count, F
 import pandas as pd
-import numpy as np
 
 
 class Metrics:
@@ -273,12 +272,14 @@ class Metrics:
         )
         # build a new dataframe with the included categories and an 'other' row
         result_df = categories_by_year.loc[included_categories_mask]
+        # this line generates a SettingWithCopyWarning
+        # See the caveats in the documentation: https://pandas.pydata.org/pandas-docs/stable/user_guide/indexing.html#returning-a-view-versus-a-copy"
         result_df.loc["other"] = categories_by_year.loc[other_categories_mask].sum(
             axis=0
         )
 
         # Convert result data frame into a list of hichart objects
-        start_year = categories_by_year.columns[0]
+        start_year = int(categories_by_year.columns[0])
         category_list = result_df.index.drop_duplicates().tolist()
         category_data_list = []
         for category in category_list:
@@ -433,41 +434,9 @@ class Metrics:
 
     def cache_all(self):
         """
-        Sample JSON schema
-        resulting data structure could be something like:
-
-        {
-            "members_by_year": [
-                {
-                    "year": 2020,
-                    "total": 220,
-                    "full_members": 119,
-                },
-                {
-                    "year": 2021,
-                    "total": 279,
-                    "full_members": 111
-                },
-                ...
-            ],
-            "codebases_by_year": [
-                {
-                    "year": 2020,
-                    "total": 70,
-                    "netlogo": 33,
-                    "python": 15,
-                    "julia": 3,
-                    "c": 1,
-                    ...
-                }
-            ]
-        }
+        caches metrics data in redis
         """
-
-        all_data = {}
-        all_data.update(members_by_year=self.get_members_by_year_timeseries())
-        all_data.update(codebases_by_year=self.get_codebases_by_year())
-        all_data.update(downloads_by_year=self.get_downloads_by_year())
         # FIXME: consider TTL cache timeout
+        all_data = self.get_highcharts_data()
         cache.set(Metrics.REDIS_METRICS_KEY, all_data)
         return all_data

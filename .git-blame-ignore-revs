@@ -14,3 +14,6 @@
 
 # style: run black==23.1.0
 116a3951b3a78b7f70b9dce65c14403bca68ab4f
+
+# style: black==23.3.0
+9c9d4becaa95b61c10f2accef345941b0d251c92
