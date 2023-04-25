@@ -3,12 +3,12 @@ import { useAxios } from "@/composables/api/axios";
 
 interface JobQueryParams {
   query?: string;
-  start_date__gte?: string;
+  date_created__gte?: string;
   application_deadline__gte?: string;
   tags?: string[];
 }
 
-export function useEventAPI() {
+export function useJobAPI() {
   /**
    * Composable function for making requests to the jobs API
    *

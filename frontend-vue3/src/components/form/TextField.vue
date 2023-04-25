@@ -9,6 +9,7 @@
       v-model="value"
       :type="type"
       :id="id"
+      :placeholder="placeholder"
       v-bind="attrs"
       :class="{ 'form-control': true, 'is-invalid': error }"
     />
