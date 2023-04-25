@@ -10,6 +10,6 @@ createApp(SortBy, {
     { value: "", label: "Relevance" },
     { value: "-first_published_at", label: "Publish date: newest" },
     { value: "first_published_at", label: "Publish date: oldest" },
-    { value: "last_modified", label: "Last Modified" },
+    { value: "last_modified", label: "Recently Modified" },
   ],
 }).mount("#sortby");
