@@ -1,30 +1,27 @@
 {% extends 'base.jinja' %}
 
-{% from "common.jinja" import list_page, paginator, breadcrumb, submit_model_btn %}
+{% from "common.jinja" import list_page, paginator, breadcrumb, search_bar %}
 
 {% block introduction %}<h1>Search Results</h1>{% endblock %}
 
 {% block breadcrumb %}
-    {{ breadcrumb([{'text': 'Computational Model Library'}]) }}
-    <div class="pb-1">
-        {{ paginator('home:search', __all__) }}
-    </div>
+{{ breadcrumb([{'text': 'Computational Model Library'}]) }}
+{{ search_bar("/search/", "Search CoMSES.Net") }}
+<div class="pb-1">
+    {{ paginator('home:search', __all__) }}
+</div>
 {% endblock %}
 
 {% block content %}
-    <form class="d-inline-flex flex-row align-items-center mb-4" action="/search/" method="get">
-        <label class="sr-only" for="search">Search</label>
-        <input id="search" class="form-control" name="query" type="text" value="{{ query }}">
-        <button type="submit" class="btn btn-primary">Submit</button>
-    </form>
-    {% for result in results %}
-        <div class="card">
-            <div class="card-header">{{ result.type.title() }} - <a href="{{ result.url }}">{{ result.title|default("Not available") }}</a></div>
-            <div class="card-body">
-                {{ result.description|default("No description available") }}
-            </div>
-        </div>
-    {% else %}
-        No matching results found
-    {% endfor %}
+{% for result in results %}
+<div class="card">
+    <div class="card-header">{{ result.type.title() }} - <a href="{{ result.url }}">{{ result.title|default("Not
+            available") }}</a></div>
+    <div class="card-body">
+        {{ result.description|default("No description available") }}
+    </div>
+</div>
+{% else %}
+No matching results found
+{% endfor %}
 {% endblock %}
