@@ -1,5 +1,6 @@
-{% extends "sidebar_layout.jinja" %}
-{% from "common.jinja" import list_page, paginator, breadcrumb, subnav, member_profile_href, search_tag_href %}
+{% extends "search_layout.jinja" %}
+{% from "common.jinja" import list_page, paginator, breadcrumb, subnav, member_profile_href, search_tag_href, search_bar
+%}
 
 {% macro render_event(item, detail_url_name) %}
 <div class="card">
@@ -10,7 +11,7 @@
                 <b class='title'>
                     {{ format_datetime_str(item.start_date) }}
                     {% if item.end_date %}
-                        - {{ format_datetime_str(item.end_date) }}
+                    - {{ format_datetime_str(item.end_date) }}
                     {% endif %}
                 </b>
             </div>
@@ -49,18 +50,18 @@
             </div>
         </div>
         {% if item.summary %}
-            <div class='row'>
-                <div class='col'>
-                    {{ markdown(item.summary) }}
-                </div>
+        <div class='row'>
+            <div class='col'>
+                {{ markdown(item.summary) }}
             </div>
+        </div>
         {% endif %}
         {% if item.tags %}
-            <div class="tag-list">
-                {% for tag in item.tags %}
-                    {{ search_tag_href(tag, category='events') }}
-                {% endfor %}
-            </div>
+        <div class="tag-list">
+            {% for tag in item.tags %}
+            {{ search_tag_href(tag, category='events') }}
+            {% endfor %}
+        </div>
         {% endif %}
     </div>
 </div>
@@ -73,27 +74,31 @@
 {% set pagination_block = paginator('home:event-list', __all__) %}
 
 {% block top %}
-    {{ breadcrumb([{'text': 'Community Events' }]) }}
+{{ breadcrumb([{'text': 'Community Events' }]) }}
+<div class="mb-4">
     {{ subnav([
     {'text': 'Calendar View', 'url': url('home:event-calendar')},
     {'text': 'List View', 'url': url('home:event-list'), 'active': True},
-    ]) 
-    }}
-    {{ pagination_block }}
-    <div id="sortby"></div>
+    ])}}
+</div>
+{% endblock %}
+
+{% block search %}
+{{ search_bar(url("home:event-list"), "Search Events") }}
+{{ pagination_block }}
 {% endblock %}
 
 {% block content %}
-    {{ list_page(__all__, render_event, 'home:event-detail') }}
-    {% if count > 10 %}
-        {{ pagination_block }}
-    {% endif %}
+{{ list_page(__all__, render_event, 'home:event-detail') }}
+{% if count > 10 %}
+{{ pagination_block }}
+{% endif %}
 {% endblock %}
 
 {% block sidebar %}
-    <div id="sidebar"></div>
+<div id="sidebar"></div>
 {% endblock %}
 
 {% block js %}
-{{ render_bundle('event_list', attrs='defer') }}
+{{ vite_asset('apps/event_list.ts') }}
 {% endblock %}

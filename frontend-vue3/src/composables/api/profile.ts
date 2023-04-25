@@ -3,7 +3,7 @@ import { toRefs } from "vue";
 
 interface ProfileQueryParams {
   query?: string;
-  page: number;
+  tags?: string[];
 }
 
 export function useProfileAPI() {

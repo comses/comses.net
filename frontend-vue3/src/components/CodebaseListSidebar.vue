@@ -2,21 +2,26 @@
   <ListSidebar
     create-label="Archive a model"
     create-url="/codebases/add/"
-    search-label="Search"
+    search-label="Apply Filters"
     :search-url="query"
   >
     <template #form>
       <form @submit="handleSubmit">
-        <TextField class="mb-3" name="keywords" label="Keywords" @keyup.enter="search" />
-        <DatepickerField class="mb-3" name="startDate" label="Published After" />
-        <DatepickerField class="mb-3" name="endDate" label="Published Before" />
-        <TaggerField class="mb-3" name="tags" label="Tags" type="Codebase" />
+        <TaggerField
+          class="mb-3"
+          name="tags"
+          label="Tags"
+          type="Codebase"
+          placeholder="Language, framework, etc."
+        />
         <SelectField
           class="mb-3"
           name="peerReviewStatus"
           label="Peer Review Status"
           :options="peerReviewOptions"
         />
+        <DatepickerField class="mb-3" name="startDate" label="Published After" />
+        <DatepickerField name="endDate" label="Published Before" />
       </form>
     </template>
   </ListSidebar>
@@ -26,7 +31,6 @@
 import * as yup from "yup";
 import { computed } from "vue";
 import ListSidebar from "@/components/ListSidebar.vue";
-import TextField from "@/components/form/TextField.vue";
 import SelectField from "@/components/form/SelectField.vue";
 import DatepickerField from "@/components/form/DatepickerField.vue";
 import TaggerField from "@/components/form/TaggerField.vue";
@@ -40,7 +44,6 @@ const peerReviewOptions = [
 ];
 
 const schema = yup.object({
-  keywords: yup.string(),
   startDate: yup.date(),
   endDate: yup.date(),
   tags: yup.array().of(yup.object().shape({ name: yup.string().required() })),
@@ -59,16 +62,14 @@ const { handleSubmit, values } = useForm<SearchFields>({
 const { searchUrl } = useCodebaseAPI();
 
 const query = computed(() => {
+  const url = new URLSearchParams(window.location.search);
+  const query = url.get("query") ?? "";
   return searchUrl({
-    query: values.keywords,
+    query,
     published_after: values.startDate?.toISOString(),
     published_before: values.endDate?.toISOString(),
     tags: values.tags?.map(tag => tag.name),
     peer_review_status: values.peerReviewStatus,
   });
 });
-
-function search() {
-  window.location.href = query.value;
-}
 </script>

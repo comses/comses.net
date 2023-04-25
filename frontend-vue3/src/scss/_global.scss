@@ -126,7 +126,12 @@ a.anchor {
 }
 
 .text-gray {
+  color: $text-color !important;
+}
+
+.bg-gray {
   color: $text-color;
+  background-color: $gray-200 !important;
 }
 
 [v-cloak] {
@@ -282,6 +287,8 @@ nav {
 
   border-left: none;
   border-right: none;
+  border-bottom: none;
+  border-radius: 0;
   padding-top: 2em;
   padding-bottom: 2em;
 
