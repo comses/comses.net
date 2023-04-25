@@ -4,6 +4,7 @@ import hmac
 import logging
 from collections import OrderedDict
 from urllib import parse
+from dateutil import parser
 
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
@@ -223,6 +224,23 @@ class SmallResultSetPagination(PageNumberPagination):
     def _to_search_terms(query_params):
         return [f"{k}: {v}" for k, v in query_params.lists()]
 
+    @staticmethod
+    def _to_filter_display_terms(query_params):
+        filters = []
+        for key, values in query_params.lists():
+            if key == "query":
+                continue
+            if key == "tags":
+                filters.extend(tag for tag in values)
+            else:
+                try:
+                    date = parser.isoparse(values[0]).date()
+                    filters.append(f"{key.replace('_', ' ')} {date.isoformat()}")
+                except ValueError:
+                    filters.extend(v.replace("_", " ") for v in values)
+
+        return filters
+
     def get_paginated_response(self, data):
         context = self.get_context_data(data)
         return Response(context)
@@ -249,6 +267,7 @@ class SmallResultSetPagination(PageNumberPagination):
                 "count": count,
                 "query": query,
                 "search_terms": cls._to_search_terms(query_params),
+                "filter_display_terms": cls._to_filter_display_terms(query_params),
                 "query_params": query_params.urlencode(),
                 "range": page_range,
                 "num_pages": num_pages,
