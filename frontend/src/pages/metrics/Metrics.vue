@@ -1,350 +1,202 @@
 <template>
-  <div>
-    <!-- Box 1 -->
-    <div class="metrics-box1">
-      <div class="metrics-group">
-        <div>
-          <div class="radio-button">
-            <input
-              type="radio"
-              id="members"
-              value="Members"
-              v-model="dataSelection"
-              @change="updateChartOptions"
-              selected
-            />
-            <label for="members" class="radio-label"> Members by year</label>
-            <div class="checkbox">
+  <div class="row">
+    <div class="col-sm-12 col-md-3" style="padding-top: 2.5rem">
+      <div class="card">
+        <ul class="list-group list-group-flush">
+          <!-- Members -->
+          <li class="list-group-item">
+            <div class="form-check">
               <input
-                type="checkbox"
-                id="fullMembers"
-                v-model="selectedFullMembers"
-                @change="updateChartOptions"
-                :disabled="dataSelection != 'Members'"
+                class="form-check-input"
+                type="radio"
+                id="members"
+                value="members"
+                v-model="dataSelection"
               />
-              <label for="fullMembers" style="margin-left: 5px">Full Members</label>
+              <label class="form-check-label font-weight-bold" for="members"
+                >Members <small class="text-muted">(total)</small></label
+              >
             </div>
-          </div>
-
-          <div class="radio-button">
-            <input
-              type="radio"
-              id="codebases"
-              value="Codebases"
-              v-model="dataSelection"
-              @change="updateChartOptions"
-            />
-            <label for="codebases" class="radio-label"> Codebases by year</label>
-
-            <div class="codebase-subsection">
-              <!-- <input type="radio" id="total" value="total" 
-                v-model="codebaseDataSelection" @change="updateChartOptions" selected/>
-              <label for="os" style="margin-left: 5px">Total</label>
-              <br style="display: block; margin: 5px 0" />
-
-              <input type="radio" id="os" value="os" 
-                v-model="codebaseDataSelection" @change="updateChartOptions"/>
-              <label for="os" style="margin-left: 5px">By OS</label>
-              <br style="display: block; margin: 5px 0" />
-
-              <input type="radio" id="platform" value="platform" 
-                v-model="codebaseDataSelection" @change="updateChartOptions"/>
-              <label for="platform" style="margin-left: 5px">By Platform</label>
-              <br style="display: block; margin: 5px 0" />
-
-              <input type="radio" id="language" value="language" 
-                v-model="codebaseDataSelection" @change="updateChartOptions"/>
-              <label for="language" style="margin-left: 5px">By Language</label>
-              <br style="display: block; margin: 5px 0" />
-
-              <input type="radio" id="reviewed" value="reviewed" 
-                v-model="codebaseDataSelection" @change="updateChartOptions"/>
-              <label for="reviewed" style="margin-left: 5px">Peer reviewed</label>
-              <br style="display: block; margin: 5px 0" /> -->
-
-              <input
-                type="checkbox"
-                id="os"
-                v-model="selectedOS"
-                @change="updateChartOptions"
-                :disabled="
-                  dataSelection != 'Codebases' ||
-                  selectedPeerReview == true ||
-                  selectedPlatform == true ||
-                  selectedLanguage == true
-                "
-              />
-              <label for="os" style="margin-left: 5px">By OS</label>
-              <br style="display: block; margin: 5px 0" />
-
-              <input
-                type="checkbox"
-                id="platform"
-                v-model="selectedPlatform"
-                @change="updateChartOptions"
-                :disabled="
-                  dataSelection != 'Codebases' ||
-                  selectedPeerReview == true ||
-                  selectedOS == true ||
-                  selectedLanguage == true
-                "
-              />
-              <label for="platform" style="margin-left: 5px">By Platform</label>
-              <br style="display: block; margin: 5px 0" />
-
-              <input
-                type="checkbox"
-                id="language"
-                v-model="selectedLanguage"
-                @change="updateChartOptions"
-                :disabled="
-                  dataSelection != 'Codebases' ||
-                  selectedPeerReview == true ||
-                  selectedOS == true ||
-                  selectedPlatform == true
-                "
-              />
-              <label for="language" style="margin-left: 5px">By language</label>
-              <br style="display: block; margin: 5px 0" />
-
-              <input
-                type="checkbox"
-                id="reviewed"
-                v-model="selectedPeerReview"
-                @change="updateChartOptions"
-                :disabled="
-                  dataSelection != 'Codebases' ||
-                  selectedLanguage == true ||
-                  selectedOS == true ||
-                  selectedPlatform == true
-                "
-              />
-              <label for="reviewed" style="margin-left: 5px">Peer reviewed</label>
+            <div class="ml-4 my-2">
+              <div class="form-check">
+                <input
+                  class="form-check-input"
+                  type="radio"
+                  id="members-full"
+                  value="members-full"
+                  v-model="dataSelection"
+                />
+                <label class="form-check-label" for="members-full"
+                  ><small>Full Members</small></label
+                >
+              </div>
             </div>
-          </div>
-
-          <div class="radio-button">
-            <input
-              type="radio"
-              id="downloads"
-              value="Downloads"
-              v-model="dataSelection"
-              @change="updateChartOptions"
-            />
-            <label for="downloads" class="radio-label"> Downloads by year</label>
-          </div>
-        </div>
+          </li>
+          <!-- Codebases -->
+          <li class="list-group-item">
+            <div class="form-check">
+              <input
+                class="form-check-input"
+                type="radio"
+                id="codebases"
+                value="codebases"
+                v-model="dataSelection"
+              />
+              <label class="form-check-label font-weight-bold" for="codebases"
+                >Codebases <small class="text-muted">(total)</small></label
+              >
+            </div>
+            <div class="ml-4 my-2">
+              <div class="form-check mb-1">
+                <input
+                  class="form-check-input"
+                  type="radio"
+                  id="codebases-reviewed"
+                  value="codebases-reviewed"
+                  v-model="dataSelection"
+                />
+                <label class="form-check-label" for="codebases-reviewed"
+                  ><small>Peer Reviewed</small></label
+                >
+              </div>
+              <div class="form-check mb-1">
+                <input
+                  class="form-check-input"
+                  type="radio"
+                  id="codebases-language"
+                  value="codebases-language"
+                  v-model="dataSelection"
+                />
+                <label class="form-check-label" for="codebases-language"
+                  ><small>By Language</small></label
+                >
+              </div>
+              <div class="form-check mb-1">
+                <input
+                  class="form-check-input"
+                  type="radio"
+                  id="codebases-platform"
+                  value="codebases-platform"
+                  v-model="dataSelection"
+                />
+                <label class="form-check-label" for="codebases-platform"
+                  ><small>By Platform</small></label
+                >
+              </div>
+              <div class="form-check">
+                <input
+                  class="form-check-input"
+                  type="radio"
+                  id="codebases-os"
+                  value="codebases-os"
+                  v-model="dataSelection"
+                />
+                <label class="form-check-label" for="codebases-os"
+                  ><small>By Operating System</small></label
+                >
+              </div>
+            </div>
+          </li>
+          <!-- Downloads -->
+          <li class="list-group-item">
+            <div class="form-check">
+              <input
+                class="form-check-input"
+                type="radio"
+                id="downloads"
+                value="downloads"
+                v-model="dataSelection"
+              />
+              <label class="form-check-label font-weight-bold" for="downloads"
+                >Downloads <small class="text-muted">(total)</small></label
+              >
+            </div>
+          </li>
+        </ul>
       </div>
     </div>
-
-    <!-- Box 2 -->
-    <div class="metrics-box2">
-      <div class="tab">
-        <button
-          class="tab-button"
-          :class="{ active: selectedTab === 'graph' }"
-          @click="selectedTab = 'graph'"
-        >
-          Graph
-        </button>
-        <button
-          class="tab-button"
-          :class="{ active: selectedTab === 'data' }"
-          @click="selectedTab = 'data'"
-        >
-          Data Table
-        </button>
-      </div>
-      <div v-if="selectedTab === 'graph'">
-        <highcharts :options="chartOptions"></highcharts>
-      </div>
-      <div v-if="selectedTab === 'data'">
-        <!-- Data content -->
+    <div class="col-sm-12 col-md-9">
+      <ul class="nav nav-tabs">
+        <li class="nav-item">
+          <a
+            :class="{ 'nav-link': true, active: selectedTab === 'chart' }"
+            @click="selectedTab = 'chart'"
+            >Chart</a
+          >
+        </li>
+        <li class="nav-item">
+          <a
+            :class="{ 'nav-link': true, active: selectedTab === 'table' }"
+            @click="selectedTab = 'table'"
+            >Table</a
+          >
+        </li>
+      </ul>
+      <div class="border border-top-0">
+        <Chart v-if="selectedTab === 'chart'" :options="chartOptions" class="pt-2" />
+        <table v-if="selectedTab === 'table'" class="table">
+          <thead>
+            <tr>
+              <th v-for="head in tableHeaders" :key="head" scope="col">{{ head }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="(row, index) in tableRows" :key="index">
+              <td v-for="(cell, index) in row" :key="index">{{ cell }}</td>
+            </tr>
+          </tbody>
+        </table>
       </div>
     </div>
-    <div class="clearfix" style="clear: both"></div>
   </div>
 </template>
 
 <script lang="ts">
-import { Component, Vue, Prop, Watch } from "vue-property-decorator";
+import { Component, Vue, Prop } from "vue-property-decorator";
+import Highcharts from "highcharts";
+import exportingInit from "highcharts/modules/exporting";
 import { Chart } from "highcharts-vue";
+import { TimeSeries } from "@/pages/metrics";
+
+exportingInit(Highcharts); // Initialize exporting module (hamburger menu w/ download options)
 
 @Component({
-  // language=Vue
   components: {
-    highcharts: Chart,
+    Chart,
   },
 })
 export default class MetricsPage extends Vue {
-  @Prop()
-  public dataMembersTotal;
-  @Prop()
-  public dataMembersFull;
-  @Prop()
-  public dataCodebasesTotal;
-  @Prop()
-  public seriesCodebasesOS;
-  @Prop()
-  public seriesCodebasesPlatform;
-  @Prop()
-  public seriesCodebasesLangs;
-  @Prop()
-  dataCodebasesReviewed;
-  @Prop()
-  public dataDownloadsTotal;
-  @Prop()
-  public chartOptions;
+  @Prop() chartOptionsMap: Map<string, any>;
 
-  public dataSelection = "Members"; // Members, Codebases, Downloads
-  public codebaseDataSelection = "Total"; // Total, ByOS, ByLang, ByPlatform, Reviewed
+  dataSelection = "members";
+  selectedTab: "chart" | "table" = "chart";
 
-  public selectedOS = false;
-  public selectedPlatform = false;
-  public selectedLanguage = false;
-  public selectedPeerReview = false;
-  public selectedFullMembers = false;
-  public selectedTab = "graph";
-  public title: string = "Members";
-
-  updateChartOptions() {
-    switch (this.dataSelection) {
-      case "Members":
-        this.chartOptions["title"]["text"] = "Members";
-        this.chartOptions["plotOptions"]["series"]["stacking"] = undefined;
-        this.chartOptions["plotOptions"]["series"]["pointStart"] = this.dataMembersTotal.start_year;
-        if (this.selectedFullMembers) {
-          this.chartOptions["series"] = [this.dataMembersTotal, this.dataMembersFull];
-        } else {
-          this.chartOptions["series"] = [this.dataMembersTotal];
-        }
-        break;
-
-      case "Codebases":
-        this.chartOptions["title"]["text"] = "Codebases";
-        this.chartOptions["plotOptions"]["series"]["stacking"] = undefined;
-        this.chartOptions["plotOptions"]["series"]["pointStart"] =
-          this.dataCodebasesTotal["start_year"];
-
-        // switch (this.codebaseDataSelection) {
-        //     case "os":
-        //         this.chartOptions["series"] = this.seriesCodebasesLangs;
-        //         this.chartOptions["plotOptions"]["series"]["stacking"] = "normal";
-        //         this.chartOptions["plotOptions"]["series"]["pointStart"] = this.seriesCodebasesLangs[0].start_year;
-        //         break;
-        //     case "language":
-        //         this.chartOptions["series"] = this.seriesCodebasesOS;
-        //         this.chartOptions["plotOptions"]["series"]["stacking"] = "normal";
-        //         this.chartOptions["plotOptions"]["series"]["pointStart"] = this.seriesCodebasesOS[0].start_year;
-        //         break;
-        //     case "platform":
-        //         this.chartOptions["series"] = this.seriesCodebasesPlatform;
-        //         this.chartOptions["plotOptions"]["series"]["stacking"] = "normal";
-        //         this.chartOptions["plotOptions"]["series"]["pointStart"] = this.seriesCodebasesPlatform[0].start_year;
-        //         break;
-        //     case "reviewed":
-        //         this.chartOptions["plotOptions"]["series"]["pointStart"] = this.dataCodebasesReviewed.start_year;
-        //         this.chartOptions["series"] = [this.dataCodebasesTotal, this.dataCodebasesReviewed];
-        //         break;
-        //     default: // Total
-        //         this.chartOptions["series"] = [this.dataCodebasesTotal];
-
-        // }
-        if (this.selectedLanguage) {
-          this.chartOptions["series"] = this.seriesCodebasesLangs;
-          this.chartOptions["plotOptions"]["series"]["stacking"] = "normal";
-          this.chartOptions["plotOptions"]["series"]["pointStart"] =
-            this.seriesCodebasesLangs[0].start_year;
-        } else if (this.selectedOS) {
-          this.chartOptions["series"] = this.seriesCodebasesOS;
-          this.chartOptions["plotOptions"]["series"]["stacking"] = "normal";
-          this.chartOptions["plotOptions"]["series"]["pointStart"] =
-            this.seriesCodebasesOS[0].start_year;
-        } else if (this.selectedPlatform) {
-          this.chartOptions["series"] = this.seriesCodebasesPlatform;
-          this.chartOptions["plotOptions"]["series"]["stacking"] = "normal";
-          this.chartOptions["plotOptions"]["series"]["pointStart"] =
-            this.seriesCodebasesPlatform[0].start_year;
-        } else if (this.selectedPeerReview) {
-          this.chartOptions["plotOptions"]["series"]["pointStart"] =
-            this.dataCodebasesReviewed.start_year;
-          this.chartOptions["series"] = [this.dataCodebasesTotal, this.dataCodebasesReviewed];
-        } else {
-          this.chartOptions["series"] = [this.dataCodebasesTotal];
-        }
-        break;
-
-      case "Downloads":
-        this.chartOptions["title"]["text"] = "Downloads";
-        this.chartOptions["series"] = [this.dataDownloadsTotal];
-        this.chartOptions["plotOptions"]["series"]["stacking"] = undefined;
-        break;
-      default:
-    }
+  get chartOptions() {
+    return {
+      ...this.chartOptionsMap.get(this.dataSelection),
+      chart: {
+        height: "70%",
+      },
+    };
   }
 
-  data() {
-    return {};
+  get series() {
+    return this.chartOptions.series;
+  }
+
+  get startYear() {
+    return this.chartOptions.plotOptions.series.pointStart;
+  }
+
+  get tableHeaders() {
+    return ["Year", ...this.chartOptions.series.map((s: TimeSeries) => s.name)];
+  }
+
+  get tableRows() {
+    return this.series[0].data.map((_, i: number) => [
+      this.startYear + i,
+      ...this.series.map((s: TimeSeries) => s.data[i]),
+    ]);
   }
 }
 </script>
-
-<style scoped>
-.metrics-box1 {
-  border: 0.4px solid black;
-  padding: 10px;
-  box-sizing: border-box;
-  width: 20%;
-  float: left;
-}
-
-.metrics-group {
-  margin: 10px 0;
-}
-.radio-button {
-  margin-left: 0px;
-}
-
-.codebase-subsection {
-  margin-left: 20px;
-}
-
-.radio-label {
-  margin-left: 5px;
-}
-
-.checkbox {
-  margin-left: 20px;
-}
-
-.metrics-box2 {
-  border: 0.4px solid black;
-  padding: 10px;
-  box-sizing: border-box;
-  width: 70%;
-  float: left;
-}
-
-.tab {
-  display: flex;
-  border-bottom: 1px solid #dee2e6;
-}
-
-.tab-button {
-  color: #22b1e6;
-  text-decoration: none;
-  background-color: transparent;
-  cursor: pointer;
-  border: 1px solid transparent;
-  display: block;
-  padding: 0.5rem 1rem;
-}
-
-.tab-button.active {
-  color: #495057;
-  background-color: #fff;
-  border-color: #dee2e6 #dee2e6 #fff;
-  box-sizing: border-box;
-  margin-bottom: -1px;
-}
-</style>

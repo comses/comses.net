@@ -1,59 +1,175 @@
 import "@/pages/sentry";
 import MetricsPage from "@/pages/metrics/Metrics.vue";
 
+export interface TimeSeries {
+  name: string;
+  data: number[];
+  start_year: number;
+}
+
+export interface MetricsData {
+  data_members_total: TimeSeries;
+  data_members_full: TimeSeries;
+  data_codebases_total: TimeSeries;
+  data_codebases_reviewed: TimeSeries;
+  series_codebases_os: TimeSeries[];
+  series_codebases_platform: TimeSeries[];
+  series_codebases_langs: TimeSeries[];
+  data_downloads_total: TimeSeries;
+}
+
 const el = document.getElementById("app");
 if (el) {
-  // const metricsData = JSON.parse(el.getAttribute("data-all-metrics-data"))
-  const metricsData = JSON.parse(el.getAttribute("data-metrics-data"));
+  const metrics: MetricsData = JSON.parse(el.getAttribute("data-metrics-data"));
 
-  console.log("metricsData");
-  console.log(JSON.stringify(metricsData, null, 4));
+  const chartOptionsMap = new Map([
+    [
+      "members",
+      createCumulativeChart("Members", "Members", metrics.data_members_total.start_year, [
+        metrics.data_members_total,
+      ]),
+    ],
+    [
+      "members-full",
+      createCumulativeChart("Full Members", "Members", metrics.data_members_total.start_year, [
+        metrics.data_members_total,
+        metrics.data_members_full,
+      ]),
+    ],
+    [
+      "codebases",
+      createCumulativeChart("Codebases", "Codebases", metrics.data_codebases_total.start_year, [
+        metrics.data_codebases_total,
+      ]),
+    ],
+    [
+      "codebases-reviewed",
+      createCumulativeChart(
+        "Reviewed Codebases",
+        "Codebases",
+        metrics.data_codebases_total.start_year,
+        [metrics.data_codebases_total, metrics.data_codebases_reviewed]
+      ),
+    ],
+    [
+      "codebases-os",
+      createAreaPercentageChart(
+        "Codebases by Operating System",
+        "Codebases",
+        metrics.series_codebases_os[0].start_year,
+        metrics.series_codebases_os
+      ),
+    ],
+    [
+      "codebases-platform",
+      createAreaPercentageChart(
+        "Codebases by Platform/Framework",
+        "Codebases",
+        metrics.series_codebases_platform[0].start_year,
+        metrics.series_codebases_platform
+      ),
+    ],
+    [
+      "codebases-language",
+      createAreaPercentageChart(
+        "Codebases by Language",
+        "Codebases",
+        metrics.series_codebases_langs[0].start_year,
+        metrics.series_codebases_langs
+      ),
+    ],
+    [
+      "downloads",
+      createCumulativeChart("Downloads", "Downloads", metrics.data_downloads_total.start_year, [
+        metrics.data_downloads_total,
+      ]),
+    ],
+  ]);
 
-  const dataMembersTotal = metricsData.data_members_total;
-  const dataMembersFull = metricsData.data_members_full;
-  const dataCodebasesTotal = metricsData.data_codebases_total; // TODO
-  const dataCodebasesReviewed = metricsData.data_codebases_reviewed;
-  const seriesCodebasesOS = metricsData.series_codebases_os;
-  const seriesCodebasesPlatform = metricsData.series_codebases_platform;
-  const seriesCodebasesLangs = metricsData.series_codebases_langs;
-  const dataDownloadsTotal = metricsData.data_downloads_total;
+  new MetricsPage({
+    propsData: { chartOptionsMap },
+  }).$mount("#app");
+}
 
-  // Initial highchart object
-  const chartOptions = {
+function cumulativeSum(array: number[]) {
+  return array.map(
+    (
+      (sum: number) => (value: number) =>
+        (sum += value)
+    )(0)
+  );
+}
+
+function createCumulativeChart(
+  title: string,
+  yAxisTitle: string,
+  startYear: number,
+  series: any[]
+) {
+  const seriesCumulative = series.map(s => {
+    return {
+      ...s,
+      type: "spline",
+      data: cumulativeSum(s.data),
+    };
+  });
+
+  const seriesNew = series.map(s => {
+    return {
+      ...s,
+      name: `New ${s.name}`,
+      type: "column",
+    };
+  });
+
+  return {
     title: {
-      text: "Members", // default
-      align: "left",
+      text: title,
     },
     yAxis: {
       title: {
-        text: "Members",
+        text: yAxisTitle,
       },
     },
     plotOptions: {
       series: {
-        label: {
-          connectorAllowed: false,
-        },
-        pointStart: dataMembersTotal.start_year,
-        stacking: undefined,
+        pointStart: startYear,
       },
     },
-    series: [
-      dataMembersTotal, // default data
-    ],
+    series: [...seriesNew, ...seriesCumulative],
   };
+}
 
-  new MetricsPage({
-    propsData: {
-      dataMembersTotal,
-      dataMembersFull,
-      dataCodebasesTotal,
-      seriesCodebasesOS,
-      seriesCodebasesPlatform,
-      seriesCodebasesLangs,
-      dataCodebasesReviewed,
-      dataDownloadsTotal,
-      chartOptions,
+function createAreaPercentageChart(
+  title: string,
+  yAxisTitle: string,
+  startYear: number,
+  series: any[]
+) {
+  series.forEach(s => {
+    s.type = "areaspline";
+  });
+
+  return {
+    title: {
+      text: title,
     },
-  }).$mount("#app");
+    yAxis: {
+      title: {
+        text: yAxisTitle,
+      },
+    },
+    plotOptions: {
+      areaspline: {
+        stacking: "percent",
+        marker: {
+          enabled: false,
+        },
+      },
+      series: {
+        pointStart: startYear,
+      },
+    },
+    series,
+  };
 }
