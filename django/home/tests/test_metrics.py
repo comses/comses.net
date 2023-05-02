@@ -34,17 +34,19 @@ class MetricsTestCase(TestCase):
         m = Metrics()
         OS_NAMES = ("linux", "other", "platform_independent", "windows", "macos")
         highcharts_timeseries = m.convert_codebase_metrics_to_timeseries(
-            self.os_metrics
+            self.os_metrics, start_year=2013
         )
         for chart_data in highcharts_timeseries:
             # missing year 2016
             self.assertEquals(
-                chart_data["data"][2], 0, f"3rd entry should be 0 {chart_data['name']}"
+                chart_data["data"][3],
+                0,
+                f"4th entry (2016) should be 0 {chart_data['name']}",
             )
             self.assertEquals(
                 chart_data["start_year"],
-                2014,
-                f"start year should be 2014 {chart_data['name']}",
+                2013,
+                f"start year should be 2013 {chart_data['name']}",
             )
             self.assertTrue(
                 chart_data["name"] in OS_NAMES, f"Invalid OS name {chart_data['name']}"
