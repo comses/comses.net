@@ -155,10 +155,12 @@
 import { Component, Vue, Prop } from "vue-property-decorator";
 import Highcharts from "highcharts";
 import exportingInit from "highcharts/modules/exporting";
+import labelInit from "highcharts/modules/series-label";
 import { Chart } from "highcharts-vue";
 import { Metric, MetricsData, TimeSeries } from "@/pages/metrics";
 
-exportingInit(Highcharts); // Initialize exporting module (hamburger menu w/ download options)
+exportingInit(Highcharts); // required for hamburger menu w/ download options
+labelInit(Highcharts); // required for series labels on area charts
 
 // key for the different charts, correpsonds to the radio button values
 type ChartSelection =
@@ -252,6 +254,9 @@ export default class MetricsPage extends Vue {
       plotOptions: {
         series: {
           pointStart: metric.start_year,
+          label: {
+            enabled: false,
+          },
         },
       },
     };
@@ -312,6 +317,10 @@ export default class MetricsPage extends Vue {
         enabled: false,
       },
     };
+    chartOptions.plotOptions.series.label.enabled = true;
+    chartOptions.tooltip = {
+      split: true,
+    }
 
     return chartOptions;
   }
