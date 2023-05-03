@@ -128,7 +128,7 @@ class Metrics:
         }
         member_metrics["full_members"] = {
             "title": "Full Members",
-            "y_label": "# Full Members",
+            "y_label": "# Members",
             "start_year": min_start_year,
             "series": [
                 {
@@ -186,7 +186,7 @@ class Metrics:
         }
         metrics_data["reviewed_codebases"] = {
             "title": "Peer Reviewed Codebases",
-            "y_label": "# Peer Reviewed Models",
+            "y_label": "# Codebases",
             "start_year": min_start_year,
             "series": [
                 {
