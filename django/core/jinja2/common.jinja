@@ -159,11 +159,11 @@
 <form class="mb-3" action="{{ search_url }}" method="get">
     <label class="sr-only" for="search-query">Search</label>
     <div class="input-group">
+        <input id="search-query" class="form-control" name="query" type="search" value=""
+            placeholder="{{ placeholder }}">
         <button type="submit" class="btn btn-primary">
             <i class="fas fa-search"></i>
         </button>
-        <input id="search-query" class="form-control" name="query" type="search" value=""
-            placeholder="{{ placeholder }}">
     </div>
 </form>
 {% endmacro %}

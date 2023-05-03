@@ -6,7 +6,6 @@
     :search-url="query"
   >
     <template #form>
-      <p>{{ userId }}</p>
       <form @submit="handleSubmit">
         <FormTagger name="tags" label="Keywords" type="Profile" />
         <!-- consider adding full member/peer reviewer filter -->

@@ -312,18 +312,22 @@ nav {
 
 .tag-list {
   .tag {
-    padding: 0.25rem 0.5rem;
-    display: inline-block;
-    line-height: 1.25;
-    background-color: $rules-color;
-    font-size: 0.9rem;
-    margin-top: 0.5rem;
+    @extend .btn;
+    @extend .badge;
+    @extend .btn-outline-secondary;
+    color: $secondary !important;
+    border-color: transparentize($color: $secondary, $amount: 0.75);
+    &:hover {
+      color: $white !important;
+    }
   }
 
   .btn-tag {
+    @extend .btn;
     @extend .btn-sm;
-    padding: 0.25rem 0.25rem;
-    margin: 0.25rem 0.25rem;
+    @extend .btn-outline-secondary;
+    padding: 0.125rem 0.25rem;
+    margin: 0.25rem 0.125rem;
   }
 }
 
