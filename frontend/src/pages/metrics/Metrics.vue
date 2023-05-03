@@ -9,11 +9,11 @@
               <input
                 class="form-check-input"
                 type="radio"
-                id="members"
-                value="members"
+                id="total-members"
+                value="total-members"
                 v-model="dataSelection"
               />
-              <label class="form-check-label font-weight-bold" for="members"
+              <label class="form-check-label font-weight-bold" for="total-members"
                 >Members <small class="text-muted">(total)</small></label
               >
             </div>
@@ -22,11 +22,11 @@
                 <input
                   class="form-check-input"
                   type="radio"
-                  id="members-full"
-                  value="members-full"
+                  id="full-members"
+                  value="full-members"
                   v-model="dataSelection"
                 />
-                <label class="form-check-label" for="members-full"
+                <label class="form-check-label" for="full-members"
                   ><small>Full Members</small></label
                 >
               </div>
@@ -38,11 +38,11 @@
               <input
                 class="form-check-input"
                 type="radio"
-                id="codebases"
-                value="codebases"
+                id="total-codebases"
+                value="total-codebases"
                 v-model="dataSelection"
               />
-              <label class="form-check-label font-weight-bold" for="codebases"
+              <label class="form-check-label font-weight-bold" for="total-codebases"
                 >Codebases <small class="text-muted">(total)</small></label
               >
             </div>
@@ -51,11 +51,11 @@
                 <input
                   class="form-check-input"
                   type="radio"
-                  id="codebases-reviewed"
-                  value="codebases-reviewed"
+                  id="reviewed-codebases"
+                  value="reviewed-codebases"
                   v-model="dataSelection"
                 />
-                <label class="form-check-label" for="codebases-reviewed"
+                <label class="form-check-label" for="reviewed-codebases"
                   ><small>Peer Reviewed</small></label
                 >
               </div>
@@ -63,11 +63,11 @@
                 <input
                   class="form-check-input"
                   type="radio"
-                  id="codebases-language"
-                  value="codebases-language"
+                  id="codebases-by-language"
+                  value="codebases-by-language"
                   v-model="dataSelection"
                 />
-                <label class="form-check-label" for="codebases-language"
+                <label class="form-check-label" for="codebases-by-language"
                   ><small>By Language</small></label
                 >
               </div>
@@ -75,11 +75,11 @@
                 <input
                   class="form-check-input"
                   type="radio"
-                  id="codebases-platform"
-                  value="codebases-platform"
+                  id="codebases-by-platform"
+                  value="codebases-by-platform"
                   v-model="dataSelection"
                 />
-                <label class="form-check-label" for="codebases-platform"
+                <label class="form-check-label" for="codebases-by-platform"
                   ><small>By Platform</small></label
                 >
               </div>
@@ -87,11 +87,11 @@
                 <input
                   class="form-check-input"
                   type="radio"
-                  id="codebases-os"
-                  value="codebases-os"
+                  id="codebases-by-os"
+                  value="codebases-by-os"
                   v-model="dataSelection"
                 />
-                <label class="form-check-label" for="codebases-os"
+                <label class="form-check-label" for="codebases-by-os"
                   ><small>By Operating System</small></label
                 >
               </div>
@@ -103,11 +103,11 @@
               <input
                 class="form-check-input"
                 type="radio"
-                id="downloads"
-                value="downloads"
+                id="total-downloads"
+                value="total-downloads"
                 v-model="dataSelection"
               />
-              <label class="form-check-label font-weight-bold" for="downloads"
+              <label class="form-check-label font-weight-bold" for="total-downloads"
                 >Downloads <small class="text-muted">(total)</small></label
               >
             </div>
@@ -156,9 +156,20 @@ import { Component, Vue, Prop } from "vue-property-decorator";
 import Highcharts from "highcharts";
 import exportingInit from "highcharts/modules/exporting";
 import { Chart } from "highcharts-vue";
-import { TimeSeries } from "@/pages/metrics";
+import { Metric, MetricsData, TimeSeries } from "@/pages/metrics";
 
 exportingInit(Highcharts); // Initialize exporting module (hamburger menu w/ download options)
+
+// key for the different charts, correpsonds to the radio button values
+type ChartSelection =
+  | "total-members"
+  | "full-members"
+  | "total-codebases"
+  | "reviewed-codebases"
+  | "codebases-by-language"
+  | "codebases-by-platform"
+  | "codebases-by-os"
+  | "total-downloads";
 
 @Component({
   components: {
@@ -166,9 +177,11 @@ exportingInit(Highcharts); // Initialize exporting module (hamburger menu w/ dow
   },
 })
 export default class MetricsPage extends Vue {
-  @Prop() chartOptionsMap: Map<string, any>;
+  @Prop() metrics: MetricsData;
 
-  dataSelection = "members";
+  chartOptionsMap: Map<ChartSelection, any>;
+
+  dataSelection: ChartSelection = "total-members";
   selectedTab: "chart" | "table" = "chart";
 
   get chartOptions() {
@@ -197,6 +210,98 @@ export default class MetricsPage extends Vue {
       this.startYear + i,
       ...this.series.map((s: TimeSeries) => s.data[i]),
     ]);
+  }
+
+  created() {
+    this.initalizeChartMap();
+  }
+
+  initalizeChartMap() {
+    this.chartOptionsMap = new Map<ChartSelection, any>([
+      ["total-members", this.createCumulativeChart(this.metrics.total_members)],
+      ["full-members", this.createCumulativeChart(this.metrics.full_members)],
+      ["total-codebases", this.createCumulativeChart(this.metrics.total_codebases)],
+      ["reviewed-codebases", this.createCumulativeChart(this.metrics.reviewed_codebases)],
+      ["codebases-by-os", this.createAreaPercentageChart(this.metrics.codebases_by_os)],
+      ["codebases-by-language", this.createAreaPercentageChart(this.metrics.codebases_by_language)],
+      ["codebases-by-platform", this.createAreaPercentageChart(this.metrics.codebases_by_platform)],
+      ["total-downloads", this.createCumulativeChart(this.metrics.total_downloads)],
+    ]);
+  }
+
+  cumulativeSum(array: number[]) {
+    return array.map(
+      (
+        (sum: number) => (value: number) =>
+          (sum += value)
+      )(0)
+    );
+  }
+
+  createBaseChartOptions(metric: Metric, chartOptions?: any) {
+    return {
+      title: {
+        text: metric.title,
+      },
+      yAxis: {
+        title: {
+          text: metric.y_label,
+        },
+      },
+      plotOptions: {
+        series: {
+          pointStart: metric.start_year,
+        },
+        ...chartOptions,
+      },
+    };
+  }
+
+  createCumulativeChart(metric: Metric) {
+    const seriesCumulative = metric.series.map(s => {
+      return {
+        ...s,
+        type: "spline",
+        data: this.cumulativeSum(s.data),
+        pointStart: metric.start_year,
+      };
+    });
+
+    const seriesNew = metric.series.map(s => {
+      return {
+        ...s,
+        name: `New ${s.name}`,
+        type: "column",
+        pointStart: metric.start_year,
+      };
+    });
+
+    return {
+      ...this.createBaseChartOptions(metric),
+      series: [...seriesNew, ...seriesCumulative],
+    };
+  }
+
+  createAreaPercentageChart(metric: Metric) {
+    const series = metric.series.map(s => {
+      return {
+        ...s,
+        type: "areaspline",
+        pointStart: metric.start_year,
+      };
+    });
+
+    return {
+      ...this.createBaseChartOptions(metric, {
+        areaspline: {
+          stacking: "percent",
+          marker: {
+            enabled: false,
+          },
+        },
+      }),
+      series,
+    };
   }
 }
 </script>
