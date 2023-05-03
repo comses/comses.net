@@ -238,7 +238,7 @@ export default class MetricsPage extends Vue {
     );
   }
 
-  createBaseChartOptions(metric: Metric, chartOptions?: any) {
+  createBaseChartOptions(metric: Metric): any {
     return {
       title: {
         text: metric.title,
@@ -248,11 +248,11 @@ export default class MetricsPage extends Vue {
           text: metric.y_label,
         },
       },
+      xAxis: {},
       plotOptions: {
         series: {
           pointStart: metric.start_year,
         },
-        ...chartOptions,
       },
     };
   }
@@ -276,10 +276,21 @@ export default class MetricsPage extends Vue {
       };
     });
 
-    return {
+    const chartOptions = {
       ...this.createBaseChartOptions(metric),
       series: [...seriesNew, ...seriesCumulative],
     };
+    const currentYear = new Date().getFullYear();
+    // cut-off band to incidate that the current year is incomplete
+    chartOptions.xAxis.plotBands = [
+      {
+        color: "#f2f2f2",
+        from: currentYear - 0.5,
+        to: currentYear + 1,
+      },
+    ];
+
+    return chartOptions;
   }
 
   createAreaPercentageChart(metric: Metric) {
@@ -291,17 +302,18 @@ export default class MetricsPage extends Vue {
       };
     });
 
-    return {
-      ...this.createBaseChartOptions(metric, {
-        areaspline: {
-          stacking: "percent",
-          marker: {
-            enabled: false,
-          },
-        },
-      }),
+    const chartOptions = {
+      ...this.createBaseChartOptions(metric),
       series,
     };
+    chartOptions.plotOptions.areaspline = {
+      stacking: "percent",
+      marker: {
+        enabled: false,
+      },
+    };
+
+    return chartOptions;
   }
 }
 </script>
