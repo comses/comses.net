@@ -14,22 +14,22 @@ export interface Metric {
   series: TimeSeries[];
 }
 
-export interface MetricsData {
-  start_year: Metric;
-  total_members: Metric;
-  full_members: Metric;
-  total_codebases: Metric;
-  codebases_by_os: Metric;
-  codebases_by_platform: Metric;
-  codebases_by_language: Metric;
-  reviewed_codebases: Metric;
-  total_downloads: Metric;
-}
+export type MetricsData = Record<
+  | "start_year"
+  | "total_members"
+  | "full_members"
+  | "total_codebases"
+  | "codebases_by_os"
+  | "codebases_by_platform"
+  | "codebases_by_language"
+  | "reviewed_codebases"
+  | "total_downloads",
+  Metric
+>;
 
 const el = document.getElementById("app");
 if (el) {
   const metrics: MetricsData = JSON.parse(el.getAttribute("data-metrics-data"));
-  console.table(metrics);
 
   new MetricsPage({
     propsData: { metrics },
