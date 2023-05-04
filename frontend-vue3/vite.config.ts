@@ -35,9 +35,13 @@ export default defineConfig({
     rollupOptions: {
       input: {
         main: resolvePath("./src/apps/main.ts"),
-        formdemo: resolvePath("./src/apps/formdemo.ts"),
         codebase_list: resolvePath("./src/apps/codebase_list.ts"),
+        codebase_edit: resolvePath("./src/apps/codebase_edit.ts"),
+        event_list: resolvePath("./src/apps/event_list.ts"),
         event_edit: resolvePath("./src/apps/event_edit.ts"),
+        job_list: resolvePath("./src/apps/job_list.ts"),
+        job_edit: resolvePath("./src/apps/job_edit.ts"),
+        profile_list: resolvePath("./src/apps/profile_list.ts"),
         profile_edit: resolvePath("./src/apps/profile_edit.ts"),
         // add more entry points here
       },
