@@ -1,7 +1,6 @@
 import { useAxios } from "@/composables/api/axios";
+import type { TagType } from "@/types";
 
-export type Tags = { name: string }[];
-export type TagType = "" | "Event" | "Codebase" | "Job" | "Profile";
 interface TagQueryParams {
   query?: string;
   type?: TagType;

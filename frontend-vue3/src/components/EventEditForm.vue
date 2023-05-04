@@ -1,13 +1,13 @@
 <template>
   <form @submit="handleSubmit">
-    <FormTextInput
+    <TextField
       class="mb-3"
       name="title"
       label="Title"
       help="A short title describing the event"
       indicate-required
     />
-    <FormTextInput
+    <TextField
       class="mb-3"
       name="location"
       label="Location"
@@ -16,7 +16,7 @@
     />
     <div class="row">
       <div class="col-6">
-        <FormDatePicker
+        <DatepickerField
           class="mb-3"
           name="start_date"
           label="Start Date"
@@ -26,7 +26,7 @@
         />
       </div>
       <div class="col-6">
-        <FormDatePicker
+        <DatepickerField
           class="mb-3"
           name="end_date"
           label="End Date"
@@ -37,7 +37,7 @@
     </div>
     <div class="row">
       <div class="col-6 d-inline">
-        <FormDatePicker
+        <DatepickerField
           class="mb-3"
           name="early_registration_deadline"
           label="Early Registration Deadline"
@@ -46,7 +46,7 @@
         />
       </div>
       <div class="col-6 d-inline">
-        <FormDatePicker
+        <DatepickerField
           class="mb-3"
           name="registration_deadline"
           label="Registration Deadline"
@@ -56,7 +56,7 @@
         />
       </div>
     </div>
-    <FormDatePicker
+    <DatepickerField
       class="mb-3"
       name="submission_deadline"
       label="Submission Deadline"
@@ -64,14 +64,14 @@
       :min-date="(values.start_date as Date)"
       :max-date="(values.end_date as Date)"
     />
-    <FormMarkdown
+    <MarkdownField
       class="mb-3"
       name="description"
       label="Description"
       help="Detailed information about the event"
       indicate-required
     />
-    <FormMarkdown
+    <MarkdownField
       class="mb-3"
       name="summary"
       label="Summary"
@@ -80,19 +80,19 @@
       indicate-required
     >
       <template #label>
-        <FormLabel label="Summary" id-for="summary" required />
+        <FieldLabel label="Summary" id-for="summary" required />
         <button type="button" class="btn btn-sm btn-link float-end p-0 mb-2" @click="summarize">
           Summarize from Description
         </button>
       </template>
-    </FormMarkdown>
-    <FormTextInput
+    </MarkdownField>
+    <TextField
       class="mb-3"
       name="external_url"
       label="Event website"
       help="Link to a more detailed website for this event"
     />
-    <FormTagger
+    <TaggerField
       class="mb-3"
       name="tags"
       label="Tags"
@@ -108,12 +108,12 @@
 <script setup lang="ts">
 import * as yup from "yup";
 import { computed, onMounted } from "vue";
-import FormTextInput from "@/components/form/FormTextInput.vue";
-import FormMarkdown from "@/components/form/FormMarkdown.vue";
-import FormDatePicker from "@/components/form/FormDatePicker.vue";
-import FormTagger from "@/components/form/FormTagger.vue";
+import TextField from "@/components/form/TextField.vue";
+import MarkdownField from "@/components/form/MarkdownField.vue";
+import DatepickerField from "@/components/form/DatepickerField.vue";
+import TaggerField from "@/components/form/TaggerField.vue";
 import FormAlert from "@/components/form/FormAlert.vue";
-import FormLabel from "@/components/form/FormLabel.vue";
+import FieldLabel from "@/components/form/FieldLabel.vue";
 import { useForm } from "@/composables/form";
 import { useEventAPI } from "@/composables/api/event";
 

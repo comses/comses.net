@@ -1,11 +1,11 @@
 <template>
   <form @submit="handleSubmit">
-    <FormTextInput class="mb-3" name="text" label="Text Input" />
-    <FormTextInput class="mb-3" name="email" label="Email" />
-    <FormCheckbox class="mb-3" name="terms" label="Terms and Conditions" />
-    <FormSelect class="mb-3" name="number" label="Your Number" :options="numberOptions" />
-    <FormDatePicker class="mb-3" name="date" label="Date" />
-    <FormTagger class="mb-3" name="tags" label="Tags" />
+    <TextField class="mb-3" name="text" label="Text Input" />
+    <TextField class="mb-3" name="email" label="Email" />
+    <CheckboxField class="mb-3" name="terms" label="Terms and Conditions" />
+    <SelectField class="mb-3" name="number" label="Your Number" :options="numberOptions" />
+    <DatepickerField class="mb-3" name="date" label="Date" />
+    <TaggerField class="mb-3" name="tags" label="Tags" />
     <button type="submit" class="mb-3 btn btn-primary">Submit</button>
   </form>
 </template>
@@ -13,11 +13,11 @@
 <script setup lang="ts">
 import * as yup from "yup";
 import { useForm } from "@/composables/form";
-import FormTextInput from "@/components/form/FormTextInput.vue";
-import FormSelect from "@/components/form/FormSelect.vue";
-import FormCheckbox from "@/components/form/FormCheckbox.vue";
-import FormDatePicker from "@/components/form/FormDatePicker.vue";
-import FormTagger from "@/components/form/FormTagger.vue";
+import TextField from "@/components/form/TextField.vue";
+import SelectField from "@/components/form/SelectField.vue";
+import CheckboxField from "@/components/form/CheckboxField.vue";
+import DatepickerField from "@/components/form/DatepickerField.vue";
+import TaggerField from "@/components/form/TaggerField.vue";
 
 const numberOptions = [
   { value: 1, label: "One" },

@@ -1,7 +1,7 @@
 <template>
   <div>
     <slot name="label">
-      <FormLabel v-if="label" :label="label" :id-for="id" :required="indicateRequired" />
+      <FieldLabel v-if="label" :label="label" :id-for="id" :required="required" />
     </slot>
     <FormPlaceholder v-if="showPlaceholder" />
     <VueDatePicker
@@ -21,10 +21,10 @@
       :max-date="maxDate"
     ></VueDatePicker>
     <slot name="help">
-      <FormHelp v-if="help" :help="help" :id-for="id" />
+      <FieldHelp v-if="help" :help="help" :id-for="id" />
     </slot>
     <slot name="error">
-      <FormError v-if="error" :error="error" :id-for="id" />
+      <FieldError v-if="error" :error="error" :id-for="id" />
     </slot>
   </div>
 </template>
@@ -33,22 +33,18 @@
 import { inject } from "vue";
 import VueDatePicker from "@vuepic/vue-datepicker";
 import { useField } from "@/composables/form";
-import FormLabel from "@/components/form/FormLabel.vue";
-import FormHelp from "@/components/form/FormHelp.vue";
-import FormError from "@/components/form/FormError.vue";
+import FieldLabel from "@/components/form/FieldLabel.vue";
+import FieldHelp from "@/components/form/FieldHelp.vue";
+import FieldError from "@/components/form/FieldError.vue";
 import FormPlaceholder from "@/components/form/FormPlaceholder.vue";
+import type { BaseFieldProps } from "@/types";
 
-export interface DatePickerProps {
-  name: string;
-  label?: string;
-  help?: string;
-  placeholder?: string;
-  indicateRequired?: boolean;
+interface DatepickerFieldProps extends BaseFieldProps {
   minDate?: Date;
   maxDate?: Date;
 }
 
-const props = defineProps<DatePickerProps>();
+const props = defineProps<DatepickerFieldProps>();
 
 const { id, value, attrs, error } = useField<Date>(props, "name");
 

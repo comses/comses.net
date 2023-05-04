@@ -1,7 +1,7 @@
 <template>
   <div>
     <slot name="label">
-      <FormLabel v-if="label" :label="label" :id-for="id" :required="indicateRequired" />
+      <FieldLabel v-if="label" :label="label" :id-for="id" :required="required" />
     </slot>
     <FormPlaceholder v-if="showPlaceholder" />
     <select
@@ -21,34 +21,28 @@
       </option>
     </select>
     <slot name="help">
-      <FormHelp v-if="help" :help="help" :id-for="id" />
+      <FieldHelp v-if="help" :help="help" :id-for="id" />
     </slot>
     <slot name="error">
-      <FormError v-if="error" :error="error" :id-for="id" />
+      <FieldError v-if="error" :error="error" :id-for="id" />
     </slot>
   </div>
 </template>
 
 <script setup lang="ts">
 import { useField } from "@/composables/form";
-import FormLabel from "@/components/form/FormLabel.vue";
-import FormHelp from "@/components/form/FormHelp.vue";
-import FormError from "@/components/form/FormError.vue";
+import FieldLabel from "@/components/form/FieldLabel.vue";
+import FieldHelp from "@/components/form/FieldHelp.vue";
+import FieldError from "@/components/form/FieldError.vue";
 import FormPlaceholder from "@/components/form/FormPlaceholder.vue";
 import { inject } from "vue";
+import type { BaseFieldProps } from "@/types";
 
-export type SelectOptions = { value: any; label: string }[];
-
-export interface SelectProps {
-  name: string;
-  label?: string;
-  help?: string;
-  placeholder?: string;
-  indicateRequired?: boolean;
-  options: SelectOptions;
+interface SelectFieldProps extends BaseFieldProps {
+  options: { value: any; label: string }[];
 }
 
-const props = defineProps<SelectProps>();
+const props = defineProps<SelectFieldProps>();
 
 const { id, value, attrs, error } = useField<any>(props, "name");
 

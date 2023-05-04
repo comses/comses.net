@@ -60,7 +60,7 @@
             </span>
           </li>
           <li class="list-group-item">
-            <FormCheckbox
+            <CheckboxField
               :required="false"
               name="full_member"
               :errorMsgs="errors.full_member"
@@ -75,7 +75,7 @@
                   of CoMSES Net Full Membership.
                 </div>
               </template>
-            </FormCheckbox>
+            </CheckboxField>
           </li>
         </ul>
       </div>
@@ -83,65 +83,65 @@
 
     <div class="row">
       <div class="col-6">
-        <FormTextInput class="mb-3" name="given_name" label="First Name" indicate-required />
+        <TextField class="mb-3" name="given_name" label="First Name" indicate-required />
       </div>
       <div class="col-6">
-        <FormTextInput class="mb-3" name="family_name" label="Last Name" indicate-required />
+        <TextField class="mb-3" name="family_name" label="Last Name" indicate-required />
       </div>
     </div>
-    <FormTextInput
+    <TextField
       class="mb-3"
       name="email"
       label="Email"
       help="Email changes require reverification of your new email address by acknowledging a confirmation email"
       indicate-required
     />
-    <FormMarkdown
+    <MarkdownField
       class="mb-3"
       name="bio"
       label="Bio"
       help="A brief description of your research career"
       :rows="5"
     />
-    <FormMarkdown
+    <MarkdownField
       class="mb-3"
       name="research_interests"
       label="Research Interests"
       help="A brief description of your research interests"
       :rows="5"
     />
-    <FormTextInput
+    <TextField
       class="mb-3"
       name="personal_url"
       label="Personal URL"
       help="A link to your personal website"
     />
-    <FormTextInput
+    <TextField
       class="mb-3"
       name="professional_url"
       label="Professional URL"
       help="A link to your institutional or professional profile page"
     />
-    <FormSelect
+    <SelectField
       class="mb-3"
       name="industry"
       label="Industry"
       help="Your primary field of work"
       :options="industryOptions"
     />
-    <FormOrgItems
+    <ResearchOrgListField
       class="mb-3"
       name="affiliations"
       label="Affiliations"
       help="A list of organizations that you are affiliated with"
     />
-    <FormTextItems
+    <TextListField
       class="mb-3"
       name="degrees"
       label="Degrees"
       help="A list of degrees earned and their associated institutions: e.g., Ph.D., Environmental Social Science, Arizona State University"
     />
-    <FormTagger class="mb-3" name="tags" label="Keywords" type="Profile" />
+    <TaggerField class="mb-3" name="tags" label="Keywords" type="Profile" />
     <FormAlert :validation-errors="Object.values(errors)" :server-errors="serverErrors" />
     <button type="submit" class="btn btn-primary mb-3" :disabled="isLoading">Save</button>
   </form>
@@ -150,13 +150,13 @@
 <script setup lang="ts">
 import * as yup from "yup";
 import { onMounted } from "vue";
-import FormCheckbox from "@/components/form/FormCheckbox.vue";
-import FormTextInput from "@/components/form/FormTextInput.vue";
-import FormTextItems from "@/components/form/FormTextItems.vue";
-import FormSelect from "@/components/form/FormSelect.vue";
-import FormMarkdown from "@/components/form/FormMarkdown.vue";
-import FormTagger from "@/components/form/FormTagger.vue";
-import FormOrgItems from "@/components/form/FormOrgItems.vue";
+import CheckboxField from "@/components/form/CheckboxField.vue";
+import TextField from "@/components/form/TextField.vue";
+import TextListField from "@/components/form/TextListField.vue";
+import SelectField from "@/components/form/SelectField.vue";
+import MarkdownField from "@/components/form/MarkdownField.vue";
+import TaggerField from "@/components/form/TaggerField.vue";
+import ResearchOrgListField from "@/components/form/ResearchOrgListField.vue";
 import FormAlert from "@/components/form/FormAlert.vue";
 import { useForm } from "@/composables/form";
 import { useProfileAPI } from "@/composables/api/profile";

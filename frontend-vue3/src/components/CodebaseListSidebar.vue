@@ -7,11 +7,11 @@
   >
     <template #form>
       <form @submit="handleSubmit">
-        <FormTextInput class="mb-3" name="keywords" label="Keywords" @keyup.enter="search" />
-        <FormDatePicker class="mb-3" name="startDate" label="Published After" />
-        <FormDatePicker class="mb-3" name="endDate" label="Published Before" />
-        <FormTagger class="mb-3" name="tags" label="Tags" type="Codebase" />
-        <FormSelect
+        <TextField class="mb-3" name="keywords" label="Keywords" @keyup.enter="search" />
+        <DatepickerField class="mb-3" name="startDate" label="Published After" />
+        <DatepickerField class="mb-3" name="endDate" label="Published Before" />
+        <TaggerField class="mb-3" name="tags" label="Tags" type="Codebase" />
+        <SelectField
           class="mb-3"
           name="peerReviewStatus"
           label="Peer Review Status"
@@ -26,10 +26,10 @@
 import * as yup from "yup";
 import { computed } from "vue";
 import ListSidebar from "@/components/ListSidebar.vue";
-import FormTextInput from "@/components/form/FormTextInput.vue";
-import FormSelect from "@/components/form/FormSelect.vue";
-import FormDatePicker from "@/components/form/FormDatePicker.vue";
-import FormTagger from "@/components/form/FormTagger.vue";
+import TextField from "@/components/form/TextField.vue";
+import SelectField from "@/components/form/SelectField.vue";
+import DatepickerField from "@/components/form/DatepickerField.vue";
+import TaggerField from "@/components/form/TaggerField.vue";
 import { useForm } from "@/composables/form";
 import { useCodebaseAPI } from "@/composables/api/codebase";
 
