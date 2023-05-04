@@ -21,16 +21,16 @@ class Metrics:
         """
         caches metrics data in redis
         """
-        all_data = self.get_highcharts_data()
+        all_data = self.get_metrics_data()
         cache.set(
             Metrics.REDIS_METRICS_KEY, all_data, Metrics.DEFAULT_METRICS_CACHE_TIMEOUT
         )
         return all_data
 
-    def get_highcharts_data(self):
+    def get_metrics_data(self):
         """
-        Returns all metrics data in a format suitable for Highcharts
-        Sample JSON schema
+        Returns all metrics data in a format amenable to HighCharts / frontend
+        consumption.
         {
             total_members: {
                 "title": "Total Members",
@@ -293,7 +293,7 @@ class Metrics:
 
     def to_timeseries(self, queryset_data, start_year):
         """
-        queryset_data is a list of dicts with keys 'year' and 'total'
+        incoming queryset_data is a list of dicts with keys 'year' and 'total'
 
         return a timeseries with 0s for all missing years in-between
         """
@@ -308,7 +308,11 @@ class Metrics:
         self, metrics, start_year, category=None
     ):
         """
-        metrics are a list of dicts with the following schema:
+        Converts Django queryset metrics to a list of timeseries dicts e.g.,
+        [{"name": "OS Counts", "data": [0, 37, 43, 14, 95, ...]}, ...]
+
+        incoming metrics are a list of dicts in Django queryset values() format
+        with the following schema:
         [
           ...
           {'operating_systems': 'macos', 'year': 2018, 'count': 18},
@@ -348,6 +352,7 @@ class Metrics:
         full_date_range = pd.date_range(
             str(df["year"].min()), str(df["year"].max()), freq="YS"
         )
+        # reindex the columns to include all years in the range
         categories_by_year = categories_by_year.reindex(
             columns=full_date_range.year, fill_value=0
         )
@@ -362,22 +367,15 @@ class Metrics:
         )
         # build a new dataframe with the included categories and an 'other' row
         result_df = categories_by_year.loc[included_categories_mask]
-        # this line generates a SettingWithCopyWarning
+        # this generates a SettingWithCopyWarning
         # See the caveats in the documentation: https://pandas.pydata.org/pandas-docs/stable/user_guide/indexing.html#returning-a-view-versus-a-copy"
         result_df.loc["other"] = categories_by_year.loc[other_categories_mask].sum(
             axis=0
         )
 
-        # Convert result data frame into a list of hichart objects
-        start_year = int(categories_by_year.columns[0])
+        # Convert result data frame into a list of Metrics Series objects
         category_list = result_df.index.drop_duplicates().tolist()
-        category_data_list = []
-        for category in category_list:
-            category_data_list.append(
-                {
-                    "name": category,
-                    "data": result_df.loc[category].tolist(),
-                    "start_year": start_year,
-                }
-            )
-        return category_data_list
+        return [
+            {"name": category, "data": result_df.loc[category].tolist()}
+            for category in category_list
+        ]

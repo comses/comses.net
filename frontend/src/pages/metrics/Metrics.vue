@@ -320,7 +320,7 @@ export default class MetricsPage extends Vue {
     chartOptions.plotOptions.series.label.enabled = true;
     chartOptions.tooltip = {
       split: true,
-    }
+    };
 
     return chartOptions;
   }
