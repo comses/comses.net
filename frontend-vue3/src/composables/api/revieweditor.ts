@@ -12,23 +12,26 @@ export function useReviewEditorAPI() {
   const { state, get, post, put, detailUrl } = useAxios(baseUrl);
 
   async function listInvitations(review_uuid: string) {
-    return get(`${detailUrl(review_uuid)}editor/invitations/`);
+    return get(detailUrl(review_uuid, ["editor", "invitations"]));
   }
 
   async function sendInvitation(review_uuid: string, candidate_reviewer: any) {
-    return post(`${detailUrl(review_uuid)}editor/invitations/send_invitation/`, candidate_reviewer);
+    return post(
+      detailUrl(review_uuid, ["editor", "invitations", "send_invitation"]),
+      candidate_reviewer
+    );
   }
 
   async function resendInvitation(slug: string, invitation_slug: string) {
-    return post(`${detailUrl(slug)}editor/invitations/${invitation_slug}/resend_invitation/`);
+    return post(detailUrl(slug, ["editor", "invitations", invitation_slug, "resend_invitation"]));
   }
 
   async function listFeedback(review_uuid: string) {
-    return get(`${detailUrl(review_uuid)}editor/feedback/`);
+    return get(detailUrl(review_uuid, ["editor", "feedback"]));
   }
 
   async function changeStatus(slug: string, status: string) {
-    return put(`${detailUrl(slug)}editor/`, { status });
+    return put(detailUrl(slug, ["editor"]), { status });
   }
 
   async function findReviewers(query: string) {

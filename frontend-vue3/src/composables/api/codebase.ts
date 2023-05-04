@@ -32,15 +32,15 @@ export function useCodebaseAPI() {
   }
 
   async function mediaList(identifier: string) {
-    return get(`${detailUrl(identifier)}media/`);
+    return get(detailUrl(identifier, ["media"]));
   }
 
   async function mediaDelete(identifier: string, image_id: string | number) {
-    return del(`${detailUrl(identifier)}media/${image_id}`);
+    return del(detailUrl(identifier, ["media", image_id]));
   }
 
   async function mediaClear(identifier: string) {
-    return del(`${detailUrl(identifier)}media/clear/`);
+    return del(detailUrl(identifier, ["media", "clear"]));
   }
 
   return {
@@ -63,50 +63,56 @@ export function useReleaseAPI() {
    */
 
   const baseUrl = "/codebases/";
-  const { state, get, post, postForm, put, del } = useAxios(baseUrl);
+  const { state, get, post, postForm, put, del, detailUrl } = useAxios(baseUrl);
+
+  function releaseDetailUrl(identifier: string, version_number: string, paths: string[] = []) {
+    return detailUrl(identifier, ["releases", version_number, ...paths]);
+  }
 
   // urls
   // FIXME: this seems overly verbose, we may not even need many of these
   // revisit when implementing components that use this
-  function detailUrl(identifier: string, version_number: string) {
-    return `${baseUrl}${identifier}/releases/${version_number}/`;
-  }
   function editUrl(identifier: string, version_number: string) {
-    return `${detailUrl(identifier, version_number)}edit/`;
+    return releaseDetailUrl(identifier, version_number, ["edit"]);
   }
   function detailEditUrl(identifier: string, version_number: string) {
-    return `${detailUrl(identifier, version_number)}?edit/`;
+    return releaseDetailUrl(identifier, version_number, ["?edit"]);
   }
   function listOriginalsFileUrl(identifier: string, version_number: string, category: string) {
-    return `${detailUrl(identifier, version_number)}files/originals/${category}/`;
+    return releaseDetailUrl(identifier, version_number, ["files", "originals", category]);
   }
   function clearCategoryUrl(identifier: string, version_number: string, category: string) {
-    return `${listOriginalsFileUrl(identifier, version_number, category)}clear_category/`;
+    return releaseDetailUrl(identifier, version_number, [
+      "files",
+      "originals",
+      category,
+      "clear_category",
+    ]);
   }
   function downloadPreviewUrl(identifier: string, version_number: string) {
-    return `${detailUrl(identifier, version_number)}download_preview/`;
+    return releaseDetailUrl(identifier, version_number, ["download_preview"]);
   }
   function downloadUrl(identifier: string, version_number: string) {
-    return `${detailUrl(identifier, version_number)}download/`;
+    return releaseDetailUrl(identifier, version_number, ["download"]);
   }
   function downloadRequestUrl(identifier: string, version_number: string) {
-    return `${detailUrl(identifier, version_number)}request_download/`;
+    return releaseDetailUrl(identifier, version_number, ["request_download"]);
   }
   function updateContributorUrl(identifier: string, version_number: string) {
-    return `${detailUrl(identifier, version_number)}contributors/`;
+    return releaseDetailUrl(identifier, version_number, ["contributors"]);
   }
 
   // requests - CRUD
   async function retrieve(identifier: string, version_number: string) {
-    return get(detailUrl(identifier, version_number));
+    return get(releaseDetailUrl(identifier, version_number));
   }
 
   async function publish(identifier: string, version_number: string) {
-    return post(`${detailUrl(identifier, version_number)}publish/`);
+    return post(releaseDetailUrl(identifier, version_number, ["publish"]));
   }
 
   async function update(identifier: string, version_number: string, data: any) {
-    return put(detailUrl(identifier, version_number), data);
+    return put(releaseDetailUrl(identifier, version_number), data);
   }
 
   async function clearCategory(identifier: string, version_number: string, category: string) {

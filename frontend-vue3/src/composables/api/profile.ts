@@ -31,7 +31,7 @@ export function useProfileAPI() {
   async function uploadProfilePicture(id: string | number, file: any) {
     const formData = new FormData();
     formData.append("file", file);
-    return postForm(`${detailUrl(id)}upload_picture/`, formData, {
+    return postForm(detailUrl(id, ["upload_picture"]), formData, {
       config: {
         headers: { "Content-Type": "multipart/form-data" },
       },

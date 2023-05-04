@@ -47,7 +47,7 @@ export function useAxios(baseUrl?: string, config?: AxiosRequestConfig) {
   instance.interceptors.response.use(
     response => {
       if (response.data) {
-        convertDates(response.data);
+        parseDates(response.data);
       }
       return response;
     },
@@ -82,9 +82,9 @@ export function useAxios(baseUrl?: string, config?: AxiosRequestConfig) {
           onError(error);
         }
         if (error.response.status === 400) {
-          state.serverErrors = describeValidationError(error.response);
+          state.serverErrors = parseValidationError(error.response);
         } else {
-          state.serverErrors = describeNonValidationError(error.response);
+          state.serverErrors = parseNonValidationError(error.response);
         }
         return error.response;
       } else {
@@ -117,15 +117,19 @@ export function useAxios(baseUrl?: string, config?: AxiosRequestConfig) {
     return request(url, "DELETE", null, options);
   }
 
-  function detailUrl(id: string | number) {
-    return `${baseUrl}${id}/`;
+  function detailUrl(id: string | number, paths?: (string | number)[], altBaseUrl?: string) {
+    // use alternative base URL if given, otherwise use baseUrl provided to useAxios
+    // and fall back to empty string
+    const _baseUrl = altBaseUrl || baseUrl || "";
+    const _paths = paths || [];
+    return joinPaths([_baseUrl, id, ..._paths]);
   }
 
   function searchUrl<QueryParams extends Record<string, any>>(params: QueryParams) {
-    // filter out falsy values (empty strings, etc)
+    // filter out empty strings
     const filteredParams: Partial<QueryParams> = {};
     for (const key in params) {
-      if (params[key]) {
+      if (params[key] !== "") {
         filteredParams[key] = params[key];
       }
     }
@@ -153,7 +157,12 @@ export function useAxios(baseUrl?: string, config?: AxiosRequestConfig) {
  * Utility functions
  */
 
-function describeNonValidationError(errorResponse: AxiosResponse): string[] {
+export function joinPaths(paths: (string | number)[]) {
+  const joined = paths.join("/").replace(new RegExp("/" + "{1,}", "g"), "/");
+  return joined.endsWith("/") ? joined : joined + "/";
+}
+
+export function parseNonValidationError(errorResponse: AxiosResponse): string[] {
   switch (errorResponse.status) {
     case 403:
       return [
@@ -170,19 +179,26 @@ function describeNonValidationError(errorResponse: AxiosResponse): string[] {
   }
 }
 
-function describeValidationError(errorResponse: AxiosResponse): string[] {
-  const errors = [];
-  for (const e in errorResponse.data) {
-    if (e === "non_field_errors") {
-      errors.push(...errorResponse.data[e]);
-    } else {
-      errors.push(`${e}: ${errorResponse.data[e].join(", ")}`);
+export function isStringArray(value: unknown): value is string[] {
+  return Array.isArray(value) && value.every(item => typeof item === "string");
+}
+
+export function parseValidationError(errorResponse: AxiosResponse): string[] {
+  const errors: string[] = [];
+  Object.entries(errorResponse.data).forEach(([key, value]) => {
+    if (isStringArray(value)) {
+      if (key === "non_field_errors") {
+        // non_field_errors are already formatted for display
+        errors.push(...value);
+      } else {
+        errors.push(`${key}: ${value.join(", ")}`);
+      }
     }
-  }
+  });
   return errors;
 }
 
-function getCookie(name: string) {
+export function getCookie(name: string) {
   return document.cookie.split("; ").reduce((r, v) => {
     const [n, ...val] = v.split("=");
     return n === name ? decodeURIComponent(val.join("=")) : r;
@@ -191,11 +207,11 @@ function getCookie(name: string) {
 
 const ISODateFormat = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d*)?(?:[-+]\d{2}:?\d{2}|Z)?$/;
 
-function isISODateString(value: any) {
+export function isISODateString(value: any) {
   return value && typeof value === "string" && ISODateFormat.test(value);
 }
 
-function convertDates(body: any) {
+export function parseDates(body: any) {
   if (body === null || body === undefined || typeof body !== "object") {
     return body;
   }
@@ -204,7 +220,7 @@ function convertDates(body: any) {
     if (isISODateString(value)) {
       body[key] = new Date(value);
     } else if (typeof value === "object") {
-      convertDates(value);
+      parseDates(value);
     }
   }
 }
