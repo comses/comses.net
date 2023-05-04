@@ -28,9 +28,14 @@ import FieldLabel from "@/components/form/FieldLabel.vue";
 import FieldHelp from "@/components/form/FieldHelp.vue";
 import FieldError from "@/components/form/FieldError.vue";
 import FormPlaceholder from "@/components/form/FormPlaceholder.vue";
-import type { BaseFieldProps } from "@/types";
 
-interface TextFieldProps extends BaseFieldProps {
+export interface TextFieldProps {
+  // FIXME: extend from types/BaseFieldProps when vuejs/core#8083 makes it into a release
+  name: string;
+  label?: string;
+  help?: string;
+  placeholder?: string;
+  required?: boolean;
   // generally it is better to leave type="text" for url/email/etc. inputs so that the browser
   // does not perform any validation before the form/yup does leading to visual inconsistency
   type?: "text" | "email" | "password" | "number" | "tel" | "url" | "search";

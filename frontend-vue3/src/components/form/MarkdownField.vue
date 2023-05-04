@@ -35,9 +35,14 @@ import FieldHelp from "@/components/form/FieldHelp.vue";
 import FieldError from "@/components/form/FieldError.vue";
 import FormPlaceholder from "@/components/form/FormPlaceholder.vue";
 import { inject } from "vue";
-import type { BaseFieldProps } from "@/types";
 
-interface MarkdownFieldProps extends BaseFieldProps {
+interface MarkdownFieldProps {
+  // FIXME: extend from types/BaseFieldProps when vuejs/core#8083 makes it into a release
+  name: string;
+  label?: string;
+  help?: string;
+  placeholder?: string;
+  required?: boolean;
   rows?: number;
 }
 

@@ -54,9 +54,17 @@ import FieldLabel from "@/components/form/FieldLabel.vue";
 import FieldHelp from "@/components/form/FieldHelp.vue";
 import FieldError from "@/components/form/FieldError.vue";
 import FormPlaceholder from "@/components/form/FormPlaceholder.vue";
-import type { BaseFieldProps } from "@/types";
 
-const props = defineProps<BaseFieldProps>();
+export interface TextListFieldProps {
+  // FIXME: extend from types/BaseFieldProps when vuejs/core#8083 makes it into a release
+  name: string;
+  label?: string;
+  help?: string;
+  placeholder?: string;
+  required?: boolean;
+}
+
+const props = defineProps<TextListFieldProps>();
 
 onMounted(() => {
   if (!value.value) {
