@@ -57,9 +57,14 @@ import FieldError from "@/components/form/FieldError.vue";
 import FormPlaceholder from "@/components/form/FormPlaceholder.vue";
 import { useTagsAPI } from "@/composables/api/tags";
 import type { Tags, TagType } from "@/types";
-import type { BaseFieldProps } from "@/types";
 
-interface TaggerFieldProps extends BaseFieldProps {
+interface TaggerFieldProps {
+  // FIXME: extend from types/BaseFieldProps when vuejs/core#8083 makes it into a release
+  name: string;
+  label?: string;
+  help?: string;
+  placeholder?: string;
+  required?: boolean;
   type?: TagType;
 }
 

@@ -73,9 +73,14 @@ import FieldHelp from "@/components/form/FieldHelp.vue";
 import FieldError from "@/components/form/FieldError.vue";
 import FormPlaceholder from "@/components/form/FormPlaceholder.vue";
 import type { Organization } from "@/types";
-import type { BaseFieldProps } from "@/types";
 
-interface ResearchOrgFieldProps extends BaseFieldProps {
+interface ResearchOrgFieldProps {
+  // FIXME: extend from types/BaseFieldProps when vuejs/core#8083 makes it into a release
+  name: string;
+  label?: string;
+  help?: string;
+  placeholder?: string;
+  required?: boolean;
   disabled?: boolean;
   clearOnSelect: boolean;
 }

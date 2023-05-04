@@ -24,9 +24,17 @@ import { useField } from "@/composables/form";
 import FieldLabel from "@/components/form/FieldLabel.vue";
 import FieldHelp from "@/components/form/FieldHelp.vue";
 import FieldError from "@/components/form/FieldError.vue";
-import type { BaseFieldProps } from "@/types";
 
-const props = withDefaults(defineProps<BaseFieldProps>(), {
+export interface CheckBoxFieldProps {
+  // FIXME: extend from types/BaseFieldProps when vuejs/core#8083 makes it into a release
+  name: string;
+  label?: string;
+  help?: string;
+  placeholder?: string;
+  required?: boolean;
+}
+
+const props = withDefaults(defineProps<CheckBoxFieldProps>(), {
   help: "",
 });
 

@@ -13,27 +13,27 @@ describe("CodebaseListSidebar.vue", () => {
     const baseSearch = wrapper.findComponent(ListSidebar);
     expect(baseSearch.exists()).toBe(true);
 
-    const TextField = wrapper.findComponent(TextField);
-    expect(TextField.exists()).toBe(true);
+    const textField = wrapper.findComponent(TextField);
+    expect(textField.exists()).toBe(true);
 
     const anyDatePicker = wrapper.findComponent(DatepickerField);
     expect(anyDatePicker.exists()).toBe(true);
 
-    const TaggerField = wrapper.findComponent(TaggerField);
-    expect(TaggerField.exists()).toBe(true);
+    const taggerField = wrapper.findComponent(TaggerField);
+    expect(taggerField.exists()).toBe(true);
 
-    const SelectField = wrapper.findComponent(SelectField);
-    expect(SelectField.exists()).toBe(true);
-    expect(SelectField.props("options").length).toEqual(3);
+    const selectField = wrapper.findComponent(SelectField);
+    expect(selectField.exists()).toBe(true);
+    expect(selectField.props("options").length).toEqual(3);
   });
 
   it("updates the query computed value based on form inputs", async () => {
     const wrapper = mount(CodebaseListSidebar);
 
-    const TextField = wrapper.findComponent(TextField);
-    const TextFieldElement = TextField.find("input");
-    TextFieldElement.element.value = "test keyword";
-    await TextFieldElement.trigger("input");
+    const textField = wrapper.findComponent(TextField);
+    const textFieldElement = textField.find("input");
+    textFieldElement.element.value = "test keyword";
+    await textFieldElement.trigger("input");
     await wrapper.vm.$nextTick();
     const baseSearch = wrapper.findComponent(ListSidebar);
     const searchUrl = baseSearch.props("searchUrl");
