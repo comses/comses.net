@@ -1,7 +1,7 @@
 <template>
   <div>
     <slot name="label">
-      <FormLabel v-if="label" :label="label" :id-for="id" :required="required" />
+      <FieldLabel v-if="label" :label="label" :id-for="id" :required="required" />
     </slot>
     <FormPlaceholder v-if="showPlaceholder" />
     <VueMultiSelect
@@ -54,10 +54,10 @@
       </template>
     </VueMultiSelect>
     <slot name="help">
-      <FormHelp v-if="help" :help="help" :id-for="id" />
+      <FieldHelp v-if="help" :help="help" :id-for="id" />
     </slot>
     <slot name="error">
-      <FormError v-if="error" :error="error" :id-for="id" />
+      <FieldError v-if="error" :error="error" :id-for="id" />
     </slot>
   </div>
 </template>
@@ -67,23 +67,20 @@ import { ref, inject } from "vue";
 import VueMultiSelect from "vue-multiselect";
 import { useDebounceFn } from "@vueuse/core";
 import { useField } from "@/composables/form";
-import { useRORAPI, type Organization } from "@/composables/api/ror";
-import FormLabel from "@/components/form/FormLabel.vue";
-import FormHelp from "@/components/form/FormHelp.vue";
-import FormError from "@/components/form/FormError.vue";
+import { useRORAPI } from "@/composables/api/ror";
+import FieldLabel from "@/components/form/FieldLabel.vue";
+import FieldHelp from "@/components/form/FieldHelp.vue";
+import FieldError from "@/components/form/FieldError.vue";
 import FormPlaceholder from "@/components/form/FormPlaceholder.vue";
+import type { Organization } from "@/types";
+import type { BaseFieldProps } from "@/types";
 
-export interface OrgSearchProps {
-  name: string;
-  label?: string;
-  help?: string;
-  placeholder?: string;
-  required?: boolean;
+interface ResearchOrgFieldProps extends BaseFieldProps {
   disabled?: boolean;
   clearOnSelect: boolean;
 }
 
-const props = withDefaults(defineProps<OrgSearchProps>(), {
+const props = withDefaults(defineProps<ResearchOrgFieldProps>(), {
   placeholder: "Type to find your organization",
   disabled: false,
   clearOnSelect: false,

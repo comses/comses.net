@@ -1,7 +1,7 @@
 <template>
   <div>
     <slot name="label">
-      <FormLabel v-if="label" :label="label" :id-for="id" :required="indicateRequired" />
+      <FieldLabel v-if="label" :label="label" :id-for="id" :required="required" />
     </slot>
     <div class="form-check-inline ms-3">
       <label class="form-check-label" :for="`${id}-custom-input-check`">
@@ -42,13 +42,13 @@
           <small>Press enter to add</small>
         </button>
       </div>
-      <FormError
+      <FieldError
         v-if="localErrors.name || localErrors.url"
         :error="localErrorMessage"
         :id-for="id"
       />
     </span>
-    <FormOrgSearch v-else name="organization" :clear-on-select="true" @select="create" />
+    <ResearchOrgField v-else name="organization" :clear-on-select="true" @select="create" />
     <Sortable :list="value" :item-key="item => item" @end="sort($event)">
       <template #item="{ element, index }">
         <div :key="element" class="my-1 input-group">
@@ -81,10 +81,10 @@
       </template>
     </Sortable>
     <slot name="help">
-      <FormHelp v-if="help" :help="help" :id-for="id" />
+      <FieldHelp v-if="help" :help="help" :id-for="id" />
     </slot>
     <slot name="error">
-      <FormError v-if="error" :error="error" :id-for="id" />
+      <FieldError v-if="error" :error="error" :id-for="id" />
     </slot>
   </div>
 </template>
@@ -95,22 +95,15 @@ import { string } from "yup";
 import { Sortable } from "sortablejs-vue3";
 import type { SortableEvent } from "sortablejs";
 import { useField } from "@/composables/form";
-import FormOrgSearch from "@/components/form/FormOrgSearch.vue";
-import FormLabel from "@/components/form/FormLabel.vue";
-import FormHelp from "@/components/form/FormHelp.vue";
-import FormError from "@/components/form/FormError.vue";
+import ResearchOrgField from "@/components/form/ResearchOrgField.vue";
+import FieldLabel from "@/components/form/FieldLabel.vue";
+import FieldHelp from "@/components/form/FieldHelp.vue";
+import FieldError from "@/components/form/FieldError.vue";
 import FormPlaceholder from "@/components/form/FormPlaceholder.vue";
-import type { Organization } from "@/composables/api/ror";
+import type { Organization } from "@/types";
+import type { BaseFieldProps } from "@/types";
 
-export interface TextItemsProps {
-  name: string;
-  label?: string;
-  help?: string;
-  placeholder?: string;
-  indicateRequired?: boolean;
-}
-
-const props = defineProps<TextItemsProps>();
+const props = defineProps<BaseFieldProps>();
 
 onMounted(() => {
   if (!value.value) {
