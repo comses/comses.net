@@ -220,14 +220,14 @@ export default class MetricsPage extends Vue {
 
   initalizeChartMap() {
     this.chartOptionsMap = new Map<ChartSelection, any>([
-      ["total-members", this.createCumulativeChart(this.metrics.total_members)],
-      ["full-members", this.createCumulativeChart(this.metrics.full_members)],
-      ["total-codebases", this.createCumulativeChart(this.metrics.total_codebases)],
-      ["reviewed-codebases", this.createCumulativeChart(this.metrics.reviewed_codebases)],
-      ["codebases-by-os", this.createAreaPercentageChart(this.metrics.codebases_by_os)],
-      ["codebases-by-language", this.createAreaPercentageChart(this.metrics.codebases_by_language)],
-      ["codebases-by-platform", this.createAreaPercentageChart(this.metrics.codebases_by_platform)],
-      ["total-downloads", this.createCumulativeChart(this.metrics.total_downloads)],
+      ["total-members", this.createCumulativeChart(this.metrics.totalMembers)],
+      ["full-members", this.createCumulativeChart(this.metrics.fullMembers)],
+      ["total-codebases", this.createCumulativeChart(this.metrics.totalCodebases)],
+      ["reviewed-codebases", this.createCumulativeChart(this.metrics.reviewedCodebases)],
+      ["codebases-by-os", this.createAreaPercentageChart(this.metrics.codebasesByOs)],
+      ["codebases-by-language", this.createAreaPercentageChart(this.metrics.codebasesByLanguage)],
+      ["codebases-by-platform", this.createAreaPercentageChart(this.metrics.codebasesByPlatform)],
+      ["total-downloads", this.createCumulativeChart(this.metrics.totalDownloads)],
     ]);
   }
 
@@ -247,13 +247,13 @@ export default class MetricsPage extends Vue {
       },
       yAxis: {
         title: {
-          text: metric.y_label,
+          text: metric.yLabel,
         },
       },
       xAxis: {},
       plotOptions: {
         series: {
-          pointStart: metric.start_year,
+          pointStart: metric.startYear,
           label: {
             enabled: false,
           },
@@ -268,7 +268,7 @@ export default class MetricsPage extends Vue {
         ...s,
         type: "spline",
         data: this.cumulativeSum(s.data),
-        pointStart: metric.start_year,
+        pointStart: metric.startYear,
       };
     });
 
@@ -277,7 +277,7 @@ export default class MetricsPage extends Vue {
         ...s,
         name: `New ${s.name}`,
         type: "column",
-        pointStart: metric.start_year,
+        pointStart: metric.startYear,
       };
     });
 
@@ -303,7 +303,7 @@ export default class MetricsPage extends Vue {
       return {
         ...s,
         type: "areaspline",
-        pointStart: metric.start_year,
+        pointStart: metric.startYear,
       };
     });
 
