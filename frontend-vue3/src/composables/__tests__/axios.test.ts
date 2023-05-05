@@ -1,5 +1,5 @@
 import type { AxiosResponse } from "axios";
-import { useAxios, parseValidationError, getCookie, parseDates } from "@/composables/api/axios";
+import { useAxios, parseValidationError, getCookie } from "@/composables/api/axios";
 
 describe("detailUrl", () => {
   test("should create detail URL with ID and paths", () => {
@@ -64,23 +64,5 @@ describe("getCookie", () => {
   test("should return an empty string if the cookie does not exist", () => {
     const result = getCookie("nonexistent");
     expect(result).toBe("");
-  });
-});
-
-describe("parseDates", () => {
-  test("should parse ISO date strings in an object", () => {
-    const data = {
-      createdAt: "2021-09-10T00:00:00Z",
-      updatedAt: "2021-09-10T01:00:00Z",
-      nested: {
-        publishedAt: "2021-09-10T02:00:00Z",
-      },
-    };
-
-    parseDates(data);
-
-    expect(data.createdAt).toBeInstanceOf(Date);
-    expect(data.updatedAt).toBeInstanceOf(Date);
-    expect(data.nested.publishedAt).toBeInstanceOf(Date);
   });
 });

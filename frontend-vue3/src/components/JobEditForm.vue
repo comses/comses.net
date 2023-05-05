@@ -41,6 +41,7 @@
       label="Application Deadline"
       help="The last day to apply to the job"
       :min-date="new Date()"
+      required
     />
     <TaggerField
       class="mb-3"
@@ -57,7 +58,7 @@
 
 <script setup lang="ts">
 import * as yup from "yup";
-import { onMounted } from "vue";
+import { onBeforeUnmount, onMounted } from "vue";
 import TextField from "@/components/form/TextField.vue";
 import MarkdownField from "@/components/form/MarkdownField.vue";
 import DatepickerField from "@/components/form/DatepickerField.vue";
@@ -77,7 +78,7 @@ const schema = yup.object().shape({
   application_deadline: yup
     .date()
     .min(new Date(), "Please enter a valid date after today's date.")
-    .nullable(),
+    .required(),
   summary: yup.string().required(),
   tags: yup
     .array()
@@ -89,7 +90,14 @@ type JobEditFields = yup.InferType<typeof schema>;
 
 const { data, serverErrors, create, retrieve, update, isLoading, detailUrl } = useJobAPI();
 
-const { errors, handleSubmit, values, setValues } = useForm<JobEditFields>({
+const {
+  errors,
+  handleSubmit,
+  values,
+  setValues,
+  addUnsavedAlertListener,
+  removeUnsavedAlertListener,
+} = useForm<JobEditFields>({
   schema,
   initialValues: {},
   showPlaceholder: isLoading,
@@ -103,6 +111,11 @@ onMounted(async () => {
     await retrieve(props.jobId);
     setValues(data.value);
   }
+  addUnsavedAlertListener();
+});
+
+onBeforeUnmount(() => {
+  removeUnsavedAlertListener();
 });
 
 async function createOrUpdate() {

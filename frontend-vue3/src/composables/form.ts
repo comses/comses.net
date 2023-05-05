@@ -63,8 +63,29 @@ export function useForm<Values>(options: UseFormValidationOptions<Values>) {
     provide("showPlaceholder", options.showPlaceholder);
   }
 
-  return useVForm({
+  const form = useVForm({
     ...options,
     ...optionalValidate,
   });
+
+  // create event listener for leaving with unsaved changes
+  function handleBeforeUnload(event: BeforeUnloadEvent) {
+    console.log(form.isSubmitting.value);
+    if (Object.keys(!form.isSubmitting.value && form.touched.value).length > 0) {
+      event.preventDefault();
+      event.returnValue = "";
+    }
+  }
+  function addUnsavedAlertListener() {
+    window.addEventListener("beforeunload", handleBeforeUnload);
+  }
+  function removeUnsavedAlertListener() {
+    window.removeEventListener("beforeunload", handleBeforeUnload);
+  }
+
+  return {
+    ...form,
+    addUnsavedAlertListener,
+    removeUnsavedAlertListener,
+  };
 }

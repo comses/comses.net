@@ -107,7 +107,7 @@
 
 <script setup lang="ts">
 import * as yup from "yup";
-import { computed, onMounted } from "vue";
+import { computed, onBeforeUnmount, onMounted } from "vue";
 import TextField from "@/components/form/TextField.vue";
 import MarkdownField from "@/components/form/MarkdownField.vue";
 import DatepickerField from "@/components/form/DatepickerField.vue";
@@ -141,7 +141,14 @@ type EventEditFields = yup.InferType<typeof schema>;
 
 const { data, serverErrors, create, retrieve, update, isLoading, detailUrl } = useEventAPI();
 
-const { errors, handleSubmit, values, setValues } = useForm<EventEditFields>({
+const {
+  errors,
+  handleSubmit,
+  values,
+  setValues,
+  addUnsavedAlertListener,
+  removeUnsavedAlertListener,
+} = useForm<EventEditFields>({
   schema,
   initialValues: {},
   showPlaceholder: isLoading,
@@ -155,6 +162,11 @@ onMounted(async () => {
     await retrieve(props.eventId);
     setValues(data.value);
   }
+  addUnsavedAlertListener();
+});
+
+onBeforeUnmount(() => {
+  removeUnsavedAlertListener();
 });
 
 async function createOrUpdate() {

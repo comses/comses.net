@@ -149,7 +149,7 @@
 
 <script setup lang="ts">
 import * as yup from "yup";
-import { onMounted } from "vue";
+import { onBeforeUnmount, onMounted } from "vue";
 import CheckboxField from "@/components/form/CheckboxField.vue";
 import TextField from "@/components/form/TextField.vue";
 import TextListField from "@/components/form/TextListField.vue";
@@ -212,7 +212,14 @@ const industryOptions = [
 const { data, serverErrors, retrieve, update, isLoading, detailUrl, uploadProfilePicture } =
   useProfileAPI();
 
-const { errors, handleSubmit, values, setValues } = useForm<ProfileEditFields>({
+const {
+  errors,
+  handleSubmit,
+  values,
+  setValues,
+  addUnsavedAlertListener,
+  removeUnsavedAlertListener,
+} = useForm<ProfileEditFields>({
   schema,
   initialValues: {},
   showPlaceholder: isLoading,
@@ -228,6 +235,11 @@ const { errors, handleSubmit, values, setValues } = useForm<ProfileEditFields>({
 onMounted(async () => {
   await retrieve(props.userId);
   setValues(data.value);
+  addUnsavedAlertListener();
+});
+
+onBeforeUnmount(() => {
+  removeUnsavedAlertListener();
 });
 
 async function uploadImage(event: Event) {
