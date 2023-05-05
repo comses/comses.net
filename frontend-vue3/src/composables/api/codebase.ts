@@ -1,5 +1,5 @@
 import { toRefs } from "vue";
-import { useAxios } from "@/composables/api/axios";
+import { useAxios, type RequestOptions } from "@/composables/api/axios";
 
 interface CodebaseQueryParams {
   query?: string;
@@ -19,16 +19,16 @@ export function useCodebaseAPI() {
   const baseUrl = "/codebases/";
   const { state, get, post, put, del, detailUrl, searchUrl } = useAxios(baseUrl);
 
-  async function create(data: any) {
-    return post(baseUrl, data);
+  async function create(data: any, options?: RequestOptions) {
+    return post(baseUrl, data, options);
   }
 
   async function retrieve(identifier: string | number) {
     return get(detailUrl(identifier));
   }
 
-  async function update(identifier: string | number, data: any) {
-    return put(detailUrl(identifier), data);
+  async function update(identifier: string | number, data: any, options?: RequestOptions) {
+    return put(detailUrl(identifier), data, options);
   }
 
   async function mediaList(identifier: string) {
@@ -51,6 +51,7 @@ export function useCodebaseAPI() {
     mediaList,
     mediaDelete,
     mediaClear,
+    detailUrl,
     searchUrl: searchUrl<CodebaseQueryParams>,
   };
 }

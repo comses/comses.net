@@ -1,5 +1,6 @@
 import { toRefs } from "vue";
 import { useAxios, type RequestOptions } from "@/composables/api/axios";
+import { parseDates } from "@/util";
 
 interface EventQueryParams {
   query?: string;
@@ -19,7 +20,18 @@ export function useEventAPI() {
   const { state, get, post, put, del, detailUrl, searchUrl } = useAxios(baseUrl);
 
   async function retrieve(id: string | number) {
-    return get(detailUrl(id));
+    return get(detailUrl(id), {
+      parser: data => {
+        parseDates(data, [
+          "early_registration_deadline",
+          "registration_deadline",
+          "submission_deadline",
+          "start_date",
+          "end_date",
+          "last_modified",
+        ]);
+      },
+    });
   }
 
   async function update(id: string | number, data: any, options?: RequestOptions) {

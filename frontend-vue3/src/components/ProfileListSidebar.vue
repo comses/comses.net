@@ -7,7 +7,7 @@
   >
     <template #form>
       <form @submit="handleSubmit">
-        <FormTagger name="tags" label="Keywords" type="Profile" />
+        <TaggerField name="tags" label="Keywords" type="Profile" />
         <!-- consider adding full member/peer reviewer filter -->
       </form>
     </template>
@@ -18,7 +18,7 @@
 import * as yup from "yup";
 import { computed } from "vue";
 import ListSidebar from "@/components/ListSidebar.vue";
-import FormTagger from "@/components/form/FormTagger.vue";
+import TaggerField from "@/components/form/TaggerField.vue";
 import { useForm } from "@/composables/form";
 import { useProfileAPI } from "@/composables/api/profile";
 

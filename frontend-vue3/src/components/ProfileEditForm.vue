@@ -83,10 +83,10 @@
 
     <div class="row">
       <div class="col-6">
-        <TextField class="mb-3" name="given_name" label="First Name" indicate-required />
+        <TextField class="mb-3" name="given_name" label="First Name" required />
       </div>
       <div class="col-6">
-        <TextField class="mb-3" name="family_name" label="Last Name" indicate-required />
+        <TextField class="mb-3" name="family_name" label="Last Name" required />
       </div>
     </div>
     <TextField
@@ -94,7 +94,7 @@
       name="email"
       label="Email"
       help="Email changes require reverification of your new email address by acknowledging a confirmation email"
-      indicate-required
+      required
     />
     <MarkdownField
       class="mb-3"

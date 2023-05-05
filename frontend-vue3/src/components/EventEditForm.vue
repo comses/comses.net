@@ -5,14 +5,14 @@
       name="title"
       label="Title"
       help="A short title describing the event"
-      indicate-required
+      required
     />
     <TextField
       class="mb-3"
       name="location"
       label="Location"
       help="The city and country where the event takes place"
-      indicate-required
+      required
     />
     <div class="row">
       <div class="col-6">
@@ -21,7 +21,7 @@
           name="start_date"
           label="Start Date"
           help="The date the event begins"
-          indicate-required
+          required
           :max-date="(values.end_date as Date)"
         />
       </div>
@@ -69,7 +69,7 @@
       name="description"
       label="Description"
       help="Detailed information about the event"
-      indicate-required
+      required
     />
     <MarkdownField
       class="mb-3"
@@ -77,7 +77,7 @@
       label="Summary"
       :rows="5"
       help="A short summary of the event for display in search results. This field can be created from the description by pressing the summarize button."
-      indicate-required
+      required
     >
       <template #label>
         <FieldLabel label="Summary" id-for="summary" required />

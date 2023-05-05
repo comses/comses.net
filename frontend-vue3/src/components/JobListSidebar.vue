@@ -7,9 +7,9 @@
   >
     <template #form>
       <form @submit="handleSubmit">
-        <FormTagger class="mb-3" name="tags" label="Keywords" type="Job" />
-        <FormDatePicker class="mb-3" name="initialPostingDate" label="Initial post date" />
-        <FormDatePicker name="applicationDeadline" label="Application deadline" />
+        <TaggerField class="mb-3" name="tags" label="Keywords" type="Job" />
+        <DatepickerField class="mb-3" name="initialPostingDate" label="Initial post date" />
+        <DatepickerField name="applicationDeadline" label="Application deadline" />
       </form>
     </template>
   </ListSidebar>
@@ -19,8 +19,8 @@
 import * as yup from "yup";
 import { computed } from "vue";
 import ListSidebar from "@/components/ListSidebar.vue";
-import FormDatePicker from "@/components/form/FormDatePicker.vue";
-import FormTagger from "@/components/form/FormTagger.vue";
+import DatepickerField from "@/components/form/DatepickerField.vue";
+import TaggerField from "@/components/form/TaggerField.vue";
 import { useForm } from "@/composables/form";
 import { useJobAPI } from "@/composables/api/job";
 

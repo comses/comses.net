@@ -7,9 +7,9 @@
   >
     <template #form>
       <form @submit="handleSubmit">
-        <FormTagger class="mb-3" name="tags" label="Keywords" type="Event" />
-        <FormDatePicker class="mb-3" name="submissionDeadline" label="Submission Deadline" />
-        <FormDatePicker name="startDate" label="Event Start Date" />
+        <TaggerField class="mb-3" name="tags" label="Keywords" type="Event" />
+        <DatepickerField class="mb-3" name="submissionDeadline" label="Submission Deadline" />
+        <DatepickerField name="startDate" label="Event Start Date" />
       </form>
     </template>
   </ListSidebar>
@@ -19,8 +19,8 @@
 import * as yup from "yup";
 import { computed } from "vue";
 import ListSidebar from "@/components/ListSidebar.vue";
-import FormDatePicker from "@/components/form/FormDatePicker.vue";
-import FormTagger from "@/components/form/FormTagger.vue";
+import DatepickerField from "@/components/form/DatepickerField.vue";
+import TaggerField from "@/components/form/TaggerField.vue";
 import { useForm } from "@/composables/form";
 import { useEventAPI } from "@/composables/api/event";
 

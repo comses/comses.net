@@ -1,5 +1,6 @@
 import { toRefs } from "vue";
-import { useAxios } from "@/composables/api/axios";
+import { useAxios, type RequestOptions } from "@/composables/api/axios";
+import { parseDates } from "@/util";
 
 interface JobQueryParams {
   query?: string;
@@ -19,15 +20,19 @@ export function useJobAPI() {
   const { state, get, post, put, del, detailUrl, searchUrl } = useAxios(baseUrl);
 
   async function retrieve(id: string | number) {
-    return get(detailUrl(id));
+    return get(detailUrl(id), {
+      parser: data => {
+        parseDates(data, ["date_created", "last_modified", "application_deadline"]);
+      },
+    });
   }
 
-  async function update(id: string | number, data: any) {
-    return put(detailUrl(id), data);
+  async function update(id: string | number, data: any, options?: RequestOptions) {
+    return put(detailUrl(id), data, options);
   }
 
-  async function create(data: any) {
-    return post(baseUrl, data);
+  async function create(data: any, options?: RequestOptions) {
+    return post(baseUrl, data, options);
   }
 
   async function _delete(id: string | number) {
@@ -40,6 +45,7 @@ export function useJobAPI() {
     update,
     create,
     delete: _delete,
+    detailUrl,
     searchUrl: searchUrl<JobQueryParams>,
   };
 }
