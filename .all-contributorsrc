@@ -94,6 +94,15 @@
         "code"
       ]
     },
+    {
+      "login": "hwelsters",
+      "name": "hwelsters",
+      "avatar_url": "https://avatars.githubusercontent.com/u/84760072?v=4",
+      "profile": "https://github.com/hwelsters",
+      "contributions": [
+        "code"
+      ]
+    },
   ],
   "contributorsPerLine": 7,
   "skipCi": true
