@@ -2,7 +2,7 @@
 [![Build Status](https://github.com/comses/comses.net/actions/workflows/docker-build.yml/badge.svg)](https://github.com/comses/comses.net/actions/workflows/docker-build.yml)
 [![Coverage Status](https://coveralls.io/repos/github/comses/comses.net/badge.svg?branch=main)](https://coveralls.io/github/comses/comses.net?branch=main)
 <!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
-[![All Contributors](https://img.shields.io/badge/all_contributors-6-orange.svg?style=flat-square)](#contributors-)
+[![All Contributors](https://img.shields.io/badge/all_contributors-7-orange.svg?style=flat-square)](#contributors-)
 <!-- ALL-CONTRIBUTORS-BADGE:END -->
 
 CoMSES Net is an open, international community of researchers, educators and professionals with the common goal of improving the way we develop, document, share, and (re)use computational models in the social and ecological sciences. This repository contains the codebase for the comses.net CMS and Model Library, built with [Wagtail](https://github.com/wagtail/wagtail), [Django Rest Framework](https://www.django-rest-framework.org/), and [VueJS](https://vuejs.org/).
@@ -120,6 +120,7 @@ Contributors ([emoji key](https://allcontributors.org/docs/en/emoji-key)):
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/BlllueSea"><img src="https://avatars.githubusercontent.com/u/20047708?v=4?s=100" width="100px;" alt="BlllueSea"/><br /><sub><b>BlllueSea</b></sub></a><br /><a href="https://github.com/comses/comses.net/commits?author=BlllueSea" title="Code">💻</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/CharlesSheelam"><img src="https://avatars.githubusercontent.com/u/100802119?v=4?s=100" width="100px;" alt="Charles Sheelam"/><br /><sub><b>Charles Sheelam</b></sub></a><br /><a href="https://github.com/comses/comses.net/commits?author=CharlesSheelam" title="Code">💻</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/hwelsters"><img src="https://avatars.githubusercontent.com/u/84760072?v=4?s=100" width="100px;" alt="hwelsters"/><br /><sub><b>hwelsters</b></sub></a><br /><a href="https://github.com/comses/comses.net/commits?author=hwelsters" title="Code">💻</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/Krisha100"><img src="https://avatars.githubusercontent.com/u/57967961?v=4?s=100" width="100px;" alt="Krisha Vekaria"/><br /><sub><b>Krisha Vekaria</b></sub></a><br /><a href="https://github.com/comses/comses.net/commits?author=Krisha100" title="Code">💻</a></td>
     </tr>
   </tbody>
 </table>
