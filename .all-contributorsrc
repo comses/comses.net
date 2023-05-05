@@ -85,7 +85,15 @@
       "contributions": [
         "code"
       ]
-    }
+    },
+      "login": "CharlesSheelam",
+      "name": "Charles Sheelam",
+      "avatar_url": "https://avatars.githubusercontent.com/u/100802119?v=4",
+      "profile": "https://github.com/CharlesSheelam",
+      "contributions": [
+        "code"
+      ]
+    },
   ],
   "contributorsPerLine": 7,
   "skipCi": true
