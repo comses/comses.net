@@ -12,6 +12,7 @@ export interface AxiosRequestState {
 
 export interface RequestOptions {
   config?: AxiosRequestConfig;
+  parser?: (data: any) => void;
   onSuccess?: (response: AxiosResponse) => void;
   onError?: (error: AxiosError) => void;
 }
@@ -43,17 +44,6 @@ export function useAxios(baseUrl?: string, config?: AxiosRequestConfig) {
     error => Promise.reject(error)
   );
 
-  // convert date strings to Date objects in response data
-  instance.interceptors.response.use(
-    response => {
-      if (response.data) {
-        parseDates(response.data);
-      }
-      return response;
-    },
-    error => Promise.reject(error)
-  );
-
   const state = reactive<AxiosRequestState>({
     response: null,
     data: undefined,
@@ -63,11 +53,14 @@ export function useAxios(baseUrl?: string, config?: AxiosRequestConfig) {
   });
 
   async function request(url: string, method: string, data: any, options: RequestOptions = {}) {
-    const { config, onSuccess, onError } = options;
+    const { config, onSuccess, onError, parser } = options;
     state.isLoading = true;
     try {
       const response = await instance({ url, method, data, ...config });
       state.response = response;
+      if (response.data && parser) {
+        parser(response.data);
+      }
       state.data = response.data;
       state.isFinished = true;
       if (onSuccess) {
@@ -203,24 +196,4 @@ export function getCookie(name: string) {
     const [n, ...val] = v.split("=");
     return n === name ? decodeURIComponent(val.join("=")) : r;
   }, "");
-}
-
-const ISODateFormat = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d*)?(?:[-+]\d{2}:?\d{2}|Z)?$/;
-
-export function isISODateString(value: any) {
-  return value && typeof value === "string" && ISODateFormat.test(value);
-}
-
-export function parseDates(body: any) {
-  if (body === null || body === undefined || typeof body !== "object") {
-    return body;
-  }
-  for (const key of Object.keys(body)) {
-    const value = body[key];
-    if (isISODateString(value)) {
-      body[key] = new Date(value);
-    } else if (typeof value === "object") {
-      parseDates(value);
-    }
-  }
 }

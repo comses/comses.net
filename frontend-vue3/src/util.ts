@@ -35,7 +35,7 @@ export function extractIdFromPath(
   path: string,
   prefix: string,
   suffix: string = "edit"
-): number | undefined {
+): string | undefined {
   /**
    * Extract resource id from path
    *
@@ -43,7 +43,22 @@ export function extractIdFromPath(
    * @param prefix The prefix of the path (e.g. "codebases", "events")
    * @param suffix="edit" The suffix of the path (e.g. "edit")
    */
-  const re = new RegExp(`/${prefix}/([0-9]+)/${suffix}/`);
+  const re = new RegExp(`/${prefix}/([0-9a-zA-Z-]+)/${suffix}/`);
   const match = path.match(re);
-  return match ? parseInt(match[1]) : undefined;
+  return match ? match[1] : undefined;
+}
+
+export function parseDates(data: any, keys: string[]) {
+  /**
+   * Parse dates (with Date.parse) in data object
+   * @param data The data object to parse
+   * @param keys The keys of the data object to parse
+   * @returns The data object with parsed dates
+   */
+  for (const key of keys) {
+    const parsedDate = Date.parse(data[key]);
+    if (!isNaN(parsedDate)) {
+      data[key] = new Date(parsedDate);
+    }
+  }
 }
