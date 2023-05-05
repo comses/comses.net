@@ -76,6 +76,15 @@
         "design",
         "test"
       ]
+    },
+    {
+      "login": "BlllueSea",
+      "name": "BlllueSea",
+      "avatar_url": "https://avatars.githubusercontent.com/u/20047708?v=4",
+      "profile": "https://github.com/BlllueSea",
+      "contributions": [
+        "code"
+      ]
     }
   ],
   "contributorsPerLine": 7,
