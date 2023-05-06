@@ -86,6 +86,7 @@
         "code"
       ]
     },
+    {
       "login": "CharlesSheelam",
       "name": "Charles Sheelam",
       "avatar_url": "https://avatars.githubusercontent.com/u/100802119?v=4",
@@ -99,6 +100,15 @@
       "name": "hwelsters",
       "avatar_url": "https://avatars.githubusercontent.com/u/84760072?v=4",
       "profile": "https://github.com/hwelsters",
+      "contributions": [
+        "code"
+      ]
+    },
+    {
+      "login": "Krisha100",
+      "name": "Krisha Vekaria",
+      "avatar_url": "https://avatars.githubusercontent.com/u/57967961?v=4",
+      "profile": "https://github.com/Krisha100",
       "contributions": [
         "code"
       ]
