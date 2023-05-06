@@ -1,0 +1,170 @@
+name: comsesnet
+services:
+  db:
+    environment:
+      POSTGRES_DB: comsesnet
+      POSTGRES_PASSWORD_FILE: /run/secrets/db_password
+      POSTGRES_USER: comsesnet
+    image: postgis/postgis:15-3.3
+    networks:
+      default: null
+    volumes:
+    - type: bind
+      source: /Users/krisha/Desktop/Comses/comses.net/docker/pgdata
+      target: /var/lib/postgresql/data
+      bind:
+        create_host_path: true
+    - type: bind
+      source: /Users/krisha/Desktop/Comses/comses.net/build/secrets/db_password
+      target: /run/secrets/db_password
+      bind:
+        create_host_path: true
+  elasticsearch:
+    cap_add:
+    - IPC_LOCK
+    deploy:
+      resources:
+        limits:
+          memory: "1073741824"
+    environment:
+      ES_JAVA_OPTS: -Xms512m -Xmx512m
+      bootstrap.memory_lock: "true"
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.17.9
+    networks:
+      default: null
+    ports:
+    - mode: ingress
+      host_ip: 127.0.0.1
+      target: 9200
+      published: "9200"
+      protocol: tcp
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65536
+        hard: 65536
+    volumes:
+    - type: bind
+      source: /Users/krisha/Desktop/Comses/comses.net/deploy/elasticsearch.conf.d/log4j2.properties
+      target: /usr/share/elasticsearch/config/log4j2.properties
+      bind:
+        create_host_path: true
+    - type: bind
+      source: /Users/krisha/Desktop/Comses/comses.net/deploy/elasticsearch.conf.d/elasticsearch-primary.yml
+      target: /usr/share/elasticsearch/config/elasticsearch.yml
+      bind:
+        create_host_path: true
+    - type: volume
+      source: esdata
+      target: /usr/share/elasticsearch/data
+      volume: {}
+  js:
+    build:
+      context: /Users/krisha/Desktop/Comses/comses.net/frontend
+      dockerfile: Dockerfile
+    image: comses/comsesnet-js
+    networks:
+      default: null
+    ports:
+    - mode: ingress
+      host_ip: 127.0.0.1
+      target: 3000
+      published: "3000"
+      protocol: tcp
+    volumes:
+    - type: bind
+      source: /Users/krisha/Desktop/Comses/comses.net/frontend
+      target: /code
+      bind:
+        create_host_path: true
+    - type: volume
+      target: /code/node_modules
+      volume: {}
+    - type: bind
+      source: /Users/krisha/Desktop/Comses/comses.net/build/secrets/config.ini
+      target: /run/secrets/config.ini
+      bind:
+        create_host_path: true
+    - type: bind
+      source: /Users/krisha/Desktop/Comses/comses.net/docker/shared
+      target: /shared
+      bind:
+        create_host_path: true
+  redis:
+    command:
+    - redis-server
+    - /usr/local/etc/redis/redis.conf
+    image: redis:7-alpine
+    networks:
+      default: null
+    volumes:
+    - type: bind
+      source: /Users/krisha/Desktop/Comses/comses.net/deploy/conf/redis.conf
+      target: /usr/local/etc/redis/redis.conf
+      bind:
+        create_host_path: true
+    - type: bind
+      source: /Users/krisha/Desktop/Comses/comses.net/docker/shared/redis
+      target: /data
+      bind:
+        create_host_path: true
+  server:
+    build:
+      context: /Users/krisha/Desktop/Comses/comses.net/django
+      dockerfile: Dockerfile
+    depends_on:
+      db:
+        condition: service_started
+      elasticsearch:
+        condition: service_started
+      js:
+        condition: service_started
+      redis:
+        condition: service_started
+    environment:
+      CLEAN_DATABASE: "false"
+      DJANGO_SETTINGS_MODULE: core.settings.dev
+    image: comses/server:dev
+    networks:
+      default: null
+    ports:
+    - mode: ingress
+      host_ip: 127.0.0.1
+      target: 8000
+      published: "8000"
+      protocol: tcp
+    volumes:
+    - type: bind
+      source: /Users/krisha/Desktop/Comses/comses.net/django
+      target: /code
+      bind:
+        create_host_path: true
+    - type: bind
+      source: /Users/krisha/Desktop/Comses/comses.net/docs
+      target: /docs
+      bind:
+        create_host_path: true
+    - type: bind
+      source: /Users/krisha/Desktop/Comses/comses.net/deploy/elasticsearch.conf.d
+      target: /etc/elasticsearch
+      bind:
+        create_host_path: true
+    - type: bind
+      source: /Users/krisha/Desktop/Comses/comses.net/build/secrets
+      target: /run/secrets
+      bind:
+        create_host_path: true
+    - type: bind
+      source: /Users/krisha/Desktop/Comses/comses.net/docker/shared
+      target: /shared
+      bind:
+        create_host_path: true
+networks:
+  default:
+    name: comsesnet_default
+volumes:
+  esdata:
+    name: comsesnet_esdata
+    driver: local
