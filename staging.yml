@@ -48,7 +48,6 @@ services:
       - ./frontend/src:/code/src
       - ./frontend/yarn.lock:/code/yarn.lock
       - ./docker/shared:/shared
-      - ./build/secrets/config.ini:/secrets/config.ini
   nginx:
     image: nginx:stable
     restart: always
