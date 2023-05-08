@@ -29,7 +29,7 @@ const props = withDefaults(defineProps<TooltipProps>(), {
 
 const info = ref(null);
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-let tooltip: Tooltip | undefined;
+let tooltip: typeof Tooltip | undefined;
 
 onMounted(() => {
   tooltip = new Tooltip(info.value!);

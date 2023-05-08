@@ -13,7 +13,8 @@
     "lint": "eslint . --ext .vue,.js,.ts --fix --ignore-path .gitignore",
     "lint:fix": "eslint --fix . --ext .vue,.js,.ts --fix --ignore-path .gitignore",
     "style": "prettier --check src/",
-    "style:fix": "prettier --write src/"
+    "style:fix": "prettier --write src/",
+    "tls": "yarn type-check && yarn test && yarn lint && (yarn style || yarn style:fix)"
   },
   "dependencies": {
     "@fortawesome/fontawesome-free": "^5.12.0",

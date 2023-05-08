@@ -38,7 +38,7 @@
 
 <script setup lang="ts">
 import { onMounted, onUnmounted, ref } from "vue";
-import Modal from "bootstrap/js/dist/modal";
+import { Modal } from "bootstrap";
 
 export interface BootstrapModalProps {
   id: string;
@@ -51,7 +51,7 @@ const props = withDefaults(defineProps<BootstrapModalProps>(), {
 });
 
 const modalElement = ref<Element>();
-let modal: Modal;
+let modal: typeof Modal;
 
 onMounted(() => {
   modal = new Modal(modalElement.value!);
