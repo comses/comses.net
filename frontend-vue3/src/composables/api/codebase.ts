@@ -120,6 +120,10 @@ export function useReleaseAPI() {
     return del(clearCategoryUrl(identifier, version_number, category));
   }
 
+  async function regenerateShareUUID(identifier: string, version_number: string) {
+    return post(releaseDetailUrl(identifier, version_number, ["regenerate_share_uuid"]));
+  }
+
   async function updateContributors(identifier: string, version_number: string, data: any) {
     return put(updateContributorUrl(identifier, version_number), data);
   }
@@ -183,6 +187,7 @@ export function useReleaseAPI() {
     publish,
     update,
     clearCategory,
+    regenerateShareUUID,
     updateContributors,
     listOriginalFiles,
     uploadFile,

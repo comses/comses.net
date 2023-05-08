@@ -148,16 +148,10 @@
             e.g., with reviewers of a publication in review. Please remember to return and publish your model when it is
             ready to be public.
             </div>
-            <div class='input-group my-3' id="regenerate_share_uuid"
-                                     data-absolute-url="{{ release.get_absolute_url() }}"
-                                     data-share-url="{{ request.build_absolute_uri(release.share_url) }}">
-                    <span class='btn input-group-text'>
-                        <i class='fas fa-sync-alt' @click="regenerateShareUuid"></i>
-                    </span>
-                <input id='release-share-url' readonly class='form-control bg-light' :value="shareUrl">
-                    <span class='btn btn-clipboard input-group-text' data-clipboard-target='#release-share-url'>
-                        <i class='fas fa-copy'></i>
-                    </span>
+            <div id="regenerate-share-uuid"
+                data-version-number="{{ release.version_number }}"
+                data-identifier="{{ codebase.identifier }}"
+                data-initial-share-url="{{ request.build_absolute_uri(release.share_url) }}">
             </div>
             <small class='text-muted'>
                 Use this link to share this release privately with others. Anyone with this URL will be able to
@@ -505,6 +499,8 @@
         });
     </script>
     {% endscript %}
-    {{ render_bundle('release_regenerate_share_uuid', attrs='defer') }}
     {{ vite_asset("apps/release_download.ts") }}
+    {% if has_change_perm %}
+        {{ vite_asset("apps/release_regenerate_share_uuid.ts") }}
+    {% endif %}
 {% endblock %}
