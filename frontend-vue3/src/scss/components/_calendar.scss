@@ -1,6 +1,22 @@
 .fc-toolbar {
   .btn-primary {
-    @include button-variant($blue, $blue);
-    color: $white;
+    @extend .btn;
+    @extend .btn-primary;
+    &.fc-add-button {
+      @extend .btn-secondary;
+    }
+    // use fontawesome icons instead of bringing in bootstrap-icons for just this
+    &.fc-prev-button {
+      span {
+        @extend .fas;
+        @extend .fa-chevron-left;
+      }
+    }
+    &.fc-next-button {
+      span {
+        @extend .fas;
+        @extend .fa-chevron-right;
+      }
+    }
   }
 }

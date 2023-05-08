@@ -46,12 +46,34 @@ export function useEventAPI() {
     return del(detailUrl(id));
   }
 
+  async function listCalendarEvents(start: Date, end: Date) {
+    const toDateStr = (d: Date) => d.toISOString().split("T")[0];
+    try {
+      const response = await get(
+        `${baseUrl}calendar/?start=${toDateStr(start)}&end=${toDateStr(end)}`,
+        {
+          config: {
+            headers: { "Content-Type": "application/json" },
+          },
+        }
+      );
+      if (response.status === 200 && response.data) {
+        return response.data;
+      } else {
+        throw new Error("Error fetching calendar events");
+      }
+    } catch (e) {
+      throw new Error("Error fetching calendar events");
+    }
+  }
+
   return {
     ...toRefs(state),
     retrieve,
     update,
     create,
     delete: _delete,
+    listCalendarEvents,
     detailUrl,
     searchUrl: searchUrl<EventQueryParams>,
   };

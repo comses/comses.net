@@ -14,15 +14,14 @@
 
 {% block content %}
     {{ breadcrumb([{'text': 'Community Events' }]) }}
-    {# FIXME: make a tab navigation to switch between list view and calendar view #}
     {{ subnav([ 
     {'text': 'Calendar View', 'url': url('home:event-calendar'), 'active': True},
     {'text': 'List View', 'url': url('home:event-list'), },
     ])
     }}
-    <div class='my-3' id="calendar"></div>
+    <div class='my-3' id="event-calendar"></div>
 {% endblock %}
 
 {% block js %}
-    {{ render_bundle('event_calendar', attrs='async') }}
+    {{ vite_asset("apps/event_calendar.ts") }}
 {% endblock %}
