@@ -159,8 +159,13 @@ export function useReleaseAPI() {
     return get(downloadUrl(identifier, version_number));
   }
 
-  async function requestDownload(identifier: string, version_number: string) {
-    return post(downloadRequestUrl(identifier, version_number));
+  async function requestDownload(
+    identifier: string,
+    version_number: string,
+    data: any,
+    options?: RequestOptions
+  ) {
+    return post(downloadRequestUrl(identifier, version_number), data, options);
   }
 
   return {

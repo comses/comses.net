@@ -37,6 +37,7 @@ export default defineConfig({
         main: resolvePath("./src/apps/main.ts"),
         codebase_list: resolvePath("./src/apps/codebase_list.ts"),
         codebase_edit: resolvePath("./src/apps/codebase_edit.ts"),
+        codebase_download: resolvePath("./src/apps/codebase_download.ts"),
         event_list: resolvePath("./src/apps/event_list.ts"),
         event_edit: resolvePath("./src/apps/event_edit.ts"),
         job_list: resolvePath("./src/apps/job_list.ts"),

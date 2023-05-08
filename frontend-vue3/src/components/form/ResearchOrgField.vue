@@ -82,7 +82,7 @@ interface ResearchOrgFieldProps {
   placeholder?: string;
   required?: boolean;
   disabled?: boolean;
-  clearOnSelect: boolean;
+  clearOnSelect?: boolean;
 }
 
 const props = withDefaults(defineProps<ResearchOrgFieldProps>(), {

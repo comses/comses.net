@@ -1,5 +1,5 @@
 <template>
-  <div class="card border-light" v-if="validationErrors.length > 0 || serverErrors.length > 0">
+  <div class="card border-0" v-if="validationErrors.length > 0 || serverErrors.length > 0">
     <div class="card-body px-0 py-0">
       <div
         v-for="message in serverErrors.concat(validationErrors)"

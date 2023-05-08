@@ -62,3 +62,11 @@ export function parseDates(data: any, keys: string[]) {
     }
   }
 }
+
+export function isEmpty(object: any) {
+  /**
+   * Check if object is empty (or null/undefined)
+   */
+  if (!object) return true;
+  return Object.keys(object).length === 0;
+}

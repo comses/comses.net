@@ -121,6 +121,16 @@ a.anchor {
   }
 }
 
+.btn-outline-gray {
+  @extend .btn-outline-secondary;
+  color: $gray-600;
+  border-color: $gray-500;
+  &:hover {
+    background-color: $gray-500;
+    border-color: $gray-500;
+  }
+}
+
 .read-only-white[readonly] {
   background-color: $white;
 }

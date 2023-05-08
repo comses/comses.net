@@ -1,5 +1,6 @@
 import { toRef, provide, type Ref } from "vue";
 import type { WritableComputedRef } from "vue";
+import { isEmpty } from "@/util";
 import { yupResolver } from "@vorms/resolvers/yup";
 import {
   useField as useVField,
@@ -71,7 +72,7 @@ export function useForm<Values>(options: UseFormValidationOptions<Values>) {
   // create event listener for leaving with unsaved changes
   function handleBeforeUnload(event: BeforeUnloadEvent) {
     console.log(form.isSubmitting.value);
-    if (Object.keys(!form.isSubmitting.value && form.touched.value).length > 0) {
+    if (!form.isSubmitting.value && !isEmpty(form.touched.value)) {
       event.preventDefault();
       event.returnValue = "";
     }

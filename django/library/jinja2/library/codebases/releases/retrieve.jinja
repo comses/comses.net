@@ -256,7 +256,7 @@
             </a>
         {% else %}
             {# use survey form #}
-            <div id='download-request-form' data-user-data="{{ get_download_request_metadata(request.user) }}"
+            <div id='download-form' data-user-data="{{ get_download_request_metadata(request.user) }}"
              data-version-number="{{ release.version_number }}"
              data-identifier="{{ codebase.identifier }}"></div>
         {% endif %}
@@ -506,5 +506,5 @@
     </script>
     {% endscript %}
     {{ render_bundle('release_regenerate_share_uuid', attrs='defer') }}
-    {{ render_bundle('download_request_form', attrs='defer') }}
+    {{ vite_asset("apps/release_download.ts") }}
 {% endblock %}
