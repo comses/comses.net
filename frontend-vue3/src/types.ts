@@ -35,3 +35,39 @@ export interface Organization {
   acronym?: string;
   ror_id?: string;
 }
+
+export interface TimeSeries {
+  name: string;
+  data: number[];
+  type?: string;
+}
+
+export interface Metric {
+  title: string;
+  yLabel: string;
+  startYear: number;
+  series: TimeSeries[];
+}
+
+export type MetricsData = Record<
+  | "startYear"
+  | "totalMembers"
+  | "fullMembers"
+  | "totalCodebases"
+  | "codebasesByOs"
+  | "codebasesByPlatform"
+  | "codebasesByLanguage"
+  | "reviewedCodebases"
+  | "totalDownloads",
+  Metric
+>;
+
+export type MetricsChartSelection =
+  | "total-members"
+  | "full-members"
+  | "total-codebases"
+  | "reviewed-codebases"
+  | "codebases-by-language"
+  | "codebases-by-platform"
+  | "codebases-by-os"
+  | "total-downloads";

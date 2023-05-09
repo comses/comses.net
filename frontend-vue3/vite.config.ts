@@ -35,6 +35,7 @@ export default defineConfig({
     rollupOptions: {
       input: {
         main: resolvePath("./src/apps/main.ts"),
+        metrics: resolvePath("./src/apps/metrics.ts"),
         codebase_list: resolvePath("./src/apps/codebase_list.ts"),
         codebase_edit: resolvePath("./src/apps/codebase_edit.ts"),
         codebase_download: resolvePath("./src/apps/codebase_download.ts"),
