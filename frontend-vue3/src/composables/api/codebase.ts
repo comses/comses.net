@@ -35,8 +35,8 @@ export function useCodebaseAPI() {
     return get(detailUrl(identifier, ["media"]));
   }
 
-  async function mediaDelete(identifier: string, image_id: string | number) {
-    return del(detailUrl(identifier, ["media", image_id]));
+  async function mediaDelete(identifier: string, imageId: string | number) {
+    return del(detailUrl(identifier, ["media", imageId]));
   }
 
   async function mediaClear(identifier: string) {
@@ -66,83 +66,83 @@ export function useReleaseAPI() {
   const baseUrl = "/codebases/";
   const { state, get, post, postForm, put, del, detailUrl } = useAxios(baseUrl);
 
-  function releaseDetailUrl(identifier: string, version_number: string, paths: string[] = []) {
-    return detailUrl(identifier, ["releases", version_number, ...paths]);
+  function releaseDetailUrl(identifier: string, versionNumber: string, paths: string[] = []) {
+    return detailUrl(identifier, ["releases", versionNumber, ...paths]);
   }
 
   // urls
   // FIXME: this seems overly verbose, we may not even need many of these
   // revisit when implementing components that use this
-  function editUrl(identifier: string, version_number: string) {
-    return releaseDetailUrl(identifier, version_number, ["edit"]);
+  function editUrl(identifier: string, versionNumber: string) {
+    return releaseDetailUrl(identifier, versionNumber, ["edit"]);
   }
-  function detailEditUrl(identifier: string, version_number: string) {
-    return releaseDetailUrl(identifier, version_number, ["?edit"]);
+  function detailEditUrl(identifier: string, versionNumber: string) {
+    return releaseDetailUrl(identifier, versionNumber, ["?edit"]);
   }
-  function listOriginalsFileUrl(identifier: string, version_number: string, category: string) {
-    return releaseDetailUrl(identifier, version_number, ["files", "originals", category]);
+  function listOriginalsFileUrl(identifier: string, versionNumber: string, category: string) {
+    return releaseDetailUrl(identifier, versionNumber, ["files", "originals", category]);
   }
-  function clearCategoryUrl(identifier: string, version_number: string, category: string) {
-    return releaseDetailUrl(identifier, version_number, [
+  function clearCategoryUrl(identifier: string, versionNumber: string, category: string) {
+    return releaseDetailUrl(identifier, versionNumber, [
       "files",
       "originals",
       category,
       "clear_category",
     ]);
   }
-  function downloadPreviewUrl(identifier: string, version_number: string) {
-    return releaseDetailUrl(identifier, version_number, ["download_preview"]);
+  function downloadPreviewUrl(identifier: string, versionNumber: string) {
+    return releaseDetailUrl(identifier, versionNumber, ["download_preview"]);
   }
-  function downloadUrl(identifier: string, version_number: string) {
-    return releaseDetailUrl(identifier, version_number, ["download"]);
+  function downloadUrl(identifier: string, versionNumber: string) {
+    return releaseDetailUrl(identifier, versionNumber, ["download"]);
   }
-  function downloadRequestUrl(identifier: string, version_number: string) {
-    return releaseDetailUrl(identifier, version_number, ["request_download"]);
+  function downloadRequestUrl(identifier: string, versionNumber: string) {
+    return releaseDetailUrl(identifier, versionNumber, ["request_download"]);
   }
-  function updateContributorUrl(identifier: string, version_number: string) {
-    return releaseDetailUrl(identifier, version_number, ["contributors"]);
+  function updateContributorUrl(identifier: string, versionNumber: string) {
+    return releaseDetailUrl(identifier, versionNumber, ["contributors"]);
   }
 
   // requests - CRUD
-  async function retrieve(identifier: string, version_number: string) {
-    return get(releaseDetailUrl(identifier, version_number));
+  async function retrieve(identifier: string, versionNumber: string) {
+    return get(releaseDetailUrl(identifier, versionNumber));
   }
 
-  async function publish(identifier: string, version_number: string) {
-    return post(releaseDetailUrl(identifier, version_number, ["publish"]));
+  async function publish(identifier: string, versionNumber: string) {
+    return post(releaseDetailUrl(identifier, versionNumber, ["publish"]));
   }
 
-  async function update(identifier: string, version_number: string, data: any) {
-    return put(releaseDetailUrl(identifier, version_number), data);
+  async function update(identifier: string, versionNumber: string, data: any) {
+    return put(releaseDetailUrl(identifier, versionNumber), data);
   }
 
-  async function clearCategory(identifier: string, version_number: string, category: string) {
-    return del(clearCategoryUrl(identifier, version_number, category));
+  async function clearCategory(identifier: string, versionNumber: string, category: string) {
+    return del(clearCategoryUrl(identifier, versionNumber, category));
   }
 
-  async function regenerateShareUUID(identifier: string, version_number: string) {
-    return post(releaseDetailUrl(identifier, version_number, ["regenerate_share_uuid"]));
+  async function regenerateShareUUID(identifier: string, versionNumber: string) {
+    return post(releaseDetailUrl(identifier, versionNumber, ["regenerate_share_uuid"]));
   }
 
-  async function updateContributors(identifier: string, version_number: string, data: any) {
-    return put(updateContributorUrl(identifier, version_number), data);
+  async function updateContributors(identifier: string, versionNumber: string, data: any) {
+    return put(updateContributorUrl(identifier, versionNumber), data);
   }
 
   // requests - files
-  async function listOriginalFiles(identifier: string, version_number: string, category: string) {
-    return get(listOriginalsFileUrl(identifier, version_number, category));
+  async function listOriginalFiles(identifier: string, versionNumber: string, category: string) {
+    return get(listOriginalsFileUrl(identifier, versionNumber, category));
   }
 
   async function uploadFile(
     identifier: string,
-    version_number: string,
+    versionNumber: string,
     category: string,
     file: any,
     onUploadProgress: any
   ) {
     const formData = new FormData();
     formData.append("file", file);
-    return postForm(listOriginalsFileUrl(identifier, version_number, category), formData, {
+    return postForm(listOriginalsFileUrl(identifier, versionNumber, category), formData, {
       config: {
         headers: { "Content-Type": "multipart/form-data" },
         onUploadProgress,
@@ -155,21 +155,21 @@ export function useReleaseAPI() {
   }
 
   // requests - download
-  async function downloadPreview(identifier: string, version_number: string) {
-    return get(downloadPreviewUrl(identifier, version_number));
+  async function downloadPreview(identifier: string, versionNumber: string) {
+    return get(downloadPreviewUrl(identifier, versionNumber));
   }
 
-  async function download(identifier: string, version_number: string) {
-    return get(downloadUrl(identifier, version_number));
+  async function download(identifier: string, versionNumber: string) {
+    return get(downloadUrl(identifier, versionNumber));
   }
 
   async function requestDownload(
     identifier: string,
-    version_number: string,
+    versionNumber: string,
     data: any,
     options?: RequestOptions
   ) {
-    return post(downloadRequestUrl(identifier, version_number), data, options);
+    return post(downloadRequestUrl(identifier, versionNumber), data, options);
   }
 
   return {
