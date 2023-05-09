@@ -3,7 +3,7 @@ import Vue from "vue";
 import { ReviewEditorAPI } from "@/api/index";
 import { ReviewerFinder } from "./reviewer_finder";
 import { holder } from "@/pages/review/directives";
-import * as _ from "lodash";
+import _ from "lodash-es";
 
 const reviewApi = new ReviewEditorAPI();
 

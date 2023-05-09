@@ -75,7 +75,7 @@ import Tagger from "@/components/tagger";
 import TextArea from "@/components/forms/textarea";
 import { createFormValidator } from "@/pages/form";
 import * as yup from "yup";
-import * as _ from "lodash";
+import _ from "lodash-es";
 import { HandlerWithRedirect, DismissOnSuccessHandler } from "@/api/handler";
 import { Upload } from "@/components/upload";
 

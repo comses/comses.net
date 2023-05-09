@@ -1,7 +1,7 @@
 import * as queryString from "query-string";
 import { api } from "@/api/connection";
 import { CreateOrUpdateHandler } from "@/api/handler";
-import { pickBy, isEmpty } from "lodash";
+import { pickBy, isEmpty } from "lodash-es";
 
 abstract class BaseAPI {
   public abstract baseUrl();

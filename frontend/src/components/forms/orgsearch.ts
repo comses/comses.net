@@ -1,7 +1,7 @@
 import BaseControl from "../forms/base";
 import { Component, Prop } from "vue-property-decorator";
 import axios from "axios";
-import * as _ from "lodash";
+import _ from "lodash-es";
 
 import Multiselect from "vue-multiselect";
 

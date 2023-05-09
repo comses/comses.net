@@ -1,4 +1,4 @@
-import * as _ from "lodash";
+import _ from "lodash-es";
 import * as yup from "yup";
 import Vue from "vue";
 import { Component } from "vue-property-decorator";

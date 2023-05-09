@@ -1,7 +1,7 @@
 import { Component, Prop } from "vue-property-decorator";
 import BaseControl from "./base";
 import Datepicker from "vuejs-datepicker";
-import * as _ from "lodash";
+import _ from "lodash-es";
 
 @Component({
   template: `<div class="form-group">

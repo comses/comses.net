@@ -1,5 +1,5 @@
 import { AxiosRequestConfig, AxiosResponse } from "axios";
-import * as _ from "lodash";
+import _ from "lodash-es";
 import * as _$ from "jquery";
 import axios from "axios";
 

@@ -138,7 +138,7 @@ import Tagger from "@/components/tagger";
 import Input from "@/components/forms/input";
 import Datepicker from "@/components/forms/datepicker";
 import MessageDisplay from "@/components/messages";
-import * as _ from "lodash";
+import _ from "lodash-es";
 import { Component, Prop } from "vue-property-decorator";
 import * as yup from "yup";
 import { createFormValidator } from "@/pages/form";

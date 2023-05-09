@@ -1,6 +1,6 @@
 import { CodebaseReleaseStore } from "@/store/common";
 import { CodebaseReleaseAPI, CodebaseAPI } from "@/api";
-import * as _ from "lodash";
+import _ from "lodash-es";
 import * as yup from "yup";
 
 const codebaseReleaseAPI = new CodebaseReleaseAPI();

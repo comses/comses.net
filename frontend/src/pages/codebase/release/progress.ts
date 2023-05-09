@@ -1,6 +1,6 @@
 import Vue from "vue";
 import { Component, Prop } from "vue-property-decorator";
-import * as _ from "lodash";
+import _ from "lodash-es";
 
 @Component({
   template: `<p class="card-text">

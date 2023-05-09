@@ -4,7 +4,7 @@ import { Invitations } from "./invitations";
 import { Feedback } from "./feedback";
 import { api } from "@/api/connection";
 import { EventLog } from "./event_log";
-import * as _ from "lodash";
+import _ from "lodash-es";
 
 @Component({
   template: `<div class="row">

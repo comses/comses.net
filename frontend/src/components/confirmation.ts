@@ -1,7 +1,7 @@
 import { Component, Prop } from "vue-property-decorator";
 import Vue from "vue";
 import { api } from "@/api/connection";
-import * as _ from "lodash";
+import _ from "lodash-es";
 
 @Component({
   template: `<div

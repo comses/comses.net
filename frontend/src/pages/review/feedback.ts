@@ -1,7 +1,7 @@
 import { Component, Prop } from "vue-property-decorator";
 import Vue from "vue";
 import { ReviewEditorAPI } from "@/api/index";
-import * as _ from "lodash";
+import _ from "lodash-es";
 
 const reviewApi = new ReviewEditorAPI();
 

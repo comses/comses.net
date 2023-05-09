@@ -43,7 +43,7 @@
 <script lang="ts">
 import { Component, Prop, Vue } from "vue-property-decorator";
 import * as queryString from "query-string";
-import * as _ from "lodash";
+import _ from "lodash-es";
 
 @Component
 export default class SortBy extends Vue {

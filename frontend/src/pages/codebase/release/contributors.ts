@@ -9,7 +9,7 @@ import EditItems from "@/components/textitem";
 import Multiselect from "vue-multiselect";
 import Username from "@/components/username";
 import draggable from "vuedraggable";
-import * as _ from "lodash";
+import _ from "lodash-es";
 import * as yup from "yup";
 import * as _$ from "jquery";
 import { createDefaultValue, createFormValidator } from "@/pages/form";

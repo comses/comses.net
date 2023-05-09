@@ -11,7 +11,7 @@ import CodebaseEditForm from "@/components/codebase/Edit.vue";
 import { store } from "./store";
 import jQuery from "jquery";
 import { CodebaseReleaseAPI, CodebaseAPI } from "@/api";
-import * as _ from "lodash";
+import _ from "lodash-es";
 import * as yup from "yup";
 import { Progress } from "@/pages/codebase/release/progress";
 import { createFormValidator } from "@/pages/form";

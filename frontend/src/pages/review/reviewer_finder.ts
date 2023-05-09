@@ -2,7 +2,7 @@ import { Component, Prop } from "vue-property-decorator";
 import Vue from "vue";
 import Multiselect from "vue-multiselect";
 import { ReviewEditorAPI } from "@/api";
-import * as _ from "lodash";
+import _ from "lodash-es";
 import { holder } from "@/pages/review/directives";
 
 const reviewApi = new ReviewEditorAPI();

@@ -1,7 +1,7 @@
 import { Component, Prop } from "vue-property-decorator";
 import { api } from "@/api/connection";
 import Vue from "vue";
-import * as _ from "lodash";
+import _ from "lodash-es";
 
 interface UploadSuccess {
   kind: "success";

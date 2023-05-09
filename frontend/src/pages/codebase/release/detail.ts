@@ -1,4 +1,4 @@
-import * as _ from "lodash";
+import _ from "lodash-es";
 import { CodebaseReleaseAPI } from "@/api";
 import { Component } from "vue-property-decorator";
 import Checkbox from "@/components/forms/checkbox";

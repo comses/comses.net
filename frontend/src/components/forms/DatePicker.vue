@@ -27,7 +27,7 @@
 import { Component, Prop } from "vue-property-decorator";
 import BaseControl from "./base";
 import Datepicker from "vuejs-datepicker/dist/vuejs-datepicker.esm.js";
-import * as _ from "lodash";
+import _ from "lodash-es";
 
 @Component({
   components: {

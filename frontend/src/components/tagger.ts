@@ -1,6 +1,6 @@
 import BaseControl from "./forms/base";
 import { Component, Prop } from "vue-property-decorator";
-import * as _ from "lodash";
+import _ from "lodash-es";
 import Multiselect from "vue-multiselect";
 import { TagAPI } from "@/api";
 
