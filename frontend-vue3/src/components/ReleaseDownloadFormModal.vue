@@ -60,7 +60,7 @@
           form="download-request-form"
           class="me-auto mb-n1"
           name="save_to_profile"
-          label="Save for next time"
+          label="Remember my answers"
         />
         <button type="button" data-bs-dismiss="modal" class="btn btn-outline-gray">Cancel</button>
         <button type="submit" form="download-request-form" class="btn btn-success">
