@@ -10,6 +10,7 @@
       :id="id"
       v-bind="attrs"
       :class="{ 'form-select': true, 'is-invalid': error }"
+      @change="attrs.onInput()"
     >
       <option
         v-for="option in options"

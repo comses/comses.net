@@ -24,6 +24,7 @@
       :limit="20"
       @tag="addTag"
       @search-change="fetchMatchingTags"
+      @select="attrs.onInput()"
       :class="{ 'is-invalid': error }"
     >
       <template #clear v-if="value?.length">
