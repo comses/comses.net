@@ -71,3 +71,21 @@ export type MetricsChartSelection =
   | "codebases-by-platform"
   | "codebases-by-os"
   | "total-downloads";
+
+export interface ReviewEvent {
+  date_created: string;
+  action: string;
+  message: string;
+  author: {
+    name: string;
+    absolute_url: string;
+  };
+}
+
+export interface Reviewer {
+  id: number;
+  name: string;
+  avatar_url: string;
+  degrees: string[];
+  tags: Tags;
+}

@@ -89,6 +89,15 @@
   .option--desc {
     color: $gray-300 !important;
   }
+  .tag-list {
+    .tag {
+      color: $white !important;
+      border-color: transparentize($color: $white, $amount: 0.75);
+    }
+  }
+  img {
+    color: $text-color;
+  }
 }
 
 .multiselect__option--selected {
