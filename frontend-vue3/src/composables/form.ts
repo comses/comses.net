@@ -58,7 +58,9 @@ export function useForm<Values>(options: UseFormValidationOptions<Values>) {
 
   // if schema is provided, pass validate: yupResolver(schema), otherwise do not define validate
   const optionalValidate = options.schema ? { validate: yupResolver(options.schema) } : {};
-  if (!options.reValidateMode) options.reValidateMode = "submit";
+
+  // re-validate on input by default
+  if (!options.reValidateMode) options.reValidateMode = "input";
 
   if (options.showPlaceholder) {
     provide("showPlaceholder", options.showPlaceholder);
