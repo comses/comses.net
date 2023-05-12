@@ -19,7 +19,7 @@
 import { useReleaseAPI } from "@/composables/api/codebase";
 import { ref } from "vue";
 
-interface RegenerateShareUUIDProps {
+export interface RegenerateShareUUIDProps {
   identifier: string;
   versionNumber: string;
   initialShareUrl: string;

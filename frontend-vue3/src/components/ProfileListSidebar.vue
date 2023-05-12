@@ -22,7 +22,7 @@ import TaggerField from "@/components/form/TaggerField.vue";
 import { useForm } from "@/composables/form";
 import { useProfileAPI } from "@/composables/api/profile";
 
-interface ProfileListSidebarProps {
+export interface ProfileListSidebarProps {
   userId?: number;
 }
 

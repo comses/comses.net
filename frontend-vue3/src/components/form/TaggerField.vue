@@ -59,7 +59,7 @@ import FormPlaceholder from "@/components/form/FormPlaceholder.vue";
 import { useTagsAPI } from "@/composables/api/tags";
 import type { Tags, TagType } from "@/types";
 
-interface TaggerFieldProps {
+export interface TaggerFieldProps {
   // FIXME: extend from types/BaseFieldProps when vuejs/core#8083 makes it into a release
   name: string;
   label?: string;

@@ -74,7 +74,7 @@ import FieldError from "@/components/form/FieldError.vue";
 import FormPlaceholder from "@/components/form/FormPlaceholder.vue";
 import type { Organization } from "@/types";
 
-interface ResearchOrgFieldProps {
+export interface ResearchOrgFieldProps {
   // FIXME: extend from types/BaseFieldProps when vuejs/core#8083 makes it into a release
   name: string;
   label?: string;

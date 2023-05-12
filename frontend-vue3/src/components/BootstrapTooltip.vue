@@ -14,7 +14,7 @@
 import { ref, onMounted } from "vue";
 import { Tooltip } from "bootstrap";
 
-interface TooltipProps {
+export interface TooltipProps {
   title: string;
   iconClass?: string; // e.g. "fas fa-info-circle"
   tooltipClass?: string;
