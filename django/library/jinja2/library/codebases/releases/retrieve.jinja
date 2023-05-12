@@ -282,11 +282,11 @@
             <b class='card-title'>DOI</b>
             {% if release.doi %}
               <p>
-                <a href='{{release.doi_url}}'><span class='badgebg-info'>{{ release.doi }}</span></a>
+                <a href='{{release.doi_url}}'><span class='badge bg-info'>{{ release.doi }}</span></a>
               </p>
             {% elif codebase.doi %}
                 <p><small>This DOI is for the parent Codebase and always points at the most recent published version of this model.</small>
-                <a href='{{codebase.doi_url}}'><span class='badgebg-info'>{{ codebase.doi }}</span></a></p>
+                <a href='{{codebase.doi_url}}'><span class='badge bg-info'>{{ codebase.doi }}</span></a></p>
             {% else %}
                 <p>No assigned DOI</p>
                 {% if has_change_perm %}
@@ -452,11 +452,11 @@
                                     <span class="badge bg-warning">Unpublished</span>
                                 {% endif %}
                                 {% if related_release.peer_reviewed %}
-                                    <span class='badgebg-info'>Peer Reviewed</span>
+                                    <span class='badge bg-info'>Peer Reviewed</span>
                                 {% endif %}
                                 {% if related_release.doi %}
                                     <a href='{{related_release.doi_url}}'>
-                                        <span class='badgebg-info'>{{related_release.doi_url}}</span>
+                                        <span class='badge bg-info'>{{related_release.doi_url}}</span>
                                     </a>
                                 {% endif %}
                             </td>
