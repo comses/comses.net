@@ -578,7 +578,9 @@ class CodebaseReleaseEditSerializer(CodebaseReleaseSerializer):
         instance = super().update(instance, validated_data)
 
         instance.license = existing_license
-        instance.draft = False
+        # keep draft status until published
+        # https://github.com/comses/comses.net/issues/304
+        # instance.draft = False
         instance.save()
 
         return instance

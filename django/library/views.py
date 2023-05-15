@@ -575,9 +575,7 @@ class CodebaseReleaseDraftView(PermissionRequiredMixin, View):
     def post(self, *args, **kwargs):
         identifier = kwargs["identifier"]
         codebase = get_object_or_404(Codebase, identifier=identifier)
-        codebase_release = codebase.releases.filter(draft=True).first()
-        if not codebase_release:
-            codebase_release = codebase.create_release()
+        codebase_release = codebase.get_or_create_draft()
         version_number = codebase_release.version_number
         return redirect(
             "library:codebaserelease-edit",

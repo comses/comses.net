@@ -806,20 +806,25 @@ class Codebase(index.Indexed, ClusterableModel):
 
     @transaction.atomic
     def get_or_create_draft(self):
-        draft = self.releases.filter(draft=True).first()
-        if not draft:
-            draft = self.create_release()
-        return draft
+        existing_draft = self.releases.filter(draft=True).first()
+        if not existing_draft:
+            return self.create_release()
+        return existing_draft
 
+    @transaction.atomic
     def create_release(self, initialize=True, **overrides):
-        # FIXME: guard against not creating a new draft if there's an existing unpublished release, see
-        # https://github.com/comses/comses.net/issues/304
+        existing_draft = self.releases.filter(draft=True).first()
+        if existing_draft:
+            logger.warn(
+                "Creating a new draft release when one already exists: %s",
+                existing_draft.identifier,
+            )
         submitter = self.submitter
-        version_number = self.next_version_number()
+        next_version_number = self.next_version_number()
         previous_release = self.releases.last()
         release_metadata = dict(
             submitter=submitter,
-            version_number=version_number,
+            version_number=next_version_number,
             identifier=None,
             live=False,
             draft=True,
