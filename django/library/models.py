@@ -847,6 +847,7 @@ class Codebase(index.Indexed, ClusterableModel):
             for k, v in release_metadata.items():
                 setattr(release, k, v)
             release.doi = None
+            release.peer_reviewed = False
             release.save()
             previous_release_contributors.copy_to(release)
 
