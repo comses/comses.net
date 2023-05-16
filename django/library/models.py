@@ -345,16 +345,19 @@ class CodebaseQuerySet(models.QuerySet):
         )
 
     def filter_by_contributor(self, user):
-        try:
-            contributor = Contributor.objects.get(user=user)
-            # FIXME: naive bad ORM query, optimize at some point
+        # FIXME: query could likely be more efficient
+        # find all codebase releases with this user marked as a ReleaseContributor
+        contributors = Contributor.objects.filter(user=user)
+        if contributors.exists():
+            if contributors.count() > 1:
+                logger.warning("User %s has multiple contributors", user)
             releases = CodebaseRelease.objects.filter(
                 pk__in=ReleaseContributor.objects.filter(
-                    contributor=contributor
+                    contributor__in=contributors
                 ).values_list("release", flat=True)
             )
             return self.filter(releases__in=releases).distinct()
-        except Contributor.DoesNotExist:
+        else:
             return self.filter(submitter=user)
 
     def with_contributors(self, release_contributor_qs=None, user=None, **kwargs):
@@ -848,8 +851,8 @@ class Codebase(index.Indexed, ClusterableModel):
                 setattr(release, k, v)
             release.doi = None
             release.peer_reviewed = False
-            release.save()
             previous_release_contributors.copy_to(release)
+            release.save()
 
         if initialize:
             release.get_fs_api().validate_bagit()
