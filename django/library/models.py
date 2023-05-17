@@ -851,8 +851,8 @@ class Codebase(index.Indexed, ClusterableModel):
                 setattr(release, k, v)
             release.doi = None
             release.peer_reviewed = False
-            previous_release_contributors.copy_to(release)
             release.save()
+            previous_release_contributors.copy_to(release)
 
         if initialize:
             release.get_fs_api().validate_bagit()
