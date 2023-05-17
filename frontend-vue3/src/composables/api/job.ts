@@ -1,5 +1,5 @@
 import { toRefs } from "vue";
-import { useAxios, type RequestOptions } from "@/composables/api/axios";
+import { useAxios, type RequestOptions } from "@/composables/api";
 import { parseDates } from "@/util";
 
 interface JobQueryParams {

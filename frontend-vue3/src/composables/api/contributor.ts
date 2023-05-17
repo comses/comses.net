@@ -1,4 +1,4 @@
-import { useAxios } from "@/composables/api/axios";
+import { useAxios } from "@/composables/api";
 import { toRefs } from "vue";
 
 interface ContributorQueryParams {

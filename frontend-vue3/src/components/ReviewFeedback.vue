@@ -21,7 +21,7 @@
 
 <script setup lang="ts">
 import { onMounted, ref } from "vue";
-import { useReviewEditorAPI } from "@/composables/api/revieweditor";
+import { useReviewEditorAPI } from "@/composables/api";
 
 const props = defineProps<{
   reviewId: string;

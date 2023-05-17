@@ -56,7 +56,7 @@ import FieldLabel from "@/components/form/FieldLabel.vue";
 import FieldHelp from "@/components/form/FieldHelp.vue";
 import FieldError from "@/components/form/FieldError.vue";
 import FormPlaceholder from "@/components/form/FormPlaceholder.vue";
-import { useTagsAPI } from "@/composables/api/tags";
+import { useTagsAPI } from "@/composables/api";
 import type { Tag, TagType } from "@/types";
 
 export interface TaggerFieldProps {

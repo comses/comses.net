@@ -63,7 +63,7 @@ import MarkdownField from "@/components/form/MarkdownField.vue";
 import TaggerField from "@/components/form/TaggerField.vue";
 import FormAlert from "@/components/form/FormAlert.vue";
 import { useForm } from "@/composables/form";
-import { useCodebaseAPI, useReleaseAPI } from "@/composables/api/codebase";
+import { useCodebaseAPI, useReleaseEditorAPI } from "@/composables/api";
 
 const props = defineProps<{
   codebaseId?: string;
@@ -82,7 +82,7 @@ const schema = yup.object().shape({
 type CodebaseEditFields = yup.InferType<typeof schema>;
 
 const { data, serverErrors, create, retrieve, update, isLoading, detailUrl } = useCodebaseAPI();
-const { editUrl } = useReleaseAPI();
+const { editUrl } = useReleaseEditorAPI();
 
 const {
   errors,

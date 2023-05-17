@@ -35,7 +35,7 @@ import SelectField from "@/components/form/SelectField.vue";
 import DatepickerField from "@/components/form/DatepickerField.vue";
 import TaggerField from "@/components/form/TaggerField.vue";
 import { useForm } from "@/composables/form";
-import { useCodebaseAPI } from "@/composables/api/codebase";
+import { useCodebaseAPI } from "@/composables/api";
 
 const peerReviewOptions = [
   { value: "reviewed", label: "Reviewed" },

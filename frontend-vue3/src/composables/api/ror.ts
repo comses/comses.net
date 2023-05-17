@@ -1,5 +1,5 @@
 import { toRefs } from "vue";
-import { useAxios } from "@/composables/api/axios";
+import { useAxios } from "@/composables/api";
 import type { Organization, RORItem } from "@/types";
 
 export function useRORAPI() {

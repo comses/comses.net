@@ -16,7 +16,7 @@ import { onMounted } from "vue";
 import ReviewInvitations from "@/components/ReviewInvitations.vue";
 import ReviewFeedback from "@/components/ReviewFeedback.vue";
 import ReviewEventLog from "@/components/ReviewEventLog.vue";
-import { useReviewEditorAPI } from "@/composables/api/revieweditor";
+import { useReviewEditorAPI } from "@/composables/api";
 
 export interface ReviewEditorProps {
   reviewId: string;
@@ -32,7 +32,6 @@ onMounted(async () => {
   await retrieveEvents();
 });
 
-// FIXME: this always seems to 404
 async function retrieveEvents() {
   await listEvents(props.reviewId);
 }

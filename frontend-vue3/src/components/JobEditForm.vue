@@ -66,7 +66,7 @@ import TaggerField from "@/components/form/TaggerField.vue";
 import FormAlert from "@/components/form/FormAlert.vue";
 import FieldLabel from "@/components/form/FieldLabel.vue";
 import { useForm } from "@/composables/form";
-import { useJobAPI } from "@/composables/api/job";
+import { useJobAPI } from "@/composables/api";
 
 const props = defineProps<{
   jobId?: number;

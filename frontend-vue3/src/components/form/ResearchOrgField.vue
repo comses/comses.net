@@ -67,7 +67,7 @@ import { ref, inject } from "vue";
 import VueMultiSelect from "vue-multiselect";
 import { useDebounceFn } from "@vueuse/core";
 import { useField } from "@/composables/form";
-import { useRORAPI } from "@/composables/api/ror";
+import { useRORAPI } from "@/composables/api";
 import FieldLabel from "@/components/form/FieldLabel.vue";
 import FieldHelp from "@/components/form/FieldHelp.vue";
 import FieldError from "@/components/form/FieldError.vue";

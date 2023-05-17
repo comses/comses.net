@@ -159,7 +159,7 @@ import TaggerField from "@/components/form/TaggerField.vue";
 import ResearchOrgListField from "@/components/form/ResearchOrgListField.vue";
 import FormAlert from "@/components/form/FormAlert.vue";
 import { useForm } from "@/composables/form";
-import { useProfileAPI } from "@/composables/api/profile";
+import { useProfileAPI } from "@/composables/api";
 
 const props = defineProps<{
   userId: number;

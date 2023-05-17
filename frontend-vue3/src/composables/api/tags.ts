@@ -1,4 +1,4 @@
-import { useAxios } from "@/composables/api/axios";
+import { useAxios } from "@/composables/api";
 import type { TagType } from "@/types";
 
 interface TagQueryParams {

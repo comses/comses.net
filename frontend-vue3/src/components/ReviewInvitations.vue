@@ -85,7 +85,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from "vue";
-import { useReviewEditorAPI } from "@/composables/api/revieweditor";
+import { useReviewEditorAPI } from "@/composables/api";
 import ReviewerSearch from "@/components/ReviewerSearch.vue";
 import type { Reviewer } from "@/types";
 

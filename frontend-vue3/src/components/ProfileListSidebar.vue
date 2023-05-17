@@ -20,7 +20,7 @@ import { computed } from "vue";
 import ListSidebar from "@/components/ListSidebar.vue";
 import TaggerField from "@/components/form/TaggerField.vue";
 import { useForm } from "@/composables/form";
-import { useProfileAPI } from "@/composables/api/profile";
+import { useProfileAPI } from "@/composables/api";
 
 export interface ProfileListSidebarProps {
   userId?: number;

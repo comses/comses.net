@@ -1,4 +1,4 @@
-import { useAxios, type RequestOptions } from "@/composables/api/axios";
+import { useAxios, type RequestOptions } from "@/composables/api";
 import { toRefs } from "vue";
 
 interface ProfileQueryParams {

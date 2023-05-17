@@ -115,7 +115,7 @@ import TaggerField from "@/components/form/TaggerField.vue";
 import FormAlert from "@/components/form/FormAlert.vue";
 import FieldLabel from "@/components/form/FieldLabel.vue";
 import { useForm } from "@/composables/form";
-import { useEventAPI } from "@/composables/api/event";
+import { useEventAPI } from "@/composables/api";
 
 const props = defineProps<{
   eventId?: number;

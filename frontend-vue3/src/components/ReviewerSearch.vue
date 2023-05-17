@@ -68,7 +68,7 @@
 import { computed, ref } from "vue";
 import VueMultiSelect from "vue-multiselect";
 import { useDebounceFn } from "@vueuse/core";
-import { useReviewEditorAPI } from "@/composables/api/revieweditor";
+import { useReviewEditorAPI } from "@/composables/api";
 
 const props = defineProps(["modelValue"]);
 const emit = defineEmits(["update:modelValue"]);

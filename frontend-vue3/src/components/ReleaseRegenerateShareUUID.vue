@@ -16,7 +16,7 @@
 </template>
 
 <script setup lang="ts">
-import { useReleaseAPI } from "@/composables/api/codebase";
+import { useReleaseEditorAPI } from "@/composables/api";
 import { ref } from "vue";
 
 export interface RegenerateShareUUIDProps {
@@ -29,7 +29,7 @@ const props = defineProps<RegenerateShareUUIDProps>();
 
 const shareUrl = ref(props.initialShareUrl);
 
-const { regenerateShareUUID, data } = useReleaseAPI();
+const { regenerateShareUUID, data } = useReleaseEditorAPI();
 
 async function regenerateShareUuid() {
   await regenerateShareUUID(props.identifier, props.versionNumber);

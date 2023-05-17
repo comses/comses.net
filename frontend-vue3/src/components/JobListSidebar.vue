@@ -22,7 +22,7 @@ import ListSidebar from "@/components/ListSidebar.vue";
 import DatepickerField from "@/components/form/DatepickerField.vue";
 import TaggerField from "@/components/form/TaggerField.vue";
 import { useForm } from "@/composables/form";
-import { useJobAPI } from "@/composables/api/job";
+import { useJobAPI } from "@/composables/api";
 
 const schema = yup.object({
   initialPostingDate: yup.date(),

@@ -83,7 +83,7 @@ import CheckboxField from "@/components/form/CheckboxField.vue";
 import ResearchOrgField from "@/components/form/ResearchOrgField.vue";
 import FormAlert from "@/components/form/FormAlert.vue";
 import { useForm } from "@/composables/form";
-import { useReleaseAPI } from "@/composables/api/codebase";
+import { useReleaseEditorAPI } from "@/composables/api";
 import { isEmpty } from "@/util";
 
 export interface ReleaseDownloadFormProps {
@@ -117,7 +117,7 @@ const schema = yup.object().shape({
 });
 type ReleaseDownloadFields = yup.InferType<typeof schema>;
 
-const { serverErrors, requestDownload, downloadUrl } = useReleaseAPI();
+const { serverErrors, requestDownload, downloadUrl } = useReleaseEditorAPI();
 
 const { errors, handleSubmit, values } = useForm<ReleaseDownloadFields>({
   schema,

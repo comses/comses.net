@@ -1,5 +1,5 @@
 import type { AxiosResponse } from "axios";
-import { useAxios, parseValidationError, getCookie } from "@/composables/api/axios";
+import { useAxios, parseValidationError, getCookie } from "@/composables/api";
 
 describe("detailUrl", () => {
   test("should create detail URL with ID and paths", () => {
