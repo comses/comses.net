@@ -57,7 +57,7 @@ import FieldHelp from "@/components/form/FieldHelp.vue";
 import FieldError from "@/components/form/FieldError.vue";
 import FormPlaceholder from "@/components/form/FormPlaceholder.vue";
 import { useTagsAPI } from "@/composables/api/tags";
-import type { Tags, TagType } from "@/types";
+import type { Tag, TagType } from "@/types";
 
 export interface TaggerFieldProps {
   // FIXME: extend from types/BaseFieldProps when vuejs/core#8083 makes it into a release
@@ -74,11 +74,11 @@ const props = withDefaults(defineProps<TaggerFieldProps>(), {
   placeholder: "Type to add tags",
 });
 
-const { id, value, attrs, error } = useField<Tags>(props, "name");
+const { id, value, attrs, error } = useField<Tag[]>(props, "name");
 
 const showPlaceholder = inject("showPlaceholder", false);
 
-const matchingTags = ref<Tags>([]);
+const matchingTags = ref<Tag[]>([]);
 const isLoading = ref(false);
 
 const { search } = useTagsAPI();
