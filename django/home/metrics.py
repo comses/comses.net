@@ -188,7 +188,7 @@ class Metrics:
             "totalDownloads": {
                 "title": "Total Downloads",
                 "yLabel": "# Downloads",
-                "start_year": min_start_year,
+                "startYear": min_start_year,
                 "series": [
                     {
                         "name": "Codebase Downloads",
