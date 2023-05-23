@@ -1,6 +1,11 @@
 import { computed, ref } from "vue";
 import { defineStore } from "pinia";
-import type { CodebaseReleaseEditorState, CodebaseRelease, CodebaseReleaseFiles } from "@/types";
+import type {
+  CodebaseReleaseEditorState,
+  CodebaseRelease,
+  CodebaseReleaseFiles,
+  CodebaseReleaseMetadata,
+} from "@/types";
 import { useCodebaseAPI, useReleaseEditorAPI } from "@/composables/api";
 
 export const useReleaseEditorStore = defineStore("releaseEditor", () => {
@@ -9,6 +14,9 @@ export const useReleaseEditorStore = defineStore("releaseEditor", () => {
   // state properties
   const files = ref(initialState.files);
   const release = ref(initialState.release);
+
+  // property to help determine if the store has been initialized with server data
+  const isInitialized = ref(false);
 
   // getters
   const identifier = computed(() => {
@@ -19,16 +27,15 @@ export const useReleaseEditorStore = defineStore("releaseEditor", () => {
     return release.value.version_number;
   });
 
-  const detail = computed(() => {
+  const metadata = computed(() => {
     return {
-      documentation: release.value.documentation,
+      release_notes: release.value.release_notes,
       embargo_end_date: release.value.embargo_end_date,
       os: release.value.os,
-      license: release.value.license,
-      live: release.value.live,
       platforms: release.value.platforms,
       programming_languages: release.value.programming_languages,
-      release_notes: release.value.release_notes,
+      live: release.value.live,
+      license: release.value.license || undefined,
     };
   });
 
@@ -41,8 +48,10 @@ export const useReleaseEditorStore = defineStore("releaseEditor", () => {
     const { data, retrieve } = useReleaseEditorAPI();
     await retrieve(identifier, versionNumber);
     release.value = data.value as CodebaseRelease;
-    console.log(release.value.identifier);
-    console.log(data.value);
+  }
+
+  function setMetadata(metadata: CodebaseReleaseMetadata) {
+    Object.assign(release.value, metadata);
   }
 
   async function fetchMediaFiles() {
@@ -59,6 +68,7 @@ export const useReleaseEditorStore = defineStore("releaseEditor", () => {
   }
 
   async function initialize(identifier: string, versionNumber: string) {
+    isInitialized.value = false;
     await fetchCodebaseRelease(identifier, versionNumber);
     await fetchMediaFiles();
     if (!release.value.live) {
@@ -66,18 +76,21 @@ export const useReleaseEditorStore = defineStore("releaseEditor", () => {
         await fetchOriginalFiles(category);
       }
     }
+    isInitialized.value = true;
   }
 
   return {
     // state
     files,
     release,
+    isInitialized,
     // getters
     identifier,
     versionNumber,
-    detail,
+    metadata,
     // actions
     initialize,
+    setMetadata,
     releaseContributors,
     fetchCodebaseRelease,
   };

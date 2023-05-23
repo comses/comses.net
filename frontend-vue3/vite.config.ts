@@ -35,16 +35,20 @@ export default defineConfig({
     rollupOptions: {
       input: {
         main: resolvePath("./src/apps/main.ts"),
-        metrics: resolvePath("./src/apps/metrics.ts"),
         codebase_list: resolvePath("./src/apps/codebase_list.ts"),
         codebase_edit: resolvePath("./src/apps/codebase_edit.ts"),
-        codebase_download: resolvePath("./src/apps/codebase_download.ts"),
+        event_calendar: resolvePath("./src/apps/event_calendar.ts"),
         event_list: resolvePath("./src/apps/event_list.ts"),
         event_edit: resolvePath("./src/apps/event_edit.ts"),
         job_list: resolvePath("./src/apps/job_list.ts"),
         job_edit: resolvePath("./src/apps/job_edit.ts"),
+        metrics: resolvePath("./src/apps/metrics.ts"),
         profile_list: resolvePath("./src/apps/profile_list.ts"),
         profile_edit: resolvePath("./src/apps/profile_edit.ts"),
+        release_editor: resolvePath("./src/apps/release_editor.ts"),
+        release_download: resolvePath("./src/apps/release_download.ts"),
+        release_regenerate_share_uuid: resolvePath("./src/apps/release_regenerate_share_uuid.ts"),
+        review_editor: resolvePath("./src/apps/review_editor.ts"),
         // add more entry points here
       },
     },

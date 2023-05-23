@@ -1,5 +1,5 @@
 <template>
-  <form @submit="handleSubmit">
+  <form :id="id" @submit="handleSubmit">
     <TextField
       class="mb-3"
       name="title"
@@ -48,7 +48,7 @@
       help="Is this model being developed on GitHub, BitBucket, GitLab, or other Git-based version control repository? Enter its root repository URL (e.g., https://github.com/comses/water-markets-model) for future CoMSES and Git integration."
     />
     <FormAlert :validation-errors="Object.values(errors)" :server-errors="serverErrors" />
-    <button type="submit" class="btn btn-primary" :disabled="isLoading">
+    <button v-if="!asModal" type="submit" class="btn btn-primary" :disabled="isLoading">
       {{ props.codebaseId ? "Update" : "Next" }}
     </button>
   </form>
@@ -65,9 +65,19 @@ import FormAlert from "@/components/form/FormAlert.vue";
 import { useForm } from "@/composables/form";
 import { useCodebaseAPI, useReleaseEditorAPI } from "@/composables/api";
 
-const props = defineProps<{
-  codebaseId?: string;
-}>();
+const props = withDefaults(
+  defineProps<{
+    codebaseId?: string;
+    asModal?: boolean;
+    id?: string;
+  }>(),
+  {
+    asModal: false,
+    id: "edit-codebase-form",
+  }
+);
+
+const emit = defineEmits(["success"]);
 
 const schema = yup.object().shape({
   title: yup.string().required(),
@@ -123,7 +133,11 @@ function nextUrl(identifier: string) {
 
 async function createOrUpdate() {
   const onSuccess = (response: any) => {
-    window.location.href = nextUrl(response.data.identifier);
+    if (props.asModal) {
+      emit("success");
+    } else {
+      window.location.href = nextUrl(response.data.identifier);
+    }
   };
   if (props.codebaseId) {
     await update(props.codebaseId, values, { onSuccess });

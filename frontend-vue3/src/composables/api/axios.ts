@@ -186,6 +186,8 @@ export function parseValidationError(errorResponse: AxiosResponse): string[] {
       } else {
         errors.push(`${key}: ${value.join(", ")}`);
       }
+    } else if (typeof value === "string") {
+      errors.push(value);
     }
   });
   return errors;

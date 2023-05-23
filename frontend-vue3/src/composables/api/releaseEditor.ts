@@ -24,7 +24,7 @@ export function useReleaseEditorAPI() {
     return releaseDetailUrl(identifier, versionNumber, ["edit"]);
   }
   function detailEditUrl(identifier: string, versionNumber: string) {
-    return releaseDetailUrl(identifier, versionNumber, ["?edit"]);
+    return `${releaseDetailUrl(identifier, versionNumber)}?edit`;
   }
   function listOriginalsFileUrl(identifier: string, versionNumber: string, category: string) {
     return releaseDetailUrl(identifier, versionNumber, ["files", "originals", category]);
@@ -65,12 +65,12 @@ export function useReleaseEditorAPI() {
     });
   }
 
-  async function publish(identifier: string, versionNumber: string) {
-    return post(releaseDetailUrl(identifier, versionNumber, ["publish"]));
+  async function publish(identifier: string, versionNumber: string, data: any) {
+    return post(releaseDetailUrl(identifier, versionNumber, ["publish"]), data);
   }
 
   async function update(identifier: string, versionNumber: string, data: any) {
-    return put(releaseDetailUrl(identifier, versionNumber), data);
+    return put(detailEditUrl(identifier, versionNumber), data);
   }
 
   async function clearCategory(identifier: string, versionNumber: string, category: string) {
@@ -131,7 +131,7 @@ export function useReleaseEditorAPI() {
 
   return {
     ...toRefs(state),
-    detailUrl,
+    detailUrl: releaseDetailUrl,
     editUrl,
     detailEditUrl,
     listOriginalsFileUrl,

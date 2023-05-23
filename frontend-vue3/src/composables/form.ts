@@ -73,7 +73,6 @@ export function useForm<Values>(options: UseFormValidationOptions<Values>) {
 
   // create event listener for leaving with unsaved changes
   function handleBeforeUnload(event: BeforeUnloadEvent) {
-    console.log(form.isSubmitting.value);
     if (!form.isSubmitting.value && !isEmpty(form.touched.value)) {
       event.preventDefault();
       event.returnValue = "";

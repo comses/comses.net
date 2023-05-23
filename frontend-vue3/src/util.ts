@@ -11,7 +11,7 @@ export function extractDataParams(elementId: string, names: string[]): Extracted
    */
   const el = document.getElementById(elementId);
   if (el) {
-    const attributes = names.reduce<ExtractedAttributes>((acc, name) => {
+    const attributes = names.reduce<ExtractedAttributes>((acc: any, name) => {
       const hyphenatedName = name.replace(/[A-Z]/g, letter => `-${letter.toLowerCase()}`);
       const attrValue = el.getAttribute(`data-${hyphenatedName}`);
 
@@ -20,7 +20,13 @@ export function extractDataParams(elementId: string, names: string[]): Extracted
           const parsedValue = JSON.parse(attrValue);
           acc[name] = parsedValue;
         } catch (error) {
-          acc[name] = attrValue;
+          if (attrValue === "False") {
+            acc[name] = false;
+          } else if (attrValue === "True") {
+            acc[name] = true;
+          } else {
+            acc[name] = attrValue;
+          }
         }
       }
       return acc;

@@ -113,7 +113,7 @@ interface FileInfo {
   identifier: string;
 }
 
-interface License {
+export interface License {
   name: string;
   url?: string;
 }
@@ -207,3 +207,14 @@ interface Codebase {
   tags: Tag[];
   title: string;
 }
+
+export type CodebaseReleaseMetadata = Pick<
+  CodebaseRelease,
+  | "release_notes"
+  | "embargo_end_date"
+  | "os"
+  | "platforms"
+  | "programming_languages"
+  | "live"
+  | "license"
+>;

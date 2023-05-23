@@ -1,13 +1,18 @@
 {% extends "base.jinja" %}
 
 {% block introduction %}
-    <h1><i class='fas fa-cloud-upload-alt'></i> Archive your computational model</h1>
+<h1><i class='fas fa-cloud-upload-alt'></i> Archive your computational model</h1>
 {% endblock %}
 {% block content %}
-    <div id="app" data-version-number="{{ release.version_number }}" data-identifier="{{ release.codebase.identifier }}"
-         data-review-status-enum="{{ review_status_enum_json }}"></div>
+<div id="app" data-version-number="{{ release.version_number }}" data-identifier="{{ release.codebase.identifier }}"
+    data-review-status-enum="{{ review_status_enum_json }}"></div>
+<div id="release-editor" data-version-number="{{ release.version_number }}"
+    data-identifier="{{ release.codebase.identifier }}"
+    data-review-status="{{ release.get_review().get_status_display() if release.get_review() else 'Unreviewed' }}"
+    data-is-live="{{ release.live }}"></div>
 {% endblock %}
 
 {% block js %}
-{{ render_bundle('releases', attrs='defer') }}
+{{ vite_asset("apps/release_editor.ts") }}
+{# {{ render_bundle('releases', attrs='defer') }} #}
 {% endblock %}

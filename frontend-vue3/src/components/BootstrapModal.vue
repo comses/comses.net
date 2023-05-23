@@ -7,7 +7,7 @@
     aria-hidden="true"
     ref="modalElement"
   >
-    <div :class="{ 'modal-dialog': true, 'modal-dialog-centered': centered }">
+    <div :class="['modal-dialog', modalSizeClass, centered ? 'modal-dialog-centered' : '']">
       <div class="modal-content">
         <div class="modal-header">
           <h5 class="modal-title" :id="`${id}-label`">
@@ -37,17 +37,19 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, onUnmounted, ref } from "vue";
+import { computed, onMounted, onUnmounted, ref } from "vue";
 import { Modal } from "bootstrap";
 
 export interface BootstrapModalProps {
   id: string;
   title?: string;
   centered?: boolean;
+  size?: "sm" | "md" | "lg" | "xl";
 }
 
 const props = withDefaults(defineProps<BootstrapModalProps>(), {
   centered: false,
+  size: "md",
 });
 
 const modalElement = ref<Element>();
@@ -69,5 +71,9 @@ defineExpose({
   hide: () => {
     modal.hide();
   },
+});
+
+const modalSizeClass = computed(() => {
+  return props.size === "md" ? "" : `modal-${props.size}`;
 });
 </script>

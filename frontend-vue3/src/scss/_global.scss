@@ -62,6 +62,15 @@ a.anchor {
   }
 }
 
+.btn-gray {
+  @include button-variant($gray-500, $gray-500);
+  color: $white;
+
+  &:hover {
+    color: $white;
+  }
+}
+
 .btn-group-xs > .btn,
 .btn-xs {
   padding: 0.25rem 0.4rem;
