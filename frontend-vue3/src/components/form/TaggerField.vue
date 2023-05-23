@@ -49,7 +49,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onBeforeMount, inject } from "vue";
+import { ref, inject } from "vue";
 import VueMultiSelect from "vue-multiselect";
 import { useField } from "@/composables/form";
 import FieldLabel from "@/components/form/FieldLabel.vue";
@@ -82,11 +82,6 @@ const matchingTags = ref<Tag[]>([]);
 const isLoading = ref(false);
 
 const { search } = useTagsAPI();
-
-onBeforeMount(() => {
-  // force the inital value to be an empty array
-  value.value = [];
-});
 
 async function fetchMatchingTags(query: string) {
   isLoading.value = true;
