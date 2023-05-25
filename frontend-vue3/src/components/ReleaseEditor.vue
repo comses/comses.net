@@ -8,12 +8,12 @@
             title="This release is currently private and unpublished."
             class="disabled btn btn-warning"
           >
-            <i class="fas fa-lock"></i> Private</span
-          >
+            <i class="fas fa-lock"></i> Private
+          </span>
           {{ store.release.codebase.title }}
-          <span class="badge bg-gray pt-1 px-2"
-            ><small>v{{ store.release.version_number }}</small></span
-          >
+          <span class="badge bg-gray pt-1 px-2">
+            <small>v{{ store.release.version_number }}</small>
+          </span>
         </h1>
       </div>
     </div>
@@ -21,9 +21,10 @@
       <div class="col d-flex justify-content-between">
         <span>
           <a :href="store.release.absolute_url">View live</a> |
-          <span class="text-muted me-2"
-            >Review Status: <span class="fw-bold">{{ reviewStatus }}</span></span
-          >
+          <span class="text-muted me-2">
+            Review Status:
+            <span class="fw-bold">{{ reviewStatus }}</span>
+          </span>
           <ReleaseEditorReviewModal button-class="btn btn-sm btn-outline-danger py-0 mb-1" />
         </span>
         <a href="//forum.comses.net/t/archiving-your-model-1-getting-started/7377">
@@ -34,11 +35,12 @@
     <div class="row">
       <div class="col d-flex justify-content-between">
         <span>
-          <ReleaseEditorCommonModal
+          <ReleaseEditorCommonModal button-class="btn btn-primary me-2" :identifier="identifier" />
+          <ReleaseEditorImagesModal
             button-class="btn btn-primary me-2"
-            :identifier="store.identifier"
+            :identifier="identifier"
+            :files="store.files.media"
           />
-          <ReleaseEditorImagesModal button-class="btn btn-primary me-2" />
         </span>
         <ReleaseEditorPublishModal button-class="btn btn-danger" />
       </div>
@@ -52,7 +54,7 @@
         <div>
           <router-view v-slot="{ Component }">
             <keep-alive>
-              <component :is="Component" :initialData="{}"></component>
+              <component :is="Component"></component>
             </keep-alive>
           </router-view>
         </div>

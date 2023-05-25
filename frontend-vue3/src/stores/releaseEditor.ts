@@ -5,6 +5,7 @@ import type {
   CodebaseRelease,
   CodebaseReleaseFiles,
   CodebaseReleaseMetadata,
+  FileCategory,
 } from "@/types";
 import { useCodebaseAPI, useReleaseEditorAPI } from "@/composables/api";
 
@@ -54,17 +55,33 @@ export const useReleaseEditorStore = defineStore("releaseEditor", () => {
     Object.assign(release.value, metadata);
   }
 
+  function getFilesInCategory(category: FileCategory) {
+    return files.value.originals[category];
+  }
+
   async function fetchMediaFiles() {
     const { data, mediaList } = useCodebaseAPI();
     await mediaList(identifier.value);
     files.value.media = data.value.results;
   }
 
-  async function fetchOriginalFiles(category: string) {
+  async function fetchOriginalFiles(category: FileCategory) {
     const { data, listOriginalFiles } = useReleaseEditorAPI();
     await listOriginalFiles(identifier.value, versionNumber.value, category);
     const key = category as keyof CodebaseReleaseFiles["originals"];
     files.value.originals[key] = data.value;
+  }
+
+  async function deleteFile(category: FileCategory, path: string) {
+    const { deleteFile } = useReleaseEditorAPI();
+    await deleteFile(path);
+    return fetchOriginalFiles(category);
+  }
+
+  async function clearCategory(category: FileCategory) {
+    const { clearCategory } = useReleaseEditorAPI();
+    await clearCategory(identifier.value, versionNumber.value, category);
+    return fetchOriginalFiles(category);
   }
 
   async function initialize(identifier: string, versionNumber: string) {
@@ -73,7 +90,7 @@ export const useReleaseEditorStore = defineStore("releaseEditor", () => {
     await fetchMediaFiles();
     if (!release.value.live) {
       for (const category of ["data", "code", "docs", "results"]) {
-        await fetchOriginalFiles(category);
+        await fetchOriginalFiles(category as FileCategory);
       }
     }
     isInitialized.value = true;
@@ -93,6 +110,11 @@ export const useReleaseEditorStore = defineStore("releaseEditor", () => {
     setMetadata,
     releaseContributors,
     fetchCodebaseRelease,
+    fetchOriginalFiles,
+    fetchMediaFiles,
+    deleteFile,
+    clearCategory,
+    getFilesInCategory,
   };
 });
 

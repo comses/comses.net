@@ -74,6 +74,7 @@
 <script setup lang="ts">
 import * as yup from "yup";
 import { ref } from "vue";
+import { isEmpty } from "lodash-es";
 import type { Modal } from "bootstrap";
 import type { Organization } from "@/types";
 import BootstrapModal from "@/components/BootstrapModal.vue";
@@ -84,7 +85,6 @@ import ResearchOrgField from "@/components/form/ResearchOrgField.vue";
 import FormAlert from "@/components/form/FormAlert.vue";
 import { useForm } from "@/composables/form";
 import { useReleaseEditorAPI } from "@/composables/api";
-import { isEmpty } from "@/util";
 
 export interface ReleaseDownloadFormProps {
   identifier: string;

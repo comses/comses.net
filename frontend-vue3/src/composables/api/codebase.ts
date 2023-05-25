@@ -31,8 +31,12 @@ export function useCodebaseAPI() {
     return put(detailUrl(identifier), data, options);
   }
 
+  function mediaListUrl(identifier: string) {
+    return detailUrl(identifier, ["media"]);
+  }
+
   async function mediaList(identifier: string) {
-    return get(detailUrl(identifier, ["media"]));
+    return get(mediaListUrl(identifier));
   }
 
   async function mediaDelete(identifier: string, imageId: string | number) {
@@ -51,6 +55,7 @@ export function useCodebaseAPI() {
     mediaList,
     mediaDelete,
     mediaClear,
+    mediaListUrl,
     detailUrl,
     searchUrl: searchUrl<CodebaseQueryParams>,
   };

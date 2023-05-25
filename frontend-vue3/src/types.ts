@@ -108,7 +108,9 @@ export interface CodebaseReleaseFiles {
   media: FileInfo[];
 }
 
-interface FileInfo {
+export type FileCategory = keyof CodebaseReleaseFiles["originals"];
+
+export interface FileInfo {
   name: string;
   identifier: string;
 }
@@ -218,3 +220,28 @@ export type CodebaseReleaseMetadata = Pick<
   | "live"
   | "license"
 >;
+
+export interface UploadSuccess {
+  kind: "success";
+  msg: string;
+}
+
+export interface UploadProgress {
+  kind: "progress";
+  percentCompleted: number;
+  size: number;
+}
+
+export interface UploadFailure {
+  kind: "failure";
+  msgs: { level: string; msg: { detail: string; stage: string } }[];
+}
+
+export interface File {
+  label: string;
+}
+
+export interface Folder {
+  label: string;
+  contents: (File | Folder)[];
+}

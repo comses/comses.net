@@ -2,6 +2,7 @@ import { toRefs } from "vue";
 import { useAxios, type RequestOptions } from "@/composables/api";
 import { parseDates } from "@/util";
 import type { CodebaseRelease } from "@/types";
+import type { AxiosProgressEvent, AxiosError } from "axios";
 
 export function useReleaseEditorAPI() {
   /**
@@ -91,19 +92,19 @@ export function useReleaseEditorAPI() {
   }
 
   async function uploadFile(
-    identifier: string,
-    versionNumber: string,
-    category: string,
+    uploadUrl: string,
     file: any,
-    onUploadProgress: any
+    onUploadProgress: (progressEvent: AxiosProgressEvent) => void,
+    onError: (error: AxiosError) => void
   ) {
     const formData = new FormData();
     formData.append("file", file);
-    return postForm(listOriginalsFileUrl(identifier, versionNumber, category), formData, {
+    return postForm(uploadUrl, formData, {
       config: {
         headers: { "Content-Type": "multipart/form-data" },
         onUploadProgress,
       },
+      onError,
     });
   }
 
