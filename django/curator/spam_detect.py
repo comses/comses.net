@@ -57,7 +57,7 @@ class UserPipeline:
     def all_users_df(self):
 
         all_users = MemberProfile.objects.all()
-        for x in all_users:
+        for i, x in enumerate(all_users, start=1):
             if x.user is None:
                 continue
             else:
@@ -121,7 +121,7 @@ class UserPipeline:
 
         combined_member_profiles = list(chain(member_profiles_first, member_profiles_last))
 
-        for x in combined_member_profiles:
+        for i, x in enumerate(combined_member_profiles, start=1):
             if x.user is None:
                 continue
             else:
