@@ -72,7 +72,8 @@ class UserPipeline:
                        'bio': x.bio, 
                        'research_interests': x.research_interests, 
                        'personal_url': x.personal_url, 
-                       'professional_url': x.professional_url
+                       'professional_url': x.professional_url,
+                       'user_id' : int(i)
                        }
                 
                 self.user_df = self.user_df.append(row, ignore_index=True)
@@ -135,7 +136,8 @@ class UserPipeline:
                        'bio': x.bio, 
                        'research_interests': x.research_interests, 
                        'personal_url': x.personal_url, 
-                       'professional_url': x.professional_url
+                       'professional_url': x.professional_url,
+                       'user_id': int(i)
                        }
                 
                 users_name_df = users_name_df.append(row, ignore_index=True)
