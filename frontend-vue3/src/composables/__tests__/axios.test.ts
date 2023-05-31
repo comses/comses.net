@@ -1,5 +1,5 @@
 import type { AxiosResponse } from "axios";
-import { useAxios, parseValidationError, getCookie } from "@/composables/api";
+import { useAxios, parseValidationErrorResponse, getCookie } from "@/composables/api";
 
 describe("detailUrl", () => {
   test("should create detail URL with ID and paths", () => {
@@ -38,15 +38,17 @@ describe("parseValidationError", () => {
         non_field_errors: ["Invalid email or password."],
         email: ["This field is required."],
         password: ["This field is required."],
+        contributor: { user: { email: ["Email must be valid"] } }, // nested errors
       },
       status: 400,
       statusText: "Bad Request",
     };
-    const result = parseValidationError(errorResponse as AxiosResponse);
+    const result = parseValidationErrorResponse(errorResponse as AxiosResponse);
     expect(result).toEqual([
       "Invalid email or password.",
       "email: This field is required.",
       "password: This field is required.",
+      "contributor: user: email: Email must be valid",
     ]);
   });
 });

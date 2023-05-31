@@ -1,6 +1,7 @@
 import { reactive } from "vue";
 import axios, { AxiosError, type AxiosRequestConfig, type AxiosResponse } from "axios";
 import queryString from "query-string";
+import { isEmpty } from "lodash-es";
 
 export interface AxiosRequestState {
   response: any;
@@ -75,7 +76,7 @@ export function useAxios(baseUrl?: string, config?: AxiosRequestConfig) {
           onError(error);
         }
         if (error.response.status === 400) {
-          state.serverErrors = parseValidationError(error.response);
+          state.serverErrors = parseValidationErrorResponse(error.response);
         } else {
           state.serverErrors = parseNonValidationError(error.response);
         }
@@ -176,18 +177,30 @@ export function isStringArray(value: unknown): value is string[] {
   return Array.isArray(value) && value.every(item => typeof item === "string");
 }
 
-export function parseValidationError(errorResponse: AxiosResponse): string[] {
+export function parseValidationErrorResponse(errorResponse: AxiosResponse): string[] {
+  return parseValidationError(errorResponse.data);
+}
+
+function parseValidationError(data: any, parentKey = ""): string[] {
   const errors: string[] = [];
-  Object.entries(errorResponse.data).forEach(([key, value]) => {
+  Object.entries(data).forEach(([key, value]) => {
+    // ignore numbered keys, they are just array indices
+    const nonNumberedKey = isNaN(Number(key)) ? key : "";
+    const fullKey = parentKey
+      ? `${parentKey}${nonNumberedKey ? `: ${nonNumberedKey}` : ""}`
+      : nonNumberedKey;
     if (isStringArray(value)) {
       if (key === "non_field_errors") {
         // non_field_errors are already formatted for display
         errors.push(...value);
       } else {
-        errors.push(`${key}: ${value.join(", ")}`);
+        errors.push(`${fullKey ? fullKey + ": " : ""}${value.join(", ")}`);
       }
     } else if (typeof value === "string") {
-      errors.push(value);
+      errors.push(`${fullKey ? fullKey + ": " : ""}${value}`);
+    } else if (typeof value === "object" && !isEmpty(value)) {
+      // recursively parse nested validation error response
+      errors.push(...parseValidationError(value, fullKey));
     }
   });
   return errors;
