@@ -10,13 +10,15 @@
       :id="id"
       v-bind="attrs"
       :multiple="multiple"
-      :track-by="trackBy"
+      :track-by="multiple ? undefined : trackBy"
       :label="labelWith"
       :placeholder="placeholder"
       :options="options"
       :hide-selected="false"
       :searchable="true"
       @select="attrs.onInput()"
+      :close-on-select="!multiple"
+      :custom-label="customLabel"
       :class="{ 'is-invalid': error }"
     >
       <template #clear v-if="multiple && value?.length">
@@ -25,9 +27,12 @@
         </div>
       </template>
       <template #option="{ option }">
-        <slot name="option" :option="option">
+        <slot name="option" :option="option" v-if="!customLabel">
           {{ option[labelWith] }}
         </slot>
+      </template>
+      <template #caret>
+        <div :class="{ multiselect__select: true, 'd-none': value?.length }"></div>
       </template>
     </VueMultiSelect>
     <slot name="help">
@@ -58,7 +63,8 @@ export interface MultiSelectFieldProps {
   multiple?: boolean;
   trackBy?: string;
   labelWith?: string;
-  options: Record<string, any>[];
+  customLabel?: (option: any) => void;
+  options: any[];
 }
 
 const props = withDefaults(defineProps<MultiSelectFieldProps>(), {
@@ -67,7 +73,7 @@ const props = withDefaults(defineProps<MultiSelectFieldProps>(), {
   labelWith: "label",
 });
 
-const { id, value, attrs, error } = useField<string | any[]>(props, props.trackBy);
+const { id, value, attrs, error } = useField<string | any[]>(props, "name");
 
 const showPlaceholder = inject("showPlaceholder", false);
 </script>

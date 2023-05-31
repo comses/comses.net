@@ -28,7 +28,7 @@ const store = useReleaseEditorStore();
 
 const iconClass = computed(() => {
   if (!store.isInitialized) {
-    return "fas fa-circle-notch fa-spin text-muted";
+    return "fas fa-spinner fa-spin text-muted";
   }
   if (props.optional && !props.check) {
     return "far fa-circle text-muted";

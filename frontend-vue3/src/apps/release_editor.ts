@@ -6,7 +6,7 @@ import { createRouter, createWebHashHistory } from "vue-router";
 import ReleaseEditor from "@/components/ReleaseEditor.vue";
 import ReleaseEditorMetadataForm from "@/components/ReleaseEditorMetadataForm.vue";
 import ReleaseEditorUploadForm from "@/components/ReleaseEditorUploadForm.vue";
-import ReleaseEditorContributorForm from "@/components/ReleaseEditorContributorForm.vue";
+import ReleaseEditorContributors from "@/components/ReleaseEditorContributors.vue";
 import { extractDataParams } from "@/util";
 
 const props = extractDataParams("release-editor", [
@@ -29,7 +29,7 @@ const router = createRouter({
       ? []
       : [{ path: "/upload", component: ReleaseEditorUploadForm, name: "upload" }]),
     { path: "/metadata", component: ReleaseEditorMetadataForm, name: "metadata" },
-    { path: "/contributors", component: ReleaseEditorContributorForm, name: "contributors" },
+    { path: "/contributors", component: ReleaseEditorContributors, name: "contributors" },
   ],
 });
 

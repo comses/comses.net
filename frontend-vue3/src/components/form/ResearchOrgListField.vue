@@ -48,7 +48,13 @@
         :id-for="id"
       />
     </span>
-    <ResearchOrgField v-else name="organization" :clear-on-select="true" @select="create" />
+    <ResearchOrgField
+      v-else
+      name="organization"
+      :placeholder="placeholder"
+      :clear-on-select="true"
+      @select="create"
+    />
     <Sortable :list="value" :item-key="item => item" @end="sort($event)">
       <template #item="{ element, index }">
         <div :key="element" class="my-1 input-group">

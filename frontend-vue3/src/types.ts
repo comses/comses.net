@@ -120,7 +120,7 @@ export interface License {
   url?: string;
 }
 
-interface ReleaseContributor {
+export interface ReleaseContributor {
   contributor: Contributor;
   include_in_citation?: boolean;
   index?: number;
@@ -128,11 +128,13 @@ interface ReleaseContributor {
   roles?: string[];
 }
 
-interface Contributor {
+export interface Contributor {
   affiliations: any[];
   email: string;
   id: number;
-  name: string;
+  given_name: string;
+  middle_name?: string;
+  family_name?: string;
   profile_url?: string;
   type: "person" | "organization";
   user?: {

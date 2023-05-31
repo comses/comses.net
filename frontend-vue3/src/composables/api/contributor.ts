@@ -3,7 +3,7 @@ import { toRefs } from "vue";
 
 interface ContributorQueryParams {
   query?: string;
-  page: number;
+  page?: number;
 }
 
 export function useContributorAPI() {
@@ -17,6 +17,7 @@ export function useContributorAPI() {
   const { state, get, searchUrl } = useAxios(baseUrl);
 
   async function search(params: ContributorQueryParams) {
+    params.page = params.page || 1;
     return get(searchUrl(params));
   }
 

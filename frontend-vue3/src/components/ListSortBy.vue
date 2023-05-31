@@ -21,7 +21,7 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, defineProps, ref } from "vue";
+import { onMounted, ref } from "vue";
 
 export interface SortByProps {
   sortOptions: { value: string; label: string }[];
