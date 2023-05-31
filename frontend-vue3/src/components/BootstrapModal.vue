@@ -21,16 +21,18 @@
             aria-label="Close"
           ></button>
         </div>
-        <div class="modal-body">
-          <slot name="body" />
-        </div>
-        <div class="modal-footer border-0">
-          <slot name="footer">
-            <button type="button" class="btn btn-outline-gray" data-bs-dismiss="modal">
-              Close
-            </button>
-          </slot>
-        </div>
+        <slot name="content">
+          <div class="modal-body">
+            <slot name="body" />
+          </div>
+          <div class="modal-footer border-0">
+            <slot name="footer">
+              <button type="button" class="btn btn-outline-gray" data-bs-dismiss="modal">
+                Close
+              </button>
+            </slot>
+          </div>
+        </slot>
       </div>
     </div>
   </div>
