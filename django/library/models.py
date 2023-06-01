@@ -129,12 +129,10 @@ class Contributor(index.Indexed, ClusterableModel):
     )
 
     search_fields = [
-        index.SearchField("given_name", partial_match=True),
-        index.SearchField("family_name", partial_match=True),
-        index.RelatedFields(
-            "affiliations", [index.SearchField("name", partial_match=True)]
-        ),
-        index.SearchField("email", partial_match=True),
+        index.AutocompleteField("given_name"),
+        index.AutocompleteField("family_name"),
+        index.RelatedFields("affiliations", [index.AutocompleteField("name")]),
+        index.AutocompleteField("email"),
         index.RelatedFields(
             "user",
             [
@@ -525,18 +523,18 @@ class Codebase(index.Indexed, ClusterableModel):
     objects = CodebaseQuerySet.as_manager()
 
     search_fields = [
-        index.SearchField("title", partial_match=True),
-        index.SearchField("description", partial_match=True),
+        index.AutocompleteField("title"),
+        index.AutocompleteField("description"),
         index.SearchField("get_all_contributors_search_fields"),
         index.SearchField("get_all_release_frameworks"),
         index.SearchField("get_all_release_programming_languages"),
-        index.SearchField("references_text", partial_match=True),
+        index.AutocompleteField("references_text"),
         index.SearchField("permanent_url"),
-        index.SearchField("associated_publication_text", partial_match=True),
+        index.AutocompleteField("associated_publication_text"),
         index.RelatedFields(
             "tags",
             [
-                index.SearchField("name", partial_match=True),
+                index.AutocompleteField("name"),
             ],
         ),
         # filter and sort fields
@@ -1085,8 +1083,8 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
     objects = CodebaseReleaseQuerySet.as_manager()
 
     search_fields = [
-        index.SearchField("release_notes", partial_match=True),
-        index.SearchField("summary", partial_match=True),
+        index.AutocompleteField("release_notes"),
+        index.AutocompleteField("summary"),
         index.SearchField("permanent_url"),
         index.SearchField("identifier"),
         index.FilterField("os"),
@@ -1098,13 +1096,13 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
         index.RelatedFields(
             "platform_tags",
             [
-                index.SearchField("name", partial_match=True),
+                index.AutocompleteField("name"),
             ],
         ),
         index.RelatedFields(
             "programming_languages",
             [
-                index.SearchField("name", partial_match=True),
+                index.AutocompleteField("name"),
             ],
         ),
         index.RelatedFields(
