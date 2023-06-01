@@ -341,7 +341,6 @@
             {% endscript %}
         {% endwith %}
     {% endif %}
-    {# {{ render_bundle('home') }} #}
     {{ vite_hmr_client() }}
     {{ vite_asset('apps/main.ts') }}
     {% script async=False %}

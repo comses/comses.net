@@ -10,7 +10,7 @@ services:
       - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
     volumes:
       - esdata1:/usr/share/elasticsearch/data
-# FIXME: duplication bad
+  # FIXME: duplication bad
   elasticsearch2:
     image: docker.elastic.co/elasticsearch/elasticsearch:${ES_VERSION}
     restart: always
@@ -36,22 +36,10 @@ services:
       - ./deploy/elasticsearch.conf.d/elasticsearch-node.yml:/usr/share/elasticsearch/config/elasticsearch.yml
       - ./deploy/elasticsearch.conf.d/log4j2.properties:/usr/share/elasticsearch/config/log4j2.properties
       - esdata2:/usr/share/elasticsearch/data
-  js:
-    # FIXME: currently needs a second Django `./manage.py collectstatic` to move generated assets from Django into
-    # static directory, seems we should be able to skip that step
-    build: frontend
-    image: comses/comsesnet-js:${RELEASE_VERSION}
-    command: ['yarn', 'build']
-    environment:
-      NODE_ENV: "production"
-    volumes:
-      - ./frontend/src:/code/src
-      - ./frontend/yarn.lock:/code/yarn.lock
-      - ./docker/shared:/shared
   vite:
     build: frontend-vue3
     image: comses/comsesnet-vite:${RELEASE_VERSION}
-    command: ['yarn', 'build']
+    command: ["yarn", "build"]
     environment:
       NODE_ENV: "production"
     volumes:

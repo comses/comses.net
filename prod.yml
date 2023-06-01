@@ -1,7 +1,4 @@
 services:
-  js:
-    environment:
-      NODE_ENV: "production"
   vite:
     environment:
       NODE_ENV: "production"

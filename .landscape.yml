@@ -5,7 +5,7 @@ requirements:
   - django/requirements-dev.txt
   - djanto/requirements-prod.txt
 ignore-paths:
-  - frontend
+  - frontend-vue3
   - deploy
   - doc
 python-targets:

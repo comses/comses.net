@@ -1,10 +1,10 @@
 # Contributing to CoMSES Net
 
-CoMSES Net is dedicated to fostering open and reproducible scientific computation through cyberinfrastructure and community development. Our mission is to improve the way we develop, document, and share our computational models so we can build on each other’s work more effectively and model our way to a better global future. 
+CoMSES Net is dedicated to fostering open and reproducible scientific computation through cyberinfrastructure and community development. Our mission is to improve the way we develop, document, and share our computational models so we can build on each other’s work more effectively and model our way to a better global future.
 
-Members are encouraged to participate in our collective effort to expand and strengthen CoMSES Net at all levels. The following information details useful resources and ways in which members can contribute which include include code contributions, curating resources for our community, and more. 
+Members are encouraged to participate in our collective effort to expand and strengthen CoMSES Net at all levels. The following information details useful resources and ways in which members can contribute which include include code contributions, curating resources for our community, and more.
 
-Thanks for being a part of CoMSES Net! 
+Thanks for being a part of CoMSES Net!
 
 ## Table of Contents
 
@@ -16,7 +16,7 @@ We encourage all CoMSES community members to report bugs and contribute to our o
 
 ### Current Technology Stack
 
-- Javascript: VueJS, Webpack, TypeScript
+- Javascript: VueJS, Vite, TypeScript
 - Python: Django Rest Framework, Wagtail
 - PostgreSQL
 - Elasticsearch

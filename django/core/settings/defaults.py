@@ -105,7 +105,6 @@ THIRD_PARTY_APPS = [
     "rest_framework_swagger",
     "robots",
     "timezone_field",
-    "webpack_loader",
     "waffle",
     "allauth",
     "allauth.account",
@@ -401,8 +400,6 @@ STATICFILES_FINDERS = [
     "django.contrib.staticfiles.finders.AppDirectoriesFinder",
 ]
 
-WEBPACK_DIR = config.get("storage", "WEBPACK_ROOT", fallback="/shared/webpack")
-
 # django-vite settings
 DJANGO_VITE_ASSETS_PATH = config.get("storage", "VITE_ROOT", fallback="/shared/vite")
 DJANGO_VITE_STATIC_URL_PREFIX = "bundles"
@@ -415,7 +412,7 @@ DJANG_VITE_MANIFEST_PATH = os.path.join(
 STATIC_ROOT = "/shared/static"
 STATIC_URL = "/static/"
 
-STATICFILES_DIRS = [WEBPACK_DIR, DJANGO_VITE_ASSETS_PATH]
+STATICFILES_DIRS = [DJANGO_VITE_ASSETS_PATH]
 
 MEDIA_ROOT = "/shared/media"
 MEDIA_URL = "/media/"
@@ -426,13 +423,6 @@ APPEND_SLASH = True
 WAGTAIL_SITE_NAME = "CoMSES Net"
 WAGTAIL_APPEND_SLASH = True
 WAGTAIL_GRAVATAR_PROVIDER_URL = None
-
-WEBPACK_LOADER = {
-    "DEFAULT": {
-        "BUNDLE_DIR_NAME": "bundles/",
-        "STATS_FILE": os.path.join(WEBPACK_DIR, "webpack-stats.json"),
-    }
-}
 
 # authentication settings
 LOGIN_REDIRECT_URL = "/"
@@ -530,7 +520,6 @@ TEMPLATES = [
         "OPTIONS": {
             "extensions": [
                 "core.jinja2ext.ViteExtension",
-                "webpack_loader.contrib.jinja2ext.WebpackExtension",
                 "wagtail.contrib.settings.jinja2tags.settings",
                 "wagtail.jinja2tags.core",
                 "wagtail.admin.jinja2tags.userbar",

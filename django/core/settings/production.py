@@ -58,7 +58,6 @@ TEMPLATES = [
         "APP_DIRS": True,
         "OPTIONS": {
             "extensions": [
-                "webpack_loader.contrib.jinja2ext.WebpackExtension",
                 "wagtail.contrib.settings.jinja2tags.settings",
                 "wagtail.jinja2tags.core",
                 "wagtail.admin.jinja2tags.userbar",

@@ -10,12 +10,6 @@ services:
       - ./django/deploy/wait-for-it.sh:/code/wait-for-it.sh
     depends_on:
       - server
-  js:
-    volumes:
-      - ./frontend:/code
-    command: ["yarn", "build"]
-    environment:
-      NODE_ENV: "e2e"
   vite:
     volumes:
       - ./frontend-vue3:/code

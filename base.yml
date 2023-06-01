@@ -48,13 +48,6 @@ services:
       POSTGRES_USER: "${DB_USER}"
       POSTGRES_DB: "${DB_NAME}"
       POSTGRES_PASSWORD_FILE: /run/secrets/db_password
-  js:
-    build: frontend
-    image: comses/comsesnet-js
-    volumes:
-      - /code/node_modules
-      - ./docker/shared:/shared
-      - ./build/secrets/config.ini:/run/secrets/config.ini
   vite:
     build: frontend-vue3
     image: comses/comsesnet-vite

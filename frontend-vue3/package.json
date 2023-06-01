@@ -1,6 +1,6 @@
 {
-  "name": "frontend-next",
-  "version": "0.0.1",
+  "name": "frontend-vue3",
+  "version": "1.0.0",
   "private": true,
   "scripts": {
     "serve": "vite",
