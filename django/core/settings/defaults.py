@@ -79,6 +79,7 @@ WAGTAIL_APPS = [
     "wagtail",
     "wagtail.contrib.modeladmin",
     "wagtail.contrib.settings",
+    "wagtail.contrib.search_promotions",
     "taggit",
     "modelcluster",
     "search",
