@@ -259,20 +259,20 @@ class MemberProfile(index.Indexed, ClusterableModel):
     search_fields = [
         index.FilterField("is_active"),
         index.FilterField("username"),
-        index.SearchField("bio", partial_match=True),
-        index.SearchField("research_interests", partial_match=True),
-        index.SearchField("degrees", partial_match=True),
-        index.SearchField("name", partial_match=True),
+        index.AutocompleteField("bio"),
+        index.AutocompleteField("research_interests"),
+        index.AutocompleteField("degrees"),
+        index.AutocompleteField("name"),
         index.RelatedFields(
             "institution",
             [
-                index.SearchField("name", partial_match=True),
+                index.AutocompleteField("name"),
             ],
         ),
         index.RelatedFields(
             "tags",
             [
-                index.SearchField("name", partial_match=True),
+                index.AutocompleteField("name"),
             ],
         ),
         index.RelatedFields(
@@ -280,10 +280,10 @@ class MemberProfile(index.Indexed, ClusterableModel):
             [
                 index.FilterField("date_joined"),
                 index.FilterField("last_name"),
-                index.SearchField("first_name", partial_match=True),
-                index.SearchField("last_name", partial_match=True),
-                index.SearchField("email", partial_match=True),
-                index.SearchField("username", partial_match=True),
+                index.AutocompleteField("first_name"),
+                index.AutocompleteField("last_name"),
+                index.AutocompleteField("email"),
+                index.AutocompleteField("username"),
             ],
         ),
     ]
@@ -452,8 +452,8 @@ class Platform(index.Indexed, ClusterableModel):
         return " ".join(self.tags.all().values_list("name", flat=True))
 
     search_fields = [
-        index.SearchField("name", partial_match=True),
-        index.SearchField("description", partial_match=True),
+        index.AutocompleteField("name"),
+        index.AutocompleteField("description"),
         index.FilterField("active"),
         index.FilterField("open_source"),
         index.RelatedFields(
@@ -553,8 +553,8 @@ class Event(index.Indexed, ClusterableModel):
     )
 
     search_fields = [
-        index.SearchField("title", partial_match=True),
-        index.SearchField("description", partial_match=True),
+        index.AutocompleteField("title"),
+        index.AutocompleteField("description"),
         index.FilterField("date_created"),
         index.FilterField("start_date"),
         index.FilterField("end_date"),
@@ -562,7 +562,7 @@ class Event(index.Indexed, ClusterableModel):
         index.FilterField("submission_deadline"),
         index.FilterField("early_registration_deadline"),
         index.FilterField("registration_deadline"),
-        index.SearchField("location", partial_match=True),
+        index.AutocompleteField("location"),
         index.RelatedFields(
             "tags",
             [
@@ -573,8 +573,8 @@ class Event(index.Indexed, ClusterableModel):
             "submitter",
             [
                 index.SearchField("username"),
-                index.SearchField("email", partial_match=True),
-                index.SearchField("get_full_name", partial_match=True),
+                index.AutocompleteField("email"),
+                index.AutocompleteField("get_full_name"),
             ],
         ),
     ]
@@ -657,8 +657,8 @@ class Job(index.Indexed, ClusterableModel):
     objects = JobQuerySet.as_manager()
 
     search_fields = [
-        index.SearchField("title", partial_match=True),
-        index.SearchField("description", partial_match=True),
+        index.AutocompleteField("title"),
+        index.AutocompleteField("description"),
         index.FilterField("date_created"),
         index.FilterField("last_modified"),
         index.FilterField("application_deadline"),
@@ -672,8 +672,8 @@ class Job(index.Indexed, ClusterableModel):
             "submitter",
             [
                 index.SearchField("username"),
-                index.SearchField("email", partial_match=True),
-                index.SearchField("get_full_name", partial_match=True),
+                index.AutocompleteField("email"),
+                index.AutocompleteField("get_full_name"),
             ],
         ),
     ]

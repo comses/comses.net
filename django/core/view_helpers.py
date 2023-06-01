@@ -50,7 +50,7 @@ def get_search_queryset(
             logger.warning("Invalid filter criteria: %s", criteria)
 
     logger.debug("parsed query: %s, filters: %s", query, criteria)
-    results = search_backend.search(
+    results = search_backend.autocomplete(
         query,
         queryset,
         operator=operator,
