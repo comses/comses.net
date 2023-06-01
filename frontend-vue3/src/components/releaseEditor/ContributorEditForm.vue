@@ -11,7 +11,7 @@
         />
         <div class="card mb-3">
           <div v-if="isPerson" class="card-header">
-            <ReleaseEditorUserSearch @select="populateFromUser($event)" />
+            <UserSearch @select="populateFromUser($event)" />
           </div>
           <div class="card-body">
             <TextField
@@ -81,7 +81,7 @@ import CheckboxField from "@/components/form/CheckboxField.vue";
 import SelectField from "@/components/form/SelectField.vue";
 import MultiSelectField from "@/components/form/MultiSelectField.vue";
 import FormAlert from "@/components/form/FormAlert.vue";
-import ReleaseEditorUserSearch from "@/components/ReleaseEditorUserSearch.vue";
+import UserSearch from "@/components/releaseEditor/UserSearch.vue";
 import { useForm } from "@/composables/form";
 import { useReleaseEditorAPI } from "@/composables/api";
 import { useReleaseEditorStore } from "@/stores/releaseEditor";

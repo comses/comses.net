@@ -25,7 +25,7 @@
             Review Status:
             <span class="fw-bold">{{ reviewStatus }}</span>
           </span>
-          <ReleaseEditorReviewModal button-class="btn btn-sm btn-outline-danger py-0 mb-1" />
+          <ReviewModal button-class="btn btn-sm btn-outline-danger py-0 mb-1" />
         </span>
         <a href="//forum.comses.net/t/archiving-your-model-1-getting-started/7377">
           <i class="fas fa-question-circle"></i> Need help? Check out our archiving tutorial
@@ -35,20 +35,20 @@
     <div class="row">
       <div class="col d-flex justify-content-between">
         <span>
-          <ReleaseEditorCommonModal button-class="btn btn-primary me-2" :identifier="identifier" />
-          <ReleaseEditorImagesModal
+          <CommonMetadataModal button-class="btn btn-primary me-2" :identifier="identifier" />
+          <CommonImagesModal
             button-class="btn btn-primary me-2"
             :identifier="identifier"
             :files="store.files.media"
           />
         </span>
-        <ReleaseEditorPublishModal button-class="btn btn-danger" />
+        <PublishModal button-class="btn btn-danger" />
       </div>
     </div>
     <hr />
     <div class="row mt-3">
       <div class="col-md-3">
-        <ReleaseEditorSidebar :isLive="isLive" />
+        <ProgressSidebar :isLive="isLive" />
       </div>
       <div class="col-md-9">
         <div>
@@ -66,11 +66,11 @@
 <script setup lang="ts">
 import { onMounted } from "vue";
 import { useReleaseEditorStore } from "@/stores/releaseEditor";
-import ReleaseEditorSidebar from "@/components/ReleaseEditorSidebar.vue";
-import ReleaseEditorImagesModal from "@/components/ReleaseEditorImagesModal.vue";
-import ReleaseEditorCommonModal from "@/components/ReleaseEditorCommonModal.vue";
-import ReleaseEditorReviewModal from "@/components/ReleaseEditorReviewModal.vue";
-import ReleaseEditorPublishModal from "@/components/ReleaseEditorPublishModal.vue";
+import ProgressSidebar from "@/components/releaseEditor/ProgressSidebar.vue";
+import CommonImagesModal from "@/components/releaseEditor/CommonImagesModal.vue";
+import CommonMetadataModal from "@/components/releaseEditor/CommonMetadataModal.vue";
+import ReviewModal from "@/components/releaseEditor/ReviewModal.vue";
+import PublishModal from "@/components/releaseEditor/PublishModal.vue";
 
 const props = defineProps<{
   identifier: string;

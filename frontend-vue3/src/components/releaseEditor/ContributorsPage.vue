@@ -10,7 +10,7 @@
       least one contributor for a given release.
     </p>
     <div class="d-flex justify-content-between align-items-end">
-      <ReleaseEditorContributorAddModal :disabled="reordered" />
+      <ContributorAddModal :disabled="reordered" />
       <div v-if="reordered">
         <div class="alert alert-warning px-1 py-0 mb-2">
           <small class="">
@@ -138,7 +138,7 @@
       centered
     >
       <template #content>
-        <ReleaseEditorContributorEditForm
+        <ContributorEditForm
           id="edit-contributor-form"
           :show-custom-input="true"
           :contributor="editCandidate"
@@ -153,8 +153,8 @@ import { onMounted, ref, watchEffect } from "vue";
 import { Sortable } from "sortablejs-vue3";
 import type { Modal } from "bootstrap";
 import BootstrapModal from "@/components/BootstrapModal.vue";
-import ReleaseEditorContributorAddModal from "@/components/ReleaseEditorContributorAddModal.vue";
-import ReleaseEditorContributorEditForm from "@/components/ReleaseEditorContributorEditForm.vue";
+import ContributorAddModal from "@/components/releaseEditor/ContributorAddModal.vue";
+import ContributorEditForm from "@/components/releaseEditor/ContributorEditForm.vue";
 import { useReleaseEditorStore } from "@/stores/releaseEditor";
 import type { Contributor, ReleaseContributor } from "@/types";
 import type { SortableEvent } from "sortablejs";

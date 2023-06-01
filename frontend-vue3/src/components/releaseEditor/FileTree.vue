@@ -6,7 +6,7 @@
         <div v-if="isFile(content)" :style="indented">
           <i class="fas fa-file"></i> {{ content.label }}
         </div>
-        <ReleaseEditorFileTree v-else :directory="(content as Folder)" />
+        <FileTree v-else :directory="(content as Folder)" />
       </div>
     </div>
   </div>

@@ -14,10 +14,10 @@
           <i class="fas fa-angle-right text-secondary"></i>
         </div>
         <div class="card-body pb-2 text-dark">
-          <ReleaseEditorProgressCheck :check="uploadProgress.code" label="Code" />
-          <ReleaseEditorProgressCheck :check="uploadProgress.docs" label="Documentation" />
-          <ReleaseEditorProgressCheck :check="uploadProgress.data" label="Input Data" optional />
-          <ReleaseEditorProgressCheck :check="uploadProgress.results" label="Results" optional />
+          <ProgressCheck :check="uploadProgress.code" label="Code" />
+          <ProgressCheck :check="uploadProgress.docs" label="Documentation" />
+          <ProgressCheck :check="uploadProgress.data" label="Input Data" optional />
+          <ProgressCheck :check="uploadProgress.results" label="Results" optional />
         </div>
       </router-link>
       <router-link
@@ -32,11 +32,11 @@
           <i class="fas fa-angle-right text-secondary"></i>
         </div>
         <div class="card-body pb-2 text-dark">
-          <ReleaseEditorProgressCheck :check="metadataProgress.notes" label="Release Notes" />
-          <ReleaseEditorProgressCheck :check="metadataProgress.os" label="Operating System" />
-          <ReleaseEditorProgressCheck :check="metadataProgress.platforms" label="Platform" />
-          <ReleaseEditorProgressCheck :check="metadataProgress.languages" label="Language" />
-          <ReleaseEditorProgressCheck :check="metadataProgress.license" label="License" />
+          <ProgressCheck :check="metadataProgress.notes" label="Release Notes" />
+          <ProgressCheck :check="metadataProgress.os" label="Operating System" />
+          <ProgressCheck :check="metadataProgress.platforms" label="Platform" />
+          <ProgressCheck :check="metadataProgress.languages" label="Language" />
+          <ProgressCheck :check="metadataProgress.license" label="License" />
         </div>
       </router-link>
       <router-link
@@ -51,11 +51,11 @@
           <i class="fas fa-angle-right text-secondary"></i>
         </div>
         <div class="card-body pb-2 text-dark">
-          <ReleaseEditorProgressCheck :check="numContributors > 0">
+          <ProgressCheck :check="numContributors > 0">
             <template #label>
               {{ `${numContributors} Contributor${numContributors > 1 ? "s" : ""}` }}
             </template>
-          </ReleaseEditorProgressCheck>
+          </ProgressCheck>
         </div>
       </router-link>
     </nav>
@@ -65,7 +65,7 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import { useReleaseEditorStore } from "@/stores/releaseEditor";
-import ReleaseEditorProgressCheck from "@/components/ReleaseEditorProgressCheck.vue";
+import ProgressCheck from "@/components/releaseEditor/ProgressCheck.vue";
 
 const props = defineProps<{
   isLive: boolean;

@@ -19,8 +19,6 @@ export function useReleaseEditorAPI() {
   }
 
   // urls
-  // FIXME: this seems overly verbose, we may not even need many of these
-  // revisit when implementing components that use this
   function editUrl(identifier: string, versionNumber: string) {
     return releaseDetailUrl(identifier, versionNumber, ["edit"]);
   }

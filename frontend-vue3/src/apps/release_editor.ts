@@ -3,10 +3,10 @@ import "vite/modulepreload-polyfill";
 import { createApp } from "vue";
 import { createPinia } from "pinia";
 import { createRouter, createWebHashHistory } from "vue-router";
-import ReleaseEditor from "@/components/ReleaseEditor.vue";
-import ReleaseEditorMetadataForm from "@/components/ReleaseEditorMetadataForm.vue";
-import ReleaseEditorUploadForm from "@/components/ReleaseEditorUploadForm.vue";
-import ReleaseEditorContributors from "@/components/ReleaseEditorContributors.vue";
+import App from "@/components/releaseEditor/App.vue";
+import MetadataFormPage from "@/components/releaseEditor/MetadataFormPage.vue";
+import UploadFormPage from "@/components/releaseEditor/UploadFormPage.vue";
+import ContributorsPage from "@/components/releaseEditor/ContributorsPage.vue";
 import { extractDataParams } from "@/util";
 
 const props = extractDataParams("release-editor", [
@@ -17,7 +17,7 @@ const props = extractDataParams("release-editor", [
 ]);
 console.log(props.reviewStatus);
 
-const app = createApp(ReleaseEditor, props);
+const app = createApp(App, props);
 const pinia = createPinia();
 
 const router = createRouter({
@@ -25,11 +25,9 @@ const router = createRouter({
   routes: [
     // only include upload route when release is unpublished
     { path: "/", redirect: { name: props.isLive ? "metadata" : "upload" } },
-    ...(props.isLive
-      ? []
-      : [{ path: "/upload", component: ReleaseEditorUploadForm, name: "upload" }]),
-    { path: "/metadata", component: ReleaseEditorMetadataForm, name: "metadata" },
-    { path: "/contributors", component: ReleaseEditorContributors, name: "contributors" },
+    ...(props.isLive ? [] : [{ path: "/upload", component: UploadFormPage, name: "upload" }]),
+    { path: "/metadata", component: MetadataFormPage, name: "metadata" },
+    { path: "/contributors", component: ContributorsPage, name: "contributors" },
   ],
 });
 

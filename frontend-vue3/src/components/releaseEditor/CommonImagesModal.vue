@@ -5,7 +5,7 @@
   <BootstrapModal id="images-modal" title="Upload Images" ref="imagesModal" size="lg" centered>
     <template #body>
       <div>
-        <ReleaseEditorFileUpload
+        <FileUpload
           accepted-file-types="image/gif, image/jpeg, image/png"
           title="Upload Images"
           :upload-url="uploadUrl"
@@ -24,7 +24,7 @@
 import { computed, ref } from "vue";
 import type { Modal } from "bootstrap";
 import BootstrapModal from "@/components/BootstrapModal.vue";
-import ReleaseEditorFileUpload from "@/components/ReleaseEditorFileUpload.vue";
+import FileUpload from "@/components/releaseEditor/FileUpload.vue";
 import { useCodebaseAPI } from "@/composables/api";
 import { useReleaseEditorStore } from "@/stores/releaseEditor";
 import type { FileInfo } from "@/types";

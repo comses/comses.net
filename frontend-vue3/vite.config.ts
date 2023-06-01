@@ -49,7 +49,6 @@ export default defineConfig({
         release_download: resolvePath("./src/apps/release_download.ts"),
         release_regenerate_share_uuid: resolvePath("./src/apps/release_regenerate_share_uuid.ts"),
         review_editor: resolvePath("./src/apps/review_editor.ts"),
-        // add more entry points here
       },
     },
   },

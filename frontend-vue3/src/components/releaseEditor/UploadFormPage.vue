@@ -19,11 +19,11 @@
         {{ serverErrors.join(", ") }}
       </div>
       <div v-if="folderContents">
-        <ReleaseEditorFileTree :directory="folderContents" />
+        <FileTree :directory="folderContents" />
       </div>
     </div>
     <div v-for="config in configs" :key="config.uploadType">
-      <ReleaseEditorFileUpload
+      <FileUpload
         :accepted-file-types="config.acceptedFileTypes"
         :instructions="config.instructions"
         :originals="store.getFilesInCategory(config.uploadType)"
@@ -33,7 +33,7 @@
         @clear="handleClear(config.uploadType)"
         @upload-file="handleUploadDone(config.uploadType)"
       >
-      </ReleaseEditorFileUpload>
+      </FileUpload>
       <hr />
     </div>
   </div>
@@ -41,8 +41,8 @@
 
 <script setup lang="ts">
 import { onMounted, ref, watch } from "vue";
-import ReleaseEditorFileUpload from "@/components/ReleaseEditorFileUpload.vue";
-import ReleaseEditorFileTree from "@/components/ReleaseEditorFileTree.vue";
+import FileUpload from "@/components/releaseEditor/FileUpload.vue";
+import FileTree from "@/components/releaseEditor/FileTree.vue";
 import { useReleaseEditorStore } from "@/stores/releaseEditor";
 import { useReleaseEditorAPI } from "@/composables/api";
 import type { FileCategory, Folder } from "@/types";

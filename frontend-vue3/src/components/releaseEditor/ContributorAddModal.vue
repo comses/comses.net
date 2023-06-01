@@ -20,7 +20,7 @@
       <div class="modal-body pb-0">
         <div v-if="!showCustomInput" class="d-flex align-items-end justify-content-between mb-3">
           <div class="flex-grow-1">
-            <ReleaseEditorContributorSearch @select="populateFromContributor($event)" />
+            <ContributorSearch @select="populateFromContributor($event)" />
           </div>
           <div class="text-center mb-2 mx-3">
             <small class="text-muted">OR</small>
@@ -46,7 +46,7 @@
           <i class="fas fa-angle-left me-1"></i> Search for Existing Contributors
         </button>
       </div>
-      <ReleaseEditorContributorEditForm
+      <ContributorEditForm
         id="add-contributor-form"
         :show-custom-input="showCustomInput"
         ref="editFormRef"
@@ -59,8 +59,8 @@
 import { ref } from "vue";
 import type { Modal } from "bootstrap";
 import BootstrapModal from "@/components/BootstrapModal.vue";
-import ReleaseEditorContributorSearch from "@/components/ReleaseEditorContributorSearch.vue";
-import ReleaseEditorContributorEditForm from "@/components/ReleaseEditorContributorEditForm.vue";
+import ContributorSearch from "@/components/releaseEditor/ContributorSearch.vue";
+import ContributorEditForm from "@/components/releaseEditor/ContributorEditForm.vue";
 import type { Contributor } from "@/types";
 
 const props = withDefaults(
@@ -73,7 +73,7 @@ const props = withDefaults(
 );
 
 const editContributorModal = ref<typeof Modal>();
-const editFormRef = ref<InstanceType<typeof ReleaseEditorContributorEditForm> | null>(null);
+const editFormRef = ref<InstanceType<typeof ContributorEditForm> | null>(null);
 
 const showCustomInput = ref(false);
 
