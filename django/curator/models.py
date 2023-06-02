@@ -1,7 +1,8 @@
-import json
-import logging
 import os
 import re
+import json
+import pickle
+import logging
 
 from collections import defaultdict
 from django.core.exceptions import FieldDoesNotExist
@@ -14,6 +15,15 @@ from nltk.corpus import stopwords
 from nltk.stem import PorterStemmer
 from nltk.tokenize import word_tokenize
 from taggit.models import Tag
+
+from sklearn.feature_extraction.text import CountVectorizer
+from sklearn.preprocessing import FunctionTransformer
+from sklearn.compose import ColumnTransformer
+from sklearn.naive_bayes import MultinomialNB
+from sklearn.pipeline import Pipeline
+import pandas
+
+from core.models import MemberProfile
 
 from library.models import ProgrammingLanguage, CodebaseReleasePlatformTag
 
@@ -359,3 +369,25 @@ class CanonicalTagMapping(models.Model):
 
     def __str__(self):
         return f"tag={self.tag} canonical_tag={self.canonical_tag.name} confidence={self.confidence_score}"
+class SpamRecommendation(models.Model):
+    member_profile = models.OneToOneField(MemberProfile, on_delete=models.CASCADE, primary_key=True)
+    is_spam_labelled_by_classifier = models.BooleanField(default=False)
+    is_spam_labelled_by_curator = models.BooleanField(default=False)
+    is_labelled_by_curator_before = models.BooleanField(default=False)
+    classifier_confidence = models.FloatField(default=0)
+    last_updated_date = models.DateField(auto_now=True)
+
+    @staticmethod
+    def get_recommendations_sorted_by_confidence():
+        return SpamRecommendation.objects.all().order_by('classifier_confidence')
+    
+    def __str__(self):
+        return "user={}, user_bio={}, is_spam_labelled_by_classifier={}, is_spam_labelled_by_curator={}, is_labelled_by_curator_before={}, classifier_confidence={}, last_updated_date={}".format(
+            str(self.member_profile), 
+            str(self.member_profile.bio), 
+            str(self.is_spam_labelled_by_classifier), 
+            str(self.is_spam_labelled_by_curator), 
+            str(self.is_labelled_by_curator_before),
+            str(self.classifier_confidence),
+            str(self.last_updated_date)
+        )
