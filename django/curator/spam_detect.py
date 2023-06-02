@@ -56,6 +56,18 @@ class UserPipeline:
         df = pd.DataFrame(list(MemberProfile.objects.all().values(*self.column_names)))
         df['is_spam'] = None
         df['spam_likely'] = None
+        # TODO: 1) ask Charles to change MemberProfile to using Noel's diango model
+
+        for col in self.column_names:
+            if col == "user__id":
+                df[col] = df[col].values.astype('int')
+            df[col] = df[col].apply(lambda x: str(x).replace('\r\n','<br />').replace('\n','<br />'))
+
+        df.rename(columns = {'user__first_name': 'first_name',
+                             'user__last_name': 'last_name',
+                             'user__is_active': 'is_active',
+                             'user__email': 'email',
+                             'user__id': 'user_id'}, inplace = True)
         return df
 
     #filter by date joined
