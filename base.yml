@@ -7,6 +7,11 @@ services:
       - ./docker/shared/redis:/data
   elasticsearch:
     image: docker.elastic.co/elasticsearch/elasticsearch:${ES_VERSION}
+    healthcheck:
+      test: curl -u elastic:elastic -s -f elasticsearch:9200/_cat/health >/dev/null || exit 1
+      interval: 30s
+      timeout: 10s
+      retries: 5
     ports:
       - "127.0.0.1:9200:9200"
     environment:
@@ -34,6 +39,11 @@ services:
     volumes:
       - ./docker/pgdata:/var/lib/postgresql/data
       - ./build/secrets/db_password:/run/secrets/db_password
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
     environment:
       POSTGRES_USER: "${DB_USER}"
       POSTGRES_DB: "${DB_NAME}"
@@ -53,10 +63,14 @@ services:
       - ./deploy/elasticsearch.conf.d:/etc/elasticsearch
       - ./docker/shared:/shared
     depends_on:
-      - db
-      - js
-      - elasticsearch
-      - redis
+      db:
+        condition: service_healthy
+      elasticsearch:
+        condition: service_started
+      redis:
+        condition: service_started
+      js:
+        condition: service_started
     environment:
       CLEAN_DATABASE: "false"
 volumes:

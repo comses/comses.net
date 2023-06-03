@@ -83,9 +83,10 @@ services:
     ports:
       - "127.0.0.1:9191:9191" # uWSGI stats server
     depends_on:
-      - db
-      - elasticsearch
-      - redis
+      js:
+        condition: service_completed_successfully
+      elasticsearch:
+        condition: service_healthy
 volumes:
   sockets:
     driver: local
