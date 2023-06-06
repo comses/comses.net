@@ -1,9 +1,11 @@
 from core.models import MemberProfile
 import pandas as pd
 from django.contrib.auth.models import User
+from django.db.models import Q
 from itertools import chain
 import warnings
 from datetime import datetime, timedelta
+from curator.models import SpamRecommendation
 
 warnings.filterwarnings("ignore")  # ignore warnings
 
@@ -63,9 +65,7 @@ class UserPipeline:
     # load all users into a dataframe
     def all_users_df(self):
         df = pd.DataFrame(list(MemberProfile.objects.all().values(*self.column_names)))
-        df["is_spam"] = None
-        df["spam_likely"] = None
-        # TODO: 1) ask Charles to change MemberProfile to using Noel's diango model
+        df = df.apply(lambda row : UserPipeline.retrieve_spam_data(row), axis=1)
 
         for col in self.column_names:
             if col == "user__id":
@@ -90,41 +90,37 @@ class UserPipeline:
     def users_joined_yesterday_df(self):
         yesterday = datetime.now() - timedelta(days=1)
         query = {"user__date_joined__gte": yesterday}
-        df = pd.DataFrame(
-            list(MemberProfile.objects.filter(**query).values(*self.column_names))
-        )
-        df["is_spam"] = None
-        df["spam_likely"] = None
+        df = pd.DataFrame(list(MemberProfile.objects.filter(**query).values(*self.column_names)))
+        df = df.apply(lambda row : UserPipeline.retrieve_spam_data(row), axis=1)
+
         return df
 
     def users_joined_last_week_df(self):
-        one_week_ago = datetime.now() - timedelta(days=7)
-        query = {"user__date_joined__gte": one_week_ago}
-        df = pd.DataFrame(
-            list(MemberProfile.objects.filter(**query).values(*self.column_names))
-        )
-        df["is_spam"] = None
-        df["spam_likely"] = None
+        
+        one_week_ago = datetime.now() - timedelta(days=7)    
+        query = ({"user__date_joined__gte": one_week_ago})
+        df = pd.DataFrame(list(MemberProfile.objects.filter(**query).values(*self.column_names)))
+        df = df.apply(lambda row : UserPipeline.retrieve_spam_data(row), axis=1)
+
         return df
 
     def users_joined_last_month_df(self):
-        one_month_ago = datetime.now() - timedelta(days=31)
-        query = {"user__date_joined__gte": one_month_ago}
-        df = pd.DataFrame(
-            list(MemberProfile.objects.filter(**query).values(*self.column_names))
-        )
-        df["is_spam"] = None
-        df["spam_likely"] = None
+       
+        one_month_ago = datetime.now() - timedelta(days=31)    
+        query = ({"user__date_joined__gte": one_month_ago})
+        df = pd.DataFrame(list(MemberProfile.objects.filter(**query).values(*self.column_names)))
+        df = df.apply(lambda row : UserPipeline.retrieve_spam_data(row), axis=1)
+
         return df
 
     def users_joined_last_year_df(self):
-        last_year = datetime.now() - timedelta(days=365)
-        query = {"user__date_joined__gte": last_year}
-        df = pd.DataFrame(
-            list(MemberProfile.objects.filter(**query).values(*self.column_names))
-        )
-        df["is_spam"] = None
-        df["spam_likely"] = None
+        
+       
+        last_year = datetime.now() - timedelta(days=365)    
+        query = ({"user__date_joined__gte": last_year})
+        df = pd.DataFrame(list(MemberProfile.objects.filter(**query).values(*self.column_names)))
+        df = df.apply(lambda row : UserPipeline.retrieve_spam_data(row), axis=1)
+
         return df
 
     # filter by first and last name
@@ -142,19 +138,17 @@ class UserPipeline:
             pk__in=[profile.pk for profile in combined_member_profiles]
         ).values(*self.column_names)
         df = pd.DataFrame(data)
-        df["is_spam"] = None
-        df["spam_likely"] = None
+        df = df.apply(lambda row : UserPipeline.retrieve_spam_data(row), axis=1)
 
         return df
 
     # filter by first name
     def users_first_name_exact_df(self, search_string):
-        query = {"user__first_name__exact": search_string}
-        df = pd.DataFrame(
-            list(MemberProfile.objects.filter(**query).values(*self.column_names))
-        )
-        df["is_spam"] = None
-        df["spam_likely"] = None
+
+        query = ({"user__first_name__exact": search_string})
+        df = pd.DataFrame(list(MemberProfile.objects.filter(**query).values(*self.column_names)))
+        df = df.apply(lambda row : UserPipeline.retrieve_spam_data(row), axis=1)
+
         return df
 
     # filter by last name
@@ -167,100 +161,87 @@ class UserPipeline:
         df["spam_likely"] = None
         return df
 
-    # filter by email
+        query = ({"user__last_name__exact": search_string})
+        df = pd.DataFrame(list(MemberProfile.objects.filter(**query).values(*self.column_names)))
+        df = df.apply(lambda row : UserPipeline.retrieve_spam_data(row), axis=1)
+
+        return df
+    
+    #filter by email
     def users_email_contains_df(self, search_string):
-        query = {"user__email__contains": search_string}
-        df = pd.DataFrame(
-            list(MemberProfile.objects.filter(**query).values(*self.column_names))
-        )
-        df["is_spam"] = None
-        df["spam_likely"] = None
+        
+        query = ({"user__email__contains": search_string})
+        df = pd.DataFrame(list(MemberProfile.objects.filter(**query).values(*self.column_names)))
+        df = df.apply(lambda row : UserPipeline.retrieve_spam_data(row), axis=1)
         return df
 
     def users_email__exact_df(self, search_string):
-        query = {"user__email__exact": search_string}
-        df = pd.DataFrame(
-            list(MemberProfile.objects.filter(**query).values(*self.column_names))
-        )
-        df["is_spam"] = None
-        df["spam_likely"] = None
+        
+        query = ({"user__email__exact": search_string})
+        df = pd.DataFrame(list(MemberProfile.objects.filter(**query).values(*self.column_names)))
+        
+        df = df.apply(lambda row : UserPipeline.retrieve_spam_data(row), axis=1)
         return df
 
     # Filter by institution contains
     def users_institution_contains_df(self, search_string):
         query = {"institution__name__contains": search_string}
-        df = pd.DataFrame(
-            list(MemberProfile.objects.filter(**query).values(*self.column_names))
-        )
-        df["is_spam"] = None
-        df["spam_likely"] = None
+        df = pd.DataFrame(list(MemberProfile.objects.filter(**query).values(*self.column_names)))
+        
+        df = df.apply(lambda row : UserPipeline.retrieve_spam_data(row), axis=1)
         return df
 
     # Filter by exact institution
     def users_institution_exact_df(self, search_string):
         query = {"institution__name__exact": search_string}
-        df = pd.DataFrame(
-            list(MemberProfile.objects.filter(**query).values(*self.column_names))
-        )
-        df["is_spam"] = None
-        df["spam_likely"] = None
+        df = pd.DataFrame(list(MemberProfile.objects.filter(**query).values(*self.column_names)))
+        
+        df = df.apply(lambda row : UserPipeline.retrieve_spam_data(row), axis=1)
         return df
 
     # filter by bio
     def users_bio_contains_df(self, search_string):
         query = {"bio__contains": search_string}
-        df = pd.DataFrame(
-            list(MemberProfile.objects.filter(**query).values(*self.column_names))
-        )
-        df["is_spam"] = None
-        df["spam_likely"] = None
+        df = pd.DataFrame(list(MemberProfile.objects.filter(**query).values(*self.column_names)))
+        
+        df = df.apply(lambda row : UserPipeline.retrieve_spam_data(row), axis=1)
         return df
 
     def users_bio_exact_df(self, search_string):
         query = {"bio__exact": search_string}
-        df = pd.DataFrame(
-            list(MemberProfile.objects.filter(**query).values(*self.column_names))
-        )
-        df["is_spam"] = None
-        df["spam_likely"] = None
+        df = pd.DataFrame(list(MemberProfile.objects.filter(**query).values(*self.column_names)))
+        
+        df = df.apply(lambda row : UserPipeline.retrieve_spam_data(row), axis=1)
         return df
 
     # filter by personal url
     def users_personal_url_contains_df(self, search_string):
         query = {"personal_url__contains": search_string}
-        df = pd.DataFrame(
-            list(MemberProfile.objects.filter(**query).values(*self.column_names))
-        )
-        df["is_spam"] = None
-        df["spam_likely"] = None
+        df = pd.DataFrame(list(MemberProfile.objects.filter(**query).values(*self.column_names)))
+        
+        df = df.apply(lambda row : UserPipeline.retrieve_spam_data(row), axis=1)
         return df
 
     def users_personal_url_exact_df(self, search_string):
         query = {"personal_url__exact": search_string}
-        df = pd.DataFrame(
-            list(MemberProfile.objects.filter(**query).values(*self.column_names))
-        )
-        df["is_spam"] = None
-        df["spam_likely"] = None
+        df = pd.DataFrame(list(MemberProfile.objects.filter(**query).values(*self.column_names)))
+        
+        df = df.apply(lambda row : UserPipeline.retrieve_spam_data(row), axis=1)
         return df
 
     # filter by professional url
     def users_professional_url_contains_df(self, search_string):
         query = {"professional_url__contains": search_string}
-        df = pd.DataFrame(
-            list(MemberProfile.objects.filter(**query).values(*self.column_names))
-        )
-        df["is_spam"] = None
-        df["spam_likely"] = None
+        df = pd.DataFrame(list(MemberProfile.objects.filter(**query).values(*self.column_names)))
+        
+        df = df.apply(lambda row : UserPipeline.retrieve_spam_data(row), axis=1)
         return df
 
     def users_professional_url_exact_df(self, search_string):
         query = {"personal_url__exact": search_string}
-        df = pd.DataFrame(
-            list(MemberProfile.objects.filter(**query).values(*self.column_names))
-        )
-        df["is_spam"] = None
-        df["spam_likely"] = None
+        df = pd.DataFrame(list(MemberProfile.objects.filter(**query).values(*self.column_names)))
+        
+        df = df.apply(lambda row : UserPipeline.retrieve_spam_data(row), axis=1)
         return df
 
     def print_user_df(self):
