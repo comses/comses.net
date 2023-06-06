@@ -371,9 +371,8 @@ class CanonicalTagMapping(models.Model):
         return f"tag={self.tag} canonical_tag={self.canonical_tag.name} confidence={self.confidence_score}"
 class SpamRecommendation(models.Model):
     member_profile = models.OneToOneField(MemberProfile, on_delete=models.CASCADE, primary_key=True)
-    is_spam_labelled_by_classifier = models.BooleanField(default=False)
-    is_spam_labelled_by_curator = models.BooleanField(default=False)
-    is_labelled_by_curator_before = models.BooleanField(default=False)
+    is_spam_labelled_by_classifier = models.BooleanField(default=None, null=True)
+    is_spam_labelled_by_curator = models.BooleanField(default=None, null=True)
     classifier_confidence = models.FloatField(default=0)
     last_updated_date = models.DateField(auto_now=True)
 
@@ -382,12 +381,11 @@ class SpamRecommendation(models.Model):
         return SpamRecommendation.objects.all().order_by('classifier_confidence')
     
     def __str__(self):
-        return "user={}, user_bio={}, is_spam_labelled_by_classifier={}, is_spam_labelled_by_curator={}, is_labelled_by_curator_before={}, classifier_confidence={}, last_updated_date={}".format(
+        return "user={}, user_bio={}, is_spam_labelled_by_classifier={}, is_labelled_by_curator_before={}, classifier_confidence={}, last_updated_date={}".format(
             str(self.member_profile), 
             str(self.member_profile.bio), 
             str(self.is_spam_labelled_by_classifier), 
             str(self.is_spam_labelled_by_curator), 
-            str(self.is_labelled_by_curator_before),
             str(self.classifier_confidence),
             str(self.last_updated_date)
         )
