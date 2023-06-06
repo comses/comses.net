@@ -1,9 +1,11 @@
 from core.models import MemberProfile
 import pandas as pd
 from django.contrib.auth.models import User
+from django.db.models import Q
 from itertools import chain
 import warnings
 from datetime import datetime, timedelta
+from curator.models import SpamRecommendation
 
 warnings.filterwarnings("ignore") #ignore warnings
 
@@ -23,6 +25,16 @@ class UserPipeline:
                 'professional_url',
                 'user__id']
         
+    def retrieve_spam_data(row):
+        row['is_spam'] = False
+        row['is_likely'] = False
+        if str(row['user__id']) != 'nan': 
+            spam_recommendation = SpamRecommendation.objects.filter(Q(member_profile__id=row['user__id']))
+            if len(spam_recommendation) > 0:
+                print('BONKUS')
+                row['is_spam'] = spam_recommendation[0].is_spam_labelled_by_curator
+                row['is_likely'] = spam_recommendation[0].is_spam_labelled_by_classifier
+        return row
 
     def custom_query_df(self, query_set):
         member_profiles = MemberProfile.objects.filter(**query_set)
@@ -49,14 +61,15 @@ class UserPipeline:
 
         return custom_df
 
+    def load_is_spam(self):
+
+        pass
 
     #load all users into a dataframe
     def all_users_df(self):
 
         df = pd.DataFrame(list(MemberProfile.objects.all().values(*self.column_names)))
-        df['is_spam'] = None
-        df['spam_likely'] = None
-        # TODO: 1) ask Charles to change MemberProfile to using Noel's diango model
+        df = df.apply(lambda row : UserPipeline.retrieve_spam_data(row), axis=1)
 
         for col in self.column_names:
             if col == "user__id":
