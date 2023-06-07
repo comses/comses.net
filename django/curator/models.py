@@ -378,12 +378,9 @@ class CanonicalTagMapping(models.Model):
 
 
 class SpamRecommendation(models.Model):
-    member_profile = models.OneToOneField(
-        MemberProfile, on_delete=models.CASCADE, primary_key=True
-    )
-    is_spam_labelled_by_classifier = models.BooleanField(default=False)
-    is_spam_labelled_by_curator = models.BooleanField(default=False)
-    is_labelled_by_curator_before = models.BooleanField(default=False)
+    member_profile = models.OneToOneField(MemberProfile, on_delete=models.CASCADE, primary_key=True)
+    is_spam_labelled_by_classifier = models.BooleanField(default=None, null=True)
+    is_spam_labelled_by_curator = models.BooleanField(default=None, null=True)
     classifier_confidence = models.FloatField(default=0)
     last_updated_date = models.DateField(auto_now=True)
 
@@ -401,7 +398,6 @@ class SpamRecommendation(models.Model):
             str(self.classifier_confidence),
             str(self.last_updated_date),
         )
-
 
 class BioSpamClassifier(object):
     # This is temporary until we find a better solution.
@@ -439,23 +435,25 @@ class BioSpamClassifier(object):
         self.pipeline.fit(x_data, y_data)
 
     def predict_spam(self, text : str):
+        # Since our classifier classifies based on the user's bio, if it is empty, there is nothing we can predict about it.
+        if len(text) == 0: return None, (0, 0)
         spam_probabilities = self.pipeline.predict_proba([text])[0]
         return BioSpamClassifier.__argmax(spam_probabilities), spam_probabilities
 
-    @staticmethod
-    def predict_all_unlabelled_users():
-        bio_spam_classifier = BioSpamClassifier.load_model()
+    def predict_row(self, row):
+        prediction, probabilities = self.predict_spam(row['bio'])
+        row['is_spam_labelled_by_classifier'] = prediction
+        row['classifier_confidence'] = abs(probabilities[0] - probabilities[1])
+        row['is_spam_labelled_by_curator'] = False
+        return row
 
-        labelled_member_profiles = SpamRecommendation.objects.exclude(is_spam_labelled_by_curator=False)
-        labelled_member_profiles = set([recommendation.member_profile.user.id for recommendation in labelled_member_profiles])
-        unlabelled_member_profiles = MemberProfile.objects.all()
-        unlabelled_member_profiles = list(filter(lambda member_profile : member_profile.user != None, unlabelled_member_profiles))  
-        unlabelled_member_profiles = list(filter(lambda member_profile : member_profile.user.id not in labelled_member_profiles, unlabelled_member_profiles))   
+    def predict_all_unlabelled_users(self):
+        user_pipeline = UserPipeline()
 
-        for member_profile in unlabelled_member_profiles:
-            prediction, probabilities = bio_spam_classifier.predict_spam(member_profile.bio)
-            confidence = abs(probabilities[0] - probabilities[1])
-            SpamRecommendation(member_profile=member_profile, is_spam_labelled_by_classifier=prediction, classifier_confidence=confidence).save()
+        unlabelled_users = user_pipeline.filtered_by_labelled_df(is_labelled=True)
+        unlabelled_users = unlabelled_users.apply(lambda row : self.predict_row(row), axis=1)
+
+        return user_pipeline.save_recommendations(unlabelled_users)
 
     def save_model(self): 
         with open(BioSpamClassifier.MODEL_FILE_PATH, "wb") as file:

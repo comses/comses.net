@@ -95,8 +95,8 @@ class UserPipeline:
 
         return df
     
-    def all_unlabelled_users_df(self):
-        labelled_member_profiles = SpamRecommendation.objects.exclude(is_spam_labelled_by_curator=False)
+    def filtered_by_labelled_df(self, is_labelled : bool):
+        labelled_member_profiles = SpamRecommendation.objects.exclude(is_spam_labelled_by_curator=is_labelled)
         labelled_member_profiles = set([recommendation.member_profile.user.id for recommendation in labelled_member_profiles])
         unlabelled_member_profiles = MemberProfile.objects.all().values(*self.column_names)
         unlabelled_member_profiles = pd.DataFrame(unlabelled_member_profiles)
