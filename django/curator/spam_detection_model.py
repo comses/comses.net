@@ -9,6 +9,11 @@ from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_sc
 import xgboost as xgb
 from curator.spam_detect import UserPipeline
 import time
+import json
+import os.path
+
+tokenizer_path = 'tokenizer.pkl'
+model_path = 'spam_xgb_classifier.pkl'
 
 class SpamClassifier:
 
@@ -34,22 +39,22 @@ class SpamClassifier:
             return 0
         
 
-    def preprocess_get_pad_sequences(self, column, tokenizer, max_len):
+    def preprocess_get_pad_sequences(self, column, tokenizer):
         word_index = tokenizer.word_index
         # total_words = len(word_index)  # get total_words of this coulmn's set
         column_sequences = tokenizer.texts_to_sequences(column) # tokenize
-        if max_len == None:
-            sequences_lens = [len(n) for n in column_sequences] # get len() of each item
-            max_len = sequences_lens[np.argmax(sequences_lens)]
+        # if max_len == None:
+        #     sequences_lens = [len(n) for n in column_sequences] # get len() of each item
+        #     max_len = sequences_lens[np.argmax(sequences_lens)]
         column_padded = pad_sequences(column_sequences, # padding
-                                    maxlen = max_len,
+                                    maxlen = 800,
                                     padding =  'post',
                                     truncating =  'post')
-        return list(column_padded), tokenizer, max_len
+        return list(column_padded), tokenizer
 
 
-    def preprocess_tokenize_test_column(self, column, tokenizer, max_len):
-        return self.preprocess_get_pad_sequences(column, tokenizer, max_len)
+    def preprocess_tokenize_test_column(self, column, tokenizer):
+        return self.preprocess_get_pad_sequences(column, tokenizer)
 
 
     def preprocess_tokenize_train_column(self, column):
@@ -57,9 +62,11 @@ class SpamClassifier:
                         char_level = True,
                         oov_token =  '<OOV>')
         tokenizer.fit_on_texts(column)
-        max_len = None
-        return self.preprocess_get_pad_sequences(column, tokenizer, max_len)
-
+        return self.preprocess_get_pad_sequences(column, tokenizer)
+    
+    def preprocess_tokenize_partial_train_column(self, column, tokenizer):
+        tokenizer.fit_on_texts(column) # add new vocabraries
+        return self.preprocess_get_pad_sequences(column, tokenizer)
 
     def preprocess_concatinate_tokenized_data(self, row):
         input_data = np.concatenate((row['first_name'], row['last_name'], np.array([row['is_active']]), row['email'], row['affiliations'], row['bio']))
@@ -71,24 +78,41 @@ class SpamClassifier:
 
         # create or load tokenizer
         tokenized_X_dict = {}
-        maxlen_dict = {}
+        # maxlen_dict = {}
         tokenizer_dict = {}
         tokenize_info_dict = {}
-        if isTraining:
-            for col in X.columns:
-                if col == "is_active":
-                    continue
-                tokenized_X_dict[col], tokenizer_dict[col], maxlen_dict[col] = self.preprocess_tokenize_train_column(X[col])
-            tokenize_info_dict = {'maxlen':maxlen_dict , 'tokenizer':tokenizer_dict}
-            pickle.dump(tokenize_info_dict, open('tokenizer.pkl', 'wb'))
-        else:
-            tokenize_info_dict = pickle.load(open('tokenizer.pkl', 'rb'))
-            maxlen_dict = tokenize_info_dict['maxlen']
+        
+        if isTraining: # initil-train or partial-train
+            if os.path.exists(tokenizer_path): # partial-train
+                print(' partial-train')
+                tokenize_info_dict = pickle.load(open(tokenizer_path, 'rb'))
+                tokenizer_dict = tokenize_info_dict['tokenizer']
+                for col in X.columns:
+                    if col == "is_active":
+                        continue
+                    tokenized_X_dict[col], tokenizer_dict[col] = self.preprocess_tokenize_partial_train_column(X[col], tokenizer_dict[col])
+                with open('first_name_tokenizer_config2.json','w') as fp: #TODO erase later
+                    json.dump(tokenizer_dict['first_name'].get_config(),fp)
+            else: # initil-train
+                for col in X.columns:
+                    if col == "is_active":
+                        continue
+                    tokenized_X_dict[col], tokenizer_dict[col] = self.preprocess_tokenize_train_column(X[col])
+                with open('first_name_tokenizer_config1.json','w') as fp: #TODO erase later
+                    json.dump(tokenizer_dict['first_name'].get_config(),fp)
+
+            tokenize_info_dict = {'tokenizer':tokenizer_dict}
+            pickle.dump(tokenize_info_dict, open(tokenizer_path, 'wb')) # update file
+
+            
+        else: # inference
+            tokenize_info_dict = pickle.load(open(tokenizer_path, 'rb'))
+            # maxlen_dict = tokenize_info_dict['maxlen']
             tokenizer_dict = tokenize_info_dict['tokenizer']
             for col in X.columns:
                 if col == "is_active":
                     continue
-                tokenized_X_dict[col], _, _ = self.preprocess_tokenize_test_column(X[col], tokenizer_dict[col], maxlen_dict[col])
+                tokenized_X_dict[col], _ = self.preprocess_tokenize_test_column(X[col], tokenizer_dict[col])
 
         # apply tokenizer        
         tokenized_X = pd.DataFrame(columns=X.columns, index=X.index)
@@ -104,7 +128,7 @@ class SpamClassifier:
         return np.array(tokenized_X['input_data'].tolist())
 
 
-    def preprocess(self, df, isTraining=False):
+    def preprocess(self, df, mode='inference'):
         # extract relavant columns
         df['is_spam'] = df['is_spam'].fillna(0)
         df = df.fillna('')
@@ -115,17 +139,23 @@ class SpamClassifier:
         # tokenize
         y = df['is_spam']
         X = df.drop(['is_spam'], axis = 1)
-        if isTraining:
+        if mode=='train':
+            isTraining = True
             X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.15, random_state=434)
-            # uid_train = X_train.filter(['user_id'],axis=1) #TODO
-            # uid_test = X_test.filter(['user_id'],axis=1) #TODO
             tokenized_X_train = self.preprocess_tokenization(X_train.drop(['user_id'],axis=1), isTraining)
             tokenized_X_test = self.preprocess_tokenization(X_test.drop(['user_id'],axis=1))
             return tokenized_X_train, tokenized_X_test, y_train, y_test
         
-        uid_series = X.filter(['user_id'],axis=1).squeeze()
-        tokenized_X = self.preprocess_tokenization(X.drop(['user_id'],axis=1))
-        return tokenized_X, y, uid_series
+        elif mode=='partial_train':
+            isTraining = True
+            uid_series = X.filter(['user_id'],axis=1).squeeze()
+            tokenized_X = self.preprocess_tokenization(X.drop(['user_id'],axis=1), isTraining)
+            return tokenized_X, y, uid_series
+    
+        elif mode=='inference':
+            uid_series = X.filter(['user_id'],axis=1).squeeze()
+            tokenized_X = self.preprocess_tokenization(X.drop(['user_id'],axis=1))
+            return tokenized_X, y, uid_series
     
 
     def train_xgboost_classifer(self, X_train, X_test, y_train, y_test):
@@ -162,22 +192,25 @@ class SpamClassifier:
         # print(end - start)
         # print(df)
 
+        df = df.iloc[:3000] #TODO erase later
+
         # preprocess
-        isTraining = True
-        X_train, X_test, y_train, y_test = self.preprocess(df, isTraining)
+        X_train, X_test, y_train, y_test = self.preprocess(df, 'train')
 
         # train
-        _, _, model = self.train_xgboost_classifer(X_train, X_test, y_train, y_test)
+        prediction, metrics, model = self.train_xgboost_classifer(X_train, X_test, y_train, y_test)
+        pd.DataFrame(prediction).to_csv('train_prediction.csv')
+        print(metrics)
 
         # save model
-        pickle.dump(model, open('spam_xgb_classifier.pkl', 'wb'))
+        pickle.dump(model, open(model_path, 'wb'))
         # end = time.time()
         # print(end - start)
 
         # return model_metrics # if needed
         return None
     
-    def partial_train(self): # TODO: add option of how old the data is
+    def partial_train(self):
         # obtain df from pipleline
         start = time.time()
         pipeline = UserPipeline()
@@ -186,18 +219,19 @@ class SpamClassifier:
         # print(end - start)
         # print(df)
 
+        df = df.iloc[3000:] #TODO erase late––
+
         # preprocess
-        isTraining = False
-        X, y, _ = self.preprocess(df, isTraining)
+        X, y, _ = self.preprocess(df, 'partial_train')
 
         # load model
-        model = pickle.load(open('spam_xgb_classifier.pkl', 'rb'))
+        model = pickle.load(open(model_path, 'rb'))
 
         # partial train
         model = self.partial_train_xgboost_classifer(X, y, model)
 
         # save model
-        pickle.dump(model, open('spam_xgb_classifier.pkl', 'wb'))
+        pickle.dump(model, open(model_path, 'wb'))
         # end = time.time()
         # print(end - start)
 
@@ -213,11 +247,10 @@ class SpamClassifier:
         # print(df)
 
         # preprocess
-        isTraining = False
-        X, _, uid_series = self.preprocess(df, isTraining)
+        X, _, uid_series = self.preprocess(df, 'inference')
 
         # load model
-        model = pickle.load(open('spam_xgb_classifier.pkl', 'rb'))
+        model = pickle.load(open(model_path, 'rb'))
 
         # inference 
         confidence_socres = self.inference_xgboost_classifer(X, model)
