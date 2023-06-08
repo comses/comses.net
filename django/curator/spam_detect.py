@@ -61,10 +61,6 @@ class UserPipeline:
 
         return custom_df
 
-    def load_is_spam(self):
-
-        pass
-
     #load all users into a dataframe
     def all_users_df(self):
 
