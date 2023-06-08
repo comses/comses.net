@@ -2,8 +2,7 @@ import "vite/modulepreload-polyfill";
 
 import { createApp } from "vue";
 import JobEditForm from "@/components/JobEditForm.vue";
-import { extractIdFromPath } from "@/util";
+import { extractDataParams } from "@/util";
 
-const jobId = extractIdFromPath(window.location.pathname, "jobs");
-const props = { jobId: jobId ? parseInt(jobId) : undefined };
+const props = extractDataParams("job-form", ["jobId"]);
 createApp(JobEditForm, props).mount("#job-form");

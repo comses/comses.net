@@ -37,23 +37,6 @@ export function extractDataParams(elementId: string, names: string[]): Extracted
   }
 }
 
-export function extractIdFromPath(
-  path: string,
-  prefix: string,
-  suffix: string = "edit"
-): string | undefined {
-  /**
-   * Extract resource id from path
-   *
-   * @param path The path to extract the id (usually window.location.pathname)
-   * @param prefix The prefix of the path (e.g. "codebases", "events")
-   * @param suffix="edit" The suffix of the path (e.g. "edit")
-   */
-  const re = new RegExp(`/${prefix}/([0-9a-zA-Z-]+)/${suffix}/`);
-  const match = path.match(re);
-  return match ? match[1] : undefined;
-}
-
 export function parseDates(data: any, keys: string[]) {
   /**
    * Parse dates (with Date.parse) in data object

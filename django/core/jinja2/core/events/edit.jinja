@@ -3,7 +3,7 @@
 {% block introduction %}<h1>Submit an Event</h1>{% endblock %}
 
 {% block content %}
-<div id="event-form"></div>
+<div id="event-form" {% if object %} data-event-id="{{ object.id }}" {% endif %}></div>
 {% endblock %}
 
 {% block js %}
