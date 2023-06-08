@@ -25,7 +25,19 @@ class UserPipeline:
                 'personal_url',
                 'professional_url',
                 'user__id']
-        
+    
+    def load_labels(self, filepath): #TODO : check SpamRecommendation has correct fields
+        # Initalize the SpamRecommendation table
+        member_profiles = MemberProfile.objects.all()
+        for profile in member_profiles:
+            SpamRecommendation(member_profile=profile).save()
+
+        # Update "is_spam_labelled_by_curator" field of the SpamRecommendation table
+        label_df = pd.read_csv(filepath)
+        for idx, row in label_df.iterrows():
+            SpamRecommendation.objects.filter(Q(member_profile__id=row['user__id'])).update(is_spam_labelled_by_curator=bool(row['is_spam']))
+
+
     def retrieve_spam_data(row):
         row['is_spam'] = False
         row['is_likely'] = False
