@@ -363,11 +363,11 @@ class BioSpamClassifier(object):
         self.save_model()
 
     def fit_on_curator_labelled_recommendations(self):
-        curator_labelled_recommendations = SpamRecommendation.objects.exclude(is_spam_labelled_by_curator=False)
+        curator_labelled_recommendations = SpamRecommendation.objects.exclude(is_spam_labelled_by_curator=None)
 
         # TODO: I should split these up into their own functions 
         x_data = [[recommendation.bio] for recommendation in curator_labelled_recommendations]
-        y_data = [1 if recommendation.is_spam else 0 for recommendation in curator_labelled_recommendations]
+        y_data = [recommendation.is_spam for recommendation in curator_labelled_recommendations]
 
         self.pipeline.fit(x_data, y_data)
 
