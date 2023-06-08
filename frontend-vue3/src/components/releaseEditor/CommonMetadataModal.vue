@@ -13,7 +13,7 @@
       <CodebaseEditForm
         :codebase-id="identifier"
         id="edit-common-metadata-form"
-        @success="editCodebaseModal.hide()"
+        @success="handleSuccess()"
         as-modal
       />
     </template>
@@ -29,6 +29,7 @@ import { ref } from "vue";
 import type { Modal } from "bootstrap";
 import BootstrapModal from "@/components/BootstrapModal.vue";
 import CodebaseEditForm from "@/components/CodebaseEditForm.vue";
+import { useReleaseEditorStore } from "@/stores/releaseEditor";
 
 const props = defineProps<{
   buttonClass: string;
@@ -36,4 +37,11 @@ const props = defineProps<{
 }>();
 
 const editCodebaseModal = ref<typeof Modal>();
+
+const store = useReleaseEditorStore();
+
+async function handleSuccess() {
+  await store.initialize(store.identifier, store.versionNumber);
+  editCodebaseModal.value.hide();
+}
 </script>
