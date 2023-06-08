@@ -37,14 +37,14 @@ services:
       - ./deploy/elasticsearch.conf.d/log4j2.properties:/usr/share/elasticsearch/config/log4j2.properties
       - esdata2:/usr/share/elasticsearch/data
   vite:
-    build: frontend-vue3
+    build: frontend
     image: comses/comsesnet-vite:${RELEASE_VERSION}
     command: ["yarn", "build"]
     environment:
       NODE_ENV: "production"
     volumes:
-      - ./frontend-vue3/src:/code/src
-      - ./frontend-vue3/yarn.lock:/code/yarn.lock
+      - ./frontend/src:/code/src
+      - ./frontend/yarn.lock:/code/yarn.lock
       - ./docker/shared:/shared
       - ./build/secrets/config.ini:/secrets/config.ini
   nginx:

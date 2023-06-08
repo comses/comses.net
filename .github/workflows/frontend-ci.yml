@@ -1,12 +1,12 @@
-name: Frontend CI (Vue3)
+name: Frontend CI (Vue3/TS)
 
 on:
   push:
     branches: [vue3]
-    paths: ["frontend-vue3/**"]
+    paths: ["frontend/**"]
   pull_request:
     branches: [vue3]
-    paths: ["frontend-vue3/**"]
+    paths: ["frontend/**"]
 
 jobs:
   build:
