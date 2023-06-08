@@ -318,7 +318,6 @@ class SpamRecommendation(models.Model):
     member_profile = models.OneToOneField(MemberProfile, on_delete=models.CASCADE, primary_key=True)
     is_spam_labelled_by_classifier = models.BooleanField(default=False)
     is_spam_labelled_by_curator = models.BooleanField(default=False)
-    is_labelled_by_curator_before = models.BooleanField(default=False)
     classifier_confidence = models.FloatField(default=0)
     last_updated_date = models.DateField(auto_now=True)
 
@@ -332,7 +331,6 @@ class SpamRecommendation(models.Model):
             str(self.member_profile.bio), 
             str(self.is_spam_labelled_by_classifier), 
             str(self.is_spam_labelled_by_curator), 
-            str(self.is_labelled_by_curator_before),
             str(self.classifier_confidence),
             str(self.last_updated_date)
         )
@@ -389,8 +387,10 @@ class BioSpamClassifier(object):
     def predict_all_unlabelled_users(self):
         bio_spam_classifier = BioSpamClassifier.load_model()
         user_pipeline = UserPipeline()
+
         unlabelled_users = user_pipeline.filtered_by_labelled_df(is_labelled=True)
         unlabelled_users = unlabelled_users.apply(lambda row : self.predict_row(row), axis=1)
+
         return unlabelled_users
 
     def save_model(self): 
