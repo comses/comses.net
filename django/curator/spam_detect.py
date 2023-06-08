@@ -1,5 +1,6 @@
 from core.models import MemberProfile
 import pandas as pd
+import numpy as np
 from django.contrib.auth.models import User
 from django.db.models import Q
 from itertools import chain
@@ -12,19 +13,43 @@ warnings.filterwarnings("ignore")  # ignore warnings
 
 class UserPipeline:
     def __init__(self):
-        self.column_names = [
-            "user__first_name",
-            "user__last_name",
-            "user__is_active",
-            "user__email",
-            "timezone",
-            "affiliations",
-            "bio",
-            "research_interests",
-            "personal_url",
-            "professional_url",
-            "user__id",
-        ]
+        
+        self.column_names = ['user__first_name',
+                'user__last_name',
+                'user__is_active',
+                'user__email',
+                'timezone',
+                'affiliations',
+                'bio',
+                'research_interests',
+                'personal_url',
+                'professional_url',
+                'user__id']
+    
+    def initalize_SpamRecommendation(self):
+        # Initalize the SpamRecommendation table
+        member_profiles = MemberProfile.objects.all()
+        for profile in member_profiles:
+            SpamRecommendation(member_profile=profile).save()
+
+    def load_labels(self, filepath): #TODO Aiko: check whether SpamRecommendation has correct field
+        if SpamRecommendation.objects.all().exists() == False:
+            self.initalize_SpamRecommendation()
+
+        # Update "is_spam_labelled_by_curator" field of the SpamRecommendation table
+        label_df = pd.read_csv(filepath)
+        for idx, row in label_df.iterrows():
+            SpamRecommendation.objects.filter(Q(member_profile__id=row['user_id']))[0].update(is_spam_labelled_by_curator=bool(row['is_spam']))
+
+    def retrieve_spam_data(row):
+        row['is_spam_labelled_by_curator'] = False
+        row['is_spam_labelled_by_classifier'] = False
+        if str(row['user__id']) != 'nan': 
+            spam_recommendation = SpamRecommendation.objects.filter(Q(member_profile__id=row['user__id']))
+            if len(spam_recommendation) > 0:
+                row['is_spam_labelled_by_curator'] = spam_recommendation[0].is_spam_labelled_by_curator
+                row['is_spam_labelled_by_classifier'] = spam_recommendation[0].is_spam_labelled_by_classifier
+        return row
 
     def custom_query_df(self, query_set):
         member_profiles = MemberProfile.objects.filter(**query_set)
@@ -95,8 +120,29 @@ class UserPipeline:
 
         return df
     
+    def save_recommendations(self, spam_recommendation_df):
+        spam_recommendation_df = spam_recommendation_df[[
+            'user__id', 
+            'is_spam_labelled_by_classifier', 
+            'is_spam_labelled_by_curator', 
+            'classifier_confidence'
+        ]]
+        spam_recommendation_df = spam_recommendation_df.replace(np.nan, None)
+
+        for index, spam_recommendation in spam_recommendation_df.iterrows():
+            member_profile = MemberProfile.objects.filter(user__id=spam_recommendation.user__id)[0]
+            spam_recommendation = SpamRecommendation(
+                member_profile=member_profile,
+                is_spam_labelled_by_classifier=spam_recommendation.is_spam_labelled_by_classifier,
+                classifier_confidence=spam_recommendation.classifier_confidence
+            )
+            spam_recommendation.save()
+        return spam_recommendation_df
+    
     def filtered_by_labelled_df(self, is_labelled : bool):
-        labelled_member_profiles = SpamRecommendation.objects.exclude(is_spam_labelled_by_curator=is_labelled)
+        if is_labelled == None: labelled_member_profiles = SpamRecommendation.objects.filter(is_spam_labelled_by_curator=is_labelled)
+        else:labelled_member_profiles = SpamRecommendation.objects.exclude(is_spam_labelled_by_curator=None)
+
         labelled_member_profiles = set([recommendation.member_profile.user.id for recommendation in labelled_member_profiles])
         unlabelled_member_profiles = MemberProfile.objects.all().values(*self.column_names)
         unlabelled_member_profiles = pd.DataFrame(unlabelled_member_profiles)
