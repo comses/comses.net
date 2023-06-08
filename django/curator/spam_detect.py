@@ -93,6 +93,14 @@ class UserPipeline:
 
         return df
     
+    def all_unlabelled_users_df(self):
+        labelled_member_profiles = SpamRecommendation.objects.exclude(is_spam_labelled_by_curator=False)
+        labelled_member_profiles = set([recommendation.member_profile.user.id for recommendation in labelled_member_profiles])
+        unlabelled_member_profiles = MemberProfile.objects.all().values(*self.column_names)
+        unlabelled_member_profiles = pd.DataFrame(unlabelled_member_profiles)
+        filter_unlabelled = unlabelled_member_profiles.apply(lambda row : row['user__id'] not in labelled_member_profiles, axis=1)
+        unlabelled_member_profiles = unlabelled_member_profiles[filter_unlabelled]
+        return unlabelled_member_profiles
     
     def users_joined_last_week_df(self):
         
