@@ -1,5 +1,6 @@
 from core.models import MemberProfile
 import pandas as pd
+import numpy as np
 from django.contrib.auth.models import User
 from django.db.models import Q
 from itertools import chain
@@ -89,8 +90,31 @@ class UserPipeline:
 
         return df
     
+    def save_recommendations(self, spam_recommendation_df):
+        spam_recommendation_df = spam_recommendation_df[[
+            'user__id', 
+            'is_spam_labelled_by_classifier', 
+            'is_spam_labelled_by_curator', 
+            'classifier_confidence'
+        ]]
+        spam_recommendation_df = spam_recommendation_df.replace(np.nan, None)
+
+        for index, spam_recommendation in spam_recommendation_df.iterrows():
+            member_profile = MemberProfile.objects.filter(user__id=spam_recommendation.user__id)[0]
+            spam_recommendation = SpamRecommendation(
+                member_profile=member_profile,
+                is_spam_labelled_by_classifier=spam_recommendation.is_spam_labelled_by_classifier,
+                is_spam_labelled_by_curator=spam_recommendation.is_spam_labelled_by_curator,
+                classifier_confidence=spam_recommendation.classifier_confidence
+            )
+            print(spam_recommendation)
+            spam_recommendation.save()
+        return spam_recommendation_df
+    
     def filtered_by_labelled_df(self, is_labelled : bool):
-        labelled_member_profiles = SpamRecommendation.objects.exclude(is_spam_labelled_by_curator=is_labelled)
+        if is_labelled == None: labelled_member_profiles = SpamRecommendation.objects.filter(is_spam_labelled_by_curator=is_labelled)
+        else:labelled_member_profiles = SpamRecommendation.objects.exclude(is_spam_labelled_by_curator=None)
+
         labelled_member_profiles = set([recommendation.member_profile.user.id for recommendation in labelled_member_profiles])
         unlabelled_member_profiles = MemberProfile.objects.all().values(*self.column_names)
         unlabelled_member_profiles = pd.DataFrame(unlabelled_member_profiles)
