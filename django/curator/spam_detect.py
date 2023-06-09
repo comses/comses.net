@@ -47,7 +47,6 @@ class UserPipeline:
         if str(row['user__id']) != 'nan': 
             spam_recommendation = SpamRecommendation.objects.filter(Q(member_profile__id=row['user__id']))
             if len(spam_recommendation) > 0:
-                print('BONKUS')
                 row['is_spam_labelled_by_curator'] = spam_recommendation[0].is_spam_labelled_by_curator
                 row['is_spam_labelled_by_classifier'] = spam_recommendation[0].is_spam_labelled_by_classifier
         return row
@@ -116,14 +115,11 @@ class UserPipeline:
 
         for index, spam_recommendation in spam_recommendation_df.iterrows():
             member_profile = MemberProfile.objects.filter(user__id=spam_recommendation.user__id)[0]
-            #TODO Noel: Filer on SpamRecommendation table and get the specific row to update only "is_spam_labelled_by_classifier" and "classifier_confidence"
             spam_recommendation = SpamRecommendation(
                 member_profile=member_profile,
                 is_spam_labelled_by_classifier=spam_recommendation.is_spam_labelled_by_classifier,
-                is_spam_labelled_by_curator=spam_recommendation.is_spam_labelled_by_curator,
                 classifier_confidence=spam_recommendation.classifier_confidence
             )
-            print(spam_recommendation)
             spam_recommendation.save()
         return spam_recommendation_df
     
