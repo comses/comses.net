@@ -26,27 +26,29 @@ class UserPipeline:
                 'professional_url',
                 'user__id']
     
-    def load_labels(self, filepath): #TODO : check SpamRecommendation has correct fields
+    def initalize_SpamRecommendation(self):
         # Initalize the SpamRecommendation table
         member_profiles = MemberProfile.objects.all()
         for profile in member_profiles:
             SpamRecommendation(member_profile=profile).save()
 
+    def load_labels(self, filepath): #TODO Aiko: check whether SpamRecommendation has correct field
+        if SpamRecommendation.objects.all().exists() == False:
+            self.initalize_SpamRecommendation()
+
         # Update "is_spam_labelled_by_curator" field of the SpamRecommendation table
         label_df = pd.read_csv(filepath)
         for idx, row in label_df.iterrows():
-            SpamRecommendation.objects.filter(Q(member_profile__id=row['user__id'])).update(is_spam_labelled_by_curator=bool(row['is_spam']))
-
+            SpamRecommendation.objects.filter(Q(member_profile__id=row['user_id']))[0].update(is_spam_labelled_by_curator=bool(row['is_spam']))
 
     def retrieve_spam_data(row):
-        row['is_spam'] = False
-        row['is_likely'] = False
+        row['is_spam_labelled_by_curator'] = False
+        row['is_spam_labelled_by_classifier'] = False
         if str(row['user__id']) != 'nan': 
             spam_recommendation = SpamRecommendation.objects.filter(Q(member_profile__id=row['user__id']))
             if len(spam_recommendation) > 0:
-                print('BONKUS')
-                row['is_spam'] = spam_recommendation[0].is_spam_labelled_by_curator
-                row['is_likely'] = spam_recommendation[0].is_spam_labelled_by_classifier
+                row['is_spam_labelled_by_curator'] = spam_recommendation[0].is_spam_labelled_by_curator
+                row['is_spam_labelled_by_classifier'] = spam_recommendation[0].is_spam_labelled_by_classifier
         return row
 
     def custom_query_df(self, query_set):
@@ -116,10 +118,8 @@ class UserPipeline:
             spam_recommendation = SpamRecommendation(
                 member_profile=member_profile,
                 is_spam_labelled_by_classifier=spam_recommendation.is_spam_labelled_by_classifier,
-                is_spam_labelled_by_curator=spam_recommendation.is_spam_labelled_by_curator,
                 classifier_confidence=spam_recommendation.classifier_confidence
             )
-            print(spam_recommendation)
             spam_recommendation.save()
         return spam_recommendation_df
     

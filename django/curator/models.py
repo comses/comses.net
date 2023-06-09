@@ -16,13 +16,6 @@ from nltk.stem import PorterStemmer
 from nltk.tokenize import word_tokenize
 from taggit.models import Tag
 
-from sklearn.feature_extraction.text import CountVectorizer
-from sklearn.preprocessing import FunctionTransformer
-from sklearn.compose import ColumnTransformer
-from sklearn.naive_bayes import MultinomialNB
-from sklearn.pipeline import Pipeline
-import pandas
-
 from core.models import MemberProfile
 
 from library.models import ProgrammingLanguage, CodebaseReleasePlatformTag
@@ -371,9 +364,9 @@ class CanonicalTagMapping(models.Model):
         return f"tag={self.tag} canonical_tag={self.canonical_tag.name} confidence={self.confidence_score}"
 class SpamRecommendation(models.Model):
     member_profile = models.OneToOneField(MemberProfile, on_delete=models.CASCADE, primary_key=True)
-    is_spam_labelled_by_classifier = models.BooleanField(default=None, null=True)
+    is_spam_labelled_by_classifier = models.BooleanField(default=None, null=True) # TODO Noel: add another field for Aiko's model's prediction
     is_spam_labelled_by_curator = models.BooleanField(default=None, null=True)
-    classifier_confidence = models.FloatField(default=0)
+    classifier_confidence = models.FloatField(default=0) # TODO Noel: add another field for the confidence level of Aiko's model's prediction
     last_updated_date = models.DateField(auto_now=True)
 
     @staticmethod
