@@ -17,13 +17,6 @@ from nltk.stem import PorterStemmer
 from nltk.tokenize import word_tokenize
 from taggit.models import Tag
 
-from sklearn.feature_extraction.text import CountVectorizer
-from sklearn.preprocessing import FunctionTransformer
-from sklearn.compose import ColumnTransformer
-from sklearn.naive_bayes import MultinomialNB
-from sklearn.pipeline import Pipeline
-import pandas
-
 from core.models import MemberProfile
 
 from library.models import ProgrammingLanguage, CodebaseReleasePlatformTag
@@ -334,87 +327,3 @@ class SpamRecommendation(models.Model):
             str(self.classifier_confidence),
             str(self.last_updated_date)
         )
-
-from curator.spam_detect import UserPipeline
-class BioSpamClassifier(object):
-    # This is temporary until we find a better solution.
-    # We are saving and loading models straight to the VM,
-    # ideally, we instead store it in some object storage instead.
-    INITIAL_FILE_PATH = "curator/label.json"
-    MODEL_FILE_PATH = "curator/instance.pkl"
-
-    @staticmethod
-    def load_model(): 
-        if os.path.isfile(BioSpamClassifier.MODEL_FILE_PATH): BioSpamClassifier().fit_on_initial_data()
-        with open(BioSpamClassifier.MODEL_FILE_PATH, "rb") as file:
-            return pickle.load(file)
-
-    def __init__(self):
-        self.pipeline = Pipeline([
-            ('cleaner', FunctionTransformer(BioSpamClassifier.text_list_cleanup)),
-            ('countvectorizer', CountVectorizer()),
-            ('classifier', MultinomialNB())
-        ])
-
-    def fit_on_initial_data(self):
-        training_data = pandas.read_json(BioSpamClassifier.INITIAL_FILE_PATH)
-        x_train, y_train = training_data['bio'], training_data['is_spam']
-        self.pipeline.fit(x_train, y_train)
-        self.save_model()
-
-    def fit_on_curator_labelled_recommendations(self):
-        curator_labelled_recommendations = SpamRecommendation.objects.exclude(is_spam_labelled_by_curator=None)
-
-        # TODO: I should split these up into their own functions 
-        x_data = [[recommendation.bio] for recommendation in curator_labelled_recommendations]
-        y_data = [recommendation.is_spam for recommendation in curator_labelled_recommendations]
-
-        self.pipeline.fit(x_data, y_data)
-
-    def predict_spam(self, text : str):
-        # Since our classifier classifies based on the user's bio, if it is empty, there is nothing we can predict about it.
-        if len(text) == 0: return None, (0, 0)
-        spam_probabilities = self.pipeline.predict_proba([text])[0]
-        return BioSpamClassifier.__argmax(spam_probabilities), spam_probabilities
-
-    def predict_row(self, row):
-        prediction, probabilities = self.predict_spam(row['bio'])
-        row['is_spam_labelled_by_classifier'] = prediction
-        row['classifier_confidence'] = abs(probabilities[0] - probabilities[1])
-        row['is_spam_labelled_by_curator'] = False # TODO Noel: please don't overwite "is_spam_labelled_by_curator"
-        return row
-
-    def predict_all_unlabelled_users(self):
-        user_pipeline = UserPipeline()
-
-        unlabelled_users = user_pipeline.filtered_by_labelled_df(is_labelled=True)
-        unlabelled_users = unlabelled_users.apply(lambda row : self.predict_row(row), axis=1)
-
-        return user_pipeline.save_recommendations(unlabelled_users)
-
-    def save_model(self): 
-        with open(BioSpamClassifier.MODEL_FILE_PATH, "wb") as file:
-            pickle.dump(self, file)
-
-    def text_list_cleanup(text_list : List[str]): 
-        return [BioSpamClassifier.text_cleanup_pipeline(text) for text in text_list]
-
-    def text_cleanup_pipeline(text : str): 
-        text = str(text)
-        text = BioSpamClassifier.__convert_text_to_lowercase(text)
-        text = BioSpamClassifier.__replace_urls_with_webtag(text)
-        text = BioSpamClassifier.__replace_numbers_with_zero(text)
-        text = BioSpamClassifier.__remove_markdown(text)
-        text = BioSpamClassifier.__remove_excess_spaces(text)
-        return text
-    
-    # Helper functions
-    def __argmax(float_list : List[float]):
-        map_index_to_element = lambda index: float_list[index]
-        return max(range(len(float_list)), key=map_index_to_element)
-    
-    def __convert_text_to_lowercase(text : str): return text.lower()
-    def __replace_urls_with_webtag(text : str): return re.sub(r'http\S+|www\S+', ' webtag ', text) 
-    def __replace_numbers_with_zero(text : str): return re.sub(r'\d+', ' 0 ', text)
-    def __remove_markdown(text : str): return re.sub(r'<.*?>', ' ', text)
-    def __remove_excess_spaces(text : str): return re.sub(r'\s+', ' ', text)
