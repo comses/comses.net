@@ -30,7 +30,6 @@ class SpamClassifier:
             return result + ". "
         else:
             return ""
-    
 
     def preprocess_active_status(self, val):
         if val == "t":
@@ -55,7 +54,7 @@ class SpamClassifier:
 
     def preprocess_tokenize_test_column(self, column, tokenizer):
         return self.preprocess_get_pad_sequences(column, tokenizer)
-
+    
 
     def preprocess_tokenize_train_column(self, column):
         tokenizer = Tokenizer(num_words = 2000, 
@@ -64,9 +63,11 @@ class SpamClassifier:
         tokenizer.fit_on_texts(column)
         return self.preprocess_get_pad_sequences(column, tokenizer)
     
+
     def preprocess_tokenize_partial_train_column(self, column, tokenizer):
         tokenizer.fit_on_texts(column) # add new vocabraries
         return self.preprocess_get_pad_sequences(column, tokenizer)
+
 
     def preprocess_concatinate_tokenized_data(self, row):
         input_data = np.concatenate((row['first_name'], row['last_name'], np.array([row['is_active']]), row['email'], row['affiliations'], row['bio']))
@@ -74,8 +75,6 @@ class SpamClassifier:
     
 
     def preprocess_tokenization(self, X, isTraining=False):
-        # print (tokenized_X.shape)
-
         # create or load tokenizer
         tokenized_X_dict = {}
         # maxlen_dict = {}
@@ -104,8 +103,7 @@ class SpamClassifier:
             tokenize_info_dict = {'tokenizer':tokenizer_dict}
             pickle.dump(tokenize_info_dict, open(tokenizer_path, 'wb')) # update file
 
-            
-        else: # inference
+        else: # predict
             tokenize_info_dict = pickle.load(open(tokenizer_path, 'rb'))
             # maxlen_dict = tokenize_info_dict['maxlen']
             tokenizer_dict = tokenize_info_dict['tokenizer']
@@ -128,17 +126,17 @@ class SpamClassifier:
         return np.array(tokenized_X['input_data'].tolist())
 
 
-    def preprocess(self, df, mode='inference'):
+    def preprocess(self, df, mode='predict'):
         # extract relavant columns
-        df['is_spam'] = df['is_spam'].fillna(0)
+        df['is_spam_labelled_by_curator'] = df['is_spam_labelled_by_curator'].fillna(0)
         df = df.fillna('')
-        df = df.filter(['user_id','is_spam','first_name','last_name', 'is_active', 'email', 'affiliations', 'bio'], axis=1)
+        df = df.filter(['user_id','is_spam_labelled_by_curator','first_name','last_name', 'is_active', 'email', 'affiliations', 'bio'], axis=1)
         df['affiliations'] =  df.apply(lambda row:self.preprocess_affiliations(row['affiliations']), axis=1)
         df['is_active'] =  df.apply(lambda row:self.preprocess_active_status(row['is_active']), axis=1)
 
         # tokenize
-        y = df['is_spam']
-        X = df.drop(['is_spam'], axis = 1)
+        y = df['is_spam_labelled_by_curator']
+        X = df.drop(['is_spam_labelled_by_curator'], axis = 1)
         if mode=='train':
             isTraining = True
             X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.15, random_state=434)
@@ -152,7 +150,7 @@ class SpamClassifier:
             tokenized_X = self.preprocess_tokenization(X.drop(['user_id'],axis=1), isTraining)
             return tokenized_X, y, uid_series
     
-        elif mode=='inference':
+        elif mode=='predict':
             uid_series = X.filter(['user_id'],axis=1).squeeze()
             tokenized_X = self.preprocess_tokenization(X.drop(['user_id'],axis=1))
             return tokenized_X, y, uid_series
@@ -178,19 +176,15 @@ class SpamClassifier:
         retrained_model.fit(X, y, xgb_model = old_model.get_booster())
         return retrained_model
 
-    def inference_xgboost_classifer(self, X, model):
+    def predict_xgboost_classifer(self, X, model):
         probas = model.predict_proba(X)
         confidence_socres = list(map(lambda x: x[1], probas))
         return confidence_socres
 
     def train(self):
         # obtain df from pipleline
-        start = time.time()
         pipeline = UserPipeline()
         df = pipeline.all_users_df()
-        # end = time.time()
-        # print(end - start)
-        # print(df)
 
         df = df.iloc[:3000] #TODO erase later
 
@@ -204,20 +198,14 @@ class SpamClassifier:
 
         # save model
         pickle.dump(model, open(model_path, 'wb'))
-        # end = time.time()
-        # print(end - start)
 
         # return model_metrics # if needed
         return None
     
     def partial_train(self):
         # obtain df from pipleline
-        start = time.time()
         pipeline = UserPipeline()
         df = pipeline.all_users_df() #TODO: let user choose
-        # end = time.time()
-        # print(end - start)
-        # print(df)
 
         df = df.iloc[3000:] #TODO erase late––
 
@@ -232,33 +220,25 @@ class SpamClassifier:
 
         # save model
         pickle.dump(model, open(model_path, 'wb'))
-        # end = time.time()
-        # print(end - start)
 
         return None
 
-    def inference(self):
+    def predict(self):
         # obtain df from pipleline
-        start = time.time()
         pipeline = UserPipeline()
         df = pipeline.all_users_df()
-        # end = time.time()
-        # print(end - start)
-        # print(df)
 
         # preprocess
-        X, _, uid_series = self.preprocess(df, 'inference')
+        X, _, uid_series = self.preprocess(df, 'predict')
 
         # load model
         model = pickle.load(open(model_path, 'rb'))
 
-        # inference 
-        confidence_socres = self.inference_xgboost_classifer(X, model)
+        # predict 
+        confidence_socres = self.predict_xgboost_classifer(X, model)
         
         # create return df
         confidence_socres_series = pd.Series(confidence_socres)
-        frame = {'user_id': uid_series.ravel() , 'spam_likely': confidence_socres_series.ravel()}
+        frame = {'user_id': uid_series.ravel() , 'is_spam_labelled_by_classifier': confidence_socres_series.ravel()} #TODO Aiko: reutrn confidence level also
         df = pd.DataFrame(frame)
-        # end = time.time()
-        # print(end - start)
         return df

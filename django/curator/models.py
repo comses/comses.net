@@ -316,9 +316,9 @@ class TagMigrator:
 
 class SpamRecommendation(models.Model):
     member_profile = models.OneToOneField(MemberProfile, on_delete=models.CASCADE, primary_key=True)
-    is_spam_labelled_by_classifier = models.BooleanField(default=None, null=True)
+    is_spam_labelled_by_classifier = models.BooleanField(default=None, null=True) # TODO Noel: add another field for Aiko's model's prediction
     is_spam_labelled_by_curator = models.BooleanField(default=None, null=True)
-    classifier_confidence = models.FloatField(default=0)
+    classifier_confidence = models.FloatField(default=0) # TODO Noel: add another field for the confidence level of Aiko's model's prediction
     last_updated_date = models.DateField(auto_now=True)
 
     @staticmethod
@@ -381,7 +381,7 @@ class BioSpamClassifier(object):
         prediction, probabilities = self.predict_spam(row['bio'])
         row['is_spam_labelled_by_classifier'] = prediction
         row['classifier_confidence'] = abs(probabilities[0] - probabilities[1])
-        row['is_spam_labelled_by_curator'] = False
+        row['is_spam_labelled_by_curator'] = False # TODO Noel: please don't overwite "is_spam_labelled_by_curator"
         return row
 
     def predict_all_unlabelled_users(self):
