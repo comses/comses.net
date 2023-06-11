@@ -47,7 +47,6 @@ class BioSpamClassifier(object):
     def fit_on_curator_labelled_recommendations(self):
         curator_labelled_recommendations = SpamRecommendation.objects.exclude(labelled_by_curator=None)
 
-        # TODO: I should split these up into their own functions 
         x_data = [[recommendation.bio] for recommendation in curator_labelled_recommendations]
         y_data = [recommendation.is_spam for recommendation in curator_labelled_recommendations]
 
@@ -63,7 +62,6 @@ class BioSpamClassifier(object):
         prediction, probabilities = self.predict_spam(row['bio'])
         row['labelled_by_bio_classifier'] = prediction
         row['bio_classifier_confidence'] = abs(probabilities[0] - probabilities[1])
-        row['labelled_by_curator'] = False # TODO Noel: please don't overwite "labelled_by_curator"
         return row
 
     def predict_all_unlabelled_users(self):

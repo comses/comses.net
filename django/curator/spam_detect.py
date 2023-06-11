@@ -1,4 +1,3 @@
-from core.models import MemberProfile
 import pandas as pd
 import numpy as np
 from django.contrib.auth.models import User
@@ -6,7 +5,9 @@ from django.db.models import Q
 from itertools import chain
 import warnings
 from datetime import datetime, timedelta
+
 from curator.models import SpamRecommendation
+from core.models import MemberProfile
 
 warnings.filterwarnings("ignore") #ignore warnings
 
@@ -105,10 +106,10 @@ class UserPipeline:
         return df
     
     def save_recommendations(self, spam_recommendation_df):
+        # TODO Noel: Update it to include Aiko's classifier fields as well.
         spam_recommendation_df = spam_recommendation_df[[
             'user__id', 
             'labelled_by_bio_classifier', 
-            'labelled_by_curator', 
             'bio_classifier_confidence'
         ]]
         spam_recommendation_df = spam_recommendation_df.replace(np.nan, None)
