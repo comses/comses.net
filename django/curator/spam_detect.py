@@ -105,6 +105,7 @@ class UserPipeline:
         return df
     
     def save_recommendations(self, spam_recommendation_df):
+        # TODO Noel: Update it to include Aiko's classifier fields as well.
         spam_recommendation_df = spam_recommendation_df[[
             'user__id', 
             'labelled_by_bio_classifier', 
