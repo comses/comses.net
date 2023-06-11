@@ -45,9 +45,8 @@ class BioSpamClassifier(object):
         self.save_model()
 
     def fit_on_curator_labelled_recommendations(self):
-        curator_labelled_recommendations = SpamRecommendation.objects.exclude(is_spam_labelled_by_curator=None)
+        curator_labelled_recommendations = SpamRecommendation.objects.exclude(labelled_by_curator=None)
 
-        # TODO: I should split these up into their own functions 
         x_data = [[recommendation.bio] for recommendation in curator_labelled_recommendations]
         y_data = [recommendation.is_spam for recommendation in curator_labelled_recommendations]
 
@@ -61,9 +60,8 @@ class BioSpamClassifier(object):
 
     def predict_row(self, row):
         prediction, probabilities = self.predict_spam(row['bio'])
-        row['is_spam_labelled_by_classifier'] = prediction
-        row['classifier_confidence'] = abs(probabilities[0] - probabilities[1])
-        row['is_spam_labelled_by_curator'] = False # TODO Noel: please don't overwite "is_spam_labelled_by_curator"
+        row['labelled_by_bio_classifier'] = prediction
+        row['bio_classifier_confidence'] = abs(probabilities[0] - probabilities[1])
         return row
 
     def predict_all_unlabelled_users(self):
@@ -160,7 +158,7 @@ class SpamClassifier:
         
         # create return df
         confidence_socres_series = pd.Series(confidence_socres)
-        frame = {'user_id': uid_series.ravel() , 'is_spam_labelled_by_classifier': confidence_socres_series.ravel()} #TODO Aiko: reutrn confidence level also
+        frame = {'user_id': uid_series.ravel() , 'labelled_by_bio_classifier': confidence_socres_series.ravel()} #TODO Aiko: reutrn confidence level also
         df = pd.DataFrame(frame)
         return df
     
@@ -192,15 +190,15 @@ class SpamClassifier:
 
     def preprocess(self, df, mode='predict'):
         # extract relavant columns
-        df['is_spam_labelled_by_curator'] = df['is_spam_labelled_by_curator'].fillna(0)
+        df['labelled_by_curator'] = df['labelled_by_curator'].fillna(0)
         df = df.fillna('')
-        df = df.filter(['user_id','is_spam_labelled_by_curator','first_name','last_name', 'is_active', 'email', 'affiliations', 'bio'], axis=1)
+        df = df.filter(['user_id','labelled_by_curator','first_name','last_name', 'is_active', 'email', 'affiliations', 'bio'], axis=1)
         df['affiliations'] =  df.apply(lambda row:self.__reform__affiliations(row['affiliations']), axis=1)
         df['is_active'] =  df.apply(lambda row:self.__reform__is_active(row['is_active']), axis=1)
 
         # tokenize
-        y = df['is_spam_labelled_by_curator']
-        X = df.drop(['is_spam_labelled_by_curator'], axis = 1)
+        y = df['labelled_by_curator']
+        X = df.drop(['labelled_by_curator'], axis = 1)
         if mode=='train':
             isTraining = True
             X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.15, random_state=434)
