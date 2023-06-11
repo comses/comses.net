@@ -1,4 +1,3 @@
-from core.models import MemberProfile
 import pandas as pd
 import numpy as np
 from django.contrib.auth.models import User
@@ -6,7 +5,9 @@ from django.db.models import Q
 from itertools import chain
 import warnings
 from datetime import datetime, timedelta
+
 from curator.models import SpamRecommendation
+from core.models import MemberProfile
 
 warnings.filterwarnings("ignore")  # ignore warnings
 
@@ -36,19 +37,19 @@ class UserPipeline:
         if SpamRecommendation.objects.all().exists() == False:
             self.initalize_SpamRecommendation()
 
-        # Update "is_spam_labelled_by_curator" field of the SpamRecommendation table
+        # Update "labelled_by_curator" field of the SpamRecommendation table
         label_df = pd.read_csv(filepath)
         for idx, row in label_df.iterrows():
-            SpamRecommendation.objects.filter(Q(member_profile__id=row['user_id']))[0].update(is_spam_labelled_by_curator=bool(row['is_spam']))
+            SpamRecommendation.objects.filter(Q(member_profile__id=row['user_id']))[0].update(labelled_by_curator=bool(row['is_spam']))
 
     def retrieve_spam_data(row):
-        row['is_spam_labelled_by_curator'] = False
-        row['is_spam_labelled_by_classifier'] = False
+        row['labelled_by_curator'] = False
+        row['labelled_by_bio_classifier'] = False
         if str(row['user__id']) != 'nan': 
             spam_recommendation = SpamRecommendation.objects.filter(Q(member_profile__id=row['user__id']))
             if len(spam_recommendation) > 0:
-                row['is_spam_labelled_by_curator'] = spam_recommendation[0].is_spam_labelled_by_curator
-                row['is_spam_labelled_by_classifier'] = spam_recommendation[0].is_spam_labelled_by_classifier
+                row['labelled_by_curator'] = spam_recommendation[0].labelled_by_curator
+                row['labelled_by_bio_classifier'] = spam_recommendation[0].labelled_by_bio_classifier
         return row
 
     def custom_query_df(self, query_set):
@@ -121,11 +122,11 @@ class UserPipeline:
         return df
     
     def save_recommendations(self, spam_recommendation_df):
+        # TODO Noel: Update it to include Aiko's classifier fields as well.
         spam_recommendation_df = spam_recommendation_df[[
             'user__id', 
-            'is_spam_labelled_by_classifier', 
-            'is_spam_labelled_by_curator', 
-            'classifier_confidence'
+            'labelled_by_bio_classifier', 
+            'bio_classifier_confidence'
         ]]
         spam_recommendation_df = spam_recommendation_df.replace(np.nan, None)
 
@@ -133,15 +134,15 @@ class UserPipeline:
             member_profile = MemberProfile.objects.filter(user__id=spam_recommendation.user__id)[0]
             spam_recommendation = SpamRecommendation(
                 member_profile=member_profile,
-                is_spam_labelled_by_classifier=spam_recommendation.is_spam_labelled_by_classifier,
-                classifier_confidence=spam_recommendation.classifier_confidence
+                labelled_by_bio_classifier=spam_recommendation.labelled_by_bio_classifier,
+                bio_classifier_confidence=spam_recommendation.bio_classifier_confidence
             )
             spam_recommendation.save()
         return spam_recommendation_df
     
     def filtered_by_labelled_df(self, is_labelled : bool):
-        if is_labelled == None: labelled_member_profiles = SpamRecommendation.objects.filter(is_spam_labelled_by_curator=is_labelled)
-        else:labelled_member_profiles = SpamRecommendation.objects.exclude(is_spam_labelled_by_curator=None)
+        if is_labelled == None: labelled_member_profiles = SpamRecommendation.objects.filter(labelled_by_curator=is_labelled)
+        else:labelled_member_profiles = SpamRecommendation.objects.exclude(labelled_by_curator=None)
 
         labelled_member_profiles = set([recommendation.member_profile.user.id for recommendation in labelled_member_profiles])
         unlabelled_member_profiles = MemberProfile.objects.all().values(*self.column_names)

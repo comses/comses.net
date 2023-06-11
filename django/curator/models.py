@@ -372,10 +372,14 @@ class CanonicalTagMapping(models.Model):
 
 class SpamRecommendation(models.Model):
     member_profile = models.OneToOneField(MemberProfile, on_delete=models.CASCADE, primary_key=True)
-    is_spam_labelled_by_classifier = models.BooleanField(default=None, null=True) # TODO Noel: add another field for Aiko's model's prediction
-    is_spam_labelled_by_curator = models.BooleanField(default=None, null=True)
-    classifier_confidence = models.FloatField(default=0) # TODO Noel: add another field for the confidence level of Aiko's model's prediction
-    last_updated_date = models.DateField(auto_now=True)
+    labelled_by_bio_classifier = models.BooleanField(default=None, null=True) 
+    bio_classifier_confidence = models.FloatField(default=0) 
+
+    labelled_by_user_classifier = models.BooleanField(default=None, null=True) 
+    user_classifier_confidence = models.FloatField(default=0) 
+
+    labelled_by_curator = models.BooleanField(default=None, null=True)
+    date_updated = models.DateField(auto_now=True)
 
     @staticmethod
     def get_recommendations_sorted_by_confidence():
