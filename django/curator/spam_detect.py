@@ -108,7 +108,6 @@ class UserPipeline:
         spam_recommendation_df = spam_recommendation_df[[
             'user__id', 
             'labelled_by_bio_classifier', 
-            'labelled_by_curator', 
             'bio_classifier_confidence'
         ]]
         spam_recommendation_df = spam_recommendation_df.replace(np.nan, None)
