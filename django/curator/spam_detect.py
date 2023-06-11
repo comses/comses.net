@@ -1,4 +1,3 @@
-from core.models import MemberProfile
 import pandas as pd
 import numpy as np
 from django.contrib.auth.models import User
@@ -6,7 +5,9 @@ from django.db.models import Q
 from itertools import chain
 import warnings
 from datetime import datetime, timedelta
+
 from curator.models import SpamRecommendation
+from core.models import MemberProfile
 
 warnings.filterwarnings("ignore") #ignore warnings
 
