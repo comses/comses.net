@@ -1,10 +1,11 @@
 import pandas as pd
 import numpy as np
+import re
 from django.contrib.auth.models import User
 from django.db.models import Q
 from itertools import chain
 import warnings
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
 
 from curator.models import SpamRecommendation
 from core.models import MemberProfile
@@ -14,30 +15,61 @@ warnings.filterwarnings("ignore")  # ignore warnings
 
 class UserPipeline:
     def __init__(self):
+        self.column_names = [
+                'member_profile__user_id',
+                'member_profile__user__first_name',
+                'member_profile__user__last_name',
+                'member_profile__user__is_active',
+                'member_profile__user__email',
+                'member_profile__timezone',
+                'member_profile__affiliations',
+                'member_profile__bio',
+                'member_profile__research_interests',
+                'member_profile__personal_url',
+                'member_profile__professional_url',
+                'labelled_by_curator',
+                'labelled_by_bio_classifier',
+                'labelled_by_user_classifier']
         
-        self.column_names = ['user__first_name',
-                'user__last_name',
-                'user__is_active',
-                'user__email',
-                'timezone',
-                'affiliations',
-                'bio',
-                'research_interests',
-                'personal_url',
-                'professional_url',
-                'user__id']
+        self.type_int_bool_column_names = [
+                'member_profile__user_id',
+                'labelled_by_curator',
+                # 'member_profile__user__is_active',
+                # 'labelled_by_bio_classifier',
+                # 'labelled_by_user_classifier'
+                ]
+
+    def __rename_columns(self, df):
+        df.rename(columns = {
+                self.column_names[0]: 'user_id',
+                self.column_names[1]: 'first_name',
+                self.column_names[2]: 'last_name',
+                self.column_names[3]: 'is_active',
+                self.column_names[4]: 'email',
+                self.column_names[5]: 'timezone',
+                self.column_names[6]: 'affiliations',
+                self.column_names[7]: 'bio',
+                self.column_names[8]: 'research_interests',
+                self.column_names[9]: 'personal_url',
+                self.column_names[10]: 'professional_url'}, inplace = True)
+        return df
     
-    def initalize_SpamRecommendation(self):
-        # Initalize the SpamRecommendation table
-        member_profiles = MemberProfile.objects.all()
-        for profile in member_profiles:
-            SpamRecommendation(member_profile=profile).save()
-
-    def load_labels(self, filepath): #TODO Aiko: check whether SpamRecommendation has correct field
+    def __convert_df_markup_to_string(self, df): # TODO: conbine with Noel's conversion function
+        for col in df.columns:
+            if col in self.type_int_bool_column_names:
+                df[col] = df[col].values.astype('int')
+            else:
+                df[col] = df[col].apply(lambda text: re.sub(r'<.*?>', ' ', str(text))) # Remove markdown
+        return df
+    
+    def load_labels(self, filepath="dataset.csv"):
+        # This function updates "labelled_by_curator" field of the SpamRecommendation table bsed on external dataset file.
+        # Dataset should have columns named "user_id" and "is_spam"
+        # param : filepath of dataset to be loaded
         if SpamRecommendation.objects.all().exists() == False:
-            self.initalize_SpamRecommendation()
+            for profile in MemberProfile.objects.all():
+                SpamRecommendation(member_profile=profile).save()
 
-        # Update "labelled_by_curator" field of the SpamRecommendation table
         label_df = pd.read_csv(filepath)
         for idx, row in label_df.iterrows():
             SpamRecommendation.objects.filter(Q(member_profile__id=row['user_id']))[0].update(labelled_by_curator=bool(row['is_spam']))
@@ -124,7 +156,7 @@ class UserPipeline:
     def save_recommendations(self, spam_recommendation_df):
         # TODO Noel: Update it to include Aiko's classifier fields as well.
         spam_recommendation_df = spam_recommendation_df[[
-            'user__id', 
+            'user_id', 
             'labelled_by_bio_classifier', 
             'bio_classifier_confidence'
         ]]
