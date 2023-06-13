@@ -11,6 +11,8 @@ from collections import defaultdict
 import modelcluster.fields
 from django.contrib.postgres.aggregates import ArrayAgg
 from django.db import models, transaction
+from django.db.models.signals import post_save
+from django.dispatch import receiver
 from django.urls import reverse
 from nltk.corpus import stopwords
 from nltk.stem import PorterStemmer
@@ -334,3 +336,8 @@ class SpamRecommendation(models.Model):
             str(self.labelled_by_curator), 
             str(self.date_updated)
         )
+
+# Create a new SpamReccomendation whenever a new MemberProfile is created
+@receiver(post_save, sender=MemberProfile)
+def sync_member_profile_spam(sender, instance, **kwargs):
+    SpamRecommendation(member_profile=instance).save()
