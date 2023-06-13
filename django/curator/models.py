@@ -10,6 +10,8 @@ from django.contrib.auth.models import User
 from django.contrib.postgres.aggregates import ArrayAgg
 from django.contrib.postgres.fields import ArrayField
 from django.db import models, transaction
+from django.db.models.signals import post_save
+from django.dispatch import receiver
 from django.urls import reverse
 from modelcluster import fields
 from nltk.corpus import stopwords
@@ -373,13 +375,15 @@ class SpamRecommendation(models.Model):
 
     labelled_by_curator = models.BooleanField(default=None, null=True)
     date_updated = models.DateField(auto_now=True)
+    
+    was_used_for_train = models.BooleanField(default=None, null=True)
 
     @staticmethod
     def get_recommendations_sorted_by_confidence():
         return SpamRecommendation.objects.all().order_by('bio_classifier_confidence')
     
     def __str__(self):
-        return "user={}, labelled_by_bio_classifier={}, bio_classifier_confidence={}, labelled_by_user_classifier={}, user_classifier_confidence={}, date_updated={}".format(
+        return "user={}, labelled_by_bio_classifier={}, bio_classifier_confidence={}, labelled_by_user_classifier={}, user_classifier_confidence={}, labelled_by_curator={}, date_updated={}".format(
             str(self.member_profile), 
             str(self.labelled_by_bio_classifier), 
             str(self.bio_classifier_confidence),
@@ -388,5 +392,12 @@ class SpamRecommendation(models.Model):
             str(self.user_classifier_confidence),
 
             str(self.labelled_by_curator), 
-            str(self.date_updated)
+            str(self.date_updated),
+
+            str(self.was_used_for_train)
         )
+
+# Create a new SpamReccomendation whenever a new MemberProfile is created
+@receiver(post_save, sender=MemberProfile)
+def sync_member_profile_spam(sender, instance, **kwargs):
+    SpamRecommendation(member_profile=instance).save()
