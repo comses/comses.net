@@ -6,13 +6,14 @@ from django.core.management.base import BaseCommand
 from curator.models import TagCleanup, PENDING_TAG_CLEANUPS_FILENAME
 # from curator.spam_detection_models import SpamClassifier
 from curator.spam_detect import UserPipeline
+from curator.spam_detection_model import SpamClassifier
 
 logger = logging.getLogger(__name__)
 
 
 class Command(BaseCommand):
     help = "Perform spam detection"
-
+    pipeline = UserPipeline()
     def add_arguments(self, parser):
         parser.add_argument("--init_table", "-i", action="store_true", default=False, help="initialize SpamRecommendation table. ")
         parser.add_argument("--load", "-l", action="store_true", default=False, help="save initial dataset to the DB (SpamRecommendation table). ")
@@ -29,13 +30,16 @@ class Command(BaseCommand):
         pipeline.load_labels(load_directory)
 
     def handle_train(self):
-        print('call SpamClassifier func') #TODO
+        classifier = SpamClassifier()
+        classifier.train()
 
     def handle_predict(self):
-        print('call SpamClassifier func') #TODO
+        classifier = SpamClassifier()
+        classifier.predict()
 
     def handle_p_train(self):
-        print('call SpamClassifier func') #TODO
+        classifier = SpamClassifier()
+        classifier.partial_train()
 
     def handle(self, *args, **options):
         init_table = options["init_table"]
@@ -45,7 +49,7 @@ class Command(BaseCommand):
         p_train = options["p_train"]
 
         # load_directory = pathlib.Path("/shared/incoming/curator/tags")
-        load_directory = pathlib.Path("curator/dataset.csv") #TODO check for the right place to store files
+        load_directory = pathlib.Path("/shared/curator/dataset.csv") #TODO check for the right place to store files
         
         if init_table:
             self.handle_init_table()
