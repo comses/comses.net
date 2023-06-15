@@ -4,6 +4,7 @@ import json
 import pickle
 import logging
 import itertools
+from datetime import datetime
 from typing import List
 from urllib.parse import urlparse
 from collections import defaultdict
@@ -309,7 +310,8 @@ class TagMigrator:
                 self.copy_through_model_refs(model, new_tags=new_tags, old_tag=old_tag)
             old_tag.delete()
 
-class SpamRecommendation(models.Model):
+class SpamRecommendation(models.Model): 
+    #TODO : change names of fileds
     member_profile = models.OneToOneField(MemberProfile, on_delete=models.CASCADE, primary_key=True)
     labelled_by_bio_classifier = models.BooleanField(default=None, null=True) 
     bio_classifier_confidence = models.FloatField(default=0) 
@@ -319,6 +321,8 @@ class SpamRecommendation(models.Model):
 
     labelled_by_curator = models.BooleanField(default=None, null=True)
     date_updated = models.DateField(auto_now=True)
+    
+    was_used_for_train = models.BooleanField(default=None, null=True)
 
     @staticmethod
     def get_recommendations_sorted_by_confidence():
@@ -334,7 +338,9 @@ class SpamRecommendation(models.Model):
             str(self.user_classifier_confidence),
 
             str(self.labelled_by_curator), 
-            str(self.date_updated)
+            str(self.date_updated),
+
+            str(self.was_used_for_train)
         )
 
 # Create a new SpamReccomendation whenever a new MemberProfile is created
