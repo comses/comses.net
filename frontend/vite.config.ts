@@ -33,6 +33,7 @@ export default defineConfig({
     outDir: "/shared/vite/bundles",
     manifest: true,
     rollupOptions: {
+      external: [/holder\.js.*/],
       input: {
         main: resolvePath("./src/apps/main.ts"),
         codebase_list: resolvePath("./src/apps/codebase_list.ts"),

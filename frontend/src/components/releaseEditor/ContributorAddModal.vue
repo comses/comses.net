@@ -4,7 +4,7 @@
     class="btn btn-primary"
     :class="{ disabled: disabled }"
     rel="nofollow"
-    @click="editContributorModal.show()"
+    @click="editContributorModal?.show()"
   >
     <i class="fas fa-plus-square me-1"></i> Add a Contributor
   </button>
@@ -50,14 +50,14 @@
         id="add-contributor-form"
         :show-custom-input="showCustomInput"
         ref="editFormRef"
-        @success="() => editContributorModal.hide()"
+        @success="() => editContributorModal?.hide()"
       />
     </template>
   </BootstrapModal>
 </template>
 <script setup lang="ts">
 import { ref } from "vue";
-import type { Modal } from "bootstrap";
+import type Modal from "bootstrap/js/dist/modal";
 import BootstrapModal from "@/components/BootstrapModal.vue";
 import ContributorSearch from "@/components/releaseEditor/ContributorSearch.vue";
 import ContributorEditForm from "@/components/releaseEditor/ContributorEditForm.vue";
@@ -72,7 +72,7 @@ const props = withDefaults(
   }
 );
 
-const editContributorModal = ref<typeof Modal>();
+const editContributorModal = ref<Modal>();
 const editFormRef = ref<InstanceType<typeof ContributorEditForm> | null>(null);
 
 const showCustomInput = ref(false);

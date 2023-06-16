@@ -56,6 +56,8 @@ BASE_DIR = os.path.dirname(PROJECT_DIR)
 
 DEBUG = True
 
+DJANGO_VITE_DEV_MODE = True
+
 # Base URL to use when referring to full URLs within the Wagtail admin backend -
 # e.g. in notification emails. Don't include '/admin' or a trailing slash
 # FIXME: needs to be overridden in staging and prod after updating DEPLOY_ENVIRONMENT which is less than ideal
@@ -403,7 +405,6 @@ STATICFILES_FINDERS = [
 # django-vite settings
 DJANGO_VITE_ASSETS_PATH = config.get("storage", "VITE_ROOT", fallback="/shared/vite")
 DJANGO_VITE_STATIC_URL_PREFIX = "bundles"
-DJANGO_VITE_DEV_MODE = DEBUG
 DJANGO_VITE_DEV_SERVER_PORT = 5000
 DJANG_VITE_MANIFEST_PATH = os.path.join(
     DJANGO_VITE_ASSETS_PATH, DJANGO_VITE_STATIC_URL_PREFIX, "manifest.json"

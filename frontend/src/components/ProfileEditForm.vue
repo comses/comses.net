@@ -13,7 +13,7 @@
           <img
             class="mt-3 d-block rounded img-fluid img-thumbnail"
             alt="Click to edit"
-            src="holder.js/150x150?text=Click to edit"
+            data-src="holder.js/150x150?text=Click to edit"
             v-else
           />
         </label>

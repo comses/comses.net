@@ -1,5 +1,5 @@
 <template>
-  <button type="button" :class="buttonClass" rel="nofollow" @click="editCodebaseModal.show()">
+  <button type="button" :class="buttonClass" rel="nofollow" @click="editCodebaseModal?.show()">
     <i class="fas fa-edit"></i> Edit Common Metadata
   </button>
   <BootstrapModal
@@ -26,7 +26,7 @@
 
 <script setup lang="ts">
 import { ref } from "vue";
-import type { Modal } from "bootstrap";
+import type Modal from "bootstrap/js/dist/modal";
 import BootstrapModal from "@/components/BootstrapModal.vue";
 import CodebaseEditForm from "@/components/CodebaseEditForm.vue";
 import { useReleaseEditorStore } from "@/stores/releaseEditor";
@@ -36,12 +36,12 @@ const props = defineProps<{
   identifier: string;
 }>();
 
-const editCodebaseModal = ref<typeof Modal>();
+const editCodebaseModal = ref<Modal>();
 
 const store = useReleaseEditorStore();
 
 async function handleSuccess() {
   await store.initialize(store.identifier, store.versionNumber);
-  editCodebaseModal.value.hide();
+  editCodebaseModal.value?.hide();
 }
 </script>

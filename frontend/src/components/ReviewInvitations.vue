@@ -20,7 +20,7 @@
           <img
             v-else
             class="d-block img-thumbnail"
-            src="holder.js/100x100?text=No Picture Available"
+            data-src="holder.js/100x100?text=No Picture Available"
             alt="No Picture Available"
           />
         </div>
@@ -55,7 +55,7 @@
           <img
             v-else
             class="d-block img-thumbnail"
-            src="holder.js/100x100?text=No Picture Available"
+            data-src="holder.js/100x100?text=No Picture Available"
             alt="No Picture Available"
           />
         </div>

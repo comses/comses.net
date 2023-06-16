@@ -2,7 +2,7 @@
   <button v-if="store.release.live" type="button" :class="`${buttonClass} disabled`">
     <i class="fas fa-share-alt"></i> Published
   </button>
-  <button v-else :class="buttonClass" rel="nofollow" @click="publishModal.show()">
+  <button v-else :class="buttonClass" rel="nofollow" @click="publishModal?.show()">
     <i class="fas fa-share-alt"></i> Publish
   </button>
   <BootstrapModal id="publish-modal" title="Publish Release" ref="publishModal" size="lg" centered>
@@ -50,7 +50,7 @@
 <script setup lang="ts">
 import * as yup from "yup";
 import { onMounted, ref, watch } from "vue";
-import type { Modal } from "bootstrap";
+import type Modal from "bootstrap/js/dist/modal";
 import BootstrapModal from "@/components/BootstrapModal.vue";
 import TextField from "@/components/form/TextField.vue";
 import FormAlert from "@/components/form/FormAlert.vue";
@@ -64,7 +64,7 @@ const props = defineProps<{
 
 const store = useReleaseEditorStore();
 
-const publishModal = ref<typeof Modal>();
+const publishModal = ref<Modal>();
 
 const schema = yup.object().shape({
   version_number: yup

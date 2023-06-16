@@ -75,7 +75,7 @@
 import * as yup from "yup";
 import { ref } from "vue";
 import { isEmpty } from "lodash-es";
-import type { Modal } from "bootstrap";
+import type Modal from "bootstrap/js/dist/modal";
 import type { Organization } from "@/types";
 import BootstrapModal from "@/components/BootstrapModal.vue";
 import BootstrapTooltip from "@/components/BootstrapTooltip.vue";
@@ -99,7 +99,7 @@ export interface ReleaseDownloadFormProps {
 
 const props = defineProps<ReleaseDownloadFormProps>();
 
-const modal = ref<typeof Modal>();
+const modal = ref<Modal>();
 
 const schema = yup.object().shape({
   industry: yup.string().required(),

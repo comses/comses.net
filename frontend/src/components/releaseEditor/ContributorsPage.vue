@@ -81,7 +81,7 @@
               :class="{ disabled: reordered }"
               @click="
                 editCandidate = element;
-                editModal.show();
+                editModal?.show();
               "
             >
               <small><i class="fas fa-edit"></i> Edit</small>
@@ -92,7 +92,7 @@
               :class="{ disabled: reordered }"
               @click="
                 removalCondidate = element;
-                removeConfirmationModal.show();
+                removeConfirmationModal?.show();
               "
             >
               <small>Remove</small>
@@ -142,7 +142,7 @@
           id="edit-contributor-form"
           :show-custom-input="true"
           :contributor="editCandidate"
-          @success="() => editModal.hide()"
+          @success="() => editModal?.hide()"
         />
       </template>
     </BootstrapModal>
@@ -151,7 +151,7 @@
 <script setup lang="ts">
 import { onMounted, ref, watchEffect } from "vue";
 import { Sortable } from "sortablejs-vue3";
-import type { Modal } from "bootstrap";
+import type Modal from "bootstrap/js/dist/modal";
 import BootstrapModal from "@/components/BootstrapModal.vue";
 import ContributorAddModal from "@/components/releaseEditor/ContributorAddModal.vue";
 import ContributorEditForm from "@/components/releaseEditor/ContributorEditForm.vue";
@@ -162,8 +162,8 @@ import { useReleaseEditorAPI } from "@/composables/api";
 
 const store = useReleaseEditorStore();
 
-const removeConfirmationModal = ref<typeof Modal>();
-const editModal = ref<typeof Modal>();
+const removeConfirmationModal = ref<Modal>();
+const editModal = ref<Modal>();
 
 const roleLookup = {
   author: "Author",
@@ -208,7 +208,7 @@ async function removeContributor() {
   if (index === undefined) return;
   releaseContributors.value.splice(index, 1);
   await save(() => {
-    removeConfirmationModal.value.hide();
+    removeConfirmationModal.value?.hide();
   });
 }
 

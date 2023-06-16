@@ -12,7 +12,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from "vue";
-import { Tooltip } from "bootstrap";
+import Tooltip from "bootstrap/js/dist/tooltip";
 
 export interface TooltipProps {
   title: string;
@@ -29,7 +29,7 @@ const props = withDefaults(defineProps<TooltipProps>(), {
 
 const info = ref(null);
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-let tooltip: typeof Tooltip | undefined;
+let tooltip: Tooltip | undefined;
 
 onMounted(() => {
   tooltip = new Tooltip(info.value!);

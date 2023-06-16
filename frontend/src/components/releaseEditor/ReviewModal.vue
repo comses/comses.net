@@ -1,6 +1,6 @@
 <template>
   <span v-if="canRequest">
-    <button type="button" :class="buttonClass" rel="nofollow" @click="reviewRequestModal.show()">
+    <button type="button" :class="buttonClass" rel="nofollow" @click="reviewRequestModal?.show()">
       Request Peer Review
     </button>
     <BootstrapModal
@@ -27,7 +27,7 @@
   </span>
 
   <span v-else-if="canNotify">
-    <button type="button" :class="buttonClass" rel="nofollow" @click="reviewNotifyModal.show()">
+    <button type="button" :class="buttonClass" rel="nofollow" @click="reviewNotifyModal?.show()">
       Request Peer Review
     </button>
     <BootstrapModal
@@ -50,7 +50,7 @@
 
 <script setup lang="ts">
 import { computed, ref } from "vue";
-import type { Modal } from "bootstrap";
+import type Modal from "bootstrap/js/dist/modal";
 import BootstrapModal from "@/components/BootstrapModal.vue";
 import FormAlert from "@/components/form/FormAlert.vue";
 import { useAxios } from "@/composables/api";
@@ -71,8 +71,9 @@ const canNotify = computed(() => {
   return store.release.review_status === "awaiting_author_changes";
 });
 
-const reviewRequestModal = ref<typeof Modal>();
+const reviewRequestModal = ref<Modal>();
 const reviewRequestErrors = ref<string[]>([]);
+
 async function submitReviewRequest() {
   await post(store.release.urls.request_peer_review ?? "", null, {
     onSuccess(response) {
@@ -88,13 +89,14 @@ async function submitReviewRequest() {
   });
 }
 
-const reviewNotifyModal = ref<typeof Modal>();
+const reviewNotifyModal = ref<Modal>();
 const reviewNotifyErrors = ref<string[]>([]);
+
 async function submitReviewNotify() {
   await post(store.release.urls.notify_reviewers_of_changes ?? "", null, {
     onSuccess(response) {
       store.release.review_status = response.data.review_status;
-      reviewNotifyModal.value.hide();
+      reviewNotifyModal.value?.hide();
     },
     onError(error) {
       if (error.response) {
