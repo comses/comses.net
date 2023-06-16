@@ -103,7 +103,9 @@ const {
   removeUnsavedAlertListener,
 } = useForm<CodebaseEditFields>({
   schema,
-  initialValues: {},
+  initialValues: {
+    tags: [],
+  },
   showPlaceholder: isLoading,
   onSubmit: async () => {
     await createOrUpdate();

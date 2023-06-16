@@ -99,7 +99,9 @@ const {
   removeUnsavedAlertListener,
 } = useForm<JobEditFields>({
   schema,
-  initialValues: {},
+  initialValues: {
+    tags: [],
+  },
   showPlaceholder: isLoading,
   onSubmit: async () => {
     await createOrUpdate();

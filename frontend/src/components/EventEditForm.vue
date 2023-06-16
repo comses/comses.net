@@ -150,7 +150,9 @@ const {
   removeUnsavedAlertListener,
 } = useForm<EventEditFields>({
   schema,
-  initialValues: {},
+  initialValues: {
+    tags: [],
+  },
   showPlaceholder: isLoading,
   onSubmit: async () => {
     await createOrUpdate();

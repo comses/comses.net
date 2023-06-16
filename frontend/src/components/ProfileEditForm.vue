@@ -221,7 +221,9 @@ const {
   removeUnsavedAlertListener,
 } = useForm<ProfileEditFields>({
   schema,
-  initialValues: {},
+  initialValues: {
+    tags: [],
+  },
   showPlaceholder: isLoading,
   onSubmit: async () => {
     await update(props.userId, values, {
