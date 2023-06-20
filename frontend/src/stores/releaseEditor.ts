@@ -25,23 +25,23 @@ export const useReleaseEditorStore = defineStore("releaseEditor", () => {
   });
 
   const versionNumber = computed(() => {
-    return release.value.version_number;
+    return release.value.versionNumber;
   });
 
   const metadata = computed(() => {
     return {
-      release_notes: release.value.release_notes,
-      embargo_end_date: release.value.embargo_end_date,
+      releaseNotes: release.value.releaseNotes,
+      embargoEndDate: release.value.embargoEndDate,
       os: release.value.os,
       platforms: release.value.platforms,
-      programming_languages: release.value.programming_languages,
+      programmingLanguages: release.value.programmingLanguages,
       live: release.value.live,
       license: release.value.license || undefined,
     };
   });
 
   const releaseContributors = computed(() => {
-    return release.value.release_contributors;
+    return release.value.releaseContributors;
   });
 
   // actions
@@ -129,68 +129,68 @@ const INITIAL_STATE: CodebaseReleaseEditorState = {
     media: [],
   },
   release: {
-    absolute_url: "",
+    absoluteUrl: "",
     citationText: "",
     codebase: {
-      absolute_url: "",
-      all_contributors: [],
-      associated_publication_text: "",
-      date_created: new Date("2006-01-01"),
+      absoluteUrl: "",
+      allContributors: [],
+      associatedPublicationText: "",
+      dateCreated: new Date("2006-01-01"),
       description: "",
       doi: null,
-      download_count: 0,
-      featured_image: null,
-      first_published_at: null,
+      downloadCount: 0,
+      featuredImage: null,
+      firstPublishedAt: null,
       id: 0,
       identifier: "",
-      last_published_on: null,
-      latest_version_number: "",
-      peer_reviewed: false,
-      references_text: "",
+      lastPublishedOn: null,
+      latestVersionNumber: "",
+      peerReviewed: false,
+      referencesText: "",
       releases: [],
-      replication_text: "",
-      repository_url: "",
+      replicationText: "",
+      repositoryUrl: "",
       submitter: {
         name: "",
-        profile_url: "",
+        profileUrl: "",
         username: "",
       },
-      summarized_description: "",
+      summarizedDescription: "",
       tags: [],
       title: "",
     },
-    date_created: new Date("2006-01-01"),
+    dateCreated: new Date("2006-01-01"),
     dependencies: null,
     documentation: null,
     doi: null,
-    embargo_end_date: null,
-    first_published_at: null,
+    embargoEndDate: null,
+    firstPublishedAt: null,
     identifier: "",
-    last_modified: null,
-    last_published_on: null,
+    lastModified: null,
+    lastPublishedOn: null,
     license: null,
     live: false,
     os: "",
-    os_display: "",
-    peer_reviewed: false,
+    osDisplay: "",
+    peerReviewed: false,
     platforms: [],
-    possible_licenses: [],
-    programming_languages: [],
-    release_contributors: [],
-    release_notes: "",
-    review_status: null,
-    share_url: null,
-    submitted_package: null,
+    possibleLicenses: [],
+    programmingLanguages: [],
+    releaseContributors: [],
+    releaseNotes: "",
+    reviewStatus: null,
+    shareUrl: null,
+    submittedPackage: null,
     submitter: {
       name: "",
-      profile_url: "",
+      profileUrl: "",
       username: "",
     },
     urls: {
-      request_peer_review: null,
+      requestPeerReview: null,
       review: null,
-      notify_reviewers_of_changes: null,
+      notifyReviewersOfChanges: null,
     },
-    version_number: "",
+    versionNumber: "",
   },
 };

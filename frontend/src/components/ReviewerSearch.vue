@@ -35,7 +35,7 @@
           <div class="row">
             <div class="col-2">
               <img
-                :src="option.avatar_url"
+                :src="option.avatarUrl"
                 alt="No picture available"
                 class="d-block img-fluid img-thumbnail"
               />

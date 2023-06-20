@@ -8,8 +8,12 @@
     <template #form>
       <form @submit="handleSubmit">
         <TaggerField class="mb-3" name="tags" label="Keywords" type="Event" />
-        <DatepickerField class="mb-3" name="submissionDeadline" label="Submission Deadline" />
-        <DatepickerField name="startDate" label="Event Start Date" />
+        <DatepickerField
+          class="mb-3"
+          name="submissionDeadlineAfter"
+          label="Submission Deadline After"
+        />
+        <DatepickerField name="startDateAfter" label="Starts After" />
       </form>
     </template>
   </ListSidebar>
@@ -25,15 +29,15 @@ import { useForm } from "@/composables/form";
 import { useEventAPI } from "@/composables/api";
 
 const schema = yup.object({
-  startDate: yup.date(),
-  submissionDeadline: yup.date(),
+  startDateAfter: yup.date(),
+  submissionDeadlineAfter: yup.date(),
   tags: yup.array().of(yup.object().shape({ name: yup.string().required() })),
 });
 type SearchFields = yup.InferType<typeof schema>;
 
 const { handleSubmit, values } = useForm<SearchFields>({
   schema,
-  initialValues: {},
+  initialValues: { tags: [] },
   onSubmit: () => {
     window.location.href = query.value;
   },
@@ -46,8 +50,8 @@ const query = computed(() => {
   const query = url.get("query") ?? "";
   return searchUrl({
     query,
-    start_date__gte: values.startDate?.toISOString(),
-    submission_deadline__gte: values.submissionDeadline?.toISOString(),
+    startDateAfter: values.startDateAfter?.toISOString(),
+    submissionDeadlineAfter: values.submissionDeadlineAfter?.toISOString(),
     tags: values.tags?.map(tag => tag.name),
   });
 });

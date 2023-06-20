@@ -31,13 +31,13 @@
     </MarkdownField>
     <TextField
       class="mb-3"
-      name="external_url"
+      name="externalUrl"
       label="Event Job URL"
       help="URL for this job on an external website"
     />
     <DatepickerField
       class="mb-3"
-      name="application_deadline"
+      name="applicationDeadline"
       label="Application Deadline"
       help="The last day to apply to the job"
       :min-date="new Date()"
@@ -75,7 +75,7 @@ const props = defineProps<{
 const schema = yup.object().shape({
   title: yup.string().required(),
   description: yup.string().required(),
-  application_deadline: yup
+  applicationDeadline: yup
     .date()
     .min(new Date(), "Please enter a valid date after today's date.")
     .required(),
@@ -84,7 +84,7 @@ const schema = yup.object().shape({
     .array()
     .of(yup.object().shape({ name: yup.string().required() }))
     .min(0),
-  external_url: yup.string().url("Please enter a valid URL").nullable(),
+  externalUrl: yup.string().url("Please enter a valid URL").nullable(),
 });
 type JobEditFields = yup.InferType<typeof schema>;
 

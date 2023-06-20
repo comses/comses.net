@@ -8,8 +8,8 @@ createApp(CodebaseListSidebar).mount("#sidebar");
 createApp(SortBy, {
   sortOptions: [
     { value: "", label: "Relevance" },
-    { value: "-first_published_at", label: "Publish date: newest" },
-    { value: "first_published_at", label: "Publish date: oldest" },
-    { value: "last_modified", label: "Recently Modified" },
+    { value: "-firstPublishedAt", label: "Publish date: newest" },
+    { value: "firstPublishedAt", label: "Publish date: oldest" },
+    { value: "lastModified", label: "Recently Modified" },
   ],
 }).mount("#sortby");

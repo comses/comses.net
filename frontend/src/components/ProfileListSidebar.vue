@@ -35,7 +35,7 @@ type SearchFields = yup.InferType<typeof schema>;
 
 const { handleSubmit, values } = useForm<SearchFields>({
   schema,
-  initialValues: {},
+  initialValues: { tags: [] },
   onSubmit: () => {
     window.location.href = query.value;
   },

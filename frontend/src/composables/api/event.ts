@@ -4,8 +4,8 @@ import { parseDates } from "@/util";
 
 interface EventQueryParams {
   query?: string;
-  start_date__gte?: string;
-  submission_deadline__gte?: string;
+  startDateAfter?: string;
+  submissionDeadlineAfter?: string;
   tags?: string[];
 }
 
@@ -23,12 +23,12 @@ export function useEventAPI() {
     return get(detailUrl(id), {
       parser: data => {
         parseDates(data, [
-          "early_registration_deadline",
-          "registration_deadline",
-          "submission_deadline",
-          "start_date",
-          "end_date",
-          "last_modified",
+          "earlyRegistrationDeadline",
+          "registrationDeadline",
+          "submissionDeadline",
+          "startDate",
+          "endDate",
+          "lastModified",
         ]);
       },
     });

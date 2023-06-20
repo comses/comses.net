@@ -28,9 +28,9 @@
         and remains backwards compatible (sans the bugs of course!).
       </p>
       <form id="publish-form" class="mb-3" @submit="handleSubmit">
-        <TextField name="version_number" label="Version Number" help="" required>
+        <TextField name="versionNumber" label="Version Number" help="" required>
           <template #help>
-            <small class="form-text text-muted" aria-describedby="version_number">
+            <small class="form-text text-muted" aria-describedby="versionNumber">
               <a target="_blank" href="https://semver.org/">more info on semantic versioning</a>
             </small>
             <small class="form-text text-muted"> </small>
@@ -67,7 +67,7 @@ const store = useReleaseEditorStore();
 const publishModal = ref<Modal>();
 
 const schema = yup.object().shape({
-  version_number: yup
+  versionNumber: yup
     .string()
     .required()
     .matches(
@@ -83,23 +83,23 @@ const { errors, handleSubmit, values, setValues } = useForm<PublishFields>({
   schema,
   initialValues: {},
   onSubmit: async () => {
-    await publish(store.identifier, store.release.version_number, values);
+    await publish(store.identifier, store.release.versionNumber, values);
     if (serverErrors.value.length === 0) {
-      window.location.href = detailUrl(store.identifier, values.version_number!);
+      window.location.href = detailUrl(store.identifier, values.versionNumber!);
     }
   },
 });
 
 onMounted(() => {
   if (store.isInitialized) {
-    setValues({ version_number: store.release.version_number });
+    setValues({ versionNumber: store.release.versionNumber });
   }
 });
 
 watch(
   () => store.isInitialized,
   () => {
-    setValues({ version_number: store.release.version_number });
+    setValues({ versionNumber: store.release.versionNumber });
   }
 );
 </script>

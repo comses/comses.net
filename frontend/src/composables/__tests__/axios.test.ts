@@ -35,7 +35,7 @@ describe("parseValidationError", () => {
   test("should parse validation error response", () => {
     const errorResponse = {
       data: {
-        non_field_errors: ["Invalid email or password."],
+        nonFieldErrors: ["Invalid email or password."],
         email: ["This field is required."],
         password: ["This field is required."],
         contributor: { user: { email: ["Email must be valid"] } }, // nested errors

@@ -236,11 +236,13 @@ class EventFilter(filters.BaseFilterBackend):
             return queryset
         query_string = request.query_params.get("query")
         query_params = request.query_params
+        logger.debug(query_params)
         submission_deadline__gte = parse_datetime(
             query_params.get("submission_deadline__gte")
+            or query_params.get("submission_deadline_after")
         )
         start_date__gte = parse_datetime(
-            query_params.get("start_date__gte") or query_params.get("start_date")
+            query_params.get("start_date__gte") or query_params.get("start_date_after")
         )
         tags = request.query_params.getlist("tags")
 
@@ -355,9 +357,13 @@ class JobFilter(filters.BaseFilterBackend):
         if view.action != "list":
             return queryset
         qs = request.query_params.get("query")
-        date_created = parse_datetime(request.query_params.get("date_created__gte"))
+        date_created = parse_datetime(
+            request.query_params.get("date_created__gte")
+            or request.query_params.get("date_created_after")
+        )
         application_deadline = parse_datetime(
             request.query_params.get("application_deadline__gte")
+            or request.query_params.get("application_deadline_after")
         )
         tags = request.query_params.getlist("tags")
         criteria = {}

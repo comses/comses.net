@@ -72,7 +72,7 @@ function userDisplay(user: any) {
   if (user.name !== user.username) {
     displayName = `${user.name} (${user.username})`;
   }
-  return `${displayName}${user.institution_name ? `, ${user.institution_name}` : ""}`;
+  return `${displayName}${user.institutionName ? `, ${user.institutionName}` : ""}`;
 }
 
 function handleSelect(user: any) {

@@ -18,17 +18,17 @@
       <div class="col-6">
         <DatepickerField
           class="mb-3"
-          name="start_date"
+          name="startDate"
           label="Start Date"
           help="The date the event begins"
           required
-          :max-date="(values.end_date as Date)"
+          :max-date="(values.endDate as Date)"
         />
       </div>
       <div class="col-6">
         <DatepickerField
           class="mb-3"
-          name="end_date"
+          name="endDate"
           label="End Date"
           help="The date the event ends"
           :min-date="minEndDate"
@@ -39,30 +39,30 @@
       <div class="col-6 d-inline">
         <DatepickerField
           class="mb-3"
-          name="early_registration_deadline"
+          name="earlyRegistrationDeadline"
           label="Early Registration Deadline"
           help="The last day for early registration of the event (inclusive)"
-          :max-date="(values.start_date as Date)"
+          :max-date="(values.startDate as Date)"
         />
       </div>
       <div class="col-6 d-inline">
         <DatepickerField
           class="mb-3"
-          name="registration_deadline"
+          name="registrationDeadline"
           label="Registration Deadline"
           help="The last day for registration of the event (inclusive)"
-          :min-date="(values.early_registration_deadline as Date)"
-          :max-date="(values.end_date as Date)"
+          :min-date="(values.earlyRegistrationDeadline as Date)"
+          :max-date="(values.endDate as Date)"
         />
       </div>
     </div>
     <DatepickerField
       class="mb-3"
-      name="submission_deadline"
+      name="submissionDeadline"
       label="Submission Deadline"
       help="The last day to make a submission for the event (inclusive)"
-      :min-date="(values.start_date as Date)"
-      :max-date="(values.end_date as Date)"
+      :min-date="(values.startDate as Date)"
+      :max-date="(values.endDate as Date)"
     />
     <MarkdownField
       class="mb-3"
@@ -88,7 +88,7 @@
     </MarkdownField>
     <TextField
       class="mb-3"
-      name="external_url"
+      name="externalUrl"
       label="Event website"
       help="Link to a more detailed website for this event"
     />
@@ -130,12 +130,12 @@ const schema = yup.object().shape({
     .of(yup.object().shape({ name: yup.string().required() }))
     .label("Tags"),
   location: yup.string().required().label("Location"),
-  early_registration_deadline: yup.date().nullable().label("Early registration deadline"),
-  registration_deadline: yup.date().nullable().label("Registration Deadline"),
-  submission_deadline: yup.date().nullable().label("Submission deadline"),
-  start_date: yup.date().required().label("Start date"),
-  end_date: yup.date().nullable().label("End date"),
-  external_url: yup.string().url().nullable().label("External URL"),
+  earlyRegistrationDeadline: yup.date().nullable().label("Early registration deadline"),
+  registrationDeadline: yup.date().nullable().label("Registration Deadline"),
+  submissionDeadline: yup.date().nullable().label("Submission deadline"),
+  startDate: yup.date().required().label("Start date"),
+  endDate: yup.date().nullable().label("End date"),
+  externalUrl: yup.string().url().nullable().label("External URL"),
 });
 type EventEditFields = yup.InferType<typeof schema>;
 
@@ -191,10 +191,10 @@ function summarize() {
 
 const minEndDate = computed(() => {
   const dates = [
-    values.start_date,
-    values.submission_deadline,
-    values.registration_deadline,
-    values.early_registration_deadline,
+    values.startDate,
+    values.submissionDeadline,
+    values.registrationDeadline,
+    values.earlyRegistrationDeadline,
   ].filter(d => !!d) as Date[];
   if (dates.length === 0) {
     return undefined;

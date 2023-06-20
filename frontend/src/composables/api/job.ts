@@ -4,8 +4,8 @@ import { parseDates } from "@/util";
 
 interface JobQueryParams {
   query?: string;
-  date_created__gte?: string;
-  application_deadline__gte?: string;
+  dateCreatedAfter?: string;
+  applicationDeadlineAfter?: string;
   tags?: string[];
 }
 
@@ -22,7 +22,7 @@ export function useJobAPI() {
   async function retrieve(id: string | number) {
     return get(detailUrl(id), {
       parser: data => {
-        parseDates(data, ["date_created", "last_modified", "application_deadline"]);
+        parseDates(data, ["dateCreated", "lastModified", "applicationDeadline"]);
       },
     });
   }

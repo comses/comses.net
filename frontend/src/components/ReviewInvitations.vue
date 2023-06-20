@@ -12,9 +12,9 @@
       <div class="row py-2">
         <div class="col-2 ps-0">
           <img
-            v-if="candidateReviewer.avatar_url"
+            v-if="candidateReviewer.avatarUrl"
             class="d-block img-thumbnail"
-            :src="candidateReviewer.avatar_url"
+            :src="candidateReviewer.avatarUrl"
             alt="Profile Image"
           />
           <img
@@ -44,12 +44,12 @@
     </div>
     <h2 class="mt-4">Invited Reviewers</h2>
     <div class="container-fluid" v-if="invitations && invitations.length > 0">
-      <div class="row border-bottom py-2" v-for="inv in invitations" :key="inv.date_created">
+      <div class="row border-bottom py-2" v-for="inv in invitations" :key="inv.dateCreated">
         <div class="col-xs-12 col-sm-2 ps-0">
           <img
-            v-if="inv.candidate_reviewer.avatar_url"
+            v-if="inv.candidateReviewer.avatarUrl"
             class="d-block img-thumbnail"
-            :src="inv.candidate_reviewer.avatar_url"
+            :src="inv.candidateReviewer.avatarUrl"
             alt="Profile Image"
           />
           <img
@@ -61,7 +61,7 @@
         </div>
         <div class="col-xs-12 col-sm-10 pe-0">
           <h3>
-            {{ inv.candidate_reviewer.name }}
+            {{ inv.candidateReviewer.name }}
             <span :class="`badge bg-${getStatusDisplay(inv).variant}`">{{
               getStatusDisplay(inv).label
             }}</span>
@@ -72,7 +72,7 @@
             </span>
           </h3>
           <div class="tag-list">
-            <div class="tag mx-1" v-for="tag in inv.candidate_reviewer.tags" :key="tag.name">
+            <div class="tag mx-1" v-for="tag in inv.candidateReviewer.tags" :key="tag.name">
               {{ tag.name }}
             </div>
           </div>

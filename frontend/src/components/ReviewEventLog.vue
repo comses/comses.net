@@ -5,16 +5,16 @@
       <h5 class="alert-heading fw-bold">Error fetching event log</h5>
       {{ error }}
     </div>
-    <div v-for="event in events" :key="event.date_created">
+    <div v-for="event in events" :key="event.dateCreated">
       <div class="card mb-2">
         <div class="card-body">
-          <h5 class="card-title">{{ event.date_created }}</h5>
+          <h5 class="card-title">{{ event.dateCreated }}</h5>
           <p class="card-text">
             <span class="badge bg-primary">
               {{ event.action }}
             </span>
             {{ event.message }} (<em>by: </em
-            ><a :href="event.author.absolute_url"> {{ event.author.name }} </a>)
+            ><a :href="event.author.absoluteUrl"> {{ event.author.name }} </a>)
           </p>
         </div>
       </div>

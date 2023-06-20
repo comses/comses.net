@@ -16,21 +16,21 @@
     />
     <TextareaField
       class="mb-3"
-      name="replication_text"
+      name="replicationText"
       label="Replication of an existing model?"
       help="Is this model a replication of a previously published computational model? Please enter a DOI or other permanent identifier to the model, or citation text. Separate multiple entries with newlines."
       :rows="3"
     />
     <TextareaField
       class="mb-3"
-      name="associated_publication_text"
+      name="associatedPublicationText"
       label="Associated Publications"
       help="Is this model associated with any publications? Please enter a DOI or other permanent identifier, or citation text. Separate multiple entries with newlines."
       :rows="3"
     />
     <TextareaField
       class="mb-3"
-      name="references_text"
+      name="referencesText"
       label="References"
       help="Other related publications. Please enter a DOI or other permanent identifier, or citation text. Separate multiple entries with newlines."
       :rows="3"
@@ -43,7 +43,7 @@
     />
     <TextField
       class="mb-3"
-      name="repository_url"
+      name="repositoryUrl"
       label="Version Control Repository URL (optional)"
       help="Is this model being developed on GitHub, BitBucket, GitLab, or other Git-based version control repository? Enter its root repository URL (e.g., https://github.com/comses/water-markets-model) for future CoMSES and Git integration."
     />
@@ -82,12 +82,12 @@ const emit = defineEmits(["success"]);
 const schema = yup.object().shape({
   title: yup.string().required(),
   description: yup.string().required(),
-  latest_version_number: yup.string(),
-  replication_text: yup.string(),
-  associated_publication_text: yup.string(),
-  references_text: yup.string(),
+  latestVersionNumber: yup.string(),
+  replicationText: yup.string(),
+  associatedPublicationText: yup.string(),
+  referencesText: yup.string(),
   tags: yup.array().of(yup.object().shape({ name: yup.string().required() })),
-  repository_url: yup.string().url(),
+  repositoryUrl: yup.string().url(),
 });
 type CodebaseEditFields = yup.InferType<typeof schema>;
 
@@ -129,7 +129,7 @@ function nextUrl(identifier: string) {
   if (props.codebaseId) {
     return detailUrl(props.codebaseId);
   } else {
-    const versionNumber = values.latest_version_number || "1.0.0";
+    const versionNumber = values.latestVersionNumber || "1.0.0";
     return editUrl(identifier, versionNumber);
   }
 }

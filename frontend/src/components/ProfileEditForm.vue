@@ -30,9 +30,9 @@
         <h3>Social Authentication and Membership</h3>
         <ul class="list-group">
           <li class="list-group-item">
-            <span v-if="values.github_url">
-              <a :href="values.github_url"
-                ><i class="text-gray fab fa-github"></i> {{ values.github_url }}</a
+            <span v-if="values.githubUrl">
+              <a :href="values.githubUrl"
+                ><i class="text-gray fab fa-github"></i> {{ values.githubUrl }}</a
               >
               <a :href="connectionsUrl" title="Manage connected GitHub account">
                 <i class="float-end fas fa-edit"></i>
@@ -45,9 +45,9 @@
             </span>
           </li>
           <li class="list-group-item">
-            <span v-if="values.orcid_url">
-              <a :href="values.orcid_url"
-                ><i class="text-gray fab fa-orcid"></i> {{ values.orcid_url }}</a
+            <span v-if="values.orcidUrl">
+              <a :href="values.orcidUrl"
+                ><i class="text-gray fab fa-orcid"></i> {{ values.orcidUrl }}</a
               >
               <a :href="connectionsUrl" title="Manage connected ORCID account">
                 <i class="float-end fas fa-edit"></i>
@@ -62,8 +62,8 @@
           <li class="list-group-item">
             <CheckboxField
               :required="false"
-              name="full_member"
-              :errorMsgs="errors.full_member"
+              name="fullMember"
+              :errorMsgs="errors.fullMember"
               label="Full Member"
             >
               <template #help>
@@ -83,10 +83,10 @@
 
     <div class="row">
       <div class="col-6">
-        <TextField class="mb-3" name="given_name" label="First Name" required />
+        <TextField class="mb-3" name="givenName" label="First Name" required />
       </div>
       <div class="col-6">
-        <TextField class="mb-3" name="family_name" label="Last Name" required />
+        <TextField class="mb-3" name="familyName" label="Last Name" required />
       </div>
     </div>
     <TextField
@@ -105,20 +105,20 @@
     />
     <MarkdownField
       class="mb-3"
-      name="research_interests"
+      name="researchInterests"
       label="Research Interests"
       help="A brief description of your research interests"
       :rows="5"
     />
     <TextField
       class="mb-3"
-      name="personal_url"
+      name="personalUrl"
       label="Personal URL"
       help="A link to your personal website"
     />
     <TextField
       class="mb-3"
-      name="professional_url"
+      name="professionalUrl"
       label="Professional URL"
       help="A link to your institutional or professional profile page"
     />
@@ -168,14 +168,14 @@ const props = defineProps<{
 
 const schema = yup.object().shape({
   avatar: yup.string().nullable(),
-  given_name: yup.string().required().label("First name"),
-  family_name: yup.string().required().label("Last name"),
+  givenName: yup.string().required().label("First name"),
+  familyName: yup.string().required().label("Last name"),
   email: yup.string().email().required().label("Email"),
-  research_interests: yup.string().label("Research interests"),
-  orcid_url: yup.string().url().nullable(),
-  github_url: yup.string().url().nullable(),
-  personal_url: yup.string().url().label("Personal URL"),
-  professional_url: yup.string().url().label("Professional URL"),
+  researchInterests: yup.string().label("Research interests"),
+  orcidUrl: yup.string().url().nullable(),
+  githubUrl: yup.string().url().nullable(),
+  personalUrl: yup.string().url().label("Personal URL"),
+  professionalUrl: yup.string().url().label("Professional URL"),
   industry: yup.string().nullable().label("Industry"),
   affiliations: yup
     .array()
@@ -184,7 +184,7 @@ const schema = yup.object().shape({
         name: yup.string().required(),
         url: yup.string().url().nullable(),
         acronym: yup.string().nullable(),
-        ror_id: yup.string().nullable(),
+        rorId: yup.string().nullable(),
       })
     )
     .nullable()
@@ -195,7 +195,7 @@ const schema = yup.object().shape({
     .array()
     .of(yup.object().shape({ name: yup.string().required() }))
     .label("Tags"),
-  full_member: yup.boolean().required().label("Full Member"),
+  fullMember: yup.boolean().required().label("Full Member"),
 });
 type ProfileEditFields = yup.InferType<typeof schema>;
 

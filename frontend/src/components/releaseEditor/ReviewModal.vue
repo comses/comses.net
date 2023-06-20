@@ -64,20 +64,20 @@ const store = useReleaseEditorStore();
 const { post } = useAxios();
 
 const canRequest = computed(() => {
-  return !store.release.review_status;
+  return !store.release.reviewStatus;
 });
 
 const canNotify = computed(() => {
-  return store.release.review_status === "awaiting_author_changes";
+  return store.release.reviewStatus === "awaitingAuthorChanges";
 });
 
 const reviewRequestModal = ref<Modal>();
 const reviewRequestErrors = ref<string[]>([]);
 
 async function submitReviewRequest() {
-  await post(store.release.urls.request_peer_review ?? "", null, {
+  await post(store.release.urls.requestPeerReview ?? "", null, {
     onSuccess(response) {
-      store.release.review_status = response.data.review_status;
+      store.release.reviewStatus = response.data.reviewStatus;
       store.release.urls = response.data.urls;
       reviewRequestModal.value?.hide();
     },
@@ -93,9 +93,9 @@ const reviewNotifyModal = ref<Modal>();
 const reviewNotifyErrors = ref<string[]>([]);
 
 async function submitReviewNotify() {
-  await post(store.release.urls.notify_reviewers_of_changes ?? "", null, {
+  await post(store.release.urls.notifyReviewersOfChanges ?? "", null, {
     onSuccess(response) {
-      store.release.review_status = response.data.review_status;
+      store.release.reviewStatus = response.data.reviewStatus;
       reviewNotifyModal.value?.hide();
     },
     onError(error) {

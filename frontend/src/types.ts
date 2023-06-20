@@ -15,8 +15,8 @@ export type TagType = "" | "Event" | "Codebase" | "Job" | "Profile";
 export interface RORItem {
   id: string;
   name: string;
-  email_address?: string;
-  ip_addresses?: any[];
+  emailAddress?: string;
+  ipAddresses?: any[];
   established?: number | null;
   types: string[];
   relationships: any[];
@@ -25,10 +25,10 @@ export interface RORItem {
   aliases: string[];
   acronyms: string[];
   status: "Active" | "Inactive" | "Withdrawn";
-  wikipedia_url?: string;
+  wikipediaUrl?: string;
   labels: string[];
   country: object;
-  external_ids: any;
+  externalIds: any;
   [key: string | number | symbol]: unknown;
 }
 
@@ -36,7 +36,7 @@ export interface Organization {
   name: string;
   url?: string;
   acronym?: string;
-  ror_id?: string;
+  rorId?: string;
 }
 
 export interface TimeSeries {
@@ -76,19 +76,19 @@ export type MetricsChartSelection =
   | "total-downloads";
 
 export interface ReviewEvent {
-  date_created: string;
+  dateCreated: string;
   action: string;
   message: string;
   author: {
     name: string;
-    absolute_url: string;
+    absoluteUrl: string;
   };
 }
 
 export interface Reviewer {
   id: number;
   name: string;
-  avatar_url: string;
+  avatarUrl: string;
   degrees: string[];
   tags: Tag[];
 }
@@ -122,9 +122,9 @@ export interface License {
 
 export interface ReleaseContributor {
   contributor: Contributor;
-  include_in_citation?: boolean;
+  includeInCitation?: boolean;
   index?: number;
-  profile_url: string;
+  profileUrl: string;
   roles?: string[];
 }
 
@@ -132,93 +132,93 @@ export interface Contributor {
   affiliations: any[];
   email: string;
   id: number;
-  given_name: string;
-  middle_name?: string;
-  family_name?: string;
-  profile_url?: string;
+  givenName: string;
+  middleName?: string;
+  familyName?: string;
+  profileUrl?: string;
   type: "person" | "organization";
   user?: {
-    institution_name?: string;
-    institution_url?: string;
+    institutionName?: string;
+    institutionUrl?: string;
     name: string;
-    profile_url: string;
+    profileUrl: string;
     username: string;
   } | null;
 }
 
 export interface LinkedUser {
   name: string;
-  profile_url: string;
+  profileUrl: string;
   username: string;
 }
 
 export interface CodebaseRelease {
-  absolute_url: string;
+  absoluteUrl: string;
   citationText?: string;
   codebase: Codebase;
-  date_created: Date;
+  dateCreated: Date;
   dependencies?: any;
   documentation: string | null;
   doi: string | null;
-  embargo_end_date: Date | null;
-  first_published_at: Date | null;
+  embargoEndDate: Date | null;
+  firstPublishedAt: Date | null;
   identifier: string;
-  last_modified: Date | null;
-  last_published_on: Date | null;
+  lastModified: Date | null;
+  lastPublishedOn: Date | null;
   license: License | null;
   live: boolean;
   os: string;
-  os_display: string;
-  peer_reviewed: boolean;
+  osDisplay: string;
+  peerReviewed: boolean;
   platforms: Tag[];
-  possible_licenses: License[];
-  programming_languages: Tag[];
-  release_contributors: ReleaseContributor[];
-  release_notes: string;
-  review_status: string | null;
-  share_url: string | null;
-  submitted_package: string | null;
+  possibleLicenses: License[];
+  programmingLanguages: Tag[];
+  releaseContributors: ReleaseContributor[];
+  releaseNotes: string;
+  reviewStatus: string | null;
+  shareUrl: string | null;
+  submittedPackage: string | null;
   submitter: LinkedUser;
   urls: {
-    request_peer_review: string | null;
+    requestPeerReview: string | null;
     review: string | null;
-    notify_reviewers_of_changes: string | null;
+    notifyReviewersOfChanges: string | null;
   };
-  version_number: string;
+  versionNumber: string;
 }
 
 interface Codebase {
-  absolute_url: string;
-  all_contributors: Contributor[];
-  associated_publication_text?: string;
-  date_created: Date;
+  absoluteUrl: string;
+  allContributors: Contributor[];
+  associatedPublicationText?: string;
+  dateCreated: Date;
   description: string;
   doi?: string | null;
-  download_count: number;
-  featured_image: string | null;
-  first_published_at: Date | null;
+  downloadCount: number;
+  featuredImage: string | null;
+  firstPublishedAt: Date | null;
   id: number;
   identifier: string;
-  last_published_on: Date | null;
-  latest_version_number?: string;
-  peer_reviewed?: boolean;
-  references_text?: string;
+  lastPublishedOn: Date | null;
+  latestVersionNumber?: string;
+  peerReviewed?: boolean;
+  referencesText?: string;
   releases?: any[];
-  replication_text?: string;
-  repository_url?: string;
+  replicationText?: string;
+  repositoryUrl?: string;
   submitter: LinkedUser;
-  summarized_description: string;
+  summarizedDescription: string;
   tags: Tag[];
   title: string;
 }
 
 export type CodebaseReleaseMetadata = Pick<
   CodebaseRelease,
-  | "release_notes"
-  | "embargo_end_date"
+  | "releaseNotes"
+  | "embargoEndDate"
   | "os"
   | "platforms"
-  | "programming_languages"
+  | "programmingLanguages"
   | "live"
   | "license"
 >;

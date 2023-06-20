@@ -8,7 +8,7 @@
     <form @submit="handleSubmit">
       <MarkdownField
         class="mb-3"
-        name="release_notes"
+        name="releaseNotes"
         label="Release Notes"
         help="Details about this specific release: what's new, improvements to existing features, bug fixes, etc."
         :rows="5"
@@ -16,7 +16,7 @@
       />
       <DatepickerField
         class="mb-3"
-        name="embargo_end_date"
+        name="embargoEndDate"
         label="Embargo End Date"
         help="The date your private release will be automatically made public"
       />
@@ -37,7 +37,7 @@
       />
       <TaggerField
         class="mb-3"
-        name="programming_languages"
+        name="programmingLanguages"
         label="Programming Language(s)"
         help=" Programming languages used in this model"
         required
@@ -102,13 +102,13 @@ const osOptions = [
   { value: "linux", label: "Unix/Linux" },
   { value: "macos", label: "Mac OS" },
   { value: "windows", label: "Windows" },
-  { value: "platform_independent", label: "Operating System Independent" },
+  { value: "platformIndependent", label: "Operating System Independent" },
   { value: "other", label: "Other" },
 ];
 
 const schema = yup.object().shape({
-  release_notes: yup.string().required().label("Release Notes"),
-  embargo_end_date: yup.date().nullable().label("Embargo End Date"),
+  releaseNotes: yup.string().required().label("Release Notes"),
+  embargoEndDate: yup.date().nullable().label("Embargo End Date"),
   os: yup.string().required().label("Operating System"),
   platforms: yup
     .array()
@@ -116,7 +116,7 @@ const schema = yup.object().shape({
     .min(1)
     .required()
     .label("Frameworks"),
-  programming_languages: yup
+  programmingLanguages: yup
     .array()
     .of(yup.object().shape({ name: yup.string() }))
     .min(1)
@@ -156,7 +156,7 @@ function initializeValuesFromStore() {
   setValues({
     ...store.metadata,
   });
-  licenseOptions.value = store.release.possible_licenses;
+  licenseOptions.value = store.release.possibleLicenses;
   isLoading.value = false;
 }
 

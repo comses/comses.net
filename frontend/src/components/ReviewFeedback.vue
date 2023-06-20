@@ -1,16 +1,16 @@
 <template>
   <div>
     <div class="container-fluid px-0" v-if="feedbackItems && feedbackItems.length > 0">
-      <div class="row" v-for="feedback in feedbackItems" :key="feedback.date_created">
+      <div class="row" v-for="feedback in feedbackItems" :key="feedback.dateCreated">
         <div class="col-xs-12 col-sm-6">
-          <a :href="feedback.editor_url">
-            {{ feedback.reviewer_name }} recommended: <mark>{{ feedback.recommendation }}</mark>
+          <a :href="feedback.editorUrl">
+            {{ feedback.reviewerName }} recommended: <mark>{{ feedback.recommendation }}</mark>
           </a>
         </div>
         <div class="col-xs-12 col-sm-6">
           <span class="badge bg-info"
-            >{{ feedback.review_status }} as of
-            {{ new Date(feedback.date_created).toDateString() }}</span
+            >{{ feedback.reviewStatus }} as of
+            {{ new Date(feedback.dateCreated).toDateString() }}</span
           >
         </div>
       </div>

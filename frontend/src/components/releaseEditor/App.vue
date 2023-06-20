@@ -12,7 +12,7 @@
           </span>
           {{ store.release.codebase.title }}
           <span class="badge bg-gray pt-1 px-2">
-            <small>v{{ store.release.version_number }}</small>
+            <small>v{{ store.release.versionNumber }}</small>
           </span>
         </h1>
       </div>
@@ -20,7 +20,7 @@
     <div class="row mb-2">
       <div class="col d-flex justify-content-between">
         <span>
-          <a :href="store.release.absolute_url">View live</a> |
+          <a :href="store.release.absoluteUrl">View live</a> |
           <span class="text-muted me-2">
             Review Status:
             <span class="fw-bold">{{ reviewStatus }}</span>

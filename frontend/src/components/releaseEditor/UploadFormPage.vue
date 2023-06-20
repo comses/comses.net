@@ -31,7 +31,7 @@
         :title="config.title"
         @delete-file="handleDeleteFile(config.uploadType, $event)"
         @clear="handleClear(config.uploadType)"
-        @upload-file="handleUploadDone(config.uploadType)"
+        @upload-done="handleUploadDone(config.uploadType)"
       >
       </FileUpload>
       <hr />

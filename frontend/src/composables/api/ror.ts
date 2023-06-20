@@ -21,7 +21,7 @@ export function useRORAPI() {
         name: item.name,
         url: item.links[0],
         acronym: item.acronyms[0],
-        ror_id: item.id,
+        rorId: item.id,
       };
     });
     return orgs;

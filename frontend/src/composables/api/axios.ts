@@ -190,8 +190,8 @@ function parseValidationError(data: any, parentKey = ""): string[] {
       ? `${parentKey}${nonNumberedKey ? `: ${nonNumberedKey}` : ""}`
       : nonNumberedKey;
     if (isStringArray(value)) {
-      if (key === "non_field_errors") {
-        // non_field_errors are already formatted for display
+      if (key === "nonFieldErrors") {
+        // nonFieldErrors are already formatted for display
         errors.push(...value);
       } else {
         errors.push(`${fullKey ? fullKey + ": " : ""}${value.join(", ")}`);

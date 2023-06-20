@@ -54,11 +54,11 @@ export function useReleaseEditorAPI() {
     return get(detailEditUrl(identifier, versionNumber), {
       parser: (data: CodebaseRelease) => {
         parseDates(data, [
-          "date_created",
-          "first_published_at",
-          "embargo_end_date",
-          "last_modified",
-          "last_published_on",
+          "dateCreated",
+          "firstPublishedAt",
+          "embargoEndDate",
+          "lastModified",
+          "lastPublishedOn",
         ]);
       },
     });

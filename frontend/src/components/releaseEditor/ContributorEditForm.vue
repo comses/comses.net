@@ -17,19 +17,19 @@
             <TextField
               v-if="!isPerson"
               class="mb-3"
-              name="given_name"
+              name="givenName"
               label="Organization Name"
               required
             />
             <div v-else class="row">
               <div class="col-4 pe-0">
-                <TextField class="mb-3" name="given_name" label="First Name" required />
+                <TextField class="mb-3" name="givenName" label="First Name" required />
               </div>
               <div class="col-3 pe-0">
-                <TextField class="mb-3" name="middle_name" label="Middle Name" />
+                <TextField class="mb-3" name="middleName" label="Middle Name" />
               </div>
               <div class="col-5">
-                <TextField class="mb-3" name="family_name" label="Last Name" required />
+                <TextField class="mb-3" name="familyName" label="Last Name" required />
               </div>
             </div>
             <TextField v-if="isPerson" class="mb-3" name="email" label="Email" required />
@@ -52,7 +52,7 @@
         multiple
         required
       />
-      <CheckboxField name="include_in_citation" label="Include in Citation?" />
+      <CheckboxField name="includeInCitation" label="Include in Citation?" />
       <FormAlert :validation-errors="Object.values(errors)" :server-errors="serverErrors" />
     </form>
   </div>
@@ -125,9 +125,9 @@ const typeOptions = [
 const schema = yup.object().shape({
   user: yup.mixed().nullable().label("User"),
   email: yup.string().email().nullable().label("Email"),
-  given_name: yup.string().nullable().label("First name/Organization name"),
-  family_name: yup.string().nullable().label("Last name"),
-  middle_name: yup.string().nullable().label("Middle name"),
+  givenName: yup.string().nullable().label("First name/Organization name"),
+  familyName: yup.string().nullable().label("Last name"),
+  middleName: yup.string().nullable().label("Middle name"),
   affiliations: yup
     .array()
     .of(
@@ -135,13 +135,13 @@ const schema = yup.object().shape({
         name: yup.string().required(),
         url: yup.string().url().nullable(),
         acronym: yup.string().nullable(),
-        ror_id: yup.string().nullable(),
+        rorId: yup.string().nullable(),
       })
     )
     .label("Affiliations"),
   type: yup.string().oneOf(["person", "organization"]).default("person"),
   roles: yup.array().of(yup.string()).min(1).label("Roles"),
-  include_in_citation: yup.bool().required().label("Include in citation"),
+  includeInCitation: yup.bool().required().label("Include in citation"),
 });
 
 type ContributorFields = yup.InferType<typeof schema>;
@@ -153,7 +153,7 @@ const initialValues: ContributorFields = {
   user: null,
   affiliations: [],
   roles: [],
-  include_in_citation: true,
+  includeInCitation: true,
 };
 
 const { errors, handleSubmit, values, setValues } = useForm<ContributorFields>({
@@ -166,13 +166,13 @@ const { errors, handleSubmit, values, setValues } = useForm<ContributorFields>({
         user: values.user,
         type: values.type,
         email: values.email,
-        given_name: values.given_name,
-        family_name: values.family_name,
-        middle_name: values.middle_name,
+        givenName: values.givenName,
+        familyName: values.familyName,
+        middleName: values.middleName,
         affiliations: values.affiliations,
       },
       roles: values.roles,
-      include_in_citation: values.include_in_citation,
+      includeInCitation: values.includeInCitation,
     };
     if (props.contributor) {
       const index = contributors.findIndex(
@@ -203,13 +203,13 @@ function populateFromReleaseContributor(contributor: ReleaseContributor) {
   setValues({
     user: contributor.contributor.user || null,
     email: contributor.contributor.email,
-    given_name: contributor.contributor.given_name,
-    family_name: contributor.contributor.family_name,
-    middle_name: contributor.contributor.middle_name,
+    givenName: contributor.contributor.givenName,
+    familyName: contributor.contributor.familyName,
+    middleName: contributor.contributor.middleName,
     affiliations: contributor.contributor.affiliations,
     type: contributor.contributor.type,
     roles: contributor.roles,
-    include_in_citation: contributor.include_in_citation,
+    includeInCitation: contributor.includeInCitation,
   });
 }
 
@@ -224,8 +224,8 @@ function populateFromUser(user: any) {
   setValues({
     ...values,
     user,
-    given_name: user.given_name,
-    family_name: user.family_name,
+    givenName: user.givenName,
+    familyName: user.familyName,
     email: user.email,
   });
 }

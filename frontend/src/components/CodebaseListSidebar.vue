@@ -39,7 +39,7 @@ import { useCodebaseAPI } from "@/composables/api";
 
 const peerReviewOptions = [
   { value: "reviewed", label: "Reviewed" },
-  { value: "not_reviewed", label: "Not Reviewed" },
+  { value: "notReviewed", label: "Not Reviewed" },
   { value: "", label: "Any" },
 ];
 
@@ -53,7 +53,7 @@ type SearchFields = yup.InferType<typeof schema>;
 
 const { handleSubmit, values } = useForm<SearchFields>({
   schema,
-  initialValues: { peerReviewStatus: "" },
+  initialValues: { peerReviewStatus: "", tags: [] },
   onSubmit: () => {
     window.location.href = query.value;
   },
@@ -66,10 +66,10 @@ const query = computed(() => {
   const query = url.get("query") ?? "";
   return searchUrl({
     query,
-    published_after: values.startDate?.toISOString(),
-    published_before: values.endDate?.toISOString(),
+    publishedAfter: values.startDate?.toISOString(),
+    publishedBefore: values.endDate?.toISOString(),
     tags: values.tags?.map(tag => tag.name),
-    peer_review_status: values.peerReviewStatus,
+    peerReviewStatus: values.peerReviewStatus,
   });
 });
 </script>

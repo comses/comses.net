@@ -59,7 +59,7 @@
           v-if="props.userData.authenticated"
           form="download-request-form"
           class="me-auto mb-n1"
-          name="save_to_profile"
+          name="saveToProfile"
           label="Remember my answers"
         />
         <button type="button" data-bs-dismiss="modal" class="btn btn-outline-gray">Cancel</button>
@@ -109,11 +109,11 @@ const schema = yup.object().shape({
       name: yup.string().required(),
       url: yup.string().url().nullable(),
       acronym: yup.string().nullable(),
-      ror_id: yup.string().nullable(),
+      rorId: yup.string().nullable(),
     })
     .nullable()
     .default(null),
-  save_to_profile: yup.boolean().required().default(false),
+  saveToProfile: yup.boolean().required().default(false),
 });
 type ReleaseDownloadFields = yup.InferType<typeof schema>;
 
@@ -125,7 +125,7 @@ const { errors, handleSubmit, values } = useForm<ReleaseDownloadFields>({
     industry: props.userData.industry || "",
     reason: "",
     affiliation: isEmpty(props.userData.affiliation) ? null : props.userData.affiliation,
-    save_to_profile: false,
+    saveToProfile: false,
   },
   onSubmit: async () => {
     await requestDownload(props.identifier, props.versionNumber, values, {

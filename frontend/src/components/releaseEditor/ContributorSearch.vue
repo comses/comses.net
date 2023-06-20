@@ -7,7 +7,7 @@
       id="existing-contributor-search"
       v-model="candidateContributor"
       :custom-label="contributorDisplay"
-      label="family_name"
+      label="familyName"
       track-by="id"
       placeholder="Find a contributor previously entered in our system"
       :allow-empty="true"
@@ -70,10 +70,10 @@ const fetchMatchingContributors = useDebounceFn(async (query: string) => {
 }, 600);
 
 function contributorDisplay(contributor: Contributor) {
-  const { given_name, family_name, user } = contributor;
+  const { givenName, familyName, user } = contributor;
   const username = user ? `[${user.username}]` : "";
   const email = contributor.email ? `(${contributor.email})` : "";
-  let name = [given_name, family_name].filter(Boolean).join(" ");
+  let name = [givenName, familyName].filter(Boolean).join(" ");
   if (!name && user && user.name) {
     name = user.name;
   }

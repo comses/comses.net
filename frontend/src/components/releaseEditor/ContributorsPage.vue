@@ -59,10 +59,10 @@
               <div class="d-flex align-items-end">
                 <h5 class="m-0">{{ displayName(element.contributor) }}</h5>
                 <small class="text-muted ms-2">({{ roleDisplay(element) }})</small>
-                <span v-if="element.include_in_citation" class="badge bg-info ms-2">citable</span>
+                <span v-if="element.includeInCitation" class="badge bg-info ms-2">citable</span>
               </div>
               <small>
-                <a :href="element.profile_url" target="_blank">
+                <a :href="element.profileUrl" target="_blank">
                   <span v-if="element.contributor.user">
                     <i class="fas fa-user"></i>
                     {{ element.contributor.user.username }}
@@ -226,8 +226,8 @@ function sort(event: SortableEvent) {
 }
 
 function displayName(contributor: Contributor) {
-  const { given_name, family_name, user } = contributor;
-  let name = [given_name, family_name].filter(Boolean).join(" ");
+  const { givenName, familyName, user } = contributor;
+  let name = [givenName, familyName].filter(Boolean).join(" ");
   if (!name && user && user.name) {
     name = user.name;
   }
