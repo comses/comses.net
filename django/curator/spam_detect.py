@@ -12,7 +12,6 @@ from curator.models import SpamRecommendation
 
 warnings.filterwarnings("ignore") #ignore warnings
 
-
 class UserPipeline:
     def __init__(self):
         self.column_names = [
@@ -29,17 +28,20 @@ class UserPipeline:
                 'member_profile__professional_url',
                 'labelled_by_curator',
                 'labelled_by_bio_classifier',
-                'labelled_by_user_classifier']
+                'labelled_by_user_classifier',
+                'bio_classifier_confidence',
+                'user_classifier_confidence']
         
         self.type_int_bool_column_names = [
                 'member_profile__user_id',
                 'labelled_by_curator',
-                # 'member_profile__user__is_active',
-                # 'labelled_by_bio_classifier',
-                # 'labelled_by_user_classifier'
-                ]
+                'labelled_by_bio_classifier',
+                'labelled_by_user_classifier',
+                'bio_classifier_confidence',
+                'user_classifier_confidence']
 
     def __rename_columns(self, df):
+        if df.empty == True: return df
         df.rename(columns = {
                 self.column_names[0]: 'user_id',
                 self.column_names[1]: 'first_name',
@@ -54,65 +56,67 @@ class UserPipeline:
                 self.column_names[10]: 'professional_url'}, inplace = True)
         return df
     
-    def __convert_df_markup_to_string(self, df): # TODO: conbine with Noel's conversion function
+    def __convert_df_markup_to_string(self, df):
+        if df.empty == True: return df
         for col in df.columns:
-            if col in self.type_int_bool_column_names:
-                df[col] = df[col].values.astype('int')
-            else:
-                df[col] = df[col].apply(lambda text: re.sub(r'<.*?>', ' ', str(text))) # Remove markdown
+            if col in self.type_int_bool_column_names: df[col] = df[col].astype('Int64')
+            else: df[col] = df[col].apply(lambda text: re.sub(r'<.*?>', ' ', str(text))) # Remove markdown
         return df
     
     def load_labels(self, filepath="dataset.csv"):
         # This function updates "labelled_by_curator" field of the SpamRecommendation table bsed on external dataset file.
         # Dataset should have columns named "user_id" and "is_spam"
         # param : filepath of dataset to be loaded
+        # return : None
         if SpamRecommendation.objects.all().exists() == False:
             for profile in MemberProfile.objects.all():
                 SpamRecommendation(member_profile=profile).save()
 
-        label_df = pd.read_csv(filepath)
+        label_df = pd.read_csv(filepath) #TODO : add json read too?
         for idx, row in label_df.iterrows():
             SpamRecommendation.objects.filter(member_profile__user_id=row['user_id']).update(labelled_by_curator=bool(row['is_spam']))
     
-    def save_recommendations(self, spam_recommendation_df):
-        # TODO Noel: Update it to include Aiko's classifier fields as well.
-        spam_recommendation_df = spam_recommendation_df[[
-            'user_id', 
-            'labelled_by_bio_classifier', 
-            'bio_classifier_confidence'
-        ]]
-        spam_recommendation_df = spam_recommendation_df.replace(np.nan, None)
-
-        for index, spam_recommendation in spam_recommendation_df.iterrows():
-            member_profile = MemberProfile.objects.filter(user__id=spam_recommendation.user__id)[0]
-            spam_recommendation = SpamRecommendation(
-                member_profile=member_profile,
-                labelled_by_bio_classifier=spam_recommendation.labelled_by_bio_classifier,
-                bio_classifier_confidence=spam_recommendation.bio_classifier_confidence
-            )
-            spam_recommendation.save()
-        return spam_recommendation_df
-    
     def update_used_for_train(self, df):
         # param : DataFrame of user_ids (int) that were used to train a model
+        # return : None
         for idx, row in df.iterrows():
             SpamRecommendation.objects.filter(member_profile__user_id=row['user_id']).update(used_for_train=True)
 
     def get_all_users_df(self):
-        user_list = list(SpamRecommendation.objects.all().exclude(member_profile__user_id=None).values(*self.column_names))
-        if len(user_list) == 0:
-            return None
-        return self.__rename_columns(self.__convert_df_markup_to_string(pd.DataFrame(user_list)))
+        return self.__rename_columns(self.__convert_df_markup_to_string(
+            pd.DataFrame(list(SpamRecommendation.objects.all().exclude(member_profile__user_id=None).values(*self.column_names)))))
     
     def get_unlabelled_by_curator_df(self):
         # return : DataFrame of user data that haven't been labeled by curator
-        user_list = list(SpamRecommendation.objects.exclude(member_profile__user_id=None).filter(labelled_by_curator=None).values(*self.column_names))
-        if len(user_list) == 0:
-            return None
-        return self.__rename_columns(self.__convert_df_markup_to_string(pd.DataFrame(user_list)))
+        return self.__rename_columns(self.__convert_df_markup_to_string(
+            pd.DataFrame(list(SpamRecommendation.objects.exclude(member_profile__user_id=None).filter(labelled_by_curator=None).values(*self.column_names)))))
 
     def get_untrained_df(self):
         # return : DataFrame of user data that haven't been used for train previously
-        user_list = list(SpamRecommendation.objects.exclude(labelled_by_curator=None).values(*self.column_names))
-        return self.__rename_columns(self.__convert_df_markup_to_string(pd.DataFrame(user_list)))
+        return self.__rename_columns(self.__convert_df_markup_to_string(pd.DataFrame(list(SpamRecommendation.objects.exclude(member_profile__user_id=None, labelled_by_curator=None).filter(used_for_train=False).values(*self.column_names)))))
+    
+    def save_predictions(self, prediction_df, isTextClassifier=False):
+        # params : spam_recommendation_df ... a Dataframe with columns "user_id", "labelled_by_{}", and "{}_classifier_confidence" 
+        # return : None
+        if isTextClassifier:
+            for idx, row in prediction_df.iterrows():
+                SpamRecommendation.objects.filter(member_profile__user_id=row.user_id).update(
+                    labelled_by_bio_classifier=row.labelled_by_bio_classifier,
+                    bio_classifier_confidence=row.bio_classifier_confidence
+                )
+        else: 
+            for idx, row in prediction_df.iterrows():
+                SpamRecommendation.objects.filter(member_profile__user_id=row.user_id).update(
+                    labelled_by_user_classifier=row.labelled_by_user_classifier,
+                    user_classifier_confidence=row.user_classifier_confidence
+                )
+
+
+    
+
+
+
+        
+
+
     
