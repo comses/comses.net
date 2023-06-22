@@ -21,6 +21,56 @@ import xgboost as xgb
 from curator.spam_detect import UserPipeline
 from curator.models import SpamRecommendation
 
+from abc import ABC, abstractmethod
+
+
+# TODO implement
+class SpamDetection():
+    def execute(self): # API for ML functions
+        ''' 
+            0, if there is some users that have None in eihter labelled_by_curator, labelled_by_user_classifier, 
+                and labelled_by_bio_classifier, predict() should be called.
+
+                1. if no model pickle files found, execute fit()
+                    - if all labelled_by_curator is None, load to DB by calling Pipeline.load_labels()
+                    - additionally, if no labels file, throw exception
+
+                2. make sure model exitsts, call predict(). 
+                   The function will save its results to the DB.
+                    - BioSpamClassifier.predict()
+                    - UserSpamClassifer.predict()
+
+            3. filtering the DB, return the list of all user_id (and user name) with a certain confidence level (TODO: discussabout returns)
+                    return UserPipeline.get_spam_users() # TODO: implement this function
+                        ... this functions will first filter out the users with labelled_by_curator==True,
+                            but the ones with None, 
+                            only get users with labelled_by_user_classifier or labelled_by_bio_classifier == True with a specific confidence level
+
+        '''
+        return
+    
+    def refine_models(self):
+        # TODO: use the newly updated labelled_by_user_classifier and call partial_train()?
+        return
+
+
+class SpamClassifier(ABC): 
+    # This class serves as a template for spam classifer varients
+    @abstractmethod
+    def fit(self):
+        pass
+
+    @abstractmethod
+    def partial_fit(self): 
+        # only used in UserClassifier at this point
+        pass
+
+    @abstractmethod
+    def predict(self):
+        # predict only the ones with unlabelled_by_curator == None
+        pass
+        
+
 class TextSpamClassifier(object):
     # This is temporary until we find a better solution.
     # We are saving and loading models straight to the VM,
@@ -60,9 +110,6 @@ class TextSpamClassifier(object):
 
         TextSpamClassifier.save_model(model)
 
-
-
-
     def predict():
         user_pipeline = UserPipeline()
         all_users_df = user_pipeline.get_all_users_df()
@@ -93,74 +140,61 @@ class TextSpamClassifier(object):
 
 
 
-
-class SpamClassifier:
+class SpamClassifier(SpamClassifier):
     TOKENIZER_FILE_PATH = 'tokenizer.pkl'
     MODEL_FILE_PATH = 'spam_xgb_classifier.pkl'
 
-    def train(self):
+    def fit(self):
         # obtain df from pipleline
         pipeline = UserPipeline()
-        df = pipeline.all_users_df()
+        df = pipeline.get_untrained_df()
+        if df.empty == True: return # if no untrained data found
 
-        # preprocess
-        X_train, X_test, y_train, y_test, _ = self.preprocess(df, 'train')
+        X_train, X_test, y_train, y_test = self.preprocess(df, 'train') # preprocess
 
-        # train
-        prediction, metrics, model = self.train_xgboost_classifer(X_train, X_test, y_train, y_test)
+        prediction, metrics, model = self.train_xgboost_classifer(X_train, X_test, y_train, y_test) # train
 
-        # save model
-        pickle.dump(model, open(self.MODEL_FILE_PATH, 'wb'))
+        pickle.dump(model, open(self.MODEL_FILE_PATH, 'wb')) # save model
 
-        # save last trained date
-        pipeline.save_last_trained(df)
-
+        pipeline.update_used_for_train(df) # save last trained date
         # return model_metrics # if needed
-        
+
     
-    def partial_train(self):
+    def partial_fit(self):
         # obtain df from pipleline
         pipeline = UserPipeline()
-        df = pipeline.filtered_untrained_df() # here!!
-        df = pipeline.df_type_convert_to_string(df)
-        df = pipeline.rename_columns(df)
+        df = pipeline.get_untrained_df()
+        if df.empty == True: return # if no untrained data found
 
-        # preprocess
-        X, y, _ = self.preprocess(df, 'partial_train')
+        X, y = self.preprocess(df, 'partial_train') # preprocess
 
-        # load model
-        model = pickle.load(open(self.MODEL_FILE_PATH, 'rb'))
+        model = pickle.load(open(self.MODEL_FILE_PATH, 'rb')) # load model
 
-        # partial train
-        model = self.partial_train_xgboost_classifer(X, y, model)
+        model = self.partial_train_xgboost_classifer(X, y, model) # partial train
 
-        # save model
-        pickle.dump(model, open(self.MODEL_FILE_PATH, 'wb'))
+        pickle.dump(model, open(self.MODEL_FILE_PATH, 'wb')) # save model
 
-        return None
+        pipeline.update_used_for_train(df) # save last trained date
+
 
     def predict(self):
-        # obtain df from pipleline
-        pipeline = UserPipeline()  # here!!
-        df = pipeline.filtered_by_labelled_df(is_labelled=True) #TODO Aiko: check the use of filtered_by_labelled_df
-        df = pipeline.df_type_convert_to_string(df)
-        df = pipeline.rename_columns(df, created_from_spam_recommendation=True)
+        pipeline = UserPipeline()
+        df = pipeline.get_unlabelled_by_curator_df()
+        if df.empty == True: return # if no data found
+                    
+        X, _ = self.preprocess(df, 'predict') # preprocess
 
-        # preprocess
-        X, _, uid_series = self.preprocess(df, 'predict')
+        model = pickle.load(open(self.MODEL_FILE_PATH, 'rb')) # load model
 
-        # load model
-        model = pickle.load(open(self.MODEL_FILE_PATH, 'rb'))
+        predictions, confidences = self.predict_xgboost_classifer(X, model) # predict 
+        df['labelled_by_user_classifier'] = predictions
+        df['user_classifier_confidence'] = confidences
+        df = df.filter(['user_id','user_classifier_confidence','labelled_by_user_classifier'], axis=1).replace(np.nan, None)
+        pipeline.save_predictions(df, isTextClassifier=False) # save the results to DB
 
-        # predict 
-        confidence_socres = self.predict_xgboost_classifer(X, model)
-        
-        # create return df
-        confidence_socres_series = pd.Series(confidence_socres)
-        frame = {'user_id': uid_series.ravel() , 'labelled_by_bio_classifier': confidence_socres_series.ravel()} #TODO Aiko: reutrn confidence level also
-        df = pd.DataFrame(frame)
-        return df
-    
+        # return result_df TODO we don't have to return this, do we?
+
+
     def train_xgboost_classifer(self, X_train, X_test, y_train, y_test):
         # fit to model
         model = xgb.XGBClassifier()
@@ -182,38 +216,37 @@ class SpamClassifier:
         return retrained_model
 
     def predict_xgboost_classifer(self, X, model):
-        probas = model.predict_proba(X)
-        confidence_socres = list(map(lambda x: x[1], probas))
-        return confidence_socres
+        confidences = model.predict(X)
+        predictions = [round(value) for value in confidences]
+        # confidence_socres = list(map(lambda x: x[1], probas))
+        return predictions, confidences
     
-
     def preprocess(self, df, mode='predict'):
         # extract relavant columns
-        df['labelled_by_curator'] = df['labelled_by_curator'].fillna(0)
-        df = df.fillna('')
+        if 'labelled_by_curator' not in df.columns: df['labelled_by_curator'] = 0 # only when mode='predict' 
         df = df.filter(['user_id','labelled_by_curator','first_name','last_name', 'is_active', 'email', 'affiliations', 'bio'], axis=1)
+        df[['first_name','last_name', 'is_active', 'email', 'affiliations', 'bio']] = df[['first_name','last_name', 'is_active', 'email', 'affiliations', 'bio']].fillna('') 
+        df[['user_id', 'labelled_by_curator']] = df[['user_id', 'labelled_by_curator']].fillna(0)
         df['affiliations'] =  df.apply(lambda row:self.__reform__affiliations(row['affiliations']), axis=1)
         df['is_active'] =  df.apply(lambda row:self.__reform__is_active(row['is_active']), axis=1)
 
         # tokenize
         y = df['labelled_by_curator']
         X = df.drop(['labelled_by_curator'], axis = 1)
-        uid_series = X.filter(['user_id'],axis=1).squeeze()
+        isTraining = False
         if mode=='train':
             isTraining = True
             X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.15, random_state=434)
             tokenized_X_train = self.__preprocess__tokenization(X_train.drop(['user_id'],axis=1), isTraining)
             tokenized_X_test = self.__preprocess__tokenization(X_test.drop(['user_id'],axis=1))
-            return tokenized_X_train, tokenized_X_test, y_train, y_test, uid_series
-        
+            return tokenized_X_train, tokenized_X_test, y_train, y_test
         elif mode=='partial_train':
             isTraining = True
-            tokenized_X = self.__preprocess__tokenization(X.drop(['user_id'],axis=1), isTraining)
-            return tokenized_X, y, uid_series
+
+        # default mode is prediction 
+        tokenized_X = self.__preprocess__tokenization(X.drop(['user_id'],axis=1), isTraining)
+        return tokenized_X, y
     
-        elif mode=='predict':
-            tokenized_X = self.__preprocess__tokenization(X.drop(['user_id'],axis=1))
-            return tokenized_X, y, uid_series
     
     def __reform__affiliations(self, array):
         array = literal_eval(array)
@@ -226,49 +259,33 @@ class SpamClassifier:
                 affili = name + "(" + "url : " + url +", ror id : " + ror_id +")"
                 result = result +", "+ affili
             return result + ". "
-        else:
-            return ""
+        else: return ""
 
     def __reform__is_active(self, val):
-        if val == "t":
-            return 1
-        else:
-            return 0
+        if val == "t": return 1
+        else: return 0
         
     def __preprocess__padding_sequences(self, column, tokenizer):
-        word_index = tokenizer.word_index
-        # total_words = len(word_index)  # get total_words of this coulmn's set
         column_sequences = tokenizer.texts_to_sequences(column) # tokenize
-        # if max_len == None:
-        #     sequences_lens = [len(n) for n in column_sequences] # get len() of each item
-        #     max_len = sequences_lens[np.argmax(sequences_lens)]
-        column_padded = pad_sequences(column_sequences, # padding
-                                    maxlen = 800,
-                                    padding =  'post',
-                                    truncating =  'post')
+        column_padded = pad_sequences(column_sequences, maxlen=800, padding='post', truncating='post')
         return list(column_padded), tokenizer
-
 
     def __preprocess__tokenize_test_column(self, column, tokenizer):
         return self.__preprocess__padding_sequences(column, tokenizer)
 
     def __preprocess__tokenize_train_column(self, column):
-        tokenizer = Tokenizer(num_words = 2000, 
-                        char_level = True,
-                        oov_token =  '<OOV>')
+        tokenizer = Tokenizer(num_words=2000, char_level=True, oov_token='<OOV>')
         tokenizer.fit_on_texts(column)
         return self.__preprocess__padding_sequences(column, tokenizer)
 
     def __preprocess__tokenize_partial_train_column(self, column, tokenizer):
-        tokenizer.fit_on_texts(column) # add new vocabraries
+        tokenizer.fit_on_texts(column) # add new vocabularies
         return self.__preprocess__padding_sequences(column, tokenizer)
-
 
     def __preprocess__concatinate_row(self, row):
         input_data = np.concatenate((row['first_name'], row['last_name'], np.array([row['is_active']]), row['email'], row['affiliations'], row['bio']))
         return input_data
     
-
     def __preprocess__tokenization(self, X, isTraining=False):
         # create or load tokenizer
         tokenized_X_dict = {}
@@ -280,29 +297,22 @@ class SpamClassifier:
                 tokenize_info_dict = pickle.load(open(self.TOKENIZER_FILE_PATH, 'rb'))
                 tokenizer_dict = tokenize_info_dict['tokenizer']
                 for col in X.columns:
-                    if col == "is_active":
-                        continue
+                    if col == "is_active": continue
                     tokenized_X_dict[col], tokenizer_dict[col] = self.__preprocess__tokenize_partial_train_column(X[col], tokenizer_dict[col])
-                with open('first_name_tokenizer_config2.json','w') as fp: #TODO erase later
-                    json.dump(tokenizer_dict['first_name'].get_config(),fp)
             else: # initil-train
                 for col in X.columns:
-                    if col == "is_active":
-                        continue
+                    if col == "is_active": continue
                     tokenized_X_dict[col], tokenizer_dict[col] = self.__preprocess__tokenize_train_column(X[col])
-                with open('first_name_tokenizer_config1.json','w') as fp: #TODO erase later
-                    json.dump(tokenizer_dict['first_name'].get_config(),fp)
 
             tokenize_info_dict = {'tokenizer':tokenizer_dict}
             pickle.dump(tokenize_info_dict, open(self.TOKENIZER_FILE_PATH, 'wb')) # update file
 
-        else: # predict
+        else: # prediction
             tokenize_info_dict = pickle.load(open(self.TOKENIZER_FILE_PATH, 'rb'))
             # maxlen_dict = tokenize_info_dict['maxlen']
             tokenizer_dict = tokenize_info_dict['tokenizer']
             for col in X.columns:
-                if col == "is_active":
-                    continue
+                if col == "is_active": continue
                 tokenized_X_dict[col], _ = self.__preprocess__tokenize_test_column(X[col], tokenizer_dict[col])
 
         # apply tokenizer        
