@@ -383,8 +383,7 @@ class SpamRecommendation(models.Model):
 
     labelled_by_curator = models.BooleanField(default=None, null=True)
     date_updated = models.DateField(auto_now=True)
-    
-    was_used_for_train = models.BooleanField(default=None, null=True)
+    used_for_train = models.BooleanField(default=False)
 
     @staticmethod
     def get_recommendations_sorted_by_confidence():

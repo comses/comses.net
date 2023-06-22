@@ -12,7 +12,6 @@ from curator.models import SpamRecommendation
 
 warnings.filterwarnings("ignore")  # ignore warnings
 
-
 class UserPipeline:
     def __init__(self):
         self.column_names = [
@@ -29,17 +28,20 @@ class UserPipeline:
                 'member_profile__professional_url',
                 'labelled_by_curator',
                 'labelled_by_bio_classifier',
-                'labelled_by_user_classifier']
+                'labelled_by_user_classifier',
+                'bio_classifier_confidence',
+                'user_classifier_confidence']
         
         self.type_int_bool_column_names = [
                 'member_profile__user_id',
                 'labelled_by_curator',
-                # 'member_profile__user__is_active',
-                # 'labelled_by_bio_classifier',
-                # 'labelled_by_user_classifier'
-                ]
+                'labelled_by_bio_classifier',
+                'labelled_by_user_classifier',
+                'bio_classifier_confidence',
+                'user_classifier_confidence']
 
     def __rename_columns(self, df):
+        if df.empty == True: return df
         df.rename(columns = {
                 self.column_names[0]: 'user_id',
                 self.column_names[1]: 'first_name',
@@ -54,23 +56,23 @@ class UserPipeline:
                 self.column_names[10]: 'professional_url'}, inplace = True)
         return df
     
-    def __convert_df_markup_to_string(self, df): # TODO: conbine with Noel's conversion function
+    def __convert_df_markup_to_string(self, df):
+        if df.empty == True: return df
         for col in df.columns:
-            if col in self.type_int_bool_column_names:
-                df[col] = df[col].values.astype('int')
-            else:
-                df[col] = df[col].apply(lambda text: re.sub(r'<.*?>', ' ', str(text))) # Remove markdown
+            if col in self.type_int_bool_column_names: df[col] = df[col].astype('Int64')
+            else: df[col] = df[col].apply(lambda text: re.sub(r'<.*?>', ' ', str(text))) # Remove markdown
         return df
     
     def load_labels(self, filepath="dataset.csv"):
         # This function updates "labelled_by_curator" field of the SpamRecommendation table bsed on external dataset file.
         # Dataset should have columns named "user_id" and "is_spam"
         # param : filepath of dataset to be loaded
+        # return : None
         if SpamRecommendation.objects.all().exists() == False:
             for profile in MemberProfile.objects.all():
                 SpamRecommendation(member_profile=profile).save()
 
-        label_df = pd.read_csv(filepath)
+        label_df = pd.read_csv(filepath) #TODO : add json read too?
         for idx, row in label_df.iterrows():
             SpamRecommendation.objects.filter(Q(member_profile__id=row['user_id']))[0].update(labelled_by_curator=bool(row['is_spam']))
 
