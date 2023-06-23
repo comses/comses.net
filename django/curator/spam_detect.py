@@ -113,6 +113,6 @@ class UserPipeline:
 
     def get_untrained_df(self):
         # return : DataFrame of user data that haven't been used for train previously
-        user_list = list(SpamRecommendation.objects.exclude(member_profile__user_id=None, labelled_by_curator=None).values(*self.column_names))
+        user_list = list(SpamRecommendation.objects.exclude(labelled_by_curator=None).values(*self.column_names))
         return self.__rename_columns(self.__convert_df_markup_to_string(pd.DataFrame(user_list)))
     
