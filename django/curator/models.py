@@ -328,11 +328,7 @@ class SpamRecommendation(models.Model):
         return SpamRecommendation.objects.all().order_by('bio_classifier_confidence')
     
     def __str__(self):
-<<<<<<< HEAD
-        return "user={}, labelled_by_bio_classifier={}, bio_classifier_confidence={}, labelled_by_user_classifier={}, user_classifier_confidence={}, labelled_by_curator={}, date_updated={}".format(
-=======
         return "user={}, labelled_by_bio_classifier={}, bio_classifier_confidence={}, labelled_by_user_classifier={}, user_classifier_confidence={}, labelled_by_curator={}, date_updated={}, used_for_train={}".format(
->>>>>>> fix: UserPipeline functions and add an abstruct class SpamClassifier
             str(self.member_profile), 
             str(self.labelled_by_bio_classifier), 
             str(self.bio_classifier_confidence),

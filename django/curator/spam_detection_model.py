@@ -1,9 +1,8 @@
-import re
-import pickle
-from ast import literal_eval
+import time
 import json
 import os.path
-from typing import List
+import pickle
+from ast import literal_eval
 
 import pandas as pd
 import numpy as np
@@ -19,7 +18,6 @@ from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_sc
 import xgboost as xgb
 
 from curator.spam_detect import UserPipeline
-from curator.models import SpamRecommendation
 
 from abc import ABC, abstractmethod
 
