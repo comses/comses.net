@@ -28,9 +28,9 @@ class TextSpamClassifier(object):
     INITIAL_FILE_PATH = "curator/label.json"
     MODEL_FILE_PATH = "curator/instance.pkl"
 
-    def load_model(file_path): 
-        if os.path.isfile(file_path): TextSpamClassifier().fit()
-        with open(file_path, "rb") as file:
+    def load_model(): 
+        if os.path.isfile(TextSpamClassifier.MODEL_FILE_PATH): TextSpamClassifier.fit()
+        with open(TextSpamClassifier.MODEL_FILE_PATH, "rb") as file:
             return pickle.load(file)
 
     def save_model(model): 
@@ -49,8 +49,6 @@ class TextSpamClassifier(object):
         untrained_df = user_pipeline.get_untrained_df()
         
         if len(untrained_df) != 0: 
-            print(untrained_df[['bio']])
-
             bio = untrained_df[['bio', 'labelled_by_curator']][untrained_df['bio'] != ""]
             research_interests = untrained_df[['research_interests', 'labelled_by_curator']][untrained_df['research_interests'] != ""]
 
@@ -67,7 +65,11 @@ class TextSpamClassifier(object):
 
     def predict():
         user_pipeline = UserPipeline()
+        all_users_df = user_pipeline.get_all_users_df()
         model = TextSpamClassifier.load_model()
+
+        if len(all_users_df) != 0:
+            model.predict(all_users_df['bio'].to_list())
 
 
     def preprocess(text_list : List[str]): 
@@ -102,7 +104,7 @@ class SpamClassifier:
         df = pipeline.all_users_df()
 
         # preprocess
-        X_train, X_test, y_train, y_test = self.preprocess(df, 'train')
+        X_train, X_test, y_train, y_test, _ = self.preprocess(df, 'train')
 
         # train
         prediction, metrics, model = self.train_xgboost_classifer(X_train, X_test, y_train, y_test)
@@ -110,13 +112,18 @@ class SpamClassifier:
         # save model
         pickle.dump(model, open(self.MODEL_FILE_PATH, 'wb'))
 
+        # save last trained date
+        pipeline.save_last_trained(df)
+
         # return model_metrics # if needed
-        return None
+        
     
     def partial_train(self):
         # obtain df from pipleline
         pipeline = UserPipeline()
-        df = pipeline.all_users_df() #TODO Aiko: filter data that wasn't used for previous training
+        df = pipeline.filtered_untrained_df() # here!!
+        df = pipeline.df_type_convert_to_string(df)
+        df = pipeline.rename_columns(df)
 
         # preprocess
         X, y, _ = self.preprocess(df, 'partial_train')
@@ -134,8 +141,10 @@ class SpamClassifier:
 
     def predict(self):
         # obtain df from pipleline
-        pipeline = UserPipeline()
-        df = pipeline.all_users_df() #TODO Aiko: filter only the ones with no prediction
+        pipeline = UserPipeline()  # here!!
+        df = pipeline.filtered_by_labelled_df(is_labelled=True) #TODO Aiko: check the use of filtered_by_labelled_df
+        df = pipeline.df_type_convert_to_string(df)
+        df = pipeline.rename_columns(df, created_from_spam_recommendation=True)
 
         # preprocess
         X, _, uid_series = self.preprocess(df, 'predict')
@@ -189,25 +198,23 @@ class SpamClassifier:
         # tokenize
         y = df['labelled_by_curator']
         X = df.drop(['labelled_by_curator'], axis = 1)
+        uid_series = X.filter(['user_id'],axis=1).squeeze()
         if mode=='train':
             isTraining = True
             X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.15, random_state=434)
-            tokenized_X_train = self.__preprocess_tokenization(X_train.drop(['user_id'],axis=1), isTraining)
-            tokenized_X_test = self.__preprocess_tokenization(X_test.drop(['user_id'],axis=1))
-            return tokenized_X_train, tokenized_X_test, y_train, y_test
+            tokenized_X_train = self.__preprocess__tokenization(X_train.drop(['user_id'],axis=1), isTraining)
+            tokenized_X_test = self.__preprocess__tokenization(X_test.drop(['user_id'],axis=1))
+            return tokenized_X_train, tokenized_X_test, y_train, y_test, uid_series
         
         elif mode=='partial_train':
             isTraining = True
-            uid_series = X.filter(['user_id'],axis=1).squeeze()
-            tokenized_X = self.__preprocess_tokenization(X.drop(['user_id'],axis=1), isTraining)
+            tokenized_X = self.__preprocess__tokenization(X.drop(['user_id'],axis=1), isTraining)
             return tokenized_X, y, uid_series
     
         elif mode=='predict':
-            uid_series = X.filter(['user_id'],axis=1).squeeze()
-            tokenized_X = self.__preprocess_tokenization(X.drop(['user_id'],axis=1))
+            tokenized_X = self.__preprocess__tokenization(X.drop(['user_id'],axis=1))
             return tokenized_X, y, uid_series
     
-
     def __reform__affiliations(self, array):
         array = literal_eval(array)
         if len(array) != 0:
@@ -262,7 +269,7 @@ class SpamClassifier:
         return input_data
     
 
-    def __preprocess_tokenization(self, X, isTraining=False):
+    def __preprocess__tokenization(self, X, isTraining=False):
         # create or load tokenizer
         tokenized_X_dict = {}
         tokenizer_dict = {}

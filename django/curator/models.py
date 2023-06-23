@@ -8,6 +8,7 @@ from collections import defaultdict
 from django.core.exceptions import FieldDoesNotExist
 from django.contrib.auth.models import User
 import itertools
+from datetime import datetime
 from typing import List
 from urllib.parse import urlparse
 
@@ -382,6 +383,8 @@ class SpamRecommendation(models.Model):
 
     labelled_by_curator = models.BooleanField(default=None, null=True)
     date_updated = models.DateField(auto_now=True)
+    
+    was_used_for_train = models.BooleanField(default=None, null=True)
 
     @staticmethod
     def get_recommendations_sorted_by_confidence():

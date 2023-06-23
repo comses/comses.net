@@ -7,8 +7,8 @@ from itertools import chain
 import warnings
 from datetime import datetime, timedelta, date
 
-from curator.models import SpamRecommendation
 from core.models import MemberProfile
+from curator.models import SpamRecommendation
 
 warnings.filterwarnings("ignore")  # ignore warnings
 
