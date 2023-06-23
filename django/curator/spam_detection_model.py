@@ -44,14 +44,18 @@ class TextSpamClassifier(object):
             ('countvectorizer', CountVectorizer(lowercase=True)),
             ('classifier', MultinomialNB())
         ])
+
         user_pipeline = UserPipeline()
         untrained_df = user_pipeline.get_untrained_df()
-
+        
         if len(untrained_df) != 0: 
+            print(untrained_df[['bio']])
+
             bio = untrained_df[['bio', 'labelled_by_curator']][untrained_df['bio'] != ""]
             research_interests = untrained_df[['research_interests', 'labelled_by_curator']][untrained_df['research_interests'] != ""]
 
-            train_x = pd.concat([bio['bio'], research_interests['research_interests']]).to_frame(name="bio")
+            train_x = pd.concat([bio['bio'], research_interests['research_interests']]).to_list()
+
             train_y = pd.concat([bio['labelled_by_curator'], research_interests['labelled_by_curator']])
 
             model.fit(train_x, train_y)
@@ -67,8 +71,7 @@ class TextSpamClassifier(object):
 
 
     def preprocess(text_list : List[str]): 
-        text_list['bio'] = text_list['bio'].apply(lambda row : TextSpamClassifier.__text_cleanup_pipeline(row))
-        print(text_list)
+        text_list = [TextSpamClassifier.__text_cleanup_pipeline(text) for text in text_list]
         return text_list
 
     def __text_cleanup_pipeline(text : str): 
