@@ -28,9 +28,9 @@ class TextSpamClassifier(object):
     INITIAL_FILE_PATH = "curator/label.json"
     MODEL_FILE_PATH = "curator/instance.pkl"
 
-    def load_model(file_path): 
-        if os.path.isfile(file_path): TextSpamClassifier().fit()
-        with open(file_path, "rb") as file:
+    def load_model(): 
+        if os.path.isfile(TextSpamClassifier.MODEL_FILE_PATH): TextSpamClassifier.fit()
+        with open(TextSpamClassifier.MODEL_FILE_PATH, "rb") as file:
             return pickle.load(file)
 
     def save_model(model): 
@@ -49,8 +49,6 @@ class TextSpamClassifier(object):
         untrained_df = user_pipeline.get_untrained_df()
         
         if len(untrained_df) != 0: 
-            print(untrained_df[['bio']])
-
             bio = untrained_df[['bio', 'labelled_by_curator']][untrained_df['bio'] != ""]
             research_interests = untrained_df[['research_interests', 'labelled_by_curator']][untrained_df['research_interests'] != ""]
 
@@ -67,7 +65,11 @@ class TextSpamClassifier(object):
 
     def predict():
         user_pipeline = UserPipeline()
+        all_users_df = user_pipeline.get_all_users_df()
         model = TextSpamClassifier.load_model()
+
+        if len(all_users_df) != 0:
+            model.predict(all_users_df['bio'].to_list())
 
 
     def preprocess(text_list : List[str]): 
