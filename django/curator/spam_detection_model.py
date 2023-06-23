@@ -1,7 +1,12 @@
-import pandas as pd
-import numpy as np
+import re
 import pickle
 from ast import literal_eval
+import json
+import os.path
+from typing import List
+
+import pandas as pd
+import numpy as np
 from tensorflow.keras.preprocessing.text import Tokenizer
 from tensorflow.keras.preprocessing.sequence import pad_sequences
 from sklearn.feature_extraction.text import CountVectorizer
@@ -12,86 +17,68 @@ from sklearn.pipeline import Pipeline
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
 import xgboost as xgb
+
 from curator.spam_detect import UserPipeline
 from curator.models import SpamRecommendation
-import json
-import os.path
-from typing import List
 
-class BioSpamClassifier(object):
+class TextSpamClassifier(object):
     # This is temporary until we find a better solution.
     # We are saving and loading models straight to the VM,
     # ideally, we instead store it in some object storage instead.
     INITIAL_FILE_PATH = "curator/label.json"
     MODEL_FILE_PATH = "curator/instance.pkl"
 
-    @staticmethod
-    def load_model(): 
-        if os.path.isfile(BioSpamClassifier.MODEL_FILE_PATH): BioSpamClassifier().fit_on_initial_data()
-        with open(BioSpamClassifier.MODEL_FILE_PATH, "rb") as file:
+    def load_model(file_path): 
+        if os.path.isfile(file_path): TextSpamClassifier().fit()
+        with open(file_path, "rb") as file:
             return pickle.load(file)
 
-    def __init__(self):
-        self.pipeline = Pipeline([
-            ('cleaner', FunctionTransformer(BioSpamClassifier.text_list_cleanup)),
-            ('countvectorizer', CountVectorizer()),
+    def save_model(model): 
+        with open(TextSpamClassifier.MODEL_FILE_PATH, "wb") as file:
+            pickle.dump(model, file)
+
+    def fit(): 
+        # TODO:
+        model = Pipeline([
+            ('cleaner', FunctionTransformer(TextSpamClassifier.preprocess)),
+            ('countvectorizer', CountVectorizer(lowercase=True)),
             ('classifier', MultinomialNB())
         ])
-
-    def fit_on_initial_data(self):
-        training_data = pd.read_json(BioSpamClassifier.INITIAL_FILE_PATH)
-        x_train, y_train = training_data['bio'], training_data['is_spam']
-        self.pipeline.fit(x_train, y_train)
-        self.save_model()
-
-    def fit_on_curator_labelled_recommendations(self):
-        curator_labelled_recommendations = SpamRecommendation.objects.exclude(labelled_by_curator=None)
-
-        x_data = [[recommendation.bio] for recommendation in curator_labelled_recommendations]
-        y_data = [recommendation.is_spam for recommendation in curator_labelled_recommendations]
-
-        self.pipeline.fit(x_data, y_data)
-
-    def predict_spam(self, text : str):
-        # Since our classifier classifies based on the user's bio, if it is empty, there is nothing we can predict about it.
-        if len(text) == 0: return None, (0, 0)
-        spam_probabilities = self.pipeline.predict_proba([text])[0]
-        return BioSpamClassifier.__argmax(spam_probabilities), spam_probabilities
-
-    def predict_row(self, row):
-        prediction, probabilities = self.predict_spam(row['bio'])
-        row['labelled_by_bio_classifier'] = prediction
-        row['bio_classifier_confidence'] = abs(probabilities[0] - probabilities[1])
-        return row
-
-    def predict_all_unlabelled_users(self):
         user_pipeline = UserPipeline()
+        untrained_df = user_pipeline.get_untrained_df()
 
-        unlabelled_users = user_pipeline.filtered_by_labelled_df(is_labelled=True)
-        unlabelled_users = unlabelled_users.apply(lambda row : self.predict_row(row), axis=1)
+        if len(untrained_df) != 0: 
+            bio = untrained_df[['bio', 'labelled_by_curator']][untrained_df['bio'] != ""]
+            research_interests = untrained_df[['research_interests', 'labelled_by_curator']][untrained_df['research_interests'] != ""]
 
-        return user_pipeline.save_recommendations(unlabelled_users)
+            train_x = pd.concat([bio['bio'], research_interests['research_interests']]).to_frame(name="bio")
+            train_y = pd.concat([bio['labelled_by_curator'], research_interests['labelled_by_curator']])
 
-    def save_model(self): 
-        with open(BioSpamClassifier.MODEL_FILE_PATH, "wb") as file:
-            pickle.dump(self, file)
+            model.fit(train_x, train_y)
 
-    def text_list_cleanup(text_list : List[str]): 
-        return [BioSpamClassifier.text_cleanup_pipeline(text) for text in text_list]
+        TextSpamClassifier.save_model(model)
 
-    def text_cleanup_pipeline(text : str): 
+
+
+
+    def predict():
+        user_pipeline = UserPipeline()
+        model = TextSpamClassifier.load_model()
+
+
+    def preprocess(text_list : List[str]): 
+        text_list['bio'] = text_list['bio'].apply(lambda row : TextSpamClassifier.__text_cleanup_pipeline(row))
+        print(text_list)
+        return text_list
+
+    def __text_cleanup_pipeline(text : str): 
         text = str(text)
-        text = BioSpamClassifier.__convert_text_to_lowercase(text)
-        text = BioSpamClassifier.__replace_urls_with_webtag(text)
-        text = BioSpamClassifier.__replace_numbers_with_zero(text)
-        text = BioSpamClassifier.__remove_markdown(text)
-        text = BioSpamClassifier.__remove_excess_spaces(text)
+        text = TextSpamClassifier.__convert_text_to_lowercase(text)
+        text = TextSpamClassifier.__replace_urls_with_webtag(text)
+        text = TextSpamClassifier.__replace_numbers_with_zero(text)
+        text = TextSpamClassifier.__remove_markdown(text)
+        text = TextSpamClassifier.__remove_excess_spaces(text)
         return text
-    
-    # Helper functions
-    def __argmax(float_list : List[float]):
-        map_index_to_element = lambda index: float_list[index]
-        return max(range(len(float_list)), key=map_index_to_element)
     
     def __convert_text_to_lowercase(text : str): return text.lower()
     def __replace_urls_with_webtag(text : str): return re.sub(r'http\S+|www\S+', ' webtag ', text) 
