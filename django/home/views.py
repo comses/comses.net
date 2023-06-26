@@ -19,13 +19,11 @@ from rest_framework import (
     parsers,
     status,
     mixins,
-    renderers,
     filters,
 )
 from rest_framework.decorators import action
 from rest_framework.filters import OrderingFilter
 from rest_framework.permissions import IsAuthenticated, AllowAny
-from rest_framework.renderers import JSONRenderer, TemplateHTMLRenderer
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from taggit.models import Tag
@@ -83,7 +81,6 @@ class ProfileRedirectView(LoginRequiredMixin, RedirectView):
 
 class ToggleFollowUser(APIView):
     permission_classes = (IsAuthenticated,)
-    renderer_classes = (TemplateHTMLRenderer, JSONRenderer)
 
     def post(self, request, *args, **kwargs):
         logger.debug("POST with request data: %s", request.data)
@@ -104,7 +101,6 @@ class TagListView(mixins.ListModelMixin, viewsets.GenericViewSet):
     serializer_class = TagSerializer
     queryset = Tag.objects.all()
     pagination_class = SmallResultSetPagination
-    renderer_classes = (renderers.JSONRenderer,)
     permission_classes = (AllowAny,)
 
     def get_queryset(self):

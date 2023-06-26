@@ -240,7 +240,6 @@ class NestedPeerReviewInvitation(permissions.BasePermission):
 class PeerReviewInvitationViewSet(NoDeleteNoUpdateViewSet):
     queryset = PeerReviewInvitation.objects.with_reviewer_statistics()
     permission_classes = (NestedPeerReviewInvitation,)
-    renderer_classes = (renderers.JSONRenderer,)
     serializer_class = PeerReviewInvitationSerializer
     lookup_url_kwarg = "invitation_slug"
 
@@ -306,7 +305,6 @@ class PeerReviewInvitationUpdateView(UpdateView):
 
 class PeerReviewFeedbackViewSet(NoDeleteNoUpdateViewSet):
     queryset = PeerReviewerFeedback.objects.all()
-    renderer_classes = (renderers.JSONRenderer,)
     serializer_class = PeerReviewFeedbackEditorSerializer
 
     def get_queryset(self):
@@ -368,12 +366,8 @@ class PeerReviewEditorFeedbackUpdateView(UpdateView):
 @permission_classes([])
 def list_review_event_log(request, slug):
     review = get_object_or_404(PeerReview, slug=slug)
-    if (
-        not MemberProfile.objects.editors()
-        .filter(pk=request.user.member_profile.pk)
-        .exists()
-    ):
-        raise Http404()
+    if not request.user.has_perm("library.change_peerreview"):
+        raise PermissionDenied()
     queryset = review.event_set.order_by("-date_created")[:10]
     serializer = PeerReviewEventLogSerializer(queryset, many=True)
     return Response(serializer.data)
@@ -521,7 +515,6 @@ class CodebaseImageViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
     lookup_value_regex = r"\d+"
     queryset = CodebaseImage.objects.all()
     serializer_class = CodebaseImageSerializer
-    renderer_classes = (renderers.JSONRenderer,)
     permission_classes = (CodebaseImagePermission,)
 
     def get_queryset(self):
@@ -897,7 +890,7 @@ class CodebaseReleaseViewSet(CommonViewSetMixin, NoDeleteViewSet):
 
         return response
 
-    @action(detail=True, methods=["get"], renderer_classes=(renderers.JSONRenderer,))
+    @action(detail=True, methods=["get"])
     def download_preview(self, request, **kwargs):
         codebase_release = self.get_object()
         fs_api = codebase_release.get_fs_api()
@@ -915,7 +908,6 @@ class BaseCodebaseReleaseFilesViewSet(viewsets.GenericViewSet):
         NestedCodebaseReleaseUnpublishedFilesPermission,
         CodebaseReleaseUnpublishedFilePermissions,
     )
-    renderer_classes = (renderers.JSONRenderer,)
 
     stage = None
 
@@ -991,8 +983,6 @@ class CodebaseReleaseFilesSipViewSet(BaseCodebaseReleaseFilesViewSet):
 
 
 class CodebaseReleaseFilesOriginalsViewSet(BaseCodebaseReleaseFilesViewSet):
-    renderer_classes = (renderers.JSONRenderer,)
-
     stage = StagingDirectories.originals
 
     def get_list_url(self, api):

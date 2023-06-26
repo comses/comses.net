@@ -39,7 +39,7 @@ import { useCodebaseAPI } from "@/composables/api";
 
 const peerReviewOptions = [
   { value: "reviewed", label: "Reviewed" },
-  { value: "notReviewed", label: "Not Reviewed" },
+  { value: "not_reviewed", label: "Not Reviewed" },
   { value: "", label: "Any" },
 ];
 
