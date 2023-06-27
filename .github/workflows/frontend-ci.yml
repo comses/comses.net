@@ -2,10 +2,10 @@ name: Frontend CI (Vue3/TS)
 
 on:
   push:
-    branches: [vue3]
+    branches: [main]
     paths: ["frontend/**"]
   pull_request:
-    branches: [vue3]
+    branches: [main]
     paths: ["frontend/**"]
 
 jobs:
