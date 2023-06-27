@@ -82,7 +82,7 @@ services:
     ports:
       - "127.0.0.1:9191:9191" # uWSGI stats server
     depends_on:
-      js:
+      vite:
         condition: service_completed_successfully
       elasticsearch:
         condition: service_healthy
