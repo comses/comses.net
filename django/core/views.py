@@ -16,7 +16,7 @@ from django.http import (
     HttpResponseRedirect,
     HttpResponseServerError,
 )
-from django.shortcuts import render
+from django.shortcuts import redirect, render
 from django.views.generic import DetailView, TemplateView
 from rest_framework import viewsets, mixins
 from rest_framework.exceptions import (
@@ -160,6 +160,16 @@ class FormUpdateView(PermissionRequiredByHttpMethodMixin, DetailView):
 
 class FormCreateView(PermissionRequiredByHttpMethodMixin, TemplateView):
     method = "POST"
+
+
+class FormMarkDeletedView(PermissionRequiredByHttpMethodMixin, DetailView):
+    method = "DELETE"
+
+    def post(self, request, *args, **kwargs):
+        instance = self.get_object()
+        instance.is_deleted = True
+        instance.save()
+        return redirect(instance.get_list_url())
 
 
 def rest_exception_handler(exc, context):

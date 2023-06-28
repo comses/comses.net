@@ -526,6 +526,18 @@ class EventQuerySet(models.QuerySet):
     def with_tags(self):
         return self.prefetch_related("tagged_events__tag")
 
+    def with_expired(self):
+        threshold = timezone.now() - timedelta(
+            days=settings.POST_DATE_DAYS_AGO_THRESHOLD
+        )
+        return self.annotate(
+            expired=models.ExpressionWrapper(
+                models.Q(start_date__lte=threshold)
+                | models.Q(end_date__lte=threshold, end_date__isnull=False),
+                output_field=models.BooleanField(),
+            )
+        )
+
     def upcoming(self, **kwargs):
         # return all events with start / end dates
         now = timezone.now()
@@ -536,6 +548,9 @@ class EventQuerySet(models.QuerySet):
             | models.Q(end_date__gte=post_date_threshold),
             **kwargs,
         )
+
+    def live(self, **kwargs):
+        return self.filter(is_deleted=False, **kwargs)
 
     def latest_for_feed(self, number=10):
         return self.select_related("submitter__member_profile").order_by(
@@ -561,6 +576,7 @@ class Event(index.Indexed, ClusterableModel):
     location = models.CharField(max_length=300)
     tags = ClusterTaggableManager(through=EventTag, blank=True)
     external_url = models.URLField(blank=True)
+    is_deleted = models.BooleanField(default=False)
 
     objects = EventQuerySet.as_manager()
 
@@ -571,6 +587,7 @@ class Event(index.Indexed, ClusterableModel):
     search_fields = [
         index.SearchField("title"),
         index.SearchField("description"),
+        index.FilterField("is_deleted"),
         index.FilterField("date_created"),
         index.FilterField("start_date"),
         index.FilterField("end_date"),
@@ -597,7 +614,7 @@ class Event(index.Indexed, ClusterableModel):
 
     @property
     def live(self):
-        return True
+        return not self.is_deleted
 
     def get_absolute_url(self):
         return reverse("home:event-detail", kwargs={"pk": self.pk})
@@ -643,6 +660,9 @@ class JobQuerySet(models.QuerySet):
             **kwargs,
         )
 
+    def live(self, **kwargs):
+        return self.filter(is_deleted=False, **kwargs)
+
     def latest_for_feed(self, number=10):
         return self.select_related("submitter__member_profile").order_by(
             "-date_created"
@@ -663,6 +683,7 @@ class Job(index.Indexed, ClusterableModel):
     description = MarkdownField()
     tags = ClusterTaggableManager(through=JobTag, blank=True)
     external_url = models.URLField(blank=True)
+    is_deleted = models.BooleanField(default=False)
 
     submitter = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -675,6 +696,7 @@ class Job(index.Indexed, ClusterableModel):
     search_fields = [
         index.SearchField("title"),
         index.SearchField("description"),
+        index.FilterField("is_deleted"),
         index.FilterField("date_created"),
         index.FilterField("last_modified"),
         index.FilterField("application_deadline"),
@@ -696,7 +718,7 @@ class Job(index.Indexed, ClusterableModel):
 
     @property
     def live(self):
-        return True
+        return not self.is_deleted
 
     def get_absolute_url(self):
         return reverse("home:job-detail", kwargs={"pk": self.pk})
