@@ -138,7 +138,7 @@ class EventSerializer(serializers.ModelSerializer):
         format=DATE_PUBLISHED_FORMAT, read_only=True
     )
     description = MarkdownField()
-    expired = serializers.BooleanField(read_only=True)
+    is_expired = serializers.BooleanField(read_only=True)
 
     tags = TagSerializer(many=True, label="Tags")
 
@@ -241,7 +241,7 @@ class JobSerializer(serializers.ModelSerializer):
         format=DATE_PUBLISHED_FORMAT, read_only=True
     )
     description = MarkdownField()
-    last_modified = serializers.DateTimeField(format="%c", read_only=True)
+    is_expired = serializers.BooleanField(read_only=True)
     application_deadline = serializers.DateField(
         allow_null=True, input_formats=["%Y-%m-%dT%H:%M:%S.%fZ", "iso-8601"]
     )
@@ -271,6 +271,7 @@ class JobSerializer(serializers.ModelSerializer):
             "absolute_url",
             "tags",
             "external_url",
+            "is_expired",
         )
 
 

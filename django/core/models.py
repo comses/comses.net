@@ -527,26 +527,31 @@ class EventQuerySet(models.QuerySet):
         return self.prefetch_related("tagged_events__tag")
 
     def with_expired(self):
-        threshold = timezone.now() - timedelta(
-            days=settings.POST_DATE_DAYS_AGO_THRESHOLD
-        )
         return self.annotate(
-            expired=models.ExpressionWrapper(
-                models.Q(start_date__lte=threshold)
-                | models.Q(end_date__lte=threshold, end_date__isnull=False),
+            is_expired=models.ExpressionWrapper(
+                self.get_expired_q(),
                 output_field=models.BooleanField(),
             )
         )
 
     def upcoming(self, **kwargs):
-        # return all events with start / end dates
+        """returns only events that have not expired"""
         now = timezone.now()
-        post_date_days_ago_threshold = settings.POST_DATE_DAYS_AGO_THRESHOLD
-        post_date_threshold = now - timedelta(days=post_date_days_ago_threshold)
+        start_date_threshold = now - timedelta(days=7)
         return self.filter(
-            models.Q(start_date__gte=post_date_threshold)
-            | models.Q(end_date__gte=post_date_threshold),
+            ~self.get_expired_q(),
             **kwargs,
+        )
+
+    def get_expired_q(self):
+        """
+        returns a Q object for all events with that have not yet ended or
+        started less than 7 days ago if the event has no end date
+        """
+        now = timezone.now()
+        start_date_threshold = now - timedelta(days=7)
+        return models.Q(start_date__lte=start_date_threshold) | models.Q(
+            end_date__lte=now, end_date__isnull=False
         )
 
     def live(self, **kwargs):
@@ -643,21 +648,35 @@ class JobQuerySet(models.QuerySet):
     def public(self):
         return self
 
-    def upcoming(self, **kwargs):
-        """returns all Jobs with a non-null application_deadline after today or posted in the last 6 months"""
+    def with_expired(self):
+        return self.annotate(
+            is_expired=models.ExpressionWrapper(
+                self.get_expired_q(),
+                output_field=models.BooleanField(),
+            )
+        )
+
+    def get_upcoming(self, **kwargs):
+        """returns only jobs that have not expired"""
+        return self.filter(
+            ~self.get_expired_q(),
+            **kwargs,
+        )
+
+    def get_expired_q(self):
+        """
+        returns a Q object for all Jobs with a non-null application deadline before today or
+        posted in the last [POST_DATE_DAYS_AGO_TRESHOLD] days if application deadline is null
+        """
         today = timezone.now()
         post_date_days_ago_threshold = settings.POST_DATE_DAYS_AGO_THRESHOLD
         post_date_threshold = today - timedelta(days=post_date_days_ago_threshold)
-        return self.filter(
-            models.Q(application_deadline__gte=post_date_threshold)
-            | (
-                models.Q(application_deadline__isnull=True)
-                & (
-                    models.Q(date_created__gte=post_date_threshold)
-                    | models.Q(last_modified__gte=post_date_threshold)
-                )
-            ),
-            **kwargs,
+        return models.Q(application_deadline__lte=today) | (
+            models.Q(application_deadline__isnull=True)
+            & (
+                models.Q(date_created__lte=post_date_threshold)
+                | models.Q(last_modified__lte=post_date_threshold)
+            )
         )
 
     def live(self, **kwargs):
