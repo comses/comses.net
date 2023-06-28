@@ -1,5 +1,5 @@
 {% extends "sidebar_layout.jinja" %}
-{% from "common.jinja" import permission_button_group, breadcrumb, embed_discourse_comments, share_card, member_profile_href, search_tag_href %}
+{% from "common.jinja" import permission_button_group, breadcrumb, embed_discourse_comments, share_card, member_profile_href, search_tag_href, delete_confirm_modal %}
 
 {% block title %}{{ title }}{% endblock %}
 
@@ -63,9 +63,7 @@
         </a>
     {% endif %}
     {% if has_delete_perm %}
-        <button type="button" class="btn btn-danger my-1 w-100" href="{{ url('home:job-detail', pk=id) }}">
-            Delete
-        </button>
+        {{ delete_confirm_modal("Delete Job Posting", title, url("home:job-delete", pk=id), csrf_input) }}
     {% endif %}
     {# {{ share_card(absolute_url) }} #}
 {% endblock %}

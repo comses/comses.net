@@ -6,11 +6,13 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.models import User
 from django.core.files.images import ImageFile
+from django.core.exceptions import PermissionDenied
 from django.http import QueryDict
 from django.shortcuts import redirect, get_object_or_404
 from django.template.loader import get_template
 from django.urls import reverse
 from django.utils.decorators import method_decorator
+from django.views.decorators.http import require_POST
 from django.views.generic import TemplateView, RedirectView, CreateView
 from django.views.generic.list import ListView
 from rest_framework import (
@@ -41,6 +43,7 @@ from core.view_helpers import (
 from core.views import (
     CommonViewSetMixin,
     FormCreateView,
+    FormMarkDeletedView,
     FormUpdateView,
     SmallResultSetPagination,
     OnlyObjectPermissionModelViewSet,
@@ -207,11 +210,19 @@ class EventUpdateView(FormUpdateView):
     model = Event
 
 
+class EventMarkDeletedView(FormMarkDeletedView):
+    model = Event
+
+
 class JobCreateView(FormCreateView):
     model = Job
 
 
 class JobUpdateView(FormUpdateView):
+    model = Job
+
+
+class JobMarkDeletedView(FormMarkDeletedView):
     model = Job
 
 
@@ -249,7 +260,11 @@ class EventFilter(filters.BaseFilterBackend):
 class EventViewSet(CommonViewSetMixin, OnlyObjectPermissionModelViewSet):
     serializer_class = EventSerializer
     queryset = (
-        Event.objects.upcoming().with_tags().with_submitter().order_by("-date_created")
+        Event.objects.live()
+        .with_tags()
+        .with_submitter()
+        .with_expired()
+        .order_by("-date_created")
     )
     pagination_class = SmallResultSetPagination
     filter_backends = (OrderingFilter, EventFilter)
@@ -368,9 +383,7 @@ class JobFilter(filters.BaseFilterBackend):
 class JobViewSet(CommonViewSetMixin, OnlyObjectPermissionModelViewSet):
     serializer_class = JobSerializer
     pagination_class = SmallResultSetPagination
-    queryset = (
-        Job.objects.upcoming().with_tags().with_submitter().order_by("-date_created")
-    )
+    queryset = Job.objects.live().with_tags().with_submitter().order_by("-date_created")
     filter_backends = (OrderingFilter, JobFilter)
     permission_classes = (ViewRestrictedObjectPermissions,)
     ordering_fields = (

@@ -137,8 +137,8 @@ class EventSerializer(serializers.ModelSerializer):
     date_created = serializers.DateTimeField(
         format=DATE_PUBLISHED_FORMAT, read_only=True
     )
-    last_modified = serializers.DateTimeField(format="%c", read_only=True)
     description = MarkdownField()
+    expired = serializers.BooleanField(read_only=True)
 
     tags = TagSerializer(many=True, label="Tags")
 
