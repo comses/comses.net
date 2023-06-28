@@ -10,7 +10,9 @@ from django.templatetags.static import static
 from django.urls import reverse
 from django.utils.dateparse import parse_datetime
 from django.utils.text import slugify
+from django.utils import timezone
 from django.utils.timezone import get_current_timezone
+from django.utils.timesince import timesince
 from jinja2 import Environment
 from markupsafe import Markup
 
@@ -76,6 +78,7 @@ def environment(**options):
             "add_field_css": add_field_css,
             "format_datetime_str": format_datetime_str,
             "format_datetime": format_datetime,
+            "timeuntil": timeuntil,
             "to_json": to_json,
             "is_checkbox": is_checkbox,
             "is_hcaptcha": is_hcaptcha,
@@ -182,6 +185,14 @@ def format_datetime(date_obj, format_string=FULL_DATE_FORMAT):
     if date_obj is None:
         return None
     return date_obj.strftime(format_string)
+
+
+def timeuntil(date):
+    if date is None:
+        return None
+    elif isinstance(date, str):
+        date = parse_datetime(date)
+    return timesince(date, timezone.now())
 
 
 def to_json(value):

@@ -383,7 +383,13 @@ class JobFilter(filters.BaseFilterBackend):
 class JobViewSet(CommonViewSetMixin, OnlyObjectPermissionModelViewSet):
     serializer_class = JobSerializer
     pagination_class = SmallResultSetPagination
-    queryset = Job.objects.live().with_tags().with_submitter().order_by("-date_created")
+    queryset = (
+        Job.objects.live()
+        .with_tags()
+        .with_submitter()
+        .with_expired()
+        .order_by("-date_created")
+    )
     filter_backends = (OrderingFilter, JobFilter)
     permission_classes = (ViewRestrictedObjectPermissions,)
     ordering_fields = (
