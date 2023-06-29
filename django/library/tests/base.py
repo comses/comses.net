@@ -1,9 +1,6 @@
 import random
 from uuid import UUID
 
-from django.contrib.auth.models import User
-from django.test import TestCase
-
 from core.tests.base import UserFactory
 from library.models import (
     Codebase,
@@ -15,15 +12,6 @@ from library.models import (
     PeerReview,
 )
 from library.serializers import CodebaseSerializer
-
-
-class BaseModelTestCase(TestCase):
-    def setUp(self):
-        self.user = self.create_user()
-
-    def create_user(self, username="test_user", password="test", **kwargs):
-        kwargs.setdefault("email", "testuser@mailinator.com")
-        return User.objects.create_user(username=username, password=password, **kwargs)
 
 
 class CodebaseFactory:
