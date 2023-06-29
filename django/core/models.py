@@ -550,8 +550,8 @@ class EventQuerySet(models.QuerySet):
         """
         now = timezone.now()
         start_date_threshold = now - timedelta(days=7)
-        return models.Q(start_date__lte=start_date_threshold) | models.Q(
-            end_date__lte=now, end_date__isnull=False
+        return models.Q(start_date__lt=start_date_threshold) | models.Q(
+            end_date__lt=now, end_date__isnull=False
         )
 
     def live(self, **kwargs):
@@ -653,10 +653,10 @@ class JobQuerySet(models.QuerySet):
             is_expired=models.ExpressionWrapper(
                 self.get_expired_q(),
                 output_field=models.BooleanField(),
-            )
+            ),
         )
 
-    def get_upcoming(self, **kwargs):
+    def upcoming(self, **kwargs):
         """returns only jobs that have not expired"""
         return self.filter(
             ~self.get_expired_q(),
@@ -666,17 +666,17 @@ class JobQuerySet(models.QuerySet):
     def get_expired_q(self):
         """
         returns a Q object for all Jobs with a non-null application deadline before today or
-        posted in the last [POST_DATE_DAYS_AGO_TRESHOLD] days if application deadline is null
+        posted/modified in the last [POST_DATE_DAYS_AGO_TRESHOLD] days if application deadline is null
         """
         today = timezone.now()
         post_date_days_ago_threshold = settings.POST_DATE_DAYS_AGO_THRESHOLD
         post_date_threshold = today - timedelta(days=post_date_days_ago_threshold)
-        return models.Q(application_deadline__lte=today) | (
-            models.Q(application_deadline__isnull=True)
-            & (
-                models.Q(date_created__lte=post_date_threshold)
-                | models.Q(last_modified__lte=post_date_threshold)
-            )
+        return models.Q(
+            application_deadline__isnull=False, application_deadline__lt=today
+        ) | models.Q(
+            application_deadline__isnull=True,
+            date_created__lt=post_date_threshold,
+            last_modified__lt=post_date_threshold,
         )
 
     def live(self, **kwargs):
