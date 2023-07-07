@@ -373,29 +373,43 @@ class CanonicalTagMapping(models.Model):
         return f"tag={self.tag} canonical_tag={self.canonical_tag.name} confidence={self.confidence_score}"
 
 
-class SpamRecommendation(models.Model):
-    member_profile = models.OneToOneField(MemberProfile, on_delete=models.CASCADE, primary_key=True)
-    labelled_by_bio_classifier = models.BooleanField(default=None, null=True) 
-    bio_classifier_confidence = models.FloatField(default=0) 
+class UserSpamStatus(models.Model):
+    member_profile = models.OneToOneField(
+        MemberProfile, on_delete=models.CASCADE, primary_key=True
+    )
+    # FIXME: add help_text
+    # None = not processed yet
+    # True = bio_classifier considered this user to be spam
+    # False = bio_classifier did not consider this user to be spam
+    labelled_by_bio_classifier = models.BooleanField(default=None, null=True)
+    bio_classifier_confidence = models.FloatField(default=0)
 
-    labelled_by_user_classifier = models.BooleanField(default=None, null=True) 
-    user_classifier_confidence = models.FloatField(default=0) 
+    # similar to bio_classifier
+    labelled_by_user_classifier = models.BooleanField(default=None, null=True)
+    user_classifier_confidence = models.FloatField(default=0)
 
     labelled_by_curator = models.BooleanField(default=None, null=True)
-    date_updated = models.DateField(auto_now=True)
-    used_for_train = models.BooleanField(default=False)
+    last_updated = models.DateField(auto_now=True)
+    is_training_data = models.BooleanField(default=False)
 
     @staticmethod
     def get_recommendations_sorted_by_confidence():
-        return SpamRecommendation.objects.all().order_by("classifier_confidence")
+        return UserSpamStatus.objects.all().order_by("bio_classifier_confidence")
 
     def __str__(self):
-        return "user={}, user_bio={}, is_spam_labelled_by_classifier={}, is_spam_labelled_by_curator={}, is_labelled_by_curator_before={}, classifier_confidence={}, last_updated_date={}".format(
+        return "user={}, labelled_by_bio_classifier={}, bio_classifier_confidence={}, labelled_by_user_classifier={}, user_classifier_confidence={}, labelled_by_curator={}, last_updated={}, is_training_data={}".format(
             str(self.member_profile),
-            str(self.member_profile.bio),
-            str(self.is_spam_labelled_by_classifier),
-            str(self.is_spam_labelled_by_curator),
-            str(self.is_labelled_by_curator_before),
-            str(self.classifier_confidence),
-            str(self.last_updated_date)
+            str(self.labelled_by_bio_classifier),
+            str(self.bio_classifier_confidence),
+            str(self.labelled_by_user_classifier),
+            str(self.user_classifier_confidence),
+            str(self.labelled_by_curator),
+            str(self.last_updated),
+            str(self.is_training_data),
         )
+
+
+# Create a new UserSpamStatus whenever a new MemberProfile is created
+@receiver(post_save, sender=MemberProfile)
+def sync_member_profile_spam(sender, instance, **kwargs):
+    UserSpamStatus(member_profile=instance).save()
