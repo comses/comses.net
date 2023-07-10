@@ -102,7 +102,7 @@ const osOptions = [
   { value: "linux", label: "Unix/Linux" },
   { value: "macos", label: "Mac OS" },
   { value: "windows", label: "Windows" },
-  { value: "platformIndependent", label: "Operating System Independent" },
+  { value: "platform_independent", label: "Operating System Independent" },
   { value: "other", label: "Other" },
 ];
 

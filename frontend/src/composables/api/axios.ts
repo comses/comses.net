@@ -63,6 +63,7 @@ export function useAxios(baseUrl?: string, config?: AxiosRequestConfig) {
         parser(response.data);
       }
       state.data = response.data;
+      state.serverErrors = [];
       state.isFinished = true;
       if (onSuccess) {
         onSuccess(response);
