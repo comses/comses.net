@@ -375,8 +375,8 @@ class UserSpamStatus(models.Model):
     # None = not processed yet
     # True = bio_classifier considered this user to be spam
     # False = bio_classifier did not consider this user to be spam
-    labelled_by_bio_classifier = models.BooleanField(default=None, null=True)
-    bio_classifier_confidence = models.FloatField(default=0)
+    labelled_by_text_classifier = models.BooleanField(default=None, null=True)
+    text_classifier_confidence = models.FloatField(default=0)
 
     # similar to bio_classifier
     labelled_by_user_classifier = models.BooleanField(default=None, null=True)
@@ -388,13 +388,13 @@ class UserSpamStatus(models.Model):
 
     @staticmethod
     def get_recommendations_sorted_by_confidence():
-        return UserSpamStatus.objects.all().order_by("bio_classifier_confidence")
+        return UserSpamStatus.objects.all().order_by("text_classifier_confidence")
 
     def __str__(self):
-        return "user={}, labelled_by_bio_classifier={}, bio_classifier_confidence={}, labelled_by_user_classifier={}, user_classifier_confidence={}, labelled_by_curator={}, last_updated={}, is_training_data={}".format(
+        return "user={}, labelled_by_text_classifier={}, text_classifier_confidence={}, labelled_by_user_classifier={}, user_classifier_confidence={}, labelled_by_curator={}, last_updated={}, is_training_data={}".format(
             str(self.member_profile),
-            str(self.labelled_by_bio_classifier),
-            str(self.bio_classifier_confidence),
+            str(self.labelled_by_text_classifier),
+            str(self.text_classifier_confidence),
             str(self.labelled_by_user_classifier),
             str(self.user_classifier_confidence),
             str(self.labelled_by_curator),

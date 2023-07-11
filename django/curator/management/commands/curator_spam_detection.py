@@ -3,15 +3,15 @@ import pathlib
 
 from django.core.management.base import BaseCommand
 
-from curator.models import TagCleanup, PENDING_TAG_CLEANUPS_FILENAME
-
-# from curator.spam_detection_models import UserMetadataSpamClassifier
+from curator.spam import DATASET_FILE_PATH
 from curator.spam_detection_models import SpamDetection
 
 logger = logging.getLogger(__name__)
 
+
 class Command(BaseCommand):
     help = "Perform spam detection"
+
     def __init__(self):
         self.detection = SpamDetection()
         self.processor = self.detection.processor
@@ -34,6 +34,13 @@ class Command(BaseCommand):
             help="retrain models and returns refined model metrics",
         )
         parser.add_argument(
+            "--get_model_metrics",
+            "-g",
+            action="store_true",
+            default=False,
+            help="retrain model accuracy, precision, recall and f1 scores",
+        )
+        parser.add_argument(
             "--load_labels",
             "-l",
             action="store_true",
@@ -54,14 +61,18 @@ class Command(BaseCommand):
 
     def handle_exe(self):
         spam_users, user_model_metircs, text_model_metrics = self.detection.execute()
-        print(spam_users)
-        print(user_model_metircs)
-        print(text_model_metrics)
+        # print(spam_users)
+        # print(user_model_metircs)
+        # print(text_model_metrics)
 
     def handle_refine(self):
         user_model_metircs, text_model_metrics = self.detection.refine()
         print(user_model_metircs)
         print(text_model_metrics)
+
+    def handle_get_model_metrics(self):
+        metrics = self.detection.get_model_metrics()
+        print(metrics)
 
     def handle_load_labels(self, load_directory):
         self.processor.update_labels(load_directory)
@@ -82,6 +93,9 @@ class Command(BaseCommand):
         self.text_classifier.predict()
 
     def handle(self, *args, **options):
+        exe = options["exe"]
+        refine = options["refine"]
+        model_metrics = options["get_model_metrics"]
         load = options["load_labels"]
         train_user = options["train_user"]
         predict_user = options["predict_user"]
@@ -89,10 +103,15 @@ class Command(BaseCommand):
         train_text = options["train_text"]
         predict_text = options["predict_text"]
 
-        # load_directory = pathlib.Path("/shared/curator/dataset.csv")
-        load_directory = pathlib.Path("dataset.csv")
+        load_directory = pathlib.Path(DATASET_FILE_PATH)
 
-        if load:
+        if exe:
+            self.handle_exe()
+        elif refine:
+            self.handle_refine()
+        elif model_metrics:
+            self.handle_get_model_metrics()
+        elif load:
             self.handle_load_labels(load_directory)
         elif train_user:
             self.handle_train_user()
