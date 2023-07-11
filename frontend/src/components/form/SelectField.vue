@@ -6,12 +6,12 @@
     <FormPlaceholder v-if="showPlaceholder" />
     <select
       v-else
-      v-model="value"
       :id="id"
       v-bind="attrs"
       :class="{ 'form-select': true, 'is-invalid': error }"
-      @change="attrs.onInput()"
+      @change="updateValue"
     >
+      <option v-if="!value" disabled :value="null" selected>{{ placeholder ?? "" }}</option>
       <option
         v-for="option in options"
         :key="option.value"
@@ -53,4 +53,10 @@ const props = defineProps<SelectFieldProps>();
 const { id, value, attrs, error } = useField<any>(props, "name");
 
 const showPlaceholder = inject("showPlaceholder", false);
+
+function updateValue(event: Event) {
+  const target = event.target as HTMLSelectElement;
+  value.value = target.value;
+  attrs.value.onInput();
+}
 </script>
