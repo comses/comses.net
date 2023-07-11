@@ -1,6 +1,7 @@
 import re
 import os.path
 import pickle
+import json
 from ast import literal_eval
 
 import pandas as pd
@@ -33,34 +34,31 @@ class SpamDetection:
         self.processor = UserSpamStatusProcessor()
         self.user_meta_classifier = UserMetadataSpamClassifier()
         self.text_classifier = TextSpamClassifier()
-
         self.processor.update_labels(check_DB=True)
+        
+        # Check whether UserMetadataSpamClassifier model file exists
+        if os.path.exists(self.user_meta_classifier.MODEL_METRICS_FILE_PATH):
+            with open(self.user_meta_classifier.MODEL_METRICS_FILE_PATH) as json_file:
+                self.user_meta_classifier_metrics = json.load(json_file)
+        else:
+            self.user_meta_classifier_metrics = self.user_meta_classifier.fit()
 
-        # TODO if pickle files exist, skip this part
-        self.user_meta_classifier_metrics = self.user_meta_classifier.fit()
-        self.text_classifier.fit()
-        # self.text_classifier_metrics = self.text_classifier.fit() TODO make text_classifier return matrics
-        self.text_classifier_metrics = {}
+        # Check whether TextSpamClassifier model file exists
+        if os.path.exists(self.text_classifier.MODEL_METRICS_FILE_PATH):
+            with open(self.text_classifier.MODEL_METRICS_FILE_PATH) as json_file:
+                self.text_classifier_metrics = json.load(json_file)
+        else:
+            self.text_classifier.fit()
+            self.text_classifier_metrics = {}
+            # self.text_classifier_metrics = self.text_classifier.fit() TODO make text_classifier return matrics
 
+            
     def execute(self):  # API for ML functions
-        """
-        1. if there are some users that have None in all labelled_by_curator, labelled_by_user_classifier,
-            and labelled_by_text_classifier, predict() should be called.
-
-            - make sure model exitsts, call predict().
-               The function will save its results to the DB.
-                - BioSpamClassifier.predict()
-                - UserMetadataSpamClassifier.predict()
-
-        2. filtering the DB, return the list of all user_id (and user name) with a certain confidence level
-                return UserPipeline.get_spam_users()
-                    ... this functions will first filter out the users with labelled_by_curator==True,
-                        but the ones with None, only get users with labelled_by_user_classifier == True
-                        or labelled_by_text_classifier == True with a specific confidence level
-        """
-        # TODO check DB for users with None in all labelled_by_curator, labelled_by_user_classifier, and labelled_by_text_classifier,
-        self.user_meta_classifier.predict()
-        self.text_classifier.predict()
+        # Check DB for unlabelled users (None in all labelled_by_curator, labelled_by_user_classifier, and labelled_by_text_classifier)
+        if len(self.processor.get_unlabelled_users()) != 0:
+            # if there are some unlabelled users, predict
+            self.user_meta_classifier.predict()
+            self.text_classifier.predict()
 
         # Return user_ids and metrics of the model
         return (
@@ -70,11 +68,24 @@ class SpamDetection:
         )
 
     def refine(self):
-        # TODO: use the newly updated labelled_by_user_classifier and call partial_train()?
+        # Retrain models using new data in DB
         self.user_meta_classifier_metrics = self.user_meta_classifier.partial_fit()
         self.text_classifier.fit()
         # self.text_classifier_metrics = self.text_classifier.fit() TODO make text_classifier return matrics
         return self.user_meta_classifier_metrics, self.text_classifier_metrics
+    
+    def get_model_metrics(self):
+        # We can assume that model and model metrics files exist after __init__
+        with open(self.user_meta_classifier.MODEL_METRICS_FILE_PATH) as json_file:
+            self.user_meta_classifier_metrics = json.load(json_file)
+
+        with open(self.text_classifier.MODEL_METRICS_FILE_PATH) as json_file:
+            self.text_classifier_metrics = json.load(json_file)
+
+        return {
+            "UserMetadataSpamClassifier" : self.user_meta_classifier_metrics,
+            "TextSpamClassifier" : self.text_classifier_metrics
+        }
 
 
 class SpamClassifier(ABC):
@@ -95,18 +106,42 @@ class SpamClassifier(ABC):
     def predict(self):
         # predict only the ones with unlabelled_by_curator == None
         pass
+    
+    def validate_model(self, model, test_matrix, test_target, save_path):
+        '''
+        Input : model ... Model instance
+                test_matrix ... DataFrame of features including the "user_id" columns
+                test_target ... target labelled by curators
+                save_path ... file path to save the model metrics json file
+        '''
+        confidences = model.predict_proba(test_matrix)
+        predictions = [round(value) for value in confidences]
 
-    # @abstractmethod
-    # def get_validation_metrics(self): #TODO save metrics as json or pickle
-    #     pass
+        # calculate metrics
+        accuracy = round(accuracy_score(test_target, predictions), 3)
+        precision = round(precision_score(test_target, predictions), 3)
+        recall = round(recall_score(test_target, predictions), 3)
+        f1 = round(f1_score(test_target, predictions), 3)
+        model_metrics = {"Accuracy" : accuracy, 
+                         "Precision" : precision, 
+                         "Recall" : recall, 
+                         "F1" : f1,
+                         "test_user_id": test_matrix["user_id"].values.tolist()}
 
+        with open(save_path, "w") as outfile:
+            json.dump(model_metrics, outfile)
+
+        return predictions, model_metrics
+    
 
 class TextSpamClassifier(SpamClassifier):
     # This is temporary until we find a better solution.
     # We are saving and loading models straight to the VM,
     # ideally, we instead store it in some object storage instead.
-    INITIAL_FILE_PATH = "curator/label.json"
-    MODEL_FILE_PATH = "curator/instance.pkl"
+
+    def __init__(self):
+        self.MODEL_FILE_PATH = "curator/text_classifier.pkl"
+        self.MODEL_METRICS_FILE_PATH = "text_classifier_metrics.json"
 
     def load_model():
         if os.path.isfile(TextSpamClassifier.MODEL_FILE_PATH):
@@ -187,8 +222,11 @@ class TextSpamClassifier(SpamClassifier):
 
 
 class UserMetadataSpamClassifier(SpamClassifier):
-    TOKENIZER_FILE_PATH = "tokenizer.pkl"
-    MODEL_FILE_PATH = "spam_xgb_classifier.pkl"
+
+    def __init__(self):
+        self.TOKENIZER_FILE_PATH = "tokenizer.pkl"
+        self.MODEL_FILE_PATH = "user_meta_classifier.pkl"
+        self.MODEL_METRICS_FILE_PATH = "user_meta_classifier_metrics.json"
 
     def fit(self):
         # obtain df from pipleline
@@ -261,7 +299,6 @@ class UserMetadataSpamClassifier(SpamClassifier):
         self.processor.update_predictions(
             df, isTextClassifier=False
         )  # save the results to DB
-        # return result_df TODO we don't have to return this, do we?
 
     def __train_xgboost_classifer(
         self, train_matrix, test_matrix, train_target, test_target
@@ -270,7 +307,7 @@ class UserMetadataSpamClassifier(SpamClassifier):
         model = xgb.XGBClassifier()
         model.fit(train_matrix, train_target)
 
-        predictions, metrics = self.__validate_model(model, test_matrix, test_target)
+        predictions, metrics = self.validate_model(model, test_matrix, test_target, self.MODEL_METRICS_FILE_PATH)
         return predictions, metrics, model
 
     def __partial_train_xgboost_classifer(
@@ -286,41 +323,15 @@ class UserMetadataSpamClassifier(SpamClassifier):
         retrained_model.fit(
             train_matrix, train_target, xgb_model=old_model.get_booster()
         )
-        predictions, metrics = self.__validate_model(
-            retrained_model, test_matrix, test_target
+        predictions, metrics = self.validate_model(
+            retrained_model, test_matrix, test_target, self.MODEL_METRICS_FILE_PATH
         )
         return predictions, metrics, retrained_model
 
     def __predict_xgboost_classifer(self, model: xgb.XGBClassifier, feat_matrix):
-        confidences = model.predict(feat_matrix)
+        confidences = model.predict_proba(feat_matrix)
         predictions = [round(value) for value in confidences]
         return predictions, confidences
-
-    def __validate_model(self, model: xgb.XGBClassifier, test_matrix, test_target):
-        confidences = model.predict(test_matrix)
-        predictions = [round(value) for value in confidences]
-        # print("test_target type")
-        # test_target = test_target.to_numpy()
-        # y_df = pd.DataFrame(test_target)
-        # pred_df = pd.DataFrame(predictions)
-        # y_df.to_csv("test_target.csv")
-        # pred_df.to_csv("predictions.csv")
-        # uni, cnt = np.unique(test_target, return_counts=True)
-        # print(dict(zip(uni, cnt)))
-        # uni, cnt = np.unique(predictions, return_counts=True)
-        # print(dict(zip(uni, cnt)))
-        # print(type(test_target[0]))
-        # print(type(predictions[0]))
-
-        # calculate metrics
-        # TODO debug for "ValueError: Classification metrics can't handle a mix of unknown and binary targets"
-        # accuracy = accuracy_score(test_target, predictions)
-        # precision = precision_score(test_target, predictions)
-        # recall = recall_score(test_target, predictions)
-        # f1 = f1_score(test_target, predictions)
-        # model_metrics = (accuracy, precision, recall, f1)
-        model_metrics = ""
-        return predictions, model_metrics
 
     def __preprocess_for_training(self, df: pd.DataFrame):
         df = self.__input_df_transformation(df)
@@ -333,7 +344,7 @@ class UserMetadataSpamClassifier(SpamClassifier):
             validation_target,
         ) = train_test_split(
             feat_matrix, target, test_size=0.1, random_state=434
-        )  # TODO save whch user_id was used for training
+        )
 
         # Initialize or Update Tokenizer and Apply it to the train feature matrix
         # training_feature_matrix = training_matrix.drop(["user_id"], axis=1)

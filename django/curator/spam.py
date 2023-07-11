@@ -42,10 +42,10 @@ class UserSpamStatusProcessor:
         self.type_int_bool_column_names = [
             "member_profile__user_id",
             "labelled_by_curator",
-            "labelled_by_bio_classifier",
-            "labelled_by_user_classifier",
-            "bio_classifier_confidence",
-            "user_classifier_confidence",
+            # "labelled_by_bio_classifier",
+            # "labelled_by_user_classifier",
+            # "bio_classifier_confidence",
+            # "user_classifier_confidence",
         ]
 
     def __rename_columns(self, df):
@@ -74,7 +74,8 @@ class UserSpamStatusProcessor:
             return df
         for col in df.columns:
             if col in self.type_int_bool_column_names:
-                df[col] = df[col].astype("float").astype("Int32")
+                print("coi name", col)
+                df[col] = df[col].astype("float").astype("int")
             else:
                 df[col] = df[col].apply(
                     lambda text: re.sub(r"<.*?>", " ", str(text))
@@ -108,6 +109,7 @@ class UserSpamStatusProcessor:
             )
         )
 
+
     def get_untrained_df(self):
         # return : DataFrame of user data that haven't been used for train previously
         return self.__rename_columns(
@@ -124,6 +126,16 @@ class UserSpamStatusProcessor:
             )
         )
 
+    def get_unlabelled_users(self):
+        unlabelled_users = list(
+            UserSpamStatus.objects.filter(
+                Q(labelled_by_curator=None)
+                & Q(labelled_by_bio_classifier=None)
+                & Q(labelled_by_user_classifier=None)
+            )
+        )
+        return unlabelled_users
+    
     # FIXME: tune confidence threshold later
     def get_spam_users(self, confidence_threshold=0.6):
         """
@@ -135,22 +147,24 @@ class UserSpamStatusProcessor:
             UserSpamStatus.objects.filter(
                 Q(labelled_by_curator=True)
                 | Q(labelled_by_bio_classifier=True)
-                & Q(bio_classifier_confidence=confidence_threshold)
+                & Q(bio_classifier_confidence_gte=confidence_threshold)
                 | Q(labelled_by_user_classifier=True)
                 & Q(user_classifier_confidence_gte=confidence_threshold)
             )
         )
-        return spam_users  # (TODO: discuss about what should be returned)
+        return spam_users
 
     def update_labels(self, filepath=DATASET_FILE_PATH, check_DB=False):
         # This function updates "labelled_by_curator" field of the SpamRecommendation table bsed on external dataset file.
         # Dataset should have columns named "user_id" and "is_spam"
         # param : filepath of dataset to be loaded
         # return : None
+
         if check_DB and UserSpamStatus.objects.filter(Q(labelled_by_curator=True) | Q(labelled_by_curator=False)).exists():
+            # if there are user with non-None values as labelled_by_curator, no need to load the label file
             return 
         
-        label_df = pd.read_csv(filepath)
+        label_df = pd.read_csv(filepath) # TODO add exception
         for idx, row in label_df.iterrows():
             UserSpamStatus.objects.filter(
                 member_profile__user_id=row["user_id"]
