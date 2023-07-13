@@ -129,10 +129,10 @@ class Contributor(index.Indexed, ClusterableModel):
     )
 
     search_fields = [
-        index.AutocompleteField("given_name"),
-        index.AutocompleteField("family_name"),
-        index.RelatedFields("affiliations", [index.AutocompleteField("name")]),
-        index.AutocompleteField("email"),
+        index.SearchField("given_name"),
+        index.SearchField("family_name"),
+        index.RelatedFields("affiliations", [index.SearchField("name")]),
+        index.SearchField("email"),
         index.RelatedFields(
             "user",
             [
@@ -523,18 +523,18 @@ class Codebase(index.Indexed, ClusterableModel):
     objects = CodebaseQuerySet.as_manager()
 
     search_fields = [
-        index.AutocompleteField("title"),
-        index.AutocompleteField("description"),
+        index.SearchField("title"),
+        index.SearchField("description"),
         index.SearchField("get_all_contributors_search_fields"),
         index.SearchField("get_all_release_frameworks"),
         index.SearchField("get_all_release_programming_languages"),
-        index.AutocompleteField("references_text"),
+        index.SearchField("references_text"),
         index.SearchField("permanent_url"),
-        index.AutocompleteField("associated_publication_text"),
+        index.SearchField("associated_publication_text"),
         index.RelatedFields(
             "tags",
             [
-                index.AutocompleteField("name"),
+                index.SearchField("name"),
             ],
         ),
         # filter and sort fields
@@ -1083,8 +1083,8 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
     objects = CodebaseReleaseQuerySet.as_manager()
 
     search_fields = [
-        index.AutocompleteField("release_notes"),
-        index.AutocompleteField("summary"),
+        index.SearchField("release_notes"),
+        index.SearchField("summary"),
         index.SearchField("permanent_url"),
         index.SearchField("identifier"),
         index.FilterField("os"),
@@ -1096,13 +1096,13 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
         index.RelatedFields(
             "platform_tags",
             [
-                index.AutocompleteField("name"),
+                index.SearchField("name"),
             ],
         ),
         index.RelatedFields(
             "programming_languages",
             [
-                index.AutocompleteField("name"),
+                index.SearchField("name"),
             ],
         ),
         index.RelatedFields(
