@@ -260,6 +260,11 @@
             Download for Review
         </a>
     {% endif %}
+    {% if has_change_perm %}
+        <a href="{{ release.get_edit_url() }}">
+            <div class="btn btn-secondary my-1 w-100">Edit metadata</div>
+        </a>
+    {% endif %}
 {% endwith %}
 
 <div class='card-metadata'>
@@ -336,11 +341,13 @@
             </b>
         </div>
         <div class='section'>
-            {% if codebase.peer_reviewed or release.peer_reviewed %}
+            {% if release.peer_reviewed %}
                 <img src="{{ static("images/icons/peer-reviewed.png") }}" alt="Peer Reviewed">
                 <div class='py-2'>
                   <a href='{{ release.permanent_url }}'><img height='88' src='{{ open_code_badge_url }}' alt='Open Code Badge'></a>
                 </div>
+            {% elif codebase.peer_reviewed %}
+                <i class='fas fa-exclamation-triangle'></i> <small>This release has not been reviewed but a different version has passed peer review.</small>
             {% else %}
                 <b class='card-title'>
                     Peer Review
@@ -412,7 +419,7 @@
 {% block bottom %}
     <ul class='nav nav-tabs detail-tabs' role='tablist'>
         <li class='nav-item'>
-            <a class='nav-link active' data-bs-toggle='tab' href='#versions' role='tab'>Model Versions</a>
+            <a class='nav-link active' id='model-versions-list' data-bs-toggle='tab' href='#versions' role='tab'>Model Versions</a>
         </li>
     </ul>
     <div class='tab-content'>
