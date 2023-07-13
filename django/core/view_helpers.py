@@ -37,10 +37,8 @@ def get_search_queryset(
         Query.get(query).add_hit()
         filters, query = parse_query_string(query, operator="or")
         criteria.update(filters)
-        search_fn = search_backend.autocomplete
     else:
         query = MATCH_ALL
-        search_fn = search_backend.search
 
     for tag in tags:
         query = query & Phrase(tag)
@@ -53,7 +51,7 @@ def get_search_queryset(
 
     logger.debug("parsed query: %s, filters: %s", query, criteria)
 
-    results = search_fn(
+    results = search_backend.search(
         query,
         queryset,
         operator=operator,

@@ -258,20 +258,20 @@ class MemberProfile(index.Indexed, ClusterableModel):
     search_fields = [
         index.FilterField("is_active"),
         index.FilterField("username"),
-        index.AutocompleteField("bio"),
-        index.AutocompleteField("research_interests"),
-        index.AutocompleteField("degrees"),
-        index.AutocompleteField("name"),
+        index.SearchField("bio"),
+        index.SearchField("research_interests"),
+        index.SearchField("degrees"),
+        index.SearchField("name"),
         index.RelatedFields(
             "institution",
             [
-                index.AutocompleteField("name"),
+                index.SearchField("name"),
             ],
         ),
         index.RelatedFields(
             "tags",
             [
-                index.AutocompleteField("name"),
+                index.SearchField("name"),
             ],
         ),
         index.RelatedFields(
@@ -279,10 +279,10 @@ class MemberProfile(index.Indexed, ClusterableModel):
             [
                 index.FilterField("date_joined"),
                 index.FilterField("last_name"),
-                index.AutocompleteField("first_name"),
-                index.AutocompleteField("last_name"),
-                index.AutocompleteField("email"),
-                index.AutocompleteField("username"),
+                index.SearchField("first_name"),
+                index.SearchField("last_name"),
+                index.SearchField("email"),
+                index.SearchField("username"),
             ],
         ),
     ]
@@ -451,8 +451,8 @@ class Platform(index.Indexed, ClusterableModel):
         return " ".join(self.tags.all().values_list("name", flat=True))
 
     search_fields = [
-        index.AutocompleteField("name"),
-        index.AutocompleteField("description"),
+        index.SearchField("name"),
+        index.SearchField("description"),
         index.FilterField("active"),
         index.FilterField("open_source"),
         index.RelatedFields(
@@ -552,8 +552,8 @@ class Event(index.Indexed, ClusterableModel):
     )
 
     search_fields = [
-        index.AutocompleteField("title"),
-        index.AutocompleteField("description"),
+        index.SearchField("title"),
+        index.SearchField("description"),
         index.FilterField("date_created"),
         index.FilterField("start_date"),
         index.FilterField("end_date"),
@@ -561,7 +561,7 @@ class Event(index.Indexed, ClusterableModel):
         index.FilterField("submission_deadline"),
         index.FilterField("early_registration_deadline"),
         index.FilterField("registration_deadline"),
-        index.AutocompleteField("location"),
+        index.SearchField("location"),
         index.RelatedFields(
             "tags",
             [
@@ -572,8 +572,8 @@ class Event(index.Indexed, ClusterableModel):
             "submitter",
             [
                 index.SearchField("username"),
-                index.AutocompleteField("email"),
-                index.AutocompleteField("get_full_name"),
+                index.SearchField("email"),
+                index.SearchField("get_full_name"),
             ],
         ),
     ]
@@ -656,8 +656,8 @@ class Job(index.Indexed, ClusterableModel):
     objects = JobQuerySet.as_manager()
 
     search_fields = [
-        index.AutocompleteField("title"),
-        index.AutocompleteField("description"),
+        index.SearchField("title"),
+        index.SearchField("description"),
         index.FilterField("date_created"),
         index.FilterField("last_modified"),
         index.FilterField("application_deadline"),
@@ -671,8 +671,8 @@ class Job(index.Indexed, ClusterableModel):
             "submitter",
             [
                 index.SearchField("username"),
-                index.AutocompleteField("email"),
-                index.AutocompleteField("get_full_name"),
+                index.SearchField("email"),
+                index.SearchField("get_full_name"),
             ],
         ),
     ]

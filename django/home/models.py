@@ -433,7 +433,7 @@ class CategoryIndexPage(NavigationMixin, Page):
         InlinePanel("navigation_links", label=_("Subnavigation Links")),
     ]
 
-    search_fields = Page.search_fields + [index.AutocompleteField("summary")]
+    search_fields = Page.search_fields + [index.SearchField("summary")]
 
 
 class EducationPage(NavigationMixin, Page):
@@ -564,9 +564,9 @@ class TutorialDetailPage(NavigationMixin, Page):
 
     search_fields = Page.search_fields + [
         index.FilterField("post_date"),
-        index.AutocompleteField("description"),
-        index.AutocompleteField("body"),
-        index.AutocompleteField("heading"),
+        index.SearchField("description"),
+        index.SearchField("body"),
+        index.SearchField("heading"),
     ]
 
 
@@ -640,9 +640,9 @@ class MarkdownPage(NavigationMixin, Page):
 
     search_fields = Page.search_fields + [
         index.FilterField("post_date"),
-        index.AutocompleteField("description"),
-        index.AutocompleteField("body"),
-        index.AutocompleteField("heading"),
+        index.SearchField("description"),
+        index.SearchField("body"),
+        index.SearchField("heading"),
     ]
 
 
@@ -734,13 +734,13 @@ class Journal(index.Indexed, ClusterableModel):
     ]
 
     search_fields = [
-        index.AutocompleteField("name"),
-        index.AutocompleteField("description"),
+        index.SearchField("name"),
+        index.SearchField("description"),
         index.SearchField("issn"),
         index.RelatedFields(
             "tags",
             [
-                index.AutocompleteField("name"),
+                index.SearchField("name"),
             ],
         ),
     ]
@@ -1046,9 +1046,9 @@ class FaqPage(Page, NavigationMixin):
         return "\n".join(FaqEntry.objects.values_list("answer", flat=True))
 
     search_fields = Page.search_fields + [
-        index.AutocompleteField("description"),
-        index.AutocompleteField("get_faq_entry_questions"),
-        index.AutocompleteField("get_faq_entry_answers"),
+        index.SearchField("description"),
+        index.SearchField("get_faq_entry_questions"),
+        index.SearchField("get_faq_entry_answers"),
     ]
 
 
@@ -1172,7 +1172,7 @@ class NewsPage(Page):
 
     search_fields = Page.search_fields + [
         index.FilterField("post_date"),
-        index.AutocompleteField("body"),
+        index.SearchField("body"),
     ]
 
     # Editor panels configuration
