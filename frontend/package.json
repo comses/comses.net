@@ -51,7 +51,6 @@
     "@types/lodash-es": "^4.17.7",
     "@types/node": "^18.14.2",
     "@types/sortablejs": "^1.15.1",
-    "@types/yup": "^0.32.0",
     "@vitejs/plugin-vue": "^4.0.0",
     "@vue/eslint-config-prettier": "^7.1.0",
     "@vue/eslint-config-typescript": "^11.0.2",
