@@ -202,6 +202,9 @@ class TextSpamClassifier(SpamClassifier):
         model = TextSpamClassifier.load_model()
         if df.empty:  # no-op if no data found
             return
+        
+        concat_pd = self.concat_pd(df)
+        return model.predict(concat_pd)
 
     def preprocess(text_list: List[str]):
         text_list = [
