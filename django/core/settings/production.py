@@ -59,6 +59,7 @@ TEMPLATES = [
         "APP_DIRS": True,
         "OPTIONS": {
             "extensions": [
+                "core.jinja2ext.ViteExtension",
                 "wagtail.contrib.settings.jinja2tags.settings",
                 "wagtail.jinja2tags.core",
                 "wagtail.admin.jinja2tags.userbar",
