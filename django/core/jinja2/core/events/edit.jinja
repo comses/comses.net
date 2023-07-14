@@ -3,9 +3,9 @@
 {% block introduction %}<h1>Submit an Event</h1>{% endblock %}
 
 {% block content %}
-<div id="app"></div>
+<div id="event-form" {% if object %} data-event-id="{{ object.id }}" {% endif %}></div>
 {% endblock %}
 
 {% block js %}
-{{ render_bundle('events', attrs='defer') }}
+{{ vite_asset('apps/event_edit.ts') }}
 {% endblock %}

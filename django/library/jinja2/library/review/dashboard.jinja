@@ -15,11 +15,11 @@
                     {% set review = release.review %}
                     <h5>Review: <a href="{{ review.get_absolute_url() }}">{{ release.version_number }}</a></h5>
                     <p class='card-text'>
-                        {% set badge_class="badge-primary" if review.is_complete else "badge-warning" %}
+                        {% set badge_class="bg-success" if review.is_complete else "bg-warning" %}
                         <div class='row'>
                             <div class='col'>
                                 <span class="badge {{badge_class}}">{{ review.get_status_display() }}</span>
-                                <span class='badge badge-info'>{{ release.n_accepted_invites }}/{{ review.invitation_set.count() }} invitations</span>
+                                <span class='badge bg-info'>{{ release.n_accepted_invites }}/{{ review.invitation_set.count() }} invitations</span>
                             </div>
                             <div class='col'>
                                 Requested on: {{ format_datetime(review.date_created) }}

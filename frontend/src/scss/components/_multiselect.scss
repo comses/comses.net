@@ -1,0 +1,118 @@
+@import "~/vue-multiselect/dist/vue-multiselect.css";
+
+.multiselect__tags {
+  border: 1px solid $input-border-color;
+  border-radius: 0.25rem;
+  padding: 0.375rem 2.25rem 0.375rem 0.75rem;
+}
+
+.multiselect__single {
+  padding: 0;
+  line-height: 1.5;
+  margin-bottom: 0;
+  color: $input-color;
+}
+
+.multiselect__tag {
+  background-color: $secondary;
+  margin-top: 5px;
+  margin-bottom: 0px;
+}
+
+.multiselect__tag-icon {
+  border-radius: 0px;
+  &:after {
+    color: $white;
+  }
+  &:hover {
+    background-color: $danger;
+  }
+}
+
+.multiselect--active .multiselect__tags {
+  border-color: $input-focus-border-color;
+  border-bottom-color: $input-border-color;
+  box-shadow: $input-focus-box-shadow;
+}
+
+.is-invalid {
+  .multiselect__tags {
+    border-color: $form-feedback-invalid-color;
+  }
+  &.multiselect--active .multiselect__tags {
+    box-shadow: 0 0 $input-btn-focus-blur $input-focus-width
+      rgba($form-feedback-invalid-color, $input-btn-focus-color-opacity);
+  }
+}
+
+.multiselect__input,
+.multiselect__placeholder {
+  margin-bottom: 0px;
+}
+
+.multiselect--above .multiselect__content-wrapper {
+  z-index: 3;
+}
+
+.multiselect__search-toggle {
+  position: absolute;
+  right: 0px;
+  top: 0.675rem;
+  margin-right: 0.9rem;
+  color: lighten($input-color, 20%);
+  cursor: pointer;
+  font-size: 0.75rem;
+}
+
+.multiselect__clear {
+  @extend .multiselect__search-toggle;
+  height: 100%;
+  top: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 1.5rem;
+}
+
+.multiselect__option {
+  white-space: normal;
+  .option--desc {
+    @extend .text-muted;
+  }
+}
+
+.multiselect__option--highlight {
+  background-color: $primary;
+  &:after {
+    background-color: $primary;
+  }
+  .option--desc {
+    color: $gray-300 !important;
+  }
+  .tag-list {
+    .tag {
+      color: $white !important;
+      border-color: transparentize($color: $white, $amount: 0.75);
+    }
+  }
+  img {
+    color: $text-color;
+  }
+}
+
+.multiselect__option--selected {
+  display: none;
+  &:after {
+    display: none;
+  }
+}
+
+.child-is-invalid {
+  .multiselect__tags {
+    border-color: $form-feedback-invalid-color;
+  }
+
+  .invalid-feedback {
+    display: block;
+  }
+}

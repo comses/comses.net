@@ -1,18 +1,20 @@
 {% extends "base.jinja" %}
 
 {% block introduction %}
-    <h1><i class='fa fa-cloud-upload'></i> Archive your model</h1>
+<h1><i class='fa fa-cloud-upload'></i> Archive your model</h1>
 {% endblock %}
 {% block content %}
-    {% include "library/includes/archive_model_help.jinja" %}
-    <p>
-    Archiving the software that your research depends on will help others (including your future self!) build on and reuse your own hard work down the road. 
-    Let's walk through the steps needed to generate a citable software archive that broadly follows recommended practices
+{% include "library/includes/archive_model_help.jinja" %}
+<p>
+    Archiving the software that your research depends on will help others (including your future self!) build on and
+    reuse your own hard work down the road.
+    Let's walk through the steps needed to generate a citable software archive that broadly follows recommended
+    practices
     for <a target='_blank' href='https://www.force11.org/software-citation-principles'>software citation</a>.
-    </p>
-    <div id="app"></div>
+</p>
+<div id="codebase-form" {% if object %} data-codebase-id="{{ object.id }}" {% endif %}></div>
 {% endblock %}
 
 {% block js %}
-{{ render_bundle('codebases', attrs='defer') }}
+{{ vite_asset("apps/codebase_edit.ts") }}
 {% endblock %}

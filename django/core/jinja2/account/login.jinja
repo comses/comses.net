@@ -31,10 +31,10 @@ to link it with GitHub or ORCID, first sign in using your username / password be
         <p>New user? You can sign up using the social auth buttons above or <a href='/accounts/signup/'>fill out a brief form to create a new CoMSES Net account</a>.</p>
         <form id='signin-form' role="form" class="form-horizontal" method="post">
             {{ csrf_input }}
-            <div id='login' class='form-group'>
+            <div id='login' class='mb-3'>
                 <input name='login' type='text' class='form-control {{ 'is-invalid' if has_errors }}' placeholder='Username or email'>
             </div>
-            <div id='password' class='form-group'>
+            <div id='password' class='mb-3'>
                 <input name='password' type='password' class='form-control {{ 'is-invalid' if has_errors }}' placeholder='Password'>
                 <small><a href="{{ password_reset_url }}">Forgot your password?</a></small>
             </div>

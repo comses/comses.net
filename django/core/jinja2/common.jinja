@@ -1,12 +1,13 @@
 {% macro submit_model_btn() %}
-<div class='submit-model'><a class='btn btn-primary w-100' href='{{ url("library:codebase-add") }}'>Submit a model</a></div>
+<div class='submit-model'><a class='btn btn-primary w-100' href='{{ url("library:codebase-add") }}'>Submit a model</a>
+</div>
 {% endmacro %}
 
 {% macro checkmark(value) %}
 {% if value %}
-    <span class='text-success far fa-check-circle'></span>
+<span class='text-success far fa-check-circle'></span>
 {% else %}
-    <span class='text-danger far fa-times-circle'></span>
+<span class='text-danger far fa-times-circle'></span>
 {%endif %}
 {% endmacro %}
 
@@ -23,18 +24,18 @@
 
 {% macro institution_href(institution) %}
 {% if institution %}
-    {%- if institution.url -%}
-        <a href='{{ institution.url }}' target='_blank'>{{ institution.name }}</a>
-    {%- else -%}
-        {{ institution.name }}
-    {%- endif -%}
+{%- if institution.url -%}
+<a href='{{ institution.url }}' target='_blank'>{{ institution.name }}</a>
+{%- else -%}
+{{ institution.name }}
+{%- endif -%}
 {% endif %}
 {%- endmacro -%}
 
 {% macro member_profile_href(member_profile) -%}
 <a href='{{ member_profile.profile_url }}'>{{ member_profile.name }}
     {%- if caller -%}
-        {{ caller() }}
+    {{ caller() }}
     {%- endif -%}</a>
 {%- endmacro %}
 
@@ -43,7 +44,7 @@
 <div class="card-metadata">
     <div class="card-body my-auto">
         <ul class='social-media-sm my-auto'>
-            <li class='pr-2'><b>Share</b></li>
+            <li class='pe-2'><b>Share</b></li>
             <li>
                 <a href='https://linkedin.com' title='LinkedIn' target='_blank'>
                     <span class='fa-stack'>
@@ -81,80 +82,109 @@
 </div>
 {% endmacro %}
 
-{% macro build_paginator_url_params(page_number, query_params) %}{%- if query_params %}{{ query_params }}&amp;{%endif -%}page={{page_number}}{% endmacro %}
+{% macro build_paginator_url_params(page_number, query_params) %}{%- if query_params %}{{ query_params }}&amp;{%endif
+-%}page={{page_number}}{% endmacro %}
+
+{% macro page_nav(url_name, list_state) %}
+<nav aria-label="Page navigation">
+    <ul class="pagination m-0">
+        <li class='page-item {{ "disabled" if list_state.is_first_page else ""}}'>
+            <a class='page-link'
+                href='{{ url(url_name) }}?{{ build_paginator_url_params(list_state.current_page - 1, list_state.query_params) }}'
+                aria-label='Previous'>
+                <span aria-hidden='true'>&laquo;</span>
+                <span class='sr-only'>Previous</span>
+            </a>
+        </li>
+        <li class='page-item {{ "active" if list_state.is_first_page else ""}}'>
+            <a class='page-link'
+                href="{{ url(url_name) }}?{{ build_paginator_url_params(1, list_state.query_params) }}">1</a>
+        </li>
+        {% for page in list_state.range -%}
+        {% if loop.first and page > 2 %}
+        <li class='page-item disabled'>
+            <span class='page-link'>&hellip;</span>
+        </li>
+        {% endif %}
+        <li class='page-item {{ "active" if page == list_state.current_page else ""}}'>
+            <a href="{{ url(url_name) }}?{{ build_paginator_url_params(page, list_state.query_params) }}"
+                class="page-link">{{ page }}</a>
+        </li>
+        {% if loop.last and page < list_state.num_pages - 1 -%} <li class="page-item disabled">
+            <span class='page-link'>&hellip;</span>
+            </li>
+            {% endif %}
+            {% endfor %}
+            {% if list_state.num_pages > 1 -%}
+            <li class="page-item {{ " active" if list_state.is_last_page }}">
+                <a href="{{ url(url_name) }}?{{ build_paginator_url_params(list_state.num_pages, list_state.query_params) }}"
+                    class="page-link">{{ list_state.num_pages }}</a>
+            </li>
+            {% endif %}
+            <li class='page-item {{ "disabled" if list_state.is_last_page }}'>
+                <a class='page-link'
+                    href='{{ url(url_name) }}?{{ build_paginator_url_params(list_state.current_page + 1, list_state.query_params) }}'
+                    aria-label='Previous'>
+                    <span aria-hidden='true'>&raquo;</span>
+                    <span class='sr-only'>Next</span>
+                </a>
+            </li>
+    </ul>
+</nav>
+{% endmacro %}
 
 {% macro paginator(url_name, list_state) %}
-    <nav aria-label="Page navigation">
-        {% if list_state.count %}
-            <ul class="pt-3 pagination">
-                <li class='page-item {{ "disabled" if list_state.is_first_page else ""}}'>
-                    <a class='page-link' href='{{ url(url_name) }}?{{ build_paginator_url_params(list_state.current_page - 1, list_state.query_params) }}'
-                        aria-label='Previous'>
-                        <span aria-hidden='true'>&laquo;</span>
-                        <span class='sr-only'>Previous</span>
-                    </a>
-                </li>
-                <li class='page-item {{ "active" if list_state.is_first_page else ""}}'>
-                    <a class='page-link' href="{{ url(url_name) }}?{{ build_paginator_url_params(1, list_state.query_params) }}">1</a>
-                </li>
-                {% for page in list_state.range -%}
-                    {% if loop.first and page > 2 %}
-                        <li class='page-item disabled'>
-                            <span class='page-link'>&hellip;</span>
-                        </li>
-                    {% endif %}
-                    <li class='page-item {{ "active" if page == list_state.current_page else ""}}'>
-                        <a href="{{ url(url_name) }}?{{ build_paginator_url_params(page, list_state.query_params) }}"
-                           class="page-link">{{ page }}</a>
-                    </li>
-                    {% if loop.last and page < list_state.num_pages - 1 -%}
-                        <li class="page-item disabled">
-                            <span class='page-link'>&hellip;</span>
-                        </li>
-                    {% endif %}
-                {% endfor %}
-                {% if list_state.num_pages > 1 -%}
-                    <li class="page-item {{ "active" if list_state.is_last_page }}">
-                        <a href="{{ url(url_name) }}?{{ build_paginator_url_params(list_state.num_pages, list_state.query_params) }}" 
-                        class="page-link">{{ list_state.num_pages }}</a>
-                    </li>
-                {% endif %}
-                <li class='page-item {{ "disabled" if list_state.is_last_page }}'>
-                    <a class='page-link' href='{{ url(url_name) }}?{{ build_paginator_url_params(list_state.current_page + 1, list_state.query_params) }}'
-                        aria-label='Previous'>
-                        <span aria-hidden='true'>&raquo;</span>
-                        <span class='sr-only'>Next</span>
-                    </a>
-                </li>
-            </ul>
-        {% endif %}
-        <div class='tag-list'>
-            {% if list_state.search_terms %}
-                Searching on {% for term in list_state.search_terms %} <span class='tag'>{{ term }}</span>{% endfor %}
-                <a class='text-danger' href='{{url(url_name)}}'><span class='fas fa-times'></span> clear</a>,
-            {% endif %}
-            displaying {{ list_state.num_results }} of <strong>{{ list_state.count }}</strong> results
-        </div>
-    </nav>
+<p>Displaying {{ list_state.num_results }} of <strong>{{ list_state.count }}</strong> results
+    {% if list_state.query %}
+    for <strong>'{{ list_state.query }}'</strong>
+    {% endif %}
+    {% if list_state.filter_display_terms %}
+    {% for term in list_state.filter_display_terms %}
+    <span class="badge bg-gray ms-1">{{ term }}</span>
+    {% endfor %}
+    <a class="text-danger ms-1" href="{{ url(url_name) }}">
+        <i class="fas fa-times"></i> clear
+    </a>
+    {% endif %}
+</p>
+{% if list_state.count %}
+<div class="d-flex justify-content-between mb-3">
+    {{ page_nav(url_name, list_state) }}
+    <div id="sortby" class=""></div>
+</div>
+{% endif %}
+{% endmacro %}
+
+{% macro search_bar(search_url, placeholder) %}
+<form class="mb-3" action="{{ search_url }}" method="get">
+    <label class="sr-only" for="search-query">Search</label>
+    <div class="input-group">
+        <input id="search-query" class="form-control" name="query" type="search" value=""
+            placeholder="{{ placeholder }}">
+        <button type="submit" class="btn btn-primary">
+            <i class="fas fa-search px-1"></i>
+        </button>
+    </div>
+</form>
 {% endmacro %}
 
 {% macro list_page(list_state, item_component, detail_url_name) %}
-    {% for item in list_state.results %}
-        {{ item_component(item, detail_url_name) }}
-    {% else %}
-        <p class='lead pt-3'>
-            No matching results found.
-        </p>
-    {% endfor %}
+{% for item in list_state.results %}
+{{ item_component(item, detail_url_name) }}
+{% else %}
+<p class='lead pt-3'>
+    No matching results found.
+</p>
+{% endfor %}
 {% endmacro %}
 
 {% macro subnav(items) %}
 {% if items %}
 <ul class='nav nav-tabs justify-content-center'>
     {% for item in items %}
-        <li class='nav-item'>
-            <a class='nav-link {{ "active" if item.active else "" }}' href='{{ item.url }}'>{{ item.text }}</a>
-        </li>
+    <li class='nav-item'>
+        <a class='nav-link {{ "active" if item.active else "" }}' href='{{ item.url }}'>{{ item.text }}</a>
+    </li>
     {% endfor %}
 </ul>
 {% endif %}
@@ -162,84 +192,84 @@
 
 {% macro breadcrumb(items) %}
 {% if items|length > 0 %}
-    <nav aria-label="breadcrumb">
-        <ol class="breadcrumb">
-            <li class='breadcrumb-item'><a href='/'>Home</a></li>
-            {% for item in items %}
-                {% if not item.url %}
-                    <li class="breadcrumb-item active" aria-current="page">{{ item.text }}</li>
-                {% else %}
-                    <li class="breadcrumb-item"><a href="{{ item.url }}">{{ item.text }}</a></li>
-                {% endif %}
-            {% endfor %}
-        </ol>
-    </nav>
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class='breadcrumb-item'><a href='/'>Home</a></li>
+        {% for item in items %}
+        {% if not item.url %}
+        <li class="breadcrumb-item active" aria-current="page">{{ item.text }}</li>
+        {% else %}
+        <li class="breadcrumb-item"><a href="{{ item.url }}">{{ item.text }}</a></li>
+        {% endif %}
+        {% endfor %}
+    </ol>
+</nav>
 {% endif %}
 {% endmacro %}
 
 {% macro render_social_profile_url(request, provider_name, profile_url, connect=False, csrf_input=None) %}
 {% with provider_icon_class="text-gray fab fa-" ~ provider_name %}
-    {% if profile_url %}
-        <a target='_blank' href='{{ profile_url }}'>
-            <i class='{{ provider_icon_class }}'></i> {{ profile_url }}
-        </a>
-    {% elif connect %}
-        <form action="{{ provider_login_url(request, provider_name, process='connect') }}" method="POST">
-            {% if csrf_input %}
-                {{ csrf_input }}
-            {% endif %}
-            <button type="submit" class="btn btn-link p-0">
-                <i class='{{ provider_icon_class }}'></i> Connect your {{ provider_display_name(provider_name) }} account
-            </button>
-        </form>
-    {% else %}
-        No associated {{ provider_display_name(provider_name) }} account.
+{% if profile_url %}
+<a target='_blank' href='{{ profile_url }}'>
+    <i class='{{ provider_icon_class }}'></i> {{ profile_url }}
+</a>
+{% elif connect %}
+<form action="{{ provider_login_url(request, provider_name, process='connect') }}" method="POST">
+    {% if csrf_input %}
+    {{ csrf_input }}
     {% endif %}
+    <button type="submit" class="btn btn-link p-0">
+        <i class='{{ provider_icon_class }}'></i> Connect your {{ provider_display_name(provider_name) }} account
+    </button>
+</form>
+{% else %}
+No associated {{ provider_display_name(provider_name) }} account.
+{% endif %}
 {% endwith %}
 {% endmacro %}
 
 {% macro embed_discourse_comments(is_public, submitter_username, nonce) %}
 {# See https://meta.discourse.org/t/embedding-discourse-comments-via-javascript/31963 for details #}
 {% if should_enable_discourse(is_public) %}
-    <h3>Discussion</h3>
-    <div id="discourse-comments"></div>
-    <script nonce="{{ nonce }}">
-        // FIXME: see if wagtail fullpageurl
-        // (https://docs.wagtail.org/en/stable/topics/writing_templates.html#fullpageurl)
-        // obviates this
-        var canonicalUrl = window.location.origin + window.location.pathname;
-        var canonicalUrlElement = document.getElementById('discourseEmbedUrl');
-        if (canonicalUrlElement != null) {
-            canonicalUrl = canonicalUrlElement.href;
-        }
-        else {
-            // remove duplicate forward slashes
-            canonicalUrl = canonicalUrl.replace(/([^:]\/)\/+/g, "$1");
-        }
-        DiscourseEmbed = {
-            discourseUrl: "{{ constants.DISCOURSE_BASE_URL }}/",
-            discourseUserName: "{{ submitter_username }}",
-            discourseReferrerPolicy: "no-referrer-when-downgrade",
-            discourseEmbedUrl: canonicalUrl
-        };
-        (function () {
-            var d = document.createElement('script');
-            d.type = 'text/javascript';
-            d.async = true;
-            d.src = DiscourseEmbed.discourseUrl + 'javascripts/embed.js';
-            (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(d);
-        })();
-    </script>
+<h3>Discussion</h3>
+<div id="discourse-comments"></div>
+<script nonce="{{ nonce }}">
+    // FIXME: see if wagtail fullpageurl
+    // (https://docs.wagtail.org/en/stable/topics/writing_templates.html#fullpageurl)
+    // obviates this
+    var canonicalUrl = window.location.origin + window.location.pathname;
+    var canonicalUrlElement = document.getElementById('discourseEmbedUrl');
+    if (canonicalUrlElement != null) {
+        canonicalUrl = canonicalUrlElement.href;
+    }
+    else {
+        // remove duplicate forward slashes
+        canonicalUrl = canonicalUrl.replace(/([^:]\/)\/+/g, "$1");
+    }
+    DiscourseEmbed = {
+        discourseUrl: "{{ constants.DISCOURSE_BASE_URL }}/",
+        discourseUserName: "{{ submitter_username }}",
+        discourseReferrerPolicy: "no-referrer-when-downgrade",
+        discourseEmbedUrl: canonicalUrl
+    };
+    (function () {
+        var d = document.createElement('script');
+        d.type = 'text/javascript';
+        d.async = true;
+        d.src = DiscourseEmbed.discourseUrl + 'javascripts/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(d);
+    })();
+</script>
 {% else %}
-    Discourse comments are disabled.
-    {% if not is_public %}
-        <em><span class='fas fa-lock'></span> (this page is private)</em>
-    {% else %}
-        Currently in <em><mark>{{ constants.DEPLOY_ENVIRONMENT }}</mark></em> mode.
-    {% endif %}
+Discourse comments are disabled.
+{% if not is_public %}
+<em><span class='fas fa-lock'></span> (this page is private)</em>
+{% else %}
+Currently in <em><mark>{{ constants.DEPLOY_ENVIRONMENT }}</mark></em> mode.
+{% endif %}
 {% endif %}
 {% endmacro %}
 
 {% macro format_date(date) %}
-    {{ date.strftime('%B %d, %Y %I:%M %p') }}
+{{ date.strftime('%B %d, %Y %I:%M %p') }}
 {% endmacro %}

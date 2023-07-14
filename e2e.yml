@@ -1,0 +1,27 @@
+services:
+  e2e:
+    image: comses/cypress
+    build: e2e
+    environment:
+      - CYPRESS_baseUrl=http://server:8000
+    volumes:
+      - ./e2e/cypress:/code/cypress
+      - ./e2e/cypress.config.js:/code/cypress.config.js
+      - ./django/deploy/wait-for-it.sh:/code/wait-for-it.sh
+    depends_on:
+      - server
+  vite:
+    volumes:
+      - ./frontend:/code
+    command: ["yarn", "build"]
+    environment:
+      NODE_ENV: "e2e"
+  server:
+    image: comses/server:dev
+    volumes:
+      - ./django:/code
+      - ./docs:/docs
+    environment:
+      DJANGO_SETTINGS_MODULE: "core.settings.e2e"
+    ports:
+      - "127.0.0.1:8000:8000"

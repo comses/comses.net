@@ -10,19 +10,18 @@
     <p class='lead'>
     Requested by <a href="{{ review.submitter.get_absolute_url() }}">{{ review.submitter.name }}</a>
     {% if review.is_complete %}
-        <span class="badge badge-primary">{{ review.get_status_display() }}</span>
+        <span class="badge bg-success">{{ review.get_status_display() }}</span>
     {% else %}
-        <span class="badge badge-warning">{{ review.get_status_display() }}</span>
+        <span class="badge bg-warning">{{ review.get_status_display() }}</span>
     {% endif %}
     </p>
 
-    <div id="app" data-review-slug="{{ review.slug }}"
+    <div id="review-editor" data-review-id="{{ review.slug }}"
                   data-status-levels="{{ review.review_status_json }}"
                   data-status="{{ review.status }}"
-                  data-event-list-url="{{ review.get_event_list_url() }}">
     </div>
 {% endblock %}
 
 {% block js %}
-    {{ render_bundle('reviews', attrs='async') }}
+    {{ vite_asset("apps/review_editor.ts") }}
 {% endblock %}

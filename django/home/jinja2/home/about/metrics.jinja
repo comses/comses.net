@@ -1,4 +1,4 @@
-{% extends 'base.jinja' %}
+{% extends "base.jinja" %}
 {% from "common.jinja" import breadcrumb %}
 
 {% block introduction %}<h1>Metrics</h1>{% endblock %}
@@ -10,13 +10,13 @@
         {"text": "CoMSES Metrics" }
     ])
     }}
-    <div class='mt-n4 pt-0 pb-4 lead'>
+    <div class="mt-n4 pt-0 pb-4 lead">
         Summary metrics on CoMSES Membership, Computational Model Library submissions, and peer reviews since our
         inception as openabm.org in 2007.
     </div>
-    <div id="app" data-metrics-data="{{ metrics_data_json }}"></div>
+    <div id="metrics-view" data-metrics-data="{{ metrics_data_json }}"></div>
 {% endblock %}
 
 {% block js %}
-{{ render_bundle('metrics', attrs='defer') }}
+{{ vite_asset("apps/metrics.ts") }}
 {% endblock %}

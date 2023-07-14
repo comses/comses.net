@@ -19,13 +19,11 @@ from rest_framework import (
     parsers,
     status,
     mixins,
-    renderers,
     filters,
 )
 from rest_framework.decorators import action
 from rest_framework.filters import OrderingFilter
 from rest_framework.permissions import IsAuthenticated, AllowAny
-from rest_framework.renderers import JSONRenderer, TemplateHTMLRenderer
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from taggit.models import Tag
@@ -83,7 +81,6 @@ class ProfileRedirectView(LoginRequiredMixin, RedirectView):
 
 class ToggleFollowUser(APIView):
     permission_classes = (IsAuthenticated,)
-    renderer_classes = (TemplateHTMLRenderer, JSONRenderer)
 
     def post(self, request, *args, **kwargs):
         logger.debug("POST with request data: %s", request.data)
@@ -104,7 +101,6 @@ class TagListView(mixins.ListModelMixin, viewsets.GenericViewSet):
     serializer_class = TagSerializer
     queryset = Tag.objects.all()
     pagination_class = SmallResultSetPagination
-    renderer_classes = (renderers.JSONRenderer,)
     permission_classes = (AllowAny,)
 
     def get_queryset(self):
@@ -236,11 +232,13 @@ class EventFilter(filters.BaseFilterBackend):
             return queryset
         query_string = request.query_params.get("query")
         query_params = request.query_params
+        logger.debug(query_params)
         submission_deadline__gte = parse_datetime(
             query_params.get("submission_deadline__gte")
+            or query_params.get("submission_deadline_after")
         )
         start_date__gte = parse_datetime(
-            query_params.get("start_date__gte") or query_params.get("start_date")
+            query_params.get("start_date__gte") or query_params.get("start_date_after")
         )
         tags = request.query_params.getlist("tags")
 
@@ -355,9 +353,13 @@ class JobFilter(filters.BaseFilterBackend):
         if view.action != "list":
             return queryset
         qs = request.query_params.get("query")
-        date_created = parse_datetime(request.query_params.get("date_created__gte"))
+        date_created = parse_datetime(
+            request.query_params.get("date_created__gte")
+            or request.query_params.get("date_created_after")
+        )
         application_deadline = parse_datetime(
             request.query_params.get("application_deadline__gte")
+            or request.query_params.get("application_deadline_after")
         )
         tags = request.query_params.getlist("tags")
         criteria = {}

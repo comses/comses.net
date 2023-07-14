@@ -77,13 +77,13 @@
             {% else %}
                 <i class='fas fa-lock'></i> (private)
             {% endif %}
-            <b class='pl-2'>Software Framework:</b>
+            <b class='ps-2'>Software Framework:</b>
             {%- for p in release.platform_tags.all() -%}
                 {{ search_tag_href(p, category='codebases') }}
             {%- else -%}
                 None
             {%- endfor -%}
-            <b class='pl-2'>Programming Language:</b>
+            <b class='ps-2'>Programming Language:</b>
             {% for pl in release.programming_languages.all() %}
                 {{ search_tag_href(pl, category='codebases') }}
             {% endfor %}
@@ -100,7 +100,7 @@
             {% with featured_image=codebase.get_featured_image() %}
                 {% if featured_image is not none %}
                     <div class='py-3'>
-                        <a href='#' data-toggle='modal' data-target='#featuredImageModal'>
+                        <a href='#' data-bs-toggle='modal' data-bs-target='#featuredImageModal'>
                             {{ image(featured_image, "width-400", class='d-block img-fluid') }}
                         </a>
                     </div>
@@ -114,7 +114,7 @@
                                     {{ image(featured_image, "max-900x600", class='img-responsive') }}
                                 </div>
                                 <div class="modal-footer">
-                                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
                                 </div>
                             </div>
                         </div>
@@ -148,20 +148,10 @@
             e.g., with reviewers of a publication in review. Please remember to return and publish your model when it is
             ready to be public.
             </div>
-            <div class='input-group' id="regenerate_share_uuid"
-                                     data-absolute-url="{{ release.get_absolute_url() }}"
-                                     data-share-url="{{ request.build_absolute_uri(release.share_url) }}">
-                <div class='input-group-prepend'>
-                    <span class='btn input-group-text'>
-                        <i class='fas fa-sync-alt' @click="regenerateShareUuid"></i>
-                    </span>
-                </div>
-                <input id='release-share-url' readonly class='form-control normal-readonly' :value="shareUrl">
-                <div class='input-group-append'>
-                    <span class='btn btn-clipboard input-group-text' data-clipboard-target='#release-share-url'>
-                        <i class='fas fa-copy'></i>
-                    </span>
-                </div>
+            <div id="regenerate-share-uuid"
+                data-version-number="{{ release.version_number }}"
+                data-identifier="{{ codebase.identifier }}"
+                data-initial-share-url="{{ request.build_absolute_uri(release.share_url) }}">
             </div>
             <small class='text-muted'>
                 Use this link to share this release privately with others. Anyone with this URL will be able to
@@ -199,15 +189,15 @@
             <div id='open-code-badge-info'>
                 <h2 class='card-title mb-0'>
                     <i class='fas fa-certificate'></i>
-                    <u>Create an Open Code Badge that links to this model</u> <a class='float-right btn btn-outline-primary mt-0 mb-0' href='{{slugurl("open-code-badge")}}'><i class='fas fa-info-circle'></i> more info</a>
-                    <button class='btn btn-link mt-0 pt-0' type='button' data-toggle='collapse'
-                            data-target='#open-code-badge-collapse' aria-expanded='true'
+                    <u>Create an Open Code Badge that links to this model</u> <a class='float-end btn btn-outline-primary mt-0 mb-0' href='{{slugurl("open-code-badge")}}'><i class='fas fa-info-circle'></i> more info</a>
+                    <button class='btn btn-link mt-0 pt-0' type='button' data-bs-toggle='collapse'
+                            data-bs-target='#open-code-badge-collapse' aria-expanded='true'
                             aria-controls='open-code-badge-collapse'>
                         <i class='fas fa-chevron-down fa-2x'></i>
                     </button>
                 </h2>
             </div>
-            <div id='open-code-badge-collapse' class='collapse' aria-labelledby='open-code-badge-info' data-parent='#open-code-badge-accordion'>
+            <div id='open-code-badge-collapse' class='collapse' aria-labelledby='open-code-badge-info' data-bs-parent='#open-code-badge-accordion'>
                 <div class='alert alert-info'>
                     {% if release.peer_reviewed %}
                         This model has been reviewed by CoMSES Net and meets the <a href='{{slugurl("open-code-badge")}}'>Open Code Badge guidelines</a>.
@@ -260,7 +250,7 @@
             </a>
         {% else %}
             {# use survey form #}
-            <div id='download-request-form' data-user-data="{{ get_download_request_metadata(request.user) }}"
+            <div id='download-form' data-user-data="{{ get_download_request_metadata(request.user) }}"
              data-version-number="{{ release.version_number }}"
              data-identifier="{{ codebase.identifier }}"></div>
         {% endif %}
@@ -268,6 +258,11 @@
         {# direct review archive download #}
         <a rel='nofollow' class='btn btn-primary my-1 w-100' href="{{ release.get_review_download_url() }}">
             Download for Review
+        </a>
+    {% endif %}
+    {% if has_change_perm %}
+        <a href="{{ release.get_edit_url() }}">
+            <div class="btn btn-secondary my-1 w-100">Edit metadata</div>
         </a>
     {% endif %}
 {% endwith %}
@@ -280,11 +275,9 @@
             <p class='card-text'>
             {% if release.live %}
                 {% for c in codebase.all_contributors %}
-                    {% set badge_class='badge-success' if c.user else 'badge-default' %}
-                    <a href='{{ c.get_profile_url() }}'>
-                        <span class='badge {{ badge_class }}'>
-                            {{ c.name }}
-                        </span>
+                    {% set badge_class='bg-success' if c.user else 'text-secondary' %}
+                    <a class='badge {{ badge_class }}' href='{{ c.get_profile_url() }}'>
+                        {{ c.name }}
                     </a>
                 {% endfor %}
             {% else %}
@@ -294,11 +287,11 @@
             <b class='card-title'>DOI</b>
             {% if release.doi %}
               <p>
-                <a href='{{release.doi_url}}'><span class='badge badge-info'>{{ release.doi }}</span></a>
+                <a href='{{release.doi_url}}'><span class='badge bg-info'>{{ release.doi }}</span></a>
               </p>
             {% elif codebase.doi %}
                 <p><small>This DOI is for the parent Codebase and always points at the most recent published version of this model.</small>
-                <a href='{{codebase.doi_url}}'><span class='badge badge-info'>{{ codebase.doi }}</span></a></p>
+                <a href='{{codebase.doi_url}}'><span class='badge bg-info'>{{ codebase.doi }}</span></a></p>
             {% else %}
                 <p>No assigned DOI</p>
                 {% if has_change_perm %}
@@ -348,11 +341,13 @@
             </b>
         </div>
         <div class='section'>
-            {% if codebase.peer_reviewed or release.peer_reviewed %}
+            {% if release.peer_reviewed %}
                 <img src="{{ static("images/icons/peer-reviewed.png") }}" alt="Peer Reviewed">
                 <div class='py-2'>
                   <a href='{{ release.permanent_url }}'><img height='88' src='{{ open_code_badge_url }}' alt='Open Code Badge'></a>
                 </div>
+            {% elif codebase.peer_reviewed %}
+                <i class='fas fa-exclamation-triangle'></i> <small>This release has not been reviewed but a different version has passed peer review.</small>
             {% else %}
                 <b class='card-title'>
                     Peer Review
@@ -372,7 +367,7 @@
         {% if release.is_peer_review_requestable %}
             <form method="post" action="{{ release.get_request_peer_review_url() }}">
                 {{ csrf_input }}
-                <button type="button" data-toggle='modal' data-target='#confirm-peer-review' class='btn btn-secondary my-1 w-100'>
+                <button type="button" data-bs-toggle='modal' data-bs-target='#confirm-peer-review' class='btn btn-secondary my-1 w-100'>
                     Request peer review 
                 </button>
                 <div class='modal fade' id='confirm-peer-review' tabindex='-1' role='dialog'
@@ -382,15 +377,14 @@
                             <div class='modal-header'>
                                 <h4 class='modal-title text-danger' id='confirm-peer-review-label'>
                                     <i class='fas fa-exclamation-triangle fa-2x'></i> Peer Review Request: Important Reminders!</h4>
-                                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                                    <span aria-hidden="true">&times;</span>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close">
                                 </button>
                             </div>
                             <div class='modal-body'>
                                 {{ render_review_reminders() }}
                             </div>
                             <div class='modal-footer'>
-                                <button type="button" class="btn btn-warning" data-dismiss="modal">Cancel</button>
+                                <button type="button" class="btn btn-warning" data-bs-dismiss="modal">Cancel</button>
                                 <button type="submit" class="btn btn-primary">Submit peer review request</button>
                             </div>
                         </div>
@@ -425,7 +419,7 @@
 {% block bottom %}
     <ul class='nav nav-tabs detail-tabs' role='tablist'>
         <li class='nav-item'>
-            <a class='nav-link active' data-toggle='tab' href='#versions' role='tab'>Model Versions</a>
+            <a class='nav-link active' id='model-versions-list' data-bs-toggle='tab' href='#versions' role='tab'>Model Versions</a>
         </li>
     </ul>
     <div class='tab-content'>
@@ -458,18 +452,18 @@
                             <td>{{ format_datetime(related_release.last_published_on, '%c') }}</td>
                             <td>
                                 {% if related_release.draft %}
-                                    <span class="badge badge-danger">Draft</span>
+                                    <span class="badge bg-danger">Draft</span>
                                 {% elif related_release.live %}
-                                    <span class="badge badge-success">Published</span>
+                                    <span class="badge bg-success">Published</span>
                                 {% else %}
-                                    <span class="badge badge-warning">Unpublished</span>
+                                    <span class="badge bg-warning">Unpublished</span>
                                 {% endif %}
                                 {% if related_release.peer_reviewed %}
-                                    <span class='badge badge-info'>Peer Reviewed</span>
+                                    <span class='badge bg-info'>Peer Reviewed</span>
                                 {% endif %}
                                 {% if related_release.doi %}
                                     <a href='{{related_release.doi_url}}'>
-                                        <span class='badge badge-info'>{{related_release.doi_url}}</span>
+                                        <span class='badge bg-info'>{{related_release.doi_url}}</span>
                                     </a>
                                 {% endif %}
                             </td>
@@ -512,6 +506,8 @@
         });
     </script>
     {% endscript %}
-    {{ render_bundle('release_regenerate_share_uuid', attrs='defer') }}
-    {{ render_bundle('download_request_form', attrs='defer') }}
+    {{ vite_asset("apps/release_download.ts") }}
+    {% if has_change_perm %}
+        {{ vite_asset("apps/release_regenerate_share_uuid.ts") }}
+    {% endif %}
 {% endblock %}

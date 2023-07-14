@@ -1,0 +1,28 @@
+{% extends 'base.jinja' %}
+
+{% block page %}
+<section class='page'>
+    <div class="container">
+        {% block top %}
+        {% endblock %}
+        <div class="row">
+            <div class="col-sm-12 order-2 col-md-9 order-md-1">
+                {% block search %}
+                {% endblock %}
+                {% block content %}
+                {% endblock %}
+            </div>
+            <div class="col-sm-12 order-1 col-md-3 order-md-2 mb-3">
+                {% block sidebar %}
+                {% endblock %}
+            </div>
+        </div>
+        <div class="row">
+            <div class='col'>
+                {% block bottom %}
+                {% endblock %}
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock page %}

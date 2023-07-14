@@ -48,9 +48,9 @@ services:
       POSTGRES_USER: "${DB_USER}"
       POSTGRES_DB: "${DB_NAME}"
       POSTGRES_PASSWORD_FILE: /run/secrets/db_password
-  js:
+  vite:
     build: frontend
-    image: comses/comsesnet-js
+    image: comses/comsesnet-vite
     volumes:
       - /code/node_modules
       - ./docker/shared:/shared
@@ -69,7 +69,7 @@ services:
         condition: service_started
       redis:
         condition: service_started
-      js:
+      vite:
         condition: service_started
     environment:
       CLEAN_DATABASE: "false"

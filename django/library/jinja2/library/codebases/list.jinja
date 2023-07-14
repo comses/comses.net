@@ -1,11 +1,12 @@
-{% extends "sidebar_layout.jinja" %}
-{% from "common.jinja" import list_page, paginator, breadcrumb, submit_model_btn %}
+{% extends "search_layout.jinja" %}
+{% from "common.jinja" import list_page, paginator, breadcrumb, search_bar %}
 {% from "library/codebases/macros.jinja" import render_codebase_result %}
 
 {% block title %}CoMSES Net Computational Model Library{% endblock %}
 
 {% block meta_description %}
-    <meta name="description" content="The Computational Model Library preserves computational / agent based models in accordance to FAIR data principles and FORCE11 Software Citation Working Group recommendations.">
+<meta name="description"
+    content="The Computational Model Library preserves computational / agent based models in accordance to FAIR data principles and FORCE11 Software Citation Working Group recommendations.">
 {% endblock %}
 
 {% block introduction %}<h1>Computational Model Library</h1>{% endblock %}
@@ -13,29 +14,32 @@
 {% set pagination_block = paginator('library:codebase-list', paginator_data) %}
 
 {% block top %}
-    {{ breadcrumb([{'text': 'Computational Model Library'}]) }}
-    {% include "library/includes/archive_model_help.jinja" %}
-    {{ pagination_block }}
-    <div id='sortby'></div>
+{{ breadcrumb([{'text': 'Computational Model Library'}]) }}
+{% include "library/includes/archive_model_help.jinja" %}
+{% endblock %}
+
+{% block search %}
+{{ search_bar(url("library:codebase-list"), "Search Codebases") }}
+{{ pagination_block }}
 {% endblock %}
 
 {% block content %}
-    {% for codebase in codebases %}
-        {{ render_codebase_result(codebase) }}
-    {% else %}
-        <p class='lead pt-3'>
-            No matching results found.
-        </p>
-    {% endfor %}
-    {% if paginator_data.count > 10 %}
-        {{ pagination_block }}
-    {% endif %}
+{% for codebase in codebases %}
+{{ render_codebase_result(codebase) }}
+{% else %}
+<p class='lead pt-3'>
+    No matching results found.
+</p>
+{% endfor %}
+{% if paginator_data.count > 10 %}
+{{ pagination_block }}
+{% endif %}
 {% endblock %}
 
 {% block sidebar %}
-    <div id="sidebar"></div>
+<div id="sidebar"></div>
 {% endblock %}
 
 {% block js %}
-    {{ render_bundle('codebase_list', attrs='defer') }}
+{{ vite_asset('apps/codebase_list.ts') }}
 {% endblock %}

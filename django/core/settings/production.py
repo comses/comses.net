@@ -5,6 +5,7 @@ from .staging import *
 INSTALLED_APPS.remove("fixture_magic")
 
 DEBUG = False
+DJANGO_VITE_DEV_MODE = False
 DEPLOY_ENVIRONMENT = Environment.PRODUCTION
 EMAIL_SUBJECT_PREFIX = config.get(
     "email", "EMAIL_SUBJECT_PREFIX", fallback="[comses.net]"
@@ -58,7 +59,6 @@ TEMPLATES = [
         "APP_DIRS": True,
         "OPTIONS": {
             "extensions": [
-                "webpack_loader.contrib.jinja2ext.WebpackExtension",
                 "wagtail.contrib.settings.jinja2tags.settings",
                 "wagtail.jinja2tags.core",
                 "wagtail.admin.jinja2tags.userbar",

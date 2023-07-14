@@ -56,6 +56,8 @@ BASE_DIR = os.path.dirname(PROJECT_DIR)
 
 DEBUG = True
 
+DJANGO_VITE_DEV_MODE = True
+
 # Base URL to use when referring to full URLs within the Wagtail admin backend -
 # e.g. in notification emails. Don't include '/admin' or a trailing slash
 # FIXME: needs to be overridden in staging and prod after updating DEPLOY_ENVIRONMENT which is less than ideal
@@ -99,12 +101,12 @@ THIRD_PARTY_APPS = [
     "hcaptcha_field",
     "cookielaw",
     "django_extensions",
+    "django_vite",
     "guardian",
     "rest_framework",
     "rest_framework_swagger",
     "robots",
     "timezone_field",
-    "webpack_loader",
     "waffle",
     "allauth",
     "allauth.account",
@@ -133,6 +135,7 @@ MIDDLEWARE = [
     "csp.middleware.CSPMiddleware",
     "waffle.middleware.WaffleMiddleware",
     "wagtail.contrib.redirects.middleware.RedirectMiddleware",
+    "djangorestframework_camel_case.middleware.CamelCaseMiddleWare",
 ]
 
 AUTHENTICATION_BACKENDS = (
@@ -400,13 +403,18 @@ STATICFILES_FINDERS = [
     "django.contrib.staticfiles.finders.AppDirectoriesFinder",
 ]
 
-WEBPACK_DIR = config.get("storage", "WEBPACK_ROOT", fallback="/shared/webpack")
+# django-vite settings
+DJANGO_VITE_ASSETS_PATH = config.get("storage", "VITE_ROOT", fallback="/shared/vite")
+DJANGO_VITE_STATIC_URL_PREFIX = "bundles"
+DJANGO_VITE_DEV_SERVER_PORT = 5000
+DJANG_VITE_MANIFEST_PATH = os.path.join(
+    DJANGO_VITE_ASSETS_PATH, DJANGO_VITE_STATIC_URL_PREFIX, "manifest.json"
+)
 
 STATIC_ROOT = "/shared/static"
 STATIC_URL = "/static/"
 
-STATICFILES_DIRS = [WEBPACK_DIR]
-
+STATICFILES_DIRS = [DJANGO_VITE_ASSETS_PATH]
 
 MEDIA_ROOT = "/shared/media"
 MEDIA_URL = "/media/"
@@ -417,13 +425,6 @@ APPEND_SLASH = True
 WAGTAIL_SITE_NAME = "CoMSES Net"
 WAGTAIL_APPEND_SLASH = True
 WAGTAIL_GRAVATAR_PROVIDER_URL = None
-
-WEBPACK_LOADER = {
-    "DEFAULT": {
-        "BUNDLE_DIR_NAME": "bundles/",
-        "STATS_FILE": os.path.join(WEBPACK_DIR, "webpack-stats.json"),
-    }
-}
 
 # authentication settings
 LOGIN_REDIRECT_URL = "/"
@@ -438,7 +439,12 @@ REST_FRAMEWORK = {
     ),
     "DEFAULT_RENDERER_CLASSES": (
         "core.renderers.RootContextHTMLRenderer",
-        "rest_framework.renderers.JSONRenderer",
+        "djangorestframework_camel_case.render.CamelCaseJSONRenderer",
+    ),
+    "DEFAULT_PARSER_CLASSES": (
+        "djangorestframework_camel_case.parser.CamelCaseJSONParser",
+        "rest_framework.parsers.MultiPartParser",
+        "rest_framework.parsers.FormParser",
     ),
     "DEFAULT_AUTHENTICATION_CLASSES": (
         "rest_framework.authentication.SessionAuthentication",
@@ -520,7 +526,7 @@ TEMPLATES = [
         "APP_DIRS": True,
         "OPTIONS": {
             "extensions": [
-                "webpack_loader.contrib.jinja2ext.WebpackExtension",
+                "core.jinja2ext.ViteExtension",
                 "wagtail.contrib.settings.jinja2tags.settings",
                 "wagtail.jinja2tags.core",
                 "wagtail.admin.jinja2tags.userbar",
