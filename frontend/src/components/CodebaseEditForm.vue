@@ -49,7 +49,7 @@
     />
     <FormAlert :validation-errors="Object.values(errors)" :server-errors="serverErrors" />
     <button v-if="!asModal" type="submit" class="btn btn-primary" :disabled="isLoading">
-      {{ props.codebaseId ? "Update" : "Next" }}
+      {{ props.identifier ? "Update" : "Next" }}
     </button>
   </form>
 </template>
@@ -67,7 +67,7 @@ import { useCodebaseAPI, useReleaseEditorAPI } from "@/composables/api";
 
 const props = withDefaults(
   defineProps<{
-    codebaseId?: string;
+    identifier?: string;
     asModal?: boolean;
     id?: string;
   }>(),
@@ -113,8 +113,8 @@ const {
 });
 
 onMounted(async () => {
-  if (props.codebaseId) {
-    await retrieve(props.codebaseId);
+  if (props.identifier) {
+    await retrieve(props.identifier);
     console.log(data.value);
     setValues(data.value);
   }
@@ -126,8 +126,8 @@ onBeforeUnmount(() => {
 });
 
 function nextUrl(identifier: string) {
-  if (props.codebaseId) {
-    return detailUrl(props.codebaseId);
+  if (props.identifier) {
+    return detailUrl(props.identifier);
   } else {
     const versionNumber = values.latestVersionNumber || "1.0.0";
     return editUrl(identifier, versionNumber);
@@ -142,8 +142,8 @@ async function createOrUpdate() {
       window.location.href = nextUrl(response.data.identifier);
     }
   };
-  if (props.codebaseId) {
-    await update(props.codebaseId, values, { onSuccess });
+  if (props.identifier) {
+    await update(props.identifier, values, { onSuccess });
   } else {
     await create(values, { onSuccess });
   }

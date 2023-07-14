@@ -117,13 +117,9 @@ class PermissionRequiredByHttpMethodMixin:
         return ["{0}/{1}".format(namespace, "edit.jinja")]
 
     def get_required_permissions(self, request=None):
-        model = self.model
-        template_perms = ViewRestrictedObjectPermissions.perms_map[self.method]
-        perms = [
-            template_perm
-            % {"app_label": model._meta.app_label, "model_name": model._meta.model_name}
-            for template_perm in template_perms
-        ]
+        perms = ViewRestrictedObjectPermissions.get_required_object_permissions(
+            self.method, self.model
+        )
         return perms
 
     def check_permissions(self):
