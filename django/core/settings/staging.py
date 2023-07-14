@@ -60,7 +60,6 @@ CSP_SCRIPT_SRC = (
     "https://*.comses.net",
     "https://hcaptcha.com",
     "https://*.hcaptcha.com",
-    "'unsafe-eval'",
 )
 
 CSP_FONT_SRC = (
