@@ -165,30 +165,46 @@ class TextSpamClassifier(SpamClassifier):
 
         untrained_df = self.processor.get_untrained_df()
 
-        if untrained_df.empty == False:
-            bio = untrained_df[["bio", "labelled_by_curator"]][
-                untrained_df["bio"] != ""
-            ]
-            research_interests = untrained_df[
-                ["research_interests", "labelled_by_curator"]
-            ][untrained_df["research_interests"] != ""]
-
-            train_x = pd.concat(
-                [bio["bio"], research_interests["research_interests"]]
-            ).to_list()
-
-            train_y = pd.concat(
-                [bio["labelled_by_curator"], research_interests["labelled_by_curator"]]
-            )
-
-            model.fit(train_x, train_y)
-
+        if untrained_df.empty: return
+        data_x, data_y = self.concat_pd(untrained_df)
+        (
+            train_x,
+            test_x,
+            train_y,
+            test_y,
+        ) = train_test_split(
+            data_x, data_y, test_size=0.1, random_state=434
+        )
+        model.fit(train_x, train_y)
         TextSpamClassifier.save_model(model)
+        return self.validate_model(model, test_x, test_y, self.MODEL_METRICS_FILE_PATH)
+
         # TODO return metrics
+    def concat_pd(self, df):
+        bio = df[["bio", "labelled_by_curator"]][
+            df["bio"] != ""
+        ]
+        research_interests = df[
+            ["research_interests", "labelled_by_curator"]
+        ][df["research_interests"] != ""]
+
+        train_x = pd.concat(
+            [bio["bio"], research_interests["research_interests"]]
+        ).to_list()
+
+        train_y = pd.concat(
+            [bio["labelled_by_curator"], research_interests["labelled_by_curator"]]
+        )
+        return train_x, train_y
 
     def predict(self):
-        all_users_df = self.processor.get_all_users_df()
+        df = self.processor.get_unlabelled_by_curator_df()
         model = TextSpamClassifier.load_model()
+        if df.empty:  # no-op if no data found
+            return
+        
+        concat_pd = self.concat_pd(df)
+        return model.predict(concat_pd)
 
     def preprocess(text_list: List[str]):
         text_list = [
@@ -251,7 +267,7 @@ class UserMetadataSpamClassifier(SpamClassifier):
 
         self.processor.update_training_data(df)  # save last trained date
         return metrics  # if needed
-
+    
     def partial_fit(self):
         # obtain df from pipleline
         df = self.processor.get_untrained_df()
