@@ -1,5 +1,5 @@
-from datetime import datetime, timedelta
-from django.test import TestCase, TransactionTestCase
+from datetime import timedelta, date
+from django.test import TestCase
 
 from allauth.account.models import EmailAddress
 from rest_framework.exceptions import ValidationError
@@ -19,9 +19,9 @@ class EventSerializerTestCase(TestCase):
 
     def test_start_date_lth_end_date(self):
         event = self.event_factory.create_unsaved()
-        dt = datetime.now() + timedelta(days=1)
-        event.start_date = dt
-        event.end_date = dt
+        d = date.today() + timedelta(days=1)
+        event.start_date = d
+        event.end_date = d
 
         serialized_event = EventSerializer(event).data
         with self.assertRaises(ValidationError):

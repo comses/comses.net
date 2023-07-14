@@ -264,6 +264,7 @@ class EventViewSet(CommonViewSetMixin, OnlyObjectPermissionModelViewSet):
         .with_tags()
         .with_submitter()
         .with_expired()
+        .with_started()
         .order_by("-date_created")
     )
     pagination_class = SmallResultSetPagination

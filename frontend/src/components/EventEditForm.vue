@@ -61,7 +61,6 @@
       name="submissionDeadline"
       label="Submission Deadline"
       help="The last day to make a submission for the event (inclusive)"
-      :min-date="(values.startDate as Date)"
       :max-date="(values.endDate as Date)"
     />
     <MarkdownField

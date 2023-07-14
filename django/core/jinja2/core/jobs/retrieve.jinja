@@ -41,7 +41,7 @@
                 <p class='card-text'> {{ member_profile_href(submitter) }}</p>
                 {% if application_deadline %}
                     <b class="card-title">Application deadline</b>
-                    <p class="card-text">{{ formatted_application_deadline }}</p>
+                    <p class="card-text">{{ format_date_str(application_deadline) }}</p>
                 {% endif %}
                 {% if external_url %}
                     <b class='card-title'>More information</b>
@@ -53,7 +53,9 @@
                     </p>
                 {% endif %}
                 <b class="card-title">Last updated</b>
-                <p class="card-text">{{ last_modified }}</p>
+                <p class="card-text">
+                    {{ format_datetime_str(last_modified) }}
+                </p>
             </div>
         </div>
     </div>

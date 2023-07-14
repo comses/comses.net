@@ -1,5 +1,5 @@
 from core.models import Job, Event
-from datetime import datetime, timedelta
+from datetime import date, timedelta
 
 from core.serializers import EventSerializer, JobSerializer
 
@@ -40,7 +40,7 @@ class EventFactory:
             "description": "Online Conference",
             "location": "Your computer",
             "submitter": self.submitter,
-            "start_date": datetime.now() + timedelta(days=1),
+            "start_date": date.today() + timedelta(days=1),
         }
 
     def create(self, **overrides):

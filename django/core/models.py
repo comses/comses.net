@@ -534,6 +534,14 @@ class EventQuerySet(models.QuerySet):
             )
         )
 
+    def with_started(self):
+        return self.annotate(
+            is_started=models.ExpressionWrapper(
+                models.Q(start_date__gt=timezone.now()),
+                output_field=models.BooleanField(),
+            )
+        )
+
     def upcoming(self, **kwargs):
         """returns only events that have not expired"""
         now = timezone.now()
@@ -573,11 +581,11 @@ class Event(index.Indexed, ClusterableModel):
     last_modified = models.DateTimeField(auto_now=True)
     summary = models.CharField(max_length=500, blank=True)
     description = MarkdownField()
-    early_registration_deadline = models.DateTimeField(null=True, blank=True)
-    registration_deadline = models.DateTimeField(null=True, blank=True)
-    submission_deadline = models.DateTimeField(null=True, blank=True)
-    start_date = models.DateTimeField()
-    end_date = models.DateTimeField(null=True, blank=True)
+    early_registration_deadline = models.DateField(null=True, blank=True)
+    registration_deadline = models.DateField(null=True, blank=True)
+    submission_deadline = models.DateField(null=True, blank=True)
+    start_date = models.DateField()
+    end_date = models.DateField(null=True, blank=True)
     location = models.CharField(max_length=300)
     tags = ClusterTaggableManager(through=EventTag, blank=True)
     external_url = models.URLField(blank=True)
