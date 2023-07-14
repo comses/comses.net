@@ -8,11 +8,11 @@ from django.template import defaultfilters
 from django.template.loader import render_to_string
 from django.templatetags.static import static
 from django.urls import reverse
-from django.utils.dateparse import parse_datetime
+from django.utils.dateparse import parse_datetime, parse_date
 from django.utils.text import slugify
 from django.utils import timezone
 from django.utils.timezone import get_current_timezone
-from django.utils.timesince import timesince
+from django.utils.timesince import timeuntil, timesince
 from jinja2 import Environment
 from markupsafe import Markup
 
@@ -25,7 +25,7 @@ import logging
 
 
 from core.fields import render_sanitized_markdown
-from core.serializers import FULL_DATE_FORMAT
+from core.serializers import FULL_DATE_FORMAT, FULL_DATETIME_FORMAT
 
 
 logger = logging.getLogger(__name__)
@@ -76,9 +76,12 @@ def environment(**options):
             "get_download_request_metadata": get_download_request_metadata,
             "markdown": markdown,
             "add_field_css": add_field_css,
+            "format_date_str": format_date_str,
+            "format_date": format_date,
             "format_datetime_str": format_datetime_str,
             "format_datetime": format_datetime,
-            "timeuntil": timeuntil,
+            "timeuntil": _timeuntil,
+            "timesince": _timesince,
             "to_json": to_json,
             "is_checkbox": is_checkbox,
             "is_hcaptcha": is_hcaptcha,
@@ -174,25 +177,44 @@ def add_field_css(field, css_classes: str):
     return field.as_widget(attrs={"class": deduped_css_classes})
 
 
-def format_datetime_str(text: Optional[str], format_string=FULL_DATE_FORMAT):
+def format_datetime_str(text: Optional[str], format_string=FULL_DATETIME_FORMAT):
     if text is None:
         return None
-    d = parse_datetime(text)
-    return format_datetime(d, format_string)
+    datetime = parse_datetime(text)
+    return format_datetime(datetime, format_string)
 
 
-def format_datetime(date_obj, format_string=FULL_DATE_FORMAT):
-    if date_obj is None:
+def format_datetime(datetime, format_string=FULL_DATETIME_FORMAT):
+    if datetime is None:
         return None
-    return date_obj.strftime(format_string)
+    return datetime.strftime(format_string)
 
 
-def timeuntil(date):
+def format_date_str(text: Optional[str], format_string=FULL_DATE_FORMAT):
+    if text is None:
+        return None
+    date = parse_date(text) or parse_datetime(text)
+    return format_date(date, format_string)
+
+
+def format_date(date, format_string=FULL_DATE_FORMAT):
     if date is None:
         return None
-    elif isinstance(date, str):
-        date = parse_datetime(date)
-    return timesince(date, timezone.now())
+    return date.strftime(format_string)
+
+
+def _timesince(date, depth=1):
+    date = parse_date(date) or parse_datetime(date)
+    if date is None:
+        return None
+    return timesince(date, depth=depth)
+
+
+def _timeuntil(date, depth=1):
+    date = parse_date(date) or parse_datetime(date)
+    if date is None:
+        return None
+    return timeuntil(date, depth=depth)
 
 
 def to_json(value):

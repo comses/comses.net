@@ -40,12 +40,12 @@
                 <b class="card-title">Submitter</b>
                 <p class="card-text">{{ member_profile_href(submitter) }}</p>
                 <b class="card-title">Last updated</b>
-                <p class="card-text">{{ last_modified }}</p>
+                <p class="card-text">{{ format_datetime_str(last_modified) }}</p>
                 <b class="card-title">When</b>
                 <p class="card-text">
-                    {{ format_datetime_str(start_date) }}
+                    {{ format_date_str(start_date) }}
                     {% if end_date %}
-                     - {{ format_datetime_str(end_date) }}
+                     - {{ format_date_str(end_date) }}
                     {% endif %}
                 </p>
                 <b class="card-title">Where</b>
@@ -57,11 +57,11 @@
                     </p>
                 {% endif %}
                 <b class="card-title">Early registration deadline</b>
-                <p class="card-text">{{ format_datetime_str(early_registration_deadline) }}</p>
+                <p class="card-text">{{ format_date_str(early_registration_deadline) }}</p>
                 <b class="card-title">Registration deadline</b>
-                <p class="card-text">{{ format_datetime_str(registration_deadline) }}</p>
+                <p class="card-text">{{ format_date_str(registration_deadline) }}</p>
                 <b class="card-title">Submission deadline</b>
-                <p class="card-text">{{ format_datetime_str(submission_deadline) }}</p>
+                <p class="card-text">{{ format_date_str(submission_deadline) }}</p>
             </div>
         </div>
     </div>
