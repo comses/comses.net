@@ -42,7 +42,8 @@ class ComsesGroups(Enum):
         return [Group.objects.get_or_create(name=g.value)[0] for g in ComsesGroups]
 
     def users(self, **kwargs):
-        return self.get_group().user_set.filter(is_active=True, **kwargs)
+        kwargs.setdefault("is_active", True)
+        return self.get_group().user_set.filter(**kwargs)
 
     def member_profiles(self, **kwargs):
         return MemberProfile.objects.filter(user__in=self.users(**kwargs))
