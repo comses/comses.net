@@ -13,6 +13,7 @@ from core.models import MemberProfile
 warnings.filterwarnings("ignore")  # ignore warnings
 DATASET_FILE_PATH = "dataset.csv"
 
+
 class UserSpamStatusProcessor:
     """
     UserSpamStatusProcessor
@@ -33,18 +34,18 @@ class UserSpamStatusProcessor:
             "member_profile__personal_url",
             "member_profile__professional_url",
             "labelled_by_curator",
-            "labelled_by_bio_classifier",
+            "labelled_by_text_classifier",
             "labelled_by_user_classifier",
-            "bio_classifier_confidence",
+            "text_classifier_confidence",
             "user_classifier_confidence",
         ]
 
         self.type_int_bool_column_names = [
             "member_profile__user_id",
             "labelled_by_curator",
-            # "labelled_by_bio_classifier",
+            # "labelled_by_text_classifier",
             # "labelled_by_user_classifier",
-            # "bio_classifier_confidence",
+            # "text_classifier_confidence",
             # "user_classifier_confidence",
         ]
 
@@ -74,12 +75,14 @@ class UserSpamStatusProcessor:
             return df
         for col in df.columns:
             if col in self.type_int_bool_column_names:
-                print("coi name", col)
-                df[col] = df[col].astype("float").astype("int")
+                df[col] = df[col].fillna(0).astype(int)
+                # It is safe to set Nan as ) because:
+                # for training, all values with labelled_by_curator=None are exclueded before passed to this function.
+                # for prediction, labelled_by_curator column is not used during prediction process.
             else:
                 df[col] = df[col].apply(
                     lambda text: re.sub(r"<.*?>", " ", str(text))
-                )  # Remove markdown
+                )  # Removing markdown
         return df
 
     def get_all_users_df(self):
@@ -109,7 +112,6 @@ class UserSpamStatusProcessor:
             )
         )
 
-
     def get_untrained_df(self):
         # return : DataFrame of user data that haven't been used for train previously
         return self.__rename_columns(
@@ -130,26 +132,26 @@ class UserSpamStatusProcessor:
         unlabelled_users = list(
             UserSpamStatus.objects.filter(
                 Q(labelled_by_curator=None)
-                & Q(labelled_by_bio_classifier=None)
+                & Q(labelled_by_text_classifier=None)
                 & Q(labelled_by_user_classifier=None)
             )
         )
         return unlabelled_users
-    
+
     # FIXME: tune confidence threshold later
-    def get_spam_users(self, confidence_threshold=0.6):
+    def get_spam_users(self, confidence_threshold=0.5):
         """
         This functions will first filter out the users with labelled_by_curator==True,
         but the ones with None, only get users with labelled_by_user_classifier == True
-        or labelled_by_bio_classifier == True with a specific confidence level.
+        or labelled_by_text_classifier == True with a specific confidence level.
         """
         spam_users = list(
             UserSpamStatus.objects.filter(
                 Q(labelled_by_curator=True)
-                | Q(labelled_by_bio_classifier=True)
-                & Q(bio_classifier_confidence_gte=confidence_threshold)
+                | Q(labelled_by_text_classifier=True)
+                & Q(text_classifier_confidence__gte=confidence_threshold)
                 | Q(labelled_by_user_classifier=True)
-                & Q(user_classifier_confidence_gte=confidence_threshold)
+                & Q(user_classifier_confidence__gte=confidence_threshold)
             )
         )
         return spam_users
@@ -160,11 +162,16 @@ class UserSpamStatusProcessor:
         # param : filepath of dataset to be loaded
         # return : None
 
-        if check_DB and UserSpamStatus.objects.filter(Q(labelled_by_curator=True) | Q(labelled_by_curator=False)).exists():
+        if (
+            check_DB
+            and UserSpamStatus.objects.filter(
+                Q(labelled_by_curator=True) | Q(labelled_by_curator=False)
+            ).exists()
+        ):
             # if there are user with non-None values as labelled_by_curator, no need to load the label file
-            return 
-        
-        label_df = pd.read_csv(filepath) # TODO add exception
+            return
+
+        label_df = pd.read_csv(filepath)  # TODO add exception
         for idx, row in label_df.iterrows():
             UserSpamStatus.objects.filter(
                 member_profile__user_id=row["user_id"]
@@ -179,15 +186,15 @@ class UserSpamStatusProcessor:
             ).update(is_training_data=True)
 
     def update_predictions(self, prediction_df, isTextClassifier=False):
-        # params : spam_recommendation_df ... a Dataframe with columns "user_id", "labelled_by_{}", and "{}_classifier_confidence"
+        # params : prediction_df ... a Dataframe with columns "user_id", "labelled_by_{}", and "{}_classifier_confidence"
         # return : None
         if isTextClassifier:
             for idx, row in prediction_df.iterrows():
                 UserSpamStatus.objects.filter(
                     member_profile__user_id=row.user_id
                 ).update(
-                    labelled_by_bio_classifier=row.labelled_by_bio_classifier,
-                    bio_classifier_confidence=row.bio_classifier_confidence,
+                    labelled_by_text_classifier=row.labelled_by_text_classifier,
+                    text_classifier_confidence=row.text_classifier_confidence,
                 )
         else:
             for idx, row in prediction_df.iterrows():
