@@ -394,7 +394,12 @@ nav {
   line-height: 1.25rem;
 
   .section {
-    padding-bottom: 2rem;
+    margin-bottom: 1rem;
+    border-bottom: 1px solid $gray-400;
+
+    &:last-of-type {
+      border-bottom: none;
+    }
 
     .card-text {
       padding-top: 0.3rem;
