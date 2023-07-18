@@ -87,6 +87,7 @@
               <small><i class="fas fa-edit"></i> Edit</small>
             </button>
             <button
+              v-if="releaseContributors.length > 1"
               type="button"
               class="btn btn-link text-danger btn-sm"
               :class="{ disabled: reordered }"
