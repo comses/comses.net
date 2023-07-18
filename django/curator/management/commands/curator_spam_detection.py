@@ -3,9 +3,7 @@ import pathlib
 
 from django.core.management.base import BaseCommand
 
-from curator.models import TagCleanup, PENDING_TAG_CLEANUPS_FILENAME
-
-# from curator.spam_detection_models import UserMetadataSpamClassifier
+from curator.spam import DATASET_FILE_PATH
 from curator.spam_detection_models import SpamDetection
 
 logger = logging.getLogger(__name__)
@@ -105,8 +103,7 @@ class Command(BaseCommand):
         train_text = options["train_text"]
         predict_text = options["predict_text"]
 
-        # load_directory = pathlib.Path("/shared/curator/dataset.csv")
-        load_directory = pathlib.Path("dataset.csv")
+        load_directory = pathlib.Path(DATASET_FILE_PATH)
 
         if exe:
             self.handle_exe()
