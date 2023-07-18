@@ -10,8 +10,10 @@ from curator.spam_detection_models import SpamDetection
 
 logger = logging.getLogger(__name__)
 
+
 class Command(BaseCommand):
     help = "Perform spam detection"
+
     def __init__(self):
         self.detection = SpamDetection()
         self.processor = self.detection.processor
@@ -35,7 +37,7 @@ class Command(BaseCommand):
         )
         parser.add_argument(
             "--get_model_metrics",
-            "-r",
+            "-g",
             action="store_true",
             default=False,
             help="retrain model accuracy, precision, recall and f1 scores",
@@ -61,9 +63,9 @@ class Command(BaseCommand):
 
     def handle_exe(self):
         spam_users, user_model_metircs, text_model_metrics = self.detection.execute()
-        print(spam_users)
-        print(user_model_metircs)
-        print(text_model_metrics)
+        # print(spam_users)
+        # print(user_model_metircs)
+        # print(text_model_metrics)
 
     def handle_refine(self):
         user_model_metircs, text_model_metrics = self.detection.refine()
@@ -73,7 +75,7 @@ class Command(BaseCommand):
     def handle_get_model_metrics(self):
         metrics = self.detection.get_model_metrics()
         print(metrics)
-        
+
     def handle_load_labels(self, load_directory):
         self.processor.update_labels(load_directory)
 
@@ -108,7 +110,7 @@ class Command(BaseCommand):
 
         if exe:
             self.handle_exe()
-        elif refine: 
+        elif refine:
             self.handle_refine()
         elif model_metrics:
             self.handle_get_model_metrics()
