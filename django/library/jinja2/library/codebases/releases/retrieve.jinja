@@ -57,7 +57,20 @@
 {% endblock %}
 
 {% block content %}
-    <div id="{{ 'discourse-content' if release.live else 'content' }}">
+    {# hidden formatted content for discourse crawler #}
+    {% if release.live %}
+        <div id="discourse-content" class="d-none">
+            <h1>{{ codebase.title }} <i>({{ release.version_number }})</i></h1>
+            <p>{{ codebase.description|safe }}</p>
+            {{ image(codebase.get_featured_image(), "width-400") }}
+            <h2>Release Notes</h2>
+            <p>{{ release.release_notes|safe }}</p>
+            <h2>Associated Publications</h2>
+            <p>{{ markdown(codebase.associated_publication_text) }}</p>
+        </div>
+    {% endif %}
+
+    <div id="content">
         {% if release.live %}
             {% if not release.is_latest_version %}
                 {% with latest_version=codebase.latest_version %}
