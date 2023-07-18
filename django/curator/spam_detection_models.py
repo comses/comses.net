@@ -17,7 +17,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
 import xgboost as xgb
 
-from curator.spam import UserSpamStatusProcessor
+from curator.spam import UserSpamStatusProcessor, SPAM_DIR_PATH
 from curator.models import UserSpamStatus
 from typing import List
 
@@ -172,9 +172,8 @@ class TextSpamClassifier(SpamClassifier):
 
     def __init__(self):
         SpamClassifier.__init__(self)
-        # self.MODEL_FILE_PATH = "curator/text_classifier.pkl"
-        self.MODEL_FILE_PATH = "text_classifier.pkl"  # TODO for test purpose, replace this to "curator/text_classifier.pkl" later
-        self.MODEL_METRICS_FILE_PATH = "text_classifier_metrics.json"
+        self.MODEL_FILE_PATH = SPAM_DIR_PATH + "text_classifier.pkl"
+        self.MODEL_METRICS_FILE_PATH = SPAM_DIR_PATH + "text_classifier_metrics.json"
 
     def load_model(self):
         if os.path.isfile(self.MODEL_FILE_PATH):
@@ -286,9 +285,9 @@ class TextSpamClassifier(SpamClassifier):
 class UserMetadataSpamClassifier(SpamClassifier):
     def __init__(self):
         SpamClassifier.__init__(self)
-        self.TOKENIZER_FILE_PATH = "tokenizer.pkl"
-        self.MODEL_FILE_PATH = "user_meta_classifier.pkl"
-        self.MODEL_METRICS_FILE_PATH = "user_meta_classifier_metrics.json"
+        self.TOKENIZER_FILE_PATH = SPAM_DIR_PATH + "tokenizer.pkl"
+        self.MODEL_FILE_PATH = SPAM_DIR_PATH + "user_meta_classifier.pkl"
+        self.MODEL_METRICS_FILE_PATH = SPAM_DIR_PATH + "user_meta_classifier_metrics.json"
 
     def fit(self):
         # obtain df from pipleline

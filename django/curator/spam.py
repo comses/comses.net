@@ -11,7 +11,8 @@ from curator.models import UserSpamStatus
 from core.models import MemberProfile
 
 warnings.filterwarnings("ignore")  # ignore warnings
-DATASET_FILE_PATH = "dataset.csv"
+SPAM_DIR_PATH = "/shared/curator/spam/"
+DATASET_FILE_PATH = SPAM_DIR_PATH + "dataset.csv"
 
 
 class UserSpamStatusProcessor:
