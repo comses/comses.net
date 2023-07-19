@@ -326,6 +326,18 @@
             <div class="card-text mb-3">
                 {{ release.version_number }}
             </div>
+            {% if codebase.repository_url %}
+                <b class='card-title'>External Repository</b>
+                <div class="card-text mb-3">
+                    <a href="{{ codebase.repository_url }}">{{ codebase.repository_url }}</a>
+                </div>
+            {% endif %}
+            {% if release.output_data_url %}
+                <b class='card-title'>Output Data</b>
+                <div class="card-text mb-3">
+                    <a href="{{ release.output_data_url }}">{{ release.output_data_url }}</a>
+                </div>
+            {% endif %}
             <b class='card-title'>License</b>
             <div class="card-text mb-3">
                 <a href='{{ release.license.url }}'>{{ release.license.name }}</a>
