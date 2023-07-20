@@ -138,8 +138,7 @@ const schema = yup.object().shape({
     })
     .required()
     .label("License"),
-  outputDataUrl: yup
-    .string().url().label("Output Data URL"),
+  outputDataUrl: yup.string().url().label("Output Data URL"),
 });
 type ReleaseMetadataFields = yup.InferType<typeof schema>;
 
