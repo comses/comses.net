@@ -360,21 +360,6 @@
             <div class="card-text mb-3">
                 {{ release.get_os_display() }}
             </div>
-
-            {# Doesn't seem like we need to display this anymore #}
-            {#
-            <b class='card-title'>Dependencies</b> 
-            <div class="card-text mb-3">
-            {% if release.dependencies %}
-                <code>
-                {{ release.dependencies }}
-                </code>
-            {% else %}
-                None listed
-            {% endif %}
-            </div>
-            #}
-
             <b class="card-title">Publish Date</b>
             <div class='card-text mb-3'>
                 {{ format_datetime(release.first_published_at, format_string="%b %d, %Y") }}
