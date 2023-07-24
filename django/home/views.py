@@ -140,14 +140,9 @@ class ProfileViewSet(CommonViewSetMixin, HtmlNoDeleteViewSet):
     def get_queryset(self):
         if self.action == "retrieve":
             # FIXME: queries like this should live in the MemberProfileQuerySet / models layer, not the view.
-            return (
-                self.queryset.prefetch_related("institution")
-                .prefetch_related("user")
-                .prefetch_related(
-                    "peer_review_invitation_set__review__codebase_release__codebase"
-                )
-            )
-        return self.queryset.with_institution().with_user()
+            return self.queryset.with_peer_review_invitations()
+        else:
+            return self.queryset.with_user()
 
     def get_retrieve_context(self, instance):
         context = super().get_retrieve_context(instance)

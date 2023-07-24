@@ -4,21 +4,27 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     initial = True
 
-    dependencies = [
-    ]
+    dependencies = []
 
     operations = [
         migrations.CreateModel(
-            name='ArchivedQueryHits',
+            name="ArchivedQueryHits",
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('year', models.IntegerField()),
-                ('query_string', models.CharField(max_length=255)),
-                ('hits', models.IntegerField()),
-                ('last_updated', models.DateField()),
+                (
+                    "id",
+                    models.AutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("year", models.IntegerField()),
+                ("query_string", models.CharField(max_length=255)),
+                ("hits", models.IntegerField()),
+                ("last_updated", models.DateField()),
             ],
         ),
     ]
