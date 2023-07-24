@@ -161,6 +161,11 @@ class MemberProfileQuerySet(models.QuerySet):
             | models.Q(user__contributor__family_name__icontains=query)
         )
 
+    def with_peer_review_invitations(self):
+        return self.prefetch_related("user").prefetch_related(
+            "peer_review_invitation_set__review__codebase_release__codebase"
+        )
+
     def with_institution(self):
         return self.select_related("institution")
 
@@ -257,12 +262,14 @@ class MemberProfile(index.Indexed, ClusterableModel):
     ]
 
     search_fields = [
-        index.FilterField("is_active"),
-        index.FilterField("username"),
+        index.SearchField("affiliations_as_string"),
         index.SearchField("bio"),
-        index.SearchField("research_interests"),
+        index.FilterField("date_joined"),
         index.SearchField("degrees"),
+        index.SearchField("email"),
+        index.FilterField("is_active"),
         index.SearchField("name"),
+        index.SearchField("research_interests"),
         index.RelatedFields(
             "institution",
             [
@@ -272,18 +279,9 @@ class MemberProfile(index.Indexed, ClusterableModel):
         index.RelatedFields(
             "tags",
             [
-                index.SearchField("name"),
-            ],
-        ),
-        index.RelatedFields(
-            "user",
-            [
-                index.FilterField("date_joined"),
-                index.FilterField("last_name"),
-                index.SearchField("first_name"),
-                index.SearchField("last_name"),
-                index.SearchField("email"),
-                index.SearchField("username"),
+                # FilterFields do not currently work but should be supported in a future wagtail release
+                # https://docs.wagtail.org/en/stable/topics/search/indexing.html#filtering-on-index-relatedfields
+                index.FilterField("name"),
             ],
         ),
     ]
@@ -324,12 +322,11 @@ class MemberProfile(index.Indexed, ClusterableModel):
             return self.picture.get_rendition("fill-150x150").url
         return None
 
-    """
-    Returns the github profile URL associated with this member profile if it exists, or None
-    """
-
     @property
     def github_url(self):
+        """
+        Returns the github profile URL associated with this member profile if it exists, or None
+        """
         return self.get_social_account_profile_url("github")
 
     def get_social_account_profile_url(self, provider_name):
@@ -341,6 +338,7 @@ class MemberProfile(index.Indexed, ClusterableModel):
     def get_social_account(self, provider_name):
         return self.user.socialaccount_set.filter(provider=provider_name).first()
 
+    # FIXME: deprecated, remove soon
     @property
     def institution_url(self):
         return self.institution.url if self.institution else ""
@@ -348,6 +346,15 @@ class MemberProfile(index.Indexed, ClusterableModel):
     @property
     def primary_affiliation_url(self):
         return self.affiliations[0].get("url") if self.affiliations else ""
+
+    @property
+    def affiliations_as_string(self):
+        return ", ".join(
+            [
+                self.to_affiliation_string(affiliation)
+                for affiliation in self.affiliations
+            ]
+        )
 
     @property
     def profile_url(self):
@@ -363,14 +370,22 @@ class MemberProfile(index.Indexed, ClusterableModel):
     def get_list_url(cls):
         return reverse("home:profile-list")
 
+    @classmethod
+    def to_affiliation_string(cls, afl):
+        return f"{afl.get('name')} {afl.get('url')} {afl.get('acronym')}"
+
     # Other
 
+    # FIXME: deprecated
     @property
     def institution_name(self):
         return self.institution.name if self.institution else ""
 
     @property
     def primary_affiliation_name(self):
+        """
+        Primary affiliation is always first
+        """
         return self.affiliations[0].get("name") if self.affiliations else ""
 
     @property
@@ -456,10 +471,11 @@ class Platform(index.Indexed, ClusterableModel):
         index.SearchField("description"),
         index.FilterField("active"),
         index.FilterField("open_source"),
+        index.FilterField("featured"),
         index.RelatedFields(
             "tags",
             [
-                index.SearchField("name"),
+                index.FilterField("name"),
             ],
         ),
     ]
