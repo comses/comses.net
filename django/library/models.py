@@ -129,12 +129,10 @@ class Contributor(index.Indexed, ClusterableModel):
     )
 
     search_fields = [
-        index.SearchField("given_name", partial_match=True),
-        index.SearchField("family_name", partial_match=True),
-        index.RelatedFields(
-            "affiliations", [index.SearchField("name", partial_match=True)]
-        ),
-        index.SearchField("email", partial_match=True),
+        index.SearchField("given_name"),
+        index.SearchField("family_name"),
+        index.RelatedFields("affiliations", [index.SearchField("name")]),
+        index.SearchField("email"),
         index.RelatedFields(
             "user",
             [
@@ -525,18 +523,18 @@ class Codebase(index.Indexed, ClusterableModel):
     objects = CodebaseQuerySet.as_manager()
 
     search_fields = [
-        index.SearchField("title", partial_match=True),
-        index.SearchField("description", partial_match=True),
+        index.SearchField("title"),
+        index.SearchField("description"),
         index.SearchField("get_all_contributors_search_fields"),
         index.SearchField("get_all_release_frameworks"),
         index.SearchField("get_all_release_programming_languages"),
-        index.SearchField("references_text", partial_match=True),
+        index.SearchField("references_text"),
         index.SearchField("permanent_url"),
-        index.SearchField("associated_publication_text", partial_match=True),
+        index.SearchField("associated_publication_text"),
         index.RelatedFields(
             "tags",
             [
-                index.SearchField("name", partial_match=True),
+                index.SearchField("name"),
             ],
         ),
         # filter and sort fields
@@ -1085,8 +1083,8 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
     objects = CodebaseReleaseQuerySet.as_manager()
 
     search_fields = [
-        index.SearchField("release_notes", partial_match=True),
-        index.SearchField("summary", partial_match=True),
+        index.SearchField("release_notes"),
+        index.SearchField("summary"),
         index.SearchField("permanent_url"),
         index.SearchField("identifier"),
         index.FilterField("os"),
@@ -1098,13 +1096,13 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
         index.RelatedFields(
             "platform_tags",
             [
-                index.SearchField("name", partial_match=True),
+                index.SearchField("name"),
             ],
         ),
         index.RelatedFields(
             "programming_languages",
             [
-                index.SearchField("name", partial_match=True),
+                index.SearchField("name"),
             ],
         ),
         index.RelatedFields(
