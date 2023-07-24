@@ -262,12 +262,13 @@ class MemberProfile(index.Indexed, ClusterableModel):
     ]
 
     search_fields = [
-        index.SearchField("affiliations_as_string"),
-        index.SearchField("bio"),
         index.FilterField("date_joined"),
+        index.FilterField("is_active"),
+        index.FilterField("username"),
+        index.SearchField("affiliations_string"),
+        index.SearchField("bio"),
         index.SearchField("degrees"),
         index.SearchField("email"),
-        index.FilterField("is_active"),
         index.SearchField("name"),
         index.SearchField("research_interests"),
         index.RelatedFields(
@@ -348,7 +349,7 @@ class MemberProfile(index.Indexed, ClusterableModel):
         return self.affiliations[0].get("url") if self.affiliations else ""
 
     @property
-    def affiliations_as_string(self):
+    def affiliations_string(self):
         return ", ".join(
             [
                 self.to_affiliation_string(affiliation)
@@ -372,9 +373,8 @@ class MemberProfile(index.Indexed, ClusterableModel):
 
     @classmethod
     def to_affiliation_string(cls, afl):
+        # e.g., "Arizona State University https://www.asu.edu ASU"
         return f"{afl.get('name')} {afl.get('url')} {afl.get('acronym')}"
-
-    # Other
 
     # FIXME: deprecated
     @property
