@@ -112,26 +112,10 @@
             </div>
             {% with featured_image=codebase.get_featured_image() %}
                 {% if featured_image is not none %}
-                    <div class='py-3'>
-                        <a href='#' data-bs-toggle='modal' data-bs-target='#featuredImageModal'>
-                            {{ image(featured_image, "width-400", class='d-block img-fluid') }}
-                        </a>
-                    </div>
-                    <div class='modal fade' id='featuredImageModal' aria-labelledby='modalCodebaseTitle' aria-hidden='true' tab-index='-1' role='dialog'>
-                        <div class='modal-dialog modal-lg' role='document'>
-                            <div class='modal-content'>
-                                <div class='modal-header'>
-                                    <h5 id='modalCodebaseTitle' class='modal-title'>{{ codebase.title }}</h5>
-                                </div>
-                                <div class="modal-body text-center">
-                                    {{ image(featured_image, "max-900x600", class='img-responsive') }}
-                                </div>
-                                <div class="modal-footer">
-                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                <div id="image-gallery" class="my-4" data-title="{{ codebase.title }}" data-images="{{ codebase.get_image_urls()|tojson|forceescape }}">
+                    {{ image(featured_image, "max-900x600", class="img-fluid") }}
+                    {{ vite_asset("apps/image_gallery.ts") }}
+                </div>
                 {% endif %}
             {% endwith %}
             {% if release.release_notes.raw %}
