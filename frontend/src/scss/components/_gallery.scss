@@ -1,0 +1,18 @@
+.active-gallery-img {
+  @extend .img-fluid;
+  @extend .border;
+  @extend .rounded;
+  cursor: pointer;
+  max-height: 35vh;
+}
+
+.gallery-img-thumbnail {
+  @extend .img-thumbnail;
+  height: 5rem;
+  width: 5rem;
+  object-fit: cover;
+  cursor: pointer;
+  &.active {
+    border: 1px solid $secondary;
+  }
+}
