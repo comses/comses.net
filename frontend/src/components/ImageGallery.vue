@@ -1,6 +1,9 @@
 <template>
   <div>
-    <div class="w-100 mb-3 d-flex justify-content-between border rounded">
+    <div
+      class="w-100 mb-3 d-flex justify-content-between border rounded gallery-frame"
+      :class="{ fixed }"
+    >
       <button
         v-if="images.length > 1"
         class="btn btn-link position-relative fs-2"
@@ -67,10 +70,16 @@ import { ref, computed } from "vue";
 import type Modal from "bootstrap/js/dist/modal";
 import BootstrapModal from "@/components/BootstrapModal.vue";
 
-const props = defineProps<{
-  title?: string;
+export interface ImageGalleryProps {
   images: string[];
-}>();
+  title?: string;
+  fixed?: boolean;
+}
+
+const props = withDefaults(defineProps<ImageGalleryProps>(), {
+  title: "",
+  fixed: true,
+});
 
 const activeImageIndex = ref(0);
 const activeImageModal = ref<Modal>();
