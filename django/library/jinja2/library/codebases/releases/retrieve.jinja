@@ -282,6 +282,55 @@
             </div>
         </div>
         <div class="section">
+            {# {% if codebase.repository_url %}
+                <div class="card-text mb-2">
+                    <a href="{{ codebase.repository_url }}">
+                        External Repository <i class="fas fa-external-link-alt"></i>
+                    </a>
+                </div>
+            {% endif %}
+            {% if release.output_data_url %}
+                <div class="card-text mb-3">
+                    <a href="{{ release.output_data_url }}">
+                        Output Data <i class="fas fa-external-link-alt"></i>
+                    </a>
+                </div>
+            {% endif %} #}
+
+            {# {% if codebase.repository_url %}
+                <div class="mb-3">
+                    <b class="card-title">External Repository</b>
+                    <a href="{{ codebase.repository_url }}" class="btn btn-sm btn-link py-0">
+                        <i class="fas fa-external-link-alt"></i>
+                    </a>
+                </div>
+            {% endif %}
+            {% if release.output_data_url %}
+                <div class="mb-3">
+                    <b class="card-title">Output Data</b>
+                    <a href="{{ release.output_data_url }}" class="btn btn-sm btn-link py-0">
+                        <i class="fas fa-external-link-alt"></i>
+                    </a>
+                </div>
+            {% endif %} #}
+
+            {% if codebase.repository_url %}
+                <b class='card-title'>External Repository</b>
+                <div class="card-text mb-3">
+                    <a href="{{ codebase.repository_url }}" class="d-block text-truncate">
+                        {{ strip_url_scheme(codebase.repository_url) }}
+                    </a>
+                </div>
+            {% endif %}
+            {% if release.output_data_url %}
+                <b class='card-title'>Output Data</b>
+                <div class="card-text mb-3">
+                    <a href="{{ release.output_data_url }}" class="d-block text-truncate">
+                        {{ strip_url_scheme(release.output_data_url) }}
+                    </a>
+                </div>
+            {% endif %}
+
             <b class='card-title'>DOI</b>
             <div class="card-text mb-3">
             {% if release.doi %}
@@ -310,18 +359,6 @@
             <div class="card-text mb-3">
                 {{ release.version_number }}
             </div>
-            {% if codebase.repository_url %}
-                <b class='card-title'>External Repository</b>
-                <div class="card-text mb-3">
-                    <a href="{{ codebase.repository_url }}">{{ codebase.repository_url }}</a>
-                </div>
-            {% endif %}
-            {% if release.output_data_url %}
-                <b class='card-title'>Output Data</b>
-                <div class="card-text mb-3">
-                    <a href="{{ release.output_data_url }}">{{ release.output_data_url }}</a>
-                </div>
-            {% endif %}
             <b class='card-title'>License</b>
             <div class="card-text mb-3">
                 <a href='{{ release.license.url }}'>{{ release.license.name }}</a>
