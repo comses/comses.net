@@ -35,6 +35,7 @@ export const useReleaseEditorStore = defineStore("releaseEditor", () => {
       os: release.value.os,
       platforms: release.value.platforms,
       programmingLanguages: release.value.programmingLanguages,
+      outputDataUrl: release.value.outputDataUrl,
       live: release.value.live,
       license: release.value.license || undefined,
     };
@@ -172,6 +173,7 @@ const INITIAL_STATE: CodebaseReleaseEditorState = {
     live: false,
     os: "",
     osDisplay: "",
+    outputDataUrl: "",
     peerReviewed: false,
     platforms: [],
     possibleLicenses: [],

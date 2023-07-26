@@ -489,7 +489,6 @@ class CodebaseReleaseSerializer(serializers.ModelSerializer):
     last_published_on = serializers.DateTimeField(
         format=DATE_PUBLISHED_FORMAT, read_only=True
     )
-    output_data_url = serializers.URLField(required=False)
     license = LicenseSerializer()
     live = serializers.ReadOnlyField()
     os_display = serializers.ReadOnlyField(source="get_os_display")
