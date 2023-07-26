@@ -17,6 +17,7 @@ from markupsafe import Markup
 from hcaptcha_field import hCaptchaField
 from typing import Optional
 
+import re
 import json
 import logging
 
@@ -79,6 +80,7 @@ def environment(**options):
             "is_checkbox": is_checkbox,
             "is_hcaptcha": is_hcaptcha,
             "get_messages": messages.get_messages,
+            "strip_url_scheme": strip_url_scheme,
         }
     )
     return env
@@ -184,6 +186,10 @@ def format_datetime(date_obj, format_string=FULL_DATE_FORMAT):
 
 def to_json(value):
     return json.dumps(value)
+
+
+def strip_url_scheme(url):
+    return re.sub(r"^https?:\/\/", "", url) if url else None
 
 
 # # http://stackoverflow.com/questions/6453652/how-to-add-the-current-query-string-to-an-url-in-a-django-template
