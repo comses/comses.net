@@ -285,8 +285,8 @@
             {% if codebase.repository_url %}
                 <b class='card-title'>External Repository</b>
                 <div class="card-text mb-3">
-                    <a href="{{ codebase.repository_url }}" class="d-block">
-                        <span class='badge bg-info text-truncate'>
+                    <a href="{{ codebase.repository_url }}" class="d-block text-truncate">
+                        <span class='badge bg-info'>
                         {{ strip_url_scheme(codebase.repository_url) }}
                         </span>
                     </a>
@@ -295,8 +295,8 @@
             {% if release.output_data_url %}
                 <b class='card-title'>Output Data</b>
                 <div class="card-text mb-3">
-                    <a href="{{ release.output_data_url }}" class="d-block">
-                        <span class='badge bg-info text-truncate'>
+                    <a href="{{ release.output_data_url }}" class="d-block text-truncate">
+                        <span class='badge bg-info'>
                         {{ strip_url_scheme(release.output_data_url) }}
                         </span>
                     </a>
@@ -307,7 +307,7 @@
             <div class="card-text mb-3">
             {% if release.doi %}
               <p>
-                <a href='{{release.doi_url}}'><span class='badge bg-info'>{{ release.doi }}</span></a>
+                <a href='{{release.doi_url}}' class='d-block text-truncate'><span class='badge bg-info'>{{ release.doi }}</span></a>
               </p>
             {% elif codebase.doi %}
                 <p><small>This DOI is for the parent Codebase and always points at the most recent published version of this model.</small>
