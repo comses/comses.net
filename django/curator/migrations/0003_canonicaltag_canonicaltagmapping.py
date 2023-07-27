@@ -6,30 +6,59 @@ import django.db.models.deletion
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
-        ('taggit', '0005_auto_20220424_2025'),
-        ('curator', '0002_rename_tagcleanup_permission'),
+        ("taggit", "0005_auto_20220424_2025"),
+        ("curator", "0002_rename_tagcleanup_permission"),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='CanonicalTag',
+            name="CanonicalTag",
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('name', models.TextField(unique=True)),
+                (
+                    "id",
+                    models.AutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("name", models.TextField(unique=True)),
             ],
         ),
         migrations.CreateModel(
-            name='CanonicalTagMapping',
+            name="CanonicalTagMapping",
             fields=[
-                ('tag', models.OneToOneField(on_delete=django.db.models.deletion.CASCADE, primary_key=True, serialize=False, to='taggit.tag')),
-                ('confidence_score', models.FloatField()),
-                ('is_canonical', models.BooleanField(default=False)),
-                ('date_created', models.DateTimeField(auto_now_add=True, null=True)),
-                ('canonical_tag', models.ForeignKey(null=True, on_delete=django.db.models.deletion.SET_NULL, to='curator.canonicaltag')),
-                ('curator', models.ForeignKey(null=True, on_delete=django.db.models.deletion.SET_NULL, to=settings.AUTH_USER_MODEL)),
+                (
+                    "tag",
+                    models.OneToOneField(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        primary_key=True,
+                        serialize=False,
+                        to="taggit.tag",
+                    ),
+                ),
+                ("confidence_score", models.FloatField()),
+                ("is_canonical", models.BooleanField(default=False)),
+                ("date_created", models.DateTimeField(auto_now_add=True, null=True)),
+                (
+                    "canonical_tag",
+                    models.ForeignKey(
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        to="curator.canonicaltag",
+                    ),
+                ),
+                (
+                    "curator",
+                    models.ForeignKey(
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
             ],
         ),
     ]
