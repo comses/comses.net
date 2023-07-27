@@ -96,7 +96,7 @@
                 removeConfirmationModal?.show();
               "
             >
-              <small>Remove</small>
+              <small><i class="fas fa-trash"></i> Remove</small>
             </button>
           </div>
         </li>
