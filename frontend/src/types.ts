@@ -169,6 +169,7 @@ export interface CodebaseRelease {
   live: boolean;
   os: string;
   osDisplay: string;
+  outputDataUrl: string;
   peerReviewed: boolean;
   platforms: Tag[];
   possibleLicenses: License[];

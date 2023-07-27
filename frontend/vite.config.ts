@@ -41,6 +41,7 @@ export default defineConfig({
         event_calendar: resolvePath("./src/apps/event_calendar.ts"),
         event_list: resolvePath("./src/apps/event_list.ts"),
         event_edit: resolvePath("./src/apps/event_edit.ts"),
+        image_gallery: resolvePath("./src/apps/image_gallery.ts"),
         job_list: resolvePath("./src/apps/job_list.ts"),
         job_edit: resolvePath("./src/apps/job_edit.ts"),
         metrics: resolvePath("./src/apps/metrics.ts"),

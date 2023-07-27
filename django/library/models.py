@@ -30,6 +30,7 @@ from wagtail.images.models import (
     Image,
     AbstractImage,
     AbstractRendition,
+    Filter,
     get_upload_to,
     ImageQuerySet,
 )
@@ -577,6 +578,16 @@ class Codebase(index.Indexed, ClusterableModel):
         if self.featured_images.exists():
             return self.featured_images.first()
         return None
+
+    def get_image_urls(self, spec="max-900x600"):
+        urls = []
+        for image in self.featured_images.all():
+            try:
+                rendition = image.get_rendition(Filter(spec=spec))
+                urls.append(rendition.url)
+            except:
+                pass  # image does not exist
+        return urls
 
     def subpath(self, *args):
         return pathlib.Path(self.base_library_dir, *args)

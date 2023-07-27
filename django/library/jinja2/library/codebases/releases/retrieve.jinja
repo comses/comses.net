@@ -57,7 +57,20 @@
 {% endblock %}
 
 {% block content %}
-    <div id="{{ 'discourse-content' if release.live else 'content' }}">
+    {# hidden formatted content for discourse crawler #}
+    {% if release.live %}
+        <div id="discourse-content" class="d-none">
+            <h1>{{ codebase.title }} <i>({{ release.version_number }})</i></h1>
+            <p>{{ codebase.description|safe }}</p>
+            {{ image(codebase.get_featured_image(), "width-400") }}
+            <h2>Release Notes</h2>
+            <p>{{ release.release_notes|safe }}</p>
+            <h2>Associated Publications</h2>
+            <p>{{ markdown(codebase.associated_publication_text) }}</p>
+        </div>
+    {% endif %}
+
+    <div id="content">
         {% if release.live %}
             {% if not release.is_latest_version %}
                 {% with latest_version=codebase.latest_version %}
@@ -69,24 +82,24 @@
         {% else %}
             <div class="alert alert-danger mt-2">The release you are viewing is currently unpublished.</div>
         {% endif %}
-        <h1 class='codebase-title pb-4'>{{ codebase.title }} <em>(version {{release.version_number}})</em></h1>
-        <div class='metadata'>
-            <b>Submitted by:</b> 
-            {% if release.live %}
-                {{ member_profile_href(codebase.submitter.member_profile) }}
-            {% else %}
-                <i class='fas fa-lock'></i> (private)
-            {% endif %}
-            <b class='ps-2'>Software Framework:</b>
-            {%- for p in release.platform_tags.all() -%}
-                {{ search_tag_href(p, category='codebases') }}
-            {%- else -%}
-                None
-            {%- endfor -%}
-            <b class='ps-2'>Programming Language:</b>
-            {% for pl in release.programming_languages.all() %}
-                {{ search_tag_href(pl, category='codebases') }}
-            {% endfor %}
+        <h1 class='codebase-title mb-3'>{{ codebase.title }} <span class="badge bg-gray py-1 px-2">{{ release.version_number }}</span></h1>
+        <div class='metadata text-muted mb-2'>
+            <span class="me-3">
+                <b>Submitted by</b>
+                {% if release.live or has_change_perms %}
+                    {{ member_profile_href(codebase.submitter.member_profile) }}
+                {% else %}
+                    <i class='fas fa-lock'></i> (private)
+                {% endif %}
+            </span>
+            <span class="me-3">
+                <b>Published</b> {{ format_datetime(release.first_published_at, "%b %d, %Y") }}
+            </span>
+            <span>
+                {% if codebase.first_published_at != codebase.last_published_on %}
+                    <b>Last modified</b> {{ format_datetime(codebase.last_published_on, "%b %d, %Y") }}
+                {% endif %}
+            </span>
         </div>
         <div class='tag-list'>
             {% for tag in codebase.tags.all() %}
@@ -99,26 +112,10 @@
             </div>
             {% with featured_image=codebase.get_featured_image() %}
                 {% if featured_image is not none %}
-                    <div class='py-3'>
-                        <a href='#' data-bs-toggle='modal' data-bs-target='#featuredImageModal'>
-                            {{ image(featured_image, "width-400", class='d-block img-fluid') }}
-                        </a>
-                    </div>
-                    <div class='modal fade' id='featuredImageModal' aria-labelledby='modalCodebaseTitle' aria-hidden='true' tab-index='-1' role='dialog'>
-                        <div class='modal-dialog modal-lg' role='document'>
-                            <div class='modal-content'>
-                                <div class='modal-header'>
-                                    <h5 id='modalCodebaseTitle' class='modal-title'>{{ codebase.title }}</h5>
-                                </div>
-                                <div class="modal-body text-center">
-                                    {{ image(featured_image, "max-900x600", class='img-responsive') }}
-                                </div>
-                                <div class="modal-footer">
-                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                <div id="image-gallery" class="my-4" data-title="{{ codebase.title }}" data-images="{{ codebase.get_image_urls()|tojson|forceescape }}">
+                    {{ image(featured_image, "max-900x600", class="img-fluid") }}
+                    {{ vite_asset("apps/image_gallery.ts") }}
+                </div>
                 {% endif %}
             {% endwith %}
             {% if release.release_notes.raw %}
@@ -170,7 +167,7 @@
         <div class='pt-1'>
             <h2 class='card-title'><i class='fas fa-book'></i> <u>Associated Publication(s)</u></h2>
             <p class='card-text'>
-                {% if release.live %}
+                {% if release.live or has_change_perm %}
                     {{ markdown(codebase.associated_publication_text) }}
                 {% else %}
                     <i class='fas fa-lock'>(private)</i>
@@ -267,107 +264,137 @@
     {% endif %}
 {% endwith %}
 
-<div class='card-metadata'>
-    <div class='card-body'>
-
-        <div class='section'>
+<div class="card-metadata">
+    <div class="card-body">
+        <div class="section">
             <b class="card-title">Contributors</b>
-            <p class='card-text'>
-            {% if release.live %}
-                {% for c in codebase.all_contributors %}
-                    {% set badge_class='bg-success' if c.user else 'text-secondary' %}
-                    <a class='badge {{ badge_class }}' href='{{ c.get_profile_url() }}'>
-                        {{ c.name }}
+            <div class="card-text mb-3">
+                {% if release.live or has_change_perm %}
+                    {% for c in codebase.all_contributors %}
+                        {% set badge_class='bg-success' if c.user else 'text-secondary' %}
+                        <a class='badge {{ badge_class }}' href='{{ c.get_profile_url() }}'>
+                            {{ c.name }}
+                        </a>
+                    {% endfor %}
+                {% else %}
+                    Contributors are hidden for unpublished releases
+                {% endif %}
+            </div>
+        </div>
+        <div class="section">
+            {% if codebase.repository_url %}
+                <b class='card-title'>External Repository</b>
+                <div class="card-text mb-3">
+                    <a href="{{ codebase.repository_url }}" class="d-block text-truncate">
+                        <span class='badge bg-info'>
+                        {{ strip_url_scheme(codebase.repository_url) }}
+                        </span>
                     </a>
-                {% endfor %}
-            {% else %}
-                <b>Contributors are hidden for unpublished releases</b>
+                </div>
             {% endif %}
-            </p>
+            {% if release.output_data_url %}
+                <b class='card-title'>Output Data</b>
+                <div class="card-text mb-3">
+                    <a href="{{ release.output_data_url }}" class="d-block text-truncate">
+                        <span class='badge bg-info'>
+                        {{ strip_url_scheme(release.output_data_url) }}
+                        </span>
+                    </a>
+                </div>
+            {% endif %}
+
             <b class='card-title'>DOI</b>
+            <div class="card-text mb-3">
             {% if release.doi %}
               <p>
-                <a href='{{release.doi_url}}'><span class='badge bg-info'>{{ release.doi }}</span></a>
+                <a href='{{release.doi_url}}' class='d-block text-truncate'><span class='badge bg-info'>{{ release.doi }}</span></a>
               </p>
             {% elif codebase.doi %}
                 <p><small>This DOI is for the parent Codebase and always points at the most recent published version of this model.</small>
                 <a href='{{codebase.doi_url}}'><span class='badge bg-info'>{{ codebase.doi }}</span></a></p>
             {% else %}
-                <p>No assigned DOI</p>
+                <div>No assigned DOI</div>
                 {% if has_change_perm %}
-                    <div class='text-muted small'>
-                    <i class='text-primary fas fa-exclamation-triangle'></i>
-                    We assign DOIs to <a href='{{ url("library:peer-review-overview") }}'>peer reviewed models</a>. If you would like a DOI and your
-                    model has not been reviewed yet, please request a peer review by clicking the "Request peer review"
-                    button below. If your model has already been reviewed and has not yet been assigned a DOI, please 
-                    <a href='{{slugurl('contact')}}'>contact us</a>.
+                    <a class="small" data-bs-toggle="collapse" href="#doi-info-collapse" role="button" aria-expanded="false" aria-controls="doi-info-collapse">
+                        <i class='fas fa-question-circle'></i> How do I get assigned a DOI?
+                    </a>
+                    <div class="collapse bg-light rounded p-2 text-muted small" id="doi-info-collapse">
+                        We assign DOIs to <a href='{{ url("library:peer-review-overview") }}'>peer reviewed models</a>. If you would like a DOI and your
+                        model has not been reviewed yet, please request a peer review by clicking the "Request peer review"
+                        button below. If your model has already been reviewed and has not yet been assigned a DOI, please 
+                        <a href='{{slugurl('contact')}}'>contact us</a>.
                     </div>
                 {% endif %}
             {% endif %}
+            </div>
             <b class='card-title'>Model Version</b>
-            <p>
-            {{ release.version_number }}
-            </p>
+            <div class="card-text mb-3">
+                {{ release.version_number }}
+            </div>
             <b class='card-title'>License</b>
-            <p><a href='{{ release.license.url }}'>{{ release.license.name }}</a></p>
-            <b class='card-title'>Operating System</b>
-            <p>{{ release.get_os_display() }}</p>
+            <div class="card-text mb-3">
+                <a href='{{ release.license.url }}'>{{ release.license.name }}</a>
+            </div>
             <b class='card-title'>Programming Language</b>
-            <p>
-            {% for pl in release.programming_languages.all() %}
-                {{ search_tag_href(pl, category='codebases') }}
-            {% endfor %}
-            </p>
-            <b class='card-title'>Dependencies</b> 
-            <p>
-            {% if release.dependencies %}
-                <code>
-                {{ release.dependencies }}
-                </code>
-            {% else %}
-                None listed
-            {% endif %}
-            </p>
+            <div class="card-text mb-3">
+                {% for pl in release.programming_languages.all() %}
+                    {{ search_tag_href(pl, category='codebases') }}
+                {% endfor %}
+            </div>
+            <b class='card-title'>Software Framework</b>
+            <div class="card-text mb-3">
+                {%- for p in release.platform_tags.all() -%}
+                    {{ search_tag_href(p, category='codebases') }}
+                {%- else -%}
+                    None
+                {%- endfor -%}
+            </div>
+            <b class='card-title'>Operating System</b>
+            <div class="card-text mb-3">
+                {{ release.get_os_display() }}
+            </div>
             <b class="card-title">Publish Date</b>
-            <p class='card-text'>
-                {{ format_datetime(release.first_published_at) }}
-            </p>
+            <div class='card-text mb-3'>
+                {{ format_datetime(release.first_published_at, format_string="%b %d, %Y") }}
+            </div>
             <b class="card-title">Last Updated</b>
-            <p class='card-text'>
-                {{ format_datetime(release.last_published_on) }}
-            </p>
-            <b class="card-title">Downloads
-                <span class='btn btn-sm btn-outline-primary disabled'>{{ codebase.download_count() }}</span>
-            </b>
+            <div class='card-text mb-3'>
+                {{ format_datetime(release.last_published_on, format_string="%b %d, %Y") }}
+            </div>
+            <div class="mb-3">
+                <b class="card-title">Downloads</b>
+                <span class="btn btn-sm btn-outline-info disabled py-0 ms-1">{{ codebase.download_count() }}</span>
+            </div>
         </div>
-        <div class='section'>
+        <div class="section mb-0">
             {% if release.peer_reviewed %}
-                <img src="{{ static("images/icons/peer-reviewed.png") }}" alt="Peer Reviewed">
-                <div class='py-2'>
-                  <a href='{{ release.permanent_url }}'><img height='88' src='{{ open_code_badge_url }}' alt='Open Code Badge'></a>
+                <img class="img-fluid" src="{{ static("images/icons/peer-reviewed.png") }}" alt="Peer Reviewed">
+                <div class="pt-2">
+                  <a href='{{ release.permanent_url }}'><img height="88" src='{{ open_code_badge_url }}' alt='Open Code Badge'></a>
                 </div>
             {% elif codebase.peer_reviewed %}
-                <i class='fas fa-exclamation-triangle'></i> <small>This release has not been reviewed but a different version has passed peer review.</small>
+                <div class="card-text">
+                    <i class='fas fa-exclamation-triangle'></i>
+                    This release has not been reviewed but a <a href="#versions">different version</a> has passed peer review.
+                </div>
             {% else %}
-                <b class='card-title'>
+                <b class="card-title">
                     Peer Review
                 </b>
-                <p>
-                <span class='btn btn-sm btn-warning disabled'>{{ release.get_review_status_display() }}</span>
-                </p>
+                <div class="card-text">
+                    <span class='btn btn-sm btn-warning disabled'>{{ release.get_review_status_display() }}</span>
+                </div>
             {% endif %}
         </div>
     </div>
 </div>
+
 {% if has_change_perm %}
-    <a href="{{ release.get_edit_url() }}">
-        <div class="btn btn-secondary my-1 w-100">Edit metadata</div>
-    </a>
     {% with review=release.get_review() %}
         {% if release.is_peer_review_requestable %}
             <form method="post" action="{{ release.get_request_peer_review_url() }}">
                 {{ csrf_input }}
-                <button type="button" data-bs-toggle='modal' data-bs-target='#confirm-peer-review' class='btn btn-secondary my-1 w-100'>
+                <button type="button" data-bs-toggle='modal' data-bs-target='#confirm-peer-review' class='btn btn-danger my-1 w-100'>
                     Request peer review 
                 </button>
                 <div class='modal fade' id='confirm-peer-review' tabindex='-1' role='dialog'
@@ -384,7 +411,7 @@
                                 {{ render_review_reminders() }}
                             </div>
                             <div class='modal-footer'>
-                                <button type="button" class="btn btn-warning" data-bs-dismiss="modal">Cancel</button>
+                                <button type="button" class="btn btn-outline-gray" data-bs-dismiss="modal">Cancel</button>
                                 <button type="submit" class="btn btn-primary">Submit peer review request</button>
                             </div>
                         </div>
@@ -442,7 +469,7 @@
                         <tr>
                             <td><a href='{{ related_release.get_absolute_url() }}'>{{ related_release.version_number }}</a></td>
                             <td>
-                                {% if release.live %}
+                                {% if release.live or has_change_perm %}
                                     {{ member_profile_href(related_release.submitter.member_profile) }}
                                 {% else %}
                                     <i class='fas fa-lock'></i> (private)
