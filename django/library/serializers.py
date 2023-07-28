@@ -75,11 +75,13 @@ class ContributorSerializer(serializers.ModelSerializer):
                 Contributor.objects.filter(user__username=username).first(),
             )
         else:
-            name = {
-                "given_name": validated_data["given_name"],
-                "family_name": validated_data["family_name"],
+            # filter by given_name and family_name if they were entered
+            name_filter = {
+                k: v
+                for k, v in validated_data
+                if k in ("family_name", "given_name") and v
             }
-            return None, Contributor.objects.filter(**name).first()
+            return None, Contributor.objects.filter(**name_filter).first()
 
     def save(self, **kwargs):
         if self.instance is None:
