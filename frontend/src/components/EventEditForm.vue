@@ -1,17 +1,11 @@
 <template>
   <form @submit="handleSubmit">
-    <TextField
-      class="mb-3"
-      name="title"
-      label="Title"
-      help="A short title describing the event"
-      required
-    />
+    <TextField class="mb-3" name="title" label="Title" help="The name of this event" required />
     <TextField
       class="mb-3"
       name="location"
       label="Location"
-      help="The city and country where the event takes place"
+      help="Please enter the city and country hosting the event, or 'online' or 'hybrid' for fully virtual or mixed events."
       required
     />
     <div class="row">
@@ -20,7 +14,7 @@
           class="mb-3"
           name="startDate"
           label="Start Date"
-          help="The date the event begins"
+          help="The date this event begins"
           required
           :max-date="(values.endDate as Date)"
         />
@@ -30,7 +24,7 @@
           class="mb-3"
           name="endDate"
           label="End Date"
-          help="The date the event ends"
+          help="The date this event ends"
           :min-date="minEndDate"
         />
       </div>
@@ -41,7 +35,7 @@
           class="mb-3"
           name="earlyRegistrationDeadline"
           label="Early Registration Deadline"
-          help="The last day for early registration of the event (inclusive)"
+          help="The last day for early registration for this event (inclusive)"
           :max-date="(values.startDate as Date)"
         />
       </div>
@@ -50,7 +44,7 @@
           class="mb-3"
           name="registrationDeadline"
           label="Registration Deadline"
-          help="The last day for registration of the event (inclusive)"
+          help="The last day to register for this event (inclusive)"
           :min-date="(values.earlyRegistrationDeadline as Date)"
           :max-date="(values.endDate as Date)"
         />
@@ -60,14 +54,14 @@
       class="mb-3"
       name="submissionDeadline"
       label="Submission Deadline"
-      help="The last day to make a submission for the event (inclusive)"
+      help="The last day to make a submission for this event (inclusive)"
       :max-date="(values.endDate as Date)"
     />
     <MarkdownField
       class="mb-3"
       name="description"
       label="Description"
-      help="Detailed information about the event"
+      help="A detailed description of this event."
       required
     />
     <MarkdownField
@@ -75,13 +69,13 @@
       name="summary"
       label="Summary"
       :rows="5"
-      help="A short summary of the event for display in search results. This field can be created from the description by pressing the summarize button."
+      help="A short summary of this event for display in search results."
       required
     >
       <template #label>
         <FieldLabel label="Summary" id-for="summary" required />
         <button type="button" class="btn btn-sm btn-link float-end p-0 mb-2" @click="summarize">
-          Summarize from Description
+          Summarize from description
         </button>
       </template>
     </MarkdownField>
@@ -89,13 +83,13 @@
       class="mb-3"
       name="externalUrl"
       label="Event website"
-      help="Link to a more detailed website for this event"
+      help="URL to this event's website where people can register, etc."
     />
     <TaggerField
       class="mb-3"
       name="tags"
       label="Tags"
-      help="A list of tags to associate with an event. Tags help people search for events."
+      help="A list of tags to associate with this event. Tags can help people find relevant events."
     />
     <FormAlert :validation-errors="Object.values(errors)" :server-errors="serverErrors" />
     <button type="submit" class="btn btn-primary" :disabled="isLoading">

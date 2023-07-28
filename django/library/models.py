@@ -14,6 +14,7 @@ from django.core.files.images import ImageFile
 from django.core.files.storage import FileSystemStorage
 from django.db import models, transaction
 from django.db.models import Prefetch, Q
+from django.utils.functional import cached_property
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.http import urlencode
@@ -714,7 +715,7 @@ class Codebase(index.Indexed, ClusterableModel):
     def format_doi_url(doi_string):
         return "https://doi.org/{0}".format(doi_string) if doi_string else ""
 
-    @property
+    @cached_property
     def permanent_url(self):
         if self.doi:
             return self.doi_url
@@ -733,7 +734,7 @@ class Codebase(index.Indexed, ClusterableModel):
     def media_url(self, name):
         return "{0}/media/{1}".format(self.get_absolute_url(), name)
 
-    @property
+    @cached_property
     def doi_url(self):
         return Codebase.format_doi_url(self.doi)
 
@@ -1322,7 +1323,7 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
             return self.doi_url
         return self.comses_permanent_url
 
-    @property
+    @cached_property
     def citation_authors(self):
         authors = self.submitter.member_profile.name
         author_list = self.codebase.author_list
@@ -1335,7 +1336,7 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
             )
         return authors
 
-    @property
+    @cached_property
     def citation_text(self):
         if not self.live:
             return "This model must be published in order to be citable."
@@ -1373,7 +1374,7 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
             "index"
         )
 
-    @property
+    @cached_property
     def bagit_info(self):
         return {
             "Contact-Name": self.submitter.get_full_name(),
@@ -1385,7 +1386,7 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
             # FIXME: check codemeta for additional metadata
         }
 
-    @property
+    @cached_property
     def codemeta(self):
         """Returns a CodeMeta object that can be dumped to json"""
         return CodeMeta.build(self)
@@ -1770,7 +1771,7 @@ class PeerReview(models.Model):
             to=[settings.REVIEW_EDITOR_EMAIL],
         )
 
-    @property
+    @cached_property
     def review_status_json(self):
         return json.dumps(
             [
