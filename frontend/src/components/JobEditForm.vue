@@ -1,17 +1,11 @@
 <template>
   <form @submit="handleSubmit">
-    <TextField
-      class="mb-3"
-      name="title"
-      label="Title"
-      help="A short title describing the job"
-      required
-    />
+    <TextField class="mb-3" name="title" label="Title" help="Job title" required />
     <MarkdownField
       class="mb-3"
       name="description"
       label="Description"
-      help="Detailed information about the event"
+      help="Detailed description of this job position, its responsibilities, requirements, expectations, etc."
       required
     />
     <MarkdownField
@@ -19,27 +13,27 @@
       name="summary"
       label="Summary"
       :rows="5"
-      help="A short summary of the event for display in search results. This field can be created from the description by pressing the summarize button."
+      help="A short summary of the job description to be shown in search results."
       required
     >
       <template #label>
         <FieldLabel label="Summary" id-for="summary" required />
         <button type="button" class="btn btn-sm btn-link float-end p-0 mb-2" @click="summarize">
-          Summarize from Description
+          Summarize from description
         </button>
       </template>
     </MarkdownField>
     <TextField
       class="mb-3"
       name="externalUrl"
-      label="Event Job URL"
-      help="URL for this job on an external website"
+      label="Job URL"
+      help="External URL with more details for this job, including how to apply."
     />
     <DatepickerField
       class="mb-3"
       name="applicationDeadline"
       label="Application Deadline"
-      help="The last day to apply to the job"
+      help="When applications for this job are due."
       :min-date="new Date()"
       required
     />
@@ -47,7 +41,7 @@
       class="mb-3"
       name="tags"
       label="Tags"
-      help="A list of tags to associate with a job. Tags help people search for jobs."
+      help="A list of tags to associate with this job. Tags can help people find relevant jobs."
     />
     <FormAlert :validation-errors="Object.values(errors)" :server-errors="serverErrors" />
     <button type="submit" class="btn btn-primary" :disabled="isLoading">

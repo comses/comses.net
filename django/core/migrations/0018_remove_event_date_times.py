@@ -4,35 +4,34 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('core', '0017_job_event_is_deleted'),
+        ("core", "0017_job_event_is_deleted"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='event',
-            name='early_registration_deadline',
+            model_name="event",
+            name="early_registration_deadline",
             field=models.DateField(blank=True, null=True),
         ),
         migrations.AlterField(
-            model_name='event',
-            name='end_date',
+            model_name="event",
+            name="end_date",
             field=models.DateField(blank=True, null=True),
         ),
         migrations.AlterField(
-            model_name='event',
-            name='registration_deadline',
+            model_name="event",
+            name="registration_deadline",
             field=models.DateField(blank=True, null=True),
         ),
         migrations.AlterField(
-            model_name='event',
-            name='start_date',
+            model_name="event",
+            name="start_date",
             field=models.DateField(),
         ),
         migrations.AlterField(
-            model_name='event',
-            name='submission_deadline',
+            model_name="event",
+            name="submission_deadline",
             field=models.DateField(blank=True, null=True),
         ),
     ]

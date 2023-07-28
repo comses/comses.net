@@ -537,15 +537,13 @@ class EventQuerySet(models.QuerySet):
     def with_started(self):
         return self.annotate(
             is_started=models.ExpressionWrapper(
-                models.Q(start_date__gt=timezone.now()),
+                models.Q(start_date__gt=timezone.now().date()),
                 output_field=models.BooleanField(),
             )
         )
 
     def upcoming(self, **kwargs):
         """returns only events that have not expired"""
-        now = timezone.now()
-        start_date_threshold = now - timedelta(days=7)
         return self.filter(
             ~self.get_expired_q(),
             **kwargs,
@@ -556,7 +554,7 @@ class EventQuerySet(models.QuerySet):
         returns a Q object for all events with that have not yet ended or
         started less than 7 days ago if the event has no end date
         """
-        now = timezone.now()
+        now = timezone.now().date()
         start_date_threshold = now - timedelta(days=7)
         return models.Q(start_date__lt=start_date_threshold) | models.Q(
             end_date__lt=now, end_date__isnull=False
