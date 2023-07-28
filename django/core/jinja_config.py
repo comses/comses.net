@@ -177,44 +177,44 @@ def add_field_css(field, css_classes: str):
     return field.as_widget(attrs={"class": deduped_css_classes})
 
 
-def format_datetime_str(text: Optional[str], format_string=FULL_DATETIME_FORMAT):
-    if text is None:
+def format_datetime_str(datetime_str, format_str=FULL_DATETIME_FORMAT):
+    if datetime_str is None:
         return None
-    datetime = parse_datetime(text)
-    return format_datetime(datetime, format_string)
+    datetime_obj = parse_datetime(datetime_str)
+    return format_datetime(datetime_obj, format_str)
 
 
-def format_datetime(datetime, format_string=FULL_DATETIME_FORMAT):
-    if datetime is None:
+def format_datetime(datetime_obj, format_str=FULL_DATETIME_FORMAT):
+    if datetime_obj is None:
         return None
-    return datetime.strftime(format_string)
+    return datetime_obj.strftime(format_str)
 
 
-def format_date_str(text: Optional[str], format_string=FULL_DATE_FORMAT):
-    if text is None:
+def format_date_str(date_str, format_str=FULL_DATE_FORMAT):
+    if date_str is None:
         return None
-    date = parse_date(text) or parse_datetime(text)
-    return format_date(date, format_string)
+    date_obj = parse_date(date_str) or parse_datetime(date_str)
+    return format_date(date_obj, format_str)
 
 
-def format_date(date, format_string=FULL_DATE_FORMAT):
-    if date is None:
+def format_date(date_obj, format_str=FULL_DATE_FORMAT):
+    if date_obj is None:
         return None
-    return date.strftime(format_string)
+    return date_obj.strftime(format_str)
 
 
-def _timesince(date, depth=1):
-    date = parse_date(date) or parse_datetime(date)
-    if date is None:
+def _timesince(date_str, depth=1):
+    date_obj = parse_date(date_str) or parse_datetime(date_str)
+    if date_obj is None:
         return None
-    return timesince(date, depth=depth)
+    return timesince(date_obj, depth=depth)
 
 
-def _timeuntil(date, depth=1):
-    date = parse_date(date) or parse_datetime(date)
-    if date is None:
+def _timeuntil(date_str, depth=1):
+    date_obj = parse_date(date_str) or parse_datetime(date_str)
+    if date_obj is None:
         return None
-    return timeuntil(date, depth=depth)
+    return timeuntil(date_obj, depth=depth)
 
 
 def to_json(value):
