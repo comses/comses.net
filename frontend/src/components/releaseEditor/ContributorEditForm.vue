@@ -65,7 +65,12 @@
     >
       Cancel
     </button>
-    <button type="submit" class="btn btn-primary" :class="{ disabled: isLoading }" :form="id">
+    <button
+      type="submit"
+      class="btn btn-primary"
+      :class="{ disabled: isLoading || !hasName }"
+      :form="id"
+    >
       <span v-if="isLoading"> <i class="fas fa-spinner fa-spin me-1"></i> Saving... </span>
       <span v-else> <i class="fas fa-user-plus me-1"></i> Save </span>
     </button>
@@ -160,6 +165,8 @@ const { errors, handleSubmit, values, setValues } = useForm<ContributorFields>({
   schema,
   initialValues,
   onSubmit: async () => {
+    if (!hasName.value) return;
+
     let contributors = JSON.parse(JSON.stringify(store.releaseContributors));
     const newContributor = {
       contributor: {
@@ -199,6 +206,8 @@ const { errors, handleSubmit, values, setValues } = useForm<ContributorFields>({
 const isLoading = ref(false);
 const isPerson = computed(() => values.type === "person");
 
+const hasName = computed(() => values.user || values.givenName);
+
 function populateFromReleaseContributor(contributor: ReleaseContributor) {
   setValues({
     user: contributor.contributor.user || null,
@@ -213,11 +222,15 @@ function populateFromReleaseContributor(contributor: ReleaseContributor) {
   });
 }
 
-function populateFromContributor(contributor: Contributor) {
+function populateFromContributor(contributor: Contributor | null) {
   setValues({
     ...values,
     ...contributor,
   });
+}
+
+function resetContributor() {
+  setValues(initialValues);
 }
 
 function populateFromUser(user: any) {
@@ -241,5 +254,6 @@ watch(
 
 defineExpose({
   populateFromContributor,
+  resetContributor,
 });
 </script>

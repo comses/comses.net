@@ -90,7 +90,7 @@
               v-if="releaseContributors.length > 1"
               type="button"
               class="btn btn-link text-danger btn-sm"
-              :class="{ disabled: reordered }"
+              :class="{ disabled: reordered || releaseContributors.length === 1 }"
               @click="
                 removalCondidate = element;
                 removeConfirmationModal?.show();
