@@ -71,13 +71,19 @@ const fetchMatchingContributors = useDebounceFn(async (query: string) => {
 
 function contributorDisplay(contributor: Contributor) {
   const { givenName, familyName, user } = contributor;
-  const username = user ? `[${user.username}]` : "";
-  const email = contributor.email ? `(${contributor.email})` : "";
   let name = [givenName, familyName].filter(Boolean).join(" ");
+  let email = contributor.email;
+  // should we always defer these attributes to the User model if it exists instead?
   if (!name && user && user.name) {
     name = user.name;
   }
-  return `${name} ${username} ${email}`;
+  if (!email && user && user.email) {
+    email = user.email;
+  }
+  if (email) {
+    return `${name} (${email})`;
+  }
+  return name;
 }
 
 function handleSelect(contributor: Contributor) {

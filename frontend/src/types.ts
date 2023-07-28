@@ -143,6 +143,7 @@ export interface Contributor {
     name: string;
     profileUrl: string;
     username: string;
+    email: string;
   } | null;
 }
 

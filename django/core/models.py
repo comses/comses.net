@@ -11,6 +11,7 @@ from django.contrib.postgres.fields import ArrayField
 from django.db import models, transaction
 from django.urls import reverse
 from django.utils import timezone
+from django.utils.functional import cached_property
 from django.utils.translation import ugettext_lazy as _
 from modelcluster.contrib.taggit import ClusterTaggableManager
 from modelcluster.fields import ParentalKey
@@ -339,16 +340,15 @@ class MemberProfile(index.Indexed, ClusterableModel):
     def get_social_account(self, provider_name):
         return self.user.socialaccount_set.filter(provider=provider_name).first()
 
-    # FIXME: deprecated, remove soon
     @property
     def institution_url(self):
-        return self.institution.url if self.institution else ""
+        return self.primary_affiliation_url
 
     @property
     def primary_affiliation_url(self):
         return self.affiliations[0].get("url") if self.affiliations else ""
 
-    @property
+    @cached_property
     def affiliations_string(self):
         return ", ".join(
             [
@@ -376,12 +376,11 @@ class MemberProfile(index.Indexed, ClusterableModel):
         # e.g., "Arizona State University https://www.asu.edu ASU"
         return f"{afl.get('name')} {afl.get('url')} {afl.get('acronym')}"
 
-    # FIXME: deprecated
     @property
     def institution_name(self):
-        return self.institution.name if self.institution else ""
+        return self.primary_affiliation_name
 
-    @property
+    @cached_property
     def primary_affiliation_name(self):
         """
         Primary affiliation is always first
@@ -392,11 +391,11 @@ class MemberProfile(index.Indexed, ClusterableModel):
     def submitter(self):
         return self.user
 
-    @property
+    @cached_property
     def is_reviewer(self):
         return self.user.groups.filter(name=ComsesGroups.REVIEWER.value).exists()
 
-    @property
+    @cached_property
     def name(self):
         return self.user.get_full_name() or self.user.username
 
