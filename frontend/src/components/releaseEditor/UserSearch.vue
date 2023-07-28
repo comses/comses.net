@@ -68,11 +68,12 @@ const fetchMatchingUsers = useDebounceFn(async (query: string) => {
 }, 600);
 
 function userDisplay(user: any) {
-  let displayName: string = user.name;
-  if (user.name !== user.username) {
-    displayName = `${user.name} (${user.username})`;
+  const displayName = `${user.name} (${user.email})`;
+  // FIXME: doesn't seem like institutionName is ever set
+  if (user.institutionName) {
+    return `${displayName} [${user.institutionName}]`;
   }
-  return `${displayName}${user.institutionName ? `, ${user.institutionName}` : ""}`;
+  return displayName;
 }
 
 function handleSelect(user: any) {
