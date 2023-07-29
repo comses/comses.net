@@ -58,8 +58,8 @@ class AllFeed(ComsesFeed):
 
     def items(self):
         releases = CodebaseRelease.objects.latest_for_feed(include_all=True)
-        jobs = Job.objects.all()
-        events = Event.objects.all()
+        jobs = Job.objects.live()
+        events = Event.objects.live()
         return sorted(
             chain(releases, jobs, events), key=attrgetter("date_created"), reverse=True
         )

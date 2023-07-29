@@ -1,7 +1,7 @@
 from django.contrib.auth.models import User
 import rest_framework.exceptions as rf
 
-from .base import BaseModelTestCase
+from core.tests.base import BaseModelTestCase
 from ..models import Codebase
 from ..serializers import (
     ContributorSerializer,

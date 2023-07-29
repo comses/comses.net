@@ -272,12 +272,14 @@ class LandingPage(Page):
             return []
 
     def get_latest_jobs(self):
-        return Job.objects.order_by("-date_created")[: self.MAX_CALLOUT_ENTRIES]
+        return Job.objects.live().order_by("-date_created")[: self.MAX_CALLOUT_ENTRIES]
 
     def get_upcoming_events(self):
-        return Event.objects.upcoming().order_by("start_date")[
-            : self.MAX_CALLOUT_ENTRIES
-        ]
+        return (
+            Event.objects.live()
+            .upcoming()
+            .order_by("start_date")[: self.MAX_CALLOUT_ENTRIES]
+        )
 
     def get_sitemap_urls(self, request):
         sitemap_urls = super().get_sitemap_urls(request)

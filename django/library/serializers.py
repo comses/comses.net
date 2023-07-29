@@ -68,18 +68,25 @@ class ContributorSerializer(serializers.ModelSerializer):
 
     def get_existing_contributor(self, validated_data):
         user = validated_data.get("user")
+        email = validated_data.get("email")
         username = user.get("username") if user else None
         if username is not None:
             return (
                 User.objects.get(username=username),
                 Contributor.objects.filter(user__username=username).first(),
             )
+        elif email:
+            # match by email if given
+            contributor = Contributor.objects.filter(email=email).first()
+            if contributor:
+                return contributor.user, contributor
         else:
-            name = {
-                "given_name": validated_data["given_name"],
-                "family_name": validated_data["family_name"],
+            # otherwise, match by the exact name given and blank email
+            contrib_filter = {
+                k: validated_data.get(k, "")
+                for k in ["given_name", "family_name", "email"]
             }
-            return None, Contributor.objects.filter(**name).first()
+            return None, Contributor.objects.filter(**contrib_filter).first()
 
     def save(self, **kwargs):
         if self.instance is None:
@@ -105,6 +112,8 @@ class ContributorSerializer(serializers.ModelSerializer):
         affiliations_serializer = TagSerializer(
             many=True, data=validated_data.pop("affiliations")
         )
+        validated_data.pop("given_name", None)
+        validated_data.pop("family_name", None)
         instance = super().update(instance, validated_data)
         set_tags(instance, affiliations_serializer, "affiliations")
         instance.save()

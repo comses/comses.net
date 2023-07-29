@@ -39,6 +39,33 @@
     {%- endif -%}</a>
 {%- endmacro %}
 
+{% macro delete_confirm_modal(modal_title, identifier, delete_url, csrf_input=None) %}
+<button type="button" class="btn btn-danger my-1 w-100" data-bs-toggle="modal" data-bs-target="#delete-modal">
+    Delete
+</button>
+<div class="modal fade" id="delete-modal" tabindex="-1" aria-labelledby="delete-label" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h1 class="modal-title fs-5" id="delete-label">{{ modal_title }}</h1>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete "<b>{{ identifier }}</b>"?</p>
+                <p>This action cannot be undone.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-gray" data-bs-dismiss="modal">Cancel</button>
+                <form method="post" action="{{ delete_url }}">
+                    {{ csrf_input }}
+                    <button type="submit" class="btn btn-danger">Delete</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endmacro %}
+
 {% macro share_card(url) %}
 {# FIXME: add detail_url to share links #}
 <div class="card-metadata">

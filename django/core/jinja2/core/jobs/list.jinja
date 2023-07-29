@@ -9,10 +9,21 @@
                 <h3 class='title mb-0'><a href="{{ url(detail_url_name, pk=item.id) }}">{{ item.title }}</a></h3>
                 <b class='title'>Application deadline</b> {{ item.application_deadline }}
             </div>
-            <div class='col-4'>
-                <small class="float-end">Last updated {{ item.last_modified }}</small>
-                <br>
-                <small class='float-end'>Submitted by {{ member_profile_href(item.submitter) }}
+            <div class='col-4 d-flex flex-column align-items-end'>
+                {% if item.is_expired %}
+                <small class="alert alert-danger d-flex align-items-center px-2 py-0 mb-1" role="alert">
+                    <i class="fas fa-clock"></i>
+                    <span class="ms-2">Expired</span>
+                </small>
+                {% else %}
+                <small class="alert alert-success d-flex align-items-center px-2 py-0 mb-1" role="alert">
+                    <i class="fas fa-clock"></i>
+                    <span class="ms-2">{{ timeuntil(item.application_deadline) }} left to apply</span>
+                </small>
+                {% endif %}
+                <small class="text-muted text-end">Last updated {{ timesince(item.last_modified) }} ago</small>
+                <small>
+                    Submitted by {{ member_profile_href(item.submitter) }}
                 </small>
             </div>
         </div>

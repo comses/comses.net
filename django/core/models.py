@@ -11,6 +11,7 @@ from django.contrib.postgres.fields import ArrayField
 from django.db import models, transaction
 from django.urls import reverse
 from django.utils import timezone
+from django.utils.functional import cached_property
 from django.utils.translation import ugettext_lazy as _
 from modelcluster.contrib.taggit import ClusterTaggableManager
 from modelcluster.fields import ParentalKey
@@ -339,16 +340,15 @@ class MemberProfile(index.Indexed, ClusterableModel):
     def get_social_account(self, provider_name):
         return self.user.socialaccount_set.filter(provider=provider_name).first()
 
-    # FIXME: deprecated, remove soon
     @property
     def institution_url(self):
-        return self.institution.url if self.institution else ""
+        return self.primary_affiliation_url
 
     @property
     def primary_affiliation_url(self):
         return self.affiliations[0].get("url") if self.affiliations else ""
 
-    @property
+    @cached_property
     def affiliations_string(self):
         return ", ".join(
             [
@@ -376,12 +376,11 @@ class MemberProfile(index.Indexed, ClusterableModel):
         # e.g., "Arizona State University https://www.asu.edu ASU"
         return f"{afl.get('name')} {afl.get('url')} {afl.get('acronym')}"
 
-    # FIXME: deprecated
     @property
     def institution_name(self):
-        return self.institution.name if self.institution else ""
+        return self.primary_affiliation_name
 
-    @property
+    @cached_property
     def primary_affiliation_name(self):
         """
         Primary affiliation is always first
@@ -392,11 +391,11 @@ class MemberProfile(index.Indexed, ClusterableModel):
     def submitter(self):
         return self.user
 
-    @property
+    @cached_property
     def is_reviewer(self):
         return self.user.groups.filter(name=ComsesGroups.REVIEWER.value).exists()
 
-    @property
+    @cached_property
     def name(self):
         return self.user.get_full_name() or self.user.username
 
@@ -526,16 +525,42 @@ class EventQuerySet(models.QuerySet):
     def with_tags(self):
         return self.prefetch_related("tagged_events__tag")
 
+    def with_expired(self):
+        return self.annotate(
+            is_expired=models.ExpressionWrapper(
+                self.get_expired_q(),
+                output_field=models.BooleanField(),
+            )
+        )
+
+    def with_started(self):
+        return self.annotate(
+            is_started=models.ExpressionWrapper(
+                models.Q(start_date__gt=timezone.now().date()),
+                output_field=models.BooleanField(),
+            )
+        )
+
     def upcoming(self, **kwargs):
-        # return all events with start / end dates
-        now = timezone.now()
-        post_date_days_ago_threshold = settings.POST_DATE_DAYS_AGO_THRESHOLD
-        post_date_threshold = now - timedelta(days=post_date_days_ago_threshold)
+        """returns only events that have not expired"""
         return self.filter(
-            models.Q(start_date__gte=post_date_threshold)
-            | models.Q(end_date__gte=post_date_threshold),
+            ~self.get_expired_q(),
             **kwargs,
         )
+
+    def get_expired_q(self):
+        """
+        returns a Q object for all events with that have not yet ended or
+        started less than 7 days ago if the event has no end date
+        """
+        now = timezone.now().date()
+        start_date_threshold = now - timedelta(days=7)
+        return models.Q(start_date__lt=start_date_threshold) | models.Q(
+            end_date__lt=now, end_date__isnull=False
+        )
+
+    def live(self, **kwargs):
+        return self.filter(is_deleted=False, **kwargs)
 
     def latest_for_feed(self, number=10):
         return self.select_related("submitter__member_profile").order_by(
@@ -553,14 +578,15 @@ class Event(index.Indexed, ClusterableModel):
     last_modified = models.DateTimeField(auto_now=True)
     summary = models.CharField(max_length=500, blank=True)
     description = MarkdownField()
-    early_registration_deadline = models.DateTimeField(null=True, blank=True)
-    registration_deadline = models.DateTimeField(null=True, blank=True)
-    submission_deadline = models.DateTimeField(null=True, blank=True)
-    start_date = models.DateTimeField()
-    end_date = models.DateTimeField(null=True, blank=True)
+    early_registration_deadline = models.DateField(null=True, blank=True)
+    registration_deadline = models.DateField(null=True, blank=True)
+    submission_deadline = models.DateField(null=True, blank=True)
+    start_date = models.DateField()
+    end_date = models.DateField(null=True, blank=True)
     location = models.CharField(max_length=300)
     tags = ClusterTaggableManager(through=EventTag, blank=True)
     external_url = models.URLField(blank=True)
+    is_deleted = models.BooleanField(default=False)
 
     objects = EventQuerySet.as_manager()
 
@@ -571,6 +597,7 @@ class Event(index.Indexed, ClusterableModel):
     search_fields = [
         index.SearchField("title"),
         index.SearchField("description"),
+        index.FilterField("is_deleted"),
         index.FilterField("date_created"),
         index.FilterField("start_date"),
         index.FilterField("end_date"),
@@ -597,7 +624,7 @@ class Event(index.Indexed, ClusterableModel):
 
     @property
     def live(self):
-        return True
+        return not self.is_deleted
 
     def get_absolute_url(self):
         return reverse("home:event-detail", kwargs={"pk": self.pk})
@@ -626,22 +653,39 @@ class JobQuerySet(models.QuerySet):
     def public(self):
         return self
 
+    def with_expired(self):
+        return self.annotate(
+            is_expired=models.ExpressionWrapper(
+                self.get_expired_q(),
+                output_field=models.BooleanField(),
+            ),
+        )
+
     def upcoming(self, **kwargs):
-        """returns all Jobs with a non-null application_deadline after today or posted in the last 6 months"""
+        """returns only jobs that have not expired"""
+        return self.filter(
+            ~self.get_expired_q(),
+            **kwargs,
+        )
+
+    def get_expired_q(self):
+        """
+        returns a Q object for all Jobs with a non-null application deadline before today or
+        posted/modified in the last [POST_DATE_DAYS_AGO_TRESHOLD] days if application deadline is null
+        """
         today = timezone.now()
         post_date_days_ago_threshold = settings.POST_DATE_DAYS_AGO_THRESHOLD
         post_date_threshold = today - timedelta(days=post_date_days_ago_threshold)
-        return self.filter(
-            models.Q(application_deadline__gte=post_date_threshold)
-            | (
-                models.Q(application_deadline__isnull=True)
-                & (
-                    models.Q(date_created__gte=post_date_threshold)
-                    | models.Q(last_modified__gte=post_date_threshold)
-                )
-            ),
-            **kwargs,
+        return models.Q(
+            application_deadline__isnull=False, application_deadline__lt=today
+        ) | models.Q(
+            application_deadline__isnull=True,
+            date_created__lt=post_date_threshold,
+            last_modified__lt=post_date_threshold,
         )
+
+    def live(self, **kwargs):
+        return self.filter(is_deleted=False, **kwargs)
 
     def latest_for_feed(self, number=10):
         return self.select_related("submitter__member_profile").order_by(
@@ -663,6 +707,7 @@ class Job(index.Indexed, ClusterableModel):
     description = MarkdownField()
     tags = ClusterTaggableManager(through=JobTag, blank=True)
     external_url = models.URLField(blank=True)
+    is_deleted = models.BooleanField(default=False)
 
     submitter = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -675,6 +720,7 @@ class Job(index.Indexed, ClusterableModel):
     search_fields = [
         index.SearchField("title"),
         index.SearchField("description"),
+        index.FilterField("is_deleted"),
         index.FilterField("date_created"),
         index.FilterField("last_modified"),
         index.FilterField("application_deadline"),
@@ -696,7 +742,7 @@ class Job(index.Indexed, ClusterableModel):
 
     @property
     def live(self):
-        return True
+        return not self.is_deleted
 
     def get_absolute_url(self):
         return reverse("home:job-detail", kwargs={"pk": self.pk})

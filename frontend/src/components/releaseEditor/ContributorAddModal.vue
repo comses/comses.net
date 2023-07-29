@@ -30,7 +30,7 @@
               <button
                 type="button"
                 class="btn btn-outline-secondary w-100"
-                @click="showCustomInput = true"
+                @click="createNewContributor"
               >
                 <i class="fas fa-plus"></i> Create a New Contributor
               </button>
@@ -80,6 +80,13 @@ const showCustomInput = ref(false);
 function populateFromContributor(contributor: Contributor) {
   if (editFormRef.value) {
     editFormRef.value.populateFromContributor(contributor);
+  }
+}
+
+function createNewContributor() {
+  if (editFormRef.value) {
+    showCustomInput.value = true;
+    editFormRef.value.resetContributor();
   }
 }
 </script>

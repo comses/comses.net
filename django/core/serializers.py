@@ -15,6 +15,9 @@ logger = logging.getLogger(__name__)
 YMD_DATETIME_FORMAT = "%Y-%m-%d"
 DATE_PUBLISHED_FORMAT = "%b %d, %Y"
 FULL_DATE_FORMAT = "%A, %B %d, %Y"
+FULL_DATETIME_FORMAT = "%a, %b %d, %Y at %I:%M %p"
+
+ISO_DATETIME_FORMAT = "%Y-%m-%dT%H:%M:%S.%fZ"
 
 
 class TagListSerializer(serializers.ListSerializer):
@@ -137,8 +140,22 @@ class EventSerializer(serializers.ModelSerializer):
     date_created = serializers.DateTimeField(
         format=DATE_PUBLISHED_FORMAT, read_only=True
     )
-    last_modified = serializers.DateTimeField(format="%c", read_only=True)
+    start_date = serializers.DateField(input_formats=[ISO_DATETIME_FORMAT, "iso-8601"])
+    end_date = serializers.DateField(
+        allow_null=True, input_formats=[ISO_DATETIME_FORMAT, "iso-8601"]
+    )
+    early_registration_deadline = serializers.DateField(
+        allow_null=True, input_formats=[ISO_DATETIME_FORMAT, "iso-8601"]
+    )
+    registration_deadline = serializers.DateField(
+        allow_null=True, input_formats=[ISO_DATETIME_FORMAT, "iso-8601"]
+    )
+    submission_deadline = serializers.DateField(
+        allow_null=True, input_formats=[ISO_DATETIME_FORMAT, "iso-8601"]
+    )
     description = MarkdownField()
+    is_expired = serializers.BooleanField(read_only=True)
+    is_started = serializers.BooleanField(read_only=True)
 
     tags = TagSerializer(many=True, label="Tags")
 
@@ -241,12 +258,10 @@ class JobSerializer(serializers.ModelSerializer):
         format=DATE_PUBLISHED_FORMAT, read_only=True
     )
     description = MarkdownField()
-    last_modified = serializers.DateTimeField(format="%c", read_only=True)
+    is_expired = serializers.BooleanField(read_only=True)
+    last_modified = serializers.DateTimeField(read_only=True)
     application_deadline = serializers.DateField(
-        allow_null=True, input_formats=["%Y-%m-%dT%H:%M:%S.%fZ", "iso-8601"]
-    )
-    formatted_application_deadline = serializers.DateField(
-        source="application_deadline", read_only=True, format=DATE_PUBLISHED_FORMAT
+        allow_null=True, input_formats=[ISO_DATETIME_FORMAT, "iso-8601"]
     )
     tags = TagSerializer(many=True, label="Tags")
 
@@ -265,12 +280,12 @@ class JobSerializer(serializers.ModelSerializer):
             "date_created",
             "last_modified",
             "application_deadline",
-            "formatted_application_deadline",
             "description",
             "summary",
             "absolute_url",
             "tags",
             "external_url",
+            "is_expired",
         )
 
 

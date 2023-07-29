@@ -16,7 +16,7 @@ from django.http import (
     HttpResponseRedirect,
     HttpResponseServerError,
 )
-from django.shortcuts import render
+from django.shortcuts import redirect, render
 from django.views.generic import DetailView, TemplateView
 from rest_framework import viewsets, mixins
 from rest_framework.exceptions import (
@@ -117,13 +117,9 @@ class PermissionRequiredByHttpMethodMixin:
         return ["{0}/{1}".format(namespace, "edit.jinja")]
 
     def get_required_permissions(self, request=None):
-        model = self.model
-        template_perms = ViewRestrictedObjectPermissions.perms_map[self.method]
-        perms = [
-            template_perm
-            % {"app_label": model._meta.app_label, "model_name": model._meta.model_name}
-            for template_perm in template_perms
-        ]
+        perms = ViewRestrictedObjectPermissions.get_required_object_permissions(
+            self.method, self.model
+        )
         return perms
 
     def check_permissions(self):
@@ -160,6 +156,16 @@ class FormUpdateView(PermissionRequiredByHttpMethodMixin, DetailView):
 
 class FormCreateView(PermissionRequiredByHttpMethodMixin, TemplateView):
     method = "POST"
+
+
+class FormMarkDeletedView(PermissionRequiredByHttpMethodMixin, DetailView):
+    method = "DELETE"
+
+    def post(self, request, *args, **kwargs):
+        instance = self.get_object()
+        instance.is_deleted = True
+        instance.save()
+        return redirect(instance.get_list_url())
 
 
 def rest_exception_handler(exc, context):
