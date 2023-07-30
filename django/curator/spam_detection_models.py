@@ -266,19 +266,19 @@ class TextSpamClassifier(SpamClassifier):
         text = self.__remove_excess_spaces(text)
         return text
 
-    def __convert_text_to_lowercase(text: str):
+    def __convert_text_to_lowercase(self, text: str):
         return text.lower()
 
-    def __replace_urls_with_webtag(text: str):
+    def __replace_urls_with_webtag(self, text: str):
         return re.sub(r"http\S+|www\S+", " webtag ", text)
 
-    def __replace_numbers_with_zero(text: str):
+    def __replace_numbers_with_zero(self, text: str):
         return re.sub(r"\d+", " 0 ", text)
 
-    def __remove_markdown(text: str):
+    def __remove_markdown(self, text: str):
         return re.sub(r"<.*?>", " ", text)
 
-    def __remove_excess_spaces(text: str):
+    def __remove_excess_spaces(self, text: str):
         return re.sub(r"\s+", " ", text)
 
 
