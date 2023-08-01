@@ -64,6 +64,7 @@ from .serializers import (
     UserMessageSerializer,
     MemberProfileSerializer,
 )
+from core.serializers import RelatedMemberProfileSerializer
 from .search import GeneralSearch
 
 
@@ -132,9 +133,14 @@ class ProfileViewSet(CommonViewSetMixin, HtmlNoDeleteViewSet):
     pagination_class = SmallResultSetPagination
     filter_backends = (MemberProfileFilter,)
     permission_classes = (ObjectPermissions,)
-    serializer_class = MemberProfileSerializer
     context_object_name = "profile"
     context_list_name = "profiles"
+
+    def get_serializer_class(self):
+        if self.action == "list":
+            return RelatedMemberProfileSerializer
+        else:
+            return MemberProfileSerializer
 
     def get_queryset(self):
         if self.action == "retrieve":

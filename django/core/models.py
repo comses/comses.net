@@ -376,10 +376,6 @@ class MemberProfile(index.Indexed, ClusterableModel):
         # e.g., "Arizona State University https://www.asu.edu ASU"
         return f"{afl.get('name')} {afl.get('url')} {afl.get('acronym')}"
 
-    @property
-    def institution_name(self):
-        return self.primary_affiliation_name
-
     @cached_property
     def primary_affiliation_name(self):
         """

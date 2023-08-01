@@ -48,6 +48,7 @@ from core.views import (
     NoDeleteNoUpdateViewSet,
     HtmlNoDeleteViewSet,
 )
+from core.serializers import RelatedMemberProfileSerializer
 from .forms import (
     PeerReviewerFeedbackReviewerForm,
     PeerReviewInvitationReplyForm,
@@ -77,7 +78,6 @@ from .serializers import (
     CodebaseImageSerializer,
     PeerReviewInvitationSerializer,
     PeerReviewFeedbackEditorSerializer,
-    PeerReviewReviewerSerializer,
     PeerReviewEventLogSerializer,
 )
 
@@ -204,7 +204,7 @@ class PeerReviewEditorView(PermissionRequiredMixin, DetailView):
 
 class PeerReviewReviewerListView(mixins.ListModelMixin, viewsets.GenericViewSet):
     queryset = MemberProfile.objects.all()
-    serializer_class = PeerReviewReviewerSerializer
+    serializer_class = RelatedMemberProfileSerializer
 
     def get_queryset(self):
         query = self.request.query_params.get("query", "")

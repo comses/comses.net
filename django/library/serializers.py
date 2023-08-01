@@ -15,14 +15,17 @@ from core.validators import validate_affiliations
 from core.serializers import (
     YMD_DATETIME_FORMAT,
     DATE_PUBLISHED_FORMAT,
-    LinkedUserSerializer,
     create,
     update,
     set_tags,
     TagSerializer,
     MarkdownField,
 )
-from home.common_serializers import RelatedMemberProfileSerializer
+
+from core.serializers import (
+    RelatedMemberProfileSerializer,
+    RelatedUserSerializer,
+)
 from .models import (
     ReleaseContributor,
     Codebase,
@@ -62,9 +65,9 @@ class LicenseSerializer(serializers.ModelSerializer):
 class ContributorSerializer(serializers.ModelSerializer):
     # Need an ID for Vue-Multiselect
     id = serializers.IntegerField(read_only=True)
-    user = RelatedMemberProfileSerializer(required=False, allow_null=True)
+    user = RelatedUserSerializer(required=False, allow_null=True)
     affiliations = TagSerializer(many=True)
-    profile_url = serializers.SerializerMethodField()
+    profile_url = serializers.SerializerMethodField(read_only=True)
 
     def get_existing_contributor(self, validated_data):
         user = validated_data.get("user")
@@ -206,7 +209,7 @@ class FeaturedImageMixin(serializers.Serializer):
 
 class ReleaseContributorSerializer(serializers.ModelSerializer):
     contributor = ContributorSerializer()
-    profile_url = serializers.SerializerMethodField()
+    profile_url = serializers.SerializerMethodField(read_only=True)
     index = serializers.IntegerField(required=False)
 
     def get_profile_url(self, instance):
@@ -272,7 +275,7 @@ class RelatedCodebaseReleaseSerializer(serializers.ModelSerializer):
         many=True,
         source="index_ordered_release_contributors",
     )
-    submitter = LinkedUserSerializer(read_only=True, label="Submitter")
+    submitter = RelatedUserSerializer(read_only=True, label="Submitter")
     first_published_at = serializers.DateTimeField(
         format=DATE_PUBLISHED_FORMAT, read_only=True
     )
@@ -311,7 +314,7 @@ class CodebaseSerializer(serializers.ModelSerializer, FeaturedImageMixin):
         source="latest_version.version_number"
     )
     releases = serializers.SerializerMethodField()
-    submitter = LinkedUserSerializer(
+    submitter = RelatedUserSerializer(
         read_only=True, default=serializers.CurrentUserDefault()
     )
     summarized_description = serializers.CharField(read_only=True)
@@ -502,7 +505,7 @@ class CodebaseReleaseSerializer(serializers.ModelSerializer):
     os_display = serializers.ReadOnlyField(source="get_os_display")
     platforms = TagSerializer(many=True, source="platform_tags")
     programming_languages = TagSerializer(many=True)
-    submitter = LinkedUserSerializer(read_only=True, label="Submitter")
+    submitter = RelatedUserSerializer(read_only=True, label="Submitter")
     version_number = serializers.ReadOnlyField()
     release_notes = MarkdownField(max_length=2048)
     urls = serializers.SerializerMethodField()
@@ -641,20 +644,6 @@ class PeerReviewFeedbackEditorSerializer(serializers.ModelSerializer):
         )
 
 
-class PeerReviewReviewerSerializer(serializers.ModelSerializer):
-    tags = TagSerializer(many=True)
-
-    class Meta:
-        model = MemberProfile
-        fields = (
-            "id",
-            "avatar_url",
-            "degrees",
-            "name",
-            "tags",
-        )
-
-
 class PeerReviewInvitationSerializer(serializers.ModelSerializer):
     """Serialize review invitations. Build for list, detail and create routes
     (updating a peer review invitation may not make sense since an email has
@@ -662,7 +651,7 @@ class PeerReviewInvitationSerializer(serializers.ModelSerializer):
 
     url = serializers.ReadOnlyField(source="get_absolute_url")
 
-    candidate_reviewer = PeerReviewReviewerSerializer(read_only=True)
+    candidate_reviewer = RelatedMemberProfileSerializer(read_only=True)
 
     class Meta:
         model = PeerReviewInvitation

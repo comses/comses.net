@@ -8,7 +8,7 @@ from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 from taggit.models import Tag
 
-from .models import Event, Job, Institution
+from .models import Event, Job, Institution, MemberProfile
 
 logger = logging.getLogger(__name__)
 
@@ -69,22 +69,6 @@ def update(serializer_update, instance, validated_data):
     return instance
 
 
-class LinkedUserSerializer(serializers.ModelSerializer):
-    profile_url = serializers.URLField(
-        source="member_profile.get_absolute_url", read_only=True
-    )
-    name = serializers.SerializerMethodField()
-    username = serializers.ReadOnlyField()
-
-    def get_name(self, user):
-        # FIXME: duplicate logic in user.member_profile.name
-        return user.get_full_name() or user.username
-
-    class Meta:
-        model = User
-        fields = ("name", "profile_url", "username")
-
-
 class EditableSerializerMixin(serializers.Serializer):
     editable = serializers.SerializerMethodField(
         help_text=_("Whether or not entity is editable by the current user")
@@ -128,8 +112,39 @@ class MarkdownField(serializers.CharField):
         return data
 
 
+class RelatedMemberProfileSerializer(serializers.ModelSerializer):
+    tags = TagSerializer(many=True)
+    family_name = serializers.CharField(allow_blank=True, source="user.last_name")
+    given_name = serializers.CharField(allow_blank=True, source="user.first_name")
+
+    class Meta:
+        model = MemberProfile
+        fields = (
+            "id",
+            "avatar_url",
+            "degrees",
+            "given_name",
+            "family_name",
+            "name",
+            "email",
+            "profile_url",
+            "primary_affiliation_name",
+            "tags",
+            "username",
+        )
+
+
+class RelatedUserSerializer(serializers.ModelSerializer):
+    member_profile = RelatedMemberProfileSerializer(read_only=True)
+    username = serializers.CharField()
+
+    class Meta:
+        model = User
+        fields = ("id", "username", "member_profile")
+
+
 class EventSerializer(serializers.ModelSerializer):
-    submitter = LinkedUserSerializer(
+    submitter = RelatedUserSerializer(
         read_only=True, help_text=_("User that created the event"), label="Submitter"
     )
     absolute_url = serializers.URLField(
@@ -243,7 +258,7 @@ class EventCalendarSerializer(serializers.ModelSerializer):
 
 
 class JobSerializer(serializers.ModelSerializer):
-    submitter = LinkedUserSerializer(
+    submitter = RelatedUserSerializer(
         read_only=True,
         help_text=_("User that created the job description"),
         label="Submitter",

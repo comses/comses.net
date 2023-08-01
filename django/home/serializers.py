@@ -11,7 +11,6 @@ from rest_framework.exceptions import ValidationError as DrfValidationError
 from core.models import Institution, MemberProfile
 from core.serializers import InstitutionSerializer, TagSerializer, MarkdownField
 from core.validators import validate_affiliations
-from library.serializers import RelatedCodebaseSerializer
 from .models import FeaturedContentItem, UserMessage
 
 logger = logging.getLogger(__name__)
@@ -35,47 +34,6 @@ class UserMessageSerializer(serializers.ModelSerializer):
         fields = ("message", "user")
 
 
-# FIXME: try to reduce duplication here and MemberProfileSerializer
-class MemberProfileListSerializer(serializers.ModelSerializer):
-    date_joined = serializers.DateTimeField(
-        source="user.date_joined", read_only=True, format="%c"
-    )
-    username = serializers.CharField(source="user.username")
-    profile_url = serializers.URLField(source="get_absolute_url", read_only=True)
-    tags = TagSerializer(many=True)
-    avatar = (
-        serializers.SerializerMethodField()
-    )  # needed to materialize the FK relationship for wagtailimages
-    bio = MarkdownField()
-    research_interests = MarkdownField()
-
-    def get_avatar(self, instance):
-        request = self.context.get("request")
-        if request and request.accepted_media_type != "text/html":
-            return (
-                instance.picture.get_rendition("fill-150x150").url
-                if instance.picture
-                else None
-            )
-        return instance.picture
-
-    class Meta:
-        model = MemberProfile
-        fields = (
-            "date_joined",
-            "name",
-            "profile_url",
-            "tags",
-            "username",
-            "avatar",
-            "bio",
-            "research_interests",
-            "full_member",
-            "is_reviewer",
-            "degrees",
-        )
-
-
 class MemberProfileSerializer(serializers.ModelSerializer):
     """
     FIXME: references library.Codebase, keeping in home for now to avoid circular dependencies in core
@@ -94,10 +52,6 @@ class MemberProfileSerializer(serializers.ModelSerializer):
     # Followers
     follower_count = serializers.ReadOnlyField(source="user.following.count")
     following_count = serializers.ReadOnlyField(source="user.followers.count")
-
-    codebases = RelatedCodebaseSerializer(
-        source="user.codebases", many=True, read_only=True
-    )
 
     # Affiliations
     institution = InstitutionSerializer(read_only=True, allow_null=True)
@@ -221,7 +175,6 @@ class MemberProfileSerializer(serializers.ModelSerializer):
             # Follower
             "follower_count",
             "following_count",
-            "codebases",
             "industry",
             # MemberProfile
             "avatar",

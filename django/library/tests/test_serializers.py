@@ -14,8 +14,6 @@ class SerializerTestCase(BaseModelTestCase):
     def create_raw_user(self, username="foo.bar"):
         User.objects.get_or_create(username=username)
         return {
-            "institution_name": "SHESC",
-            "institution_url": "http://shesc.asu.edu",
             "username": username,
         }
 
