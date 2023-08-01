@@ -379,9 +379,16 @@
         </div>
     </section>
 {% endblock introduction_section %}
+<noscript>
+    <div class='alert alert-danger mt-3'>
+        <i class='fas fa-exclamation-triangle me-2'></i>
+        Javascript is disabled in your browser. Some of this site's functionality <b>will not work</b> or
+        be heavily degraded without it.
+    </div>
+</noscript>
 {% if not is_production() %}
     <div class='alert alert-danger mt-3'>
-        <i class='fas fa-warning fa-2x'></i>
+        <i class='fas fa-flask me-2'></i>
         You are currently accessing a <b>test version of the comses.net website</b>. Information that you
         view or store here will <b>not be preserved</b> and may not be consistent.
     </div>
