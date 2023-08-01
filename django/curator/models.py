@@ -1,13 +1,15 @@
 import json
 import logging
-from collections import defaultdict
-
-import modelcluster.fields
 import os
 import re
+
+from collections import defaultdict
+from django.core.exceptions import FieldDoesNotExist
+from django.contrib.auth.models import User
 from django.contrib.postgres.aggregates import ArrayAgg
 from django.db import models, transaction
 from django.urls import reverse
+from modelcluster import fields
 from nltk.corpus import stopwords
 from nltk.stem import PorterStemmer
 from nltk.tokenize import word_tokenize
@@ -23,8 +25,8 @@ PENDING_TAG_CLEANUPS_FILENAME = "pending_tag_cleanups"
 def has_parental_object_content_field(model):
     try:
         field = model._meta.get_field("content_object")
-        return isinstance(field, modelcluster.fields.ParentalKey)
-    except models.FieldDoesNotExist:
+        return isinstance(field, fields.ParentalKey)
+    except FieldDoesNotExist:
         return False
 
 
@@ -119,7 +121,7 @@ class Matcher:
         self.regex = regex
 
 
-def pl_regex(name, flags=re.I):
+def pl_regex(name, flags=re.IGNORECASE):
     return re.compile(
         r"\b{}(?:,|\b|\s+|\Z|v?\d+\.\d+\.\d+(?:-?\w[\w-]*)*|\d+)".format(name),
         flags=flags,
@@ -300,3 +302,26 @@ class TagMigrator:
             for model in through_models:
                 self.copy_through_model_refs(model, new_tags=new_tags, old_tag=old_tag)
             old_tag.delete()
+
+
+class CanonicalTag(models.Model):
+    name = models.TextField(unique=True)
+
+    def __str__(self):
+        return "{}".format(self.name)
+
+
+class CanonicalTagMapping(models.Model):
+    tag = models.OneToOneField(Tag, on_delete=models.deletion.CASCADE, primary_key=True)
+    canonical_tag = models.ForeignKey(
+        CanonicalTag, null=True, on_delete=models.SET_NULL
+    )
+    confidence_score = models.FloatField()
+    is_canonical = models.BooleanField(default=False)
+    date_created = models.DateTimeField(null=True, auto_now_add=True)
+    curator = models.ForeignKey(User, null=True, on_delete=models.SET_NULL)
+
+    def __str__(self):
+        return "tag={} canonical_tag={} confidence={}".format(
+            str(self.tag), str(self.canonical_tag), str(self.confidence_score)
+        )
