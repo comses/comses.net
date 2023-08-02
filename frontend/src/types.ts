@@ -124,6 +124,7 @@ export interface ReleaseContributor {
 
 export interface Contributor {
   affiliations: any[];
+  primaryAffiliationName: string;
   email: string;
   id: number;
   name: string;
@@ -137,7 +138,7 @@ export interface Contributor {
 
 export interface RelatedMemberProfile {
   id: number;
-  avatar_url?: string;
+  avatarUrl?: string;
   degrees: string[];
   givenName: string;
   familyName: string;
@@ -250,4 +251,10 @@ export interface File {
 export interface Folder {
   label: string;
   contents: (File | Folder)[];
+}
+
+export interface UserSearchQueryParams {
+  query?: string;
+  page?: number;
+  tags?: string[];
 }

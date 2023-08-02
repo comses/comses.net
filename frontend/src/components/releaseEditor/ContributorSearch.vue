@@ -6,7 +6,6 @@
     <VueMultiSelect
       id="existing-contributor-search"
       v-model="candidateContributor"
-      :custom-label="contributorDisplay"
       label="familyName"
       track-by="id"
       placeholder="Find a contributor previously entered in our system"
@@ -24,6 +23,16 @@
         <div class="multiselect__search-toggle">
           <i class="fas fa-search" @mousedown.prevent.stop="toggle" />
         </div>
+      </template>
+      <template #option="{ option }">
+        <b>{{ contributorName(option) }}</b>
+        <small class="text-muted">{{ contributorEmail(option) }}</small>
+        <small>{{ contributorAffiliation(option) }}</small>
+      </template>
+      <template #singleLabel="{ option }">
+        <b>{{ contributorName(option) }}</b>
+        <small class="text-muted">{{ contributorEmail(option) }}</small>
+        <small>{{ contributorAffiliation(option) }}</small>
       </template>
       <template #noOptions>No matching users found.</template>
     </VueMultiSelect>
@@ -69,21 +78,32 @@ const fetchMatchingContributors = useDebounceFn(async (query: string) => {
   }
 }, 600);
 
-function contributorDisplay(contributor: Contributor) {
-  const { givenName, familyName, user } = contributor;
-  let name = [givenName, familyName].filter(Boolean).join(" ");
-  let email = contributor.email;
-  // should we always defer these attributes to the User model if it exists instead?
-  if (!name && user && user.name) {
-    name = user.name;
+function contributorName(contributor: Contributor) {
+  if (contributor.user) {
+    return contributor.user.memberProfile.name;
+  } else {
+    return contributor.name;
   }
-  if (!email && user && user.email) {
-    email = user.email;
+}
+
+function contributorEmail(contributor: Contributor) {
+  let email = "";
+  if (contributor.user) {
+    email = contributor.user.memberProfile.email;
+  } else {
+    email = contributor.email || "";
   }
-  if (email) {
-    return `${name} (${email})`;
+  return email ? ` (${email})` : "";
+}
+
+function contributorAffiliation(contributor: Contributor) {
+  let affiliation = "";
+  if (contributor.primaryAffiliationName) {
+    affiliation = contributor.primaryAffiliationName || "";
+  } else if (contributor.user) {
+    affiliation = contributor.user.memberProfile.primaryAffiliationName || "";
   }
-  return name;
+  return affiliation ? `, ${affiliation}` : "";
 }
 
 function handleSelect(contributor: Contributor) {

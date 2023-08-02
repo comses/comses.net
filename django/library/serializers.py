@@ -74,21 +74,23 @@ class ContributorSerializer(serializers.ModelSerializer):
         email = validated_data.get("email")
         username = user.get("username") if user else None
         if username is not None:
-            return (
-                User.objects.get(username=username),
-                Contributor.objects.filter(user__username=username).first(),
-            )
+            user = User.objects.get(username=username)
+            contributor = Contributor.objects.filter(user__username=username).first()
         elif email:
             # match by email if given
             contributor = Contributor.objects.filter(email=email).first()
-            return (contributor.user if contributor else None, contributor)
+            if contributor:
+                user = contributor.user
         else:
             # otherwise, match by the exact name given and blank email
             contrib_filter = {
                 k: validated_data.get(k, "")
                 for k in ["given_name", "family_name", "email"]
             }
-            return None, Contributor.objects.filter(**contrib_filter).first()
+            user = None
+            contributor = Contributor.objects.filter(**contrib_filter).first()
+
+        return user, contributor
 
     def save(self, **kwargs):
         if self.instance is None:
@@ -142,6 +144,7 @@ class ContributorSerializer(serializers.ModelSerializer):
             "user",
             "type",
             "affiliations",
+            "primary_affiliation_name",
             "profile_url",
         )
 

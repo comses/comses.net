@@ -1,10 +1,6 @@
 import { useAxios } from "@/composables/api";
 import { toRefs } from "vue";
-
-interface ContributorQueryParams {
-  query?: string;
-  page?: number;
-}
+import type { UserSearchQueryParams } from "@/types";
 
 export function useContributorAPI() {
   /**
@@ -16,7 +12,7 @@ export function useContributorAPI() {
   const baseUrl = "/contributors/";
   const { state, get, searchUrl } = useAxios(baseUrl);
 
-  async function search(params: ContributorQueryParams) {
+  async function search(params: UserSearchQueryParams) {
     params.page = params.page || 1;
     return get(searchUrl(params));
   }

@@ -6,6 +6,7 @@ import type {
   CodebaseReleaseFiles,
   CodebaseReleaseMetadata,
   FileCategory,
+  RelatedUser,
 } from "@/types";
 import { useCodebaseAPI, useReleaseEditorAPI } from "@/composables/api";
 
@@ -119,6 +120,22 @@ export const useReleaseEditorStore = defineStore("releaseEditor", () => {
   };
 });
 
+const DEFAULT_USER: RelatedUser = {
+  id: 0,
+  username: "",
+  memberProfile: {
+    id: 0,
+    degrees: [],
+    givenName: "",
+    familyName: "",
+    name: "",
+    email: "",
+    profileUrl: "",
+    tags: [],
+    username: "",
+  },
+};
+
 const INITIAL_STATE: CodebaseReleaseEditorState = {
   files: {
     originals: {
@@ -151,11 +168,7 @@ const INITIAL_STATE: CodebaseReleaseEditorState = {
       releases: [],
       replicationText: "",
       repositoryUrl: "",
-      submitter: {
-        name: "",
-        profileUrl: "",
-        username: "",
-      },
+      submitter: DEFAULT_USER,
       summarizedDescription: "",
       tags: [],
       title: "",
@@ -183,11 +196,7 @@ const INITIAL_STATE: CodebaseReleaseEditorState = {
     reviewStatus: null,
     shareUrl: null,
     submittedPackage: null,
-    submitter: {
-      name: "",
-      profileUrl: "",
-      username: "",
-    },
+    submitter: DEFAULT_USER,
     urls: {
       requestPeerReview: null,
       review: null,

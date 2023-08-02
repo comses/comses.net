@@ -11,7 +11,16 @@
         />
         <div class="card mb-3">
           <div v-if="isPerson" class="card-header">
-            <UserSearch @select="populateFromUser($event)" />
+            <UserSearch
+              label="Search for an Existing User"
+              placeholder="Skip entering contributor details by searching for users already in our system"
+              :search-fn="search"
+              :errors="profileErrors"
+              @select="populateFromUser($event)"
+              show-avatar
+              show-email
+              show-affiliation
+            />
           </div>
           <div class="card-body">
             <TextField
@@ -86,9 +95,9 @@ import CheckboxField from "@/components/form/CheckboxField.vue";
 import SelectField from "@/components/form/SelectField.vue";
 import MultiSelectField from "@/components/form/MultiSelectField.vue";
 import FormAlert from "@/components/form/FormAlert.vue";
-import UserSearch from "@/components/releaseEditor/UserSearch.vue";
+import UserSearch from "@/components/UserSearch.vue";
 import { useForm } from "@/composables/form";
-import { useReleaseEditorAPI } from "@/composables/api";
+import { useReleaseEditorAPI, useProfileAPI } from "@/composables/api";
 import { useReleaseEditorStore } from "@/stores/releaseEditor";
 import type { Contributor, ReleaseContributor } from "@/types";
 
@@ -105,6 +114,8 @@ const props = withDefaults(
 );
 
 const emit = defineEmits(["success"]);
+
+const { serverErrors: profileErrors, search } = useProfileAPI();
 
 const store = useReleaseEditorStore();
 

@@ -1,5 +1,6 @@
 import { useAxios } from "@/composables/api";
 import { toRefs } from "vue";
+import type { UserSearchQueryParams } from "@/types";
 
 export function useReviewEditorAPI() {
   /**
@@ -9,7 +10,7 @@ export function useReviewEditorAPI() {
    */
 
   const baseUrl = "/reviews/";
-  const { state, get, post, put, detailUrl } = useAxios(baseUrl);
+  const { state, get, post, put, detailUrl, searchUrl } = useAxios(baseUrl);
 
   async function listInvitations(reviewUUID: string) {
     return get(detailUrl(reviewUUID, ["editor", "invitations"]));
@@ -38,8 +39,8 @@ export function useReviewEditorAPI() {
     return put(detailUrl(slug, ["editor"]), { status });
   }
 
-  async function findReviewers(query: string) {
-    return get(`/reviewers/?query=${query}`);
+  async function findReviewers(params: UserSearchQueryParams) {
+    return get(searchUrl(params, "/reviewers/"));
   }
 
   return {

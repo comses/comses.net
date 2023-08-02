@@ -4,7 +4,17 @@
     <div class="container-fluid" v-if="!candidateReviewer">
       <div class="row">
         <div class="col-12 px-0 mb-3">
-          <ReviewerSearch v-model="candidateReviewer" />
+          <UserSearch
+            v-model="candidateReviewer"
+            label="Search by name, email address, or username among existing CoMSES Net members"
+            placeholder="Find a reviewer"
+            :search-fn="findReviewers"
+            :errors="serverErrors"
+            show-avatar
+            show-affiliation
+            show-tags
+            show-link
+          />
         </div>
       </div>
     </div>
@@ -86,7 +96,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from "vue";
 import { useReviewEditorAPI } from "@/composables/api";
-import ReviewerSearch from "@/components/ReviewerSearch.vue";
+import UserSearch from "@/components/UserSearch.vue";
 import type { Reviewer } from "@/types";
 
 const props = defineProps<{
@@ -95,7 +105,8 @@ const props = defineProps<{
 
 const emit = defineEmits(["pollEvents"]);
 
-const { listInvitations, sendInvitation, resendInvitation } = useReviewEditorAPI();
+const { serverErrors, listInvitations, sendInvitation, resendInvitation, findReviewers } =
+  useReviewEditorAPI();
 
 const invitations = ref<any[]>([]);
 const candidateReviewer = ref<Reviewer | null>(null);

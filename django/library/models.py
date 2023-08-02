@@ -242,6 +242,10 @@ class Contributor(index.Indexed, ClusterableModel):
     def formatted_affiliations(self):
         return ", ".join(self.affiliations.values_list("name", flat=True))
 
+    @property
+    def primary_affiliation_name(self):
+        return self.affiliations.first().name if self.affiliations.exists() else ""
+
     def get_profile_url(self):
         user = self.user
         if user:

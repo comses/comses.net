@@ -98,6 +98,10 @@
   img {
     color: $text-color;
   }
+  & .text-muted {
+    @extend .text-muted;
+    color: $gray-400 !important;
+  }
 }
 
 .multiselect__option--selected {
