@@ -29,7 +29,7 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
-        if len(CanonicalTag.objects.all()) == 0:
+        if not CanonicalTag.objects.exists():
             logger.warn(
                 "Canonical list is empty, populating canonical list using the curator_cluster_tags command"
             )
@@ -48,13 +48,13 @@ class Command(BaseCommand):
                 )
 
             search_results = tag_gazetteering.human_readable_search(options["search"])
-            print("Searching for tags that closely match: ", options["search"])
+            logger.debug("Searching for tags that closely match: %s", options["search"])
 
             if len(search_results) == 0:
-                print(
-                    "There are no tags that closely match the name you were searching for"
-                )
+                logger.debug("no matching tags found")
 
             else:
-                print("The following tags seem to closely match the tag")
-                print(search_results)
+                logger.debug(
+                    "The following tags seem to closely match the tag: %s",
+                    search_results,
+                )

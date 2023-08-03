@@ -142,7 +142,7 @@ PLATFORM_AND_LANGUAGE_MATCHERS = [
     Matcher("Jade", pl_regex("jade")),
     Matcher("Jason", pl_regex("jason")),
     Matcher("Java", pl_regex("java")),
-    Matcher("James II", pl_regex("james\s+ii")),
+    Matcher("James II", pl_regex("james\\s+ii")),
     Matcher("Logo", pl_regex("logo")),
     Matcher("NetLogo", pl_regex("netlogo")),
     Matcher("Mason", pl_regex("mason")),
@@ -150,7 +150,7 @@ PLATFORM_AND_LANGUAGE_MATCHERS = [
     Matcher("MatLab", pl_regex("matlab")),
     Matcher("Objective-C", pl_regex(r"objective(:?[-\s]+)?c")),
     Matcher("Pandora", pl_regex("pandora")),
-    Matcher("Powersim Studio", pl_regex("powersim\s+studio")),
+    Matcher("Powersim Studio", pl_regex("powersim\\s+studio")),
     Matcher("Python", pl_regex("python")),
     Matcher("R", pl_regex("r")),
     Matcher("Repast", pl_regex("repast")),
@@ -172,7 +172,7 @@ class TagCleanupTransaction(models.Model):
     date_created = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return "{}".format(self.date_created.strftime("%c"))
+        return self.date_created.strftime("%c")
 
 
 class TagCleanup(models.Model):
@@ -185,9 +185,7 @@ class TagCleanup(models.Model):
     objects = TagCleanupQuerySet.as_manager()
 
     def __str__(self):
-        return "id={} new_name={}, old_name={}".format(
-            self.id, repr(self.new_name), repr(self.old_name)
-        )
+        return f"id={self.id} new_name={self.new_name}, old_name={self.old_name}"
 
     @classmethod
     def find_groups_by_porter_stemmer(cls):
@@ -308,7 +306,7 @@ class CanonicalTag(models.Model):
     name = models.TextField(unique=True)
 
     def __str__(self):
-        return "{}".format(self.name)
+        return self.name
 
 
 class CanonicalTagMapping(models.Model):
@@ -322,6 +320,4 @@ class CanonicalTagMapping(models.Model):
     curator = models.ForeignKey(User, null=True, on_delete=models.SET_NULL)
 
     def __str__(self):
-        return "tag={} canonical_tag={} confidence={}".format(
-            str(self.tag), str(self.canonical_tag), str(self.confidence_score)
-        )
+        return f"tag={self.tag} canonical_tag={self.canonical_tag} confidence={self.confidence_score}"

@@ -31,7 +31,7 @@ class Command(BaseCommand):
 
     def handle_load(self, restore_directory):
         path = restore_directory.joinpath(PENDING_TAG_CLEANUPS_FILENAME)
-        print("Loading data from path {}".format(str(path)))
+        logger.debug("Loading data from path %s", path)
         tag_cleanups = TagCleanup.load(path)
         TagCleanup.objects.bulk_create(tag_cleanups)
 
@@ -50,11 +50,11 @@ class Command(BaseCommand):
     def handle_view(self):
         qs = TagCleanup.objects.filter(is_active=True)
         if qs.count() > 0:
-            print("Tag Cleanups\n--------------------\n")
+            logger.debug("Tag Cleanups\n--------------------\n")
             for tag_cleanup in qs.iterator():
-                print(tag_cleanup)
+                logger.debug(tag_cleanup)
         else:
-            print("No Pending Tag Cleanups!")
+            logger.debug("No Pending Tag Cleanups!")
 
     def handle(self, *args, **options):
         run = options["run"]
@@ -70,11 +70,11 @@ class Command(BaseCommand):
         elif method:
             self.handle_method(method)
         elif dump:
-            print(
-                "Dumping tag curation data to {}".format(
-                    load_directory.joinpath(PENDING_TAG_CLEANUPS_FILENAME)
-                )
+            logger.debug(
+                "Dumping tag curation data to %s",
+                load_directory.joinpath(PENDING_TAG_CLEANUPS_FILENAME),
             )
+
             TagCleanup.objects.dump(
                 load_directory.joinpath(PENDING_TAG_CLEANUPS_FILENAME)
             )
