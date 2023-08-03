@@ -17,7 +17,7 @@ class TagPreprocessing:
         return tag_names
 
 
-class TagDeduplication(abc.ABC):
+class AbstractTagDeduper(abc.ABC):
     FIELDS = [{"field": "name", "type": "String"}]
 
     # Gets the model's most uncertain pairs
@@ -49,12 +49,13 @@ class TagDeduplication(abc.ABC):
 # This class is used to help to make the initial canonical list.
 # Besides that, there isn't much other use for this.
 # If the curator can directly provide a small canonical list, even a small one will do, this class will not be needed.
-class TagClustering(TagDeduplication):
+class TagClusterer(AbstractTagDeduper):
     TRAINING_FILE = "curator/clustering_training.json"
-    CLUSTERING_THRESHOLD = 0.1
 
-    def __init__(self):
-        self.deduper = dedupe.Dedupe(TagDeduplication.FIELDS)
+    def __init__(self, clustering_threshold):
+        self.clustering_threshold = clustering_threshold
+
+        self.deduper = dedupe.Dedupe(AbstractTagDeduper.FIELDS)
         self.prepare_training()
 
     # The training data is stored in a file.
@@ -62,8 +63,8 @@ class TagClustering(TagDeduplication):
     # Otherwise, start from scratch
     def prepare_training(self):
         data = self.prepare_training_data()
-        if os.path.exists(TagClustering.TRAINING_FILE):
-            with open(TagClustering.TRAINING_FILE, "r") as training_file:
+        if os.path.exists(TagClusterer.TRAINING_FILE):
+            with open(TagClusterer.TRAINING_FILE, "r") as training_file:
                 self.deduper.prepare_training(data, training_file)
         else:
             self.deduper.prepare_training(data)
@@ -72,11 +73,11 @@ class TagClustering(TagDeduplication):
     def cluster_tags(self):
         self.deduper.train()
         return self.deduper.partition(
-            self.prepare_training_data(), TagClustering.CLUSTERING_THRESHOLD
+            self.prepare_training_data(), self.clustering_threshold
         )
 
     def save_to_training_file(self):
-        with open(TagClustering.TRAINING_FILE, "w") as file:
+        with open(TagClusterer.TRAINING_FILE, "w") as file:
             self.deduper.write_training(file)
 
     # Saves the clusters to the database
@@ -99,19 +100,20 @@ class TagClustering(TagDeduplication):
                     tag_canon_mapping.save()
 
     def training_file_exists(self) -> bool:
-        return os.path.exists(TagClustering.TRAINING_FILE)
+        return os.path.exists(TagClusterer.TRAINING_FILE)
 
     def remove_training_file(self):
-        if os.path.isfile(TagClustering.TRAINING_FILE):
-            os.remove(TagClustering.TRAINING_FILE)
+        if os.path.isfile(TagClusterer.TRAINING_FILE):
+            os.remove(TagClusterer.TRAINING_FILE)
 
 
-class TagGazetteering(TagDeduplication):
+class TagGazetteer(AbstractTagDeduper):
     TRAINING_FILE = "curator/gazetteering_training.json"
-    SEARCH_THRESHOLD = 0.5
 
-    def __init__(self):
-        self.deduper = dedupe.Gazetteer(TagDeduplication.FIELDS)
+    def __init__(self, search_threshold):
+        self.search_threshold = search_threshold
+
+        self.deduper = dedupe.Gazetteer(AbstractTagDeduper.FIELDS)
         self.prepare_training()
 
     # The training data is stored in a file.
@@ -122,7 +124,7 @@ class TagGazetteering(TagDeduplication):
         canonical_data = self.prepare_canonical_data()
 
         if self.training_file_exists():
-            with open(TagGazetteering.TRAINING_FILE, "r") as training_file:
+            with open(TagGazetteer.TRAINING_FILE, "r") as training_file:
                 self.deduper.prepare_training(data, canonical_data, training_file)
         else:
             self.deduper.prepare_training(data, canonical_data)
@@ -135,7 +137,7 @@ class TagGazetteering(TagDeduplication):
     def search(self, data):
         self.deduper.train()
         self.deduper.index(self.prepare_canonical_data())
-        return self.deduper.search(data, threshold=TagGazetteering.SEARCH_THRESHOLD)
+        return self.deduper.search(data, threshold=self.search_threshold)
 
     def human_readable_search(self, name: str):
         results = self.search({1: {"id": 1, "name": name}})
@@ -151,12 +153,12 @@ class TagGazetteering(TagDeduplication):
         return "\n".join(matches)
 
     def training_file_exists(self) -> bool:
-        return os.path.exists(TagGazetteering.TRAINING_FILE)
+        return os.path.exists(TagGazetteer.TRAINING_FILE)
 
     def remove_training_file(self):
-        if os.path.isfile(TagGazetteering.TRAINING_FILE):
-            os.remove(TagGazetteering.TRAINING_FILE)
+        if os.path.isfile(TagGazetteer.TRAINING_FILE):
+            os.remove(TagGazetteer.TRAINING_FILE)
 
     def save_to_training_file(self):
-        with open(TagGazetteering.TRAINING_FILE, "w") as file:
+        with open(TagGazetteer.TRAINING_FILE, "w") as file:
             self.deduper.write_training(file)

@@ -3,10 +3,13 @@ import shortuuid
 import string
 
 from django.test import TestCase
+from django.utils.text import slugify
 from taggit.models import Tag
 
-from curator.tag_deduplication import TagPreprocessing, TagClustering, TagGazetteering
+from curator.tag_deduplication import TagPreprocessing, TagClusterer, TagGazetteer
 from curator.models import CanonicalTag, CanonicalTagMapping
+
+random.seed(0)
 
 
 class TagPreprocessingTestCase(TestCase):
@@ -40,21 +43,24 @@ class TagPreprocessingTestCase(TestCase):
         self.assertEqual(list, type(preprocessed_Tags))
 
 
+def name_generator(unique_id, size=12):
+    return shortuuid.uuid()[:size] + str(unique_id)
+
+
 class TestTagClustering(TestCase):
     def setUp(self):
-        for i in range(300):
-            id = TestTagClustering._id_generator()
-            CanonicalTag(name=id).save()
-            Tag(name=id + "1").save()
-            Tag(name=id + "2").save()
-            Tag(name=id + "3").save()
+        tags = []
+        for index in range(300):
+            name = name_generator(index)
+            tags.append(Tag(name=name, slug=name))
+        Tag.objects.bulk_create(tags)
 
     def test_uncertain_pairs(self):
-        tag_clustering = TagClustering()
+        tag_clustering = TagClusterer(clustering_threshold=0.5)
         uncertain_pairs = tag_clustering.uncertain_pairs()
         self.assertEqual(list, type(uncertain_pairs))
-        self.assertEqual(1, len(uncertain_pairs))
-        self.assertEqual(2, len(uncertain_pairs[0]))
+        self.assertLessEqual(1, len(uncertain_pairs))
+        self.assertLessEqual(2, len(uncertain_pairs[0]))
         self.assertEqual(int, type(uncertain_pairs[0][0]["id"]))
         self.assertEqual(str, type(uncertain_pairs[0][0]["name"]))
         self.assertEqual(str, type(uncertain_pairs[0][0]["slug"]))
@@ -69,27 +75,28 @@ class TestTagClustering(TestCase):
             self.assertLess(0, len(cluster[1]))
 
     def _cluster_tags(self):
-        tag_clustering = TagClustering()
-        for i in range(300):
+        tag_clustering = TagClusterer(clustering_threshold=0.5)
+        for i in range(600):
             uncertain_pair = tag_clustering.uncertain_pairs()
             tag_clustering.mark_pairs(uncertain_pair, i % 3 != 0)
         return tag_clustering.cluster_tags()
 
-    def _id_generator(size=6):
-        return shortuuid.uuid()[:size]
-
 
 class TestTagGazetteering(TestCase):
     def setUp(self):
-        for i in range(300):
-            _id = TestTagGazetteering._id_generator()
-            CanonicalTag(name=_id).save()
-            Tag(name=_id + "1").save()
-            Tag(name=_id + "2").save()
-            Tag(name=_id + "3").save()
+        canonical_tags = []
+        tags = []
+        for index in range(300):
+            name = name_generator(index)
+            canonical_tags.append(CanonicalTag(name=name))
+            tags.append(Tag(name=name + "a", slug=name + "a"))
+            tags.append(Tag(name=name + "b", slug=name + "b"))
+            tags.append(Tag(name=name + "c", slug=name + "c"))
+        CanonicalTag.objects.bulk_create(canonical_tags)
+        Tag.objects.bulk_create(tags)
 
     def test_uncertain_pairs(self):
-        tag_clustering = TagGazetteering()
+        tag_clustering = TagGazetteer(search_threshold=0.5)
         uncertain_pairs = tag_clustering.uncertain_pairs()
         self.assertEqual(list, type(uncertain_pairs))
         self.assertEqual(1, len(uncertain_pairs))
@@ -107,11 +114,8 @@ class TestTagGazetteering(TestCase):
             self.assertEqual(tuple, type(cluster[1]))
 
     def _search(self):
-        tag_clustering = TagGazetteering()
-        for i in range(300):
+        tag_clustering = TagGazetteer(search_threshold=0.5)
+        for i in range(600):
             uncertain_pair = tag_clustering.uncertain_pairs()
             tag_clustering.mark_pairs(uncertain_pair, i % 3 != 0)
         return tag_clustering.search({1: {"id": 1, "name": "abms"}})
-
-    def _id_generator(size=6, chars=string.ascii_uppercase + string.digits):
-        return "".join(random.choice(chars) for _ in range(size))

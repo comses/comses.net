@@ -2,7 +2,7 @@ import logging
 
 from django.core.management.base import BaseCommand
 
-from curator.tag_deduplication import TagGazetteering
+from curator.tag_deduplication import TagGazetteer
 from curator.models import CanonicalTag
 
 logger = logging.getLogger(__name__)
@@ -20,6 +20,13 @@ class Command(BaseCommand):
             action="store_true",
             default=False,
         )
+        parser.add_argument(
+            "--threshold",
+            "-t",
+            help="Threshold to use for clustering tags",
+            action="store_true",
+            default=0.5,
+        )
 
     def handle(self, *args, **options):
         if len(CanonicalTag.objects.all()) == 0:
@@ -28,7 +35,7 @@ class Command(BaseCommand):
             )
             return
 
-        tag_gazetteering = TagGazetteering()
+        tag_gazetteering = TagGazetteer(options["threshold"])
 
         if options["label"]:
             tag_gazetteering.console_label()

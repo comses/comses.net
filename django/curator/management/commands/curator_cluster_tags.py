@@ -2,7 +2,7 @@ import logging
 
 from django.core.management.base import BaseCommand
 
-from curator.tag_deduplication import TagClustering
+from curator.tag_deduplication import TagClusterer
 
 
 class Command(BaseCommand):
@@ -33,8 +33,16 @@ class Command(BaseCommand):
             default=False,
         )
 
+        parser.add_argument(
+            "--threshold",
+            "-t",
+            help="Threshold to use for clustering tags",
+            action="store_true",
+            default=0.5,
+        )
+
     def handle(self, *args, **options):
-        tag_gazetteering = TagClustering()
+        tag_gazetteering = TagClusterer(clustering_threshold=options["threshold"])
 
         if options["label"]:
             tag_gazetteering.console_label()
