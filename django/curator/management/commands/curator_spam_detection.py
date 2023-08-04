@@ -4,7 +4,7 @@ import pathlib
 from django.core.management.base import BaseCommand
 
 from curator.spam import DATASET_FILE_PATH
-from curator.spam_detection_models import SpamDetection
+from curator.spam import SpamDetection
 
 logger = logging.getLogger(__name__)
 
@@ -31,14 +31,14 @@ class Command(BaseCommand):
             "-r",
             action="store_true",
             default=False,
-            help="retrain models and returns refined model metrics",
+            help="retrains the models and returns refined model metrics",
         )
         parser.add_argument(
             "--get_model_metrics",
             "-g",
             action="store_true",
             default=False,
-            help="retrain model accuracy, precision, recall and f1 scores",
+            help="gets model accuracy, precision, recall and f1 scores",
         )
         parser.add_argument(
             "--load_labels",
@@ -60,22 +60,32 @@ class Command(BaseCommand):
         parser.add_argument("--predict_text", "-pb", action="store_true", default=False)
 
     def handle_exe(self):
-        spam_users, user_model_metircs, text_model_metrics = self.detection.execute()
-        # print(spam_users)
-        # print(user_model_metircs)
-        # print(text_model_metrics)
+        result = self.detection.execute()
+        print("Spam Users :\n", result.spam_users)
+        print(
+            "UserMetadataSpamClassifier Metircs :\n",
+            result.user_metadata_spam_classifier,
+        )
+        print("TextSpamClassifier  Metircs:\n", result.text_spam_classifier)
 
     def handle_refine(self):
-        user_model_metircs, text_model_metrics = self.detection.refine()
-        print(user_model_metircs)
-        print(text_model_metrics)
+        metrics = self.detection.refine()
+        print(
+            "UserMetadataSpamClassifier Metircs :\n",
+            metrics.user_metadata_spam_classifier,
+        )
+        print("TextSpamClassifier  Metircs:\n", metrics.text_spam_classifier)
 
     def handle_get_model_metrics(self):
         metrics = self.detection.get_model_metrics()
-        print(metrics)
+        print(
+            "UserMetadataSpamClassifier Metircs :\n",
+            metrics.user_metadata_spam_classifier,
+        )
+        print("TextSpamClassifier  Metircs:\n", metrics.text_spam_classifier)
 
     def handle_load_labels(self, load_directory):
-        self.processor.update_labels(load_directory)
+        self.processor.load_labels_from_csv(load_directory)
 
     def handle_train_user(self):
         self.user_meta_classifier.fit()
