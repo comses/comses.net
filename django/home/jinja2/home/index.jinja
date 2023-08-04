@@ -36,7 +36,7 @@
 
                     <div class='mx-5'>
                         <em>Posted {{ site_settings.last_modified.strftime('%B %-d, %Y') }}</em>
-                        <div class='text-left font-weight-bold my-2'>
+                        <div class='text-start fw-bold my-2'>
                             {% autoescape off %}
                                 {{ site_settings.banner_message }}
                             {% endautoescape %}
@@ -102,10 +102,10 @@
 </div>
 <section class='featured-content'>
     <h1>Featured Models</h1>
-    <div id='featured-content-carousel' class='carousel slide' data-ride='carousel' data-pause='hover'>
+    <div id='featured-content-carousel' class='carousel slide' data-bs-ride='carousel' data-bs-pause='hover'>
         <ol class="carousel-indicators">
             {% for _ in featured_content %}
-                <li data-target="#featured-content-carousel" data-slide-to="{{ loop.index0 }}"
+                <li data-bs-target="#featured-content-carousel" data-bs-slide-to="{{ loop.index0 }}"
                     {% if loop.index0 == 0 %}class='active'{% endif %}>
                 </li>
             {% endfor %}
@@ -117,7 +117,7 @@
                         <div class='row'>
                             <div class='col-md-4 mx-auto my-auto carousel-image'>
                                 <a class='d-block' href='{{ item.link }}'>
-                                    {{ image(item.featured_image, "fill-350x350", class='d-block img-fluid float-right') }}
+                                    {{ image(item.featured_image, "fill-350x350", class='d-block img-fluid float-end') }}
                                 </a>
                             </div>
                             <div class='col-md-8 mx-auto my-auto carousel-text'>
@@ -133,11 +133,11 @@
                 </div>
             {% endfor %}
         </div>
-        <a class="carousel-control-prev" href="#featured-content-carousel" role="button" data-slide="prev">
+        <a class="carousel-control-prev" href="#featured-content-carousel" role="button" data-bs-slide="prev">
             <span class="carousel-control-prev-icon" aria-hidden="true"></span>
             <span class="sr-only">Previous</span>
         </a>
-        <a class="carousel-control-next" href="#featured-content-carousel" role="button" data-slide="next">
+        <a class="carousel-control-next" href="#featured-content-carousel" role="button" data-bs-slide="next">
             <span class="carousel-control-next-icon" aria-hidden="true"></span>
             <span class="sr-only">Next</span>
         </a>
@@ -157,8 +157,8 @@
                     <div class='col-9'>
                         <h3>Recent Forum Posts</h3>
                     </div>
-                    <div class='col-3 text-right'>
-                        <small><a class='text-right' href='{{ DISCOURSE_BASE_URL }}'>View Forum</a></small>
+                    <div class='col-3 text-end'>
+                        <small><a class='text-end' href='{{ DISCOURSE_BASE_URL }}'>View Forum</a></small>
                     </div>
                 </div>
                 {% for post in recent_forum_activity %}
@@ -182,7 +182,7 @@
                     <div class='col-10'>
                         <h3>Latest Jobs &amp; Appointments</h3>
                     </div>
-                    <div class='col-2 text-right'>
+                    <div class='col-2 text-end'>
                         <small><a href='{{ url("home:job-list") }}'>View All</a></small>
                     </div>
                 </div>

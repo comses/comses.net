@@ -4,6 +4,7 @@ import sentry_sdk
 from sentry_sdk.integrations.django import DjangoIntegration
 
 DEBUG = False
+DJANGO_VITE_DEV_MODE = False
 DEPLOY_ENVIRONMENT = Environment.STAGING
 
 # configure sentry
@@ -59,7 +60,6 @@ CSP_SCRIPT_SRC = (
     "https://*.comses.net",
     "https://hcaptcha.com",
     "https://*.hcaptcha.com",
-    "'unsafe-eval'",
 )
 
 CSP_FONT_SRC = (

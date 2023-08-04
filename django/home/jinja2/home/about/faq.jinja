@@ -9,7 +9,7 @@
     {{ breadcrumb(page.get_breadcrumbs()) }}
     {{ subnav(page.get_navigation_links()) }}
     <div class='jumbotron'>
-        <h1 class='display-5'>{{ page.title }}</h1>
+        <h1>{{ page.title }}</h1>
         <div class='pt-4 lead'>
             {{ markdown(page.description) }}
         </div>
@@ -23,13 +23,13 @@
                 <div class='card'>
                     <div class='card-header' role='tab' id='{{ heading_id }}'>
                         <h5 class='mb-0'>
-                            <button class='btn btn-link' data-toggle='collapse' data-target='#{{entry_id}}'
+                            <button class='btn btn-link' data-bs-toggle='collapse' data-bs-target='#{{entry_id}}'
                                 aria-expanded='false' aria-controls='{{entry_id}}'>
                                 {{ entry.question }}
                             </button>
                         </h5>
                     </div>
-                    <div id='{{entry_id}}' class='collapse' aria-labelledby='{{ heading_id }}' data-parent='#faq-accordion'>
+                    <div id='{{entry_id}}' class='collapse' aria-labelledby='{{ heading_id }}' data-bs-parent='#faq-accordion'>
                         <div class='card-body'>
                             {{ markdown(entry.answer) }}
                         </div>

@@ -3,12 +3,12 @@
 {% block introduction %}<h1>Edit Profile</h1>{% endblock %}
 
 {% block content %}
-    <div class="modal" tabindex="-1" role="dialog" id="rightsAndResponsibilities">
+<div class="modal" tabindex="-1" role="dialog" id="membership-modal">
+    <div class="modal-dialog modal-xl modal-dialog-centered">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title">CoMSES Net Membership</h5>
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                    <span aria-hidden="true" class="fas fa-times"></span>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close">
                 </button>
             </div>
             <div class="modal-body">
@@ -16,9 +16,11 @@
             </div>
         </div>
     </div>
-    <div id="app" data-user-pk="{{ object.user.id }}" data-connections-url="{{ url('socialaccount_connections') }}"></div>
+</div>
+<div id="profile-form" data-user-id="{{ object.user.id }}"
+    data-connections-url="{{ url('socialaccount_connections') }}"></div>
 {% endblock %}
 
 {% block js %}
-{{ render_bundle('profiles', attrs='defer') }}
+{{ vite_asset('apps/profile_edit.ts') }}
 {% endblock %}

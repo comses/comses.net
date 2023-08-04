@@ -27,8 +27,16 @@ urlpatterns = [
         ServeView.as_view(),
         name="wagtailimages_serve",
     ),
+    path(
+        "events/<int:pk>/delete/",
+        views.EventMarkDeletedView.as_view(),
+        name="event-delete",
+    ),
     path("events/<int:pk>/edit/", views.EventUpdateView.as_view(), name="event-edit"),
     path("events/add/", views.EventCreateView.as_view(), name="event-add"),
+    path(
+        "jobs/<int:pk>/delete/", views.JobMarkDeletedView.as_view(), name="job-delete"
+    ),
     path("jobs/<int:pk>/edit/", views.JobUpdateView.as_view(), name="job-edit"),
     path("jobs/add/", views.JobCreateView.as_view(), name="job-add"),
     path("about/contact/sent/", views.ContactSentView.as_view(), name="contact-sent"),

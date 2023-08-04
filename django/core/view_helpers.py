@@ -5,7 +5,7 @@ from django.core.exceptions import FieldError
 from rest_framework.response import Response
 from wagtail.search.backends import get_search_backend
 from wagtail.search.backends.base import FilterFieldError
-from wagtail.search.models import Query
+from wagtail.contrib.search_promotions.models import Query
 from wagtail.search.query import MATCH_ALL, Phrase
 from wagtail.search.utils import parse_query_string
 
@@ -50,6 +50,7 @@ def get_search_queryset(
             logger.warning("Invalid filter criteria: %s", criteria)
 
     logger.debug("parsed query: %s, filters: %s", query, criteria)
+
     results = search_backend.search(
         query,
         queryset,
@@ -57,6 +58,7 @@ def get_search_queryset(
         fields=fields,
         order_by_relevance=order_by_relevance,
     )
+
     results.model = queryset.model
     return results
 

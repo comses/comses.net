@@ -6,6 +6,7 @@ import subprocess
 
 from django.conf import settings
 from django.contrib.auth.models import User
+from django.test import TestCase
 
 logger = logging.getLogger(__name__)
 
@@ -60,6 +61,15 @@ class UserFactory:
         if password:
             user.set_password(password)
         return user
+
+
+class BaseModelTestCase(TestCase):
+    def setUp(self):
+        self.user = self.create_user()
+
+    def create_user(self, username="test_user", password="test", **kwargs):
+        kwargs.setdefault("email", "testuser@mailinator.com")
+        return User.objects.create_user(username=username, password=password, **kwargs)
 
 
 def initialize_test_shared_folders():

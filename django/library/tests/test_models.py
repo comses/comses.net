@@ -8,9 +8,8 @@ from django.contrib.auth.models import AnonymousUser
 from django.core.files.base import ContentFile
 from rest_framework.exceptions import ValidationError
 
-from core.tests.base import UserFactory
+from core.tests.base import UserFactory, BaseModelTestCase
 from .base import (
-    BaseModelTestCase,
     CodebaseFactory,
     ContributorFactory,
     ReleaseContributorFactory,

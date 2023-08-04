@@ -272,12 +272,14 @@ class LandingPage(Page):
             return []
 
     def get_latest_jobs(self):
-        return Job.objects.order_by("-date_created")[: self.MAX_CALLOUT_ENTRIES]
+        return Job.objects.live().order_by("-date_created")[: self.MAX_CALLOUT_ENTRIES]
 
     def get_upcoming_events(self):
-        return Event.objects.upcoming().order_by("start_date")[
-            : self.MAX_CALLOUT_ENTRIES
-        ]
+        return (
+            Event.objects.live()
+            .upcoming()
+            .order_by("start_date")[: self.MAX_CALLOUT_ENTRIES]
+        )
 
     def get_sitemap_urls(self, request):
         sitemap_urls = super().get_sitemap_urls(request)
@@ -433,9 +435,7 @@ class CategoryIndexPage(NavigationMixin, Page):
         InlinePanel("navigation_links", label=_("Subnavigation Links")),
     ]
 
-    search_fields = Page.search_fields + [
-        index.SearchField("summary", partial_match=True)
-    ]
+    search_fields = Page.search_fields + [index.SearchField("summary")]
 
 
 class EducationPage(NavigationMixin, Page):
@@ -566,9 +566,9 @@ class TutorialDetailPage(NavigationMixin, Page):
 
     search_fields = Page.search_fields + [
         index.FilterField("post_date"),
-        index.SearchField("description", partial_match=True),
-        index.SearchField("body", partial_match=True),
-        index.SearchField("heading", partial_match=True),
+        index.SearchField("description"),
+        index.SearchField("body"),
+        index.SearchField("heading"),
     ]
 
 
@@ -642,9 +642,9 @@ class MarkdownPage(NavigationMixin, Page):
 
     search_fields = Page.search_fields + [
         index.FilterField("post_date"),
-        index.SearchField("description", partial_match=True),
-        index.SearchField("body", partial_match=True),
-        index.SearchField("heading", partial_match=True),
+        index.SearchField("description"),
+        index.SearchField("body"),
+        index.SearchField("heading"),
     ]
 
 
@@ -736,13 +736,13 @@ class Journal(index.Indexed, ClusterableModel):
     ]
 
     search_fields = [
-        index.SearchField("name", partial_match=True),
-        index.SearchField("description", partial_match=True),
+        index.SearchField("name"),
+        index.SearchField("description"),
         index.SearchField("issn"),
         index.RelatedFields(
             "tags",
             [
-                index.SearchField("name", partial_match=True),
+                index.SearchField("name"),
             ],
         ),
     ]
@@ -1048,9 +1048,9 @@ class FaqPage(Page, NavigationMixin):
         return "\n".join(FaqEntry.objects.values_list("answer", flat=True))
 
     search_fields = Page.search_fields + [
-        index.SearchField("description", partial_match=True),
-        index.SearchField("get_faq_entry_questions", partial_match=True),
-        index.SearchField("get_faq_entry_answers", partial_match=True),
+        index.SearchField("description"),
+        index.SearchField("get_faq_entry_questions"),
+        index.SearchField("get_faq_entry_answers"),
     ]
 
 
@@ -1174,7 +1174,7 @@ class NewsPage(Page):
 
     search_fields = Page.search_fields + [
         index.FilterField("post_date"),
-        index.SearchField("body", partial_match=True),
+        index.SearchField("body"),
     ]
 
     # Editor panels configuration

@@ -28,6 +28,16 @@ def parse_datetime(datetime_str: str):
     return None
 
 
+def parse_date(date_str: str):
+    """
+    Parses a date string and returns a date object (without time).
+    If an empty string is passed in, returns None. If an invalid date string is given a ValueError will be raised
+    """
+    if date_str:
+        return parser.parse(date_str).date()
+    return None
+
+
 def confirm(prompt="Continue? (y/n) ", cancel_message="Aborted."):
     response = input(prompt)
     try:

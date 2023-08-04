@@ -1,34 +1,45 @@
-{% extends "sidebar_layout.jinja" %}
-{% from "common.jinja" import list_page, paginator, breadcrumb, member_profile_href, search_tag_href %}
+{% extends "search_layout.jinja" %}
+{% from "common.jinja" import list_page, paginator, breadcrumb, member_profile_href, search_tag_href, search_bar %}
 
 {% macro render_job(item, detail_url_name) %}
-<div class="card">
+<div class="card mb-3">
     <div class='card-body'>
         <div class='row'>
             <div class='col-8'>
                 <h3 class='title mb-0'><a href="{{ url(detail_url_name, pk=item.id) }}">{{ item.title }}</a></h3>
                 <b class='title'>Application deadline</b> {{ item.application_deadline }}
             </div>
-            <div class='col-4'>
-                <small class="float-right">Last updated {{ item.last_modified }}</small>
-                <br>
-                <small class='float-right'>Submitted by {{ member_profile_href(item.submitter) }}
+            <div class='col-4 d-flex flex-column align-items-end'>
+                {% if item.is_expired %}
+                <small class="alert alert-danger d-flex align-items-center px-2 py-0 mb-1" role="alert">
+                    <i class="fas fa-clock"></i>
+                    <span class="ms-2">Expired</span>
+                </small>
+                {% else %}
+                <small class="alert alert-success d-flex align-items-center px-2 py-0 mb-1" role="alert">
+                    <i class="fas fa-clock"></i>
+                    <span class="ms-2">{{ timeuntil(item.application_deadline) }} left to apply</span>
+                </small>
+                {% endif %}
+                <small class="text-muted text-end">Last updated {{ timesince(item.last_modified) }} ago</small>
+                <small>
+                    Submitted by {{ member_profile_href(item.submitter) }}
                 </small>
             </div>
         </div>
         {% if item.summary %}
-            <div class='row mt-2'>
-                <div class='col'>
-                    {{ markdown(item.summary) }}
-                </div>
+        <div class='row mt-2'>
+            <div class='col'>
+                {{ markdown(item.summary) }}
             </div>
+        </div>
         {% endif %}
         {% if item.tags %}
-            <div class="tag-list">
-                {% for tag in item.tags %}
-                    {{ search_tag_href(tag, category='jobs') }}
-                {% endfor %}
-            </div>
+        <div class="tag-list">
+            {% for tag in item.tags %}
+            {{ search_tag_href(tag, category='jobs') }}
+            {% endfor %}
+        </div>
         {% endif %}
     </div>
 </div>
@@ -39,33 +50,37 @@
 {% block introduction %}<h1>Jobs &amp; Appointments </h1>{% endblock %}
 
 {% set pagination_block = paginator('home:job-list', __all__) %}
+
 {% block top %}
-    {{ breadcrumb([
-        {'url': '/community/', 'text': 'Community'},
-        {'text': 'Jobs & Appointments' }]) 
-    }}
-    {{ pagination_block }}
-    <div id="sortby"></div>
-    <div id="app"></div>
+{{ breadcrumb([
+{'url': '/community/', 'text': 'Community'},
+{'text': 'Jobs & Appointments' }])
+}}
+<div id="app"></div>
+{% endblock %}
+
+{% block search %}
+{{ search_bar(url("home:job-list"), "Search Jobs") }}
+{{ pagination_block }}
 {% endblock %}
 
 {% block content %}
-    {{ list_page(__all__, render_job, 'home:job-detail') }}
-    {% if count == 0 %}
-        <div class='mt-3 alert alert-primary'>
-            <i class='fas fa-robot fa-2x'></i>
-            Sorry, there's nothing to see here. Perhaps the robots have taken all of these jobs.
-        </div>
-    {% endif %}
-    {% if count > 10 %}
-        {{ pagination_block }}
-    {% endif %}
+{{ list_page(__all__, render_job, 'home:job-detail') }}
+{% if count == 0 %}
+<div class='mt-3 alert alert-primary'>
+    <i class='fas fa-robot fa-2x'></i>
+    Sorry, there's nothing to see here. Perhaps the robots have taken all of these jobs.
+</div>
+{% endif %}
+{% if count > 10 %}
+{{ pagination_block }}
+{% endif %}
 {% endblock %}
 
 {% block sidebar %}
-    <div id="sidebar"></div>
+<div id="sidebar"></div>
 {% endblock %}
 
 {% block js %}
-    {{ render_bundle('job_list', attrs='defer') }}
+{{ vite_asset("apps/job_list.ts") }}
 {% endblock %}

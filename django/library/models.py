@@ -14,6 +14,7 @@ from django.core.files.images import ImageFile
 from django.core.files.storage import FileSystemStorage
 from django.db import models, transaction
 from django.db.models import Prefetch, Q
+from django.utils.functional import cached_property
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.http import urlencode
@@ -30,6 +31,7 @@ from wagtail.images.models import (
     Image,
     AbstractImage,
     AbstractRendition,
+    Filter,
     get_upload_to,
     ImageQuerySet,
 )
@@ -129,12 +131,10 @@ class Contributor(index.Indexed, ClusterableModel):
     )
 
     search_fields = [
-        index.SearchField("given_name", partial_match=True),
-        index.SearchField("family_name", partial_match=True),
-        index.RelatedFields(
-            "affiliations", [index.SearchField("name", partial_match=True)]
-        ),
-        index.SearchField("email", partial_match=True),
+        index.SearchField("given_name"),
+        index.SearchField("family_name"),
+        index.RelatedFields("affiliations", [index.SearchField("name")]),
+        index.SearchField("email"),
         index.RelatedFields(
             "user",
             [
@@ -525,18 +525,18 @@ class Codebase(index.Indexed, ClusterableModel):
     objects = CodebaseQuerySet.as_manager()
 
     search_fields = [
-        index.SearchField("title", partial_match=True),
-        index.SearchField("description", partial_match=True),
+        index.SearchField("title"),
+        index.SearchField("description"),
         index.SearchField("get_all_contributors_search_fields"),
         index.SearchField("get_all_release_frameworks"),
         index.SearchField("get_all_release_programming_languages"),
-        index.SearchField("references_text", partial_match=True),
+        index.SearchField("references_text"),
         index.SearchField("permanent_url"),
-        index.SearchField("associated_publication_text", partial_match=True),
+        index.SearchField("associated_publication_text"),
         index.RelatedFields(
             "tags",
             [
-                index.SearchField("name", partial_match=True),
+                index.SearchField("name"),
             ],
         ),
         # filter and sort fields
@@ -579,6 +579,16 @@ class Codebase(index.Indexed, ClusterableModel):
         if self.featured_images.exists():
             return self.featured_images.first()
         return None
+
+    def get_image_urls(self, spec="max-900x600"):
+        urls = []
+        for image in self.featured_images.all():
+            try:
+                rendition = image.get_rendition(Filter(spec=spec))
+                urls.append(rendition.url)
+            except:
+                pass  # image does not exist
+        return urls
 
     def subpath(self, *args):
         return pathlib.Path(self.base_library_dir, *args)
@@ -705,7 +715,7 @@ class Codebase(index.Indexed, ClusterableModel):
     def format_doi_url(doi_string):
         return "https://doi.org/{0}".format(doi_string) if doi_string else ""
 
-    @property
+    @cached_property
     def permanent_url(self):
         if self.doi:
             return self.doi_url
@@ -724,7 +734,7 @@ class Codebase(index.Indexed, ClusterableModel):
     def media_url(self, name):
         return "{0}/media/{1}".format(self.get_absolute_url(), name)
 
-    @property
+    @cached_property
     def doi_url(self):
         return Codebase.format_doi_url(self.doi)
 
@@ -1085,8 +1095,8 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
     objects = CodebaseReleaseQuerySet.as_manager()
 
     search_fields = [
-        index.SearchField("release_notes", partial_match=True),
-        index.SearchField("summary", partial_match=True),
+        index.SearchField("release_notes"),
+        index.SearchField("summary"),
         index.SearchField("permanent_url"),
         index.SearchField("identifier"),
         index.FilterField("os"),
@@ -1098,13 +1108,13 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
         index.RelatedFields(
             "platform_tags",
             [
-                index.SearchField("name", partial_match=True),
+                index.SearchField("name"),
             ],
         ),
         index.RelatedFields(
             "programming_languages",
             [
-                index.SearchField("name", partial_match=True),
+                index.SearchField("name"),
             ],
         ),
         index.RelatedFields(
@@ -1313,7 +1323,7 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
             return self.doi_url
         return self.comses_permanent_url
 
-    @property
+    @cached_property
     def citation_authors(self):
         authors = self.submitter.member_profile.name
         author_list = self.codebase.author_list
@@ -1326,7 +1336,7 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
             )
         return authors
 
-    @property
+    @cached_property
     def citation_text(self):
         if not self.live:
             return "This model must be published in order to be citable."
@@ -1364,7 +1374,7 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
             "index"
         )
 
-    @property
+    @cached_property
     def bagit_info(self):
         return {
             "Contact-Name": self.submitter.get_full_name(),
@@ -1376,7 +1386,7 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
             # FIXME: check codemeta for additional metadata
         }
 
-    @property
+    @cached_property
     def codemeta(self):
         """Returns a CodeMeta object that can be dumped to json"""
         return CodeMeta.build(self)
@@ -1761,7 +1771,7 @@ class PeerReview(models.Model):
             to=[settings.REVIEW_EDITOR_EMAIL],
         )
 
-    @property
+    @cached_property
     def review_status_json(self):
         return json.dumps(
             [

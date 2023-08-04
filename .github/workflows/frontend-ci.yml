@@ -1,0 +1,36 @@
+name: Frontend CI (Vue3/TS)
+
+on:
+  push:
+    branches: [main]
+    paths: ["frontend/**"]
+  pull_request:
+    branches: [main]
+    paths: ["frontend/**"]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: set up docker buildx
+        uses: docker/setup-buildx-action@v2
+      - name: build container
+        run: |
+          make docker-compose.yml
+          docker compose build vite --pull
+          docker compose up vite -d
+      - name: Lint
+        run: docker compose exec vite yarn lint
+      - name: Check formatting
+        if: ${{ success() || failure() }}
+        run: docker compose exec vite yarn style
+      - name: Unit tests
+        if: ${{ success() || failure() }}
+        run: docker compose exec vite yarn test
+      - name: Type check
+        if: ${{ success() || failure() }}
+        run: docker compose exec vite yarn type-check
+      - name: bring down container
+        if: ${{ always() }}
+        run: docker compose down

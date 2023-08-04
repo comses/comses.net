@@ -1,3 +1,0 @@
-export const __TEST_USERNAME__ = '${TEST_USERNAME}';
-export const __TEST_USER_ID__ = '${TEST_USER_ID}';
-export const __TEST_USER_PASSWORD__ = '${TEST_BASIC_AUTH_PASSWORD}';

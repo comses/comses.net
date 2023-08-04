@@ -3,9 +3,9 @@
 {% block introduction %}<h1>Edit a Job</h1>{% endblock %}
 
 {% block content %}
-<div id="app"></div>
+<div id="job-form" {% if object %} data-job-id="{{ object.id }}" {% endif %}></div>
 {% endblock %}
 
 {% block js %}
-{{ render_bundle('jobs', attrs='defer') }}
+{{ vite_asset("apps/job_edit.ts") }}
 {% endblock %}

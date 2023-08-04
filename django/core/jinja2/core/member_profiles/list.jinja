@@ -1,5 +1,6 @@
-{% extends "sidebar_layout.jinja" %}
-{% from "common.jinja" import item_component, list_page, paginator, breadcrumb, subnav, member_profile_href, search_tag_href %}
+{% extends "search_layout.jinja" %}
+{% from "common.jinja" import item_component, list_page, paginator, breadcrumb, subnav, member_profile_href,
+search_tag_href, search_bar %}
 
 {% macro render_user(member_profile) %}
 <div class="search-result">
@@ -7,43 +8,44 @@
         <h1>
             {% call member_profile_href(member_profile) %}
             {% if member_profile.avatar is not none %}
-                <span class='float-left'>
-                    {{ image(member_profile.avatar, "fill-50x50", width=50, height=50, class="img-fluid img-thumbnail d-block rounded-circle") }}
-                </span>
+            <span class='float-start'>
+                {{ image(member_profile.avatar, "fill-50x50", width=50, height=50, class="img-fluid img-thumbnail
+                d-block rounded-circle") }}
+            </span>
             {% endif %}
             {% endcall %}
-            <small class="text-muted float-right">
+            <small class="text-muted float-end">
                 Member since: {{ format_datetime(member_profile.date_joined) }}
                 {% if member_profile.full_member %}
-                    <span class="badge badge-primary">Full Member</span>
+                <span class="badge bg-success">Full Member</span>
                 {% endif %}
                 {% if member_profile.is_reviewer %}
-                    <span class="badge badge-success">Reviewer</span>
+                <span class="badge bg-success">Reviewer</span>
                 {% endif %}
             </small>
         </h1>
         {% if member_profile.degrees %}
-            <div style='margin-top: -10px;' class='degrees mb-1'>
-                <small>{{ member_profile.degrees|join(", ") }}</small>
-            </div>
+        <div style='margin-top: -10px;' class='degrees mb-1'>
+            <small>{{ member_profile.degrees|join(", ") }}</small>
+        </div>
         {% endif %}
         {% if member_profile.bio %}
-            <div class='bio'>
-                {{ markdown(member_profile.bio.raw) }}
-            </div>
+        <div class='bio'>
+            {{ markdown(member_profile.bio.raw) }}
+        </div>
         {%endif %}
         {% if member_profile.research_interests %}
-            <div class='research-interests'>
-                {{ markdown(member_profile.research_interests.raw) }}
-            </div>
+        <div class='research-interests'>
+            {{ markdown(member_profile.research_interests.raw) }}
+        </div>
         {% endif %}
     </div>
     {% if member_profile.tags %}
-        <div class="tag-list">
+    <div class="tag-list">
         {% for tag in member_profile.tags.all() %}
-            {{ search_tag_href(tag, category='users') }}
+        {{ search_tag_href(tag, category='users') }}
         {% endfor %}
-        </div>
+    </div>
     {% endif %}
 </div>
 {% endmacro %}
@@ -52,37 +54,39 @@
 
 {% block introduction %}<h1>Community</h1>{% endblock %}
 
+{% set pagination_block = paginator("home:profile-list", paginator_data) %}
+
 {% block top %}
-    {{ 
-    breadcrumb([
-        {'url': '/community/', 'text': 'Community'},
-        {'url': url("home:profile-list"), 'text': 'Users'}
-    ])
-    }}
-    {{ paginator('home:profile-list', paginator_data) }}
-    {#<div id="sortby"></div>#}
+{{
+breadcrumb([
+{'url': '/community/', 'text': 'Community'},
+{'url': url("home:profile-list"), 'text': 'Users'}
+])
+}}
+{% endblock %}
+
+{% block search %}
+{{ search_bar(url("home:profile-list"), "Search by name") }}
+{{ pagination_block }}
 {% endblock %}
 
 {% block content %}
-    {% for profile in profiles %}
-        {{ render_user(profile) }}
-    {% else %}
-        <p class='lead pt-3'>
-            No matching results found.
-        </p>
-    {% endfor %}
+{% for profile in profiles %}
+{{ render_user(profile) }}
+{% else %}
+<p class='lead pt-3'>
+    No matching results found.
+</p>
+{% endfor %}
+{% if paginator_data.count > 10 %}
+{{ pagination_block }}
+{% endif %}
 {% endblock %}
 
 {% block sidebar %}
-    <div id="sidebar" data-is-authenticated="{{ user.is_authenticated }}"></div>
-{% endblock %}
-
-{% block bottom %}
-    <div class="col">
-        {{ paginator('home:profile-list', paginator_data) }}
-    </div>
+<div id="sidebar" data-user-id="{{ user.id }}"></div>
 {% endblock %}
 
 {% block js %}
-    {{ render_bundle('profile_list', attrs='defer') }}
+{{ vite_asset('apps/profile_list.ts') }}
 {% endblock %}

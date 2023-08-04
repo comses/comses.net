@@ -1,0 +1,43 @@
+/* Conference page stylesheet */
+
+/* conference title */
+
+.conference-title {
+  font-weight: bold;
+}
+
+.conference-body {
+  font-size: 14px;
+}
+
+/* conference cards */
+.box {
+  position: relative;
+  display: inline-block;
+  width: 100%;
+  min-width: 100%;
+  max-width: 100%;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
+  -webkit-transition: all 0.6s cubic-bezier(0.165, 0.84, 0.44, 1);
+  transition: all 0.6s cubic-bezier(0.165, 0.84, 0.44, 1);
+}
+
+.box::after {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  top: 0;
+  left: 0;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+  opacity: 0;
+  transition: opacity 0.1s ease-in-out;
+}
+
+.box:hover {
+  -webkit-transform: scale(1.05, 1.05);
+  transform: scale(1.05, 1.05);
+}
+
+.box:hover::after {
+  opacity: 1;
+}

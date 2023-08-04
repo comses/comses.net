@@ -4,6 +4,7 @@ import hmac
 import logging
 from collections import OrderedDict
 from urllib import parse
+from dateutil import parser
 
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
@@ -15,7 +16,7 @@ from django.http import (
     HttpResponseRedirect,
     HttpResponseServerError,
 )
-from django.shortcuts import render
+from django.shortcuts import redirect, render
 from django.views.generic import DetailView, TemplateView
 from rest_framework import viewsets, mixins
 from rest_framework.exceptions import (
@@ -116,13 +117,9 @@ class PermissionRequiredByHttpMethodMixin:
         return ["{0}/{1}".format(namespace, "edit.jinja")]
 
     def get_required_permissions(self, request=None):
-        model = self.model
-        template_perms = ViewRestrictedObjectPermissions.perms_map[self.method]
-        perms = [
-            template_perm
-            % {"app_label": model._meta.app_label, "model_name": model._meta.model_name}
-            for template_perm in template_perms
-        ]
+        perms = ViewRestrictedObjectPermissions.get_required_object_permissions(
+            self.method, self.model
+        )
         return perms
 
     def check_permissions(self):
@@ -159,6 +156,16 @@ class FormUpdateView(PermissionRequiredByHttpMethodMixin, DetailView):
 
 class FormCreateView(PermissionRequiredByHttpMethodMixin, TemplateView):
     method = "POST"
+
+
+class FormMarkDeletedView(PermissionRequiredByHttpMethodMixin, DetailView):
+    method = "DELETE"
+
+    def post(self, request, *args, **kwargs):
+        instance = self.get_object()
+        instance.is_deleted = True
+        instance.save()
+        return redirect(instance.get_list_url())
 
 
 def rest_exception_handler(exc, context):
@@ -223,6 +230,23 @@ class SmallResultSetPagination(PageNumberPagination):
     def _to_search_terms(query_params):
         return [f"{k}: {v}" for k, v in query_params.lists()]
 
+    @staticmethod
+    def _to_filter_display_terms(query_params):
+        filters = []
+        for key, values in query_params.lists():
+            if key == "query":
+                continue
+            if key == "tags":
+                filters.extend(tag for tag in values)
+            else:
+                try:
+                    date = parser.isoparse(values[0]).date()
+                    filters.append(f"{key.replace('_', ' ')} {date.isoformat()}")
+                except ValueError:
+                    filters.extend(v.replace("_", " ") for v in values)
+
+        return filters
+
     def get_paginated_response(self, data):
         context = self.get_context_data(data)
         return Response(context)
@@ -249,6 +273,7 @@ class SmallResultSetPagination(PageNumberPagination):
                 "count": count,
                 "query": query,
                 "search_terms": cls._to_search_terms(query_params),
+                "filter_display_terms": cls._to_filter_display_terms(query_params),
                 "query_params": query_params.urlencode(),
                 "range": page_range,
                 "num_pages": num_pages,

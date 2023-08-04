@@ -8,21 +8,24 @@ from django.template import defaultfilters
 from django.template.loader import render_to_string
 from django.templatetags.static import static
 from django.urls import reverse
-from django.utils.dateparse import parse_datetime
+from django.utils.dateparse import parse_datetime, parse_date
 from django.utils.text import slugify
+from django.utils import timezone
 from django.utils.timezone import get_current_timezone
+from django.utils.timesince import timeuntil, timesince
 from jinja2 import Environment
 from markupsafe import Markup
 
 from hcaptcha_field import hCaptchaField
 from typing import Optional
 
+import re
 import json
 import logging
 
 
 from core.fields import render_sanitized_markdown
-from core.serializers import FULL_DATE_FORMAT
+from core.serializers import FULL_DATE_FORMAT, FULL_DATETIME_FORMAT
 
 
 logger = logging.getLogger(__name__)
@@ -73,12 +76,17 @@ def environment(**options):
             "get_download_request_metadata": get_download_request_metadata,
             "markdown": markdown,
             "add_field_css": add_field_css,
+            "format_date_str": format_date_str,
+            "format_date": format_date,
             "format_datetime_str": format_datetime_str,
             "format_datetime": format_datetime,
+            "timeuntil": _timeuntil,
+            "timesince": _timesince,
             "to_json": to_json,
             "is_checkbox": is_checkbox,
             "is_hcaptcha": is_hcaptcha,
             "get_messages": messages.get_messages,
+            "strip_url_scheme": strip_url_scheme,
         }
     )
     return env
@@ -169,21 +177,52 @@ def add_field_css(field, css_classes: str):
     return field.as_widget(attrs={"class": deduped_css_classes})
 
 
-def format_datetime_str(text: Optional[str], format_string=FULL_DATE_FORMAT):
-    if text is None:
+def format_datetime_str(datetime_str, format_str=FULL_DATETIME_FORMAT):
+    if datetime_str is None:
         return None
-    d = parse_datetime(text)
-    return format_datetime(d, format_string)
+    datetime_obj = parse_datetime(datetime_str)
+    return format_datetime(datetime_obj, format_str)
 
 
-def format_datetime(date_obj, format_string=FULL_DATE_FORMAT):
+def format_datetime(datetime_obj, format_str=FULL_DATETIME_FORMAT):
+    if datetime_obj is None:
+        return None
+    return datetime_obj.strftime(format_str)
+
+
+def format_date_str(date_str, format_str=FULL_DATE_FORMAT):
+    if date_str is None:
+        return None
+    date_obj = parse_date(date_str) or parse_datetime(date_str)
+    return format_date(date_obj, format_str)
+
+
+def format_date(date_obj, format_str=FULL_DATE_FORMAT):
     if date_obj is None:
         return None
-    return date_obj.strftime(format_string)
+    return date_obj.strftime(format_str)
+
+
+def _timesince(date_str, depth=1):
+    date_obj = parse_date(date_str) or parse_datetime(date_str)
+    if date_obj is None:
+        return None
+    return timesince(date_obj, depth=depth)
+
+
+def _timeuntil(date_str, depth=1):
+    date_obj = parse_date(date_str) or parse_datetime(date_str)
+    if date_obj is None:
+        return None
+    return timeuntil(date_obj, depth=depth)
 
 
 def to_json(value):
     return json.dumps(value)
+
+
+def strip_url_scheme(url):
+    return re.sub(r"^https?:\/\/", "", url) if url else None
 
 
 # # http://stackoverflow.com/questions/6453652/how-to-add-the-current-query-string-to-an-url-in-a-django-template

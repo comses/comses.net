@@ -6,11 +6,13 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.models import User
 from django.core.files.images import ImageFile
+from django.core.exceptions import PermissionDenied
 from django.http import QueryDict
 from django.shortcuts import redirect, get_object_or_404
 from django.template.loader import get_template
 from django.urls import reverse
 from django.utils.decorators import method_decorator
+from django.views.decorators.http import require_POST
 from django.views.generic import TemplateView, RedirectView, CreateView
 from django.views.generic.list import ListView
 from rest_framework import (
@@ -19,13 +21,11 @@ from rest_framework import (
     parsers,
     status,
     mixins,
-    renderers,
     filters,
 )
 from rest_framework.decorators import action
 from rest_framework.filters import OrderingFilter
 from rest_framework.permissions import IsAuthenticated, AllowAny
-from rest_framework.renderers import JSONRenderer, TemplateHTMLRenderer
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from taggit.models import Tag
@@ -34,7 +34,7 @@ from wagtail.images.models import Image
 from core.models import FollowUser, Event, Job
 from core.permissions import ObjectPermissions, ViewRestrictedObjectPermissions
 from core.serializers import TagSerializer, EventSerializer, JobSerializer
-from core.utils import parse_datetime, send_markdown_email
+from core.utils import parse_date, parse_datetime, send_markdown_email
 from core.view_helpers import (
     retrieve_with_perms,
     get_search_queryset,
@@ -43,6 +43,7 @@ from core.view_helpers import (
 from core.views import (
     CommonViewSetMixin,
     FormCreateView,
+    FormMarkDeletedView,
     FormUpdateView,
     SmallResultSetPagination,
     OnlyObjectPermissionModelViewSet,
@@ -83,7 +84,6 @@ class ProfileRedirectView(LoginRequiredMixin, RedirectView):
 
 class ToggleFollowUser(APIView):
     permission_classes = (IsAuthenticated,)
-    renderer_classes = (TemplateHTMLRenderer, JSONRenderer)
 
     def post(self, request, *args, **kwargs):
         logger.debug("POST with request data: %s", request.data)
@@ -104,7 +104,6 @@ class TagListView(mixins.ListModelMixin, viewsets.GenericViewSet):
     serializer_class = TagSerializer
     queryset = Tag.objects.all()
     pagination_class = SmallResultSetPagination
-    renderer_classes = (renderers.JSONRenderer,)
     permission_classes = (AllowAny,)
 
     def get_queryset(self):
@@ -140,14 +139,9 @@ class ProfileViewSet(CommonViewSetMixin, HtmlNoDeleteViewSet):
     def get_queryset(self):
         if self.action == "retrieve":
             # FIXME: queries like this should live in the MemberProfileQuerySet / models layer, not the view.
-            return (
-                self.queryset.prefetch_related("institution")
-                .prefetch_related("user")
-                .prefetch_related(
-                    "peer_review_invitation_set__review__codebase_release__codebase"
-                )
-            )
-        return self.queryset.with_institution().with_user()
+            return self.queryset.with_peer_review_invitations()
+        else:
+            return self.queryset.with_user()
 
     def get_retrieve_context(self, instance):
         context = super().get_retrieve_context(instance)
@@ -216,11 +210,19 @@ class EventUpdateView(FormUpdateView):
     model = Event
 
 
+class EventMarkDeletedView(FormMarkDeletedView):
+    model = Event
+
+
 class JobCreateView(FormCreateView):
     model = Job
 
 
 class JobUpdateView(FormUpdateView):
+    model = Job
+
+
+class JobMarkDeletedView(FormMarkDeletedView):
     model = Job
 
 
@@ -236,11 +238,13 @@ class EventFilter(filters.BaseFilterBackend):
             return queryset
         query_string = request.query_params.get("query")
         query_params = request.query_params
-        submission_deadline__gte = parse_datetime(
+        logger.debug(query_params)
+        submission_deadline__gte = parse_date(
             query_params.get("submission_deadline__gte")
+            or query_params.get("submission_deadline_after")
         )
-        start_date__gte = parse_datetime(
-            query_params.get("start_date__gte") or query_params.get("start_date")
+        start_date__gte = parse_date(
+            query_params.get("start_date__gte") or query_params.get("start_date_after")
         )
         tags = request.query_params.getlist("tags")
 
@@ -256,7 +260,12 @@ class EventFilter(filters.BaseFilterBackend):
 class EventViewSet(CommonViewSetMixin, OnlyObjectPermissionModelViewSet):
     serializer_class = EventSerializer
     queryset = (
-        Event.objects.upcoming().with_tags().with_submitter().order_by("-date_created")
+        Event.objects.live()
+        .with_tags()
+        .with_submitter()
+        .with_expired()
+        .with_started()
+        .order_by("-date_created")
     )
     pagination_class = SmallResultSetPagination
     filter_backends = (OrderingFilter, EventFilter)
@@ -273,8 +282,8 @@ class EventViewSet(CommonViewSetMixin, OnlyObjectPermissionModelViewSet):
         return retrieve_with_perms(self, request, *args, **kwargs)
 
     def get_calendar_queryset(self):
-        start = parse_datetime(self.request.query_params["start"])
-        end = parse_datetime(self.request.query_params["end"])
+        start = parse_date(self.request.query_params["start"])
+        end = parse_date(self.request.query_params["end"])
         return self.queryset.find_by_interval(start, end), start, end
 
     @staticmethod
@@ -300,7 +309,7 @@ class EventViewSet(CommonViewSetMixin, OnlyObjectPermissionModelViewSet):
         return {
             "title": event.title,
             "start": event.start_date.isoformat(),
-            "end": event.end_date.replace(hour=23).isoformat(),
+            "end": event.end_date.isoformat(),
             "url": event.get_absolute_url(),
             "color": "#3a87ad",
         }
@@ -355,9 +364,13 @@ class JobFilter(filters.BaseFilterBackend):
         if view.action != "list":
             return queryset
         qs = request.query_params.get("query")
-        date_created = parse_datetime(request.query_params.get("date_created__gte"))
-        application_deadline = parse_datetime(
+        date_created = parse_datetime(
+            request.query_params.get("date_created__gte")
+            or request.query_params.get("date_created_after")
+        )
+        application_deadline = parse_date(
             request.query_params.get("application_deadline__gte")
+            or request.query_params.get("application_deadline_after")
         )
         tags = request.query_params.getlist("tags")
         criteria = {}
@@ -372,7 +385,11 @@ class JobViewSet(CommonViewSetMixin, OnlyObjectPermissionModelViewSet):
     serializer_class = JobSerializer
     pagination_class = SmallResultSetPagination
     queryset = (
-        Job.objects.upcoming().with_tags().with_submitter().order_by("-date_created")
+        Job.objects.live()
+        .with_tags()
+        .with_submitter()
+        .with_expired()
+        .order_by("-date_created")
     )
     filter_backends = (OrderingFilter, JobFilter)
     permission_classes = (ViewRestrictedObjectPermissions,)

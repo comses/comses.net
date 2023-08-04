@@ -1,0 +1,30 @@
+.gallery-frame {
+  max-height: 35vh;
+  &.fixed {
+    height: 35vh;
+  }
+  @include media-breakpoint-down(md) {
+    max-height: 20vh;
+    &.fixed {
+      height: 20vh;
+    }
+  }
+}
+
+.active-gallery-img {
+  @extend .img-fluid;
+  cursor: pointer;
+  max-height: 35vh;
+  object-fit: scale-down;
+}
+
+.gallery-img-thumbnail {
+  @extend .img-thumbnail;
+  height: 5rem;
+  width: 5rem;
+  object-fit: cover;
+  cursor: pointer;
+  &.active {
+    border: 1px solid $secondary;
+  }
+}

@@ -4,6 +4,8 @@ import os
 
 DEPLOY_ENVIRONMENT = Environment.TEST
 
+ALLOWED_HOSTS = ["localhost", "127.0.0.1", "server"]
+
 LOGGING["loggers"]["core.views"] = {
     "level": "ERROR",
     "handlers": ["console"],

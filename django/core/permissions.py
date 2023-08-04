@@ -28,16 +28,17 @@ class ObjectPermissions(permissions.DjangoObjectPermissions):
         "DELETE": ["%(app_label)s.delete_%(model_name)s"],
     }
 
-    def get_required_object_permissions(self, method, model_cls):
+    @classmethod
+    def get_required_object_permissions(cls, method, model_cls):
         kwargs = {
             "app_label": model_cls._meta.app_label,
             "model_name": model_cls._meta.model_name,
         }
 
-        if method not in self.object_perms_map:
+        if method not in cls.object_perms_map:
             raise exceptions.MethodNotAllowed(method)
 
-        return [perm % kwargs for perm in self.object_perms_map[method]]
+        return [perm % kwargs for perm in cls.object_perms_map[method]]
 
 
 class ViewRestrictedObjectPermissions(ObjectPermissions):
