@@ -1,7 +1,6 @@
 import os
 import re
 import json
-import pickle
 import logging
 
 from collections import defaultdict
@@ -13,11 +12,15 @@ from typing import List
 from urllib.parse import urlparse
 
 import modelcluster.fields
+import pandas as pd
+
+from collections import defaultdict
+from django.conf import settings
 from django.contrib.postgres.aggregates import ArrayAgg
-from django.contrib.postgres.fields import ArrayField
-from django.db import models, transaction
-from django.db.models.signals import post_save
 from django.dispatch import receiver
+from django.db import models, transaction
+from django.db.models import Q
+from django.db.models.signals import post_save
 from django.urls import reverse
 from modelcluster import fields
 from nltk.corpus import stopwords
@@ -26,7 +29,6 @@ from nltk.tokenize import word_tokenize
 from taggit.models import Tag
 
 from core.models import MemberProfile
-
 from library.models import ProgrammingLanguage, CodebaseReleasePlatformTag
 
 logger = logging.getLogger(__name__)
@@ -392,12 +394,14 @@ class UserSpamStatus(models.Model):
     last_updated = models.DateField(auto_now=True)
     is_training_data = models.BooleanField(default=False)
 
+    objects = UserSpamStatusQuerySet.as_manager()
+
     @staticmethod
     def get_recommendations_sorted_by_confidence():
         return UserSpamStatus.objects.all().order_by("text_classifier_confidence")
 
     def __str__(self):
-        return "user={}, labelled_by_text_classifier={}, text_classifier_confidence={}, labelled_by_user_classifier={}, user_classifier_confidence={}, labelled_by_curator={}, last_updated={}, is_training_data={}".format(
+        return "member_profile={}, labelled_by_text_classifier={}, text_classifier_confidence={}, labelled_by_user_classifier={}, user_classifier_confidence={}, labelled_by_curator={}, last_updated={}, is_training_data={}".format(
             str(self.member_profile),
             str(self.labelled_by_text_classifier),
             str(self.text_classifier_confidence),
@@ -411,5 +415,8 @@ class UserSpamStatus(models.Model):
 
 # Create a new UserSpamStatus whenever a new MemberProfile is created
 @receiver(post_save, sender=MemberProfile)
-def sync_member_profile_spam(sender, instance, **kwargs):
-    UserSpamStatus(member_profile=instance).save()
+def sync_member_profile_spam_status(sender, instance:MemberProfile, created, **kwargs):
+    if created:
+        mp, mp_created = MemberProfile.objects.get_or_create(
+            member_profile=instance,
+        )
