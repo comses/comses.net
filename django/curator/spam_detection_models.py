@@ -24,71 +24,6 @@ from typing import List
 from abc import ABC, abstractmethod
 
 
-class SpamDetection:
-    def __init__(self):
-        """
-        if no model pickle files found, execute fit()
-            - if all users have None in labelled_by_curator, load to DB by calling Pipeline.update_labels()
-            - additionally, if no labels file, throw exception
-        """
-        self.processor = UserSpamStatusProcessor()
-        self.user_meta_classifier = UserMetadataSpamClassifier()
-        self.text_classifier = TextSpamClassifier()
-        self.processor.update_labels(check_DB=True)
-
-        # Check whether UserMetadataSpamClassifier model file exists
-        if os.path.exists(self.user_meta_classifier.MODEL_METRICS_FILE_PATH):
-            with open(self.user_meta_classifier.MODEL_METRICS_FILE_PATH) as json_file:
-                self.user_meta_classifier_metrics = json.load(json_file)
-        else:
-            self.user_meta_classifier_metrics = self.user_meta_classifier.fit()
-
-        # TODO: remove commnet out after TextSpamClassifier() is fixed
-        # Check whether TextSpamClassifier model file exists
-        # if os.path.exists(self.text_classifier.MODEL_METRICS_FILE_PATH):
-        #     with open(self.text_classifier.MODEL_METRICS_FILE_PATH) as json_file:
-        #         self.text_classifier_metrics = json.load(json_file)
-        # else:
-        #     self.text_classifier.fit()
-        # self.text_classifier_metrics = self.text_classifier.fit()
-
-        self.text_classifier_metrics = {}
-        print("hello!!")
-
-    def execute(self):  # API for ML functions
-        # Check DB for unlabelled users (None in all labelled_by_curator, labelled_by_user_classifier, and labelled_by_text_classifier)
-        if len(self.processor.get_unlabelled_users()) != 0:
-            # if there are some unlabelled users, predict
-            self.user_meta_classifier.predict()
-            # self.text_classifier.predict() TODO: remove commnet out after TextSpamClassifier() is fixed
-
-        # Return user_ids and metrics of the model
-        return (
-            self.processor.get_spam_users(),
-            self.user_meta_classifier_metrics,
-            self.text_classifier_metrics,
-        )
-
-    def refine(self):  # Retrain models using new data in DB
-        self.user_meta_classifier_metrics = self.user_meta_classifier.partial_fit()
-        # self.text_classifier_metrics = self.text_classifier.fit() TODO: remove commnet out after TextSpamClassifier() is fixed
-        return self.user_meta_classifier_metrics, self.text_classifier_metrics
-
-    def get_model_metrics(self):
-        # We can assume that model and model metrics files exist after __init__
-        with open(self.user_meta_classifier.MODEL_METRICS_FILE_PATH) as json_file:
-            self.user_meta_classifier_metrics = json.load(json_file)
-
-        # TODO: remove commnet out after TextSpamClassifier() is fixed
-        # with open(self.text_classifier.MODEL_METRICS_FILE_PATH) as json_file:
-        #     self.text_classifier_metrics = json.load(json_file)
-
-        return {
-            "UserMetadataSpamClassifier": self.user_meta_classifier_metrics,
-            "TextSpamClassifier": self.text_classifier_metrics,
-        }
-
-
 class SpamClassifier(ABC):
     # This class serves as a template for spam classifer varients
     def __init__(self):
@@ -118,8 +53,11 @@ class SpamClassifier(ABC):
         confidences = model.predict_proba(
             feat_matrix
         )  # predict_proba() outputs a list of list in the format of [(probability of 0(ham)), (probability of 1(spam))]
+
         confidences = [value[1] for value in confidences]
         predictions = [round(value) for value in confidences]
+        print("confidences", confidences)
+        print("predictions", predictions)
         return predictions, confidences
 
     def validate_model(
@@ -142,11 +80,6 @@ class SpamClassifier(ABC):
                   model_metrics ... Dictionary of the same format as the output json file.
         """
         predictions, _ = self.get_predictions(model, test_matrix)
-
-        print(type(test_user_ids[0]))
-        print(type(test_target[0]))
-        print("predictions", predictions)
-        print("test_target", test_target)
         accuracy = round(accuracy_score(test_target, predictions), 3)
         precision = round(precision_score(test_target, predictions), 3)
         recall = round(recall_score(test_target, predictions), 3)
@@ -186,7 +119,6 @@ class TextSpamClassifier(SpamClassifier):
             pickle.dump(model, file)
 
     def fit(self):
-        # TODO:
         model = Pipeline(
             [
                 ("cleaner", FunctionTransformer(self.preprocess)),
@@ -195,8 +127,7 @@ class TextSpamClassifier(SpamClassifier):
             ]
         )
 
-        untrained_df = self.processor.get_untrained_df()
-
+        untrained_df = self.processor.get_all_users_df()
         if untrained_df.empty:
             return
         data_x, data_y = self.concat_pd(untrained_df)
@@ -208,8 +139,11 @@ class TextSpamClassifier(SpamClassifier):
         ) = train_test_split(data_x, data_y, test_size=0.1, random_state=434)
         model.fit(train_x, train_y)
         self.save_model(model)
+        stub_test_user_ids = (
+            []
+        )  # FIXME: fix the code so that user_ids used for test are stored
         test_predictions, model_metrics = self.validate_model(
-            model, test_x, test_y, self.MODEL_METRICS_FILE_PATH
+            model, stub_test_user_ids, test_x, test_y, self.MODEL_METRICS_FILE_PATH
         )
         return model_metrics
 
@@ -243,15 +177,24 @@ class TextSpamClassifier(SpamClassifier):
         concat_pd = self.concat_pd(df)
 
         predictions, confidences = self.get_predictions(model, concat_pd)
+        print("predictions in predict", predictions)
+        print("confidences in predict", confidences)
 
         # save the results to DB
-        df["labelled_by_text_classifier"] = predictions
-        df["text_classifier_confidence"] = confidences
+        df[
+            "labelled_by_text_classifier"
+        ] = predictions  # FIXME : Causing error due to the size difference in df vs predictions and confidences.
+        df[
+            "text_classifier_confidence"
+        ] = confidences  #       : This is because concat_pd only contains data that have string in bio and/or research_interests.
+        #       : Need to map prediction results back into original user_ids to update DB.
         df = df.filter(
             ["user_id", "text_classifier_confidence", "labelled_by_text_classifier"],
             axis=1,
         ).replace(np.nan, None)
-        self.processor.update_predictions(df, isTextClassifier=True)
+        self.processor.update_predictions(
+            df, isTextClassifier=True
+        )  # TODO: return a df in the correct form so DB can be updated
 
     def preprocess(self, text_list: List[str]):
         text_list = [self.__text_cleanup_pipeline(text) for text in text_list]
@@ -287,7 +230,9 @@ class UserMetadataSpamClassifier(SpamClassifier):
         SpamClassifier.__init__(self)
         self.TOKENIZER_FILE_PATH = SPAM_DIR_PATH + "tokenizer.pkl"
         self.MODEL_FILE_PATH = SPAM_DIR_PATH + "user_meta_classifier.pkl"
-        self.MODEL_METRICS_FILE_PATH = SPAM_DIR_PATH + "user_meta_classifier_metrics.json"
+        self.MODEL_METRICS_FILE_PATH = (
+            SPAM_DIR_PATH + "user_meta_classifier_metrics.json"
+        )
 
     def fit(self):
         # obtain df from pipleline
@@ -362,6 +307,7 @@ class UserMetadataSpamClassifier(SpamClassifier):
         self.processor.update_predictions(
             df, isTextClassifier=False
         )  # save the results to DB
+        return df["user_id"].tolist()
 
     def __train_xgboost_classifer(
         self,
