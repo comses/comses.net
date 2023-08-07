@@ -78,8 +78,7 @@ class ContributorSerializer(serializers.ModelSerializer):
         elif email:
             # match by email if given
             contributor = Contributor.objects.filter(email=email).first()
-            if contributor:
-                return contributor.user, contributor
+            return (contributor.user if contributor else None, contributor)
         else:
             # otherwise, match by the exact name given and blank email
             contrib_filter = {

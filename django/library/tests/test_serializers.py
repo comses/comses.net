@@ -19,13 +19,20 @@ class SerializerTestCase(BaseModelTestCase):
             "username": username,
         }
 
-    def create_raw_contributor(self, raw_user):
+    def create_raw_contributor(
+        self,
+        raw_user,
+        email="a@b.com",
+        family_name="Bar",
+        given_name="Foo",
+        middle_name="Middle",
+    ):
         return {
             "affiliations": [],
-            "email": "a@b.com",
-            "family_name": "Bar",
-            "given_name": "Foo",
-            "middle_name": "",
+            "email": email,
+            "family_name": family_name,
+            "given_name": given_name,
+            "middle_name": middle_name,
             "type": "person",
             "user": raw_user,
         }
@@ -78,6 +85,13 @@ class SerializerTestCase(BaseModelTestCase):
         release_contributor_serializer.is_valid(raise_exception=True)
         release_contributor = release_contributor_serializer.save()
         self.assertEqual(release_contributor.roles, raw_release_contributor["roles"])
+
+    def test_nouser_contributor_save(self):
+        raw_contributor = self.create_raw_contributor(None, email="nouser@example.com")
+        contributor_serializer = ContributorSerializer(data=raw_contributor)
+        contributor_serializer.is_valid(raise_exception=True)
+        contributor = contributor_serializer.save()
+        self.assertEqual(contributor.email, raw_contributor["email"])
 
     def test_multiple_release_contributor_save(self):
         codebase = Codebase.objects.create(
