@@ -11,7 +11,7 @@
   >
     <template #body>
       <CodebaseEditForm
-        :codebase-id="identifier"
+        :identifier="identifier"
         id="edit-common-metadata-form"
         @success="handleSuccess()"
         as-modal
