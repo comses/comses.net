@@ -71,23 +71,21 @@ class ContributorSerializer(serializers.ModelSerializer):
 
     def get_existing_contributor(self, validated_data):
         user = validated_data.get("user")
-        email = validated_data.get("email")
         username = user.get("username") if user else None
-        if username is not None:
+        email = validated_data.get("email")
+        contributor = None
+        # attempt to find contributor by username, then email, then name without an email
+        if username:
             user = User.objects.get(username=username)
             contributor = Contributor.objects.filter(user__username=username).first()
         elif email:
-            # match by email if given
             contributor = Contributor.objects.filter(email=email).first()
-            if contributor:
-                user = contributor.user
+            user = contributor.user if contributor else None
         else:
-            # otherwise, match by the exact name given and blank email
             contrib_filter = {
                 k: validated_data.get(k, "")
                 for k in ["given_name", "family_name", "email"]
             }
-            user = None
             contributor = Contributor.objects.filter(**contrib_filter).first()
 
         return user, contributor
