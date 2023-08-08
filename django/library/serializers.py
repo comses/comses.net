@@ -76,7 +76,7 @@ class ContributorSerializer(serializers.ModelSerializer):
         contributor = None
         # attempt to find contributor by username, then email, then name without an email
         if username:
-            user = User.objects.get(username=username)
+            user = User.objects.filter(username=username).first()
             contributor = Contributor.objects.filter(user__username=username).first()
         elif email:
             contributor = Contributor.objects.filter(email=email).first()
@@ -111,13 +111,15 @@ class ContributorSerializer(serializers.ModelSerializer):
             )
 
     def update(self, instance, validated_data):
-        affiliations_serializer = TagSerializer(
-            many=True, data=validated_data.pop("affiliations")
-        )
+        affiliations = validated_data.pop("affiliations", None)
         validated_data.pop("given_name", None)
         validated_data.pop("family_name", None)
         instance = super().update(instance, validated_data)
-        set_tags(instance, affiliations_serializer, "affiliations")
+        if affiliations:  # dont overwrite affiliations if not provided
+            affiliations_serializer = TagSerializer(
+                many=True, data=affiliations, context=self.context
+            )
+            set_tags(instance, affiliations_serializer, "affiliations")
         instance.save()
         return instance
 
