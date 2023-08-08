@@ -107,7 +107,7 @@ class ContributorSerializer(serializers.ModelSerializer):
             return user.member_profile.get_absolute_url()
         else:
             return "{0}?{1}".format(
-                reverse("home:profile-list"), urlencode({"query": instance.name})
+                reverse("core:profile-list"), urlencode({"query": instance.name})
             )
 
     def update(self, instance, validated_data):
@@ -219,7 +219,7 @@ class ReleaseContributorSerializer(serializers.ModelSerializer):
             return user.member_profile.get_absolute_url()
         else:
             return "{0}?{1}".format(
-                reverse("home:profile-list"),
+                reverse("core:profile-list"),
                 urlencode({"query": instance.contributor.name}),
             )
 

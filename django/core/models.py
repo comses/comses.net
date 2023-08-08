@@ -120,6 +120,7 @@ class SocialMediaSettings(BaseSiteSetting):
 
 @register_snippet
 class Institution(models.Model):
+    # FIXME: institution deprecated in favor of affiliations, consider removal
     name = models.CharField(max_length=200)
     url = models.URLField(blank=True)
     acronym = models.CharField(max_length=50, blank=True)
@@ -166,9 +167,6 @@ class MemberProfileQuerySet(models.QuerySet):
         return self.prefetch_related("user").prefetch_related(
             "peer_review_invitation_set__review__codebase_release__codebase"
         )
-
-    def with_institution(self):
-        return self.select_related("institution")
 
     def with_user(self):
         return self.select_related("user")
@@ -232,7 +230,7 @@ class MemberProfile(index.Indexed, ClusterableModel):
     industry = models.CharField(blank=True, max_length=255, choices=Industry.choices)
     bio = MarkdownField(max_length=2048, help_text=_("Brief bio"))
     degrees = ArrayField(models.CharField(max_length=255), blank=True, default=list)
-    # deprecated primary institution
+    # FIXME: institution deprecated in favor of affiliations, consider removal
     institution = models.ForeignKey(Institution, null=True, on_delete=models.SET_NULL)
     # user's institutional affiliations
     affiliations = models.JSONField(
@@ -255,7 +253,6 @@ class MemberProfile(index.Indexed, ClusterableModel):
         FieldPanel("research_interests", widget=forms.Textarea),
         FieldPanel("personal_url"),
         FieldPanel("professional_url"),
-        FieldPanel("institution"),
         FieldPanel("affiliations"),
         FieldPanel("industry"),
         FieldPanel("picture"),
@@ -272,12 +269,6 @@ class MemberProfile(index.Indexed, ClusterableModel):
         index.SearchField("email"),
         index.SearchField("name"),
         index.SearchField("research_interests"),
-        index.RelatedFields(
-            "institution",
-            [
-                index.SearchField("name"),
-            ],
-        ),
         index.RelatedFields(
             "tags",
             [
@@ -341,10 +332,6 @@ class MemberProfile(index.Indexed, ClusterableModel):
         return self.user.socialaccount_set.filter(provider=provider_name).first()
 
     @property
-    def institution_url(self):
-        return self.primary_affiliation_url
-
-    @property
     def primary_affiliation_url(self):
         return self.affiliations[0].get("url") if self.affiliations else ""
 
@@ -362,14 +349,14 @@ class MemberProfile(index.Indexed, ClusterableModel):
         return self.get_absolute_url()
 
     def get_absolute_url(self):
-        return reverse("home:profile-detail", kwargs={"pk": self.user.pk})
+        return reverse("core:profile-detail", kwargs={"pk": self.user.pk})
 
     def get_edit_url(self):
-        return reverse("home:profile-edit", kwargs={"user__pk": self.user.pk})
+        return reverse("core:profile-edit", kwargs={"user__pk": self.user.pk})
 
     @classmethod
     def get_list_url(cls):
-        return reverse("home:profile-list")
+        return reverse("core:profile-list")
 
     @classmethod
     def to_affiliation_string(cls, afl):
@@ -623,11 +610,11 @@ class Event(index.Indexed, ClusterableModel):
         return not self.is_deleted
 
     def get_absolute_url(self):
-        return reverse("home:event-detail", kwargs={"pk": self.pk})
+        return reverse("core:event-detail", kwargs={"pk": self.pk})
 
     @classmethod
     def get_list_url(cls):
-        return reverse("home:event-list")
+        return reverse("core:event-list")
 
     def __str__(self):
         return "{0} posted by {1} on {2}".format(
@@ -741,11 +728,11 @@ class Job(index.Indexed, ClusterableModel):
         return not self.is_deleted
 
     def get_absolute_url(self):
-        return reverse("home:job-detail", kwargs={"pk": self.pk})
+        return reverse("core:job-detail", kwargs={"pk": self.pk})
 
     @classmethod
     def get_list_url(cls):
-        return reverse("home:job-list")
+        return reverse("core:job-list")
 
     def __str__(self):
         return "{0} posted by {1} on {2}".format(

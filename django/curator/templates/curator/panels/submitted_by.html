@@ -1,1 +1,1 @@
-Submitted by <a href="{% url 'home:profile-detail' obj.submitter.id %}">{{ obj.submitter.get_full_name|default:obj.submitter.username }}</a>
+Submitted by <a href="{% url 'core:profile-detail' obj.submitter.id %}">{{ obj.submitter.get_full_name|default:obj.submitter.username }}</a>

@@ -35,7 +35,7 @@
                 {% endif %}
                 <small class="text-muted text-end">Last updated {{ timesince(item.last_modified) }} ago</small>
                 <small>
-                    Submitted by {{ member_profile_href(item.submitter) }}
+                    Submitted by {{ member_profile_href(item.submitter.member_profile) }}
                 </small>
             </div>
         </div>
@@ -87,25 +87,25 @@
 
 {% block introduction %}<h1>Community Events</h1>{% endblock %}
 
-{% set pagination_block = paginator('home:event-list', __all__) %}
+{% set pagination_block = paginator('core:event-list', __all__) %}
 
 {% block top %}
 {{ breadcrumb([{'text': 'Community Events' }]) }}
 <div class="mb-4">
     {{ subnav([
-    {'text': 'Calendar View', 'url': url('home:event-calendar')},
-    {'text': 'List View', 'url': url('home:event-list'), 'active': True},
+    {'text': 'Calendar View', 'url': url('core:event-calendar')},
+    {'text': 'List View', 'url': url('core:event-list'), 'active': True},
     ])}}
 </div>
 {% endblock %}
 
 {% block search %}
-{{ search_bar(url("home:event-list"), "Search Events") }}
+{{ search_bar(url("core:event-list"), "Search Events") }}
 {{ pagination_block }}
 {% endblock %}
 
 {% block content %}
-{{ list_page(__all__, render_event, 'home:event-detail') }}
+{{ list_page(__all__, render_event, 'core:event-detail') }}
 {% if count > 10 %}
 {{ pagination_block }}
 {% endif %}

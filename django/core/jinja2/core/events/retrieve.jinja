@@ -11,7 +11,7 @@
 
 {% block top %}
     {{ breadcrumb([
-    {'text': 'Community Events', 'url': url('home:event-list')},
+    {'text': 'Community Events', 'url': url('core:event-list')},
     {'text': title }
     ]) }}
 {% endblock %}
@@ -38,7 +38,7 @@
         <div class="card-body">
             <div class='section'>
                 <b class="card-title">Submitter</b>
-                <p class="card-text">{{ member_profile_href(submitter) }}</p>
+                <p class="card-text">{{ member_profile_href(submitter.member_profile) }}</p>
                 <b class="card-title">Last updated</b>
                 <p class="card-text">{{ format_datetime_str(last_modified) }}</p>
                 <b class="card-title">When</b>
@@ -66,12 +66,12 @@
         </div>
     </div>
     {% if has_change_perm %}
-        <a href="{{ url('home:event-edit', pk=id) }}">
+        <a href="{{ url('core:event-edit', pk=id) }}">
             <div class="btn btn-primary my-1 w-100">Edit</div>
         </a>
     {% endif %}
     {% if has_delete_perm %}
-        {{ delete_confirm_modal("Delete Event", title, url("home:event-delete", pk=id), csrf_input) }}
+        {{ delete_confirm_modal("Delete Event", title, url("core:event-delete", pk=id), csrf_input) }}
     {% endif %}
     {#{{ share_card(absolute_url) }}#}
 {% endblock %}

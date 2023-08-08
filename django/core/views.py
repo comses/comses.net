@@ -2,13 +2,13 @@ import base64
 import hashlib
 import hmac
 import logging
-from collections import OrderedDict
 from urllib import parse
-from dateutil import parser
 
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
-from django.contrib.auth.views import redirect_to_login
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth.models import User
+from django.core.files.images import ImageFile
 from django.core.exceptions import PermissionDenied
 from django.http import (
     Http404,
@@ -16,138 +16,117 @@ from django.http import (
     HttpResponseRedirect,
     HttpResponseServerError,
 )
-from django.shortcuts import redirect, render
-from django.views.generic import DetailView, TemplateView
-from rest_framework import viewsets, mixins
+from django.shortcuts import get_object_or_404, redirect, render
+from django.views.generic import DetailView, TemplateView, RedirectView
+from django.urls import reverse
+from rest_framework import (
+    viewsets,
+    generics,
+    parsers,
+    mixins,
+    filters,
+)
 from rest_framework.exceptions import (
     PermissionDenied as DrfPermissionDenied,
     NotAuthenticated,
     NotFound,
     APIException,
 )
-from rest_framework.pagination import PageNumberPagination
+from rest_framework.decorators import action
+from rest_framework.filters import OrderingFilter
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
-from rest_framework.views import exception_handler
+from rest_framework.views import APIView, exception_handler
+from taggit.models import Tag
+from wagtail.images.models import Image
 
+from library.models import Codebase
+from .models import Event, FollowUser, Job, MemberProfile
+from .serializers import (
+    EventSerializer,
+    JobSerializer,
+    MemberProfileSerializer,
+    RelatedMemberProfileSerializer,
+    TagSerializer,
+)
+from .mixins import (
+    CommonViewSetMixin,
+    HtmlListModelMixin,
+    HtmlRetrieveModelMixin,
+    PermissionRequiredByHttpMethodMixin,
+)
+from .pagination import SmallResultSetPagination
+from .permissions import ObjectPermissions, ViewRestrictedObjectPermissions
 from .discourse import build_discourse_url
-from .permissions import ViewRestrictedObjectPermissions
+from .view_helpers import (
+    add_change_delete_perms,
+    get_search_queryset,
+    retrieve_with_perms,
+)
+from .utils import parse_date, parse_datetime
+
 
 logger = logging.getLogger(__name__)
 
 
-def make_error(request, should_raise=True):
-    if should_raise:
-        raise ValueError("This is an unhandled error")
-    return HttpResponseServerError("This is an unhandled server error response.")
+class NoDeleteNoUpdateViewSet(
+    mixins.CreateModelMixin,
+    mixins.ListModelMixin,
+    mixins.RetrieveModelMixin,
+    viewsets.GenericViewSet,
+):
+    pass
 
 
-def _common_namespace_path(model):
-    meta = model._meta
-    app_label = meta.app_label
-    return "{0}/{1}".format(app_label, meta.verbose_name_plural.replace(" ", "_"))
+class HtmlNoDeleteNoUpdateViewSet(
+    mixins.CreateModelMixin,
+    HtmlListModelMixin,
+    HtmlRetrieveModelMixin,
+    viewsets.GenericViewSet,
+):
+    pass
 
 
-class CommonViewSetMixin:
-    """
-    Provide conventions for list, retrieve, and delete URL routes + template paths for
-    ViewSets.
-
-    List => <namespace>/list.<ext>
-    Retrieve => <namespace>/retrieve.<ext>
-    Delete => <namespace>/delete.<ext>
-
-    Override 'namespace' property to set the namespace directly,
-
-    namespace = 'library/codebases'
-
-    By default the namespace will be set to <app-label>/<model-name> which is typically not pluralized. This namespace
-    is used for the URL namespace as well as the template filesystem namespace, where the template files are discovered.
-
-    Override 'ext' property to set the file extension, default is 'jinja'
+class NoDeleteViewSet(
+    mixins.CreateModelMixin,
+    mixins.ListModelMixin,
+    mixins.RetrieveModelMixin,
+    mixins.UpdateModelMixin,
+    viewsets.GenericViewSet,
+):
+    pass
 
 
-    """
-
-    ALLOWED_ACTIONS = ("list", "retrieve", "delete")
-    namespace = None
-    ext = "jinja"
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.templates = {}
-
-    def _get_namespace(self):
-        if self.namespace is None:
-            # FIXME: assumes everything mixing this in will have a queryset property
-            self.namespace = _common_namespace_path(self.queryset.model)
-        return self.namespace
-
-    def get_template_names(self):
-        namespace = self._get_namespace()
-        file_ext = self.ext
-        ts = self.templates
-        if not ts:
-            for action in self.ALLOWED_ACTIONS:
-                # by convention, templates should be named <action>.<file-ext> and discovered in TEMPLATE_DIRS under
-                # `django/<app-name>/jinja2/<namespace>/<action>.<file_ext>`.
-                ts[action] = ["{0}/{1}.{2}".format(namespace, action, file_ext)]
-        if self.action in ts:
-            return ts[self.action]
-        # FIXME: this appears to be caused by https://github.com/encode/django-rest-framework/issues/6196
-        error_message = f"Unhandled action {self.action} in namespace {namespace} - expecting list / retrieve / delete."
-        logger.warning(error_message)
-        raise NotFound(error_message)
+class HtmlNoDeleteViewSet(
+    mixins.CreateModelMixin,
+    HtmlListModelMixin,
+    HtmlRetrieveModelMixin,
+    mixins.UpdateModelMixin,
+    viewsets.GenericViewSet,
+):
+    pass
 
 
-class PermissionRequiredByHttpMethodMixin:
-    """
-    Classes using this mixin must override model and optionally namespace.
-    """
+class OnlyObjectPermissionModelViewSet(
+    mixins.CreateModelMixin,
+    mixins.DestroyModelMixin,
+    mixins.ListModelMixin,
+    mixins.RetrieveModelMixin,
+    mixins.UpdateModelMixin,
+    viewsets.GenericViewSet,
+):
+    pass
 
-    namespace = None
-    model = None
 
-    def get_template_names(self):
-        # NB: assumes everything mixing this in will have a model attribute and that edit pages are always
-        # edit.jinja
-        if self.namespace is None:
-            namespace = _common_namespace_path(self.model)
-        else:
-            namespace = self.namespace
-        return ["{0}/{1}".format(namespace, "edit.jinja")]
-
-    def get_required_permissions(self, request=None):
-        perms = ViewRestrictedObjectPermissions.get_required_object_permissions(
-            self.method, self.model
-        )
-        return perms
-
-    def check_permissions(self):
-        user = self.request.user
-        # Because user.has_perms hasn't been called yet django-guardian
-        # hasn't replaced the AnonymousUser with an actual user object
-        if user.is_anonymous:
-            return redirect_to_login(
-                self.request.get_full_path(), settings.LOGIN_URL, "next"
-            )
-        if hasattr(self, "get_object"):
-            obj = self.get_object()
-        else:
-            obj = None
-        perms = self.get_required_permissions()
-        if user.has_perms(perms, obj):
-            return None
-        else:
-            raise PermissionDenied
-
-    def dispatch(self, request, *args, **kwargs):
-        self.request = request
-        self.args = args
-        self.kwargs = kwargs
-        response = self.check_permissions()
-        if response:
-            return response
-        return super().dispatch(request, *args, **kwargs)
+class HtmlOnlyObjectPermissionModelViewSet(
+    mixins.CreateModelMixin,
+    mixins.DestroyModelMixin,
+    HtmlListModelMixin,
+    HtmlRetrieveModelMixin,
+    mixins.UpdateModelMixin,
+    viewsets.GenericViewSet,
+):
+    pass
 
 
 class FormUpdateView(PermissionRequiredByHttpMethodMixin, DetailView):
@@ -166,6 +145,12 @@ class FormMarkDeletedView(PermissionRequiredByHttpMethodMixin, DetailView):
         instance.is_deleted = True
         instance.save()
         return redirect(instance.get_list_url())
+
+
+def make_error(request, should_raise=True):
+    if should_raise:
+        raise ValueError("This is an unhandled error")
+    return HttpResponseServerError("This is an unhandled server error response.")
 
 
 def rest_exception_handler(exc, context):
@@ -219,84 +204,6 @@ def server_error(request, template_name="500.jinja", context=None):
         request=request, template_name=template_name, context=context, status=500
     )
     return response
-
-
-class SmallResultSetPagination(PageNumberPagination):
-    page_size = 10
-    page_size_query_param = "page_size"
-    max_page_size = 200
-
-    @staticmethod
-    def _to_search_terms(query_params):
-        return [f"{k}: {v}" for k, v in query_params.lists()]
-
-    @staticmethod
-    def _to_filter_display_terms(query_params):
-        filters = []
-        for key, values in query_params.lists():
-            if key == "query":
-                continue
-            if key == "tags":
-                filters.extend(tag for tag in values)
-            else:
-                try:
-                    date = parser.isoparse(values[0]).date()
-                    filters.append(f"{key.replace('_', ' ')} {date.isoformat()}")
-                except ValueError:
-                    filters.extend(v.replace("_", " ") for v in values)
-
-        return filters
-
-    def get_paginated_response(self, data):
-        context = self.get_context_data(data)
-        return Response(context)
-
-    @classmethod
-    def create_paginated_context_data(
-        cls, query, data, current_page_number, count, query_params, size=None
-    ):
-        if size is None:
-            size = cls.page_size
-        # ceiling division https://stackoverflow.com/questions/14822184/is-there-a-ceiling-equivalent-of-operator-in-python
-        num_pages = -(-count // size)
-        page_range = list(
-            range(
-                max(2, current_page_number - 3), min(num_pages, current_page_number + 4)
-            )
-        )
-        return OrderedDict(
-            {
-                "is_first_page": current_page_number == 1,
-                "is_last_page": current_page_number == num_pages,
-                "current_page": current_page_number,
-                "num_results": min(size, count - (current_page_number - 1) * size),
-                "count": count,
-                "query": query,
-                "search_terms": cls._to_search_terms(query_params),
-                "filter_display_terms": cls._to_filter_display_terms(query_params),
-                "query_params": query_params.urlencode(),
-                "range": page_range,
-                "num_pages": num_pages,
-                "results": data,
-            }
-        )
-
-    def get_context_data(self, data):
-        query_params = self.request.query_params.copy()
-        query = query_params.get("query")
-        page = query_params.pop("page", [1])[0]
-        count = self.page.paginator.count
-        try:
-            current_page_number = max(1, int(page))
-        except ValueError:
-            current_page_number = 1
-        return self.create_paginated_context_data(
-            query=query,
-            data=data,
-            current_page_number=current_page_number,
-            count=count,
-            query_params=query_params,
-        )
 
 
 @login_required
@@ -358,109 +265,310 @@ def discourse_sso(request):
     return HttpResponseRedirect(discourse_sso_url)
 
 
-class HtmlRetrieveModelMixin:
-    """
-    Retrieve a model instance. If renderer if html pass the instance to the template directly
-    """
+class ProfileRedirectView(LoginRequiredMixin, RedirectView):
+    permanent = False
+    query_string = False
 
-    context_object_name = "object"
+    def get_redirect_url(self, *args, **kwargs):
+        return reverse("core:profile-detail", kwargs={"pk": self.request.user.pk})
+
+
+class ToggleFollowUser(APIView):
+    permission_classes = (IsAuthenticated,)
+
+    def post(self, request, *args, **kwargs):
+        logger.debug("POST with request data: %s", request.data)
+        username = request.data["username"]
+        source = request.user
+        target = User.objects.get(username=username)
+        follow_user, created = FollowUser.objects.get_or_create(
+            source=source, target=target
+        )
+        if created:
+            target.following.add(follow_user)
+        else:
+            follow_user.delete()
+        return Response({"following": created})
+
+
+class TagListView(mixins.ListModelMixin, viewsets.GenericViewSet):
+    serializer_class = TagSerializer
+    queryset = Tag.objects.all()
+    pagination_class = SmallResultSetPagination
+    permission_classes = (AllowAny,)
+
+    def get_queryset(self):
+        query = self.request.query_params.get("query")
+        queryset = Tag.objects.all()
+        if query:
+            queryset = queryset.filter(name__icontains=query)
+        return queryset.order_by("name")
+
+
+class MemberProfileFilter(filters.BaseFilterBackend):
+    def filter_queryset(self, request, queryset, view):
+        if view.action != "list":
+            return queryset
+        query_params = request.query_params
+        qs = query_params.get("query")
+        tags = query_params.getlist("tags")
+        return get_search_queryset(qs, queryset, tags=tags)
+
+
+class MemberProfileViewSet(CommonViewSetMixin, HtmlNoDeleteViewSet):
+    lookup_field = "user__pk"
+    lookup_url_kwarg = "pk"
+    queryset = MemberProfile.objects.public().with_tags()
+    pagination_class = SmallResultSetPagination
+    filter_backends = (MemberProfileFilter,)
+    permission_classes = (ObjectPermissions,)
+    context_object_name = "profile"
+    context_list_name = "profiles"
+
+    def get_serializer_class(self):
+        if self.action == "list":
+            return RelatedMemberProfileSerializer
+        else:
+            return MemberProfileSerializer
+
+    def get_queryset(self):
+        if self.action == "retrieve":
+            return self.queryset.with_peer_review_invitations()
+        else:
+            return self.queryset.with_user()
 
     def get_retrieve_context(self, instance):
-        context = {self.context_object_name: instance}
+        context = super().get_retrieve_context(instance)
+        accessing_user = self.request.user
+        # FIXME: ideally this functionality should be in the library app, though its not clear
+        # whether this can be done without a much more complicated workaround or a major
+        # re-organization of apps
+        logger.debug("Finding models for user %s", instance.user)
+        context["codebases"] = (
+            Codebase.objects.accessible(accessing_user)
+            .filter_by_contributor(instance.user)
+            .with_tags()
+            .with_featured_images()
+        )
+        add_change_delete_perms(instance, context, accessing_user)
         return context
+
+
+class MemberProfileImageUploadView(generics.CreateAPIView):
+    parser_classes = (
+        parsers.MultiPartParser,
+        parsers.FormParser,
+    )
+    queryset = MemberProfile.objects.all()
+
+    def create(self, request, *args, **kwargs):
+        file_obj = request.data["file"]
+        member_profile = get_object_or_404(MemberProfile, **kwargs)
+        # FIXME: perform validity checks on the file_obj (jpg, png, etc only)
+        image = Image.objects.create(
+            title=file_obj.name, file=ImageFile(file_obj), uploaded_by_user=request.user
+        )
+        member_profile.picture = image
+        member_profile.save()
+        return Response(data=image.get_rendition("fill-150x150").url, status=200)
+
+
+class ProfileUpdateView(FormUpdateView):
+    model = MemberProfile
+    slug_field = "user__pk"
+    slug_url_kwarg = "user__pk"
+
+
+class EventCreateView(FormCreateView):
+    model = Event
+
+
+class EventUpdateView(FormUpdateView):
+    model = Event
+
+
+class EventMarkDeletedView(FormMarkDeletedView):
+    model = Event
+
+
+class JobCreateView(FormCreateView):
+    model = Job
+
+
+class JobUpdateView(FormUpdateView):
+    model = Job
+
+
+class JobMarkDeletedView(FormMarkDeletedView):
+    model = Job
+
+
+class EventFilter(filters.BaseFilterBackend):
+    def filter_queryset(self, request, queryset, view):
+        if view.action != "list":
+            return queryset
+        query_string = request.query_params.get("query")
+        query_params = request.query_params
+        logger.debug(query_params)
+        submission_deadline__gte = parse_date(
+            query_params.get("submission_deadline__gte")
+            or query_params.get("submission_deadline_after")
+        )
+        start_date__gte = parse_date(
+            query_params.get("start_date__gte") or query_params.get("start_date_after")
+        )
+        tags = request.query_params.getlist("tags")
+
+        criteria = {}
+
+        if submission_deadline__gte:
+            criteria.update(submission_deadline__gte=submission_deadline__gte)
+        if start_date__gte:
+            criteria.update(start_date__gte=start_date__gte)
+        return get_search_queryset(query_string, queryset, tags=tags, criteria=criteria)
+
+
+class EventViewSet(CommonViewSetMixin, OnlyObjectPermissionModelViewSet):
+    serializer_class = EventSerializer
+    queryset = (
+        Event.objects.live()
+        .with_tags()
+        .with_submitter()
+        .with_expired()
+        .with_started()
+        .order_by("-date_created")
+    )
+    pagination_class = SmallResultSetPagination
+    filter_backends = (OrderingFilter, EventFilter)
+    permission_classes = (ViewRestrictedObjectPermissions,)
+    ordering_fields = (
+        "date_created",
+        "last_modified",
+        "early_registration_deadline",
+        "submission_deadline",
+        "start_date",
+    )
 
     def retrieve(self, request, *args, **kwargs):
-        instance = self.get_object()
-        if request.accepted_renderer.format == "html":
-            return Response(self.get_retrieve_context(instance))
+        return retrieve_with_perms(self, request, *args, **kwargs)
 
-        serializer = self.get_serializer(instance)
-        return Response(serializer.data)
+    def get_calendar_queryset(self):
+        start = parse_date(self.request.query_params["start"])
+        end = parse_date(self.request.query_params["end"])
+        return self.queryset.find_by_interval(start, end), start, end
 
+    @staticmethod
+    def to_calendar_early_registration_deadline_event(event):
+        return {
+            "title": "Early Registration Deadline: " + event.title,
+            "start": event.early_registration_deadline.isoformat(),
+            "url": event.get_absolute_url(),
+            "color": "#D9230F",
+        }
 
-class HtmlListModelMixin:
-    """
-    List a queryset. If renderer if html pass the queryset to the template directly
-    """
+    @staticmethod
+    def to_calendar_submission_deadline_event(event):
+        return {
+            "title": "Submission Deadline: " + event.title,
+            "start": event.submission_deadline.isoformat(),
+            "url": event.get_absolute_url(),
+            "color": "#D9230F",
+        }
 
-    context_list_name = "object"
+    @staticmethod
+    def to_calendar_event(event):
+        return {
+            "title": event.title,
+            "start": event.start_date.isoformat(),
+            "end": event.end_date.isoformat(),
+            "url": event.get_absolute_url(),
+            "color": "#3a87ad",
+        }
 
-    def get_list_context(self, page_or_queryset):
-        context = {self.context_list_name: page_or_queryset}
-        if self.paginator:
-            context["paginator_data"] = self.paginator.get_context_data(context)
-        return context
+    @action(detail=False)
+    def calendar(self, request, *args, **kwargs):
+        """Arrange events so that early registration deadline, registration deadline and the actual event
+        are events to be rendered in the calendar"""
+        calendar_events = {}
+        if request.query_params:
+            if request.accepted_media_type == "application/json":
+                calendar_events = []
+                queryset, start, end = self.get_calendar_queryset()
+                for event in list(queryset):
+                    if (
+                        event.early_registration_deadline
+                        and start <= event.early_registration_deadline <= end
+                    ):
+                        calendar_events.append(
+                            self.to_calendar_early_registration_deadline_event(event)
+                        )
 
-    def list(self, request, *args, **kwargs):
-        queryset = self.filter_queryset(self.get_queryset())
-        page = self.paginate_queryset(queryset)
-        if request.accepted_renderer.format == "html":
-            context = self.get_list_context(page or queryset)
-            return Response(context)
+                    if (
+                        event.submission_deadline
+                        and start <= event.submission_deadline <= end
+                    ):
+                        calendar_events.append(
+                            self.to_calendar_submission_deadline_event(event)
+                        )
 
-        if page is not None:
-            serializer = self.get_serializer(page, many=True)
-            return self.get_paginated_response(serializer.data)
+                    if event.start_date:
+                        min_date = max(start, event.start_date)
+                        if event.end_date is None:
+                            event.end_date = event.start_date
+                        max_date = min(end, event.end_date)
+                        if min_date <= max_date:
+                            calendar_events.append(self.to_calendar_event(event))
+            else:
+                # FIXME: revert if this turns out to be a terrible idea
+                return redirect(
+                    reverse("core:event-list")
+                    + "?{0}".format(request.query_params.urlencode())
+                )
 
-        serializer = self.get_serializer(queryset, many=True)
-        return Response(serializer.data)
-
-
-class NoDeleteNoUpdateViewSet(
-    mixins.CreateModelMixin,
-    mixins.ListModelMixin,
-    mixins.RetrieveModelMixin,
-    viewsets.GenericViewSet,
-):
-    pass
-
-
-class HtmlNoDeleteNoUpdateViewSet(
-    mixins.CreateModelMixin,
-    HtmlListModelMixin,
-    HtmlRetrieveModelMixin,
-    viewsets.GenericViewSet,
-):
-    pass
-
-
-class NoDeleteViewSet(
-    mixins.CreateModelMixin,
-    mixins.ListModelMixin,
-    mixins.RetrieveModelMixin,
-    mixins.UpdateModelMixin,
-    viewsets.GenericViewSet,
-):
-    pass
-
-
-class HtmlNoDeleteViewSet(
-    mixins.CreateModelMixin,
-    HtmlListModelMixin,
-    HtmlRetrieveModelMixin,
-    mixins.UpdateModelMixin,
-    viewsets.GenericViewSet,
-):
-    pass
-
-
-class OnlyObjectPermissionModelViewSet(
-    mixins.CreateModelMixin,
-    mixins.DestroyModelMixin,
-    mixins.ListModelMixin,
-    mixins.RetrieveModelMixin,
-    mixins.UpdateModelMixin,
-    viewsets.GenericViewSet,
-):
-    pass
+        return Response(
+            data=calendar_events, template_name="core/events/calendar.jinja"
+        )
 
 
-class HtmlOnlyObjectPermissionModelViewSet(
-    mixins.CreateModelMixin,
-    mixins.DestroyModelMixin,
-    HtmlListModelMixin,
-    HtmlRetrieveModelMixin,
-    mixins.UpdateModelMixin,
-    viewsets.GenericViewSet,
-):
-    pass
+class JobFilter(filters.BaseFilterBackend):
+    def filter_queryset(self, request, queryset, view):
+        if view.action != "list":
+            return queryset
+        qs = request.query_params.get("query")
+        date_created = parse_datetime(
+            request.query_params.get("date_created__gte")
+            or request.query_params.get("date_created_after")
+        )
+        application_deadline = parse_date(
+            request.query_params.get("application_deadline__gte")
+            or request.query_params.get("application_deadline_after")
+        )
+        tags = request.query_params.getlist("tags")
+        criteria = {}
+        if date_created:
+            criteria.update(date_created__gte=date_created)
+        if application_deadline:
+            criteria.update(application_deadline__gte=application_deadline)
+        return get_search_queryset(qs, queryset, tags=tags, criteria=criteria)
+
+
+class JobViewSet(CommonViewSetMixin, OnlyObjectPermissionModelViewSet):
+    serializer_class = JobSerializer
+    pagination_class = SmallResultSetPagination
+    queryset = (
+        Job.objects.live()
+        .with_tags()
+        .with_submitter()
+        .with_expired()
+        .order_by("-date_created")
+    )
+    filter_backends = (OrderingFilter, JobFilter)
+    permission_classes = (ViewRestrictedObjectPermissions,)
+    ordering_fields = (
+        "application_deadline",
+        "date_created",
+        "last_modified",
+    )
+
+    def retrieve(self, request, *args, **kwargs):
+        return retrieve_with_perms(self, request, *args, **kwargs)

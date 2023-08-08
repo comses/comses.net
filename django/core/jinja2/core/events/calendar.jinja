@@ -15,8 +15,8 @@
 {% block content %}
     {{ breadcrumb([{'text': 'Community Events' }]) }}
     {{ subnav([ 
-    {'text': 'Calendar View', 'url': url('home:event-calendar'), 'active': True},
-    {'text': 'List View', 'url': url('home:event-list'), },
+    {'text': 'Calendar View', 'url': url('core:event-calendar'), 'active': True},
+    {'text': 'List View', 'url': url('core:event-list'), },
     ])
     }}
     <div class='my-3' id="event-calendar"></div>

@@ -1,10 +1,11 @@
 import logging
-from django.conf import settings
-from core.models import Event, Job
-from core.tests.base import BaseModelTestCase
-from .base import JobFactory, EventFactory
-from django.utils import timezone
 from datetime import timedelta
+
+from django.conf import settings
+from django.utils import timezone
+
+from core.models import Event, Job
+from .base import BaseModelTestCase, JobFactory, EventFactory
 
 logger = logging.getLogger(__name__)
 

@@ -252,7 +252,7 @@ class Contributor(index.Indexed, ClusterableModel):
             return user.member_profile.get_absolute_url()
         else:
             return "{0}?{1}".format(
-                reverse("home:profile-list"), urlencode({"query": self.name})
+                reverse("core:profile-list"), urlencode({"query": self.name})
             )
 
     def __str__(self):

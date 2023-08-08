@@ -11,7 +11,7 @@
 {% endblock %}
 {% block top %}
     {{ breadcrumb([
-    {'url': url('home:job-list'), 'text': 'Jobs & Appointments' },
+    {'url': url('core:job-list'), 'text': 'Jobs & Appointments' },
     {'text': title }
     ]) }}
 {% endblock %}
@@ -38,7 +38,7 @@
         <div class="card-body">
             <div class='section'>
                 <b class="card-title">Submitter</b>
-                <p class='card-text'> {{ member_profile_href(submitter) }}</p>
+                <p class='card-text'> {{ member_profile_href(submitter.member_profile) }}</p>
                 {% if application_deadline %}
                     <b class="card-title">Application deadline</b>
                     <p class="card-text">{{ format_date_str(application_deadline) }}</p>
@@ -60,12 +60,12 @@
         </div>
     </div>
     {% if has_change_perm %}
-        <a href="{{ url('home:job-edit', pk=id) }}">
+        <a href="{{ url('core:job-edit', pk=id) }}">
             <div class="btn btn-primary my-1 w-100">Edit</div>
         </a>
     {% endif %}
     {% if has_delete_perm %}
-        {{ delete_confirm_modal("Delete Job Posting", title, url("home:job-delete", pk=id), csrf_input) }}
+        {{ delete_confirm_modal("Delete Job Posting", title, url("core:job-delete", pk=id), csrf_input) }}
     {% endif %}
     {# {{ share_card(absolute_url) }} #}
 {% endblock %}

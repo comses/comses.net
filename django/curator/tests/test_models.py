@@ -4,7 +4,7 @@ from taggit.models import Tag
 from core.models import Event, Job
 from core.tests.base import UserFactory
 from curator.models import TagCleanup
-from home.tests.base import EventFactory, JobFactory
+from core.tests.base import EventFactory, JobFactory
 from library.models import Codebase
 from library.tests.base import CodebaseFactory
 

@@ -5,7 +5,7 @@
 {% set logout_url = url("account_logout") %}
 {% set signup_url = url("account_signup") %}
 {% set contact_url = slugurl('contact') %}
-{% set profile_url = url('home:profile-detail', pk=user.pk) if user.is_authenticated else signup_url %}
+{% set profile_url = url('core:profile-detail', pk=user.pk) if user.is_authenticated else signup_url %}
 
 {% macro navbar() %}
     <div class="fixed-top bg-light">
@@ -38,10 +38,10 @@
                         <a href='{{ slugurl("education") }}' class='nav-link'>Education</a>
                     </li>
                     <li class="nav-item">
-                        <a href="{{ url('home:event-list') }}" class="nav-link">Events</a>
+                        <a href="{{ url('core:event-list') }}" class="nav-link">Events</a>
                     </li>
                     <li class="nav-item">
-                        <a href="{{ url('home:job-list') }}" class="nav-link">Jobs</a>
+                        <a href="{{ url('core:job-list') }}" class="nav-link">Jobs</a>
                     </li>
                     <li class="nav-item">
                         <a href="/resources/" class="nav-link">Resources</a>

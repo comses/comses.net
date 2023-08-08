@@ -22,12 +22,12 @@
 {{ search_tag_href(tag, 'btn btn-tag btn-outline-secondary', category) }}
 {% endmacro %}
 
-{% macro institution_href(institution) %}
-{% if institution %}
-{%- if institution.url -%}
-<a href='{{ institution.url }}' target='_blank'>{{ institution.name }}</a>
+{% macro affiliation_href(affiliation) %}
+{% if affiliation %}
+{%- if affiliation.url -%}
+<a href='{{ affiliation.url }}' target='_blank'>{{ affiliation.name }}</a>
 {%- else -%}
-{{ institution.name }}
+{{ affiliation.name }}
 {%- endif -%}
 {% endif %}
 {%- endmacro -%}
