@@ -99,17 +99,13 @@ class SpamClassifier(ABC):
 
 
 class TextSpamClassifier(SpamClassifier):
-    # This is temporary until we find a better solution.
-    # We are saving and loading models straight to the VM,
-    # ideally, we instead store it in some object storage instead.
-
     def __init__(self):
         SpamClassifier.__init__(self)
         self.MODEL_FILE_PATH = SPAM_DIR_PATH + "text_classifier.pkl"
         self.MODEL_METRICS_FILE_PATH = SPAM_DIR_PATH + "text_classifier_metrics.json"
 
     def load_model(self):
-        if os.path.isfile(self.MODEL_FILE_PATH):
+        if not os.path.isfile(self.MODEL_FILE_PATH):
             self.fit()
         with open(self.MODEL_FILE_PATH, "rb") as file:
             return pickle.load(file)
@@ -119,6 +115,7 @@ class TextSpamClassifier(SpamClassifier):
             pickle.dump(model, file)
 
     def fit(self):
+        # TODO:
         model = Pipeline(
             [
                 ("cleaner", FunctionTransformer(self.preprocess)),
@@ -127,23 +124,28 @@ class TextSpamClassifier(SpamClassifier):
             ]
         )
 
-        untrained_df = self.processor.get_all_users_df()
+        untrained_df = self.processor.get_untrained_df()
+
         if untrained_df.empty:
-            return
+            return False
+
         data_x, data_y = self.concat_pd(untrained_df)
+
         (
             train_x,
             test_x,
             train_y,
             test_y,
         ) = train_test_split(data_x, data_y, test_size=0.1, random_state=434)
-        model.fit(train_x, train_y)
+
+        model.fit(train_x["text"], train_y)
         self.save_model(model)
-        stub_test_user_ids = (
-            []
-        )  # FIXME: fix the code so that user_ids used for test are stored
         test_predictions, model_metrics = self.validate_model(
-            model, stub_test_user_ids, test_x, test_y, self.MODEL_METRICS_FILE_PATH
+            model,
+            test_x["user_id"].tolist(),
+            test_x["text"].tolist(),
+            test_y.tolist(),
+            self.MODEL_METRICS_FILE_PATH,
         )
         return model_metrics
 
@@ -154,14 +156,17 @@ class TextSpamClassifier(SpamClassifier):
         self.fit()
 
     def concat_pd(self, df):
-        bio = df[["bio", "labelled_by_curator"]][df["bio"] != ""]
-        research_interests = df[["research_interests", "labelled_by_curator"]][
-            df["research_interests"] != ""
-        ]
+        bio = df[["user_id", "bio", "labelled_by_curator"]][df["bio"] != ""]
+        research_interests = df[
+            ["user_id", "research_interests", "labelled_by_curator"]
+        ][df["research_interests"] != ""]
+
+        bio = bio.rename(columns={"bio": "text"})
+        research_interests = bio.rename(columns={"research_interests": "text"})
 
         train_x = pd.concat(
-            [bio["bio"], research_interests["research_interests"]]
-        ).to_list()
+            [bio[["user_id", "text"]], research_interests[["user_id", "text"]]]
+        )
 
         train_y = pd.concat(
             [bio["labelled_by_curator"], research_interests["labelled_by_curator"]]
@@ -174,27 +179,19 @@ class TextSpamClassifier(SpamClassifier):
             return
 
         model = self.load_model()
-        concat_pd = self.concat_pd(df)
+        train_x, train_y = self.concat_pd(df)
 
-        predictions, confidences = self.get_predictions(model, concat_pd)
-        print("predictions in predict", predictions)
-        print("confidences in predict", confidences)
+        predictions, confidences = self.get_predictions(model, train_x["text"])
 
         # save the results to DB
-        df[
-            "labelled_by_text_classifier"
-        ] = predictions  # FIXME : Causing error due to the size difference in df vs predictions and confidences.
-        df[
-            "text_classifier_confidence"
-        ] = confidences  #       : This is because concat_pd only contains data that have string in bio and/or research_interests.
-        #       : Need to map prediction results back into original user_ids to update DB.
+        df["labelled_by_text_classifier"] = predictions
+        df["text_classifier_confidence"] = confidences
         df = df.filter(
             ["user_id", "text_classifier_confidence", "labelled_by_text_classifier"],
             axis=1,
         ).replace(np.nan, None)
-        self.processor.update_predictions(
-            df, isTextClassifier=True
-        )  # TODO: return a df in the correct form so DB can be updated
+
+        self.processor.update_predictions(df, isTextClassifier=True)
 
     def preprocess(self, text_list: List[str]):
         text_list = [self.__text_cleanup_pipeline(text) for text in text_list]
