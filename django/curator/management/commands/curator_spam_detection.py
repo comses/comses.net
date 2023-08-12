@@ -3,7 +3,7 @@ import pathlib
 
 from django.core.management.base import BaseCommand
 
-from curator.spam import DATASET_FILE_PATH
+from curator.spam_processor import DATASET_FILE_PATH
 from curator.spam import SpamDetection
 
 logger = logging.getLogger(__name__)
@@ -61,28 +61,28 @@ class Command(BaseCommand):
 
     def handle_exe(self):
         result = self.detection.execute()
-        print("Spam Users :\n", result.spam_users)
+        print("Spam Users :\n", result["spam_users"])
         print(
             "UserMetadataSpamClassifier Metircs :\n",
-            result.user_metadata_spam_classifier,
+            result["user_metadata_spam_classifier"],
         )
-        print("TextSpamClassifier  Metircs:\n", result.text_spam_classifier)
+        print("TextSpamClassifier Metircs:\n", result["text_spam_classifier"])
 
     def handle_refine(self):
         metrics = self.detection.refine()
         print(
             "UserMetadataSpamClassifier Metircs :\n",
-            metrics.user_metadata_spam_classifier,
+            metrics["user_metadata_spam_classifier"],
         )
-        print("TextSpamClassifier  Metircs:\n", metrics.text_spam_classifier)
+        print("TextSpamClassifier Metircs:\n", metrics["text_spam_classifier"])
 
     def handle_get_model_metrics(self):
         metrics = self.detection.get_model_metrics()
         print(
             "UserMetadataSpamClassifier Metircs :\n",
-            metrics.user_metadata_spam_classifier,
+            metrics["user_metadata_spam_classifier"],
         )
-        print("TextSpamClassifier  Metircs:\n", metrics.text_spam_classifier)
+        print("TextSpamClassifier  Metircs:\n", metrics["text_spam_classifier"])
 
     def handle_load_labels(self, load_directory):
         self.processor.load_labels_from_csv(load_directory)

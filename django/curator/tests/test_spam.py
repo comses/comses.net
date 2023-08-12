@@ -6,9 +6,9 @@ from django.test import TestCase
 from django.conf import settings
 
 from curator.spam_detection_models import UserMetadataSpamClassifier, TextSpamClassifier
-from curator.spam import UserSpamStatusProcessor, SpamDetection
+from curator.spam_processor import UserSpamStatusProcessor
 from curator.models import UserSpamStatus
-from core.models import MemberProfile, User, ComsesGroups
+from core.models import User
 from core.tests.base import UserFactory
 
 
@@ -61,8 +61,8 @@ class SpamDetectionTestCase(TestCase):
     # =================  Tests for UserSpamStatusProcessor.load_labels_from_csv() =================
     def test_load_labels_from_csv(self):
         """
-        case : First time loading dataset.csv
-            stub data/requirements ... /shared/curator/spam/dataset.csv
+        case : First time loading spam_dataset.csv
+            stub data/requirements ... /shared/curator/spam/spam_dataset.csv
             assertion ... there exists users with labelled_by_curator != None
         """
         self.processor.load_labels_from_csv()
@@ -108,7 +108,7 @@ class SpamDetectionTestCase(TestCase):
     # ======================== Tests for UserSpamStatusProcessor.get_untrained_df()  ========================
     def test_get_untrained_df__dataset_loaded(self):
         """
-        case1 : Just uploaded dataset.csv
+        case1 : Just uploaded spam_dataset.csv
             stub data/requirements ... just called load_labels_from_csv().
             assertion ... df with the specific columns with the correct user_ids
         """
