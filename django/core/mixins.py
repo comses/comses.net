@@ -12,9 +12,16 @@ logger = logging.getLogger(__name__)
 
 
 def _common_namespace_path(model):
+    """
+    converts a model class like library.CodebaseRelease to 'library/codebase_releases'
+    """
     meta = model._meta
     app_label = meta.app_label
-    return "{0}/{1}".format(app_label, meta.verbose_name_plural.replace(" ", "_"))
+    model_label = meta.verbose_name_plural.replace(" ", "_")
+    # FIXME: consider replacing this with a simpler default with less logic like
+    # return model._meta.label_lower.replace('.', '/')
+    # which would convert library.CodebaseRelease to library/codebaserelease
+    return f"{app_label}/{model_label}"
 
 
 class CommonViewSetMixin:
@@ -48,8 +55,14 @@ class CommonViewSetMixin:
 
     def _get_namespace(self):
         if self.namespace is None:
-            # FIXME: assumes everything mixing this in will have a queryset property
-            self.namespace = _common_namespace_path(self.queryset.model)
+            if hasattr(self, "queryset"):
+                self.namespace = _common_namespace_path(self.queryset.model)
+            elif hasattr(self, "model"):
+                self.namespace = _common_namespace_path(self.model)
+            else:
+                logger.error(
+                    "invalid mixin, no namespace, queryset or model set on self"
+                )
         return self.namespace
 
     def get_template_names(self):
@@ -57,10 +70,11 @@ class CommonViewSetMixin:
         file_ext = self.ext
         ts = self.templates
         if not ts:
+            # FIXME: why is self.templates being initialized here instead of in __init__ ...
             for action in self.ALLOWED_ACTIONS:
                 # by convention, templates should be named <action>.<file-ext> and discovered in TEMPLATE_DIRS under
                 # `django/<app-name>/jinja2/<namespace>/<action>.<file_ext>`.
-                ts[action] = ["{0}/{1}.{2}".format(namespace, action, file_ext)]
+                ts[action] = [f"{namespace}/{action}.{file_ext}"]
         if self.action in ts:
             return ts[self.action]
         # FIXME: this appears to be caused by https://github.com/encode/django-rest-framework/issues/6196
@@ -76,15 +90,15 @@ class PermissionRequiredByHttpMethodMixin:
 
     namespace = None
     model = None
+    ext = "jinja"
 
     def get_template_names(self):
-        # NB: assumes everything mixing this in will have a model attribute and that edit pages are always
-        # edit.jinja
-        if self.namespace is None:
-            namespace = _common_namespace_path(self.model)
-        else:
-            namespace = self.namespace
-        return ["{0}/{1}".format(namespace, "edit.jinja")]
+        # assumes any class using this mixin will have a model attribute and an edit.<ext>
+        namespace = (
+            self.namespace if self.namespace else _common_namespace_path(self.model)
+        )
+        file_ext = self.ext if self.ext else "jinja"
+        return [f"{namespace}/edit.{file_ext}"]
 
     def get_required_permissions(self, request=None):
         perms = ViewRestrictedObjectPermissions.get_required_object_permissions(
@@ -94,7 +108,7 @@ class PermissionRequiredByHttpMethodMixin:
 
     def check_permissions(self):
         user = self.request.user
-        # Because user.has_perms hasn't been called yet django-guardian
+        # user.has_perms hasn't been called yet so django-guardian
         # hasn't replaced the AnonymousUser with an actual user object
         if user.is_anonymous:
             return redirect_to_login(
@@ -122,7 +136,7 @@ class PermissionRequiredByHttpMethodMixin:
 
 class HtmlRetrieveModelMixin:
     """
-    Retrieve a model instance. If renderer if html pass the instance to the template directly
+    Retrieve a model instance. If renderer is html pass the instance to the template directly
     """
 
     context_object_name = "object"
