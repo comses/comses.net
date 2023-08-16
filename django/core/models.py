@@ -220,7 +220,7 @@ class MemberProfile(index.Indexed, ClusterableModel):
         OTHER = "other", _("Other")
 
     user = models.OneToOneField(
-        User, null=True, on_delete=models.SET_NULL, related_name="member_profile"
+        User, null=True, on_delete=models.CASCADE, related_name="member_profile"
     )
 
     # FIXME: add location field eventually, with postgis
