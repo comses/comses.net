@@ -27,24 +27,6 @@ handler500 = views.server_error
 app_name = "core"
 
 
-def get_debug_urls():
-    if not settings.DEPLOY_ENVIRONMENT.is_production:
-        import debug_toolbar
-
-        return [
-            path("argh/", handler500, name="error"),
-            path("make-error/", views.make_error),
-            path("__debug__/", include(debug_toolbar.urls)),
-        ]
-
-
-def get_dev_urls():
-    # serve static files from development server
-    # https://docs.djangoproject.com/en/3.0/howto/static-files/#serving-static-files-during-development
-    if settings.DEPLOY_ENVIRONMENT.is_development:
-        return static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
-
-
 def get_core_urls():
     router = SimpleRouter()
     router.register(r"tags", views.TagListView, basename="tag")
@@ -110,8 +92,18 @@ urlpatterns = [
 
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 urlpatterns += feeds.urlpatterns()
-urlpatterns += get_dev_urls()
-urlpatterns += get_debug_urls()
+
+if not settings.DEPLOY_ENVIRONMENT.is_production:
+    import debug_toolbar
+
+    urlpatterns += [
+        path("argh/", handler500, name="error"),
+        path("make-error/", views.make_error),
+        path("__debug__/", include(debug_toolbar.urls)),
+    ]
+
+if settings.DEPLOY_ENVIRONMENT.is_development:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
 # NB: wagtail_urls are the catchall, must be last
 urlpatterns.append(path("", include(wagtail_urls)))

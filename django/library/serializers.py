@@ -87,6 +87,7 @@ class ContributorSerializer(serializers.ModelSerializer):
                 for k in ["given_name", "family_name", "email"]
             }
             contributor = Contributor.objects.filter(**contrib_filter).first()
+            user = None
 
         return user, contributor
 
