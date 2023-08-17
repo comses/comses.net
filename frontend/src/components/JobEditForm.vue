@@ -68,9 +68,7 @@ const props = defineProps<{
 const schema = yup.object().shape({
   title: yup.string().required(),
   description: yup.string().required(),
-  applicationDeadline: yup
-    .date()
-    .min(new Date(), "Please enter a valid date after today's date."),
+  applicationDeadline: yup.date().min(new Date(), "Please enter a valid date after today's date."),
   summary: yup.string().required(),
   tags: yup
     .array()
