@@ -128,6 +128,16 @@ class MarkdownField(serializers.CharField):
         return data
 
 
+class IsoDateField(serializers.DateField):
+    """
+    Extension to DateField that accepts full ISO 8601 date-time strings
+    """
+
+    def __init__(self, *args, **kwargs):
+        kwargs.setdefault("input_formats", [ISO_DATETIME_FORMAT, "iso-8601"])
+        super().__init__(*args, **kwargs)
+
+
 class EventSerializer(serializers.ModelSerializer):
     submitter = LinkedUserSerializer(
         read_only=True, help_text=_("User that created the event"), label="Submitter"
@@ -140,19 +150,11 @@ class EventSerializer(serializers.ModelSerializer):
     date_created = serializers.DateTimeField(
         format=DATE_PUBLISHED_FORMAT, read_only=True
     )
-    start_date = serializers.DateField(input_formats=[ISO_DATETIME_FORMAT, "iso-8601"])
-    end_date = serializers.DateField(
-        allow_null=True, input_formats=[ISO_DATETIME_FORMAT, "iso-8601"]
-    )
-    early_registration_deadline = serializers.DateField(
-        allow_null=True, input_formats=[ISO_DATETIME_FORMAT, "iso-8601"]
-    )
-    registration_deadline = serializers.DateField(
-        allow_null=True, input_formats=[ISO_DATETIME_FORMAT, "iso-8601"]
-    )
-    submission_deadline = serializers.DateField(
-        allow_null=True, input_formats=[ISO_DATETIME_FORMAT, "iso-8601"]
-    )
+    start_date = IsoDateField()
+    end_date = IsoDateField(allow_null=True, required=False)
+    early_registration_deadline = IsoDateField(allow_null=True, required=False)
+    registration_deadline = IsoDateField(allow_null=True, required=False)
+    submission_deadline = IsoDateField(allow_null=True, required=False)
     description = MarkdownField()
     is_expired = serializers.BooleanField(read_only=True)
     is_started = serializers.BooleanField(read_only=True)
@@ -260,9 +262,7 @@ class JobSerializer(serializers.ModelSerializer):
     description = MarkdownField()
     is_expired = serializers.BooleanField(read_only=True)
     last_modified = serializers.DateTimeField(read_only=True)
-    application_deadline = serializers.DateField(
-        allow_null=True, input_formats=[ISO_DATETIME_FORMAT, "iso-8601"]
-    )
+    application_deadline = IsoDateField(allow_null=True, required=False)
     tags = TagSerializer(many=True, label="Tags")
 
     def create(self, validated_data):

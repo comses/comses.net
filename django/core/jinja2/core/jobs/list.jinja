@@ -18,7 +18,11 @@
                 {% else %}
                 <small class="alert alert-success d-flex align-items-center px-2 py-0 mb-1" role="alert">
                     <i class="fas fa-clock"></i>
-                    <span class="ms-2">{{ timeuntil(item.application_deadline) }} left to apply</span>
+                        {% if item.application_deadline %}
+                        <span class="ms-2">{{ timeuntil(item.application_deadline) }} left to apply</span>
+                        {% else %}
+                        <span class="ms-2">No deadline</span>
+                        {% endif %}
                 </small>
                 {% endif %}
                 <small class="text-muted text-end">Last updated {{ timesince(item.last_modified) }} ago</small>

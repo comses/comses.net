@@ -35,7 +35,6 @@
       label="Application Deadline"
       help="When applications for this job are due."
       :min-date="new Date()"
-      required
     />
     <TaggerField
       class="mb-3"
@@ -71,8 +70,7 @@ const schema = yup.object().shape({
   description: yup.string().required(),
   applicationDeadline: yup
     .date()
-    .min(new Date(), "Please enter a valid date after today's date.")
-    .required(),
+    .min(new Date(), "Please enter a valid date after today's date."),
   summary: yup.string().required(),
   tags: yup
     .array()
