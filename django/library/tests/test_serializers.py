@@ -12,9 +12,10 @@ from ..serializers import (
 
 class SerializerTestCase(BaseModelTestCase):
     def create_raw_user(self, username="foo.bar"):
-        User.objects.get_or_create(username=username)
+        user, _ = User.objects.get_or_create(username=username)
         return {
-            "username": username,
+            "username": user.username,
+            "id": user.id,
         }
 
     def create_raw_contributor(
@@ -201,3 +202,90 @@ class SerializerTestCase(BaseModelTestCase):
         )
         with self.assertRaises(rf.ValidationError):
             release_contributors_serializer.is_valid(raise_exception=True)
+
+    def test_get_existing_contributor_given_user(self):
+        # correctly matches a contributor to a user
+        raw_user = self.create_raw_user(username="contrib123")
+        raw_contributor = self.create_raw_contributor(raw_user)
+        contributor_serializer = ContributorSerializer(data=raw_contributor)
+        contributor_serializer.is_valid()
+        contributor_serializer.save()
+        _, existing_contributor = contributor_serializer.get_existing_contributor(
+            raw_contributor
+        )
+        self.assertEqual(existing_contributor.user.id, raw_user["id"])
+
+        # contributor is none (needs to be created) when user is given but no matching contributor
+        raw_user = self.create_raw_user(username="contrib456")
+        raw_contributor = self.create_raw_contributor(
+            raw_user, email="contrib456@hotmail.com"
+        )
+        contributor_serializer = ContributorSerializer(data=raw_contributor)
+        _, existing_contributor = contributor_serializer.get_existing_contributor(
+            raw_contributor
+        )
+        self.assertIsNone(existing_contributor)
+
+    def test_get_existing_contributor_given_email(self):
+        # correctly matches a contributor with the same email
+        email = "johnprine@aol.com"
+        raw_contributor = self.create_raw_contributor(
+            raw_user=None, email=email, family_name="Prine", given_name="John"
+        )
+        contributor_serializer = ContributorSerializer(data=raw_contributor)
+        contributor_serializer.is_valid()
+        contributor = contributor_serializer.save()
+        _, found_contributor = contributor_serializer.get_existing_contributor(
+            {"email": email}
+        )
+        self.assertEqual(contributor.id, found_contributor.id)
+
+        # contributor is none (needs to be created) when email match is not found
+        # we dont want to overwrite the email even if a name match exists
+        email = "johnprine@yahoo.com"
+        raw_contributor = self.create_raw_contributor(
+            raw_user=None, email=email, family_name="Prine", given_name="John"
+        )
+        contributor_serializer = ContributorSerializer(data=raw_contributor)
+        _, found_contributor = contributor_serializer.get_existing_contributor(
+            raw_contributor
+        )
+        self.assertIsNone(found_contributor)
+
+    def test_get_existing_contributor_given_name(self):
+        # correctly matches a contributor with the same name if no user or email matches can be found
+        given_name = "Robert"
+        family_name = "Fripp"
+        raw_contributor = self.create_raw_contributor(
+            raw_user=None, email="", family_name=family_name, given_name=given_name
+        )
+        contributor_serializer = ContributorSerializer(data=raw_contributor)
+        contributor_serializer.is_valid()
+        contributor = contributor_serializer.save()
+        _, found_contributor = contributor_serializer.get_existing_contributor(
+            {"given_name": given_name, "family_name": family_name}
+        )
+        self.assertEqual(contributor.id, found_contributor.id)
+
+        # contributor is none (needs to be created) when name match is not found
+        raw_contributor = self.create_raw_contributor(
+            raw_user=None, email="", family_name="Thom", given_name="Yorke"
+        )
+        contributor_serializer = ContributorSerializer(data=raw_contributor)
+        _, found_contributor = contributor_serializer.get_existing_contributor(
+            raw_contributor
+        )
+        self.assertIsNone(found_contributor)
+
+        # check that we only match contributors that do not have an email in this case
+        raw_contributor = self.create_raw_contributor(
+            raw_user=None,
+            email="differentfripp@aol.com",
+            family_name=family_name,
+            given_name=given_name,
+        )
+        contributor_serializer = ContributorSerializer(data=raw_contributor)
+        _, found_contributor = contributor_serializer.get_existing_contributor(
+            raw_contributor
+        )
+        self.assertIsNone(found_contributor)
