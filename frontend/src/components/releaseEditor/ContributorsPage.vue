@@ -57,7 +57,7 @@
             </div>
             <div>
               <div class="d-flex align-items-end">
-                <h5 class="m-0">{{ displayName(element.contributor) }}</h5>
+                <h5 class="m-0">{{ element.contributor.name }}</h5>
                 <small class="text-muted ms-2">({{ roleDisplay(element) }})</small>
                 <span v-if="element.includeInCitation" class="badge bg-info ms-2">citable</span>
               </div>
@@ -68,7 +68,7 @@
                     {{ element.contributor.user.username }}
                   </span>
                   <span v-else>
-                    {{ displayName(element.contributor) }}
+                    {{ element.contributor.name }}
                   </span>
                 </a>
               </small>
@@ -157,7 +157,7 @@ import BootstrapModal from "@/components/BootstrapModal.vue";
 import ContributorAddModal from "@/components/releaseEditor/ContributorAddModal.vue";
 import ContributorEditForm from "@/components/releaseEditor/ContributorEditForm.vue";
 import { useReleaseEditorStore } from "@/stores/releaseEditor";
-import type { Contributor, ReleaseContributor } from "@/types";
+import type { ReleaseContributor } from "@/types";
 import type { SortableEvent } from "sortablejs";
 import { useReleaseEditorAPI } from "@/composables/api";
 
@@ -224,15 +224,6 @@ function sort(event: SortableEvent) {
       contributor.index = index;
     });
   }
-}
-
-function displayName(contributor: Contributor) {
-  const { givenName, familyName, user } = contributor;
-  let name = [givenName, familyName].filter(Boolean).join(" ");
-  if (!name && user && user.name) {
-    name = user.name;
-  }
-  return name;
 }
 
 function roleDisplay(contributor: ReleaseContributor) {

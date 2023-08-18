@@ -54,19 +54,19 @@ search_tag_href, search_bar %}
 
 {% block introduction %}<h1>Community</h1>{% endblock %}
 
-{% set pagination_block = paginator("home:profile-list", paginator_data) %}
+{% set pagination_block = paginator("core:profile-list", paginator_data) %}
 
 {% block top %}
 {{
 breadcrumb([
 {'url': '/community/', 'text': 'Community'},
-{'url': url("home:profile-list"), 'text': 'Users'}
+{'url': url("core:profile-list"), 'text': 'Users'}
 ])
 }}
 {% endblock %}
 
 {% block search %}
-{{ search_bar(url("home:profile-list"), "Search by name") }}
+{{ search_bar(url("core:profile-list"), "Search by name") }}
 {{ pagination_block }}
 {% endblock %}
 

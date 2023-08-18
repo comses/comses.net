@@ -15,14 +15,17 @@ from core.validators import validate_affiliations
 from core.serializers import (
     YMD_DATETIME_FORMAT,
     DATE_PUBLISHED_FORMAT,
-    LinkedUserSerializer,
     create,
     update,
     set_tags,
     TagSerializer,
     MarkdownField,
 )
-from home.common_serializers import RelatedMemberProfileSerializer
+
+from core.serializers import (
+    RelatedMemberProfileSerializer,
+    RelatedUserSerializer,
+)
 from .models import (
     ReleaseContributor,
     Codebase,
@@ -62,30 +65,31 @@ class LicenseSerializer(serializers.ModelSerializer):
 class ContributorSerializer(serializers.ModelSerializer):
     # Need an ID for Vue-Multiselect
     id = serializers.IntegerField(read_only=True)
-    user = RelatedMemberProfileSerializer(required=False, allow_null=True)
+    user = RelatedUserSerializer(required=False, allow_null=True)
     affiliations = TagSerializer(many=True)
-    profile_url = serializers.SerializerMethodField()
+    profile_url = serializers.SerializerMethodField(read_only=True)
 
     def get_existing_contributor(self, validated_data):
         user = validated_data.get("user")
-        email = validated_data.get("email")
         username = user.get("username") if user else None
-        if username is not None:
-            return (
-                User.objects.get(username=username),
-                Contributor.objects.filter(user__username=username).first(),
-            )
+        email = validated_data.get("email")
+        contributor = None
+        # attempt to find contributor by username, then email, then name without an email
+        if username:
+            user = User.objects.filter(username=username).first()
+            contributor = Contributor.objects.filter(user__username=username).first()
         elif email:
-            # match by email if given
             contributor = Contributor.objects.filter(email=email).first()
-            return (contributor.user if contributor else None, contributor)
+            user = contributor.user if contributor else None
         else:
-            # otherwise, match by the exact name given and blank email
             contrib_filter = {
                 k: validated_data.get(k, "")
                 for k in ["given_name", "family_name", "email"]
             }
-            return None, Contributor.objects.filter(**contrib_filter).first()
+            contributor = Contributor.objects.filter(**contrib_filter).first()
+            user = None
+
+        return user, contributor
 
     def save(self, **kwargs):
         if self.instance is None:
@@ -104,17 +108,19 @@ class ContributorSerializer(serializers.ModelSerializer):
             return user.member_profile.get_absolute_url()
         else:
             return "{0}?{1}".format(
-                reverse("home:profile-list"), urlencode({"query": instance.name})
+                reverse("core:profile-list"), urlencode({"query": instance.name})
             )
 
     def update(self, instance, validated_data):
-        affiliations_serializer = TagSerializer(
-            many=True, data=validated_data.pop("affiliations")
-        )
+        affiliations = validated_data.pop("affiliations", None)
         validated_data.pop("given_name", None)
         validated_data.pop("family_name", None)
         instance = super().update(instance, validated_data)
-        set_tags(instance, affiliations_serializer, "affiliations")
+        if affiliations:  # dont overwrite affiliations if not provided
+            affiliations_serializer = TagSerializer(
+                many=True, data=affiliations, context=self.context
+            )
+            set_tags(instance, affiliations_serializer, "affiliations")
         instance.save()
         return instance
 
@@ -139,6 +145,7 @@ class ContributorSerializer(serializers.ModelSerializer):
             "user",
             "type",
             "affiliations",
+            "primary_affiliation_name",
             "profile_url",
         )
 
@@ -206,7 +213,7 @@ class FeaturedImageMixin(serializers.Serializer):
 
 class ReleaseContributorSerializer(serializers.ModelSerializer):
     contributor = ContributorSerializer()
-    profile_url = serializers.SerializerMethodField()
+    profile_url = serializers.SerializerMethodField(read_only=True)
     index = serializers.IntegerField(required=False)
 
     def get_profile_url(self, instance):
@@ -215,7 +222,7 @@ class ReleaseContributorSerializer(serializers.ModelSerializer):
             return user.member_profile.get_absolute_url()
         else:
             return "{0}?{1}".format(
-                reverse("home:profile-list"),
+                reverse("core:profile-list"),
                 urlencode({"query": instance.contributor.name}),
             )
 
@@ -272,7 +279,7 @@ class RelatedCodebaseReleaseSerializer(serializers.ModelSerializer):
         many=True,
         source="index_ordered_release_contributors",
     )
-    submitter = LinkedUserSerializer(read_only=True, label="Submitter")
+    submitter = RelatedUserSerializer(read_only=True, label="Submitter")
     first_published_at = serializers.DateTimeField(
         format=DATE_PUBLISHED_FORMAT, read_only=True
     )
@@ -311,7 +318,7 @@ class CodebaseSerializer(serializers.ModelSerializer, FeaturedImageMixin):
         source="latest_version.version_number"
     )
     releases = serializers.SerializerMethodField()
-    submitter = LinkedUserSerializer(
+    submitter = RelatedUserSerializer(
         read_only=True, default=serializers.CurrentUserDefault()
     )
     summarized_description = serializers.CharField(read_only=True)
@@ -502,7 +509,7 @@ class CodebaseReleaseSerializer(serializers.ModelSerializer):
     os_display = serializers.ReadOnlyField(source="get_os_display")
     platforms = TagSerializer(many=True, source="platform_tags")
     programming_languages = TagSerializer(many=True)
-    submitter = LinkedUserSerializer(read_only=True, label="Submitter")
+    submitter = RelatedUserSerializer(read_only=True, label="Submitter")
     version_number = serializers.ReadOnlyField()
     release_notes = MarkdownField(max_length=2048)
     urls = serializers.SerializerMethodField()
@@ -641,20 +648,6 @@ class PeerReviewFeedbackEditorSerializer(serializers.ModelSerializer):
         )
 
 
-class PeerReviewReviewerSerializer(serializers.ModelSerializer):
-    tags = TagSerializer(many=True)
-
-    class Meta:
-        model = MemberProfile
-        fields = (
-            "id",
-            "avatar_url",
-            "degrees",
-            "name",
-            "tags",
-        )
-
-
 class PeerReviewInvitationSerializer(serializers.ModelSerializer):
     """Serialize review invitations. Build for list, detail and create routes
     (updating a peer review invitation may not make sense since an email has
@@ -662,7 +655,7 @@ class PeerReviewInvitationSerializer(serializers.ModelSerializer):
 
     url = serializers.ReadOnlyField(source="get_absolute_url")
 
-    candidate_reviewer = PeerReviewReviewerSerializer(read_only=True)
+    candidate_reviewer = RelatedMemberProfileSerializer(read_only=True)
 
     class Meta:
         model = PeerReviewInvitation

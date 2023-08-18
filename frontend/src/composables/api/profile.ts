@@ -1,10 +1,6 @@
 import { useAxios, type RequestOptions } from "@/composables/api";
 import { toRefs } from "vue";
-
-interface ProfileQueryParams {
-  query?: string;
-  tags?: string[];
-}
+import type { UserSearchQueryParams } from "@/types";
 
 export function useProfileAPI() {
   /**
@@ -16,7 +12,7 @@ export function useProfileAPI() {
   const baseUrl = "/users/";
   const { state, get, postForm, put, detailUrl, searchUrl } = useAxios(baseUrl);
 
-  async function search(params: ProfileQueryParams) {
+  async function search(params: UserSearchQueryParams) {
     return get(searchUrl(params));
   }
 
@@ -45,6 +41,6 @@ export function useProfileAPI() {
     update,
     uploadProfilePicture,
     detailUrl,
-    searchUrl: searchUrl<ProfileQueryParams>,
+    searchUrl: searchUrl<UserSearchQueryParams>,
   };
 }

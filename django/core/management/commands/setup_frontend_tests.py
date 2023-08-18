@@ -2,7 +2,7 @@ from allauth.account.models import EmailAddress
 from django.conf import settings
 from django.core.management.base import BaseCommand
 
-from core.models import MemberProfile, User, Institution, ComsesGroups
+from core.models import MemberProfile, User, ComsesGroups
 
 
 class Command(BaseCommand):

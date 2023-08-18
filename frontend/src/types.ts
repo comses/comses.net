@@ -85,13 +85,7 @@ export interface ReviewEvent {
   };
 }
 
-export interface Reviewer {
-  id: number;
-  name: string;
-  avatarUrl: string;
-  degrees: string[];
-  tags: Tag[];
-}
+export type Reviewer = RelatedMemberProfile;
 
 export interface CodebaseReleaseEditorState {
   files: CodebaseReleaseFiles;
@@ -130,27 +124,36 @@ export interface ReleaseContributor {
 
 export interface Contributor {
   affiliations: any[];
+  primaryAffiliationName: string;
   email: string;
   id: number;
+  name: string;
   givenName: string;
   middleName?: string;
   familyName?: string;
   profileUrl?: string;
   type: "person" | "organization";
-  user?: {
-    institutionName?: string;
-    institutionUrl?: string;
-    name: string;
-    profileUrl: string;
-    username: string;
-    email: string;
-  } | null;
+  user?: RelatedUser | null;
 }
 
-export interface LinkedUser {
+export interface RelatedMemberProfile {
+  id: number;
+  avatarUrl?: string;
+  degrees: string[];
+  givenName: string;
+  familyName: string;
   name: string;
+  email: string;
   profileUrl: string;
+  primaryAffiliationName?: string;
+  tags: Tag[];
   username: string;
+}
+
+export interface RelatedUser {
+  id: number;
+  username: string;
+  memberProfile: RelatedMemberProfile;
 }
 
 export interface CodebaseRelease {
@@ -180,7 +183,7 @@ export interface CodebaseRelease {
   reviewStatus: string | null;
   shareUrl: string | null;
   submittedPackage: string | null;
-  submitter: LinkedUser;
+  submitter: RelatedUser;
   urls: {
     requestPeerReview: string | null;
     review: string | null;
@@ -208,7 +211,7 @@ interface Codebase {
   releases?: any[];
   replicationText?: string;
   repositoryUrl?: string;
-  submitter: LinkedUser;
+  submitter: RelatedUser;
   summarizedDescription: string;
   tags: Tag[];
   title: string;
@@ -248,4 +251,10 @@ export interface File {
 export interface Folder {
   label: string;
   contents: (File | Folder)[];
+}
+
+export interface UserSearchQueryParams {
+  query?: string;
+  page?: number;
+  tags?: string[];
 }

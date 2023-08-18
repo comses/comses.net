@@ -1,14 +1,19 @@
 import logging
 
 from django.contrib.auth.models import User
+from allauth.account.models import EmailAddress
+from django.core.exceptions import ValidationError
+from django.core.validators import validate_email
+from django.db import transaction
 from django.utils import timezone
 from django.utils.translation import ugettext_lazy as _
 from markupfield.fields import Markup
 from rest_framework import serializers
-from rest_framework.exceptions import ValidationError
+from rest_framework.exceptions import ValidationError as DrfValidationError
 from taggit.models import Tag
 
-from .models import Event, Job, Institution
+from .validators import validate_affiliations
+from .models import Event, Job, MemberProfile
 
 logger = logging.getLogger(__name__)
 
@@ -69,22 +74,6 @@ def update(serializer_update, instance, validated_data):
     return instance
 
 
-class LinkedUserSerializer(serializers.ModelSerializer):
-    profile_url = serializers.URLField(
-        source="member_profile.get_absolute_url", read_only=True
-    )
-    name = serializers.SerializerMethodField()
-    username = serializers.ReadOnlyField()
-
-    def get_name(self, user):
-        # FIXME: duplicate logic in user.member_profile.name
-        return user.get_full_name() or user.username
-
-    class Meta:
-        model = User
-        fields = ("name", "profile_url", "username")
-
-
 class EditableSerializerMixin(serializers.Serializer):
     editable = serializers.SerializerMethodField(
         help_text=_("Whether or not entity is editable by the current user")
@@ -128,6 +117,191 @@ class MarkdownField(serializers.CharField):
         return data
 
 
+class MemberProfileSerializer(serializers.ModelSerializer):
+    # User fields
+    date_joined = serializers.DateTimeField(
+        source="user.date_joined", read_only=True, format="%B %d %Y"
+    )
+    family_name = serializers.CharField(source="user.last_name")
+    given_name = serializers.CharField(source="user.first_name")
+    username = serializers.CharField(source="user.username", read_only=True)
+    user_pk = serializers.IntegerField(source="user.pk", read_only=True)
+    email = serializers.SerializerMethodField()
+
+    # Followers
+    follower_count = serializers.ReadOnlyField(source="user.following.count")
+    following_count = serializers.ReadOnlyField(source="user.followers.count")
+
+    # MemberProfile
+    affiliations = serializers.JSONField()
+    avatar = (
+        serializers.SerializerMethodField()
+    )  # needed to materialize the FK relationship for wagtailimages
+    orcid_url = serializers.ReadOnlyField()
+    github_url = serializers.ReadOnlyField()
+    tags = TagSerializer(many=True)
+    profile_url = serializers.URLField(source="get_absolute_url", read_only=True)
+    bio = MarkdownField()
+    research_interests = MarkdownField()
+
+    def validate_affiliations(self, value):
+        return validate_affiliations(value)
+
+    def get_email(self, instance):
+        request = self.context.get("request")
+        if request and request.user.is_anonymous:
+            return None
+        else:
+            return instance.email
+
+    def get_avatar(self, instance):
+        request = self.context.get("request")
+        if request and request.accepted_media_type != "text/html":
+            return (
+                instance.picture.get_rendition("fill-150x150").url
+                if instance.picture
+                else None
+            )
+        return instance.picture
+
+    def save_email(self, user, new_email):
+        if user.email != new_email:
+            try:
+                validate_email(new_email)
+                # Check if any user other the user currently being edited has an email account with the same address as the
+                # new email
+                users_with_email = MemberProfile.objects.find_users_with_email(
+                    new_email, exclude_user=user
+                )
+                if users_with_email.exists():
+                    logger.warning(
+                        "Unable to register email %s, already owned by [%s]",
+                        user.email,
+                        users_with_email,
+                    )
+                    raise DrfValidationError(
+                        {"email": ["This email address is already taken."]}
+                    )
+            except ValidationError as e:
+                raise DrfValidationError({"email": e.messages})
+
+            sender = self.context.get("request")
+
+            if EmailAddress.objects.filter(primary=True, user=user).exists():
+                EmailAddress.objects.get(primary=True, user=user).change(
+                    sender, new_email, confirm=True
+                )
+            else:
+                email_address = EmailAddress.objects.create(
+                    primary=True, user=user, email=new_email
+                )
+                email_address.send_confirmation(sender)
+
+            logger.warning(
+                "email change for user [pk: %s] %s -> %s, awaiting confirmation.",
+                user.id,
+                user.email,
+                new_email,
+            )
+
+    @transaction.atomic
+    def update(self, instance, validated_data):
+        raw_tags = TagSerializer(many=True, data=validated_data.pop("tags"))
+        user = instance.user
+        raw_user = validated_data.pop("user")
+        user.first_name = raw_user["first_name"]
+        user.last_name = raw_user["last_name"]
+        user.save()
+
+        new_email = self.initial_data["email"]
+
+        # Full members cannot downgrade their status
+        if instance.full_member:
+            validated_data["full_member"] = True
+        else:
+            validated_data["full_member"] = bool(self.initial_data["full_member"])
+
+        logger.debug("validated data in member profile serializer: %s", validated_data)
+
+        obj = super().update(instance, validated_data)
+        self.save_tags(instance, raw_tags)
+        self.save_email(user, new_email)
+        return obj
+
+    @staticmethod
+    def save_tags(instance, tags):
+        if not tags.is_valid():
+            raise serializers.ValidationError(tags.errors)
+        db_tags = tags.save()
+        instance.tags.clear()
+        instance.tags.add(*db_tags)
+        instance.save()
+
+    class Meta:
+        model = MemberProfile
+        fields = (
+            # User
+            "date_joined",
+            "family_name",
+            "given_name",
+            "profile_url",
+            "username",
+            "email",
+            "user_pk",
+            # Follower
+            "follower_count",
+            "following_count",
+            "industry",
+            # MemberProfile
+            "avatar",
+            "bio",
+            "name",
+            "degrees",
+            "full_member",
+            "tags",
+            "orcid_url",
+            "github_url",
+            "personal_url",
+            "is_reviewer",
+            "professional_url",
+            "profile_url",
+            "research_interests",
+            "affiliations",
+            "name",
+        )
+
+
+class RelatedMemberProfileSerializer(serializers.ModelSerializer):
+    tags = TagSerializer(many=True)
+    family_name = serializers.CharField(allow_blank=True, source="user.last_name")
+    given_name = serializers.CharField(allow_blank=True, source="user.first_name")
+
+    class Meta:
+        model = MemberProfile
+        fields = (
+            "id",
+            "avatar_url",
+            "degrees",
+            "given_name",
+            "family_name",
+            "name",
+            "email",
+            "profile_url",
+            "primary_affiliation_name",
+            "tags",
+            "username",
+        )
+
+
+class RelatedUserSerializer(serializers.ModelSerializer):
+    member_profile = RelatedMemberProfileSerializer(read_only=True)
+    username = serializers.CharField()
+
+    class Meta:
+        model = User
+        fields = ("id", "username", "member_profile")
+
+        
 class IsoDateField(serializers.DateField):
     """
     Extension to DateField that accepts full ISO 8601 date-time strings
@@ -139,7 +313,7 @@ class IsoDateField(serializers.DateField):
 
 
 class EventSerializer(serializers.ModelSerializer):
-    submitter = LinkedUserSerializer(
+    submitter = RelatedUserSerializer(
         read_only=True, help_text=_("User that created the event"), label="Submitter"
     )
     absolute_url = serializers.URLField(
@@ -245,7 +419,7 @@ class EventCalendarSerializer(serializers.ModelSerializer):
 
 
 class JobSerializer(serializers.ModelSerializer):
-    submitter = LinkedUserSerializer(
+    submitter = RelatedUserSerializer(
         read_only=True,
         help_text=_("User that created the job description"),
         label="Submitter",
@@ -286,22 +460,4 @@ class JobSerializer(serializers.ModelSerializer):
             "tags",
             "external_url",
             "is_expired",
-        )
-
-
-class InstitutionSerializer(serializers.ModelSerializer):
-    # Not sure why these need required and allow blank, should have correct defaults
-    # from blank=True in the model
-    name = serializers.CharField(allow_blank=False)
-    url = serializers.URLField(required=False, allow_blank=True)
-    acronym = serializers.CharField(required=False, allow_blank=True)
-    ror_id = serializers.URLField(required=False, allow_blank=True)
-
-    class Meta:
-        model = Institution
-        fields = (
-            "name",
-            "url",
-            "acronym",
-            "ror_id",
         )

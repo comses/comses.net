@@ -16,7 +16,7 @@ from core.tests.base import (
 )
 from curator.invoke_tasks.borg import _restore as restore_archive, backup
 from curator.invoke_tasks.database import create_pgpass_file
-from home.tests.base import EventFactory, JobFactory
+from core.tests.base import EventFactory, JobFactory
 from library.fs import import_archive
 from library.models import Codebase
 from library.tests.base import CodebaseFactory

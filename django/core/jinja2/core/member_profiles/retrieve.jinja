@@ -1,5 +1,5 @@
 {% extends "sidebar_layout.jinja" %}
-{% from "common.jinja" import breadcrumb, subnav, institution_href, search_tag_btn, render_social_profile_url %}
+{% from "common.jinja" import breadcrumb, subnav, affiliation_href, search_tag_btn, render_social_profile_url %}
 {% from "library/codebases/macros.jinja" import render_codebase_result, render_reviewer_feedback %}
 
 {% block title %}User profile for {{ profile.name }}{% endblock %}
@@ -33,12 +33,11 @@
                     {% for degree in degrees %}
                         <p class='card-text'>{{ profile.degree }}</p>
                     {% endfor %}
-                    {# consider marking primary institution #}
                     {% if profile.affiliations %}
                         <b class='card-title'>Affiliations</b>
                         <p class='card-text'>
                     {% for affiliation in profile.affiliations %}
-                        {{ institution_href(affiliation) }}{{ ", " if not loop.last else "" }}
+                        {{ affiliation_href(affiliation) }}{{ ", " if not loop.last else "" }}
                     {% endfor %}
                         </p>
                     {% endif %}
@@ -103,7 +102,6 @@
             {% endif %}
         </div>
         <div class='tab-pane' id='code' role='tabpanel'>
-            {# FIXME: use codebase list component #}
             {% for codebase in codebases %}
                 {{ render_codebase_result(codebase) }}
             {% else %}

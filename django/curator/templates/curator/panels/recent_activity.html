@@ -7,7 +7,7 @@
                 <li>
                     <a class="button button-secondary button-small" href="{% url 'wagtailusers_users:edit' new_account.pk %}">edit in wagtail</a>
                     <a class="button button-secondary button-small" href="{% url 'admin:auth_user_change' new_account.pk %}">edit in django admin</a>
-                    <a href="{% url 'home:profile-detail' new_account.id %}">{{ new_account.username }}</a>
+                    <a href="{% url 'core:profile-detail' new_account.id %}">{{ new_account.username }}</a>
                     - joined 
                         <em>{{ new_account.date_joined }}</em></a>
 
@@ -33,7 +33,7 @@
     {% if modified_events %}
         <ul>
             {% for event in modified_events %}
-                <li><a href="{% url 'home:event-detail' event.id %}">{{ event.title }}
+                <li><a href="{% url 'core:event-detail' event.id %}">{{ event.title }}
                     (Modified {{ event.last_modified }})</a>. {% include 'curator/panels/submitted_by.html' with obj=event %}</li>
             {% endfor %}
         </ul>

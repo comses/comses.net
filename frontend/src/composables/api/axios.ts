@@ -120,7 +120,10 @@ export function useAxios(baseUrl?: string, config?: AxiosRequestConfig) {
     return joinPaths([_baseUrl, id, ..._paths]);
   }
 
-  function searchUrl<QueryParams extends Record<string, any>>(params: QueryParams) {
+  function searchUrl<QueryParams extends Record<string, any>>(
+    params: QueryParams,
+    _baseUrl = baseUrl
+  ) {
     // filter out empty strings
     const filteredParams: Partial<QueryParams> = {};
     for (const key in params) {
@@ -130,9 +133,9 @@ export function useAxios(baseUrl?: string, config?: AxiosRequestConfig) {
     }
     const qs = queryString.stringify(filteredParams);
     if (!qs) {
-      return baseUrl || window.location.origin;
+      return _baseUrl || window.location.origin;
     }
-    return `${baseUrl}?${qs}`;
+    return `${_baseUrl}?${qs}`;
   }
 
   return {

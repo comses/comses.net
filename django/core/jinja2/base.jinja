@@ -5,7 +5,7 @@
 {% set logout_url = url("account_logout") %}
 {% set signup_url = url("account_signup") %}
 {% set contact_url = slugurl('contact') %}
-{% set profile_url = url('home:profile-detail', pk=user.pk) if user.is_authenticated else signup_url %}
+{% set profile_url = url('core:profile-detail', pk=user.pk) if user.is_authenticated else signup_url %}
 
 {% macro navbar() %}
     <div class="fixed-top bg-light">
@@ -38,10 +38,10 @@
                         <a href='{{ slugurl("education") }}' class='nav-link'>Education</a>
                     </li>
                     <li class="nav-item">
-                        <a href="{{ url('home:event-list') }}" class="nav-link">Events</a>
+                        <a href="{{ url('core:event-list') }}" class="nav-link">Events</a>
                     </li>
                     <li class="nav-item">
-                        <a href="{{ url('home:job-list') }}" class="nav-link">Jobs</a>
+                        <a href="{{ url('core:job-list') }}" class="nav-link">Jobs</a>
                     </li>
                     <li class="nav-item">
                         <a href="/resources/" class="nav-link">Resources</a>
@@ -379,9 +379,16 @@
         </div>
     </section>
 {% endblock introduction_section %}
+<noscript>
+    <div class='alert alert-danger mt-3'>
+        <i class='fas fa-exclamation-triangle me-2'></i>
+        Javascript is disabled in your browser. Some of this site's functionality <b>will not work</b> or
+        be heavily degraded without it.
+    </div>
+</noscript>
 {% if not is_production() %}
     <div class='alert alert-danger mt-3'>
-        <i class='fas fa-warning fa-2x'></i>
+        <i class='fas fa-flask me-2'></i>
         You are currently accessing a <b>test version of the comses.net website</b>. Information that you
         view or store here will <b>not be preserved</b> and may not be consistent.
     </div>

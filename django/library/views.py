@@ -20,7 +20,6 @@ from ipware import get_client_ip
 from rest_framework import (
     viewsets,
     generics,
-    renderers,
     status,
     permissions,
     filters,
@@ -39,15 +38,16 @@ from rest_framework.response import Response
 from core.models import MemberProfile
 from core.permissions import ViewRestrictedObjectPermissions
 from core.view_helpers import add_change_delete_perms, get_search_queryset
+from core.mixins import CommonViewSetMixin
 from core.views import (
-    CommonViewSetMixin,
     FormUpdateView,
     FormCreateView,
-    SmallResultSetPagination,
     NoDeleteViewSet,
     NoDeleteNoUpdateViewSet,
     HtmlNoDeleteViewSet,
 )
+from core.pagination import SmallResultSetPagination
+from core.serializers import RelatedMemberProfileSerializer
 from .forms import (
     PeerReviewerFeedbackReviewerForm,
     PeerReviewInvitationReplyForm,
@@ -77,7 +77,6 @@ from .serializers import (
     CodebaseImageSerializer,
     PeerReviewInvitationSerializer,
     PeerReviewFeedbackEditorSerializer,
-    PeerReviewReviewerSerializer,
     PeerReviewEventLogSerializer,
 )
 
@@ -204,7 +203,7 @@ class PeerReviewEditorView(PermissionRequiredMixin, DetailView):
 
 class PeerReviewReviewerListView(mixins.ListModelMixin, viewsets.GenericViewSet):
     queryset = MemberProfile.objects.all()
-    serializer_class = PeerReviewReviewerSerializer
+    serializer_class = RelatedMemberProfileSerializer
 
     def get_queryset(self):
         query = self.request.query_params.get("query", "")
