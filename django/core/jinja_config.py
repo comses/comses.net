@@ -204,17 +204,17 @@ def format_date(date_obj, format_str=FULL_DATE_FORMAT):
 
 
 def _timesince(date_str, depth=1):
-    date_obj = parse_date(date_str) or parse_datetime(date_str)
-    if date_obj is None:
+    if date_str is None:
         return None
-    return timesince(date_obj, depth=depth)
+    date_obj = parse_date(date_str) or parse_datetime(date_str)
+    return timesince(date_obj, depth=depth) if date_obj else None
 
 
 def _timeuntil(date_str, depth=1):
-    date_obj = parse_date(date_str) or parse_datetime(date_str)
-    if date_obj is None:
+    if date_str is None:
         return None
-    return timeuntil(date_obj, depth=depth)
+    date_obj = parse_date(date_str) or parse_datetime(date_str)
+    return timeuntil(date_obj, depth=depth) if date_obj else None
 
 
 def to_json(value):
