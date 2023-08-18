@@ -10,6 +10,7 @@ from django.db.models import Count, Q, Prefetch, Max
 from django.http import HttpResponse, Http404, HttpResponseRedirect
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import resolve
+from django.utils import timezone
 from django.utils.translation import ugettext_lazy as _
 from django.views import View
 from django.views.generic.base import RedirectView
@@ -262,9 +263,8 @@ class PeerReviewInvitationViewSet(NoDeleteNoUpdateViewSet):
             raise ValidationError("Must have either id or email fields")
         form = PeerReviewInvitationForm(data=form_data)
         if form.is_valid():
-            # FIXME: consider an explicit invitation.send_candidate_reviewer_email() here instead of
-            # buried in the form.save() logic to match resend_invitation better and make it more clear what's going on
-            form.save()
+            invitation = form.save()
+            invitation.send_candidate_reviewer_email()
             return Response(status=status.HTTP_200_OK)
         else:
             return Response(status=status.HTTP_400_BAD_REQUEST, data=form.errors)

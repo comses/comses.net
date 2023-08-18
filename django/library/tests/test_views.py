@@ -3,7 +3,7 @@ import pathlib
 import shutil
 
 from django.conf import settings
-from django.test import TestCase
+from django.test import TestCase, RequestFactory
 from django.urls import reverse
 from guardian.shortcuts import assign_perm
 from rest_framework import status
@@ -27,7 +27,7 @@ from .base import (
     ReleaseContributorFactory,
     PeerReviewInvitationFactory,
 )
-from ..views import CodebaseViewSet, CodebaseReleaseViewSet
+from ..views import CodebaseViewSet, CodebaseReleaseViewSet, PeerReviewInvitationViewSet
 
 import logging
 
@@ -602,6 +602,15 @@ class PeerReviewInvitationTestCase(ReviewSetup, ResponseStatusCodesMixin, TestCa
             accept_invitation_response,
             self.invitation.latest_feedback.get_absolute_url(),
         )
+
+    def test_resend_invitation(self):
+        # date_sent field should be updated when resending an invitation
+        date_sent = self.invitation.date_sent
+        request = RequestFactory().post("/invitations/", data={})
+        view = PeerReviewInvitationViewSet()
+        view.resend_invitation(request, slug=None, invitation_slug=self.invitation.slug)
+        self.invitation.refresh_from_db()
+        self.assertGreater(self.invitation.date_sent, date_sent)
 
     @classmethod
     def tearDownClass(cls):

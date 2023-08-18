@@ -15,6 +15,7 @@ from core.validators import validate_affiliations
 from core.serializers import (
     YMD_DATETIME_FORMAT,
     DATE_PUBLISHED_FORMAT,
+    FULL_DATETIME_FORMAT,
     create,
     update,
     set_tags,
@@ -654,8 +655,11 @@ class PeerReviewInvitationSerializer(serializers.ModelSerializer):
     already been sent)"""
 
     url = serializers.ReadOnlyField(source="get_absolute_url")
-
     candidate_reviewer = RelatedMemberProfileSerializer(read_only=True)
+    expiration_date = serializers.SerializerMethodField()
+
+    def get_expiration_date(self, obj):
+        return format(obj.expiration_date, FULL_DATETIME_FORMAT)
 
     class Meta:
         model = PeerReviewInvitation

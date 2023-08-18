@@ -21,7 +21,6 @@ class PeerReviewInvitationForm(forms.ModelForm):
 
     def save(self, commit=True):
         invitation = super().save(commit)
-        invitation.send_candidate_reviewer_email()
         return invitation
 
     class Meta:

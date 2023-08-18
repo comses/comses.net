@@ -87,6 +87,20 @@ export interface ReviewEvent {
 
 export type Reviewer = RelatedMemberProfile;
 
+export interface ReviewInvitation {
+  id: number;
+  slug: string;
+  candidateReviewer: RelatedMemberProfile;
+  dateCreated: string;
+  dateSent: string;
+  expirationDate: string;
+  optionalMessage: string;
+  optionalMessageMarkupType: string;
+  accepted: boolean | null;
+  review: number;
+  editor: number;
+}
+
 export interface CodebaseReleaseEditorState {
   files: CodebaseReleaseFiles;
   release: CodebaseRelease;

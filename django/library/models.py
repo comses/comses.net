@@ -1825,6 +1825,7 @@ class PeerReviewInvitationQuerySet(models.QuerySet):
 @register_snippet
 class PeerReviewInvitation(models.Model):
     date_created = models.DateTimeField(auto_now_add=True)
+    date_sent = models.DateTimeField(default=timezone.now)
     review = models.ForeignKey(
         PeerReview, related_name="invitation_set", on_delete=models.CASCADE
     )
@@ -1861,7 +1862,7 @@ class PeerReviewInvitation(models.Model):
 
     @property
     def expiration_date(self):
-        return self.date_created + timedelta(
+        return self.date_sent + timedelta(
             days=settings.PEER_REVIEW_INVITATION_EXPIRATION
         )
 
@@ -1920,6 +1921,8 @@ class PeerReviewInvitation(models.Model):
             author=self.editor,
             message=f"{self.editor} sent an invitation to candidate reviewer {self.candidate_reviewer}",
         )
+        self.date_sent = timezone.now()
+        self.save(update_fields=["date_sent"])
 
     @transaction.atomic
     def accept(self):
