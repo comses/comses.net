@@ -3,26 +3,20 @@ import os.path
 import pickle
 import json
 from ast import literal_eval
-
 import pandas as pd
 import numpy as np
 from tensorflow.keras.preprocessing.text import Tokenizer
 from tensorflow.keras.preprocessing.sequence import pad_sequences
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.preprocessing import FunctionTransformer
-from sklearn.compose import ColumnTransformer
 from sklearn.naive_bayes import MultinomialNB
 from sklearn.pipeline import Pipeline
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
 import xgboost as xgb
-
-from curator.spam import UserSpamStatusProcessor, SPAM_DIR_PATH
-from curator.models import UserSpamStatus
 from typing import List
-
 from abc import ABC, abstractmethod
-
+from curator.spam_processor import UserSpamStatusProcessor, SPAM_DIR_PATH
 
 class SpamClassifier(ABC):
     # This class serves as a template for spam classifer varients
@@ -56,8 +50,6 @@ class SpamClassifier(ABC):
 
         confidences = [value[1] for value in confidences]
         predictions = [round(value) for value in confidences]
-        print("confidences", confidences)
-        print("predictions", predictions)
         return predictions, confidences
 
     def validate_model(
@@ -184,12 +176,11 @@ class TextSpamClassifier(SpamClassifier):
         predictions, confidences = self.get_predictions(model, train_x["text"])
 
         # save the results to DB
-        df["labelled_by_text_classifier"] = predictions
-        df["text_classifier_confidence"] = confidences
-        df = df.filter(
-            ["user_id", "text_classifier_confidence", "labelled_by_text_classifier"],
-            axis=1,
-        ).replace(np.nan, None)
+        result = {"user_id" : train_x["user_id"],
+                  "text_classifier_confidence": confidences,
+                  "labelled_by_text_classifier": predictions
+        }
+        df = pd.DataFrame(result).replace(np.nan, None)
 
         self.processor.update_predictions(df, isTextClassifier=True)
 
@@ -227,9 +218,8 @@ class UserMetadataSpamClassifier(SpamClassifier):
         SpamClassifier.__init__(self)
         self.TOKENIZER_FILE_PATH = SPAM_DIR_PATH + "tokenizer.pkl"
         self.MODEL_FILE_PATH = SPAM_DIR_PATH + "user_meta_classifier.pkl"
-        self.MODEL_METRICS_FILE_PATH = (
-            SPAM_DIR_PATH + "user_meta_classifier_metrics.json"
-        )
+        self.MODEL_METRICS_FILE_PATH = SPAM_DIR_PATH + "user_meta_classifier_metrics.json"
+
 
     def fit(self):
         # obtain df from pipleline
@@ -262,7 +252,6 @@ class UserMetadataSpamClassifier(SpamClassifier):
         if df.empty == True:
             return  # if no untrained data found
 
-        print("partial_fit in UserMetadataSpamClassifier")
         model = pickle.load(open(self.MODEL_FILE_PATH, "rb"))  # load model
 
         (
