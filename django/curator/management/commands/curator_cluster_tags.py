@@ -6,13 +6,16 @@ from curator.tag_deduplication import TagClusterer
 
 
 class Command(BaseCommand):
-    help = "Cluster Tags using dedupe"
+    help = """
+    Cluster Tags using dedupe. This command takes the rows of tags available in the database and clusters the tags together using Dedupe. 
+    It takes in the rows available in the Tag table and attempts to create CanonicalTag objects that are stored in the database.
+    """
 
     def add_arguments(self, parser):
         parser.add_argument(
             "--run",
             "-r",
-            help="Run the clustering model",
+            help="run the clustering model.",
             action="store_true",
             default=False,
         )
@@ -20,7 +23,7 @@ class Command(BaseCommand):
         parser.add_argument(
             "--label",
             "-l",
-            help="Label the data via the console",
+            help="label the training data for the gazetteering model using the console.",
             action="store_true",
             default=False,
         )
@@ -28,7 +31,7 @@ class Command(BaseCommand):
         parser.add_argument(
             "--save",
             "-s",
-            help="Save the clustering results to the database",
+            help="save the clustering results to the database.",
             action="store_true",
             default=False,
         )
@@ -36,7 +39,9 @@ class Command(BaseCommand):
         parser.add_argument(
             "--threshold",
             "-t",
-            help="Threshold to use for clustering tags",
+            help="""float between [0,1]. Blank defaults to 0.5. 
+            Defines how much confidence to require from the model before tags are clustered. 
+            Higher thresholds cluster less tags and require more training data labels.""",
             action="store_true",
             default=0.5,
         )

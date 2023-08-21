@@ -9,21 +9,27 @@ logger = logging.getLogger(__name__)
 
 
 class Command(BaseCommand):
-    help = "Searches for canonical tags that most closely match a tag name"
+    help = "Matches tags to a canonical list of tags using dedupe. This command finds a canonical tag "
 
     def add_arguments(self, parser):
-        parser.add_argument("--search", default="")
+        parser.add_argument(
+            "--search",
+            default="",
+            help="str to search for. Dedupe will search for a canonical tag that most closely matches this.",
+        )
         parser.add_argument(
             "--label",
             "-l",
-            help="Label the training data for the gazetteering model using the console",
+            help="label the training data for the gazetteering model using the console",
             action="store_true",
             default=False,
         )
         parser.add_argument(
             "--threshold",
             "-t",
-            help="Threshold to use for clustering tags",
+            help="""float between [0,1]. Blank defaults to 0.5. 
+            Defines how much confidence to require from the model before tags are selected from the canonical list. 
+            Higher thresholds matches less tags to those in a canonical list and require more training data labels.""",
             action="store_true",
             default=0.5,
         )
