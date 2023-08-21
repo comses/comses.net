@@ -35,19 +35,19 @@ class Command(BaseCommand):
             )
             return
 
-        tag_gazetteering = TagGazetteer(options["threshold"])
+        tag_gazetteer = TagGazetteer(options["threshold"])
 
         if options["label"]:
-            tag_gazetteering.console_label()
-            tag_gazetteering.save_to_training_file()
+            tag_gazetteer.console_label()
+            tag_gazetteer.save_to_training_file()
 
         if options["search"] != "":
-            if not tag_gazetteering.training_file_exists():
+            if not tag_gazetteer.training_file_exists():
                 logging.warn(
                     "Your model does not have any labelled data. Run this command with --label and try again."
                 )
 
-            search_results = tag_gazetteering.human_readable_search(options["search"])
+            search_results = tag_gazetteer.human_readable_search(options["search"])
             print("Searching for tags that closely match: ", options["search"])
 
             if len(search_results) == 0:

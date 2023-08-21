@@ -42,18 +42,18 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
-        tag_gazetteering = TagClusterer(clustering_threshold=options["threshold"])
+        tag_clusterer = TagClusterer(clustering_threshold=options["threshold"])
 
         if options["label"]:
-            tag_gazetteering.console_label()
-            tag_gazetteering.save_to_training_file()
+            tag_clusterer.console_label()
+            tag_clusterer.save_to_training_file()
 
         if options["run"]:
-            if not tag_gazetteering.training_file_exists():
+            if not tag_clusterer.training_file_exists():
                 logging.warn(
                     "Your model does not have any labelled data. Run this command with --label and try again."
                 )
 
-            clusters = tag_gazetteering.cluster_tags()
+            clusters = tag_clusterer.cluster_tags()
             if options["save"]:
-                tag_gazetteering.save_clusters(clusters)
+                tag_clusterer.save_clusters(clusters)
