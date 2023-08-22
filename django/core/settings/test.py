@@ -1,6 +1,7 @@
 from .dev import *
 
 from os import path
+from pathlib import Path
 
 DEPLOY_ENVIRONMENT = Environment.TEST
 
@@ -35,3 +36,6 @@ DATABASE_ROUTERS = [
     "core.database_routers.DumpRestoreRouter",
     "core.database_routers.DefaultRouter",
 ]
+
+# Spam detection configuration
+SPAM_DIR_PATH = Path("./curator/spam")

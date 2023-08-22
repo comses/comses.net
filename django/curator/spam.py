@@ -1,39 +1,45 @@
 import json
 import os
-import warnings
 
-from curator.spam_detection_models import UserMetadataSpamClassifier, TextSpamClassifier
-from curator.spam_processor import UserSpamStatusProcessor
+from django.conf import settings
 
-warnings.filterwarnings("ignore")  # ignore warnings
+from .models import UserSpamStatusProcessor
+from .spam_classifiers import (
+    UserMetadataSpamClassifier,
+    TextSpamClassifier,
+)
 
-class SpamDetection:
+
+class SpamDetector:
     """
-    This class servers as an API for the spam detection features. Calling execute() returns the spam users detected
+    This class serves as an API for the spam detection features. Calling execute() returns the spam users detected
     in the DB as well as the scores of the machine leaning models used to detect the spams.
     """
 
     def __init__(self):
         """
         SpamDetection Initialization Steps
-        1. Initializes UserSpamStatusProcessor and the classidier classes
+        1. Initializes UserSpamStatusProcessor and the classifier classes
         2. If no data has been labelled by a curator, load datase.csv
         3. If no model pickle file is found, call fit() of Classifier classes
             - if all users have None in labelled_by_curator, load to DB by calling Pipeline.load_labels_from_csv()
             - additionally, if no labels file, throw exception
         """
+        settings.SPAM_DIR_PATH.mkdir(parents=True, exist_ok=True)
         self.processor = UserSpamStatusProcessor()
-        self.user_meta_classifier = UserMetadataSpamClassifier()
+        self.user_metadata_classifier = UserMetadataSpamClassifier()
         self.text_classifier = TextSpamClassifier()
         if not self.processor.have_labelled_by_curator():
             self.processor.load_labels_from_csv()
 
         # Check whether UserMetadataSpamClassifier model file exists
-        if os.path.exists(self.user_meta_classifier.MODEL_METRICS_FILE_PATH):
-            with open(self.user_meta_classifier.MODEL_METRICS_FILE_PATH) as json_file:
+        if os.path.exists(self.user_metadata_classifier.MODEL_METRICS_FILE_PATH):
+            with open(
+                self.user_metadata_classifier.MODEL_METRICS_FILE_PATH
+            ) as json_file:
                 self.user_meta_classifier_metrics = json.load(json_file)
         else:
-            self.user_meta_classifier_metrics = self.user_meta_classifier.fit()
+            self.user_meta_classifier_metrics = self.user_metadata_classifier.fit()
 
         # Check whether TextSpamClassifier model file exists
         if os.path.exists(self.text_classifier.MODEL_METRICS_FILE_PATH):
@@ -52,8 +58,8 @@ class SpamDetection:
 
         # 1. Check DB for unlabelled users (None in all labelled_by_curator, labelled_by_user_classifier, and labelled_by_text_classifier)
         if len(self.processor.get_unlabelled_users()) != 0:
-        # 2. if there are some unlabelled users, predict
-            self.user_meta_classifier.predict()
+            # 2. if there are some unlabelled users, predict
+            self.user_metadata_classifier.predict()
             self.text_classifier.predict()
 
         # 3. Return spam user_ids and metrics of the model
@@ -68,7 +74,7 @@ class SpamDetection:
         Retrain machine learning models using new data in DB
         return : a dictionary of the models scores after retraining.
         """
-        self.user_meta_classifier_metrics = self.user_meta_classifier.partial_fit()
+        self.user_meta_classifier_metrics = self.user_metadata_classifier.partial_fit()
         self.text_classifier_metrics = self.text_classifier.partial_fit()
         return {
             "user_metadata_spam_classifier": self.user_meta_classifier_metrics,
@@ -81,7 +87,7 @@ class SpamDetection:
         """
 
         # We can assume that model and model metrics files exist after __init__
-        with open(self.user_meta_classifier.MODEL_METRICS_FILE_PATH) as json_file:
+        with open(self.user_metadata_classifier.MODEL_METRICS_FILE_PATH) as json_file:
             self.user_meta_classifier_metrics = json.load(json_file)
 
         with open(self.text_classifier.MODEL_METRICS_FILE_PATH) as json_file:
