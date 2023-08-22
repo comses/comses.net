@@ -1,6 +1,6 @@
 from .dev import *
 
-import os
+from os import path
 
 DEPLOY_ENVIRONMENT = Environment.TEST
 
@@ -12,14 +12,14 @@ LOGGING["loggers"]["core.views"] = {
     "propagate": False,
 }
 
-SHARE_DIR = os.path.realpath("library/tests/tmp")
-LIBRARY_ROOT = os.path.join(SHARE_DIR, "library")
-LIBRARY_PREVIOUS_ROOT = os.path.join(SHARE_DIR, ".latest")
-REPOSITORY_ROOT = os.path.join(BASE_DIR, "repository")
-BACKUP_ROOT = os.path.join(SHARE_DIR, "backups")
-BORG_ROOT = os.path.join(BACKUP_ROOT, "repo")
-EXTRACT_ROOT = os.path.join(SHARE_DIR, "extract")
-MEDIA_ROOT = os.path.join(SHARE_DIR, "media")
+SHARE_DIR = path.realpath("library/tests/tmp")
+LIBRARY_ROOT = path.join(SHARE_DIR, "library")
+LIBRARY_PREVIOUS_ROOT = path.join(SHARE_DIR, ".latest")
+REPOSITORY_ROOT = path.join(BASE_DIR, "repository")
+BACKUP_ROOT = path.join(SHARE_DIR, "backups")
+BORG_ROOT = path.join(BACKUP_ROOT, "repo")
+EXTRACT_ROOT = path.join(SHARE_DIR, "extract")
+MEDIA_ROOT = path.join(SHARE_DIR, "media")
 
 DATABASES["dump_restore"] = {
     "ENGINE": "django.db.backends.postgresql",

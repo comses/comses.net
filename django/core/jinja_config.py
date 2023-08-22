@@ -1,4 +1,4 @@
-from allauth.socialaccount import providers
+from allauth.socialaccount.adapter import get_adapter
 from datetime import datetime
 from django.conf import settings
 from django.contrib.sites.models import Site
@@ -10,14 +10,12 @@ from django.templatetags.static import static
 from django.urls import reverse
 from django.utils.dateparse import parse_datetime, parse_date
 from django.utils.text import slugify
-from django.utils import timezone
 from django.utils.timezone import get_current_timezone
 from django.utils.timesince import timeuntil, timesince
 from jinja2 import Environment
 from markupsafe import Markup
 
 from hcaptcha_field import hCaptchaField
-from typing import Optional
 
 import re
 import json
@@ -128,7 +126,7 @@ def is_production():
 
 
 def provider_login_url(request, provider_id, **kwargs):
-    provider = providers.registry.by_id(provider_id, request)
+    provider = get_adapter().get_provider(request, provider_id)
     next_url = request.GET.get("next", None)
     if next_url:
         kwargs["next"] = next_url

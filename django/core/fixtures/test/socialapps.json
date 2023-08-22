@@ -1,0 +1,34 @@
+[
+{
+    "model": "socialaccount.socialapp",
+    "pk": 1,
+    "fields": {
+        "provider": "orcid",
+        "provider_id": "",
+        "name": "ORCID",
+        "client_id": "",
+        "secret": "",
+        "key": "",
+        "settings": {},
+        "sites": [
+            1
+        ]
+    }
+},
+{
+    "model": "socialaccount.socialapp",
+    "pk": 2,
+    "fields": {
+        "provider": "github",
+        "provider_id": "",
+        "name": "GitHub",
+        "client_id": "",
+        "secret": "",
+        "key": "",
+        "settings": {},
+        "sites": [
+            1
+        ]
+    }
+}
+]
