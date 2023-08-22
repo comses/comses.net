@@ -4,8 +4,10 @@ import warnings
 
 from curator.spam_detection_models import UserMetadataSpamClassifier, TextSpamClassifier
 from curator.spam_processor import UserSpamStatusProcessor
+from django.conf import settings
 
 warnings.filterwarnings("ignore")  # ignore warnings
+
 
 class SpamDetection:
     """
@@ -22,6 +24,7 @@ class SpamDetection:
             - if all users have None in labelled_by_curator, load to DB by calling Pipeline.load_labels_from_csv()
             - additionally, if no labels file, throw exception
         """
+        settings.SPAM_DIR_PATH.mkdir(parents=True, exist_ok=True)
         self.processor = UserSpamStatusProcessor()
         self.user_meta_classifier = UserMetadataSpamClassifier()
         self.text_classifier = TextSpamClassifier()
@@ -52,7 +55,7 @@ class SpamDetection:
 
         # 1. Check DB for unlabelled users (None in all labelled_by_curator, labelled_by_user_classifier, and labelled_by_text_classifier)
         if len(self.processor.get_unlabelled_users()) != 0:
-        # 2. if there are some unlabelled users, predict
+            # 2. if there are some unlabelled users, predict
             self.user_meta_classifier.predict()
             self.text_classifier.predict()
 

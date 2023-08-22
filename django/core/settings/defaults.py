@@ -12,6 +12,7 @@ Wagtail settings reference:
 import configparser
 import os
 from enum import Enum
+from pathlib import Path
 
 from django.contrib.messages import constants as messages
 
@@ -57,6 +58,9 @@ BASE_DIR = os.path.dirname(PROJECT_DIR)
 DEBUG = True
 
 DJANGO_VITE_DEV_MODE = True
+
+# Spam detection configuration
+SPAM_DIR_PATH = Path("/shared/curator/spam")
 
 # Base URL to use when referring to full URLs within the Wagtail admin backend -
 # e.g. in notification emails. Don't include '/admin' or a trailing slash

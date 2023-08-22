@@ -3,6 +3,9 @@ import os.path
 import pickle
 import json
 from ast import literal_eval
+
+from django.conf import settings
+
 import pandas as pd
 import numpy as np
 from tensorflow.keras.preprocessing.text import Tokenizer
@@ -16,7 +19,11 @@ from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_sc
 import xgboost as xgb
 from typing import List
 from abc import ABC, abstractmethod
-from curator.spam_processor import UserSpamStatusProcessor, SPAM_DIR_PATH
+from curator.spam_processor import UserSpamStatusProcessor
+
+
+SPAM_DIR_PATH = settings.SPAM_DIR_PATH
+
 
 class SpamClassifier(ABC):
     # This class serves as a template for spam classifer varients
@@ -92,18 +99,18 @@ class SpamClassifier(ABC):
 
 class TextSpamClassifier(SpamClassifier):
     def __init__(self):
-        SpamClassifier.__init__(self)
-        self.MODEL_FILE_PATH = SPAM_DIR_PATH + "text_classifier.pkl"
-        self.MODEL_METRICS_FILE_PATH = SPAM_DIR_PATH + "text_classifier_metrics.json"
+        super().__init__()
+        self.MODEL_FILE_PATH = SPAM_DIR_PATH / "text_classifier.pkl"
+        self.MODEL_METRICS_FILE_PATH = SPAM_DIR_PATH / "text_classifier_metrics.json"
 
     def load_model(self):
-        if not os.path.isfile(self.MODEL_FILE_PATH):
+        if not self.MODEL_FILE_PATH.is_file():
             self.fit()
-        with open(self.MODEL_FILE_PATH, "rb") as file:
+        with self.MODEL_FILE_PATH.open("rb") as file:
             return pickle.load(file)
 
     def save_model(self, model):
-        with open(self.MODEL_FILE_PATH, "wb") as file:
+        with self.MODEL_FILE_PATH.open("wb") as file:
             pickle.dump(model, file)
 
     def fit(self):
@@ -176,9 +183,10 @@ class TextSpamClassifier(SpamClassifier):
         predictions, confidences = self.get_predictions(model, train_x["text"])
 
         # save the results to DB
-        result = {"user_id" : train_x["user_id"],
-                  "text_classifier_confidence": confidences,
-                  "labelled_by_text_classifier": predictions
+        result = {
+            "user_id": train_x["user_id"],
+            "text_classifier_confidence": confidences,
+            "labelled_by_text_classifier": predictions,
         }
         df = pd.DataFrame(result).replace(np.nan, None)
 
@@ -215,16 +223,17 @@ class TextSpamClassifier(SpamClassifier):
 
 class UserMetadataSpamClassifier(SpamClassifier):
     def __init__(self):
-        SpamClassifier.__init__(self)
-        self.TOKENIZER_FILE_PATH = SPAM_DIR_PATH + "tokenizer.pkl"
-        self.MODEL_FILE_PATH = SPAM_DIR_PATH + "user_meta_classifier.pkl"
-        self.MODEL_METRICS_FILE_PATH = SPAM_DIR_PATH + "user_meta_classifier_metrics.json"
-
+        super().__init__()
+        self.TOKENIZER_FILE_PATH = SPAM_DIR_PATH / "tokenizer.pkl"
+        self.MODEL_FILE_PATH = SPAM_DIR_PATH / "user_meta_classifier.pkl"
+        self.MODEL_METRICS_FILE_PATH = (
+            SPAM_DIR_PATH / "user_meta_classifier_metrics.json"
+        )
 
     def fit(self):
         # obtain df from pipleline
         df = self.processor.get_untrained_df()
-        if df.empty == True:
+        if df.empty:
             return  # if no untrained data found
 
         (
@@ -249,7 +258,7 @@ class UserMetadataSpamClassifier(SpamClassifier):
     def partial_fit(self):
         # obtain df from pipleline
         df = self.processor.get_untrained_df()
-        if df.empty == True:
+        if df.empty:
             return  # if no untrained data found
 
         model = pickle.load(open(self.MODEL_FILE_PATH, "rb"))  # load model
