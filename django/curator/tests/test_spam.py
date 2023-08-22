@@ -1,24 +1,31 @@
 import pandas as pd
 import random
-import os
 
 from django.test import TestCase
-from django.conf import settings
 
-from curator.spam_detection_models import UserMetadataSpamClassifier, TextSpamClassifier
-from curator.spam_processor import UserSpamStatusProcessor
-from curator.models import UserSpamStatus
 from core.models import User
 from core.tests.base import UserFactory
+from curator.spam import SpamDetector
+from curator.models import UserSpamStatus
 
 
 class SpamDetectionTestCase(TestCase):
     def setUp(self):
-        self.processor = UserSpamStatusProcessor()
-        self.user_meta_classifier = UserMetadataSpamClassifier()
-        self.text_classifier = TextSpamClassifier()
+        self.spam_detector = SpamDetector()
         self.user_factory = UserFactory()
         self.user_ids = self.create_new_users()
+
+    @property
+    def processor(self):
+        return self.spam_detector.processor
+
+    @property
+    def user_metadata_classifier(self):
+        return self.spam_detector.user_metadata_classifier
+
+    @property
+    def text_classifier(self):
+        return self.spam_detector.text_classifier
 
     def create_new_users(self):
         user_size = random.randint(5, 100)
@@ -33,14 +40,40 @@ class SpamDetectionTestCase(TestCase):
             user = User.objects.filter(id=user_id)
             user.delete()
 
-    def update_labels(self, user_ids):
-        for user_id in user_ids:
-            label = random.randint(0, 1)
-            self.processor.update_labelled_by_curator(user_id, label)
+    def randomize_user_spam_labels(self, user_ids):
+        """
+        randomly partition user_ids into spam and non-spam
+        spam = 1, non-spam = 0
+        """
+
+        '''
+        something similar in raw SQL
+        with connection.cursor() as cursor:
+            cursor.execute(
+                """
+                UPDATE curator_userspamstatus
+                SET labelled_by_curator = random() > 0.5
+                WHERE user_id IN %s
+                """,
+                [tuple(user_ids)],
+            )
+        '''
+        randomized_user_ids = list(user_ids)
+        random.shuffle(randomized_user_ids)
+        partition_index = len(user_ids) // 3
+        spam_ids = randomized_user_ids[partition_index:]
+        non_spam_ids = randomized_user_ids[:partition_index]
+        UserSpamStatus.objects.filter_by_user_ids(non_spam_ids).update(
+            labelled_by_curator=False
+        )
+        UserSpamStatus.objects.filter_by_user_ids(spam_ids).update(
+            labelled_by_curator=True
+        )
 
     def delete_labels(self, user_ids):
-        for user_id in user_ids:
-            self.processor.update_labelled_by_curator(user_id, None)
+        UserSpamStatus.objects.filter_by_user_ids(user_ids).update(
+            labelled_by_curator=None
+        )
 
     def get_existing_users(self):
         user_ids = list(
@@ -98,7 +131,9 @@ class SpamDetectionTestCase(TestCase):
             assertion ... empty df
         """
         existing_users = self.user_ids
-        self.update_labels(existing_users)  # simulate a curator labelling the users
+        self.randomize_user_spam_labels(
+            existing_users
+        )  # simulate a curator labelling the users
 
         df = self.processor.get_unlabelled_by_curator_df()
         self.assertEqual(len(df), 0)
@@ -119,7 +154,7 @@ class SpamDetectionTestCase(TestCase):
         self.assertTrue(
             set(self.processor.column_names).issubset(set(df.columns.unique()))
         )
-        self.assertListEqual(user_ids, list(df["user_id"].values))
+        self.assertCountEqual(user_ids, list(df["user_id"].values))
 
         self.delete_labels(user_ids)
 
@@ -130,14 +165,16 @@ class SpamDetectionTestCase(TestCase):
             assertion ... df with the specific columns with the correct user_ids
         """
         existing_users = self.user_ids
-        self.update_labels(existing_users)  # update labels of exisiting users
+        self.randomize_user_spam_labels(
+            existing_users
+        )  # update labels of exisiting users
 
         df = self.processor.get_untrained_df()
         self.assertIsInstance(df, pd.DataFrame)
         self.assertTrue(
             set(self.processor.column_names).issubset(set(df.columns.unique()))
         )
-        self.assertListEqual(existing_users, list(df["user_id"].values))
+        self.assertCountEqual(existing_users, list(df["user_id"].values))
 
         self.delete_labels(existing_users)
 
@@ -148,7 +185,9 @@ class SpamDetectionTestCase(TestCase):
             assertion ... empty df
         """
         existing_users = self.user_ids
-        self.update_labels(existing_users)  # update labels of exisiting users
+        self.randomize_user_spam_labels(
+            existing_users
+        )  # update labels of exisiting users
         self.mark_as_training_data(existing_users)  # mark the user as training data
 
         df = self.processor.get_untrained_df()
@@ -158,7 +197,7 @@ class SpamDetectionTestCase(TestCase):
         self.unmark_as_training_data(existing_users)
 
     # ================================ Tests for UserMetadataSpamClassifier ================================
-    def test_user_meta_classifier_fit(self):
+    def test_user_metadata_classifier_fit(self):
         """
         stub data/requirements ... loaded labels (labelled_by_curator) in DB using processor.load_labels_from_csv()
         assertion ... returns model metrics in the following format and output model instance as a pickle file
@@ -171,33 +210,35 @@ class SpamDetectionTestCase(TestCase):
         """
         user_ids = self.processor.load_labels_from_csv()
 
-        user_meta_classifier_metrics = self.user_meta_classifier.fit()
-        self.assertIsInstance(user_meta_classifier_metrics, dict)
-        self.assertTrue("Accuracy" in user_meta_classifier_metrics)
-        self.assertTrue("Precision" in user_meta_classifier_metrics)
-        self.assertTrue("Recall" in user_meta_classifier_metrics)
-        self.assertTrue("F1" in user_meta_classifier_metrics)
-        self.assertTrue("test_user_ids" in user_meta_classifier_metrics)
+        user_metadata_classifier_metrics = self.user_metadata_classifier.fit()
+        self.assertIsInstance(user_metadata_classifier_metrics, dict)
+        self.assertTrue("Accuracy" in user_metadata_classifier_metrics)
+        self.assertTrue("Precision" in user_metadata_classifier_metrics)
+        self.assertTrue("Recall" in user_metadata_classifier_metrics)
+        self.assertTrue("F1" in user_metadata_classifier_metrics)
+        self.assertTrue("test_user_ids" in user_metadata_classifier_metrics)
         self.assertTrue(
-            set(user_meta_classifier_metrics["test_user_ids"]).issubset(set(user_ids))
+            set(user_metadata_classifier_metrics["test_user_ids"]).issubset(
+                set(user_ids)
+            )
         )
 
         self.delete_labels(user_ids)
 
-    def test_user_meta_classifier_prediction(self):
+    def test_user_metadata_classifier_prediction(self):
         """
         stub data/requirements ... /shared/curator/spam/{model}.pkl, and new user data on DB with labelled_by_curator=None
         assertion ... True or False valuse in labelled_by_text_classifier and labelled_by_user_classifier fields
                         of the user data in DB
         """
-        if not os.path.exists(self.user_meta_classifier.MODEL_METRICS_FILE_PATH):
+        if not self.user_metadata_classifier.MODEL_METRICS_FILE_PATH.is_file():
             self.processor.load_labels_from_csv()
-            self.user_meta_classifier.fit()
+            self.user_metadata_classifier.fit()
 
         existing_users = self.user_ids
-        self.update_labels(existing_users)
+        self.randomize_user_spam_labels(existing_users)
         new_user_ids = self.create_new_users()  # default labelled_by_curator==None
-        labelled_user_ids = self.user_meta_classifier.predict()
+        labelled_user_ids = self.user_metadata_classifier.predict()
 
         self.assertTrue(self.processor.all_have_labels())
         self.assertTrue(set(new_user_ids).issubset(labelled_user_ids))
@@ -219,7 +260,7 @@ class SpamDetectionTestCase(TestCase):
     #     self.delete_labels(user_ids)
 
     # def test_text_classifier_prediction(self):
-    #     if not os.path.exists(self.text_classifier.MODEL_METRICS_FILE_PATH):
+    #     if not self.text_classifier.MODEL_METRICS_FILE_PATH.is_file():
     #             self.processor.load_labels_from_csv()
     #             self.text_classifier.fit()
 
