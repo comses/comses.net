@@ -66,6 +66,10 @@ DEBUG = True
 
 DJANGO_VITE_DEV_MODE = True
 
+# Spam detection configuration
+SPAM_DIR_PATH = Path("/shared/curator/spam")
+SPAM_TRAINING_DATASET_PATH = Path("./curator/spam_dataset.csv")
+
 # Base URL to use when referring to full URLs within the Wagtail admin backend -
 # e.g. in notification emails. Don't include '/admin' or a trailing slash
 # FIXME: needs to be overridden in staging and prod after updating DEPLOY_ENVIRONMENT which is less than ideal
