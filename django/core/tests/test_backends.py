@@ -1,14 +1,18 @@
 import logging
 
-from .base import UserFactory
-from rest_framework.status import HTTP_302_FOUND, HTTP_200_OK
+from allauth.socialaccount.models import SocialApp
 from django.urls import reverse
 from django.test import TestCase
+from rest_framework.status import HTTP_302_FOUND, HTTP_200_OK
+
+from .base import UserFactory
 
 logger = logging.getLogger(__name__)
 
 
 class EmailAuthenticationBackendTestCase(TestCase):
+    fixtures = ["core/fixtures/test/socialapps.json"]
+
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -75,6 +79,7 @@ class EmailAuthenticationBackendTestCase(TestCase):
         self.check_authentication_succeeded(superuser)
 
     def test_wrong_password(self):
+        logger.debug("all social apps: %s", SocialApp.objects.all())
         deactivated_user = self.user_factory.create(is_active=False)
         self.check_response_200(deactivated_user, password=self.wrong_password)
         self.check_authentication_failed(deactivated_user, password=self.wrong_password)

@@ -185,17 +185,15 @@ class MemberProfileSerializer(serializers.ModelSerializer):
             except ValidationError as e:
                 raise DrfValidationError({"email": e.messages})
 
-            sender = self.context.get("request")
+            request = self.context.get("request")
 
             if EmailAddress.objects.filter(primary=True, user=user).exists():
-                EmailAddress.objects.get(primary=True, user=user).change(
-                    sender, new_email, confirm=True
-                )
+                EmailAddress.objects.add_new_email(request, user, new_email)
             else:
                 email_address = EmailAddress.objects.create(
                     primary=True, user=user, email=new_email
                 )
-                email_address.send_confirmation(sender)
+                email_address.send_confirmation(request)
 
             logger.warning(
                 "email change for user [pk: %s] %s -> %s, awaiting confirmation.",
@@ -301,7 +299,7 @@ class RelatedUserSerializer(serializers.ModelSerializer):
         model = User
         fields = ("id", "username", "member_profile")
 
-        
+
 class IsoDateField(serializers.DateField):
     """
     Extension to DateField that accepts full ISO 8601 date-time strings

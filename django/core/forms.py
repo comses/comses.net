@@ -15,6 +15,7 @@ class SignupForm(forms.Form):
     field_order = (
         "username",
         "email",
+        "email2",
         "first_name",
         "last_name",
         "full_member",
@@ -56,5 +57,5 @@ class SignupForm(forms.Form):
         full_member = data.get("full_member")
         if full_member:
             user.groups.add(ComsesGroups.FULL_MEMBER.get_group())
-            # FIXME: add user to mailchimp list
+        logger.debug("adding user: %s", user)
         user.save()

@@ -162,7 +162,8 @@ CSP_SCRIPT_SRC = (
     "browser.sentry-cdn.com",
     "www.googletagmanager.com",
     "https://*.comses.net",
-    "'unsafe-eval'",  # unsafe-eval only for dev mode
+    "https://hcaptcha.com",
+    "https://*.hcaptcha.com",
 )
 CSP_CONNECT_SRC = (
     "'self'",
@@ -187,7 +188,9 @@ CSP_FRAME_SRC = (
     "'self'",
     "*.comses.net",
     "youtube.com",
-    "www.youtube.com",
+    "*.youtube.com",
+    "https://hcaptcha.com",
+    "https://*.hcaptcha.com",
 )
 CSP_INCLUDE_NONCE_IN = ["script-src"]
 CSP_EXCLUDE_URL_PREFIXES = ("/wagtail/admin", "/django/admin")
@@ -476,10 +479,14 @@ ACCOUNT_EMAIL_CONFIRMATION_EXPIRE_DAYS = 15
 ACCOUNT_EMAIL_REQUIRED = True
 ACCOUNT_EMAIL_VERIFICATION = "mandatory"
 ACCOUNT_SIGNUP_FORM_CLASS = "core.forms.SignupForm"
+# FIXME: enable after configuring form
+ACCOUNT_SIGNUP_EMAIL_ENTER_TWICE = True
 ACCOUNT_TEMPLATE_EXTENSION = "jinja"
 ACCOUNT_PRESERVE_USERNAME_CASING = False
 ACCOUNT_LOGIN_ON_PASSWORD_RESET = True
 ACCOUNT_LOGIN_ON_EMAIL_CONFIRMATION = True
+# allow django-allauth to change emails
+ACCOUNT_CHANGE_EMAIL = True
 
 ORCID_CLIENT_ID = config.get("secrets", "ORCID_CLIENT_ID", fallback="")
 ORCID_CLIENT_SECRET = config.get("secrets", "ORCID_CLIENT_SECRET", fallback="")
@@ -508,6 +515,7 @@ SOCIALACCOUNT_PROVIDERS = {
         "MEMBER_API": True,
     },
 }
+
 
 DISCOURSE_BASE_URL = config.get(
     "discourse", "DISCOURSE_BASE_URL", fallback="https://staging-discourse.comses.net"
