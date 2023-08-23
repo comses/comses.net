@@ -308,6 +308,11 @@ class TagMigrator:
             old_tag.delete()
 
 
+class UserSpamStatusQuerySet(models.QuerySet):
+    def filter_by_user_ids(self, user_ids, **kwargs):
+        return self.filter(member_profile__user_id__in=user_ids, **kwargs)
+
+
 class UserSpamStatus(models.Model):
     member_profile = models.OneToOneField(
         MemberProfile, on_delete=models.CASCADE, primary_key=True
@@ -326,6 +331,8 @@ class UserSpamStatus(models.Model):
     labelled_by_curator = models.BooleanField(default=None, null=True)
     last_updated = models.DateField(auto_now=True)
     is_training_data = models.BooleanField(default=False)
+
+    objects = UserSpamStatusQuerySet.as_manager()
 
     @staticmethod
     def get_recommendations_sorted_by_confidence():
@@ -515,22 +522,20 @@ class UserSpamStatusProcessor:
             training_file = settings.SPAM_TRAINING_DATASET_PATH
         """
         updates UserSpamStatus.labelled_by_curator based on an initial training file.
-        Dataset should have columns named "user_id" and "is_spam"
-        param : filepath of dataset to be loaded
-        return : list of user_ids which labelled_by_curator was updated
+        Dataset should have columns "user_id" and "is_spam" indicating their spam status
+        param : path to a training dataset to be loaded
+        return : list of user_ids marked as spam via UserSpamStatus.labelled_by_curator 
         """
         label_df = pd.read_csv(training_file)  # FIXME: add exception handling
-        user_id_list = []
-        for idx, row in label_df.iterrows():
-            flag = self.update_labelled_by_curator(row["user_id"], bool(row["is_spam"]))
-            if flag == 1:
-                user_id_list.append(row["user_id"])
-        return user_id_list
-
-    def update_labelled_by_curator(self, user_id, label):
-        return UserSpamStatus.objects.filter(member_profile__user_id=user_id).update(
-            labelled_by_curator=label
-        )  # return 0(fail) or 1(success)
+        nonspam_user_ids = label_df[label_df["is_spam"] == 0]["user_id"]
+        spam_user_ids = label_df[label_df["is_spam"] == 1]["user_id"]
+        UserSpamStatus.objects.filter_by_user_ids(nonspam_user_ids).update(
+            labelled_by_curator=False
+        )
+        UserSpamStatus.objects.filter_by_user_ids(spam_user_ids).update(
+            labelled_by_curator=True
+        )
+        return list(spam_user_ids)
 
     def update_training_data(self, df, training_data=True):
         # param : DataFrame of user_ids (int) that were used to train a model

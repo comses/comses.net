@@ -127,7 +127,7 @@ class SpamDetectionTestCase(TestCase):
         self.assertTrue(
             set(self.processor.column_names).issubset(set(df.columns.unique()))
         )
-        self.assertListEqual(user_ids, list(df["user_id"].values))
+        self.assertCountEqual(user_ids, list(df["user_id"].values))
 
         self.delete_labels(user_ids)
 
@@ -145,7 +145,7 @@ class SpamDetectionTestCase(TestCase):
         self.assertTrue(
             set(self.processor.column_names).issubset(set(df.columns.unique()))
         )
-        self.assertListEqual(existing_users, list(df["user_id"].values))
+        self.assertCountEqual(existing_users, list(df["user_id"].values))
 
         self.delete_labels(existing_users)
 
