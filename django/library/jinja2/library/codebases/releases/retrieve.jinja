@@ -478,13 +478,9 @@
                             <td>{{ format_datetime(related_release.first_published_at, '%c') }}</td>
                             <td>{{ format_datetime(related_release.last_published_on, '%c') }}</td>
                             <td>
-                                {% if related_release.draft %}
-                                    <span class="badge bg-danger">Draft</span>
-                                {% elif related_release.live %}
-                                    <span class="badge bg-success">Published</span>
-                                {% else %}
-                                    <span class="badge bg-warning">Unpublished</span>
-                                {% endif %}
+                                <span class='badge bg-{{ related_release.get_status_color() }}'>
+                                    {{ related_release.get_status_display() }}
+                                </span>
                                 {% if related_release.peer_reviewed %}
                                     <span class='badge bg-info'>Peer Reviewed</span>
                                 {% endif %}

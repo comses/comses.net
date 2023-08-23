@@ -325,7 +325,9 @@ class CodebaseQuerySet(models.QuerySet):
 
     def update_liveness(self):
         for codebase in self.all():
-            codebase.live = codebase.releases.filter(live=True).exists()
+            codebase.live = codebase.releases.filter(
+                status=CodebaseRelease.Status.PUBLISHED
+            ).exists()
             codebase.save()
 
     def with_viewable_releases(self, user):
@@ -823,14 +825,44 @@ class Codebase(index.Indexed, ClusterableModel):
 
     @transaction.atomic
     def get_or_create_draft(self):
-        existing_draft = self.releases.filter(draft=True).first()
+        existing_draft = self.releases.filter(
+            status=CodebaseRelease.Status.DRAFT
+        ).first()
         if not existing_draft:
             return self.create_release()
         return existing_draft
 
     @transaction.atomic
-    def create_release(self, initialize=True, **overrides):
-        existing_draft = self.releases.filter(draft=True).first()
+    def create_review_draft_from_release(self, source_release):
+        # create a new "under review" release from an existing release
+        # (should only be called from a publishable release)
+        release_metadata = dict(
+            release_notes=source_release.release_notes,
+            os=source_release.os,
+            output_data_url=source_release.output_data_url,
+            license=source_release.license,
+        )
+        review_draft = self.create_release(
+            status=CodebaseRelease.Status.UNDER_REVIEW, **release_metadata
+        )
+
+        review_draft.contributors.set(source_release.contributors.all())
+        review_draft.platform_tags.add(*source_release.platform_tags.all())
+        review_draft.programming_languages.add(
+            *source_release.programming_languages.all()
+        )
+        review_draft.save()
+
+        fs_api = review_draft.get_fs_api()
+        fs_api.copy_originals(source_release)
+        return review_draft
+
+    @transaction.atomic
+    def create_release(self, initialize=True, status=None, **overrides):
+        if status is None:
+            status = CodebaseRelease.Status.DRAFT
+
+        existing_draft = self.releases.filter(status=status).first()
         if existing_draft:
             logger.warn(
                 "Creating a new draft release when one already exists: %s",
@@ -843,8 +875,7 @@ class Codebase(index.Indexed, ClusterableModel):
             submitter=submitter,
             version_number=next_version_number,
             identifier=None,
-            live=False,
-            draft=True,
+            status=status,
             share_uuid=uuid.uuid4(),
         )
         if previous_release is None:
@@ -980,8 +1011,7 @@ class CodebaseReleaseQuerySet(models.QuerySet):
         return self.prefetch_related("submitter")
 
     def public(self, **kwargs):
-        # FIXME: is there ever a time draft + live are both True?
-        return self.filter(draft=False, live=True, **kwargs)
+        return self.filter(status=CodebaseRelease.Status.PUBLISHED, **kwargs)
 
     def accessible_without_codebase(self, user):
         return get_viewable_objects_for_user(user, queryset=self)
@@ -1014,17 +1044,31 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
     * git repository in /repository/<codebase_identifier>/
     """
 
+    class Status(models.TextChoices):
+        """
+        Represents the various states a release can be in.
+        """
+
+        # editable and not live
+        DRAFT = "draft", _("Draft")
+        # equivalent to draft but indicates that a release is under review and should not
+        # block the normal flow of creating/publishing new releases
+        UNDER_REVIEW = "under_review", _("Under review")
+        # not editable and live
+        PUBLISHED = "published", _("Published")
+        # not editable and not live
+        UNPUBLISHED = "unpublished", _("Unpublished")
+
     date_created = models.DateTimeField(default=timezone.now)
     last_modified = models.DateTimeField(auto_now=True)
 
-    live = models.BooleanField(
-        default=False, help_text=_("Signifies that this release is public.")
+    status = models.CharField(
+        choices=Status.choices,
+        default=Status.DRAFT,
+        help_text=_("The current status of this codebase release."),
+        max_length=32,
     )
-    # there should only be one draft CodebaseRelease ever
-    draft = models.BooleanField(
-        default=False,
-        help_text=_("Signifies that this release is currently being edited."),
-    )
+
     first_published_at = models.DateTimeField(null=True, blank=True)
     last_published_on = models.DateTimeField(null=True, blank=True)
 
@@ -1204,6 +1248,15 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
     def validate_publishable(self):
         self.validate_metadata()
         self.validate_uploaded_files()
+        if self.status == self.Status.UNDER_REVIEW:
+            # if under review, raise validation error if review is not complete
+            review = self.get_review()
+            if review and not review.is_complete:
+                raise ValidationError(
+                    _(
+                        "Releases under review cannot be published until the review is complete."
+                    )
+                )
 
     def validate_metadata(self):
         """
@@ -1396,8 +1449,32 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
         return CodeMeta.build(self)
 
     @property
+    def is_draft(self):
+        return self.status == self.Status.DRAFT
+
+    @property
     def is_published(self):
-        return self.live and not self.draft
+        return self.status == self.Status.PUBLISHED
+
+    @property
+    def is_under_review(self):
+        return self.status == self.Status.UNDER_REVIEW
+
+    @property
+    def live(self):
+        return self.is_published
+
+    def get_status_display(self):
+        return self.Status(self.status).label
+
+    def get_status_color(self):
+        COLOR_MAP = {
+            self.Status.DRAFT: "warning",
+            self.Status.UNPUBLISHED: "gray",
+            self.Status.UNDER_REVIEW: "danger",
+            self.Status.PUBLISHED: "success",
+        }
+        return COLOR_MAP.get(self.status)
 
     @property
     def codemeta_json(self):
@@ -1429,8 +1506,7 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
             now = timezone.now()
             self.first_published_at = now
             self.last_published_on = now
-            self.live = True
-            self.draft = False
+            self.status = self.Status.PUBLISHED
             self.get_fs_api().build_published_archive(force=True)
             self.save()
             codebase = self.codebase
@@ -1443,13 +1519,13 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
 
     @transaction.atomic
     def unpublish(self):
-        self.live = False
+        self.status = self.Status.UNPUBLISHED
         self.last_published_on = None
         self.first_published_at = None
         self.save()
         codebase = self.codebase
         # if this is the only public release, unpublish the codebase as well
-        if not codebase.releases.filter(live=True).exists():
+        if not codebase.releases.filter(status=self.Status.PUBLISHED).exists():
             codebase.live = False
             codebase.last_published_on = None
             codebase.first_published_at = None

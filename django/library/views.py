@@ -595,7 +595,6 @@ class NestedCodebaseReleasePermission(permissions.BasePermission):
 
 class NestedCodebaseReleaseUnpublishedFilesPermission(permissions.BasePermission):
     def has_object_permission(self, request, view, obj):
-        # FIXME: figure out the rationale of this boolean logic
         if obj.live:
             raise DrfPermissionDenied(
                 "Cannot access unpublished files of published release"
@@ -808,21 +807,58 @@ class CodebaseReleaseViewSet(CommonViewSetMixin, NoDeleteViewSet):
     @action(detail=True, methods=["post"])
     @transaction.atomic
     def request_peer_review(self, request, identifier, version_number):
+        """
+        If a peer review is requestable (publishable, not reviewed, no related review exists):
+        - Create a new "under review" draft release if:
+          - the release from which the request was made is published
+          - the requester chose to convert a draft release to a draft under review with the
+            knowledge that it will not be publishable until the review is complete
+        - Otherwise, update the existing draft release to be "under review"
+        - Create a new peer review object and send an email to the author
+        """
         codebase_release = get_object_or_404(
             CodebaseRelease,
             codebase__identifier=identifier,
             version_number=version_number,
         )
         codebase_release.validate_publishable()
-        review, created = PeerReview.objects.get_or_create(
-            codebase_release=codebase_release,
-            defaults={"submitter": request.user.member_profile},
-        )
-        if created:
+        existing_review = PeerReview.objects.filter(
+            codebase_release=codebase_release
+        ).first()
+
+        if existing_review:
+            review = existing_review
+            review_release = codebase_release
+            created = False
+        else:
+            use_existing_draft = (
+                "use_existing_draft" in request.query_params
+                and codebase_release.is_draft
+            )
+            if use_existing_draft:
+                codebase_release.status = CodebaseRelease.STATUS_UNDER_REVIEW
+                codebase_release.save(update_fields=["status"])
+                review_release = codebase_release
+            else:
+                review_release = (
+                    codebase_release.codebase.create_review_draft_from_release(
+                        codebase_release
+                    )
+                )
+
+            review = PeerReview.objects.create(
+                codebase_release=review_release,
+                submitter=request.user.member_profile,
+            )
             review.send_author_requested_peer_review_email()
+            created = True
+
         if request.accepted_renderer.format == "html":
-            response = HttpResponseRedirect(codebase_release.get_absolute_url())
-            messages.success(request, "Peer review request submitted.")
+            response = HttpResponseRedirect(review_release.get_absolute_url())
+            if created:
+                messages.success(request, "Peer review request submitted.")
+            else:
+                messages.info(request, "A peer review already exists for this release.")
             return response
         else:
             return Response(
@@ -830,7 +866,7 @@ class CodebaseReleaseViewSet(CommonViewSetMixin, NoDeleteViewSet):
                     "review_status": review.status,
                     "urls": {
                         "review": review.get_absolute_url(),
-                        "notify_reviewers_of_changes": codebase_release.get_notify_reviewers_of_changes_url(),
+                        "notify_reviewers_of_changes": review_release.get_notify_reviewers_of_changes_url(),
                     },
                 },
                 status=status.HTTP_200_OK,

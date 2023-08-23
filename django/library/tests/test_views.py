@@ -19,7 +19,7 @@ from core.tests.permissions_base import (
 )
 from library.forms import PeerReviewerFeedbackReviewerForm
 from library.fs import FileCategoryDirectories
-from library.models import Codebase, License, ReviewStatus
+from library.models import Codebase, CodebaseRelease, License, ReviewStatus
 from library.tests.base import ReviewSetup
 from .base import (
     CodebaseFactory,
@@ -49,7 +49,10 @@ class CodebaseViewSetTestCase(BaseViewSetTestCase):
         self.create_representative_users(submitter)
         self.instance_factory = CodebaseFactory(submitter=submitter)
         self.instance = self.instance_factory.create()
-        self.instance.create_release(live=True, draft=False, initialize=False)
+        self.instance.create_release(
+            status=CodebaseRelease.Status.PUBLISHED,
+            initialize=False,
+        )
 
     def assertResponseNoPermission(self, instance, response):
         if instance.live:
@@ -165,7 +168,7 @@ class CodebaseReleaseViewSetTestCase(BaseViewSetTestCase):
         codebase_factory = CodebaseFactory(submitter=self.submitter)
         self.codebase = codebase_factory.create()
         self.codebase_release = self.codebase.create_release(
-            draft=False, initialize=False
+            status=CodebaseRelease.Status.PUBLISHED, initialize=False
         )
         self.path = self.codebase_release.get_list_url()
 
@@ -223,7 +226,8 @@ class CodebaseReleaseUnpublishedFilesTestCase(
         codebase_factory = CodebaseFactory(submitter=self.submitter)
         self.codebase = codebase_factory.create()
         self.codebase_release = self.codebase.create_release(
-            draft=False, initialize=False
+            status=CodebaseRelease.Status.PUBLISHED,
+            initialize=False,
         )
 
     def test_upload_file(self):
@@ -250,8 +254,7 @@ class CodebaseReleaseUnpublishedFilesTestCase(
                 msg="{} {}".format(repr(user), response.data),
             )
 
-        self.codebase_release.live = True
-        self.codebase_release.draft = False
+        self.codebase_release.status = CodebaseRelease.Status.PUBLISHED
         self.codebase_release.save()
 
         # Published codebase release permissions
@@ -300,8 +303,7 @@ class CodebaseReleaseUnpublishedFilesTestCase(
                 msg="{} {}".format(repr(user), response.data),
             )
 
-        self.codebase_release.live = True
-        self.codebase_release.draft = False
+        self.codebase_release.status = CodebaseRelease.Status.PUBLISHED
         self.codebase_release.save()
         self.client.logout()
 
@@ -358,8 +360,7 @@ class CodebaseReleaseUnpublishedFilesTestCase(
             )
             self.assertEqual(response.status_code, expected_status_code, msg=repr(user))
 
-        self.codebase_release.live = True
-        self.codebase_release.draft = False
+        self.codebase_release.status = CodebaseRelease.Status.PUBLISHED
         self.codebase_release.save()
         self.client.logout()
 
@@ -393,7 +394,7 @@ class CodebaseReleaseDraftViewTestCase(
         codebase_factory = CodebaseFactory(submitter=self.submitter)
         self.codebase = codebase_factory.create()
         self.codebase_release = self.codebase.create_release(
-            draft=False, live=False, initialize=False
+            status=CodebaseRelease.Status.PUBLISHED, initialize=False
         )
         self.path = self.codebase.get_draft_url()
 

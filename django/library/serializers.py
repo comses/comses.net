@@ -298,7 +298,7 @@ class RelatedCodebaseReleaseSerializer(serializers.ModelSerializer):
             "last_published_on",
             "version_number",
             "live",
-            "draft",
+            "status",
         )
 
 
@@ -351,7 +351,6 @@ class CodebaseSerializer(serializers.ModelSerializer, FeaturedImageMixin):
         return codebase
 
     def update(self, instance, validated_data):
-        validated_data["draft"] = False
         return update(super().update, instance, validated_data)
 
     class Meta:
@@ -593,9 +592,6 @@ class CodebaseReleaseEditSerializer(CodebaseReleaseSerializer):
         instance = super().update(instance, validated_data)
 
         instance.license = existing_license
-        # keep draft status until published
-        # https://github.com/comses/comses.net/issues/304
-        # instance.draft = False
         instance.save()
 
         return instance

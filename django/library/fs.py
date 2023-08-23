@@ -652,6 +652,23 @@ class CodebaseReleaseFsApi:
 
         return msgs
 
+    def copy_originals(self, source_release):
+        """copy all original files from a source CodebaseRelease to the calling release"""
+        logger.info(
+            "copying files from version %s to version %s for codebase %s",
+            source_release.version_number,
+            self.version_number,
+            self.identifier,
+        )
+        source_fs_api = source_release.get_fs_api()
+        for category in FileCategoryDirectories:
+            source_files = source_fs_api.list(StagingDirectories.originals, category)
+            for relpath in source_files:
+                with source_fs_api.retrieve(
+                    StagingDirectories.originals, category, Path(relpath)
+                ) as file_content:
+                    self.add(category, file_content, name=relpath)
+
     def get_or_create_sip_bag(self, bagit_info=None):
         sip_dir = str(self.sip_dir)
         logger.info("creating bagit metadata at %s", sip_dir)
