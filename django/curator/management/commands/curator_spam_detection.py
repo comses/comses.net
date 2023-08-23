@@ -4,7 +4,7 @@ import pathlib
 from django.core.management.base import BaseCommand
 
 from curator.spam_processor import DATASET_FILE_PATH
-from curator.spam import SpamDetection
+from curator.spam import SpamDetector
 
 logger = logging.getLogger(__name__)
 
@@ -13,9 +13,9 @@ class Command(BaseCommand):
     help = "Perform spam detection"
 
     def __init__(self):
-        self.detection = SpamDetection()
+        self.detection = SpamDetector()
         self.processor = self.detection.processor
-        self.user_meta_classifier = self.detection.user_meta_classifier
+        self.user_meta_classifier = self.detection.user_metadata_classifier
         self.text_classifier = self.detection.text_classifier
 
     def add_arguments(self, parser):

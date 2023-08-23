@@ -3,10 +3,8 @@ import random
 import os
 
 from django.test import TestCase
-from django.conf import settings
 
-from curator.spam_detection_models import UserMetadataSpamClassifier, TextSpamClassifier
-from curator.spam_processor import UserSpamStatusProcessor
+from curator.spam import SpamDetector
 from curator.models import UserSpamStatus
 from core.models import User
 from core.tests.base import UserFactory
@@ -14,11 +12,21 @@ from core.tests.base import UserFactory
 
 class SpamDetectionTestCase(TestCase):
     def setUp(self):
-        self.processor = UserSpamStatusProcessor()
-        self.user_meta_classifier = UserMetadataSpamClassifier()
-        self.text_classifier = TextSpamClassifier()
+        self.spam_detector = SpamDetector()
         self.user_factory = UserFactory()
         self.user_ids = self.create_new_users()
+
+    @property
+    def processor(self):
+        return self.spam_detector.processor
+
+    @property
+    def user_metadata_classifier(self):
+        return self.spam_detector.user_metadata_classifier
+
+    @property
+    def text_classifier(self):
+        return self.spam_detector.text_classifier
 
     def create_new_users(self):
         user_size = random.randint(5, 100)
@@ -158,7 +166,7 @@ class SpamDetectionTestCase(TestCase):
         self.unmark_as_training_data(existing_users)
 
     # ================================ Tests for UserMetadataSpamClassifier ================================
-    def test_user_meta_classifier_fit(self):
+    def test_user_metadata_classifier_fit(self):
         """
         stub data/requirements ... loaded labels (labelled_by_curator) in DB using processor.load_labels_from_csv()
         assertion ... returns model metrics in the following format and output model instance as a pickle file
@@ -171,33 +179,35 @@ class SpamDetectionTestCase(TestCase):
         """
         user_ids = self.processor.load_labels_from_csv()
 
-        user_meta_classifier_metrics = self.user_meta_classifier.fit()
-        self.assertIsInstance(user_meta_classifier_metrics, dict)
-        self.assertTrue("Accuracy" in user_meta_classifier_metrics)
-        self.assertTrue("Precision" in user_meta_classifier_metrics)
-        self.assertTrue("Recall" in user_meta_classifier_metrics)
-        self.assertTrue("F1" in user_meta_classifier_metrics)
-        self.assertTrue("test_user_ids" in user_meta_classifier_metrics)
+        user_metadata_classifier_metrics = self.user_metadata_classifier.fit()
+        self.assertIsInstance(user_metadata_classifier_metrics, dict)
+        self.assertTrue("Accuracy" in user_metadata_classifier_metrics)
+        self.assertTrue("Precision" in user_metadata_classifier_metrics)
+        self.assertTrue("Recall" in user_metadata_classifier_metrics)
+        self.assertTrue("F1" in user_metadata_classifier_metrics)
+        self.assertTrue("test_user_ids" in user_metadata_classifier_metrics)
         self.assertTrue(
-            set(user_meta_classifier_metrics["test_user_ids"]).issubset(set(user_ids))
+            set(user_metadata_classifier_metrics["test_user_ids"]).issubset(
+                set(user_ids)
+            )
         )
 
         self.delete_labels(user_ids)
 
-    def test_user_meta_classifier_prediction(self):
+    def test_user_metadata_classifier_prediction(self):
         """
         stub data/requirements ... /shared/curator/spam/{model}.pkl, and new user data on DB with labelled_by_curator=None
         assertion ... True or False valuse in labelled_by_text_classifier and labelled_by_user_classifier fields
                         of the user data in DB
         """
-        if not os.path.exists(self.user_meta_classifier.MODEL_METRICS_FILE_PATH):
+        if not os.path.exists(self.user_metadata_classifier.MODEL_METRICS_FILE_PATH):
             self.processor.load_labels_from_csv()
-            self.user_meta_classifier.fit()
+            self.user_metadata_classifier.fit()
 
         existing_users = self.user_ids
         self.update_labels(existing_users)
         new_user_ids = self.create_new_users()  # default labelled_by_curator==None
-        labelled_user_ids = self.user_meta_classifier.predict()
+        labelled_user_ids = self.user_metadata_classifier.predict()
 
         self.assertTrue(self.processor.all_have_labels())
         self.assertTrue(set(new_user_ids).issubset(labelled_user_ids))

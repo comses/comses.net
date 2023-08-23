@@ -1,32 +1,33 @@
-import re
-import os.path
-import pickle
 import json
-from ast import literal_eval
-
-from django.conf import settings
-
-import pandas as pd
 import numpy as np
-from tensorflow.keras.preprocessing.text import Tokenizer
-from tensorflow.keras.preprocessing.sequence import pad_sequences
+import os.path
+import pandas as pd
+import pickle
+import re
+
+from abc import ABC, abstractmethod
+from ast import literal_eval
+from django.conf import settings
+from typing import List
+
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.preprocessing import FunctionTransformer
 from sklearn.naive_bayes import MultinomialNB
 from sklearn.pipeline import Pipeline
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
+from tensorflow.keras.preprocessing.text import Tokenizer
+from tensorflow.keras.preprocessing.sequence import pad_sequences
 import xgboost as xgb
-from typing import List
-from abc import ABC, abstractmethod
-from curator.spam_processor import UserSpamStatusProcessor
+
+from .models import UserSpamStatusProcessor
 
 
 SPAM_DIR_PATH = settings.SPAM_DIR_PATH
 
 
 class SpamClassifier(ABC):
-    # This class serves as a template for spam classifer varients
+    # This class serves as a template for spam classifer variants
     def __init__(self):
         self.processor = UserSpamStatusProcessor()
 
@@ -190,7 +191,7 @@ class TextSpamClassifier(SpamClassifier):
         }
         df = pd.DataFrame(result).replace(np.nan, None)
 
-        self.processor.update_predictions(df, isTextClassifier=True)
+        self.processor.update_predictions(df, is_text_classifier=True)
 
     def preprocess(self, text_list: List[str]):
         text_list = [self.__text_cleanup_pipeline(text) for text in text_list]
@@ -300,7 +301,7 @@ class UserMetadataSpamClassifier(SpamClassifier):
             axis=1,
         ).replace(np.nan, None)
         self.processor.update_predictions(
-            df, isTextClassifier=False
+            df, is_text_classifier=False
         )  # save the results to DB
         return df["user_id"].tolist()
 
