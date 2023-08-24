@@ -31,7 +31,7 @@ class Command(BaseCommand):
         parser.add_argument(
             "--save",
             "-s",
-            help="save the clustering results to the database.",
+            help="save the clustering results to the database in CanonicalTag.",
             action="store_true",
             default=False,
         )
@@ -47,6 +47,10 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
+        """
+        `curator_cluster_tags should be used only if the curator would like for a large amount of unlabelled tags to be clustered.
+        For individual tags, the TagGazetteer is more preferred.
+        """
         tag_clusterer = TagClusterer(clustering_threshold=options["threshold"])
 
         if options["label"]:

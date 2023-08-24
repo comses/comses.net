@@ -35,6 +35,10 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
+        """
+        `curator_gazetteer_tags` searches for CanonicalTags that most closely match a certain tag.
+        From a canonical list, the canonical tag that most closely matches is selected.
+        """
         if len(CanonicalTag.objects.all()) == 0:
             logger.warn(
                 "Canonical list is empty, populating canonical list using the curator_cluster_tags command"
