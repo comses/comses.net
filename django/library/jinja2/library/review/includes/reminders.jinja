@@ -1,5 +1,7 @@
-NOTE: We recommend that you request peer review on **unpublished models** so that you can continue to revise your code,
-data, and documentation files based on peer reviewer guidance.
+!!! warning "Note"
+    Peer review may only occur on **unpublished model releases** so that you can continue to revise your code, data, and documentation based on reviewer guidance.
+
+    If you have already published your model release or would like to do so before the review process is completed, **a new draft release will be created** for the review to take place on which will be an exact copy of the state of the model release at the time you request a review. On completion, the release can then be published to supersede unreviewed versions.
 
 Before submitting your peer review request please make sure your computational model conforms to the following [review criteria](/reviews/):
 
@@ -7,5 +9,6 @@ Before submitting your peer review request please make sure your computational m
 - **Detailed narrative documentation** with mathematical equations, flowcharts, or other visual diagrams in a structured format like the [ODD protocol](https://www.ufz.de/index.php?de=40429) or equivalent. Please note that a published journal article related to your model does not qualify as sufficient narrative documentation and will generally not pass peer review. Published articles also pose potential copyright issues for us to host.
 - **Runnable** without any changes to the downloaded package that the CoMSES Net Model Library generates. **Please take care to remove absolute paths from your source code**. 
 
-### Uploaded Data
-**NOTE:** CoMSES Net places uploaded data files in a `<project-root>/data/` directory and uploaded source code in a `<project-root>/code/` directory. This means that references to your uploaded data files within your model will typically be via a relative path like `"../data/my-input-data.csv"`. If you uploaded a zipfile with a nested directory structure you may need to go up several directories to get to the project root before descending back down into the data directory, depending on where your source code files exist within that nested directory structure (e.g., a Python script in a `src/python/` directory would have to reference uploaded data files in `"../../../data/"`). This can be mitigated by including your data in your source code zipfile and referencing relative paths to your input data directly in your code and ignoring the CoMSES data upload slot.
+#### Note on Uploaded Data
+
+CoMSES Net places uploaded data files in a `<project-root>/data/` directory and uploaded source code in a `<project-root>/code/` directory. This means that references to your uploaded data files within your model will typically be via a relative path like `"../data/my-input-data.csv"`. If you uploaded a zipfile with a nested directory structure you may need to go up several directories to get to the project root before descending back down into the data directory, depending on where your source code files exist within that nested directory structure (e.g., a Python script in a `src/python/` directory would have to reference uploaded data files in `"../../../data/"`). This can be mitigated by including your data in your source code zipfile and referencing relative paths to your input data directly in your code and ignoring the CoMSES data upload slot.
