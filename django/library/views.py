@@ -822,21 +822,20 @@ class CodebaseReleaseViewSet(CommonViewSetMixin, NoDeleteViewSet):
             version_number=version_number,
         )
         codebase_release.validate_publishable()
-        existing_review = PeerReview.objects.filter(
-            codebase_release=codebase_release
-        ).first()
-
+        existing_review = PeerReview.get_codebase_latest_active_review(
+            codebase_release.codebase
+        )
         if existing_review:
             review = existing_review
-            review_release = codebase_release
+            review_release = existing_review.codebase_release
             created = False
         else:
-            use_existing_draft = (
+            use_existing_draft = request.POST.get("use_existing_draft") == "true" or (
                 "use_existing_draft" in request.query_params
                 and codebase_release.is_draft
             )
             if use_existing_draft:
-                codebase_release.status = CodebaseRelease.STATUS_UNDER_REVIEW
+                codebase_release.status = CodebaseRelease.Status.UNDER_REVIEW
                 codebase_release.save(update_fields=["status"])
                 review_release = codebase_release
             else:
@@ -845,7 +844,6 @@ class CodebaseReleaseViewSet(CommonViewSetMixin, NoDeleteViewSet):
                         codebase_release
                     )
                 )
-
             review = PeerReview.objects.create(
                 codebase_release=review_release,
                 submitter=request.user.member_profile,
@@ -853,20 +851,25 @@ class CodebaseReleaseViewSet(CommonViewSetMixin, NoDeleteViewSet):
             review.send_author_requested_peer_review_email()
             created = True
 
+        if created:
+            messages.success(request, "Peer review request submitted.")
+        else:
+            messages.info(
+                request, "An active peer review already exists for this codebase."
+            )
+        return self.build_archive_download_response(request, review_release, review)
+
+    def build_review_request_response(self, request, codebase_release, review):
         if request.accepted_renderer.format == "html":
-            response = HttpResponseRedirect(review_release.get_absolute_url())
-            if created:
-                messages.success(request, "Peer review request submitted.")
-            else:
-                messages.info(request, "A peer review already exists for this release.")
-            return response
+            return HttpResponseRedirect(review.get_absolute_url())
         else:
             return Response(
                 data={
                     "review_status": review.status,
+                    "review_release_url": codebase_release.get_absolute_url(),
                     "urls": {
                         "review": review.get_absolute_url(),
-                        "notify_reviewers_of_changes": review_release.get_notify_reviewers_of_changes_url(),
+                        "notify_reviewers_of_changes": codebase_release.get_notify_reviewers_of_changes_url(),
                     },
                 },
                 status=status.HTTP_200_OK,

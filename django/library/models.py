@@ -1464,6 +1464,10 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
     def live(self):
         return self.is_published
 
+    @property
+    def editable(self):
+        return self.is_draft or self.is_under_review
+
     def get_status_display(self):
         return self.Status(self.status).label
 
@@ -1796,6 +1800,9 @@ class PeerReview(models.Model):
             action=PeerReviewEvent.RELEASE_CERTIFIED,
             message="Model has been certified as peer reviewed",
         )
+        # automatically publish the release if previous versions are live
+        if self.codebase_release.codebase.live:
+            self.codebase_release.status = CodebaseRelease.Status.PUBLISHED
         self.codebase_release.peer_reviewed = True
         self.codebase_release.save()
         self.codebase_release.codebase.peer_reviewed = True
@@ -1867,6 +1874,13 @@ class PeerReview(models.Model):
     @property
     def contact_author_name(self):
         return self.codebase_release.submitter.member_profile.name
+
+    @classmethod
+    def get_codebase_latest_active_review(cls, codebase):
+        qs = cls.objects.filter(codebase_release__codebase=codebase).exclude(
+            status=ReviewStatus.COMPLETE
+        )
+        return qs.latest("date_created") if qs.exists() else None
 
     def __str__(self):
         return "PeerReview of {} requested on {}. Status: {}, last modified {}".format(
