@@ -4,7 +4,6 @@ import re
 from typing import List
 
 import dedupe
-from django.utils.text import slugify
 from taggit.models import Tag
 
 from curator.models import CanonicalTagMapping, CanonicalTag
@@ -30,10 +29,8 @@ class AbstractTagDeduper(abc.ABC):
     def mark_pairs(self, pairs, is_distinct: bool):
         labelled_examples = {"match": [], "distinct": []}
 
-        if is_distinct:
-            labelled_examples["distinct"] = pairs
-        else:
-            labelled_examples["match"] = pairs
+        example_key = "distinct" if is_distinct else "match"
+        labelled_examples[example_key] = pairs
 
         self.deduper.mark_pairs(labelled_examples)
 

@@ -39,7 +39,7 @@ class Command(BaseCommand):
         `curator_gazetteer_tags` searches for CanonicalTags that most closely match a certain tag.
         From a canonical list, the canonical tag that most closely matches is selected.
         """
-        if len(CanonicalTag.objects.all()) == 0:
+        if not CanonicalTag.objects.exists():
             logger.warn(
                 "Canonical list is empty, populating canonical list using the curator_cluster_tags command"
             )
@@ -61,10 +61,10 @@ class Command(BaseCommand):
             print("Searching for tags that closely match: ", options["search"])
 
             if len(search_results) == 0:
-                print(
-                    "There are no tags that closely match the name you were searching for"
-                )
+                logger.debug("no matching tags found")
 
             else:
-                print("The following tags seem to closely match the tag")
-                print(search_results)
+                logger.debug(
+                    "The following tags seem to closely match the tag: %s",
+                    search_results,
+                )
