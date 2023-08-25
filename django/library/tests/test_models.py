@@ -88,7 +88,7 @@ class CodebaseReleaseTest(BaseModelTestCase):
                 self.get_perm_str("view"), obj=self.codebase_release
             )
         )
-        self.codebase_release.live = True
+        self.codebase_release.status = CodebaseRelease.Status.PUBLISHED
         self.codebase_release.save()
         self.assertTrue(
             anonymous_user.has_perm(
@@ -137,7 +137,7 @@ class CodebaseReleaseTest(BaseModelTestCase):
         self.assertFalse(
             regular_user.has_perm(self.get_perm_str("view"), obj=self.codebase_release)
         )
-        self.codebase_release.live = True
+        self.codebase_release.status = CodebaseRelease.Status.PUBLISHED
         self.codebase_release.save()
         self.assertTrue(
             regular_user.has_perm(self.get_perm_str("view"), obj=self.codebase_release)

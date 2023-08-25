@@ -226,7 +226,7 @@ class CodebaseReleaseUnpublishedFilesTestCase(
         codebase_factory = CodebaseFactory(submitter=self.submitter)
         self.codebase = codebase_factory.create()
         self.codebase_release = self.codebase.create_release(
-            status=CodebaseRelease.Status.PUBLISHED,
+            status=CodebaseRelease.Status.UNPUBLISHED,
             initialize=False,
         )
 

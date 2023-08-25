@@ -711,7 +711,11 @@ class Codebase(index.Indexed, ClusterableModel):
 
     def ordered_releases(self, has_change_perm=False, **kwargs):
         releases = self.releases.order_by("-version_number").filter(**kwargs)
-        return releases if has_change_perm else releases.exclude(live=False)
+        return (
+            releases
+            if has_change_perm
+            else releases.filter(status=CodebaseRelease.Status.PUBLISHED)
+        )
 
     @classmethod
     def get_list_url(cls):
@@ -1172,6 +1176,8 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
             ],
         ),
     ]
+
+    HAS_PUBLISHED_KEY = True
 
     def regenerate_share_uuid(self):
         self.share_uuid = uuid.uuid4()

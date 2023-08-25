@@ -12,6 +12,10 @@ def copy_date_created_to_date_sent(apps, schema):
     PeerReviewInvitation.objects.all().update(date_sent=models.F("date_created"))
 
 
+def noop(apps, schema):
+    pass
+
+
 class Migration(migrations.Migration):
 
     dependencies = [
@@ -24,5 +28,5 @@ class Migration(migrations.Migration):
             name="date_sent",
             field=models.DateTimeField(default=django.utils.timezone.now),
         ),
-        migrations.RunPython(copy_date_created_to_date_sent),
+        migrations.RunPython(copy_date_created_to_date_sent, noop),
     ]
