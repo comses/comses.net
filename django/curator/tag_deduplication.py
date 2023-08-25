@@ -17,6 +17,7 @@ class TagPreprocessing:
 
 
 class AbstractTagDeduper(abc.ABC):
+    TRAINING_FILE = "curator/clustering_training.json"
     FIELDS = [{"field": "name", "type": "String"}]
 
     # Gets the model's most uncertain pairs
@@ -43,12 +44,7 @@ class AbstractTagDeduper(abc.ABC):
         dedupe.console_label(self.deduper)
 
 
-# This class is used to help to make the initial canonical list.
-# Besides that, there isn't much other use for this.
-# If the curator can directly provide a small canonical list, even a small one will do, this class will not be needed.
 class TagClusterer(AbstractTagDeduper):
-    TRAINING_FILE = "curator/clustering_training.json"
-
     def __init__(self, clustering_threshold):
         self.clustering_threshold = clustering_threshold
 
@@ -105,8 +101,6 @@ class TagClusterer(AbstractTagDeduper):
 
 
 class TagGazetteer(AbstractTagDeduper):
-    TRAINING_FILE = "curator/gazetteering_training.json"
-
     def __init__(self, search_threshold):
         self.search_threshold = search_threshold
 
@@ -136,18 +130,15 @@ class TagGazetteer(AbstractTagDeduper):
         self.deduper.index(self.prepare_canonical_data())
         return self.deduper.search(data, threshold=self.search_threshold)
 
-    def human_readable_search(self, name: str):
+    def text_search(self, name: str):
         results = self.search({1: {"id": 1, "name": name}})
         matches = results[0][1]
 
         matches = [
-            str(CanonicalTag.objects.filter(pk=match[0])[0])
-            + "\tConfidence: "
-            + str(match[1])
-            for match in matches
+            (CanonicalTag.objects.filter(pk=match[0])[0], match[1]) for match in matches
         ]
 
-        return "\n".join(matches)
+        return matches
 
     def training_file_exists(self) -> bool:
         return os.path.exists(TagGazetteer.TRAINING_FILE)

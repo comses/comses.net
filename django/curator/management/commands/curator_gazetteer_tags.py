@@ -1,9 +1,10 @@
 import logging
 
 from django.core.management.base import BaseCommand
+from taggit.models import Tag
 
 from curator.tag_deduplication import TagGazetteer
-from curator.models import CanonicalTag
+from curator.models import CanonicalTag, CanonicalTagMapping
 
 logger = logging.getLogger(__name__)
 
@@ -13,9 +14,10 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument(
-            "--search",
-            default="",
-            help="str to search for. Dedupe will search for a canonical tag that most closely matches this.",
+            "--run",
+            action="store_true",
+            help="run the gazetteering model.",
+            default=False,
         )
         parser.add_argument(
             "--label",
@@ -51,20 +53,25 @@ class Command(BaseCommand):
             tag_gazetteer.console_label()
             tag_gazetteer.save_to_training_file()
 
-        if options["search"] != "":
+        if options["run"] != "":
             if not tag_gazetteer.training_file_exists():
                 logging.warn(
                     "Your model does not have any labelled data. Run this command with --label and try again."
                 )
 
-            search_results = tag_gazetteer.human_readable_search(options["search"])
-            print("Searching for tags that closely match: ", options["search"])
+            tags = Tag.objects.filter(canonicaltagmapping=None)
+            is_unmatched = False
+            for tag in tags:
+                matches = tag_gazetteer.text_search(tag.name)
+                if matches:
+                    match = matches[0]
+                    CanonicalTagMapping(
+                        tag=tag, canonical_tag=match[0], confidence_score=match[1]
+                    ).save()
+                else:
+                    is_unmatched = True
 
-            if len(search_results) == 0:
-                logger.debug("no matching tags found")
-
-            else:
-                logger.debug(
-                    "The following tags seem to closely match the tag: %s",
-                    search_results,
+            if is_unmatched:
+                logging.warn(
+                    "There are some Tags that could not be matched to CanonicalTags. Either lower the threshold or increase the training data size."
                 )
