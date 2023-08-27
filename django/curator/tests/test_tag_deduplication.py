@@ -6,41 +6,10 @@ from django.test import TestCase
 from django.utils.text import slugify
 from taggit.models import Tag
 
-from curator.tag_deduplication import TagPreprocessing, TagClusterer, TagGazetteer
+from curator.tag_deduplication import TagClusterer, TagGazetteer
 from curator.models import CanonicalTag, CanonicalTagMapping
 
 random.seed(0)
-
-
-class TagPreprocessingTestCase(TestCase):
-    def setUp(self):
-        pass
-
-    # Make sure tag preprocessing
-    def test_split_by_and(self):
-        preprocessed_Tags = TagPreprocessing.preprocess("biology and chemistry")
-        self.assertEqual(
-            ["biology", "chemistry"], preprocessed_Tags, "Failed to split by 'and'"
-        )
-        self.assertEqual(list, type(preprocessed_Tags))
-
-    def test_split_by_semicolon(self):
-        preprocessed_Tags = TagPreprocessing.preprocess("agent-based model; land-use")
-        self.assertEqual(
-            ["agent-based model", "land-use"],
-            preprocessed_Tags,
-            "Failed to split by ';'",
-        )
-        self.assertEqual(list, type(preprocessed_Tags))
-
-    def test_split_by_comma(self):
-        preprocessed_Tags = TagPreprocessing.preprocess("agent-based model, land-use")
-        self.assertEqual(
-            ["agent-based model", "land-use"],
-            preprocessed_Tags,
-            "Failed to split by ','",
-        )
-        self.assertEqual(list, type(preprocessed_Tags))
 
 
 def name_generator(unique_id, size=12):

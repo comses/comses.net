@@ -310,7 +310,7 @@ class TagCluster(models.Model):
     date_created = models.DateTimeField(auto_now_add=True, null=True)
 
     def save_mapping(self):
-        canonical_tag, created = CanonicalTag.objects.get_or_create(
+        canonical_tag, _ = CanonicalTag.objects.get_or_create(
             name=self.canonical_tag_name
         )
 
@@ -324,7 +324,6 @@ class TagCluster(models.Model):
         ]
         for tag_mapping in tag_mappings:
             tag_mapping.save()
-        print(CanonicalTagMapping.objects.all())
 
         return canonical_tag, tag_mappings
 

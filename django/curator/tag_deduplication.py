@@ -47,7 +47,7 @@ class AbstractTagDeduper(abc.ABC):
 
 # TODO: ME (NOEL), rename this to something that actually makes sense
 class TagClusterManager:
-    def remove_all_clusters():
+    def reset():
         TagCluster.objects.all().delete()
 
     def has_unlabelled_clusters():
@@ -61,8 +61,6 @@ class TagClusterManager:
         tag_clusters = TagCluster.objects.all()
         for index, tag_cluster in enumerate(tag_clusters):
             option = ""
-            if len(tag_cluster.tags.all()) < 2:
-                continue
             while option != "q":
                 TagClusterManager.__display_cluster(tag_cluster)
                 option = input(
@@ -103,8 +101,9 @@ class TagClusterManager:
                     print("Published mapping")
                     canonical_tag, tag_mappings = tag_cluster.save_mapping()
 
-                    print(canonical_tag)
-                    print(tag_mappings)
+                    print(
+                        f"The following was saved to the database: \n<CanonicalTag {canonical_tag}>\n{tag_mappings}"
+                    )
 
                 elif option == "f":
                     tag_cluster.delete()
