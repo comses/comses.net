@@ -62,6 +62,7 @@ class TagClusterManager:
         for index, tag_cluster in enumerate(tag_clusters):
             option = ""
             while option != "q":
+                print(f"{index + 1}/{len(tag_clusters)}")
                 TagClusterManager.__display_cluster(tag_cluster)
                 option = input(
                     "What would you like to do?\n(c)hange canonical tag name\n(a)dd tags\n(r)emove tags\n(s)ave\n(p)ublish mapping\n(f)inish\n"
@@ -76,11 +77,8 @@ class TagClusterManager:
                     tag_name = input(
                         "Input the name of the tag you would like to add\n"
                     )
-                    tag = Tag.objects.filter(name=tag_name)
-                    if tag:
-                        tag_cluster.tags.add(tag.first())
-                    else:
-                        print("The tag does not exist in the database!")
+                    if not tag_cluster.add_tag_by_name(tag_name):
+                        print("The tag does not exist in Tags")
                 elif option == "r":
                     tag_index = input(
                         "Input the number of the tag you would like to remove.\n"
@@ -93,7 +91,6 @@ class TagClusterManager:
 
                     tags.pop(int(tag_index))
                     tag_cluster.tags.set(tags)
-
                 elif option == "s":
                     tag_cluster.save()
                     print("Saved!")
