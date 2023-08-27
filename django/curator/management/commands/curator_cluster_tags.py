@@ -15,7 +15,15 @@ class Command(BaseCommand):
         parser.add_argument(
             "--label",
             "-l",
-            help="label the training data for the gazetteering model using the console.",
+            help="label the training data for the clustering model using the console.",
+            action="store_true",
+            default=False,
+        )
+
+        parser.add_argument(
+            "--reset",
+            "-r",
+            help="""remove all unlabelled clusters from the database.""",
             action="store_true",
             default=False,
         )
@@ -35,12 +43,13 @@ class Command(BaseCommand):
         `curator_cluster_tags should be used only if the curator would like for a large amount of unlabelled tags to be clustered.
         For individual tags, the TagGazetteer is more preferred.
         """
-        if TagClusterManager.has_unlabelled_clusters():
+        if TagClusterManager.has_unlabelled_clusters() and not options["reset"]:
             logging.warn(
-                "There are still some unlabelled clusters. Finish labelling those using curator_edit_clusters before creating new ones."
+                "There are still some unlabelled clusters. Finish labelling those using curator_edit_clusters or run this command with the --reset option to remove all unlabelled clusters."
             )
             return
 
+        TagClusterManager.reset()
         tag_clusterer = TagClusterer(clustering_threshold=options["threshold"])
 
         if options["label"]:
@@ -54,5 +63,3 @@ class Command(BaseCommand):
 
         clusters = tag_clusterer.cluster_tags()
         tag_clusterer.save_clusters(clusters)
-
-        # TagClusterManager.console_label()
