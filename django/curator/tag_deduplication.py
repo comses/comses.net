@@ -1,4 +1,5 @@
 import abc
+import logging
 import os
 import re
 from typing import List
@@ -6,27 +7,16 @@ from typing import List
 import dedupe
 from taggit.models import Tag
 
-from curator.models import CanonicalTagMapping, CanonicalTag
-
-
-class TagPreprocessing:
-    def preprocess(tag_name: str) -> List[str]:
-        tag_names = re.split(r" and |\;|\,", tag_name)
-        tag_names = [tag_name.strip() for tag_name in tag_names]
-        return tag_names
+from curator.models import CanonicalTagMapping, CanonicalTag, TagCluster
 
 
 class AbstractTagDeduper(abc.ABC):
     TRAINING_FILE = "curator/clustering_training.json"
     FIELDS = [{"field": "name", "type": "String"}]
 
-    # Gets the model's most uncertain pairs
     def uncertain_pairs(self):
         return self.deduper.uncertain_pairs()
 
-    # Pairs will be two tags.
-    # If the tags refer to the same thing, is_distinct = True
-    # Otherwise, is_distinct should be equal to False
     def mark_pairs(self, pairs, is_distinct: bool):
         labelled_examples = {"match": [], "distinct": []}
 
@@ -42,6 +32,93 @@ class AbstractTagDeduper(abc.ABC):
 
     def console_label(self):
         dedupe.console_label(self.deduper)
+
+    def training_file_exists(self) -> bool:
+        return os.path.exists(self.TRAINING_FILE)
+
+    def remove_training_file(self):
+        if os.path.isfile(self.TRAINING_FILE):
+            os.remove(self.TRAINING_FILE)
+
+    def save_to_training_file(self):
+        with open(self.TRAINING_FILE, "w") as file:
+            self.deduper.write_training(file)
+
+
+# TODO: ME (NOEL), rename this to something that actually makes sense
+class TagClusterManager:
+    def remove_all_clusters():
+        TagCluster.objects.all().delete()
+
+    def has_unlabelled_clusters():
+        return TagCluster.objects.exists()
+
+    def console_label():
+        if not TagCluster.objects.exists():
+            logging.info("There aren't any clusters to label.")
+            return
+
+        tag_clusters = TagCluster.objects.all()
+        for index, tag_cluster in enumerate(tag_clusters):
+            option = ""
+            if len(tag_cluster.tags.all()) < 2:
+                continue
+            while option != "q":
+                TagClusterManager.__display_cluster(tag_cluster)
+                option = input(
+                    "What would you like to do?\n(c)hange canonical tag name\n(a)dd tags\n(r)emove tags\n(s)ave\n(p)ublish mapping\n(f)inish\n"
+                )
+
+                if option == "c":
+                    new_canonical_tag_name = input(
+                        "What would you like to change it to?\n"
+                    )
+                    tag_cluster.canonical_tag_name = new_canonical_tag_name
+                elif option == "a":
+                    tag_name = input(
+                        "Input the name of the tag you would like to add\n"
+                    )
+                    tag = Tag.objects.filter(name=tag_name)
+                    if tag:
+                        tag_cluster.tags.add(tag.first())
+                    else:
+                        print("The tag does not exist in the database!")
+                elif option == "r":
+                    tag_index = input(
+                        "Input the number of the tag you would like to remove.\n"
+                    )
+
+                    tags = list(tag_cluster.tags.all())
+                    if not tag_index.isnumeric() or int(tag_index) >= len(tags):
+                        print("Index is out of bounds!")
+                        continue
+
+                    tags.pop(int(tag_index))
+                    tag_cluster.tags.set(tags)
+
+                elif option == "s":
+                    tag_cluster.save()
+                    print("Saved!")
+                elif option == "p":
+                    print("Published mapping")
+                    canonical_tag, tag_mappings = tag_cluster.save_mapping()
+
+                    print(canonical_tag)
+                    print(tag_mappings)
+
+                elif option == "f":
+                    tag_cluster.delete()
+                    break
+                else:
+                    print("Invalid option!")
+
+    def __display_cluster(tag_cluster: TagCluster):
+        tag_names = [tag.name for tag in tag_cluster.tags.all()]
+        print("Canonical tag name:", tag_cluster.canonical_tag_name, end="\n\n")
+        print("Tags:")
+        for index, tag_name in enumerate(tag_names):
+            print(f"{index}. {tag_name}")
+        print("")
 
 
 class TagClusterer(AbstractTagDeduper):
@@ -69,28 +146,26 @@ class TagClusterer(AbstractTagDeduper):
             self.prepare_training_data(), self.clustering_threshold
         )
 
+    # Saves the clusters to the database
+    def save_clusters(self, clusters):
+        # TODO: REMOVE THIS
+        TagCluster.objects.all().delete()
+
+        for id_list, confidence_list in clusters:
+            tags = Tag.objects.filter(id__in=id_list)
+            confidence_score = confidence_list[0]
+
+            tag_cluster = TagCluster(
+                canonical_tag_name=tags[0].name, confidence_score=confidence_score
+            )
+            tag_cluster.save()
+
+            tag_cluster.tags.set(tags)
+            tag_cluster.save()
+
     def save_to_training_file(self):
         with open(TagClusterer.TRAINING_FILE, "w") as file:
             self.deduper.write_training(file)
-
-    # Saves the clusters to the database
-    def save_clusters(self, clusters):
-        for id_list, confidence_list in clusters:
-            first_tag = Tag.objects.filter(id=id_list[0])
-            if len(first_tag) == 0:
-                continue
-
-            canonical_tag = CanonicalTag.objects.get_or_create(name=first_tag[0].name)
-            for index in range(len(id_list)):
-                tag = Tag.objects.filter(id=id_list[index])
-                confidence = confidence_list[index]
-                if len(tag) > 0:
-                    tag_canon_mapping = CanonicalTagMapping(
-                        tag=tag[0],
-                        canonical_tag=canonical_tag[0],
-                        confidence_score=confidence,
-                    )
-                    tag_canon_mapping.save()
 
     def training_file_exists(self) -> bool:
         return os.path.exists(TagClusterer.TRAINING_FILE)
@@ -139,14 +214,3 @@ class TagGazetteer(AbstractTagDeduper):
         ]
 
         return matches
-
-    def training_file_exists(self) -> bool:
-        return os.path.exists(TagGazetteer.TRAINING_FILE)
-
-    def remove_training_file(self):
-        if os.path.isfile(TagGazetteer.TRAINING_FILE):
-            os.remove(TagGazetteer.TRAINING_FILE)
-
-    def save_to_training_file(self):
-        with open(TagGazetteer.TRAINING_FILE, "w") as file:
-            self.deduper.write_training(file)

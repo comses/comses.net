@@ -7,6 +7,7 @@ from collections import defaultdict
 from django.core.exceptions import FieldDoesNotExist
 from django.contrib.auth.models import User
 from django.contrib.postgres.aggregates import ArrayAgg
+from django.contrib.postgres.fields import ArrayField
 from django.db import models, transaction
 from django.urls import reverse
 from modelcluster import fields
@@ -302,11 +303,41 @@ class TagMigrator:
             old_tag.delete()
 
 
+class TagCluster(models.Model):
+    canonical_tag_name = models.TextField(unique=True)
+    tags = models.ManyToManyField(Tag)
+    confidence_score = models.FloatField()
+    date_created = models.DateTimeField(auto_now_add=True, null=True)
+
+    def save_mapping(self):
+        CanonicalTag.objects.all().delete()
+        canonical_tag, created = CanonicalTag.objects.get_or_create(
+            name=self.canonical_tag_name
+        )
+
+        tag_mappings = [
+            CanonicalTagMapping(
+                tag=tag,
+                canonical_tag=canonical_tag,
+                confidence_score=self.confidence_score,
+            )
+            for tag in self.tags.all()
+        ]
+        for tag_mapping in tag_mappings:
+            tag_mapping.save()
+        print(CanonicalTagMapping.objects.all())
+
+        return canonical_tag, tag_mappings
+
+    def __str__(self):
+        return f"canonical_tag_name={self.canonical_tag_name} tags={self.tags.all()}"
+
+
 class CanonicalTag(models.Model):
     name = models.TextField(unique=True)
 
     def __str__(self):
-        return self.name
+        return f"name={self.name}"
 
 
 class CanonicalTagMapping(models.Model):
@@ -314,10 +345,9 @@ class CanonicalTagMapping(models.Model):
     canonical_tag = models.ForeignKey(
         CanonicalTag, null=True, on_delete=models.SET_NULL
     )
-    confidence_score = models.FloatField()
-    is_canonical = models.BooleanField(default=False)
-    date_created = models.DateTimeField(null=True, auto_now_add=True)
     curator = models.ForeignKey(User, null=True, on_delete=models.SET_NULL)
+    confidence_score = models.FloatField()
+    date_created = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return f"tag={self.tag} canonical_tag={self.canonical_tag} confidence={self.confidence_score}"

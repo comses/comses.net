@@ -2,7 +2,7 @@ import logging
 
 from django.core.management.base import BaseCommand
 
-from curator.tag_deduplication import TagClusterer
+from curator.tag_deduplication import TagClusterer, TagClusterManager
 
 
 class Command(BaseCommand):
@@ -13,25 +13,9 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument(
-            "--run",
-            "-r",
-            help="run the clustering model.",
-            action="store_true",
-            default=False,
-        )
-
-        parser.add_argument(
             "--label",
             "-l",
             help="label the training data for the gazetteering model using the console.",
-            action="store_true",
-            default=False,
-        )
-
-        parser.add_argument(
-            "--save",
-            "-s",
-            help="save the clustering results to the database in CanonicalTag.",
             action="store_true",
             default=False,
         )
@@ -51,18 +35,24 @@ class Command(BaseCommand):
         `curator_cluster_tags should be used only if the curator would like for a large amount of unlabelled tags to be clustered.
         For individual tags, the TagGazetteer is more preferred.
         """
+        if TagClusterManager.has_unlabelled_clusters():
+            logging.warn(
+                "There are still some unlabelled clusters. Finish labelling those using curator_edit_clusters before creating new ones."
+            )
+            return
+
         tag_clusterer = TagClusterer(clustering_threshold=options["threshold"])
 
         if options["label"]:
             tag_clusterer.console_label()
             tag_clusterer.save_to_training_file()
 
-        if options["run"]:
-            if not tag_clusterer.training_file_exists():
-                logging.warn(
-                    "Your model does not have any labelled data. Run this command with --label and try again."
-                )
+        if not tag_clusterer.training_file_exists():
+            logging.warn(
+                "Your model does not have any labelled data. Run this command with --label and try again."
+            )
 
-            clusters = tag_clusterer.cluster_tags()
-            if options["save"]:
-                tag_clusterer.save_clusters(clusters)
+        clusters = tag_clusterer.cluster_tags()
+        tag_clusterer.save_clusters(clusters)
+
+        # TagClusterManager.console_label()
