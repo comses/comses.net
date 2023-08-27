@@ -309,6 +309,12 @@ class TagCluster(models.Model):
     confidence_score = models.FloatField()
     date_created = models.DateTimeField(auto_now_add=True, null=True)
 
+    def add_tag_by_name(self, name: str):
+        tag = Tag.objects.filter(name=name)
+        if tag:
+            self.tags.add(tag.first())
+        return tag
+
     def save_mapping(self):
         canonical_tag, _ = CanonicalTag.objects.get_or_create(
             name=self.canonical_tag_name
