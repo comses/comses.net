@@ -68,7 +68,8 @@ class SearchView(TemplateView):
         query = self.request.GET.get("query")
         page = self.request.GET.get("page", 1)
         try:
-            page = int(page)
+            # clamp page to range [1, n)
+            page = max(1, int(page))
         except ValueError:
             page = 1
         if query is not None:
