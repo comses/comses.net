@@ -2,6 +2,7 @@ import abc
 import logging
 import os
 import re
+import enum
 from typing import List
 
 import dedupe
@@ -45,13 +46,56 @@ class AbstractTagDeduper(abc.ABC):
             self.deduper.write_training(file)
 
 
-# TODO: ME (NOEL), rename this to something that actually makes sense
 class TagClusterManager:
     def reset():
         TagCluster.objects.all().delete()
 
     def has_unlabelled_clusters():
         return TagCluster.objects.exists()
+
+    def modify_cluster(tag_cluster: TagCluster):
+        action = ""
+        while action != "q":
+            TagClusterManager.__display_cluster(tag_cluster)
+            action = input(
+                "What would you like to do?\n(c)hange canonical tag name\n(a)dd tags\n(r)emove tags\n(s)ave\n(p)ublish mapping\n(f)inish\n"
+            )
+
+            if action == "c":
+                new_canonical_tag_name = input("What would you like to change it to?\n")
+                tag_cluster.canonical_tag_name = new_canonical_tag_name
+            elif action == "a":
+                tag_name = input("Input the name of the tag you would like to add\n")
+                if not tag_cluster.add_tag_by_name(tag_name):
+                    print("The tag does not exist in Tags")
+            elif action == "r":
+                tag_index = input(
+                    "Input the number of the tag you would like to remove.\n"
+                )
+
+                tags = list(tag_cluster.tags.all())
+                if not tag_index.isnumeric() or int(tag_index) >= len(tags):
+                    print("Index is out of bounds!")
+                    continue
+
+                tags.pop(int(tag_index))
+                tag_cluster.tags.set(tags)
+            elif action == "s":
+                tag_cluster.save()
+                print("Saved!")
+            elif action == "p":
+                print("Published mapping")
+                canonical_tag, tag_mappings = tag_cluster.save_mapping()
+
+                print(
+                    f"The following was saved to the database: \n<CanonicalTag {canonical_tag}>\n{tag_mappings}"
+                )
+
+            elif action == "f":
+                tag_cluster.delete()
+                break
+            else:
+                print("Invalid option!")
 
     def console_label():
         if not TagCluster.objects.exists():
@@ -60,53 +104,35 @@ class TagClusterManager:
 
         tag_clusters = TagCluster.objects.all()
         for index, tag_cluster in enumerate(tag_clusters):
-            option = ""
-            while option != "q":
-                print(f"{index + 1}/{len(tag_clusters)}")
-                TagClusterManager.__display_cluster(tag_cluster)
-                option = input(
-                    "What would you like to do?\n(c)hange canonical tag name\n(a)dd tags\n(r)emove tags\n(s)ave\n(p)ublish mapping\n(f)inish\n"
+            TagClusterManager.modify_cluster(tag_cluster)
+
+    def console_canonicalize_edit():
+        quit = False
+        while not quit:
+            action = input(
+                "What would you like to do?\n(v)iew canonical list\n(m)odify canonical list\n"
+            )
+            if action == "v":
+                canonical_tags = CanonicalTag.objects.all()
+
+                print("Canonical Tag List:")
+                for canonical_tag in canonical_tags:
+                    print(canonical_tag.name)
+                print("")
+
+            if action == "m":
+                name = input("Which one would you like to modify?\n")
+                canonical_tag = CanonicalTag.objects.filter(name=name)
+                tags = CanonicalTagMapping.objects.filter(
+                    canonical_tag__in=canonical_tag
                 )
-
-                if option == "c":
-                    new_canonical_tag_name = input(
-                        "What would you like to change it to?\n"
-                    )
-                    tag_cluster.canonical_tag_name = new_canonical_tag_name
-                elif option == "a":
-                    tag_name = input(
-                        "Input the name of the tag you would like to add\n"
-                    )
-                    if not tag_cluster.add_tag_by_name(tag_name):
-                        print("The tag does not exist in Tags")
-                elif option == "r":
-                    tag_index = input(
-                        "Input the number of the tag you would like to remove.\n"
-                    )
-
-                    tags = list(tag_cluster.tags.all())
-                    if not tag_index.isnumeric() or int(tag_index) >= len(tags):
-                        print("Index is out of bounds!")
-                        continue
-
-                    tags.pop(int(tag_index))
-                    tag_cluster.tags.set(tags)
-                elif option == "s":
-                    tag_cluster.save()
-                    print("Saved!")
-                elif option == "p":
-                    print("Published mapping")
-                    canonical_tag, tag_mappings = tag_cluster.save_mapping()
-
-                    print(
-                        f"The following was saved to the database: \n<CanonicalTag {canonical_tag}>\n{tag_mappings}"
-                    )
-
-                elif option == "f":
-                    tag_cluster.delete()
-                    break
-                else:
-                    print("Invalid option!")
+                tag_cluster = TagCluster(
+                    canonical_tag_name=canonical_tag[0].name,
+                    confidence_score=tags[0].confidence_score,
+                )
+                tags = [tag.tag for tag in tags]
+                tag_cluster.tags.set(tags)
+                print(canonical_tag, tags)
 
     def __display_cluster(tag_cluster: TagCluster):
         tag_names = [tag.name for tag in tag_cluster.tags.all()]
@@ -144,9 +170,6 @@ class TagClusterer(AbstractTagDeduper):
 
     # Saves the clusters to the database
     def save_clusters(self, clusters):
-        # TODO: REMOVE THIS
-        TagCluster.objects.all().delete()
-
         for id_list, confidence_list in clusters:
             tags = Tag.objects.filter(id__in=id_list)
             confidence_score = confidence_list[0]
