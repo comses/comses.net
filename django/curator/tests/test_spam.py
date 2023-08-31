@@ -64,15 +64,16 @@ class SpamDetectionTestCase(TestCase):
         spam_ids = randomized_user_ids[partition_index:]
         non_spam_ids = randomized_user_ids[:partition_index]
         UserSpamStatus.objects.filter_by_user_ids(non_spam_ids).update(
-            labelled_by_curator=0
+            labelled_by_curator=False
         )
         UserSpamStatus.objects.filter_by_user_ids(spam_ids).update(
-            labelled_by_curator=1
+            labelled_by_curator=True
         )
 
     def delete_labels(self, user_ids):
-        for user_id in user_ids:
-            self.processor.update_labelled_by_curator(user_id, None)
+        UserSpamStatus.objects.filter_by_user_ids(user_ids).update(
+            labelled_by_curator=None
+        )
 
     def get_existing_users(self):
         user_ids = list(
