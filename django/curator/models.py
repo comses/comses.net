@@ -502,11 +502,9 @@ class UserSpamStatusProcessor:
 
     def have_labelled_by_curator(self):
         # if there are users with labelled_by_curator != None, return True
-        if UserSpamStatus.objects.filter(
+        return UserSpamStatus.objects.filter(
             Q(labelled_by_curator=True) | Q(labelled_by_curator=False)
-        ).exists():
-            return True
-        return False
+        ).exists()
 
     def all_have_labels(self):
         # returns True if all users have any kind of labels (labelled_by_curator, user_meta_classifier, text_classifier)
