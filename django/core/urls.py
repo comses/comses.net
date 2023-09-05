@@ -3,7 +3,6 @@ from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import include, path
 from rest_framework.routers import SimpleRouter
-from rest_framework_jwt.views import obtain_jwt_token
 from rest_framework_swagger.views import get_swagger_view
 from wagtail.admin import urls as wagtailadmin_urls
 from wagtail import urls as wagtail_urls
@@ -82,7 +81,6 @@ urlpatterns = [
     # path('wagtail/admin/', view=wagtail_hooks.DashboardView.as_view(), name='wagtailadmin_home'),
     path("wagtail/admin/", include(wagtailadmin_urls)),
     path("api/schema/", schema_view),
-    path("api/token/", obtain_jwt_token),
     path("api-auth/", include("rest_framework.urls")),
     # configure sitemaps and robots.txt, see https://django-robots.readthedocs.io/en/latest/
     # https://docs.wagtail.io/en/v2.9.2/reference/contrib/sitemaps.html

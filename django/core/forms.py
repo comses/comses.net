@@ -2,7 +2,7 @@ import logging
 
 from hcaptcha_field import hCaptchaField
 from django import forms
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import gettext_lazy as _
 
 from .models import ComsesGroups
 
@@ -57,5 +57,4 @@ class SignupForm(forms.Form):
         full_member = data.get("full_member")
         if full_member:
             user.groups.add(ComsesGroups.FULL_MEMBER.get_group())
-        logger.debug("adding user: %s", user)
         user.save()

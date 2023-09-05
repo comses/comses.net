@@ -6,7 +6,7 @@ from django.core.exceptions import ValidationError
 from django.core.validators import validate_email
 from django.db import transaction
 from django.utils import timezone
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import gettext_lazy as _
 from markupfield.fields import Markup
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError as DrfValidationError

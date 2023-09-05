@@ -301,8 +301,11 @@ BORG_ROOT = "/shared/backups/repo"
 BACKUP_ROOT = "/shared/backups"
 EXTRACT_ROOT = "/shared/extract"
 
+FILE_UPLOAD_MAX_MEMORY_SIZE = 104857600
+FILE_UPLOAD_PERMISSIONS = 0o644
+FILE_UPLOAD_TEMP_DIR = "/shared/uploads/"
 
-for d in (LOG_DIRECTORY, LIBRARY_ROOT, REPOSITORY_ROOT):
+for d in (LOG_DIRECTORY, LIBRARY_ROOT, REPOSITORY_ROOT, FILE_UPLOAD_TEMP_DIR):
     try:
         if not os.path.isdir(d):
             os.mkdir(d)
@@ -453,7 +456,6 @@ REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": (
         "rest_framework.authentication.SessionAuthentication",
         "rest_framework.authentication.BasicAuthentication",
-        "rest_framework_jwt.authentication.JSONWebTokenAuthentication",
     ),
     "EXCEPTION_HANDLER": "core.views.rest_exception_handler",
     "PAGE_SIZE": 10,
@@ -572,9 +574,5 @@ MESSAGE_TAGS = {
     messages.WARNING: "alert alert-warning",
     messages.ERROR: "alert alert-danger",
 }
-
-FILE_UPLOAD_MAX_MEMORY_SIZE = 104857600
-FILE_UPLOAD_PERMISSIONS = 0o644
-FILE_UPLOAD_TEMP_DIR = "/shared/uploads/"
 
 ACCEPTED_IMAGE_TYPES = ["gif", "jpeg", "png"]
