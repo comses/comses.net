@@ -1,4 +1,5 @@
 import io
+import os
 import pathlib
 import shutil
 
@@ -19,13 +20,14 @@ from core.tests.permissions_base import (
 )
 from library.forms import PeerReviewerFeedbackReviewerForm
 from library.fs import FileCategoryDirectories
-from library.models import Codebase, CodebaseRelease, License, ReviewStatus
+from library.models import Codebase, CodebaseRelease, License, PeerReview
 from library.tests.base import ReviewSetup
 from .base import (
     CodebaseFactory,
     ContributorFactory,
     ReleaseContributorFactory,
     PeerReviewInvitationFactory,
+    ReleaseSetup,
 )
 from ..views import CodebaseViewSet, CodebaseReleaseViewSet, PeerReviewInvitationViewSet
 
@@ -207,6 +209,70 @@ class CodebaseReleaseViewSetTestCase(BaseViewSetTestCase):
         )
         response = self.client.delete(path=path, HTTP_ACCEPT="application/json")
         self.assertResponseMethodNotAllowed(response)
+
+    def test_request_peer_review_from_draft(self):
+        self.client.login(
+            username=self.submitter.username, password=self.user_factory.password
+        )
+        draft_release = ReleaseSetup.setUpPublishableDraftRelease(self.codebase)
+        response = self.client.post(
+            draft_release.get_request_peer_review_url(),
+            HTTP_ACCEPT="application/json",
+        )
+
+        logger.fatal(response.content)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            CodebaseRelease.objects.get(id=draft_release.id).status,
+            CodebaseRelease.Status.UNDER_REVIEW,
+        )
+        self.assertTrue(
+            PeerReview.objects.filter(codebase_release=draft_release).exists()
+        )
+
+    def test_request_peer_review_from_published(self):
+        self.client.login(
+            username=self.submitter.username, password=self.user_factory.password
+        )
+        draft_release = ReleaseSetup.setUpPublishableDraftRelease(self.codebase)
+        draft_release.publish()
+
+        response = self.client.post(
+            draft_release.get_request_peer_review_url(),
+            HTTP_ACCEPT="application/json",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertNotEqual(
+            draft_release.id,
+            draft_release.codebase.releases.order_by("-last_published_on").first().id,
+        )
+        self.assertTrue(
+            PeerReview.objects.filter(codebase_release=draft_release).exists()
+        )
+
+    def test_request_peer_review_existing_review(self):
+        self.client.login(
+            username=self.submitter.username, password=self.user_factory.password
+        )
+        first_release = ReleaseSetup.setUpPublishableDraftRelease(self.codebase)
+        PeerReview.objects.create(
+            codebase_release=first_release, submitter=self.submitter.member_profile
+        )
+        second_release = ReleaseSetup.setUpPublishableDraftRelease(self.codebase)
+
+        response = self.client.post(
+            second_release.get_request_peer_review_url(),
+            HTTP_ACCEPT="application/json",
+        )
+
+        # this returns a 200 success, might be better to 302 but that needs some refactoring
+        self.assertEqual(
+            PeerReview.objects.filter(codebase_release=first_release).count(), 1
+        )
+        self.assertEqual(
+            PeerReview.objects.filter(codebase_release=second_release).count(), 0
+        )
 
 
 class CodebaseReleaseUnpublishedFilesTestCase(

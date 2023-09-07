@@ -830,6 +830,16 @@ class CodebaseReleaseViewSet(CommonViewSetMixin, NoDeleteViewSet):
             review_release = existing_review.codebase_release
             created = False
         else:
+            if codebase_release.is_draft:
+                codebase_release.status = CodebaseRelease.Status.UNDER_REVIEW
+                codebase_release.save(update_fields=["status"])
+                review_release = codebase_release
+            else:
+                review_release = (
+                    codebase_release.codebase.create_review_draft_from_release(
+                        codebase_release
+                    )
+                )
             codebase_release.status = CodebaseRelease.Status.UNDER_REVIEW
             codebase_release.save(update_fields=["status"])
             review_release = codebase_release
