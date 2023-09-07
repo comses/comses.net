@@ -162,11 +162,11 @@ class LandingPage(Page):
         )
         return [
             {
-                "title": "Generated Forum Topic {}".format(i),
+                "title": f"Generated Forum Topic {i}",
                 "submitter_name": random_submitters[i].member_profile.name,
                 "submitter_url": random_submitters[i].member_profile.get_absolute_url(),
                 "date_created": datetime.now(),
-                "url": "https://forum.example.com/topic/{}".format(i),
+                "url": f"https://forum.example.com/topic/{i}",
             }
             for i in range(self.RECENT_FORUM_ACTIVITY_COUNT)
         ]
@@ -238,7 +238,7 @@ class LandingPage(Page):
             for topic in topics[: self.RECENT_FORUM_ACTIVITY_COUNT]:
                 topic_title = topic["title"]
                 topic_url = build_discourse_url(
-                    "t/{0}/{1}".format(topic["slug"], topic["id"])
+                    "t/{topic['slug']}/{topic['id']}"
                 )
                 # getting back to the original submitter involves some trickery.
                 # The Discourse embed Javascript queues up a crawler to hit the given page and parses it for content to use
@@ -332,7 +332,7 @@ class CategoryIndexItem(Orderable, models.Model):
     caption = models.CharField(max_length=600)
 
     def __str__(self):
-        return "{0} {1}".format(self.title, self.url)
+        return f"CategoryIndexItem: {self.title} {self.url}"
 
 
 class SubnavigationMenu:
@@ -345,7 +345,7 @@ class SubNavigationLink(Orderable, models.Model):
     title = models.CharField(max_length=128)
 
     def __str__(self):
-        return f"SubNavigationLink for page {self.page}: {self.title} ({self.url})"
+        return f"SubNavigationLink: {self.page} {self.title} ({self.url})"
 
 
 class Breadcrumb(Orderable, models.Model):
@@ -522,7 +522,7 @@ class TutorialCard(Orderable, ClusterableModel):
     ]
 
     def __str__(self):
-        return "{0} {1}".format(self.title, self.url)
+        return f"TutorialCard: {self.title} {self.url}"
 
 
 class TutorialDetailPage(NavigationMixin, Page):
@@ -684,7 +684,7 @@ class PlatformSnippetPlacement(models.Model):
     ]
 
     def __str__(self):
-        return "Snippet placement for {0}".format(self.platform.name)
+        return f"Snippet placement for {self.platform.name}"
 
     class Meta:
         verbose_name = "platform placement"
@@ -750,10 +750,10 @@ class Journal(index.Indexed, ClusterableModel):
     def __lt__(self, other):
         if isinstance(other, Journal):
             return self.name < other.name
-        raise TypeError("Unorderable types: {0} < {1}".format(Journal, type(other)))
+        raise TypeError(f"Unorderable types: {Journal} < {type(other)}")
 
     def __str__(self):
-        return "{0} {1} {2}".format(self.name, self.url, self.issn)
+        return f"{self.name} {self.url} {self.issn}"
 
 
 class JournalSnippetPlacement(models.Model):
@@ -822,7 +822,7 @@ class ConferenceTheme(models.Model):
             conference_presentation.save()
 
     def __str__(self):
-        return "{0} {1}".format(self.category, self.title)
+        return f"ConferenceTheme: {self.category} {self.title}"
 
     panels = [
         FieldPanel("title"),
@@ -849,7 +849,7 @@ class ConferencePresentation(models.Model):
     def markdown_contributors(self):
         """returns markdown formatted authors"""
         linked_authors = [
-            "[{0}]({1})".format(c.get_full_name(), c.member_profile_url)
+            c.get_markdown_link()
             for c in self.contributors.all()
         ]
         return ", ".join(linked_authors)
@@ -906,7 +906,8 @@ class ConferenceIndexPage(Page, NavigationMixin):
     template = "home/conference/list.jinja"
 
     def __init__(self, *args, **kwargs):
-        kwargs.setdefault("slug", "conference")
+        if not args:
+            kwargs.setdefault("slug", "conference")
         super().__init__(*args, **kwargs)
 
     def conferences(self):
@@ -937,7 +938,7 @@ class ConferenceSubmission(models.Model):
     )
 
     def __str__(self):
-        return "submission {} by {}".format(self.title, self.submitter)
+        return f"ConferenceSubmission {self.title} {self.submitter}"
 
 
 @register_snippet
@@ -1008,9 +1009,7 @@ class FaqEntry(index.Indexed, models.Model):
     ]
 
     def __str__(self):
-        return "[{0}] {1} {2}".format(
-            self.category, self.question, shorten(self.answer, 140)
-        )
+        return f"[{self.category}] {self.question} {shorten(self.answer, 140)}"
 
 
 class FaqEntryPlacement(models.Model):
@@ -1114,9 +1113,7 @@ class PeopleEntryPlacement(Orderable, models.Model):
         }
 
     def __str__(self):
-        return "{0}: {1} {2}".format(
-            self.sort_order, self.member_profile, self.category.label
-        )
+        return f"{self.sort_order}: {self.member_profile} {self.category.label}"
 
     class Meta:
         verbose_name = "people entry placement"
