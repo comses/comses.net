@@ -830,20 +830,9 @@ class CodebaseReleaseViewSet(CommonViewSetMixin, NoDeleteViewSet):
             review_release = existing_review.codebase_release
             created = False
         else:
-            use_existing_draft = request.POST.get("use_existing_draft") == "true" or (
-                "use_existing_draft" in request.query_params
-                and codebase_release.is_draft
-            )
-            if use_existing_draft:
-                codebase_release.status = CodebaseRelease.Status.UNDER_REVIEW
-                codebase_release.save(update_fields=["status"])
-                review_release = codebase_release
-            else:
-                review_release = (
-                    codebase_release.codebase.create_review_draft_from_release(
-                        codebase_release
-                    )
-                )
+            codebase_release.status = CodebaseRelease.Status.UNDER_REVIEW
+            codebase_release.save(update_fields=["status"])
+            review_release = codebase_release
             review = PeerReview.objects.create(
                 codebase_release=review_release,
                 submitter=request.user.member_profile,
@@ -857,11 +846,11 @@ class CodebaseReleaseViewSet(CommonViewSetMixin, NoDeleteViewSet):
             messages.info(
                 request, "An active peer review already exists for this codebase."
             )
-        return self.build_archive_download_response(request, review_release, review)
+        return self.build_review_request_response(request, review_release, review)
 
     def build_review_request_response(self, request, codebase_release, review):
         if request.accepted_renderer.format == "html":
-            return HttpResponseRedirect(review.get_absolute_url())
+            return HttpResponseRedirect(codebase_release.get_absolute_url())
         else:
             return Response(
                 data={

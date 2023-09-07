@@ -7,7 +7,14 @@
     aria-hidden="true"
     ref="modalElement"
   >
-    <div :class="['modal-dialog', modalSizeClass, centered ? 'modal-dialog-centered' : '']">
+    <div
+      :class="[
+        'modal-dialog',
+        modalSizeClass,
+        centered ? 'modal-dialog-centered' : '',
+        scrollable ? 'modal-dialog-scrollable' : '',
+      ]"
+    >
       <div class="modal-content">
         <div class="modal-header">
           <h5 class="modal-title" :id="`${id}-label`">
@@ -46,6 +53,7 @@ export interface BootstrapModalProps {
   id: string;
   title?: string;
   centered?: boolean;
+  scrollable?: boolean;
   size?: "sm" | "md" | "lg" | "xl";
 }
 
