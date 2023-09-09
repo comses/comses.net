@@ -535,13 +535,13 @@ class EventQuerySet(models.QuerySet):
     def get_expired_q(self):
         """
         returns a Q object for all events with that have not yet ended or
-        started less than 2 days ago if the event has no end date
+        started less than 2 days ago
         """
         now = timezone.now().date()
-        start_date_threshold = now - timedelta(days=2)
-        return models.Q(
-            start_date__lt=start_date_threshold, end_date__isnull=True
-        ) | models.Q(end_date__lt=now, end_date__isnull=False)
+        start_date_threshold = now - timedelta(days=Event.EXPIRED_EVENT_DAYS_THRESHOLD)
+        return models.Q(start_date__lt=start_date_threshold) | models.Q(
+            end_date__lt=now, end_date__isnull=False
+        )
 
     def live(self, **kwargs):
         return self.filter(is_deleted=False, **kwargs)
@@ -557,6 +557,7 @@ class EventQuerySet(models.QuerySet):
 
 @add_to_comses_permission_whitelist
 class Event(index.Indexed, ClusterableModel):
+    EXPIRED_EVENT_DAYS_THRESHOLD = 2
     title = models.CharField(max_length=300)
     date_created = models.DateTimeField(default=timezone.now)
     last_modified = models.DateTimeField(auto_now=True)

@@ -116,11 +116,14 @@ class EventTest(BaseModelTestCase):
             end_date=now + timedelta(days=1),
             title="Current Event",
         )
-        self.no_end_date_current_event = self.event_factory.create(
-            start_date=now - timedelta(days=6),
-            end_date=None,
-            title="No End Date Current Event",
-        )
+        self.no_end_date_current_events = [
+            self.event_factory.create(
+                start_date=now - timedelta(days=threshold),
+                end_date=None,
+                title="No End Date Current Event",
+            )
+            for threshold in range(0, 2)
+        ]
 
         # expired events
         self.expired_event = self.event_factory.create(
@@ -128,26 +131,30 @@ class EventTest(BaseModelTestCase):
             end_date=now - timedelta(days=7),
             title="Expired Event",
         )
-        self.no_end_date_expired_event = self.event_factory.create(
-            start_date=now - timedelta(days=10),
-            end_date=None,
-            title="No End Date Expired Event",
-        )
+        self.no_end_date_expired_events = [
+            self.event_factory.create(
+                start_date=now - timedelta(days=threshold),
+                end_date=None,
+                title="No End Date Expired Event",
+            )
+            for threshold in range(3, 20)
+        ]
 
     def test_with_expired(self):
         events = Event.objects.all().with_expired()
         for event in events:
-            if event in [self.expired_event, self.no_end_date_expired_event]:
+            if event in [self.expired_event] + self.no_end_date_expired_events:
                 self.assertTrue(event.is_expired)
             else:
                 self.assertFalse(event.is_expired)
 
     def test_upcoming(self):
         events = Event.objects.upcoming()
-        for upcoming_event in [
-            self.upcoming_event,
-            self.no_end_date_upcoming_event,
-            self.current_event,
-            self.no_end_date_current_event,
-        ]:
+        for upcoming_event in (
+            [
+                self.upcoming_event,
+                self.current_event,
+            ]
+            + self.no_end_date_current_events
+        ):
             self.assertIn(upcoming_event, events)
