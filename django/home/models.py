@@ -237,9 +237,7 @@ class LandingPage(Page):
             recent_forum_activity = []
             for topic in topics[: self.RECENT_FORUM_ACTIVITY_COUNT]:
                 topic_title = topic["title"]
-                topic_url = build_discourse_url(
-                    "t/{topic['slug']}/{topic['id']}"
-                )
+                topic_url = build_discourse_url(f"t/{topic['slug']}/{topic['id']}")
                 # getting back to the original submitter involves some trickery.
                 # The Discourse embed Javascript queues up a crawler to hit the given page and parses it for content to use
                 # as the initial topic text. However, this topic gets added as a specific Discourse User (`comses`,
@@ -848,10 +846,7 @@ class ConferencePresentation(models.Model):
 
     def markdown_contributors(self):
         """returns markdown formatted authors"""
-        linked_authors = [
-            c.get_markdown_link()
-            for c in self.contributors.all()
-        ]
+        linked_authors = [c.get_markdown_link() for c in self.contributors.all()]
         return ", ".join(linked_authors)
 
     def __str__(self):

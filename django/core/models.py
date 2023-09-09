@@ -73,6 +73,7 @@ class SiteSettings(BaseSiteSetting):
     banner_destination_url = models.URLField(
         help_text=_("URL to redirect to when this banner is clicked"), blank=True
     )
+    # expired_event_days_threshold = models.PositiveIntegerField(default=3, help_text=_("Number of days after an event's start date for which an event will be considered expired.")
     last_modified = models.DateTimeField(auto_now=True)
     mailchimp_digest_archive_url = models.URLField(
         help_text=_("Mailchimp Digest Campaign Archive URL"), blank=True
@@ -534,13 +535,13 @@ class EventQuerySet(models.QuerySet):
     def get_expired_q(self):
         """
         returns a Q object for all events with that have not yet ended or
-        started less than 7 days ago if the event has no end date
+        started less than 2 days ago if the event has no end date
         """
         now = timezone.now().date()
-        start_date_threshold = now - timedelta(days=7)
-        return models.Q(start_date__lt=start_date_threshold) | models.Q(
-            end_date__lt=now, end_date__isnull=False
-        )
+        start_date_threshold = now - timedelta(days=2)
+        return models.Q(
+            start_date__lt=start_date_threshold, end_date__isnull=True
+        ) | models.Q(end_date__lt=now, end_date__isnull=False)
 
     def live(self, **kwargs):
         return self.filter(is_deleted=False, **kwargs)
