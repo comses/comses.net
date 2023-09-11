@@ -123,9 +123,6 @@ class TagClusterManager:
                 tags = Tag.objects.filter(
                     canonicaltagmapping__canonical_tag=canonical_tag[0]
                 )
-                # tags = list(
-                #     CanonicalTagMapping.objects.filter(canonical_tag__in=canonical_tag)
-                # )
 
                 if canonical_tag.exists():
                     try:
