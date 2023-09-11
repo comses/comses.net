@@ -1,4 +1,5 @@
 import logging
+import random
 from datetime import timedelta
 
 from django.conf import settings
@@ -122,7 +123,7 @@ class EventTest(BaseModelTestCase):
                 end_date=None,
                 title="No End Date Current Event",
             )
-            for threshold in range(0, 2)
+            for threshold in range(Event.EXPIRED_EVENT_DAYS_THRESHOLD)
         ]
 
         # expired events
@@ -131,13 +132,19 @@ class EventTest(BaseModelTestCase):
             end_date=now - timedelta(days=7),
             title="Expired Event",
         )
+        sample_expired_event_thresholds = set(
+            random.sample(range(Event.EXPIRED_EVENT_DAYS_THRESHOLD + 1, 365), 10)
+        )
+        sample_expired_event_thresholds.add(
+            Event.EXPIRED_EVENT_DAYS_THRESHOLD + 1
+        )  # always test the edge
         self.no_end_date_expired_events = [
             self.event_factory.create(
                 start_date=now - timedelta(days=threshold),
                 end_date=None,
                 title="No End Date Expired Event",
             )
-            for threshold in range(3, 20)
+            for threshold in sample_expired_event_thresholds
         ]
 
     def test_with_expired(self):
@@ -150,11 +157,8 @@ class EventTest(BaseModelTestCase):
 
     def test_upcoming(self):
         events = Event.objects.upcoming()
-        for upcoming_event in (
-            [
-                self.upcoming_event,
-                self.current_event,
-            ]
-            + self.no_end_date_current_events
-        ):
+        for upcoming_event in [
+            self.upcoming_event,
+            self.current_event,
+        ] + self.no_end_date_current_events:
             self.assertIn(upcoming_event, events)
