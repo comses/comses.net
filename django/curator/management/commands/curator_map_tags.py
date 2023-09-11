@@ -32,7 +32,6 @@ class Command(BaseCommand):
             help="""float between [0,1]. Blank defaults to 0.5. 
             Defines how much confidence to require from the model before tags are selected from the canonical list. 
             Higher thresholds matches less tags to those in a canonical list and require more training data labels.""",
-            action="store_true",
             default=0.5,
         )
 
@@ -47,13 +46,13 @@ class Command(BaseCommand):
             )
             return
 
-        tag_gazetteer = TagGazetteer(options["threshold"])
+        tag_gazetteer = TagGazetteer(float(options["threshold"]))
 
         if options["label"]:
             tag_gazetteer.console_label()
             tag_gazetteer.save_to_training_file()
 
-        if options["run"] != "":
+        if options["run"]:
             if not tag_gazetteer.training_file_exists():
                 logging.warn(
                     "Your model does not have any labelled data. Run this command with --label and try again."
@@ -65,9 +64,17 @@ class Command(BaseCommand):
                 matches = tag_gazetteer.text_search(tag.name)
                 if matches:
                     match = matches[0]
-                    CanonicalTagMapping(
+                    canonical_tag_mapping = CanonicalTagMapping(
                         tag=tag, canonical_tag=match[0], confidence_score=match[1]
-                    ).save()
+                    )
+
+                    is_correct = input(
+                        f"Does the following mapping make sense?:\n{str(canonical_tag_mapping)}\n(y)es/(n)o\n"
+                    )
+
+                    if is_correct == "y":
+                        print("Mapped tag!")
+                        canonical_tag_mapping.save()
                 else:
                     is_unmatched = True
 

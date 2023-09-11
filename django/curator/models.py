@@ -361,4 +361,4 @@ class CanonicalTagMapping(models.Model):
     date_created = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return f"tag={self.tag} canonical_tag={self.canonical_tag} confidence={self.confidence_score}"
+        return f"tag={self.tag} canonical_tag={self.canonical_tag.name} confidence={self.confidence_score}"

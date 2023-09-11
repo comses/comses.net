@@ -207,6 +207,8 @@ class TagGazetteer(AbstractTagDeduper):
 
         self.deduper = dedupe.Gazetteer(AbstractTagDeduper.FIELDS)
         self.prepare_training()
+        self.deduper.train()
+        self.deduper.index(self.prepare_canonical_data())
 
     # The training data is stored in a file.
     # If it exists, load from the file
@@ -227,8 +229,6 @@ class TagGazetteer(AbstractTagDeduper):
         return data
 
     def search(self, data):
-        self.deduper.train()
-        self.deduper.index(self.prepare_canonical_data())
         return self.deduper.search(data, threshold=self.search_threshold)
 
     def text_search(self, name: str):
