@@ -107,9 +107,26 @@ class TagClusterManager:
         quit = False
         while not quit:
             action = input(
-                "What would you like to do?\n(v)iew canonical list\n(m)odify canonical tag\n(q)uit\n"
+                "What would you like to do?\n(a)dd canonical tag\n(r)emove canonical tag\n(v)iew canonical list\n(m)odify canonical tag\n(q)uit\n"
             )
-            if action == "v":
+            if action == "a":
+                new_canonical_tag_name = input("What is your new tag name?\n")
+                canonical_tag = CanonicalTag.objects.get_or_create(
+                    name=new_canonical_tag_name
+                )
+                print("Created:\n", canonical_tag)
+            elif action == "r":
+                canonical_tag_name = input(
+                    "What is the name of the canonical tag to delete?\n"
+                )
+                canonical_tag = CanonicalTag.objects.filter(name=canonical_tag_name)
+                if canonical_tag.exists():
+                    canonical_tag.delete()
+                    print("Successfully deleted!")
+                else:
+                    print("Tag not found!")
+
+            elif action == "v":
                 canonical_tags = CanonicalTag.objects.all()
 
                 print("Canonical Tag List:")
@@ -129,11 +146,14 @@ class TagClusterManager:
                         cluster = TagCluster(
                             canonical_tag_name=canonical_tag[0].name, confidence_score=1
                         )
+                        canonical_tag[0].delete()
+
                         cluster.save()
                         cluster.tags.set(tags)
                         TagClusterManager.modify_cluster(cluster)
                     except KeyboardInterrupt:
                         cluster.delete()
+                        canonical_tag[0].save()
 
                 else:
                     print("Canonical tag not found!")
