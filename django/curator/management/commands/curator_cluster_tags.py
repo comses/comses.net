@@ -34,7 +34,6 @@ class Command(BaseCommand):
             help="""float between [0,1]. Blank defaults to 0.5. 
             Defines how much confidence to require from the model before tags are clustered. 
             Higher thresholds cluster less tags and require more training data labels.""",
-            action="store_true",
             default=0.5,
         )
 
