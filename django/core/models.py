@@ -538,7 +538,9 @@ class EventQuerySet(models.QuerySet):
         started less than 2 days ago
         """
         now = timezone.now().date()
-        start_date_threshold = now - timedelta(days=Event.EXPIRED_EVENT_DAYS_THRESHOLD)
+        start_date_threshold = now - timedelta(
+            days=settings.EXPIRED_EVENT_DAYS_THRESHOLD
+        )
         return models.Q(start_date__lt=start_date_threshold) | models.Q(
             end_date__lt=now, end_date__isnull=False
         )
@@ -557,7 +559,6 @@ class EventQuerySet(models.QuerySet):
 
 @add_to_comses_permission_whitelist
 class Event(index.Indexed, ClusterableModel):
-    EXPIRED_EVENT_DAYS_THRESHOLD = 2
     title = models.CharField(max_length=300)
     date_created = models.DateTimeField(default=timezone.now)
     last_modified = models.DateTimeField(auto_now=True)
@@ -656,11 +657,12 @@ class JobQuerySet(models.QuerySet):
     def get_expired_q(self):
         """
         returns a Q object for all Jobs with a non-null application deadline before today or
-        posted/modified in the last [POST_DATE_DAYS_AGO_TRESHOLD] days if application deadline is null
+        posted/modified in the last [settings.EXPIRED_JOB_DAYS_THRESHOLD] days if
+        application deadline is null
         """
         today = timezone.now()
-        post_date_days_ago_threshold = settings.POST_DATE_DAYS_AGO_THRESHOLD
-        post_date_threshold = today - timedelta(days=post_date_days_ago_threshold)
+        threshold = settings.EXPIRED_JOB_DAYS_THRESHOLD
+        post_date_threshold = today - timedelta(days=threshold)
         return models.Q(
             application_deadline__isnull=False, application_deadline__lt=today
         ) | models.Q(

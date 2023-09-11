@@ -17,7 +17,7 @@ class JobTest(BaseModelTestCase):
         self.job_factory = JobFactory(submitter=self.user)
         today = timezone.now()
 
-        self.threshold = settings.POST_DATE_DAYS_AGO_THRESHOLD
+        self.threshold = settings.EXPIRED_JOB_DAYS_THRESHOLD
 
         # active jobs
         self.active_job = self.job_factory.create(
@@ -123,7 +123,7 @@ class EventTest(BaseModelTestCase):
                 end_date=None,
                 title="No End Date Current Event",
             )
-            for threshold in range(Event.EXPIRED_EVENT_DAYS_THRESHOLD)
+            for threshold in range(settings.EXPIRED_EVENT_DAYS_THRESHOLD)
         ]
 
         # expired events
@@ -132,11 +132,12 @@ class EventTest(BaseModelTestCase):
             end_date=now - timedelta(days=7),
             title="Expired Event",
         )
+        expired_days_threshold = settings.EXPIRED_EVENT_DAYS_THRESHOLD + 1
         sample_expired_event_thresholds = set(
-            random.sample(range(Event.EXPIRED_EVENT_DAYS_THRESHOLD + 1, 365), 10)
+            random.sample(range(expired_days_threshold, 365), 10)
         )
         sample_expired_event_thresholds.add(
-            Event.EXPIRED_EVENT_DAYS_THRESHOLD + 1
+            expired_days_threshold
         )  # always test the edge
         self.no_end_date_expired_events = [
             self.event_factory.create(

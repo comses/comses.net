@@ -266,12 +266,16 @@ SECRET_KEY = config.get("secrets", "SECRET_KEY")
 
 # regular settings
 
-POST_DATE_DAYS_AGO_THRESHOLD = config.getint(
-    "default", "POST_DATE_DAYS_AGO_THRESHOLD", fallback=180
+EXPIRED_JOB_DAYS_THRESHOLD = config.getint(
+    "default", "EXPIRED_JOB_DAYS_THRESHOLD", fallback=180
+)
+
+EXPIRED_EVENT_DAYS_THRESHOLD = config.getint(
+    "default", "EXPIRED_EVENT_DAYS_THRESHOLD", fallback=2
 )
 
 # Database configuration
-# https://docs.djangoproject.com/en/3.2/ref/settings/#databases
+# https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
 DEFAULT_AUTO_FIELD = "django.db.models.AutoField"
 
@@ -530,7 +534,7 @@ DISCOURSE_API_USERNAME = config.get(
     "discourse", "DISCOURSE_API_USERNAME", fallback="unconfigured"
 )
 
-# https://docs.djangoproject.com/en/3.2/ref/settings/#templates
+# https://docs.djangoproject.com/en/4.2/ref/settings/#templates
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.jinja2.Jinja2",
