@@ -58,7 +58,7 @@ class TagClusterManager:
         while action != "q":
             TagClusterManager.__display_cluster(tag_cluster)
             action = input(
-                "What would you like to do?\n(c)hange canonical tag name\n(a)dd tags\n(r)emove tags\n(s)ave\n(p)ublish mapping\n(f)inish\n"
+                "What would you like to do?\n(c)hange canonical tag name\n(a)dd tags\n(r)emove tags\n(s)ave\n(f)inish\n"
             )
 
             if action == "c":
@@ -81,9 +81,6 @@ class TagClusterManager:
                 tags.pop(int(tag_index))
                 tag_cluster.tags.set(tags)
             elif action == "s":
-                tag_cluster.save()
-                print("Saved!")
-            elif action == "p":
                 print("Published mapping")
                 canonical_tag, tag_mappings = tag_cluster.save_mapping()
 
@@ -110,7 +107,7 @@ class TagClusterManager:
         quit = False
         while not quit:
             action = input(
-                "What would you like to do?\n(v)iew canonical list\n(m)odify canonical list\n"
+                "What would you like to do?\n(v)iew canonical list\n(m)odify canonical tag\n(q)uit\n"
             )
             if action == "v":
                 canonical_tags = CanonicalTag.objects.all()
@@ -120,19 +117,55 @@ class TagClusterManager:
                     print(canonical_tag.name)
                 print("")
 
-            if action == "m":
+            elif action == "m":
                 name = input("Which one would you like to modify?\n")
                 canonical_tag = CanonicalTag.objects.filter(name=name)
-                tags = CanonicalTagMapping.objects.filter(
-                    canonical_tag__in=canonical_tag
+                tags = list(
+                    CanonicalTagMapping.objects.filter(canonical_tag__in=canonical_tag)
                 )
-                tag_cluster = TagCluster(
-                    canonical_tag_name=canonical_tag[0].name,
-                    confidence_score=tags[0].confidence_score,
-                )
-                tags = [tag.tag for tag in tags]
-                tag_cluster.tags.set(tags)
-                print(canonical_tag, tags)
+
+                if canonical_tag.exists():
+                    tag_action = ""
+                    while tag_action != "q":
+                        print("\n\nCanonical tag:", canonical_tag[0].name)
+                        print("Tags:")
+                        for tag in tags:
+                            if tag.canonical_tag == canonical_tag[0]:
+                                print(tag.tag.name)
+                        tag_action = input(
+                            "What would you like to do?\n(a)dd tags\n(r)emove tags\n(s)ave\n(q)uit\n"
+                        )
+
+                        if tag_action == "a":
+                            tag_name = input("Enter tag name:\n")
+                            tag_to_add = Tag.objects.filter(name=tag_name)
+
+                            if tag_to_add.exists():
+                                canonical_tag_mapping = CanonicalTagMapping(
+                                    tag=tag_to_add[0],
+                                    canonical_tag=canonical_tag[0],
+                                    confidence_score=1,
+                                )
+                                tags.append(canonical_tag_mapping)
+                            else:
+                                print("Tag cannot be found in database!")
+                        elif tag_action == "r":
+                            tag_name = input("Enter tag name:\n")
+
+                            for tag in tags:
+                                if tag.tag.name == tag_name:
+                                    tag.canonical_tag = None
+                        elif tag_action == "s":
+                            for tag in tags:
+                                tag.save()
+                        elif tag_action == "q":
+                            break
+
+                else:
+                    print("Canonical tag not found!")
+
+            elif action == "q":
+                quit = True
 
     def __display_cluster(tag_cluster: TagCluster):
         tag_names = [tag.name for tag in tag_cluster.tags.all()]
