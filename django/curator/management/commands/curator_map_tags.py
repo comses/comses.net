@@ -14,12 +14,6 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument(
-            "--run",
-            action="store_true",
-            help="run the gazetteering model.",
-            default=False,
-        )
-        parser.add_argument(
             "--label",
             "-l",
             help="label the training data for the gazetteering model using the console",
@@ -52,33 +46,32 @@ class Command(BaseCommand):
             tag_gazetteer.console_label()
             tag_gazetteer.save_to_training_file()
 
-        if options["run"]:
-            if not tag_gazetteer.training_file_exists():
-                logging.warn(
-                    "Your model does not have any labelled data. Run this command with --label and try again."
+        if not tag_gazetteer.training_file_exists():
+            logging.warn(
+                "Your model does not have any labelled data. Run this command with --label and try again."
+            )
+
+        tags = Tag.objects.filter(canonicaltagmapping=None)
+        is_unmatched = False
+        for tag in tags:
+            matches = tag_gazetteer.text_search(tag.name)
+            if matches:
+                match = matches[0]
+                canonical_tag_mapping = CanonicalTagMapping(
+                    tag=tag, canonical_tag=match[0], confidence_score=match[1]
                 )
 
-            tags = Tag.objects.filter(canonicaltagmapping=None)
-            is_unmatched = False
-            for tag in tags:
-                matches = tag_gazetteer.text_search(tag.name)
-                if matches:
-                    match = matches[0]
-                    canonical_tag_mapping = CanonicalTagMapping(
-                        tag=tag, canonical_tag=match[0], confidence_score=match[1]
-                    )
-
-                    is_correct = input(
-                        f"Does the following mapping make sense?:\n{str(canonical_tag_mapping)}\n(y)es/(n)o\n"
-                    )
-
-                    if is_correct == "y":
-                        print("Mapped tag!")
-                        canonical_tag_mapping.save()
-                else:
-                    is_unmatched = True
-
-            if is_unmatched:
-                logging.warn(
-                    "There are some Tags that could not be matched to CanonicalTags. Either lower the threshold or increase the training data size."
+                is_correct = input(
+                    f"Does the following mapping make sense?:\n{str(canonical_tag_mapping)}\n(y)es/(n)o\n"
                 )
+
+                if is_correct == "y":
+                    print("Mapped tag!")
+                    canonical_tag_mapping.save()
+            else:
+                is_unmatched = True
+
+        if is_unmatched:
+            logging.warn(
+                "There are some Tags that could not be matched to CanonicalTags. Either lower the threshold or increase the training data size."
+            )
