@@ -304,7 +304,7 @@ class TagMigrator:
 
 
 class TagCluster(models.Model):
-    canonical_tag_name = models.TextField(unique=True)
+    canonical_tag_name = models.TextField()
     tags = models.ManyToManyField(Tag)
     confidence_score = models.FloatField()
     date_created = models.DateTimeField(auto_now_add=True, null=True)
@@ -319,6 +319,13 @@ class TagCluster(models.Model):
         canonical_tag, _ = CanonicalTag.objects.get_or_create(
             name=self.canonical_tag_name
         )
+
+        previous_tag_mappings = CanonicalTagMapping.objects.filter(
+            canonical_tag=canonical_tag
+        )
+        for previous_tag_mapping in previous_tag_mappings:
+            previous_tag_mapping.canonical_tag = None
+            previous_tag_mapping.save()
 
         tag_mappings = [
             CanonicalTagMapping(

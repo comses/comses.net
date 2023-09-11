@@ -120,46 +120,23 @@ class TagClusterManager:
             elif action == "m":
                 name = input("Which one would you like to modify?\n")
                 canonical_tag = CanonicalTag.objects.filter(name=name)
-                tags = list(
-                    CanonicalTagMapping.objects.filter(canonical_tag__in=canonical_tag)
+                tags = Tag.objects.filter(
+                    canonicaltagmapping__canonical_tag=canonical_tag[0]
                 )
+                # tags = list(
+                #     CanonicalTagMapping.objects.filter(canonical_tag__in=canonical_tag)
+                # )
 
                 if canonical_tag.exists():
-                    tag_action = ""
-                    while tag_action != "q":
-                        print("\n\nCanonical tag:", canonical_tag[0].name)
-                        print("Tags:")
-                        for tag in tags:
-                            if tag.canonical_tag == canonical_tag[0]:
-                                print(tag.tag.name)
-                        tag_action = input(
-                            "What would you like to do?\n(a)dd tags\n(r)emove tags\n(s)ave\n(q)uit\n"
+                    try:
+                        cluster = TagCluster(
+                            canonical_tag_name=canonical_tag[0].name, confidence_score=1
                         )
-
-                        if tag_action == "a":
-                            tag_name = input("Enter tag name:\n")
-                            tag_to_add = Tag.objects.filter(name=tag_name)
-
-                            if tag_to_add.exists():
-                                canonical_tag_mapping = CanonicalTagMapping(
-                                    tag=tag_to_add[0],
-                                    canonical_tag=canonical_tag[0],
-                                    confidence_score=1,
-                                )
-                                tags.append(canonical_tag_mapping)
-                            else:
-                                print("Tag cannot be found in database!")
-                        elif tag_action == "r":
-                            tag_name = input("Enter tag name:\n")
-
-                            for tag in tags:
-                                if tag.tag.name == tag_name:
-                                    tag.canonical_tag = None
-                        elif tag_action == "s":
-                            for tag in tags:
-                                tag.save()
-                        elif tag_action == "q":
-                            break
+                        cluster.save()
+                        cluster.tags.set(tags)
+                        TagClusterManager.modify_cluster(cluster)
+                    except KeyboardInterrupt:
+                        cluster.delete()
 
                 else:
                     print("Canonical tag not found!")
