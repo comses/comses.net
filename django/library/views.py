@@ -840,9 +840,6 @@ class CodebaseReleaseViewSet(CommonViewSetMixin, NoDeleteViewSet):
                         codebase_release
                     )
                 )
-            codebase_release.status = CodebaseRelease.Status.UNDER_REVIEW
-            codebase_release.save(update_fields=["status"])
-            review_release = codebase_release
             review = PeerReview.objects.create(
                 codebase_release=review_release,
                 submitter=request.user.member_profile,
