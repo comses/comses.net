@@ -97,12 +97,12 @@
                 {% endif %}
             </span>
             <span class="me-3">
-                <b>Published</b> {{ format_datetime(release.first_published_at, "%b %d, %Y") }}
+                {% if release.first_published_at %}
+                    <b>Published</b> {{ format_datetime(release.first_published_at, "%b %d, %Y") }}
+                {% endif %}
             </span>
             <span>
-                {% if codebase.first_published_at != codebase.last_published_on %}
-                    <b>Last modified</b> {{ format_datetime(codebase.last_published_on, "%b %d, %Y") }}
-                {% endif %}
+                <b>Last modified</b> {{ format_datetime(codebase.last_modified, "%b %d, %Y") }}
             </span>
         </div>
         <div class='tag-list'>
@@ -357,13 +357,15 @@
             <div class="card-text mb-3">
                 {{ release.get_os_display() }}
             </div>
-            <b class="card-title">Publish Date</b>
-            <div class='card-text mb-3'>
-                {{ format_date(release.first_published_at) }}
-            </div>
+            {% if release.first_published_at %}
+                <b class="card-title">Publish Date</b>
+                <div class='card-text mb-3'>
+                    {{ format_date(release.first_published_at) }}
+                </div>
+            {% endif %}
             <b class="card-title">Last Updated</b>
             <div class='card-text mb-3'>
-                {{ format_date(release.last_published_on) }}
+                {{ format_date(release.last_modified) }}
             </div>
             <div class="mb-3">
                 <b class="card-title">Downloads</b>
@@ -482,8 +484,8 @@
                                     <i class='fas fa-lock'></i> (private)
                                 {% endif %}
                             </td>
-                            <td>{{ format_datetime(related_release.first_published_at, '%c') }}</td>
-                            <td>{{ format_datetime(related_release.last_published_on, '%c') }}</td>
+                            <td>{{ format_datetime(related_release.first_published_at, '%c') or '-' }}</td>
+                            <td>{{ format_datetime(related_release.last_modified, '%c') }}</td>
                             <td>
                                 <span class='badge bg-{{ related_release.get_status_color() }}'>
                                     {{ related_release.get_status_display() }}
