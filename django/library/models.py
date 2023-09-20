@@ -1817,7 +1817,7 @@ class PeerReview(models.Model):
         if self.codebase_release.codebase.live:
             self.codebase_release.publish()
         else:
-            self.codebase_release.status = CodebaseRelease.status.UNPUBLISHED
+            self.codebase_release.status = CodebaseRelease.Status.UNPUBLISHED
         self.codebase_release.peer_reviewed = True
         self.codebase_release.save()
         self.codebase_release.codebase.peer_reviewed = True
