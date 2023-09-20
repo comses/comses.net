@@ -687,11 +687,13 @@ class Codebase(index.Indexed, ClusterableModel):
 
     @property
     def author_list(self):
-        return [c.get_full_name() for c in self.all_authors if c.has_name]
+        return [c.get_full_name() for c in self.all_authors if c.has_name or c.user]
 
     @property
     def contributor_list(self):
-        return [c.get_full_name() for c in self.all_contributors if c.has_name]
+        return [
+            c.get_full_name() for c in self.all_contributors if c.has_name or c.user
+        ]
 
     def get_all_contributors_search_fields(self):
         return " ".join(
@@ -1813,7 +1815,7 @@ class PeerReview(models.Model):
         )
         # automatically publish the release if previous versions are live
         if self.codebase_release.codebase.live:
-            self.codebase_release.status = CodebaseRelease.Status.PUBLISHED
+            self.codebase_release.publish()
         self.codebase_release.peer_reviewed = True
         self.codebase_release.save()
         self.codebase_release.codebase.peer_reviewed = True

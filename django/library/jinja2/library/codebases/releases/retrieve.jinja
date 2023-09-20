@@ -430,7 +430,7 @@
         {% elif review.is_awaiting_author_changes %}
             <form method="post" action="{{ release.get_notify_reviewers_of_changes_url() }}">
                 {{ csrf_input }}
-                <button type="submit" class="btn btn-danger my-1 w-100">Revisions complete, request new review</button>
+                <button type="submit" class="btn btn-danger my-1 w-100">Notify reviewers of changes</button>
             </form>
         {% elif review is not none %}
             <button type="button" class="btn btn-warning my-1 w-100" disabled>{{ review.get_status_display() }}</button>
