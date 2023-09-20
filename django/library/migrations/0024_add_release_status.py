@@ -12,17 +12,9 @@ def translate_flags_to_status(apps, schema):
 
 def translate_status_to_flags(apps, schema):
     CodebaseRelease = apps.get_model("library", "CodebaseRelease")
-    for release in CodebaseRelease.objects.all():
-        if release.status == "draft":
-            release.draft = True
-            release.live = False
-        elif release.status == "published":
-            release.draft = False
-            release.live = True
-        else:
-            release.draft = False
-            release.live = False
-        release.save()
+    CodebaseRelease.objects.filter(status="draft").update(draft=True, live=False)
+    CodebaseRelease.objects.filter(status="published").update(draft=False, live=True)
+    CodebaseRelease.objects.filter(status="unpublished").update(draft=False, live=False)
 
 
 class Migration(migrations.Migration):

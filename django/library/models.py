@@ -832,76 +832,81 @@ class Codebase(index.Indexed, ClusterableModel):
         existing_draft = self.releases.filter(
             status=CodebaseRelease.Status.DRAFT
         ).first()
-        if not existing_draft:
-            return self.create_release()
-        return existing_draft
+        if existing_draft:
+            return existing_draft
+
+        draft_release = self.create_release()
+        # reset fields that should not be copied over to a new draft
+        draft_release.doi = None
+        draft_release.release_notes = ""
+        draft_release.output_data_url = ""
+        draft_release.save()
+        return draft_release
 
     @transaction.atomic
     def create_review_draft_from_release(self, source_release):
         # create a new "under review" release from an existing release
         # (should only be called from a publishable release)
-        release_metadata = dict(
-            release_notes=source_release.release_notes,
-            os=source_release.os,
-            output_data_url=source_release.output_data_url,
-            license=source_release.license,
-        )
+        source_id = source_release.id
         review_draft = self.create_release(
-            status=CodebaseRelease.Status.UNDER_REVIEW, **release_metadata
+            status=CodebaseRelease.Status.UNDER_REVIEW, source_release=source_release
         )
-
-        review_draft.contributors.set(source_release.contributors.all())
-        review_draft.platform_tags.add(*source_release.platform_tags.all())
-        review_draft.programming_languages.add(
-            *source_release.programming_languages.all()
-        )
-        review_draft.save()
-
         fs_api = review_draft.get_fs_api()
-        fs_api.copy_originals(source_release)
+        fs_api.copy_originals(CodebaseRelease.objects.get(id=source_id))
         return review_draft
 
+    def create_release_from_source(self, source_release, release_metadata):
+        # cache these before removing source release id to copy it over
+        contributors = ReleaseContributor.objects.filter(release_id=source_release.id)
+        platform_tags = source_release.platform_tags.all()
+        programming_languages = source_release.programming_languages.all()
+
+        source_release.id = None
+        release = source_release
+        for k, v in release_metadata.items():
+            setattr(release, k, v)
+        release.peer_reviewed = False
+        release.last_published_on = None
+        release.first_published_at = None
+        release.platform_tags.add(*platform_tags)
+        release.programming_languages.add(*programming_languages)
+        release.save()
+        contributors.copy_to(release)
+        return release
+
     @transaction.atomic
-    def create_release(self, initialize=True, status=None, **overrides):
+    def create_release(
+        self, initialize=True, status=None, source_release=None, **overrides
+    ):
         if status is None:
             status = CodebaseRelease.Status.DRAFT
+        if source_release is None:
+            source_release = self.releases.last()
 
         existing_draft = self.releases.filter(status=status).first()
         if existing_draft:
             logger.warn(
-                "Creating a new draft release when one already exists: %s",
+                "Creating a new %s release when one already exists: %s",
+                status,
                 existing_draft.identifier,
             )
-        submitter = self.submitter
-        next_version_number = self.next_version_number()
-        previous_release = self.releases.last()
         release_metadata = dict(
-            submitter=submitter,
-            version_number=next_version_number,
+            submitter=self.submitter,
+            version_number=self.next_version_number(),
             identifier=None,
             status=status,
             share_uuid=uuid.uuid4(),
         )
-        if previous_release is None:
+
+        if source_release is None:  # this is the first release of the codebase
             release_metadata["codebase"] = self
             release_metadata.update(overrides)
             release = CodebaseRelease.objects.create(**release_metadata)
             # add submitter as a release contributor automatically
-            # https://github.com/comses/core.comses.net/issues/129
             release.add_contributor(self.submitter)
         else:
-            # copy previous release metadata
-            previous_release_contributors = ReleaseContributor.objects.filter(
-                release_id=previous_release.id
-            )
-            previous_release.id = None
-            release = previous_release
-            for k, v in release_metadata.items():
-                setattr(release, k, v)
-            release.doi = None
-            release.peer_reviewed = False
-            release.save()
-            previous_release_contributors.copy_to(release)
+            # copy source release metadata (previous or specified source)
+            release = self.create_release_from_source(source_release, release_metadata)
 
         if initialize:
             release.get_fs_api().validate_bagit()

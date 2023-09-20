@@ -242,13 +242,17 @@ class CodebaseReleaseViewSetTestCase(BaseViewSetTestCase):
             HTTP_ACCEPT="application/json",
         )
 
+        under_review_release = draft_release.codebase.latest_accessible_release(
+            self.submitter
+        )
+
         self.assertEqual(response.status_code, 200)
         self.assertNotEqual(
             draft_release.id,
-            draft_release.codebase.releases.order_by("-last_published_on").first().id,
+            under_review_release.id,
         )
         self.assertTrue(
-            PeerReview.objects.filter(codebase_release=draft_release).exists()
+            PeerReview.objects.filter(codebase_release=under_review_release).exists()
         )
 
     def test_request_peer_review_existing_review(self):
