@@ -60,6 +60,7 @@ import { useReleaseEditorStore } from "@/stores/releaseEditor";
 
 const props = defineProps<{
   buttonClass: string;
+  show: boolean;
 }>();
 
 const store = useReleaseEditorStore();
@@ -91,6 +92,9 @@ const { errors, handleSubmit, values, setValues } = useForm<PublishFields>({
 });
 
 onMounted(() => {
+  if (props.show) {
+    publishModal.value?.show();
+  }
   if (store.isInitialized) {
     setValues({ versionNumber: store.release.versionNumber });
   }

@@ -15,6 +15,12 @@ def translate_status_to_flags(apps, schema):
     CodebaseRelease.objects.filter(status="draft").update(draft=True, live=False)
     CodebaseRelease.objects.filter(status="published").update(draft=False, live=True)
     CodebaseRelease.objects.filter(status="unpublished").update(draft=False, live=False)
+    CodebaseRelease.objects.filter(status="under_review").update(
+        draft=False, live=False
+    )
+    CodebaseRelease.objects.filter(status="review_complete").update(
+        draft=False, live=False
+    )
 
 
 class Migration(migrations.Migration):
@@ -33,6 +39,7 @@ class Migration(migrations.Migration):
                     ("under_review", "Under review"),
                     ("published", "Published"),
                     ("unpublished", "Unpublished"),
+                    ("review_complete", "Review complete"),
                 ],
                 default="draft",
                 help_text="The current status of this codebase release.",

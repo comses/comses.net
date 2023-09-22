@@ -172,6 +172,7 @@ export interface RelatedUser {
 
 export interface CodebaseRelease {
   absoluteUrl: string;
+  canEditOriginals: boolean;
   citationText?: string;
   codebase: Codebase;
   dateCreated: Date;

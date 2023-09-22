@@ -1065,9 +1065,11 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
         # equivalent to draft but indicates that a release is under review and should not
         # block the normal flow of creating/publishing new releases
         UNDER_REVIEW = "under_review", _("Under review")
+        # status given after completing the review process, not editable and not live
+        REVIEW_COMPLETE = "review_complete", _("Review complete")
         # not editable and live
         PUBLISHED = "published", _("Published")
-        # not editable and not live
+        # indicates a release that was once published but has been unpublished
         UNPUBLISHED = "unpublished", _("Unpublished")
 
     date_created = models.DateTimeField(default=timezone.now)
@@ -1198,6 +1200,9 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
                 "version_number": self.version_number,
             },
         )
+
+    def get_publish_url(self):
+        return f"{self.get_edit_url()}?publish"
 
     def get_list_url(self):
         return reverse(
@@ -1364,11 +1369,20 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
         2. has not already been peer reviewed
         3. a related PeerReview does not exist
         """
+        return (
+            self.is_publishable and not self.peer_reviewed and self.get_review() is None
+        )
+
+    @property
+    def is_publishable(self):
+        """
+        Returns true if this release is ready to be published
+        """
         try:
             self.validate_publishable()
+            return True
         except ValidationError:
             return False
-        return not self.peer_reviewed and self.get_review() is None
 
     @property
     def is_latest_version(self):
@@ -1474,12 +1488,17 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
         return self.status == self.Status.UNDER_REVIEW
 
     @property
+    def is_review_complete(self):
+        return self.status == self.Status.REVIEW_COMPLETE
+
+    @property
     def live(self):
         return self.is_published
 
     @property
-    def editable(self):
-        return self.is_draft or self.is_under_review
+    def can_edit_originals(self):
+        """return true if the original (unpublished) files are editable"""
+        return not self.live and not self.is_review_complete
 
     def get_status_display(self):
         return self.Status(self.status).label
@@ -1490,6 +1509,7 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
             self.Status.UNPUBLISHED: "gray",
             self.Status.UNDER_REVIEW: "danger",
             self.Status.PUBLISHED: "success",
+            self.Status.REVIEW_COMPLETE: "primary",
         }
         return COLOR_MAP.get(self.status)
 
@@ -1813,11 +1833,9 @@ class PeerReview(models.Model):
             action=PeerReviewEvent.RELEASE_CERTIFIED,
             message="Model has been certified as peer reviewed",
         )
-        # automatically publish the release if previous versions are live
-        if self.codebase_release.codebase.live:
-            self.codebase_release.publish()
-        else:
-            self.codebase_release.status = CodebaseRelease.Status.UNPUBLISHED
+        # dont un-publish releases with a review started before the new review process
+        if self.codebase_release.is_under_review:
+            self.codebase_release.status = CodebaseRelease.Status.REVIEW_COMPLETE
         self.codebase_release.peer_reviewed = True
         self.codebase_release.save()
         self.codebase_release.codebase.peer_reviewed = True

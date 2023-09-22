@@ -2,7 +2,7 @@
   <div>
     <nav class="nav flex-md-column">
       <router-link
-        v-if="!isLive"
+        v-if="showUpload"
         to="/upload"
         class="card text-decoration-none flex-grow-1 mb-3 me-3 me-md-0"
         active-class="border-secondary"
@@ -68,7 +68,7 @@ import { useReleaseEditorStore } from "@/stores/releaseEditor";
 import ProgressCheck from "@/components/releaseEditor/ProgressCheck.vue";
 
 const props = defineProps<{
-  isLive: boolean;
+  showUpload: boolean;
 }>();
 
 const store = useReleaseEditorStore();

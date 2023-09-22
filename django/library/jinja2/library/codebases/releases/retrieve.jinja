@@ -81,6 +81,10 @@
             {% endif %}
         {% elif release.is_under_review %}
             <div class="alert alert-danger mt-2">This release is currently undergoing peer review and must remain unpublished until complete.</div>
+        {% elif release.is_review_complete %}
+            <div class="alert alert-warning mt-2">This release has undergone peer review and is currently unpublished. You can
+                <a href="{{ release.get_publish_url() }}">publish it here</a>
+            </div>
         {% elif release.is_draft %}
             <div class="alert alert-danger mt-2">The release you are viewing is currently a draft.</div>
         {% else %}
@@ -265,6 +269,11 @@
         <a href="{{ release.get_edit_url() }}">
             <div class="btn btn-secondary my-1 w-100">Edit {{ "Draft" if release.editable else "Metadata" }}</div>
         </a>
+        {% if not release.live and release.is_publishable %}
+            <a href="{{ release.get_publish_url() }}">
+                <div class="btn btn-danger my-1 w-100">Publish</div>
+            </a>
+        {% endif %}
     {% endif %}
 {% endwith %}
 

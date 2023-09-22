@@ -594,10 +594,14 @@ class NestedCodebaseReleasePermission(permissions.BasePermission):
 
 
 class NestedCodebaseReleaseUnpublishedFilesPermission(permissions.BasePermission):
-    def has_object_permission(self, request, view, obj):
+    def has_object_permission(self, request, view, obj: CodebaseRelease):
         if obj.live:
             raise DrfPermissionDenied(
                 "Cannot access unpublished files of published release"
+            )
+        if obj.is_review_complete:
+            raise DrfPermissionDenied(
+                "Cannot modify unpublished files of a release that has been peer reviewed"
             )
         if request.method == "GET" and not request.user.has_perm(
             "library.change_codebaserelease", obj=obj

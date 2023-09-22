@@ -506,6 +506,7 @@ class CodebaseReleaseSerializer(serializers.ModelSerializer):
     )
     license = LicenseSerializer()
     live = serializers.ReadOnlyField()
+    can_edit_originals = serializers.ReadOnlyField()
     os_display = serializers.ReadOnlyField(source="get_os_display")
     platforms = TagSerializer(many=True, source="platform_tags")
     programming_languages = TagSerializer(many=True)
@@ -535,6 +536,7 @@ class CodebaseReleaseSerializer(serializers.ModelSerializer):
         model = CodebaseRelease
         fields = (
             "absolute_url",
+            "can_edit_originals",
             "citation_text",
             "release_contributors",
             "date_created",
