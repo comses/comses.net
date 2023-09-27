@@ -114,12 +114,8 @@ class PeerReviewDashboardView(PermissionRequiredMixin, ListView):
     def get_queryset(self):
         query_params = self.get_query_params()
         requires_editor_input = query_params.get("requires_editor_input")
-        include_dated_author_change_requests = query_params.get(
-            "include_dated_author_change_requests"
-        )
-        include_dated_reviewer_feedback_requests = query_params.get(
-            "include_dated_reviewer_feedback_requests"
-        )
+        author_changes_requested = query_params.get("author_changes_requested")
+        reviewer_feedback_requested = query_params.get("reviewer_feedback_requested")
         order_by = query_params.get("order_by")
         reviews = PeerReview.objects.annotate(
             n_accepted_invites=Count(
@@ -128,25 +124,14 @@ class PeerReviewDashboardView(PermissionRequiredMixin, ListView):
         )
 
         filters = Q()
-        # FIXME: refactor - this type of complicated query logic should probably be encapsulated in a model's QuerySet
-        # if possible
         if requires_editor_input:
-            filters |= (
-                Q(n_accepted_invites=0)
-                | Q(status=ReviewStatus.AWAITING_EDITOR_FEEDBACK.name)
-                | (
-                    Q(last_modified__lt=datetime.now() - timedelta(days=25))
-                    & Q(status=ReviewStatus.AWAITING_EDITOR_FEEDBACK.name)
-                )
+            filters |= Q(n_accepted_invites=0) | Q(
+                status=ReviewStatus.AWAITING_EDITOR_FEEDBACK
             )
-        if include_dated_author_change_requests:
-            filters |= Q(last_modified__lt=datetime.now() - timedelta(days=25)) & Q(
-                status=ReviewStatus.AWAITING_AUTHOR_CHANGES.name
-            )
-        if include_dated_reviewer_feedback_requests:
-            filters |= Q(last_modified__lt=datetime.now() - timedelta(days=25)) & Q(
-                status=ReviewStatus.AWAITING_REVIEWER_FEEDBACK.name
-            )
+        if author_changes_requested:
+            filters |= Q(status=ReviewStatus.AWAITING_AUTHOR_CHANGES)
+        if reviewer_feedback_requested:
+            filters |= Q(status=ReviewStatus.AWAITING_REVIEWER_FEEDBACK)
         if filters:
             reviews = reviews.filter(filters)
 

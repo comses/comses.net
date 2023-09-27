@@ -196,13 +196,13 @@ class PeerReviewerFeedbackEditorForm(CheckCharFieldLengthMixin, forms.ModelForm)
 
 class PeerReviewFilterForm(forms.Form):
     requires_editor_input = forms.BooleanField(required=False)
-    include_dated_author_change_requests = forms.BooleanField(required=False)
-    include_dated_reviewer_feedback_requests = forms.BooleanField(required=False)
+    author_changes_requested = forms.BooleanField(required=False)
+    reviewer_feedback_requested = forms.BooleanField(required=False)
     order_by = forms.ChoiceField(
         choices=[
-            ("-max_last_modified", "Last Modified DESC"),
-            ("min_n_accepted_invites", "Min Accepted Invites ASC"),
-            ("title", "Title ASC"),
+            ("-max_last_modified", "Most recently modified"),
+            ("min_n_accepted_invites", "Least accepted invites"),
+            ("title", "Title"),
         ],
         required=False,
     )
