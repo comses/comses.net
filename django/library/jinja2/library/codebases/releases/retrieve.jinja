@@ -1,6 +1,6 @@
 {% extends "sidebar_layout.jinja" %}
 {% from "common.jinja" import breadcrumb, embed_discourse_comments, share_card, search_tag_href, member_profile_href %}
-{% from "library/review/includes/macros.jinja" import include_review_reminders %}
+{% from "library/review/includes/macros.jinja" import include_review_reminders, confirm_change_closed_modal %}
 
 {% set open_code_badge_url = request.build_absolute_uri(static("images/icons/open-code-badge.png")) %}
 {% set codebase = release.codebase %}
@@ -442,7 +442,14 @@
                 <button type="submit" class="btn btn-danger my-1 w-100">Notify reviewers of changes</button>
             </form>
         {% elif review is not none %}
+            <h4 class="mt-3 text-muted">Review Status:</h4>
             <button type="button" class="btn btn-warning my-1 w-100" disabled>{{ review.get_status_display() }}</button>
+            {% if not review.is_complete %}
+                <form method="post" action="{{ review.get_change_closed_url() }}">
+                    {{ csrf_input }}
+                    {{ confirm_change_closed_modal(review, show_reopen=False) }}
+                </form>
+            {% endif %}
         {% endif %}
     {% endwith %}
     {# end has_change_perm #}

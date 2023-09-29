@@ -1,4 +1,5 @@
 {% extends 'sidebar_layout.jinja' %}
+{% from "library/review/includes/macros.jinja" import display_closed_status %}
 
 {% block introduction %}
     <h1>Peer Review Editor Dashboard</h1>
@@ -13,7 +14,12 @@
                 </h4>
                 {% for release in codebase.releases.all() %}
                     {% set review = release.review %}
-                    <h5>Review: <a href="{{ review.get_absolute_url() }}">{{ release.version_number }}</a></h5>
+                    <h5>
+                        Review: <a href="{{ review.get_absolute_url() }}">
+                            {{ display_closed_status(review) }}
+                            {{ release.version_number }}
+                        </a>
+                    </h5>
                     <p class='card-text'>
                         {% set badge_class="bg-success" if review.is_complete else "bg-warning" %}
                         <div class='row'>

@@ -37,9 +37,9 @@ class Migration(migrations.Migration):
                 choices=[
                     ("draft", "Draft"),
                     ("under_review", "Under review"),
+                    ("review_complete", "Review complete"),
                     ("published", "Published"),
                     ("unpublished", "Unpublished"),
-                    ("review_complete", "Review complete"),
                 ],
                 default="draft",
                 help_text="The current status of this codebase release.",

@@ -278,6 +278,26 @@ class CodebaseReleaseViewSetTestCase(BaseViewSetTestCase):
             PeerReview.objects.filter(codebase_release=second_release).count(), 0
         )
 
+    def test_request_peer_review_existing_closed_review(self):
+        self.client.login(
+            username=self.submitter.username, password=self.user_factory.password
+        )
+        first_release = ReleaseSetup.setUpPublishableDraftRelease(self.codebase)
+        pr = PeerReview.objects.create(
+            codebase_release=first_release, submitter=self.submitter.member_profile
+        )
+        pr.close(self.submitter.member_profile)
+        second_release = ReleaseSetup.setUpPublishableDraftRelease(self.codebase)
+
+        response = self.client.post(
+            second_release.get_request_peer_review_url(),
+            HTTP_ACCEPT="application/json",
+        )
+
+        self.assertTrue(
+            PeerReview.objects.filter(codebase_release=second_release).exists()
+        )
+
 
 class CodebaseReleaseUnpublishedFilesTestCase(
     ApiAccountMixin, ResponseStatusCodesMixin, TestCase

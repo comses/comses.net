@@ -1,9 +1,10 @@
 <template>
   <div class="row">
     <div class="col-sm-12 col-md-8">
-      <ReviewInvitations :review-id="reviewId" @pollEvents="retrieveEvents" />
+      <div v-if="closed" class="alert alert-danger"><b>This review is closed.</b> Re-open it to invite reviewers or send feedback.</div>
+      <ReviewInvitations :review-id="reviewId" :disabled="closed" @pollEvents="retrieveEvents" />
       <h2 class="mt-4">Feedback</h2>
-      <ReviewFeedback :review-id="reviewId" />
+      <ReviewFeedback :review-id="reviewId" :disabled="closed" />
     </div>
     <div class="col-sm-12 col-md-4">
       <ReviewEventLog :events="events" :errors="eventErrors" />
@@ -22,6 +23,7 @@ export interface ReviewEditorProps {
   reviewId: string;
   statusLevels: { value: string; label: string }[];
   status: string;
+  closed: boolean;
 }
 
 const props = defineProps<ReviewEditorProps>();

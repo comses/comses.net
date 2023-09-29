@@ -13,7 +13,7 @@ from django.core.cache import cache
 from django.core.files.images import ImageFile
 from django.core.files.storage import FileSystemStorage
 from django.db import models, transaction
-from django.db.models import Prefetch, Q
+from django.db.models import Prefetch, Q, Count, Max
 from django.utils.functional import cached_property
 from django.urls import reverse
 from django.utils import timezone
@@ -381,6 +381,31 @@ class CodebaseQuerySet(models.QuerySet):
             Prefetch(
                 "releases", release_qs.with_release_contributors(release_contributor_qs)
             )
+        )
+
+    def with_reviews(self, reviews):
+        return (
+            self.filter(releases__review__in=reviews)
+            .prefetch_related(
+                Prefetch(
+                    "releases",
+                    queryset=CodebaseRelease.objects.filter(review__in=reviews)
+                    .select_related("review")
+                    .annotate(
+                        n_accepted_invites=Count(
+                            "review__invitation_set",
+                            filter=Q(review__invitation_set__accepted=True),
+                        )
+                    ),
+                )
+            )
+            .annotate(
+                min_n_accepted_invites=Count(
+                    "releases__review__invitation_set",
+                    filter=Q(releases__review__invitation_set__accepted=True),
+                )
+            )
+            .annotate(max_last_modified=Max("releases__review__last_modified"))
         )
 
     @staticmethod
@@ -1247,7 +1272,8 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
         )
 
     def get_review(self):
-        return getattr(self, "review", None)
+        review = getattr(self, "review", None)
+        return review if review and not review.closed else None
 
     def get_review_status_display(self):
         review = self.get_review()
@@ -1738,6 +1764,8 @@ class PeerReviewEvent(models.TextChoices):
     RELEASE_CERTIFIED = "release_certified", _(
         "Editor has taken reviewer feedback into account and certified this release as peer reviewed"
     )
+    REVIEW_CLOSED = "review_closed", _("Peer review was closed")
+    REVIEW_REOPENED = "review_reopened", _("Peer review was reopened")
 
 
 class PeerReviewQuerySet(models.QuerySet):
@@ -1760,6 +1788,36 @@ class PeerReviewQuerySet(models.QuerySet):
             return get_search_queryset(query, queryset)
         return queryset
 
+    def review_open(self, **kwargs):
+        return self.filter(closed=False, **kwargs)
+
+    def requires_editor_input(self):
+        return self.annotate(
+            n_accepted_invites=Count(
+                "invitation_set", filter=Q(invitation_set__accepted=True)
+            )
+        ).filter(
+            Q(n_accepted_invites=0) | Q(status=ReviewStatus.AWAITING_EDITOR_FEEDBACK)
+        )
+
+    def author_changes_requested(self):
+        return self.filter(status=ReviewStatus.AWAITING_AUTHOR_CHANGES)
+
+    def reviewer_feedback_requested(self):
+        return self.filter(status=ReviewStatus.AWAITING_REVIEWER_FEEDBACK)
+
+    def with_filters(self, query_params):
+        queryset = self
+        if not query_params.get("include_closed"):
+            queryset = queryset.review_open()
+        if query_params.get("requires_editor_input"):
+            queryset = queryset.requires_editor_input()
+        if query_params.get("author_changes_requested"):
+            queryset = queryset.author_changes_requested()
+        if query_params.get("reviewer_feedback_requested"):
+            queryset = queryset.reviewer_feedback_requested()
+        return queryset
+
     def completed(self, **kwargs):
         return self.filter(status=ReviewStatus.COMPLETE, **kwargs)
 
@@ -1779,6 +1837,7 @@ class PeerReview(models.Model):
         help_text=_("The current status of this review."),
         max_length=32,
     )
+    closed = models.BooleanField(default=False)
     codebase_release = models.OneToOneField(
         CodebaseRelease, related_name="review", on_delete=models.PROTECT
     )
@@ -1792,6 +1851,10 @@ class PeerReview(models.Model):
     panels = [
         FieldPanel("status"),
     ]
+
+    @property
+    def is_open(self):
+        return not self.closed
 
     @property
     def is_complete(self):
@@ -1810,6 +1873,9 @@ class PeerReview(models.Model):
 
     def get_edit_url(self):
         return reverse("library:profile-edit", kwargs={"user_pk": self.user.pk})
+
+    def get_change_closed_url(self):
+        return reverse("library:peer-review-change-closed", kwargs={"slug": self.slug})
 
     def get_invite(self, member_profile):
         return self.invitation_set.filter(candidate_reviewer=member_profile).first()
@@ -1840,15 +1906,7 @@ class PeerReview(models.Model):
         self.codebase_release.save()
         self.codebase_release.codebase.peer_reviewed = True
         self.codebase_release.codebase.save()
-
-        # FIXME: consider moving this into explicit send_model_certified_email()
-        send_markdown_email(
-            subject="Peer review completed",
-            template_name="library/review/email/model_certified.jinja",
-            context={"review": self},
-            to=[self.submitter.email],
-            cc=[settings.REVIEW_EDITOR_EMAIL],
-        )
+        self.send_model_certified_email()
 
     def log(self, message: str, action: PeerReviewEvent, author: MemberProfile):
         return self.event_set.create(message=message, action=action.name, author=author)
@@ -1865,11 +1923,36 @@ class PeerReview(models.Model):
     def author_resubmitted_changes(self, changes_made=None):
         author = self.submitter
         self.log(
-            message="Release has been resubmitted for review: {}".format(changes_made),
+            message=f"Release has been resubmitted for review: {changes_made}",
             action=PeerReviewEvent.AUTHOR_RESUBMITTED,
             author=author,
         )
         self.send_author_updated_content_email()
+
+    def close(self, submitter_or_editor: MemberProfile):
+        if self.closed:
+            return
+
+        self.closed = True
+        self.log(
+            message=f"Peer review closed by {'submitter' if submitter_or_editor == self.submitter else 'editor'}",
+            action=PeerReviewEvent.REVIEW_CLOSED,
+            author=submitter_or_editor,
+        )
+        self.save()
+        # do we want to send an email when a review is closed?
+
+    def reopen(self, submitter_or_editor: MemberProfile):
+        if not self.closed:
+            return
+
+        self.closed = False
+        self.log(
+            message=f"Peer review re-opened by {'submitter' if submitter_or_editor == self.submitter else 'editor'}",
+            action=PeerReviewEvent.REVIEW_REOPENED,
+            author=submitter_or_editor,
+        )
+        self.save()
 
     def send_author_updated_content_email(self):
         qs = self.invitation_set.filter(accepted=True)
@@ -1891,6 +1974,15 @@ class PeerReview(models.Model):
             to=[settings.REVIEW_EDITOR_EMAIL],
         )
 
+    def send_model_certified_email(self):
+        send_markdown_email(
+            subject="Peer review completed",
+            template_name="library/review/email/model_certified.jinja",
+            context={"review": self},
+            to=[self.submitter.email],
+            cc=[settings.REVIEW_EDITOR_EMAIL],
+        )
+
     @cached_property
     def review_status_json(self):
         return json.dumps(
@@ -1910,8 +2002,9 @@ class PeerReview(models.Model):
 
     @classmethod
     def get_codebase_latest_active_review(cls, codebase):
+        """returns the latest review for a codebase that is not complete and not closed"""
         qs = cls.objects.filter(codebase_release__codebase=codebase).exclude(
-            status=ReviewStatus.COMPLETE
+            Q(status=ReviewStatus.COMPLETE) | Q(closed=True)
         )
         return qs.latest("date_created") if qs.exists() else None
 
@@ -2195,7 +2288,7 @@ class PeerReviewerFeedback(models.Model):
         )
 
     @transaction.atomic
-    def editor_called_for_revisions(self):
+    def editor_called_for_revisions(self, editor: MemberProfile):
         """Add an editor called for revisions event to the log
 
         Preconditions:
@@ -2203,7 +2296,6 @@ class PeerReviewerFeedback(models.Model):
         editor updated feedback
         """
         review = self.invitation.review
-        editor = self.invitation.editor
         review.log(
             action=PeerReviewEvent.REVISIONS_REQUESTED,
             author=editor,

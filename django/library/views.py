@@ -113,53 +113,9 @@ class PeerReviewDashboardView(PermissionRequiredMixin, ListView):
 
     def get_queryset(self):
         query_params = self.get_query_params()
-        requires_editor_input = query_params.get("requires_editor_input")
-        author_changes_requested = query_params.get("author_changes_requested")
-        reviewer_feedback_requested = query_params.get("reviewer_feedback_requested")
         order_by = query_params.get("order_by")
-        reviews = PeerReview.objects.annotate(
-            n_accepted_invites=Count(
-                "invitation_set", filter=Q(invitation_set__accepted=True)
-            )
-        )
-
-        filters = Q()
-        if requires_editor_input:
-            filters |= Q(n_accepted_invites=0) | Q(
-                status=ReviewStatus.AWAITING_EDITOR_FEEDBACK
-            )
-        if author_changes_requested:
-            filters |= Q(status=ReviewStatus.AWAITING_AUTHOR_CHANGES)
-        if reviewer_feedback_requested:
-            filters |= Q(status=ReviewStatus.AWAITING_REVIEWER_FEEDBACK)
-        if filters:
-            reviews = reviews.filter(filters)
-
-        codebases = (
-            Codebase.objects.filter(releases__review__in=reviews)
-            .prefetch_related(
-                Prefetch(
-                    "releases",
-                    queryset=CodebaseRelease.objects.filter(review__in=reviews)
-                    .select_related("review")
-                    .annotate(
-                        n_accepted_invites=Count(
-                            "review__invitation_set",
-                            filter=Q(review__invitation_set__accepted=True),
-                        )
-                    ),
-                )
-            )
-            .annotate(
-                min_n_accepted_invites=Count(
-                    "releases__review__invitation_set",
-                    filter=Q(releases__review__invitation_set__accepted=True),
-                )
-            )
-            .annotate(max_last_modified=Max("releases__review__last_modified"))
-            .order_by(order_by)
-        )
-        return codebases
+        reviews = PeerReview.objects.with_filters(query_params)
+        return Codebase.objects.with_reviews(reviews).order_by(order_by)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -185,6 +141,35 @@ class PeerReviewEditorView(PermissionRequiredMixin, DetailView):
     def put(self, request, *args, **kwargs):
         request.kwargs = kwargs
         return _change_peer_review_status(request)
+
+
+class PeerReviewChangeClosedView(PermissionRequiredMixin, DetailView):
+    context_object_name = "review"
+    model = PeerReview
+    permission_required = "library.change_peerreview"
+    slug_field = "slug"
+
+    def has_permission(self):
+        has_base_permission = super().has_permission()
+        if has_base_permission:
+            return True
+        obj = self.get_object()
+        return obj.submitter.user == self.request.user
+
+    def post(self, request, *args, **kwargs):
+        review = self.get_object()
+        action = request.POST.get("action")
+        if action == "close":
+            review.close(request.user.member_profile)
+        elif action == "reopen":
+            review.reopen(request.user.member_profile)
+        else:
+            raise ValidationError("Invalid action")
+        messages.success(
+            request,
+            (f"Review successfully {action}{'d' if action == 'close' else 'ed'}"),
+        )
+        return redirect(request.META.get("HTTP_REFERER", ""))
 
 
 class PeerReviewReviewerListView(mixins.ListModelMixin, viewsets.GenericViewSet):
@@ -341,6 +326,11 @@ class PeerReviewEditorFeedbackUpdateView(UpdateView):
     template_name = "library/review/feedback/editor_update.jinja"
     pk_url_kwarg = "feedback_id"
     queryset = PeerReviewerFeedback.objects.all()
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["editor"] = self.request.user.member_profile
+        return kwargs
 
     def get_success_url(self):
         return self.object.invitation.review.get_absolute_url()
@@ -798,10 +788,7 @@ class CodebaseReleaseViewSet(CommonViewSetMixin, NoDeleteViewSet):
     def request_peer_review(self, request, identifier, version_number):
         """
         If a peer review is requestable (publishable, not reviewed, no related review exists):
-        - Create a new "under review" draft release if:
-          - the release from which the request was made is published
-          - the requester chose to convert a draft release to a draft under review with the
-            knowledge that it will not be publishable until the review is complete
+        - Create a new "under review" draft release if the release from which the request was made is published
         - Otherwise, update the existing draft release to be "under review"
         - Create a new peer review object and send an email to the author
         """
@@ -840,7 +827,8 @@ class CodebaseReleaseViewSet(CommonViewSetMixin, NoDeleteViewSet):
             messages.success(request, "Peer review request submitted.")
         else:
             messages.info(
-                request, "An active peer review already exists for this codebase."
+                request,
+                "An active peer review already exists for this codebase. Close it below if you wish to open a new one",
             )
         return self.build_review_request_response(request, review_release, review)
 

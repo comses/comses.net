@@ -20,6 +20,7 @@
       :limit="20"
       @search-change="fetchMatchingUsers"
       @select="handleSelect"
+      :disabled="disabled"
     >
       <template #clear v-if="value">
         <div class="multiselect__clear">
@@ -94,6 +95,7 @@ export interface UserSearchProps {
     params: UserSearchQueryParams
   ) => Promise<AxiosResponse<{ results: RelatedMemberProfile[] }, any>>;
   errors?: string[];
+  disabled?: boolean;
 }
 
 const props = withDefaults(defineProps<UserSearchProps>(), {

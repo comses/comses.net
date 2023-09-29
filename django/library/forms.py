@@ -194,6 +194,7 @@ class PeerReviewerFeedbackEditorForm(CheckCharFieldLengthMixin, forms.ModelForm)
 
 
 class PeerReviewFilterForm(forms.Form):
+    include_closed = forms.BooleanField(required=False)
     requires_editor_input = forms.BooleanField(required=False)
     author_changes_requested = forms.BooleanField(required=False)
     reviewer_feedback_requested = forms.BooleanField(required=False)

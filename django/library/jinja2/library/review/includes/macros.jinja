@@ -14,6 +14,50 @@
     fas {% if q %}fa-check text-success{% else %}fa-times text-danger{% endif %}
 {% endmacro %}
 
+{% macro display_closed_status(review) %}
+    {% if review.is_complete %}
+        <i class="far fa-check-circle text-success" title="complete"></i>
+    {% elif review.closed %}
+        <i class="far fa-times-circle text-danger" title="closed"></i>
+    {% else %}
+        <i class="far fa-dot-circle text-secondary" title="open"></i>
+    {% endif %}
+{% endmacro %}
+
+{% macro confirm_change_closed_modal(review, show_reopen=False) %}
+    {% set action = "reopen" if review.closed else "close" %}
+    {% if not review.closed %}
+        <button type="button" data-bs-toggle='modal' data-bs-target='#confirm-review-change-closed' class='btn btn-danger my-1 w-100'>
+            Close review
+        </button>
+    {% elif show_reopen %}
+        <button type="button" data-bs-toggle='modal' data-bs-target='#confirm-review-change-closed' class='btn btn-success my-1 w-100'>
+            Re-open review
+        </button>
+    {% endif %}
+    <div class='modal fade' id='confirm-review-change-closed' tabindex='-1' role='dialog'
+            aria-labelledby='confirm-review-change-closed-label' aria-hidden='true'>
+        <div class='modal-dialog modal-dialog-centered modal-dialog-scrollable' role='document'>
+            <div class='modal-content'>
+                <div class='modal-header'>
+                    <h4 class='modal-title' id='confirm-review-change-closed-label'>
+                        Review for {{ review.codebase_release.codebase.title }} v{{ review.codebase_release.version_number }}
+                    </h4>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close">
+                    </button>
+                </div>
+                <div class='modal-body'>
+                    Are you sure you wish to {{ action }} this review?
+                </div>
+                <div class='modal-footer'>
+                    <button type="button" class="btn btn-outline-gray" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" name="action" value="{{ action }}" class="btn btn-primary">Confirm</button>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endmacro %}
+
 {% macro display_reviewer_feedback(feedback, include_private=false, include_editor=false) %}
     <h1>Reviewer Comments</h1>
     <p>

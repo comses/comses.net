@@ -14,6 +14,7 @@
             show-affiliation
             show-tags
             show-link
+            :disabled="disabled"
           />
         </div>
       </div>
@@ -76,7 +77,7 @@
               getStatusDisplay(inv).label
             }}</span>
             <span class="float-md-end">
-              <button class="btn btn-outline-secondary" @click="resendEmail(inv.slug)">
+              <button v-if="!disabled" class="btn btn-outline-secondary" @click="resendEmail(inv.slug)">
                 Resend Invite
               </button>
             </span>
@@ -102,6 +103,7 @@ import type { Reviewer, ReviewInvitation } from "@/types";
 
 const props = defineProps<{
   reviewId: string;
+  disabled: boolean;
 }>();
 
 const emit = defineEmits(["pollEvents"]);
