@@ -172,6 +172,7 @@ class PeerReviewerFeedbackEditorForm(CheckCharFieldLengthMixin, forms.ModelForm)
             feedback = kwargs["instance"]
             logger.debug("feedback %s", feedback.invitation.review.status)
             kwargs["initial"]["accept"] = feedback.invitation.review.is_complete
+        self.editor = kwargs.pop("editor", feedback.invitation.editor)
         super().__init__(**kwargs)
 
     accept = forms.BooleanField(label="Accept?", required=False)
@@ -182,11 +183,9 @@ class PeerReviewerFeedbackEditorForm(CheckCharFieldLengthMixin, forms.ModelForm)
     def save(self, commit=True):
         feedback = super().save(commit)
         if self.cleaned_data["accept"]:
-            feedback.invitation.review.set_complete_status(
-                editor=feedback.invitation.editor
-            )
+            feedback.invitation.review.set_complete_status(editor=self.editor)
         else:
-            feedback.editor_called_for_revisions()
+            feedback.editor_called_for_revisions(editor=self.editor)
         return feedback
 
     class Meta:
