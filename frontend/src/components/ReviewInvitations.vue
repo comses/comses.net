@@ -77,7 +77,11 @@
               getStatusDisplay(inv).label
             }}</span>
             <span class="float-md-end">
-              <button v-if="!disabled" class="btn btn-outline-secondary" @click="resendEmail(inv.slug)">
+              <button
+                v-if="!disabled"
+                class="btn btn-outline-secondary"
+                @click="resendEmail(inv.slug)"
+              >
                 Resend Invite
               </button>
             </span>

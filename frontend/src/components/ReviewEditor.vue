@@ -1,7 +1,9 @@
 <template>
   <div class="row">
     <div class="col-sm-12 col-md-8">
-      <div v-if="closed" class="alert alert-danger"><b>This review is closed.</b> Re-open it to invite reviewers or send feedback.</div>
+      <div v-if="closed" class="alert alert-danger">
+        <b>This review is closed.</b> Re-open it to invite reviewers or send feedback.
+      </div>
       <ReviewInvitations :review-id="reviewId" :disabled="closed" @pollEvents="retrieveEvents" />
       <h2 class="mt-4">Feedback</h2>
       <ReviewFeedback :review-id="reviewId" :disabled="closed" />
