@@ -109,57 +109,59 @@ class TagClusterManager:
             action = input(
                 "What would you like to do?\n(a)dd canonical tag\n(r)emove canonical tag\n(v)iew canonical list\n(m)odify canonical tag\n(q)uit\n"
             )
+
             if action == "a":
-                new_canonical_tag_name = input("What is your new tag name?\n")
-                canonical_tag = CanonicalTag.objects.get_or_create(
-                    name=new_canonical_tag_name
-                )
-                print("Created:\n", canonical_tag)
+                TagClusterManager.__console_add_new_canonical_tag()
             elif action == "r":
-                canonical_tag_name = input(
-                    "What is the name of the canonical tag to delete?\n"
-                )
-                canonical_tag = CanonicalTag.objects.filter(name=canonical_tag_name)
-                if canonical_tag.exists():
-                    canonical_tag.delete()
-                    print("Successfully deleted!")
-                else:
-                    print("Tag not found!")
-
+                TagClusterManager.__console_remove_canonical_tag()
             elif action == "v":
-                canonical_tags = CanonicalTag.objects.all()
-
-                print("Canonical Tag List:")
-                for canonical_tag in canonical_tags:
-                    print(canonical_tag.name)
-                print("")
-
+                TagClusterManager.__console_view_canonical_tag()
             elif action == "m":
-                name = input("Which one would you like to modify?\n")
-                canonical_tag = CanonicalTag.objects.filter(name=name)
-                tags = Tag.objects.filter(
-                    canonicaltagmapping__canonical_tag=canonical_tag[0]
-                )
-
-                if canonical_tag.exists():
-                    try:
-                        cluster = TagCluster(
-                            canonical_tag_name=canonical_tag[0].name, confidence_score=1
-                        )
-                        canonical_tag[0].delete()
-
-                        cluster.save()
-                        cluster.tags.set(tags)
-                        TagClusterManager.modify_cluster(cluster)
-                    except KeyboardInterrupt:
-                        cluster.delete()
-                        canonical_tag[0].save()
-
-                else:
-                    print("Canonical tag not found!")
-
+                TagClusterManager.__console_modify_canonical_tag()
             elif action == "q":
                 quit = True
+
+    def __console_add_new_canonical_tag():
+        new_canonical_tag_name = input("What is your new tag name?\n")
+        canonical_tag = CanonicalTag.objects.get_or_create(name=new_canonical_tag_name)
+        print("Created:\n", canonical_tag)
+
+    def __console_remove_canonical_tag():
+        canonical_tag_name = input("What is the name of the canonical tag to delete?\n")
+        canonical_tag = CanonicalTag.objects.filter(name=canonical_tag_name)
+        if canonical_tag.exists():
+            canonical_tag.delete()
+            print("Successfully deleted!")
+        else:
+            print("Tag not found!")
+
+    def __console_view_canonical_tag():
+        canonical_tags = CanonicalTag.objects.all()
+        print("Canonical Tag List:")
+        for canonical_tag in canonical_tags:
+            print(canonical_tag.name)
+        print("")
+
+    def __console_modify_canonical_tag():
+        name = input("Which one would you like to modify?\n")
+        canonical_tag = CanonicalTag.objects.filter(name=name)
+        tags = Tag.objects.filter(canonicaltagmapping__canonical_tag=canonical_tag[0])
+
+        if canonical_tag.exists():
+            try:
+                cluster = TagCluster(
+                    canonical_tag_name=canonical_tag[0].name, confidence_score=1
+                )
+                canonical_tag[0].delete()
+
+                cluster.save()
+                cluster.tags.set(tags)
+                TagClusterManager.modify_cluster(cluster)
+            except KeyboardInterrupt:
+                cluster.delete()
+                canonical_tag[0].save()
+        else:
+            print("Canonical tag not found!")
 
     def __display_cluster(tag_cluster: TagCluster):
         tag_names = [tag.name for tag in tag_cluster.tags.all()]
