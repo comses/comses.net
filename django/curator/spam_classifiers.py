@@ -9,18 +9,15 @@ from abc import ABC, abstractmethod
 from ast import literal_eval
 from django.conf import settings
 from typing import List
-
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.preprocessing import FunctionTransformer
 from sklearn.naive_bayes import MultinomialNB
 from sklearn.pipeline import Pipeline
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
-from tensorflow.keras.preprocessing.text import Tokenizer
-from tensorflow.keras.preprocessing.sequence import pad_sequences
 import xgboost as xgb
 
-from .models import UserSpamStatusProcessor
+from .spam_processor import UserSpamStatusProcessor
 
 
 SPAM_DIR_PATH = settings.SPAM_DIR_PATH
@@ -36,26 +33,20 @@ class SpamClassifier(ABC):
         pass
 
     @abstractmethod
-    def partial_fit(self):
-        # only used in UserClassifier at this point
-        pass
-
-    @abstractmethod
     def predict(self):
         # predict only the ones with unlabelled_by_curator == None
         pass
 
-    def get_predictions(self, model, feat_matrix):
+    def get_predictions(self, model, feat_list: list):
         """
         Params : model ... Model instance
-                feat_matrix ... List of numerical values, which is an input to the model
+                feat_list ... List of texts
         Returns : predictions ... List of predictions made by the model. Consists of 0 (ham) and 1 (spam).
                   confidences ... List of floating values, which represent probabilities whether a user is 1 (spam)
         """
         confidences = model.predict_proba(
-            feat_matrix
+            feat_list
         )  # predict_proba() outputs a list of list in the format of [(probability of 0(ham)), (probability of 1(spam))]
-
         confidences = [value[1] for value in confidences]
         predictions = [round(value) for value in confidences]
         return predictions, confidences
@@ -63,15 +54,15 @@ class SpamClassifier(ABC):
     def validate_model(
         self,
         model,
-        test_user_ids: list[int],
-        test_matrix: list,
-        test_target: list[int],
+        test_user_ids: list,
+        test_feats: list,
+        test_target: list,
         save_path: str,
     ):
         """
         Params : model ... Model instance
-                test_user_ids ... List of user_id which test_matrix, validation input, was taken from
-                test_matrix ... List of numerical values, which is an input to the model
+                test_user_ids ... List of user_id which test_feats, validation input, was taken from
+                test_feats ... List of numerical values, which is an input to the model
                 test_target ... List of 0 (ham) and 1 (spam) labelled by curators
                 save_path ... String of file path to save the model metrics json file
         Output : json file ... This stores model scores and user_ids used to validate the model. The format is as follows.
@@ -79,7 +70,7 @@ class SpamClassifier(ABC):
         Returns : predictions ... List of predictions made by the model. Consists of 0 (ham) and 1 (spam).
                   model_metrics ... Dictionary of the same format as the output json file.
         """
-        predictions, _ = self.get_predictions(model, test_matrix)
+        predictions, _ = self.get_predictions(model, test_feats)
         accuracy = round(accuracy_score(test_target, predictions), 3)
         precision = round(precision_score(test_target, predictions), 3)
         recall = round(recall_score(test_target, predictions), 3)
@@ -96,107 +87,21 @@ class SpamClassifier(ABC):
             json.dump(model_metrics, outfile, indent=4)
 
         return predictions, model_metrics
-
-
-class TextSpamClassifier(SpamClassifier):
-    def __init__(self):
-        super().__init__()
-        self.MODEL_FILE_PATH = SPAM_DIR_PATH / "text_classifier.pkl"
-        self.MODEL_METRICS_FILE_PATH = SPAM_DIR_PATH / "text_classifier_metrics.json"
-
-    def load_model(self):
-        if not self.MODEL_FILE_PATH.is_file():
+    
+    def load_model(self, file_path:str):
+        if not os.path.isfile(file_path):
             self.fit()
-        with self.MODEL_FILE_PATH.open("rb") as file:
+        with open(file_path, "rb") as file:
             return pickle.load(file)
 
-    def save_model(self, model):
-        with self.MODEL_FILE_PATH.open("wb") as file:
+    def save_model(self, model, file_path:str):
+        with open(file_path, "wb") as file:
             pickle.dump(model, file)
-
-    def fit(self):
-        # TODO:
-        model = Pipeline(
-            [
-                ("cleaner", FunctionTransformer(self.preprocess)),
-                ("countvectorizer", CountVectorizer(lowercase=True)),
-                ("classifier", MultinomialNB()),
-            ]
-        )
-
-        untrained_df = self.processor.get_untrained_df()
-
-        if untrained_df.empty:
-            return False
-
-        data_x, data_y = self.concat_pd(untrained_df)
-
-        (
-            train_x,
-            test_x,
-            train_y,
-            test_y,
-        ) = train_test_split(data_x, data_y, test_size=0.1, random_state=434)
-
-        model.fit(train_x["text"], train_y)
-        self.save_model(model)
-        test_predictions, model_metrics = self.validate_model(
-            model,
-            test_x["user_id"].tolist(),
-            test_x["text"].tolist(),
-            test_y.tolist(),
-            self.MODEL_METRICS_FILE_PATH,
-        )
-        return model_metrics
-
-    def partial_fit(self):
-        """
-        Since there is no partial training feature in TextSpamClassifier, this function calls fit() and train based on all data
-        """
-        self.fit()
-
-    def concat_pd(self, df):
-        bio = df[["user_id", "bio", "labelled_by_curator"]][df["bio"] != ""]
-        research_interests = df[
-            ["user_id", "research_interests", "labelled_by_curator"]
-        ][df["research_interests"] != ""]
-
-        bio = bio.rename(columns={"bio": "text"})
-        research_interests = bio.rename(columns={"research_interests": "text"})
-
-        train_x = pd.concat(
-            [bio[["user_id", "text"]], research_interests[["user_id", "text"]]]
-        )
-
-        train_y = pd.concat(
-            [bio["labelled_by_curator"], research_interests["labelled_by_curator"]]
-        )
-        return train_x, train_y
-
-    def predict(self):
-        df = self.processor.get_unlabelled_by_curator_df()
-        if df.empty:  # no-op if no data found
-            return
-
-        model = self.load_model()
-        train_x, train_y = self.concat_pd(df)
-
-        predictions, confidences = self.get_predictions(model, train_x["text"])
-
-        # save the results to DB
-        result = {
-            "user_id": train_x["user_id"],
-            "text_classifier_confidence": confidences,
-            "labelled_by_text_classifier": predictions,
-        }
-        df = pd.DataFrame(result).replace(np.nan, None)
-
-        self.processor.update_predictions(df, is_text_classifier=True)
 
     def preprocess(self, text_list: List[str]):
         text_list = [self.__text_cleanup_pipeline(text) for text in text_list]
         return text_list
-
+    
     def __text_cleanup_pipeline(self, text: str):
         text = str(text)
         text = self.__convert_text_to_lowercase(text)
@@ -222,190 +127,165 @@ class TextSpamClassifier(SpamClassifier):
         return re.sub(r"\s+", " ", text)
 
 
-class UserMetadataSpamClassifier(SpamClassifier):
+class TextSpamClassifier(SpamClassifier):
     def __init__(self):
         super().__init__()
-        self.TOKENIZER_FILE_PATH = SPAM_DIR_PATH / "tokenizer.pkl"
-        self.MODEL_FILE_PATH = SPAM_DIR_PATH / "user_meta_classifier.pkl"
-        self.MODEL_METRICS_FILE_PATH = (
-            SPAM_DIR_PATH / "user_meta_classifier_metrics.json"
-        )
+        self.MODEL_FILE_PATH = SPAM_DIR_PATH / "text_classifier.pkl"
+        self.MODEL_METRICS_FILE_PATH = SPAM_DIR_PATH / "text_classifier_metrics.json"
 
     def fit(self):
-        # obtain df from pipleline
-        df = self.processor.get_untrained_df()
-        if df.empty:
-            return  # if no untrained data found
+        model = Pipeline(
+            [
+                ("cleaner", FunctionTransformer(self.preprocess)),
+                ("countvectorizer", CountVectorizer(lowercase=True)),
+                ("classifier", MultinomialNB()),
+            ]
+        )
+
+        all_df = self.processor.get_all_users_df()
+
+        if all_df.empty:
+            return None
+
+        data_x, data_y = self.concat_pd(all_df)
+        if data_x.empty:
+            return None
+        
+        print(len(data_y.value_counts()))
+        if len(data_y.value_counts()) != 2: 
+            print("Cannot create a binary classifier!!")
+            return None
 
         (
-            train_matrix,
-            test_matrix,
-            train_target,
-            test_target,
-            test_user_ids,
-        ) = self.__preprocess_for_training(
-            df
-        )  # preprocess
+            train_x,
+            test_x,
+            train_y,
+            test_y,
+        ) = train_test_split(data_x, data_y, test_size=0.1, random_state=434)
 
-        test_prediction, metrics, model = self.__train_xgboost_classifer(
-            train_matrix, test_matrix, train_target, test_target, test_user_ids
-        )  # train
-
-        pickle.dump(model, open(self.MODEL_FILE_PATH, "wb"))  # save model
-
-        self.processor.update_training_data(df)  # save last trained date
-        return metrics  # if needed
-
-    def partial_fit(self):
-        # obtain df from pipleline
-        df = self.processor.get_untrained_df()
-        if df.empty:
-            return  # if no untrained data found
-
-        model = pickle.load(open(self.MODEL_FILE_PATH, "rb"))  # load model
-
-        (
-            train_matrix,
-            test_matrix,
-            train_target,
-            test_target,
-            test_user_ids,
-        ) = self.__preprocess_for_training(
-            df
-        )  # preprocess
-
-        test_prediction, metrics, model = self.__partial_train_xgboost_classifer(
-            train_matrix, test_matrix, train_target, test_target, test_user_ids, model
-        )  # partial train
-
-        pickle.dump(model, open(self.MODEL_FILE_PATH, "wb"))  # save model
-
-        # self.processor.update_training_data(df)  # save last trained date
-        return metrics
+        model.fit(train_x["text"], train_y)
+        self.save_model(model, self.MODEL_FILE_PATH)
+        test_predictions, model_metrics = self.validate_model(
+            model,
+            test_x["user_id"].tolist(),
+            test_x["text"].tolist(),
+            test_y.tolist(),
+            self.MODEL_METRICS_FILE_PATH,
+        )
+        return model_metrics
 
     def predict(self):
         df = self.processor.get_unlabelled_by_curator_df()
         if df.empty:  # no-op if no data found
-            return
+            return []
 
-        feat_matrix = self.__preprocess_for_prediction(df)  # preprocess
+        model = self.load_model(self.MODEL_FILE_PATH)
+        data_x, data_y = self.concat_pd(df)
+        if data_x.empty:
+            return []
+        
+        predictions, confidences = self.get_predictions(model, data_x["text"])
 
-        model = pickle.load(open(self.MODEL_FILE_PATH, "rb"))  # load model
+        # save the results to DB
+        result = {"user_id" : data_x["user_id"],
+                  "text_classifier_confidence": confidences,
+                  "labelled_by_text_classifier": predictions
+        }
+        df = pd.DataFrame(result).replace(np.nan, None)
 
-        predictions, confidences = self.get_predictions(model, feat_matrix)
+        self.processor.update_predictions(df, isTextClassifier=True)
+        return df["user_id"].values.flatten()
 
-        df["labelled_by_user_classifier"] = predictions
-        df["user_classifier_confidence"] = confidences
-        df = df.filter(
-            ["user_id", "user_classifier_confidence", "labelled_by_user_classifier"],
-            axis=1,
-        ).replace(np.nan, None)
-        self.processor.update_predictions(
-            df, is_text_classifier=False
-        )  # save the results to DB
-        return df["user_id"].tolist()
+    def concat_pd(self, df):
+        bio = df[["user_id", "bio", "labelled_by_curator"]][df["bio"] != ""]
+        research_interests = df[
+            ["user_id", "research_interests", "labelled_by_curator"]
+        ][df["research_interests"] != ""]
 
-    def __train_xgboost_classifer(
-        self,
-        train_matrix: list,
-        test_matrix: list,
-        train_target: list,
-        test_target: list,
-        test_user_ids: list,
-    ):
-        # Fit to model
-        model = xgb.XGBClassifier()
-        model.fit(train_matrix, train_target)
+        bio = bio.rename(columns={"bio": "text"})
+        research_interests = bio.rename(columns={"research_interests": "text"})
 
-        predictions, metrics = self.validate_model(
-            model, test_user_ids, test_matrix, test_target, self.MODEL_METRICS_FILE_PATH
+        train_x = pd.concat(
+            [bio[["user_id", "text"]], research_interests[["user_id", "text"]]]
         )
-        return predictions, metrics, model
 
-    def __partial_train_xgboost_classifer(
-        self,
-        train_matrix: list,
-        test_matrix: list,
-        train_target: list,
-        test_target: list,
-        test_user_ids: list,
-        old_model: xgb.XGBClassifier,
-    ):
-        # Fit the new data to model
-        retrained_model = xgb.XGBClassifier()
-        retrained_model.fit(
-            train_matrix, train_target, xgb_model=old_model.get_booster()
+        train_y = pd.concat(
+            [bio["labelled_by_curator"], research_interests["labelled_by_curator"]]
         )
-        predictions, metrics = self.validate_model(
-            retrained_model,
-            test_user_ids,
-            test_matrix,
-            test_target,
+        return train_x, train_y
+
+
+
+class UserMetadataSpamClassifier(SpamClassifier):
+    def __init__(self):
+        SpamClassifier.__init__(self)
+        self.MODEL_FILE_PATH = SPAM_DIR_PATH / "user_meta_classifier.pkl"
+        self.MODEL_METRICS_FILE_PATH = SPAM_DIR_PATH / "user_meta_classifier_metrics.json"
+
+    def fit(self):
+        model = Pipeline(
+            [
+                ("cleaner", FunctionTransformer(self.preprocess)),
+                ("countvectorizer", CountVectorizer(lowercase=True)),
+                ("classifier", xgb.XGBClassifier()),
+            ]
+        )
+        # obtain df from pipleline
+        df = self.processor.get_all_users_df()
+        if df.empty:
+            return None # if no untrained data found
+        
+        if len(df['labelled_by_curator'].value_counts()) != 2:
+            print("Cannot create a binary classifier!!")
+            return None
+        
+        feats, targets = self.__input_df_transformation(df)
+        (
+            train_feats,
+            test_feats,
+            train_targets,
+            test_targets,
+        ) = train_test_split(feats, targets, test_size=0.1, random_state=434)
+
+        model.fit(train_feats["text"], train_targets)
+        self.save_model(model, self.MODEL_FILE_PATH)
+        test_predictions, model_metrics = self.validate_model(
+            model,
+            test_feats["user_id"].tolist(),
+            test_feats["text"].tolist(),
+            test_targets["labelled_by_curator"].tolist(),
             self.MODEL_METRICS_FILE_PATH,
         )
-        return predictions, metrics, retrained_model
+        return model_metrics
+    
 
-    # def __predict_xgboost_classifer(self, model: xgb.XGBClassifier, feat_matrix: list):
-    #     confidences = model.predict_proba(feat_matrix)
-    #     predictions = [round(value[1]) for value in confidences]
-    #     return predictions, confidences
+    def predict(self):
+        df = self.processor.get_unlabelled_by_curator_df()
+        if df.empty:  # no-op if no data found
+            return []
 
-    def __preprocess_for_training(self, df: pd.DataFrame):
-        df = self.__input_df_transformation(df)
-        target = df["labelled_by_curator"].values.tolist()
-        feat_matrix = df.drop(["labelled_by_curator"], axis=1)
-        (
-            training_matrix,
-            validation_matrix,
-            training_target,
-            validation_target,
-        ) = train_test_split(feat_matrix, target, test_size=0.1, random_state=434)
-        validation_user_ids = validation_matrix["user_id"].values.tolist()
+        model = self.load_model(self.MODEL_FILE_PATH)
 
-        # Initialize or Update Tokenizer and Apply it to the train feature matrix
-        # training_feature_matrix = training_matrix.drop(["user_id"], axis=1)
-        tokenizer_dict = {}
-        if os.path.exists(self.TOKENIZER_FILE_PATH):
-            tokenizer_dict = self.__update_tokenizer(training_matrix)
-        else:
-            tokenizer_dict = self.__initialize_tokenizer(training_matrix)
+        feats, targets = self.__input_df_transformation(df)
 
-        tokenized_matrix_dict = self.__apply_tokenizer(
-            training_matrix, tokenizer_dict=tokenizer_dict
-        )
-        training_input = self.__get_model_input(training_matrix, tokenized_matrix_dict)
+        predictions, confidences = self.get_predictions(model, feats["text"])
 
-        # Apply Tokenizer to the validation feature matrix
-        # validation_feature_matrix = validation_matrix.drop(["user_id"], axis=1)
-        tokenized_matrix_dict = self.__apply_tokenizer(
-            validation_matrix, tokenizer_dict=tokenizer_dict
-        )
-        validation_input = self.__get_model_input(
-            validation_matrix, tokenized_matrix_dict
-        )
-        return (
-            training_input.tolist(),
-            validation_input.tolist(),
-            training_target,
-            validation_target,
-            validation_user_ids,
-        )
+        # save the results to DB
+        result = {"user_id" : feats["user_id"],
+                  "user_classifier_confidence": confidences,
+                  "labelled_by_user_classifier": predictions
+        }
+        df = pd.DataFrame(result).replace(np.nan, None)
 
-    def __preprocess_for_prediction(self, df: pd.DataFrame):
-        df = self.__input_df_transformation(df)
-        feat_matrix = df.drop(["labelled_by_curator"], axis=1)
-
-        # Apply Tokenizer to the feature matrix to be predicted
-        tokenized_matrix_dict = self.__apply_tokenizer(feat_matrix)
-        model_input = self.__get_model_input(feat_matrix, tokenized_matrix_dict)
-        return model_input.tolist()
-
+        self.processor.update_predictions(df, isTextClassifier=False)
+        return df["user_id"].values.flatten()
+    
     def __input_df_transformation(self, df: pd.DataFrame):
         # extract relavant columns and reform data of some columns
         if "labelled_by_curator" not in df.columns:
             df["labelled_by_curator"] = 0  # only when mode='predict'
-        df = df.filter(
-            [
+
+        df = df[[
                 "user_id",
                 "labelled_by_curator",
                 "first_name",
@@ -414,132 +294,70 @@ class UserMetadataSpamClassifier(SpamClassifier):
                 "email",
                 "affiliations",
                 "bio",
-            ],
-            axis=1,
-        )
-        df[
-            ["first_name", "last_name", "is_active", "email", "affiliations", "bio"]
-        ] = df[
-            ["first_name", "last_name", "is_active", "email", "affiliations", "bio"]
-        ].fillna(
-            ""
-        )
-        df[["user_id", "labelled_by_curator"]] = df[
-            ["user_id", "labelled_by_curator"]
-        ].fillna(0)
-        df["affiliations"] = df.apply(
-            lambda row: self.__reform__affiliations(row["affiliations"]), axis=1
-        )
-        df["is_active"] = df.apply(
-            lambda row: self.__reform__is_active(row["is_active"]), axis=1
-        )
-        return df
+                "research_interests"
+            ]]
+        df[["first_name", "last_name", "is_active", "email", "affiliations", "bio", "research_interests"]] = df[["first_name", "last_name", "is_active", "email", "affiliations", "bio", "research_interests"]].fillna("")
+        df[["user_id", "labelled_by_curator"]] = df[["user_id", "labelled_by_curator"]].fillna(0)
 
-    def __reform__affiliations(self, array):
-        array = literal_eval(array)
-        if len(array) == 0:
+        df['text'] =  df.apply(lambda row:self.__create_text(row), axis=1)
+        target = df[["labelled_by_curator"]]
+        df = df[['text', 'user_id']]
+        return df, target
+
+    def __create_text(self, row):
+        return self.__name(row) + self.__is_active(row['is_active'] )\
+                                        + self.__email(row['email'])\
+                                        + self.__affiliations(row['affiliations'])\
+                                        + self.__bio(row['bio'])\
+                                        + self.__research_interests(row['research_interests'])
+
+    def __name(self, row):
+        pre_string = "My name is "
+        result = ""
+        if row['first_name'] != 'NaN':
+            result = pre_string + row['first_name']
+            if row['last_name'] != "NaN":
+                result = result + " " + row['last_name']
+            result = result + ". "
+        elif row['last_name'] != "NaN":
+            result = pre_string + row['last_name'] + ". "
+        return result
+
+    def __is_active(self, val):
+        if val == "t":
+            return "I am an active user. "
+        else:
+            return "I am not an active user. "
+
+    def __email(self, val):
+        if val != 'NaN':
+            return "My email address is " + val + ". "
+        else:
             return ""
-        affiliations = []
-        for affiliation_dict in array:
-            name = (
-                affiliation_dict["name"]
-                if ("name" in affiliation_dict.keys())
-                else "NaN"
-            )
-            url = (
-                affiliation_dict["url"] if ("url" in affiliation_dict.keys()) else "NaN"
-            )
-            ror_id = (
-                affiliation_dict["ror_id"]
-                if ("ror_id" in affiliation_dict.keys())
-                else "NaN"
-            )
-            affiliation = f"{name} (url: {url}, ror id: {ror_id})"
-            affiliations.append(affiliation)
-        return ", ".join(affiliations)
 
-    def __reform__is_active(self, val):
-        return 1 if val == "t" else 0
+    def __affiliations(self, array):
+        array = literal_eval(array)
+        if len(array) != 0:
+            pre_string = "I'm affiliated with the following organizations: "
+            result = pre_string
+            for affili_dict in array:
+                name = affili_dict["name"] if ('name' in affili_dict.keys()) else "NaN"
+                url = affili_dict["url"] if ('url' in affili_dict.keys()) else "NaN"
+                ror_id = affili_dict["ror_id"] if ('ror_id' in affili_dict.keys()) else "NaN"
+                affili = name + "(" + "url : " + url +", ror id : " + ror_id +")"
+                result = result +", "+ affili
+            return result + ". "
+        else:
+            return ""
 
-    def __get_model_input(self, feat_matrix: pd.DataFrame, tokenized_matrix_dict):
-        tokenized_matrix = pd.DataFrame(
-            columns=feat_matrix.columns, index=feat_matrix.index
-        )
-        tokenized_matrix["user_id"] = feat_matrix["user_id"]
-        tokenized_matrix["is_active"] = feat_matrix["is_active"]
-        del feat_matrix
-        for col in tokenized_matrix.columns:
-            if col == "is_active" or col == "user_id":
-                continue
-            tokenized_matrix[col] = tokenized_matrix[col].astype(object)
-            temp_df = pd.DataFrame(
-                {col: tokenized_matrix_dict[col]},
-                columns=[col],
-                index=tokenized_matrix.index,
-            )
-            tokenized_matrix[col] = temp_df
-        tokenized_matrix["model_input"] = tokenized_matrix.apply(
-            lambda row: self.__concatenate_row(row), axis=1
-        )
-        return np.array(tokenized_matrix["model_input"].tolist())
+    def __bio(self, val):
+        if val != 'NaN':
+            return val + " "
+        else:
+            return ""
 
-    def __concatenate_row(self, row):
-        model_input = np.concatenate(
-            (
-                row["first_name"],
-                row["last_name"],
-                np.array([row["is_active"]]),
-                row["email"],
-                row["affiliations"],
-                row["bio"],
-            )
-        )
-        return model_input
-
-    def __initialize_tokenizer(self, feat_matrix: pd.DataFrame):
-        tokenizer_dict = {}
-        for col in feat_matrix.columns:
-            if col == "is_active" or col == "user_id":
-                continue
-            # initialize tokenizer
-            tokenizer = Tokenizer(num_words=2000, char_level=True, oov_token="<OOV>")
-            tokenizer.fit_on_texts(feat_matrix[col])
-            tokenizer_dict[col] = tokenizer
-        pickle.dump(tokenizer_dict, open(self.TOKENIZER_FILE_PATH, "wb"))  # update file
-        return tokenizer_dict
-
-    def __load_tokenizer(self):
-        tokenizer_dict = pickle.load(open(self.TOKENIZER_FILE_PATH, "rb"))
-        return tokenizer_dict
-
-    def __update_tokenizer(self, feat_matrix: pd.DataFrame):
-        """
-        assumes that the tokenizer dictionary has already been pickled to disk and
-        loads it into memory before updating it based on the data in feat_matrix
-        """
-        tokenizer_dict = self.__load_tokenizer()
-        for col in feat_matrix.columns:
-            if col == "is_active" or col == "user_id":
-                continue
-            tokenizer = tokenizer_dict[col]
-            tokenizer.fit_on_texts(feat_matrix[col])
-            tokenizer_dict[col] = tokenizer
-        pickle.dump(tokenizer_dict, open(self.TOKENIZER_FILE_PATH, "wb"))  # update file
-        return tokenizer_dict
-
-    def __apply_tokenizer(self, feat_matrix: pd.DataFrame, tokenizer_dict=None):
-        tokenized_matrix_dict = {}
-        if tokenizer_dict == None:
-            tokenizer_dict = self.__load_tokenizer()
-        for col in feat_matrix.columns:
-            if col == "is_active" or col == "user_id":
-                continue
-            tokenizer = tokenizer_dict[col]
-            column_sequences = tokenizer.texts_to_sequences(
-                feat_matrix[col]
-            )  # tokenize texts
-            column_padded = pad_sequences(
-                column_sequences, maxlen=800, padding="post", truncating="post"
-            )
-            tokenized_matrix_dict[col] = list(column_padded)
-        return tokenized_matrix_dict
+    def __research_interests(self, val):
+        if val != 'NaN':
+            return "My research interests: " + val + ". "
+        else:
+            return ""
