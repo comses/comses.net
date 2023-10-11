@@ -7,7 +7,7 @@ import django.db.models.deletion
 class Migration(migrations.Migration):
     dependencies = [
         ("core", "0016_alter_memberprofile_industry"),
-        ("curator", "0002_rename_tagcleanup_permission"),
+        ("curator", "0003_canonicaltag_canonicaltagmapping_tagcluster"),
     ]
 
     operations = [

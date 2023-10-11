@@ -40,4 +40,4 @@ DATABASE_ROUTERS = [
 ]
 
 # Spam detection configuration
-SPAM_DIR_PATH = Path("./curator/spam")
+SPAM_DIR_PATH = Path("/shared/curator/spam")
