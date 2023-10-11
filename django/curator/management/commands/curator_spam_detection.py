@@ -2,8 +2,6 @@ import logging
 import pathlib
 
 from django.core.management.base import BaseCommand
-
-from curator.spam_processor import DATASET_FILE_PATH
 from curator.spam import SpamDetector
 
 logger = logging.getLogger(__name__)
@@ -27,13 +25,6 @@ class Command(BaseCommand):
             help="returns spam user_ids and model metrics",
         )
         parser.add_argument(
-            "--refine",
-            "-r",
-            action="store_true",
-            default=False,
-            help="retrains the models and returns refined model metrics",
-        )
-        parser.add_argument(
             "--get_model_metrics",
             "-g",
             action="store_true",
@@ -48,16 +39,9 @@ class Command(BaseCommand):
             help="save initial dataset to the DB. ",
         )
         parser.add_argument("--train_user", "-tu", action="store_true", default=False)
-        parser.add_argument(
-            "--p_train_user",
-            "-ptu",
-            action="store_true",
-            default=False,
-            help="perform partial train on data with no ML model recomendation",
-        )
         parser.add_argument("--predict_user", "-pu", action="store_true", default=False)
-        parser.add_argument("--train_text", "-tb", action="store_true", default=False)
-        parser.add_argument("--predict_text", "-pb", action="store_true", default=False)
+        parser.add_argument("--train_text", "-tt", action="store_true", default=False)
+        parser.add_argument("--predict_text", "-pt", action="store_true", default=False)
 
     def handle_exe(self):
         result = self.detection.execute()
@@ -68,68 +52,63 @@ class Command(BaseCommand):
         )
         print("TextSpamClassifier Metircs:\n", result["text_spam_classifier"])
 
-    def handle_refine(self):
-        metrics = self.detection.refine()
-        print(
-            "UserMetadataSpamClassifier Metircs :\n",
-            metrics["user_metadata_spam_classifier"],
-        )
-        print("TextSpamClassifier Metircs:\n", metrics["text_spam_classifier"])
-
     def handle_get_model_metrics(self):
         metrics = self.detection.get_model_metrics()
         print(
-            "UserMetadataSpamClassifier Metircs :\n",
+            "UserMetadataSpamClassifier Metircs:\n",
             metrics["user_metadata_spam_classifier"],
         )
-        print("TextSpamClassifier  Metircs:\n", metrics["text_spam_classifier"])
+        print(
+            "TextSpamClassifier Metircs:\n", 
+              metrics["text_spam_classifier"]
+        )
 
-    def handle_load_labels(self, load_directory):
-        self.processor.load_labels_from_csv(load_directory)
+    def handle_load_labels(self):
+        self.processor.load_labels_from_csv()
 
     def handle_train_user(self):
-        self.user_meta_classifier.fit()
+        model_metrics = self.user_meta_classifier.fit()
+        print(
+            "UserMetadataSpamClassifier Metircs:\n",
+            model_metrics
+        )
 
     def handle_predict_user(self):
-        self.user_meta_classifier.predict()
-
-    def handle_p_train_user(self):
-        self.user_meta_classifier.partial_fit()
+        user_ids = self.user_meta_classifier.predict()
+        print(
+            "UserMetadataSpamClassifier predicted users:\n", 
+            user_ids
+        )
 
     def handle_train_text(self):
-        self.text_classifier.fit()
+        model_metrics = self.text_classifier.fit()
+        print(
+            "TextSpamClassifier Metircs:\n", 
+            model_metrics
+        )
 
     def handle_predict_text(self):
-        self.text_classifier.predict()
+        user_ids = self.text_classifier.predict()
+        print(
+            "TextSpamClassifier predicted users:\n", 
+            user_ids
+        )
 
     def handle(self, *args, **options):
-        exe = options["exe"]
-        refine = options["refine"]
-        model_metrics = options["get_model_metrics"]
-        load = options["load_labels"]
-        train_user = options["train_user"]
-        predict_user = options["predict_user"]
-        p_train_user = options["p_train_user"]
-        train_text = options["train_text"]
-        predict_text = options["predict_text"]
+        if options["exe"]: 
+            action = "exe"
+        elif options["get_model_metrics"]:
+            action = "get_model_metrics"
+        elif options["load_labels"]:
+            action = "load_labels"
+        elif options["train_user"]:
+            action = "train_user"
+        elif options["predict_user"]:
+            action = "predict_user"
+        elif options["train_text"]:
+            action = "train_text"
+        elif options["predict_text"]:
+            action = "predict_text"
+        
+        getattr(self, f"handle_{action}")()
 
-        load_directory = pathlib.Path(DATASET_FILE_PATH)
-
-        if exe:
-            self.handle_exe()
-        elif refine:
-            self.handle_refine()
-        elif model_metrics:
-            self.handle_get_model_metrics()
-        elif load:
-            self.handle_load_labels(load_directory)
-        elif train_user:
-            self.handle_train_user()
-        elif predict_user:
-            self.handle_predict_user()
-        elif p_train_user:
-            self.handle_p_train_user()
-        elif train_text:
-            self.handle_train_text()
-        elif predict_text:
-            self.handle_predict_text()

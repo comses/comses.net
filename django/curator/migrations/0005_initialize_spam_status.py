@@ -21,7 +21,7 @@ def clear_user_spam_status(apps, schema_editor):
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("curator", "0003_userspamstatus"),
+        ("curator", "0004_add_user_spam_status"),
     ]
 
     operations = [migrations.RunPython(create_user_spam_status, clear_user_spam_status)]

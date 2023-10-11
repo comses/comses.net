@@ -3,7 +3,7 @@ import os
 
 from django.conf import settings
 
-from .models import UserSpamStatusProcessor
+from .spam_processor import UserSpamStatusProcessor
 from .spam_classifiers import (
     UserMetadataSpamClassifier,
     TextSpamClassifier,
@@ -29,7 +29,7 @@ class SpamDetector:
         self.processor = UserSpamStatusProcessor()
         self.user_metadata_classifier = UserMetadataSpamClassifier()
         self.text_classifier = TextSpamClassifier()
-        if not self.processor.have_labelled_by_curator():
+        if not self.processor.labelled_by_curator_exist():
             self.processor.load_labels_from_csv()
 
         # Check whether UserMetadataSpamClassifier model file exists
@@ -39,13 +39,15 @@ class SpamDetector:
             ) as json_file:
                 self.user_meta_classifier_metrics = json.load(json_file)
         else:
-            self.user_meta_classifier_metrics = self.user_metadata_classifier.fit()
+            # If model metrics and instance file don't exist, call fit()
+            self.user_meta_classifier_metrics = self.user_meta_classifier.fit()
 
         # Check whether TextSpamClassifier model file exists
         if os.path.exists(self.text_classifier.MODEL_METRICS_FILE_PATH):
             with open(self.text_classifier.MODEL_METRICS_FILE_PATH) as json_file:
                 self.text_classifier_metrics = json.load(json_file)
         else:
+            # If model metrics and instance file don't exist, call fit()
             self.text_classifier_metrics = self.text_classifier.fit()
 
     def execute(self):
@@ -69,17 +71,6 @@ class SpamDetector:
             "text_spam_classifier": self.text_classifier_metrics,
         }
 
-    def refine(self):
-        """
-        Retrain machine learning models using new data in DB
-        return : a dictionary of the models scores after retraining.
-        """
-        self.user_meta_classifier_metrics = self.user_metadata_classifier.partial_fit()
-        self.text_classifier_metrics = self.text_classifier.partial_fit()
-        return {
-            "user_metadata_spam_classifier": self.user_meta_classifier_metrics,
-            "text_spam_classifier": self.text_classifier_metrics,
-        }
 
     def get_model_metrics(self):
         """
