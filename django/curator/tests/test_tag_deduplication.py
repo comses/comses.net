@@ -45,9 +45,6 @@ class TestTagClustering(TestCase):
 
     def _cluster_tags(self):
         tag_clustering = TagClusterer(clustering_threshold=0.5)
-        for i in range(600):
-            uncertain_pair = tag_clustering.uncertain_pairs()
-            tag_clustering.mark_pairs(uncertain_pair, i % 3 != 0)
         return tag_clustering.cluster_tags()
 
 
@@ -84,7 +81,4 @@ class TestTagGazetteering(TestCase):
 
     def _search(self):
         tag_clustering = TagGazetteer(search_threshold=0.5)
-        for i in range(600):
-            uncertain_pair = tag_clustering.uncertain_pairs()
-            tag_clustering.mark_pairs(uncertain_pair, i % 3 != 0)
         return tag_clustering.search({1: {"id": 1, "name": "abms"}})
