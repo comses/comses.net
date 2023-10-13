@@ -288,6 +288,21 @@
     <link rel="mask-icon" href="{{ static('favicon/safari-pinned-tab.svg') }}" color="#5bbad5">
     <meta name="msapplication-TileColor" content="#da532c">
     <meta name="theme-color" content="#ffffff">
+    {% block ogp_tags %}
+    <!-- Facebook Meta Tags -->
+    <meta property="og:url" content="https://www.comses.net/">
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="CoMSES Net">
+    <meta property="og:description" content="CoMSES Net is an international open research community dedicated to fostering good practices for computational / agent based modeling.">
+    <meta property="og:image" content="https://complexity.asu.edu/sites/default/files/comses.jpg">
+    <!-- Twitter Meta Tags -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta property="twitter:domain" content="comses.net">
+    <meta property="twitter:url" content="https://www.comses.net/">
+    <meta name="twitter:title" content="CoMSES Net">
+    <meta name="twitter:description" content="CoMSES Net is an international open research community dedicated to fostering good practices for computational / agent based modeling.">
+    <meta name="twitter:image" content="https://complexity.asu.edu/sites/default/files/comses.jpg">
+    {% endblock ogp_tags%}
     <title>
         {% block title %}CoMSES Net{% endblock %}
     </title>

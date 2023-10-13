@@ -23,6 +23,22 @@
 {{ pagination_block }}
 {% endblock %}
 
+{% block ogp_tags %}
+    <!-- Facebook Meta Tags -->
+    <meta property="og:url" content="https://www.comses.net/codebases/">
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="Community Codebases">
+    <meta property="og:description" content="View all codebases related to CoMSES">
+    <meta property="og:image" content="https://complexity.asu.edu/sites/default/files/comses.jpg">
+    <!-- Twitter Meta Tags -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta property="twitter:domain" content="comses.net">
+    <meta property="twitter:url" content="https://www.comses.net/codebases/">
+    <meta name="twitter:title" content="Community codebases">
+    <meta name="twitter:description" content="View all codebases related to CoMSES">
+    <meta name="twitter:image" content="https://complexity.asu.edu/sites/default/files/comses.jpg">
+{% endblock ogp_tags %}
+
 {% block content %}
 {% for codebase in codebases %}
 {{ render_codebase_result(codebase) }}
