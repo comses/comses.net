@@ -323,9 +323,7 @@ class TagCluster(models.Model):
         previous_tag_mappings = CanonicalTagMapping.objects.filter(
             canonical_tag=canonical_tag
         )
-        for previous_tag_mapping in previous_tag_mappings:
-            previous_tag_mapping.canonical_tag = None
-            previous_tag_mapping.save()
+        previous_tag_mappings.delete()
 
         tag_mappings = [
             CanonicalTagMapping(
