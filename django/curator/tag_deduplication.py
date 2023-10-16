@@ -4,6 +4,7 @@ import os
 import re
 import enum
 from typing import List
+import pathlib
 
 import dedupe
 from taggit.models import Tag
@@ -12,7 +13,8 @@ from curator.models import CanonicalTagMapping, CanonicalTag, TagCluster
 
 
 class AbstractTagDeduper(abc.ABC):
-    TRAINING_FILE = "curator/clustering_training.json"
+    # TRAINING_FILE = "curator/clustering_training.json"
+    TRAINING_FILE = pathlib.Path("curator", "clustering_training.json")
     FIELDS = [{"field": "name", "type": "String"}]
 
     def uncertain_pairs(self):
@@ -35,14 +37,13 @@ class AbstractTagDeduper(abc.ABC):
         dedupe.console_label(self.deduper)
 
     def training_file_exists(self) -> bool:
-        return os.path.exists(self.TRAINING_FILE)
+        return self.TRAINING_FILE.exists()
 
     def remove_training_file(self):
-        if os.path.isfile(self.TRAINING_FILE):
-            os.remove(self.TRAINING_FILE)
+        self.TRAINING_FILE.unlink(missing_ok=True)
 
     def save_to_training_file(self):
-        with open(self.TRAINING_FILE, "w") as file:
+        with self.TRAINING_FILE.open("w") as file:
             self.deduper.write_training(file)
 
 
@@ -100,7 +101,7 @@ class TagClusterManager:
             return
 
         tag_clusters = TagCluster.objects.all()
-        for index, tag_cluster in enumerate(tag_clusters):
+        for tag_cluster in tag_clusters:
             TagClusterManager.modify_cluster(tag_cluster)
 
     def console_canonicalize_edit():
@@ -184,8 +185,8 @@ class TagClusterer(AbstractTagDeduper):
     # Otherwise, start from scratch
     def prepare_training(self):
         data = self.prepare_training_data()
-        if os.path.exists(TagClusterer.TRAINING_FILE):
-            with open(TagClusterer.TRAINING_FILE, "r") as training_file:
+        if TagClusterer.TRAINING_FILE.exists():
+            with TagClusterer.TRAINING_FILE.open("r") as training_file:
                 self.deduper.prepare_training(data, training_file)
         else:
             self.deduper.prepare_training(data)
@@ -212,15 +213,14 @@ class TagClusterer(AbstractTagDeduper):
             tag_cluster.save()
 
     def save_to_training_file(self):
-        with open(TagClusterer.TRAINING_FILE, "w") as file:
+        with TagClusterer.TRAINING_FILE.open("w") as file:
             self.deduper.write_training(file)
 
     def training_file_exists(self) -> bool:
-        return os.path.exists(TagClusterer.TRAINING_FILE)
+        return TagClusterer.TRAINING_FILE.exists()
 
     def remove_training_file(self):
-        if os.path.isfile(TagClusterer.TRAINING_FILE):
-            os.remove(TagClusterer.TRAINING_FILE)
+        TagClusterer.TRAINING_FILE.unlink(missing_ok=True)
 
 
 class TagGazetteer(AbstractTagDeduper):
@@ -240,7 +240,7 @@ class TagGazetteer(AbstractTagDeduper):
         canonical_data = self.prepare_canonical_data()
 
         if self.training_file_exists():
-            with open(TagGazetteer.TRAINING_FILE, "r") as training_file:
+            with TagGazetteer.TRAINING_FILE.open("r") as training_file:
                 self.deduper.prepare_training(data, canonical_data, training_file)
         else:
             self.deduper.prepare_training(data, canonical_data)
