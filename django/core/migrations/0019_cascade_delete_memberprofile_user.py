@@ -6,16 +6,20 @@ import django.db.models.deletion
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
-        ('core', '0018_remove_event_date_times'),
+        ("core", "0018_remove_event_date_times"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='memberprofile',
-            name='user',
-            field=models.OneToOneField(null=True, on_delete=django.db.models.deletion.CASCADE, related_name='member_profile', to=settings.AUTH_USER_MODEL),
+            model_name="memberprofile",
+            name="user",
+            field=models.OneToOneField(
+                null=True,
+                on_delete=django.db.models.deletion.CASCADE,
+                related_name="member_profile",
+                to=settings.AUTH_USER_MODEL,
+            ),
         ),
     ]

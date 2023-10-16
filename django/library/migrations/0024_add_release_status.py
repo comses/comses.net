@@ -24,7 +24,6 @@ def translate_status_to_flags(apps, schema):
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("library", "0023_peerreviewinvitation_date_sent"),
     ]

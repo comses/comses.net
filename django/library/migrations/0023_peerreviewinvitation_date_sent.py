@@ -17,7 +17,6 @@ def noop(apps, schema):
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("library", "0022_alter_codebaserendition_file"),
     ]
