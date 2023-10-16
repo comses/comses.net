@@ -81,4 +81,4 @@ class TestTagGazetteering(TestCase):
 
     def _search(self):
         tag_clustering = TagGazetteer(search_threshold=0.5)
-        return tag_clustering.search({1: {"id": 1, "name": "abms"}})
+        return tag_clustering.search_canonical({1: {"id": 1, "name": "abms"}})

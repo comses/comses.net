@@ -250,11 +250,12 @@ class TagGazetteer(AbstractTagDeduper):
         data = {row["id"]: {**row} for i, row in enumerate(tags)}
         return data
 
-    def search_canonical(self, data):
+    def search(self, data):
         return self.deduper.search(data, threshold=self.search_threshold)
 
-    def search_canonical_by_name(self, name: str):
-        results = self.search_canonical({1: {"id": 1, "name": name}})
+    # This returns the canonical tag with a name that is most similar to 'name'
+    def text_search(self, name: str):
+        results = self.search({1: {"id": 1, "name": name}})
         matches = results[0][1]
 
         matches = [
