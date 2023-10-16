@@ -30,7 +30,7 @@ class AbstractTagDeduper(abc.ABC):
 
     def prepare_training_data(self):
         tags = Tag.objects.all().values()
-        data = {row["id"]: row for i, row in enumerate(tags)}
+        data = {row["id"]: row for row in tags}
         return data
 
     def console_label(self):
@@ -250,11 +250,11 @@ class TagGazetteer(AbstractTagDeduper):
         data = {row["id"]: {**row} for i, row in enumerate(tags)}
         return data
 
-    def search(self, data):
+    def search_canonical(self, data):
         return self.deduper.search(data, threshold=self.search_threshold)
 
-    def text_search(self, name: str):
-        results = self.search({1: {"id": 1, "name": name}})
+    def search_canonical_by_name(self, name: str):
+        results = self.search_canonical({1: {"id": 1, "name": name}})
         matches = results[0][1]
 
         matches = [
