@@ -212,7 +212,7 @@ class Contributor(index.Indexed, ClusterableModel):
 
     @property
     def has_name(self):
-        return any([self.given_name, self.family_name])
+        return any([self.given_name, self.family_name]) or self.user
 
     def get_full_name(self, family_name_first=False):
         full_name = ""
@@ -662,6 +662,11 @@ class Codebase(index.Indexed, ClusterableModel):
         return f"codebase:authors:{self.identifier}"
 
     def compute_contributors(self, force=False):
+        """
+        caches and returns a two values: codebase_contributors and codebase_authors
+        codebase_contributors are all contributors to the release
+        codebase_authors are the contributors to the release that should be included in the citation
+        """
         contributors_redis_key = self.codebase_contributors_redis_key
         codebase_contributors = cache.get(contributors_redis_key) if not force else None
         codebase_authors = None
@@ -677,7 +682,9 @@ class Codebase(index.Indexed, ClusterableModel):
                     "contributor__user__member_profile"
                 ).order_by("index"):
                     contributor = release_contributor.contributor
+                    # set to None as a makeshift OrderedSet implementation
                     codebase_contributors_dict[contributor] = None
+                    # only include citable authors in returned codebase_authors
                     if release_contributor.include_in_citation:
                         codebase_authors_dict[contributor] = None
             # PEP 448 syntax to unpack dict keys into list literal
@@ -712,13 +719,11 @@ class Codebase(index.Indexed, ClusterableModel):
 
     @property
     def author_list(self):
-        return [c.get_full_name() for c in self.all_authors if c.has_name or c.user]
+        return [c.get_full_name() for c in self.all_authors if c.has_name]
 
     @property
     def contributor_list(self):
-        return [
-            c.get_full_name() for c in self.all_contributors if c.has_name or c.user
-        ]
+        return [c.get_full_name() for c in self.all_contributors if c.has_name]
 
     def get_all_contributors_search_fields(self):
         return " ".join(
@@ -1472,6 +1477,7 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
 
     @property
     def contributor_list(self):
+        """Returns all contributors for just this CodebaseRelease"""
         return [
             c.contributor.get_full_name()
             for c in self.index_ordered_release_contributors
@@ -1489,7 +1495,7 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
         return {
             "Contact-Name": self.submitter.get_full_name(),
             "Contact-Email": self.submitter.email,
-            "Author": self.codebase.contributor_list,
+            "Author": self.contributor_list,
             "Version-Number": self.version_number,
             "Codebase-DOI": str(self.codebase.doi),
             "DOI": str(self.doi),
