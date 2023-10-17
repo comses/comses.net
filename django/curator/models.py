@@ -1,13 +1,16 @@
 import json
 import logging
-from collections import defaultdict
-
-import modelcluster.fields
 import os
 import re
+
+from collections import defaultdict
+from django.core.exceptions import FieldDoesNotExist
+from django.contrib.auth.models import User
 from django.contrib.postgres.aggregates import ArrayAgg
+from django.contrib.postgres.fields import ArrayField
 from django.db import models, transaction
 from django.urls import reverse
+from modelcluster import fields
 from nltk.corpus import stopwords
 from nltk.stem import PorterStemmer
 from nltk.tokenize import word_tokenize
@@ -23,8 +26,8 @@ PENDING_TAG_CLEANUPS_FILENAME = "pending_tag_cleanups"
 def has_parental_object_content_field(model):
     try:
         field = model._meta.get_field("content_object")
-        return isinstance(field, modelcluster.fields.ParentalKey)
-    except models.FieldDoesNotExist:
+        return isinstance(field, fields.ParentalKey)
+    except FieldDoesNotExist:
         return False
 
 
@@ -119,7 +122,7 @@ class Matcher:
         self.regex = regex
 
 
-def pl_regex(name, flags=re.I):
+def pl_regex(name, flags=re.IGNORECASE):
     return re.compile(
         r"\b{}(?:,|\b|\s+|\Z|v?\d+\.\d+\.\d+(?:-?\w[\w-]*)*|\d+)".format(name),
         flags=flags,
@@ -140,7 +143,7 @@ PLATFORM_AND_LANGUAGE_MATCHERS = [
     Matcher("Jade", pl_regex("jade")),
     Matcher("Jason", pl_regex("jason")),
     Matcher("Java", pl_regex("java")),
-    Matcher("James II", pl_regex("james\s+ii")),
+    Matcher("James II", pl_regex("james\\s+ii")),
     Matcher("Logo", pl_regex("logo")),
     Matcher("NetLogo", pl_regex("netlogo")),
     Matcher("Mason", pl_regex("mason")),
@@ -148,7 +151,7 @@ PLATFORM_AND_LANGUAGE_MATCHERS = [
     Matcher("MatLab", pl_regex("matlab")),
     Matcher("Objective-C", pl_regex(r"objective(:?[-\s]+)?c")),
     Matcher("Pandora", pl_regex("pandora")),
-    Matcher("Powersim Studio", pl_regex("powersim\s+studio")),
+    Matcher("Powersim Studio", pl_regex("powersim\\s+studio")),
     Matcher("Python", pl_regex("python")),
     Matcher("R", pl_regex("r")),
     Matcher("Repast", pl_regex("repast")),
@@ -170,7 +173,7 @@ class TagCleanupTransaction(models.Model):
     date_created = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return "{}".format(self.date_created.strftime("%c"))
+        return self.date_created.strftime("%c")
 
 
 class TagCleanup(models.Model):
@@ -183,9 +186,7 @@ class TagCleanup(models.Model):
     objects = TagCleanupQuerySet.as_manager()
 
     def __str__(self):
-        return "id={} new_name={}, old_name={}".format(
-            self.id, repr(self.new_name), repr(self.old_name)
-        )
+        return f"id={self.id} new_name={self.new_name}, old_name={self.old_name}"
 
     @classmethod
     def find_groups_by_porter_stemmer(cls):
@@ -300,3 +301,62 @@ class TagMigrator:
             for model in through_models:
                 self.copy_through_model_refs(model, new_tags=new_tags, old_tag=old_tag)
             old_tag.delete()
+
+
+class TagCluster(models.Model):
+    canonical_tag_name = models.TextField()
+    tags = models.ManyToManyField(Tag)
+    confidence_score = models.FloatField()
+    date_created = models.DateTimeField(auto_now_add=True, null=True)
+
+    def add_tag_by_name(self, name: str):
+        tag = Tag.objects.filter(name=name)
+        if tag:
+            self.tags.add(tag.first())
+        return tag
+
+    def save_mapping(self):
+        canonical_tag, _ = CanonicalTag.objects.get_or_create(
+            name=self.canonical_tag_name
+        )
+
+        previous_tag_mappings = CanonicalTagMapping.objects.filter(
+            canonical_tag=canonical_tag
+        )
+        previous_tag_mappings.delete()
+
+        tag_mappings = [
+            CanonicalTagMapping(
+                tag=tag,
+                canonical_tag=canonical_tag,
+                confidence_score=self.confidence_score,
+            )
+            for tag in self.tags.all()
+        ]
+        for tag_mapping in tag_mappings:
+            tag_mapping.save()
+
+        return canonical_tag, tag_mappings
+
+    def __str__(self):
+        return f"canonical_tag_name={self.canonical_tag_name} tags={self.tags.all()}"
+
+
+class CanonicalTag(models.Model):
+    name = models.TextField(unique=True)
+
+    def __str__(self):
+        return f"name={self.name}"
+
+
+class CanonicalTagMapping(models.Model):
+    tag = models.OneToOneField(Tag, on_delete=models.deletion.CASCADE, primary_key=True)
+    canonical_tag = models.ForeignKey(
+        CanonicalTag, null=True, on_delete=models.SET_NULL
+    )
+    curator = models.ForeignKey(User, null=True, on_delete=models.SET_NULL)
+    confidence_score = models.FloatField()
+    date_created = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"tag={self.tag} canonical_tag={self.canonical_tag.name} confidence={self.confidence_score}"
