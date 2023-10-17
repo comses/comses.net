@@ -415,7 +415,7 @@ class UserSpamStatus(models.Model):
 
 # Create a new UserSpamStatus whenever a new MemberProfile is created
 @receiver(post_save, sender=MemberProfile)
-def sync_member_profile_spam_status(sender, instance:MemberProfile, created, **kwargs):
+def sync_member_profile_spam_status(sender, instance: MemberProfile, created, **kwargs):
     if created:
         mp, mp_created = MemberProfile.objects.get_or_create(
             member_profile=instance,

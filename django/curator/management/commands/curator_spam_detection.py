@@ -58,44 +58,29 @@ class Command(BaseCommand):
             "UserMetadataSpamClassifier Metircs:\n",
             metrics["user_metadata_spam_classifier"],
         )
-        print(
-            "TextSpamClassifier Metircs:\n", 
-              metrics["text_spam_classifier"]
-        )
+        print("TextSpamClassifier Metircs:\n", metrics["text_spam_classifier"])
 
     def handle_load_labels(self):
         self.processor.load_labels_from_csv()
 
     def handle_train_user(self):
         model_metrics = self.user_meta_classifier.fit()
-        print(
-            "UserMetadataSpamClassifier Metircs:\n",
-            model_metrics
-        )
+        print("UserMetadataSpamClassifier Metircs:\n", model_metrics)
 
     def handle_predict_user(self):
         user_ids = self.user_meta_classifier.predict()
-        print(
-            "UserMetadataSpamClassifier predicted users:\n", 
-            user_ids
-        )
+        print("UserMetadataSpamClassifier predicted users:\n", user_ids)
 
     def handle_train_text(self):
         model_metrics = self.text_classifier.fit()
-        print(
-            "TextSpamClassifier Metircs:\n", 
-            model_metrics
-        )
+        print("TextSpamClassifier Metircs:\n", model_metrics)
 
     def handle_predict_text(self):
         user_ids = self.text_classifier.predict()
-        print(
-            "TextSpamClassifier predicted users:\n", 
-            user_ids
-        )
+        print("TextSpamClassifier predicted users:\n", user_ids)
 
     def handle(self, *args, **options):
-        if options["exe"]: 
+        if options["exe"]:
             action = "exe"
         elif options["get_model_metrics"]:
             action = "get_model_metrics"
@@ -109,6 +94,5 @@ class Command(BaseCommand):
             action = "train_text"
         elif options["predict_text"]:
             action = "predict_text"
-        
-        getattr(self, f"handle_{action}")()
 
+        getattr(self, f"handle_{action}")()

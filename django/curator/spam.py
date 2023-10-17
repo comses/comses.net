@@ -71,7 +71,6 @@ class SpamDetector:
             "text_spam_classifier": self.text_classifier_metrics,
         }
 
-
     def get_model_metrics(self):
         """
         return: a dictionary of the scores of existing machine learning model instances.
