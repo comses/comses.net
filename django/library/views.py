@@ -1,16 +1,13 @@
 import logging
 import pathlib
-from datetime import datetime, timedelta
 
 from django.contrib import messages
 from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.core.exceptions import PermissionDenied
 from django.db import transaction
-from django.db.models import Count, Q, Prefetch, Max
 from django.http import HttpResponse, Http404, HttpResponseRedirect
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import resolve
-from django.utils import timezone
 from django.utils.translation import ugettext_lazy as _
 from django.views import View
 from django.views.generic.base import RedirectView
@@ -329,6 +326,7 @@ class PeerReviewEditorFeedbackUpdateView(UpdateView):
 
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
+        # set editor to the currently signed in user initiating this action
         kwargs["editor"] = self.request.user.member_profile
         return kwargs
 

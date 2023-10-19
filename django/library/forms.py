@@ -8,7 +8,6 @@ from .models import (
     PeerReviewerFeedback,
     PeerReviewInvitation,
     ReviewerRecommendation,
-    ReviewStatus,
 )
 
 logger = logging.getLogger(__name__)
@@ -20,8 +19,7 @@ class PeerReviewInvitationForm(forms.ModelForm):
     """
 
     def save(self, commit=True):
-        invitation = super().save(commit)
-        return invitation
+        return super().save(commit)
 
     class Meta:
         model = PeerReviewInvitation

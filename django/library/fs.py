@@ -119,7 +119,7 @@ class MessageGroup:
         return len(self.msgs) > 0
 
     def __repr__(self):
-        return "<MessageGroup {0}>".format(repr(self.msgs))
+        return f"<MessageGroup {repr(self.msgs)}>"
 
     def append(self, msg: Optional):
         if msg is not None and msg:
@@ -189,7 +189,7 @@ class CodebaseReleaseStorage(FileSystemStorage):
     def validate_system_file(self, name, content) -> Optional[Message]:
         # FIXME: do we expect validate_file being run on full paths?
         if fs.has_system_files(name):
-            return self.error("Ignored system file '{}'".format(name))
+            return self.error(f"Ignored system file '{name}'")
         return None
 
     def validate_mimetype(self, name):
@@ -198,7 +198,7 @@ class CodebaseReleaseStorage(FileSystemStorage):
         mimetype = mimetype if mimetype else "*/*"
         if not mimetype_matcher.match(mimetype):
             return create_fs_message(
-                "Ignored file '{}'. File type mismatch.".format(name),
+                f"Ignored file '{name}': invalid filetype {mimetype}",
                 self.stage,
                 self.mimetype_mismatch_message_level,
             )
@@ -438,7 +438,7 @@ class CodebaseReleaseFsApi:
         elif stage == StagingDirectories.aip:
             return self.get_aip_storage()
         else:
-            raise ValueError("StageDirectories values {} not valid".format(stage))
+            raise ValueError(f"StageDirectories values {stage} not valid")
 
     def get_sip_list_url(self, category: FileCategoryDirectories):
         return reverse(
@@ -603,7 +603,7 @@ class CodebaseReleaseFsApi:
             if not originals_storage.exists(str(relpath)):
                 logs.append(
                     create_fs_message(
-                        "No file at path {} to delete".format(str(relpath)),
+                        f"No file at path {relpath} to delete",
                         StagingDirectories.originals,
                         MessageLevels.error,
                     )
@@ -623,14 +623,14 @@ class CodebaseReleaseFsApi:
             return sip_storage.log_save(name=name, content=content)
 
     def add_category(self, category: FileCategoryDirectories, src):
-        logger.info("adding category {}".format(category.name))
+        logger.info("adding category %s", category.name)
         originals_storage = self.get_originals_storage()
         msgs = self._create_msg_group()
         for dirpath, dirnames, filenames in os.walk(src):
             for filename in filenames:
                 filename = os.path.join(dirpath, filename)
                 name = os.path.join(category.name, str(Path(filename).relative_to(src)))
-                logger.debug("adding file {}".format(name))
+                logger.debug("adding file %s", name)
                 with open(filename, "rb") as content:
                     msgs.append(originals_storage.log_save(name, content))
         return msgs
@@ -655,7 +655,7 @@ class CodebaseReleaseFsApi:
     def copy_originals(self, source_release):
         """copy all original files from a source CodebaseRelease to the calling release"""
         logger.info(
-            "copying files from version %s to version %s for codebase %s",
+            "copying files from source version %s to version %s for codebase %s",
             source_release.version_number,
             self.version_number,
             self.identifier,
@@ -687,7 +687,7 @@ class CodebaseReleaseFsApi:
         msgs = self._create_msg_group()
         for name in originals_storage.list():
             path = self.originals_dir.joinpath(name)
-            logger.debug("adding file: {}".format(path.relative_to(self.originals_dir)))
+            logger.debug("adding file: %s", path.relative_to(self.originals_dir))
             category = get_category(Path(name).parts[0])
             with File(path.open("rb")) as f:
                 msgs.append(
@@ -756,7 +756,7 @@ class ArchiveExtractor:
                 r.extractall(path=unpack_destination)
 
         else:
-            return Message("Archive {} is unsupported".format(filename))
+            return Message(f"Archive {filename} is unsupported")
 
     def find_root_directory(self, basedir):
         for dirpath, dirnames, filenames in os.walk(basedir):
@@ -806,11 +806,12 @@ class ArchiveExtractor:
         return msgs
 
 
-def import_archive(codebase_release, nestedcode_folder_name, fs_api=None):
+def import_archive(codebase_release, nested_code_folder_name, fs_api=None):
+    """currently only used for tests"""
     if fs_api is None:
         fs_api = codebase_release.get_fs_api()
-    archive_name = "{}.zip".format(nestedcode_folder_name)
-    shutil.make_archive(nestedcode_folder_name, "zip", nestedcode_folder_name)
+    archive_name = f"{nested_code_folder_name}.zip"
+    shutil.make_archive(nested_code_folder_name, "zip", nested_code_folder_name)
     with open(archive_name, "rb") as f:
         msgs = fs_api.add(
             FileCategoryDirectories.code, content=f, name="nestedcode.zip"
