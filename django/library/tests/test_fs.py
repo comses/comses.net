@@ -1,4 +1,4 @@
-import shutil
+from pathlib import Path
 
 import os
 from django.test import TestCase
@@ -11,12 +11,12 @@ from core.tests.base import (
 )
 from library.fs import (
     FileCategoryDirectories,
-    ArchiveExtractor,
     StagingDirectories,
     MessageLevels,
     import_archive,
 )
 from library.tests.base import CodebaseFactory
+
 
 import logging
 
@@ -28,7 +28,7 @@ def setUpModule():
 
 
 class ArchiveExtractorTestCase(TestCase):
-    nestedcode_folder_name = "library/tests/archives/nestedcode"
+    nested_code_folder = Path("library/tests/archives/nestedcode")
 
     def setUp(self):
         self.user_factory = UserFactory()
@@ -41,7 +41,7 @@ class ArchiveExtractorTestCase(TestCase):
         fs_api = self.codebase_release.get_fs_api()
         msgs = import_archive(
             codebase_release=self.codebase_release,
-            nestedcode_folder_name=self.nestedcode_folder_name,
+            nested_code_folder_name=str(self.nested_code_folder),
             fs_api=fs_api,
         )
         logs, level = msgs.serialize()
@@ -85,8 +85,7 @@ class ArchiveExtractorTestCase(TestCase):
     @classmethod
     def tearDownClass(cls):
         super().tearDownClass()
-        if os.path.exists(cls.nestedcode_folder_name):
-            os.remove("{}.zip".format(cls.nestedcode_folder_name))
+        cls.nested_code_folder.with_suffix(".zip").unlink(missing_ok=True)
 
 
 def tearDownModule():

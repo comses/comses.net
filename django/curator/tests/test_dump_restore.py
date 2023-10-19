@@ -51,7 +51,7 @@ class DumpRestoreTestCase(TestCase):
         fs_api = self.release.get_fs_api()
         import_archive(
             codebase_release=self.release,
-            nestedcode_folder_name="library/tests/archives/nestedcode",
+            nested_code_folder_name="library/tests/archives/nestedcode",
             fs_api=fs_api,
         )
 

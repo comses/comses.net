@@ -12,16 +12,18 @@
       centered
     >
       <template #body>
+        <!-- FIXME: is there a way to deduplicate this + reminders.jinja -->
         <div class="alert alert-danger mb-4" role="alert">
           <p>
-            <i class="fas fa-exclamation-triangle"></i> Peer reviews may only occur on
+            <i class="fas fa-exclamation-triangle"></i> Peer reviews must be requested on
             <strong>unpublished model releases</strong> so that you can continue to revise your
             submission based on reviewer guidance.
           </p>
           <p class="mb-0">
             If you have already published your model
-            <strong>a new draft release will be created</strong> as an exact copy. On completion,
-            the release can then be published to supersede unreviewed versions.
+            <strong>a new draft release will be created</strong> as an exact copy of your most
+            recent published release. If your model successfully passes peer review you can then
+            choose to publish the reviewed release as the latest version.
           </p>
         </div>
         <p>
@@ -30,38 +32,47 @@
         </p>
         <ul class="mb-4">
           <li>
-            <strong>Clean source code</strong> that is well-commented, uses meaningful variable
-            names, consistently formatted, etc.
+            <strong>Has "clean" source code</strong> that uses meaningful variable, method, and/or
+            class names, is well-structured and consistently formatted for readability, has thorough
+            comments that describe the semantics and intent of the code, and is in general
+            <q cite="https://doi.org/10.1038/d41586-018-05004-4"
+              >as simple as possible but no simpler</q
+            >. The ideal goal we are striving for here is to make it as easy as possible for others
+            (including your future self) to understand your code.
           </li>
           <li>
-            <strong>Detailed narrative documentation</strong> containing equations, flowcharts, or
-            other diagrams in a structured format like the
+            <strong>Has detailed narrative documentation</strong> containing equations, flowcharts,
+            or other diagrams in a structured format like the
             <a href="https://www.ufz.de/index.php?de=40429" target="_blank">ODD protocol</a> or
-            equivalent. Published journal articles generally are not considered sufficient narrative
-            documentation and pose copyright issues for us to host.
+            equivalent. We
+            <strong>do not recommend submitting a published journal article</strong> as your model's
+            narrative documentation as they are often not detailed enough to allow others to fully
+            reproduce your model and pose copyright issues for us to host.
           </li>
           <li>
-            <strong>Runnable</strong> without any changes to the downloaded package. Take care to
-            remove absolute paths from your source code and see the following note for referencing
-            data files.
+            <strong>Is easily runnable</strong> without substantive changes to the downloaded
+            package. Make sure to remove any absolute paths (e.g.,
+            <code>/home/twubc/project/psyche/2023-01-14/data/hurn.nc</code> or
+            <code>C:\Users\twubc\Downloads\data\ferns-and-wells.zip</code> or
+            <code>/Users/twubc/data/ferns.nc</code>) from your source code and read the following
+            note carefully for more details on how to reference any data files you upload to the
+            Computational Model Library.
           </li>
         </ul>
         <div class="alert bg-gray" role="alert">
           <p><strong>Note on Uploaded Data</strong></p>
           <p class="mb-0">
-            <small
-              >CoMSES Net stores uploaded data files in <code>&lt;project-root&gt;/data/</code> and
-              code in <code>&lt;project-root&gt;/code/</code>. This means that references to your
-              uploaded data files within your model will typically be via a relative path like
-              <code>"../data/my-input-data.csv"</code>. If you uploaded a zipfile with a nested
-              directory structure you may need to go up several directories to get to the project
-              root before descending back down into the data directory, depending on where your
-              source code files exist within that nested directory structure (e.g., a Python script
-              in a <code>src/python/</code> directory would have to reference uploaded data files in
-              <code>"../../../data/"</code>). This can be mitigated by including your data in your
-              source code zipfile and referencing relative paths to your input data directly in your
-              code and ignoring the CoMSES data upload slot.
-            </small>
+            CoMSES Net stores uploaded data files in <code>&lt;project-root&gt;/data/</code> and
+            code in <code>&lt;project-root&gt;/code/</code>. This means that your model will need to
+            reference uploaded data files via a relative path like
+            <code>"../data/my-input-data.csv"</code>. If you uploaded a zipfile with a nested
+            directory structure you may need to go up several directories to get to the project root
+            before descending back down into the data directory, depending on where your source code
+            files exist within that nested directory structure. For example, a Python script in a
+            <code>src/python/</code> directory would have to reference uploaded data files in
+            <code>"../../../data/"</code>). This limitation can be sidestepped by including your
+            data in your source code zipfile and referencing relative paths to your input data
+            directly in your code and ignoring the CoMSES data upload slot.
           </p>
         </div>
         <FormAlert :validation-errors="[]" :server-errors="reviewRequestErrors" />

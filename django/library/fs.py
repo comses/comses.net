@@ -24,6 +24,10 @@ from core import fs
 
 logger = logging.getLogger(__name__)
 
+"""
+FIXME: consider refactoring to use pathlib.Path throughout this module instead of string paths
+"""
+
 
 class StagingDirectories(Enum):
     # Directory containing original files uploaded (such as zip files)
@@ -141,10 +145,7 @@ class MessageGroup:
 
     def serialize(self):
         """Return a list of message along with message level"""
-        logs = []
-        for msg in self.msgs:
-            logs.append(msg.serialize())
-        return logs, self.level
+        return [msg.serialize() for msg in self.msgs], self.level
 
 
 class Message:
@@ -168,6 +169,10 @@ def create_fs_message(detail, stage: StagingDirectories, level: MessageLevels):
 
 
 class CodebaseReleaseStorage(FileSystemStorage):
+    """
+    storage abstraction for CodebaseRelease files
+    """
+
     stage = None
 
     def __init__(
@@ -187,7 +192,7 @@ class CodebaseReleaseStorage(FileSystemStorage):
         self.mimetype_mismatch_message_level = mimetype_mismatch_message_level
 
     def validate_system_file(self, name, content) -> Optional[Message]:
-        # FIXME: do we expect validate_file being run on full paths?
+        # FIXME: do we expect validate_file to be run on absolute paths?
         if fs.has_system_files(name):
             return self.error(f"Ignored system file '{name}'")
         return None
