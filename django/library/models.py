@@ -19,7 +19,7 @@ from django.urls import reverse
 from django.utils import timezone
 from django.utils.http import urlencode
 from django.utils.text import slugify
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import gettext_lazy as _
 from modelcluster.contrib.taggit import ClusterTaggableManager
 from modelcluster.fields import ParentalKey
 from modelcluster.models import ClusterableModel
@@ -109,7 +109,7 @@ class License(models.Model):
     url = models.URLField(blank=True)
 
     def __str__(self):
-        return "{} ({})".format(self.name, self.url)
+        return f"{self.name} ({self.url})"
 
 
 class Contributor(index.Indexed, ClusterableModel):
@@ -184,6 +184,9 @@ class Contributor(index.Indexed, ClusterableModel):
         if self.user:
             return self.user.member_profile.get_absolute_url()
         return None
+
+    def get_markdown_link(self):
+        return f"[{self.get_full_name()}]({self.member_profile_url})"
 
     def to_codemeta(self):
         codemeta = {
@@ -307,7 +310,7 @@ class CodebaseReleaseDownload(models.Model):
     industry = models.CharField(max_length=255, choices=MemberProfile.Industry.choices)
 
     def __str__(self):
-        return "{0}: downloaded {1}".format(self.ip_address, self.release)
+        return f"[download] ip: {self.ip_address}, release: {self.release}"
 
     class Meta:
         indexes = [models.Index(fields=["date_created"])]
@@ -638,12 +641,13 @@ class Codebase(index.Indexed, ClusterableModel):
     def summarized_description(self):
         if self.summary:
             return self.summary
-        lines = self.description.raw.splitlines()
+        # FIXME: convert to cached/regenerate-able AI summary of model description
+        raw_description = self.description.raw
+        lines = raw_description.splitlines()
         max_lines = 6
         if len(lines) > max_lines:
-            # FIXME: add a "more.." link, is this type of summarization more appropriate in JS?
             return "{0} \n...".format("\n".join(lines[:max_lines]))
-        return self.description.raw
+        return raw_description
 
     @property
     def base_library_dir(self):
@@ -755,7 +759,7 @@ class Codebase(index.Indexed, ClusterableModel):
 
     @staticmethod
     def format_doi_url(doi_string):
-        return "https://doi.org/{0}".format(doi_string) if doi_string else ""
+        return f"https://doi.org/{doi_string}" if doi_string else ""
 
     @cached_property
     def permanent_url(self):
@@ -774,7 +778,7 @@ class Codebase(index.Indexed, ClusterableModel):
         )
 
     def media_url(self, name):
-        return "{0}/media/{1}".format(self.get_absolute_url(), name)
+        return f"{self.get_absolute_url()}/media/{name}"
 
     @cached_property
     def doi_url(self):
@@ -953,9 +957,7 @@ class Codebase(index.Indexed, ClusterableModel):
         return cls.objects.public()
 
     def __str__(self):
-        return "{0} {1} identifier={2} live={3}".format(
-            self.title, self.date_created, str(self.identifier), self.live
-        )
+        return f"[codebase] {self.title} {self.date_created} (identifier:{self.identifier}, live:{self.live})"
 
 
 class CodebaseImageQuerySet(ImageQuerySet):
@@ -1297,7 +1299,7 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
     def validate_publishable(self):
         self.validate_metadata()
         self.validate_uploaded_files()
-        if self.status == self.Status.UNDER_REVIEW:
+        if self.is_under_review:
             # if under review, raise validation error if review is not complete
             review = self.get_review()
             if review and not review.is_complete:
@@ -1354,15 +1356,15 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
 
     @staticmethod
     def check_files(storage, category: FileCategoryDirectories):
-        # FIXME: storage API should be refactored to make this logic cleaner
+        # FIXME: document and/or refactor this API, should raise an exception or ...
+        # currently returns an error message or ""
+        uploaded_files = []
         if storage.exists(category.name):
             uploaded_files = list(storage.list(category))
-        else:
-            uploaded_files = []
-        if not uploaded_files:
-            return "Must have at least one {} file.".format(category.name)
-        else:
+        if uploaded_files:
             return ""
+        else:
+            return "Must have at least one {category.name} file."
 
     @property
     def version_info(self):
@@ -1469,11 +1471,11 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
 
     @property
     def title(self):
-        return "{} v{}".format(self.codebase.title, self.version_number)
+        return f"{self.codebase.title} v{self.version_number}"
 
     @property
     def archive_filename(self):
-        return "{0}_v{1}.zip".format(slugify(self.codebase.title), self.version_number)
+        return f"{slugify(self.codebase.title)}_v{self.version_number}.zip"
 
     @property
     def contributor_list(self):
@@ -1648,9 +1650,7 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
         return cls.objects.public()
 
     def __str__(self):
-        return "{0} {1} v{2}".format(
-            self.codebase, self.submitter.username, self.version_number
-        )
+        return f"[codebase_release] {self.codebase} (submitter:{self.submitter}, v:{self.version_number})"
 
     class Meta:
         unique_together = ("codebase", "version_number")
@@ -1697,7 +1697,7 @@ class ReleaseContributor(models.Model):
     objects = ReleaseContributorQuerySet.as_manager()
 
     def __str__(self):
-        return "{0} contributor {1}".format(self.release, self.contributor)
+        return f"[release_contributor] (release:{self.release}, contributor:{self.contributor})"
 
 
 class ReviewerRecommendation(models.TextChoices):
@@ -2015,9 +2015,7 @@ class PeerReview(models.Model):
         return qs.latest("date_created") if qs.exists() else None
 
     def __str__(self):
-        return "PeerReview of {} requested on {}. Status: {}, last modified {}".format(
-            self.title, self.date_created, self.status, self.last_modified
-        )
+        return f"[peer review] {self.title} (status: {self.status}, created: {self.date_created}, last_modified {self.last_modified})"
 
 
 class PeerReviewInvitationQuerySet(models.QuerySet):
@@ -2320,13 +2318,7 @@ class PeerReviewerFeedback(models.Model):
 
     def __str__(self):
         invitation = self.invitation
-        return (
-            "Peer Review Feedback by {}. (submitted? {}) (recommendation: {})".format(
-                invitation.candidate_reviewer,
-                self.reviewer_submitted,
-                self.get_recommendation_display(),
-            )
-        )
+        return f"[peer review] {invitation.candidate_reviewer} submitted? {self.reviewer_submitted}, recommendation: {self.get_recommendation_display()}"
 
 
 class CodeMeta:
@@ -2487,6 +2479,6 @@ class PeerReviewEventLog(models.Model):
 
     def add_message(self, message):
         if self.message:
-            self.message += "\n\n{}".format(message)
+            self.message += f"\n\n{message}"
         else:
             self.message = message

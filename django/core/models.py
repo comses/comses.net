@@ -12,7 +12,7 @@ from django.db import models, transaction
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.functional import cached_property
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import gettext_lazy as _
 from modelcluster.contrib.taggit import ClusterTaggableManager
 from modelcluster.fields import ParentalKey
 from modelcluster.models import ClusterableModel
@@ -73,6 +73,7 @@ class SiteSettings(BaseSiteSetting):
     banner_destination_url = models.URLField(
         help_text=_("URL to redirect to when this banner is clicked"), blank=True
     )
+    # expired_event_days_threshold = models.PositiveIntegerField(default=3, help_text=_("Number of days after an event's start date for which an event will be considered expired.")
     last_modified = models.DateTimeField(auto_now=True)
     mailchimp_digest_archive_url = models.URLField(
         help_text=_("Mailchimp Digest Campaign Archive URL"), blank=True
@@ -534,10 +535,12 @@ class EventQuerySet(models.QuerySet):
     def get_expired_q(self):
         """
         returns a Q object for all events with that have not yet ended or
-        started less than 7 days ago if the event has no end date
+        started less than 2 days ago
         """
         now = timezone.now().date()
-        start_date_threshold = now - timedelta(days=7)
+        start_date_threshold = now - timedelta(
+            days=settings.EXPIRED_EVENT_DAYS_THRESHOLD
+        )
         return models.Q(start_date__lt=start_date_threshold) | models.Q(
             end_date__lt=now, end_date__isnull=False
         )
@@ -654,11 +657,12 @@ class JobQuerySet(models.QuerySet):
     def get_expired_q(self):
         """
         returns a Q object for all Jobs with a non-null application deadline before today or
-        posted/modified in the last [POST_DATE_DAYS_AGO_TRESHOLD] days if application deadline is null
+        posted/modified in the last [settings.EXPIRED_JOB_DAYS_THRESHOLD] days if
+        application deadline is null
         """
         today = timezone.now()
-        post_date_days_ago_threshold = settings.POST_DATE_DAYS_AGO_THRESHOLD
-        post_date_threshold = today - timedelta(days=post_date_days_ago_threshold)
+        threshold = settings.EXPIRED_JOB_DAYS_THRESHOLD
+        post_date_threshold = today - timedelta(days=threshold)
         return models.Q(
             application_deadline__isnull=False, application_deadline__lt=today
         ) | models.Q(
