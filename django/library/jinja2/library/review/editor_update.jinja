@@ -1,12 +1,24 @@
 {% extends 'base.jinja' %}
 {% from 'common.jinja' import format_date %}
+{% from "library/review/includes/macros.jinja" import display_closed_status, confirm_change_closed_modal %}
 
 {% block introduction %}
     <h1>CoMSES Net Peer Review Editor</h1>
 {% endblock %}
 
 {% block content %}
-    <h2>Peer review for <a href="{{ review.codebase_release.share_url }}">{{ review.title }}</a></h2>
+    <div class="d-flex justify-content-between">
+        <h2>
+            Peer review for <a href="{{ review.codebase_release.share_url }}">{{ review.title }}</a>
+            {{ display_closed_status(review) }}
+        </h2>
+        {% if not review.is_complete %}
+            <form method="post" action="{{ review.get_change_closed_url() }}">
+                {{ csrf_input }}
+                {{ confirm_change_closed_modal(review, show_reopen=True) }}
+            </form>
+        {% endif %}
+    </div>
     <p class='lead'>
     Requested by <a href="{{ review.submitter.get_absolute_url() }}">{{ review.submitter.name }}</a>
     {% if review.is_complete %}
@@ -19,6 +31,7 @@
     <div id="review-editor" data-review-id="{{ review.slug }}"
                   data-status-levels="{{ review.review_status_json }}"
                   data-status="{{ review.status }}"
+                  data-closed="{{ review.closed }}"
     </div>
 {% endblock %}
 

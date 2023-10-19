@@ -42,13 +42,13 @@
             :files="store.files.media"
           />
         </span>
-        <PublishModal button-class="btn btn-danger" />
+        <PublishModal :show="showPublishModal" button-class="btn btn-danger" />
       </div>
     </div>
     <hr />
     <div class="row mt-3">
       <div class="col-md-3">
-        <ProgressSidebar :isLive="isLive" />
+        <ProgressSidebar :showUpload="canEditOriginals" />
       </div>
       <div class="col-md-9">
         <div>
@@ -77,6 +77,8 @@ const props = defineProps<{
   versionNumber: string;
   reviewStatus: string;
   isLive: boolean;
+  canEditOriginals: boolean;
+  showPublishModal: boolean;
 }>();
 
 const store = useReleaseEditorStore();

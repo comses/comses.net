@@ -1,13 +1,15 @@
+import io
 import random
 from uuid import UUID
 
 from core.tests.base import UserFactory
+from library.fs import FileCategoryDirectories
 from library.models import (
     Codebase,
     CodebaseRelease,
+    License,
     ReleaseContributor,
     Contributor,
-    PeerReviewerFeedback,
     PeerReviewInvitation,
     PeerReview,
 )
@@ -171,3 +173,31 @@ class ReviewSetup:
             codebase_release=cls.codebase_release,
         )
         cls.review = cls.review_factory.create()
+
+
+class ReleaseSetup:
+    @classmethod
+    def setUpPublishableDraftRelease(cls, codebase):
+        draft_release = codebase.create_release(
+            status=CodebaseRelease.Status.DRAFT,
+            initialize=True,
+        )
+        draft_release.license = License.objects.create(name="MIT")
+        draft_release.os = "Linux"
+        draft_release.programming_languages.add("Python")
+        contributor_factory = ContributorFactory(user=draft_release.submitter)
+        release_contributor_factory = ReleaseContributorFactory(draft_release)
+        contributor = contributor_factory.create()
+        release_contributor_factory.create(contributor)
+
+        code_file = io.BytesIO(b"print('hello world')")
+        code_file.name = "some_code_file.py"
+        docs_file = io.BytesIO(b"# Documentation")
+        docs_file.name = "some_doc_file.md"
+        fs_api = draft_release.get_fs_api()
+        fs_api.add(content=code_file, category=FileCategoryDirectories.code)
+        fs_api.add(content=docs_file, category=FileCategoryDirectories.docs)
+
+        draft_release.save()
+
+        return draft_release

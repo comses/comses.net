@@ -1,5 +1,5 @@
 type ExtractedAttributes = {
-  [key: string]: string | object;
+  [key: string]: any;
 };
 
 export function extractDataParams(elementId: string, names: string[]): ExtractedAttributes {

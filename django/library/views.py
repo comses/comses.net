@@ -1,12 +1,10 @@
 import logging
 import pathlib
-from datetime import datetime, timedelta
 
 from django.contrib import messages
 from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.core.exceptions import PermissionDenied
 from django.db import transaction
-from django.db.models import Count, Q, Prefetch, Max
 from django.http import HttpResponse, Http404, HttpResponseRedirect
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import resolve
@@ -112,68 +110,9 @@ class PeerReviewDashboardView(PermissionRequiredMixin, ListView):
 
     def get_queryset(self):
         query_params = self.get_query_params()
-        requires_editor_input = query_params.get("requires_editor_input")
-        include_dated_author_change_requests = query_params.get(
-            "include_dated_author_change_requests"
-        )
-        include_dated_reviewer_feedback_requests = query_params.get(
-            "include_dated_reviewer_feedback_requests"
-        )
         order_by = query_params.get("order_by")
-        reviews = PeerReview.objects.annotate(
-            n_accepted_invites=Count(
-                "invitation_set", filter=Q(invitation_set__accepted=True)
-            )
-        )
-
-        filters = Q()
-        # FIXME: refactor - this type of complicated query logic should probably be encapsulated in a model's QuerySet
-        # if possible
-        if requires_editor_input:
-            filters |= (
-                Q(n_accepted_invites=0)
-                | Q(status=ReviewStatus.AWAITING_EDITOR_FEEDBACK.name)
-                | (
-                    Q(last_modified__lt=datetime.now() - timedelta(days=25))
-                    & Q(status=ReviewStatus.AWAITING_EDITOR_FEEDBACK.name)
-                )
-            )
-        if include_dated_author_change_requests:
-            filters |= Q(last_modified__lt=datetime.now() - timedelta(days=25)) & Q(
-                status=ReviewStatus.AWAITING_AUTHOR_CHANGES.name
-            )
-        if include_dated_reviewer_feedback_requests:
-            filters |= Q(last_modified__lt=datetime.now() - timedelta(days=25)) & Q(
-                status=ReviewStatus.AWAITING_REVIEWER_FEEDBACK.name
-            )
-        if filters:
-            reviews = reviews.filter(filters)
-
-        codebases = (
-            Codebase.objects.filter(releases__review__in=reviews)
-            .prefetch_related(
-                Prefetch(
-                    "releases",
-                    queryset=CodebaseRelease.objects.filter(review__in=reviews)
-                    .select_related("review")
-                    .annotate(
-                        n_accepted_invites=Count(
-                            "review__invitation_set",
-                            filter=Q(review__invitation_set__accepted=True),
-                        )
-                    ),
-                )
-            )
-            .annotate(
-                min_n_accepted_invites=Count(
-                    "releases__review__invitation_set",
-                    filter=Q(releases__review__invitation_set__accepted=True),
-                )
-            )
-            .annotate(max_last_modified=Max("releases__review__last_modified"))
-            .order_by(order_by)
-        )
-        return codebases
+        reviews = PeerReview.objects.with_filters(query_params)
+        return Codebase.objects.with_reviews(reviews).order_by(order_by)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -199,6 +138,35 @@ class PeerReviewEditorView(PermissionRequiredMixin, DetailView):
     def put(self, request, *args, **kwargs):
         request.kwargs = kwargs
         return _change_peer_review_status(request)
+
+
+class PeerReviewChangeClosedView(PermissionRequiredMixin, DetailView):
+    context_object_name = "review"
+    model = PeerReview
+    permission_required = "library.change_peerreview"
+    slug_field = "slug"
+
+    def has_permission(self):
+        has_base_permission = super().has_permission()
+        if has_base_permission:
+            return True
+        obj = self.get_object()
+        return obj.submitter.user == self.request.user
+
+    def post(self, request, *args, **kwargs):
+        review = self.get_object()
+        action = request.POST.get("action")
+        if action == "close":
+            review.close(request.user.member_profile)
+        elif action == "reopen":
+            review.reopen(request.user.member_profile)
+        else:
+            raise ValidationError("Invalid action")
+        messages.success(
+            request,
+            (f"Review successfully {action}{'d' if action == 'close' else 'ed'}"),
+        )
+        return redirect(request.META.get("HTTP_REFERER", ""))
 
 
 class PeerReviewReviewerListView(mixins.ListModelMixin, viewsets.GenericViewSet):
@@ -262,9 +230,8 @@ class PeerReviewInvitationViewSet(NoDeleteNoUpdateViewSet):
             raise ValidationError("Must have either id or email fields")
         form = PeerReviewInvitationForm(data=form_data)
         if form.is_valid():
-            # FIXME: consider an explicit invitation.send_candidate_reviewer_email() here instead of
-            # buried in the form.save() logic to match resend_invitation better and make it more clear what's going on
-            form.save()
+            invitation = form.save()
+            invitation.send_candidate_reviewer_email()
             return Response(status=status.HTTP_200_OK)
         else:
             return Response(status=status.HTTP_400_BAD_REQUEST, data=form.errors)
@@ -356,6 +323,12 @@ class PeerReviewEditorFeedbackUpdateView(UpdateView):
     template_name = "library/review/feedback/editor_update.jinja"
     pk_url_kwarg = "feedback_id"
     queryset = PeerReviewerFeedback.objects.all()
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        # set editor to the currently signed in user initiating this action
+        kwargs["editor"] = self.request.user.member_profile
+        return kwargs
 
     def get_success_url(self):
         return self.object.invitation.review.get_absolute_url()
@@ -594,11 +567,14 @@ class NestedCodebaseReleasePermission(permissions.BasePermission):
 
 
 class NestedCodebaseReleaseUnpublishedFilesPermission(permissions.BasePermission):
-    def has_object_permission(self, request, view, obj):
-        # FIXME: figure out the rationale of this boolean logic
+    def has_object_permission(self, request, view, obj: CodebaseRelease):
         if obj.live:
             raise DrfPermissionDenied(
                 "Cannot access unpublished files of published release"
+            )
+        if obj.is_review_complete:
+            raise DrfPermissionDenied(
+                "Cannot modify unpublished files of a release that has been peer reviewed"
             )
         if request.method == "GET" and not request.user.has_perm(
             "library.change_codebaserelease", obj=obj
@@ -808,26 +784,60 @@ class CodebaseReleaseViewSet(CommonViewSetMixin, NoDeleteViewSet):
     @action(detail=True, methods=["post"])
     @transaction.atomic
     def request_peer_review(self, request, identifier, version_number):
+        """
+        If a peer review is requestable (publishable, not reviewed, no related review exists):
+        - Create a new "under review" draft release if the release from which the request was made is published
+        - Otherwise, update the existing draft release to be "under review"
+        - Create a new peer review object and send an email to the author
+        """
         codebase_release = get_object_or_404(
             CodebaseRelease,
             codebase__identifier=identifier,
             version_number=version_number,
         )
         codebase_release.validate_publishable()
-        review, created = PeerReview.objects.get_or_create(
-            codebase_release=codebase_release,
-            defaults={"submitter": request.user.member_profile},
+        existing_review = PeerReview.get_codebase_latest_active_review(
+            codebase_release.codebase
         )
-        if created:
+        if existing_review:
+            review = existing_review
+            review_release = existing_review.codebase_release
+            created = False
+        else:
+            if codebase_release.is_draft:
+                codebase_release.status = CodebaseRelease.Status.UNDER_REVIEW
+                codebase_release.save(update_fields=["status"])
+                review_release = codebase_release
+            else:
+                review_release = (
+                    codebase_release.codebase.create_review_draft_from_release(
+                        codebase_release
+                    )
+                )
+            review = PeerReview.objects.create(
+                codebase_release=review_release,
+                submitter=request.user.member_profile,
+            )
             review.send_author_requested_peer_review_email()
-        if request.accepted_renderer.format == "html":
-            response = HttpResponseRedirect(codebase_release.get_absolute_url())
+            created = True
+
+        if created:
             messages.success(request, "Peer review request submitted.")
-            return response
+        else:
+            messages.info(
+                request,
+                "An active peer review already exists for this codebase. Close it below if you wish to open a new one",
+            )
+        return self.build_review_request_response(request, review_release, review)
+
+    def build_review_request_response(self, request, codebase_release, review):
+        if request.accepted_renderer.format == "html":
+            return HttpResponseRedirect(codebase_release.get_absolute_url())
         else:
             return Response(
                 data={
                     "review_status": review.status,
+                    "review_release_url": codebase_release.get_absolute_url(),
                     "urls": {
                         "review": review.get_absolute_url(),
                         "notify_reviewers_of_changes": codebase_release.get_notify_reviewers_of_changes_url(),

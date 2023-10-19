@@ -62,6 +62,11 @@ urlpatterns = [
         name="peer-review-detail",
     ),
     path(
+        "reviews/<uuid:slug>/change-closed/",
+        views.PeerReviewChangeClosedView.as_view(),
+        name="peer-review-change-closed",
+    ),
+    path(
         "reviews/<uuid:slug>/events/",
         views.list_review_event_log,
         name="peer-review-event-list",

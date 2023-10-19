@@ -7,7 +7,7 @@
 
 {% block content %}
     <h2 class='title'>CoMSES Net Computational Library Peer Review</h2>
-    <img class='d-block img-fluid' src="{{ static("images/icons/peer-reviewed.png") }}" alt="Peer Reviewed">
+    <img class='d-block img-fluid mb-3' src="{{ static("images/icons/peer-reviewed.png") }}" alt="Peer Reviewed">
     <p>
     Authors who <a href="{{ url('library:codebase-add') }}">submit their computational models</a> to the 
     <a href="{{ url('library:codebase-list') }}">CoMSES Net Computational Model Library</a> can request peer review of
@@ -15,7 +15,7 @@
     <a href='https://www.doi.org/faq.html'>DOI</a>.
     </p>
     <p>
-    Models can remain private during peer review and this is actually recommended so that you can continue to adjust your computational model files and metadata to address any reviewer concerns raised during the peer review process. Publishing a codebase release locks the files associated with that release (but not the metadata), so you would need to draft a new release to address any reviewer concerns related to the files included in your codebase release.
+    Models must remain private during peer review so that you can continue to adjust your computational model files and metadata to address any reviewer concerns raised during the peer review process. Publishing a codebase release locks the files associated with that release (but not the metadata), so you would need to draft a new release to address any reviewer concerns related to the files included in your codebase release.
     </p>
     <h2 class='title'>Review Criteria</h2>
     {{ render_review_criteria() }}

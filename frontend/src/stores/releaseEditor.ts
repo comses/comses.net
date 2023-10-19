@@ -38,6 +38,7 @@ export const useReleaseEditorStore = defineStore("releaseEditor", () => {
       programmingLanguages: release.value.programmingLanguages,
       outputDataUrl: release.value.outputDataUrl,
       live: release.value.live,
+      canEditOriginals: release.value.canEditOriginals,
       license: release.value.license || undefined,
     };
   });
@@ -90,7 +91,7 @@ export const useReleaseEditorStore = defineStore("releaseEditor", () => {
     isInitialized.value = false;
     await fetchCodebaseRelease(identifier, versionNumber);
     await fetchMediaFiles();
-    if (!release.value.live) {
+    if (release.value.canEditOriginals) {
       for (const category of ["data", "code", "docs", "results"]) {
         await fetchOriginalFiles(category as FileCategory);
       }
@@ -173,6 +174,7 @@ const INITIAL_STATE: CodebaseReleaseEditorState = {
       tags: [],
       title: "",
     },
+    canEditOriginals: false,
     dateCreated: new Date("2006-01-01"),
     dependencies: null,
     documentation: null,

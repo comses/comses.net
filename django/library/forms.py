@@ -8,7 +8,6 @@ from .models import (
     PeerReviewerFeedback,
     PeerReviewInvitation,
     ReviewerRecommendation,
-    ReviewStatus,
 )
 
 logger = logging.getLogger(__name__)
@@ -20,9 +19,7 @@ class PeerReviewInvitationForm(forms.ModelForm):
     """
 
     def save(self, commit=True):
-        invitation = super().save(commit)
-        invitation.send_candidate_reviewer_email()
-        return invitation
+        return super().save(commit)
 
     class Meta:
         model = PeerReviewInvitation
@@ -173,6 +170,7 @@ class PeerReviewerFeedbackEditorForm(CheckCharFieldLengthMixin, forms.ModelForm)
             feedback = kwargs["instance"]
             logger.debug("feedback %s", feedback.invitation.review.status)
             kwargs["initial"]["accept"] = feedback.invitation.review.is_complete
+        self.editor = kwargs.pop("editor", feedback.invitation.editor)
         super().__init__(**kwargs)
 
     accept = forms.BooleanField(label="Accept?", required=False)
@@ -183,11 +181,9 @@ class PeerReviewerFeedbackEditorForm(CheckCharFieldLengthMixin, forms.ModelForm)
     def save(self, commit=True):
         feedback = super().save(commit)
         if self.cleaned_data["accept"]:
-            feedback.invitation.review.set_complete_status(
-                editor=feedback.invitation.editor
-            )
+            feedback.invitation.review.set_complete_status(editor=self.editor)
         else:
-            feedback.editor_called_for_revisions()
+            feedback.editor_called_for_revisions(editor=self.editor)
         return feedback
 
     class Meta:
@@ -196,14 +192,15 @@ class PeerReviewerFeedbackEditorForm(CheckCharFieldLengthMixin, forms.ModelForm)
 
 
 class PeerReviewFilterForm(forms.Form):
+    include_closed = forms.BooleanField(required=False)
     requires_editor_input = forms.BooleanField(required=False)
-    include_dated_author_change_requests = forms.BooleanField(required=False)
-    include_dated_reviewer_feedback_requests = forms.BooleanField(required=False)
+    author_changes_requested = forms.BooleanField(required=False)
+    reviewer_feedback_requested = forms.BooleanField(required=False)
     order_by = forms.ChoiceField(
         choices=[
-            ("-max_last_modified", "Last Modified DESC"),
-            ("min_n_accepted_invites", "Min Accepted Invites ASC"),
-            ("title", "Title ASC"),
+            ("-max_last_modified", "Most recently modified"),
+            ("min_n_accepted_invites", "Least accepted invites"),
+            ("title", "Title"),
         ],
         required=False,
     )

@@ -1,6 +1,6 @@
 {% extends "sidebar_layout.jinja" %}
 {% from "common.jinja" import breadcrumb, embed_discourse_comments, share_card, search_tag_href, member_profile_href %}
-{% from "library/review/includes/macros.jinja" import render_review_reminders %}
+{% from "library/review/includes/macros.jinja" import include_review_reminders, confirm_change_closed_modal %}
 
 {% set open_code_badge_url = request.build_absolute_uri(static("images/icons/open-code-badge.png")) %}
 {% set codebase = release.codebase %}
@@ -79,6 +79,14 @@
                     </div>
                 {% endwith %}
             {% endif %}
+        {% elif release.is_under_review %}
+            <div class="alert alert-danger mt-2">This release is currently undergoing peer review and must remain unpublished until complete.</div>
+        {% elif release.is_review_complete %}
+            <div class="alert alert-warning mt-2">This release has undergone peer review and is currently unpublished. You can
+                <a href="{{ release.get_publish_url() }}">publish it here</a>
+            </div>
+        {% elif release.is_draft %}
+            <div class="alert alert-danger mt-2">The release you are viewing is currently a draft.</div>
         {% else %}
             <div class="alert alert-danger mt-2">The release you are viewing is currently unpublished.</div>
         {% endif %}
@@ -86,19 +94,19 @@
         <div class='metadata text-muted mb-2'>
             <span class="me-3">
                 <b>Submitted by</b>
-                {% if release.live or has_change_perms %}
+                {% if release.live or has_change_perm %}
                     {{ member_profile_href(codebase.submitter.member_profile) }}
                 {% else %}
                     <i class='fas fa-lock'></i> (private)
                 {% endif %}
             </span>
             <span class="me-3">
-                <b>Published</b> {{ format_datetime(release.first_published_at, "%b %d, %Y") }}
+                {% if release.first_published_at %}
+                    <b>Published</b> {{ format_datetime(release.first_published_at, "%b %d, %Y") }}
+                {% endif %}
             </span>
             <span>
-                {% if codebase.first_published_at != codebase.last_published_on %}
-                    <b>Last modified</b> {{ format_datetime(codebase.last_published_on, "%b %d, %Y") }}
-                {% endif %}
+                <b>Last modified</b> {{ format_datetime(codebase.last_modified, "%b %d, %Y") }}
             </span>
         </div>
         <div class='tag-list'>
@@ -259,8 +267,13 @@
     {% endif %}
     {% if has_change_perm %}
         <a href="{{ release.get_edit_url() }}">
-            <div class="btn btn-secondary my-1 w-100">Edit metadata</div>
+            <div class="btn btn-secondary my-1 w-100">Edit {{ "Draft" if release.editable else "Metadata" }}</div>
         </a>
+        {% if not release.live and release.is_publishable %}
+            <a href="{{ release.get_publish_url() }}">
+                <div class="btn btn-danger my-1 w-100">Publish</div>
+            </a>
+        {% endif %}
     {% endif %}
 {% endwith %}
 
@@ -353,13 +366,15 @@
             <div class="card-text mb-3">
                 {{ release.get_os_display() }}
             </div>
-            <b class="card-title">Publish Date</b>
-            <div class='card-text mb-3'>
-                {{ format_date(release.first_published_at) }}
-            </div>
+            {% if release.first_published_at %}
+                <b class="card-title">Publish Date</b>
+                <div class='card-text mb-3'>
+                    {{ format_date(release.first_published_at) }}
+                </div>
+            {% endif %}
             <b class="card-title">Last Updated</b>
             <div class='card-text mb-3'>
-                {{ format_date(release.last_published_on) }}
+                {{ format_date(release.last_modified) }}
             </div>
             <div class="mb-3">
                 <b class="card-title">Downloads</b>
@@ -373,7 +388,7 @@
                   <a href='{{ release.permanent_url }}'><img height="88" src='{{ open_code_badge_url }}' alt='Open Code Badge'></a>
                 </div>
             {% elif codebase.peer_reviewed %}
-                <div class="card-text">
+                <div class="card-text alert alert-success p-2">
                     <i class='fas fa-exclamation-triangle'></i>
                     This release has not been reviewed but a <a href="#versions">different version</a> has passed peer review.
                 </div>
@@ -399,18 +414,21 @@
                 </button>
                 <div class='modal fade' id='confirm-peer-review' tabindex='-1' role='dialog'
                         aria-labelledby='confirm-peer-review-label' aria-hidden='true'>
-                    <div class='modal-dialog mw-100 w-50' role='document'>
+                    <div class='modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg' role='document'>
                         <div class='modal-content'>
                             <div class='modal-header'>
                                 <h4 class='modal-title text-danger' id='confirm-peer-review-label'>
-                                    <i class='fas fa-exclamation-triangle fa-2x'></i> Peer Review Request: Important Reminders!</h4>
+                                    Peer Review Request: Important Reminders!</h4>
                                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close">
                                 </button>
                             </div>
                             <div class='modal-body'>
-                                {{ render_review_reminders() }}
+                                {{ include_review_reminders() }}
                             </div>
                             <div class='modal-footer'>
+                                {% if release.is_draft %}
+                                    <div class="me-auto form-text">* You will be unable to publish this release until the process is complete.</div>
+                                {% endif %}
                                 <button type="button" class="btn btn-outline-gray" data-bs-dismiss="modal">Cancel</button>
                                 <button type="submit" class="btn btn-primary">Submit peer review request</button>
                             </div>
@@ -421,10 +439,17 @@
         {% elif review.is_awaiting_author_changes %}
             <form method="post" action="{{ release.get_notify_reviewers_of_changes_url() }}">
                 {{ csrf_input }}
-                <button type="submit" class="btn btn-danger my-1 w-100">Revisions complete, request new review</button>
+                <button type="submit" class="btn btn-danger my-1 w-100">Notify reviewers of changes</button>
             </form>
         {% elif review is not none %}
+            <h4 class="mt-3 text-muted">Review Status:</h4>
             <button type="button" class="btn btn-warning my-1 w-100" disabled>{{ review.get_status_display() }}</button>
+            {% if not review.is_complete %}
+                <form method="post" action="{{ review.get_change_closed_url() }}">
+                    {{ csrf_input }}
+                    {{ confirm_change_closed_modal(review, show_reopen=False) }}
+                </form>
+            {% endif %}
         {% endif %}
     {% endwith %}
     {# end has_change_perm #}
@@ -475,16 +500,12 @@
                                     <i class='fas fa-lock'></i> (private)
                                 {% endif %}
                             </td>
-                            <td>{{ format_datetime(related_release.first_published_at, '%c') }}</td>
-                            <td>{{ format_datetime(related_release.last_published_on, '%c') }}</td>
+                            <td>{{ format_datetime(related_release.first_published_at, '%c') or '-' }}</td>
+                            <td>{{ format_datetime(related_release.last_modified, '%c') }}</td>
                             <td>
-                                {% if related_release.draft %}
-                                    <span class="badge bg-danger">Draft</span>
-                                {% elif related_release.live %}
-                                    <span class="badge bg-success">Published</span>
-                                {% else %}
-                                    <span class="badge bg-warning">Unpublished</span>
-                                {% endif %}
+                                <span class='badge bg-{{ related_release.get_status_color() }}'>
+                                    {{ related_release.get_status_display() }}
+                                </span>
                                 {% if related_release.peer_reviewed %}
                                     <span class='badge bg-info'>Peer Reviewed</span>
                                 {% endif %}

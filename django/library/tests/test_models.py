@@ -13,6 +13,7 @@ from .base import (
     CodebaseFactory,
     ContributorFactory,
     ReleaseContributorFactory,
+    ReleaseSetup,
 )
 from ..models import Codebase, CodebaseRelease, License
 
@@ -40,10 +41,9 @@ class CodebaseTest(BaseModelTestCase):
         )
 
     def test_create_release(self):
-        # FIXME: should create a proper codebase release with actual
-        # metadata + file payloads
-        """
-        release = self.c1.create_release(initialize=False, live=True)
+        release = ReleaseSetup.setUpPublishableDraftRelease(self.c1)
+        release.validate_publishable()
+        release.publish()
         self.assertEquals(self.c1.latest_version, release)
         self.assertEquals(
             CodebaseRelease.objects.get(
@@ -51,8 +51,43 @@ class CodebaseTest(BaseModelTestCase):
             ),
             release,
         )
-        """
-        pass
+        fs_api = release.get_fs_api()
+        # check that at least something exists for code/docs
+        sip_contents = fs_api.list_sip_contents()
+        contents = {
+            item["label"]: item.get("contents", []) for item in sip_contents["contents"]
+        }
+        for category in ["code", "docs"]:
+            self.assertIn(category, contents)
+            self.assertTrue(contents[category])
+
+    def test_create_review_draft_from_release(self):
+        source_release = ReleaseSetup.setUpPublishableDraftRelease(self.c1)
+        source_sip_contents = source_release.get_fs_api().list_sip_contents()
+        review_draft = self.c1.create_review_draft_from_release(source_release)
+
+        # check metadata
+        self.assertEqual(
+            review_draft.release_notes.rendered, source_release.release_notes.rendered
+        )
+        self.assertEqual(review_draft.os, source_release.os)
+        self.assertEqual(review_draft.output_data_url, source_release.output_data_url)
+        self.assertEqual(review_draft.license, source_release.license)
+        self.assertEqual(
+            set(review_draft.contributors.all()), set(source_release.contributors.all())
+        )
+        self.assertEqual(
+            set(review_draft.platform_tags.all()),
+            set(source_release.platform_tags.all()),
+        )
+        self.assertEqual(
+            set(review_draft.programming_languages.all()),
+            set(source_release.programming_languages.all()),
+        )
+
+        # check file contents
+        review_draft_sip_contents = review_draft.get_fs_api().list_sip_contents()
+        self.assertEqual(source_sip_contents, review_draft_sip_contents)
 
 
 class CodebaseReleaseTest(BaseModelTestCase):
@@ -88,7 +123,7 @@ class CodebaseReleaseTest(BaseModelTestCase):
                 self.get_perm_str("view"), obj=self.codebase_release
             )
         )
-        self.codebase_release.live = True
+        self.codebase_release.status = CodebaseRelease.Status.PUBLISHED
         self.codebase_release.save()
         self.assertTrue(
             anonymous_user.has_perm(
@@ -137,7 +172,7 @@ class CodebaseReleaseTest(BaseModelTestCase):
         self.assertFalse(
             regular_user.has_perm(self.get_perm_str("view"), obj=self.codebase_release)
         )
-        self.codebase_release.live = True
+        self.codebase_release.status = CodebaseRelease.Status.PUBLISHED
         self.codebase_release.save()
         self.assertTrue(
             regular_user.has_perm(self.get_perm_str("view"), obj=self.codebase_release)

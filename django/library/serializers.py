@@ -15,6 +15,7 @@ from core.validators import validate_affiliations
 from core.serializers import (
     YMD_DATETIME_FORMAT,
     DATE_PUBLISHED_FORMAT,
+    FULL_DATETIME_FORMAT,
     create,
     update,
     set_tags,
@@ -297,7 +298,7 @@ class RelatedCodebaseReleaseSerializer(serializers.ModelSerializer):
             "last_published_on",
             "version_number",
             "live",
-            "draft",
+            "status",
         )
 
 
@@ -350,7 +351,6 @@ class CodebaseSerializer(serializers.ModelSerializer, FeaturedImageMixin):
         return codebase
 
     def update(self, instance, validated_data):
-        validated_data["draft"] = False
         return update(super().update, instance, validated_data)
 
     class Meta:
@@ -506,6 +506,7 @@ class CodebaseReleaseSerializer(serializers.ModelSerializer):
     )
     license = LicenseSerializer()
     live = serializers.ReadOnlyField()
+    can_edit_originals = serializers.ReadOnlyField()
     os_display = serializers.ReadOnlyField(source="get_os_display")
     platforms = TagSerializer(many=True, source="platform_tags")
     programming_languages = TagSerializer(many=True)
@@ -535,6 +536,7 @@ class CodebaseReleaseSerializer(serializers.ModelSerializer):
         model = CodebaseRelease
         fields = (
             "absolute_url",
+            "can_edit_originals",
             "citation_text",
             "release_contributors",
             "date_created",
@@ -592,9 +594,6 @@ class CodebaseReleaseEditSerializer(CodebaseReleaseSerializer):
         instance = super().update(instance, validated_data)
 
         instance.license = existing_license
-        # keep draft status until published
-        # https://github.com/comses/comses.net/issues/304
-        # instance.draft = False
         instance.save()
 
         return instance
@@ -654,8 +653,11 @@ class PeerReviewInvitationSerializer(serializers.ModelSerializer):
     already been sent)"""
 
     url = serializers.ReadOnlyField(source="get_absolute_url")
-
     candidate_reviewer = RelatedMemberProfileSerializer(read_only=True)
+    expiration_date = serializers.SerializerMethodField()
+
+    def get_expiration_date(self, obj):
+        return format(obj.expiration_date, FULL_DATETIME_FORMAT)
 
     class Meta:
         model = PeerReviewInvitation

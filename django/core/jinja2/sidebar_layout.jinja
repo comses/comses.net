@@ -1,6 +1,13 @@
 {% extends 'base.jinja' %}
 
 {% block page %}
+    <section class='messages'>
+        {% for message in get_messages(request) %}
+            <div class='{{ message.tags }}'>
+                <i class='fas fa-info-circle'></i> {{ message }}
+            </div>
+        {% endfor %}
+    </section>
     <section class='page'>
         <div class="container">
             {% block top %}

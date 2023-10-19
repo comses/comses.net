@@ -434,3 +434,30 @@ nav {
   @extend .placeholder;
   background-color: $gray-400;
 }
+
+// markdown extension styles
+.admonition {
+  p:last-child {
+    margin-bottom: 0;
+  }
+}
+
+.admonition.prereqs {
+  @extend .alert;
+  @extend .alert-primary;
+}
+
+.admonition.info {
+  @extend .alert;
+  @extend .alert-info;
+}
+
+.admonition.warning {
+  @extend .alert;
+  @extend .alert-danger;
+}
+
+.admonition-title {
+  font-size: 1.1em;
+  font-weight: bold;
+}

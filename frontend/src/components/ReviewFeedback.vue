@@ -3,9 +3,12 @@
     <div class="container-fluid px-0" v-if="feedbackItems && feedbackItems.length > 0">
       <div class="row" v-for="feedback in feedbackItems" :key="feedback.dateCreated">
         <div class="col-xs-12 col-sm-6">
-          <a :href="feedback.editorUrl">
+          <a v-if="!disabled" :href="feedback.editorUrl">
             {{ feedback.reviewerName }} recommended: <mark>{{ feedback.recommendation }}</mark>
           </a>
+          <div v-else>
+            {{ feedback.reviewerName }} recommended: <mark>{{ feedback.recommendation }}</mark>
+          </div>
         </div>
         <div class="col-xs-12 col-sm-6">
           <span class="badge bg-info"
@@ -25,6 +28,7 @@ import { useReviewEditorAPI } from "@/composables/api";
 
 const props = defineProps<{
   reviewId: string;
+  disabled: boolean;
 }>();
 
 const { listFeedback } = useReviewEditorAPI();

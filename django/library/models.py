@@ -13,7 +13,7 @@ from django.core.cache import cache
 from django.core.files.images import ImageFile
 from django.core.files.storage import FileSystemStorage
 from django.db import models, transaction
-from django.db.models import Prefetch, Q
+from django.db.models import Prefetch, Q, Count, Max
 from django.utils.functional import cached_property
 from django.urls import reverse
 from django.utils import timezone
@@ -212,7 +212,7 @@ class Contributor(index.Indexed, ClusterableModel):
 
     @property
     def has_name(self):
-        return any([self.given_name, self.family_name])
+        return any([self.given_name, self.family_name]) or self.user
 
     def get_full_name(self, family_name_first=False):
         full_name = ""
@@ -325,7 +325,9 @@ class CodebaseQuerySet(models.QuerySet):
 
     def update_liveness(self):
         for codebase in self.all():
-            codebase.live = codebase.releases.filter(live=True).exists()
+            codebase.live = codebase.releases.filter(
+                status=CodebaseRelease.Status.PUBLISHED
+            ).exists()
             codebase.save()
 
     def with_viewable_releases(self, user):
@@ -379,6 +381,31 @@ class CodebaseQuerySet(models.QuerySet):
             Prefetch(
                 "releases", release_qs.with_release_contributors(release_contributor_qs)
             )
+        )
+
+    def with_reviews(self, reviews):
+        return (
+            self.filter(releases__review__in=reviews)
+            .prefetch_related(
+                Prefetch(
+                    "releases",
+                    queryset=CodebaseRelease.objects.filter(review__in=reviews)
+                    .select_related("review")
+                    .annotate(
+                        n_accepted_invites=Count(
+                            "review__invitation_set",
+                            filter=Q(review__invitation_set__accepted=True),
+                        )
+                    ),
+                )
+            )
+            .annotate(
+                min_n_accepted_invites=Count(
+                    "releases__review__invitation_set",
+                    filter=Q(releases__review__invitation_set__accepted=True),
+                )
+            )
+            .annotate(max_last_modified=Max("releases__review__last_modified"))
         )
 
     @staticmethod
@@ -635,6 +662,11 @@ class Codebase(index.Indexed, ClusterableModel):
         return f"codebase:authors:{self.identifier}"
 
     def compute_contributors(self, force=False):
+        """
+        caches and returns a two values: codebase_contributors and codebase_authors
+        codebase_contributors are all contributors to the release
+        codebase_authors are the contributors to the release that should be included in the citation
+        """
         contributors_redis_key = self.codebase_contributors_redis_key
         codebase_contributors = cache.get(contributors_redis_key) if not force else None
         codebase_authors = None
@@ -650,7 +682,9 @@ class Codebase(index.Indexed, ClusterableModel):
                     "contributor__user__member_profile"
                 ).order_by("index"):
                     contributor = release_contributor.contributor
+                    # set to None as a makeshift OrderedSet implementation
                     codebase_contributors_dict[contributor] = None
+                    # only include citable authors in returned codebase_authors
                     if release_contributor.include_in_citation:
                         codebase_authors_dict[contributor] = None
             # PEP 448 syntax to unpack dict keys into list literal
@@ -709,7 +743,11 @@ class Codebase(index.Indexed, ClusterableModel):
 
     def ordered_releases(self, has_change_perm=False, **kwargs):
         releases = self.releases.order_by("-version_number").filter(**kwargs)
-        return releases if has_change_perm else releases.exclude(live=False)
+        return (
+            releases
+            if has_change_perm
+            else releases.filter(status=CodebaseRelease.Status.PUBLISHED)
+        )
 
     @classmethod
     def get_list_url(cls):
@@ -823,50 +861,84 @@ class Codebase(index.Indexed, ClusterableModel):
 
     @transaction.atomic
     def get_or_create_draft(self):
-        existing_draft = self.releases.filter(draft=True).first()
-        if not existing_draft:
-            return self.create_release()
-        return existing_draft
+        existing_draft = self.releases.filter(
+            status=CodebaseRelease.Status.DRAFT
+        ).first()
+        if existing_draft:
+            return existing_draft
+
+        draft_release = self.create_release()
+        # reset fields that should not be copied over to a new draft
+        draft_release.doi = None
+        draft_release.release_notes = ""
+        draft_release.output_data_url = ""
+        draft_release.save()
+        return draft_release
 
     @transaction.atomic
-    def create_release(self, initialize=True, **overrides):
-        existing_draft = self.releases.filter(draft=True).first()
+    def create_review_draft_from_release(self, source_release):
+        # create a new "under review" release from an existing release
+        # (should only be called from a publishable release)
+        source_id = source_release.id
+        review_draft = self.create_release(
+            status=CodebaseRelease.Status.UNDER_REVIEW, source_release=source_release
+        )
+        fs_api = review_draft.get_fs_api()
+        fs_api.copy_originals(CodebaseRelease.objects.get(id=source_id))
+        return review_draft
+
+    def create_release_from_source(self, source_release, release_metadata):
+        # cache these before removing source release id to copy it over
+        contributors = ReleaseContributor.objects.filter(release_id=source_release.id)
+        platform_tags = source_release.platform_tags.all()
+        programming_languages = source_release.programming_languages.all()
+
+        source_release.id = None
+        release = source_release
+        for k, v in release_metadata.items():
+            setattr(release, k, v)
+        release.peer_reviewed = False
+        release.last_published_on = None
+        release.first_published_at = None
+        release.platform_tags.add(*platform_tags)
+        release.programming_languages.add(*programming_languages)
+        release.save()
+        contributors.copy_to(release)
+        return release
+
+    @transaction.atomic
+    def create_release(
+        self, initialize=True, status=None, source_release=None, **overrides
+    ):
+        if status is None:
+            status = CodebaseRelease.Status.DRAFT
+        if source_release is None:
+            source_release = self.releases.last()
+
+        existing_draft = self.releases.filter(status=status).first()
         if existing_draft:
             logger.warn(
-                "Creating a new draft release when one already exists: %s",
+                "Creating a new %s release when one already exists: %s",
+                status,
                 existing_draft.identifier,
             )
-        submitter = self.submitter
-        next_version_number = self.next_version_number()
-        previous_release = self.releases.last()
         release_metadata = dict(
-            submitter=submitter,
-            version_number=next_version_number,
+            submitter=self.submitter,
+            version_number=self.next_version_number(),
             identifier=None,
-            live=False,
-            draft=True,
+            status=status,
             share_uuid=uuid.uuid4(),
         )
-        if previous_release is None:
+
+        if source_release is None:  # this is the first release of the codebase
             release_metadata["codebase"] = self
             release_metadata.update(overrides)
             release = CodebaseRelease.objects.create(**release_metadata)
             # add submitter as a release contributor automatically
-            # https://github.com/comses/core.comses.net/issues/129
             release.add_contributor(self.submitter)
         else:
-            # copy previous release metadata
-            previous_release_contributors = ReleaseContributor.objects.filter(
-                release_id=previous_release.id
-            )
-            previous_release.id = None
-            release = previous_release
-            for k, v in release_metadata.items():
-                setattr(release, k, v)
-            release.doi = None
-            release.peer_reviewed = False
-            release.save()
-            previous_release_contributors.copy_to(release)
+            # copy source release metadata (previous or specified source)
+            release = self.create_release_from_source(source_release, release_metadata)
 
         if initialize:
             release.get_fs_api().validate_bagit()
@@ -980,8 +1052,7 @@ class CodebaseReleaseQuerySet(models.QuerySet):
         return self.prefetch_related("submitter")
 
     def public(self, **kwargs):
-        # FIXME: is there ever a time draft + live are both True?
-        return self.filter(draft=False, live=True, **kwargs)
+        return self.filter(status=CodebaseRelease.Status.PUBLISHED, **kwargs)
 
     def accessible_without_codebase(self, user):
         return get_viewable_objects_for_user(user, queryset=self)
@@ -1014,17 +1085,33 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
     * git repository in /repository/<codebase_identifier>/
     """
 
+    class Status(models.TextChoices):
+        """
+        Represents the various states a release can be in.
+        """
+
+        # editable and not live
+        DRAFT = "draft", _("Draft")
+        # equivalent to draft but indicates that a release is under review and should not
+        # block the normal flow of creating/publishing new releases
+        UNDER_REVIEW = "under_review", _("Under review")
+        # status given after completing the review process, not editable and not live
+        REVIEW_COMPLETE = "review_complete", _("Review complete")
+        # not editable and live
+        PUBLISHED = "published", _("Published")
+        # indicates a release that was once published but has been unpublished
+        UNPUBLISHED = "unpublished", _("Unpublished")
+
     date_created = models.DateTimeField(default=timezone.now)
     last_modified = models.DateTimeField(auto_now=True)
 
-    live = models.BooleanField(
-        default=False, help_text=_("Signifies that this release is public.")
+    status = models.CharField(
+        choices=Status.choices,
+        default=Status.DRAFT,
+        help_text=_("The current status of this codebase release."),
+        max_length=32,
     )
-    # there should only be one draft CodebaseRelease ever
-    draft = models.BooleanField(
-        default=False,
-        help_text=_("Signifies that this release is currently being edited."),
-    )
+
     first_published_at = models.DateTimeField(null=True, blank=True)
     last_published_on = models.DateTimeField(null=True, blank=True)
 
@@ -1129,6 +1216,8 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
         ),
     ]
 
+    HAS_PUBLISHED_KEY = True
+
     def regenerate_share_uuid(self):
         self.share_uuid = uuid.uuid4()
         self.save()
@@ -1141,6 +1230,9 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
                 "version_number": self.version_number,
             },
         )
+
+    def get_publish_url(self):
+        return f"{self.get_edit_url()}?publish"
 
     def get_list_url(self):
         return reverse(
@@ -1185,7 +1277,8 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
         )
 
     def get_review(self):
-        return getattr(self, "review", None)
+        review = getattr(self, "review", None)
+        return review if review and not review.closed else None
 
     def get_review_status_display(self):
         review = self.get_review()
@@ -1204,6 +1297,15 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
     def validate_publishable(self):
         self.validate_metadata()
         self.validate_uploaded_files()
+        if self.status == self.Status.UNDER_REVIEW:
+            # if under review, raise validation error if review is not complete
+            review = self.get_review()
+            if review and not review.is_complete:
+                raise ValidationError(
+                    _(
+                        "Releases under review cannot be published until the review is complete."
+                    )
+                )
 
     def validate_metadata(self):
         """
@@ -1298,11 +1400,20 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
         2. has not already been peer reviewed
         3. a related PeerReview does not exist
         """
+        return (
+            self.is_publishable and not self.peer_reviewed and self.get_review() is None
+        )
+
+    @property
+    def is_publishable(self):
+        """
+        Returns true if this release is ready to be published
+        """
         try:
             self.validate_publishable()
+            return True
         except ValidationError:
             return False
-        return not self.peer_reviewed and self.get_review() is None
 
     @property
     def is_latest_version(self):
@@ -1366,6 +1477,7 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
 
     @property
     def contributor_list(self):
+        """Returns all contributors for just this CodebaseRelease"""
         return [
             c.contributor.get_full_name()
             for c in self.index_ordered_release_contributors
@@ -1383,7 +1495,7 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
         return {
             "Contact-Name": self.submitter.get_full_name(),
             "Contact-Email": self.submitter.email,
-            "Author": self.codebase.contributor_list,
+            "Author": self.contributor_list,
             "Version-Number": self.version_number,
             "Codebase-DOI": str(self.codebase.doi),
             "DOI": str(self.doi),
@@ -1396,8 +1508,42 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
         return CodeMeta.build(self)
 
     @property
+    def is_draft(self):
+        return self.status == self.Status.DRAFT
+
+    @property
     def is_published(self):
-        return self.live and not self.draft
+        return self.status == self.Status.PUBLISHED
+
+    @property
+    def is_under_review(self):
+        return self.status == self.Status.UNDER_REVIEW
+
+    @property
+    def is_review_complete(self):
+        return self.status == self.Status.REVIEW_COMPLETE
+
+    @property
+    def live(self):
+        return self.is_published
+
+    @property
+    def can_edit_originals(self):
+        """return true if the original (unpublished) files are editable"""
+        return not self.live and not self.is_review_complete
+
+    def get_status_display(self):
+        return self.Status(self.status).label
+
+    def get_status_color(self):
+        COLOR_MAP = {
+            self.Status.DRAFT: "warning",
+            self.Status.UNPUBLISHED: "gray",
+            self.Status.UNDER_REVIEW: "danger",
+            self.Status.PUBLISHED: "success",
+            self.Status.REVIEW_COMPLETE: "primary",
+        }
+        return COLOR_MAP.get(self.status)
 
     @property
     def codemeta_json(self):
@@ -1429,8 +1575,7 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
             now = timezone.now()
             self.first_published_at = now
             self.last_published_on = now
-            self.live = True
-            self.draft = False
+            self.status = self.Status.PUBLISHED
             self.get_fs_api().build_published_archive(force=True)
             self.save()
             codebase = self.codebase
@@ -1443,13 +1588,13 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
 
     @transaction.atomic
     def unpublish(self):
-        self.live = False
+        self.status = self.Status.UNPUBLISHED
         self.last_published_on = None
         self.first_published_at = None
         self.save()
         codebase = self.codebase
         # if this is the only public release, unpublish the codebase as well
-        if not codebase.releases.filter(live=True).exists():
+        if not codebase.releases.filter(status=self.Status.PUBLISHED).exists():
             codebase.live = False
             codebase.last_published_on = None
             codebase.first_published_at = None
@@ -1625,6 +1770,8 @@ class PeerReviewEvent(models.TextChoices):
     RELEASE_CERTIFIED = "release_certified", _(
         "Editor has taken reviewer feedback into account and certified this release as peer reviewed"
     )
+    REVIEW_CLOSED = "review_closed", _("Peer review was closed")
+    REVIEW_REOPENED = "review_reopened", _("Peer review was reopened")
 
 
 class PeerReviewQuerySet(models.QuerySet):
@@ -1647,6 +1794,36 @@ class PeerReviewQuerySet(models.QuerySet):
             return get_search_queryset(query, queryset)
         return queryset
 
+    def review_open(self, **kwargs):
+        return self.filter(closed=False, **kwargs)
+
+    def requires_editor_input(self):
+        return self.annotate(
+            n_accepted_invites=Count(
+                "invitation_set", filter=Q(invitation_set__accepted=True)
+            )
+        ).filter(
+            Q(n_accepted_invites=0) | Q(status=ReviewStatus.AWAITING_EDITOR_FEEDBACK)
+        )
+
+    def author_changes_requested(self):
+        return self.filter(status=ReviewStatus.AWAITING_AUTHOR_CHANGES)
+
+    def reviewer_feedback_requested(self):
+        return self.filter(status=ReviewStatus.AWAITING_REVIEWER_FEEDBACK)
+
+    def with_filters(self, query_params):
+        queryset = self
+        if not query_params.get("include_closed"):
+            queryset = queryset.review_open()
+        if query_params.get("requires_editor_input"):
+            queryset = queryset.requires_editor_input()
+        if query_params.get("author_changes_requested"):
+            queryset = queryset.author_changes_requested()
+        if query_params.get("reviewer_feedback_requested"):
+            queryset = queryset.reviewer_feedback_requested()
+        return queryset
+
     def completed(self, **kwargs):
         return self.filter(status=ReviewStatus.COMPLETE, **kwargs)
 
@@ -1666,6 +1843,7 @@ class PeerReview(models.Model):
         help_text=_("The current status of this review."),
         max_length=32,
     )
+    closed = models.BooleanField(default=False)
     codebase_release = models.OneToOneField(
         CodebaseRelease, related_name="review", on_delete=models.PROTECT
     )
@@ -1679,6 +1857,10 @@ class PeerReview(models.Model):
     panels = [
         FieldPanel("status"),
     ]
+
+    @property
+    def is_open(self):
+        return not self.closed
 
     @property
     def is_complete(self):
@@ -1697,6 +1879,9 @@ class PeerReview(models.Model):
 
     def get_edit_url(self):
         return reverse("library:profile-edit", kwargs={"user_pk": self.user.pk})
+
+    def get_change_closed_url(self):
+        return reverse("library:peer-review-change-closed", kwargs={"slug": self.slug})
 
     def get_invite(self, member_profile):
         return self.invitation_set.filter(candidate_reviewer=member_profile).first()
@@ -1720,19 +1905,14 @@ class PeerReview(models.Model):
             action=PeerReviewEvent.RELEASE_CERTIFIED,
             message="Model has been certified as peer reviewed",
         )
+        # dont un-publish releases with a review started before the new review process
+        if self.codebase_release.is_under_review:
+            self.codebase_release.status = CodebaseRelease.Status.REVIEW_COMPLETE
         self.codebase_release.peer_reviewed = True
         self.codebase_release.save()
         self.codebase_release.codebase.peer_reviewed = True
         self.codebase_release.codebase.save()
-
-        # FIXME: consider moving this into explicit send_model_certified_email()
-        send_markdown_email(
-            subject="Peer review completed",
-            template_name="library/review/email/model_certified.jinja",
-            context={"review": self},
-            to=[self.submitter.email],
-            cc=[settings.REVIEW_EDITOR_EMAIL],
-        )
+        self.send_model_certified_email()
 
     def log(self, message: str, action: PeerReviewEvent, author: MemberProfile):
         return self.event_set.create(message=message, action=action.name, author=author)
@@ -1749,11 +1929,36 @@ class PeerReview(models.Model):
     def author_resubmitted_changes(self, changes_made=None):
         author = self.submitter
         self.log(
-            message="Release has been resubmitted for review: {}".format(changes_made),
+            message=f"Release has been resubmitted for review: {changes_made}",
             action=PeerReviewEvent.AUTHOR_RESUBMITTED,
             author=author,
         )
         self.send_author_updated_content_email()
+
+    def close(self, submitter_or_editor: MemberProfile):
+        if self.closed:
+            return
+
+        self.closed = True
+        self.log(
+            message=f"Peer review closed by {'submitter' if submitter_or_editor == self.submitter else 'editor'}",
+            action=PeerReviewEvent.REVIEW_CLOSED,
+            author=submitter_or_editor,
+        )
+        self.save()
+        # do we want to send an email when a review is closed?
+
+    def reopen(self, submitter_or_editor: MemberProfile):
+        if not self.closed:
+            return
+
+        self.closed = False
+        self.log(
+            message=f"Peer review re-opened by {'submitter' if submitter_or_editor == self.submitter else 'editor'}",
+            action=PeerReviewEvent.REVIEW_REOPENED,
+            author=submitter_or_editor,
+        )
+        self.save()
 
     def send_author_updated_content_email(self):
         qs = self.invitation_set.filter(accepted=True)
@@ -1775,6 +1980,15 @@ class PeerReview(models.Model):
             to=[settings.REVIEW_EDITOR_EMAIL],
         )
 
+    def send_model_certified_email(self):
+        send_markdown_email(
+            subject="Peer review completed",
+            template_name="library/review/email/model_certified.jinja",
+            context={"review": self},
+            to=[self.submitter.email],
+            cc=[settings.REVIEW_EDITOR_EMAIL],
+        )
+
     @cached_property
     def review_status_json(self):
         return json.dumps(
@@ -1791,6 +2005,14 @@ class PeerReview(models.Model):
     @property
     def contact_author_name(self):
         return self.codebase_release.submitter.member_profile.name
+
+    @classmethod
+    def get_codebase_latest_active_review(cls, codebase):
+        """returns the latest review for a codebase that is not complete and not closed"""
+        qs = cls.objects.filter(codebase_release__codebase=codebase).exclude(
+            Q(status=ReviewStatus.COMPLETE) | Q(closed=True)
+        )
+        return qs.latest("date_created") if qs.exists() else None
 
     def __str__(self):
         return "PeerReview of {} requested on {}. Status: {}, last modified {}".format(
@@ -1825,6 +2047,7 @@ class PeerReviewInvitationQuerySet(models.QuerySet):
 @register_snippet
 class PeerReviewInvitation(models.Model):
     date_created = models.DateTimeField(auto_now_add=True)
+    date_sent = models.DateTimeField(default=timezone.now)
     review = models.ForeignKey(
         PeerReview, related_name="invitation_set", on_delete=models.CASCADE
     )
@@ -1861,7 +2084,7 @@ class PeerReviewInvitation(models.Model):
 
     @property
     def expiration_date(self):
-        return self.date_created + timedelta(
+        return self.date_sent + timedelta(
             days=settings.PEER_REVIEW_INVITATION_EXPIRATION
         )
 
@@ -1920,6 +2143,8 @@ class PeerReviewInvitation(models.Model):
             author=self.editor,
             message=f"{self.editor} sent an invitation to candidate reviewer {self.candidate_reviewer}",
         )
+        self.date_sent = timezone.now()
+        self.save(update_fields=["date_sent"])
 
     @transaction.atomic
     def accept(self):
@@ -2069,7 +2294,7 @@ class PeerReviewerFeedback(models.Model):
         )
 
     @transaction.atomic
-    def editor_called_for_revisions(self):
+    def editor_called_for_revisions(self, editor: MemberProfile):
         """Add an editor called for revisions event to the log
 
         Preconditions:
@@ -2077,7 +2302,6 @@ class PeerReviewerFeedback(models.Model):
         editor updated feedback
         """
         review = self.invitation.review
-        editor = self.invitation.editor
         review.log(
             action=PeerReviewEvent.REVISIONS_REQUESTED,
             author=editor,

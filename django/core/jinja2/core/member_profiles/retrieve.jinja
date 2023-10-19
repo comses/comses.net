@@ -137,9 +137,11 @@
                                     {% if invitation.accepted is none %}
                                         <span class="badge bg-warning">Waiting for response</span>
                                     {% elif invitation.review.is_complete %}
-                                        <span class="badge bg-light">Review complete</span>
+                                        <span class="badge bg-gray">Review complete</span>
                                     {% elif not invitation.accepted %}
                                         <span class="badge bg-primary">Declined review request</span>
+                                    {% elif invitation.review.closed %}
+                                        <span class="badge bg-danger">Review closed</span>
                                     {% else %}
                                         {% set badge_class="bg-warning" if invitation.review.is_awaiting_reviewer_feedback else "bg-info" %}
                                         <span class="badge {{badge_class}}">{{ invitation.review.get_status_display() }}</span>

@@ -14,6 +14,7 @@
             show-affiliation
             show-tags
             show-link
+            :disabled="disabled"
           />
         </div>
       </div>
@@ -76,11 +77,16 @@
               getStatusDisplay(inv).label
             }}</span>
             <span class="float-md-end">
-              <button class="btn btn-outline-secondary" @click="resendEmail(inv.slug)">
+              <button
+                v-if="!disabled"
+                class="btn btn-outline-secondary"
+                @click="resendEmail(inv.slug)"
+              >
                 Resend Invite
               </button>
             </span>
           </h3>
+          <span v-if="!inv.accepted" class="badge bg-gray">Expires {{ inv.expirationDate }}</span>
           <div class="tag-list">
             <div class="tag mx-1" v-for="tag in inv.candidateReviewer.tags" :key="tag.name">
               {{ tag.name }}
@@ -97,10 +103,11 @@
 import { ref, onMounted } from "vue";
 import { useReviewEditorAPI } from "@/composables/api";
 import UserSearch from "@/components/UserSearch.vue";
-import type { Reviewer } from "@/types";
+import type { Reviewer, ReviewInvitation } from "@/types";
 
 const props = defineProps<{
   reviewId: string;
+  disabled: boolean;
 }>();
 
 const emit = defineEmits(["pollEvents"]);
@@ -108,7 +115,7 @@ const emit = defineEmits(["pollEvents"]);
 const { serverErrors, listInvitations, sendInvitation, resendInvitation, findReviewers } =
   useReviewEditorAPI();
 
-const invitations = ref<any[]>([]);
+const invitations = ref<ReviewInvitation[]>([]);
 const candidateReviewer = ref<Reviewer | null>(null);
 
 onMounted(async () => {
@@ -134,7 +141,7 @@ async function resendEmail(invitationSlug: string) {
   emit("pollEvents");
 }
 
-function getStatusDisplay(invitation: any) {
+function getStatusDisplay(invitation: ReviewInvitation) {
   let label = "";
   let variant = "";
   switch (invitation.accepted) {

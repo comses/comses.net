@@ -14,8 +14,13 @@ const props = extractDataParams("release-editor", [
   "identifier",
   "reviewStatus",
   "isLive",
+  "canEditOriginals",
 ]);
-console.log(props.reviewStatus);
+
+// check if ?publish is in the url, set prop, and clear from the url
+const urlParams = new URLSearchParams(window.location.search);
+props.showPublishModal = urlParams.has("publish");
+window.history.replaceState({}, "", window.location.pathname + window.location.hash);
 
 const app = createApp(App, props);
 const pinia = createPinia();
@@ -23,9 +28,11 @@ const pinia = createPinia();
 const router = createRouter({
   history: createWebHashHistory(),
   routes: [
-    // only include upload route when release is unpublished
-    { path: "/", redirect: { name: props.isLive ? "metadata" : "upload" } },
-    ...(props.isLive ? [] : [{ path: "/upload", component: UploadFormPage, name: "upload" }]),
+    // only include upload route when original files are editable
+    { path: "/", redirect: { name: props.canEditOriginals ? "upload" : "metadata" } },
+    ...(props.canEditOriginals
+      ? [{ path: "/upload", component: UploadFormPage, name: "upload" }]
+      : []),
     { path: "/metadata", component: MetadataFormPage, name: "metadata" },
     { path: "/contributors", component: ContributorsPage, name: "contributors" },
   ],

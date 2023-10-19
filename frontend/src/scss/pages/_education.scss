@@ -83,26 +83,6 @@
       line-height: 1.25;
     }
   }
-
-  .admonition.prereqs {
-    @extend .alert;
-    @extend .alert-primary;
-  }
-
-  .admonition.info {
-    @extend .alert;
-    @extend .alert-info;
-  }
-
-  .admonition.warning {
-    @extend .alert;
-    @extend .alert-danger;
-  }
-
-  .admonition-title {
-    font-size: 1.1em;
-    font-weight: bold;
-  }
 }
 
 .tutorial-card {

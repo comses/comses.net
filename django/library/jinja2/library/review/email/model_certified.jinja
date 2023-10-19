@@ -1,9 +1,10 @@
 {% set release = review.codebase_release %}
 {% set release_url = build_absolute_uri(release.get_absolute_url() if release.is_published else release.share_url) %}
+{% set release_publish_url = build_absolute_uri(release.get_publish_url()) %}
 
 Dear {{ review.submitter.name }},
 
-Congratulations! The peer review of your model [{{ release.title }}]({{ release_url }}) is now complete and your release has been marked as peer reviewed. An automatic DOI registration workflow that automatically assigns a DOI to all peer reviewed models is under development but if you need a DOI immediately please feel free to [contact us]({{ build_absolute_uri(slugurl('contact')) }}).
+Congratulations! The peer review of your model [{{ release.title }}]({{ release_url }}) is now complete and your release has been marked as peer reviewed. Your release will remain private until you [publish it yourself]({{release_publish_url}}). An automatic DOI registration workflow that automatically assigns a DOI to all peer reviewed models is slated for development by Q2 2024. If you need a DOI immediately please feel free to [contact us]({{ build_absolute_uri(slugurl('contact')) }}).
 
 Thank you for submitting your computational model for review to CoMSES Net! We hope you will be willing to serve as a reviewer of model code as well in future model peer reviews.
 

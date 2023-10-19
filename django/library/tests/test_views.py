@@ -1,9 +1,10 @@
 import io
+import os
 import pathlib
 import shutil
 
 from django.conf import settings
-from django.test import TestCase
+from django.test import TestCase, RequestFactory
 from django.urls import reverse
 from guardian.shortcuts import assign_perm
 from rest_framework import status
@@ -19,15 +20,16 @@ from core.tests.permissions_base import (
 )
 from library.forms import PeerReviewerFeedbackReviewerForm
 from library.fs import FileCategoryDirectories
-from library.models import Codebase, License, ReviewStatus
+from library.models import Codebase, CodebaseRelease, License, PeerReview
 from library.tests.base import ReviewSetup
 from .base import (
     CodebaseFactory,
     ContributorFactory,
     ReleaseContributorFactory,
     PeerReviewInvitationFactory,
+    ReleaseSetup,
 )
-from ..views import CodebaseViewSet, CodebaseReleaseViewSet
+from ..views import CodebaseViewSet, CodebaseReleaseViewSet, PeerReviewInvitationViewSet
 
 import logging
 
@@ -49,7 +51,10 @@ class CodebaseViewSetTestCase(BaseViewSetTestCase):
         self.create_representative_users(submitter)
         self.instance_factory = CodebaseFactory(submitter=submitter)
         self.instance = self.instance_factory.create()
-        self.instance.create_release(live=True, draft=False, initialize=False)
+        self.instance.create_release(
+            status=CodebaseRelease.Status.PUBLISHED,
+            initialize=False,
+        )
 
     def assertResponseNoPermission(self, instance, response):
         if instance.live:
@@ -165,7 +170,7 @@ class CodebaseReleaseViewSetTestCase(BaseViewSetTestCase):
         codebase_factory = CodebaseFactory(submitter=self.submitter)
         self.codebase = codebase_factory.create()
         self.codebase_release = self.codebase.create_release(
-            draft=False, initialize=False
+            status=CodebaseRelease.Status.PUBLISHED, initialize=False
         )
         self.path = self.codebase_release.get_list_url()
 
@@ -205,6 +210,94 @@ class CodebaseReleaseViewSetTestCase(BaseViewSetTestCase):
         response = self.client.delete(path=path, HTTP_ACCEPT="application/json")
         self.assertResponseMethodNotAllowed(response)
 
+    def test_request_peer_review_from_draft(self):
+        self.client.login(
+            username=self.submitter.username, password=self.user_factory.password
+        )
+        draft_release = ReleaseSetup.setUpPublishableDraftRelease(self.codebase)
+        response = self.client.post(
+            draft_release.get_request_peer_review_url(),
+            HTTP_ACCEPT="application/json",
+        )
+
+        logger.fatal(response.content)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            CodebaseRelease.objects.get(id=draft_release.id).status,
+            CodebaseRelease.Status.UNDER_REVIEW,
+        )
+        self.assertTrue(
+            PeerReview.objects.filter(codebase_release=draft_release).exists()
+        )
+
+    def test_request_peer_review_from_published(self):
+        self.client.login(
+            username=self.submitter.username, password=self.user_factory.password
+        )
+        draft_release = ReleaseSetup.setUpPublishableDraftRelease(self.codebase)
+        draft_release.publish()
+
+        response = self.client.post(
+            draft_release.get_request_peer_review_url(),
+            HTTP_ACCEPT="application/json",
+        )
+
+        under_review_release = draft_release.codebase.latest_accessible_release(
+            self.submitter
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertNotEqual(
+            draft_release.id,
+            under_review_release.id,
+        )
+        self.assertTrue(
+            PeerReview.objects.filter(codebase_release=under_review_release).exists()
+        )
+
+    def test_request_peer_review_existing_review(self):
+        self.client.login(
+            username=self.submitter.username, password=self.user_factory.password
+        )
+        first_release = ReleaseSetup.setUpPublishableDraftRelease(self.codebase)
+        PeerReview.objects.create(
+            codebase_release=first_release, submitter=self.submitter.member_profile
+        )
+        second_release = ReleaseSetup.setUpPublishableDraftRelease(self.codebase)
+
+        response = self.client.post(
+            second_release.get_request_peer_review_url(),
+            HTTP_ACCEPT="application/json",
+        )
+
+        # this returns a 200 success, might be better to 302 but that needs some refactoring
+        self.assertEqual(
+            PeerReview.objects.filter(codebase_release=first_release).count(), 1
+        )
+        self.assertEqual(
+            PeerReview.objects.filter(codebase_release=second_release).count(), 0
+        )
+
+    def test_request_peer_review_existing_closed_review(self):
+        self.client.login(
+            username=self.submitter.username, password=self.user_factory.password
+        )
+        first_release = ReleaseSetup.setUpPublishableDraftRelease(self.codebase)
+        pr = PeerReview.objects.create(
+            codebase_release=first_release, submitter=self.submitter.member_profile
+        )
+        pr.close(self.submitter.member_profile)
+        second_release = ReleaseSetup.setUpPublishableDraftRelease(self.codebase)
+
+        response = self.client.post(
+            second_release.get_request_peer_review_url(),
+            HTTP_ACCEPT="application/json",
+        )
+
+        self.assertTrue(
+            PeerReview.objects.filter(codebase_release=second_release).exists()
+        )
+
 
 class CodebaseReleaseUnpublishedFilesTestCase(
     ApiAccountMixin, ResponseStatusCodesMixin, TestCase
@@ -223,7 +316,8 @@ class CodebaseReleaseUnpublishedFilesTestCase(
         codebase_factory = CodebaseFactory(submitter=self.submitter)
         self.codebase = codebase_factory.create()
         self.codebase_release = self.codebase.create_release(
-            draft=False, initialize=False
+            status=CodebaseRelease.Status.UNPUBLISHED,
+            initialize=False,
         )
 
     def test_upload_file(self):
@@ -250,8 +344,7 @@ class CodebaseReleaseUnpublishedFilesTestCase(
                 msg="{} {}".format(repr(user), response.data),
             )
 
-        self.codebase_release.live = True
-        self.codebase_release.draft = False
+        self.codebase_release.status = CodebaseRelease.Status.PUBLISHED
         self.codebase_release.save()
 
         # Published codebase release permissions
@@ -300,8 +393,7 @@ class CodebaseReleaseUnpublishedFilesTestCase(
                 msg="{} {}".format(repr(user), response.data),
             )
 
-        self.codebase_release.live = True
-        self.codebase_release.draft = False
+        self.codebase_release.status = CodebaseRelease.Status.PUBLISHED
         self.codebase_release.save()
         self.client.logout()
 
@@ -358,8 +450,7 @@ class CodebaseReleaseUnpublishedFilesTestCase(
             )
             self.assertEqual(response.status_code, expected_status_code, msg=repr(user))
 
-        self.codebase_release.live = True
-        self.codebase_release.draft = False
+        self.codebase_release.status = CodebaseRelease.Status.PUBLISHED
         self.codebase_release.save()
         self.client.logout()
 
@@ -393,7 +484,7 @@ class CodebaseReleaseDraftViewTestCase(
         codebase_factory = CodebaseFactory(submitter=self.submitter)
         self.codebase = codebase_factory.create()
         self.codebase_release = self.codebase.create_release(
-            draft=False, live=False, initialize=False
+            status=CodebaseRelease.Status.PUBLISHED, initialize=False
         )
         self.path = self.codebase.get_draft_url()
 
@@ -602,6 +693,15 @@ class PeerReviewInvitationTestCase(ReviewSetup, ResponseStatusCodesMixin, TestCa
             accept_invitation_response,
             self.invitation.latest_feedback.get_absolute_url(),
         )
+
+    def test_resend_invitation(self):
+        # date_sent field should be updated when resending an invitation
+        date_sent = self.invitation.date_sent
+        request = RequestFactory().post("/invitations/", data={})
+        view = PeerReviewInvitationViewSet()
+        view.resend_invitation(request, slug=None, invitation_slug=self.invitation.slug)
+        self.invitation.refresh_from_db()
+        self.assertGreater(self.invitation.date_sent, date_sent)
 
     @classmethod
     def tearDownClass(cls):

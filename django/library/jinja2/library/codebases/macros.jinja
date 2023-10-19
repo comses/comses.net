@@ -61,7 +61,7 @@
                 <div class="title">
                     <h1>
                         {% if codebase.peer_reviewed %}
-                            <span class='badge bg-success'>Peer reviewed</span>
+                            <span class='badge bg-info'>Peer reviewed</span>
                         {% endif %}
                         <a href="{{ codebase.get_absolute_url() }}">{{ codebase.title }}</a>
                         {% if not codebase.live %}
