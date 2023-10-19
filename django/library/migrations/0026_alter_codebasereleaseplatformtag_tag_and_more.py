@@ -8,7 +8,7 @@ import wagtail.images.models
 class Migration(migrations.Migration):
     dependencies = [
         ("taggit", "0005_auto_20220424_2025"),
-        ("library", "0022_alter_codebaserendition_file"),
+        ("library", "0025_add_peerreview_closed"),
     ]
 
     operations = [
