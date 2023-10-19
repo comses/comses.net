@@ -1299,7 +1299,7 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
     def validate_publishable(self):
         self.validate_metadata()
         self.validate_uploaded_files()
-        if self.status == self.Status.UNDER_REVIEW:
+        if self.is_under_review:
             # if under review, raise validation error if review is not complete
             review = self.get_review()
             if review and not review.is_complete:
