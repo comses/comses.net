@@ -29,16 +29,13 @@ class SpamDetectionTestCase(TestCase):
             new_user = self.user_factory.create()
             new_user_ids.append(new_user.id)
         return new_user_ids
-    
+
     def add_texts_to_users(self, user_ids):
         for user_id in user_ids:
             letters = string.ascii_lowercase
-            result_str = ''.join(random.choice(letters) for i in range(10))
-            MemberProfile.objects.all().filter(
-                user_id=user_id
-            ).update(
-                bio=result_str,
-                research_interests=result_str
+            result_str = "".join(random.choice(letters) for i in range(10))
+            MemberProfile.objects.all().filter(user_id=user_id).update(
+                bio=result_str, research_interests=result_str
             )
 
     def delete_new_users(self, user_ids):
@@ -184,7 +181,7 @@ class SpamDetectionTestCase(TestCase):
         """
         user_ids = self.processor.load_labels_from_csv()
         self.update_labels(user_ids)
-        
+
         user_meta_classifier_metrics = self.user_meta_classifier.fit()
         self.assertIsInstance(user_meta_classifier_metrics, dict)
         self.assertTrue("Accuracy" in user_meta_classifier_metrics)
@@ -229,19 +226,21 @@ class SpamDetectionTestCase(TestCase):
         self.assertTrue("Recall" in text_classifier_metrics)
         self.assertTrue("F1" in text_classifier_metrics)
         self.assertTrue("test_user_ids" in text_classifier_metrics)
-        self.assertTrue(set(text_classifier_metrics["test_user_ids"]).issubset(set(user_ids)))
+        self.assertTrue(
+            set(text_classifier_metrics["test_user_ids"]).issubset(set(user_ids))
+        )
 
         self.delete_labels(user_ids)
 
     def test_text_classifier_prediction(self):
         if not os.path.exists(self.text_classifier.MODEL_METRICS_FILE_PATH):
-                user_ids = self.processor.load_labels_from_csv()
-                # self.add_texts_to_users(user_ids)
-                self.text_classifier.fit()
+            user_ids = self.processor.load_labels_from_csv()
+            # self.add_texts_to_users(user_ids)
+            self.text_classifier.fit()
 
         existing_users = self.user_ids
         self.update_labels(existing_users)
-        new_user_ids = self.create_new_users() # default labelled_by_curator==None
+        new_user_ids = self.create_new_users()  # default labelled_by_curator==None
         self.add_texts_to_users(existing_users)
         self.add_texts_to_users(new_user_ids)
         labelled_user_ids = self.text_classifier.predict()
