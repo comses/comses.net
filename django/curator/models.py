@@ -2,20 +2,18 @@ import os
 import re
 import json
 import logging
-import pandas as pd
+
 from collections import defaultdict
 from django.core.exceptions import FieldDoesNotExist
 from django.contrib.auth.models import User
 from django.contrib.postgres.aggregates import ArrayAgg
-from django.db import models, transaction
-from django.db.models.signals import post_save
-from django.conf import settings
 from django.dispatch import receiver
 from django.db import models, transaction
-from django.db.models import Q
 from django.db.models.signals import post_save
 from django.urls import reverse
+
 from modelcluster import fields
+
 from nltk.corpus import stopwords
 from nltk.stem import PorterStemmer
 from nltk.tokenize import word_tokenize
@@ -366,6 +364,8 @@ class CanonicalTagMapping(models.Model):
 
     def __str__(self):
         return f"tag={self.tag} canonical_tag={self.canonical_tag.name} confidence={self.confidence_score}"
+
+
 class UserSpamStatusQuerySet(models.QuerySet):
     def filter_by_user_ids(self, user_ids, **kwargs):
         return self.filter(member_profile__user_id__in=user_ids, **kwargs)
@@ -411,8 +411,8 @@ class UserSpamStatus(models.Model):
 
 # Create a new UserSpamStatus whenever a new MemberProfile is created
 @receiver(post_save, sender=MemberProfile)
-def sync_member_profile_spam_status(sender, instance:MemberProfile, created, **kwargs):
+def sync_member_profile_spam_status(sender, instance: MemberProfile, created, **kwargs):
     if created:
-        mp, mp_created = MemberProfile.objects.get_or_create(
+        spam_status, created = UserSpamStatus.objects.get_or_create(
             member_profile=instance,
         )
