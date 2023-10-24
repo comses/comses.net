@@ -4,7 +4,6 @@ from django.db.models import Q
 from curator.models import UserSpamStatus
 from django.conf import settings
 
-SPAM_DIR_PATH = "/shared/curator/spam/"
 DATASET_FILE_PATH = settings.SPAM_TRAINING_DATASET_PATH
 
 class UserSpamStatusProcessor:
@@ -161,7 +160,7 @@ class UserSpamStatusProcessor:
                 & Q(user_classifier_confidence__gte=confidence_threshold)
             ).values_list("member_profile__user_id", flat=True)
         )
-        return spam_users # returns list of spam user_id
+        return spam_users  # returns list of spam user_id
 
     def labelled_by_curator_exist(self):
         # if there are users with labelled_by_curator != None, return True

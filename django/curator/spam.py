@@ -25,7 +25,6 @@ class SpamDetector:
             - if all users have None in labelled_by_curator, load to DB by calling Pipeline.load_labels_from_csv()
             - additionally, if no labels file, throw exception
         """
-        settings.SPAM_DIR_PATH.mkdir(parents=True, exist_ok=True)
         self.processor = UserSpamStatusProcessor()
         self.user_metadata_classifier = UserMetadataSpamClassifier()
         self.text_classifier = TextSpamClassifier()
@@ -70,7 +69,6 @@ class SpamDetector:
             "user_metadata_spam_classifier": self.user_meta_classifier_metrics,
             "text_spam_classifier": self.text_classifier_metrics,
         }
-
 
     def get_model_metrics(self):
         """

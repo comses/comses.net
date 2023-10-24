@@ -27,6 +27,7 @@ class SpamClassifier(ABC):
     # This class serves as a template for spam classifer variants
     def __init__(self):
         self.processor = UserSpamStatusProcessor()
+        SPAM_DIR_PATH.mkdir(parents=True, exist_ok=True)
 
     @abstractmethod
     def fit(self):
@@ -87,21 +88,21 @@ class SpamClassifier(ABC):
             json.dump(model_metrics, outfile, indent=4)
 
         return predictions, model_metrics
-    
-    def load_model(self, file_path:str):
+
+    def load_model(self, file_path: str):
         if not os.path.isfile(file_path):
             self.fit()
         with open(file_path, "rb") as file:
             return pickle.load(file)
 
-    def save_model(self, model, file_path:str):
+    def save_model(self, model, file_path: str):
         with open(file_path, "wb") as file:
             pickle.dump(model, file)
 
     def preprocess(self, text_list: List[str]):
         text_list = [self.__text_cleanup_pipeline(text) for text in text_list]
         return text_list
-    
+
     def __text_cleanup_pipeline(self, text: str):
         text = str(text)
         text = self.__convert_text_to_lowercase(text)
@@ -150,9 +151,9 @@ class TextSpamClassifier(SpamClassifier):
         data_x, data_y = self.concat_pd(all_df)
         if data_x.empty:
             return None
-        
+
         print(len(data_y.value_counts()))
-        if len(data_y.value_counts()) != 2: 
+        if len(data_y.value_counts()) != 2:
             print("Cannot create a binary classifier!!")
             return None
 
@@ -183,13 +184,14 @@ class TextSpamClassifier(SpamClassifier):
         data_x, data_y = self.concat_pd(df)
         if data_x.empty:
             return []
-        
+
         predictions, confidences = self.get_predictions(model, data_x["text"])
 
         # save the results to DB
-        result = {"user_id" : data_x["user_id"],
-                  "text_classifier_confidence": confidences,
-                  "labelled_by_text_classifier": predictions
+        result = {
+            "user_id": data_x["user_id"],
+            "text_classifier_confidence": confidences,
+            "labelled_by_text_classifier": predictions,
         }
         df = pd.DataFrame(result).replace(np.nan, None)
 
@@ -215,12 +217,13 @@ class TextSpamClassifier(SpamClassifier):
         return train_x, train_y
 
 
-
 class UserMetadataSpamClassifier(SpamClassifier):
     def __init__(self):
         SpamClassifier.__init__(self)
         self.MODEL_FILE_PATH = SPAM_DIR_PATH / "user_meta_classifier.pkl"
-        self.MODEL_METRICS_FILE_PATH = SPAM_DIR_PATH / "user_meta_classifier_metrics.json"
+        self.MODEL_METRICS_FILE_PATH = (
+            SPAM_DIR_PATH / "user_meta_classifier_metrics.json"
+        )
 
     def fit(self):
         model = Pipeline(
@@ -233,12 +236,12 @@ class UserMetadataSpamClassifier(SpamClassifier):
         # obtain df from pipleline
         df = self.processor.get_all_users_df()
         if df.empty:
-            return None # if no untrained data found
-        
-        if len(df['labelled_by_curator'].value_counts()) != 2:
+            return None  # if no untrained data found
+
+        if len(df["labelled_by_curator"].value_counts()) != 2:
             print("Cannot create a binary classifier!!")
             return None
-        
+
         feats, targets = self.__input_df_transformation(df)
         (
             train_feats,
@@ -257,7 +260,6 @@ class UserMetadataSpamClassifier(SpamClassifier):
             self.MODEL_METRICS_FILE_PATH,
         )
         return model_metrics
-    
 
     def predict(self):
         df = self.processor.get_unlabelled_by_curator_df()
@@ -271,21 +273,23 @@ class UserMetadataSpamClassifier(SpamClassifier):
         predictions, confidences = self.get_predictions(model, feats["text"])
 
         # save the results to DB
-        result = {"user_id" : feats["user_id"],
-                  "user_classifier_confidence": confidences,
-                  "labelled_by_user_classifier": predictions
+        result = {
+            "user_id": feats["user_id"],
+            "user_classifier_confidence": confidences,
+            "labelled_by_user_classifier": predictions,
         }
         df = pd.DataFrame(result).replace(np.nan, None)
 
         self.processor.update_predictions(df, isTextClassifier=False)
         return df["user_id"].values.flatten()
-    
+
     def __input_df_transformation(self, df: pd.DataFrame):
         # extract relavant columns and reform data of some columns
         if "labelled_by_curator" not in df.columns:
             df["labelled_by_curator"] = 0  # only when mode='predict'
 
-        df = df[[
+        df = df[
+            [
                 "user_id",
                 "labelled_by_curator",
                 "first_name",
@@ -294,33 +298,61 @@ class UserMetadataSpamClassifier(SpamClassifier):
                 "email",
                 "affiliations",
                 "bio",
-                "research_interests"
-            ]]
-        df[["first_name", "last_name", "is_active", "email", "affiliations", "bio", "research_interests"]] = df[["first_name", "last_name", "is_active", "email", "affiliations", "bio", "research_interests"]].fillna("")
-        df[["user_id", "labelled_by_curator"]] = df[["user_id", "labelled_by_curator"]].fillna(0)
+                "research_interests",
+            ]
+        ]
+        df[
+            [
+                "first_name",
+                "last_name",
+                "is_active",
+                "email",
+                "affiliations",
+                "bio",
+                "research_interests",
+            ]
+        ] = df[
+            [
+                "first_name",
+                "last_name",
+                "is_active",
+                "email",
+                "affiliations",
+                "bio",
+                "research_interests",
+            ]
+        ].fillna(
+            ""
+        )
+        df[["user_id", "labelled_by_curator"]] = df[
+            ["user_id", "labelled_by_curator"]
+        ].fillna(0)
 
-        df['text'] =  df.apply(lambda row:self.__create_text(row), axis=1)
+        df["text"] = df.apply(lambda row: self.__create_text(row), axis=1)
         target = df[["labelled_by_curator"]]
-        df = df[['text', 'user_id']]
+        df = df[["text", "user_id"]]
         return df, target
 
     def __create_text(self, row):
-        return self.__name(row) + self.__is_active(row['is_active'] )\
-                                        + self.__email(row['email'])\
-                                        + self.__affiliations(row['affiliations'])\
-                                        + self.__bio(row['bio'])\
-                                        + self.__research_interests(row['research_interests'])
+        return (
+            self.__name(row)
+            + self.__is_active(row["is_active"])
+            + self.__email(row["email"])
+            + self.__affiliations(row["affiliations"])
+            + self.__bio(row["bio"])
+            + self.__research_interests(row["research_interests"])
+        )
 
     def __name(self, row):
         pre_string = "My name is "
         result = ""
-        if row['first_name'] != 'NaN':
-            result = pre_string + row['first_name']
-            if row['last_name'] != "NaN":
-                result = result + " " + row['last_name']
+        if row["first_name"] != "NaN":
+            result = pre_string + row["first_name"]
+            if row["last_name"] != "NaN":
+                result = result + " " + row["last_name"]
             result = result + ". "
-        elif row['last_name'] != "NaN":
-            result = pre_string + row['last_name'] + ". "
+        elif row["last_name"] != "NaN":
+            result = pre_string + row["last_name"] + ". "
         return result
 
     def __is_active(self, val):
@@ -330,7 +362,7 @@ class UserMetadataSpamClassifier(SpamClassifier):
             return "I am not an active user. "
 
     def __email(self, val):
-        if val != 'NaN':
+        if val != "NaN":
             return "My email address is " + val + ". "
         else:
             return ""
@@ -341,23 +373,25 @@ class UserMetadataSpamClassifier(SpamClassifier):
             pre_string = "I'm affiliated with the following organizations: "
             result = pre_string
             for affili_dict in array:
-                name = affili_dict["name"] if ('name' in affili_dict.keys()) else "NaN"
-                url = affili_dict["url"] if ('url' in affili_dict.keys()) else "NaN"
-                ror_id = affili_dict["ror_id"] if ('ror_id' in affili_dict.keys()) else "NaN"
-                affili = name + "(" + "url : " + url +", ror id : " + ror_id +")"
-                result = result +", "+ affili
+                name = affili_dict["name"] if ("name" in affili_dict.keys()) else "NaN"
+                url = affili_dict["url"] if ("url" in affili_dict.keys()) else "NaN"
+                ror_id = (
+                    affili_dict["ror_id"] if ("ror_id" in affili_dict.keys()) else "NaN"
+                )
+                affili = name + "(" + "url : " + url + ", ror id : " + ror_id + ")"
+                result = result + ", " + affili
             return result + ". "
         else:
             return ""
 
     def __bio(self, val):
-        if val != 'NaN':
+        if val != "NaN":
             return val + " "
         else:
             return ""
 
     def __research_interests(self, val):
-        if val != 'NaN':
+        if val != "NaN":
             return "My research interests: " + val + ". "
         else:
             return ""
