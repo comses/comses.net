@@ -1,6 +1,23 @@
 {% extends "base.jinja" %}
 {% from "common.jinja" import breadcrumb, subnav, submit_model_btn, search_tag_href %}
 
+{% block ogp_tags %}
+    <!-- Facebook Meta Tags -->
+    <meta property="og:url" content="https://www.comses.net/">
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="CoMSES Net Resources">
+    <meta property="og:description" content="CoMSES Net is dedicated to fostering open and reproducible computational modeling through trusted cyberinfrastructure and community development. We maintain these community curated resources to help new and experienced computational modelers adopt FAIR principles for digital data management and improve the discoverability, reusability, and reproducibility of their computational models.">
+    <meta property="og:image" content="{{ static('images/logo-comses.png') }}">
+    <!-- Twitter Meta Tags -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta property="twitter:domain" content="comses.net">
+    <meta property="twitter:url" content="https://www.comses.net/">
+    <meta name="twitter:title" content="CoMSES Net Resources">
+    <meta name="twitter:description" content="CoMSES Net is dedicated to fostering open and reproducible computational modeling through trusted cyberinfrastructure and community development. We maintain these community curated resources to help new and experienced computational modelers adopt FAIR principles for digital data management and improve the discoverability, reusability, and reproducibility of their computational models.">
+    <meta name="twitter:image" content="{{ static('images/logo-comses.png') }}">
+{% endblock ogp_tags%}
+
+
 {% block title %}{{ page.title }}{% endblock %}
 
 {% block introduction %}<h1>Resources</h1>{% endblock %}

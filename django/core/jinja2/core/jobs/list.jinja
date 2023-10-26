@@ -1,6 +1,22 @@
 {% extends "search_layout.jinja" %}
 {% from "common.jinja" import list_page, paginator, breadcrumb, member_profile_href, search_tag_href, search_bar %}
 
+{% block ogp_tags %}
+    <!-- Facebook Meta Tags -->
+    <meta property="og:url" content="https://www.comses.net/jobs/">
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="Community Jobs">
+    <meta property="og:description" content="View all jobs related to CoMSES">
+    <meta property="og:image" content="{{ static('images/logo-comses.png') }}">
+    <!-- Twitter Meta Tags -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta property="twitter:domain" content="comses.net">
+    <meta property="twitter:url" content="https://www.comses.net/jobs/">
+    <meta name="twitter:title" content="Community jobs">
+    <meta name="twitter:description" content="View all jobs related to CoMSES">
+    <meta name="twitter:image" content="{{ static('images/logo-comses.png') }}">
+{% endblock ogp_tags %}
+
 {% macro render_job(item, detail_url_name) %}
 <div class="card mb-3">
     <div class='card-body'>
