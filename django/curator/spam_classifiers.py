@@ -27,6 +27,7 @@ class SpamClassifier(ABC):
     # This class serves as a template for spam classifer variants
     def __init__(self):
         self.processor = UserSpamStatusProcessor()
+        SPAM_DIR_PATH.mkdir(parents=True, exist_ok=True)
 
     @abstractmethod
     def fit(self):

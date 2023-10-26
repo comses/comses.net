@@ -4,9 +4,7 @@ from django.db.models import Q
 from curator.models import UserSpamStatus
 from django.conf import settings
 
-SPAM_DIR_PATH = "/shared/curator/spam/"
 DATASET_FILE_PATH = settings.SPAM_TRAINING_DATASET_PATH
-
 
 class UserSpamStatusProcessor:
     """
