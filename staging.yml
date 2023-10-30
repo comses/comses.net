@@ -6,18 +6,24 @@ services:
   elasticsearch:
     restart: always
     environment:
+      - node.name=es01
+      - cluster.name=es-docker-cluster
+      - discovery.seed_hosts=es02
+      - cluster.initial_master_nodes=es01,es02
       - bootstrap.memory_lock=true
       - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
     volumes:
       - esdata1:/usr/share/elasticsearch/data
   # FIXME: duplication bad
-  elasticsearch2:
+  es02:
     image: docker.elastic.co/elasticsearch/elasticsearch:${ES_VERSION}
     restart: always
     environment:
+      - node.name=es02
+      - cluster.name=es-docker-cluster
+      - discovery.seed_hosts=es01
+      - cluster.initial_master_nodes=es01,es02
       - bootstrap.memory_lock=true
-      - node.name=esnode2
-      - discovery.seed_hosts=elasticsearch
       - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
     ulimits:
       memlock:
@@ -26,12 +32,6 @@ services:
       nofile:
         soft: 65536
         hard: 65536
-    deploy:
-      resources:
-        limits:
-          memory: 1g
-    cap_add:
-      - IPC_LOCK
     volumes:
       - ./deploy/elasticsearch.conf.d/elasticsearch-node.yml:/usr/share/elasticsearch/config/elasticsearch.yml
       - ./deploy/elasticsearch.conf.d/log4j2.properties:/usr/share/elasticsearch/config/log4j2.properties

@@ -15,6 +15,7 @@ services:
     ports:
       - "127.0.0.1:9200:9200"
     environment:
+      - node.name=es01
       - bootstrap.memory_lock=true
       - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
     ulimits:
@@ -24,12 +25,6 @@ services:
       nofile:
         soft: 65536
         hard: 65536
-    deploy:
-      resources:
-        limits:
-          memory: 1g
-    cap_add:
-      - IPC_LOCK
     volumes:
       - ./deploy/elasticsearch.conf.d/log4j2.properties:/usr/share/elasticsearch/config/log4j2.properties
       - ./deploy/elasticsearch.conf.d/elasticsearch-primary.yml:/usr/share/elasticsearch/config/elasticsearch.yml
