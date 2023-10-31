@@ -1364,7 +1364,7 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
         if uploaded_files:
             return ""
         else:
-            return "Must have at least one {category.name} file."
+            return f"Must have at least one {category.name} file."
 
     @property
     def version_info(self):
