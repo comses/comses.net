@@ -210,7 +210,7 @@ WAGTAILSEARCH_BACKENDS = {
         "URLS": ["http://elasticsearch:9200"],
         "ATOMIC_REBUILD": True,
         "AUTO_UPDATE": True,
-        "TIMEOUT": 10,
+        "TIMEOUT": 30,
         "OPTIONS": {
             "max_retries": 2,
         },

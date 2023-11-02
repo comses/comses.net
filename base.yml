@@ -22,8 +22,6 @@ services:
       resources:
         limits:
           memory: 1g
-    cap_add:
-      - IPC_LOCK
     ulimits:
       memlock:
         soft: -1
