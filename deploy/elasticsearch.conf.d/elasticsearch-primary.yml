@@ -1,5 +1,0 @@
-node.name: "comses-es-master"
-cluster.name: "comses-es-cluster"
-cluster.initial_master_nodes: "comses-es-master"
-network.host: 0.0.0.0
-xpack.security.enabled: false

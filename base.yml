@@ -15,6 +15,7 @@ services:
     ports:
       - "127.0.0.1:9200:9200"
     environment:
+      - node.name=comses-es
       - discovery.type=single-node
       - bootstrap.memory_lock=true
       - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
@@ -31,7 +32,6 @@ services:
         hard: 65536
     volumes:
       - ./deploy/elasticsearch.conf.d/log4j2.properties:/usr/share/elasticsearch/config/log4j2.properties
-      - ./deploy/elasticsearch.conf.d/elasticsearch-primary.yml:/usr/share/elasticsearch/config/elasticsearch.yml
       - esdata:/usr/share/elasticsearch/data
   db:
     image: postgis/postgis:15-3.3
