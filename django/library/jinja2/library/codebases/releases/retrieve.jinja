@@ -62,16 +62,16 @@
     <meta property="og:type" content="article">
     <meta property="og:title" content="{{ codebase.title }}">
     <meta property="og:description" content="{{ codebase.summarized_description }}">
-    <meta property="og:image" content="{{ codebase.get_featured_image() }}">
+    <meta property="og:image" content="{{ codebase.get_image_urls()[0] }}">
     <!-- Twitter Meta Tags -->
     <meta name="twitter:card" content="summary_large_image">
     <meta property="twitter:domain" content="comses.net">
     <meta property="twitter:url" content="{{ request.build_absolute_uri(absolute_url) }}">
     <meta name="twitter:title" content="{{ codebase.title }}">
     <meta name="twitter:description" content="{{ codebase.summarized_description }}">
-    <meta name="twitter:image" content="{{ codebase.get_featured_image() }}">
+    <meta name="twitter:image" content="{{ codebase.get_image_urls()[0] }}">
 {% endblock ogp_tags %}
-
+x
 {% block content %}
     {# hidden formatted content for discourse crawler #}
     {% if release.live %}
