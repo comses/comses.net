@@ -106,39 +106,44 @@ const configs: Config[] = [
     uploadType: "code",
     acceptedFileTypes: "*/*",
     title: "Upload Source Code (required)",
-    instructions: `You can upload a single plaintext source file (e.g., a NetLogo .nlogo file) or a tar or zip archive of
-            plaintext source code representing your codebase. Archives will be unpacked and extracted as part of archival processing
-            and system files will be removed but the archive's directory structure is preserved.  All file types are currently
-            accepted though files should be stored in open or plaintext formats. We may remove executables or binaries in the
-            future.`,
+    instructions: `Upload a single plaintext source code file (e.g., a NetLogo .nlogo file) or a tarball or zip archive of
+            plaintext source code representing your codebase. A submitted archive will be unpacked with all files within
+            the archive extracted during the publishing process. System files will be removed but the archive's original
+            directory structure will be preserved. All file types are currently accepted though files should be stored
+            in open or plaintext formats. We reserve the right to curate and remove executables, binaries, or
+            inappropriate content.`,
   },
   {
     uploadType: "docs",
     acceptedFileTypes: "*/*",
     title: "Upload Narrative Documentation (required)",
     instructions: `Upload narrative documentation that comprehensively describes your computational model. The ODD
-            Protocol offers a good starting point for thinking about how to comprehensively describe agent based models and
-            good Narrative Documentation often includes equations, pseudocode, and flow diagrams. Acceptable files include
-            plain text formats (including Markdown and other structured text), OpenDocument Text files (ODT), and PDF documents.`,
+            Protocol, although designed for individual based or agent based simulation models, may still serve as a
+            useful reference for properly describing your computational model. Effective narrative documentation often
+            includes equations, pseudocode, and flow diagrams. Only plain text formats are accepted and include
+            Markdown, OpenDocument Text files (ODT), and PDF documents.`,
   },
   {
     uploadType: "data",
     acceptedFileTypes: "*/*",
     title: "Upload Data (optional)",
-    instructions: `Upload any datasets required by your source code. There is a limit on file upload size so if
-            your datasets are very large, you may consider using osf.io or figshare or other data repository to store your
-            data and refer to it in your code via DOI or other permanent URL. If a zip or tar archive is uploaded
-            it will be automatically unpacked. Files should be plaintext or an open data formats but all file types
-            are currently accepted. Please note that data files uploaded here will be placed in a "<project-root>/data"
-            directory so if you'd like for your source code to work immediately when another researcher downloads your
-            codebase, please consider referring to any input data files via a relative path "../data/<your-data-file>".`,
+    instructions: `Upload any input datasets required by your source code. There is a limit on file upload size so if
+            your datasets are very large (over 1 GB), please consider using a trusted data repository like osf.io,
+            figshare, or Zenodo to publish your data and include references to your data in your code via DOI or other
+            permanent URL. If a zip or tar archive is uploaded it will be automatically unpacked. Files should be in
+            plaintext or other open data formats but all file types are currently accepted. Please note that data files
+            uploaded here will be placed in a "<project-root>/data" directory so if you'd like for your source code to
+            work immediately when another researcher downloads your codebase, your code may need to reference your input
+            data files via a relative path "../data/<your-data-file>".`,
   },
   {
     uploadType: "results",
     acceptedFileTypes: "*/*",
     title: "Upload Simulation Outputs (optional)",
-    instructions:
-      "Upload simulation outputs associated with your computational model. Ideally these data files should be in plain text or other open data formats.",
+    instructions: `Upload simulation outputs associated with your computational model. There is a limit on file upload
+    size so if your datasets are very large (over 1 GB), please consider using a trusted data repository like osf.io,
+    figshare, or Zenodo to publish your data and include references to it in your code via DOI or other permanent URL.
+    Data files should be in plain text or other open data formats.`,
   },
 ];
 </script>

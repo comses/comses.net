@@ -1,6 +1,6 @@
 <template>
   <ListSidebar
-    create-label="Archive a model"
+    create-label="Publish a model"
     create-url="/codebases/add/"
     search-label="Apply Filters"
     :search-url="query"
