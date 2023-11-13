@@ -349,6 +349,7 @@ class MemberProfileViewSet(CommonViewSetMixin, HtmlNoDeleteViewSet):
             .filter_by_contributor(instance.user)
             .with_tags()
             .with_featured_images()
+            .order_by("-last_modified")
         )
         add_change_delete_perms(instance, context, accessing_user)
         return context

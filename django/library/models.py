@@ -218,28 +218,22 @@ class Contributor(index.Indexed, ClusterableModel):
         return any([self.given_name, self.family_name]) or self.user
 
     def get_full_name(self, family_name_first=False):
-        full_name = ""
-        # Bah. Horrid name logic
         if self.type == "person":
-            if self.has_name:
-                if family_name_first:
-                    full_name = (
-                        f"{self.family_name}, {self.given_name} {self.middle_name}"
-                    )
-                elif self.middle_name:
-                    full_name = (
-                        f"{self.given_name} {self.middle_name} {self.family_name}"
-                    )
-                else:
-                    full_name = f"{self.given_name} {self.family_name}"
-            elif self.user:
-                full_name = self.user.member_profile.name
-            else:
-                logger.exception("No usable name found for contributor %s", self.pk)
+            return self._get_person_full_name(family_name_first)
         else:
-            # organizations only have given_name
-            full_name = self.given_name
-        return " ".join(full_name.split())
+            # organizations only use given_name
+            return self.given_name
+
+    def _get_person_full_name(self, family_name_first=False):
+        if not self.has_name:
+            logger.exception("No usable name found for contributor %s", self.pk)
+            return ""
+        if self.user and not any([self.given_name, self.family_name]):
+            return self.user.member_profile.name
+        if family_name_first:
+            return f"{self.family_name}, {self.given_name} {self.middle_name}"
+        else:
+            return f"{self.given_name} {self.middle_name} {self.family_name}"
 
     @property
     def formatted_affiliations(self):
