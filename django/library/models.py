@@ -459,7 +459,8 @@ class CodebaseQuerySet(models.QuerySet):
         updated_codebases = updated_codebases.difference(new_codebases)
         releases = CodebaseRelease.objects.filter(
             id__in=(
-                new_codebases.values("releases") | updated_codebases.values("releases")
+                list(new_codebases.values_list("releases", flat=True))
+                + list(updated_codebases.values_list("releases", flat=True))
             )
         )
         return new_codebases, updated_codebases, releases
