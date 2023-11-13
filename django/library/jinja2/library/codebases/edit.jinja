@@ -4,13 +4,13 @@
 <h1><i class='fa fa-cloud-upload'></i> Publish your model</h1>
 {% endblock %}
 {% block content %}
-{% include "library/includes/archive_model_help.jinja" %}
+{% include "library/includes/publish_model_help.jinja" %}
 <p>
-    Archiving the software that your research depends on will help others (including your future self!) build on and
+    Publishing the software that your research depends on will help others (including your future self!) build on and
     reuse your own hard work down the road.
-    Let's walk through the steps needed to generate a citable software archive that broadly follows recommended
-    practices
-    for <a target='_blank' href='https://www.force11.org/software-citation-principles'>software citation</a>.
+
+    Let's walk through the steps needed to generate a citable software archive that broadly follows the 
+    <a target='_blank' href='https://doi.org/10.15497/RDA00068'>FAIR Principles for Research Software</a>.
 </p>
 <div id="codebase-form" {% if object %} data-identifier="{{ object.identifier }}" {% endif %}></div>
 {% endblock %}

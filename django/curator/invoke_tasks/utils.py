@@ -33,5 +33,5 @@ def dj(ctx, command, **kwargs):
         "{python} manage.py {dj_command} --settings {project_conf}".format(
             dj_command=command, **env
         ),
-        **kwargs
+        **kwargs,
     )

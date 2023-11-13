@@ -93,9 +93,9 @@ More information about the FAIR Principles:
 
 [Watch the Video on Code Management](https://mediaplus.asu.edu/lti/embedded?id=f79a200f-892f-4512-b20d-eddc32b0e1ed&siteId=61e0606e-415d-4001-8206-ffde48430c64)
 
-## 5. Archiving
+## 5. Publishing
 
-[Watch the Video on Archiving Your Code](https://mediaplus.asu.edu/lti/embedded?id=66bfb66e-ba8e-48aa-bc53-7a72b72a0dfd&siteId=61e0606e-415d-4001-8206-ffde48430c64)
+[Watch the Video on Publishing Your Code](https://mediaplus.asu.edu/lti/embedded?id=66bfb66e-ba8e-48aa-bc53-7a72b72a0dfd&siteId=61e0606e-415d-4001-8206-ffde48430c64)
 
 ## 6. Documentation
 

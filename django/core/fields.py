@@ -44,7 +44,7 @@ ALLOWED_ATTRIBUTES = dict(
     **{
         "*": ["name", "id", "class"],
         "img": ["alt", "src"],
-    }
+    },
 )
 
 DEFAULT_MARKDOWN_EXTENSIONS = [

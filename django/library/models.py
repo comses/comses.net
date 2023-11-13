@@ -1701,11 +1701,15 @@ class ReleaseContributor(models.Model):
 
 
 class ReviewerRecommendation(models.TextChoices):
-    ACCEPT = "accept", _(
-        "This computational model meets CoMSES Net peer review requirements."
+    ACCEPT = (
+        "accept",
+        _("This computational model meets CoMSES Net peer review requirements."),
     )
-    REVISE = "revise", _(
-        "This computational model must be revised to meet CoMSES Net peer review requirements."
+    REVISE = (
+        "revise",
+        _(
+            "This computational model must be revised to meet CoMSES Net peer review requirements."
+        ),
     )
 
 
@@ -1717,16 +1721,18 @@ class ReviewStatus(models.TextChoices):
     """
 
     # No reviewer has given feedback
-    AWAITING_REVIEWER_FEEDBACK = "awaiting_reviewer_feedback", _(
-        "Awaiting reviewer feedback"
+    AWAITING_REVIEWER_FEEDBACK = (
+        "awaiting_reviewer_feedback",
+        _("Awaiting reviewer feedback"),
     )
     # At least one reviewer has provided feedback on a model and an editor has not requested changes
     # to the model
     AWAITING_EDITOR_FEEDBACK = "awaiting_editor_feedback", _("Awaiting editor feedback")
     # An editor has requested changes to a model. The author has either not given changes or
     # given changes that the editor has not approved of yet or has asked further revisions on
-    AWAITING_AUTHOR_CHANGES = "awaiting_author_changes", _(
-        "Awaiting author release changes"
+    AWAITING_AUTHOR_CHANGES = (
+        "awaiting_author_changes",
+        _("Awaiting author release changes"),
     )
     # The model review process is complete
     COMPLETE = "complete", _("Review is complete")
@@ -1755,20 +1761,27 @@ class PeerReviewEvent(models.TextChoices):
     INVITATION_RESENT = "invitation_resent", _("Reviewer invitation has been resent")
     INVITATION_ACCEPTED = "invitation_accepted", _("Reviewer has accepted invitation")
     INVITATION_DECLINED = "invitation_declined", _("Reviewer has declined invitation")
-    REVIEWER_FEEDBACK_SUBMITTED = "reviewer_feedback_submitted", _(
-        "Reviewer has given feedback"
+    REVIEWER_FEEDBACK_SUBMITTED = (
+        "reviewer_feedback_submitted",
+        _("Reviewer has given feedback"),
     )
-    AUTHOR_RESUBMITTED = "author_resubmitted", _(
-        "Author has resubmitted release for review"
+    AUTHOR_RESUBMITTED = (
+        "author_resubmitted",
+        _("Author has resubmitted release for review"),
     )
-    REVIEW_STATUS_UPDATED = "review_status_updated", _(
-        "Editor manually changed review status"
+    REVIEW_STATUS_UPDATED = (
+        "review_status_updated",
+        _("Editor manually changed review status"),
     )
-    REVISIONS_REQUESTED = "revisions_requested", _(
-        "Editor has requested revisions to this release"
+    REVISIONS_REQUESTED = (
+        "revisions_requested",
+        _("Editor has requested revisions to this release"),
     )
-    RELEASE_CERTIFIED = "release_certified", _(
-        "Editor has taken reviewer feedback into account and certified this release as peer reviewed"
+    RELEASE_CERTIFIED = (
+        "release_certified",
+        _(
+            "Editor has taken reviewer feedback into account and certified this release as peer reviewed"
+        ),
     )
     REVIEW_CLOSED = "review_closed", _("Peer review was closed")
     REVIEW_REOPENED = "review_reopened", _("Peer review was reopened")

@@ -24,7 +24,7 @@ Chue Hong, Neil P., Katz, Daniel S., Barker, Michelle, Lamprecht, Anna-Lena, Mar
 # Metadata
 
 !!! info ""
-    Metadata, **data about data**, a collection of data that describes some *other data*. In this case, our *other data* is a computational model, and the metadata are the descriptive fields, structured data, narrative prose text, etc., the **human and machine-readable things** we use to annotate our computational models so others can more easily Find, Evaluate, or Reuse them. Some examples of metadata: keywords, contributors, sponsors, a durable graph of provenance, the semantic version for a specific snapshot of code, an abstract or description, links and permanent identifiers to related resources and references, links and permanent identifiers to semantic ontologies that provide rigorous details on a computational model's inputs and outputs
+    Metadata is data about **some other data**. In this case, our *other data* is a computational model, and the metadata are the descriptive fields like the keywords, contributors, version numbers, narrative description and documentation, links and permanent identifiers to related resources and references, etc. It's all the **human and machine-readable things** we use to annotate our computational models' source code so that others can more easily find, evaluate, reuse, or extend our models. 
 
 
 ![Watch the Video on Metadata](https://www.youtube.com/watch?v=UaWwHv5O2Pc)
@@ -40,11 +40,11 @@ Chue Hong, Neil P., Katz, Daniel S., Barker, Michelle, Lamprecht, Anna-Lena, Mar
 
 # Code Management
 
-![Watch the Video on Code Management](https://www.youtube.com/watch?v=ozZJEGNuwz8)
+![Principles of Code Management](https://www.youtube.com/watch?v=ozZJEGNuwz8)
 
-# Archiving
+# Publishing Your Code
 
-![Watch the Video on Archiving Your Code](https://www.youtube.com/watch?v=uodCLUADYE4)
+![How to Publish Your Code](https://www.youtube.com/watch?v=uodCLUADYE4)
 
 # Documentation
 
