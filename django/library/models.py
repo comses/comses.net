@@ -347,21 +347,16 @@ class CodebaseQuerySet(models.QuerySet):
             user=user, queryset=self.with_viewable_releases(user=user)
         )
 
+    def get_contributor_q(self, user):
+        if Contributor.objects.filter(user=user).count() > 1:
+            logger.warning("User %s has multiple contributors", user)
+        return Q(releases__contributors__user=user)
+
     def filter_by_contributor(self, user):
-        # FIXME: query could likely be more efficient
-        # find all codebase releases with this user marked as a ReleaseContributor
-        contributors = Contributor.objects.filter(user=user)
-        if contributors.exists():
-            if contributors.count() > 1:
-                logger.warning("User %s has multiple contributors", user)
-            releases = CodebaseRelease.objects.filter(
-                pk__in=ReleaseContributor.objects.filter(
-                    contributor__in=contributors
-                ).values_list("release", flat=True)
-            )
-            return self.filter(releases__in=releases).distinct()
-        else:
-            return self.filter(submitter=user)
+        return self.filter(self.get_contributor_q(user)).distinct()
+
+    def filter_by_contributor_or_submitter(self, user):
+        return self.filter(Q(submitter=user) | self.get_contributor_q(user)).distinct()
 
     def with_contributors(self, release_contributor_qs=None, user=None, **kwargs):
         if user is not None:

@@ -340,13 +340,10 @@ class MemberProfileViewSet(CommonViewSetMixin, HtmlNoDeleteViewSet):
     def get_retrieve_context(self, instance):
         context = super().get_retrieve_context(instance)
         accessing_user = self.request.user
-        # FIXME: ideally this functionality should be in the library app, though its not clear
-        # whether this can be done without a much more complicated workaround or a major
-        # re-organization of apps
         logger.debug("Finding models for user %s", instance.user)
         context["codebases"] = (
             Codebase.objects.accessible(accessing_user)
-            .filter_by_contributor(instance.user)
+            .filter_by_contributor_or_submitter(instance.user)
             .with_tags()
             .with_featured_images()
             .order_by("-last_modified")
