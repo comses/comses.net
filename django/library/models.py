@@ -226,14 +226,17 @@ class Contributor(index.Indexed, ClusterableModel):
 
     def _get_person_full_name(self, family_name_first=False):
         if not self.has_name:
-            logger.exception("No usable name found for contributor %s", self.pk)
+            logger.warning("No usable name found for contributor %s", self.pk)
             return ""
         if self.user and not any([self.given_name, self.family_name]):
             return self.user.member_profile.name
         if family_name_first:
-            return f"{self.family_name}, {self.given_name} {self.middle_name}"
+            return f"{self.family_name}, {self.given_name} {self.middle_name}".strip()
         else:
-            return f"{self.given_name} {self.middle_name} {self.family_name}"
+            return (
+                f"{self.given_name} {self.middle_name}".strip()
+                + f" {self.family_name}".rstrip()
+            )
 
     @property
     def formatted_affiliations(self):

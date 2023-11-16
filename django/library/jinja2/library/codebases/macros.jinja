@@ -81,7 +81,7 @@
                                 </a>
                             {% endif %}
                         {% else %}
-                            {# FIXME: this is a degenerate case, there should always be at least 1 contributor (the submitter) #}
+                            {# FIXME: degenerate data guard, there should always be at least 1 contributor #}
                             no contributors listed 
                         {% endfor %}
                         |
@@ -91,7 +91,7 @@
                                 | Last modified {{ format_date(codebase.last_published_on) }}
                             {% endif %}
                         {% else %}
-                            Last modified {{ format_date(codebase.last_modified) }}
+                            Unpublished | Last modified {{ format_date(codebase.last_modified) }}
                         {% endif %}
                     </small>
                 </div>
