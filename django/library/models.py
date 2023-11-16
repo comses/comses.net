@@ -457,8 +457,9 @@ class CodebaseQuerySet(models.QuerySet):
         updated_codebases = updated_codebases.difference(new_codebases)
         releases = CodebaseRelease.objects.filter(
             id__in=(
-                list(new_codebases.values_list("releases", flat=True))
-                + list(updated_codebases.values_list("releases", flat=True))
+                new_codebases.values_list("releases", flat=True).union(
+                    updated_codebases.values_list("releases", flat=True)
+                )
             )
         )
         return new_codebases, updated_codebases, releases
@@ -2024,7 +2025,7 @@ class PeerReviewInvitationQuerySet(models.QuerySet):
     def candidate_reviewers(self, **kwargs):
         # FIXME: fairly horribly inefficient
         return MemberProfile.objects.filter(
-            pk__in=self.values_list("candidate_reviewer", flat=True)
+            id__in=self.values_list("candidate_reviewer", flat=True)
         )
 
     def with_reviewer_statistics(self):
