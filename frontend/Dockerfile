@@ -1,7 +1,10 @@
-FROM node:lts-bullseye-slim
+FROM node:lts-bookworm-slim
 
 RUN apt-get update \
-    && apt-get install -y nasm libjpeg-turbo-progs vim \
+    && apt-get install -y libjpeg-turbo-progs \
+    git \
+    nasm \
+    vim \
     && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 WORKDIR /code
