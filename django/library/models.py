@@ -218,28 +218,25 @@ class Contributor(index.Indexed, ClusterableModel):
         return any([self.given_name, self.family_name]) or self.user
 
     def get_full_name(self, family_name_first=False):
-        full_name = ""
-        # Bah. Horrid name logic
         if self.type == "person":
-            if self.has_name:
-                if family_name_first:
-                    full_name = (
-                        f"{self.family_name}, {self.given_name} {self.middle_name}"
-                    )
-                elif self.middle_name:
-                    full_name = (
-                        f"{self.given_name} {self.middle_name} {self.family_name}"
-                    )
-                else:
-                    full_name = f"{self.given_name} {self.family_name}"
-            elif self.user:
-                full_name = self.user.member_profile.name
-            else:
-                logger.exception("No usable name found for contributor %s", self.pk)
+            return self._get_person_full_name(family_name_first)
         else:
-            # organizations only have given_name
-            full_name = self.given_name
-        return " ".join(full_name.split())
+            # organizations only use given_name
+            return self.given_name
+
+    def _get_person_full_name(self, family_name_first=False):
+        if not self.has_name:
+            logger.warning("No usable name found for contributor %s", self.pk)
+            return ""
+        if self.user and not any([self.given_name, self.family_name]):
+            return self.user.member_profile.name
+        if family_name_first:
+            return f"{self.family_name}, {self.given_name} {self.middle_name}".strip()
+        else:
+            return (
+                f"{self.given_name} {self.middle_name}".strip()
+                + f" {self.family_name}".rstrip()
+            )
 
     @property
     def formatted_affiliations(self):
@@ -353,21 +350,16 @@ class CodebaseQuerySet(models.QuerySet):
             user=user, queryset=self.with_viewable_releases(user=user)
         )
 
+    def get_contributor_q(self, user):
+        if Contributor.objects.filter(user=user).count() > 1:
+            logger.warning("User %s has multiple contributors", user)
+        return Q(releases__contributors__user=user)
+
     def filter_by_contributor(self, user):
-        # FIXME: query could likely be more efficient
-        # find all codebase releases with this user marked as a ReleaseContributor
-        contributors = Contributor.objects.filter(user=user)
-        if contributors.exists():
-            if contributors.count() > 1:
-                logger.warning("User %s has multiple contributors", user)
-            releases = CodebaseRelease.objects.filter(
-                pk__in=ReleaseContributor.objects.filter(
-                    contributor__in=contributors
-                ).values_list("release", flat=True)
-            )
-            return self.filter(releases__in=releases).distinct()
-        else:
-            return self.filter(submitter=user)
+        return self.filter(self.get_contributor_q(user)).distinct()
+
+    def filter_by_contributor_or_submitter(self, user):
+        return self.filter(Q(submitter=user) | self.get_contributor_q(user)).distinct()
 
     def with_contributors(self, release_contributor_qs=None, user=None, **kwargs):
         if user is not None:
@@ -465,7 +457,9 @@ class CodebaseQuerySet(models.QuerySet):
         updated_codebases = updated_codebases.difference(new_codebases)
         releases = CodebaseRelease.objects.filter(
             id__in=(
-                new_codebases.values("releases") | updated_codebases.values("releases")
+                new_codebases.values_list("releases", flat=True).union(
+                    updated_codebases.values_list("releases", flat=True)
+                )
             )
         )
         return new_codebases, updated_codebases, releases
@@ -2044,7 +2038,7 @@ class PeerReviewInvitationQuerySet(models.QuerySet):
     def candidate_reviewers(self, **kwargs):
         # FIXME: fairly horribly inefficient
         return MemberProfile.objects.filter(
-            pk__in=self.values_list("candidate_reviewer", flat=True)
+            id__in=self.values_list("candidate_reviewer", flat=True)
         )
 
     def with_reviewer_statistics(self):
