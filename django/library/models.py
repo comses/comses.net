@@ -2365,7 +2365,6 @@ class CodeMeta:
 
     @classmethod
     def convert_target_product(cls, codebase_release: CodebaseRelease):
-        from wagtail.images.views.serve import generate_image_url
 
         target_product = {
             "@type": "SoftwareApplication",
@@ -2381,13 +2380,10 @@ class CodeMeta:
                 identifier=codebase_release.permanent_url,
                 sameAs=codebase_release.comses_permanent_url,
             )
-        featured_image = codebase_release.codebase.get_featured_image()
-        if featured_image:
-            relative_screenshot_url = generate_image_url(
-                featured_image, "fill-205x115", viewname="home:wagtailimages_serve"
-            )
+        image_urls = codebase_release.codebase.get_image_urls()
+        if image_urls:
             target_product.update(
-                screenshot=f"{settings.BASE_URL}{relative_screenshot_url}"
+                screenshot=f"{settings.BASE_URL}{image_urls[0]}"
             )
         return target_product
 

@@ -1,4 +1,7 @@
 services:
+  elasticsearch:
+    environment:
+      - discovery.type=single-node
   vite:
     ports:
       - "127.0.0.1:5000:5000"

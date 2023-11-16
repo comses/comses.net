@@ -15,8 +15,7 @@ services:
     ports:
       - "127.0.0.1:9200:9200"
     environment:
-      - node.name=comses-es
-      - discovery.type=single-node
+      - node.name=elasticsearch
       - bootstrap.memory_lock=true
       - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
     deploy:
