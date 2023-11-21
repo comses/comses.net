@@ -208,7 +208,7 @@ class SpamDetectionTestCase(TestCase):
         existing_users = self.user_ids
         self.update_labels(existing_users)
         new_user_ids = self.create_new_users()  # default labelled_by_curator==None
-        labelled_user_ids = self.user_meta_classifier.predict()
+        labelled_user_ids, _ = self.user_meta_classifier.predict()
 
         self.assertTrue(self.processor.all_have_labels())
         self.assertTrue(set(new_user_ids).issubset(labelled_user_ids))
@@ -243,7 +243,7 @@ class SpamDetectionTestCase(TestCase):
         new_user_ids = self.create_new_users()  # default labelled_by_curator==None
         self.add_texts_to_users(existing_users)
         self.add_texts_to_users(new_user_ids)
-        labelled_user_ids = self.text_classifier.predict()
+        labelled_user_ids, _ = self.text_classifier.predict()
 
         self.assertTrue(self.processor.all_have_labels())
         self.assertTrue(bool(set(new_user_ids) & set(labelled_user_ids)))

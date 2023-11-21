@@ -21,62 +21,63 @@ class Command(BaseCommand):
             "-e",
             action="store_true",
             default=False,
-            help="returns spam user_ids and model metrics",
+            help="Print user_ids of spam users and the metrics of the models used to obtain the predictions.",
         )
         parser.add_argument(
             "--get_model_metrics",
-            "-g",
+            "-m",
             action="store_true",
             default=False,
-            help="gets model accuracy, precision, recall and f1 scores",
+            help="Print the accuracy, precision, recall and f1 scores of the models used to obtain the predictions.",
         )
         parser.add_argument(
             "--load_labels",
             "-l",
             action="store_true",
             default=False,
-            help="save initial dataset to the DB. ",
+            help="Store manually annotated spam labels to the DB.",
         )
-        parser.add_argument("--train_user", "-tu", action="store_true", default=False)
-        parser.add_argument("--predict_user", "-pu", action="store_true", default=False)
-        parser.add_argument("--train_text", "-tt", action="store_true", default=False)
-        parser.add_argument("--predict_text", "-pt", action="store_true", default=False)
+        parser.add_argument(
+            "--fit_usermeta_model", "-fu", action="store_true", default=False
+        )
+        parser.add_argument(
+            "--fit_text_model", "-ft", action="store_true", default=False
+        )
+        parser.add_argument(
+            "--predict_usermeta_model",
+            "-pu",
+            action="store_true",
+            default=False,
+            help="Print user_ids of all the evaluated users and spam users using the UserMetadata model",
+        )
+        parser.add_argument(
+            "--predict_text_model",
+            "-pt",
+            action="store_true",
+            default=False,
+            help="Print user_ids of all the evaluated users and spam users using the Text model",
+        )
 
     def handle_exe(self):
-        result = self.detection.execute()
-        print("Spam Users :\n", result["spam_users"])
-        print(
-            "UserMetadataSpamClassifier Metrics :\n",
-            result["user_metadata_spam_classifier"],
-        )
-        print("TextSpamClassifier Metrics:\n", result["text_spam_classifier"])
+        self.detection.execute()
 
     def handle_get_model_metrics(self):
-        metrics = self.detection.get_model_metrics()
-        print(
-            "UserMetadataSpamClassifier Metrics:\n",
-            metrics["user_metadata_spam_classifier"],
-        )
-        print("TextSpamClassifier Metrics:\n", metrics["text_spam_classifier"])
+        self.detection.get_model_metrics()
 
     def handle_load_labels(self):
         self.processor.load_labels_from_csv()
 
-    def handle_train_user(self):
-        model_metrics = self.user_meta_classifier.fit()
-        print("UserMetadataSpamClassifier Metrics:\n", model_metrics)
+    def handle_fit_usermeta_model(self):
+        self.detection.fit_usermeta_spam_classifier()
 
-    def handle_predict_user(self):
-        user_ids = self.user_meta_classifier.predict()
-        print("UserMetadataSpamClassifier predicted users:\n", user_ids)
+    def handle_fit_text_model(self):
+        self.detection.fit_text_spam_classifier()
 
-    def handle_train_text(self):
-        model_metrics = self.text_classifier.fit()
-        print("TextSpamClassifier Metrics:\n", model_metrics)
+    def handle_predict_usermeta_model(self):
+        self.detection.predict_usermeta_spam_classifier()
 
-    def handle_predict_text(self):
-        user_ids = self.text_classifier.predict()
-        print("TextSpamClassifier predicted users:\n", user_ids)
+    def handle_predict_text_model(self):
+        self.detection.predict_text_spam_classifier()
 
     def handle(self, *args, **options):
         if options["exe"]:
@@ -85,13 +86,13 @@ class Command(BaseCommand):
             action = "get_model_metrics"
         elif options["load_labels"]:
             action = "load_labels"
-        elif options["train_user"]:
-            action = "train_user"
-        elif options["predict_user"]:
-            action = "predict_user"
-        elif options["train_text"]:
-            action = "train_text"
-        elif options["predict_text"]:
-            action = "predict_text"
+        elif options["fit_usermeta_model"]:
+            action = "fit_usermeta_model"
+        elif options["fit_text_model"]:
+            action = "fit_text_model"
+        elif options["predict_usermeta_model"]:
+            action = "predict_usermeta_model"
+        elif options["predict_text_model"]:
+            action = "predict_text_model"
 
         getattr(self, f"handle_{action}")()
