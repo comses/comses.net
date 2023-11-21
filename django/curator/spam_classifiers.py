@@ -24,22 +24,32 @@ SPAM_DIR_PATH = settings.SPAM_DIR_PATH
 
 
 class SpamClassifier(ABC):
-    # This class serves as a template for spam classifer variants
+    """
+    This class serves as a template for spam classifer variants
+    """
+
     def __init__(self):
         self.processor = UserSpamStatusProcessor()
         SPAM_DIR_PATH.mkdir(parents=True, exist_ok=True)
 
     @abstractmethod
     def fit(self):
+        """
+        Implementation should be made in inherited spam classifer classes
+        """
         pass
 
     @abstractmethod
     def predict(self):
-        # predict only the ones with unlabelled_by_curator == None
+        """
+        Implementation should be made in inherited spam classifer classes
+        """
         pass
 
     def get_predictions(self, model, feat_list: list):
         """
+        Calculate model predictions by calling the sklearn/xgboost predict_proba function.
+
         Params : model ... Model instance
                 feat_list ... List of texts
         Returns : predictions ... List of predictions made by the model. Consists of 0 (ham) and 1 (spam).
@@ -61,6 +71,8 @@ class SpamClassifier(ABC):
         save_path: str,
     ):
         """
+        Calculate model metrics such as scores of accuracy, precision, and recall.
+
         Params : model ... Model instance
                 test_user_ids ... List of user_id which test_feats, validation input, was taken from
                 test_feats ... List of numerical values, which is an input to the model
@@ -90,20 +102,43 @@ class SpamClassifier(ABC):
         return predictions, model_metrics
 
     def load_model(self, file_path: str):
+        """
+        Load model instance that was trained and saved previously.
+
+        Params : file_path ... Path to the saved model instance
+        Returns : Loaded model instance
+        """
         if not os.path.isfile(file_path):
             self.fit()
         with open(file_path, "rb") as file:
             return pickle.load(file)
 
     def save_model(self, model, file_path: str):
+        """
+        Save model instance that was trained.
+
+        Params : file_path ... Path where the trained model instance will be saved
+        """
         with open(file_path, "wb") as file:
             pickle.dump(model, file)
 
     def preprocess(self, text_list: List[str]):
+        """
+        Call a series of text preprocess for each text iteratively.
+
+        Params : text_list ... List of texts
+        Returns : text_list ... List of preprocessed texts
+        """
         text_list = [self.__text_cleanup_pipeline(text) for text in text_list]
         return text_list
 
     def __text_cleanup_pipeline(self, text: str):
+        """
+        Call a series of text preprocess.
+
+        Params : text ... a single instance of text data
+        Returns : text ... a single instance of preprocessed text data
+        """
         text = str(text)
         text = self.__convert_text_to_lowercase(text)
         text = self.__replace_urls_with_webtag(text)
@@ -129,12 +164,18 @@ class SpamClassifier(ABC):
 
 
 class TextSpamClassifier(SpamClassifier):
+    """
+    This class utlizes the fields of "bio" and "labelled_by_curator" in MemberProfile django model
+    to detect spam users on the platform. Note that users with blanks in these fields will NOT be evaluated.
+    """
+
     def __init__(self):
         super().__init__()
         self.MODEL_FILE_PATH = SPAM_DIR_PATH / "text_classifier.pkl"
         self.MODEL_METRICS_FILE_PATH = SPAM_DIR_PATH / "text_classifier_metrics.json"
 
     def fit(self):
+        print("Training TextSpamClassifier...")
         model = Pipeline(
             [
                 ("cleaner", FunctionTransformer(self.preprocess)),
@@ -152,7 +193,6 @@ class TextSpamClassifier(SpamClassifier):
         if data_x.empty:
             return None
 
-        print(len(data_y.value_counts()))
         if len(data_y.value_counts()) != 2:
             print("Cannot create a binary classifier!!")
             return None
@@ -166,16 +206,18 @@ class TextSpamClassifier(SpamClassifier):
 
         model.fit(train_x["text"], train_y)
         self.save_model(model, self.MODEL_FILE_PATH)
-        test_predictions, model_metrics = self.validate_model(
+        _, model_metrics = self.validate_model(
             model,
             test_x["user_id"].tolist(),
             test_x["text"].tolist(),
             test_y.tolist(),
             self.MODEL_METRICS_FILE_PATH,
         )
+        print("Successfully trained TextSpamClassifier!")
         return model_metrics
 
     def predict(self):
+        print("TextSpamClassifier is making predictions...")
         df = self.processor.get_unlabelled_by_curator_df()
         if df.empty:  # no-op if no data found
             return []
@@ -196,7 +238,13 @@ class TextSpamClassifier(SpamClassifier):
         df = pd.DataFrame(result).replace(np.nan, None)
 
         self.processor.update_predictions(df, isTextClassifier=True)
-        return df["user_id"].values.flatten()
+        evaluated_user_ids = df["user_id"].values.flatten()
+        spam_user_ids = df["user_id"][
+            df["labelled_by_text_classifier"] == 1
+        ].values.flatten()
+
+        print("Successfully made predictions!")
+        return evaluated_user_ids, spam_user_ids
 
     def concat_pd(self, df):
         bio = df[["user_id", "bio", "labelled_by_curator"]][df["bio"] != ""]
@@ -218,6 +266,13 @@ class TextSpamClassifier(SpamClassifier):
 
 
 class UserMetadataSpamClassifier(SpamClassifier):
+    """
+    This class utlizes the fields of "labelled_by_curator", "first_name", "last_name",
+    "is_active", "email", "affiliations", "bio", and "research_interests" in MemberProfile django model
+    to detect spam users on the platform. These fields of an user will be preprocessed and
+    converted into a single text as a model input.
+    """
+
     def __init__(self):
         SpamClassifier.__init__(self)
         self.MODEL_FILE_PATH = SPAM_DIR_PATH / "user_meta_classifier.pkl"
@@ -226,6 +281,7 @@ class UserMetadataSpamClassifier(SpamClassifier):
         )
 
     def fit(self):
+        print("Training UserMetadataSpamClassifier...")
         model = Pipeline(
             [
                 ("cleaner", FunctionTransformer(self.preprocess)),
@@ -259,9 +315,12 @@ class UserMetadataSpamClassifier(SpamClassifier):
             test_targets["labelled_by_curator"].tolist(),
             self.MODEL_METRICS_FILE_PATH,
         )
+
+        print("Successfully trained UserMetadataSpamClassifier!")
         return model_metrics
 
     def predict(self):
+        print("UserMetadataSpamClassifier is making predictions...")
         df = self.processor.get_unlabelled_by_curator_df()
         if df.empty:  # no-op if no data found
             return []
@@ -281,7 +340,18 @@ class UserMetadataSpamClassifier(SpamClassifier):
         df = pd.DataFrame(result).replace(np.nan, None)
 
         self.processor.update_predictions(df, isTextClassifier=False)
-        return df["user_id"].values.flatten()
+        evaluated_user_ids = df["user_id"].values.flatten()
+        spam_user_ids = df["user_id"][
+            df["labelled_by_user_classifier"] == 1
+        ].values.flatten()
+
+        print("Successfully made predictions!")
+        return evaluated_user_ids, spam_user_ids
+
+    """
+    The following functions will be called to preprocess and 
+    convert user metadeta into text as a model inputs.
+    """
 
     def __input_df_transformation(self, df: pd.DataFrame):
         # extract relavant columns and reform data of some columns
@@ -301,7 +371,9 @@ class UserMetadataSpamClassifier(SpamClassifier):
                 "research_interests",
             ]
         ]
-        df[
+
+        df.loc[
+            :,
             [
                 "first_name",
                 "last_name",
@@ -310,7 +382,7 @@ class UserMetadataSpamClassifier(SpamClassifier):
                 "affiliations",
                 "bio",
                 "research_interests",
-            ]
+            ],
         ] = df[
             [
                 "first_name",
@@ -324,11 +396,11 @@ class UserMetadataSpamClassifier(SpamClassifier):
         ].fillna(
             ""
         )
-        df[["user_id", "labelled_by_curator"]] = df[
+        df.loc[:, ["user_id", "labelled_by_curator"]] = df[
             ["user_id", "labelled_by_curator"]
         ].fillna(0)
 
-        df["text"] = df.apply(lambda row: self.__create_text(row), axis=1)
+        df.loc[:, ["text"]] = df.apply(lambda row: self.__create_text(row), axis=1)
         target = df[["labelled_by_curator"]]
         df = df[["text", "user_id"]]
         return df, target

@@ -6,10 +6,12 @@ from django.conf import settings
 
 DATASET_FILE_PATH = settings.SPAM_TRAINING_DATASET_PATH
 
+
 class UserSpamStatusProcessor:
     """
     UserSpamStatusProcessor
-    converts UserSpamStatus querysets into Pandas dataframes
+    converts UserSpamStatus querysets into Pandas dataframes.
+    The functions are called by SpamClassifier variants.
     """
 
     def __init__(self):
@@ -188,13 +190,15 @@ class UserSpamStatusProcessor:
         param : filepath of dataset to be loaded
         return : list of user_ids which labelled_by_curator was updated
         """
-        print("loading labels CSV...")
+        print("Loading labels CSV...")
         label_df = pd.read_csv(filepath)  # TODO add exception
         user_id_list = []
         for idx, row in label_df.iterrows():
             flag = self.update_labelled_by_curator(row["user_id"], bool(row["is_spam"]))
             if flag == 1:
                 user_id_list.append(row["user_id"])
+        print("Successfully loaded labels from CSV!")
+        print("List of user ids of which label was loaded :\n", user_id_list)
         return user_id_list
 
     def update_labelled_by_curator(self, user_id, label):
