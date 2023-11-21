@@ -1,4 +1,6 @@
 # app specific
+.yarn
+.yarnrc.yml
 build
 incoming
 logs
