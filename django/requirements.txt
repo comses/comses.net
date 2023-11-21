@@ -42,7 +42,7 @@ shortuuid==1.0.11
 tzdata==2023.3
 uwsgi==2.0.23
 uwsgitop==0.11
-wagtail==5.2
+wagtail==5.2.1
 # used for institution -> affiliation data migration, unused afterwards
 fuzzywuzzy==0.18.0
 invoke

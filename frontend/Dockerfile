@@ -14,9 +14,9 @@ WORKDIR /code
 COPY package.json yarn.lock /code/
 RUN set -ex; \
     if [ "$NODE_ENV" = "production" ]; then \
-        yarn install --no-cache --frozen-lockfile --production; \
+        yarn workspaces focus --production; \
     elif [ "$NODE_ENV" = "test" ] || [ "$NODE_ENV" = "e2e" ]; then \
-        yarn install --no-cache --frozen-lockfile; \
+        yarn install --immutable; \
     else \
         yarn install; \
     fi

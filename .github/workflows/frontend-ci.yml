@@ -13,12 +13,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: set up docker buildx
-        uses: docker/setup-buildx-action@v2
       - name: build container
         run: |
           make docker-compose.yml
-          docker compose build vite --pull
+          docker compose build vite --pull --no-cache
           docker compose up vite -d
       - name: Lint
         run: docker compose exec vite yarn lint
@@ -31,6 +29,9 @@ jobs:
       - name: Type check
         if: ${{ success() || failure() }}
         run: docker compose exec vite yarn type-check
+      - name: Build for production
+        if: ${{ success() || failure() }}
+        run: docker compose exec vite yarn build
       - name: bring down container
         if: ${{ always() }}
         run: docker compose down
