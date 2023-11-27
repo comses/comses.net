@@ -1062,6 +1062,11 @@ class CodebaseReleaseQuerySet(models.QuerySet):
     def accessible(self, user):
         return get_viewable_objects_for_user(user, queryset=self)
 
+    def reviewed_without_doi(self, **kwargs):
+        return self.filter(peer_reviewed=True, **kwargs).filter(
+            Q(doi__isnull=True) | Q(doi="")
+        )
+
     def latest_for_feed(self, number=10, include_all=False):
         qs = (
             self.public()
