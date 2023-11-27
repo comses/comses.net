@@ -502,6 +502,9 @@ TEST_BASIC_AUTH_PASSWORD = os.getenv("TEST_BASIC_AUTH_PASSWORD", "test password"
 TEST_USER_ID = os.getenv("TEST_USER_ID", 1000000)
 TEST_USERNAME = os.getenv("TEST_USERNAME", "__test_user__")
 
+DATACITE_API_USERNAME = os.getenv("DATACITE_API_USERNAME", "comses")
+DATACITE_API_PASSWORD = read_secret("datacite_api_password")
+
 SOCIALACCOUNT_PROVIDERS = {
     # https://developer.github.com/apps/building-integrations/setting-up-and-registering-oauth-apps/about-scopes-for-oauth-apps/
     "github": {

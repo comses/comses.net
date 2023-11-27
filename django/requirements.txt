@@ -1,5 +1,6 @@
 bagit==1.8.1
 bleach==6.1.0
+datacite==1.1.3
 dedupe==2.0.23
 django-allauth==0.63.6
 django-anymail[mailgun]==10.3
@@ -52,5 +53,3 @@ invoke
 ipython
 pgcli
 rarfile
-# CoMSES citation app - disabled until migration to django 2.0 https://github.com/comses/citation/issues/20
-# -e git+https://github.com/comses/citation.git#egg=citation
