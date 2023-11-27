@@ -1056,6 +1056,11 @@ class CodebaseReleaseQuerySet(models.QuerySet):
     def accessible(self, user):
         return get_viewable_objects_for_user(user, queryset=self)
 
+    def reviewed_without_doi(self, **kwargs):
+        return self.filter(peer_reviewed=True, **kwargs).filter(
+            Q(doi__isnull=True) | Q(doi="")
+        )
+
     def latest_for_feed(self, number=10, include_all=False):
         qs = (
             self.public()
@@ -2359,7 +2364,6 @@ class CodeMeta:
 
     @classmethod
     def convert_target_product(cls, codebase_release: CodebaseRelease):
-
         target_product = {
             "@type": "SoftwareApplication",
             "name": codebase_release.title,
@@ -2376,9 +2380,7 @@ class CodeMeta:
             )
         image_urls = codebase_release.codebase.get_image_urls()
         if image_urls:
-            target_product.update(
-                screenshot=f"{settings.BASE_URL}{image_urls[0]}"
-            )
+            target_product.update(screenshot=f"{settings.BASE_URL}{image_urls[0]}")
         return target_product
 
     @classmethod
