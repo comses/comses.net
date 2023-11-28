@@ -62,8 +62,8 @@
     <meta property="og:type" content="article">
     <meta property="og:title" content="{{ codebase.title }}">
     <meta property="og:description" content="{{ codebase.summarized_description }}">
-    {% if codebase.get_image_urls()|length > 0 %}
-    <meta property="og:image" content="{{ codebase.get_image_urls()[0] }}">
+    {% if codebase.featured_images.exists() %}
+        <meta property="og:image" content="{{ codebase.get_featured_rendition_url() }}">
     {% else %}
         <!-- Provide a fallback image URL -->
         <meta property="og:image" content="{{ static('images/logo-comses.png') }}">
@@ -74,8 +74,8 @@
     <meta property="twitter:url" content="{{ request.build_absolute_uri(absolute_url) }}">
     <meta name="twitter:title" content="{{ codebase.title }}">
     <meta name="twitter:description" content="{{ codebase.summarized_description }}">
-    {% if codebase.get_image_urls()|length > 0 %}
-    <meta property="twitter:image" content="{{ codebase.get_image_urls()[0] }}">
+    {% if codebase.featured_images.exists() %}
+    <meta property="twitter:image" content="{{ codebase.get_featured_rendition_url() }}">
     {% else %}
         <!-- Provide a fallback image URL -->
         <meta property="twitter:image" content="{{ static('images/logo-comses.png') }}">
