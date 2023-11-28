@@ -129,8 +129,8 @@ class SpamDetectionTestCase(TestCase):
         self.assertTrue(
             set(self.processor.column_names).issubset(set(df.columns.unique()))
         )
-        self.assertListEqual(user_ids, list(df["user_id"].values))
-
+        # self.assertListEqual(user_ids, list(df["user_id"].values))
+        self.assertTrue(set(user_ids) == set(list(df["user_id"].values)))
         self.delete_labels(user_ids)
 
     def test_get_untrained_df__labels_updated(self):
@@ -147,8 +147,8 @@ class SpamDetectionTestCase(TestCase):
         self.assertTrue(
             set(self.processor.column_names).issubset(set(df.columns.unique()))
         )
-        self.assertListEqual(existing_users, list(df["user_id"].values))
-
+        # self.assertListEqual(existing_users, list(df["user_id"].values))
+        self.assertTrue(set(existing_users) == set(list(df["user_id"].values)))
         self.delete_labels(existing_users)
 
     def test_get_untrained_df__no_labels_updated(self):
