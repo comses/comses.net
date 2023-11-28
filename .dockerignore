@@ -1,6 +1,6 @@
 .git
-.yarn
-.yarnrc.yml
+.yarn/cache
+.yarn/install-state.gz
 build
 incoming
 docker

@@ -2,6 +2,7 @@ FROM node:lts-bookworm-slim
 
 ENV YARN_VERSION stable
 
+WORKDIR /code
 RUN apt-get update \
     && apt-get install -y libjpeg-turbo-progs \
     git \
@@ -10,9 +11,8 @@ RUN apt-get update \
     && yarn set version $YARN_VERSION \
     && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
-WORKDIR /code
-COPY package.json yarn.lock /code/
-RUN set -ex; \
+COPY package.json yarn.lock .yarnrc.yml /code/
+RUN set -ex;  \
     if [ "$NODE_ENV" = "production" ]; then \
         yarn workspaces focus --production; \
     elif [ "$NODE_ENV" = "test" ] || [ "$NODE_ENV" = "e2e" ]; then \

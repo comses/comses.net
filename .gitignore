@@ -1,11 +1,13 @@
 # app specific
-.yarn
-.yarnrc.yml
 build
 incoming
 logs
 release-version.txt
 config.mk
+
+# yarn things
+# https://yarnpkg.com/getting-started/qa#which-files-should-be-gitignored
+.yarn/*
 
 # vscode
 .devcontainer
