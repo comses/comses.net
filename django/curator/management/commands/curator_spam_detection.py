@@ -12,7 +12,7 @@ class Command(BaseCommand):
     def __init__(self):
         self.detection = SpamDetector()
         self.processor = self.detection.processor
-        self.user_meta_classifier = self.detection.user_metadata_classifier
+        self.user_meta_classifier = self.detection.usermeta_classifier
         self.text_classifier = self.detection.text_classifier
 
     def add_arguments(self, parser):
