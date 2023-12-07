@@ -8,7 +8,7 @@ RUN apt-get update \
     git \
     nasm \
     vim \
-    && yarn set version $YARN_VERSION \
+    && corepack enable && yarn set version $YARN_VERSION \
     && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 COPY package.json yarn.lock .yarnrc.yml /code/
