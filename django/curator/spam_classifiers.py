@@ -176,6 +176,7 @@ class TextSpamClassifier(SpamClassifier):
 
     def fit(self):
         print("Training TextSpamClassifier...")
+        model_metrics = None
         model = Pipeline(
             [
                 ("cleaner", FunctionTransformer(self.preprocess)),
@@ -187,15 +188,15 @@ class TextSpamClassifier(SpamClassifier):
         all_df = self.processor.get_all_users_df()
 
         if all_df.empty:
-            return None
+            return model_metrics # = None
 
         data_x, data_y = self.concat_pd(all_df)
         if data_x.empty:
-            return None
+            return model_metrics # = None
 
         if len(data_y.value_counts()) != 2:
             print("Cannot create a binary classifier!!")
-            return None
+            return model_metrics # = None
 
         (
             train_x,
@@ -218,14 +219,16 @@ class TextSpamClassifier(SpamClassifier):
 
     def predict(self):
         print("TextSpamClassifier is making predictions...")
+        evaluated_user_ids = []
+        spam_user_ids = []
         df = self.processor.get_unlabelled_by_curator_df()
         if df.empty:  # no-op if no data found
-            return []
+            return evaluated_user_ids, spam_user_ids
 
         model = self.load_model(self.MODEL_FILE_PATH)
         data_x, data_y = self.concat_pd(df)
         if data_x.empty:
-            return []
+            return evaluated_user_ids, spam_user_ids
 
         predictions, confidences = self.get_predictions(model, data_x["text"])
 
@@ -282,6 +285,7 @@ class UserMetadataSpamClassifier(SpamClassifier):
 
     def fit(self):
         print("Training UserMetadataSpamClassifier...")
+        model_metrics = None
         model = Pipeline(
             [
                 ("cleaner", FunctionTransformer(self.preprocess)),
@@ -292,11 +296,11 @@ class UserMetadataSpamClassifier(SpamClassifier):
         # obtain df from pipleline
         df = self.processor.get_all_users_df()
         if df.empty:
-            return None  # if no untrained data found
+            return model_metrics  # None if no untrained data found
 
         if len(df["labelled_by_curator"].value_counts()) != 2:
             print("Cannot create a binary classifier!!")
-            return None
+            return model_metrics
 
         feats, targets = self.__input_df_transformation(df)
         (
@@ -321,9 +325,11 @@ class UserMetadataSpamClassifier(SpamClassifier):
 
     def predict(self):
         print("UserMetadataSpamClassifier is making predictions...")
+        evaluated_user_ids = []
+        spam_user_ids = []
         df = self.processor.get_unlabelled_by_curator_df()
         if df.empty:  # no-op if no data found
-            return []
+            return evaluated_user_ids, spam_user_ids
 
         model = self.load_model(self.MODEL_FILE_PATH)
 
@@ -396,6 +402,7 @@ class UserMetadataSpamClassifier(SpamClassifier):
         ].fillna(
             ""
         )
+        
         df.loc[:, ["user_id", "labelled_by_curator"]] = df[
             ["user_id", "labelled_by_curator"]
         ].fillna(0)
