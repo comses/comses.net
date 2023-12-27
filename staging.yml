@@ -38,12 +38,12 @@ services:
   vite:
     build: frontend
     image: comses/comsesnet-vite:${RELEASE_VERSION}
-    command: ["yarn", "build"]
+    command: ["npm", "run", "build"]
     environment:
       NODE_ENV: "production"
     volumes:
       - ./frontend/src:/code/src
-      - ./frontend/yarn.lock:/code/yarn.lock
+      - ./frontend/package-lock.json:/code/package-lock.json
       - ./docker/shared:/shared
       - ./build/secrets/config.ini:/secrets/config.ini
   nginx:

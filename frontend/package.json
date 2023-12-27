@@ -1,10 +1,9 @@
 {
   "name": "frontend",
-  "packageManager": "yarn@4.0.2",
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "serve": "vite",
+    "start": "vite",
     "build": "run-p type-check build-only",
     "build-only": "vite build",
     "preview": "vite preview",
@@ -15,7 +14,7 @@
     "lint:fix": "eslint --fix . --ext .vue,.js,.ts --fix --ignore-path .gitignore",
     "style": "prettier --check src/",
     "style:fix": "prettier --write src/",
-    "tls": "yarn type-check && yarn test && yarn lint && (yarn style || yarn style:fix)"
+    "tls": "npm run type-check && npm run test && npm run lint && (npm run style || npm run style:fix)"
   },
   "dependencies": {
     "@fortawesome/fontawesome-free": "^5.12.0",
@@ -66,5 +65,8 @@
     "vite": "^4.5.1",
     "vitest": "^0.29.1",
     "vue-tsc": "^1.2.0"
+  },
+  "engines": {
+    "yarn": "\n\n! Use npm !\n\n"
   }
 }

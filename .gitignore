@@ -5,16 +5,6 @@ logs
 release-version.txt
 config.mk
 
-# yarn things
-# https://yarnpkg.com/getting-started/qa#which-files-should-be-gitignored
-.pnp.*
-**/.yarn/*
-!**.yarn/patches
-!**.yarn/plugins
-!**.yarn/releases
-!**.yarn/sdks
-!**.yarn/versions
-
 # vscode
 .devcontainer
 .vscode
