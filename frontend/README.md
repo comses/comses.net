@@ -28,20 +28,20 @@ make deploy
 ### Run Unit Tests with [Vitest](https://vitest.dev/)
 
 ```sh
-docker compose exec vite yarn test # run all tests once
+docker compose exec vite npm run test # run all tests once
 # OR
-docker compose exec vite yarn yarn test:watch # run all tests watching for file changes
+docker compose exec vite npm run test:watch # run all tests watching for file changes
 ```
 
 ### Run type-checker
 
 ```sh
-docker compose exec vite yarn type-check
+docker compose exec vite npm run type-check
 ```
 
 ### Linting/formatting
 
 ```sh
-docker compose exec vite yarn lint # lint:fix to attempt to fix linting errors
-docker compose exec vite yarn format # format:fix to fix formatting errors
+docker compose exec vite npm run lint # lint:fix to attempt to fix linting errors
+docker compose exec vite npm run style # style:fix to fix formatting errors
 ```

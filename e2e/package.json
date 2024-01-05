@@ -4,10 +4,14 @@
   "description": "CoMSES Net e2e/integration tests",
   "main": "index.ts",
   "scripts": {
+    "cy:run": "cypress run",
     "test": "./wait-for-it.sh server:8000 -t 120 -- cypress run"
   },
   "devDependencies": {
     "cypress": "^12.8.1",
     "typescript": "~4.8.4"
+  },
+  "engines": {
+    "yarn": "\n\n! Use npm !\n\n"
   }
 }

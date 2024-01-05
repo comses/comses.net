@@ -1,14 +1,14 @@
 FROM cypress/base:18.14.1
 WORKDIR /code
 
-# only install dependencies if package.json or yarn.lock has changed
+# only install dependencies if package.json or package-lock.json has changed
 COPY package.json .
-COPY yarn.lock .
+COPY package-lock.json .
 
 # suppress most of the cypress messages
 ENV CI=1
 
-RUN yarn install --frozen-lockfile
+RUN npm install
 
 # verify that cypress is installed correctly
-RUN yarn cypress verify
+RUN npm run cy:run -- verify
