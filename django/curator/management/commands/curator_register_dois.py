@@ -8,7 +8,6 @@ logger = logging.getLogger(__name__)
 
 
 class Command(BaseCommand):
-
     help = "Mint DOIs for all peer reviewed codebase releases without a DOI"
 
     def handle(self, *args, **options):

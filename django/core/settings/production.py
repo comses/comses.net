@@ -4,6 +4,10 @@ from .staging import *
 # remove staging specific apps like fixture_magic
 INSTALLED_APPS.remove("fixture_magic")
 
+# datacite configuration
+DATACITE_PREFIX = "10.25937"
+DATACITE_TEST_MODE = False
+
 DEBUG = False
 DJANGO_VITE_DEV_MODE = False
 DEPLOY_ENVIRONMENT = Environment.PRODUCTION
