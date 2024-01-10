@@ -1508,6 +1508,10 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
         """Returns a CodeMeta object that can be dumped to json"""
         return CodeMeta.build(self)
 
+    @cached_property
+    def datacite_metadata(self):
+        return DataCiteMetadata.build(self)
+
     @property
     def is_draft(self):
         return self.status == self.Status.DRAFT
@@ -2331,6 +2335,22 @@ class PeerReviewerFeedback(models.Model):
     def __str__(self):
         invitation = self.invitation
         return f"[peer review] {invitation.candidate_reviewer} submitted? {self.reviewer_submitted}, recommendation: {self.get_recommendation_display()}"
+
+
+class DataCiteMetadata:
+    def __init__(self, metadata: dict):
+        if not metadata:
+            raise ValueError(
+                "Initialize with a base dictionary with DataCite terms mapped to JSON-serializable values"
+            )
+        self.metadata = metadata
+
+    @classmethod
+    def build(cls, release: CodebaseRelease):
+        metadata = cls.INITIAL_METADATA.copy()
+        # FIXME: map all metadata in the given release to DataCite terms
+        # https://codemeta.github.io/crosswalk/datacite/
+        return DataCiteMetadata(metadata)
 
 
 class CodeMeta:
