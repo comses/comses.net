@@ -11,7 +11,7 @@ from django.conf import settings
 from typing import List
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.preprocessing import FunctionTransformer
-from sklearn.naive_bayes import MultinomialNB
+# from sklearn.naive_bayes import MultinomialNB
 from sklearn.pipeline import Pipeline
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
@@ -108,9 +108,11 @@ class SpamClassifier(ABC):
         Params : file_path ... Path to the saved model instance
         Returns : Loaded model instance
         """
-        if not os.path.isfile(file_path):
-            self.fit()
-        with open(file_path, "rb") as file:
+        try:
+            file = open(file_path, "rb")
+        except OSError:
+            print("Could not open/read file:", file_path)
+        with file:
             return pickle.load(file)
 
     def save_model(self, model, file_path: str):
@@ -175,28 +177,39 @@ class TextSpamClassifier(SpamClassifier):
         self.MODEL_METRICS_FILE_PATH = SPAM_DIR_PATH / "text_classifier_metrics.json"
 
     def fit(self):
+        """
+        return:
+            - model_metrics ... Dictionary of the following format containing model scores and user_ids
+                                that were used for the validation.
+                                    { "Accuracy": accuracy,
+                                      "Precision": precision,
+                                      "Recall": recall,
+                                      "F1": f1,
+                                      "test_user_ids": test_user_ids,}
+                                If training connot be conducted, it returns empty dictionary. (model_metrics = {})
+        """
         print("Training TextSpamClassifier...")
-        model_metrics = None
+        model_metrics = {}
         model = Pipeline(
             [
                 ("cleaner", FunctionTransformer(self.preprocess)),
                 ("countvectorizer", CountVectorizer(lowercase=True)),
-                ("classifier", MultinomialNB()),
+                ("classifier", xgb.XGBClassifier()),
             ]
         )
 
-        all_df = self.processor.get_all_users_df()
+        # Use labelled samples as training data
+        df = self.processor.get_labelled_by_curator_df()
+        if df.empty:
+            return model_metrics
 
-        if all_df.empty:
-            return model_metrics # = None
-
-        data_x, data_y = self.concat_pd(all_df)
+        data_x, data_y = self.concat_pd(df)
         if data_x.empty:
-            return model_metrics # = None
+            return model_metrics
 
         if len(data_y.value_counts()) != 2:
             print("Cannot create a binary classifier!!")
-            return model_metrics # = None
+            return model_metrics
 
         (
             train_x,
@@ -218,10 +231,15 @@ class TextSpamClassifier(SpamClassifier):
         return model_metrics
 
     def predict(self):
+        """
+        return:
+            - evaluated_user_ids ...
+            - spam_user_ids ...
+        """
         print("TextSpamClassifier is making predictions...")
         evaluated_user_ids = []
         spam_user_ids = []
-        df = self.processor.get_unlabelled_by_curator_df()
+        df = self.processor.get_all_users_df()
         if df.empty:  # no-op if no data found
             return evaluated_user_ids, spam_user_ids
 
@@ -241,10 +259,12 @@ class TextSpamClassifier(SpamClassifier):
         df = pd.DataFrame(result).replace(np.nan, None)
 
         self.processor.update_predictions(df, isTextClassifier=True)
-        evaluated_user_ids = df["user_id"].values.flatten()
-        spam_user_ids = df["user_id"][
-            df["labelled_by_text_classifier"] == 1
-        ].values.flatten()
+        evaluated_user_ids = df["user_id"].values.flatten().tolist()
+        spam_user_ids = (
+            df["user_id"][df["labelled_by_text_classifier"] == 1]
+            .values.flatten()
+            .tolist()
+        )
 
         print("Successfully made predictions!")
         return evaluated_user_ids, spam_user_ids
@@ -293,8 +313,8 @@ class UserMetadataSpamClassifier(SpamClassifier):
                 ("classifier", xgb.XGBClassifier()),
             ]
         )
-        # obtain df from pipleline
-        df = self.processor.get_all_users_df()
+        # Use labelled samples as training data
+        df = self.processor.get_labelled_by_curator_df()
         if df.empty:
             return model_metrics  # None if no untrained data found
 
@@ -327,7 +347,7 @@ class UserMetadataSpamClassifier(SpamClassifier):
         print("UserMetadataSpamClassifier is making predictions...")
         evaluated_user_ids = []
         spam_user_ids = []
-        df = self.processor.get_unlabelled_by_curator_df()
+        df = self.processor.get_all_users_df()
         if df.empty:  # no-op if no data found
             return evaluated_user_ids, spam_user_ids
 
@@ -346,10 +366,12 @@ class UserMetadataSpamClassifier(SpamClassifier):
         df = pd.DataFrame(result).replace(np.nan, None)
 
         self.processor.update_predictions(df, isTextClassifier=False)
-        evaluated_user_ids = df["user_id"].values.flatten()
-        spam_user_ids = df["user_id"][
-            df["labelled_by_user_classifier"] == 1
-        ].values.flatten()
+        evaluated_user_ids = df["user_id"].values.flatten().tolist()
+        spam_user_ids = (
+            df["user_id"][df["labelled_by_user_classifier"] == 1]
+            .values.flatten()
+            .tolist()
+        )
 
         print("Successfully made predictions!")
         return evaluated_user_ids, spam_user_ids
@@ -402,7 +424,7 @@ class UserMetadataSpamClassifier(SpamClassifier):
         ].fillna(
             ""
         )
-        
+
         df.loc[:, ["user_id", "labelled_by_curator"]] = df[
             ["user_id", "labelled_by_curator"]
         ].fillna(0)

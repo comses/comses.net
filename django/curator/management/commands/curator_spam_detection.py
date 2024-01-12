@@ -17,11 +17,18 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument(
-            "--exe",
-            "-e",
+            "--predict",
+            "-p",
             action="store_true",
             default=False,
             help="Print user_ids of spam users and the metrics of the models used to obtain the predictions.",
+        )
+        parser.add_argument(
+            "--fit",
+            "-f",
+            action="store_true",
+            default=False,
+            help="Fit all models based on user data labelled by curator.",
         )
         parser.add_argument(
             "--get_model_metrics",
@@ -35,7 +42,7 @@ class Command(BaseCommand):
             "-l",
             action="store_true",
             default=False,
-            help="Store manually annotated spam labels to the DB.",
+            help="Store bootstrap spam labels to the DB.",
         )
         parser.add_argument(
             "--fit_usermeta_model", "-fu", action="store_true", default=False
@@ -58,8 +65,11 @@ class Command(BaseCommand):
             help="Print user_ids of all the evaluated users and spam users using the Text model",
         )
 
-    def handle_exe(self):
-        self.detection.execute()
+    def handle_predict(self):
+        self.detection.predict()
+    
+    def handle_fit(self):
+        self.detection.fit_classifiers()
 
     def handle_get_model_metrics(self):
         self.detection.get_model_metrics()
@@ -80,8 +90,10 @@ class Command(BaseCommand):
         self.detection.predict_text_spam_classifier()
 
     def handle(self, *args, **options):
-        if options["exe"]:
-            action = "exe"
+        if options["predict"]:
+            action = "predict"
+        elif options["fit"]:
+            action = "fit"
         elif options["get_model_metrics"]:
             action = "get_model_metrics"
         elif options["load_labels"]:

@@ -43,6 +43,16 @@ class SpamDetectionTestCase(TestCase):
             user = User.objects.filter(id=user_id)
             user.delete()
 
+    # def update_labels(self, user_ids):
+    #     middle_idx = len(user_ids)/2 - 1
+    #     label = True
+    #     self.processor.update_labelled_by_curator(user_ids[0:middle_idx], label)
+    #     label = False
+    #     self.processor.update_labelled_by_curator(user_ids[middle_idx:-1], label)
+
+    # def delete_labels(self, user_ids):
+    #     self.processor.update_labelled_by_curator(user_ids, None)
+
     def update_labels(self, user_ids):
         for user_id in user_ids:
             label = random.randint(0, 1)
@@ -52,7 +62,7 @@ class SpamDetectionTestCase(TestCase):
         for user_id in user_ids:
             self.processor.update_labelled_by_curator(user_id, None)
 
-    def get_existing_users(self):
+    def get_existing_user_ids(self):
         user_ids = list(
             UserSpamStatus.objects.all()
             .exclude(member_profile__user_id=None)
@@ -79,93 +89,75 @@ class SpamDetectionTestCase(TestCase):
         self.assertTrue(self.processor.labelled_by_curator_exist())
 
     # ============== Tests for UserSpamStatusProcessor.get_unlabelled_by_curator_df() ==============
-    def test_get_unlabelled_by_curator_df__new_users_added(self):
+    def test_get_labelled_by_curator_df__new_users_added(self):
         """
         case1 : new user data added
             stub data/requirements ... new user data with labelled_by_curator==None
-            assertion ... df with the specific columns with the correct user_ids
+            assertion ... no change in df
         """
 
-        existing_users = self.user_ids
-        user_ids = self.create_new_users()  # default labelled_by_curator==None
-        user_size = len(user_ids) + len(existing_users)
+        existing_user_ids = self.user_ids
+        self.update_labels(
+            existing_user_ids
+        )  # make sure all the existing users have labels
+        existing_df = self.processor.get_labelled_by_curator_df()
 
-        df = self.processor.get_unlabelled_by_curator_df()
+        new_user_ids = self.create_new_users()  # default labelled_by_curator==None
+
+        user_size = len(new_user_ids) + len(existing_user_ids)
+        new_df = self.processor.get_labelled_by_curator_df()
+
+        self.assertEqual(
+            len(existing_df["user_id"].values), len(new_df["user_id"].values)
+        )
+        self.assertGreater(user_size, len(existing_df["user_id"].values))
+        self.assertFalse(set(new_user_ids).issubset(set(new_df["user_id"].values)))
+        self.delete_new_users(new_user_ids)
+
+    def test_get_labelled_by_curator_df__label_added(self):
+        """
+        case2 : new user data added
+            stub data/requirements ... new user data with labelled_by_curator==True/False
+            assertion ... df with the specific columns with the addtional user data that were labelled.
+        """
+        existing_user_ids = self.user_ids
+        self.update_labels(
+            existing_user_ids
+        )  # make sure all the existing users have labels
+
+        new_user_ids = self.create_new_users()  # default labelled_by_curator==None
+        user_size = len(new_user_ids) + len(existing_user_ids)
+
+        self.update_labels(new_user_ids)
+        df = self.processor.get_labelled_by_curator_df()
 
         self.assertIsInstance(df, pd.DataFrame)
         self.assertTrue(
             set(self.processor.column_names).issubset(set(df.columns.unique()))
         )
         self.assertEqual(user_size, len(df["user_id"].values))
-        self.assertTrue(set(user_ids).issubset(set(df["user_id"].values)))
-        self.delete_new_users(user_ids)
+        self.assertTrue(set(new_user_ids).issubset(set(df["user_id"].values)))
+        self.delete_new_users(new_user_ids)
 
-    def test_get_unlabelled_by_curator_df__no_users_added(self):
+    def test_get_labelled_by_curator_df__no_users_added(self):
         """
-        case2 : no new user data added
+        case3 : no new user data added
             stub data/requirements ... all data in DB with correct user_id has values
-                                       with labelled_by_curator!=None
-            assertion ... empty df
+                                        with labelled_by_curator==True/False
+            assertion ... no change in df
         """
-        existing_users = self.user_ids
-        self.update_labels(existing_users)  # simulate a curator labelling the users
+        existing_user_ids = self.user_ids
+        self.update_labels(
+            existing_user_ids
+        )  # make sure all the existing users have labels
+        existing_df = self.processor.get_labelled_by_curator_df()
 
-        df = self.processor.get_unlabelled_by_curator_df()
-        self.assertEqual(len(df), 0)
+        self.update_labels(existing_user_ids)  # making sure all users are labelled
 
-        self.delete_labels(existing_users)
-
-    # ======================== Tests for UserSpamStatusProcessor.get_untrained_df()  ========================
-    def test_get_untrained_df__dataset_loaded(self):
-        """
-        case1 : Just uploaded spam_dataset.csv
-            stub data/requirements ... just called load_labels_from_csv().
-            assertion ... df with the specific columns with the correct user_ids
-        """
-        user_ids = self.processor.load_labels_from_csv()
-
-        df = self.processor.get_untrained_df()
-        self.assertIsInstance(df, pd.DataFrame)
-        self.assertTrue(
-            set(self.processor.column_names).issubset(set(df.columns.unique()))
+        new_df = self.processor.get_labelled_by_curator_df()
+        self.assertEqual(
+            len(existing_df["user_id"].values), len(new_df["user_id"].values)
         )
-        # self.assertListEqual(user_ids, list(df["user_id"].values))
-        self.assertTrue(set(user_ids) == set(list(df["user_id"].values)))
-        self.delete_labels(user_ids)
-
-    def test_get_untrained_df__labels_updated(self):
-        """
-        case2 : labelled_by_curator updated
-            stub data/requirements ...  new labells by curator (users with abelled_by_curator!=None and is_training_data=False)
-            assertion ... df with the specific columns with the correct user_ids
-        """
-        existing_users = self.user_ids
-        self.update_labels(existing_users)  # update labels of exisiting users
-
-        df = self.processor.get_untrained_df()
-        self.assertIsInstance(df, pd.DataFrame)
-        self.assertTrue(
-            set(self.processor.column_names).issubset(set(df.columns.unique()))
-        )
-        # self.assertListEqual(existing_users, list(df["user_id"].values))
-        self.assertTrue(set(existing_users) == set(list(df["user_id"].values)))
-        self.delete_labels(existing_users)
-
-    def test_get_untrained_df__no_labels_updated(self):
-        """
-        case3 : no label updates
-            stub data/requirements ... all data in DB with labelled_by_curator!=None has is_training_data=True
-            assertion ... empty df
-        """
-        existing_users = self.user_ids
-        self.update_labels(existing_users)  # update labels of exisiting users
-        self.mark_as_training_data(existing_users)  # mark the user as training data
-
-        df = self.processor.get_untrained_df()
-        self.assertEqual(len(df), 0)
-
-        self.delete_labels(existing_users)
-        self.unmark_as_training_data(existing_users)
 
     # ================================ Tests for UserMetadataSpamClassifier ================================
     def test_user_meta_classifier_fit(self):
@@ -205,8 +197,8 @@ class SpamDetectionTestCase(TestCase):
             self.processor.load_labels_from_csv()
             self.user_meta_classifier.fit()
 
-        existing_users = self.user_ids
-        self.update_labels(existing_users)
+        existing_user_ids = self.user_ids
+        self.update_labels(existing_user_ids)
         new_user_ids = self.create_new_users()  # default labelled_by_curator==None
         labelled_user_ids, _ = self.user_meta_classifier.predict()
 
@@ -238,12 +230,101 @@ class SpamDetectionTestCase(TestCase):
             # self.add_texts_to_users(user_ids)
             self.text_classifier.fit()
 
-        existing_users = self.user_ids
-        self.update_labels(existing_users)
+        existing_user_ids = self.user_ids
+        self.update_labels(existing_user_ids)
         new_user_ids = self.create_new_users()  # default labelled_by_curator==None
-        self.add_texts_to_users(existing_users)
+        self.add_texts_to_users(existing_user_ids)
         self.add_texts_to_users(new_user_ids)
         labelled_user_ids, _ = self.text_classifier.predict()
 
         self.assertTrue(self.processor.all_have_labels())
         self.assertTrue(bool(set(new_user_ids) & set(labelled_user_ids)))
+
+    # # ============== Tests for UserSpamStatusProcessor.get_unlabelled_by_curator_df() ==============
+    # def test_get_unlabelled_by_curator_df__new_users_added(self):
+    #     """
+    #     case1 : new user data added
+    #         stub data/requirements ... new user data with labelled_by_curator==None
+    #         assertion ... df with the specific columns with the correct user_ids
+    #     """
+
+    #     existing_user_ids = self.user_ids
+    #     user_ids = self.create_new_users()  # default labelled_by_curator==None
+    #     user_size = len(user_ids) + len(existing_user_ids)
+
+    #     df = self.processor.get_unlabelled_by_curator_df()
+
+    #     self.assertIsInstance(df, pd.DataFrame)
+    #     self.assertTrue(
+    #         set(self.processor.column_names).issubset(set(df.columns.unique()))
+    #     )
+    #     self.assertEqual(user_size, len(df["user_id"].values))
+    #     self.assertTrue(set(user_ids).issubset(set(df["user_id"].values)))
+    #     self.delete_new_users(user_ids)
+
+    # def test_get_unlabelled_by_curator_df__no_users_added(self):
+    #     """
+    #     case2 : no new user data added
+    #         stub data/requirements ... all data in DB with correct user_id has values
+    #                                    with labelled_by_curator!=None
+    #         assertion ... empty df
+    #     """
+    #     existing_user_ids = self.user_ids
+    #     self.update_labels(existing_user_ids)  # simulate a curator labelling the users
+
+    #     df = self.processor.get_unlabelled_by_curator_df()
+    #     self.assertEqual(len(df), 0)
+
+    #     self.delete_labels(existing_user_ids)
+
+    # ======================== Tests for UserSpamStatusProcessor.get_untrained_df()  ========================
+    # def test_get_untrained_df__dataset_loaded(self):
+    #     """
+    #     case1 : Just uploaded spam_dataset.csv
+    #         stub data/requirements ... just called load_labels_from_csv().
+    #         assertion ... df with the specific columns with the correct user_ids
+    #     """
+    #     user_ids = self.processor.load_labels_from_csv()
+
+    #     df = self.processor.get_untrained_df()
+    #     self.assertIsInstance(df, pd.DataFrame)
+    #     self.assertTrue(
+    #         set(self.processor.column_names).issubset(set(df.columns.unique()))
+    #     )
+    #     # self.assertListEqual(user_ids, list(df["user_id"].values))
+    #     self.assertTrue(set(user_ids) == set(list(df["user_id"].values)))
+    #     self.delete_labels(user_ids)
+
+    # def test_get_untrained_df__labels_updated(self):
+    #     """
+    #     case2 : labelled_by_curator updated
+    #         stub data/requirements ...  new labells by curator (users with abelled_by_curator!=None and is_training_data=False)
+    #         assertion ... df with the specific columns with the correct user_ids
+    #     """
+    #     existing_user_ids = self.user_ids
+    #     self.update_labels(existing_user_ids)  # update labels of exisiting users
+
+    #     df = self.processor.get_untrained_df()
+    #     self.assertIsInstance(df, pd.DataFrame)
+    #     self.assertTrue(
+    #         set(self.processor.column_names).issubset(set(df.columns.unique()))
+    #     )
+    #     # self.assertListEqual(existing_user_ids, list(df["user_id"].values))
+    #     self.assertTrue(set(existing_user_ids) == set(list(df["user_id"].values)))
+    #     self.delete_labels(existing_user_ids)
+
+    # def test_get_untrained_df__no_labels_updated(self):
+    #     """
+    #     case3 : no label updates
+    #         stub data/requirements ... all data in DB with labelled_by_curator!=None has is_training_data=True
+    #         assertion ... empty df
+    #     """
+    #     existing_user_ids = self.user_ids
+    #     self.update_labels(existing_user_ids)  # update labels of exisiting users
+    #     self.mark_as_training_data(existing_user_ids)  # mark the user as training data
+
+    #     df = self.processor.get_untrained_df()
+    #     self.assertEqual(len(df), 0)
+
+    #     self.delete_labels(existing_user_ids)
+    #     self.unmark_as_training_data(existing_user_ids)

@@ -375,7 +375,7 @@ class UserSpamStatus(models.Model):
     member_profile = models.OneToOneField(
         MemberProfile, on_delete=models.CASCADE, primary_key=True
     )
-    # FIXME: add help_text
+    # TODO: add help_text
     # None = not processed yet
     # True = bio_classifier considered this user to be spam
     # False = bio_classifier did not consider this user to be spam

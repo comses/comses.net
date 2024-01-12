@@ -1,5 +1,6 @@
 import json
 import os
+import sys
 
 from django.conf import settings
 
@@ -25,9 +26,6 @@ class SpamDetector:
         SpamDetection Initialization Steps:
         1. Initializes UserSpamStatusProcessor and the classifier classes
         2. If no data has been labelled by a curator, load datase.csv
-        3. If no model pickle file is found, call fit() of Classifier classes
-            - if all users have None in labelled_by_curator, load to DB by calling Pipeline.load_labels_from_csv()
-            - additionally, if no labels file, throw exception
         """
         self.processor = UserSpamStatusProcessor()
         self.usermeta_classifier = UserMetadataSpamClassifier()
@@ -35,41 +33,45 @@ class SpamDetector:
         if not self.processor.labelled_by_curator_exist():
             self.processor.load_labels_from_csv()
 
+
+    def _check_model_instance_files(self):
         # Check whether UserMetadataSpamClassifier model file exists
-        if os.path.exists(self.usermeta_classifier.MODEL_METRICS_FILE_PATH):
-            with open(self.usermeta_classifier.MODEL_METRICS_FILE_PATH) as json_file:
-                self.usermeta_classifier_metrics = json.load(json_file)
-        else:
-            # If model metrics and instance file don't exist, call fit()
-            self.usermeta_classifier_metrics = self.usermeta_classifier.fit()
+        try:
+            json_file = open(self.usermeta_classifier.MODEL_METRICS_FILE_PATH)
+        except OSError:
+            print("Could not open/read file:", self.usermeta_classifier.MODEL_METRICS_FILE_PATH)
+            print("Please run fit_classifiers() to create model instance and metrics files.")
+            sys.exit()
+        with json_file:
+            self.usermeta_classifier_metrics = json.load(json_file)
+        
+        try:
+            json_file = open(self.text_classifier.MODEL_METRICS_FILE_PATH)
+        except OSError:
+            print("Could not open/read file:", self.text_classifier.MODEL_METRICS_FILE_PATH)
+            print("Please run fit_classifiers() to create model instance and metrics files.")
+            sys.exit()
+        with json_file:
+            self.text_classifier_metrics = json.load(json_file)
 
-        # Check whether TextSpamClassifier model file exists
-        if os.path.exists(self.text_classifier.MODEL_METRICS_FILE_PATH):
-            with open(self.text_classifier.MODEL_METRICS_FILE_PATH) as json_file:
-                self.text_classifier_metrics = json.load(json_file)
-        else:
-            # If model metrics and instance file don't exist, call fit()
-            self.text_classifier_metrics = self.text_classifier.fit()
 
-    def execute(self):
+    def predict(self):
         """
         A default function to obtain the list of spam users and the metrics of the models used to
         obtain the predictions.
 
         Execution Steps:
-            1. Check if there exists user data that should be labelled by the classifier models
-            2. If there exists, class predict() of the classifier classes. This function will store the result in DB at the end.
-            3. Print resluts
+            1. Call predict() of the classifier classes. This function will store the result in DB at the end.
+            2. Print resluts
             4. Return the detection results stored in DB.
         """
         print("Executing spam dectection...")
-        # 1. Check DB for unlabelled users (None in all labelled_by_curator, labelled_by_user_classifier, and labelled_by_text_classifier)
-        if len(self.processor.get_unlabelled_users()) != 0:
-            # 2. if there are some unlabelled users, predict
-            print("Models are making predictions...")
-            self.usermeta_classifier.predict()
-            self.text_classifier.predict()
-            print("Successfully made predictions!")
+        self._check_model_instance_files()
+
+        print("Models are making predictions...")
+        self.usermeta_classifier.predict()
+        self.text_classifier.predict()
+        print("Successfully made predictions!")
 
         result = {
             "spam_users": self.processor.get_spam_users(),
@@ -78,33 +80,9 @@ class SpamDetector:
         }
 
         # 3. Print resluts
-        metadata_model_tested_ids = result["usermeta_spam_classifier"]["test_user_ids"]
-        result["usermeta_spam_classifier"].pop("test_user_ids")
-        metadata_model_metrics = result["usermeta_spam_classifier"]
+        self._print_model_metrics_usermeta(self.usermeta_classifier_metrics)
+        self._print_model_metrics_text(self.text_classifier_metrics)
 
-        text_model_tested_ids = result["text_spam_classifier"]["test_user_ids"]
-        result["text_spam_classifier"].pop("test_user_ids")
-        text_model_metrics = result["text_spam_classifier"]
-
-        print("IDs of Detected Spam User :\n", result["spam_users"])
-        print("\n------------------------------------\n")
-        print(
-            "UserMetadataSpamClassifier Metrics :\n",
-            metadata_model_metrics,
-        )
-        print(
-            "Metrics was calculated based on users with following IDs ....\n",
-            metadata_model_tested_ids,
-        )
-        print("\n------------------------------------\n")
-        print(
-            "TextSpamClassifier Metrics :\n",
-            text_model_metrics,
-        )
-        print(
-            "Metrics was calculated based on users with following IDs ....\n",
-            text_model_tested_ids,
-        )
         # 4. Return spam user_ids and metrics of the model
         return result
 
@@ -115,9 +93,9 @@ class SpamDetector:
         load the JSON metrics files as dictionary and return it.
 
         Execution Steps:
-            1. load the model metrics files from the saving directory
-            2. print the metrics
-            3. return a dictionary of the scores of existing machine learning model instances.
+            1. Load the model metrics files from the saving directory
+            2. Print the metrics
+            3. Return a dictionary of the scores of existing machine learning model instances.
         return:
             {   "usermeta_spam_classifier": {"Accuracy": float,
                                                   "Precision": float,
@@ -128,13 +106,9 @@ class SpamDetector:
                 "text_spam_classifier": { same as above }
             }
         """
+        # 1. Load the model metrics files from the saving directory
         print("Loading model metric files...")
-        # We can assume that model and model metrics files exist after __init__
-        with open(self.usermeta_classifier.MODEL_METRICS_FILE_PATH) as json_file:
-            self.usermeta_classifier_metrics = json.load(json_file)
-
-        with open(self.text_classifier.MODEL_METRICS_FILE_PATH) as json_file:
-            self.text_classifier_metrics = json.load(json_file)
+        self._check_model_instance_files()
 
         print("Successfully loaded model metrics!")
         result = {
@@ -142,34 +116,18 @@ class SpamDetector:
             "text_spam_classifier": self.text_classifier_metrics,
         }
 
-        # Print the model metrics
-        metadata_model_tested_ids = result["usermeta_spam_classifier"]["test_user_ids"]
-        result["usermeta_spam_classifier"].pop("test_user_ids")
-        metadata_model_metrics = result["usermeta_spam_classifier"]
+        # 2. Print the model metrics
+        self._print_model_metrics_usermeta(self.usermeta_classifier_metrics)
+        self._print_model_metrics_text(self.text_classifier_metrics)
 
-        text_model_tested_ids = result["text_spam_classifier"]["test_user_ids"]
-        result["text_spam_classifier"].pop("test_user_ids")
-        text_model_metrics = result["text_spam_classifier"]
-
-        print("\n------------------------------------\n")
-        print(
-            "UserMetadataSpamClassifier Metrics :\n",
-            metadata_model_metrics,
-        )
-        print(
-            "Metrics was calculated based on users with following IDs ....\n",
-            metadata_model_tested_ids,
-        )
-        print("\n------------------------------------\n")
-        print(
-            "TextSpamClassifier Metrics :\n",
-            text_model_metrics,
-        )
-        print(
-            "Metrics was calculated based on users with following IDs ....\n",
-            text_model_tested_ids,
-        )
+        # 3. Return a dictionary of the scores of existing machine learning model instances.
         return result
+
+
+    def fit_classifiers(self):
+        self.fit_usermeta_spam_classifier()
+        self.fit_text_spam_classifier()
+
 
     def fit_usermeta_spam_classifier(self):
         """
@@ -181,18 +139,7 @@ class SpamDetector:
             2. print the model metrics and the user_ids of the users used to calculate the scores.
         """
         model_metrics = self.usermeta_classifier.fit()
-        metadata_model_tested_ids = model_metrics["test_user_ids"]
-        model_metrics.pop("test_user_ids")
-        metadata_model_metrics = model_metrics
-        print("\n------------------------------------\n")
-        print(
-            "UserMetadataSpamClassifier Metrics :\n",
-            metadata_model_metrics,
-        )
-        print(
-            "Metrics was calculated based on users with following IDs ....\n",
-            metadata_model_tested_ids,
-        )
+        self._print_model_metrics_usermeta(model_metrics)
 
     def fit_text_spam_classifier(self):
         """
@@ -204,18 +151,7 @@ class SpamDetector:
             2. print the model metrics and the user_ids of the users used to calculate the scores.
         """
         model_metrics = self.text_classifier.fit()
-        text_model_tested_ids = model_metrics["test_user_ids"]
-        model_metrics.pop("test_user_ids")
-        text_model_metrics = model_metrics
-        print("\n------------------------------------\n")
-        print(
-            "TextSpamClassifier Metrics :\n",
-            text_model_metrics,
-        )
-        print(
-            "Metrics was calculated based on users with following IDs ....\n",
-            text_model_tested_ids,
-        )
+        self._print_model_metrics_text(model_metrics)
 
     def predict_usermeta_spam_classifier(self):
         """
@@ -232,8 +168,22 @@ class SpamDetector:
                 "Since all users were labelled by curator, classifier prediction was not executed.\n"
             )
         else:
-            print("UserMetadataSpamClassifier evaluated users:\n", evaluated_user_ids)
-            print("Spam Users :\n", spam_user_ids)
+            result_filepath = (
+                "/shared/curator/spam/user_meta_classifier_prediction.json"
+            )
+            result = {
+                "spam_user_ids": spam_user_ids,
+                "evaluated_user_ids": evaluated_user_ids,
+            }
+            self._save_prediction_result(result_filepath, result)
+            print("\n------------------------------------")
+            print(
+                "Number of spam users detected by UserMetadataSpamClassifier: %d / %d"
+                % (len(spam_user_ids), len(evaluated_user_ids))
+            )
+            print(
+                "You can find the list of ids of the detected spams and evaluated users"
+            )
 
     def predict_text_spam_classifier(self):
         """
@@ -251,5 +201,63 @@ class SpamDetector:
                 "Since all users were labelled by curator, classifier prediction was not executed.\n"
             )
         else:
-            print("TextSpamClassifier evaluated users:\n", evaluated_user_ids)
-            print("Spam Users :\n", spam_user_ids)
+            result_filepath = "/shared/curator/spam/text_classifier_prediction.json"
+            result = {
+                "spam_user_ids": spam_user_ids,
+                "evaluated_user_ids": evaluated_user_ids,
+            }
+            self._save_prediction_result(result_filepath, result)
+            print("\n------------------------------------")
+            print(
+                "Number of spam users detected by TextSpamClassifier: %d / %d"
+                % (len(spam_user_ids), len(evaluated_user_ids))
+            )
+            print(
+                "You can find the list of ids of the detected spams and evaluated users"
+            )
+
+    def _save_prediction_result(self, filepath, data: dict):
+        with open(filepath, "w") as f:
+            json.dump(data, f, indent=4)
+
+    def _print_model_metrics_usermeta(self, result: dict):
+        metadata_model_tested_ids = result["test_user_ids"]
+        result.pop("test_user_ids")
+        metadata_model_metrics = result
+        print("\n------------------------------------")
+        print(
+            "UserMetadataSpamClassifier Metrics :\n",
+            metadata_model_metrics,
+        )
+        print(
+            "Metrics was calculated based on a test dataset of size ",
+            len(metadata_model_tested_ids),
+        )
+        print(
+            "Here's some of the user IDs in the test dataset.\n",
+            metadata_model_tested_ids[:10],
+        )
+        print(
+            "You can find the rest in /shared/curator/spam/user_meta_classifier_metrics.json"
+        )
+
+    def _print_model_metrics_text(self, result: dict):
+        text_model_tested_ids = result["test_user_ids"]
+        result.pop("test_user_ids")
+        text_model_metrics = result
+        print("\n------------------------------------")
+        print(
+            "TextSpamClassifier Metrics :\n",
+            text_model_metrics,
+        )
+        print(
+            "Metrics was calculated based on a test dataset of size ",
+            len(text_model_tested_ids),
+        )
+        print(
+            "Here's some of the user IDs in the test dataset.\n",
+            text_model_tested_ids[:10],
+        )
+        print(
+            "You can find the rest in /shared/curator/spam/text_classifier_metrics.json"
+        )

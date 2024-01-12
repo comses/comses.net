@@ -1,5 +1,6 @@
 import pandas as pd
 import re
+import sys
 from django.db.models import Q
 from curator.models import UserSpamStatus
 from django.conf import settings
@@ -84,7 +85,7 @@ class UserSpamStatusProcessor:
         for col in df.columns:
             if col in self.type_int_bool_column_names:
                 df[col] = df[col].fillna(0).astype(int)
-                # It is safe to set Nan as 0 because:
+                # It is safe to set None as 0 because:
                 # for training, all values with labelled_by_curator=None are exclueded before passed to this function.
                 # for prediction, the labelled_by_curator column is not used during prediction process.
             else:
@@ -98,60 +99,76 @@ class UserSpamStatusProcessor:
             self.__convert_df_markup_to_string(
                 pd.DataFrame(
                     list(
-                        UserSpamStatus.objects.all()
-                        .exclude(member_profile__user_id=None, labelled_by_curator=None)
-                        .values(*self.db_column_names)
+                        UserSpamStatus.objects.exclude(
+                            member_profile__user_id=None
+                        ).values(*self.db_column_names)
                     )
                 )
             )
         )
 
-    def get_unlabelled_by_curator_df(self):
-        # return : DataFrame of user data that haven't been labeled by curator
+    def get_labelled_by_curator_df(self):
         return self.__rename_columns(
             self.__convert_df_markup_to_string(
                 pd.DataFrame(
                     list(
-                        UserSpamStatus.objects.all()
-                        .exclude(member_profile__user_id=None)
-                        .filter(labelled_by_curator=None)
-                        .values(*self.db_column_names)
+                        UserSpamStatus.objects.exclude(
+                            Q(member_profile__user_id=None)
+                            | Q(labelled_by_curator=None)
+                        ).values(*self.db_column_names)
                     )
                 )
             )
         )
 
-    def get_untrained_df(self):
-        # return : DataFrame of user data that haven't been used for train previously
-        return self.__rename_columns(
-            self.__convert_df_markup_to_string(
-                pd.DataFrame(
-                    list(
-                        UserSpamStatus.objects.all()
-                        .exclude(member_profile__user_id=None, labelled_by_curator=None)
-                        .filter(is_training_data=False)
-                        .values(*self.db_column_names)
-                    )
-                )
-            )
-        )
+    # Currently not using
+    # def get_unlabelled_by_curator_df(self):
+    #     # return : DataFrame of user data that haven't been labeled by curator
+    #     return self.__rename_columns(
+    #         self.__convert_df_markup_to_string(
+    #             pd.DataFrame(
+    #                 list(
+    #                     UserSpamStatus.objects
+    #                     .exclude(member_profile__user_id=None)
+    #                     .filter(labelled_by_curator=None)
+    #                     .values(*self.db_column_names)
+    #                 )
+    #             )
+    #         )
+    #     )
 
-    def get_unlabelled_users(self):
-        unlabelled_users = list(
-            UserSpamStatus.objects.filter(
-                Q(labelled_by_curator=None)
-                & Q(labelled_by_text_classifier=None)
-                & Q(labelled_by_user_classifier=None)
-            )
-        )
-        return unlabelled_users
+    # Currently not using
+    # def get_untrained_df(self):
+    #     # return : DataFrame of user data that haven't been used for train previously
+    #     return self.__rename_columns(
+    #         self.__convert_df_markup_to_string(
+    #             pd.DataFrame(
+    #                 list(
+    #                     UserSpamStatus.objects
+    #                     .exclude(Q(member_profile__user_id=None) | Q(labelled_by_curator=None))
+    #                     .filter(is_training_data=False)
+    #                     .values(*self.db_column_names)
+    #                 )
+    #             )
+    #         )
+    #     )
 
-    # FIXME: tune confidence threshold later
+    # def get_unlabelled_users(self):
+    #     unlabelled_users = list(
+    #         UserSpamStatus.objects.filter(
+    #             Q(labelled_by_curator=None)
+    #             & Q(labelled_by_text_classifier=None)
+    #             & Q(labelled_by_user_classifier=None)
+    #         )
+    #     )
+    #     return unlabelled_users
+
+    # TODO: tune confidence threshold later
     def get_spam_users(self, confidence_threshold=0.5):
         """
         This functions will first filter out the users with labelled_by_curator==True,
-        but the ones with None, only get users with labelled_by_user_classifier == True
-        or labelled_by_text_classifier == True with a specific confidence level.
+        but the ones with None, only get users with labelled_by_user_classifier==True
+        or labelled_by_text_classifier==True with a specific confidence level.
         """
         spam_users = list(
             UserSpamStatus.objects.filter(
@@ -191,17 +208,37 @@ class UserSpamStatusProcessor:
         return : list of user_ids which labelled_by_curator was updated
         """
         print("Loading labels CSV...")
-        label_df = pd.read_csv(filepath)  # TODO add exception
+        try:
+            label_df = pd.read_csv(filepath)
+        except Exception:
+            print("Could not open/read file:", filepath)
+            print("Please locate a dataset with labels at the path of ./curator/spam_dataset.csv")
+            sys.exit()
+        
+        # Use when batch updating of labelled_by_curator is ready
+        # spam_user_ids = label_df[label_df['is_spam']==1]['user_id'].values
+        # ham_user_ids = label_df[label_df['is_spam']==0]['user_id'].values
+
+        # is_spam = True
+        # flag = self.update_labelled_by_curator(spam_user_ids, is_spam)
+        # if flag == 1:
+        #     user_id_list.append(spam_user_ids)
+
+        # is_spam = False
+        # flag = self.update_labelled_by_curator(ham_user_ids, is_spam)
+        # if flag == 1:
+        #     user_id_list.append(ham_user_ids)
+            
         user_id_list = []
         for idx, row in label_df.iterrows():
             flag = self.update_labelled_by_curator(row["user_id"], bool(row["is_spam"]))
             if flag == 1:
                 user_id_list.append(row["user_id"])
         print("Successfully loaded labels from CSV!")
-        print("List of user ids of which label was loaded :\n", user_id_list)
+        print("Number of user ids whose label was loaded: ", len(user_id_list))
         return user_id_list
 
-    def update_labelled_by_curator(self, user_id, label):
+    def update_labelled_by_curator(self, user_id, label): #TODO update with batch
         return UserSpamStatus.objects.filter(member_profile__user_id=user_id).update(
             labelled_by_curator=label
         )  # return 0(fail) or 1(success)
