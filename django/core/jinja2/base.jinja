@@ -272,6 +272,23 @@
     {% endwith %}
 {% endmacro %}
 
+{% macro ogp_tags_base(url=None, title=None, description=None, image=None) %}
+    <!-- Facebook Meta Tags -->
+    <meta property="og:url" content="{{ url or 'https://www.comses.net/'}}">
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="{{ title or 'The Network for Computational Modeling in the Social and Ecological Sciences (CoMSES Net)'}}">
+    <meta property="og:description" content="{{ description or 'CoMSES Net is an international open research community dedicated to fostering good practices for computational / agent based modeling.'}}">
+    <meta property="og:image" content="{{ image or static('images/logo-comses.png') }}">
+
+    <!-- Twitter Meta Tags -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta property="twitter:domain" content="comses.net">
+    <meta property="twitter:url" content="{{ url or 'https://www.comses.net/'}}">
+    <meta name="twitter:title" content="{{ title or 'The Network for Computational Modeling in the Social and Ecological Sciences (CoMSES Net)'}}">
+    <meta name="twitter:description" content="{{ description or 'CoMSES Net is an international open research community dedicated to fostering good practices for computational / agent based modeling.'}}">
+    <meta property="og:image" content="{{ image or static('images/logo-comses.png') }}">
+{% endmacro %}
+
 <!DOCTYPE html>
 <html lang="en" class="no-js">
 <head>
@@ -289,20 +306,8 @@
     <meta name="msapplication-TileColor" content="#da532c">
     <meta name="theme-color" content="#ffffff">
     {% block ogp_tags %}
-    <!-- Facebook Meta Tags -->
-    <meta property="og:url" content="https://www.comses.net/">
-    <meta property="og:type" content="website">
-    <meta property="og:title" content="The Network for Computational Modeling in the Social and Ecological Sciences (CoMSES Net)">
-    <meta property="og:description" content="CoMSES Net is an international open research community dedicated to fostering good practices for computational / agent based modeling.">
-    <meta property="og:image" content="{{ static('images/logo-comses.png') }}">
-    <!-- Twitter Meta Tags -->
-    <meta name="twitter:card" content="summary_large_image">
-    <meta property="twitter:domain" content="comses.net">
-    <meta property="twitter:url" content="https://www.comses.net/">
-    <meta name="twitter:title" content="The Network for Computational Modeling in the Social and Ecological Sciences (CoMSES Net)">
-    <meta name="twitter:description" content="CoMSES Net is an international open research community dedicated to fostering good practices for computational / agent based modeling.">
-    <meta name="twitter:image" content="{{ static('images/logo-comses.png') }}">
-    {% endblock ogp_tags%}
+    {{ ogp_tags_base() }}
+    {% endblock ogp_tags %}
     <title>
         {% block title %}CoMSES Net{% endblock %}
     </title>

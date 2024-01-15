@@ -2,21 +2,6 @@
 {% from "common.jinja" import list_page, paginator, breadcrumb, subnav, member_profile_href, search_tag_href, search_bar
 %}
 
-{% block ogp_tags %}
-    <!-- Facebook Meta Tags -->
-    <meta property="og:url" content="https://www.comses.net/events/">
-    <meta property="og:type" content="website">
-    <meta property="og:title" content="Community Events">
-    <meta property="og:description" content="View all events related to CoMSES">
-    <meta property="og:image" content="{{ static('images/logo-comses.png') }}">
-    <!-- Twitter Meta Tags -->
-    <meta name="twitter:card" content="summary_large_image">
-    <meta property="twitter:domain" content="comses.net">
-    <meta property="twitter:url" content="https://www.comses.net/events/">
-    <meta name="twitter:title" content="Community Events">
-    <meta name="twitter:description" content="View all events related to CoMSES">
-    <meta name="twitter:image" content="{{ static('images/logo-comses.png') }}">
-{% endblock ogp_tags %}
 
 
 {% macro render_event(item, detail_url_name) %}
@@ -100,6 +85,9 @@
 </div>
 {% endmacro %}
 
+
+
+
 {% block title %}Community Events{% endblock %}
 
 {% block introduction %}<h1>Community Events</h1>{% endblock %}
@@ -121,12 +109,19 @@
 {{ pagination_block }}
 {% endblock %}
 
+
+
 {% block content %}
 {{ list_page(__all__, render_event, 'core:event-detail') }}
 {% if count > 10 %}
 {{ pagination_block }}
 {% endif %}
 {% endblock %}
+
+{% block ogp_tags %}
+{{ ogp_tags_base(url="https://www.comses.net/events/", title="Community Events", description="View all events related to CoMSES")}}
+{% endblock ogp_tags %}
+
 
 {% block sidebar %}
 <div id="sidebar"></div>
