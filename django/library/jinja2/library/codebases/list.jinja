@@ -1,5 +1,5 @@
 {% extends "search_layout.jinja" %}
-{% from "common.jinja" import list_page, paginator, breadcrumb, search_bar, ogp_tags_base %}
+{% from "common.jinja" import list_page, paginator, breadcrumb, search_bar, render_ogp_tags %}
 {% from "library/codebases/macros.jinja" import render_codebase_result %}
 
 {% block title %}CoMSES Net Computational Model Library{% endblock %}
@@ -24,7 +24,7 @@
 {% endblock %}
 
 {% block ogp_tags %}
-    {{ ogp_tags_base(url="https://www.comses.net/codebases/", title="Community Codebases", description="View all codebases related to CoMSES") }}
+    {{ render_ogp_tags(url="https://www.comses.net/codebases/", title="Community Codebases", description="View all codebases related to CoMSES") }}
 {% endblock ogp_tags %}
 
 {% block content %}

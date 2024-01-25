@@ -1,9 +1,9 @@
 {% extends "search_layout.jinja" %}
 {% from "common.jinja" import item_component, list_page, paginator, breadcrumb, subnav, member_profile_href,
-search_tag_href, search_bar, ogp_tags_base %}
+search_tag_href, search_bar, render_ogp_tags %}
 
 {% block ogp_tags %}
-{{ ogp_tags_base(url="https://www.comses.net/users/", title="Member Profiles", description="View all users related to CoMSES")}}
+{{ render_ogp_tags(url="https://www.comses.net/users/", title="Member Profiles", description="View all users related to CoMSES")}}
 {% endblock ogp_tags %}
 
 {% macro render_user(member_profile) %}

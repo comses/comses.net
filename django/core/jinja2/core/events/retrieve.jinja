@@ -1,5 +1,5 @@
 {% extends "sidebar_layout.jinja" %}
-{% from "common.jinja" import breadcrumb, embed_discourse_comments, share_card, member_profile_href, search_tag_href, delete_confirm_modal, ogp_tags_base %}
+{% from "common.jinja" import breadcrumb, embed_discourse_comments, share_card, member_profile_href, search_tag_href, delete_confirm_modal, render_ogp_tags %}
 
 {% block title %}{{ title }}{% endblock %}
 
@@ -17,7 +17,7 @@
 {% endblock %}
 
 {% block ogp_tags %}
-    {{ ogp_tags_base(url=request.build_absolute_uri(absolute_url), title=title, description=summary) }}
+    {{ render_ogp_tags(url=request.build_absolute_uri(absolute_url), title=title, description=summary) }}
 {% endblock ogp_tags %}
 
 {% block content %}

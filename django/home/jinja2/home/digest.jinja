@@ -1,8 +1,8 @@
 {% extends "base.jinja" %}
-{% from "common.jinja" import breadcrumb, subnav, import ogp_tags_base %}
+{% from "common.jinja" import breadcrumb, subnav, import render_ogp_tags %}
 
 {% block ogp_tags %}
-    {{ ogp_tags_base(url="https://www.comses.net/", title="The COMSES Digest", description="CoMSES Net is an international open research community dedicated to fostering good practices for computational / agent based modeling.") }}
+    {{ render_ogp_tags(url="https://www.comses.net/", title="The COMSES Digest", description="CoMSES Net is an international open research community dedicated to fostering good practices for computational / agent based modeling.") }}
 {% endblock ogp_tags %}
 
 

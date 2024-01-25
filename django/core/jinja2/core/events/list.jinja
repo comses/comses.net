@@ -1,5 +1,5 @@
 {% extends "search_layout.jinja" %}
-{% from "common.jinja" import list_page, paginator, breadcrumb, subnav, member_profile_href, search_tag_href, search_bar, ogp_tags_base
+{% from "common.jinja" import list_page, paginator, breadcrumb, subnav, member_profile_href, search_tag_href, search_bar, render_ogp_tags
 %}
 
 
@@ -119,7 +119,7 @@
 {% endblock %}
 
 {% block ogp_tags %}
-{{ ogp_tags_base(url="https://www.comses.net/events/", title="Community Events", description="View all events related to CoMSES")}}
+{{ render_ogp_tags(url="https://www.comses.net/events/", title="Community Events", description="View all events related to CoMSES")}}
 {% endblock ogp_tags %}
 
 

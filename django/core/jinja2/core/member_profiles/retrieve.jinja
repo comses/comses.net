@@ -1,5 +1,5 @@
 {% extends "sidebar_layout.jinja" %}
-{% from "common.jinja" import breadcrumb, subnav, affiliation_href, search_tag_btn, render_social_profile_url, ogp_tags_base %}
+{% from "common.jinja" import breadcrumb, subnav, affiliation_href, search_tag_btn, render_social_profile_url, render_ogp_tags %}
 {% from "library/codebases/macros.jinja" import render_codebase_result, render_reviewer_feedback %}
 
 {% block title %}User profile for {{ profile.name }}{% endblock %}
@@ -15,7 +15,7 @@
 {% endblock %}
 
 {% block ogp_tags %}
-{{ ogp_tags_base(url=request.build_absolute_uri(absolute_url), title=profile.name, description=profile.bio)}}
+{{ render_ogp_tags(url=request.build_absolute_uri(absolute_url), title=profile.name, description=profile.bio)}}
 {% endblock ogp_tags %}
 
 {% block content %}

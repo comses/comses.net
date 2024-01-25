@@ -1,4 +1,4 @@
-{% from "common.jinja" import ogp_tags_base%}
+{% from "common.jinja" import render_ogp_tags%}
 
 {% if not user %}
     {% set user = request.user %}
@@ -291,7 +291,7 @@
     <meta name="msapplication-TileColor" content="#da532c">
     <meta name="theme-color" content="#ffffff">
     {% block ogp_tags %}
-    {{ ogp_tags_base() }}
+    {{ render_ogp_tags() }}
     {% endblock ogp_tags %}
     <title>
         {% block title %}CoMSES Net{% endblock %}

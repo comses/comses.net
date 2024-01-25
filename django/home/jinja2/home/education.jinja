@@ -1,8 +1,8 @@
 {% extends "base.jinja" %}
-{% from "common.jinja" import breadcrumb, ogp_tags_base %}
+{% from "common.jinja" import breadcrumb, render_ogp_tags %}
 
 {% block ogp_tags %}
-    {{ ogp_tags_base(url="https://www.comses.net/", title="CoMSES Net Education", description="CoMSES Net training modules provide guidance on good practices for computational modeling and sharing your work with FAIR principles for research software (FAIR4RS) and FORCE11 Software Citation Principles in mind.") }}
+    {{ render_ogp_tags(url="https://www.comses.net/", title="CoMSES Net Education", description="CoMSES Net training modules provide guidance on good practices for computational modeling and sharing your work with FAIR principles for research software (FAIR4RS) and FORCE11 Software Citation Principles in mind.") }}
 {% endblock ogp_tags %}
 
 {% block title %}{{ page.title }}{% endblock %}

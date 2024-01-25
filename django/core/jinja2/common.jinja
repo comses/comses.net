@@ -301,7 +301,7 @@ Currently in <em><mark>{{ constants.DEPLOY_ENVIRONMENT }}</mark></em> mode.
 {{ date.strftime('%B %d, %Y %I:%M %p') }}
 {% endmacro %}
 
-{% macro ogp_tags_base(url=None, title=None, description=None, image=None) %}
+{% macro render_ogp_tags(url=None, title=None, description=None, image=None) %}
     <!-- Facebook Meta Tags -->
     <meta property="og:url" content="{{ url or 'https://www.comses.net/'}}">
     <meta property="og:type" content="website">
