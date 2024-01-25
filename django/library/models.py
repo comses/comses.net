@@ -625,12 +625,10 @@ class Codebase(index.Indexed, ClusterableModel):
         return urls
 
     def get_featured_rendition_url(self):
-        url = self.get_featured_image().get_rendition("max-900x600").url
-
-        if url:
-            return url
-        else:
-            return None
+        featured_image = self.get_featured_image()
+        if featured_image:
+            return featured_image.get_rendition("max-900x600").url
+        return None
 
     def subpath(self, *args):
         return pathlib.Path(self.base_library_dir, *args)
