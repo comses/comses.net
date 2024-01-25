@@ -64,9 +64,11 @@
     <meta property="og:description" content="{{ codebase.summarized_description }}">
     {% if codebase.featured_images.exists() %}
         <meta property="og:image" content="{{ codebase.get_featured_rendition_url() }}">
+        <meta property="twitter:image" content="{{ codebase.get_featured_rendition_url() }}">
     {% else %}
         <!-- Provide a fallback image URL -->
         <meta property="og:image" content="{{ static('images/logo-comses.png') }}">
+        <meta property="twitter:image" content="{{ static('images/logo-comses.png') }}">
     {% endif %}
     <!-- Twitter Meta Tags -->
     <meta name="twitter:card" content="summary_large_image">
@@ -74,12 +76,6 @@
     <meta property="twitter:url" content="{{ request.build_absolute_uri(absolute_url) }}">
     <meta name="twitter:title" content="{{ codebase.title }}">
     <meta name="twitter:description" content="{{ codebase.summarized_description }}">
-    {% if codebase.featured_images.exists() %}
-    <meta property="twitter:image" content="{{ codebase.get_featured_rendition_url() }}">
-    {% else %}
-        <!-- Provide a fallback image URL -->
-        <meta property="twitter:image" content="{{ static('images/logo-comses.png') }}">
-    {% endif %}
 {% endblock ogp_tags %}
 
 {% block content %}
