@@ -1,4 +1,4 @@
-{% from "common.jinja" import render_ogp_tags%}
+{% from "common.jinja" import render_ogp_tags %}
 
 {% if not user %}
     {% set user = request.user %}
@@ -275,7 +275,7 @@
 {% endmacro %}
 
 <!DOCTYPE html>
-<html lang="en" class="no-js">
+<html lang="en" class="no-js" prefix="og: http://ogp.me/ns#">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
@@ -291,7 +291,7 @@
     <meta name="msapplication-TileColor" content="#da532c">
     <meta name="theme-color" content="#ffffff">
     {% block ogp_tags %}
-    {{ render_ogp_tags() }}
+        {{ render_ogp_tags() }}
     {% endblock ogp_tags %}
     <title>
         {% block title %}CoMSES Net{% endblock %}
