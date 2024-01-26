@@ -618,6 +618,12 @@ class Codebase(index.Indexed, ClusterableModel):
                 pass  # image does not exist
         return urls
 
+    def get_featured_rendition_url(self):
+        featured_image = self.get_featured_image()
+        if featured_image:
+            return featured_image.get_rendition("max-900x600").url
+        return None
+
     def subpath(self, *args):
         return pathlib.Path(self.base_library_dir, *args)
 

@@ -1,5 +1,5 @@
 {% extends "search_layout.jinja" %}
-{% from "common.jinja" import list_page, paginator, breadcrumb, search_bar %}
+{% from "common.jinja" import list_page, paginator, breadcrumb, search_bar, render_ogp_tags %}
 {% from "library/codebases/macros.jinja" import render_codebase_result %}
 
 {% block title %}CoMSES Net Computational Model Library{% endblock %}
@@ -24,19 +24,7 @@
 {% endblock %}
 
 {% block ogp_tags %}
-    <!-- Facebook Meta Tags -->
-    <meta property="og:url" content="https://www.comses.net/codebases/">
-    <meta property="og:type" content="website">
-    <meta property="og:title" content="Community Codebases">
-    <meta property="og:description" content="View all codebases related to CoMSES">
-    <meta property="og:image" content="{{ static('images/logo-comses.png') }}">
-    <!-- Twitter Meta Tags -->
-    <meta name="twitter:card" content="summary_large_image">
-    <meta property="twitter:domain" content="comses.net">
-    <meta property="twitter:url" content="https://www.comses.net/codebases/">
-    <meta name="twitter:title" content="Community codebases">
-    <meta name="twitter:description" content="View all codebases related to CoMSES">
-    <meta name="twitter:image" content="{{ static('images/logo-comses.png') }}">
+    {{ render_ogp_tags(url="https://www.comses.net/codebases/", title="Community Codebases", description="View all codebases related to CoMSES") }}
 {% endblock ogp_tags %}
 
 {% block content %}

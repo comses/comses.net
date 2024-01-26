@@ -1,21 +1,9 @@
 {% extends "base.jinja" %}
-{% from "common.jinja" import breadcrumb %}
+{% from "common.jinja" import breadcrumb, render_ogp_tags %}
 
 {% block ogp_tags %}
-    <!-- Facebook Meta Tags -->
-    <meta property="og:url" content="https://www.comses.net/">
-    <meta property="og:type" content="website">
-    <meta property="og:title" content="CoMSES Net Education">
-    <meta property="og:description" content="CoMSES Net training modules provide guidance on good practices for computational modeling and sharing your work with FAIR principles for research software (FAIR4RS) and FORCE11 Software Citation Principles in mind.">
-    <meta property="og:image" content="{{ static('images/logo-comses.png') }}">
-    <!-- Twitter Meta Tags -->
-    <meta name="twitter:card" content="summary_large_image">
-    <meta property="twitter:domain" content="comses.net">
-    <meta property="twitter:url" content="https://www.comses.net/">
-    <meta name="twitter:title" content="CoMSES Net Education">
-    <meta name="twitter:description" content="CoMSES Net training modules provide guidance on good practices for computational modeling and sharing your work with FAIR principles for research software (FAIR4RS) and FORCE11 Software Citation Principles in mind.">
-    <meta name="twitter:image" content="{{ static('images/logo-comses.png') }}">
-{% endblock ogp_tags%}
+    {{ render_ogp_tags(url="https://www.comses.net/", title="CoMSES Net Education", description="CoMSES Net training modules provide guidance on good practices for computational modeling and sharing your work with FAIR principles for research software (FAIR4RS) and FORCE11 Software Citation Principles in mind.") }}
+{% endblock ogp_tags %}
 
 {% block title %}{{ page.title }}{% endblock %}
 

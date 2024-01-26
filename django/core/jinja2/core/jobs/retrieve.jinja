@@ -1,5 +1,5 @@
 {% extends "sidebar_layout.jinja" %}
-{% from "common.jinja" import permission_button_group, breadcrumb, embed_discourse_comments, share_card, member_profile_href, search_tag_href, delete_confirm_modal %}
+{% from "common.jinja" import permission_button_group, breadcrumb, embed_discourse_comments, share_card, member_profile_href, search_tag_href, delete_confirm_modal, render_ogp_tags %}
 
 {% block title %}{{ title }}{% endblock %}
 
@@ -17,19 +17,7 @@
 {% endblock %}
 
 {% block ogp_tags %}
-    <!-- Facebook Meta Tags -->
-    <meta property="og:url" content="{{ request.build_absolute_uri(absolute_url) }}">
-    <meta property="og:type" content="article">
-    <meta property="og:title" content="{{ title }}">
-    <meta property="og:description" content="{{ summary }}">
-    <meta property="og:image" content="/static/images/logo.png">
-    <!-- Twitter Meta Tags -->
-    <meta name="twitter:card" content="summary_large_image">
-    <meta property="twitter:domain" content="comses.net">
-    <meta property="twitter:url" content="{{ request.build_absolute_uri(absolute_url) }}">
-    <meta name="twitter:title" content="{{ title }}">
-    <meta name="twitter:description" content="{{ summary }}">
-    <meta name="twitter:image" content="/static/images/logo.png">
+    {{ render_ogp_tags(url=request.build_absolute_uri(absolute_url), title=title, description=summary) }}
 {% endblock ogp_tags %}
 
 {% block content %}
