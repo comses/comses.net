@@ -13,8 +13,8 @@ def get_datacite_client():
     Get a DataCite REST API client
     """
     return DataCiteRESTClient(
-        username=settings.DATACITE_USERNAME,
-        password=settings.DATACITE_PASSWORD,
+        username=settings.DATACITE_API_USERNAME,
+        password=settings.DATACITE_API_PASSWORD,
         prefix=settings.DATACITE_PREFIX,
         test_mode=settings.DATACITE_TEST_MODE,
     )
