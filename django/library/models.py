@@ -1561,10 +1561,10 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
             self, mimetype_mismatch_message_level=mimetype_mismatch_message_level
         )
 
-    def add_contributor(self, submitter):
-        contributor, created = Contributor.from_user(submitter)
+    def add_contributor(self, user, index=0):
+        codebase_contributor, created = Contributor.from_user(user)
         self.codebase_contributors.create(
-            contributor=contributor, roles=[Role.AUTHOR], index=0
+            contributor=codebase_contributor, roles=[Role.AUTHOR], index=index
         )
 
     @transaction.atomic
@@ -2365,7 +2365,6 @@ class CodeMeta:
 
     @classmethod
     def convert_target_product(cls, codebase_release: CodebaseRelease):
-
         target_product = {
             "@type": "SoftwareApplication",
             "name": codebase_release.title,
@@ -2382,9 +2381,7 @@ class CodeMeta:
             )
         image_urls = codebase_release.codebase.get_image_urls()
         if image_urls:
-            target_product.update(
-                screenshot=f"{settings.BASE_URL}{image_urls[0]}"
-            )
+            target_product.update(screenshot=f"{settings.BASE_URL}{image_urls[0]}")
         return target_product
 
     @classmethod
