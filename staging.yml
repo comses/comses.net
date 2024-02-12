@@ -6,12 +6,9 @@ services:
   elasticsearch:
     restart: always
     environment:
-      - node.name=elasticsearch
       - cluster.name=es-docker-cluster
       - discovery.seed_hosts=es02
       - cluster.initial_master_nodes=elasticsearch,es02
-      - bootstrap.memory_lock=true
-      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
     volumes:
       - esdata1:/usr/share/elasticsearch/data
   # FIXME: duplication bad
@@ -44,8 +41,6 @@ services:
     volumes:
       - ./frontend/src:/code/src
       - ./frontend/package-lock.json:/code/package-lock.json
-      - ./docker/shared:/shared
-      - ./build/secrets/config.ini:/secrets/config.ini
   nginx:
     image: nginx:stable
     restart: always
@@ -73,8 +68,6 @@ services:
     image: comses/server:${RELEASE_VERSION}
     restart: always
     volumes:
-      - ./deploy/elasticsearch.conf.d:/etc/elasticsearch
-      - ./docker/shared:/shared
       - sockets:/shared/sockets
     environment:
       DJANGO_SETTINGS_MODULE: "core.settings.staging"

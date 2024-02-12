@@ -35,14 +35,23 @@ CSP_SCRIPT_SRC = (
     "'self'",
     "cdnjs.cloudflare.com",
     "browser.sentry-cdn.com",
-    "www.googletagmanager.com",
-    "www.google-analytics.com",
     "https://comses.net",
     "https://*.comses.net",
     "https://hcaptcha.com",
     "https://*.hcaptcha.com",
 )
-CSP_IMG_SRC = ("'self'", "data:", "i.ytimg.com", "www.google-analytics.com")
+CSP_CONNECT_SRC = (
+    "'self'",
+    "https://*.google-analytics.com",
+    "https://*.analytics.google.com",
+    "https://*.googletagmanager.com",
+    "https://*.g.doubleclick.net",
+    "https://*.google.com",
+    "https://*.google.<TLD>",
+)
+CSP_IMG_SRC = ("'self'", "data:", "i.ytimg.com", "https://*.google-analytics.com", "https://*.googletagmanager.com",
+               "https://*.analytics.google.com", "https://*.g.doubleclick.net", "https://*.google.com",
+               "https://*.google.<TLD>",)
 CSP_INCLUDE_NONCE_IN = ["script-src"]
 
 # Base URL to use when referring to full URLs within the Wagtail admin backend -
