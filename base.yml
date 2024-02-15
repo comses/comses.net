@@ -69,8 +69,8 @@ services:
         condition: service_started
       vite:
         condition: service_started
-    environment:
-      CLEAN_DATABASE: "false"
+    env_file:
+      - .env
 volumes:
   esdata:
     driver: local

@@ -23,11 +23,11 @@ MEDIA_ROOT = path.join(SHARE_DIR, "media")
 
 DATABASES["dump_restore"] = {
     "ENGINE": "django.db.backends.postgresql",
-    "NAME": "dump_restore_{}".format(config.get("database", "DB_NAME")),
-    "USER": config.get("database", "DB_USER"),
-    "PASSWORD": config.get("database", "DB_PASSWORD"),
-    "HOST": config.get("database", "DB_HOST"),
-    "PORT": config.get("database", "DB_PORT"),
+    "NAME": "dump_restore_{}".format(os.getenv("DB_NAME")),
+    "USER": os.getenv("DB_USER"),
+    "PASSWORD": os.getenv("DB_PASSWORD"),
+    "HOST": os.getenv("DB_HOST"),
+    "PORT": os.getenv("DB_PORT"),
 }
 
 

@@ -7,9 +7,7 @@ INSTALLED_APPS.remove("fixture_magic")
 DEBUG = False
 DJANGO_VITE_DEV_MODE = False
 DEPLOY_ENVIRONMENT = Environment.PRODUCTION
-EMAIL_SUBJECT_PREFIX = config.get(
-    "email", "EMAIL_SUBJECT_PREFIX", fallback="[comses.net]"
-)
+EMAIL_SUBJECT_PREFIX = os.getenv("EMAIL_SUBJECT_PREFIX", "[comses.net]")
 # See http://django-allauth.readthedocs.io/en/latest/providers.html#orcid for more context.
 #
 # staging settings include a customized sandbox orcid provider that we remove in production. In production, the ORCID
@@ -49,9 +47,17 @@ CSP_CONNECT_SRC = (
     "https://*.google.com",
     "https://*.google.<TLD>",
 )
-CSP_IMG_SRC = ("'self'", "data:", "i.ytimg.com", "https://*.google-analytics.com", "https://*.googletagmanager.com",
-               "https://*.analytics.google.com", "https://*.g.doubleclick.net", "https://*.google.com",
-               "https://*.google.<TLD>",)
+CSP_IMG_SRC = (
+    "'self'",
+    "data:",
+    "i.ytimg.com",
+    "https://*.google-analytics.com",
+    "https://*.googletagmanager.com",
+    "https://*.analytics.google.com",
+    "https://*.g.doubleclick.net",
+    "https://*.google.com",
+    "https://*.google.<TLD>",
+)
 CSP_INCLUDE_NONCE_IN = ["script-src"]
 
 # Base URL to use when referring to full URLs within the Wagtail admin backend -

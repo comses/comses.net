@@ -9,7 +9,6 @@ Wagtail settings reference:
 
 """
 
-import configparser
 import os
 from enum import Enum
 
@@ -231,50 +230,34 @@ ADMIN_DASHBOARD_MAX_ITEMS = 15
 # from now to 90 days ago
 ADMIN_DASHBOARD_DAYS = 90
 
-config = configparser.ConfigParser()
-# FIXME: switch to docker secrets instead
-config.read("/run/secrets/config.ini")
-
-RELEASE_VERSION = config.get("default", "BUILD_ID", fallback="v2023.01")
+RELEASE_VERSION = os.getenv("RELEASE_VERSION", "v2024.01")
 
 # default from email for various automated emails sent by Django
-DEFAULT_FROM_EMAIL = config.get(
-    "email", "DEFAULT_FROM_EMAIL", fallback="info@comses.net"
-)
+DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL", "info@comses.net")
 # email address used for errors emails sent to ADMINS and MANAGERS
-SERVER_EMAIL = config.get("email", "SERVER_EMAIL", fallback="editors@comses.net")
-EDITOR_EMAIL = config.get("email", "EDITOR_EMAIL", fallback="editors@comses.net")
-REVIEW_EDITOR_EMAIL = config.get(
-    "email", "REVIEW_EDITOR_EMAIL", fallback="reviews@comses.net"
-)
+SERVER_EMAIL = os.getenv("SERVER_EMAIL", "editors@comses.net")
+EDITOR_EMAIL = os.getenv("EDITOR_EMAIL", "editors@comses.net")
+REVIEW_EDITOR_EMAIL = os.getenv("REVIEW_EDITOR_EMAIL", "reviews@comses.net")
 # default email subject prefix
-EMAIL_SUBJECT_PREFIX = config.get(
-    "email", "EMAIL_SUBJECT_PREFIX", fallback="[CoMSES Net]"
-)
+EMAIL_SUBJECT_PREFIX = os.getenv("EMAIL_SUBJECT_PREFIX", "[CoMSES Net]")
 
 # number of days before a peer review invitation expires
 PEER_REVIEW_INVITATION_EXPIRATION = 21
 
-# RECAPTCHA_PUBLIC_KEY = config.get('captcha', 'RECAPTCHA_PUBLIC_KEY', fallback='')
-# RECAPTCHA_PRIVATE_KEY = config.get('captcha', 'RECAPTCHA_PRIVATE_KEY', fallback='')
+# RECAPTCHA_PUBLIC_KEY = os.getenv('RECAPTCHA_PUBLIC_KEY', '')
+# RECAPTCHA_PRIVATE_KEY = os.getenv('RECAPTCHA_PRIVATE_KEY', '')
 # NOCAPTCHA = True
 
 # sentry DSN
-SENTRY_DSN = config.get(
-    "logging", "SENTRY_DSN", fallback="https://sentry.example.com/2"
-)
+SENTRY_DSN = os.getenv("SENTRY_DSN", "https://sentry.example.com/2")
 
-SECRET_KEY = config.get("secrets", "SECRET_KEY")
+SECRET_KEY = os.getenv("SECRET_KEY")
 
 # regular settings
 
-EXPIRED_JOB_DAYS_THRESHOLD = config.getint(
-    "default", "EXPIRED_JOB_DAYS_THRESHOLD", fallback=180
-)
+EXPIRED_JOB_DAYS_THRESHOLD = int(os.getenv("EXPIRED_JOB_DAYS_THRESHOLD", 180))
 
-EXPIRED_EVENT_DAYS_THRESHOLD = config.getint(
-    "default", "EXPIRED_EVENT_DAYS_THRESHOLD", fallback=2
-)
+EXPIRED_EVENT_DAYS_THRESHOLD = int(os.getenv("EXPIRED_EVENT_DAYS_THRESHOLD", 2))
 
 # Database configuration
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
@@ -284,25 +267,19 @@ DEFAULT_AUTO_FIELD = "django.db.models.AutoField"
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql",
-        "NAME": config.get("database", "DB_NAME"),
-        "USER": config.get("database", "DB_USER"),
-        "PASSWORD": config.get("database", "DB_PASSWORD"),
-        "HOST": config.get("database", "DB_HOST"),
-        "PORT": config.get("database", "DB_PORT"),
+        "NAME": os.getenv("DB_NAME"),
+        "USER": os.getenv("DB_USER"),
+        "PASSWORD": os.getenv("DB_PASSWORD"),
+        "HOST": os.getenv("DB_HOST"),
+        "PORT": os.getenv("DB_PORT"),
     }
 }
 
 SHARE_DIR = "/shared"
-LOG_DIRECTORY = config.get(
-    "logging", "LOG_DIRECTORY", fallback=os.path.join(BASE_DIR, "logs")
-)
-LIBRARY_ROOT = config.get(
-    "storage", "LIBRARY_ROOT", fallback=os.path.join(BASE_DIR, "library")
-)
+LOG_DIRECTORY = os.getenv("LOG_DIRECTORY", os.path.join(BASE_DIR, "logs"))
+LIBRARY_ROOT = os.getenv("LIBRARY_ROOT", os.path.join(BASE_DIR, "library"))
 PREVIOUS_SHARE_ROOT = os.path.join(SHARE_DIR, ".latest")
-REPOSITORY_ROOT = config.get(
-    "storage", "REPOSITORY_ROOT", fallback=os.path.join(BASE_DIR, "repository")
-)
+REPOSITORY_ROOT = os.getenv("REPOSITORY_ROOT", os.path.join(BASE_DIR, "repository"))
 BORG_ROOT = "/shared/backups/repo"
 BACKUP_ROOT = "/shared/backups"
 EXTRACT_ROOT = "/shared/extract"
@@ -417,7 +394,7 @@ STATICFILES_FINDERS = [
 ]
 
 # django-vite settings
-DJANGO_VITE_ASSETS_PATH = config.get("storage", "VITE_ROOT", fallback="/shared/vite")
+DJANGO_VITE_ASSETS_PATH = os.getenv("VITE_ROOT", "/shared/vite")
 DJANGO_VITE_STATIC_URL_PREFIX = "bundles"
 DJANGO_VITE_DEV_SERVER_PORT = 5000
 DJANG_VITE_MANIFEST_PATH = os.path.join(
@@ -496,17 +473,15 @@ ACCOUNT_LOGIN_ON_EMAIL_CONFIRMATION = True
 # allow django-allauth to change emails
 ACCOUNT_CHANGE_EMAIL = True
 
-ORCID_CLIENT_ID = config.get("secrets", "ORCID_CLIENT_ID", fallback="")
-ORCID_CLIENT_SECRET = config.get("secrets", "ORCID_CLIENT_SECRET", fallback="")
+ORCID_CLIENT_ID = os.getenv("ORCID_CLIENT_ID", "")
+ORCID_CLIENT_SECRET = os.getenv("ORCID_CLIENT_SECRET", "")
 
-GITHUB_CLIENT_ID = config.get("secrets", "GITHUB_CLIENT_ID", fallback="")
-GITHUB_CLIENT_SECRET = config.get("secrets", "GITHUB_CLIENT_SECRET", fallback="")
+GITHUB_CLIENT_ID = os.getenv("GITHUB_CLIENT_ID", "")
+GITHUB_CLIENT_SECRET = os.getenv("GITHUB_CLIENT_SECRET", "")
 
-TEST_BASIC_AUTH_PASSWORD = config.get(
-    "test", "TEST_BASIC_AUTH_PASSWORD", fallback="test password"
-)
-TEST_USER_ID = config.get("test", "TEST_USER_ID", fallback=1000000)
-TEST_USERNAME = config.get("test", "TEST_USERNAME", fallback="__test_user__")
+TEST_BASIC_AUTH_PASSWORD = os.getenv("TEST_BASIC_AUTH_PASSWORD", "test password")
+TEST_USER_ID = os.getenv("TEST_USER_ID", 1000000)
+TEST_USERNAME = os.getenv("TEST_USERNAME", "__test_user__")
 
 SOCIALACCOUNT_PROVIDERS = {
     # https://developer.github.com/apps/building-integrations/setting-up-and-registering-oauth-apps/about-scopes-for-oauth-apps/
@@ -525,16 +500,12 @@ SOCIALACCOUNT_PROVIDERS = {
 }
 
 
-DISCOURSE_BASE_URL = config.get(
-    "discourse", "DISCOURSE_BASE_URL", fallback="https://staging-discourse.comses.net"
+DISCOURSE_BASE_URL = os.getenv(
+    "DISCOURSE_BASE_URL", "https://staging-discourse.comses.net"
 )
-DISCOURSE_SSO_SECRET = config.get(
-    "secrets", "DISCOURSE_SSO_SECRET", fallback="unconfigured"
-)
-DISCOURSE_API_KEY = config.get("secrets", "DISCOURSE_API_KEY", fallback="unconfigured")
-DISCOURSE_API_USERNAME = config.get(
-    "discourse", "DISCOURSE_API_USERNAME", fallback="unconfigured"
-)
+DISCOURSE_SSO_SECRET = os.getenv("DISCOURSE_SSO_SECRET", "unconfigured")
+DISCOURSE_API_KEY = os.getenv("DISCOURSE_API_KEY", "unconfigured")
+DISCOURSE_API_USERNAME = os.getenv("DISCOURSE_API_USERNAME", "unconfigured")
 
 # https://docs.djangoproject.com/en/4.2/ref/settings/#templates
 TEMPLATES = [

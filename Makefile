@@ -1,22 +1,19 @@
 DEPLOY_ENVIRONMENT := dev
-DB_USER=comsesnet
+
 DOCKER_SHARED_DIR=docker/shared
 DOCKER_DB_DATA_DIR=docker/pgdata
+
 BUILD_DIR=build
 SECRETS_DIR=${BUILD_DIR}/secrets
 DB_PASSWORD_PATH=${SECRETS_DIR}/db_password
 PGPASS_PATH=${SECRETS_DIR}/.pgpass
 SECRET_KEY_PATH=${SECRETS_DIR}/secret_key
-SENTRY_DSN_PATH=${SECRETS_DIR}/sentry_dsn
+GENERATED_SECRETS=$(DB_PASSWORD_PATH) $(PGPASS_PATH) $(SECRET_KEY_PATH)
+
+ENVREPLACE := deploy/scripts/envreplace
 DEPLOY_CONF_DIR=deploy/conf
-PGPASS_TEMPLATE=${DEPLOY_CONF_DIR}/pgpass.template
-CONFIG_INI_TEMPLATE=${DEPLOY_CONF_DIR}/config.ini.template
-DOCKER_ENV_PATH=${DEPLOY_CONF_DIR}/docker.env
-CONFIG_INI_PATH=${SECRETS_DIR}/config.ini
-MAIL_API_KEY_PATH=${SECRETS_DIR}/mail_api_key
-SECRETS=$(MAIL_API_KEY_PATH) $(DB_PASSWORD_PATH) $(CONFIG_INI_PATH) $(PGPASS_PATH) $(SENTRY_DSN_PATH) $(SECRET_KEY_PATH) .env
-BUILD_ID=$(shell git describe --tags --abbrev=1)
-BUILD_ID_PATH=${SECRETS_DIR}/.build-id.txt
+ENV_TEMPLATE=${DEPLOY_CONF_DIR}/.env.template
+
 # assumes a .tar.xz file
 BORG_REPO_URL := https://example.com/repo.tar.xz
 BORG_REPO_PATH=${BUILD_DIR}/sparse-repo.tar.xz
@@ -31,15 +28,11 @@ include .env
 .EXPORT_ALL_VARIABLES:
 
 .PHONY: build
-build: docker-compose.yml secrets $(DOCKER_SHARED_DIR) $(BUILD_ID_PATH)
+build: docker-compose.yml secrets $(DOCKER_SHARED_DIR)
 	docker compose build --pull
 
 $(BORG_REPO_PATH):
 	wget ${BORG_REPO_URL} -P ${BUILD_DIR}
-
-$(BUILD_ID_PATH):
-	BUILD_ID=${BUILD_ID} \
-	echo "$${BUILD_ID}" > ${BUILD_ID_PATH}
 
 config.mk:
 	DEPLOY_ENVIRONMENT=${DEPLOY_ENVIRONMENT} envsubst < ${DEPLOY_CONF_DIR}/config.mk.template > config.mk
@@ -54,6 +47,10 @@ $(DOCKER_SHARED_DIR):
 ${SECRETS_DIR}:
 	mkdir -p ${SECRETS_DIR}
 
+$(SECRET_KEY_PATH): | ${SECRETS_DIR}
+	SECRET_KEY=$$(openssl rand -base64 48); \
+	echo "$${SECRET_KEY}" > $(SECRET_KEY_PATH)
+
 $(DB_PASSWORD_PATH): | ${SECRETS_DIR}
 	DB_PASSWORD=$$(openssl rand -base64 48); \
 	TODAY=$$(date +%Y-%m-%d-%H:%M:%S); \
@@ -65,34 +62,23 @@ $(DB_PASSWORD_PATH): | ${SECRETS_DIR}
 	@echo "db password at $(DB_PASSWORD_PATH) was reset, may need to manually update existing db password"
 
 $(PGPASS_PATH): $(DB_PASSWORD_PATH) $(PGPASS_TEMPLATE) | ${SECRETS_DIR}
-	DB_PASSWORD=$$(cat $(DB_PASSWORD_PATH)); \
-	sed -e "s|DB_PASSWORD|$$DB_PASSWORD|" -e "s|DB_HOST|${DB_HOST}|" \
-			-e "s|DB_USER|${DB_USER}|" $(PGPASS_TEMPLATE) > $(PGPASS_PATH)
+	echo "${DB_HOST}:5432:*:${DB_USER}:$$(cat $(DB_PASSWORD_PATH))" > $(PGPASS_PATH)
 	chmod 0600 $(PGPASS_PATH)
 
-$(MAIL_API_KEY_PATH): | ${SECRETS_DIR}
-	touch "$(MAIL_API_KEY_PATH)"
+.PHONY: build-id
+build-id: .env
+	$(ENVREPLACE) BUILD_ID $$(git describe --tags --abbrev=1) .env
 
-$(SENTRY_DSN_PATH): | ${SECRETS_DIR}
-	touch "$(SENTRY_DSN_PATH)"
-
-.env: $(DOCKER_ENV_PATH)
-	cp ${DOCKER_ENV_PATH} .env
-
-$(CONFIG_INI_PATH): .env $(DB_PASSWORD_PATH) $(CONFIG_INI_TEMPLATE) $(SECRET_KEY_PATH) $(BUILD_ID_PATH)
-	DB_HOST=${DB_HOST} DB_NAME=${DB_NAME} DB_PASSWORD=$$(cat ${DB_PASSWORD_PATH}) \
-	DB_USER=${DB_USER} DB_PORT=${DB_PORT} DJANGO_SECRET_KEY=$$(cat ${SECRET_KEY_PATH}) \
-	TEST_USERNAME=___test_user___ TEST_BASIC_AUTH_PASSWORD=$$(openssl rand -base64 42) \
-	SENTRY_DSN=$(shell cat $(SENTRY_DSN_PATH)) \
-	TEST_USER_ID=1111111 BUILD_ID=${BUILD_ID} \
-	envsubst < ${CONFIG_INI_TEMPLATE} > ${CONFIG_INI_PATH}
-
-$(SECRET_KEY_PATH): | ${SECRETS_DIR}
-	SECRET_KEY=$$(openssl rand -base64 48); \
-	echo "$${SECRET_KEY}" > $(SECRET_KEY_PATH)
+.env: $(DB_PASSWORD_PATH) $(SECRET_KEY_PATH)
+	if [ ! -f .env ]; then \
+		cp $(ENV_TEMPLATE) .env; \
+	fi; \
+	$(ENVREPLACE) DB_PASSWORD $$(cat $(DB_PASSWORD_PATH)) .env; \
+	$(ENVREPLACE) SECRET_KEY $$(cat $(SECRET_KEY_PATH)) .env; \
+	$(ENVREPLACE) TEST_BASIC_AUTH_PASSWORD $$(openssl rand -base64 42) .env
 
 .PHONY: docker-compose.yml
-docker-compose.yml: base.yml dev.yml staging.yml prod.yml config.mk $(PGPASS_PATH) .env
+docker-compose.yml: base.yml dev.yml staging.yml prod.yml config.mk $(PGPASS_PATH) build-id
 	case "$(DEPLOY_ENVIRONMENT)" in \
 	  dev|staging|e2e) docker compose -f base.yml -f $(DEPLOY_ENVIRONMENT).yml config > docker-compose.yml;; \
 	  prod) docker compose -f base.yml -f staging.yml -f $(DEPLOY_ENVIRONMENT).yml config > docker-compose.yml;; \
@@ -100,11 +86,11 @@ docker-compose.yml: base.yml dev.yml staging.yml prod.yml config.mk $(PGPASS_PAT
 	esac
 
 .PHONY: set-db-password
-set-db-password: $(DB_PASSWORD_PATH) $(CONFIG_INI_PATH)
+set-db-password: $(DB_PASSWORD_PATH) .env
 	docker compose run --rm server psql -h db -U comsesnet comsesnet -c "ALTER USER ${DB_USER} with password '$(shell cat ${DB_PASSWORD_PATH})';"
 
 .PHONY: secrets
-secrets: $(SECRETS_DIR) $(SECRETS)
+secrets: $(SECRETS_DIR) $(GENERATED_SECRETS)
 
 .PHONY: deploy
 deploy: build
@@ -137,7 +123,7 @@ restore: build $(BORG_REPO_PATH) | $(REPO_BACKUPS_PATH)
 .PHONY: clean
 clean:
 	@echo "Backing up generated files to /tmp directory"
-	mv .env config.mk docker-compose.yml $(CONFIG_INI_PATH) $(shell mktemp -d)
+	mv .env config.mk docker-compose.yml $(shell mktemp -d)
 
 .PHONY: test
 test: build
