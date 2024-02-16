@@ -65,9 +65,9 @@ $(PGPASS_PATH): $(DB_PASSWORD_PATH) $(PGPASS_TEMPLATE) | ${SECRETS_DIR}
 	echo "${DB_HOST}:5432:*:${DB_USER}:$$(cat $(DB_PASSWORD_PATH))" > $(PGPASS_PATH)
 	chmod 0600 $(PGPASS_PATH)
 
-.PHONY: build-id
-build-id: .env
-	$(ENVREPLACE) BUILD_ID $$(git describe --tags --abbrev=1) .env
+.PHONY: release-version
+release-version: .env
+	$(ENVREPLACE) RELEASE_VERSION $$(git describe --tags --abbrev=1) .env
 
 .env: $(DB_PASSWORD_PATH) $(SECRET_KEY_PATH)
 	if [ ! -f .env ]; then \
@@ -78,7 +78,7 @@ build-id: .env
 	$(ENVREPLACE) TEST_BASIC_AUTH_PASSWORD $$(openssl rand -base64 42) .env
 
 .PHONY: docker-compose.yml
-docker-compose.yml: base.yml dev.yml staging.yml prod.yml config.mk $(PGPASS_PATH) build-id
+docker-compose.yml: base.yml dev.yml staging.yml prod.yml config.mk $(PGPASS_PATH) release-version
 	case "$(DEPLOY_ENVIRONMENT)" in \
 	  dev|staging|e2e) docker compose -f base.yml -f $(DEPLOY_ENVIRONMENT).yml config > docker-compose.yml;; \
 	  prod) docker compose -f base.yml -f staging.yml -f $(DEPLOY_ENVIRONMENT).yml config > docker-compose.yml;; \
