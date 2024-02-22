@@ -2365,7 +2365,6 @@ class CodeMeta:
 
     @classmethod
     def convert_target_product(cls, codebase_release: CodebaseRelease):
-
         target_product = {
             "@type": "SoftwareApplication",
             "name": codebase_release.title,
@@ -2382,9 +2381,7 @@ class CodeMeta:
             )
         image_urls = codebase_release.codebase.get_image_urls()
         if image_urls:
-            target_product.update(
-                screenshot=f"{settings.BASE_URL}{image_urls[0]}"
-            )
+            target_product.update(screenshot=f"{settings.BASE_URL}{image_urls[0]}")
         return target_product
 
     @classmethod

@@ -1,3 +1,4 @@
+# set DEPLOY_ENVIRONMENT in config.mk
 DEPLOY_ENVIRONMENT := dev
 
 DOCKER_SHARED_DIR=docker/shared
@@ -8,7 +9,7 @@ SECRETS_DIR=${BUILD_DIR}/secrets
 DB_PASSWORD_PATH=${SECRETS_DIR}/db_password
 PGPASS_PATH=${SECRETS_DIR}/.pgpass
 SECRET_KEY_PATH=${SECRETS_DIR}/django_secret_key
-EXT_SECRETS=mailgun_api_key hcaptcha_secret github_client_secret orcid_client_secret discourse_api_key discourse_sso_secret mail_api_key
+EXT_SECRETS=hcaptcha_secret github_client_secret orcid_client_secret discourse_api_key discourse_sso_secret mail_api_key
 GENERATED_SECRETS=$(DB_PASSWORD_PATH) $(PGPASS_PATH) $(SECRET_KEY_PATH)
 
 ENVREPLACE := deploy/scripts/envreplace
