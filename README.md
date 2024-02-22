@@ -16,17 +16,17 @@ Members who participate in this project agree to abide by the [CoMSES Net Code o
 
 Members are encouraged to participate and we welcome contributions of all kinds to our collective effort. Here's how you can contribute:
 
-### Archive your Model Source Code
+### Publish your Model Source Code
 
-We develop and maintain the CoMSES Model Library, a digital repository to archive model code that supports discovery and the FAIR Data Principles for software citation, reproducibility and reuse.
+We develop and maintain the CoMSES Model Library, a digital repository for publishing model code that supports discovery and the [FAIR Principles for Research Software](https://doi.org/10.15497/RDA00068), software citation, reproducibility and reuse.
 
-Archive your model here: [https://www.comses.net/codebases/](https://www.comses.net/codebases/)
+Publish your model here: [https://www.comses.net/codebases/](https://www.comses.net/codebases/)
 
 ### Peer Reviews
 
 The [CoMSES Net Peer Review Process](https://www.comses.net/reviews/) helps to verify that a computational model's source code and documentation meets [baseline community standards](https://www.comses.net/resources/guides-to-good-practice/) from the software engineering and scientific communities that we serve.
 
-Peer reviewers follow a 3 item checklist and inspect model code and documentation for completeness, cleanliness, and the ability to run the computational model without errors.
+Peer reviewers follow a simple checklist and inspect model code and documentation for completeness, cleanliness, and the ability to run the computational model without errors.
 
 We're always looking for new members willing to review computational models. Feel free to submit your own computational models for peer review as well - after they pass peer review they will be eligible to be issued a DOI. 
 
@@ -44,7 +44,7 @@ Jobs board: [https://www.comses.net/jobs/](https://www.comses.net/jobs/)
 
 ### Usability Testing
 
-CoMSES Net is actively working with the [Science Gateways Community Institute](https://sciencegateways.org) to improve the usability of our services. Please [let us know](https://comses.net/about/contact/) if you'd like to participate in upcoming usability studies, help us conduct usability studies in your institution or area. If you encounter any usability issues while using CoMSES Net we'd love to hear your feedback too! You can use the GitHub issues here or send us a private note through the contact form.
+CoMSES Net is actively working with the [Science Gateways Community Institute](https://sciencegateways.org) to improve the usability of our services. Please [let us know](https://comses.net/about/contact/) if you'd like to participate in upcoming usability studies, or help us conduct usability studies in your institution or area. If you encounter any usability issues while using CoMSES Net we'd love to hear your feedback too! You can use the GitHub issues here or send us a private note through the contact form.
 
 ### Development 
 
@@ -75,8 +75,6 @@ Dependencies
 3. Create or update the file `/etc/sysctl.d/99-docker.conf` and add a line `vm.max_map_count=262144` so [elasticsearch can run properly](https://www.elastic.co/guide/en/elasticsearch/reference/current/vm-max-map-count.html). You can create / access the file with any plaintext editor like nano e.g., `$ sudo nano /etc/sysctl.d/99-docker.conf` - follow the in-terminal nano instructions to save and exit.
 
 #### Apple Silicon + Docker workarounds
-
-Our `Makefile` relies on [envsubst](https://www.gnu.org/software/gettext/manual/html_node/envsubst-Invocation.html) which is generally included in the GNU `gettext` package. To install this on macOS you can install [macports](https://www.macports.org/) and run `$ sudo port install gettext` or use [homebrew](https://brew.sh/) and `$ brew install gettext`.
 
 For M1/M2 chipsets you must have `export DOCKER_DEFAULT_PLATFORM=linux/amd64` set to properly build the Docker images from the command-line. Place this environment variable setting in a shell startup file e.g., `.bashrc` | `.profile` | `.zshrc` | `.zprofile` so that it will be automatically set when you open an interactive CLI shell to initiate a Docker build.
 
