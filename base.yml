@@ -33,7 +33,9 @@ services:
       - ./deploy/elasticsearch.conf.d/log4j2.properties:/usr/share/elasticsearch/config/log4j2.properties
       - esdata:/usr/share/elasticsearch/data
   db:
-    image: postgis/postgis:15-3.3
+    image: postgis/postgis:15-3.4
+    secrets:
+      - db_password
     volumes:
       - ./docker/pgdata:/var/lib/postgresql/data
       - ./build/secrets/db_password:/run/secrets/db_password
@@ -56,8 +58,16 @@ services:
   server:
     build: django
     image: comses/server
+    secrets:
+      - db_password
+      - discourse_api_key
+      - discourse_sso_secret
+      - django_secret_key
+      - github_client_secret
+      - orcid_client_secret
+      - hcaptcha_secret
+      - mail_api_key
     volumes:
-      - ./build/secrets:/run/secrets
       - ./deploy/elasticsearch.conf.d:/etc/elasticsearch
       - ./docker/shared:/shared
     depends_on:
@@ -69,8 +79,27 @@ services:
         condition: service_started
       vite:
         condition: service_started
-    environment:
-      CLEAN_DATABASE: "false"
+    env_file:
+      - .env
+
+secrets:
+  db_password:
+    file: ./build/secrets/db_password
+  discourse_api_key:
+    file: ./build/secrets/discourse_api_key
+  discourse_sso_secret:
+    file: ./build/secrets/discourse_sso_secret
+  django_secret_key:
+    file: ./build/secrets/django_secret_key
+  github_client_secret:
+    file: ./build/secrets/github_client_secret
+  hcaptcha_secret:
+    file: ./build/secrets/hcaptcha_secret
+  mail_api_key:
+    file: ./build/secrets/mail_api_key
+  orcid_client_secret:
+    file: ./build/secrets/orcid_client_secret
+
 volumes:
   esdata:
     driver: local

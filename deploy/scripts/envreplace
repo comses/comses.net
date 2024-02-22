@@ -1,0 +1,26 @@
+#!/usr/bin/bash
+
+# envreplace: replace environment variables in a file
+# usage: envreplace <VAR_NAME> <new_value> [file (default: .env)]
+
+VAR_NAME=$1
+NEW_VALUE=$2
+ENV_FILE=${3:-".env"}
+
+if [ -z "$VAR_NAME" ] || [ -z "$NEW_VALUE" ]; then
+  echo "usage: envreplace <VAR_NAME> <new_value> [file (default: .env)]"
+  exit 1
+fi
+
+if sed --version 2>&1 | grep -q "GNU"; then
+    SED_CMD="sed -i" # GNU sed
+else
+    SED_CMD="sed -i ''" # BSD sed
+fi
+
+if grep -q "^$VAR_NAME=" "$ENV_FILE"; then
+    $SED_CMD "s|^$VAR_NAME=.*|$VAR_NAME=$NEW_VALUE|" "$ENV_FILE"
+else
+    echo "$VAR_NAME not found in $ENV_FILE"
+    # echo "$VAR_NAME=$NEW_VALUE" >> $ENV_FILE
+fi
