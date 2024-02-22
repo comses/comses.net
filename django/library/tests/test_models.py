@@ -167,21 +167,44 @@ class CodeMetaTest(BaseModelTestCase):
         for i, language in enumerate(languages):
             self.assertEqual(language, language_list[i]['name'])  # compare name of languages
 
+        print("Done with languages test")
+
     
+    def test_keywords(self):
+
+        print("Starting keywords test")
+
+        release = self.codebase_release
+
+        num_of_keywords = random.randint(1,9)
+        keywords_choices = [
+            'Simulation',
+            'Prediction',
+            'Analysis',
+            'Ecological',
+            'Climate Change',
+            'Agent-Based',
+            'Epidemiological',
+            'Computational',
+            'Migration',
+            'Pattern'
+        ]
+
+        keywords = []
+
+        for i in range(num_of_keywords):
+            choice_of_keyword = keywords_choices[random.randint(0, len(keywords_choices) - 1)] #choose random keyword
+            keywords.append(choice_of_keyword)
+            release.codebase.tags.add(choice_of_keyword)
+
+        keyword_list = release.codemeta.metadata['keywords']
+
+        for i, keyword in enumerate(keywords):
+            self.assertEqual(keyword, keyword_list[i + 1])
 
 
-        
-    
-
-
-
-
-
-
-
-
-
-        
+        print("Done with keywords testing")
+  
 
 class CodebaseReleaseTest(BaseModelTestCase):
     def get_perm_str(self, perm_prefix):
