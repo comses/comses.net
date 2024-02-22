@@ -21,7 +21,7 @@ sentry_sdk.init(
 # EMAIL_FILE_PATH = '/shared/logs/mail.log'
 EMAIL_BACKEND = "anymail.backends.mailgun.EmailBackend"
 
-MAILGUN_API_KEY = os.getenv("MAILGUN_API_KEY")
+MAILGUN_API_KEY = read_secret('mail_api_key')
 MAILGUN_SENDER_DOMAIN = os.getenv("MAILGUN_SENDER_DOMAIN", "mg.comses.net")
 EMAIL_SUBJECT_PREFIX = os.getenv("EMAIL_SUBJECT_PREFIX", "[staging.comses.net]")
 EMAIL_USE_TLS = True
@@ -104,7 +104,7 @@ X_FRAME_OPTIONS = "DENY"
 
 # hcaptcha config
 HCAPTCHA_SITEKEY = os.getenv("HCAPTCHA_SITEKEY", "")
-HCAPTCHA_SECRET = os.getenv("HCAPTCHA_SECRET", "")
+HCAPTCHA_SECRET = read_secret('hcaptcha_secret', 'unconfigured')
 
 WSGI_APPLICATION = "core.wsgi.application"
 

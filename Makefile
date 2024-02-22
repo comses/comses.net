@@ -7,7 +7,8 @@ BUILD_DIR=build
 SECRETS_DIR=${BUILD_DIR}/secrets
 DB_PASSWORD_PATH=${SECRETS_DIR}/db_password
 PGPASS_PATH=${SECRETS_DIR}/.pgpass
-SECRET_KEY_PATH=${SECRETS_DIR}/secret_key
+SECRET_KEY_PATH=${SECRETS_DIR}/django_secret_key
+EXT_SECRETS=mailgun_api_key hcaptcha_secret github_client_secret orcid_client_secret discourse_api_key discourse_sso_secret mail_api_key
 GENERATED_SECRETS=$(DB_PASSWORD_PATH) $(PGPASS_PATH) $(SECRET_KEY_PATH)
 
 ENVREPLACE := deploy/scripts/envreplace
@@ -73,8 +74,8 @@ release-version: .env
 	if [ ! -f .env ]; then \
 		cp $(ENV_TEMPLATE) .env; \
 	fi; \
-	$(ENVREPLACE) DB_PASSWORD $$(cat $(DB_PASSWORD_PATH)) .env; \
-	$(ENVREPLACE) SECRET_KEY $$(cat $(SECRET_KEY_PATH)) .env; \
+	# $(ENVREPLACE) DB_PASSWORD $$(cat $(DB_PASSWORD_PATH)) .env; \
+	# $(ENVREPLACE) SECRET_KEY $$(cat $(SECRET_KEY_PATH)) .env; \
 	$(ENVREPLACE) TEST_BASIC_AUTH_PASSWORD $$(openssl rand -base64 42) .env
 
 .PHONY: docker-compose.yml
@@ -91,9 +92,12 @@ set-db-password: $(DB_PASSWORD_PATH) .env
 
 .PHONY: secrets
 secrets: $(SECRETS_DIR) $(GENERATED_SECRETS)
+	for secret_path in $(EXT_SECRETS); do \
+		touch ${SECRETS_DIR}/$$secret_path; \
+	done
 
 .PHONY: deploy
-deploy: build
+deploy: build .env
 	docker compose pull db redis elasticsearch
 ifneq ($(DEPLOY_ENVIRONMENT),dev)
 	docker compose pull nginx
@@ -124,6 +128,10 @@ restore: build $(BORG_REPO_PATH) | $(REPO_BACKUPS_PATH)
 clean:
 	@echo "Backing up generated files to /tmp directory"
 	mv .env config.mk docker-compose.yml $(shell mktemp -d)
+
+.PHONY: clean_deploy
+clean_deploy: clean
+	+@$(MAKE) deploy
 
 .PHONY: test
 test: build

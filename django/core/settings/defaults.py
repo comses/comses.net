@@ -11,8 +11,17 @@ Wagtail settings reference:
 
 import os
 from enum import Enum
+from pathlib import Path
 
 from django.contrib.messages import constants as messages
+
+def read_secret(file, fallback=''):
+    secrets_file_path = Path('/run/secrets', file)
+    if secrets_file_path.is_file():
+        return secrets_file_path.read_text().strip()
+    else:
+        return fallback
+
 
 
 class Environment(Enum):
@@ -251,7 +260,7 @@ PEER_REVIEW_INVITATION_EXPIRATION = 21
 # sentry DSN
 SENTRY_DSN = os.getenv("SENTRY_DSN", "https://sentry.example.com/2")
 
-SECRET_KEY = os.getenv("SECRET_KEY")
+SECRET_KEY = read_secret('django_secret_key', os.getenv("SECRET_KEY"))
 
 # regular settings
 
@@ -269,7 +278,7 @@ DATABASES = {
         "ENGINE": "django.db.backends.postgresql",
         "NAME": os.getenv("DB_NAME"),
         "USER": os.getenv("DB_USER"),
-        "PASSWORD": os.getenv("DB_PASSWORD"),
+        "PASSWORD": read_secret('db_password', os.getenv("DB_PASSWORD")),
         "HOST": os.getenv("DB_HOST"),
         "PORT": os.getenv("DB_PORT"),
     }
@@ -474,10 +483,11 @@ ACCOUNT_LOGIN_ON_EMAIL_CONFIRMATION = True
 ACCOUNT_CHANGE_EMAIL = True
 
 ORCID_CLIENT_ID = os.getenv("ORCID_CLIENT_ID", "")
-ORCID_CLIENT_SECRET = os.getenv("ORCID_CLIENT_SECRET", "")
+
+ORCID_CLIENT_SECRET = read_secret('orcid_client_secret')
 
 GITHUB_CLIENT_ID = os.getenv("GITHUB_CLIENT_ID", "")
-GITHUB_CLIENT_SECRET = os.getenv("GITHUB_CLIENT_SECRET", "")
+GITHUB_CLIENT_SECRET = read_secret('github_client_secret')
 
 TEST_BASIC_AUTH_PASSWORD = os.getenv("TEST_BASIC_AUTH_PASSWORD", "test password")
 TEST_USER_ID = os.getenv("TEST_USER_ID", 1000000)
@@ -503,8 +513,8 @@ SOCIALACCOUNT_PROVIDERS = {
 DISCOURSE_BASE_URL = os.getenv(
     "DISCOURSE_BASE_URL", "https://staging-discourse.comses.net"
 )
-DISCOURSE_SSO_SECRET = os.getenv("DISCOURSE_SSO_SECRET", "unconfigured")
-DISCOURSE_API_KEY = os.getenv("DISCOURSE_API_KEY", "unconfigured")
+DISCOURSE_SSO_SECRET = read_secret('discourse_sso_secret', "unconfigured")
+DISCOURSE_API_KEY = read_secret('discourse_api_key', "unconfigured")
 DISCOURSE_API_USERNAME = os.getenv("DISCOURSE_API_USERNAME", "unconfigured")
 
 # https://docs.djangoproject.com/en/4.2/ref/settings/#templates
