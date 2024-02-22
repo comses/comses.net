@@ -15,7 +15,7 @@ from .base import (
     ReleaseContributorFactory,
     ReleaseSetup,
 )
-from ..models import Codebase, CodebaseRelease, License
+from ..models import Codebase, CodebaseRelease, License, CodeMeta
 
 logger = logging.getLogger(__name__)
 
@@ -97,7 +97,7 @@ class CodeMetaTest(BaseModelTestCase):
         codebase_factory = CodebaseFactory(submitter=self.submitter)
         self.codebase = codebase_factory.create()
         self.codebase_release = self.codebase.create_release(initialize=False)
-
+        
     def test_codemeta_validate(self):
         logger.debug("run some kind of schema validation on the emitted codemeta.json")
 
@@ -106,7 +106,7 @@ class CodeMetaTest(BaseModelTestCase):
         # verify that they are included in the correct order in the resulting
         # codemeta object and JSON
         release = self.codebase_release
-        # CodebaseRelease has many ReleaseContributors as an ordered set
+            # CodebaseRelease has many ReleaseContributors as an ordered set
         number_of_authors = random.randint(5, 8)
         users = []
         for i in range(number_of_authors):
@@ -118,8 +118,70 @@ class CodeMetaTest(BaseModelTestCase):
             )
             users.append(user)
             release.add_contributor(user, index=i)
-        # TODO: verify that the emitted CodeMeta authors contributors are in the correct order
 
+        author_list = release.codemeta.metadata['author']
+
+        for i, user in enumerate(users):
+            self.assertEqual(user.last_name, author_list[i + 1]['familyName']) #compare last name 
+            self.assertEqual(user.first_name, author_list[i + 1]['givenName']) #compare last name
+            self.assertEqual(user.email, author_list[i + 1]['email']) #compare last name
+            #POSSIBLE FIX: there is a 'i + 1' because the first dictionary in the 'author_list' is an empty dictionary
+            
+
+        print("Done with author tests")
+
+    def test_languages(self):
+
+        print("Starting languages test")
+        #create a set of languages and add them to the release
+        #verify that they are included in the correct order in the resulting codemeta object object and json
+
+        #dont have a language factory so will have to add them manually
+        release = self.codebase_release
+
+        num_of_languages = random.randint(1, 5) #pick a random number of languages to add to the codebase release
+        language_choices = [
+            'Python',
+            'C',
+            'C++',
+            'C#',
+            'Java',
+            'NetLogo',
+        ]
+
+        languages = []
+        
+    
+        for i in range(num_of_languages):
+            choice_of_language = language_choices[random.randint(0, len(language_choices) - 1)] #choose random language from list
+
+            languages.append(choice_of_language)
+            release.programming_languages.add(choice_of_language)
+            
+        
+        language_list = release.codemeta.metadata['programmingLanguage']
+
+        print(language_list) #tests work when this print statement is uncommented, if commented out, doesnt work
+                            #and gives an error with the indexes.
+
+        for i, language in enumerate(languages):
+            self.assertEqual(language, language_list[i]['name'])  # compare name of languages
+
+    
+
+
+        
+    
+
+
+
+
+
+
+
+
+
+        
 
 class CodebaseReleaseTest(BaseModelTestCase):
     def get_perm_str(self, perm_prefix):
