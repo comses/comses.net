@@ -2,7 +2,8 @@
 {% from "common.jinja" import breadcrumb, embed_discourse_comments, share_card, search_tag_href, member_profile_href %}
 {% from "library/review/includes/macros.jinja" import include_review_reminders, confirm_change_closed_modal %}
 
-{% set open_code_badge_url = request.build_absolute_uri(static("images/icons/open-code-badge.png")) %}
+{% set open_code_badge_png_url = request.build_absolute_uri(static("images/icons/open-code-badge.png")) %}
+{% set open_code_badge_svg_url = request.build_absolute_uri(static("images/icons/open-code-badge.svg")) %}
 {% set codebase = release.codebase %}
 
 {%- block title -%}{{ codebase.title }}{% endblock %}
@@ -239,14 +240,14 @@
                 of this computational model.
 <pre><code id='open-code-badge-html'>
 &lt;a href=&quot;{{release.permanent_url}}&quot;&gt;
-  &lt;img height=&quot;100&quot; src=&quot;{{ open_code_badge_url  }}&quot; alt=&quot;Open Code Badge&quot;&gt;
+  &lt;img height=&quot;100&quot; src=&quot;{{ open_code_badge_svg_url  }}&quot; alt=&quot;Open Code Badge&quot;&gt;
 &lt;/a&gt;
 </code></pre>
 <button class='btn btn-clipboard btn-outline-info' data-clipboard-target='#open-code-badge-html'>
   <i class='fas fa-copy'></i> Copy HTML to clipboard
 </button>
 <pre><code id='open-code-badge-md'>
-[![Open Code Badge]({{ open_code_badge_url }})]({{release.permanent_url}})
+[![Open Code Badge]({{ open_code_badge_svg_url }})]({{release.permanent_url}})
 </code>
 </pre>
 <button class='btn btn-clipboard btn-outline-info' data-clipboard-target='#open-code-badge-md'>
@@ -407,7 +408,7 @@
             {% if release.peer_reviewed %}
                 <img class="img-fluid" src="{{ static("images/icons/peer-reviewed.png") }}" alt="Peer Reviewed">
                 <div class="pt-2">
-                  <a href='{{ release.permanent_url }}'><img height="88" src='{{ open_code_badge_url }}' alt='Open Code Badge'></a>
+                  <a href='{{ release.permanent_url }}'><img height="88" src='{{ open_code_badge_svg_url }}' alt='Open Code Badge'></a>
                 </div>
             {% elif codebase.peer_reviewed %}
                 <div class="card-text alert alert-success p-2">
