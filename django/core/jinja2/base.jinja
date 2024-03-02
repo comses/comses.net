@@ -330,10 +330,10 @@
     <script src="//cdnjs.cloudflare.com/ajax/libs/holder/2.9.8/holder.min.js"></script>
     {% if constants.DEPLOY_ENVIRONMENT.is_staging_or_production %}
 
-        {% with SENTRYJS_VERSION='7.92.0' %}
+        {% with SENTRYJS_VERSION='7.104.0' %}
             <script
-                src="https://browser.sentry-cdn.com/{{SENTRYJS_VERSION}}/bundle.min.js"
-                integrity="sha384-twzJm4czBvefWTYieg38QNd4KycBrT5jt/HDyVbGCumN0zlLVmMNCVE7oDccARDg"
+                src="https://browser.sentry-cdn.com/{{SENTRYJS_VERSION}}/bundle.tracing.min.js"
+                integrity="sha384-GIGwRJTameecYX7D86H2eXPQAhZ2erxGcgL3f906+a9BFv0Z88R524eZzamYbll0"
                 crossorigin="anonymous">
             </script>
             {% script defer=True %}
