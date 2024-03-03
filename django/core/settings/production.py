@@ -33,6 +33,7 @@ CSP_SCRIPT_SRC = (
     "'self'",
     "cdnjs.cloudflare.com",
     "browser.sentry-cdn.com",
+    "www.googletagmanager.com",
     "https://comses.net",
     "https://*.comses.net",
     "https://hcaptcha.com",
@@ -40,12 +41,12 @@ CSP_SCRIPT_SRC = (
 )
 CSP_CONNECT_SRC = (
     "'self'",
-    "https://*.google-analytics.com",
-    "https://*.analytics.google.com",
-    "https://*.googletagmanager.com",
-    "https://*.g.doubleclick.net",
-    "https://*.google.com",
-    "https://*.google.<TLD>",
+    "ws:",  # websockets
+    "api.ror.org",  # RoR affiliations dropdown support
+    "cdn.jsdelivr.net",  # codemirror spell checker
+    "*.comses.net",  # sentry.comses.net / forum.comses.net
+    "www.google-analytics.com",  # google analytics
+    "analytics.google.com",
 )
 CSP_IMG_SRC = (
     "'self'",
@@ -56,7 +57,6 @@ CSP_IMG_SRC = (
     "https://*.analytics.google.com",
     "https://*.g.doubleclick.net",
     "https://*.google.com",
-    "https://*.google.<TLD>",
 )
 CSP_INCLUDE_NONCE_IN = ["script-src"]
 
