@@ -3,7 +3,7 @@
 
 Dear {{ invitation.invitee }},
 
-Thank you for accepting the invitation to review [{{ release.title }}]({{ build_absolute_uri(release.get_absolute_url()) }}).
+Thank you for accepting the invitation to review [{{ release.title }}]({{ build_absolute_uri(release.share_url) }}).
 
 #### Description
 {% autoescape false %}
