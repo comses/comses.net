@@ -63,7 +63,7 @@ $(DB_PASSWORD_PATH): | ${SECRETS_DIR}
 	echo "$${DB_PASSWORD}" > $(DB_PASSWORD_PATH)
 	@echo "db password at $(DB_PASSWORD_PATH) was reset, may need to manually update existing db password"
 
-$(PGPASS_PATH): $(DB_PASSWORD_PATH) $(PGPASS_TEMPLATE) | ${SECRETS_DIR}
+$(PGPASS_PATH): $(DB_PASSWORD_PATH) | ${SECRETS_DIR}
 	echo "${DB_HOST}:5432:*:${DB_USER}:$$(cat $(DB_PASSWORD_PATH))" > $(PGPASS_PATH)
 	chmod 0600 $(PGPASS_PATH)
 

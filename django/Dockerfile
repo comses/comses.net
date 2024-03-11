@@ -36,7 +36,6 @@ RUN sed -i "s|archive.ubuntu.com|${UBUNTU_MIRROR}|" /etc/apt/sources.list \
         && update-alternatives --install /usr/bin/python python /usr/bin/python3 1000 \
         && apt-get upgrade -y -o Dpkg::Options::="--force-confold" \
         && mkdir -p /etc/service/django \
-        && pip3 install -U pip \
         && touch /etc/service/django/run /etc/postgresql-backup-pre \
         && chmod a+x /etc/service/django/run /etc/postgresql-backup-pre \
         && ln -sf /run/secrets/.pgpass /root/.pgpass \
