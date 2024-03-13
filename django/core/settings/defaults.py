@@ -286,9 +286,11 @@ DATABASES = {
 
 SHARE_DIR = "/shared"
 LOG_DIRECTORY = os.getenv("LOG_DIRECTORY", os.path.join(BASE_DIR, "logs"))
-LIBRARY_ROOT = os.getenv("LIBRARY_ROOT", os.path.join(BASE_DIR, "library"))
+LIBRARY_ROOT = os.getenv("LIBRARY_ROOT")
+if not LIBRARY_ROOT:
+    raise ValueError("LIBRARY_ROOT not configured")
 PREVIOUS_SHARE_ROOT = os.path.join(SHARE_DIR, ".latest")
-REPOSITORY_ROOT = os.getenv("REPOSITORY_ROOT", os.path.join(BASE_DIR, "repository"))
+REPOSITORY_ROOT = os.getenv("REPOSITORY_ROOT")
 BORG_ROOT = "/shared/backups/repo"
 BACKUP_ROOT = "/shared/backups"
 EXTRACT_ROOT = "/shared/extract"

@@ -1,4 +1,4 @@
 #!/bin/sh
 
 export DJANGO_SETTINGS_MODULE="core.settings.production"
-/usr/local/bin/inv -r /code db.backup borg.backup > /var/log/comses-backup.log 2>&1
+/usr/local/bin/inv -r /code db.backup borg.backup >> /shared/logs/comses-backup.log 2>&1
