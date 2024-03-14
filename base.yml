@@ -80,7 +80,9 @@ services:
       vite:
         condition: service_started
     env_file:
-      - .env
+      - ./.env
+      - path: ./override.env
+        required: false
 
 secrets:
   db_password:

@@ -4,18 +4,20 @@ ARG REQUIREMENTS_FILE=requirements-dev.txt
 ARG RUN_SCRIPT=./deploy/dev.sh
 ARG UBUNTU_MIRROR=mirror.arizona.edu/ubuntu
 
-RUN sed -i "s|archive.ubuntu.com|${UBUNTU_MIRROR}|" /etc/apt/sources.list \
-        && apt-get update && apt-get install -y wget \
-        && echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list \
-        && wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-key add - \
+RUN rm -f /etc/apt/apt.conf.d/docker-clean; echo 'Binary::apt::APT::Keep-Downloaded-Packages "true";' > /etc/apt/apt.conf.d/keep-cache
+RUN --mount=type=cache,target=/var/lib/apt,sharing=locked \
+    --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    sed -i "s|archive.ubuntu.com|${UBUNTU_MIRROR}|" /etc/apt/sources.list \
+        && apt-get update && apt-get install -y --no-install-recommends curl ca-certificates \
+        && install -d /usr/share/postgresql-common/pgdg && curl -o /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc --fail https://www.postgresql.org/media/keys/ACCC4CF8.asc \
+        && echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list \
         && apt-get update \
-        && apt-get install -y \
+        && apt-get install -y --no-install-recommends \
         autopostgresqlbackup \
         binutils \
         borgbackup \
         clamav \
         clamav-daemon \
-        curl \
         gdal-bin \
         git \
         libffi-dev \
@@ -31,6 +33,7 @@ RUN sed -i "s|archive.ubuntu.com|${UBUNTU_MIRROR}|" /etc/apt/sources.list \
         python3-gdal \
         python3-pip \
         python3-setuptools \
+        python3-venv \
         unrar-free \
         unzip \
         && update-alternatives --install /usr/bin/python python /usr/bin/python3 1000 \
@@ -42,7 +45,11 @@ RUN sed -i "s|archive.ubuntu.com|${UBUNTU_MIRROR}|" /etc/apt/sources.list \
         && apt-get autoremove -y && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 COPY ${REQUIREMENTS_FILE} requirements.txt /tmp/
-RUN pip3 install -r /tmp/${REQUIREMENTS_FILE} --no-cache-dir
+
+# FIXME: will need to change to user later
+RUN --mount=type=cache,target=/root/.cache/pip,sharing=locked \
+    pip3 install -r /tmp/${REQUIREMENTS_FILE}
+
 COPY ./deploy/cron.daily/* /etc/cron.daily/
 COPY ./deploy/cron.hourly/* /etc/cron.hourly/
 COPY ./deploy/cron.weekly/* /etc/cron.weekly/
