@@ -41,14 +41,17 @@ RUN --mount=type=cache,target=/var/lib/apt,sharing=locked \
         && mkdir -p /etc/service/django \
         && touch /etc/service/django/run /etc/postgresql-backup-pre \
         && chmod a+x /etc/service/django/run /etc/postgresql-backup-pre \
-        && ln -sf /run/secrets/.pgpass /root/.pgpass \
+        # FIXME: change to container user        
+        && ln -sf /run/secrets/.pgpass /root/.pgpass \ 
         && apt-get autoremove -y && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
+WORKDIR /code
 COPY ${REQUIREMENTS_FILE} requirements.txt /tmp/
 
-# FIXME: will need to change to user later
+# FIXME: change to container user
 RUN --mount=type=cache,target=/root/.cache/pip,sharing=locked \
-    pip3 install -r /tmp/${REQUIREMENTS_FILE}
+    pip3 install -r /tmp/${REQUIREMENTS_FILE} \ 
+    && touch /code/override.env
 
 COPY ./deploy/cron.daily/* /etc/cron.daily/
 COPY ./deploy/cron.hourly/* /etc/cron.hourly/
@@ -56,6 +59,5 @@ COPY ./deploy/cron.weekly/* /etc/cron.weekly/
 COPY ./deploy/db/autopostgresqlbackup.conf /etc/default/autopostgresqlbackup
 COPY ./deploy/db/postgresql-backup-pre /etc/
 COPY ${RUN_SCRIPT} /etc/service/django/run
-WORKDIR /code
 COPY . /code
 CMD ["/sbin/my_init"]

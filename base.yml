@@ -81,8 +81,6 @@ services:
         condition: service_started
     env_file:
       - ./.env
-      - path: ./override.env
-        required: false
 
 secrets:
   db_password:
