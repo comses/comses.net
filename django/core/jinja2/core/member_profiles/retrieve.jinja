@@ -15,7 +15,7 @@
 {% endblock %}
 
 {% block ogp_tags %}
-{{ render_ogp_tags(url=request.build_absolute_uri(absolute_url), title=profile.name, description=profile.bio)}}
+{{ render_ogp_tags(request, title=profile.name, description=profile.bio)}}
 {% endblock ogp_tags %}
 
 {% block content %}

@@ -1,5 +1,5 @@
 {% extends "sidebar_layout.jinja" %}
-{% from "common.jinja" import breadcrumb, embed_discourse_comments, share_card, search_tag_href, member_profile_href %}
+{% from "common.jinja" import breadcrumb, embed_discourse_comments, share_card, search_tag_href, member_profile_href, render_ogp_tags %}
 {% from "library/review/includes/macros.jinja" import include_review_reminders, confirm_change_closed_modal %}
 
 {% set open_code_badge_png_url = request.build_absolute_uri(static("images/icons/open-code-badge.png")) %}
@@ -58,25 +58,13 @@
 {% endblock %}
 
 {% block ogp_tags %}
-    <!-- Facebook Meta Tags -->
-    <meta property="og:url" content="{{ request.build_absolute_uri(absolute_url) }}">
-    <meta property="og:type" content="article">
-    <meta property="og:title" content="{{ codebase.title }}">
-    <meta property="og:description" content="{{ codebase.summarized_description }}">
-    {% if codebase.featured_images.exists() %}
-        <meta property="og:image" content="{{ codebase.get_featured_rendition_url() }}">
-        <meta property="twitter:image" content="{{ codebase.get_featured_rendition_url() }}">
-    {% else %}
-        <!-- Provide a fallback image URL -->
-        <meta property="og:image" content="{{ static('images/logo-comses.png') }}">
-        <meta property="twitter:image" content="{{ static('images/logo-comses.png') }}">
-    {% endif %}
-    <!-- Twitter Meta Tags -->
-    <meta name="twitter:card" content="summary_large_image">
-    <meta property="twitter:domain" content="comses.net">
-    <meta property="twitter:url" content="{{ request.build_absolute_uri(absolute_url) }}">
-    <meta name="twitter:title" content="{{ codebase.title }}">
-    <meta name="twitter:description" content="{{ codebase.summarized_description }}">
+    {{ render_ogp_tags(
+            request,
+            title=codebase.title,
+            description=codebase.summarized_description,
+            image=codebase.get_featured_rendition_url()
+        )
+    }}
 {% endblock ogp_tags %}
 
 {% block content %}
