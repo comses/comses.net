@@ -3,7 +3,7 @@
 
 
 {% block ogp_tags %}
-{{ render_ogp_tags(url="https://www.comses.net/jobs/", title="Community Jobs", description="View all jobs related to CoMSES")}}
+{{ render_ogp_tags(request, title="Community Jobs", description="View all jobs posted to CoMSES.")}}
 {% endblock ogp_tags %}
 
 {% macro render_job(item, detail_url_name) %}

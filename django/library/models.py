@@ -945,7 +945,7 @@ class Codebase(index.Indexed, ClusterableModel):
             release = self.create_release_from_source(source_release, release_metadata)
 
         if initialize:
-            release.get_fs_api().validate_bagit()
+            release.get_fs_api()  # implicitly initializes the release filesystem
 
         if release.is_published:
             self.latest_version = release
@@ -2148,9 +2148,11 @@ class PeerReviewInvitation(models.Model):
             cc=[settings.REVIEW_EDITOR_EMAIL],
         )
         self.review.log(
-            action=PeerReviewEvent.INVITATION_SENT
-            if resend
-            else PeerReviewEvent.INVITATION_RESENT,
+            action=(
+                PeerReviewEvent.INVITATION_SENT
+                if resend
+                else PeerReviewEvent.INVITATION_RESENT
+            ),
             author=self.editor,
             message=f"{self.editor} sent an invitation to candidate reviewer {self.candidate_reviewer}",
         )

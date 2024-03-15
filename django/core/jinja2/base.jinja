@@ -291,7 +291,7 @@
     <meta name="msapplication-TileColor" content="#da532c">
     <meta name="theme-color" content="#ffffff">
     {% block ogp_tags %}
-        {{ render_ogp_tags() }}
+        {{ render_ogp_tags(request) }}
     {% endblock ogp_tags %}
     <title>
         {% block title %}CoMSES Net{% endblock %}

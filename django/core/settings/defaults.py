@@ -284,20 +284,19 @@ DATABASES = {
     }
 }
 
+# FIXME: turn everything here into pathlib.Paths at some point
 SHARE_DIR = "/shared"
-LOG_DIRECTORY = os.getenv("LOG_DIRECTORY", os.path.join(BASE_DIR, "logs"))
-LIBRARY_ROOT = os.getenv("LIBRARY_ROOT")
-if not LIBRARY_ROOT:
-    raise ValueError("LIBRARY_ROOT not configured")
+LOG_DIRECTORY = os.path.join(SHARE_DIR, "logs")
+LIBRARY_ROOT = os.path.join(SHARE_DIR, "library")
 PREVIOUS_SHARE_ROOT = os.path.join(SHARE_DIR, ".latest")
-REPOSITORY_ROOT = os.getenv("REPOSITORY_ROOT")
-BORG_ROOT = "/shared/backups/repo"
-BACKUP_ROOT = "/shared/backups"
-EXTRACT_ROOT = "/shared/extract"
+REPOSITORY_ROOT = os.path.join(SHARE_DIR, "repository")
+BORG_ROOT = os.path.join(SHARE_DIR, "backups", "repo")
+BACKUP_ROOT = os.path.join(SHARE_DIR, "backups")
+EXTRACT_ROOT = os.path.join(SHARE_DIR, "extract")
 
 FILE_UPLOAD_MAX_MEMORY_SIZE = 104857600
 FILE_UPLOAD_PERMISSIONS = 0o644
-FILE_UPLOAD_TEMP_DIR = "/shared/uploads/"
+FILE_UPLOAD_TEMP_DIR = os.path.join(SHARE_DIR, "uploads")
 
 for d in (LOG_DIRECTORY, LIBRARY_ROOT, REPOSITORY_ROOT, FILE_UPLOAD_TEMP_DIR):
     try:
@@ -405,19 +404,19 @@ STATICFILES_FINDERS = [
 ]
 
 # django-vite settings
-DJANGO_VITE_ASSETS_PATH = os.getenv("VITE_ROOT", "/shared/vite")
+DJANGO_VITE_ASSETS_PATH = os.path.join(SHARE_DIR, "vite")
 DJANGO_VITE_STATIC_URL_PREFIX = "bundles"
 DJANGO_VITE_DEV_SERVER_PORT = 5000
 DJANG_VITE_MANIFEST_PATH = os.path.join(
     DJANGO_VITE_ASSETS_PATH, DJANGO_VITE_STATIC_URL_PREFIX, "manifest.json"
 )
 
-STATIC_ROOT = "/shared/static"
+STATIC_ROOT = os.path.join(SHARE_DIR, "static")
 STATIC_URL = "/static/"
 
 STATICFILES_DIRS = [DJANGO_VITE_ASSETS_PATH]
 
-MEDIA_ROOT = "/shared/media"
+MEDIA_ROOT = os.path.join(SHARE_DIR, "media")
 MEDIA_URL = "/media/"
 APPEND_SLASH = True
 

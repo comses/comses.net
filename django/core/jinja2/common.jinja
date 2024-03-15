@@ -301,16 +301,26 @@ Currently in <em><mark>{{ constants.DEPLOY_ENVIRONMENT }}</mark></em> mode.
 {{ date.strftime('%B %d, %Y %I:%M %p') }}
 {% endmacro %}
 
-{% macro render_ogp_tags(url=None, title=None, description=None, image=None) %}
-    <!-- Open Graph Protocol Tags -->
-
+{%
+    macro render_ogp_tags(
+        request,
+        title="The Network for Computational Modeling in the Social and Ecological Sciences (CoMSES Net)",
+        description="CoMSES Net is an international open research community dedicated to fostering good practices for computational / agent based modeling.",
+        image=None
+    )
+%}
+    {% set url = request.build_absolute_uri() %}
+    {% set absolute_image_url = request.build_absolute_uri(image or static("images/logo-comses.png")) %}
     <!-- Twitter Meta Tags -->
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:site" content="@comses" />
+    <meta name="twitter:description" content="{{ description }}">
     <meta property="twitter:domain" content="comses.net" />
-    <meta property="og:url" content="{{ url or 'https://www.comses.net/'}}" />
+    
+    <!-- Open Graph Protocol Tags -->
+    <meta property="og:url" content="{{ url }}" />
     <meta property="og:type" content="website" />
-    <meta property="og:title" content="{{ title or 'The Network for Computational Modeling in the Social and Ecological Sciences (CoMSES Net)'}}" />
-    <meta property="og:description" content="{{ description or 'CoMSES Net is an international open research community dedicated to fostering good practices for computational / agent based modeling.'}}" />
-    <meta property="og:image" content="{{ image or static('images/logo-comses.png') }}" />
+    <meta property="og:title" content="{{ title }}" />
+    <meta property="og:description" content="{{ description }}" />
+    <meta property="og:image" content="{{ absolute_image_url }}" />
 {% endmacro %}

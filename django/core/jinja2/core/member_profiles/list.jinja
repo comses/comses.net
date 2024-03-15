@@ -3,7 +3,7 @@
 search_tag_href, search_bar, render_ogp_tags %}
 
 {% block ogp_tags %}
-{{ render_ogp_tags(url="https://www.comses.net/users/", title="Member Profiles", description="View all users related to CoMSES")}}
+{{ render_ogp_tags(request, title="Member Profiles", description="View member profiles on CoMSES Net.")}}
 {% endblock ogp_tags %}
 
 {% macro render_user(member_profile) %}

@@ -479,8 +479,8 @@ class CodebaseReleaseFsApi:
     def _create_msg_group(self):
         return MessageGroup()
 
-    def validate_bagit(self):
-        bag = self.get_or_create_sip_bag()
+    def validate_bagit(self, sip_bag=None):
+        bag = sip_bag or self.get_or_create_sip_bag()
         try:
             bag.validate()
         except bagit.BagValidationError as e:
@@ -526,7 +526,8 @@ class CodebaseReleaseFsApi:
 
     def build_published_archive(self, force=False):
         self.create_or_update_codemeta(force=force)
-        self.get_or_create_sip_bag(self.bagit_info)
+        bag = self.get_or_create_sip_bag(self.bagit_info)
+        self.validate_bagit(bag)
         self.build_aip()
         self.build_archive(force=force)
 
