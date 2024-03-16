@@ -600,13 +600,14 @@ def build_archive_download_response(codebase_release, review_archive=False):
     )
     # response['Content-Length'] = fs_api.archive_size
     archive_uri = fs_api.archive_uri
+    archive_absolute_path = fs_api.archivepath
     if review_archive:
         fs_api.build_review_archive()
+        archive_absolute_path = fs_api.review_archivepath
         archive_uri = fs_api.review_archive_uri
     #    response['Content-Length'] = fs_api.review_archive_size
 
-    # prevent failing silently if the archive is missing
-    if not pathlib.Path(archive_uri).exists():
+    if not archive_absolute_path.exists():
         raise FileNotFoundError
     response["X-Accel-Redirect"] = "/library/internal/{0}".format(archive_uri)
     return response
