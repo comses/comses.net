@@ -1561,10 +1561,10 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
             self, mimetype_mismatch_message_level=mimetype_mismatch_message_level
         )
 
-    def add_contributor(self, submitter):
-        contributor, created = Contributor.from_user(submitter)
+    def add_contributor(self, user, index=0):
+        codebase_contributor, created = Contributor.from_user(user)
         self.codebase_contributors.create(
-            contributor=contributor, roles=[Role.AUTHOR], index=0
+            contributor=codebase_contributor, roles=[Role.AUTHOR], index=index
         )
 
     @transaction.atomic

@@ -1,11 +1,11 @@
 import logging
 import pathlib
+import random
 import semver
 import uuid
 
 from django.conf import settings
 from django.contrib.auth.models import AnonymousUser
-from django.core.files.base import ContentFile
 from rest_framework.exceptions import ValidationError
 
 from core.tests.base import UserFactory, BaseModelTestCase
@@ -88,6 +88,37 @@ class CodebaseTest(BaseModelTestCase):
         # check file contents
         review_draft_sip_contents = review_draft.get_fs_api().list_sip_contents()
         self.assertEqual(source_sip_contents, review_draft_sip_contents)
+
+
+class CodeMetaTest(BaseModelTestCase):
+    def setUp(self):
+        self.user_factory = UserFactory()
+        self.submitter = self.user_factory.create()
+        codebase_factory = CodebaseFactory(submitter=self.submitter)
+        self.codebase = codebase_factory.create()
+        self.codebase_release = self.codebase.create_release(initialize=False)
+
+    def test_codemeta_validate(self):
+        logger.debug("run some kind of schema validation on the emitted codemeta.json")
+
+    def test_authors(self):
+        # create a set of citable Contributors and add them to the release
+        # verify that they are included in the correct order in the resulting
+        # codemeta object and JSON
+        release = self.codebase_release
+        # CodebaseRelease has many ReleaseContributors as an ordered set
+        number_of_authors = random.randint(5, 8)
+        users = []
+        for i in range(number_of_authors):
+            user = self.user_factory.create(
+                username=f"test_author_{i}",
+                email=f"test_codemeta{i}@mailinator.com",
+                first_name="CodemetaTester",
+                last_name=f"Testerson {i}",
+            )
+            users.append(user)
+            release.add_contributor(user, index=i)
+        # TODO: verify that the emitted CodeMeta authors contributors are in the correct order
 
 
 class CodebaseReleaseTest(BaseModelTestCase):
