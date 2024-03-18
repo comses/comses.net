@@ -15,7 +15,7 @@ from .base import (
     ReleaseContributorFactory,
     ReleaseSetup,
 )
-from ..models import Codebase, CodebaseRelease, License
+from ..models import Codebase, CodebaseRelease, License, CodeMeta
 
 logger = logging.getLogger(__name__)
 
@@ -108,7 +108,7 @@ class CodeMetaTest(BaseModelTestCase):
         release = self.codebase_release
         # CodebaseRelease has many ReleaseContributors as an ordered set
         number_of_authors = random.randint(5, 8)
-        users = []
+        users = [self.submitter]
         for i in range(number_of_authors):
             user = self.user_factory.create(
                 username=f"test_author_{i}",
@@ -118,7 +118,100 @@ class CodeMetaTest(BaseModelTestCase):
             )
             users.append(user)
             release.add_contributor(user, index=i)
-        # TODO: verify that the emitted CodeMeta authors contributors are in the correct order
+
+        author_list = release.codemeta.metadata["author"]
+
+        # print(author_list)
+
+        for i, user in enumerate(users):
+            self.assertEqual(user.last_name, author_list[i]["familyName"])
+            self.assertEqual(user.first_name, author_list[i]["givenName"])
+            self.assertEqual(user.email, author_list[i]["email"])
+
+        print("Done with author tests")
+
+    def test_languages(self):
+        print("Starting languages test")
+
+        release = self.codebase_release
+
+        languages = [
+            "Python",
+            "C",
+            "C++",
+            "C#",
+            "Java",
+            "NetLogo",
+        ]
+
+        for language in languages:
+            release.programming_languages.add(language)
+
+        language_list = release.codemeta.metadata["programmingLanguage"]
+
+        # logger.debug(language_list)
+
+        for i, language in enumerate(languages):
+            self.assertEqual(language, language_list[i]["name"])
+
+        print("Done with languages test")
+
+    def test_keywords(self):
+        print("Starting keywords test")
+
+        release = self.codebase_release
+
+        tags = [
+            "Simulation",
+            "Prediction",
+            "Analysis",
+            "Ecological",
+            "Climate Change",
+            "Agent-Based",
+            "Epidemiological",
+            "Computational",
+            "Migration",
+            "Pattern",
+        ]
+
+        for tag in tags:
+            release.codebase.tags.add(tag)
+
+        keyword_list = release.codemeta.metadata["keywords"]
+
+        # logger.debug(keyword_list)
+
+        self.assertListEqual(tags, keyword_list)
+
+        print("Done with keywords testing")
+
+    def test_citation(self):
+        print("Starting citations test")
+
+        release = self.codebase_release
+
+        citations = [
+            "Smith, John & Doe, Jane. (2018). Understanding the Impact of Climate Change on Urban Infrastructure. In International Conference on Sustainable Urban Development, (pp. 112–128). Elsevier.\n\nJ. Smith and J. Doe, “Urban resilience and climate change: Adaptation strategies for urban areas,” in Proceedings of the Global Conference on Climate Change, pp. 45–60, 2018.",
+            "Brown, Samuel & Knight, Teresa. (2015). The Role of Social Media in Modern Political Campaigns. InAnnual Meeting of the Political Science Association, (pp. 75–91). Cambridge University Press.\n\nS. Brown and T. Knight, “Engagement or echo chamber? Social media and political campaigning,” in Journal of Digital Media & Policy, vol. 6, no. 3, pp. 233–248, 2015.",
+            "Lee, Ming & Zhang, Wei. (2020). Advances in Quantum Computing: A Survey. In International Symposium on Quantum Technology, (pp. 202–216). IEEE.\n\nM. Lee and W. Zhang, “Quantum computing: From theoretical concepts to practical applications,” in Quantum Information Processing, vol. 19, no. 7, Article 152, 2020.",
+            "Garcia, Roberto & Lopez, Maria. (2017). The Evolution of E-commerce: A Comparative Study. In Conference on Digital Business Models, (pp. 134–150). ACM.\n\nR. Garcia and M. Lopez, “E-commerce platforms and the digital economy,” in E-commerce Research, vol. 5, no. 2, pp. 89–104, 2017.",
+            "Patel, Anil & Kumar, Vijay. (2019). The Influence of Artificial Intelligence on Healthcare. In International Conference on Medical Informatics, (pp. 88–102). Springer.\n\nA. Patel and V. Kumar, “AI in healthcare: Promises and challenges,” in Health Informatics Journal, vol. 25, no. 3, pp. 590–604, 2019.",
+            "Morris, Linda & Thompson, Gary. (2016). Renewable Energy Sources and Their Economic Impact. In Global Summit on Renewable Energy, (pp. 54–69). Oxford University Press.\n\nL. Morris and G. Thompson, “Evaluating the economic benefits of renewable energy,” in Renewable Energy Review, vol. 11, no. 4, pp. 213–229, 2016.",
+            "Chen, Xiao & Yang, Jun. (2021). Blockchain Technology in Supply Chain Management: An Overview. In International Conference on Supply Chain Management and Information Systems, (pp. 175–189). IEEE.\n\nX. Chen and J. Yang, “Blockchain and its applications in supply chain management,” in Supply Chain Management: An International Journal, vol. 26, no. 5, pp. 425–439, 2021.",
+            "Kim, Soo-Hyun & Park, Ji-Hoon. (2014). The Dynamics of Cultural Globalization and Local Identity. In World Conference on Cultural Studies, (pp. 98–112). Sage Publications.\n\nS.-H. Kim and J.-H. Park, “Cultural globalization and identity dynamics,” in Journal of Cultural Economics, vol. 38, no. 2, pp. 159–174, 2014.",
+            "Fernandez, Carlos & Rodriguez, Ana. (2023). Cybersecurity in the Age of IoT: Challenges and Solutions. In International Workshop on Internet of Things Security, (pp. 46–61). Springer.\n\nC. Fernandez and A. Rodriguez, “Securing IoT devices: Trends and challenges,” in IoT Security Journal, vol. 2, no. 1, pp. 22–37, 2023.",
+        ]
+
+        for c in citations:
+            release.codemeta.metadata["citation"].append(c)
+
+        citation_list = release.codemeta.metadata["citation"]
+
+        # logger.debug(citation_list)
+
+        self.assertListEqual(citations, citation_list)
+
+        print("Done with citations test")
 
 
 class CodebaseReleaseTest(BaseModelTestCase):
