@@ -89,7 +89,7 @@ docker-compose.yml: base.yml dev.yml staging.yml prod.yml config.mk $(PGPASS_PAT
 
 .PHONY: set-db-password
 set-db-password: $(DB_PASSWORD_PATH) .env
-	docker compose run --rm server psql -h db -U comsesnet comsesnet -c "ALTER USER ${DB_USER} with password '$(shell cat ${DB_PASSWORD_PATH})';"
+	docker compose exec db psql comsesnet comsesnet -c "ALTER USER ${DB_USER} with password '$(shell cat ${DB_PASSWORD_PATH})';"
 
 .PHONY: secrets
 secrets: $(SECRETS_DIR) $(GENERATED_SECRETS)
