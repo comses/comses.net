@@ -41,8 +41,6 @@ RUN --mount=type=cache,target=/var/lib/apt,sharing=locked \
         && mkdir -p /etc/service/django \
         && touch /etc/service/django/run /etc/postgresql-backup-pre \
         && chmod a+x /etc/service/django/run /etc/postgresql-backup-pre \
-        # FIXME: change to container user        
-        && ln -sf /run/secrets/.pgpass /root/.pgpass \ 
         && apt-get autoremove -y && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 WORKDIR /code

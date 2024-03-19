@@ -70,6 +70,7 @@ services:
     volumes:
       - ./deploy/elasticsearch.conf.d:/etc/elasticsearch
       - ./docker/shared:/shared
+      - ./.env:/etc/environment
     depends_on:
       db:
         condition: service_healthy
