@@ -63,7 +63,7 @@ def backup(ctx):
 
     with ctx.cd(share):
         ctx.run(
-            f'borg create --progress --compression lz4 {repo}::"{archive}" {library} {media} {database}',
+            f'borg create --stats --compression lz4 {repo}::"{archive}" {library} {media} {database}',
             echo=True,
             env=environment(),
         )
