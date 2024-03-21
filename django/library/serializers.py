@@ -573,7 +573,12 @@ class CodebaseReleaseEditSerializer(CodebaseReleaseSerializer):
 
     def get_possible_licenses(self, instance):
         serialized = LicenseSerializer(
-            License.objects.order_by("name").all(), many=True
+            # do not include CC licenses, this will be unnecessary if we manage
+            # to fully migrate everything to different licenses
+            License.objects.order_by("name").exclude(
+                url__icontains="creativecommons.org"
+            ),
+            many=True,
         )
         return serialized.data
 
