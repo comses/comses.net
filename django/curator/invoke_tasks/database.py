@@ -49,7 +49,7 @@ def create_pgpass_file(ctx, db_key=_DEFAULT_DATABASE, force=False):
 @task(aliases=["b"])
 def backup(ctx):
     create_pgpass_file(ctx)
-    ctx.run("autopostgresqlbackup")
+    ctx.run("/usr/sbin/autopostgresqlbackup")
 
 
 @task(aliases=["r"])

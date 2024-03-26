@@ -1,3 +1,4 @@
 #!/bin/sh
 
-/usr/local/bin/inv -r /code db.pgpass >> /shared/logs/db-backup.log 2>&1 
+export DJANGO_SETTINGS_MODULE="core.settings.production"
+/usr/local/bin/inv -r /code db.pgpass >> /shared/logs/prepare-db-backup.log 2>&1 
