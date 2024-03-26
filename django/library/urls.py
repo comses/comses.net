@@ -113,4 +113,9 @@ urlpatterns = [
         views.CodebaseReleaseFormCreateView.as_view(),
         name="codebaserelease-add",
     ),
+    path(
+        "cc-license/",
+        views.CCLicenseChangeView.as_view(),
+        name="cc-license-change",
+    ),
 ] + router.urls
