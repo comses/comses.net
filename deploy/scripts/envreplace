@@ -1,4 +1,4 @@
-#!/usr/bin/bash
+#!/bin/bash
 
 # envreplace: replace environment variables in a file
 # usage: envreplace <VAR_NAME> <new_value> [file (default: .env)]
