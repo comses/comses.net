@@ -1,0 +1,78 @@
+{% extends "base.jinja" %}
+
+{% block title %}Model License Migration{% endblock %}
+
+{% block introduction %}<h1>Model License Migration</h1>{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    {% if user_releases %}
+    <p>
+        We are attempting to phase out the use of Creative Commons licenses for models
+        stored in the CoMSES Model Library, as
+        <a href="https://creativecommons.org/faq/#can-i-apply-a-creative-commons-license-to-software">
+            they are not recommended for software.
+        </a>
+        To this end, we are asking members to update the licensing of their models and
+        are providing an easy way to do so by relicensing all of your models at once to
+        a more appropriate software license. If you prefer a different license to the default
+        alternatives listed below, you may update the license by editing a release's metadata
+        at any time.
+    </p>
+    <ul>
+        <li>
+            The CC BY license will be replaced with the
+            <a href="https://opensource.org/license/MIT" target="_blank">MIT license</a>,
+            a commonly used permissive license that retains the attribution requirement.
+        </li>
+        <li>
+            All other CC licenses will be changed to the
+            <a href="https://www.gnu.org/licenses/gpl-3.0.en.html" target="_blank">
+                GNU General Public License v3.0</a>, a widely used copyleft license that
+            provides a rough equivalent to the ShareAlike restriction.
+            There are no commonly used software licenses that include the same restrictions
+            as NonCommercial or NoDerivatives.
+        </li>
+    </ul>
+    <hr />
+    <p><b>
+            Please review the following changes to the licensing of your models stored
+            in the model library. By pressing confirm, you will be relicensing your
+            software which affects how others are legally allowed to use your code.
+        </b></p>
+    <form method="post">
+        {{ csrf_input }}
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Model release</th>
+                    <th>Current license</th>
+                    <th>Will be changed to</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for release in user_releases %}
+                <tr>
+                    <td><a href="{{ release.get_absolute_url() }}">{{ release.title }}</a></td>
+                    <td class="table-danger">
+                        {{ release.license.name }}
+                        <a href="{{ release.license.url }}" target="_blank"><i
+                                class="small fas fa-external-link-alt"></i></a>
+                    </td>
+                    <td class="table-success">
+                        {{ release.candidate_license.name }} <a href="{{ release.candidate_license.url }}"
+                            target="_blank"><i class="small fas fa-external-link-alt"></i></a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        <button type="submit" class="btn btn-primary mb-5 mt-3">Confirm License Change</button>
+    </form>
+    {% else %}
+    <div class="alert alert-info" role="alert">
+        You do not have any releases requiring license updates.
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
