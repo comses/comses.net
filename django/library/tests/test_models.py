@@ -15,7 +15,7 @@ from .base import (
     ReleaseContributorFactory,
     ReleaseSetup,
 )
-from ..models import Codebase, CodebaseRelease, License, CodeMeta
+from ..models import Codebase, CodebaseRelease, Contributor, License, CodeMeta
 
 logger = logging.getLogger(__name__)
 
@@ -117,11 +117,12 @@ class CodeMetaTest(BaseModelTestCase):
                 last_name=f"Testerson {i}",
             )
             users.append(user)
-            release.add_contributor(user, index=i)
+            contributor, created = Contributor.from_user(user)
+            release.add_contributor(contributor, index=i)
 
         author_list = release.codemeta.metadata["author"]
 
-        # print(author_list)
+        print(author_list)
 
         for i, user in enumerate(users):
             self.assertEqual(user.last_name, author_list[i]["familyName"])
