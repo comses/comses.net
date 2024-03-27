@@ -392,6 +392,11 @@ LOGGING = {
             "handlers": ["console", "comsesfile"],
             "propagate": False,
         },
+        "elasticsearch": {
+            "level": "ERROR",
+            "handlers": ["console", "comsesfile"],
+            "propagate": False,
+        },
     },
 }
 
