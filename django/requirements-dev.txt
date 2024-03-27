@@ -8,3 +8,4 @@ django-debug-toolbar-request-history
 django-fixture-magic
 sphinx
 sphinx_rtd_theme
+hypothesis
