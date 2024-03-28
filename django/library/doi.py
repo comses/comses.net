@@ -29,7 +29,7 @@ def register_peer_reviewed_codebases():
     for release in codebase_releases:
         logger.debug("Registering codebase release %s with DataCite", release)
         try:
-            json_metadata = release.codemeta.to_json()
+            json_metadata = release.codemeta_metadata.to_json()
             schema43.validate(json_metadata)
             doi = datacite_client.public_doi(json_metadata, url=release.permanent_url)
             logger.debug("minted public DOI: %s", doi)
