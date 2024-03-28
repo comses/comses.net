@@ -2463,6 +2463,7 @@ class PeerReviewerFeedback(models.Model):
 class CommonMetadata:
     DATE_PUBLISHED_FORMAT = "%Y-%m-%d"
 
+    # FIXME: move CodeMeta specific things into CodeMeta, keep this as a generic metadata object
     COMSES_ORGANIZATION = {
         "@id": "https://ror.org/015bsfc29",
         "@type": "Organization",
@@ -2505,19 +2506,7 @@ class CommonMetadata:
         self.runtimePlatform = self.convert_platforms()
         self.url = release.permanent_url
 
-        self.citation = []
-        if codebase.references_text:
-            self.citation.append(
-                {"@type": "CreativeWork", "text": codebase.references_text}
-            )
-        if codebase.replication_text:
-            self.citation.append(
-                {"@type": "CreativeWork", "text": codebase.replication_text}
-            )
-        if codebase.associated_publication_text:
-            self.citation.append(
-                {"@type": "CreativeWork", "text": codebase.associated_publication_text}
-            )
+        self.add_citations(codebase)
 
         if release.live:
             self.datePublished = release.last_published_on.strftime(
@@ -2538,8 +2527,17 @@ class CommonMetadata:
             self.releaseNotes = release.release_notes.raw
 
         #  codemeta @id
-        self.id = release.permanent_url
+        self.permanent_url = release.permanent_url
 
+    def add_citations(self, codebase):
+        self.citation = []
+        if codebase.references_text:
+            self.citation.append(codebase.references_text)
+        if codebase.replication_text:
+            self.citation.append(codebase.replication_text)
+        if codebase.associated_publication_text:
+            self.citation.append(codebase.associated_publication_text)
+ 
     def convert_target_product(self):
         target_product = {
             "@type": "SoftwareApplication",
@@ -2549,15 +2547,16 @@ class CommonMetadata:
         }
         if self.codebase_release.live:
             target_product.update(
+                # FIXME: consider adding a convenience method to generate absolute urls
                 downloadUrl=f"{settings.BASE_URL}{self.codebase_release.get_download_url()}",
                 releaseNotes=self.codebase_release.release_notes.raw,
                 softwareVersion=self.codebase_release.version_number,
                 identifier=self.codebase_release.permanent_url,
                 sameAs=self.codebase_release.comses_permanent_url,
             )
-        image_urls = self.codebase_release.codebase.get_image_urls()
-        if image_urls:
-            target_product.update(screenshot=f"{settings.BASE_URL}{image_urls[0]}")
+        image_url = self.codebase_release.codebase.get_featured_rendition_url()
+        if image_url:
+            target_product.update(screenshot=f"{settings.BASE_URL}{image_url}")
         return target_product
 
     def convert_keywords(self):
@@ -2707,7 +2706,7 @@ class CodeMetaMetadata:
         if releaseNotes:
             metadata.update(releaseNotes=releaseNotes)
 
-        metadata["@id"] = common_metadata.id
+        metadata["@id"] = common_metadata.permanent_url
 
         return CodeMetaMetadata(metadata)
 
