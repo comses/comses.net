@@ -364,7 +364,7 @@ class CodebaseReleaseFsApi:
         self.identifier = codebase_release.codebase.identifier
         self.version_number = codebase_release.version_number
         self.release_id = codebase_release.id
-        self.codemeta = codebase_release.codemeta
+        self.codemeta = codebase_release.codemeta_metadata
         self.bagit_info = codebase_release.bagit_info
         self.mimetype_mismatch_message_level = mimetype_mismatch_message_level
 
