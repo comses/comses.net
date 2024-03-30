@@ -2463,26 +2463,9 @@ class PeerReviewerFeedback(models.Model):
 class CommonMetadata:
     DATE_PUBLISHED_FORMAT = "%Y-%m-%d"
 
-    # FIXME: move CodeMeta specific things into CodeMeta, keep this as a generic metadata object
     COMSES_ORGANIZATION = {
-        "@id": "https://ror.org/015bsfc29",
-        "@type": "Organization",
         "name": "CoMSES Net",
         "url": "https://www.comses.net",
-    }
-
-    INITIAL_DATA = {
-        "@context": "http://schema.org",
-        "@type": "SoftwareSourceCode",
-        "isPartOf": {
-            "@type": "WebApplication",
-            "applicationCategory": "Computational Modeling Software Repository",
-            "operatingSystem": "Any",
-            "name": "CoMSES Model Library",
-            "url": "https://www.comses.net/codebases",
-        },
-        "publisher": COMSES_ORGANIZATION,
-        "provider": COMSES_ORGANIZATION,
     }
 
     def __init__(self, release: CodebaseRelease):
@@ -2490,13 +2473,13 @@ class CommonMetadata:
 
         self.codebase_release = release
 
-        self.initial_data = self.INITIAL_DATA
         self.name = codebase.title
+        self.release_title = release.title
         self.abstract = codebase.summary
         self.description = codebase.description.raw
         self.version = release.version_number
-        self.targetProduct = self.convert_target_product()
-        self.programmingLanguage = self.convert_programming_languages()
+        self.programming_languages = release.programming_languages.all()
+        self.os = release.os
         self.author = self.convert_authors()
         self.contributors = self.convert_contributors()
         self.identifier = release.permanent_url
@@ -2505,8 +2488,16 @@ class CommonMetadata:
         self.keywords = self.convert_keywords()
         self.runtimePlatform = self.convert_platforms()
         self.url = release.permanent_url
+        self.download_url = release.get_download_url()
+        self.comses_permanent_url = release.comses_permanent_url
+        self.get_featured_rendition_url = codebase.get_featured_rendition_url()
 
-        self.add_citations(codebase)
+        self.live = release.live
+
+        # used for citations
+        self.references_text = codebase.references_text
+        self.replication_text = codebase.replication_text
+        self.associated_publication_text = codebase.associated_publication_text
 
         if release.live:
             self.datePublished = release.last_published_on.strftime(
@@ -2529,36 +2520,6 @@ class CommonMetadata:
         #  codemeta @id
         self.permanent_url = release.permanent_url
 
-    def add_citations(self, codebase):
-        self.citation = []
-        if codebase.references_text:
-            self.citation.append(codebase.references_text)
-        if codebase.replication_text:
-            self.citation.append(codebase.replication_text)
-        if codebase.associated_publication_text:
-            self.citation.append(codebase.associated_publication_text)
- 
-    def convert_target_product(self):
-        target_product = {
-            "@type": "SoftwareApplication",
-            "name": self.codebase_release.title,
-            "operatingSystem": self.codebase_release.os,
-            "applicationCategory": "Computational Model",
-        }
-        if self.codebase_release.live:
-            target_product.update(
-                # FIXME: consider adding a convenience method to generate absolute urls
-                downloadUrl=f"{settings.BASE_URL}{self.codebase_release.get_download_url()}",
-                releaseNotes=self.codebase_release.release_notes.raw,
-                softwareVersion=self.codebase_release.version_number,
-                identifier=self.codebase_release.permanent_url,
-                sameAs=self.codebase_release.comses_permanent_url,
-            )
-        image_url = self.codebase_release.codebase.get_featured_rendition_url()
-        if image_url:
-            target_product.update(screenshot=f"{settings.BASE_URL}{image_url}")
-        return target_product
-
     def convert_keywords(self):
         return [tag.name for tag in self.codebase_release.codebase.tags.all()]
 
@@ -2575,88 +2536,25 @@ class CommonMetadata:
         nonauthor_contributors = ReleaseContributor.objects.nonauthors(
             self.codebase_release
         )
-
-        contributors = [
-            {
-                "contributorName": self.codebase_release.codebase.repository_url,
-                "contributorType": "hostingInstitution",
-            }
-        ]
-
-        if nonauthor_contributors is not None:
-            for contributor in nonauthor_contributors:
-                already_has_other_role = False
-                for role in contributor.roles:
-                    if role == "copyrightHolder":
-                        contributors.append(
-                            {
-                                "contributorName:": contributor.contributor.name,
-                                "contributorType:": "RightsHolder",
-                            }
-                        )
-                    elif role == "editor":
-                        contributors.append(
-                            {
-                                "contributorName:": contributor.contributor.name,
-                                "contributorType:": "Editor",
-                            }
-                        )
-                    elif role == "funder":
-                        contributors.append(
-                            {
-                                "contributorName:": contributor.contributor.name,
-                                "contributorType:": "Sponsor",
-                            }
-                        )
-                    elif role == "pointOfContact":
-                        contributors.append(
-                            {
-                                "contributorName:": contributor.contributor.name,
-                                "contributorType:": "ContactPerson",
-                            }
-                        )
-                    elif role == "resourceProvider":
-                        contributors.append(
-                            {
-                                "contributorName:": contributor.contributor.name,
-                                "contributorType:": "Distributor",
-                            }
-                        )
-                    # collaborator, contributor, maintainer, publisher and any other new roles will be mapped to other role
-                    elif already_has_other_role == False:
-                        contributors.append(
-                            {
-                                "contributorName:": contributor.contributor.name,
-                                "contributorType:": "Other",
-                            }
-                        )
-                        already_has_other_role = True
-        return contributors
-
-    def convert_programming_languages(self):
-        return [
-            {"@type": "ComputerLanguage", "name": pl.name}
-            for pl in self.codebase_release.programming_languages.all()
-        ]
-
-    def to_creative_work(cls, text):
-        return
-
-    # def to_json(self):
-    #     """Returns a JSON string of this codemeta data"""
-    #     # FIXME: should ideally validate metadata as well
-    #     return json.dumps(self.metadata)
-
-    # def to_dict(self):
-    #     return self.metadata.copy()
+        return nonauthor_contributors
 
 
 class CodeMetaMetadata:
-    COMSES_ORGANIZATION = {
+    INITIAL_DATA = {
+        "@context": "http://schema.org",
+        "@type": "SoftwareSourceCode",
+        "isPartOf": {
+            "@type": "WebApplication",
+            "applicationCategory": "Computational Modeling Software Repository",
+            "operatingSystem": "Any",
+            "name": "CoMSES Model Library",
+            "url": "https://www.comses.net/codebases",
+        },
+    }
+
+    COMSES_ORGANIZATION_FOR_CODEMETA = {
         "@id": "https://ror.org/015bsfc29",
         "@type": "Organization",
-        "name": "CoMSES Net",
-        "url": "https://www.comses.net",
     }
 
     def __init__(self, metadata: dict):
@@ -2668,17 +2566,23 @@ class CodeMetaMetadata:
 
     @classmethod
     def build(cls, common_metadata: CommonMetadata):
-
         metadata = {}
-
         metadata.update(
-            **common_metadata.initial_data,
+            **cls.INITIAL_DATA,
+            publisher={
+                **cls.COMSES_ORGANIZATION_FOR_CODEMETA,
+                **CommonMetadata.COMSES_ORGANIZATION,
+            },
+            provider={
+                **cls.COMSES_ORGANIZATION_FOR_CODEMETA,
+                **CommonMetadata.COMSES_ORGANIZATION,
+            },
             name=common_metadata.name,
             abstract=common_metadata.abstract,
             description=common_metadata.description,
             version=common_metadata.version,
-            targetProduct=common_metadata.targetProduct,
-            programmingLanguage=common_metadata.programmingLanguage,
+            targetProduct=cls.convert_target_product(common_metadata),
+            programmingLanguage=cls.convert_programming_languages(common_metadata),
             author=common_metadata.author,
             identifier=common_metadata.identifier,
             dateCreated=common_metadata.dateCreated,
@@ -2686,7 +2590,7 @@ class CodeMetaMetadata:
             keywords=common_metadata.keywords,
             runtimePlatform=common_metadata.runtimePlatform,
             url=common_metadata.url,
-            citation=common_metadata.citation,
+            citation=cls.add_citation(common_metadata),
         )
 
         datePublished = getattr(common_metadata, "datePublished", None)
@@ -2710,10 +2614,57 @@ class CodeMetaMetadata:
 
         return CodeMetaMetadata(metadata)
 
+    @classmethod
+    def convert_programming_languages(cls, common_metadata: CommonMetadata):
+        return [
+            {"@type": "ComputerLanguage", "name": pl.name}
+            for pl in common_metadata.programming_languages
+        ]
+
+    @classmethod
+    def add_citation(cls, common_metadata: CommonMetadata):
+        citation = []
+        if common_metadata.references_text:
+            citation.append(cls.to_creative_work(common_metadata.references_text))
+        if common_metadata.replication_text:
+            citation.append(cls.to_creative_work(common_metadata.replication_text))
+        if common_metadata.associated_publication_text:
+            citation.append(
+                cls.to_creative_work(common_metadata.associated_publication_text)
+            )
+
+        return citation
+
+    @classmethod
+    def to_creative_work(cls, text):
+        return {"@type": "CreativeWork", "text": text}
+
+    @classmethod
+    def convert_target_product(cls, common_metadata: CommonMetadata):
+        target_product = {
+            "@type": "SoftwareApplication",
+            "name": common_metadata.release_title,
+            "operatingSystem": common_metadata.os,
+            "applicationCategory": "Computational Model",
+        }
+        if common_metadata.live:
+            target_product.update(
+                # FIXME: consider adding a convenience method to generate absolute urls
+                downloadUrl=f"{settings.BASE_URL}{common_metadata.download_url}",
+                releaseNotes=getattr(common_metadata, "releaseNotes", None),
+                softwareVersion=common_metadata.version,
+                identifier=common_metadata.identifier,
+                sameAs=common_metadata.comses_permanent_url,
+            )
+        image_url = common_metadata.get_featured_rendition_url
+        if image_url:
+            target_product.update(screenshot=f"{settings.BASE_URL}{image_url}")
+        return target_product
+
     def to_json(self):
         """Returns a JSON string of this codemeta data"""
         # FIXME: should ideally validate metadata as well
-        return json.dumps(self.metadata)
+        return json.dumps(self.metadata, indent=4)
 
     def to_dict(self):
         return self.metadata.copy()
@@ -2744,9 +2695,9 @@ class DataCiteMetadata:
         some fields DataCite do not want or have.
         """
         metadata = {}
-        
-        publisher_name = common_metadata.initial_data["publisher"]["name"]
-        publisher_url = common_metadata.initial_data["publisher"]["url"]
+
+        publisher_name = CommonMetadata.COMSES_ORGANIZATION["name"]
+        publisher_url = CommonMetadata.COMSES_ORGANIZATION["url"]
 
         metadata.update(
             creators=cls.convert_authors(common_metadata),
@@ -2770,19 +2721,21 @@ class DataCiteMetadata:
         if codeRepository:
             metadata.update(contributors=common_metadata.contributors)
 
-        if common_metadata.keywords:
+        keywords = getattr(common_metadata, "keywords", None)
+        if keywords:
             metadata.update(subjects=common_metadata.keywords)
 
-        if common_metadata.releaseNotes:
+        releaseNotes = getattr(common_metadata, "releaseNotes", None)
+        if releaseNotes:
             metadata["descriptions"].append(
                 {
-                    "description": common_metadata.releaseNotes,
+                    "description": releaseNotes,
                     "descriptionType": "TechnicalInfo",
                 }
             )
 
-        if common_metadata.license:
-            license = common_metadata.license
+        license = getattr(common_metadata, "license", None)
+        if license:
             metadata.update(
                 rightsList=[
                     {
@@ -2835,7 +2788,7 @@ class DataCiteMetadata:
         return creators
 
     @classmethod
-    def convert_publication_year(cls, common_metadata):
+    def convert_publication_year(cls, common_metadata: CommonMetadata):
         copyrightYear = getattr(common_metadata, "copyrightYear", None)
         if copyrightYear:
             return copyrightYear
@@ -2847,6 +2800,48 @@ class DataCiteMetadata:
                 if getattr(common_metadata, "first_published_at")
                 else None
             )
+
+    @classmethod
+    def convert_contributors(cls, common_metadata: CommonMetadata):
+        nonauthor_contributors = common_metadata.nonauthor_contributors
+
+        contributors = [
+            {
+                "contributorName": common_metadata.codeRepository,
+                "contributorType": "hostingInstitution",
+            }
+        ]
+
+        if nonauthor_contributors:
+            role_mapping = {
+                "copyrightHolder": "RightsHolder",
+                "editor": "Editor",
+                "funder": "Sponsor",
+                "pointOfContact": "ContactPerson",
+                "resourceProvider": "Distributor",
+            }
+
+            for contributor in nonauthor_contributors:
+                other_role_added = False
+                for role in contributor.roles:
+                    contributor_type = role_mapping.get(role, "Other")
+                    if contributor_type == "Other" and not other_role_added:
+                        contributors.append(
+                            {
+                                "contributorName": contributor.contributor.name,
+                                "contributorType": "Other",
+                            }
+                        )
+                        other_role_added = True
+                    elif contributor_type != "Other":
+                        contributors.append(
+                            {
+                                "contributorName": contributor.contributor.name,
+                                "contributorType": contributor_type,
+                            }
+                        )
+
+        return contributors
 
     def to_json(self):
         """Returns a JSON string of this codemeta data"""
