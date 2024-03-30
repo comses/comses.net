@@ -9,6 +9,7 @@ from datetime import timedelta
 import semver
 from django.conf import settings
 from django.contrib.postgres.fields import ArrayField
+from django.contrib.auth.models import User
 from django.core.cache import cache
 from django.core.files.images import ImageFile
 from django.core.files.storage import FileSystemStorage
@@ -939,7 +940,8 @@ class Codebase(index.Indexed, ClusterableModel):
             release_metadata.update(overrides)
             release = CodebaseRelease.objects.create(**release_metadata)
             # add submitter as a release contributor automatically
-            release.add_contributor(self.submitter)
+            contributor, created = Contributor.from_user(self.submitter)
+            release.add_contributor(contributor)
         else:
             # copy source release metadata (previous or specified source)
             release = self.create_release_from_source(source_release, release_metadata)
@@ -1570,11 +1572,27 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
             self, mimetype_mismatch_message_level=mimetype_mismatch_message_level
         )
 
-    def add_contributor(self, user, index=0):
-        codebase_contributor, created = Contributor.from_user(user)
-        self.codebase_contributors.create(
-            contributor=codebase_contributor, roles=[Role.AUTHOR], index=index
-        )
+    def add_contributor(self, contributor: Contributor, role=Role.AUTHOR, index=None):
+        # Check if a ReleaseContributor with the same contributor already exists
+        existing_release_contributor = self.codebase_contributors.filter(
+            contributor=contributor
+        ).first()
+
+        if existing_release_contributor is None:
+            if index is None:
+                index = self.codebase_contributors.all().count()
+            # Create a new ReleaseContributor instance if the contributor is not already associated
+            new_release_contributor = self.codebase_contributors.create(
+                contributor=contributor, roles=[role], index=index
+            )
+            return new_release_contributor
+        else:
+            if role not in existing_release_contributor.roles:
+                # Update the roles of the existing ReleaseContributor instance
+                existing_release_contributor.roles.append(role)
+                existing_release_contributor.save()
+
+            return existing_release_contributor
 
     @transaction.atomic
     def publish(self):

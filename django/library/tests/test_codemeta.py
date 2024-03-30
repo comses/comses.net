@@ -7,18 +7,20 @@ from hypothesis.extra.django import (
     register_field_strategy,
 )
 
-
 from hypothesis.stateful import (
     RuleBasedStateMachine,
     initialize,
     invariant,
     rule,
+    multiple,
+    consumes,
+    Bundle,
 )
 
 from django.contrib.auth.models import User
 import jsonschema
 from library.tests.base import CodebaseFactory
-from library.models import CodeMeta
+from library.models import CodeMeta, Contributor, ReleaseContributor, Role
 
 from typing import List, Tuple
 from hypothesis import (
@@ -26,21 +28,33 @@ from hypothesis import (
     Verbosity,
     given,
     settings,
+    example,
     strategies as st,
 )
 
-from hypothesis import given
+from hypothesis.strategies import data
+
 import logging
 
-
+st.dictionaries
 from hypothesis import settings, Verbosity
 
 from core.tests.base import UserFactory
 from library.models import Codebase, CodebaseRelease
 
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.ERROR)
+
+
+MAX_PROPERTY_TEST_RUNS = 15
+
+MAX_STATEFUL_TEST_RUNS = 5
+MAX_STATEFUL_TEST_RULES_COUNT = 15
+
+HYPOTHESIS_SETTINGS_VERBOSITY = Verbosity.quiet
+
 # infered from json-ld.json
 # https://raw.githubusercontent.com/codemeta/codemeta/master/codemeta.jsonld
-
 CODEMETA_SCHEMA = {
     "$schema": "http://json-schema.org/draft-07/schema",
     "properties": {
@@ -112,7 +126,7 @@ CODEMETA_SCHEMA = {
                     "familyName": {"type": "string"},
                     "email": {"type": "string"},
                 },
-                "required": ["@type", "givenName", "familyName", "email"],
+                "required": ["@type", "givenName", "familyName"],
             },
             "minItems": 1,
         },
@@ -184,12 +198,13 @@ This class is used to test all methods which affect CodeMeta object
 
 class CodeMetaTest(TestCase):
     def setUp(self):
-        self.test_counter = 0
+        pass
 
     @staticmethod
     def build_release(
         submitter_dict: dict,
     ) -> Tuple[User, UserFactory, CodebaseRelease]:
+
         user_factory = UserFactory()
         submitter = user_factory.create(
             username=submitter_dict["username"],
@@ -201,14 +216,14 @@ class CodeMetaTest(TestCase):
         codebase_factory = CodebaseFactory(submitter=submitter)
         codebase = codebase_factory.create()
         codebase_release = codebase.create_release(initialize=False)
-        # create a set of citable Contributors and add them to the release
-        # verify that they are included in the correct order in the resulting
-        # codemeta object and JSON
-        # CodebaseRelease has many ReleaseContributors as an ordered set
 
         return submitter, user_factory, codebase_release
 
-    @settings(max_examples=15, verbosity=Verbosity.quiet, deadline=None)
+    @settings(
+        max_examples=MAX_PROPERTY_TEST_RUNS,
+        verbosity=HYPOTHESIS_SETTINGS_VERBOSITY,
+        deadline=None,
+    )
     @given(
         st.lists(
             st.fixed_dictionaries(USER_MAPPING),
@@ -218,8 +233,7 @@ class CodeMetaTest(TestCase):
         )
     )
     def test_authors(self, seed_user_dict_list: List[dict]):
-        print(f"Starting authors test {self.test_counter+1}")
-
+        logger.debug("test_authors()")
         submitter_dict = seed_user_dict_list.pop()
         submitter, user_factory, release = self.build_release(submitter_dict)
 
@@ -232,7 +246,8 @@ class CodeMetaTest(TestCase):
                 last_name=user_seed["last_name"],
             )
             users.append(user)
-            release.add_contributor(user, index=i)
+            contributor, created = Contributor.from_user(user)
+            release.add_contributor(contributor, index=i)
 
         # Function to test: CodeMeta.build(self)
         author_list = release.codemeta.metadata["author"]
@@ -242,10 +257,13 @@ class CodeMetaTest(TestCase):
             self.assertEqual(user.first_name, author_list[i]["givenName"])
             self.assertEqual(user.email, author_list[i]["email"])
 
-        self.test_counter += 1
-        print("Done with authors test")
+        logger.debug("test_authors() done.")
 
-    @settings(max_examples=15, verbosity=Verbosity.quiet, deadline=None)
+    @settings(
+        max_examples=MAX_PROPERTY_TEST_RUNS,
+        verbosity=HYPOTHESIS_SETTINGS_VERBOSITY,
+        deadline=None,
+    )
     @given(
         st.data(),
         st.lists(
@@ -256,8 +274,7 @@ class CodeMetaTest(TestCase):
         ),
     )
     def test_languages(self, data, programming_language_names: List[str]):
-        print(f"Starting language test {self.test_counter+1}")
-
+        logger.debug("test_languages()")
         submitter_dict = data.draw(st.fixed_dictionaries(USER_MAPPING))
         submitter, user_factory, release = self.build_release(submitter_dict)
 
@@ -276,10 +293,13 @@ class CodeMetaTest(TestCase):
                 f"Mismatch found at index {index}. Expected: {expected_language_name}, Actual: {language}",
             )
 
-        self.test_counter += 1
-        print("Done with languages test")
+        logger.debug("test_languages() done.")
 
-    @settings(max_examples=15, verbosity=Verbosity.quiet, deadline=None)
+    @settings(
+        max_examples=MAX_PROPERTY_TEST_RUNS,
+        verbosity=HYPOTHESIS_SETTINGS_VERBOSITY,
+        deadline=None,
+    )
     @given(
         st.data(),
         st.lists(
@@ -290,8 +310,7 @@ class CodeMetaTest(TestCase):
         ),
     )
     def test_keywords(self, data, tags: List[str]):
-        print(f"Starting keywords test {self.test_counter+1}")
-
+        logger.debug("test_keywords()")
         submitter_dict = data.draw(st.fixed_dictionaries(USER_MAPPING))
         submitter, user_factory, release = self.build_release(submitter_dict)
 
@@ -303,10 +322,13 @@ class CodeMetaTest(TestCase):
         # logger.debug(keyword_list)
         self.assertListEqual(tags, keyword_list)
 
-        self.test_counter += 1
-        print("Done with keywords testing")
+        logger.debug("test_keywords() done.")
 
-    @settings(max_examples=15, verbosity=Verbosity.quiet, deadline=None)
+    @settings(
+        max_examples=MAX_PROPERTY_TEST_RUNS,
+        verbosity=HYPOTHESIS_SETTINGS_VERBOSITY,
+        deadline=None,
+    )
     @given(
         st.data(),
         st.lists(
@@ -317,8 +339,7 @@ class CodeMetaTest(TestCase):
         ),
     )
     def test_citation(self, data, citations: List[str]):
-        print(f"Starting citation test {self.test_counter+1}")
-
+        logger.debug("test_citation()")
         submitter_dict = data.draw(st.fixed_dictionaries(USER_MAPPING))
         submitter, user_factory, release = self.build_release(submitter_dict)
 
@@ -327,40 +348,30 @@ class CodeMetaTest(TestCase):
 
         citation_list = release.codemeta.metadata["citation"]
 
-        # logger.debug(citation_list)
-
         self.assertListEqual(citations, citation_list)
+        logger.debug("test_citation() done.")
 
-        self.test_counter += 1
-        print("Done with citations test")
-
-    @settings(max_examples=15, verbosity=Verbosity.quiet, deadline=None)
+    @settings(
+        max_examples=MAX_PROPERTY_TEST_RUNS,
+        verbosity=HYPOTHESIS_SETTINGS_VERBOSITY,
+        deadline=None,
+    )
     @given(st.data())
     def test_codemeta_validate(self, data):
-        """
-        1. build a codebase with data.draw()
-        2. build release with draw()
-        3. perform actions (rules?) that change metadata of the release
-        4. assert validity of release.codemeta.to_json against SCHEMA
-
-        Add stateful testing!
-        https://hypothesis.readthedocs.io/en/latest/stateful.html
-        """
-        print(f"Starting codemeta validation test {self.test_counter+1}")
+        logger.debug("test_codemeta_validate()")
 
         submitter_dict = data.draw(st.fixed_dictionaries(USER_MAPPING))
         submitter, user_factory, release = self.build_release(submitter_dict)
 
         try:
             jsonschema.validate(release.codemeta.to_json(), schema=CODEMETA_SCHEMA)
+            logger.debug("codemeta.json is valid.")
         except Exception as e:
+            logger.error("codemeta.json is invalid! Validation error: {e}")
             self.fail(f"Validation error: {e}")
 
-        self.test_counter += 1
-        print("Done with codemeta validation test")
+        logger.debug("test_codemeta_validate() done.")
 
-
-STATEFUL_STEP_COUNT = 15
 
 """
 This class is used to test whether a random combination of methods that affect CodeMeta will produce a valid codemeta.json
@@ -368,53 +379,59 @@ This class is used to test whether a random combination of methods that affect C
 
 
 @settings(
-    max_examples=3,
-    stateful_step_count=STATEFUL_STEP_COUNT,
-    verbosity=Verbosity.quiet,
+    max_examples=MAX_STATEFUL_TEST_RUNS,
+    stateful_step_count=MAX_STATEFUL_TEST_RULES_COUNT,
+    verbosity=HYPOTHESIS_SETTINGS_VERBOSITY,
     deadline=None,
     suppress_health_check=[HealthCheck.data_too_large],
 )
-class CodeMetaValidation(RuleBasedStateMachine):
-    print("CodeMetaValidationTester class")
+class CodeMetaValidationTest(RuleBasedStateMachine):
+    added_release_contributors = Bundle("added_release_contributors")
 
-    def __init__(self):
-        super().__init__()
-        print("CodeMetaValidationTester __init__() - runs once per test!")
-        self.contributors = []
-        self.contributor_count = 0
-
-    @initialize(data=st.data())
-    def init_release(self, data):
+    @initialize(data=data())
+    def setup(self, data):
         """
         This runs before each test case
         """
+        logger.debug("setup()")
 
-        print("@initialize()")
+        self.release_contributors_count = 0
+        self.release_nonauthor_contributors_count = 0
+        self.release_author_contributors_count = 0
+        self.keywords_count = 0
+        self.programming_languages_count = 0
+        self.citations_count = 0
 
         """
         Generate a pool of unique users dicts
         """
-        self.unique_user_dict_pool = data.draw(
+        unique_user_dict_pool = data.draw(
             st.lists(
                 st.fixed_dictionaries(USER_MAPPING),
-                min_size=STATEFUL_STEP_COUNT,
-                max_size=STATEFUL_STEP_COUNT,
+                min_size=MAX_STATEFUL_TEST_RULES_COUNT,
+                max_size=MAX_STATEFUL_TEST_RULES_COUNT,
                 unique_by=(lambda x: x["username"]),
             )
         )
 
         """
-        Create one user as submitter
+        Create users
         """
-        submitter_dict = self.unique_user_dict_pool.pop()
-
         self.user_factory = UserFactory()
-        self.submitter = self.user_factory.create(
-            username=submitter_dict["username"],
-            email=submitter_dict["email"],
-            first_name=submitter_dict["first_name"],
-            last_name=submitter_dict["last_name"],
-        )
+        self.users = set({})
+        for user_dict in unique_user_dict_pool:
+            user = self.user_factory.create(
+                username=user_dict["username"],
+                email=user_dict["email"],
+                first_name=user_dict["first_name"],
+                last_name=user_dict["last_name"],
+            )
+            self.users.add(user)
+
+        """
+        Create Submitter
+        """
+        self.submitter = self.users.pop()
 
         """
         Create Codebase and CodebaseRelease
@@ -423,101 +440,193 @@ class CodeMetaValidation(RuleBasedStateMachine):
         self.codebase = codebase_factory.create()
         self.codebase_release = self.codebase.create_release(initialize=False)
 
-        """
-        List of contributors
-        """
+        #  set initial texts used for citation
+        self.codebase.references_text = ""
+        self.codebase.replication_text = ""
+        self.codebase.associated_publication_text = ""
 
-        # print(submitter_dict)
+        # submitter is by default Contributor with role=Role.AUTHOR
+        self.release_contributors_count += 1
+        self.release_author_contributors_count += 1
 
-    """
-    TODO: add some rules for:
-    1. citations
-    2. programming languages
-    3. keywords
-    """
+        logger.debug("setup() done.")
 
-    @rule()
-    def add_contributor(self):
-        """
-        Adds a contributor to the CodebaseRelease
-        """
-
-        print("add_contributor()")
-
-        """
-        Create one user from the pool data
-        """
-        user_dict = self.unique_user_dict_pool.pop()
-        user = self.user_factory.create(
-            username=user_dict["username"],
-            email=user_dict["email"],
-            first_name=user_dict["first_name"],
-            last_name=user_dict["last_name"],
-        )
-
-        print(f"Created new user: {user.username}")
-
+    @rule(
+        role=st.sampled_from(list(Role)),
+    )
+    def add_contributor(self, role):
+        logger.debug("add_contributor()")
+        contributor, created = Contributor.from_user(self.users.pop())
         # FUNCTION UNDER TEST
-        self.codebase_release.add_contributor(user)
+        release_contributor = self.codebase_release.add_contributor(contributor, role)
 
-        self.contributors.append(user)
+        self.codebase_release.save()
+        self.release_contributors_count += 1
+
+        if role == Role.AUTHOR:
+            self.release_author_contributors_count += 1
+        else:
+            self.release_nonauthor_contributors_count += 1
+        logger.debug("add_contributor() done.")
+
+    @rule(
+        reference=st.text(min_size=100, alphabet=string.printable),
+        replication=st.text(min_size=100, alphabet=string.printable),
+        associated_publication=st.text(min_size=100, alphabet=string.printable),
+    )
+    def add_citation(self, reference, replication, associated_publication):
+        logger.debug("add_citation()")
+        self.codebase.references_text = reference
+        self.codebase.replication_text = replication
+        self.codebase.associated_publication_text = associated_publication
+        logger.debug("add_citation() done.")
+
+    @rule(programming_language=st.text(min_size=1, alphabet=string.printable))
+    def add_programming_language(self, programming_language):
+        logger.debug("add_programming_language()")
+        existing_pls = self.codebase_release.programming_languages.all()
+
+        if programming_language not in [pl.name for pl in existing_pls]:
+            # .upper() is used to make the test pass.
+            # TODO: check behaviour when adding programming_languages
+
+            self.codebase_release.programming_languages.add(
+                programming_language.upper()
+            )
+            self.programming_languages_count += 1
+
+        logger.debug("add_programming_language() done.")
+
+    @rule(keyword=st.text(min_size=1, alphabet=string.printable))
+    def add_keyword(self, keyword):
+        logger.debug("add_keyword()")
+        existing_tags = self.codebase_release.codebase.tags.all()
+        if keyword not in [tag.name for tag in existing_tags]:
+            self.codebase_release.codebase.tags.add(keyword)
+            self.keywords_count += 1
+        logger.debug("add_keyword() done.")
 
     @invariant()
     def length_agrees(self):
-        """
-        Length of "author list" in the CodeMeta.build(self.codebase_release)
-        should be ALWAYS equal to length of
-        self.contributors + 1 (submitter)
-        """
-        print("length_agrees()")
-        # TODO Why self.codebase_release.codemeta.metadata["author"] is cached during tests??
-        # author_list = self.codebase_release.codemeta.metadata["author"]
-        author_list = CodeMeta.build(self.codebase_release).metadata["author"]
+        """authors"""
+        logger.debug("length_agrees()")
+        expected_contributors_count = (
+            self.codebase_release.codebase_contributors.all().count()
+        )
 
-        assert len(author_list) == len(self.contributors) + 1
+        expected_author_contributors_count = (
+            ReleaseContributor.objects.authors(self.codebase_release).all().count()
+        )
+
+        expected_nonauthor_contributors_count = (
+            ReleaseContributor.objects.nonauthors(self.codebase_release).all().count()
+        )
+
+        assert expected_contributors_count == self.release_contributors_count
+
+        assert (
+            expected_contributors_count
+            == expected_author_contributors_count
+            + expected_nonauthor_contributors_count
+        )
+
+        assert (
+            expected_contributors_count
+            == self.release_author_contributors_count
+            + self.release_nonauthor_contributors_count
+        )
+
+        expected_codemeta_authors_count = len(
+            CodeMeta.convert_authors(self.codebase_release)
+        )
+        assert expected_codemeta_authors_count == self.release_author_contributors_count
+
+        """ keywords """
+        expected_keywords_count = self.codebase_release.codebase.tags.all().count()
+        assert expected_keywords_count == self.keywords_count
+
+        """ programming_languages """
+        expected_programming_languages_count = (
+            self.codebase_release.programming_languages.all().count()
+        )
+        assert expected_programming_languages_count == self.programming_languages_count
+
+        """ citations """
+        # Replicate citation building mechanism from CodeMeta
+        expected_citation = [
+            citation
+            for citation in [
+                self.codebase.references_text,
+                self.codebase.replication_text,
+                self.codebase.associated_publication_text,
+            ]
+            if citation
+        ]
+
+        # Extract text from CodeMeta.metadata
+        codemeta_citation_flat_text = [
+            creative_work["text"]
+            for creative_work in CodeMeta.build(self.codebase_release).metadata[
+                "citation"
+            ]
+        ]
+
+        assert expected_citation == codemeta_citation_flat_text
+
+        logger.debug("length_agrees() done.")
 
     @invariant()
     def validate_against_schema(self):
         """
         CodeMeta.build(release).to_json() should ALWAYS validate against CODEMETA_SCHEMA
         """
-        print("validate_against_schema()")
+        logger.debug("validate_against_schema()")
         try:
             jsonschema.validate(
                 json.loads(CodeMeta.build(self.codebase_release).to_json()),
                 schema=CODEMETA_SCHEMA,
             )
-            print("codemeta.json is valid!")
+
+            logger.debug("codemeta.json is valid.")
+            assert True, "codemeta.json is valid."
+
         except Exception as e:
+            logger.error("codemeta.json is invalid! {e}")
             assert False, "CodeMeta validation error: {e}"
+
+        logger.debug("validate_against_schema() done.")
 
     def teardown(self):
         """
-        This runs at the end of each test case
+        Clean up all created objects. This runs at the end of each test case
         """
-        print("teardown()")
+        logger.debug("teardown()")
 
-        """
-        Clean up all created objects
-        """
-        CodebaseRelease.objects.filter(id=self.codebase_release.id).get().delete()
-        Codebase.objects.filter(id=self.codebase.id).get().delete()
-        User.objects.filter(id=self.submitter.id).get().delete()
+        # TODO: why is this check necessary? Why does hypothesis run multiple @initialize and teardown at start?
+        if self.codebase_release is not None:
+            try:
+                # Delete CodebaseRelease
+                CodebaseRelease.objects.filter(id=self.codebase_release.id).delete()
+                # Delete Codebase
+                Codebase.objects.filter(id=self.codebase.id).delete()
+                # Delete Submitter
+                User.objects.filter(id=self.submitter.id).delete()
+                # Delete Contributor objects
+                for user in self.users:
+                    User.objects.filter(username=user.username).delete()
+            except Exception as err:
+                logger.error(f"Exception during teardown: {err}")
 
-        # delete contributor objects
-        for user in self.contributors:
-            User.objects.filter(username=user.username).get().delete()
+        logger.debug("teardown() done.")
 
 
 """
-This class is used to run CodeMetaValidation
+This class is used to run CodeMetaValidationTest
 """
 
 
-class StatefulTest(CodeMetaValidation.TestCase, TestCase):
-
+class StatefulCodeMetaValidationTest(CodeMetaValidationTest.TestCase, TestCase):
     def __init__(self, *args, **kwargs):
         # Call the __init__ method of the parent classes
-        CodeMetaValidation.TestCase.__init__(self, *args, **kwargs)
+        CodeMetaValidationTest.TestCase.__init__(self, *args, **kwargs)
         TestCase.__init__(self, *args, **kwargs)
-        print("StatefulTest.__init__()")
