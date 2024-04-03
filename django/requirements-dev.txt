@@ -6,5 +6,7 @@ coveralls
 django-debug-toolbar
 django-debug-toolbar-request-history
 django-fixture-magic
+# https://hypothesis.readthedocs.io/en/latest/django.html
+hypothesis[django]
 sphinx
 sphinx_rtd_theme
