@@ -1582,12 +1582,12 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
         return CommonMetadata(self)
 
     @cached_property
-    def codemeta_metadata(self):
+    def codemeta(self):
         """Returns a CodeMetaMetadata object that can be dumped to json"""
         return CodeMetaMetadata.build(self.common_metadata)
 
     @cached_property
-    def datacite_metadata(self):
+    def datacite(self):
         return DataCiteMetadata.build(self.common_metadata)
 
     @property
@@ -1630,7 +1630,7 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
 
     @property
     def codemeta_json(self):
-        return self.codemeta_metadata.to_json()
+        return self.codemeta.to_json()
 
     def create_or_update_codemeta(self, force=True):
         return self.get_fs_api().create_or_update_codemeta(force=force)
@@ -2480,13 +2480,11 @@ class CommonMetadata:
         self.version = release.version_number
         self.programming_languages = release.programming_languages.all()
         self.os = release.os
-        self.author = self.convert_authors()
-        self.contributors = self.convert_contributors()
         self.identifier = release.permanent_url
-        self.dateCreated = release.date_created.isoformat()
-        self.dateModified = release.last_modified.isoformat()
+        self.date_created = release.date_created.isoformat()
+        self.date_modified = release.last_modified.isoformat()
         self.keywords = self.convert_keywords()
-        self.runtimePlatform = self.convert_platforms()
+        self.runtime_platform = self.convert_platforms()
         self.url = release.permanent_url
         self.download_url = release.get_download_url()
         self.comses_permanent_url = release.comses_permanent_url
@@ -2495,15 +2493,16 @@ class CommonMetadata:
         self.live = release.live
 
         # used for citations
-        self.references_text = codebase.references_text
-        self.replication_text = codebase.replication_text
-        self.associated_publication_text = codebase.associated_publication_text
+        self.citations = [
+            codebase.references_text,
+            codebase.replication_text,
+            codebase.associated_publication_text,
+        ]
 
         if release.live:
-            self.datePublished = release.last_published_on.strftime(
-                self.DATE_PUBLISHED_FORMAT
-            )
-            self.copyrightYear = release.last_published_on.year
+            date_published = release.last_published_on
+            self.date_published = date_published.strftime(self.DATE_PUBLISHED_FORMAT)
+            self.copyright_year = date_published.year
 
         if release.first_published_at:
             self.first_published_at = release.first_published_at
@@ -2512,12 +2511,11 @@ class CommonMetadata:
             self.license = release.license
 
         if codebase.repository_url:
-            self.codeRepository = codebase.repository_url
+            self.code_repository = codebase.repository_url
 
         if release.release_notes:
-            self.releaseNotes = release.release_notes.raw
+            self.release_notes = release.release_notes.raw
 
-        #  codemeta @id
         self.permanent_url = release.permanent_url
 
     def convert_keywords(self):
@@ -2526,17 +2524,13 @@ class CommonMetadata:
     def convert_platforms(self):
         return [tag.name for tag in self.codebase_release.platform_tags.all()]
 
-    def convert_authors(self):
-        return [
-            author.contributor.to_codemeta()
-            for author in ReleaseContributor.objects.authors(self.codebase_release)
-        ]
+    @cached_property
+    def release_contributor_nonauthors(self):
+        return ReleaseContributor.objects.nonauthors(self.codebase_release)
 
-    def convert_contributors(self):
-        nonauthor_contributors = ReleaseContributor.objects.nonauthors(
-            self.codebase_release
-        )
-        return nonauthor_contributors
+    @cached_property
+    def release_contributor_authors(self):
+        return ReleaseContributor.objects.authors(self.codebase_release)
 
 
 class CodeMetaMetadata:
@@ -2583,20 +2577,20 @@ class CodeMetaMetadata:
             version=common_metadata.version,
             targetProduct=cls.convert_target_product(common_metadata),
             programmingLanguage=cls.convert_programming_languages(common_metadata),
-            author=common_metadata.author,
+            author=cls.convert_authors(common_metadata),
             identifier=common_metadata.identifier,
-            dateCreated=common_metadata.dateCreated,
-            dateModified=common_metadata.dateModified,
+            dateCreated=common_metadata.date_created,
+            dateModified=common_metadata.date_modified,
             keywords=common_metadata.keywords,
-            runtimePlatform=common_metadata.runtimePlatform,
+            runtimePlatform=common_metadata.runtime_platform,
             url=common_metadata.url,
-            citation=cls.add_citation(common_metadata),
+            citation=cls.get_citations(common_metadata),
         )
 
         datePublished = getattr(common_metadata, "datePublished", None)
         if datePublished:
             metadata.update(datePublished=datePublished)
-            metadata.update(copyrightYear=common_metadata.copyrightYear)
+            metadata.update(copyrightYear=common_metadata.copyright_year)
 
         license = getattr(common_metadata, "license", None)
         if license:
@@ -2622,22 +2616,22 @@ class CodeMetaMetadata:
         ]
 
     @classmethod
-    def add_citation(cls, common_metadata: CommonMetadata):
-        citation = []
-        if common_metadata.references_text:
-            citation.append(cls.to_creative_work(common_metadata.references_text))
-        if common_metadata.replication_text:
-            citation.append(cls.to_creative_work(common_metadata.replication_text))
-        if common_metadata.associated_publication_text:
-            citation.append(
-                cls.to_creative_work(common_metadata.associated_publication_text)
-            )
-
-        return citation
+    def get_citations(cls, common_metadata: CommonMetadata):
+        return [
+            cls.to_creative_work(citation_text)
+            for citation_text in common_metadata.citations
+        ]
 
     @classmethod
     def to_creative_work(cls, text):
         return {"@type": "CreativeWork", "text": text}
+
+    @classmethod
+    def convert_authors(cls, common_metadata: CommonMetadata):
+        return [
+            author.contributor.to_codemeta()
+            for author in common_metadata.release_contributor_authors
+        ]
 
     @classmethod
     def convert_target_product(cls, common_metadata: CommonMetadata):
@@ -2658,12 +2652,12 @@ class CodeMetaMetadata:
             )
         image_url = common_metadata.get_featured_rendition_url
         if image_url:
+            # FIXME: consider adding a convenience method to generate absolute urls
             target_product.update(screenshot=f"{settings.BASE_URL}{image_url}")
         return target_product
 
     def to_json(self):
         """Returns a JSON string of this codemeta data"""
-        # FIXME: should ideally validate metadata as well
         return json.dumps(self.metadata, indent=4)
 
     def to_dict(self):
@@ -2747,32 +2741,26 @@ class DataCiteMetadata:
             )
 
         """
-        Now we will handle the nested parent/child DOI part.
+        FIXME: nested parent/child DOIs not yet implemented
         DataCite documentation @ https://support.datacite.org/docs/versioning
         Here's an example of how Zenodo does this relationship in metadata:
             parent @ https://api.datacite.org/dois/10.5281/zenodo.705645
             v1 @ https://api.datacite.org/dois/10.5281/zenodo.60943
             v2 @ https://api.datacite.org/dois/10.5281/zenodo.800648
         Zenodo's documentation @ https://help.zenodo.org/faq/#versioning
-        """
-        """
         parent = release.codebase
         parent_doi = parent.get_absolute_url()
         releases = parent.ordered_releases()
 
         # If there are 2 releases, then we need to create a parent DOI but should this be done elsewhere since it requires a call to DataCite's Fabrica API?
-        #if releases.count() == 2:
-            # do something
-        #elif releases.count() > 2:
-            # do something
         """
         return DataCiteMetadata(metadata)
 
     @classmethod
     def convert_authors(cls, common_metadata: CommonMetadata):
         creators = []
-        for author in common_metadata.author:
-            # print ("author: " + str(author))
+        for author in common_metadata.release_contributor_authors:
+            # FIXME: this should not rely on CodeMeta attributes and is currently broken
             author_type = "Organizational"
             if author["@type"] == "Person":
                 author_type = "Personal"
@@ -2803,11 +2791,13 @@ class DataCiteMetadata:
 
     @classmethod
     def convert_contributors(cls, common_metadata: CommonMetadata):
-        nonauthor_contributors = common_metadata.nonauthor_contributors
+        nonauthor_contributors = common_metadata.release_contributor_nonauthors
 
         contributors = [
+            # FIXME: probably not the right way to bootstrap non author contributors
+            # perhaps this should be the provider institution, e.g., CML ROR
             {
-                "contributorName": common_metadata.codeRepository,
+                "contributorName": common_metadata.code_repository,
                 "contributorType": "hostingInstitution",
             }
         ]
@@ -2821,14 +2811,15 @@ class DataCiteMetadata:
                 "resourceProvider": "Distributor",
             }
 
-            for contributor in nonauthor_contributors:
+            for release_contributor in nonauthor_contributors:
+                # FIXME: what is other_role_added for?
                 other_role_added = False
-                for role in contributor.roles:
+                for role in release_contributor.roles:
                     contributor_type = role_mapping.get(role, "Other")
                     if contributor_type == "Other" and not other_role_added:
                         contributors.append(
                             {
-                                "contributorName": contributor.contributor.name,
+                                "contributorName": release_contributor.contributor.name,
                                 "contributorType": "Other",
                             }
                         )
@@ -2836,7 +2827,7 @@ class DataCiteMetadata:
                     elif contributor_type != "Other":
                         contributors.append(
                             {
-                                "contributorName": contributor.contributor.name,
+                                "contributorName": release_contributor.contributor.name,
                                 "contributorType": contributor_type,
                             }
                         )
