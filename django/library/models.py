@@ -101,8 +101,22 @@ class ContributorAffiliation(TaggedItemBase):
     )
 
 
+class LicenseQuerySet(models.QuerySet):
+    def software(self, **kwargs):
+        return self.no_cc(**kwargs)
+
+    def no_cc(self, **kwargs):
+        return (
+            self.exclude(name="None")
+            .exclude(name__istartswith="CC", **kwargs)
+            .order_by("name")
+        )
+
+
 @register_snippet
 class License(models.Model):
+    objects = LicenseQuerySet.as_manager()
+
     name = models.CharField(
         max_length=200, help_text=_("SPDX license code from https://spdx.org/licenses/")
     )
@@ -1072,6 +1086,9 @@ class CodebaseReleaseQuerySet(models.QuerySet):
         if include_all:
             return qs
         return qs[:number]
+
+    def with_invalid_license(self, **kwargs):
+        return self.filter(**kwargs).exclude(license__in=License.objects.software())
 
 
 @add_to_comses_permission_whitelist

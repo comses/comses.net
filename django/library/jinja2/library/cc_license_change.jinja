@@ -8,38 +8,37 @@
 <div class="container mt-4">
     {% if user_releases %}
     <p>
-        We are attempting to phase out the use of Creative Commons licenses for models
-        stored in the CoMSES Model Library, as
+        We are phasing out Creative Commons licenses for computational models
+        published in the CoMSES Model Library. Creative Commons offers excellent licenses for data and publications but
         <a href="https://creativecommons.org/faq/#can-i-apply-a-creative-commons-license-to-software">
-            they are not recommended for software.
+            explicitly state that they <em>do not recommend</em> their usage for software.
         </a>
-        To this end, we are asking members to update the licensing of their models and
-        are providing an easy way to do so by relicensing all of your models at once to
-        a more appropriate software license. If you prefer a different license to the default
-        alternatives listed below, you may update the license by editing a release's metadata
-        at any time.
+        In order to ensure that software in our model library is properly licensed for reuse, we are providing an easy
+        way to do relicense your models all at once to an appropriate software license. If you prefer a different
+        license to the default alternatives listed below, please edit your specific codebase release's metadata and
+        update the license there.
     </p>
     <ul>
         <li>
-            The CC BY license will be replaced with the
-            <a href="https://opensource.org/license/MIT" target="_blank">MIT license</a>,
-            a commonly used permissive license that retains the attribution requirement.
+            Most <a href='https://creativecommons.org/licenses/by/4.0/'>CC-BY</a>, CC-NC, and CC-ND licenses will be
+            replaced with the <a href="https://opensource.org/license/MIT" target="_blank">MIT license</a>, a commonly
+            used permissive license that preserves the attribution requirement but promotes maximum reuse.
         </li>
         <li>
-            All other CC licenses will be changed to the
+            All CC ShareAlike licenses will be changed to the
             <a href="https://www.gnu.org/licenses/gpl-3.0.en.html" target="_blank">
-                GNU General Public License v3.0</a>, a widely used copyleft license that
-            provides a rough equivalent to the ShareAlike restriction.
-            There are no commonly used software licenses that include the same restrictions
-            as NonCommercial or NoDerivatives.
+                GNU General Public License v3.0
+            </a>, a widely used copyleft license that is closest in spirit to the 
+            <a href='https://creativecommons.org/licenses/by-sa/4.0/'>ShareAlike</a> restriction. There are no commonly
+            used software licenses that offer the same restrictions as the NonCommercial or NoDerivatives clauses in the
+            Creative Commons family of licenses.
         </li>
     </ul>
     <hr />
-    <p><b>
-            Please review the following changes to the licensing of your models stored
-            in the model library. By pressing confirm, you will be relicensing your
-            software which affects how others are legally allowed to use your code.
-        </b></p>
+    <p><strong>
+        Please review the following changes to the licensing of your models stored in the model library. By pressing
+        confirm, you will be relicensing your software which affects how others are legally allowed to use your code.
+    </strong></p>
     <form method="post">
         {{ csrf_input }}
         <table class="table">
@@ -47,7 +46,7 @@
                 <tr>
                     <th>Model release</th>
                     <th>Current license</th>
-                    <th>Will be changed to</th>
+                    <th>Change to new license</th>
                 </tr>
             </thead>
             <tbody>

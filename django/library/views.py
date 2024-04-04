@@ -1,6 +1,3 @@
-import logging
-import pathlib
-
 from django.forms import Form
 from django.contrib import messages
 from django.contrib.auth.mixins import PermissionRequiredMixin, LoginRequiredMixin
@@ -81,6 +78,8 @@ from .serializers import (
     PeerReviewEventLogSerializer,
 )
 
+import logging
+import pathlib
 
 logger = logging.getLogger(__name__)
 
@@ -1096,11 +1095,11 @@ class CCLicenseChangeView(LoginRequiredMixin, FormView):
     # maps CC license SPDX names to a default alternative
     LICENSE_MAPPING = {
         "CC-BY-4.0": "MIT",
+        "CC-BY-ND-4.0": "MIT",
+        "CC-BY-NC-4.0": "MIT",
+        "CC-BY-NC-ND-4.0": "MIT",
         "CC-BY-SA-4.0": "GPL-3.0",
-        "CC-BY-ND-4.0": "GPL-3.0",
-        "CC-BY-NC-4.0": "GPL-3.0",
         "CC-BY-NC-SA-4.0": "GPL-3.0",
-        "CC-BY-NC-ND-4.0": "GPL-3.0",
     }
 
     def get_context_data(self, **kwargs):
@@ -1117,21 +1116,24 @@ class CCLicenseChangeView(LoginRequiredMixin, FormView):
         return context
 
     def form_valid(self, form):
-        # update licenses
+        # update all codebase releases with invalid licenses with their mapped alternative
         try:
-            releases_with_cc = CodebaseRelease.objects.filter(
-                submitter=self.request.user,
-                license__url__icontains="creativecommons.org",
+            releases_with_cc = CodebaseRelease.objects.with_invalid_license(
+                submitter=self.request.user
             )
             for release in releases_with_cc:
                 candidate_license_name = self.LICENSE_MAPPING.get(release.license.name)
                 release.license = License.objects.get(name=candidate_license_name)
                 release.save()
-            messages.success(self.request, "Licenses updated successfully. Thank you!")
+            messages.success(
+                self.request,
+                "Licenses successfully updated. Thanks for making your models more reusable on CoMSES.Net!",
+            )
             return super().form_valid(form)
         except Exception as e:
             messages.error(
-                self.request, "An error occurred while updating the licenses."
+                self.request,
+                "An error occurred while attempting to update your licenses. Please contact us if the problem persists.",
             )
             logger.error("Error updating licenses: %s", e)
             return super().form_invalid(form)

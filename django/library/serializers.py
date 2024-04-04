@@ -44,16 +44,13 @@ logger = logging.getLogger(__name__)
 
 
 class LicenseSerializer(serializers.ModelSerializer):
-    def create(self, validated_data):
-        license = License.objects.filter(name=validated_data["name"]).first()
-        if license is not None:
-            if validated_data["url"] != license.url:
-                license.url = validated_data["url"]
-                license.save()
-        else:
-            license = super().create(validated_data)
+    def validate_name(self, value):
+        if not License.objects.filter(name=value).exists():
+            raise ValidationError(_(f"Invalid license: {value}"))
+        return value
 
-        return license
+    def create(self, validated_data):
+        return License.objects.filter(name=validated_data["name"]).first()
 
     class Meta:
         model = License
@@ -575,9 +572,7 @@ class CodebaseReleaseEditSerializer(CodebaseReleaseSerializer):
         serialized = LicenseSerializer(
             # do not include CC licenses, this will be unnecessary if we manage
             # to fully migrate everything to different licenses
-            License.objects.order_by("name").exclude(
-                url__icontains="creativecommons.org"
-            ),
+            License.objects.software(),
             many=True,
         )
         return serialized.data
