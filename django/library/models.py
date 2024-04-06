@@ -1788,14 +1788,6 @@ class ReleaseContributorQuerySet(models.QuerySet):
             .order_by("index")
         )
 
-    def nonauthors(self, release):
-        qs = (
-            self.select_related("contributor")
-            .filter(release=release, include_in_citation=True)
-            .exclude(roles__contains="{author}")
-        )
-        return qs.order_by("index")
-
 
 class ReleaseContributor(models.Model):
     release = models.ForeignKey(
@@ -2496,9 +2488,13 @@ class CommonMetadata:
 
         # used for citations
         self.citations = [
-            codebase.references_text,
-            codebase.replication_text,
-            codebase.associated_publication_text,
+            text
+            for text in [
+                codebase.references_text,
+                codebase.replication_text,
+                codebase.associated_publication_text,
+            ]
+            if text
         ]
 
         if release.live:
@@ -2761,19 +2757,22 @@ class DataCiteMetadata:
     @classmethod
     def convert_authors(cls, common_metadata: CommonMetadata):
         creators = []
-        for author in common_metadata.release_contributor_authors:
-            # FIXME: this should not rely on CodeMeta attributes and is currently broken
-            author_type = "Organizational"
-            if author["@type"] == "Person":
-                author_type = "Personal"
+        for release_contributor in common_metadata.release_contributor_authors:
+            contributor = release_contributor.contributor
+            contributor_type = "Organizational"
+            # FIXME: is this check enough?
+            if contributor.type == "person":
+                contributor_type = "Personal"
             item = {
-                "name": author["familyName"] + ", " + author["givenName"],
-                "givenName": author["givenName"],
-                "familyName": author["familyName"],
-                "nameType": author_type,
+                "name": contributor.family_name + ", " + contributor.given_name,
+                "givenName": contributor.given_name,
+                "familyName": contributor.family_name,
+                "nameType": contributor_type,
             }
-            if "affiliation" in author:
-                item["affiliation"] = [author["affiliation"]]
+
+            if contributor.affiliations.exists():
+                item["affiliation"] = [contributor.formatted_affiliations]
+
             creators.append(item)
         return creators
 
