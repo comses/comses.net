@@ -1,6 +1,7 @@
 from django.core.management.base import BaseCommand
 from django.contrib.auth.models import User
 from django.conf import settings
+from django.urls import reverse
 from core.utils import send_markdown_email
 from library.models import CodebaseRelease
 import os
@@ -12,32 +13,29 @@ logger = logging.getLogger(__name__)
 # in case of failure, we can resume from where we left off
 SENT_EMAILS_FILE_PATH = os.path.join(settings.SHARE_DIR, "sent_cc_emails.txt")
 
+CC_LICENSE_CHANGE_URL = settings.BASE_URL + reverse("library:cc-license-change")
+
 
 class Command(BaseCommand):
-    help = "provides some operations to help with phasing out Creative Commons licenses in the CML"
+    help = "Sends an email to all users who have submitted codebase releases currently licensed under a Creative Commons license"
 
     def add_arguments(self, parser):
-        parser.add_argument("operation", type=str, choices=["send_emails", "migrate"])
         parser.add_argument(
             "--test-user-id",
             type=int,
             required=False,
-            help="If specified, only email or migrate the specified user's releases",
+            help="If specified, only email the specified user about their releases",
         )
 
     def handle(self, *args, **options):
-        operation = options["operation"]
-        if operation == "send_emails":
-            self.send_emails(test_user_id=options["test_user_id"])
-        if operation == "migrate":
-            self.migrate(test_user_id=options["test_user_id"])
+        self.send_emails(test_user_id=options["test_user_id"])
 
     def send_emails(self, test_user_id=None):
         sent_user_ids = self._read_sent_user_ids()
 
         # get all unique user ids that have submitted codebases with CC licenses
         releases_with_cc = CodebaseRelease.objects.filter(
-            license__url__icontains="creativecommons.org"
+            license__name__istartswith="CC"
         )
         unique_submitter_ids = (
             releases_with_cc.values_list("submitter", flat=True).distinct()
@@ -54,7 +52,7 @@ class Command(BaseCommand):
                     # send email, if successful, append user id to temp file to mark as sent
                     send_markdown_email(
                         subject="CoMSES Net Codebase License Change",
-                        body=self._get_email_body(user, releases),
+                        body=self._get_email_body(user),
                         to=[user.email],
                     )
                     with open(SENT_EMAILS_FILE_PATH, "a") as f:
@@ -90,25 +88,16 @@ All emails sent successfully, {SENT_EMAILS_FILE_PATH} can be removed
         except FileNotFoundError:
             return set()
 
-    def _get_email_body(self, user, releases):
-        releases_list = ""
-        for r in releases:
-            releases_list += f"- {r.comses_permanent_url}edit\n"
-
+    def _get_email_body(self, user):
         return f"""
 Dear {user.member_profile.name},
         
-We are writing to inform you that we are phasing out the use of Creative Commons licenses in the CoMSES Net Computational Model Library as CC licenses are not recommended for use in software. For more information regarding the reasoning behind this decision, please see the the following from the Creative Commons FAQ: https://creativecommons.org/faq/#can-i-apply-a-creative-commons-license-to-software.
+We are writing to inform you that we are phasing out the use of Creative Commons licenses in the CoMSES Model Library due to their [unsuitability for software](https://creativecommons.org/faq/#can-i-apply-a-creative-commons-license-to-software) and have identified one or more of your submissions that currently use such a license. In order to ensure that software archived with us is properly licensed for reuse, we are asking authors to relicense their models and have set up a straightforward process to transition all of your submissions at once to an appropriate software license. You can access this service at the following link:
 
-We have identified the following codebases submitted by you that are currently licensed under a Creative Commons license:
+[{CC_LICENSE_CHANGE_URL}]({CC_LICENSE_CHANGE_URL})
 
-{releases_list}
-
-FIXME: what else? ask to change license? with or without migrating to a default in X days?
+Thank you for helping us make model software more accessible and reusable, and do not hesitate to contact us if you have any questions or require further assistance.
 
 Sincerely,
 The CoMSES Net Team
         """
-
-    def migrate(self, test_user_id=None):
-        pass

@@ -1106,7 +1106,7 @@ class CCLicenseChangeView(LoginRequiredMixin, FormView):
         context = super().get_context_data(**kwargs)
         user_releases = CodebaseRelease.objects.filter(
             submitter=self.request.user,
-            license__url__icontains="creativecommons.org",
+            license__name__istartswith="CC",
         )
         for release in user_releases:
             candidate_license_name = self.LICENSE_MAPPING.get(release.license.name)
