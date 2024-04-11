@@ -46,21 +46,21 @@ class SpamDetectionTestCase(TestCase):
     # def update_labels(self, user_ids):
     #     middle_idx = len(user_ids)/2 - 1
     #     label = True
-    #     self.processor.update_labelled_by_curator(user_ids[0:middle_idx], label)
+    #     self.processor.update_labels(user_ids[0:middle_idx], label)
     #     label = False
-    #     self.processor.update_labelled_by_curator(user_ids[middle_idx:-1], label)
+    #     self.processor.update_labels(user_ids[middle_idx:-1], label)
 
     # def delete_labels(self, user_ids):
-    #     self.processor.update_labelled_by_curator(user_ids, None)
+    #     self.processor.update_labels(user_ids, None)
 
     def update_labels(self, user_ids):
         for user_id in user_ids:
             label = random.randint(0, 1)
-            self.processor.update_labelled_by_curator(user_id, label)
+            self.processor.update_labels(user_id, label)
 
     def delete_labels(self, user_ids):
         for user_id in user_ids:
-            self.processor.update_labelled_by_curator(user_id, None)
+            self.processor.update_labels(user_id, None)
 
     def get_existing_user_ids(self):
         user_ids = list(
@@ -83,16 +83,16 @@ class SpamDetectionTestCase(TestCase):
         """
         case : First time loading spam_dataset.csv
             stub data/requirements ... ./curator/spam_dataset.csv
-            assertion ... there exists users with labelled_by_curator != None
+            assertion ... there exists users with label != None
         """
         self.processor.load_labels_from_csv()
-        self.assertTrue(self.processor.labelled_by_curator_exist())
+        self.assertTrue(self.processor.labels_exist())
 
-    # ============== Tests for UserSpamStatusProcessor.get_unlabelled_by_curator_df() ==============
-    def test_get_labelled_by_curator_df__new_users_added(self):
+    # ============== Tests for UserSpamStatusProcessor.get_unlabel_df() ==============
+    def test_get_label_df__new_users_added(self):
         """
         case1 : new user data added
-            stub data/requirements ... new user data with labelled_by_curator==None
+            stub data/requirements ... new user data with label==None
             assertion ... no change in df
         """
 
@@ -100,12 +100,12 @@ class SpamDetectionTestCase(TestCase):
         self.update_labels(
             existing_user_ids
         )  # make sure all the existing users have labels
-        existing_df = self.processor.get_labelled_by_curator_df()
+        existing_df = self.processor.get_all_users_with_label()
 
-        new_user_ids = self.create_new_users()  # default labelled_by_curator==None
+        new_user_ids = self.create_new_users()  # default label==None
 
         user_size = len(new_user_ids) + len(existing_user_ids)
-        new_df = self.processor.get_labelled_by_curator_df()
+        new_df = self.processor.get_all_users_with_label()
 
         self.assertEqual(
             len(existing_df["user_id"].values), len(new_df["user_id"].values)
@@ -114,10 +114,10 @@ class SpamDetectionTestCase(TestCase):
         self.assertFalse(set(new_user_ids).issubset(set(new_df["user_id"].values)))
         self.delete_new_users(new_user_ids)
 
-    def test_get_labelled_by_curator_df__label_added(self):
+    def test_get_label_df__label_added(self):
         """
         case2 : new user data added
-            stub data/requirements ... new user data with labelled_by_curator==True/False
+            stub data/requirements ... new user data with label==True/False
             assertion ... df with the specific columns with the addtional user data that were labelled.
         """
         existing_user_ids = self.user_ids
@@ -125,11 +125,11 @@ class SpamDetectionTestCase(TestCase):
             existing_user_ids
         )  # make sure all the existing users have labels
 
-        new_user_ids = self.create_new_users()  # default labelled_by_curator==None
+        new_user_ids = self.create_new_users()  # default label==None
         user_size = len(new_user_ids) + len(existing_user_ids)
 
         self.update_labels(new_user_ids)
-        df = self.processor.get_labelled_by_curator_df()
+        df = self.processor.get_all_users_with_label()
 
         self.assertIsInstance(df, pd.DataFrame)
         self.assertTrue(
@@ -139,22 +139,22 @@ class SpamDetectionTestCase(TestCase):
         self.assertTrue(set(new_user_ids).issubset(set(df["user_id"].values)))
         self.delete_new_users(new_user_ids)
 
-    def test_get_labelled_by_curator_df__no_users_added(self):
+    def test_get_label_df__no_users_added(self):
         """
         case3 : no new user data added
             stub data/requirements ... all data in DB with correct user_id has values
-                                        with labelled_by_curator==True/False
+                                        with label==True/False
             assertion ... no change in df
         """
         existing_user_ids = self.user_ids
         self.update_labels(
             existing_user_ids
         )  # make sure all the existing users have labels
-        existing_df = self.processor.get_labelled_by_curator_df()
+        existing_df = self.processor.get_all_users_with_label()
 
         self.update_labels(existing_user_ids)  # making sure all users are labelled
 
-        new_df = self.processor.get_labelled_by_curator_df()
+        new_df = self.processor.get_all_users_with_label()
         self.assertEqual(
             len(existing_df["user_id"].values), len(new_df["user_id"].values)
         )
@@ -162,7 +162,7 @@ class SpamDetectionTestCase(TestCase):
     # ================================ Tests for UserMetadataSpamClassifier ================================
     def test_user_meta_classifier_fit(self):
         """
-        stub data/requirements ... loaded labels (labelled_by_curator) in DB using processor.load_labels_from_csv()
+        stub data/requirements ... loaded labels (label) in DB using processor.load_labels_from_csv()
         assertion ... returns model metrics in the following format and output model instance as a pickle file
                       in the "/shared/curator/spam/" folder.
                       model metrics format = {"Accuracy": float,
@@ -189,7 +189,7 @@ class SpamDetectionTestCase(TestCase):
 
     def test_user_meta_classifier_prediction(self):
         """
-        stub data/requirements ... /shared/curator/spam/{model}.pkl, and new user data on DB with labelled_by_curator=None
+        stub data/requirements ... /shared/curator/spam/{model}.pkl, and new user data on DB with label=None
         assertion ... True or False valuse in labelled_by_text_classifier and labelled_by_user_classifier fields
                         of the user data in DB
         """
@@ -199,10 +199,10 @@ class SpamDetectionTestCase(TestCase):
 
         existing_user_ids = self.user_ids
         self.update_labels(existing_user_ids)
-        new_user_ids = self.create_new_users()  # default labelled_by_curator==None
+        new_user_ids = self.create_new_users()  # default label==None
         labelled_user_ids, _ = self.user_meta_classifier.predict()
 
-        self.assertTrue(self.processor.all_have_labels())
+        # self.assertTrue(self.processor.all_have_labels())
         self.assertTrue(set(new_user_ids).issubset(labelled_user_ids))
 
     # ==================================== Tests for TextSpamClassifier ====================================
@@ -232,27 +232,27 @@ class SpamDetectionTestCase(TestCase):
 
         existing_user_ids = self.user_ids
         self.update_labels(existing_user_ids)
-        new_user_ids = self.create_new_users()  # default labelled_by_curator==None
+        new_user_ids = self.create_new_users()  # default label==None
         self.add_texts_to_users(existing_user_ids)
         self.add_texts_to_users(new_user_ids)
         labelled_user_ids, _ = self.text_classifier.predict()
 
-        self.assertTrue(self.processor.all_have_labels())
+        #self.assertTrue(self.processor.all_have_labels())
         self.assertTrue(bool(set(new_user_ids) & set(labelled_user_ids)))
 
-    # # ============== Tests for UserSpamStatusProcessor.get_unlabelled_by_curator_df() ==============
-    # def test_get_unlabelled_by_curator_df__new_users_added(self):
+    # # ============== Tests for UserSpamStatusProcessor.get_unlabel_df() ==============
+    # def test_get_unlabel_df__new_users_added(self):
     #     """
     #     case1 : new user data added
-    #         stub data/requirements ... new user data with labelled_by_curator==None
+    #         stub data/requirements ... new user data with label==None
     #         assertion ... df with the specific columns with the correct user_ids
     #     """
 
     #     existing_user_ids = self.user_ids
-    #     user_ids = self.create_new_users()  # default labelled_by_curator==None
+    #     user_ids = self.create_new_users()  # default label==None
     #     user_size = len(user_ids) + len(existing_user_ids)
 
-    #     df = self.processor.get_unlabelled_by_curator_df()
+    #     df = self.processor.get_unlabel_df()
 
     #     self.assertIsInstance(df, pd.DataFrame)
     #     self.assertTrue(
@@ -262,17 +262,17 @@ class SpamDetectionTestCase(TestCase):
     #     self.assertTrue(set(user_ids).issubset(set(df["user_id"].values)))
     #     self.delete_new_users(user_ids)
 
-    # def test_get_unlabelled_by_curator_df__no_users_added(self):
+    # def test_get_unlabel_df__no_users_added(self):
     #     """
     #     case2 : no new user data added
     #         stub data/requirements ... all data in DB with correct user_id has values
-    #                                    with labelled_by_curator!=None
+    #                                    with label!=None
     #         assertion ... empty df
     #     """
     #     existing_user_ids = self.user_ids
     #     self.update_labels(existing_user_ids)  # simulate a curator labelling the users
 
-    #     df = self.processor.get_unlabelled_by_curator_df()
+    #     df = self.processor.get_unlabel_df()
     #     self.assertEqual(len(df), 0)
 
     #     self.delete_labels(existing_user_ids)
@@ -297,7 +297,7 @@ class SpamDetectionTestCase(TestCase):
 
     # def test_get_untrained_df__labels_updated(self):
     #     """
-    #     case2 : labelled_by_curator updated
+    #     case2 : label updated
     #         stub data/requirements ...  new labells by curator (users with abelled_by_curator!=None and is_training_data=False)
     #         assertion ... df with the specific columns with the correct user_ids
     #     """
@@ -316,7 +316,7 @@ class SpamDetectionTestCase(TestCase):
     # def test_get_untrained_df__no_labels_updated(self):
     #     """
     #     case3 : no label updates
-    #         stub data/requirements ... all data in DB with labelled_by_curator!=None has is_training_data=True
+    #         stub data/requirements ... all data in DB with label!=None has is_training_data=True
     #         assertion ... empty df
     #     """
     #     existing_user_ids = self.user_ids

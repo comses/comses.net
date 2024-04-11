@@ -14,6 +14,8 @@ from django.urls import reverse
 
 from modelcluster import fields
 
+from wagtail.snippets.models import register_snippet
+
 from nltk.corpus import stopwords
 from nltk.stem import PorterStemmer
 from nltk.tokenize import word_tokenize
@@ -377,17 +379,11 @@ class UserSpamStatus(models.Model):
     )
     # TODO: add help_text
     # None = not processed yet
-    # True = bio_classifier considered this user to be spam
-    # False = bio_classifier did not consider this user to be spam
-    labelled_by_text_classifier = models.BooleanField(default=None, null=True)
-    text_classifier_confidence = models.FloatField(default=0)
-
-    # similar to bio_classifier
-    labelled_by_user_classifier = models.BooleanField(default=None, null=True)
-    user_classifier_confidence = models.FloatField(default=0)
-
-    labelled_by_curator = models.BooleanField(default=None, null=True)
-    last_updated = models.DateField(auto_now=True)
+    # True = classifier thinks a user is spam
+    # False = classifier does not think a user is spam
+    
+    label = models.BooleanField(default=None, null=True)
+    last_updated = models.DateTimeField(auto_now=True)
     is_training_data = models.BooleanField(default=False)
 
     objects = UserSpamStatusQuerySet.as_manager()
@@ -397,17 +393,12 @@ class UserSpamStatus(models.Model):
         return UserSpamStatus.objects.all().order_by("text_classifier_confidence")
 
     def __str__(self):
-        return "member_profile={}, labelled_by_text_classifier={}, text_classifier_confidence={}, labelled_by_user_classifier={}, user_classifier_confidence={}, labelled_by_curator={}, last_updated={}, is_training_data={}".format(
+        return "member_profile={}, label={}, last_updated={}, is_training_data={}".format(
             str(self.member_profile),
-            str(self.labelled_by_text_classifier),
-            str(self.text_classifier_confidence),
-            str(self.labelled_by_user_classifier),
-            str(self.user_classifier_confidence),
-            str(self.labelled_by_curator),
+            str(self.label),
             str(self.last_updated),
             str(self.is_training_data),
         )
-
 
 # Create a new UserSpamStatus whenever a new MemberProfile is created
 @receiver(post_save, sender=MemberProfile)
@@ -416,3 +407,10 @@ def sync_member_profile_spam_status(sender, instance: MemberProfile, created, **
         spam_status, created = UserSpamStatus.objects.get_or_create(
             member_profile=instance,
         )
+
+class UserSpamPrediction(models.Model):
+    spam_status = models.ForeignKey(UserSpamStatus, on_delete=models.CASCADE)
+    context_id = models.CharField(max_length=300)
+    prediction = models.BooleanField(default=False)
+    confidence = models.FloatField(default=0)
+    date_created = models.DateTimeField(auto_now=True)
