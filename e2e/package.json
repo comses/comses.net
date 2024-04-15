@@ -4,8 +4,7 @@
   "description": "CoMSES Net e2e/integration tests",
   "main": "index.ts",
   "scripts": {
-    "cy:run": "cypress run",
-    "test": "./wait-for-it.sh server:8000 -t 120 -- cypress run"
+    "test": "cypress run"
   },
   "devDependencies": {
     "cypress": "^13.6.2",
