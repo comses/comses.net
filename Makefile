@@ -141,6 +141,7 @@ test: build
 .PHONY: e2e
 e2e: DEPLOY_ENVIRONMENT=e2e
 e2e: build
-	docker compose run server inv collectstatic
-	docker compose run --rm e2e npm run test
-	docker compose down
+	docker compose up -d
+	docker compose exec server inv collectstatic
+	docker compose run --rm --no-deps e2e npm run test
+	docker compose down > /dev/null 2>&1

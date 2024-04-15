@@ -6,10 +6,9 @@ services:
       - CYPRESS_baseUrl=http://server:8000
     volumes:
       - ./e2e/cypress:/code/cypress
-      - ./e2e/cypress.config.js:/code/cypress.config.js
-      - ./django/deploy/wait-for-it.sh:/code/wait-for-it.sh
     depends_on:
-      - server
+      server:
+        condition: service_healthy
   vite:
     volumes:
       - ./frontend:/code
@@ -21,6 +20,11 @@ services:
     volumes:
       - ./django:/code
       - ./docs:/docs
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
     environment:
       DJANGO_SETTINGS_MODULE: "core.settings.e2e"
     ports:
