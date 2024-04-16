@@ -112,6 +112,9 @@ class LicenseQuerySet(models.QuerySet):
             .order_by("name")
         )
 
+    def creative_commons(self, **kwargs):
+        return self.filter(name__istartswith="CC", **kwargs)
+
 
 @register_snippet
 class License(models.Model):
@@ -1087,8 +1090,8 @@ class CodebaseReleaseQuerySet(models.QuerySet):
             return qs
         return qs[:number]
 
-    def with_invalid_license(self, **kwargs):
-        return self.filter(**kwargs).exclude(license__in=License.objects.software())
+    def with_cc_license(self, **kwargs):
+        return self.filter(license__in=License.objects.creative_commons(), **kwargs)
 
 
 @add_to_comses_permission_whitelist

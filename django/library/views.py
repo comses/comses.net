@@ -1104,9 +1104,8 @@ class CCLicenseChangeView(LoginRequiredMixin, FormView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        user_releases = CodebaseRelease.objects.filter(
+        user_releases = CodebaseRelease.objects.with_cc_license(
             submitter=self.request.user,
-            license__name__istartswith="CC",
         )
         for release in user_releases:
             candidate_license_name = self.LICENSE_MAPPING.get(release.license.name)
@@ -1118,7 +1117,7 @@ class CCLicenseChangeView(LoginRequiredMixin, FormView):
     def form_valid(self, form):
         # update all codebase releases with invalid licenses with their mapped alternative
         try:
-            releases_with_cc = CodebaseRelease.objects.with_invalid_license(
+            releases_with_cc = CodebaseRelease.objects.with_cc_license(
                 submitter=self.request.user
             )
             for release in releases_with_cc:

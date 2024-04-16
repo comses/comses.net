@@ -570,8 +570,8 @@ class CodebaseReleaseEditSerializer(CodebaseReleaseSerializer):
 
     def get_possible_licenses(self, instance):
         serialized = LicenseSerializer(
-            # do not include CC licenses, this will be unnecessary if we manage
-            # to fully migrate everything to different licenses
+            # FXIME: directly exclude CC licenses, this will be unnecessary if/when we manage
+            # to fully migrate all codebases to proper OSI-approved licenses
             License.objects.software(),
             many=True,
         )
