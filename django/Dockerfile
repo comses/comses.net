@@ -48,8 +48,7 @@ COPY ${REQUIREMENTS_FILE} requirements.txt /tmp/
 
 # FIXME: change to container user
 RUN --mount=type=cache,target=/root/.cache/pip,sharing=locked \
-    pip3 install -r /tmp/${REQUIREMENTS_FILE} \ 
-    && touch /code/override.env
+    pip3 install -r /tmp/${REQUIREMENTS_FILE}
 
 COPY ./deploy/cron.daily/* /etc/cron.daily/
 COPY ./deploy/cron.hourly/* /etc/cron.hourly/

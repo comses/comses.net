@@ -1,15 +1,14 @@
-import logging
-import pathlib
-
+from django.forms import Form
 from django.contrib import messages
-from django.contrib.auth.mixins import PermissionRequiredMixin
+from django.contrib.auth.mixins import PermissionRequiredMixin, LoginRequiredMixin
 from django.core.exceptions import PermissionDenied
 from django.db import transaction
 from django.http import HttpResponse, Http404, HttpResponseRedirect
 from django.shortcuts import get_object_or_404, redirect
-from django.urls import resolve
+from django.urls import resolve, reverse
 from django.utils.translation import gettext_lazy as _
 from django.views import View
+from django.views.generic import FormView
 from django.views.generic.base import RedirectView
 from django.views.generic.detail import DetailView
 from django.views.generic.edit import UpdateView
@@ -59,6 +58,7 @@ from .models import (
     CodebaseRelease,
     Contributor,
     CodebaseImage,
+    License,
     PeerReview,
     PeerReviewerFeedback,
     PeerReviewInvitation,
@@ -78,6 +78,8 @@ from .serializers import (
     PeerReviewEventLogSerializer,
 )
 
+import logging
+import pathlib
 
 logger = logging.getLogger(__name__)
 
@@ -1083,3 +1085,57 @@ class ContributorList(generics.ListAPIView):
     serializer_class = ContributorSerializer
     pagination_class = SmallResultSetPagination
     filter_backends = (ContributorFilter,)
+
+
+class CCLicenseChangeView(LoginRequiredMixin, FormView):
+    template_name = "library/cc_license_change.jinja"
+    form_class = Form  # just a confirmation form, we don't need any fields
+    success_message = "Licenses updated successfully."
+
+    # maps CC license SPDX names to a default alternative
+    LICENSE_MAPPING = {
+        "CC-BY-4.0": "MIT",
+        "CC-BY-ND-4.0": "MIT",
+        "CC-BY-NC-4.0": "MIT",
+        "CC-BY-NC-ND-4.0": "MIT",
+        "CC-BY-SA-4.0": "GPL-3.0",
+        "CC-BY-NC-SA-4.0": "GPL-3.0",
+    }
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        user_releases = CodebaseRelease.objects.with_cc_license(
+            submitter=self.request.user,
+        )
+        for release in user_releases:
+            candidate_license_name = self.LICENSE_MAPPING.get(release.license.name)
+            release.candidate_license = License.objects.get(name=candidate_license_name)
+
+        context["user_releases"] = user_releases
+        return context
+
+    def form_valid(self, form):
+        # update all codebase releases with invalid licenses with their mapped alternative
+        try:
+            releases_with_cc = CodebaseRelease.objects.with_cc_license(
+                submitter=self.request.user
+            )
+            for release in releases_with_cc:
+                candidate_license_name = self.LICENSE_MAPPING.get(release.license.name)
+                release.license = License.objects.get(name=candidate_license_name)
+                release.save()
+            messages.success(
+                self.request,
+                "Licenses successfully updated. Thanks for making your models more reusable on CoMSES.Net!",
+            )
+            return super().form_valid(form)
+        except Exception as e:
+            messages.error(
+                self.request,
+                "An error occurred while attempting to update your licenses. Please contact us if the problem persists.",
+            )
+            logger.error("Error updating licenses: %s", e)
+            return super().form_invalid(form)
+
+    def get_success_url(self):
+        return reverse("core:profile-detail", kwargs={"pk": self.request.user.pk})

@@ -62,6 +62,7 @@ def create_markdown_email(
     body: str = None,
     from_email: str = settings.DEFAULT_FROM_EMAIL,
     email_subject_prefix: str = settings.EMAIL_SUBJECT_PREFIX,
+    bcc=None,
     **kwargs,
 ):
     if all([template_name, context]):
@@ -77,15 +78,13 @@ def create_markdown_email(
     if all(required_fields):
         subject = f"{email_subject_prefix} {subject}"
         email = EmailMultiAlternatives(
-            subject=subject, body=body, to=to, from_email=from_email, **kwargs
+            subject=subject, body=body, to=to, from_email=from_email, bcc=bcc, **kwargs
         )
         email.attach_alternative(markdown(body), "text/html")
         return email
     else:
         raise ValueError(
-            "Ignoring request to create a markdown email with missing required content {}".format(
-                required_fields
-            )
+            f"Not creating markdown email due to missing required fields: {required_fields}"
         )
 
 

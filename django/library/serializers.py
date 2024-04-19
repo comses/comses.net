@@ -44,16 +44,13 @@ logger = logging.getLogger(__name__)
 
 
 class LicenseSerializer(serializers.ModelSerializer):
-    def create(self, validated_data):
-        license = License.objects.filter(name=validated_data["name"]).first()
-        if license is not None:
-            if validated_data["url"] != license.url:
-                license.url = validated_data["url"]
-                license.save()
-        else:
-            license = super().create(validated_data)
+    def validate_name(self, value):
+        if not License.objects.filter(name=value).exists():
+            raise ValidationError(_(f"Invalid license: {value}"))
+        return value
 
-        return license
+    def create(self, validated_data):
+        return License.objects.filter(name=validated_data["name"]).first()
 
     class Meta:
         model = License
@@ -573,7 +570,10 @@ class CodebaseReleaseEditSerializer(CodebaseReleaseSerializer):
 
     def get_possible_licenses(self, instance):
         serialized = LicenseSerializer(
-            License.objects.order_by("name").all(), many=True
+            # FXIME: directly exclude CC licenses, this will be unnecessary if/when we manage
+            # to fully migrate all codebases to proper OSI-approved licenses
+            License.objects.software(),
+            many=True,
         )
         return serialized.data
 
