@@ -2696,33 +2696,46 @@ class DataCiteMetadata:
     @classmethod
     def build_codebase_metadata(cls, codebase: Codebase):
         metadata = {}
-        # FIXME: set mandatory attributes!!!!
+        # FIXME: set more codebase attributes???
+        # https://support.datacite.org/docs/what-is-the-identifiers-attribute-in-the-rest-api
 
-        metadata = {
-            "identifiers": [
+        metadata["identifiers"] = [
+            {
+                "identifierType": "URL",
+                "identifier": codebase.permanent_url,
+            }
+        ]
+
+        if codebase.doi:
+            metadata["identifiers"].append(
                 {
                     "identifierType": "DOI",
-                    "identifier": "10.1234/foo.bar",
+                    "identifier": codebase.doi,
                 }
-            ],
-            "creators": [
-                {"name": "Smith, John"},
-            ],
-            "titles": [
-                {
-                    "title": "Minimal Test Case",
-                }
-            ],
-            "publisher": "Invenio Software",
-            "publicationYear": "2015",
-            "types": {"resourceType": "Dataset", "resourceTypeGeneral": "Dataset"},
-            "schemaVersion": "http://datacite.org/schema/kernel-4",
-        }
+            )
+
+        # FIXME: creators should never be empty!
+        metadata["creators"] = [
+            {"name": author_string_name} for author_string_name in codebase.author_list
+        ]
+        metadata["titles"] = [{"title": codebase.title}]
+
+        metadata["publisher"] = (
+            f'{CommonMetadata.COMSES_ORGANIZATION["name"]} {CommonMetadata.COMSES_ORGANIZATION["url"]}'
+        )
+        metadata["publicationYear"] = (
+            str(codebase.first_published_at.year)
+            if codebase is not None and codebase.first_published_at is not None
+            else ""
+        )
+        metadata["types"] = {"resourceType": "Model", "resourceTypeGeneral": "Software"}
+        metadata["schemaVersion"] = "http://datacite.org/schema/kernel-4"
+
+        """ 
+        Set codebase relatedIdentifiers
+        """
 
         metadata["relatedIdentifiers"] = []
-        """
-        Set codebase specific metadata
-        """
 
         # set relatedIdentifiers
         ordered_codebase_releases: List[CodebaseRelease] = codebase.ordered_releases()
@@ -2812,10 +2825,9 @@ class DataCiteMetadata:
             ]
 
         """
-        Set release specific metadata
+        Set release relatedIdentifiers
         """
 
-        # set relatedIdentifiers
         metadata["relatedIdentifiers"] = []
 
         """
@@ -3059,7 +3071,7 @@ class DataciteRegistrationLog(models.Model):
             if isinstance(item, Codebase):
                 newest_log_entry = (
                     DataciteRegistrationLog.objects.filter(
-                        Q(codebase=item) & Q(http_status__in=[200, 600])
+                        Q(codebase=item) & Q(http_status=200)
                     )
                     .order_by("-timestamp")
                     .first()
@@ -3067,7 +3079,7 @@ class DataciteRegistrationLog(models.Model):
             if isinstance(item, CodebaseRelease):
                 newest_log_entry = (
                     DataciteRegistrationLog.objects.filter(
-                        Q(release=item) & Q(http_status__in=[200, 600])
+                        Q(release=item) & Q(http_status=200)
                     )
                     .order_by("-timestamp")
                     .first()
@@ -3083,9 +3095,4 @@ class DataciteRegistrationLog(models.Model):
         return True
 
     def __str__(self):
-        if self.codebase:
-            return f"Metadata sent for Codebase({self.codebase.pk}): {self.codebase.title} at {self.timestamp}, HTTP Status: {self.http_status}, Message: {self.message}, Hash: {self.metadata_hash}, DOI: {self.codebase.doi}"
-        elif self.release:
-            return f"Metadata sent for CodebaseRelease: {self.release.version} at {self.timestamp}, HTTP Status: {self.http_status}, Message: {self.message}, Hash: {self.metadata_hash}, DOI: {self.release.doi}"
-        else:
-            return "Metadata sent for unspecified object at {self.timestamp}"
+        return f"Metadata sent for { 'Codebase ' + str(self.codebase.pk) if self.codebase else 'CodebaseRelease '+ str(self.release.pk)} at {self.timestamp}, HTTP Status: {self.http_status}, Message: {self.message}, Hash: {self.metadata_hash}, DOI: {self.doi}"
