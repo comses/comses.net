@@ -75,35 +75,36 @@ class DataCiteApi:
         return ok
 
     @staticmethod
-    def _is_deep_inclusive(cls, elem1, elem2):
+    def _is_deep_inclusive(elem1, elem2):
         if isinstance(elem1, dict):
             if not isinstance(elem2, dict):
                 return False
             for key, value in elem1.items():
-                if key not in elem2.keys():
+                if key not in elem2:
                     return False
-                if not cls._is_deep_inclusive(value, elem2[key]):
+                if not DataCiteApi._is_deep_inclusive(value, elem2[key]):
                     return False
         elif isinstance(elem1, list):
             if not isinstance(elem2, list):
                 return False
             if elem1 and isinstance(elem1[0], dict):
-                for i, el in enumerate(elem1):
-                    if not elem2:
-                        return False
-                    if not cls._is_deep_inclusive(el, elem2[i]):
+                if len(elem1) != len(elem2):
+                    return False
+                for el1, el2 in zip(elem1, elem2):
+                    if not DataCiteApi._is_deep_inclusive(el1, el2):
                         return False
             else:
                 return set(elem1).issubset(set(elem2))
         elif isinstance(elem2, int):
             # publicationYear is returned as int from DataCite
+            # compare string versions
             return str(elem1) == str(elem2)
         elif elem1 != elem2:
             return False
         return True
 
     @staticmethod
-    def _is_same_metadata(cls, sent_data, received_data):
+    def _is_same_metadata(sent_data, received_data):
         # Extract keys (attributes) from both dictionaries
         sent_keys = set(sent_data.keys())
         received_keys = set(received_data.keys())
@@ -115,7 +116,9 @@ class DataCiteApi:
         if sent_keys.issubset(received_keys):
             # Check if values of corresponding keys are the same
             for key in sent_keys:
-                if not cls._is_deep_inclusive(sent_data[key], received_data[key]):
+                if not DataCiteApi._is_deep_inclusive(
+                    sent_data[key], received_data[key]
+                ):
                     # if sent_data[key] != received_data[key]:
 
                     # FIXME: identifiers is not considered by the Fabrica API...
@@ -153,9 +156,11 @@ class DataCiteApi:
             if not DRY_RUN:
                 comses_metadata = item.datacite.to_dict()
                 datacite_metadata = self.datacite_client.get_metadata(item.doi)
-                return self._is_same_metadata(comses_metadata, datacite_metadata)
+                return DataCiteApi._is_same_metadata(comses_metadata, datacite_metadata)
             else:
-                logger.debug(f"Metadata is in sync!")
+                logger.debug(
+                    f"{'Codebase' if isinstance(item, Codebase) else 'CodebaseRelease'} metadata is in sync!"
+                )
                 return True
 
         except DataCiteError as de:
@@ -183,7 +188,7 @@ class DataCiteApi:
             metadata_dict = item.datacite.to_dict()
             metadata_hash = item.datacite.to_hash()
 
-            # validate metadta
+            # validate metadta. Will throw AssertionError (will not call DataCite) if metadata is invalid.
             assert schema43.validate(metadata_dict), "Metadata is invalid!"
 
             if (
@@ -196,6 +201,7 @@ class DataCiteApi:
                     doi = self.datacite_client.public_doi(
                         metadata_dict, url=item.permanent_url
                     )
+                logger.debug(f"New DOI minted: {doi}")
                 http_status = 200
             elif (
                 action == DataciteAction.UPDATE_RELEASE_METADATA
@@ -206,48 +212,42 @@ class DataCiteApi:
                 if not DRY_RUN:
                     self.datacite_client.put_doi(item.doi, metadata_dict)
 
+                logger.debug(f"Metadata successfully updated for DOI: {item.doi}")
                 http_status = 200
             else:
                 raise Exception("DataCite action unknown!")
 
         except DataCiteNoContentError as dc_nce:
-            # if err_code == 204:
             logger.info(dc_nce)
             http_status = 204
             message = str(dc_nce)
 
         except DataCiteBadRequestError as cd_bre:
-            # elif err_code == 400:
             logger.error(cd_bre)
             http_status = 400
             message = str(cd_bre)
 
         except DataCiteUnauthorizedError as dc_ue:
-            # elif err_code == 401:
             logger.error(dc_ue)
             http_status = 401
             message = str(dc_ue)
 
         except DataCiteForbiddenError as dc_fe:
-            # elif err_code == 403:
             logger.error(dc_fe)
             http_status = 403
             message = str(dc_fe)
 
         except DataCiteNotFoundError as dc_nfe:
-            # elif err_code == 404:
             logger.error(dc_nfe)
             http_status = 404
             message = str(dc_nfe)
 
         except DataCiteGoneError as dc_ge:
-            # elif err_code == 410:
             logger.error(dc_ge)
             http_status = 410
             message = str(dc_ge)
 
         except DataCitePreconditionError as dc_pe:
-            # elif err_code == 412:
             logger.error(dc_pe)
             http_status = 412
             message = str(dc_pe)
@@ -441,7 +441,7 @@ def fix_existing_dois_03():
             #     logger.error("Could not update DOI metadata for release {release.pk}, DOI: {release_doi}. Error: {message}. Skipping.")
             #     continue
             logger.debug(
-                f"Release {release.pk} already has a DataCite DOI {release.doi}. Skipping..."
+                f"Release {release.pk} already has a valid DataCite DOI {release.doi}. Skipping..."
             )
             input("Press Enter to continue...")
             continue
@@ -482,13 +482,19 @@ def fix_existing_dois_03():
         for release in peer_reviewed_releases_with_dois:
             assert (
                 release.codebase.doi is not None
-            ), f"Codebase DOI should not be None for release {release.pk}"
+            ), f"Codebase DOI should not be None for codebase {release.codebase.pk}"
+
             assert (
                 release.doi is not None
             ), f"DOI should not be None for release {release.pk}"
+
+            assert doi_matches_pattern(
+                release.codebase.doi
+            ), f"{release.codebase.doi} Codebase DOI doesn't match DataCite pattern!"
+
             assert doi_matches_pattern(
                 release.doi
-            ), f"{release.doi} doesn't match DataCite pattern!"
+            ), f"{release.doi} CodebaseRelease DOI doesn't match DataCite pattern!"
 
 
 def update_metadata_for_all_existing_dois_04():
@@ -540,10 +546,11 @@ def update_metadata_for_all_existing_dois_04():
                 assert datacite_api.check_metadata(
                     codebase
                 ), f"Metadata check not passed for codebase {codebase.pk}"
-                for release in codebase.releases:
-                    assert datacite_api.check_metadata(
-                        release
-                    ), f"Metadata check not passed for release {release.pk}"
+                for release in codebase.releases.all():
+                    if release.doi:
+                        assert datacite_api.check_metadata(
+                            release
+                        ), f"Metadata check not passed for release {release.pk}"
 
 
 """
