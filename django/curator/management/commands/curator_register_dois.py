@@ -1,6 +1,6 @@
 from django.core.management.base import BaseCommand
 
-from library.doi import register_peer_reviewed_codebases
+from library.doi import mint_dois_for_peer_reviewed_releases_without_dois
 
 import logging
 
@@ -12,5 +12,5 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         logger.debug("Registering all peer reviewed codebases")
-        codebases = register_peer_reviewed_codebases()
+        codebases = mint_dois_for_peer_reviewed_releases_without_dois()
         logger.debug("DOIs minted for %s", codebases)
