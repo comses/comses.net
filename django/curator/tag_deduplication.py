@@ -11,7 +11,7 @@ from curator.models import CanonicalTag, TagCluster
 class AbstractTagDeduper(abc.ABC):
     # TRAINING_FILE = "curator/clustering_training.json"
     TRAINING_FILE = pathlib.Path("curator", "clustering_training.json")
-    FIELDS = [{"field": "name", "type": "String"}]
+    FIELDS = [dedupe.variables.String("name")]
 
     def uncertain_pairs(self):
         return self.deduper.uncertain_pairs()
@@ -222,7 +222,6 @@ class TagClusterer(AbstractTagDeduper):
 class TagGazetteer(AbstractTagDeduper):
     def __init__(self, search_threshold):
         self.search_threshold = search_threshold
-
         self.deduper = dedupe.Gazetteer(AbstractTagDeduper.FIELDS)
         self.prepare_training()
         self.deduper.train()

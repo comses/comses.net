@@ -10,6 +10,8 @@ Wagtail settings reference:
 """
 
 import os
+import warnings
+from elasticsearch.exceptions import ElasticsearchWarning
 from enum import Enum
 from pathlib import Path
 
@@ -61,6 +63,10 @@ DEPLOY_ENVIRONMENT = Environment.DEVELOPMENT
 PROJECT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # base directory is one level above the project directory
 BASE_DIR = os.path.dirname(PROJECT_DIR)
+
+# default to datacite sandbox and test mode
+DATACITE_PREFIX = "10.82853"
+DATACITE_TEST_MODE = True
 
 DEBUG = True
 
@@ -211,6 +217,9 @@ CSP_EXCLUDE_URL_PREFIXES = ("/wagtail/admin", "/django/admin")
 SITE_ID = 1
 
 ROOT_URLCONF = "core.urls"
+
+# tune down elasticsearch complaints
+warnings.simplefilter("ignore", category=ElasticsearchWarning)
 
 # configure elasticsearch 7 wagtail backend
 WAGTAILSEARCH_BACKENDS = {
@@ -503,6 +512,7 @@ TEST_USER_ID = os.getenv("TEST_USER_ID", 1000000)
 TEST_USERNAME = os.getenv("TEST_USERNAME", "__test_user__")
 
 DATACITE_API_USERNAME = os.getenv("DATACITE_API_USERNAME", "comses")
+DATACITE_DRY_RUN = os.getenv("DATACITE_DRY_RUN", "true")
 DATACITE_API_PASSWORD = read_secret("datacite_api_password")
 
 SOCIALACCOUNT_PROVIDERS = {

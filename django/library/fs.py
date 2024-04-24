@@ -525,10 +525,12 @@ class CodebaseReleaseFsApi:
         return self.codemeta.to_json()
 
     def build_published_archive(self, force=False):
+        """
+        FIXME: some of this should be moved to an async processing task.
+        """
         self.create_or_update_codemeta(force=force)
         bag = self.get_or_create_sip_bag(self.bagit_info)
         self.validate_bagit(bag)
-        self.build_aip()
         self.build_archive(force=force)
 
     def build_review_archive(self):

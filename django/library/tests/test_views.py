@@ -414,20 +414,12 @@ class CodebaseReleaseUnpublishedFilesTestCase(
             self.assertEqual(
                 response.status_code,
                 expected_status_code,
-                msg="{} {}".format(repr(user), response.data),
+                msg=f"{user} {response.data}",
             )
 
     def test_delete_file(self):
         path_to_foo = pathlib.Path("foo.txt")
         api = self.codebase_release.get_fs_api()
-        print(self.codebase_release)
-        print(
-            "CodebaseRelease perm %s"
-            % self.submitter.has_perm(
-                "library.delete_codebaserelease", self.codebase_release
-            )
-        )
-
         # Unpublished codebase release permissions
         response = self.client.delete(
             api.get_absolute_url(

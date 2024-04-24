@@ -1,7 +1,7 @@
 bagit==1.8.1
 bleach==6.1.0
 datacite==1.1.4
-dedupe==2.0.23
+dedupe==3.0.2
 django-allauth==0.63.6
 django-anymail[mailgun]==10.3
 django-cookie-law==2.2.0
