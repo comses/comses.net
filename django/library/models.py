@@ -1,7 +1,10 @@
+from enum import Enum
+import hashlib
 import json
 import logging
 import os
 import pathlib
+from typing import List
 import uuid
 from collections import OrderedDict
 from datetime import timedelta
@@ -637,6 +640,10 @@ class Codebase(index.Indexed, ModeratedContent, ClusterableModel):
     ]
 
     HAS_PUBLISHED_KEY = True
+
+    @cached_property
+    def datacite(self):
+        return DataCiteMetadata.build_codebase_metadata(self)
 
     @property
     def is_replication(self):
@@ -1541,6 +1548,24 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
     def download_count(self):
         return self.downloads.count()
 
+    def get_previous_release(self):
+        return (
+            CodebaseRelease.objects.filter(
+                codebase=self.codebase, version_number__lt=self.version_number
+            )
+            .order_by("-version_number")
+            .first()
+        )
+
+    def get_next_release(self):
+        return (
+            CodebaseRelease.objects.filter(
+                codebase=self.codebase, version_number__gt=self.version_number
+            )
+            .order_by("-version_number")
+            .last()
+        )
+
     @property
     def title(self):
         return f"{self.codebase.title} v{self.version_number}"
@@ -1588,7 +1613,7 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
 
     @cached_property
     def datacite(self):
-        return DataCiteMetadata.build(self.common_metadata)
+        return DataCiteMetadata.build_release_metadata(self.common_metadata)
 
     @property
     def is_draft(self):
@@ -2596,9 +2621,9 @@ class CodeMetaMetadata:
         if codeRepository:
             metadata.update(codeRepository=codeRepository)
 
-        releaseNotes = getattr(common_metadata, "releaseNotes", None)
-        if releaseNotes:
-            metadata.update(releaseNotes=releaseNotes)
+        release_notes = getattr(common_metadata, "release_notes", None)
+        if release_notes:
+            metadata.update(releaseNotes=release_notes)
 
         metadata["@id"] = common_metadata.permanent_url
 
@@ -2641,7 +2666,7 @@ class CodeMetaMetadata:
             target_product.update(
                 # FIXME: consider adding a convenience method to generate absolute urls
                 downloadUrl=f"{settings.BASE_URL}{common_metadata.download_url}",
-                releaseNotes=getattr(common_metadata, "releaseNotes", None),
+                releaseNotes=getattr(common_metadata, "release_notes", None),
                 softwareVersion=common_metadata.version,
                 identifier=common_metadata.identifier,
                 sameAs=common_metadata.comses_permanent_url,
@@ -2669,7 +2694,61 @@ class DataCiteMetadata:
         self.metadata = metadata
 
     @classmethod
-    def build(cls, common_metadata: CommonMetadata):
+    def build_codebase_metadata(cls, codebase: Codebase):
+        metadata = {}
+        # FIXME: set mandatory attributes!!!!
+
+        metadata = {
+            "identifiers": [
+                {
+                    "identifierType": "DOI",
+                    "identifier": "10.1234/foo.bar",
+                }
+            ],
+            "creators": [
+                {"name": "Smith, John"},
+            ],
+            "titles": [
+                {
+                    "title": "Minimal Test Case",
+                }
+            ],
+            "publisher": "Invenio Software",
+            "publicationYear": "2015",
+            "types": {"resourceType": "Dataset", "resourceTypeGeneral": "Dataset"},
+            "schemaVersion": "http://datacite.org/schema/kernel-4",
+        }
+
+        metadata["relatedIdentifiers"] = []
+        """
+        Set codebase specific metadata
+        """
+
+        # set relatedIdentifiers
+        ordered_codebase_releases: List[CodebaseRelease] = codebase.ordered_releases()
+
+        for release in ordered_codebase_releases:
+            if release.doi:
+                metadata["relatedIdentifiers"].append(
+                    {
+                        "relationType": "HasVersion",
+                        "relatedIdentifier": release.doi,
+                        "relatedIdentifierType": "DOI",
+                    }
+                )
+
+        metadata["relatedIdentifiers"].append(
+            {
+                "relationType": "IsPartOf",
+                "relatedIdentifier": f"{settings.BASE_URL}/codebases/",
+                "relatedIdentifierType": "URL",
+            }
+        )
+
+        return DataCiteMetadata(metadata)
+
+    @classmethod
+    def build_release_metadata(cls, common_metadata: CommonMetadata):
         """
         Build the DataCite schema 4.3 data in JSON format.
         See documentation @ https://schema.datacite.org/meta/kernel-4.3/doc/DataCite-MetadataKernel_v4.3.pdf
@@ -2686,55 +2765,105 @@ class DataCiteMetadata:
         """
         metadata = {}
 
-        publisher_name = CommonMetadata.COMSES_ORGANIZATION["name"]
-        publisher_url = CommonMetadata.COMSES_ORGANIZATION["url"]
+        """
+        Set codebase and release common metadta
+        """
+        metadata["creators"] = cls.convert_authors(common_metadata)
+        metadata["descriptions"] = [
+            {"description": common_metadata.description, "descriptionType": "Abstract"}
+        ]
 
-        metadata.update(
-            creators=cls.convert_authors(common_metadata),
-            descriptions=[
-                {
-                    "description": common_metadata.description,
-                    "descriptionType": "Abstract",
-                }
-            ],
-            identifiers=[
-                {"identifier": common_metadata.identifier, "identifierType": "DOI"}
-            ],
-            publicationYear=cls.convert_publication_year(common_metadata),
-            publisher=publisher_name + " " + publisher_url,
-            types={"resourceType": "Model", "resourceTypeGeneral": "Software"},
-            titles=[{"title": common_metadata.name}],
-            version=common_metadata.version,
+        metadata["identifiers"] = [
+            {"identifier": common_metadata.identifier, "identifierType": "DOI"}
+        ]
+
+        metadata["publicationYear"] = str(cls.convert_publication_year(common_metadata))
+        metadata["publisher"] = (
+            CommonMetadata.COMSES_ORGANIZATION["name"]
+            + " "
+            + CommonMetadata.COMSES_ORGANIZATION["url"]
         )
+        metadata["types"] = {"resourceType": "Model", "resourceTypeGeneral": "Software"}
+        metadata["titles"] = [{"title": common_metadata.name}]
+        metadata["version"] = common_metadata.version
 
         codeRepository = getattr(common_metadata, "codeRepository", None)
         if codeRepository:
-            metadata.update(contributors=common_metadata.contributors)
+            metadata["contributors"] = common_metadata.contributors
 
         keywords = getattr(common_metadata, "keywords", None)
         if keywords:
-            metadata.update(subjects=common_metadata.keywords)
+            metadata["subjects"] = cls.convert_keywords(common_metadata)
 
-        releaseNotes = getattr(common_metadata, "releaseNotes", None)
-        if releaseNotes:
+        release_notes = getattr(common_metadata, "release_notes", None)
+        if release_notes:
             metadata["descriptions"].append(
-                {
-                    "description": releaseNotes,
-                    "descriptionType": "TechnicalInfo",
-                }
+                {"description": release_notes, "descriptionType": "TechnicalInfo"}
             )
 
         license = getattr(common_metadata, "license", None)
         if license:
-            metadata.update(
-                rightsList=[
-                    {
-                        "rights": license.name,
-                        "rightsIdentifier": license.name,
-                        "rightsURI": license.url,
-                    }
-                ]
+            metadata["rightsList"] = [
+                {
+                    "rights": license.name,
+                    "rightsIdentifier": license.name,
+                    "rightsURI": license.url,
+                }
+            ]
+
+        """
+        Set release specific metadata
+        """
+
+        # set relatedIdentifiers
+        metadata["relatedIdentifiers"] = []
+
+        """
+        Set relationship to parent
+        """
+        codebase_doi = common_metadata.codebase_release.codebase.doi
+        if codebase_doi:
+            metadata["relatedIdentifiers"].append(
+                {
+                    "relationType": "IsVersionOf",
+                    "relatedIdentifier": codebase_doi,
+                    "relatedIdentifierType": "DOI",
+                }
             )
+
+        """
+        Set relationships to siblings
+        """
+        previous_release = common_metadata.codebase_release.get_previous_release()
+        next_release = common_metadata.codebase_release.get_next_release()
+
+        # set relationship to previous_release
+        if previous_release and previous_release.doi:
+            metadata["relatedIdentifiers"].append(
+                {
+                    "relationType": "IsNewVersionOf",
+                    "relatedIdentifier": previous_release.doi,
+                    "relatedIdentifierType": "DOI",
+                }
+            )
+
+        # set relationship to next_release
+        if next_release and next_release.doi:
+            metadata["relatedIdentifiers"].append(
+                {
+                    "relationType": "IsPreviousVersionOf",
+                    "relatedIdentifier": next_release.doi,
+                    "relatedIdentifierType": "DOI",
+                }
+            )
+
+        metadata["relatedIdentifiers"].append(
+            {
+                "relationType": "IsPartOf",
+                "relatedIdentifier": f"{settings.BASE_URL}/codebases/",
+                "relatedIdentifierType": "URL",
+            }
+        )
 
         """
         FIXME: nested parent/child DOIs not yet implemented
@@ -2750,7 +2879,15 @@ class DataCiteMetadata:
 
         # If there are 2 releases, then we need to create a parent DOI but should this be done elsewhere since it requires a call to DataCite's Fabrica API?
         """
+
+        metadata["schemaVersion"] = "http://datacite.org/schema/kernel-4"
+
         return DataCiteMetadata(metadata)
+
+    @classmethod
+    def convert_keywords(cls, common_metadata: CommonMetadata):
+        unique_keywords = set(common_metadata.keywords)
+        return [{"subject": keyword} for keyword in unique_keywords]
 
     @classmethod
     def convert_authors(cls, common_metadata: CommonMetadata):
@@ -2763,13 +2900,16 @@ class DataCiteMetadata:
                 contributor_type = "Personal"
             item = {
                 "name": contributor.family_name + ", " + contributor.given_name,
+                "nameType": contributor_type,
                 "givenName": contributor.given_name,
                 "familyName": contributor.family_name,
-                "nameType": contributor_type,
             }
 
+            # FIXME: more details on affiliation: see https://schema.datacite.org/meta/kernel-4.3/metadata.xsd
             if contributor.affiliations.exists():
-                item["affiliation"] = [contributor.formatted_affiliations]
+                item["affiliation"] = []
+                for affiliation in contributor.affiliations.all():
+                    item["affiliation"].append({"name": affiliation.name})
 
             creators.append(item)
         return creators
@@ -2833,13 +2973,22 @@ class DataCiteMetadata:
 
         return contributors
 
-    def to_json(self):
-        """Returns a JSON string of this codemeta data"""
-        # FIXME: should ideally validate metadata as well
-        return json.dumps(self.metadata)
-
     def to_dict(self):
         return self.metadata.copy()
+
+    def to_hash(self):
+        """
+        Compute SHA-256 hash from metadata dictionary.
+        """
+        # Convert metadata dictionary to JSON string
+        json_str = json.dumps(self.to_dict(), sort_keys=True)
+
+        # Compute hash using SHA-256
+        hash_obj = hashlib.sha256()
+        hash_obj.update(json_str.encode("utf-8"))
+        hash_value = hash_obj.hexdigest()
+
+        return hash_value
 
 
 @register_snippet
@@ -2866,3 +3015,77 @@ class PeerReviewEventLog(models.Model):
             self.message += f"\n\n{message}"
         else:
             self.message = message
+
+
+class DataciteAction(Enum):
+    CREATE_RELEASE_DOI = "CREATE_RELEASE_DOI"
+    CREATE_CODEBASE_DOI = "CREATE_CODEBASE_DOI"
+    UPDATE_RELEASE_METADATA = "UPDATE_RELEASE_METADATA"
+    UPDATE_CODEBASE_METADATA = "UPDATE_CODEBASE_METADATA"
+
+
+@register_snippet
+class DataciteRegistrationLog(models.Model):
+    release = models.ForeignKey(
+        CodebaseRelease,
+        related_name="datacite_logs",
+        on_delete=models.CASCADE,
+        null=True,
+    )
+    codebase = models.ForeignKey(
+        Codebase, related_name="datacite_logs", on_delete=models.CASCADE, null=True
+    )
+
+    action = models.CharField(
+        max_length=50,
+        choices=[(action.value, action.value) for action in DataciteAction],
+    )
+    timestamp = models.DateTimeField(default=timezone.now)
+    http_status = models.IntegerField(default=None, null=True)
+    message = models.TextField(default=None, null=True)
+    metadata_hash = models.CharField(max_length=255)
+    doi = models.CharField(max_length=25, null=True, blank=True)
+
+    @classmethod
+    def is_metadata_stale(cls, item):
+        try:
+            # remove cache
+            if item.datacite:
+                del item.datacite
+
+            current_metadata_hash = item.datacite.to_hash()
+
+            newest_log_entry = None
+            if isinstance(item, Codebase):
+                newest_log_entry = (
+                    DataciteRegistrationLog.objects.filter(
+                        Q(codebase=item) & Q(http_status__in=[200, 600])
+                    )
+                    .order_by("-timestamp")
+                    .first()
+                )
+            if isinstance(item, CodebaseRelease):
+                newest_log_entry = (
+                    DataciteRegistrationLog.objects.filter(
+                        Q(release=item) & Q(http_status__in=[200, 600])
+                    )
+                    .order_by("-timestamp")
+                    .first()
+                )
+
+            if newest_log_entry:
+                last_successfuly_sent_metadata_hash = newest_log_entry.metadata_hash
+                return last_successfuly_sent_metadata_hash != current_metadata_hash
+
+        except Exception as e:
+            logger.error(e)
+
+        return True
+
+    def __str__(self):
+        if self.codebase:
+            return f"Metadata sent for Codebase({self.codebase.pk}): {self.codebase.title} at {self.timestamp}, HTTP Status: {self.http_status}, Message: {self.message}, Hash: {self.metadata_hash}, DOI: {self.codebase.doi}"
+        elif self.release:
+            return f"Metadata sent for CodebaseRelease: {self.release.version} at {self.timestamp}, HTTP Status: {self.http_status}, Message: {self.message}, Hash: {self.metadata_hash}, DOI: {self.release.doi}"
+        else:
+            return "Metadata sent for unspecified object at {self.timestamp}"
