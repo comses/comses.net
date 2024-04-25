@@ -16,16 +16,30 @@ from datacite.errors import *
 
 logger = logging.getLogger(__name__)
 
-DRY_RUN = True
-DRY_RUN_MESSAGE = """
-DDDDD   RRRRR   YYY   YYY     RRRRR    UU   UU   NN   NN 
-DD   DD RR   RR  YY   YY      RR   RR  UU   UU   NNN  NN 
-DD   DD RRRRR     YYYYY       RRRRR    UU   UU   NN N NN 
-DD   DD RR   RR    YYY        RR   RR  UU   UU   NN  NNN 
-DDDDD   RR    RR   YYY        RR    RR  UUUUU    NN   NN 
+DRY_RUN = True if settings.DATACITE_DRY_RUN == "true" else False
+if DRY_RUN:
+    WELCOME_MESSAGE = """
+    DDDDD   RRRRR   YYY   YYY     RRRRR    UU   UU   NN   NN 
+    DD   DD RR   RR  YY   YY      RR   RR  UU   UU   NNN  NN 
+    DD   DD RRRRR     YYYYY       RRRRR    UU   UU   NN N NN 
+    DD   DD RR   RR    YYY        RR   RR  UU   UU   NN  NNN 
+    DDDDD   RR    RR   YYY        RR    RR  UUUUU    NN   NN 
 
-Dry Run Mode is On
-"""
+    Dry Run Mode is On
+    """
+else:
+    WELCOME_MESSAGE = """
+    (   (       ) (                       (       )     ) 
+    )\ ))\ ) ( /( )\ )          (    *   ))\ ) ( /(  ( /( 
+    (()/(()/( )\()|()/(     (    )\ ` )  /(()/( )\()) )\())
+    /(_))(_)|(_)\ /(_))    )\ (((_) ( )(_))(_)|(_)\ ((_)\ 
+    (_))(_))   ((_|_))_  _ ((_))\___(_(_()|_))   ((_) _((_)
+    | _ \ _ \ / _ \|   \| | | ((/ __|_   _|_ _| / _ \| \| |
+    |  _/   /| (_) | |) | |_| || (__  | |  | | | (_) | .` |
+    |_| |_|_\ \___/|___/ \___/  \___| |_| |___| \___/|_|\_|
+
+    Production Mode is On
+    """
 
 
 def doi_matches_pattern(doi: str) -> bool:
@@ -182,7 +196,7 @@ class DataCiteApi:
         logger.info(f"_call_datacite_api({action}, {type(item)}, pk={item.pk})")
         try:
             # remove from cache
-            if item.datacite:
+            if hasattr(item, "datacite"):
                 del item.datacite
 
             metadata_dict = item.datacite.to_dict()
@@ -314,8 +328,7 @@ ONE-TIME TASKS
 
 
 def delete_all_existing_codebase_dois_01():
-    if DRY_RUN:
-        print(DRY_RUN_MESSAGE)
+    print(WELCOME_MESSAGE)
     codebases_with_dois = Codebase.objects.exclude(doi__isnull=True)
 
     logger.debug(
@@ -347,8 +360,7 @@ def delete_all_existing_codebase_dois_01():
 
 
 def remove_dois_from_not_peer_reviewed_releases_02():
-    if DRY_RUN:
-        print(DRY_RUN_MESSAGE)
+    print(WELCOME_MESSAGE)
 
     not_peer_reviewed_releases_with_dois = CodebaseRelease.objects.filter(
         peer_reviewed=False
@@ -382,8 +394,7 @@ def remove_dois_from_not_peer_reviewed_releases_02():
 
 
 def fix_existing_dois_03():
-    if DRY_RUN:
-        print(DRY_RUN_MESSAGE)
+    print(WELCOME_MESSAGE)
 
     datacite_api = DataCiteApi()
 
@@ -469,7 +480,7 @@ def fix_existing_dois_03():
             input("Press Enter to continue...")
             continue
         else:
-            logger.info(
+            logger.warn(
                 f"Unknown DOI! Release {release.pk} with doi {release_doi} will not be handled by this script."
             )
             input("Press Enter to continue...")
@@ -498,8 +509,7 @@ def fix_existing_dois_03():
 
 
 def update_metadata_for_all_existing_dois_04():
-    if DRY_RUN:
-        print(DRY_RUN_MESSAGE)
+    print(WELCOME_MESSAGE)
 
     datacite_api = DataCiteApi()
     all_codebases_with_dois = Codebase.objects.exclude(doi__isnull=True)
@@ -566,8 +576,7 @@ def mint_dois_for_peer_reviewed_releases_without_dois():
     3. Updates metadata for parent codebase and sibling releases
     """
 
-    if DRY_RUN:
-        print(DRY_RUN_MESSAGE)
+    print(WELCOME_MESSAGE)
 
     datacite_api = DataCiteApi()
 
@@ -650,8 +659,7 @@ def mint_dois_for_peer_reviewed_releases_without_dois():
 
 
 def update_stale_metadata_for_all_codebases_with_dois():
-    if DRY_RUN:
-        print(DRY_RUN_MESSAGE)
+    print(WELCOME_MESSAGE)
 
     datacite_api = DataCiteApi()
     all_codebases_with_dois = Codebase.objects.exclude(doi__isnull=True)
@@ -688,8 +696,7 @@ def update_stale_metadata_for_all_codebases_with_dois():
 
 
 def update_stale_metadata_for_all_releases_with_dois():
-    if DRY_RUN:
-        print(DRY_RUN_MESSAGE)
+    print(WELCOME_MESSAGE)
 
     datacite_api = DataCiteApi()
     all_releases_with_dois = CodebaseRelease.objects.exclude(doi__isnull=True)

@@ -503,6 +503,7 @@ TEST_USER_ID = os.getenv("TEST_USER_ID", 1000000)
 TEST_USERNAME = os.getenv("TEST_USERNAME", "__test_user__")
 
 DATACITE_API_USERNAME = os.getenv("DATACITE_API_USERNAME", "comses")
+DATACITE_DRY_RUN = os.getenv("DATACITE_DRY_RUN", "true")
 DATACITE_API_PASSWORD = read_secret("datacite_api_password")
 
 SOCIALACCOUNT_PROVIDERS = {
