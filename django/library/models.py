@@ -987,7 +987,7 @@ class Codebase(index.Indexed, ModeratedContent, ClusterableModel):
 
         existing_draft = self.releases.filter(status=status).first()
         if existing_draft:
-            logger.warn(
+            logger.warning(
                 "Creating a new %s release when one already exists: %s",
                 status,
                 existing_draft.identifier,
@@ -2720,10 +2720,11 @@ class DataCiteMetadata:
         ]
         metadata["titles"] = [{"title": codebase.title}]
 
-        metadata["publisher"] = (
+        # FIXME: include more info!
+        metadata["publisher"] = str(
             f'{CommonMetadata.COMSES_ORGANIZATION["name"]} {CommonMetadata.COMSES_ORGANIZATION["url"]}'
         )
-        metadata["publicationYear"] = (
+        metadata["publicationYear"] = str(
             str(codebase.first_published_at.year)
             if codebase is not None and codebase.first_published_at is not None
             else ""
@@ -2749,14 +2750,6 @@ class DataCiteMetadata:
                         "relatedIdentifierType": "DOI",
                     }
                 )
-
-        metadata["relatedIdentifiers"].append(
-            {
-                "relationType": "IsPartOf",
-                "relatedIdentifier": f"{settings.BASE_URL}/codebases/",
-                "relatedIdentifierType": "URL",
-            }
-        )
 
         return DataCiteMetadata(metadata)
 
@@ -2791,11 +2784,11 @@ class DataCiteMetadata:
         ]
 
         metadata["publicationYear"] = str(cls.convert_publication_year(common_metadata))
-        metadata["publisher"] = (
-            CommonMetadata.COMSES_ORGANIZATION["name"]
-            + " "
-            + CommonMetadata.COMSES_ORGANIZATION["url"]
+        # FIXME: include more info!
+        metadata["publisher"] = str(
+            f'{CommonMetadata.COMSES_ORGANIZATION["name"]} {CommonMetadata.COMSES_ORGANIZATION["url"]}'
         )
+
         metadata["types"] = {"resourceType": "Model", "resourceTypeGeneral": "Software"}
         metadata["titles"] = [{"title": common_metadata.name}]
         metadata["version"] = common_metadata.version
@@ -2868,14 +2861,6 @@ class DataCiteMetadata:
                     "relatedIdentifierType": "DOI",
                 }
             )
-
-        metadata["relatedIdentifiers"].append(
-            {
-                "relationType": "IsPartOf",
-                "relatedIdentifier": f"{settings.BASE_URL}/codebases/",
-                "relatedIdentifierType": "URL",
-            }
-        )
 
         """
         FIXME: nested parent/child DOIs not yet implemented
@@ -3062,7 +3047,7 @@ class DataciteRegistrationLog(models.Model):
     def is_metadata_stale(cls, item):
         try:
             # remove cache
-            if item.datacite:
+            if hasattr(item, "datacite"):
                 del item.datacite
 
             current_metadata_hash = item.datacite.to_hash()
