@@ -686,10 +686,16 @@ class Codebase(index.Indexed, ModeratedContent, ClusterableModel):
         return urls
 
     def get_featured_rendition_url(self):
-        featured_image = self.get_featured_image()
-        if featured_image:
-            return featured_image.get_rendition("max-900x600").url
-        return None
+        try:
+            featured_image = self.get_featured_image()
+            if featured_image:
+                return featured_image.get_rendition("max-900x600").url
+            return None
+        except Exception as e:
+            logger.error(
+                f"Failed to get featured image for codebase {self.pk}. Error{e}"
+            )
+            return None
 
     def subpath(self, *args):
         return pathlib.Path(self.base_library_dir, *args)
@@ -2522,8 +2528,11 @@ class CommonMetadata:
 
         if release.live:
             date_published = release.last_published_on
-            self.date_published = date_published.strftime(self.DATE_PUBLISHED_FORMAT)
-            self.copyright_year = date_published.year
+            if date_published:
+                self.date_published = date_published.strftime(
+                    self.DATE_PUBLISHED_FORMAT
+                )
+                self.copyright_year = date_published.year
 
         if release.first_published_at:
             self.first_published_at = release.first_published_at
@@ -2608,7 +2617,7 @@ class CodeMetaMetadata:
             citation=cls.get_citations(common_metadata),
         )
 
-        datePublished = getattr(common_metadata, "datePublished", None)
+        datePublished = getattr(common_metadata, "date_published", None)
         if datePublished:
             metadata.update(datePublished=datePublished)
             metadata.update(copyrightYear=common_metadata.copyright_year)
@@ -2725,9 +2734,11 @@ class DataCiteMetadata:
             f'{CommonMetadata.COMSES_ORGANIZATION["name"]} {CommonMetadata.COMSES_ORGANIZATION["url"]}'
         )
         metadata["publicationYear"] = str(
-            str(codebase.first_published_at.year)
-            if codebase is not None and codebase.first_published_at is not None
-            else ""
+            codebase.first_published_at.year
+            if codebase is not None
+            and codebase.first_published_at is not None
+            and codebase.first_published_at.year is not None
+            else None
         )
         metadata["types"] = {"resourceType": "Model", "resourceTypeGeneral": "Software"}
         metadata["schemaVersion"] = "http://datacite.org/schema/kernel-4"
@@ -2739,7 +2750,15 @@ class DataCiteMetadata:
         metadata["relatedIdentifiers"] = []
 
         # set relatedIdentifiers
-        ordered_codebase_releases: List[CodebaseRelease] = codebase.ordered_releases()
+        # FIXME: what is the difference between
+        # CodebaseRelease.objects.filter(codebase=r.codebase).order_by("-version_number").all()
+        # and
+        # ordered_codebase_releases: List[CodebaseRelease] = codebase.ordered_releases()
+        ordered_codebase_releases: List[CodebaseRelease] = (
+            CodebaseRelease.objects.filter(codebase=codebase)
+            .order_by("-version_number")
+            .all()
+        )
 
         for release in ordered_codebase_releases:
             if release.doi:
@@ -2783,7 +2802,11 @@ class DataCiteMetadata:
             {"identifier": common_metadata.identifier, "identifierType": "DOI"}
         ]
 
-        metadata["publicationYear"] = str(cls.convert_publication_year(common_metadata))
+        metadata["publicationYear"] = str(
+            cls.convert_publication_year(common_metadata)
+            if cls.convert_publication_year(common_metadata) is not None
+            else None
+        )
         # FIXME: include more info!
         metadata["publisher"] = str(
             f'{CommonMetadata.COMSES_ORGANIZATION["name"]} {CommonMetadata.COMSES_ORGANIZATION["url"]}'
@@ -2862,21 +2885,6 @@ class DataCiteMetadata:
                 }
             )
 
-        """
-        FIXME: nested parent/child DOIs not yet implemented
-        DataCite documentation @ https://support.datacite.org/docs/versioning
-        Here's an example of how Zenodo does this relationship in metadata:
-            parent @ https://api.datacite.org/dois/10.5281/zenodo.705645
-            v1 @ https://api.datacite.org/dois/10.5281/zenodo.60943
-            v2 @ https://api.datacite.org/dois/10.5281/zenodo.800648
-        Zenodo's documentation @ https://help.zenodo.org/faq/#versioning
-        parent = release.codebase
-        parent_doi = parent.get_absolute_url()
-        releases = parent.ordered_releases()
-
-        # If there are 2 releases, then we need to create a parent DOI but should this be done elsewhere since it requires a call to DataCite's Fabrica API?
-        """
-
         metadata["schemaVersion"] = "http://datacite.org/schema/kernel-4"
 
         return DataCiteMetadata(metadata)
@@ -2913,17 +2921,14 @@ class DataCiteMetadata:
 
     @classmethod
     def convert_publication_year(cls, common_metadata: CommonMetadata):
-        copyrightYear = getattr(common_metadata, "copyrightYear", None)
+        copyrightYear = getattr(common_metadata, "copyright_year", None)
         if copyrightYear:
             return copyrightYear
 
         first_published_at = getattr(common_metadata, "first_published_at", None)
         if first_published_at:
-            return (
-                first_published_at.year
-                if getattr(common_metadata, "first_published_at")
-                else None
-            )
+            return first_published_at.year
+        return None
 
     @classmethod
     def convert_contributors(cls, common_metadata: CommonMetadata):

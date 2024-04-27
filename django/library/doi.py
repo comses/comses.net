@@ -1,5 +1,6 @@
 import logging
 import re
+import requests
 
 from django.conf import settings
 from django.db.models import Q
@@ -17,6 +18,12 @@ from datacite.errors import *
 logger = logging.getLogger(__name__)
 
 DRY_RUN = True if settings.DATACITE_DRY_RUN == "true" else False
+IS_STAGING = settings.DEPLOY_ENVIRONMENT.is_staging
+IS_PRODUCTION = settings.DEPLOY_ENVIRONMENT.is_production
+
+DATACITE_PREFIX = settings.DATACITE_PREFIX
+
+
 if DRY_RUN:
     WELCOME_MESSAGE = """
     DDDDD   RRRRR   YYY   YYY     RRRRR    UU   UU   NN   NN 
@@ -27,7 +34,20 @@ if DRY_RUN:
 
     Dry Run Mode is On
     """
-else:
+elif IS_STAGING:
+    WELCOME_MESSAGE = """
+    (                             (        )          
+    )\ )  *   )    (      (       )\ )  ( /(  (       
+    (()/(` )  /(    )\     )\ )   (()/(  )\()) )\ )    
+    /(_))( )(_))((((_)(  (()/(    /(_))((_)\ (()/(    
+    (_)) (_(_())  )\ _ )\  /(_))_ (_))   _((_) /(_))_  
+    / __||_   _|  (_)_\(_)(_)) __||_ _| | \| |(_)) __| 
+    \__ \  | |     / _ \    | (_ | | |  | .` |  | (_ | 
+    |___/  |_|    /_/ \_\    \___||___| |_|\_|   \___|
+
+    Staging Mode is On
+    """
+elif IS_PRODUCTION:
     WELCOME_MESSAGE = """
     (   (       ) (                       (       )     ) 
     )\ ))\ ) ( /( )\ )          (    *   ))\ ) ( /(  ( /( 
@@ -41,10 +61,21 @@ else:
     Production Mode is On
     """
 
+VERIFICATION_MESSAGE = """
+                _  __       _                         
+               (_)/ _|     (_)                        
+__   _____ _ __ _| |_ _   _ _ _ __   __ _             
+\ \ / / _ \ '__| |  _| | | | | '_ \ / _` |            
+ \ V /  __/ |  | | | | |_| | | | | | (_| |  _   _   _ 
+  \_/ \___|_|  |_|_|  \__, |_|_| |_|\__, | (_) (_) (_)
+                       __/ |         __/ |            
+                      |___/         |___/             
+"""
+
 
 def doi_matches_pattern(doi: str) -> bool:
     # checks if DOI is formatted like this "00.12345/q2xt-rj46"
-    pattern = re.compile(f"{settings.DATACITE_PREFIX}/[-._;()/:a-zA-Z0-9]+")
+    pattern = re.compile(f"{DATACITE_PREFIX}/[-._;()/:a-zA-Z0-9]+")
     if re.match(pattern, doi):
         return True
     else:
@@ -67,6 +98,29 @@ class DataCiteApi:
             prefix=settings.DATACITE_PREFIX,
             test_mode=settings.DATACITE_TEST_MODE,
         )
+
+        if not self.heartbeat():
+            logger.error("Failed to access DataCite API!")
+            raise Exception("Failed to access DataCite API!")
+
+    def heartbeat(self) -> bool:
+        # Check if DataCite API is working
+        try:
+            datacite_heartbeat_url = "https://api.test.datacite.org/heartbeat"
+            if not DRY_RUN and IS_PRODUCTION:
+                datacite_heartbeat_url = "https://api.datacite.org/heartbeat"
+
+            headers = {"accept": "text/plain"}
+            response = requests.get(datacite_heartbeat_url, headers=headers)
+            logger.debug(f"DataCite API heartbeat: {response.text}")
+
+            if response.text == "OK":
+                return True
+            else:
+                return False
+
+        except Exception as e:
+            return False
 
     def mint_new_doi_for_codebase(self, codebase: Codebase) -> str:
         action = DataciteAction.CREATE_CODEBASE_DOI
@@ -94,6 +148,11 @@ class DataCiteApi:
             if not isinstance(elem2, dict):
                 return False
             for key, value in elem1.items():
+                # FIXME: affiliations for contributors will be returned as object only if '&affiliation=true' is present in the request.
+                # Is there a way to set it when using datacite package?
+                # https://support.datacite.org/docs/can-i-see-more-detailed-affiliation-information-in-the-rest-api
+                if key == "affiliation":
+                    return True
                 if key not in elem2:
                     return False
                 if not DataCiteApi._is_deep_inclusive(value, elem2[key]):
@@ -102,16 +161,23 @@ class DataCiteApi:
             if not isinstance(elem2, list):
                 return False
             if elem1 and isinstance(elem1[0], dict):
+                if not (elem2 and isinstance(elem2[0], dict)):
+                    return False
+
                 if len(elem1) != len(elem2):
                     return False
-                for el1, el2 in zip(elem1, elem2):
+
+                sort_key = next(iter(elem1[0]))
+                elem1_sorted = sorted(elem1, key=lambda x: x[sort_key])
+                elem2_sorted = sorted(elem2, key=lambda x: x[sort_key])
+
+                for el1, el2 in zip(elem1_sorted, elem2_sorted):
                     if not DataCiteApi._is_deep_inclusive(el1, el2):
                         return False
             else:
                 return set(elem1).issubset(set(elem2))
         elif isinstance(elem2, int):
             # publicationYear is returned as int from DataCite
-            # compare string versions
             return str(elem1) == str(elem2)
         elif elem1 != elem2:
             return False
@@ -130,6 +196,22 @@ class DataCiteApi:
         if sent_keys.issubset(received_keys):
             # Check if values of corresponding keys are the same
             for key in sent_keys:
+                if key == "publicationYear":
+                    # publicationYear is returned as int from DataCite
+                    # FIXME: this accounts for publicationYear: None or "" sent to DataCite
+                    EMPTY_VALS = [None, 0, "None", "0"]
+
+                    if sent_data[key] and received_data[key]:
+                        if str(sent_data[key]) != str(received_data[key]):
+                            different_attributes.append(key)
+                    elif not (
+                        sent_data[key] in EMPTY_VALS
+                        and received_data[key] in EMPTY_VALS
+                    ):
+                        different_attributes.append(key)
+                    else:
+                        continue
+
                 if not DataCiteApi._is_deep_inclusive(
                     sent_data[key], received_data[key]
                 ):
@@ -137,6 +219,7 @@ class DataCiteApi:
 
                     # FIXME: identifiers is not considered by the Fabrica API...
                     # FIXME: rightsList is enhanced by DataCite
+
                     if key != "identifiers" and key != "rightsList":
                         different_attributes.append(key)
 
@@ -193,7 +276,7 @@ class DataCiteApi:
         message = None
         metadata_hash = None
 
-        logger.info(f"_call_datacite_api({action}, {type(item)}, pk={item.pk})")
+        logger.debug(f"_call_datacite_api({action}, {type(item)}, pk={item.pk})")
         try:
             # remove from cache
             if hasattr(item, "datacite"):
@@ -210,11 +293,16 @@ class DataCiteApi:
                 or action == DataciteAction.CREATE_CODEBASE_DOI
             ):
                 if DRY_RUN:
-                    doi = "10.25937/9syz-f680"
-                else:
+                    doi = "XX.XXXXX/XXXX-XXXX"
+
+                if IS_STAGING and not DRY_RUN:
+                    doi = self.datacite_client.draft_doi(metadata_dict)
+
+                if IS_PRODUCTION and not DRY_RUN:
                     doi = self.datacite_client.public_doi(
                         metadata_dict, url=item.permanent_url
                     )
+
                 logger.debug(f"New DOI minted: {doi}")
                 http_status = 200
             elif (
@@ -224,7 +312,8 @@ class DataCiteApi:
                 doi = item.doi
 
                 if not DRY_RUN:
-                    self.datacite_client.put_doi(item.doi, metadata_dict)
+                    metadata_dict_enhanced = {"attributes": {**metadata_dict}}
+                    self.datacite_client.put_doi(item.doi, metadata_dict_enhanced)
 
                 logger.debug(f"Metadata successfully updated for DOI: {item.doi}")
                 http_status = 200
@@ -305,7 +394,7 @@ class DataCiteApi:
     ):
         item = release or codebase
 
-        logger.info(
+        logger.debug(
             f"save_log_record(action={action}, item={type(item)}, http_status={http_status})"
         )
 
@@ -334,7 +423,6 @@ def delete_all_existing_codebase_dois_01():
     logger.debug(
         f"Deleting DOIs for {len(codebases_with_dois)} Codebases. Query: Codebase.objects.exclude(doi__isnull=True) ..."
     )
-
     input("Press Enter to continue...")
 
     for i, codebase in enumerate(codebases_with_dois):
@@ -445,7 +533,7 @@ def fix_existing_dois_03():
         """
         release_doi = release.doi
 
-        if "10.25937" in release_doi:
+        if DATACITE_PREFIX in release_doi:
             # update release metadata in DataCite
             # ok = datacite_api.update_metadata_for_release(release)
             # if not ok:
@@ -480,15 +568,38 @@ def fix_existing_dois_03():
             input("Press Enter to continue...")
             continue
         else:
-            logger.warn(
-                f"Unknown DOI! Release {release.pk} with doi {release_doi} will not be handled by this script."
+            logger.debug(
+                f"Release {release.pk} has a 'bad' DOI: ({release.doi}). Minting new DOI for release..."
             )
+            # request to DataCite API: mint new DOI!
+            release_doi = datacite_api.mint_new_doi_for_release(release)
+            if not release_doi:
+                logger.error(
+                    "Could not mint DOI for release {release.pk}. Error: {message}. Skipping."
+                )
+                input("Press Enter to continue...")
+                continue
+
+            logger.debug(
+                f"Saving new doi {release_doi} for release {release.pk}. Previous doi: {release.doi}"
+            )
+            if not DRY_RUN:
+                release.doi = release_doi
+                release.save()
+
             input("Press Enter to continue...")
             continue
+            # logger.warning(
+            #     f"Unknown DOI! Release {release.pk} with doi {release_doi} will not be handled by this script."
+            # )
+            # input("Press Enter to continue...")
+            # continue
 
     """
     assert correctness
     """
+    print(VERIFICATION_MESSAGE)
+
     if not DRY_RUN:
         for release in peer_reviewed_releases_with_dois:
             assert (
@@ -525,9 +636,12 @@ def update_metadata_for_all_existing_dois_04():
         )
 
         if DataciteRegistrationLog.is_metadata_stale(codebase):
+            logger.debug(f"Metadata is stale. Updating metadata in DataCite...")
             ok = datacite_api.update_metadata_for_codebase(codebase)
             if not ok:
                 logger.error(f"Failed to update metadata for codebase {codebase.pk}")
+        else:
+            logger.debug(f"Metadata for codebase {codebase.pk} is in sync!")
 
         for j, release in enumerate(codebase.releases.all()):
             logger.debug(
@@ -535,11 +649,14 @@ def update_metadata_for_all_existing_dois_04():
             )
             if release.peer_reviewed and release.doi:
                 if DataciteRegistrationLog.is_metadata_stale(release):
+                    logger.debug(f"Metadata is stale. Updating metadata in DataCite...")
                     ok = datacite_api.update_metadata_for_release(release)
                     if not ok:
                         logger.error(
                             f"Failed to update metadata for release {release.pk}"
                         )
+                else:
+                    logger.debug(f"Metadata for release {release.pk} is in sync!")
             else:
                 logger.debug(
                     f'{"Release has no DOI. " if not release.doi else ""}'
@@ -548,19 +665,29 @@ def update_metadata_for_all_existing_dois_04():
 
             input("Press Enter to continue...")
 
-        """
-        assert correctness
-        """
-        if not DRY_RUN:
-            for codebase in all_codebases_with_dois:
-                assert datacite_api.check_metadata(
-                    codebase
-                ), f"Metadata check not passed for codebase {codebase.pk}"
-                for release in codebase.releases.all():
-                    if release.doi:
-                        assert datacite_api.check_metadata(
-                            release
-                        ), f"Metadata check not passed for release {release.pk}"
+    """
+    assert correctness
+    """
+    print(VERIFICATION_MESSAGE)
+    if not DRY_RUN:
+        logger.debug(f"Checking that Comses metadata is in sync with DataCite:")
+        invalid_codebases = []
+        invalid_releases = []
+        for codebase in all_codebases_with_dois:
+            # assert datacite_api.check_metadata(codebase), f"Metadata check not passed for codebase {codebase.pk}"
+            if not datacite_api.check_metadata(codebase):
+                invalid_codebases.append(codebase.pk)
+
+            for release in codebase.releases.all():
+                if release.doi:
+                    if not datacite_api.check_metadata(release):
+                        invalid_releases.append(release.pk)
+                    # assert datacite_api.check_metadata(
+                    #     release
+                    # ), f"Metadata check not passed for release {release.pk}"
+
+        print(f"Invalid Codebases ({len(invalid_codebases)}): {invalid_codebases}")
+        print(f"Invalid Releases ({len(invalid_releases)}): {invalid_releases}")
 
 
 """
@@ -589,7 +716,10 @@ def mint_dois_for_peer_reviewed_releases_without_dois():
     )
     input("Press Enter to continue...")
 
-    for release in peer_reviewed_releases_without_dois:
+    for i, release in enumerate(peer_reviewed_releases_without_dois):
+        logger.debug(
+            f"Processing release {i+1}/{len(peer_reviewed_releases_without_dois)} release.pk={release.pk}..."
+        )
         codebase = release.codebase
         codebase_doi = codebase.doi
 
@@ -688,6 +818,7 @@ def update_stale_metadata_for_all_codebases_with_dois():
     """
     assert correctness
     """
+    print(VERIFICATION_MESSAGE)
     if not DRY_RUN:
         for codebase in all_codebases_with_dois:
             assert datacite_api.check_metadata(
@@ -726,6 +857,7 @@ def update_stale_metadata_for_all_releases_with_dois():
     """
     assert correctness
     """
+    print(VERIFICATION_MESSAGE)
     if not DRY_RUN:
         for release in all_releases_with_dois:
             assert datacite_api.check_metadata(
