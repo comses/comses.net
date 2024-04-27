@@ -18,10 +18,16 @@ from datacite.errors import *
 logger = logging.getLogger(__name__)
 
 DRY_RUN = True if settings.DATACITE_DRY_RUN == "true" else False
+IS_DEVELOPMENT = settings.DEPLOY_ENVIRONMENT.is_development
 IS_STAGING = settings.DEPLOY_ENVIRONMENT.is_staging
 IS_PRODUCTION = settings.DEPLOY_ENVIRONMENT.is_production
 
 DATACITE_PREFIX = settings.DATACITE_PREFIX
+
+# FIXME: DELETEME!!!
+#  OVERRIDES
+DRY_RUN = False
+IS_STAGING = True
 
 
 if DRY_RUN:
@@ -294,14 +300,14 @@ class DataCiteApi:
             ):
                 if DRY_RUN:
                     doi = "XX.XXXXX/XXXX-XXXX"
+                else:
+                    if IS_STAGING or IS_DEVELOPMENT:
+                        doi = self.datacite_client.draft_doi(metadata_dict)
 
-                if IS_STAGING and not DRY_RUN:
-                    doi = self.datacite_client.draft_doi(metadata_dict)
-
-                if IS_PRODUCTION and not DRY_RUN:
-                    doi = self.datacite_client.public_doi(
-                        metadata_dict, url=item.permanent_url
-                    )
+                    if IS_PRODUCTION:
+                        doi = self.datacite_client.public_doi(
+                            metadata_dict, url=item.permanent_url
+                        )
 
                 logger.debug(f"New DOI minted: {doi}")
                 http_status = 200
