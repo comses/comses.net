@@ -1,5 +1,10 @@
 import logging
 import re
+import time
+import threading
+from concurrent.futures import ThreadPoolExecutor
+import queue
+
 import requests
 
 from django.conf import settings
@@ -15,33 +20,30 @@ from .models import (
 from datacite import DataCiteRESTClient, schema43
 from datacite.errors import *
 
+
 logger = logging.getLogger(__name__)
 
 DRY_RUN = True if settings.DATACITE_DRY_RUN == "true" else False
+
 IS_DEVELOPMENT = settings.DEPLOY_ENVIRONMENT.is_development
 IS_STAGING = settings.DEPLOY_ENVIRONMENT.is_staging
 IS_PRODUCTION = settings.DEPLOY_ENVIRONMENT.is_production
 
+# prefix is different for (dev & staging) and production environments
 DATACITE_PREFIX = settings.DATACITE_PREFIX
 
-# FIXME: DELETEME!!!
-#  OVERRIDES
-DRY_RUN = False
-IS_STAGING = True
+MAX_DATACITE_API_WORKERS = 25
 
-
-if DRY_RUN:
-    WELCOME_MESSAGE = """
-    DDDDD   RRRRR   YYY   YYY     RRRRR    UU   UU   NN   NN 
-    DD   DD RR   RR  YY   YY      RR   RR  UU   UU   NNN  NN 
-    DD   DD RRRRR     YYYYY       RRRRR    UU   UU   NN N NN 
-    DD   DD RR   RR    YYY        RR   RR  UU   UU   NN  NNN 
-    DDDDD   RR    RR   YYY        RR    RR  UUUUU    NN   NN 
-
-    Dry Run Mode is On
+ENV_MESSAGE = ""
+if IS_DEVELOPMENT:
+    ENV_MESSAGE = """
+    +-+-+-+-+-+-+-+-+-+-+-+
+    |D|E|V|E|L|O|P|M|E|N|T|
+    +-+-+-+-+-+-+-+-+-+-+-+
+    Development Mode is On
     """
-elif IS_STAGING:
-    WELCOME_MESSAGE = """
+if IS_STAGING:
+    ENV_MESSAGE = """
     (                             (        )          
     )\ )  *   )    (      (       )\ )  ( /(  (       
     (()/(` )  /(    )\     )\ )   (()/(  )\()) )\ )    
@@ -53,8 +55,8 @@ elif IS_STAGING:
 
     Staging Mode is On
     """
-elif IS_PRODUCTION:
-    WELCOME_MESSAGE = """
+if IS_PRODUCTION:
+    ENV_MESSAGE = """
     (   (       ) (                       (       )     ) 
     )\ ))\ ) ( /( )\ )          (    *   ))\ ) ( /(  ( /( 
     (()/(()/( )\()|()/(     (    )\ ` )  /(()/( )\()) )\())
@@ -67,6 +69,18 @@ elif IS_PRODUCTION:
     Production Mode is On
     """
 
+DRY_RUN_MESSAGE = ""
+if DRY_RUN:
+    DRY_RUN_MESSAGE = """
+    Dry Run Mode is On\n
+    """
+else:
+    DRY_RUN_MESSAGE = """
+    Dry Run Mode is Off
+    """
+
+WELCOME_MESSAGE = ENV_MESSAGE + DRY_RUN_MESSAGE
+
 VERIFICATION_MESSAGE = """
                 _  __       _                         
                (_)/ _|     (_)                        
@@ -78,7 +92,6 @@ __   _____ _ __ _| |_ _   _ _ _ __   __ _
                       |___/         |___/             
 """
 
-
 def doi_matches_pattern(doi: str) -> bool:
     # checks if DOI is formatted like this "00.12345/q2xt-rj46"
     pattern = re.compile(f"{DATACITE_PREFIX}/[-._;()/:a-zA-Z0-9]+")
@@ -86,7 +99,6 @@ def doi_matches_pattern(doi: str) -> bool:
         return True
     else:
         return False
-
 
 class DataCiteApi:
     """
@@ -238,7 +250,6 @@ class DataCiteApi:
                     )
                 return False
             else:
-                logger.debug("All sent and received attributes match.")
                 return True
         else:
             logger.debug("Some attributes are missing.")
@@ -272,6 +283,35 @@ class DataCiteApi:
         except Exception as e:
             logger.error(str(e))
             return False
+
+    def threaded_metadata_check(self, items):
+        def loading_animation(thread):
+            while thread.is_alive():
+                print(".", end="", flush=True)
+                time.sleep(0.1)
+            print("\n")
+
+        def _check_metadata(q: queue.Queue):
+            with ThreadPoolExecutor(max_workers=MAX_DATACITE_API_WORKERS) as executor:
+                results = executor.map(lambda item: (item.pk, self.check_metadata(item)), items)
+
+            q.put(results)
+
+        # Create a queue to pass data between threads
+        result_queue = queue.Queue()
+
+        # Start the long-running function in a separate thread
+        thread = threading.Thread(target=_check_metadata, args=(result_queue,))
+        thread.start()
+
+        # Display the loading animation in the main thread
+        loading_animation(thread)
+
+        # Wait for the long-running function to finish
+        thread.join()
+        # Get the results from the queue
+        results = result_queue.get()
+        return results
 
     def _call_datacite_api(self, action: DataciteAction, item):
         """
@@ -416,43 +456,43 @@ class DataCiteApi:
                 metadata_hash=metadata_hash,
             )
 
-
 """
 ONE-TIME TASKS
 """
-
 
 def delete_all_existing_codebase_dois_01():
     print(WELCOME_MESSAGE)
     codebases_with_dois = Codebase.objects.exclude(doi__isnull=True)
 
-    logger.debug(
+    logger.info(
         f"Deleting DOIs for {len(codebases_with_dois)} Codebases. Query: Codebase.objects.exclude(doi__isnull=True) ..."
     )
-    input("Press Enter to continue...")
 
     for i, codebase in enumerate(codebases_with_dois):
         logger.debug(
             f"Deleting DOI {i+1}/{len(codebases_with_dois)}: {codebase.doi} from codebase {codebase.pk} ..."
         )
+        input("Press Enter to continue or CTRL+C to quit...")
 
         if not DRY_RUN:
             codebase.doi = None
             codebase.save()
 
-        logger.debug(f"DOI deleted.")
-        input("Press Enter to continue...")
+    logger.info(
+        f"All DOIs from {len(codebases_with_dois)} codebases deleted successfully."
+    )
 
+    """
+    assert correctness
+    """
     if not DRY_RUN:
-        """
-        assert correctness
-        """
-        for codebase in codebases_with_dois:
-            assert (
-                codebase.doi is None
-            ), f"DOI for codebase {codebase.pk} should be None!"
-
-
+        print(VERIFICATION_MESSAGE)
+        logger.info("Checking that all existing codebase DOIs have been deleted...")
+        for i, codebase in enumerate(codebases_with_dois):
+            print(f"Processing Codebase {i}/{len(codebases_with_dois)} {'' if (i+1)%8 == 0 else '.'*((i+1)%8)}", end=" \r")
+            if codebase.doi is not None:
+                logger.error(f"DOI for codebase {codebase.pk} should be None!")
+        logger.info("Success. All existing codebase DOIs deleted.")
 def remove_dois_from_not_peer_reviewed_releases_02():
     print(WELCOME_MESSAGE)
 
@@ -460,33 +500,35 @@ def remove_dois_from_not_peer_reviewed_releases_02():
         peer_reviewed=False
     ).filter(doi__isnull=False)
 
-    logger.debug(
+    logger.info(
         f"Cleaning up DOIs for {len(not_peer_reviewed_releases_with_dois)} not peer_reviewed CodebaseReleases with DOIs. Query: CodebaseRelease.objects.filter(peer_reviewed=False).filter(doi__isnull=False) ..."
     )
-    input("Press Enter to continue...")
 
     for i, release in enumerate(not_peer_reviewed_releases_with_dois):
         logger.debug(
             f"Deleting DOI {i+1}/{len(not_peer_reviewed_releases_with_dois)}: {release.doi} from release {release.pk} ..."
         )
 
+        input("Press Enter to continue or CTRL+C to quit...")
         if not DRY_RUN:
             release.doi = None
             release.save()
 
-        logger.debug(f"DOI deleted.")
-        input("Press Enter to continue...")
-
+    logger.info(
+        f"All DOIs from not peer_reviewed CodebaseReleases ({len(not_peer_reviewed_releases_with_dois)}) with DOIs deleted successfully."
+    )
+    """
+    assert correctness
+    """
     if not DRY_RUN:
-        """
-        assert correctness
-        """
-        for release in not_peer_reviewed_releases_with_dois:
-            assert (
-                release.doi is None
-            ), f"DOI for not peer reviewed release {release.pk} should be None!"
-
-
+        print(VERIFICATION_MESSAGE)
+        logger.info(
+            "Checking that DOIs for all not peer reviewed releases have been deleted...")
+        for i, release in enumerate(not_peer_reviewed_releases_with_dois):
+            print(f"Processing Codebase {i}/{len(not_peer_reviewed_releases_with_dois)} {'' if (i+1)%8 == 0 else '.'*((i+1)%8)}", end=" \r")
+            if release.doi is not None:
+                logger.error(f"DOI for not peer reviewed release {release.pk} should be None!")
+        logger.info("Success. All existing DOIs for non peer reviewed releases have been deleted.")
 def fix_existing_dois_03():
     print(WELCOME_MESSAGE)
 
@@ -496,15 +538,16 @@ def fix_existing_dois_03():
         peer_reviewed=True
     ).filter(Q(doi__isnull=False) | Q(doi=""))
 
-    logger.debug(
+    logger.info(
         f'Fixing existing DOIs for {len(peer_reviewed_releases_with_dois)} peer reviewed CodebaseReleases with DOIs. Query: CodebaseRelease.objects.filter(peer_reviewed=True).filter(Q(doi__isnull=False) | Q(doi="")) ...'
     )
-    input("Press Enter to continue...")
 
     for i, release in enumerate(peer_reviewed_releases_with_dois):
         logger.debug(
             f"Processing release {i+1}/{len(peer_reviewed_releases_with_dois)}, release.pk={release.pk}..."
         )
+        input("Press Enter to continue or CTRL+C to quit...")
+
         codebase = release.codebase
         codebase_doi = codebase.doi
 
@@ -521,7 +564,7 @@ def fix_existing_dois_03():
                 logger.error(
                     f"Could not mint DOI for parent codebase {codebase.pk}. Skipping release {release.pk}."
                 )
-                input("Press Enter to continue...")
+                input("Press Enter to continue or CTRL+C to quit...")
                 continue
 
             logger.debug(f"New codebase DOI: {codebase_doi}. Saving codebase...")
@@ -548,7 +591,7 @@ def fix_existing_dois_03():
             logger.debug(
                 f"Release {release.pk} already has a valid DataCite DOI {release.doi}. Skipping..."
             )
-            input("Press Enter to continue...")
+            input("Press Enter to continue or CTRL+C to quit...")
             continue
 
         elif release_doi == "" or "2286.0" in release_doi:
@@ -561,7 +604,7 @@ def fix_existing_dois_03():
                 logger.error(
                     "Could not mint DOI for release {release.pk}. Error: {message}. Skipping."
                 )
-                input("Press Enter to continue...")
+                input("Press Enter to continue or CTRL+C to quit...")
                 continue
 
             logger.debug(
@@ -571,7 +614,7 @@ def fix_existing_dois_03():
                 release.doi = release_doi
                 release.save()
 
-            input("Press Enter to continue...")
+            input("Press Enter to continue or CTRL+C to quit...")
             continue
         else:
             logger.debug(
@@ -583,7 +626,7 @@ def fix_existing_dois_03():
                 logger.error(
                     "Could not mint DOI for release {release.pk}. Error: {message}. Skipping."
                 )
-                input("Press Enter to continue...")
+                input("Press Enter to continue or CTRL+C to quit...")
                 continue
 
             logger.debug(
@@ -592,54 +635,48 @@ def fix_existing_dois_03():
             if not DRY_RUN:
                 release.doi = release_doi
                 release.save()
-
-            input("Press Enter to continue...")
             continue
-            # logger.warning(
-            #     f"Unknown DOI! Release {release.pk} with doi {release_doi} will not be handled by this script."
-            # )
-            # input("Press Enter to continue...")
-            # continue
+
+    logger.info(
+        f'Successfully fixed DOIs for existing {len(peer_reviewed_releases_with_dois)} peer reviewed CodebaseReleases with DOIs and their Codebases.'
+    )
 
     """
     assert correctness
     """
-    print(VERIFICATION_MESSAGE)
-
     if not DRY_RUN:
-        for release in peer_reviewed_releases_with_dois:
-            assert (
-                release.codebase.doi is not None
-            ), f"Codebase DOI should not be None for codebase {release.codebase.pk}"
+        print(VERIFICATION_MESSAGE)
+        logger.info("Checking that  all existing peer reviewed releases with DOIs (and their parent codebases) have valid DOIs...")
+        for i, release in enumerate(peer_reviewed_releases_with_dois):
+            print(f"Processing Codebase {i}/{len(peer_reviewed_releases_with_dois)} {'' if (i+1)%8 == 0 else '.'*((i+1)%8)}", end=" \r")
+            if release.codebase.doi is None:
+                logger.error(f"Codebase DOI should not be None for codebase {release.codebase.pk}")
 
-            assert (
-                release.doi is not None
-            ), f"DOI should not be None for release {release.pk}"
+            if release.doi is None:
+                logger.error(f"DOI should not be None for release {release.pk}")
 
-            assert doi_matches_pattern(
-                release.codebase.doi
-            ), f"{release.codebase.doi} Codebase DOI doesn't match DataCite pattern!"
+            if not doi_matches_pattern(release.codebase.doi):
+                logger.error(f"{release.codebase.doi} Codebase DOI doesn't match DataCite pattern!")
 
-            assert doi_matches_pattern(
-                release.doi
-            ), f"{release.doi} CodebaseRelease DOI doesn't match DataCite pattern!"
+            if not doi_matches_pattern(release.doi):
+                logger.error(f"{release.doi} CodebaseRelease DOI doesn't match DataCite pattern!")
 
-
+        logger.info("Success. All existing peer reviewed releases with DOIs (and their parent codebases) have valid DOIs now.")
 def update_metadata_for_all_existing_dois_04():
     print(WELCOME_MESSAGE)
 
     datacite_api = DataCiteApi()
     all_codebases_with_dois = Codebase.objects.exclude(doi__isnull=True)
 
-    logger.debug(
+    logger.info(
         f"Updating metadata for all codebases ({len(all_codebases_with_dois)}) with DOIs and their releases with DOIs. Query: Codebase.objects.exclude(doi__isnull=True) ..."
     )
-    input("Press Enter to continue...")
 
     for i, codebase in enumerate(all_codebases_with_dois):
         logger.debug(
             f"Processing codebase {i+1}/{len(all_codebases_with_dois)} codebase.pk={codebase.pk}..."
         )
+        input("Press Enter to continue or CTRL+C to quit...")
 
         if DataciteRegistrationLog.is_metadata_stale(codebase):
             logger.debug(f"Metadata is stale. Updating metadata in DataCite...")
@@ -653,6 +690,8 @@ def update_metadata_for_all_existing_dois_04():
             logger.debug(
                 f"Processing release {j+1}/{codebase.releases.count()} release.pk={release.pk}..."
             )
+            input("Press Enter to continue or CTRL+C to quit...")
+
             if release.peer_reviewed and release.doi:
                 if DataciteRegistrationLog.is_metadata_stale(release):
                     logger.debug(f"Metadata is stale. Updating metadata in DataCite...")
@@ -669,38 +708,45 @@ def update_metadata_for_all_existing_dois_04():
                     + f'{"Release is not peer reviewed." if not release.peer_reviewed else ""} Skipping.'
                 )
 
-            input("Press Enter to continue...")
-
+    logger.info(
+        f"Metadata updated for all existing (Codebase & CodebaseRelease) DOIs."
+    )
     """
     assert correctness
     """
-    print(VERIFICATION_MESSAGE)
     if not DRY_RUN:
-        logger.debug(f"Checking that Comses metadata is in sync with DataCite:")
+        print(VERIFICATION_MESSAGE)
+        logger.info(f"Checking that Comses metadata is in sync with DataCite...")
         invalid_codebases = []
         invalid_releases = []
-        for codebase in all_codebases_with_dois:
-            # assert datacite_api.check_metadata(codebase), f"Metadata check not passed for codebase {codebase.pk}"
-            if not datacite_api.check_metadata(codebase):
-                invalid_codebases.append(codebase.pk)
 
-            for release in codebase.releases.all():
-                if release.doi:
-                    if not datacite_api.check_metadata(release):
-                        invalid_releases.append(release.pk)
-                    # assert datacite_api.check_metadata(
-                    #     release
-                    # ), f"Metadata check not passed for release {release.pk}"
+        results = datacite_api.threaded_metadata_check(all_codebases_with_dois)
+        for pk, is_meta_valid in results:
+            if not is_meta_valid:
+                invalid_codebases.append(pk)
 
-        print(f"Invalid Codebases ({len(invalid_codebases)}): {invalid_codebases}")
-        print(f"Invalid Releases ({len(invalid_releases)}): {invalid_releases}")
+        if invalid_codebases:
+            logger.error(f"Failure. Metadata not in sync with DataCite for {len(invalid_codebases)} codebases: {invalid_codebases}")
+        else:
+            logger.info(
+                f"Success. Metadata in sync with DataCite for all codebases with DOI.")
+
+        all_releases_with_dois = CodebaseRelease.objects.exclude(doi__isnull=True)
+        results = datacite_api.threaded_metadata_check(all_releases_with_dois)
+        for pk, is_meta_valid in results:
+            if not is_meta_valid:
+                invalid_releases.append(pk)
+
+        if invalid_releases:
+            logger.error(f"Failure. Metadata not in sync with DataCite for {len(invalid_releases)} releases: {invalid_releases}")
+        else:
+            logger.info(
+                f"Success. Metadata in sync with DataCite for all releases with DOI.")
 
 
 """
 RECURRENT TASKS
 """
-
-
 def mint_dois_for_peer_reviewed_releases_without_dois():
     """
     for ALL peer_reviewed releases without DOIs:
@@ -710,22 +756,22 @@ def mint_dois_for_peer_reviewed_releases_without_dois():
     """
 
     print(WELCOME_MESSAGE)
-
     datacite_api = DataCiteApi()
 
     # CodebaseRelease.objects.filter(peer_reviewed=True).filter(Q(doi__isnull=True) | Q(doi=""))
     peer_reviewed_releases_without_dois = CodebaseRelease.objects.reviewed_without_doi()
 
-    logger.debug(
+    logger.info(
         f"Minting DOIs for peer reviewed releases without DOIs  ({len(peer_reviewed_releases_without_dois)}). Query: CodebaseRelease.objects.filter(peer_reviewed=True).filter(Q(doi__isnull=True) | Q(doi="
         ")) ..."
     )
-    input("Press Enter to continue...")
 
     for i, release in enumerate(peer_reviewed_releases_without_dois):
         logger.debug(
-            f"Processing release {i+1}/{len(peer_reviewed_releases_without_dois)} release.pk={release.pk}..."
+            f"Processing release {i+1}/{len(peer_reviewed_releases_without_dois)} release.pk={release.pk} ..."
         )
+        input("Press Enter to continue or CTRL+C to quit...")
+
         codebase = release.codebase
         codebase_doi = codebase.doi
 
@@ -740,7 +786,7 @@ def mint_dois_for_peer_reviewed_releases_without_dois():
                 logger.error(
                     f"Could not mint DOI for parent codebase {codebase.pk}. Skipping release {release.pk}."
                 )
-                input("Press Enter to continue...")
+                input("Press Enter to continue or CTRL+C to quit...")
                 continue
 
             if not DRY_RUN:
@@ -754,7 +800,7 @@ def mint_dois_for_peer_reviewed_releases_without_dois():
         release_doi = datacite_api.mint_new_doi_for_release(release)
         if not release_doi:
             logger.error(f"Could not mint DOI for release {release.pk}. Skipping.")
-            input("Press Enter to continue...")
+            input("Press Enter to continue or CTRL+C to quit...")
             continue
 
         if not DRY_RUN:
@@ -791,8 +837,33 @@ def mint_dois_for_peer_reviewed_releases_without_dois():
                     f"Failed to update metadata for next_release {next_release.pk}"
                 )
 
-        input("Press Enter to continue...")
+    logger.info(f"Minted {len(peer_reviewed_releases_without_dois)} DOIs for peer reviewed releases without DOIs.")
 
+    """
+    assert correctness
+    """
+    if not DRY_RUN:
+        print(VERIFICATION_MESSAGE)
+        logger.info(f"Checking that: all peer reviewed releases (previously) without DOIs (and their parent codebases) have valid DOIs now...")
+        invalid_codebases = []
+        invalid_releases = []
+
+        for i, release in enumerate(peer_reviewed_releases_without_dois):
+            print(f"Verifying release: {i}/{len(peer_reviewed_releases_without_dois)} {'' if (i+1)%8 == 0 else '.'*((i+1)%8)}", end=" \r")
+
+            if not release.doi or not doi_matches_pattern(release.doi):
+                invalid_releases.append(release.pk)
+            if not release.codebase.doi or not doi_matches_pattern(release.codebase.doi):
+                invalid_codebases.append(release.codebase.pk)
+
+        if invalid_codebases:
+            logger.error(f"Failure. Codebases with invalid or missing DOIs ({len(invalid_codebases)}): {invalid_codebases}")
+        else:
+            logger.info("Success. All parent codebases for peer reviewed releases previously without DOIs have valid DOIs now.")
+        if invalid_releases:
+            logger.error(f"Failure. CodebaseReleases with invalid or missing DOIs ({len(invalid_releases)}): {invalid_releases}")
+        else:
+            logger.info("Success. All peer reviewed releases previously without DOIs have valid DOIs now.")
 
 def update_stale_metadata_for_all_codebases_with_dois():
     print(WELCOME_MESSAGE)
@@ -800,15 +871,16 @@ def update_stale_metadata_for_all_codebases_with_dois():
     datacite_api = DataCiteApi()
     all_codebases_with_dois = Codebase.objects.exclude(doi__isnull=True)
 
-    logger.debug(
+    logger.info(
         f"Updating stale metadata for all codebases with DOIs ({len(all_codebases_with_dois)}). Query: Codebase.objects.exclude(doi__isnull=True) ..."
     )
-    input("Press Enter to continue...")
 
     for i, codebase in enumerate(all_codebases_with_dois):
         logger.debug(
             f"Processing Codebase {i+1}/{len(all_codebases_with_dois)}: codebase.pk={codebase.pk} ..."
         )
+        input("Press Enter to continue or CTRL+C to quit...")
+
         if DataciteRegistrationLog.is_metadata_stale(codebase):
             logger.debug(f"Metadata is stale. Updating metadata in DataCite...")
             ok = datacite_api.update_metadata_for_codebase(codebase)
@@ -819,34 +891,37 @@ def update_stale_metadata_for_all_codebases_with_dois():
         else:
             logger.debug(f"Metadata is in sync. Skipping...")
 
-        input("Press Enter to continue...")
-
+    logger.info(
+        f"Updated {len(all_codebases_with_dois)} codebases with stale metadata."
+    )
     """
     assert correctness
     """
-    print(VERIFICATION_MESSAGE)
     if not DRY_RUN:
-        for codebase in all_codebases_with_dois:
-            assert datacite_api.check_metadata(
-                codebase
-            ), f"Metadata check not passed for codebase {codebase.pk}"
+        print(VERIFICATION_MESSAGE)
+        logger.info(
+            f"Checking that: metadata for all codebases with DOIs is in sync with DataCite...")
 
+        results = datacite_api.threaded_metadata_check(all_codebases_with_dois)
+
+        if all([is_meta_valid for pk, is_meta_valid in results]):
+            logger.info(f"Success. Metadata for all codebases with DOIs is in sync with DataCite.")
 
 def update_stale_metadata_for_all_releases_with_dois():
     print(WELCOME_MESSAGE)
-
     datacite_api = DataCiteApi()
     all_releases_with_dois = CodebaseRelease.objects.exclude(doi__isnull=True)
 
     logger.debug(
         f"Updating stale metadata for all releases with DOIs ({len(all_releases_with_dois)}). Query: CodebaseRelease.objects.exclude(doi__isnull=True) ..."
     )
-    input("Press Enter to continue...")
 
     for i, release in enumerate(all_releases_with_dois):
         logger.debug(
             f"Processing Release {i+1}/{len(all_releases_with_dois)}: release.pk={release.pk} ..."
         )
+        input("Press Enter to continue or CTRL+C to quit...")
+
         if DataciteRegistrationLog.is_metadata_stale(release):
             logger.debug(f"Metadata is stale. Updating metadata in DataCite...")
             ok = datacite_api.update_metadata_for_release(release)
@@ -857,15 +932,22 @@ def update_stale_metadata_for_all_releases_with_dois():
         else:
             logger.debug(f"Metadata is in sync. Skipping...")
 
-        input("Press Enter to continue...")
+        input("Press Enter to continue or CTRL+C to quit...")
         continue
+
+    logger.info(
+        f"Updated {len(all_releases_with_dois)} releases with stale metadata."
+    )
 
     """
     assert correctness
     """
-    print(VERIFICATION_MESSAGE)
     if not DRY_RUN:
-        for release in all_releases_with_dois:
-            assert datacite_api.check_metadata(
-                release
-            ), f"Metadata check not passed for release {release.pk}"
+        print(VERIFICATION_MESSAGE)
+        logger.info(
+            f"Checking that: metadata for all releases with DOIs is in sync with DataCite...")
+
+        results = datacite_api.threaded_metadata_check(all_releases_with_dois)
+
+        if all([is_meta_valid for pk, is_meta_valid in results]):
+            logger.info(f"Success. Metadata for all releases with DOIs is in sync with DataCite.")

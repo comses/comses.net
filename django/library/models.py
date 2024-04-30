@@ -2893,7 +2893,7 @@ class DataCiteMetadata:
 
     @classmethod
     def convert_keywords(cls, common_metadata: CommonMetadata):
-        unique_keywords = set(common_metadata.keywords)
+        unique_keywords = sorted(set(common_metadata.keywords))
         return [{"subject": keyword} for keyword in unique_keywords]
 
     @classmethod
