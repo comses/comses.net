@@ -20,6 +20,7 @@
       :min-date="minDate"
       :max-date="maxDate"
       @update:model-value="attrs.onInput()"
+      timezone="utc"
     ></VueDatePicker>
     <slot name="help">
       <FieldHelp v-if="help" :help="help" :id-for="id" />
