@@ -260,7 +260,7 @@ class CodeMetaTest(TestCase):
 
         # Function under test: CodeMetaMetadata.build(self)
         # delete codemeta cached property & rebuild
-        if self.codebase_release.codemeta:
+        if hasattr(self.codebase_release, "codemeta"):
             del self.codebase_release.codemeta
         author_list = self.codebase_release.codemeta.metadata["author"]
 
@@ -294,7 +294,7 @@ class CodeMetaTest(TestCase):
             self.codebase_release.programming_languages.add(language_name)
 
         # delete codemeta cached property & rebuild
-        if self.codebase_release.codemeta:
+        if hasattr(self.codebase_release, "codemeta"):
             del self.codebase_release.codemeta
         language_list = self.codebase_release.codemeta.metadata["programmingLanguage"]
 
@@ -333,7 +333,7 @@ class CodeMetaTest(TestCase):
             self.codebase_release.codebase.tags.add(tag)
 
         # delete codemeta cached property & rebuild
-        if self.codebase_release.codemeta:
+        if hasattr(self.codebase_release, "codemeta"):
             del self.codebase_release.codemeta
         keyword_list = self.codebase_release.codemeta.metadata["keywords"]
 
@@ -374,7 +374,7 @@ class CodeMetaTest(TestCase):
         ]
 
         # delete codemeta cached property
-        if self.codebase_release.codemeta:
+        if hasattr(self.codebase_release, "codemeta"):
             del self.codebase_release.codemeta
         # Extract text from CodeMeta.metadata
         codemeta_citation_flat_text = [
@@ -398,7 +398,7 @@ class CodeMetaTest(TestCase):
         self.setup(submitter_dict)
 
         # delete codemeta cached property
-        if self.codebase_release.codemeta:
+        if hasattr(self.codebase_release, "codemeta"):
             del self.codebase_release.codemeta
         try:
             jsonschema.validate(self.codebase_release.codemeta.to_json(), schema=CODEMETA_SCHEMA)
