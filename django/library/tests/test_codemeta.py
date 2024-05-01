@@ -1,5 +1,17 @@
+import json
+import jsonschema
+import logging
 import random
-from django.contrib.auth.models import User
+import string
+
+from django.contrib.auth.models import get_user_model
+from hypothesis import (
+    HealthCheck,
+    Verbosity,
+    given,
+    settings,
+    strategies as st,
+)
 from hypothesis.extra.django import TestCase
 from hypothesis.stateful import (
     RuleBasedStateMachine,
@@ -8,20 +20,7 @@ from hypothesis.stateful import (
     rule,
     Bundle,
 )
-
 from typing import List
-from hypothesis import (
-    HealthCheck,
-    Verbosity,
-    given,
-    settings,
-    strategies as st,
-)
-
-import json
-import jsonschema
-import string
-import logging
 
 from core.tests.base import UserFactory
 from library.models import (
@@ -34,7 +33,6 @@ from library.models import (
     Role,
 )
 from .base import CodebaseFactory
-
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.ERROR)
@@ -203,7 +201,7 @@ class CodeMetaTest(TestCase):
         submitter_dict: dict,
     ):
         """
-        Used to initialize codebase_release instance at the beginneing of each hypothesis test run
+        Used to initialize codebase_release instance at the beginning of each hypothesis test run
         """
         self.user_factory = UserFactory()
         self.submitter = self.user_factory.create(
@@ -227,6 +225,7 @@ class CodeMetaTest(TestCase):
         if self.submitter:
             self.submitter.delete()
         if self.users:
+            User = get_user_model()
             User.objects.filter(id__in=[user.id for user in self.users]).delete()
 
     @settings(
@@ -426,6 +425,25 @@ This class is used to test whether a random combination of methods that affect C
 class CodeMetaValidationTest(RuleBasedStateMachine):
     added_release_contributors = Bundle("added_release_contributors")
 
+    def __init__(self):
+        self.release_contributors_count = 0
+        self.release_nonauthor_contributors_count = 0
+        self.release_author_contributors_count = 0
+
+        self.keywords_count = 0
+        self.programming_languages_count = 0
+        self.citations_count = 0
+
+        self.user_factory = None
+        self.users = None
+        self.popped_users = None
+
+        self.submitter = None
+        self.codebase = None
+        self.codebase_release = None
+
+        super().__init__()
+
     @initialize(data=st.data())
     def setup(self, data):
         """
@@ -573,6 +591,10 @@ class CodeMetaValidationTest(RuleBasedStateMachine):
     def add_keyword(self, keyword):
         logger.debug("add_keyword()")
         existing_tags = self.codebase_release.codebase.tags.all()
+
+        # adding tags is case INSENSITIVE, need to make sure that the counter is increase
+        # keyword should not be null or "", hence `min_size=1`!
+        keyword = keyword.upper()
         if keyword not in [tag.name for tag in existing_tags]:
             self.codebase_release.codebase.tags.add(keyword)
             self.keywords_count += 1
