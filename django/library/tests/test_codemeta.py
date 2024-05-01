@@ -1,53 +1,44 @@
 import json
+import logging
+import random
 import string
-from hypothesis.extra.django import (
-    TestCase,
-    TransactionTestCase,
-    from_model,
-    register_field_strategy,
-)
+from typing import List
 
-from hypothesis.stateful import (
-    RuleBasedStateMachine,
-    initialize,
-    invariant,
-    rule,
-    multiple,
-    consumes,
-    Bundle,
-)
-
-from django.contrib.auth.models import User
 import jsonschema
-from library.tests.base import CodebaseFactory
-from library.models import CodeMeta, Contributor, ReleaseContributor, Role
-
-from typing import List, Tuple
+from django.contrib.auth.models import User
 from hypothesis import (
     HealthCheck,
     Verbosity,
     given,
     settings,
-    example,
     strategies as st,
 )
-
-from hypothesis.strategies import data
-
-import logging
-
-st.dictionaries
-from hypothesis import settings, Verbosity
+from hypothesis.extra.django import TestCase
+from hypothesis.stateful import (
+    RuleBasedStateMachine,
+    initialize,
+    invariant,
+    rule,
+    Bundle,
+)
 
 from core.tests.base import UserFactory
-from library.models import Codebase, CodebaseRelease
+from library.models import (
+    Codebase,
+    CodebaseRelease,
+    CodeMetaMetadata,
+    CommonMetadata,
+    Contributor,
+    ReleaseContributor,
+    Role,
+)
+from .base import CodebaseFactory
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.ERROR)
 
 
 MAX_PROPERTY_TEST_RUNS = 15
-
 MAX_STATEFUL_TEST_RUNS = 5
 MAX_STATEFUL_TEST_RULES_COUNT = 15
 
@@ -198,25 +189,43 @@ This class is used to test all methods which affect CodeMeta object
 
 class CodeMetaTest(TestCase):
     def setUp(self):
+        """Django method. Is called once before hypothesis starts running a test multiple times."""
         pass
 
-    @staticmethod
-    def build_release(
+    def tearDown(self):
+        """Django method. Is called once after hypothesis is done running a test multiple times."""
+        pass
+
+    def setup(
+        self,
         submitter_dict: dict,
-    ) -> Tuple[User, UserFactory, CodebaseRelease]:
-        user_factory = UserFactory()
-        submitter = user_factory.create(
+    ):
+        """
+        Used to initialize codebase_release instance at the beginning of each hypothesis test run
+        """
+        self.user_factory = UserFactory()
+        self.submitter = self.user_factory.create(
             username=submitter_dict["username"],
             email=submitter_dict["email"],
             first_name=submitter_dict["first_name"],
             last_name=submitter_dict["last_name"],
         )
+        self.users = []
 
-        codebase_factory = CodebaseFactory(submitter=submitter)
-        codebase = codebase_factory.create()
-        codebase_release = codebase.create_release(initialize=False)
+        codebase_factory = CodebaseFactory(submitter=self.submitter)
+        self.codebase = codebase_factory.create()
+        self.codebase_release = self.codebase.create_release(initialize=False)
 
-        return submitter, user_factory, codebase_release
+    def cleanup(self):
+        """
+        Used to manually cleanup database records after each hypothesis test run
+        """
+        self.codebase_release.delete()
+        self.codebase.delete()
+        if self.submitter:
+            self.submitter.delete()
+        if self.users:
+            User.objects.filter(id__in=[user.id for user in self.users]).delete()
 
     @settings(
         max_examples=MAX_PROPERTY_TEST_RUNS,
@@ -234,28 +243,31 @@ class CodeMetaTest(TestCase):
     def test_authors(self, seed_user_dict_list: List[dict]):
         logger.debug("test_authors()")
         submitter_dict = seed_user_dict_list.pop()
-        submitter, user_factory, release = self.build_release(submitter_dict)
+        self.setup(submitter_dict)
 
-        users = [submitter]
         for i, user_seed in enumerate(seed_user_dict_list):
-            user = user_factory.create(
+            user = self.user_factory.create(
                 username=user_seed["username"],
                 email=user_seed["email"],
                 first_name=user_seed["first_name"],
                 last_name=user_seed["last_name"],
             )
-            users.append(user)
+            self.users.append(user)
             contributor, created = Contributor.from_user(user)
-            release.add_contributor(contributor, index=i)
+            self.codebase_release.add_contributor(contributor, index=i)
 
-        # Function to test: CodeMeta.build(self)
-        author_list = release.codemeta.metadata["author"]
+        # Function under test: CodeMetaMetadata.build(self)
+        # delete codemeta cached property & rebuild
+        if hasattr(self.codebase_release, "codemeta"):
+            del self.codebase_release.codemeta
+        author_list = self.codebase_release.codemeta.metadata["author"]
 
-        for i, user in enumerate(users):
+        for i, user in enumerate([self.submitter, *self.users]):
             self.assertEqual(user.last_name, author_list[i]["familyName"])
             self.assertEqual(user.first_name, author_list[i]["givenName"])
             self.assertEqual(user.email, author_list[i]["email"])
 
+        self.cleanup()
         logger.debug("test_authors() done.")
 
     @settings(
@@ -264,7 +276,7 @@ class CodeMetaTest(TestCase):
         deadline=None,
     )
     @given(
-        st.data(),
+        st.fixed_dictionaries(USER_MAPPING),
         st.lists(
             st.text(min_size=1, alphabet=string.printable),
             min_size=1,
@@ -272,15 +284,17 @@ class CodeMetaTest(TestCase):
             unique=True,
         ),
     )
-    def test_languages(self, data, programming_language_names: List[str]):
+    def test_languages(self, submitter_dict, programming_language_names: List[str]):
         logger.debug("test_languages()")
-        submitter_dict = data.draw(st.fixed_dictionaries(USER_MAPPING))
-        submitter, user_factory, release = self.build_release(submitter_dict)
+        self.setup(submitter_dict)
 
         for language_name in programming_language_names:
-            release.programming_languages.add(language_name)
+            self.codebase_release.programming_languages.add(language_name)
 
-        language_list = release.codemeta.metadata["programmingLanguage"]
+        # delete codemeta cached property & rebuild
+        if hasattr(self.codebase_release, "codemeta"):
+            del self.codebase_release.codemeta
+        language_list = self.codebase_release.codemeta.metadata["programmingLanguage"]
 
         assert len(language_list) == len(programming_language_names)
 
@@ -292,6 +306,7 @@ class CodeMetaTest(TestCase):
                 f"Mismatch found at index {index}. Expected: {expected_language_name}, Actual: {language}",
             )
 
+        self.cleanup()
         logger.debug("test_languages() done.")
 
     @settings(
@@ -300,7 +315,7 @@ class CodeMetaTest(TestCase):
         deadline=None,
     )
     @given(
-        st.data(),
+        st.fixed_dictionaries(USER_MAPPING),
         st.lists(
             st.text(min_size=1, alphabet=string.printable),
             min_size=1,
@@ -308,19 +323,21 @@ class CodeMetaTest(TestCase):
             unique=True,
         ),
     )
-    def test_keywords(self, data, tags: List[str]):
+    def test_keywords(self, submitter_dict, tags: List[str]):
         logger.debug("test_keywords()")
-        submitter_dict = data.draw(st.fixed_dictionaries(USER_MAPPING))
-        submitter, user_factory, release = self.build_release(submitter_dict)
+        self.setup(submitter_dict)
 
         for tag in tags:
-            release.codebase.tags.add(tag)
+            self.codebase_release.codebase.tags.add(tag)
 
-        keyword_list = release.codemeta.metadata["keywords"]
+        # delete codemeta cached property & rebuild
+        if hasattr(self.codebase_release, "codemeta"):
+            del self.codebase_release.codemeta
+        keyword_list = self.codebase_release.codemeta.metadata["keywords"]
 
-        # logger.debug(keyword_list)
         self.assertListEqual(tags, keyword_list)
 
+        self.cleanup()
         logger.debug("test_keywords() done.")
 
     @settings(
@@ -329,25 +346,42 @@ class CodeMetaTest(TestCase):
         deadline=None,
     )
     @given(
-        st.data(),
-        st.lists(
-            st.text(min_size=300, max_size=900, alphabet=string.printable),
-            min_size=1,
-            max_size=20,
-            unique=True,
-        ),
+        st.fixed_dictionaries(USER_MAPPING),
+        st.text(min_size=300, max_size=900, alphabet=string.printable),
+        st.text(min_size=300, max_size=900, alphabet=string.printable),
+        st.text(min_size=300, max_size=900, alphabet=string.printable),
     )
-    def test_citation(self, data, citations: List[str]):
+    def test_citation(
+        self,
+        submitter_dict,
+        references_text,
+        replication_text,
+        associated_publication_text,
+    ):
         logger.debug("test_citation()")
-        submitter_dict = data.draw(st.fixed_dictionaries(USER_MAPPING))
-        submitter, user_factory, release = self.build_release(submitter_dict)
+        self.setup(submitter_dict)
 
-        for c in citations:
-            release.codemeta.metadata["citation"].append(c)
+        self.codebase_release.codebase.references_text = references_text
+        self.codebase_release.codebase.replication_text = replication_text
+        self.codebase_release.codebase.associated_publication_text = associated_publication_text
 
-        citation_list = release.codemeta.metadata["citation"]
+        expected_citation_flat = [
+            references_text,
+            replication_text,
+            associated_publication_text,
+        ]
 
-        self.assertListEqual(citations, citation_list)
+        # delete codemeta cached property
+        if hasattr(self.codebase_release, "codemeta"):
+            del self.codebase_release.codemeta
+        # Extract text from CodeMeta.metadata
+        codemeta_citation_flat_text = [
+            creative_work["text"] for creative_work in self.codebase_release.codemeta.metadata["citation"]
+        ]
+
+        self.assertEqual(expected_citation_flat, codemeta_citation_flat_text)
+
+        self.cleanup()
         logger.debug("test_citation() done.")
 
     @settings(
@@ -355,20 +389,23 @@ class CodeMetaTest(TestCase):
         verbosity=HYPOTHESIS_SETTINGS_VERBOSITY,
         deadline=None,
     )
-    @given(st.data())
-    def test_codemeta_validate(self, data):
+    @given(st.fixed_dictionaries(USER_MAPPING))
+    def test_codemeta_validate(self, submitter_dict):
         logger.debug("test_codemeta_validate()")
 
-        submitter_dict = data.draw(st.fixed_dictionaries(USER_MAPPING))
-        submitter, user_factory, release = self.build_release(submitter_dict)
+        self.setup(submitter_dict)
 
+        # delete codemeta cached property
+        if hasattr(self.codebase_release, "codemeta"):
+            del self.codebase_release.codemeta
         try:
-            jsonschema.validate(release.codemeta.to_json(), schema=CODEMETA_SCHEMA)
+            jsonschema.validate(self.codebase_release.codemeta.to_json(), schema=CODEMETA_SCHEMA)
             logger.debug("codemeta.json is valid.")
         except Exception as e:
-            logger.error("codemeta.json is invalid! Validation error: {e}")
+            logger.error("codemeta.json is invalid! Validation error:", e)
             self.fail(f"Validation error: {e}")
 
+        self.cleanup()
         logger.debug("test_codemeta_validate() done.")
 
 
@@ -387,7 +424,26 @@ This class is used to test whether a random combination of methods that affect C
 class CodeMetaValidationTest(RuleBasedStateMachine):
     added_release_contributors = Bundle("added_release_contributors")
 
-    @initialize(data=data())
+    def __init__(self):
+        self.release_contributors_count = 0
+        self.release_nonauthor_contributors_count = 0
+        self.release_author_contributors_count = 0
+
+        self.keywords_count = 0
+        self.programming_languages_count = 0
+        self.citations_count = 0
+
+        self.user_factory = None
+        self.users = None
+        self.popped_users = None
+
+        self.submitter = None
+        self.codebase = None
+        self.codebase_release = None
+
+        super().__init__()
+
+    @initialize(data=st.data())
     def setup(self, data):
         """
         This runs before each test case
@@ -397,6 +453,7 @@ class CodeMetaValidationTest(RuleBasedStateMachine):
         self.release_contributors_count = 0
         self.release_nonauthor_contributors_count = 0
         self.release_author_contributors_count = 0
+
         self.keywords_count = 0
         self.programming_languages_count = 0
         self.citations_count = 0
@@ -418,6 +475,8 @@ class CodeMetaValidationTest(RuleBasedStateMachine):
         """
         self.user_factory = UserFactory()
         self.users = set({})
+        self.popped_users = set({})
+
         for user_dict in unique_user_dict_pool:
             user = self.user_factory.create(
                 username=user_dict["username"],
@@ -432,6 +491,10 @@ class CodeMetaValidationTest(RuleBasedStateMachine):
         """
         self.submitter = self.users.pop()
 
+        # submitter is regarded as default contributor with role=Role.AUTHOR
+        self.release_contributors_count += 1
+        self.release_author_contributors_count += 1
+
         """
         Create Codebase and CodebaseRelease
         """
@@ -440,44 +503,73 @@ class CodeMetaValidationTest(RuleBasedStateMachine):
         self.codebase_release = self.codebase.create_release(initialize=False)
 
         #  set initial texts used for citation
-        self.codebase.references_text = ""
-        self.codebase.replication_text = ""
-        self.codebase.associated_publication_text = ""
-
-        # submitter is by default Contributor with role=Role.AUTHOR
-        self.release_contributors_count += 1
-        self.release_author_contributors_count += 1
+        self.codebase_release.codebase.references_text = ""
+        self.codebase_release.codebase.replication_text = ""
+        self.codebase_release.codebase.associated_publication_text = ""
 
         logger.debug("setup() done.")
 
     @rule(
         role=st.sampled_from(list(Role)),
     )
-    def add_contributor(self, role):
-        logger.debug("add_contributor()")
-        contributor, created = Contributor.from_user(self.users.pop())
-        # FUNCTION UNDER TEST
-        release_contributor = self.codebase_release.add_contributor(contributor, role)
+    def add_unique_contributor(self, role):
+        logger.debug("add_unique_contributor()")
 
+        # this should return a unique user
+        u = self.users.pop()
+        self.popped_users.add(u)
+
+        contributor, created = Contributor.from_user(u)
+
+        logger.debug(f"adding unique contributor: {contributor.name}")
+
+        # Function under test: CodebaseRelease.add_contributor()
+        release_contributor = self.codebase_release.add_contributor(contributor, role)
         self.codebase_release.save()
+
+        # since we are always adding a unique user, the contributors count will always increase by one
         self.release_contributors_count += 1
 
         if role == Role.AUTHOR:
             self.release_author_contributors_count += 1
         else:
             self.release_nonauthor_contributors_count += 1
-        logger.debug("add_contributor() done.")
+
+        logger.debug("add_unique_contributor() done.")
 
     @rule(
-        reference=st.text(min_size=100, alphabet=string.printable),
-        replication=st.text(min_size=100, alphabet=string.printable),
-        associated_publication=st.text(min_size=100, alphabet=string.printable),
+        role=st.sampled_from(list(Role)),
+    )
+    def add_existing_contributor(self, role):
+        logger.debug("add_existing_contributor()")
+
+        # pick an existing contributor on the release
+        contributor = random.choice(Contributor.objects.filter(codebaserelease=self.codebase_release))
+        existing_contributor_roles = ReleaseContributor.objects.filter(contributor=contributor).get().roles
+
+        logger.debug(f"adding existing contributor: {contributor.id}")
+
+        # Function under test: CodebaseRelease.add_contributor()
+        release_contributor = self.codebase_release.add_contributor(contributor, role)
+        self.codebase_release.save()
+
+        # if an existing contributor is added again, but with AUTHOR role -> it will be considered "author" and not "nonauthor"
+        if Role.AUTHOR not in existing_contributor_roles and role == Role.AUTHOR:
+            self.release_author_contributors_count += 1
+            self.release_nonauthor_contributors_count -= 1
+
+        logger.debug("add_existing_contributor() done.")
+
+    @rule(
+        reference=st.text(min_size=300, max_size=900, alphabet=string.printable),
+        replication=st.text(min_size=300, max_size=900, alphabet=string.printable),
+        associated_publication=st.text(min_size=300, max_size=900, alphabet=string.printable),
     )
     def add_citation(self, reference, replication, associated_publication):
         logger.debug("add_citation()")
-        self.codebase.references_text = reference
-        self.codebase.replication_text = replication
-        self.codebase.associated_publication_text = associated_publication
+        self.codebase_release.codebase.references_text = reference
+        self.codebase_release.codebase.replication_text = replication
+        self.codebase_release.codebase.associated_publication_text = associated_publication
         logger.debug("add_citation() done.")
 
     @rule(programming_language=st.text(min_size=1, alphabet=string.printable))
@@ -485,13 +577,11 @@ class CodeMetaValidationTest(RuleBasedStateMachine):
         logger.debug("add_programming_language()")
         existing_pls = self.codebase_release.programming_languages.all()
 
-        if programming_language not in [pl.name for pl in existing_pls]:
-            # .upper() is used to make the test pass.
-            # TODO: check behaviour when adding programming_languages
-
-            self.codebase_release.programming_languages.add(
-                programming_language.upper()
-            )
+        # .upper() is used to make the test pass.
+        # TODO: check behaviour when adding programming_languages
+        programming_language_upper = programming_language.upper()
+        if programming_language_upper not in [pl.name for pl in existing_pls]:
+            self.codebase_release.programming_languages.add(programming_language_upper)
             self.programming_languages_count += 1
 
         logger.debug("add_programming_language() done.")
@@ -500,6 +590,10 @@ class CodeMetaValidationTest(RuleBasedStateMachine):
     def add_keyword(self, keyword):
         logger.debug("add_keyword()")
         existing_tags = self.codebase_release.codebase.tags.all()
+
+        # adding tags is case INSENSITIVE, need to make sure that the counter is increase
+        # keyword should not be null or "", hence `min_size=1`!
+        keyword = keyword.upper()
         if keyword not in [tag.name for tag in existing_tags]:
             self.codebase_release.codebase.tags.add(keyword)
             self.keywords_count += 1
@@ -507,91 +601,90 @@ class CodeMetaValidationTest(RuleBasedStateMachine):
 
     @invariant()
     def length_agrees(self):
-        """authors"""
+        """
+        authors
+        """
         logger.debug("length_agrees()")
-        expected_contributors_count = (
-            self.codebase_release.codebase_contributors.all().count()
-        )
 
-        expected_author_contributors_count = (
-            ReleaseContributor.objects.authors(self.codebase_release).all().count()
-        )
+        # total number of added unique contributors should match
+        expected_contributors_count = self.release_contributors_count
+        real_contributors_count = self.codebase_release.codebase_contributors.all().count()
 
-        expected_nonauthor_contributors_count = (
-            ReleaseContributor.objects.nonauthors(self.codebase_release).all().count()
-        )
+        assert expected_contributors_count == real_contributors_count
 
-        assert expected_contributors_count == self.release_contributors_count
-
-        assert (
-            expected_contributors_count
-            == expected_author_contributors_count
-            + expected_nonauthor_contributors_count
-        )
+        """
+        total number of added unique authors and non-author contributors should match
+        """
+        real_author_contributors_count = ReleaseContributor.objects.authors(self.codebase_release).all().count()
+        real_nonauthor_contributors_count = ReleaseContributor.objects.nonauthors(self.codebase_release).all().count()
 
         assert (
             expected_contributors_count
-            == self.release_author_contributors_count
-            + self.release_nonauthor_contributors_count
+            == self.release_author_contributors_count + self.release_nonauthor_contributors_count
         )
 
-        expected_codemeta_authors_count = len(
-            CodeMeta.convert_authors(self.codebase_release)
-        )
+        assert expected_contributors_count == real_author_contributors_count + real_nonauthor_contributors_count
+
+        expected_codemeta_authors_count = len(CodeMetaMetadata.convert_authors(CommonMetadata(self.codebase_release)))
         assert expected_codemeta_authors_count == self.release_author_contributors_count
 
-        """ keywords """
-        expected_keywords_count = self.codebase_release.codebase.tags.all().count()
-        assert expected_keywords_count == self.keywords_count
+        """ 
+        keywords 
+        """
+        expected_keywords_count = self.keywords_count
+        real_keywords_count = self.codebase_release.codebase.tags.all().count()
 
-        """ programming_languages """
-        expected_programming_languages_count = (
-            self.codebase_release.programming_languages.all().count()
-        )
-        assert expected_programming_languages_count == self.programming_languages_count
+        assert expected_keywords_count == real_keywords_count
 
-        """ citations """
+        """
+        programming_languages
+        """
+        expected_programming_languages_count = self.programming_languages_count
+        real_programming_languages_count = self.codebase_release.programming_languages.all().count()
+
+        assert expected_programming_languages_count == real_programming_languages_count
+
+        """
+        citations
+        """
         # Replicate citation building mechanism from CodeMeta
         expected_citation = [
             citation
             for citation in [
-                self.codebase.references_text,
-                self.codebase.replication_text,
-                self.codebase.associated_publication_text,
+                self.codebase_release.codebase.references_text,
+                self.codebase_release.codebase.replication_text,
+                self.codebase_release.codebase.associated_publication_text,
             ]
             if citation
         ]
 
+        fresh_codemeta = CodeMetaMetadata.build(CommonMetadata(self.codebase_release))
         # Extract text from CodeMeta.metadata
-        codemeta_citation_flat_text = [
-            creative_work["text"]
-            for creative_work in CodeMeta.build(self.codebase_release).metadata[
-                "citation"
-            ]
+        real_codemeta_citation_flat_text = [
+            creative_work["text"] for creative_work in fresh_codemeta.metadata["citation"]
         ]
 
-        assert expected_citation == codemeta_citation_flat_text
+        assert expected_citation == real_codemeta_citation_flat_text
 
         logger.debug("length_agrees() done.")
 
     @invariant()
     def validate_against_schema(self):
         """
-        CodeMeta.build(release).to_json() should ALWAYS validate against CODEMETA_SCHEMA
+        release.codemeta.to_json() should ALWAYS validate against CODEMETA_SCHEMA
         """
         logger.debug("validate_against_schema()")
+
+        fresh_codemeta = CodeMetaMetadata.build(CommonMetadata(self.codebase_release))
         try:
             jsonschema.validate(
-                json.loads(CodeMeta.build(self.codebase_release).to_json()),
+                json.loads(fresh_codemeta.to_json()),
                 schema=CODEMETA_SCHEMA,
             )
-
-            logger.debug("codemeta.json is valid.")
             assert True, "codemeta.json is valid."
-
         except Exception as e:
-            logger.error("codemeta.json is invalid! {e}")
-            assert False, "CodeMeta validation error: {e}"
+            logger.error("codemeta json was invalid ", e)
+            assert False, f"CodeMeta validation error: {e}"
 
         logger.debug("validate_against_schema() done.")
 
@@ -610,9 +703,11 @@ class CodeMetaValidationTest(RuleBasedStateMachine):
                 Codebase.objects.filter(id=self.codebase.id).delete()
                 # Delete Submitter
                 User.objects.filter(id=self.submitter.id).delete()
-                # Delete Contributor objects
-                for user in self.users:
-                    User.objects.filter(username=user.username).delete()
+                # Delete generated users which were added as contributors
+                User.objects.filter(id__in=[user.id for user in self.popped_users]).delete()
+                # Delete the rest of user objects
+                User.objects.filter(id__in=[user.id for user in self.users]).delete()
+
             except Exception as err:
                 logger.error(f"Exception during teardown: {err}")
 
