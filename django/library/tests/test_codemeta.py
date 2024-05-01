@@ -282,7 +282,7 @@ class CodeMetaTest(TestCase):
             st.text(min_size=1, alphabet=string.printable),
             min_size=1,
             max_size=20,
-            unique=True,
+            unique_by=(lambda x: x.upper(), lambda x: x.upper())
         ),
     )
     def test_languages(self, submitter_dict, programming_language_names: List[str]):
@@ -321,7 +321,7 @@ class CodeMetaTest(TestCase):
             st.text(min_size=1, alphabet=string.printable),
             min_size=1,
             max_size=20,
-            unique=True,
+            unique_by=(lambda x: x.upper(), lambda x: x.upper())
         ),
     )
     def test_keywords(self, submitter_dict, tags: List[str]):
