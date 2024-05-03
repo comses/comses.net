@@ -549,9 +549,11 @@ class EventQuerySet(models.QuerySet):
         return self.filter(is_deleted=False, **kwargs)
 
     def latest_for_feed(self, number=10):
-        return self.select_related("submitter__member_profile").order_by(
-            "-date_created"
-        )[:number]
+        return (
+            self.live()
+            .select_related("submitter__member_profile")
+            .order_by("-date_created")[:number]
+        )
 
     def public(self):
         return self
@@ -675,9 +677,11 @@ class JobQuerySet(models.QuerySet):
         return self.filter(is_deleted=False, **kwargs)
 
     def latest_for_feed(self, number=10):
-        return self.select_related("submitter__member_profile").order_by(
-            "-date_created"
-        )[:number]
+        return (
+            self.live()
+            .select_related("submitter__member_profile")
+            .order_by("-date_created")[:number]
+        )
 
 
 @add_to_comses_permission_whitelist
