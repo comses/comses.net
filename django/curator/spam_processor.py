@@ -7,6 +7,7 @@ from django.db.models import Q
 from curator.models import UserSpamStatus, UserSpamPrediction
 from django.conf import settings
 from enum import Enum
+from typing import List
 #from .spam import PresetContextID
 
 DATASET_FILE_PATH = settings.SPAM_TRAINING_DATASET_PATH
@@ -14,9 +15,8 @@ logger = logging.getLogger(__name__)
 
 class UserSpamStatusProcessor:
     """
-    UserSpamStatusProcessor
-    converts UserSpamStatus querysets into Pandas dataframes.
-    The functions are called by SpamClassifier variants.
+    Convert UserSpamStatus querysets into Pandas dataframes.
+    Store spam labels to UserSpamStatus and predictions to UserSpamPrediction.
     """
 
     def __init__(self):
@@ -82,6 +82,15 @@ class UserSpamStatusProcessor:
         self.df_db_field_mapping = dict((v,k) for k,v in self.db_df_field_mapping.items())
 
     def __rename_df_fields(self, df:DataFrame)->DataFrame:
+        """
+        Rename fields in the DataFrame according to the mapping defined in 'db_df_field_mapping'.
+        This internal method modifies the DataFrame columns in place if it is not empty.
+
+        Params:
+            df (DataFrame): The DataFrame whose columns are to be renamed.
+        Returns:
+            DataFrame: The DataFrame with renamed fields.
+        """
         if df.empty:
             return df
         
@@ -92,33 +101,58 @@ class UserSpamStatusProcessor:
         return df
 
     def __preprocess_fields(self, df:DataFrame)->DataFrame:
-            if df.empty:
-                return df
-            
-            for col in df.columns:
-                if col in self.field_type['string']:
-                    df[col] = df[col].fillna('')
-                    df[col] = df[col].apply(lambda text: re.sub(r"<.*?>", " ", str(text))) # Removing markdown
-                    if col == 'affiliations': 
-                        df[col] = df[col].apply(self.__restructure_affiliation_field)
-                    if col == 'email': 
-                        df = df.apply(self.__split_email_field, axis=1)
-                        df = df.drop('email', axis=1)
+        """
+        Preprocess fields in the DataFrame based on their data type as specified in 'field_type'.
+        This involves filling missing values, applying transformations, and splitting or restructuring specific fields.
 
-                elif col in self.field_type['numerical']:
-                    df[col] = df[col].fillna(-1).astype(int)
-
-                elif col in self.field_type['categorical']:
-                    df[col] = df[col].fillna('NaN').astype(str)
-
+        Params:
+            df (DataFrame): The DataFrame to preprocess.
+        Returns:
+            DataFrame: The preprocessed DataFrame.
+        """
+        if df.empty:
             return df
-    
+        
+        for col in df.columns:
+            if col in self.field_type['string']:
+                df[col] = df[col].fillna('')
+                df[col] = df[col].apply(lambda text: re.sub(r"<.*?>", " ", str(text))) # Removing markdown
+                if col == 'affiliations': 
+                    df[col] = df[col].apply(self.__restructure_affiliation_field)
+                if col == 'email': 
+                    df = df.apply(self.__split_email_field, axis=1)
+                    df = df.drop('email', axis=1)
+
+            elif col in self.field_type['numerical']:
+                df[col] = df[col].fillna(-1).astype(int)
+
+            elif col in self.field_type['categorical']:
+                df[col] = df[col].fillna('NaN').astype(str)
+
+        return df
+
 
     def __split_email_field(self,row):
+        """
+        Split the email into username and domain and update the row accordingly.
+
+        Params:
+            row (Series): A row of the DataFrame containing the email field.
+        Returns:
+            Series: The updated row with 'email_username' and 'email_domain' fields.
+        """
         row['email_username'], row['email_domain'] = row['email'].split('@')
         return row
 
     def __restructure_affiliation_field(self, array):
+        """
+        Restructure the 'affiliations' field into a more readable string format.
+
+        Params:
+            array (str): A string representation of a list of dictionaries describing affiliations.
+        Returns:
+            str: A formatted string summarizing the affiliations.
+        """
         array = literal_eval(array)
         if len(array) != 0:
             result = ""
@@ -132,9 +166,14 @@ class UserSpamStatusProcessor:
         else:
             return ""
 
-    def __validate_selected_fields(self, selected_fields:list[str])->list[str]:
+    def __validate_selected_fields(self, selected_fields:List[str])->List[str]:
         """
-        only field names that exist in DB will be filter out.
+        Validate the selected fields against the database fields. Only fields that exist in the database are kept.
+
+        Params:
+            selected_fields (List[str]): A list of field names to validate.
+        Returns:
+            List[str]: A list of validated field names.
         """
         validated_fields = []
         for field in selected_fields:
@@ -142,7 +181,15 @@ class UserSpamStatusProcessor:
                 validated_fields.append(field)
         return validated_fields
 
-    def get_all_users(self, selected_fields:list[str])->DataFrame:
+    def get_all_users(self, selected_fields:List[str])->DataFrame:
+        """
+        Fetch and return all user data with the selected fields processed and renamed for easier analysis.
+
+        Params:
+            selected_fields (List[str]): Fields to be included in the returned data.
+        Returns:
+            DataFrame: A DataFrame containing the data for all users with the specified fields.
+        """
         selected_fields = self.__validate_selected_fields(selected_fields)
         selected_fields.append('user_id')
         selected_db_fields = [self.df_db_field_mapping[v] for v in selected_fields]
@@ -158,7 +205,17 @@ class UserSpamStatusProcessor:
             )
         )
 
-    def get_selected_users(self, user_ids:int, selected_fields:list[str])->DataFrame:
+    def get_selected_users(self, user_ids:int, selected_fields:List[str])->DataFrame:
+        """
+        Fetch and return data for specified users based on provided user IDs and selected fields.
+        This function preprocesses, renames fields, and returns data specific to given user IDs.
+
+        Params:
+            user_ids (int): The user IDs to filter by.
+            selected_fields (List[str]): Fields to be included in the returned data.
+        Returns:
+            DataFrame: A DataFrame containing the data for selected users with the specified fields.
+        """
         selected_fields = self.__validate_selected_fields(selected_fields)
         selected_fields.append('user_id')
         selected_db_fields = [self.df_db_field_mapping[v] for v in selected_fields]
@@ -175,7 +232,16 @@ class UserSpamStatusProcessor:
             )
         )
 
-    def get_all_users_with_label(self, selected_fields:list[str])->DataFrame:
+    def get_all_users_with_label(self, selected_fields:List[str])->DataFrame:
+        """
+        Fetch and return data for all users who have a label, using specified fields.
+        This function handles preprocessing and renaming of fields to match database schema.
+
+        Params:
+            selected_fields (List[str]): Fields to be included in the returned data.
+        Returns:
+            DataFrame: A DataFrame containing labeled user data with the specified fields.
+        """
         selected_fields = self.__validate_selected_fields(selected_fields)
         selected_fields.extend(['label','user_id'])
         selected_db_fields = [self.df_db_field_mapping[v] for v in selected_fields]
@@ -193,7 +259,17 @@ class UserSpamStatusProcessor:
             )
         )
     
-    def get_selected_users_with_label(self, user_ids:int, selected_fields:list[str])->DataFrame:
+    def get_selected_users_with_label(self, user_ids:int, selected_fields:List[str])->DataFrame:
+        """
+        Fetch and return data for specified users with labels, using provided user IDs and selected fields.
+        This function handles preprocessing and renaming of fields to facilitate analysis.
+
+        Params:
+            user_ids (int): The user IDs to filter by.
+            selected_fields (List[str]): Fields to be included in the returned data.
+        Returns:
+            DataFrame: A DataFrame containing the data for selected labeled users.
+        """
         selected_fields = self.__validate_selected_fields(selected_fields)
         selected_fields.extend(['label','user_id'])
         selected_db_fields = [self.df_db_field_mapping[v] for v in selected_fields]
@@ -212,21 +288,32 @@ class UserSpamStatusProcessor:
         )
     
     # TODO: tune confidence threshold later
-    def get_predicted_spam_users(self, classifier_type:str, confidence_threshold=0.5)->list[int]:
+    def get_predicted_spam_users(self, context_id:Enum, confidence_threshold=0.5)->List[int]:
         """
-        This functions will first filter out the users predicted as a spam by the selected classifier.
+        Retrieve user IDs predicted as spam with a confidence level above the specified threshold.
+        
+        Params:
+            context_id (Enum): The context identifier for the spam prediction.
+            confidence_threshold (float): The confidence threshold for considering a user as spam.
+        Returns:
+            List[int]: A list of user IDs classified as spam above the specified confidence threshold.
         """
-        spam_users = list(
+        spam_users = set(list(
            UserSpamPrediction.objects.filter(
-               Q(classifier_type=classifier_type)
+               Q(context_id=context_id.name)
                & Q(prediction=True)
                & Q(confidence__gte=confidence_threshold)
            ).values_list("spam_status__member_profile__user_id", flat=True)
-        )
+        ))
         return spam_users  # returns list of spam user_id
 
     def labels_exist(self)->bool:
-        # if there are users with label != None, return True
+        """
+        Check if any user labels exist in the database.
+
+        Returns:
+            bool: True if there are users with a label, False otherwise.
+        """
         if UserSpamStatus.objects.filter(
             Q(label=True) | Q(label=False)
         ).exists():
@@ -234,12 +321,15 @@ class UserSpamStatusProcessor:
         return False
     
 
-    def load_labels_from_csv(self, filepath=DATASET_FILE_PATH)->list[int]:
+    def load_labels_from_csv(self, filepath=DATASET_FILE_PATH)->List[int]:
         """
-        This function updates "label" field of the SpamRecommendation table bsed on external dataset file.
-        Dataset should have columns named "user_id" and "label"
-        param : filepath of dataset to be loaded
-        return : list of user_ids which label was updated
+        Load user labels from a CSV file and update the corresponding records in the database.
+        This function logs the process and captures any exceptions related to file handling.
+
+        Params:
+            filepath (str): The path to the CSV file containing user IDs and labels.
+        Returns:
+            List[int]: A list of user IDs whose labels were successfully updated.
         """
         logger.info("Loading labels CSV...")
         try:
@@ -258,25 +348,47 @@ class UserSpamStatusProcessor:
         # return user_id_list
 
     def update_labels(self, user_id:int, label:bool): #TODO update with batch
+        """
+        Update the label for a specified user in the database.
+
+        Params:
+            user_id (int): The user ID whose label is to be updated.
+            label (bool): The label value to set.
+        Returns:
+            int: 1 if the update was successful, 0 otherwise.
+        """
         return UserSpamStatus.objects.filter(member_profile__user_id=user_id).update(
             label=label
         )  # return 0(fail) or 1(success)
 
-    def update_training_data(self, df:DataFrame, training_data=True):
-        # param : DataFrame of user_ids (int) that were used to train a model
-        # return : None
+    def update_training_data(self, df:DataFrame, is_training_data=True):
+        """
+        Mark specified users in the DataFrame as training data or not, based on the provided boolean.
+
+        Params:
+            df (DataFrame): DataFrame containing user IDs.
+            is_training_data (bool): Whether to mark as training data.
+        Returns:
+            None
+        """
         for idx, row in df.iterrows():
             UserSpamStatus.objects.filter(
                 member_profile__user_id=row["user_id"]
-            ).update(is_training_data=training_data)
+            ).update(is_training_data=is_training_data)
 
     def save_predictions(self, prediction_df:DataFrame, context_id:Enum):
-        # params : prediction_df ... a Dataframe with columns "user_id", "predictions", and "confidences"
-        #          context_id ... PresetContextID Enum
-        # return : None
+        """
+        Save spam predictions for users into the database, using the provided DataFrame and context ID.
+
+        Params:
+            prediction_df (DataFrame): A DataFrame containing user IDs, predictions, and confidence levels.
+            context_id (Enum): The context ID related to the spam predictions.
+        Returns:
+            None
+        """
         for idx, row in prediction_df.iterrows():
             spam_status = UserSpamStatus.objects.get(member_profile__user_id=row['user_id'])
-            print(vars(spam_status))
+            # print(vars(spam_status))
             UserSpamPrediction.objects.get_or_create(
                 spam_status = spam_status,
                 context_id = context_id.name,
@@ -284,7 +396,7 @@ class UserSpamStatusProcessor:
                 confidence = row['confidences']
             )
 
-        # batching and get all applicable UserSpamStatus
+        # Batching and get all applicable UserSpamStatus
         # spam_status_Qset = UserSpamStatus.objects.filter(
         #     member_profile__user_id__in=prediction_df['user_id'].tolist()
         # )

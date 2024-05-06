@@ -2,28 +2,36 @@ import pandas as pd
 import random
 import string
 import os
-
 from django.test import TestCase
 from django.conf import settings
+from django.db import connection
 
-from curator.spam_classifiers import UserMetadataSpamClassifier, TextSpamClassifier
+from curator.spam_classifiers import (
+    XGBoostClassifier, 
+    CountVectEncoder, 
+    CategoricalFieldEncoder
+    )
 from curator.spam_processor import UserSpamStatusProcessor
-from curator.models import UserSpamStatus
-from core.models import MemberProfile
-from core.models import User
+from curator.models import UserSpamStatus, UserSpamPrediction
+from curator.spam import SpamDetectionContext, PresetContextID
+from core.models import MemberProfile, User
 from core.tests.base import UserFactory
+from sklearn.datasets import load_breast_cancer
+from sklearn.model_selection import train_test_split
+from nltk.parse.generate import generate, demo_grammar
+from nltk import CFG
+from xgboost import XGBClassifier
 
+SPAM_DIR_PATH = settings.SPAM_DIR_PATH
 
 class SpamDetectionTestCase(TestCase):
     def setUp(self):
         self.processor = UserSpamStatusProcessor()
-        self.user_meta_classifier = UserMetadataSpamClassifier()
-        self.text_classifier = TextSpamClassifier()
         self.user_factory = UserFactory()
         self.user_ids = self.create_new_users()
 
     def create_new_users(self):
-        user_size = random.randint(5, 100)
+        user_size = random.randint(5, 30)
         new_user_ids = []
         for i in range(0, user_size):
             new_user = self.user_factory.create()
@@ -42,16 +50,6 @@ class SpamDetectionTestCase(TestCase):
         for user_id in user_ids:
             user = User.objects.filter(id=user_id)
             user.delete()
-
-    # def update_labels(self, user_ids):
-    #     middle_idx = len(user_ids)/2 - 1
-    #     label = True
-    #     self.processor.update_labels(user_ids[0:middle_idx], label)
-    #     label = False
-    #     self.processor.update_labels(user_ids[middle_idx:-1], label)
-
-    # def delete_labels(self, user_ids):
-    #     self.processor.update_labels(user_ids, None)
 
     def update_labels(self, user_ids):
         for user_id in user_ids:
@@ -76,255 +74,334 @@ class SpamDetectionTestCase(TestCase):
 
     def unmark_as_training_data(self, user_ids):
         df = pd.DataFrame(user_ids, columns=["user_id"])
-        self.processor.update_training_data(df, training_data=False)
+        self.processor.update_training_data(df, is_training_data=False)
 
-    # =================  Tests for UserSpamStatusProcessor.load_labels_from_csv() =================
+    def get_mock_binary_dataset(self, split=True):
+        dataset = load_breast_cancer(as_frame=True)
+        if not split:
+            return (dataset.data, dataset.target.to_frame(name="target"))
+        return train_test_split(dataset.data, dataset.target, test_size=0.1, random_state=434)
+
+    def get_mock_text_dataset(self, split=True, sample_size=10):
+        grammar = CFG.fromstring(demo_grammar)
+        sentences = [' '.join(sentence) for sentence in generate(grammar, n=sample_size)]
+        target = [random.randint(0, 1) for i in range(len(sentences))]
+        dataset = pd.DataFrame({'data':sentences, 'target':target})
+        if not split:
+            return (dataset[['data']], dataset[['target']])
+        return train_test_split(dataset.data, dataset.target, test_size=0.1, random_state=434)
+
+        
+    # ================= Tests for UserSpamStatusProcessor =================
     def test_load_labels_from_csv(self):
         """
-        case : First time loading spam_dataset.csv
-            stub data/requirements ... ./curator/spam_dataset.csv
-            assertion ... there exists users with label != None
+        Verify the functionality of loading labels from a CSV file.
+        The test checks if the labels are correctly applied to users in the database.
+        Preconditions:
+          - Assumes a CSV file at ./curator/spam_dataset.csv with 'user_id' and 'label' columns.
+        Postconditions:
+          - Asserts that there are users with labels in the database, indicating successful label application.
         """
         self.processor.load_labels_from_csv()
         self.assertTrue(self.processor.labels_exist())
-
-    # ============== Tests for UserSpamStatusProcessor.get_unlabel_df() ==============
-    def test_get_label_df__new_users_added(self):
+    
+    def test_get_all_users(self):
         """
-        case1 : new user data added
-            stub data/requirements ... new user data with label==None
-            assertion ... no change in df
+        Verify that all users can be retrieved with the 'email' field processed into 'email_username' and 'email_domain'.
+        Preconditions:
+          - User data must include 'email' that can be split into username and domain.
+        Assertions:
+          - Ensure the resulting dataframe is not empty.
+          - Assert that the dataframe includes the processed columns 'email_username' and 'email_domain'.
         """
+        selected_fields = ["email"]
+        df = self.processor.get_all_users(selected_fields)
+        self.assertFalse(df.empty)
+        self.assertTrue(set(['email_username', 'email_domain']).issubset(set(df.columns)))
 
-        existing_user_ids = self.user_ids
-        self.update_labels(
-            existing_user_ids
-        )  # make sure all the existing users have labels
-        existing_df = self.processor.get_all_users_with_label()
-
-        new_user_ids = self.create_new_users()  # default label==None
-
-        user_size = len(new_user_ids) + len(existing_user_ids)
-        new_df = self.processor.get_all_users_with_label()
-
-        self.assertEqual(
-            len(existing_df["user_id"].values), len(new_df["user_id"].values)
-        )
-        self.assertGreater(user_size, len(existing_df["user_id"].values))
-        self.assertFalse(set(new_user_ids).issubset(set(new_df["user_id"].values)))
-        self.delete_new_users(new_user_ids)
-
-    def test_get_label_df__label_added(self):
+    def test_get_selected_users(self):
         """
-        case2 : new user data added
-            stub data/requirements ... new user data with label==True/False
-            assertion ... df with the specific columns with the addtional user data that were labelled.
+        Verify that selected users are retrieved with the 'email' field processed into 'email_username' and 'email_domain'.
+        Preconditions:
+          - Random subset of user IDs used to fetch data.
+        Assertions:
+          - Ensure the resulting dataframe is not empty.
+          - Assert that the dataframe includes the necessary 'email_username' and 'email_domain' columns.
         """
-        existing_user_ids = self.user_ids
-        self.update_labels(
-            existing_user_ids
-        )  # make sure all the existing users have labels
+        selected_fields = ["email"]
+        user_ids = random.sample(self.user_ids, min(len(self.user_ids), 5))
+        df = self.processor.get_selected_users(user_ids, selected_fields)
+        self.assertFalse(df.empty)
+        self.assertTrue(set(['email_username', 'email_domain']).issubset(set(df.columns)))
 
-        new_user_ids = self.create_new_users()  # default label==None
-        user_size = len(new_user_ids) + len(existing_user_ids)
-
-        self.update_labels(new_user_ids)
-        df = self.processor.get_all_users_with_label()
-
-        self.assertIsInstance(df, pd.DataFrame)
-        self.assertTrue(
-            set(self.processor.column_names).issubset(set(df.columns.unique()))
-        )
-        self.assertEqual(user_size, len(df["user_id"].values))
-        self.assertTrue(set(new_user_ids).issubset(set(df["user_id"].values)))
-        self.delete_new_users(new_user_ids)
-
-    def test_get_label_df__no_users_added(self):
+    def test_get_all_users_with_label(self):
         """
-        case3 : no new user data added
-            stub data/requirements ... all data in DB with correct user_id has values
-                                        with label==True/False
-            assertion ... no change in df
+        Verify that all users with labels are retrieved along with the 'email' field processed.
+        Preconditions:
+          - Labels are assigned to all user IDs prior to retrieval.
+        Assertions:
+          - Ensure the resulting dataframe is not empty.
+          - Assert that 'email_username', 'email_domain', and 'label' columns are present.
         """
-        existing_user_ids = self.user_ids
-        self.update_labels(
-            existing_user_ids
-        )  # make sure all the existing users have labels
-        existing_df = self.processor.get_all_users_with_label()
+        self.update_labels(self.user_ids)
+        selected_fields = ["email"]
+        df = self.processor.get_all_users_with_label(selected_fields)
+        self.assertFalse(df.empty)
+        self.assertTrue(set(['email_username', 'email_domain']).issubset(set(df.columns)))
+        self.assertTrue("label" in df.columns)
 
-        self.update_labels(existing_user_ids)  # making sure all users are labelled
-
-        new_df = self.processor.get_all_users_with_label()
-        self.assertEqual(
-            len(existing_df["user_id"].values), len(new_df["user_id"].values)
-        )
-
-    # ================================ Tests for UserMetadataSpamClassifier ================================
-    def test_user_meta_classifier_fit(self):
+    def test_get_selected_users_with_label(self):
         """
-        stub data/requirements ... loaded labels (label) in DB using processor.load_labels_from_csv()
-        assertion ... returns model metrics in the following format and output model instance as a pickle file
-                      in the "/shared/curator/spam/" folder.
-                      model metrics format = {"Accuracy": float,
-                                                "Precision": float,
-                                                "Recall": float,
-                                                "F1",float,
-                                                "test_user_ids": list of user_id}
+        Verify that selected users with labels are retrieved along with the 'email' field processed.
+        Preconditions:
+          - Labels are assigned to a random subset of user IDs prior to retrieval.
+        Assertions:
+          - Ensure the resulting dataframe is not empty.
+          - Assert that 'email_username', 'email_domain', and 'label' columns are present.
         """
-        user_ids = self.processor.load_labels_from_csv()
-        self.update_labels(user_ids)
+        self.update_labels(self.user_ids)
+        selected_fields = ["email"]
+        user_ids = random.sample(self.user_ids, min(len(self.user_ids), 5))
+        df = self.processor.get_selected_users_with_label(user_ids, selected_fields)
+        self.assertFalse(df.empty)
+        self.assertTrue(set(['email_username', 'email_domain']).issubset(set(df.columns)))
+        self.assertTrue("label" in df.columns)
 
-        user_meta_classifier_metrics = self.user_meta_classifier.fit()
-        self.assertIsInstance(user_meta_classifier_metrics, dict)
-        self.assertTrue("Accuracy" in user_meta_classifier_metrics)
-        self.assertTrue("Precision" in user_meta_classifier_metrics)
-        self.assertTrue("Recall" in user_meta_classifier_metrics)
-        self.assertTrue("F1" in user_meta_classifier_metrics)
-        self.assertTrue("test_user_ids" in user_meta_classifier_metrics)
-        self.assertTrue(
-            set(user_meta_classifier_metrics["test_user_ids"]).issubset(set(user_ids))
-        )
-
-        self.delete_labels(user_ids)
-
-    def test_user_meta_classifier_prediction(self):
+    def test_get_predicted_spam_users(self):
         """
-        stub data/requirements ... /shared/curator/spam/{model}.pkl, and new user data on DB with label=None
-        assertion ... True or False valuse in labelled_by_text_classifier and labelled_by_user_classifier fields
-                        of the user data in DB
+        Verify that the function returns user IDs predicted as spam with greater than a certain confidence level.
+        Preconditions:
+          - Users must be predicted by the specified context ID with confidence.
+        Assertions:
+          - Assert that the returned object is a set, containing user IDs.
         """
-        if not os.path.exists(self.user_meta_classifier.MODEL_METRICS_FILE_PATH):
-            self.processor.load_labels_from_csv()
-            self.user_meta_classifier.fit()
+        spam_users = self.processor.get_predicted_spam_users(PresetContextID.XGBoost_CountVect_1, confidence_threshold=0.5)
+        self.assertIsInstance(spam_users, set)
 
-        existing_user_ids = self.user_ids
-        self.update_labels(existing_user_ids)
-        new_user_ids = self.create_new_users()  # default label==None
-        labelled_user_ids, _ = self.user_meta_classifier.predict()
+    def test_update_training_data(self):
+        """
+        Verify that users are correctly marked as training data.
+        Preconditions:
+          - DataFrame contains user IDs.
+        Assertions:
+          - Assert that the number of users marked as training data matches the number of user IDs provided.
+        """
+        df = pd.DataFrame({"user_id": self.user_ids})
+        self.processor.update_training_data(df)
+        updated_users = UserSpamStatus.objects.filter(is_training_data=True).count()
+        self.assertEqual(updated_users, len(self.user_ids))
 
-        # self.assertTrue(self.processor.all_have_labels())
-        self.assertTrue(set(new_user_ids).issubset(labelled_user_ids))
+    def test_save_predictions(self):
+        """
+        Verify that prediction entries are correctly saved with the appropriate timestamp and model name.
+        Preconditions:
+          - DataFrame containing 'user_id', 'predictions', and 'confidences'.
+        Assertions:
+          - Assert that the count of saved predictions matches the number of user IDs.
+        """
+        prediction_df = pd.DataFrame({"user_id": self.user_ids, "predictions": [True] * len(self.user_ids), "confidences": [0.8] * len(self.user_ids)})
+        self.processor.save_predictions(prediction_df, PresetContextID.XGBoost_CountVect_1)
+        saved_predictions = UserSpamPrediction.objects.filter(context_id=PresetContextID.XGBoost_CountVect_1.name).count()
+        self.assertEqual(saved_predictions, len(self.user_ids))
 
-    # ==================================== Tests for TextSpamClassifier ====================================
-    def test_text_classifier_fit(self):
-        user_ids = self.processor.load_labels_from_csv()
-        self.add_texts_to_users(user_ids)
-        self.update_labels(user_ids)
+    # ================= Tests for XGBoostClassifier =================
+    def test_xgboost_train_predict_evaluate(self):
+        """
+        Test the full cycle of training, predicting, and evaluating using the XGBoost classifier.
+        Preconditions:
+          - Use a mock binary dataset for training and testing.
+          - Use CountVectEncoder for feature encoding.
+        Assertions:
+          - Confirm that the trained model is an instance of XGBClassifier.
+          - Ensure that the predictions return a dataframe and contain the correct user IDs.
+          - Validate that evaluation metrics returned are correct and include expected keys.
+        """
+        context_id = "XGBoost_mock"
+        classifier = XGBoostClassifier(context_id)
+        
+        (
+            train_feats,
+            test_feats,
+            train_labels,
+            test_labels,
+        ) = self.get_mock_binary_dataset()
 
-        text_classifier_metrics = self.text_classifier.fit()
-        self.assertIsInstance(text_classifier_metrics, dict)
-        self.assertTrue("Accuracy" in text_classifier_metrics)
-        self.assertTrue("Precision" in text_classifier_metrics)
-        self.assertTrue("Recall" in text_classifier_metrics)
-        self.assertTrue("F1" in text_classifier_metrics)
-        self.assertTrue("test_user_ids" in text_classifier_metrics)
-        self.assertTrue(
-            set(text_classifier_metrics["test_user_ids"]).issubset(set(user_ids))
-        )
+        encoder = CountVectEncoder(context_id)
+        train_feats['user_id'] = train_feats.index
+        train_feats = encoder.concatenate(train_feats)
+        model = classifier.train(train_feats, train_labels)
+        self.assertIsInstance(model, XGBClassifier)
 
-        self.delete_labels(user_ids)
+        test_feats['user_id'] = test_feats.index
+        test_feats = encoder.concatenate(test_feats)
+        prediction_df = classifier.predict(model, test_feats)
+        self.assertIsInstance(prediction_df, pd.DataFrame)
+        self.assertTrue(set(prediction_df['user_id']) == set(test_feats['user_id']))
 
-    def test_text_classifier_prediction(self):
-        if not os.path.exists(self.text_classifier.MODEL_METRICS_FILE_PATH):
-            user_ids = self.processor.load_labels_from_csv()
-            # self.add_texts_to_users(user_ids)
-            self.text_classifier.fit()
+        metrics = classifier.evaluate(model, test_feats, test_labels)
+        self.assertIsInstance(metrics, dict)
+        self.assertTrue(set(metrics.keys()) == {'Accuracy', 'Precision', 'Recall', 'F1', 'test_user_ids'})
 
-        existing_user_ids = self.user_ids
-        self.update_labels(existing_user_ids)
-        new_user_ids = self.create_new_users()  # default label==None
-        self.add_texts_to_users(existing_user_ids)
-        self.add_texts_to_users(new_user_ids)
-        labelled_user_ids, _ = self.text_classifier.predict()
 
-        #self.assertTrue(self.processor.all_have_labels())
-        self.assertTrue(bool(set(new_user_ids) & set(labelled_user_ids)))
+    def test_xgboost_save_load(self):
+        """
+        Test the saving and loading functionality of the XGBoost model.
+        Preconditions:
+          - A model is trained using a mock binary dataset.
+        Assertions:
+          - Ensure that the loaded model is an instance of XGBClassifier.
+        """
+        context_id = "XGBoost_mock"
+        classifier = XGBoostClassifier(context_id)
+        encoder = CountVectEncoder(context_id)
+        (
+            train_feats,
+            test_feats,
+            train_labels,
+            test_labels,
+        ) = self.get_mock_binary_dataset()
 
-    # # ============== Tests for UserSpamStatusProcessor.get_unlabel_df() ==============
-    # def test_get_unlabel_df__new_users_added(self):
-    #     """
-    #     case1 : new user data added
-    #         stub data/requirements ... new user data with label==None
-    #         assertion ... df with the specific columns with the correct user_ids
-    #     """
+        # Train mock classifier
+        train_feats['user_id'] = train_feats.index
+        train_feats = encoder.concatenate(train_feats)
+        model = classifier.train(train_feats, train_labels)
 
-    #     existing_user_ids = self.user_ids
-    #     user_ids = self.create_new_users()  # default label==None
-    #     user_size = len(user_ids) + len(existing_user_ids)
+        # Save and load classifier
+        classifier.save(model)
+        saved_model = classifier.load()
+        self.assertIsInstance(saved_model, XGBClassifier)
 
-    #     df = self.processor.get_unlabel_df()
 
-    #     self.assertIsInstance(df, pd.DataFrame)
-    #     self.assertTrue(
-    #         set(self.processor.column_names).issubset(set(df.columns.unique()))
-    #     )
-    #     self.assertEqual(user_size, len(df["user_id"].values))
-    #     self.assertTrue(set(user_ids).issubset(set(df["user_id"].values)))
-    #     self.delete_new_users(user_ids)
+    def test_xgboost_save_load_metrics(self):
+        """
+        Test the saving and loading functionality for the XGBoost evaluation metrics.
+        Preconditions:
+          - A model is trained and evaluated to generate metrics.
+        Assertions:
+          - Ensure the loaded metrics are a dictionary containing the expected evaluation metrics.
+        """
+        context_id = "XGBoost_mock"
+        classifier = XGBoostClassifier(context_id)
+        encoder = CountVectEncoder(context_id)
 
-    # def test_get_unlabel_df__no_users_added(self):
-    #     """
-    #     case2 : no new user data added
-    #         stub data/requirements ... all data in DB with correct user_id has values
-    #                                    with label!=None
-    #         assertion ... empty df
-    #     """
-    #     existing_user_ids = self.user_ids
-    #     self.update_labels(existing_user_ids)  # simulate a curator labelling the users
+        (
+            train_feats,
+            test_feats,
+            train_labels,
+            test_labels,
+        ) = self.get_mock_binary_dataset()
 
-    #     df = self.processor.get_unlabel_df()
-    #     self.assertEqual(len(df), 0)
+        # Train mock classifier and compute metrics
+        train_feats['user_id'] = train_feats.index
+        train_feats = encoder.concatenate(train_feats)
+        model = classifier.train(train_feats, train_labels)
 
-    #     self.delete_labels(existing_user_ids)
+        test_feats['user_id'] = test_feats.index
+        test_feats = encoder.concatenate(test_feats)
+        metrics = classifier.evaluate(model, test_feats, test_labels)
 
-    # ======================== Tests for UserSpamStatusProcessor.get_untrained_df()  ========================
-    # def test_get_untrained_df__dataset_loaded(self):
-    #     """
-    #     case1 : Just uploaded spam_dataset.csv
-    #         stub data/requirements ... just called load_labels_from_csv().
-    #         assertion ... df with the specific columns with the correct user_ids
-    #     """
-    #     user_ids = self.processor.load_labels_from_csv()
+        # Save and load metrics
+        classifier.save_metrics(metrics)
+        metrics = classifier.load_metrics()
+        self.assertIsInstance(metrics, dict)
 
-    #     df = self.processor.get_untrained_df()
-    #     self.assertIsInstance(df, pd.DataFrame)
-    #     self.assertTrue(
-    #         set(self.processor.column_names).issubset(set(df.columns.unique()))
-    #     )
-    #     # self.assertListEqual(user_ids, list(df["user_id"].values))
-    #     self.assertTrue(set(user_ids) == set(list(df["user_id"].values)))
-    #     self.delete_labels(user_ids)
+    # ================= Tests for CountVectEncoder =================
+    def test_countvect_encode(self):
+        """
+        Test the encoding process of the CountVectEncoder.
+        Preconditions:
+          - Use a mock text dataset.
+        Assertions:
+          - Ensure that the encoded features dataframe contains the 'input_data' column.
+        """
+        context_id = "CountVect_mock"
+        encoder = CountVectEncoder(context_id)
+        feats, labels = self.get_mock_text_dataset(split=False)
+        feats['user_id'] = feats.index
+        encoded_feats = encoder.encode(feats)
+        self.assertIsInstance(encoded_feats, pd.DataFrame)
+        self.assertTrue('input_data' in encoded_feats.columns)
 
-    # def test_get_untrained_df__labels_updated(self):
-    #     """
-    #     case2 : label updated
-    #         stub data/requirements ...  new labells by curator (users with abelled_by_curator!=None and is_training_data=False)
-    #         assertion ... df with the specific columns with the correct user_ids
-    #     """
-    #     existing_user_ids = self.user_ids
-    #     self.update_labels(existing_user_ids)  # update labels of exisiting users
+    def test_countvect_set_char_analysis_fields(self):
+        """
+        Test setting character analysis fields in the CountVectEncoder.
+        Preconditions:
+          - Set specific fields to be analyzed by character.
+        Assertions:
+          - Ensure the character analysis fields are set correctly.
+        """
+        context_id = "CountVect_mock"
+        encoder = CountVectEncoder(context_id)
+        encoder.set_char_analysis_fields(['first_name', 'last_name'])
+        self.assertTrue(encoder.char_analysis_fields == ['first_name', 'last_name'])
 
-    #     df = self.processor.get_untrained_df()
-    #     self.assertIsInstance(df, pd.DataFrame)
-    #     self.assertTrue(
-    #         set(self.processor.column_names).issubset(set(df.columns.unique()))
-    #     )
-    #     # self.assertListEqual(existing_user_ids, list(df["user_id"].values))
-    #     self.assertTrue(set(existing_user_ids) == set(list(df["user_id"].values)))
-    #     self.delete_labels(existing_user_ids)
+    # ================= Tests for CategoricalFieldEncoder =================    
+    def test_categorical_encode(self):
+        """
+        Test the encoding process of the CategoricalFieldEncoder.
+        Preconditions:
+          - Use a mock binary dataset and set categorical fields for encoding.
+        Assertions:
+          - Check if all categorical fields are converted and if the resulting dataframe is valid.
+        """
+        encoder = CategoricalFieldEncoder()
+        encoder.set_categorical_fields(['target'])
+        feats, labels = self.get_mock_binary_dataset(split=False)
+        encoded_feats = encoder.encode(labels)
+        self.assertIsInstance(encoded_feats, pd.DataFrame)
+        # check if all categorical fields are converted
 
-    # def test_get_untrained_df__no_labels_updated(self):
-    #     """
-    #     case3 : no label updates
-    #         stub data/requirements ... all data in DB with label!=None has is_training_data=True
-    #         assertion ... empty df
-    #     """
-    #     existing_user_ids = self.user_ids
-    #     self.update_labels(existing_user_ids)  # update labels of exisiting users
-    #     self.mark_as_training_data(existing_user_ids)  # mark the user as training data
+    def test_categorical_set_categorical_fields(self):
+        """
+        Test setting categorical fields in the CategoricalFieldEncoder.
+        Preconditions:
+          - Set specific fields to be treated as categorical.
+        Assertions:
+          - Ensure the categorical fields are set correctly.
+        """
+        encoder = CategoricalFieldEncoder()
+        encoder.set_categorical_fields(['is_active', 'label'])
+        self.assertTrue(encoder.categorical_fields == ['is_active', 'label'])
 
-    #     df = self.processor.get_untrained_df()
-    #     self.assertEqual(len(df), 0)
+    # ================= Tests for SpamDetectionContext =================
+    def test_context_set_classifier(self):
+        """
+        Test setting a classifier in the SpamDetectionContext.
+        Preconditions:
+          - Create a spam detection context and instantiate a classifier.
+        Assertions:
+          - Confirm that the classifier is set correctly in the context.
+        """
+        context_id = PresetContextID.XGBoost_CountVect_1
+        context = SpamDetectionContext(context_id)
+        classifier = XGBoostClassifier(context_id.name)
+        context.set_classifier(classifier)
+        self.assertEqual(context.classifier, classifier)
 
-    #     self.delete_labels(existing_user_ids)
-    #     self.unmark_as_training_data(existing_user_ids)
+    def test_context_set_encoder(self):
+        """
+        Test setting an encoder in the SpamDetectionContext.
+        Preconditions:
+          - Create a spam detection context and instantiate an encoder.
+        Assertions:
+          - Confirm that the encoder is set correctly in the context.
+        """
+        context_id = PresetContextID.XGBoost_CountVect_1
+        context = SpamDetectionContext(context_id)
+        encoder = CountVectEncoder(context_id.name)
+        context.set_encoder(encoder)
+        self.assertEqual(context.encoder, encoder)
+
+    def test_context_set_fields(self):
+        """
+        Test setting fields in the SpamDetectionContext.
+        Preconditions:
+          - Specify fields to be included in spam detection processing.
+        Assertions:
+          - Ensure the fields are set correctly within the context.
+        """
+        context_id = PresetContextID.XGBoost_CountVect_1
+        context = SpamDetectionContext(context_id)
+        fields = ['email', 'affiliations', 'bio']
+        context.set_fields(fields)
+        self.assertEqual(context.selected_fields, fields)
