@@ -7,10 +7,10 @@ from django.conf import settings
 from django.db import connection
 
 from curator.spam_classifiers import (
-    XGBoostClassifier, 
-    CountVectEncoder, 
-    CategoricalFieldEncoder
-    )
+    XGBoostClassifier,
+    CountVectEncoder,
+    CategoricalFieldEncoder,
+)
 from curator.spam_processor import UserSpamStatusProcessor
 from curator.models import UserSpamStatus, UserSpamPrediction
 from curator.spam import SpamDetectionContext, PresetContextID
@@ -23,6 +23,7 @@ from nltk import CFG
 from xgboost import XGBClassifier
 
 SPAM_DIR_PATH = settings.SPAM_DIR_PATH
+
 
 class SpamDetectionTestCase(TestCase):
     def setUp(self):
@@ -80,18 +81,23 @@ class SpamDetectionTestCase(TestCase):
         dataset = load_breast_cancer(as_frame=True)
         if not split:
             return (dataset.data, dataset.target.to_frame(name="target"))
-        return train_test_split(dataset.data, dataset.target, test_size=0.1, random_state=434)
+        return train_test_split(
+            dataset.data, dataset.target, test_size=0.1, random_state=434
+        )
 
     def get_mock_text_dataset(self, split=True, sample_size=10):
         grammar = CFG.fromstring(demo_grammar)
-        sentences = [' '.join(sentence) for sentence in generate(grammar, n=sample_size)]
+        sentences = [
+            " ".join(sentence) for sentence in generate(grammar, n=sample_size)
+        ]
         target = [random.randint(0, 1) for i in range(len(sentences))]
-        dataset = pd.DataFrame({'data':sentences, 'target':target})
+        dataset = pd.DataFrame({"data": sentences, "target": target})
         if not split:
-            return (dataset[['data']], dataset[['target']])
-        return train_test_split(dataset.data, dataset.target, test_size=0.1, random_state=434)
+            return (dataset[["data"]], dataset[["target"]])
+        return train_test_split(
+            dataset.data, dataset.target, test_size=0.1, random_state=434
+        )
 
-        
     # ================= Tests for UserSpamStatusProcessor =================
     def test_load_labels_from_csv(self):
         """
@@ -104,7 +110,7 @@ class SpamDetectionTestCase(TestCase):
         """
         self.processor.load_labels_from_csv()
         self.assertTrue(self.processor.labels_exist())
-    
+
     def test_get_all_users(self):
         """
         Verify that all users can be retrieved with the 'email' field processed into 'email_username' and 'email_domain'.
@@ -117,7 +123,9 @@ class SpamDetectionTestCase(TestCase):
         selected_fields = ["email"]
         df = self.processor.get_all_users(selected_fields)
         self.assertFalse(df.empty)
-        self.assertTrue(set(['email_username', 'email_domain']).issubset(set(df.columns)))
+        self.assertTrue(
+            set(["email_username", "email_domain"]).issubset(set(df.columns))
+        )
 
     def test_get_selected_users(self):
         """
@@ -132,7 +140,9 @@ class SpamDetectionTestCase(TestCase):
         user_ids = random.sample(self.user_ids, min(len(self.user_ids), 5))
         df = self.processor.get_selected_users(user_ids, selected_fields)
         self.assertFalse(df.empty)
-        self.assertTrue(set(['email_username', 'email_domain']).issubset(set(df.columns)))
+        self.assertTrue(
+            set(["email_username", "email_domain"]).issubset(set(df.columns))
+        )
 
     def test_get_all_users_with_label(self):
         """
@@ -147,7 +157,9 @@ class SpamDetectionTestCase(TestCase):
         selected_fields = ["email"]
         df = self.processor.get_all_users_with_label(selected_fields)
         self.assertFalse(df.empty)
-        self.assertTrue(set(['email_username', 'email_domain']).issubset(set(df.columns)))
+        self.assertTrue(
+            set(["email_username", "email_domain"]).issubset(set(df.columns))
+        )
         self.assertTrue("label" in df.columns)
 
     def test_get_selected_users_with_label(self):
@@ -164,7 +176,9 @@ class SpamDetectionTestCase(TestCase):
         user_ids = random.sample(self.user_ids, min(len(self.user_ids), 5))
         df = self.processor.get_selected_users_with_label(user_ids, selected_fields)
         self.assertFalse(df.empty)
-        self.assertTrue(set(['email_username', 'email_domain']).issubset(set(df.columns)))
+        self.assertTrue(
+            set(["email_username", "email_domain"]).issubset(set(df.columns))
+        )
         self.assertTrue("label" in df.columns)
 
     def test_get_predicted_spam_users(self):
@@ -175,7 +189,9 @@ class SpamDetectionTestCase(TestCase):
         Assertions:
           - Assert that the returned object is a set, containing user IDs.
         """
-        spam_users = self.processor.get_predicted_spam_users(PresetContextID.XGBoost_CountVect_1, confidence_threshold=0.5)
+        spam_users = self.processor.get_predicted_spam_users(
+            PresetContextID.XGBoost_CountVect_1, confidence_threshold=0.5
+        )
         self.assertIsInstance(spam_users, set)
 
     def test_update_training_data(self):
@@ -199,9 +215,19 @@ class SpamDetectionTestCase(TestCase):
         Assertions:
           - Assert that the count of saved predictions matches the number of user IDs.
         """
-        prediction_df = pd.DataFrame({"user_id": self.user_ids, "predictions": [True] * len(self.user_ids), "confidences": [0.8] * len(self.user_ids)})
-        self.processor.save_predictions(prediction_df, PresetContextID.XGBoost_CountVect_1)
-        saved_predictions = UserSpamPrediction.objects.filter(context_id=PresetContextID.XGBoost_CountVect_1.name).count()
+        prediction_df = pd.DataFrame(
+            {
+                "user_id": self.user_ids,
+                "predictions": [True] * len(self.user_ids),
+                "confidences": [0.8] * len(self.user_ids),
+            }
+        )
+        self.processor.save_predictions(
+            prediction_df, PresetContextID.XGBoost_CountVect_1
+        )
+        saved_predictions = UserSpamPrediction.objects.filter(
+            context_id=PresetContextID.XGBoost_CountVect_1.name
+        ).count()
         self.assertEqual(saved_predictions, len(self.user_ids))
 
     # ================= Tests for XGBoostClassifier =================
@@ -218,7 +244,7 @@ class SpamDetectionTestCase(TestCase):
         """
         context_id = "XGBoost_mock"
         classifier = XGBoostClassifier(context_id)
-        
+
         (
             train_feats,
             test_feats,
@@ -227,21 +253,23 @@ class SpamDetectionTestCase(TestCase):
         ) = self.get_mock_binary_dataset()
 
         encoder = CountVectEncoder(context_id)
-        train_feats['user_id'] = train_feats.index
+        train_feats["user_id"] = train_feats.index
         train_feats = encoder.concatenate(train_feats)
         model = classifier.train(train_feats, train_labels)
         self.assertIsInstance(model, XGBClassifier)
 
-        test_feats['user_id'] = test_feats.index
+        test_feats["user_id"] = test_feats.index
         test_feats = encoder.concatenate(test_feats)
         prediction_df = classifier.predict(model, test_feats)
         self.assertIsInstance(prediction_df, pd.DataFrame)
-        self.assertTrue(set(prediction_df['user_id']) == set(test_feats['user_id']))
+        self.assertTrue(set(prediction_df["user_id"]) == set(test_feats["user_id"]))
 
         metrics = classifier.evaluate(model, test_feats, test_labels)
         self.assertIsInstance(metrics, dict)
-        self.assertTrue(set(metrics.keys()) == {'Accuracy', 'Precision', 'Recall', 'F1', 'test_user_ids'})
-
+        self.assertTrue(
+            set(metrics.keys())
+            == {"Accuracy", "Precision", "Recall", "F1", "test_user_ids"}
+        )
 
     def test_xgboost_save_load(self):
         """
@@ -262,7 +290,7 @@ class SpamDetectionTestCase(TestCase):
         ) = self.get_mock_binary_dataset()
 
         # Train mock classifier
-        train_feats['user_id'] = train_feats.index
+        train_feats["user_id"] = train_feats.index
         train_feats = encoder.concatenate(train_feats)
         model = classifier.train(train_feats, train_labels)
 
@@ -270,7 +298,6 @@ class SpamDetectionTestCase(TestCase):
         classifier.save(model)
         saved_model = classifier.load()
         self.assertIsInstance(saved_model, XGBClassifier)
-
 
     def test_xgboost_save_load_metrics(self):
         """
@@ -292,11 +319,11 @@ class SpamDetectionTestCase(TestCase):
         ) = self.get_mock_binary_dataset()
 
         # Train mock classifier and compute metrics
-        train_feats['user_id'] = train_feats.index
+        train_feats["user_id"] = train_feats.index
         train_feats = encoder.concatenate(train_feats)
         model = classifier.train(train_feats, train_labels)
 
-        test_feats['user_id'] = test_feats.index
+        test_feats["user_id"] = test_feats.index
         test_feats = encoder.concatenate(test_feats)
         metrics = classifier.evaluate(model, test_feats, test_labels)
 
@@ -317,10 +344,10 @@ class SpamDetectionTestCase(TestCase):
         context_id = "CountVect_mock"
         encoder = CountVectEncoder(context_id)
         feats, labels = self.get_mock_text_dataset(split=False)
-        feats['user_id'] = feats.index
+        feats["user_id"] = feats.index
         encoded_feats = encoder.encode(feats)
         self.assertIsInstance(encoded_feats, pd.DataFrame)
-        self.assertTrue('input_data' in encoded_feats.columns)
+        self.assertTrue("input_data" in encoded_feats.columns)
 
     def test_countvect_set_char_analysis_fields(self):
         """
@@ -332,10 +359,10 @@ class SpamDetectionTestCase(TestCase):
         """
         context_id = "CountVect_mock"
         encoder = CountVectEncoder(context_id)
-        encoder.set_char_analysis_fields(['first_name', 'last_name'])
-        self.assertTrue(encoder.char_analysis_fields == ['first_name', 'last_name'])
+        encoder.set_char_analysis_fields(["first_name", "last_name"])
+        self.assertTrue(encoder.char_analysis_fields == ["first_name", "last_name"])
 
-    # ================= Tests for CategoricalFieldEncoder =================    
+    # ================= Tests for CategoricalFieldEncoder =================
     def test_categorical_encode(self):
         """
         Test the encoding process of the CategoricalFieldEncoder.
@@ -345,7 +372,7 @@ class SpamDetectionTestCase(TestCase):
           - Check if all categorical fields are converted and if the resulting dataframe is valid.
         """
         encoder = CategoricalFieldEncoder()
-        encoder.set_categorical_fields(['target'])
+        encoder.set_categorical_fields(["target"])
         feats, labels = self.get_mock_binary_dataset(split=False)
         encoded_feats = encoder.encode(labels)
         self.assertIsInstance(encoded_feats, pd.DataFrame)
@@ -360,8 +387,8 @@ class SpamDetectionTestCase(TestCase):
           - Ensure the categorical fields are set correctly.
         """
         encoder = CategoricalFieldEncoder()
-        encoder.set_categorical_fields(['is_active', 'label'])
-        self.assertTrue(encoder.categorical_fields == ['is_active', 'label'])
+        encoder.set_categorical_fields(["is_active", "label"])
+        self.assertTrue(encoder.categorical_fields == ["is_active", "label"])
 
     # ================= Tests for SpamDetectionContext =================
     def test_context_set_classifier(self):
@@ -402,6 +429,6 @@ class SpamDetectionTestCase(TestCase):
         """
         context_id = PresetContextID.XGBoost_CountVect_1
         context = SpamDetectionContext(context_id)
-        fields = ['email', 'affiliations', 'bio']
+        fields = ["email", "affiliations", "bio"]
         context.set_fields(fields)
         self.assertEqual(context.selected_fields, fields)

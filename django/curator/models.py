@@ -381,7 +381,7 @@ class UserSpamStatus(models.Model):
     # None = not processed yet
     # True = classifier thinks a user is spam
     # False = classifier does not think a user is spam
-    
+
     label = models.BooleanField(default=None, null=True)
     last_updated = models.DateTimeField(auto_now=True)
     is_training_data = models.BooleanField(default=False)
@@ -393,12 +393,15 @@ class UserSpamStatus(models.Model):
         return UserSpamStatus.objects.all().order_by("text_classifier_confidence")
 
     def __str__(self):
-        return "member_profile={}, label={}, last_updated={}, is_training_data={}".format(
-            str(self.member_profile),
-            str(self.label),
-            str(self.last_updated),
-            str(self.is_training_data),
+        return (
+            "member_profile={}, label={}, last_updated={}, is_training_data={}".format(
+                str(self.member_profile),
+                str(self.label),
+                str(self.last_updated),
+                str(self.is_training_data),
+            )
         )
+
 
 # Create a new UserSpamStatus whenever a new MemberProfile is created
 @receiver(post_save, sender=MemberProfile)
@@ -407,6 +410,7 @@ def sync_member_profile_spam_status(sender, instance: MemberProfile, created, **
         spam_status, created = UserSpamStatus.objects.get_or_create(
             member_profile=instance,
         )
+
 
 class UserSpamPrediction(models.Model):
     spam_status = models.ForeignKey(UserSpamStatus, on_delete=models.CASCADE)
