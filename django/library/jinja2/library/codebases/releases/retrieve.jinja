@@ -504,7 +504,7 @@
                 </tr>
                 </thead>
                 <tbody>
-                    {% for related_release in codebase.ordered_releases(has_change_perm) %}
+                    {% for related_release in codebase.ordered_releases(has_change_perm, asc=False) %}
                         <tr>
                             <td><a href='{{ related_release.get_absolute_url() }}'>{{ related_release.version_number }}</a></td>
                             <td>
