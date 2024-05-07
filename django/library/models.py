@@ -3,9 +3,12 @@ import json
 import logging
 import os
 import pathlib
+import uuid
 import semver
 import uuid
-
+from collections import OrderedDict
+from datetime import timedelta
+from packaging.version import Version
 from abc import ABC
 from collections import OrderedDict, defaultdict
 from datetime import date, timedelta
@@ -512,6 +515,38 @@ class CodebaseQuerySet(models.QuerySet):
         return new_codebases, updated_codebases, releases
 
 
+class CodebaseGitMirror(models.Model):
+    """
+    model to keep track of the state of a git mirror for a codebase
+    """
+
+    repository_name = models.CharField(max_length=100, unique=True)
+    remote_url = models.URLField(
+        blank=True,
+        help_text=_("URL of mirrored remote repository"),
+    )
+    # keep track of timestamp and releases that have been mirrored locally
+    last_local_update = models.DateTimeField(null=True, blank=True)
+    local_releases = models.ManyToManyField("CodebaseRelease", related_name="+")
+    # keep track of timestamp and releases that have been synced to the remote
+    last_remote_update = models.DateTimeField(null=True, blank=True)
+    remote_releases = models.ManyToManyField("CodebaseRelease", related_name="+")
+
+    @property
+    def latest_local_release(self):
+        return max(self.local_releases.all(), key=lambda r: Version(r.version_number))
+
+    @property
+    def latest_remote_release(self):
+        return max(self.remote_releases.all(), key=lambda r: Version(r.version_number))
+
+    @property
+    def unmirrored_local_releases(self):
+        return self.codebase.ordered_releases().exclude(
+            id__in=self.local_releases.values_list("id", flat=True)
+        )
+
+
 @add_to_comses_permission_whitelist
 class Codebase(index.Indexed, ModeratedContent, ClusterableModel):
     """
@@ -544,6 +579,13 @@ class Codebase(index.Indexed, ModeratedContent, ClusterableModel):
         "CodebaseRelease",
         null=True,
         related_name="latest_version",
+        on_delete=models.SET_NULL,
+    )
+
+    git_mirror = models.OneToOneField(
+        "CodebaseGitMirror",
+        null=True,
+        related_name="codebase",
         on_delete=models.SET_NULL,
     )
 
@@ -706,6 +748,16 @@ class Codebase(index.Indexed, ModeratedContent, ClusterableModel):
     def base_git_dir(self):
         return pathlib.Path(settings.REPOSITORY_ROOT, str(self.uuid))
 
+    def create_git_mirror(self, repository_name, **kwargs):
+        if not self.git_mirror:
+            git_mirror = CodebaseGitMirror.objects.create(
+                repository_name=repository_name,
+                **kwargs,
+            )
+            self.git_mirror = git_mirror
+            self.save()
+        return self.git_mirror
+
     @property
     def codebase_contributors_redis_key(self):
         return f"codebase:contributors:{self.identifier}"
@@ -812,13 +864,19 @@ class Codebase(index.Indexed, ModeratedContent, ClusterableModel):
             release__codebase__id=self.id
         ).count()
 
-    def ordered_releases(self, has_change_perm=False, **kwargs):
-        releases = self.releases.order_by("-version_number").filter(**kwargs)
-        return (
-            releases
-            if has_change_perm
-            else releases.filter(status=CodebaseRelease.Status.PUBLISHED)
-        )
+    def ordered_releases(self, has_change_perm=False, asc=True, **kwargs):
+        """
+        list public releases (or all release if has_change_perm is True) in ascending (default) or descending order
+        """
+        if has_change_perm:
+            releases = self.releases.filter(**kwargs)
+        else:
+            releases = self.releases.filter(
+                status=CodebaseRelease.Status.PUBLISHED, **kwargs
+            )
+        releases_list = list(releases)
+        releases_list.sort(key=lambda r: Version(r.version_number), reverse=not asc)
+        return releases_list
 
     @classmethod
     def get_list_url(cls):
