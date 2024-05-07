@@ -6,11 +6,15 @@ import re
 import shutil
 import tarfile
 import zipfile
+import filecmp
+from contextlib import contextmanager
+from packaging.version import Version
 from enum import Enum
 from functools import total_ordering
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import Optional
+from git import Actor, InvalidGitRepositoryError, Repo
 
 import bagit
 import rarfile
@@ -18,6 +22,7 @@ from django.conf import settings
 from django.core.files.storage import FileSystemStorage
 from django.core.files.uploadedfile import File
 from django.urls import reverse
+from django.utils import timezone
 from rest_framework.exceptions import ValidationError
 
 from core import fs
@@ -738,6 +743,209 @@ class CodebaseReleaseFsApi:
         self.create_or_update_codemeta(force=True)
         self.build_archive(force=True)
         return msgs
+
+
+class CodebaseGitRepositoryApi:
+    """
+    Manage a (local) git repository mirror of a codebase
+    """
+
+    def __init__(self, codebase):
+        self.codebase = codebase
+        self.mirror = codebase.git_mirror
+        if not self.mirror:
+            raise ValueError("Codebase must have a git_mirror")
+        self.repo_name = codebase.git_mirror.repository_name
+        if not self.repo_name:
+            raise ValueError("Repository name not set")
+        self.repo_dir = Path(self.codebase.base_git_dir, str(self.repo_name)).absolute()
+
+    @property
+    def committer(self):
+        return Actor("CoMSES Net", settings.EDITOR_EMAIL)
+
+    @property
+    def author(self):
+        profile = self.codebase.submitter.member_profile
+        author_email = (
+            f"{profile.github_username}@users.noreply.github.com"
+            if profile.github_username
+            else profile.email
+        )
+        return Actor(profile.name, author_email)
+
+    @contextmanager
+    def use_temporary_repo(self, from_existing=False):
+        """
+        context manager that allows for 'atomic' operations on the git repository
+        by creating a temporary copy and copying it back after the block is executed
+        """
+        original_repo_dir = self.repo_dir
+        with TemporaryDirectory() as tmpdir:
+            self.repo_dir = Path(tmpdir)
+            if from_existing:
+                shutil.copytree(original_repo_dir, self.repo_dir, dirs_exist_ok=True)
+                self.initialize(should_exist=True)
+            yield
+            if original_repo_dir.exists():
+                shutil.rmtree(original_repo_dir)
+            shutil.copytree(self.repo_dir, original_repo_dir, dirs_exist_ok=True)
+            self.repo_dir = original_repo_dir
+
+    def initialize(self, should_exist=False):
+        """
+        initialize the git repository or connect to an existing one
+
+        :param should_exist: if True, raise an error if the repository does not exist
+        """
+        if not self.repo_dir.exists():
+            if should_exist:
+                raise RuntimeError(f"Repository {self.repo_dir} does not exist")
+            self.repo_dir.mkdir(parents=True)
+        try:
+            self.repo = Repo(self.repo_dir)
+        except InvalidGitRepositoryError:
+            if should_exist:
+                raise RuntimeError(f"Repository {self.repo_dir} does not exist")
+            self.repo = Repo.init(self.repo_dir)
+        except Exception as e:
+            logger.exception(e)
+            raise RuntimeError(f"Failed to initialize git repository")
+
+    def add_release_files(self, release):
+        """
+        copy over submission package files for a release to the working tree of the git repo
+        starting from a clean directory by removing all files except .git/
+        """
+        release_fs_api: CodebaseReleaseFsApi = release.get_fs_api()
+        sip_storage = release_fs_api.get_sip_storage()
+        # clear existing file besides .git
+        for item in self.repo_dir.iterdir():
+            if item.name != ".git":
+                if item.is_dir():
+                    shutil.rmtree(item)
+                else:
+                    item.unlink()
+        # copy over files from the sip storage and add to the index
+        for file in sip_storage.list(absolute=True):
+            rel_path = file.relative_to(sip_storage.location)
+            dest_path = self.repo_dir / rel_path
+            dest_path.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy(file, dest_path)
+            self.repo.index.add([str(rel_path)])
+
+    def add_release_meta_files(self, release):
+        """
+        helper for adding all 'meta' files (readme, citation, license) for a release
+
+        TODO: missing logic for building citation and license files (should also be included in our normal archives)
+        """
+        # FIXME: README should be codebase metadata, so description + title + image, etc.
+        self._add_meta_file("README.md", release.release_notes.raw)
+        self._add_meta_file("CITATION.cff", "nothing yet")
+        self._add_meta_file("LICENSE", "nothing yet")
+
+    def _add_meta_file(self, filename, content):
+        dest_path = self.repo_dir / filename
+        with dest_path.open("w") as f:
+            f.write(content + "\n")
+        self.repo.index.add([filename])
+
+    def commit_release(self, release, tag=True):
+        """
+        commit the the release and tag it, should only be called after adding all necessary files
+        """
+        commit_msg = f"Release {release.version_number}"
+        self.repo.index.commit(
+            message=commit_msg,
+            committer=self.committer,
+            author=self.author,
+            author_date=release.last_published_on,
+            # TODO: add co-authors from contributors?
+        )
+        if tag:
+            self.repo.create_tag(f"v{release.version_number}")
+
+    def append_releases(self, releases=None):
+        """
+        add new releases to the git repository.
+        releases must be newer/higher than the latest mirrored release so that they can be added on top
+
+        this should only be used if no releases have been removed or otherwise modified since these require
+        rewriting history and this method strictly appends new releases
+
+        :param releases: list of releases to append, if None, all unmirrored releases will be appended
+        """
+        with self.use_temporary_repo(from_existing=True):
+            if not releases:
+                releases = self.mirror.unmirrored_local_releases
+            # make sure the releases are higher than the latest mirrored release
+            if not all(
+                Version(release.version_number)
+                > Version(self.mirror.latest_local_release.version_number)
+                for release in releases
+            ):
+                raise ValueError(
+                    "Releases must be higher than the latest mirrored release to append"
+                )
+            # make sure the releases are ordered by version number
+            releases = sorted(releases, key=lambda r: Version(r.version_number))
+            # append releases to the git repo
+            for release in releases:
+                self.add_release_files(release)
+                self.add_release_meta_files(release)
+                self.commit_release(release)
+        # record newly mirrored releases and update timestamp
+        self.mirror.local_releases.add(*releases)
+        self.mirror.last_local_update = timezone.now()
+        self.mirror.save()
+
+    def build(self):
+        """
+        builds or rebuilds the git repository from codebase releases
+
+        this will create an entirely new repository and should only be used if we are creating the
+        mirror for the first time or need to rebuild the entire history
+        """
+        try:
+            releases = self.codebase.ordered_releases()
+            with self.use_temporary_repo():
+                self.initialize()
+                for release in releases:
+                    self.add_release_files(release)
+                    self.add_release_meta_files(release)
+                    self.commit_release(release)
+            # record mirrored releases and update timestamp
+            self.mirror.local_releases.set(releases)
+            self.mirror.last_local_update = timezone.now()
+            self.mirror.save()
+        except Exception as e:
+            logger.exception(e)
+            raise ValidationError("Failed to build git repository")
+
+    def dirs_equal(self, dir1: Path, dir2: Path, ignore=[".git"]):
+        """
+        check if two directories are equal by recursively comparing their contents
+        excluding the files in the ignore list (default is just .git)
+
+        this will likely go unused in favor of a more efficient method for checking if a
+        release mirror (commit) is up to date
+        """
+        dir1 = Path(dir1)
+        dir2 = Path(dir2)
+        comparison = filecmp.dircmp(dir1, dir2, ignore=ignore)
+        if (
+            comparison.left_only
+            or comparison.right_only
+            or comparison.diff_files
+            or comparison.funny_files
+        ):
+            return False
+        else:
+            for subdir in comparison.common_dirs:
+                if not self.dirs_equal(dir1 / subdir, dir2 / subdir):
+                    return False
+            return True
 
 
 class ArchiveExtractor:

@@ -53,6 +53,7 @@ from core.queryset import get_viewable_objects_for_user
 from core.utils import send_markdown_email
 from core.view_helpers import get_search_queryset
 from .fs import (
+    CodebaseGitRepositoryApi,
     CodebaseReleaseFsApi,
     StagingDirectories,
     FileCategoryDirectories,
@@ -545,6 +546,9 @@ class CodebaseGitMirror(models.Model):
         return self.codebase.ordered_releases().exclude(
             id__in=self.local_releases.values_list("id", flat=True)
         )
+
+    def get_repo_api(self):
+        return CodebaseGitRepositoryApi(self.codebase)
 
 
 @add_to_comses_permission_whitelist
