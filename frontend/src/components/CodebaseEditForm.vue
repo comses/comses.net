@@ -7,6 +7,7 @@
       help="A short title describing this computational model, limited to 300 characters"
       required
     />
+    <HoneypotField />
     <MarkdownField
       class="mb-3"
       name="description"
@@ -61,9 +62,11 @@ import TextField from "@/components/form/TextField.vue";
 import TextareaField from "@/components/form/TextareaField.vue";
 import MarkdownField from "@/components/form/MarkdownField.vue";
 import TaggerField from "@/components/form/TaggerField.vue";
+import HoneypotField from "@/components/form/HoneypotField.vue";
 import FormAlert from "@/components/form/FormAlert.vue";
 import { useForm } from "@/composables/form";
 import { useCodebaseAPI, useReleaseEditorAPI } from "@/composables/api";
+import { useFormTimer, type TimerFields } from "@/composables/spam";
 
 const props = withDefaults(
   defineProps<{
@@ -94,6 +97,8 @@ type CodebaseEditFields = yup.InferType<typeof schema>;
 const { data, serverErrors, create, retrieve, update, isLoading, detailUrl } = useCodebaseAPI();
 const { editUrl } = useReleaseEditorAPI();
 
+const { loadedTime, getSubmitTime } = useFormTimer();
+
 const {
   errors,
   handleSubmit,
@@ -101,13 +106,15 @@ const {
   setValues,
   addUnsavedAlertListener,
   removeUnsavedAlertListener,
-} = useForm<CodebaseEditFields>({
+} = useForm<CodebaseEditFields & TimerFields>({
   schema,
   initialValues: {
     tags: [],
   },
   showPlaceholder: isLoading,
   onSubmit: async () => {
+    values.loadedTime = loadedTime;
+    values.submitTime = getSubmitTime();
     await createOrUpdate();
   },
 });

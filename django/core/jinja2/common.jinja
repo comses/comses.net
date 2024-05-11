@@ -324,3 +324,12 @@ Currently in <em><mark>{{ constants.DEPLOY_ENVIRONMENT }}</mark></em> mode.
     <meta property="og:description" content="{{ description }}" />
     <meta property="og:image" content="{{ absolute_image_url }}" />
 {% endmacro %}
+
+{% macro spam_detected_alert() %}
+<div class="alert alert-danger" role="alert">
+    <i class="fas fa-exclamation-triangle"></i>
+    <b>This submission has been flagged as spam and is awaiting moderator approval.</b>
+    <hr>
+    Believe this is a mistake? Please <a href="{{ slugurl('contact') }}">contact us</a>!
+</div>
+{% endmacro %}

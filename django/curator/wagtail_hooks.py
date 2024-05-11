@@ -15,7 +15,7 @@ from wagtail.contrib.modeladmin.options import (
 from wagtail.contrib.modeladmin.views import IndexView
 from wagtail import hooks
 
-from core.models import Event, Job
+from core.models import Event, Job, SpamContent
 from library.models import CodebaseRelease, PeerReview
 from .models import TagCleanup
 
@@ -114,6 +114,34 @@ class TagCleanupAdmin(ModelAdmin):
     ordering = ("id",)
 
 
+class SpamContentAdmin(ModelAdmin):
+    # FIXME: work in progress
+    # ref: https://wagtail-modeladmin.readthedocs.io/en/latest/usage.html
+    model = SpamContent
+    base_url_path = "spam"
+    menu_label = "Spam Content"
+    menu_icon = "warning"
+    add_to_settings_menu = False
+    exclude_from_explorer = False
+    add_to_admin_menu = True
+    list_display = (
+        "content_object_title",
+        "content_object_url",
+        "content_type",
+        "status",
+        "date_created",
+        "last_modified",
+        "review_notes",
+    )
+    search_fields = ("status", "content_type", "content_object", "review_notes")
+
+    def content_object_title(self, obj):
+        return obj.content_object.title
+
+    def content_object_url(self, obj):
+        return obj.content_object.get_absolute_url()
+
+
 @hooks.register("construct_homepage_panels")
 def add_recent_activity_panel(request, panels):
     panels.append(RecentActivityPanel())
@@ -177,3 +205,4 @@ class RecentActivityPanel(Component):
 
 
 modeladmin_register(TagCleanupAdmin)
+modeladmin_register(SpamContentAdmin)

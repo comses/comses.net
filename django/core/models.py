@@ -8,6 +8,8 @@ from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group, User
 from django.contrib.postgres.fields import ArrayField
+from django.contrib.contenttypes.fields import GenericForeignKey
+from django.contrib.contenttypes.models import ContentType
 from django.db import models, transaction
 from django.urls import reverse
 from django.utils import timezone
@@ -88,6 +90,36 @@ class SiteSettings(BaseSiteSetting):
 
     def deploy_environment(self):
         return settings.DEPLOY_ENVIRONMENT
+
+
+class SpamContent(models.Model):
+    class Status(models.TextChoices):
+        UNREVIEWED = "unreviewed", _("Unreviewed")
+        CONFIRMED = "confirmed", _("Confirmed")
+        REJECTED = "rejected", _("Rejected")
+
+    status = models.CharField(
+        choices=Status.choices,
+        default=Status.UNREVIEWED,
+        max_length=32,
+    )
+    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
+    object_id = models.PositiveIntegerField()
+    content_object = GenericForeignKey("content_type", "object_id")
+    date_created = models.DateTimeField(auto_now_add=True)
+    last_modified = models.DateTimeField(auto_now=True)
+    review_notes = models.TextField(blank=True, null=True)
+
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        self.update_related_object()
+
+    def update_related_object(self):
+        obj = self.content_object
+        if hasattr(obj, "is_marked_spam"):
+            obj.spam_content = self
+            obj.is_marked_spam = self.status != self.Status.REJECTED
+            obj.save()
 
 
 @register_setting
@@ -548,6 +580,9 @@ class EventQuerySet(models.QuerySet):
     def live(self, **kwargs):
         return self.filter(is_deleted=False, **kwargs)
 
+    def exclude_spam(self):
+        return self.exclude(is_marked_spam=True)
+
     def latest_for_feed(self, number=10):
         return (
             self.live()
@@ -575,6 +610,10 @@ class Event(index.Indexed, ClusterableModel):
     tags = ClusterTaggableManager(through=EventTag, blank=True)
     external_url = models.URLField(blank=True)
     is_deleted = models.BooleanField(default=False)
+    spam_content = models.ForeignKey(SpamContent, null=True, on_delete=models.SET_NULL)
+    # need to have this denormalized field to allow for filtering out spam content
+    # https://docs.wagtail.org/en/stable/topics/search/indexing.html#filtering-on-index-relatedfields
+    is_marked_spam = models.BooleanField(default=False)
 
     objects = EventQuerySet.as_manager()
 
@@ -585,6 +624,7 @@ class Event(index.Indexed, ClusterableModel):
     search_fields = [
         index.SearchField("title"),
         index.SearchField("description"),
+        index.FilterField("is_marked_spam"),
         index.FilterField("is_deleted"),
         index.FilterField("date_created"),
         index.FilterField("start_date"),
@@ -676,6 +716,9 @@ class JobQuerySet(models.QuerySet):
     def live(self, **kwargs):
         return self.filter(is_deleted=False, **kwargs)
 
+    def exclude_spam(self):
+        return self.exclude(is_marked_spam=True)
+
     def latest_for_feed(self, number=10):
         return (
             self.live()
@@ -699,6 +742,10 @@ class Job(index.Indexed, ClusterableModel):
     tags = ClusterTaggableManager(through=JobTag, blank=True)
     external_url = models.URLField(blank=True)
     is_deleted = models.BooleanField(default=False)
+    spam_content = models.ForeignKey(SpamContent, null=True, on_delete=models.SET_NULL)
+    # need to have this denormalized field to allow for filtering out spam content
+    # https://docs.wagtail.org/en/stable/topics/search/indexing.html#filtering-on-index-relatedfields
+    is_marked_spam = models.BooleanField(default=False)
 
     submitter = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -711,6 +758,7 @@ class Job(index.Indexed, ClusterableModel):
     search_fields = [
         index.SearchField("title"),
         index.SearchField("description"),
+        index.FilterField("is_marked_spam"),
         index.FilterField("is_deleted"),
         index.FilterField("date_created"),
         index.FilterField("last_modified"),

@@ -14,6 +14,7 @@ from taggit.models import Tag
 
 from .validators import validate_affiliations
 from .models import Event, Job, MemberProfile
+from .mixins import SpamCatcherSerializerMixin
 
 logger = logging.getLogger(__name__)
 
@@ -310,7 +311,7 @@ class IsoDateField(serializers.DateField):
         super().__init__(*args, **kwargs)
 
 
-class EventSerializer(serializers.ModelSerializer):
+class EventSerializer(serializers.ModelSerializer, SpamCatcherSerializerMixin):
     submitter = RelatedUserSerializer(
         read_only=True, help_text=_("User that created the event"), label="Submitter"
     )
@@ -330,6 +331,7 @@ class EventSerializer(serializers.ModelSerializer):
     description = MarkdownField()
     is_expired = serializers.BooleanField(read_only=True)
     is_started = serializers.BooleanField(read_only=True)
+    is_marked_spam = serializers.BooleanField(read_only=True)
 
     tags = TagSerializer(many=True, label="Tags")
 
@@ -340,6 +342,7 @@ class EventSerializer(serializers.ModelSerializer):
         return update(super().update, instance, validated_data)
 
     def validate(self, attrs):
+        attrs = super().validate(attrs)
         date_created = attrs.get("date_created", timezone.now())
         early_registration_deadline_name = "early_registration_deadline"
         early_registration_deadline = attrs.get(early_registration_deadline_name)
@@ -416,7 +419,7 @@ class EventCalendarSerializer(serializers.ModelSerializer):
         )
 
 
-class JobSerializer(serializers.ModelSerializer):
+class JobSerializer(serializers.ModelSerializer, SpamCatcherSerializerMixin):
     submitter = RelatedUserSerializer(
         read_only=True,
         help_text=_("User that created the job description"),
@@ -433,6 +436,7 @@ class JobSerializer(serializers.ModelSerializer):
     )
     description = MarkdownField()
     is_expired = serializers.BooleanField(read_only=True)
+    is_marked_spam = serializers.BooleanField(read_only=True)
     last_modified = serializers.DateTimeField(read_only=True)
     application_deadline = IsoDateField(allow_null=True, required=False)
     tags = TagSerializer(many=True, label="Tags")
@@ -458,4 +462,5 @@ class JobSerializer(serializers.ModelSerializer):
             "tags",
             "external_url",
             "is_expired",
+            "is_marked_spam",
         )
