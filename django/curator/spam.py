@@ -66,16 +66,18 @@ class PresetContextID(Enum):
 class SpamDetectionContext:
     """
     Manages the spam detection process, including setting up classifiers, encoders, and handling data.
+
+    specific to Users + MemberProfile + UserSpamStatus
     """
 
-    def __init__(self, contex_id: PresetContextID):
+    def __init__(self, context_id: PresetContextID):
         """
         Initializes a spam detection context with a specified context configuration.
 
         Params:
             context_id (PresetContextID): The context ID from PresetContextID enum defining the configuration.
         """
-        self.contex_id = contex_id
+        self.context_id = context_id
         self.classifier: SpamClassifier = None
         self.encoder: Encoder = None
         self.categorical_encoder = CategoricalFieldEncoder()
@@ -182,7 +184,7 @@ class SpamDetectionContext:
 
         model = self.classifier.load()
         result_df = self.classifier.predict(model, feats)
-        processor.save_predictions(result_df, self.contex_id)
+        processor.save_predictions(result_df, self.context_id)
 
 
 class SpamDetectionContextFactory:
@@ -203,18 +205,18 @@ class SpamDetectionContextFactory:
         Returns:
             SpamDetectionContext: The newly created spam detection context.
         """
-        spam_detection_contex = SpamDetectionContext(context_id)
+        spam_detection_context = SpamDetectionContext(context_id)
         context_id_value = context_id.value.split()
 
         classifier_class_ = getattr(spam_classifiers, context_id_value[0])
         selected_classifier = classifier_class_(context_id.name)
-        spam_detection_contex.set_classifier(selected_classifier)
+        spam_detection_context.set_classifier(selected_classifier)
 
         encoder_class_ = getattr(spam_classifiers, context_id_value[1])
         selected_encoder = encoder_class_(context_id.name)
-        spam_detection_contex.set_encoder(selected_encoder)
+        spam_detection_context.set_encoder(selected_encoder)
 
         selected_fields = PresetContextID.fields(context_id.value)
-        spam_detection_contex.set_fields(selected_fields)
+        spam_detection_context.set_fields(selected_fields)
 
-        return spam_detection_contex
+        return spam_detection_context

@@ -68,7 +68,9 @@ class UserSpamStatusProcessor:
             "numerical": ["user_id", "label"],
         }
 
+        # bidirectional map
         self.db_df_field_mapping = {
+            # FIXME: could probably build this dynamically from the two lists
             self.db_fields[0]: self.df_fields[0],
             self.db_fields[1]: self.df_fields[1],
             self.db_fields[2]: self.df_fields[2],
