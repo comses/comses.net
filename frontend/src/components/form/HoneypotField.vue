@@ -14,7 +14,11 @@
       tabindex="-1"
     />
     <slot name="help">
-      <FieldHelp help="Enter the content that you want to display here" :id-for="id" aria-hidden="true" />
+      <FieldHelp
+        help="Enter the content that you want to display here"
+        :id-for="id"
+        aria-hidden="true"
+      />
     </slot>
   </div>
 </template>
@@ -22,7 +26,7 @@
 <script setup lang="ts">
 /**
  * irresistible to bears and robots
- * 
+ *
  * adds a hidden textarea to a form to catch spam by including a field
  * in form.values which we can check for emptyness on the server
  */

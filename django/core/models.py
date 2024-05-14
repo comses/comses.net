@@ -108,7 +108,16 @@ class SpamContent(models.Model):
     content_object = GenericForeignKey("content_type", "object_id")
     date_created = models.DateTimeField(auto_now_add=True)
     last_modified = models.DateTimeField(auto_now=True)
-    review_notes = models.TextField(blank=True, null=True)
+    review_notes = models.TextField(
+        blank=True, null=True, help_text=_("Additional notes left by the reviewer")
+    )
+    detection_method = models.CharField(max_length=255, blank=True, null=True)
+    detection_details = models.JSONField(
+        default=dict,
+        help_text=_(
+            "Extra context from the detection method, e.g. NLP results, elapsed time"
+        ),
+    )
 
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)

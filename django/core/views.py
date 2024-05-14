@@ -42,7 +42,7 @@ from taggit.models import Tag
 from wagtail.images.models import Image
 
 from library.models import Codebase
-from .models import Event, FollowUser, Job, MemberProfile, SpamContent
+from .models import Event, FollowUser, Job, MemberProfile
 from .serializers import (
     EventSerializer,
     JobSerializer,
