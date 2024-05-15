@@ -246,7 +246,7 @@ class SpamCatcherViewSetMixin:
     """
 
     def perform_create(self, serializer: serializers.Serializer):
-        super().perform_update(serializer)
+        super().perform_create(serializer)
         self.handle_spam_detection(serializer)
 
     def perform_update(self, serializer):

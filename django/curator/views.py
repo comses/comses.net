@@ -1,13 +1,16 @@
 from django.contrib.auth.decorators import permission_required
+from django.contrib import messages
+from django.shortcuts import get_object_or_404, redirect
 from django.http import HttpResponseRedirect, HttpResponseBadRequest
+from django.urls import reverse
 from django.views.decorators.http import require_POST
-from wagtail.contrib.modeladmin.helpers import AdminURLHelper
+from wagtail_modeladmin.helpers import AdminURLHelper
 
 from curator.models import TagCleanup
 from curator.wagtail_hooks import TagCleanupAction
+from core.models import SpamContent
 
 import bleach
-
 
 TAG_CLEANUP_ACTIONS = {
     TagCleanupAction.process.name: TagCleanup.objects.process,
@@ -32,3 +35,27 @@ def process_pending_tag_cleanups(request):
         return HttpResponseBadRequest(f"invalid action: {bleach.clean(action_name)}")
     action()
     return HttpResponseRedirect(AdminURLHelper(TagCleanup).index_url)
+
+
+def confirm_spam_view(request, instance_id):
+    spam_content = get_object_or_404(SpamContent, id=instance_id)
+    deactivate_user = request.GET.get("deactivate_user") == "true"
+    if deactivate_user:
+        user = spam_content.content_object.submitter
+        user.is_active = False
+        user.save()
+        messages.success(
+            request, f"Content confirmed as spam and user: {user} deactivated."
+        )
+    spam_content.status = SpamContent.Status.CONFIRMED
+    spam_content.save()
+    messages.success(request, f"Content confirmed as spam.")
+    return HttpResponseRedirect(AdminURLHelper(SpamContent).index_url)
+
+
+def reject_spam_view(request, instance_id):
+    spam_content = get_object_or_404(SpamContent, id=instance_id)
+    spam_content.status = SpamContent.Status.REJECTED
+    spam_content.save()
+    messages.success(request, "Content marked as not spam.")
+    return HttpResponseRedirect(AdminURLHelper(SpamContent).index_url)

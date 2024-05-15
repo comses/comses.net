@@ -409,7 +409,8 @@ class CodebaseViewSet(SpamCatcherViewSetMixin, CommonViewSetMixin, HtmlNoDeleteV
         return self.queryset.accessible(user=self.request.user)
 
     def perform_create(self, serializer):
-        codebase = serializer.save()
+        super().perform_create(serializer)
+        codebase = serializer.instance
         return codebase.get_or_create_draft()
 
     def retrieve(self, request, *args, **kwargs):
