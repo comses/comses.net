@@ -117,7 +117,6 @@ const {
 onMounted(async () => {
   if (props.identifier) {
     await retrieve(props.identifier);
-    console.log(data.value);
     setValuesWithLoadTime(data.value);
   }
   addUnsavedAlertListener();

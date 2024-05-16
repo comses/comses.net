@@ -40,64 +40,76 @@
     </div>
     <Sortable
       :list="releaseContributors"
-      :item-key="item => item"
+      :item-key="item => item.contributor.email"
       class="list-group my-3"
       @end="sort"
       tag="ul"
     >
       <template #item="{ element }">
         <li
-          :key="element"
+          :key="element.contributor.id"
           class="list-group-item d-flex justify-content-between"
           style="cursor: move"
         >
-          <div class="d-flex">
-            <div class="align-self-center pe-3">
-              <i class="fas fa-grip-vertical text-muted"></i>
-            </div>
-            <div>
-              <div class="d-flex align-items-end">
-                <h5 class="m-0">{{ element.contributor.name }}</h5>
-                <small class="text-muted ms-2">({{ roleDisplay(element) }})</small>
-                <span v-if="element.includeInCitation" class="badge bg-info ms-2">citable</span>
+          <div class="container">
+            <div class="row justify-content-start align-items-center">
+              <div class="col-9">
+                <div class="d-flex flex-row">
+                  <div class="align-self-center pe-3">
+                    <i class="fas fa-grip-vertical text-muted"></i>
+                  </div>
+                  <div class="col">
+                    <h5 class="m-0">
+                      <a
+                        :href="element.profileUrl"
+                        target="_blank"
+                        data-bs-toggle="tooltip"
+                        :title="element.contributor.name + '\'s User Profile'"
+                      >
+                        <span v-if="element.contributor.user">
+                          <i class="fas fa-user fa-xs"></i>
+                          {{ element.contributor.name }}
+                        </span>
+                        <span v-else>
+                          {{ element.contributor.name }}
+                        </span>
+                      </a>
+                    </h5>
+                    <div>
+                      <small class="text-muted"> ({{ roleDisplay(element) }})</small>
+                    </div>
+                  </div>
+                </div>
               </div>
-              <small>
-                <a :href="element.profileUrl" target="_blank">
-                  <span v-if="element.contributor.user">
-                    <i class="fas fa-user"></i>
-                    {{ element.contributor.user.username }}
-                  </span>
-                  <span v-else>
-                    {{ element.contributor.name }}
-                  </span>
-                </a>
-              </small>
+              <div class="col-1 d-flex align-items-center">
+                <span v-if="element.includeInCitation" class="badge bg-info">citable</span>
+              </div>
+              <div class="col-2">
+                <button
+                  type="button"
+                  class="btn btn-link btn-sm me-2"
+                  :class="{ disabled: reordered }"
+                  @click="
+                    editCandidate = element;
+                    editModal?.show();
+                  "
+                >
+                  <small><i class="fas fa-edit"></i> Edit</small>
+                </button>
+                <button
+                  v-if="releaseContributors.length > 1"
+                  type="button"
+                  class="btn btn-link text-danger btn-sm"
+                  :class="{ disabled: reordered || releaseContributors.length === 1 }"
+                  @click="
+                    removalCondidate = element;
+                    removeConfirmationModal?.show();
+                  "
+                >
+                  <small><i class="fas fa-trash"></i> Remove</small>
+                </button>
+              </div>
             </div>
-          </div>
-          <div class="d-flex align-items-center">
-            <button
-              type="button"
-              class="btn btn-link btn-sm me-2"
-              :class="{ disabled: reordered }"
-              @click="
-                editCandidate = element;
-                editModal?.show();
-              "
-            >
-              <small><i class="fas fa-edit"></i> Edit</small>
-            </button>
-            <button
-              v-if="releaseContributors.length > 1"
-              type="button"
-              class="btn btn-link text-danger btn-sm"
-              :class="{ disabled: reordered || releaseContributors.length === 1 }"
-              @click="
-                removalCondidate = element;
-                removeConfirmationModal?.show();
-              "
-            >
-              <small><i class="fas fa-trash"></i> Remove</small>
-            </button>
           </div>
         </li>
       </template>

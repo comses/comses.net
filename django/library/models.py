@@ -136,6 +136,11 @@ class Contributor(index.Indexed, ClusterableModel):
     middle_name = models.CharField(max_length=100, blank=True)
     family_name = models.CharField(max_length=100, blank=True)
     affiliations = ClusterTaggableManager(through=ContributorAffiliation)
+
+    json_affiliations = models.JSONField(
+         default=list, help_text=_("JSON-LD list of affiliated institutions")
+    )
+
     type = models.CharField(
         max_length=16,
         choices=(("person", "person"), ("organization", "organization")),
@@ -151,6 +156,7 @@ class Contributor(index.Indexed, ClusterableModel):
         index.SearchField("given_name"),
         index.SearchField("family_name"),
         index.RelatedFields("affiliations", [index.SearchField("name")]),
+        index.SearchField("json_affiliations_string"),
         index.SearchField("email"),
         index.RelatedFields(
             "user",
@@ -162,6 +168,20 @@ class Contributor(index.Indexed, ClusterableModel):
             ],
         ),
     ]
+
+    @cached_property
+    def json_affiliations_string(self):
+        return ", ".join(
+            [
+                self.to_affiliation_string(affiliation)
+                for affiliation in self.json_affiliations
+            ]
+        )
+
+    @classmethod
+    def to_affiliation_string(cls, afl):
+        # e.g., "Arizona State University https://www.asu.edu ASU"
+        return f"{afl.get('name')} {afl.get('url')} {afl.get('acronym')}"
 
     @staticmethod
     def from_user(user):
@@ -214,7 +234,7 @@ class Contributor(index.Indexed, ClusterableModel):
         if self.orcid_url:
             codemeta["@id"] = self.orcid_url
         if self.affiliations.exists():
-            codemeta["affiliation"] = self.formatted_affiliations
+            codemeta["affiliation"] = self.formatted_json_affiliations
         if self.email:
             codemeta["email"] = self.email
         return codemeta
@@ -260,8 +280,16 @@ class Contributor(index.Indexed, ClusterableModel):
         return ", ".join(self.affiliations.values_list("name", flat=True))
 
     @property
+    def formatted_json_affiliations(self):
+        return ", ".join(item["name"] for item in self.json_affiliations)
+
+    @property
     def primary_affiliation_name(self):
         return self.affiliations.first().name if self.affiliations.exists() else ""
+
+    @property
+    def primary_json_affiliation_name(self):
+        return self.json_affiliations[0]["name"] if self.json_affiliations else ""
 
     def get_profile_url(self):
         user = self.user

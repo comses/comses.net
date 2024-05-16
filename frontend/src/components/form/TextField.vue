@@ -12,6 +12,7 @@
       :placeholder="placeholder"
       v-bind="attrs"
       :class="{ 'form-control': true, 'is-invalid': error }"
+      :disabled="disabled"
     />
     <slot name="help">
       <FieldHelp v-if="help" :help="help" :id-for="id" />
@@ -36,6 +37,7 @@ export interface TextFieldProps {
   label?: string;
   help?: string;
   placeholder?: string;
+  disabled?: boolean;
   required?: boolean;
   // generally it is better to leave type="text" for url/email/etc. inputs so that the browser
   // does not perform any validation before the form/yup does leading to visual inconsistency

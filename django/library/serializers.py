@@ -1,6 +1,7 @@
 import logging
 from collections import defaultdict
 
+from django.db import models
 from django.contrib.auth.models import User
 from django.urls import reverse
 from django.utils import timezone
@@ -66,7 +67,85 @@ class ContributorSerializer(serializers.ModelSerializer):
     id = serializers.IntegerField(read_only=True)
     user = RelatedUserSerializer(required=False, allow_null=True)
     affiliations = TagSerializer(many=True)
+
+    json_affiliations = models.JSONField(
+        default=list, help_text=_("JSON-LD list of affiliated institutions")
+    )
+    mutable = serializers.SerializerMethodField(read_only=True)
+
     profile_url = serializers.SerializerMethodField(read_only=True)
+    def get_mutable(self, obj):
+        return self._is_exclusive_to_one_codebase(obj)
+
+    def _trying_to_modify_attributes(self, instance, validated_data):
+        try:
+            for key in [
+                "id",
+                "user_id",
+                "given_name",
+                "middle_name",
+                "family_name",
+                "email",
+                "type",
+                "json_affiliations",
+            ]:
+                if key in validated_data and getattr(instance, key) != validated_data[key]:
+                    if key == "affiliations":
+                        instance_affiliations = getattr(instance, "affiliations", None)
+                        incoming_affiliations = validated_data.get("affiliations", None)
+
+                        if instance_affiliations and instance_affiliations.count() == 0 and not incoming_affiliations:
+                            logger.debug(
+                                "Skipping update for affiliations because both instance.affiliations and validated_data.affiliations are None and empty list respectively")
+                            continue
+
+                    logger.debug(
+                        f"{key} is not the same! {getattr(instance, key)} != {validated_data[key]}. Contributors can only be updated when they are exclusive to one codebase"
+                    )
+                    return True
+            logger.debug(
+                f"not trying to update, all attributes match!"
+            )
+            return False
+        except Exception as e:
+            logger.error(
+                f"Some Exception here {e}"
+            )
+            return True
+
+    def _is_exclusive_to_one_codebase(self, obj):
+        distinct_codebases = (
+            ReleaseContributor.objects.filter(contributor=obj)
+            .values_list("release__codebase", flat=True)
+            .distinct()
+        )
+
+        times_used_in_codebases = distinct_codebases.count()
+        return times_used_in_codebases <= 1
+    def _is_not_used_or_used_by_current_release_only(self, contributor):
+        # codebase instead of release so we allow a submitter to update a contributor on their own codebase
+        release_id = self.context.get("release_id")
+        if not release_id:
+            return False
+
+        distinct_codebases = (
+            ReleaseContributor.objects.filter(contributor=contributor)
+            .values_list("release__codebase", flat=True)
+            .distinct()
+        )
+
+        times_used_in_codebases = distinct_codebases.count()
+        logger.debug(f"distinct_codebases={distinct_codebases}")
+
+        if times_used_in_codebases == 0:
+            return True
+        elif times_used_in_codebases == 1:
+            if ReleaseContributor.objects.filter(contributor=contributor).first().release_id == release_id:
+                return True
+            else:
+                return False
+        else:
+            return False
 
     def get_existing_contributor(self, validated_data):
         user = validated_data.get("user")
@@ -98,6 +177,7 @@ class ContributorSerializer(serializers.ModelSerializer):
             user, self.instance = self.get_existing_contributor(validated_data)
             if user:
                 kwargs["user_id"] = user.id
+
         self.validated_data.pop("user")
         return super().save(**kwargs)
 
@@ -111,19 +191,46 @@ class ContributorSerializer(serializers.ModelSerializer):
             )
 
     def update(self, instance, validated_data):
-        affiliations = validated_data.pop("affiliations", None)
-        validated_data.pop("given_name", None)
-        validated_data.pop("family_name", None)
+        if not self._is_not_used_or_used_by_current_release_only(instance):
+            if self._trying_to_modify_attributes(instance, validated_data):
+                raise ValidationError(
+                    _(
+                        "Contributors can only be updated when they are exclusive to one codebase"
+                    )
+                )
+        # Server side validation:
+        # if a contributor is made from a user, do not allow to modify it's data.
+        # POP following:
+        # 'given_name'
+        # 'middle_name'
+        # 'family_name'
+        # 'email'
+        # 'type'
+        # 'affiliations'
+        # 'json_affiliations'
+        user_id  = validated_data.pop("user_id", None)
+        if user_id:
+            validated_data.pop('given_name', None)
+            validated_data.pop('middle_name', None)
+            validated_data.pop('family_name', None)
+            validated_data.pop('email', None)
+            validated_data.pop('type', None)
+            validated_data.pop('affiliations', None)
+            validated_data.pop('json_affiliations', None)
+
         instance = super().update(instance, validated_data)
-        if affiliations:  # dont overwrite affiliations if not provided
-            affiliations_serializer = TagSerializer(
-                many=True, data=affiliations, context=self.context
-            )
-            set_tags(instance, affiliations_serializer, "affiliations")
+        # affiliations = validated_data.pop("affiliations", None)
+        #
+        # if affiliations:  # dont overwrite affiliations if not provided
+        #     affiliations_serializer = TagSerializer(
+        #         many=True, data=affiliations, context=self.context
+        #     )
+        #     set_tags(instance, affiliations_serializer, "affiliations")
         instance.save()
         return instance
 
     def create(self, validated_data):
+        print(f"CREATE TRIGGERED with: {validated_data}")
         affiliations_serializer = TagSerializer(
             many=True, data=validated_data.pop("affiliations")
         )
@@ -144,10 +251,12 @@ class ContributorSerializer(serializers.ModelSerializer):
             "user",
             "type",
             "affiliations",
+            "json_affiliations",
             "primary_affiliation_name",
+            "primary_json_affiliation_name",
             "profile_url",
+            "mutable",
         )
-
 
 class ListReleaseContributorSerializer(serializers.ListSerializer):
     def validate(self, attrs):
@@ -157,11 +266,14 @@ class ListReleaseContributorSerializer(serializers.ListSerializer):
 
     def check_unique_users(self, contributors):
         user_map = defaultdict(list)
+        contributors_map = defaultdict(list)
         for contributor in contributors:
             raw_user = contributor["user"]
             if raw_user:
                 username = raw_user["username"]
                 user_map[username].append(contributor)
+            else:
+                contributors_map[contributor["email"]].append(contributor)
 
         error_messages = []
         for username, related_contributors in user_map.items():
@@ -169,8 +281,15 @@ class ListReleaseContributorSerializer(serializers.ListSerializer):
             if related_contributor_count > 1:
                 error_messages.append(
                     (
-                        f'Validation Error: "{username}" was listed {related_contributor_count} times in the contributors list.'
-                        f"Please remove all duplicates and assign multiple roles to them instead."
+                        f'Contributor with username "{username}" was listed {related_contributor_count} times in the contributors list. Please remove all duplicates and assign multiple roles to them instead.'
+                    )
+                )
+        for email, related_contributors in contributors_map.items():
+            related_contributor_count = len(related_contributors)
+            if related_contributor_count > 1:
+                error_messages.append(
+                    (
+                        f'Contributor with email "{email}" was listed {related_contributor_count} times in the contributors list. Please remove all duplicates and assign multiple roles to them instead.'
                     )
                 )
         if error_messages:
@@ -228,7 +347,7 @@ class ReleaseContributorSerializer(serializers.ModelSerializer):
     @staticmethod
     def create_unsaved(context, validated_data):
         raw_contributor = validated_data.pop("contributor")
-        contributor_serializer = ContributorSerializer(data=raw_contributor)
+        contributor_serializer = ContributorSerializer(data=raw_contributor, context=context)
         contributor_serializer.is_valid(raise_exception=True)
         contributor = contributor_serializer.save()
 

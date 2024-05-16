@@ -1,6 +1,6 @@
 <template>
   <div class="modal-body">
-    <form @submit="handleSubmit" :id="id">
+    <form @submit="handleSubmit" @reset="handleReset" :id="id">
       <span v-if="showCustomInput">
         <SelectField
           class="mb-3"
@@ -22,31 +22,64 @@
               show-affiliation
             />
           </div>
-          <div class="card-body">
-            <TextField
-              v-if="!isPerson"
-              class="mb-3"
-              name="givenName"
-              label="Organization Name"
-              required
-            />
-            <div v-else class="row">
-              <div class="col-4 pe-0">
-                <TextField class="mb-3" name="givenName" label="First Name" required />
+          <div style="position: relative">
+            <!-- Container element with relative positioning -->
+            <div
+              v-if="fromUser"
+              class="position-absolute top-0 start-0 w-100 h-100 bg-light opacity-50"
+              style="z-index: 3"
+            ></div>
+            <div class="card-body">
+              <TextField
+                v-if="!isPerson"
+                class="mb-3"
+                name="givenName"
+                label="Organization Name"
+                required
+              />
+              <div v-else class="row">
+                <div class="col-4 pe-0">
+                  <TextField
+                    class="mb-3"
+                    name="givenName"
+                    label="First Name"
+                    required
+                    :disabled="fromUser"
+                  />
+                </div>
+                <div class="col-3 pe-0">
+                  <TextField
+                    class="mb-3"
+                    name="middleName"
+                    label="Middle Name"
+                    :disabled="fromUser"
+                  />
+                </div>
+                <div class="col-5">
+                  <TextField
+                    class="mb-3"
+                    name="familyName"
+                    label="Last Name"
+                    required
+                    :disabled="fromUser"
+                  />
+                </div>
               </div>
-              <div class="col-3 pe-0">
-                <TextField class="mb-3" name="middleName" label="Middle Name" />
-              </div>
-              <div class="col-5">
-                <TextField class="mb-3" name="familyName" label="Last Name" required />
-              </div>
+              <TextField
+                v-if="isPerson"
+                class="mb-3"
+                name="email"
+                label="Email"
+                required
+                :disabled="fromUser"
+              />
+              <ResearchOrgListField
+                name="jsonAffiliations"
+                placeholder="Type to find organizations"
+                label="Affiliations"
+                :disabled="fromUser"
+              />
             </div>
-            <TextField v-if="isPerson" class="mb-3" name="email" label="Email" required />
-            <ResearchOrgListField
-              name="affiliations"
-              placeholder="Type to find organizations"
-              label="Affiliations"
-            />
           </div>
         </div>
       </span>
@@ -60,6 +93,7 @@
         placeholder="Add contributor's role(s)"
         multiple
         required
+        :disabled="fromUser"
       />
       <CheckboxField name="includeInCitation" label="Include in Citation?" />
       <FormAlert :validation-errors="Object.values(errors)" :server-errors="serverErrors" />
@@ -67,7 +101,7 @@
   </div>
   <div class="modal-footer border-0">
     <button
-      type="button"
+      type="reset"
       class="btn btn-outline-gray"
       :class="{ disabled: isLoading }"
       data-bs-dismiss="modal"
@@ -155,9 +189,21 @@ const schema = yup.object().shape({
       })
     )
     .label("Affiliations"),
+  jsonAffiliations: yup
+    .array()
+    .of(
+      yup.object({
+        name: yup.string().required(),
+        url: yup.string().url().nullable(),
+        acronym: yup.string().nullable(),
+        rorId: yup.string().nullable(), // assuming "rorId" is the correct key, not "ror_id"
+      })
+    )
+    .label("JSON Affiliations"),
   type: yup.string().oneOf(["person", "organization"]).default("person"),
   roles: yup.array().of(yup.string()).min(1).label("Roles"),
   includeInCitation: yup.bool().required().label("Include in citation"),
+  mutable: yup.bool().label("Mutable"),
 });
 
 type ContributorFields = yup.InferType<typeof schema>;
@@ -168,11 +214,13 @@ const initialValues: ContributorFields = {
   type: "person",
   user: null,
   affiliations: [],
+  jsonAffiliations: [],
+  mutable: true,
   roles: [],
   includeInCitation: true,
 };
 
-const { errors, handleSubmit, values, setValues } = useForm<ContributorFields>({
+const { errors, handleSubmit, handleReset, values, setValues } = useForm<ContributorFields>({
   schema,
   initialValues,
   onSubmit: async () => {
@@ -188,6 +236,7 @@ const { errors, handleSubmit, values, setValues } = useForm<ContributorFields>({
         familyName: values.familyName,
         middleName: values.middleName,
         affiliations: values.affiliations,
+        jsonAffiliations: values.jsonAffiliations,
       },
       roles: values.roles,
       includeInCitation: values.includeInCitation,
@@ -203,6 +252,7 @@ const { errors, handleSubmit, values, setValues } = useForm<ContributorFields>({
     } else {
       contributors.push(newContributor);
     }
+
     await updateContributors(store.identifier, store.versionNumber, contributors);
     if (serverErrors.value.length === 0) {
       isLoading.value = true;
@@ -216,17 +266,28 @@ const { errors, handleSubmit, values, setValues } = useForm<ContributorFields>({
 
 const isLoading = ref(false);
 const isPerson = computed(() => values.type === "person");
-
 const hasName = computed(() => values.user || values.givenName);
+// used to disable UI inputs if prefilled from existing user or contributor is not mutable (some other release uses the contributor)
+const fromUser = computed(() => !!values.user || !values.mutable);
 
 function populateFromReleaseContributor(contributor: ReleaseContributor) {
+  const user = contributor.contributor.user;
+
+  // Contributor has an associated user! Take values from the user.
+  const givenName = user ? user.memberProfile.givenName : contributor.contributor.givenName;
+  const familyName = user ? user.memberProfile.familyName : contributor.contributor.familyName;
+
   setValues({
+    // set this to get the id from autocomplete contributor
+    // id: contributor.contributor.id,
     user: contributor.contributor.user || null,
     email: contributor.contributor.email,
-    givenName: contributor.contributor.givenName,
-    familyName: contributor.contributor.familyName,
+    givenName: givenName,
+    familyName: familyName,
     middleName: contributor.contributor.middleName,
     affiliations: contributor.contributor.affiliations,
+    jsonAffiliations: contributor.contributor.jsonAffiliations,
+    mutable: contributor.contributor.mutable,
     type: contributor.contributor.type,
     roles: contributor.roles,
     includeInCitation: contributor.includeInCitation,
@@ -242,6 +303,8 @@ function populateFromContributor(contributor: Contributor | null) {
 
 function resetContributor() {
   setValues(initialValues);
+  serverErrors.value = [];
+  handleReset();
 }
 
 function populateFromUser(user: any) {
@@ -250,7 +313,9 @@ function populateFromUser(user: any) {
     user,
     givenName: user.givenName,
     familyName: user.familyName,
+    middleName: "",
     email: user.email,
+    jsonAffiliations: user.affiliations,
   });
 }
 
