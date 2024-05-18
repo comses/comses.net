@@ -433,8 +433,7 @@ class EventViewSet(
 ):
     serializer_class = EventSerializer
     queryset = (
-        Event.objects.live()
-        .with_tags()
+        Event.objects.with_tags()
         .with_submitter()
         .with_expired()
         .with_started()
@@ -454,7 +453,7 @@ class EventViewSet(
     def get_queryset(self):
         # exclude spam from list view
         if self.action == "list":
-            return self.queryset.exclude_spam()
+            return self.queryset.public()
         return self.queryset
 
     def retrieve(self, request, *args, **kwargs):
@@ -566,8 +565,7 @@ class JobViewSet(
     serializer_class = JobSerializer
     pagination_class = SmallResultSetPagination
     queryset = (
-        Job.objects.live()
-        .with_tags()
+        Job.objects.with_tags()
         .with_submitter()
         .with_expired()
         .order_by("-date_created")
@@ -583,7 +581,7 @@ class JobViewSet(
     def get_queryset(self):
         # exclude spam from list view
         if self.action == "list":
-            return self.queryset.exclude_spam()
+            return self.queryset.public()
         return self.queryset
 
     def retrieve(self, request, *args, **kwargs):

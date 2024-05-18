@@ -462,5 +462,6 @@ class JobSerializer(serializers.ModelSerializer, SpamCatcherSerializerMixin):
             "tags",
             "external_url",
             "is_expired",
+            "is_deleted",
             "is_marked_spam",
         )

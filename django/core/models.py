@@ -450,6 +450,10 @@ class MemberProfile(index.Indexed, ClusterableModel):
             user_metadata["affiliation"] = self.affiliations[0]
         return user_metadata
 
+    @classmethod
+    def get_indexed_objects(cls):
+        return cls.objects.public()
+
     def __str__(self):
         return str(self.user)
 
@@ -600,7 +604,7 @@ class EventQuerySet(models.QuerySet):
         )
 
     def public(self):
-        return self
+        return self.filter(is_deleted=False).exclude_spam()
 
 
 @add_to_comses_permission_whitelist
@@ -670,6 +674,10 @@ class Event(index.Indexed, ClusterableModel):
     def get_list_url(cls):
         return reverse("core:event-list")
 
+    @classmethod
+    def get_indexed_objects(cls):
+        return cls.objects.public()
+
     def __str__(self):
         return "{0} posted by {1} on {2}".format(
             self.title, self.submitter.username, self.date_created.strftime("%c")
@@ -688,7 +696,7 @@ class JobQuerySet(models.QuerySet):
         return self.prefetch_related("tagged_jobs__tag")
 
     def public(self):
-        return self
+        return self.filter(is_deleted=False).exclude_spam()
 
     def with_expired(self):
         return self.annotate(
@@ -798,6 +806,10 @@ class Job(index.Indexed, ClusterableModel):
     @classmethod
     def get_list_url(cls):
         return reverse("core:job-list")
+
+    @classmethod
+    def get_indexed_objects(cls):
+        return cls.objects.public()
 
     def __str__(self):
         return "{0} posted by {1} on {2}".format(

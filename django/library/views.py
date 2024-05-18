@@ -404,7 +404,7 @@ class CodebaseViewSet(SpamCatcherViewSetMixin, CommonViewSetMixin, HtmlNoDeleteV
 
     def get_queryset(self):
         if self.action == "list":
-            return self.queryset.public().exclude_spam()
+            return self.queryset.public()
         # On detail pages we want to see unpublished releases and spam
         return self.queryset.accessible(user=self.request.user)
 

@@ -436,7 +436,7 @@ class CodebaseQuerySet(models.QuerySet):
 
     def public(self, **kwargs):
         """Returns a queryset of all live codebases and their live releases"""
-        return self.with_contributors(**kwargs)
+        return self.with_contributors(**kwargs).exclude_spam()
 
     def peer_reviewed(self):
         return self.public().filter(peer_reviewed=True)

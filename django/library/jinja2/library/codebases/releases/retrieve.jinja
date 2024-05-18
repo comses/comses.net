@@ -1,5 +1,5 @@
 {% extends "sidebar_layout.jinja" %}
-{% from "common.jinja" import breadcrumb, embed_discourse_comments, share_card, search_tag_href, member_profile_href, render_ogp_tags, spam_detected_alert %}
+{% from "common.jinja" import breadcrumb, embed_discourse_comments, share_card, search_tag_href, member_profile_href, render_ogp_tags, alert_if_spam %}
 {% from "library/review/includes/macros.jinja" import include_review_reminders, confirm_change_closed_modal %}
 
 {% set open_code_badge_png_url = request.build_absolute_uri(static("images/icons/open-code-badge.png")) %}
@@ -82,9 +82,7 @@
     {% endif %}
 
     <div id="content">
-        {% if codebase.is_marked_spam %}
-            {{ spam_detected_alert() }}
-        {% endif %}
+        {{ alert_if_spam(codebase.is_marked_spam) }}
         {% if release.live %}
             {% if not release.is_latest_version %}
                 {% with latest_version=codebase.latest_version %}
