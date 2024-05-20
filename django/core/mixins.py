@@ -4,6 +4,7 @@ from django.conf import settings
 from django.contrib.auth.views import redirect_to_login
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import PermissionDenied
+from django.utils import timezone
 from rest_framework import serializers
 from rest_framework.exceptions import NotFound
 from rest_framework.response import Response
@@ -202,7 +203,6 @@ class SpamCatcherSerializerMixin(serializers.Serializer):
             required=False, allow_blank=True, write_only=True
         )
         self.fields["loaded_time"] = serializers.DateTimeField(required=False)
-        self.fields["submit_time"] = serializers.DateTimeField(required=False)
 
     def validate(self, attrs):
         super().validate(attrs)
@@ -224,7 +224,7 @@ class SpamCatcherSerializerMixin(serializers.Serializer):
 
     def check_form_submit_time(self, attrs):
         loaded_time = attrs.get("loaded_time")
-        submit_time = attrs.get("submit_time")
+        submit_time = timezone.now()
         if loaded_time and submit_time:
             elapsed = submit_time - loaded_time
             if elapsed.total_seconds() < settings.SPAM_LIKELY_SECONDS_THRESHOLD:

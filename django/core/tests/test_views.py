@@ -163,8 +163,9 @@ class SpamDetectionTestCase(BaseViewSetTestCase):
         self.assertEqual(event.spam_moderation.detection_method, "honeypot")
 
     def test_job_creation_with_timer_spam(self):
+        # FIXME: should incorporate how long a typical request takes to resolve
         data = self.job_factory.get_request_data(
-            seconds_delta=settings.SPAM_LIKELY_SECONDS_THRESHOLD - 1
+            elapsed_time=settings.SPAM_LIKELY_SECONDS_THRESHOLD - 2
         )
         response = self.client.post(
             reverse("core:job-list"),
@@ -205,7 +206,7 @@ class SpamDetectionTestCase(BaseViewSetTestCase):
         self.assertIsNone(job.spam_moderation)
         data = self.job_factory.get_request_data(
             honeypot_value="spammy content",
-            seconds_delta=settings.SPAM_LIKELY_SECONDS_THRESHOLD + 1,
+            elapsed_time=settings.SPAM_LIKELY_SECONDS_THRESHOLD + 1,
         )
         response = self.client.put(
             job.get_absolute_url(),

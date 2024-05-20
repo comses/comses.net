@@ -37,7 +37,7 @@ class ContentModelFactory(ABC):
         pass
 
     def get_request_data(
-        self, with_tags=True, honeypot_value=None, seconds_delta=999, **kwargs
+        self, with_tags=True, honeypot_value=None, elapsed_time=999, **kwargs
     ):
         data = self.get_default_data()
         data.pop("submitter")
@@ -48,15 +48,9 @@ class ContentModelFactory(ABC):
 
         if honeypot_value:
             data["content"] = honeypot_value
-        loaded_time = timezone.now()
-        submit_time = loaded_time + timezone.timedelta(seconds=seconds_delta)
-        data.update(
-            {
-                "loaded_time": loaded_time,
-                "submit_time": submit_time,
-                **kwargs,
-            }
-        )
+        data["loaded_time"] = timezone.now() - timezone.timedelta(seconds=elapsed_time)
+        # submit_time = loaded_time + timezone.timedelta(seconds=seconds_delta)
+        data.update(kwargs)
         return data
 
     def create(self, **overrides):
