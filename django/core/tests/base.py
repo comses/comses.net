@@ -43,7 +43,7 @@ class ContentModelFactory(ABC):
         data.pop("submitter")
         if with_tags:
             data["tags"] = []
-        if not hasattr(self.model, "spam_content"):
+        if not hasattr(self.model, "spam_moderation"):
             return data
 
         if honeypot_value:

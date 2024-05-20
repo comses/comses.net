@@ -1,10 +1,8 @@
 from django.test import TestCase
 from django.urls import reverse
-from django.utils import timezone
 
-from core.models import Event, SpamContent
+from core.models import SpamModeration
 from core.tests.base import JobFactory, UserFactory, EventFactory
-from core.tests.permissions_base import BaseViewSetTestCase
 from curator.models import TagCleanup
 from curator.wagtail_hooks import TagCleanupPermissionHelper
 
@@ -70,7 +68,7 @@ class SpamAdminViewTestCase(TestCase):
         self.event = self.event_factory.create(
             title="pool cleaning in Salzburg", submitter=self.submitter
         )
-        SpamContent.objects.create(
+        SpamModeration.objects.create(
             content_object=self.event,
             object_id=self.event.id,
             detection_method="honeypot",
@@ -82,24 +80,26 @@ class SpamAdminViewTestCase(TestCase):
         self.client.logout()
 
     def test_admin_confirm_spam(self):
-        url = reverse("curator:confirm_spam", args=[self.event.spam_content.id])
+        url = reverse("curator:confirm_spam", args=[self.event.spam_moderation.id])
         response = self.client.get(url)
         self.event.refresh_from_db()
-        self.assertEqual(self.event.spam_content.status, SpamContent.Status.CONFIRMED)
+        self.assertEqual(self.event.spam_moderation.status, SpamModeration.Status.SPAM)
         self.assertTrue(self.event.is_marked_spam)
         self.assertTrue(self.event.submitter.is_active)
 
     def test_admin_reject_spam(self):
-        url = reverse("curator:reject_spam", args=[self.event.spam_content.id])
+        url = reverse("curator:reject_spam", args=[self.event.spam_moderation.id])
         response = self.client.get(url)
         self.event.refresh_from_db()
-        self.assertEqual(self.event.spam_content.status, SpamContent.Status.REJECTED)
+        self.assertEqual(
+            self.event.spam_moderation.status, SpamModeration.Status.NOT_SPAM
+        )
         self.assertFalse(self.event.is_marked_spam)
 
     def test_admin_confirm_spam_deactivate_user(self):
-        url = reverse("curator:confirm_spam", args=[self.event.spam_content.id])
+        url = reverse("curator:confirm_spam", args=[self.event.spam_moderation.id])
         response = self.client.get(url + "?deactivate_user=true")
         self.event.refresh_from_db()
-        self.assertEqual(self.event.spam_content.status, SpamContent.Status.CONFIRMED)
+        self.assertEqual(self.event.spam_moderation.status, SpamModeration.Status.SPAM)
         self.assertTrue(self.event.is_marked_spam)
         self.assertFalse(self.event.submitter.is_active)

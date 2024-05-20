@@ -1,11 +1,9 @@
-import json
 import logging
 
 from django.conf import settings
 from rest_framework.test import APIClient
 
 from django.urls import reverse
-from django.utils import timezone
 from django.test import TestCase
 
 from core.tests.base import UserFactory
@@ -161,8 +159,8 @@ class SpamDetectionTestCase(BaseViewSetTestCase):
         self.assertResponseCreated(response)
         event = Event.objects.get(title=data["title"])
         self.assertTrue(event.is_marked_spam)
-        self.assertIsNotNone(event.spam_content)
-        self.assertEqual(event.spam_content.detection_method, "honeypot")
+        self.assertIsNotNone(event.spam_moderation)
+        self.assertEqual(event.spam_moderation.detection_method, "honeypot")
 
     def test_job_creation_with_timer_spam(self):
         data = self.job_factory.get_request_data(
@@ -177,8 +175,8 @@ class SpamDetectionTestCase(BaseViewSetTestCase):
         self.assertResponseCreated(response)
         job = Job.objects.get(title=data["title"])
         self.assertTrue(job.is_marked_spam)
-        self.assertIsNotNone(job.spam_content)
-        self.assertEqual(job.spam_content.detection_method, "form_submit_time")
+        self.assertIsNotNone(job.spam_moderation)
+        self.assertEqual(job.spam_moderation.detection_method, "form_submit_time")
 
     def test_event_creation_without_spam(self):
         data = self.event_factory.get_request_data()
@@ -191,7 +189,7 @@ class SpamDetectionTestCase(BaseViewSetTestCase):
         self.assertResponseCreated(response)
         event = Event.objects.get(title=data["title"])
         self.assertFalse(event.is_marked_spam)
-        self.assertIsNone(event.spam_content)
+        self.assertIsNone(event.spam_moderation)
 
     def test_job_update_with_spam(self):
         data = self.job_factory.get_request_data()
@@ -204,7 +202,7 @@ class SpamDetectionTestCase(BaseViewSetTestCase):
         self.assertResponseCreated(response)
         job = Job.objects.get(title=data["title"])
         self.assertFalse(job.is_marked_spam)
-        self.assertIsNone(job.spam_content)
+        self.assertIsNone(job.spam_moderation)
         data = self.job_factory.get_request_data(
             honeypot_value="spammy content",
             seconds_delta=settings.SPAM_LIKELY_SECONDS_THRESHOLD + 1,
@@ -217,8 +215,8 @@ class SpamDetectionTestCase(BaseViewSetTestCase):
         )
         job.refresh_from_db()
         self.assertTrue(job.is_marked_spam)
-        self.assertIsNotNone(job.spam_content)
-        self.assertEqual(job.spam_content.detection_method, "honeypot")
+        self.assertIsNotNone(job.spam_moderation)
+        self.assertEqual(job.spam_moderation.detection_method, "honeypot")
 
     def test_exclude_spam_from_public_views(self):
         data = self.event_factory.get_request_data(honeypot_value="spammy content")

@@ -14,7 +14,7 @@ from wagtail_modeladmin.helpers import ButtonHelper, PermissionHelper
 from wagtail_modeladmin.views import IndexView
 from wagtail import hooks
 
-from core.models import Event, Job, SpamContent
+from core.models import Event, Job, SpamModeration
 from library.models import CodebaseRelease, PeerReview
 from .models import TagCleanup
 
@@ -159,7 +159,7 @@ class ContentTypeFilter(admin.SimpleListFilter):
 
     def lookups(self, request, model_admin):
         # get the list of content types for which there are spam content entries
-        content_types = SpamContent.objects.values_list(
+        content_types = SpamModeration.objects.values_list(
             "content_type", flat=True
         ).distinct()
         return [
@@ -177,7 +177,7 @@ class SpamContentAdmin(ModelAdmin):
     provides a custom admin interface for managing spam content
     """
 
-    model = SpamContent
+    model = SpamModeration
     menu_label = "Spam Content"
     menu_icon = "warning"
     add_to_settings_menu = False

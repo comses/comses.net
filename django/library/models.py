@@ -41,7 +41,7 @@ from wagtail.snippets.models import register_snippet
 from core import fs
 from core.backends import add_to_comses_permission_whitelist
 from core.fields import MarkdownField
-from core.models import Platform, MemberProfile, SpamContent
+from core.models import Platform, MemberProfile, ModeratedContent, SpamModeration
 from core.queryset import get_viewable_objects_for_user
 from core.utils import send_markdown_email
 from core.view_helpers import get_search_queryset
@@ -363,6 +363,7 @@ class CodebaseQuerySet(models.QuerySet):
         return self.select_related("submitter")
 
     def exclude_spam(self):
+        # FIXME: duplicated across Event/Job/Codebase querysets
         return self.exclude(is_marked_spam=True)
 
     def accessible(self, user):
@@ -498,7 +499,7 @@ class CodebaseQuerySet(models.QuerySet):
 
 
 @add_to_comses_permission_whitelist
-class Codebase(index.Indexed, ClusterableModel):
+class Codebase(ModeratedContent, ClusterableModel):
     """
     Metadata applicable across a set of CodebaseReleases
     """
@@ -525,10 +526,8 @@ class Codebase(index.Indexed, ClusterableModel):
     doi = models.CharField(max_length=128, unique=True, null=True)
     uuid = models.UUIDField(unique=True, default=uuid.uuid4, editable=False)
 
-    spam_content = models.ForeignKey(SpamContent, null=True, on_delete=models.SET_NULL)
     # need to have this denormalized field to allow for filtering out spam content
     # https://docs.wagtail.org/en/stable/topics/search/indexing.html#filtering-on-index-relatedfields
-    is_marked_spam = models.BooleanField(default=False)
 
     latest_version = models.ForeignKey(
         "CodebaseRelease",

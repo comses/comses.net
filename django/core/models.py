@@ -11,6 +11,7 @@ from django.contrib.postgres.fields import ArrayField
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.db import models, transaction
+from django.db.models import Q
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.functional import cached_property
@@ -92,11 +93,11 @@ class SiteSettings(BaseSiteSetting):
         return settings.DEPLOY_ENVIRONMENT
 
 
-class SpamContent(models.Model):
+class SpamModeration(models.Model):
     class Status(models.TextChoices):
         UNREVIEWED = "unreviewed", _("Unreviewed")
-        CONFIRMED = "confirmed", _("Confirmed")
-        REJECTED = "rejected", _("Rejected")
+        SPAM = "spam", _("Confirmed spam")
+        NOT_SPAM = "not_spam", _("Confirmed not spam")
 
     status = models.CharField(
         choices=Status.choices,
@@ -108,9 +109,10 @@ class SpamContent(models.Model):
     content_object = GenericForeignKey("content_type", "object_id")
     date_created = models.DateTimeField(auto_now_add=True)
     last_modified = models.DateTimeField(auto_now=True)
-    review_notes = models.TextField(
+    notes = models.TextField(
         blank=True, null=True, help_text=_("Additional notes left by the reviewer")
     )
+    # FIXME: should we start an enum / choices for this?
     detection_method = models.CharField(max_length=255, blank=True, null=True)
     detection_details = models.JSONField(
         default=dict,
@@ -118,17 +120,38 @@ class SpamContent(models.Model):
             "Extra context from the detection method, e.g. NLP results, elapsed time"
         ),
     )
+    reviewer = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET(get_sentinel_user),
+        null=True,
+        blank=True,
+    )
 
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)
         self.update_related_object()
 
     def update_related_object(self):
-        obj = self.content_object
-        if hasattr(obj, "is_marked_spam"):
-            obj.spam_content = self
-            obj.is_marked_spam = self.status != self.Status.REJECTED
-            obj.save()
+        related_object = self.content_object
+        if hasattr(related_object, "is_marked_spam"):
+            related_object.spam_moderation = self
+            related_object.is_marked_spam = self.status != self.Status.NOT_SPAM
+            related_object.save()
+
+
+class ModeratedContent(index.Indexed, models.Model):
+    spam_moderation = models.ForeignKey(
+        SpamModeration, null=True, blank=True, on_delete=models.SET_NULL
+    )
+    is_marked_spam = models.BooleanField(
+        default=False,
+        help_text=_(
+            "cached boolean representation of spam_moderation for search indexing"
+        ),
+    )
+
+    class Meta:
+        abstract = True
 
 
 @register_setting
@@ -594,6 +617,7 @@ class EventQuerySet(models.QuerySet):
         return self.filter(is_deleted=False, **kwargs)
 
     def exclude_spam(self):
+        # FIXME: duplicated across Event/Job/Codebase querysets
         return self.exclude(is_marked_spam=True)
 
     def latest_for_feed(self, number=10):
@@ -608,7 +632,7 @@ class EventQuerySet(models.QuerySet):
 
 
 @add_to_comses_permission_whitelist
-class Event(index.Indexed, ClusterableModel):
+class Event(ModeratedContent, ClusterableModel):
     title = models.CharField(max_length=300)
     date_created = models.DateTimeField(default=timezone.now)
     last_modified = models.DateTimeField(auto_now=True)
@@ -623,15 +647,13 @@ class Event(index.Indexed, ClusterableModel):
     tags = ClusterTaggableManager(through=EventTag, blank=True)
     external_url = models.URLField(blank=True)
     is_deleted = models.BooleanField(default=False)
-    spam_content = models.ForeignKey(SpamContent, null=True, on_delete=models.SET_NULL)
     # need to have this denormalized field to allow for filtering out spam content
     # https://docs.wagtail.org/en/stable/topics/search/indexing.html#filtering-on-index-relatedfields
-    is_marked_spam = models.BooleanField(default=False)
 
     objects = EventQuerySet.as_manager()
 
     submitter = models.ForeignKey(
-        settings.AUTH_USER_MODEL, on_delete=models.SET(get_sentinel_user)
+        settings.AUTH_USER_MODEL, on_delete=models.SET(get_sentinel_user), blank=True
     )
 
     search_fields = [
@@ -734,6 +756,7 @@ class JobQuerySet(models.QuerySet):
         return self.filter(is_deleted=False, **kwargs)
 
     def exclude_spam(self):
+        # FIXME: duplicated across Event/Job/Codebase querysets
         return self.exclude(is_marked_spam=True)
 
     def latest_for_feed(self, number=10):
@@ -745,7 +768,7 @@ class JobQuerySet(models.QuerySet):
 
 
 @add_to_comses_permission_whitelist
-class Job(index.Indexed, ClusterableModel):
+class Job(ModeratedContent, ClusterableModel):
     title = models.CharField(max_length=300, help_text=_("Job posting title"))
     date_created = models.DateTimeField(default=timezone.now)
     application_deadline = models.DateField(
@@ -759,10 +782,8 @@ class Job(index.Indexed, ClusterableModel):
     tags = ClusterTaggableManager(through=JobTag, blank=True)
     external_url = models.URLField(blank=True)
     is_deleted = models.BooleanField(default=False)
-    spam_content = models.ForeignKey(SpamContent, null=True, on_delete=models.SET_NULL)
     # need to have this denormalized field to allow for filtering out spam content
     # https://docs.wagtail.org/en/stable/topics/search/indexing.html#filtering-on-index-relatedfields
-    is_marked_spam = models.BooleanField(default=False)
 
     submitter = models.ForeignKey(
         settings.AUTH_USER_MODEL,

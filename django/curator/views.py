@@ -8,7 +8,7 @@ from wagtail_modeladmin.helpers import AdminURLHelper
 
 from curator.models import TagCleanup
 from curator.wagtail_hooks import TagCleanupAction
-from core.models import SpamContent
+from core.models import SpamModeration
 
 import bleach
 
@@ -38,24 +38,26 @@ def process_pending_tag_cleanups(request):
 
 
 def confirm_spam_view(request, instance_id):
-    spam_content = get_object_or_404(SpamContent, id=instance_id)
+    spam_moderation = get_object_or_404(SpamModeration, id=instance_id)
     deactivate_user = request.GET.get("deactivate_user") == "true"
     if deactivate_user:
-        user = spam_content.content_object.submitter
+        user = spam_moderation.content_object.submitter
         user.is_active = False
         user.save()
         messages.success(
             request, f"Content confirmed as spam and user: {user} deactivated."
         )
-    spam_content.status = SpamContent.Status.CONFIRMED
-    spam_content.save()
+    spam_moderation.status = SpamModeration.Status.SPAM
+    spam_moderation.reviewer = request.user
+    spam_moderation.save()
     messages.success(request, f"Content confirmed as spam.")
-    return HttpResponseRedirect(AdminURLHelper(SpamContent).index_url)
+    return HttpResponseRedirect(AdminURLHelper(SpamModeration).index_url)
 
 
 def reject_spam_view(request, instance_id):
-    spam_content = get_object_or_404(SpamContent, id=instance_id)
-    spam_content.status = SpamContent.Status.REJECTED
-    spam_content.save()
+    spam_moderation = get_object_or_404(SpamModeration, id=instance_id)
+    spam_moderation.status = SpamModeration.Status.NOT_SPAM
+    spam_moderation.reviewer = request.user
+    spam_moderation.save()
     messages.success(request, "Content marked as not spam.")
-    return HttpResponseRedirect(AdminURLHelper(SpamContent).index_url)
+    return HttpResponseRedirect(AdminURLHelper(SpamModeration).index_url)

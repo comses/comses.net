@@ -8,7 +8,7 @@ from rest_framework import serializers
 from rest_framework.exceptions import NotFound
 from rest_framework.response import Response
 
-from .models import SpamContent
+from .models import SpamModeration
 from .permissions import ViewRestrictedObjectPermissions
 
 logger = logging.getLogger(__name__)
@@ -254,10 +254,10 @@ class SpamCatcherViewSetMixin:
         self.handle_spam_detection(serializer)
 
     def _validate_content_object(self, instance):
-        # make sure that the instance has a spam_content attribute as well as the
+        # make sure that the instance has a spam_moderation attribute as well as the
         # necessary fields for displaying the spam content in the admin
         required_fields = [
-            "spam_content",
+            "spam_moderation",
             "is_marked_spam",
             "get_absolute_url",
             "title",
@@ -281,15 +281,15 @@ class SpamCatcherViewSetMixin:
     def _record_spam(self, instance, spam_context: dict):
         content_type = ContentType.objects.get_for_model(type(instance))
         # SpamContent updates the content instance on save
-        spam_content, created = SpamContent.objects.get_or_create(
+        spam_moderation, created = SpamModeration.objects.get_or_create(
             content_type=content_type,
             object_id=instance.pk,
             defaults={
-                "status": SpamContent.Status.UNREVIEWED,
+                "status": SpamModeration.Status.UNREVIEWED,
                 "detection_method": spam_context["detection_method"],
                 "detection_details": spam_context["detection_details"],
             },
         )
         if not created:
-            spam_content.status = SpamContent.Status.UNREVIEWED
-            spam_content.save()
+            spam_moderation.status = SpamModeration.Status.UNREVIEWED
+            spam_moderation.save()

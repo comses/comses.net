@@ -49,7 +49,7 @@ def get_search_queryset(
         except FieldError:
             logger.warning("Invalid filter criteria: %s", criteria)
 
-    logger.debug("parsed query: %s, filters: %s", query, criteria)
+    logger.debug("parsed query: %s, filters: %s, fields: %s", query, criteria, fields)
 
     results = search_backend.search(
         query,
