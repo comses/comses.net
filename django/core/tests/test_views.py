@@ -1,17 +1,15 @@
 import logging
 
 from django.conf import settings
+from django.test import TestCase
+from django.urls import reverse
 from rest_framework.test import APIClient
 
-from django.urls import reverse
-from django.test import TestCase
-
-from .base import create_test_user
+from .base import create_test_user, EventFactory, JobFactory
 from .permissions_base import BaseViewSetTestCase
-from core.views import EventViewSet, JobViewSet
-from core.models import Job, Event, SpamModeration, ComsesGroups
-from .base import JobFactory, EventFactory
 
+from core.models import ComsesGroups, Event, Job, SpamModeration
+from core.views import EventViewSet, JobViewSet
 
 logger = logging.getLogger(__name__)
 
@@ -156,9 +154,13 @@ class SpamDetectionTestCase(BaseViewSetTestCase):
         )
         self.assertResponseCreated(response)
         event = Event.objects.get(title=data["title"])
-        self.assertTrue(event.is_marked_spam)
+
         self.assertIsNotNone(event.spam_moderation)
+        self.assertEqual(
+            event.spam_moderation.status, SpamModeration.Status.SPAM_LIKELY
+        )
         self.assertEqual(event.spam_moderation.detection_method, "honeypot")
+        self.assertTrue(event.is_marked_spam)
 
     def test_job_creation_with_timer_spam(self):
         # FIXME: should incorporate how long a typical request takes to resolve
@@ -173,9 +175,11 @@ class SpamDetectionTestCase(BaseViewSetTestCase):
         )
         self.assertResponseCreated(response)
         job = Job.objects.get(title=data["title"])
-        self.assertTrue(job.is_marked_spam)
+
         self.assertIsNotNone(job.spam_moderation)
+        self.assertEqual(job.spam_moderation.status, SpamModeration.Status.SPAM_LIKELY)
         self.assertEqual(job.spam_moderation.detection_method, "form_submit_time")
+        self.assertTrue(job.is_marked_spam)
 
     def test_mark_spam(self):
         data = self.event_factory.get_request_data()
@@ -187,18 +191,29 @@ class SpamDetectionTestCase(BaseViewSetTestCase):
             format="json",
         )
         event = Event.objects.get(title=data["title"])
+        self.assertIsNotNone(event.spam_moderation)
+        self.assertEqual(
+            event.spam_moderation.status, SpamModeration.Status.SCHEDULED_FOR_CHECK
+        )
+        # by default, all created objects will have is_marked_spam = False unless spam_moderation.status is explicitly SPAM or SPAM_LIKELY
         self.assertFalse(event.is_marked_spam)
-        self.assertIsNone(event.spam_moderation)
+
         response = self.client.post(
             reverse("core:event-mark-spam", kwargs={"pk": event.id}),
             data,
             HTTP_ACCEPT="application/json",
             format="json",
         )
+
         event.refresh_from_db()
         # non-moderators cannot mark content as spam
         self.assertEqual(response.status_code, 403)
+        self.assertIsNotNone(event.spam_moderation)
+        self.assertEqual(
+            event.spam_moderation.status, SpamModeration.Status.SCHEDULED_FOR_CHECK
+        )
         self.assertFalse(event.is_marked_spam)
+
         # check moderator
         self.client.login(
             username=self.moderator.username, password=self.user_factory.password
@@ -211,12 +226,17 @@ class SpamDetectionTestCase(BaseViewSetTestCase):
             format="json",
         )
         event.refresh_from_db()
-        self.assertTrue(event.is_marked_spam)
         self.assertIsNotNone(event.spam_moderation)
+        self.assertEqual(event.spam_moderation.status, SpamModeration.Status.SPAM)
+        self.assertTrue(event.is_marked_spam)
+
         event.mark_not_spam(self.moderator)
         event.refresh_from_db()
-        self.assertFalse(event.is_marked_spam)
+
         self.assertIsNotNone(event.spam_moderation)
+        self.assertEqual(event.spam_moderation.status, SpamModeration.Status.NOT_SPAM)
+        self.assertFalse(event.is_marked_spam)
+
         # check superuser
         self.client.login(
             username=self.superuser.username, password=self.user_factory.password
@@ -228,9 +248,10 @@ class SpamDetectionTestCase(BaseViewSetTestCase):
             format="json",
         )
         event.refresh_from_db()
-        self.assertTrue(event.is_marked_spam)
+
         self.assertIsNotNone(event.spam_moderation)
         self.assertEqual(event.spam_moderation.status, SpamModeration.Status.SPAM)
+        self.assertTrue(event.is_marked_spam)
 
     def test_event_creation_without_spam(self):
         data = self.event_factory.get_request_data()
@@ -242,8 +263,12 @@ class SpamDetectionTestCase(BaseViewSetTestCase):
         )
         self.assertResponseCreated(response)
         event = Event.objects.get(title=data["title"])
+
+        self.assertIsNotNone(event.spam_moderation)
+        self.assertEqual(
+            event.spam_moderation.status, SpamModeration.Status.SCHEDULED_FOR_CHECK
+        )
         self.assertFalse(event.is_marked_spam)
-        self.assertIsNone(event.spam_moderation)
 
     def test_job_update_with_spam(self):
         data = self.job_factory.get_request_data()
@@ -255,8 +280,13 @@ class SpamDetectionTestCase(BaseViewSetTestCase):
         )
         self.assertResponseCreated(response)
         job = Job.objects.get(title=data["title"])
+
+        self.assertIsNotNone(job.spam_moderation)
+        self.assertEqual(
+            job.spam_moderation.status, SpamModeration.Status.SCHEDULED_FOR_CHECK
+        )
         self.assertFalse(job.is_marked_spam)
-        self.assertIsNone(job.spam_moderation)
+
         data = self.job_factory.get_request_data(
             honeypot_value="spammy content",
             elapsed_time=settings.SPAM_LIKELY_SECONDS_THRESHOLD + 1,
@@ -268,9 +298,11 @@ class SpamDetectionTestCase(BaseViewSetTestCase):
             format="json",
         )
         job.refresh_from_db()
-        self.assertTrue(job.is_marked_spam)
+
         self.assertIsNotNone(job.spam_moderation)
+        self.assertEqual(job.spam_moderation.status, SpamModeration.Status.SPAM_LIKELY)
         self.assertEqual(job.spam_moderation.detection_method, "honeypot")
+        self.assertTrue(job.is_marked_spam)
 
     def test_exclude_spam_from_public_views(self):
         data = self.event_factory.get_request_data(honeypot_value="spammy content")

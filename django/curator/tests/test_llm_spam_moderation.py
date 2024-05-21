@@ -2,12 +2,12 @@ from datetime import timedelta
 
 from django.conf import settings
 from django.utils import timezone
-
-from rest_framework.test import APIClient
 from rest_framework import status
+from rest_framework.test import APIClient
 
-from core.models import SpamModeration
+from core.models import Event, Job, SpamModeration
 from core.tests.base import BaseModelTestCase, EventFactory, JobFactory
+from library.models import Codebase
 from library.tests.base import CodebaseFactory
 
 
@@ -21,11 +21,11 @@ class SpamModerationAPITestCase(BaseModelTestCase):
 
         self.job_factory = JobFactory(submitter=self.user)
         self.event_factory = EventFactory(submitter=self.user)
+        self.codebase_factory = CodebaseFactory(submitter=self.user)
 
         today = timezone.now()
 
         # Create test objects
-
         self.job = self.job_factory.create(
             application_deadline=today + timedelta(days=30),
             title="Test Job",
@@ -38,8 +38,7 @@ class SpamModerationAPITestCase(BaseModelTestCase):
             title="Test Event",
         )
 
-        codebase_factory = CodebaseFactory(submitter=self.user)
-        self.codebase = codebase_factory.create(
+        self.codebase = self.codebase_factory.create(
             title="Test Codebase", description="Codebase Description"
         )
 
@@ -70,20 +69,30 @@ class SpamModerationAPITestCase(BaseModelTestCase):
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
         response = self.client.post(
-            "/api/spam/update/", {"object_id": 1, "is_spam": True}, format="json"
+            "/api/spam/update/",
+            {"id": self.event.spam_moderation.id, "is_spam": True},
+            format="json",
         )
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
         # Test with correct API key
         self.client.credentials(HTTP_X_API_KEY=self.api_key)
-
         response = self.client.get("/api/spam/get-latest-batch/")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
+        event = Event.objects.get(id=self.event.id)
         response = self.client.post(
-            "/api/spam/update/", {"object_id": 1, "is_spam": True}, format="json"
+            "/api/spam/update/",
+            {"id": event.spam_moderation.id, "is_spam": True},
+            format="json",
         )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
+        event.refresh_from_db()
+        self.assertIsNotNone(event.spam_moderation)
+        self.assertEqual(
+            event.spam_moderation.status, SpamModeration.Status.SPAM_LIKELY
+        )
+        self.assertTrue(event.is_marked_spam)
 
     def test_get_latest_spam_batch(self):
         self.client.credentials(HTTP_X_API_KEY=self.api_key)
@@ -112,19 +121,20 @@ class SpamModerationAPITestCase(BaseModelTestCase):
         self.client.credentials(HTTP_X_API_KEY=self.api_key)
 
         # Change all SpamModeration statuses
-        SpamModeration.objects.all().update(status=SpamModeration.Status.SPAM)
+        SpamModeration.objects.all().update(status=SpamModeration.Status.NOT_SPAM)
 
         response = self.client.get("/api/spam/get-latest-batch/")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
         data = response.json()
-        self.assertEqual(len(data), 0)  # We expect an empty list
+        # only objects with status SCHEDULED_FOR_CHECK should be present in the batch, so we expect an empty list here
+        self.assertEqual(len(data), 0)
 
     def test_update_spam_moderation_success(self):
         self.client.credentials(HTTP_X_API_KEY=self.api_key)
 
         data = {
-            "object_id": self.job_spam.id,
+            "id": self.job.spam_moderation.id,
             "is_spam": True,
             "spam_indicators": ["indicator1", "indicator2"],
             "reasoning": "Test reasoning",
@@ -133,29 +143,31 @@ class SpamModerationAPITestCase(BaseModelTestCase):
 
         response = self.client.post("/api/spam/update/", data, format="json")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(
-            response.json()["message"], "SpamModeration updated successfully"
-        )
 
-        # Check if SpamModeration object was updated correctly
-        updated_spam = SpamModeration.objects.get(id=self.job_spam.id)
-        self.assertEqual(updated_spam.status, SpamModeration.Status.SPAM_LIKELY)
-        self.assertEqual(updated_spam.detection_method, "LLM")
+        job = Job.objects.get(id=self.job.id)
+
+        # Check if SpamModeration object was updated
+        self.assertIsNotNone(job.spam_moderation)
+        self.assertEqual(job.spam_moderation.status, SpamModeration.Status.SPAM_LIKELY)
+        self.assertTrue(job.is_marked_spam)
+        self.assertEqual(job.spam_moderation.detection_method, "LLM")
         self.assertEqual(
-            updated_spam.detection_details["spam_indicators"],
+            job.spam_moderation.detection_details["spam_indicators"],
             ["indicator1", "indicator2"],
         )
-        self.assertEqual(updated_spam.detection_details["reasoning"], "Test reasoning")
-        self.assertEqual(updated_spam.detection_details["confidence"], 0.9)
+        self.assertEqual(
+            job.spam_moderation.detection_details["reasoning"], "Test reasoning"
+        )
+        self.assertEqual(job.spam_moderation.detection_details["confidence"], 0.9)
 
         # Check if related content object was updated
-        self.assertTrue(updated_spam.content_object.is_marked_spam)
+        self.assertTrue(job.is_marked_spam)
 
     def test_update_spam_moderation_not_spam(self):
         self.client.credentials(HTTP_X_API_KEY=self.api_key)
 
         data = {
-            "object_id": self.event_spam.id,
+            "id": self.event.spam_moderation.id,
             "is_spam": False,
             "reasoning": "Not spam reasoning",
             "confidence": 0.8,
@@ -164,14 +176,16 @@ class SpamModerationAPITestCase(BaseModelTestCase):
         response = self.client.post("/api/spam/update/", data, format="json")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
-        updated_spam = SpamModeration.objects.get(id=self.event_spam.id)
-        self.assertEqual(updated_spam.status, SpamModeration.Status.NOT_SPAM_LIKELY)
-        self.assertFalse(updated_spam.content_object.is_marked_spam)
+        event = Event.objects.get(id=self.event.id)
+        self.assertEqual(
+            event.spam_moderation.status, SpamModeration.Status.NOT_SPAM_LIKELY
+        )
+        self.assertFalse(event.is_marked_spam)
 
     def test_update_spam_moderation_not_found(self):
         self.client.credentials(HTTP_X_API_KEY=self.api_key)
 
-        data = {"object_id": 99999, "is_spam": True}  # Non-existent ID
+        data = {"id": 99999, "is_spam": True}  # Non-existent ID
 
         response = self.client.post("/api/spam/update/", data, format="json")
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
@@ -180,7 +194,7 @@ class SpamModerationAPITestCase(BaseModelTestCase):
         self.client.credentials(HTTP_X_API_KEY=self.api_key)
 
         data = {
-            "object_id": self.codebase_spam.id,
+            "id": self.codebase_spam.id,
             # Missing required 'is_spam' field
         }
 
@@ -191,7 +205,7 @@ class SpamModerationAPITestCase(BaseModelTestCase):
         self.client.credentials(HTTP_X_API_KEY=self.api_key)
 
         data = {
-            "object_id": self.job_spam.id,
+            "id": self.codebase_spam.id,
             "is_spam": True,
             # Only providing partial data
         }
@@ -199,9 +213,14 @@ class SpamModerationAPITestCase(BaseModelTestCase):
         response = self.client.post("/api/spam/update/", data, format="json")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
-        updated_spam = SpamModeration.objects.get(id=self.job_spam.id)
-
-        self.assertEqual(updated_spam.status, SpamModeration.Status.SPAM_LIKELY)
-        self.assertEqual(updated_spam.detection_details.get("spam_indicators"), [])
-        self.assertEqual(updated_spam.detection_details.get("reasoning"), "")
-        self.assertIsNone(updated_spam.detection_details.get("confidence"))
+        codebase = Codebase.objects.get(id=self.codebase.id)
+        self.assertEqual(
+            codebase.spam_moderation.status, SpamModeration.Status.SPAM_LIKELY
+        )
+        self.assertEqual(
+            codebase.spam_moderation.detection_details.get("spam_indicators"), []
+        )
+        self.assertEqual(
+            codebase.spam_moderation.detection_details.get("reasoning"), ""
+        )
+        self.assertIsNone(codebase.spam_moderation.detection_details.get("confidence"))

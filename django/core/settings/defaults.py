@@ -543,7 +543,9 @@ DISCOURSE_SSO_SECRET = read_secret("discourse_sso_secret", "unconfigured")
 DISCOURSE_API_KEY = read_secret("discourse_api_key", "unconfigured")
 DISCOURSE_API_USERNAME = os.getenv("DISCOURSE_API_USERNAME", "unconfigured")
 
-LLM_SPAM_CHECK_API_KEY = read_secret("llm_spam_check_api_key", "unconfigured")
+LLM_SPAM_CHECK_API_KEY = (
+    read_secret("llm_spam_check_api_key", "unconfigured") or "unconfigured"
+)
 
 # https://docs.djangoproject.com/en/4.2/ref/settings/#templates
 TEMPLATES = [

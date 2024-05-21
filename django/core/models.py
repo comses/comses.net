@@ -1,16 +1,16 @@
-import logging
-import pathlib
 from datetime import timedelta
 from enum import Enum
+import logging
+import pathlib
 
 from allauth.account.models import EmailAddress
 from django import forms
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group, User
-from django.contrib.postgres.fields import ArrayField
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
+from django.contrib.postgres.fields import ArrayField
 from django.db import models, transaction
 from django.urls import reverse
 from django.utils import timezone
@@ -134,16 +134,15 @@ class SiteSettings(BaseSiteSetting):
 
 class SpamModeration(models.Model):
     class Status(models.TextChoices):
-        UNREVIEWED = "unreviewed", _("Unreviewed")
         SPAM = "spam", _("Confirmed spam")
         NOT_SPAM = "not_spam", _("Confirmed not spam")
         SCHEDULED_FOR_CHECK = "scheduled_for_check", _("Scheduled for check by LLM")
-        SPAM_LIKELY = "spam_likely", _("Marked spam by LLM")
-        NOT_SPAM_LIKELY = "not_spam_likely", _("Marked as not spam by LLM")
+        SPAM_LIKELY = "spam_likely", _("Automatically marked as spam")
+        NOT_SPAM_LIKELY = "not_spam_likely", _("Automatically marked as not spam")
 
     status = models.CharField(
         choices=Status.choices,
-        default=Status.UNREVIEWED,
+        default=Status.SCHEDULED_FOR_CHECK,
         max_length=32,
     )
     content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
@@ -195,7 +194,10 @@ class SpamModeration(models.Model):
         related_object = self.content_object
         if hasattr(related_object, "is_marked_spam"):
             related_object.spam_moderation = self
-            related_object.is_marked_spam = self.status == self.Status.SPAM
+            related_object.is_marked_spam = self.status in {
+                self.Status.SPAM,
+                self.Status.SPAM_LIKELY,
+            }
             related_object.save()
 
     def __str__(self):

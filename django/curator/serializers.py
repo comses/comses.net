@@ -1,10 +1,6 @@
 from rest_framework import serializers
-from core.models import SpamModeration
-from django.contrib.contenttypes.models import ContentType
-from rest_framework import serializers
-from core.models import Event, Job, SpamModeration
-from django.contrib.contenttypes.models import ContentType
 
+from core.models import Event, Job, SpamModeration
 from library.models import Codebase
 
 
@@ -61,7 +57,7 @@ class MinimalCodebaseSerializer(serializers.ModelSerializer):
 
 
 class SpamUpdateSerializer(serializers.Serializer):
-    object_id = serializers.IntegerField()
+    id = serializers.IntegerField()
     is_spam = serializers.BooleanField()
     spam_indicators = serializers.ListField(
         child=serializers.CharField(), required=False

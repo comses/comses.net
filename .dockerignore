@@ -1,3 +1,6 @@
+.direnv/
+.tool-versions
+.envrc
 .git
 .yarn/cache
 .yarn/install-state.gz
