@@ -36,7 +36,7 @@ pandas==1.5.3
 psycopg2-binary==2.9.9
 pytz==2024.1
 redis==4.5.5
-requests==2.31.0
+requests==2.32.0
 semver==3.0.2
 sentry-cli==2.30.2
 sentry-sdk==1.40.3
