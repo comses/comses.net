@@ -1,25 +1,26 @@
-from django.contrib.auth.decorators import permission_required
+import bleach
 from django.contrib import messages
-from django.shortcuts import get_object_or_404
-from django.http import HttpResponseRedirect, HttpResponseBadRequest
-from django.views.decorators.http import require_POST
-from wagtail_modeladmin.helpers import AdminURLHelper
+from django.contrib.auth.decorators import permission_required
 from django.core.exceptions import ObjectDoesNotExist
+from django.http import HttpResponseBadRequest, HttpResponseRedirect
 from django.shortcuts import get_object_or_404
-
-
+from django.views.decorators.http import require_POST
+from djangorestframework_camel_case.render import CamelCaseJSONRenderer
+from rest_framework import status
 from rest_framework.decorators import (
     api_view,
-    permission_classes,
     authentication_classes,
+    permission_classes,
+    renderer_classes,
 )
-from rest_framework.response import Response
-from rest_framework import status
-from curator.auth import APIKeyAuthentication
 from rest_framework.permissions import AllowAny
-from rest_framework.decorators import api_view, authentication_classes, renderer_classes
-from djangorestframework_camel_case.render import CamelCaseJSONRenderer
+from rest_framework.response import Response
+from wagtail_modeladmin.helpers import AdminURLHelper
 
+from core.models import SpamModeration
+from curator.auth import APIKeyAuthentication
+from curator.models import TagCleanup
+from curator.wagtail_hooks import TagCleanupAction
 from .serializers import (
     MinimalCodebaseSerializer,
     MinimalEventSerializer,
@@ -27,12 +28,6 @@ from .serializers import (
     SpamModerationSerializer,
     SpamUpdateSerializer,
 )
-from curator.models import TagCleanup
-from curator.wagtail_hooks import TagCleanupAction
-
-from core.models import SpamModeration
-
-import bleach
 
 TAG_CLEANUP_ACTIONS = {
     TagCleanupAction.process.name: TagCleanup.objects.process,
@@ -129,11 +124,9 @@ def update_spam_moderation(request):
     serializer = SpamUpdateSerializer(data=request.data)
     if serializer.is_valid():
         data = serializer.validated_data
-        print(data)
-        print(data["object_id"])
         try:
             spam_moderation = SpamModeration.objects.get(
-                id=data["object_id"],
+                id=data["id"],
             )
         except ObjectDoesNotExist:
             return Response(
