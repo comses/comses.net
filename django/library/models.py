@@ -3021,11 +3021,11 @@ class PeerReviewEventLog(models.Model):
             self.message = message
 
 
-class DataciteAction(Enum):
-    CREATE_RELEASE_DOI = "CREATE_RELEASE_DOI"
-    CREATE_CODEBASE_DOI = "CREATE_CODEBASE_DOI"
-    UPDATE_RELEASE_METADATA = "UPDATE_RELEASE_METADATA"
-    UPDATE_CODEBASE_METADATA = "UPDATE_CODEBASE_METADATA"
+class DataciteAction(models.TextChoices):
+    CREATE_RELEASE_DOI = "CREATE_RELEASE_DOI", _("CREATE_RELEASE_DOI")
+    CREATE_CODEBASE_DOI = "CREATE_CODEBASE_DOI", _("CREATE_CODEBASE_DOI")
+    UPDATE_RELEASE_METADATA = "UPDATE_RELEASE_METADATA", _("UPDATE_RELEASE_METADATA")
+    UPDATE_CODEBASE_METADATA = "UPDATE_CODEBASE_METADATA", _("UPDATE_CODEBASE_METADATA")
 
 
 @register_snippet
@@ -3040,10 +3040,8 @@ class DataciteRegistrationLog(models.Model):
         Codebase, related_name="datacite_logs", on_delete=models.CASCADE, null=True
     )
 
-    action = models.CharField(
-        max_length=50,
-        choices=[(action.value, action.value) for action in DataciteAction],
-    )
+    action = models.CharField(max_length=50, choices=DataciteAction.choices)
+
     timestamp = models.DateTimeField(default=timezone.now)
     http_status = models.IntegerField(default=None, null=True)
     message = models.TextField(default=None, null=True)
