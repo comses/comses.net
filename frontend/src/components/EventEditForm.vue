@@ -111,7 +111,6 @@ import FormAlert from "@/components/form/FormAlert.vue";
 import FieldLabel from "@/components/form/FieldLabel.vue";
 import { useForm } from "@/composables/form";
 import { useEventAPI } from "@/composables/api";
-import { useFormTimer, type TimerFields } from "@/composables/spam";
 
 const props = defineProps<{
   eventId?: number;
@@ -137,24 +136,20 @@ type EventEditFields = yup.InferType<typeof schema>;
 
 const { data, serverErrors, create, retrieve, update, isLoading, detailUrl } = useEventAPI();
 
-const { loadedTime, getSubmitTime } = useFormTimer();
-
 const {
   errors,
   handleSubmit,
   values,
-  setValues,
+  setValuesWithLoadTime,
   addUnsavedAlertListener,
   removeUnsavedAlertListener,
-} = useForm<EventEditFields & TimerFields>({
+} = useForm<EventEditFields>({
   schema,
   initialValues: {
     tags: [],
   },
   showPlaceholder: isLoading,
   onSubmit: async () => {
-    values.loadedTime = loadedTime;
-    values.submitTime = getSubmitTime();
     await createOrUpdate();
   },
 });
@@ -162,7 +157,7 @@ const {
 onMounted(async () => {
   if (props.eventId) {
     await retrieve(props.eventId);
-    setValues(data.value);
+    setValuesWithLoadTime(data.value);
   }
   addUnsavedAlertListener();
 });

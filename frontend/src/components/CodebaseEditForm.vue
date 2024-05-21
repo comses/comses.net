@@ -66,7 +66,6 @@ import HoneypotField from "@/components/form/HoneypotField.vue";
 import FormAlert from "@/components/form/FormAlert.vue";
 import { useForm } from "@/composables/form";
 import { useCodebaseAPI, useReleaseEditorAPI } from "@/composables/api";
-import { useFormTimer, type TimerFields } from "@/composables/spam";
 
 const props = withDefaults(
   defineProps<{
@@ -97,24 +96,20 @@ type CodebaseEditFields = yup.InferType<typeof schema>;
 const { data, serverErrors, create, retrieve, update, isLoading, detailUrl } = useCodebaseAPI();
 const { editUrl } = useReleaseEditorAPI();
 
-const { loadedTime, getSubmitTime } = useFormTimer();
-
 const {
   errors,
   handleSubmit,
   values,
-  setValues,
+  setValuesWithLoadTime,
   addUnsavedAlertListener,
   removeUnsavedAlertListener,
-} = useForm<CodebaseEditFields & TimerFields>({
+} = useForm<CodebaseEditFields>({
   schema,
   initialValues: {
     tags: [],
   },
   showPlaceholder: isLoading,
   onSubmit: async () => {
-    values.loadedTime = loadedTime;
-    values.submitTime = getSubmitTime();
     await createOrUpdate();
   },
 });
@@ -123,7 +118,7 @@ onMounted(async () => {
   if (props.identifier) {
     await retrieve(props.identifier);
     console.log(data.value);
-    setValues(data.value);
+    setValuesWithLoadTime(data.value);
   }
   addUnsavedAlertListener();
 });

@@ -49,7 +49,6 @@ class ContentModelFactory(ABC):
         if honeypot_value:
             data["content"] = honeypot_value
         data["loaded_time"] = timezone.now() - timezone.timedelta(seconds=elapsed_time)
-        # submit_time = loaded_time + timezone.timedelta(seconds=seconds_delta)
         data.update(kwargs)
         return data
 

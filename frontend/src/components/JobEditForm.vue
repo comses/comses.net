@@ -62,7 +62,6 @@ import FormAlert from "@/components/form/FormAlert.vue";
 import FieldLabel from "@/components/form/FieldLabel.vue";
 import { useForm } from "@/composables/form";
 import { useJobAPI } from "@/composables/api";
-import { useFormTimer, type TimerFields } from "@/composables/spam";
 
 const props = defineProps<{
   jobId?: number;
@@ -83,24 +82,20 @@ type JobEditFields = yup.InferType<typeof schema>;
 
 const { data, serverErrors, create, retrieve, update, isLoading, detailUrl } = useJobAPI();
 
-const { loadedTime, getSubmitTime } = useFormTimer();
-
 const {
   errors,
   handleSubmit,
   values,
-  setValues,
+  setValuesWithLoadTime,
   addUnsavedAlertListener,
   removeUnsavedAlertListener,
-} = useForm<JobEditFields & TimerFields>({
+} = useForm<JobEditFields>({
   schema,
   initialValues: {
     tags: [],
   },
   showPlaceholder: isLoading,
   onSubmit: async () => {
-    values.loadedTime = loadedTime;
-    values.submitTime = getSubmitTime();
     await createOrUpdate();
   },
 });
@@ -108,7 +103,7 @@ const {
 onMounted(async () => {
   if (props.jobId) {
     await retrieve(props.jobId);
-    setValues(data.value);
+    setValuesWithLoadTime(data.value);
   }
   addUnsavedAlertListener();
 });

@@ -217,7 +217,7 @@ class SpamCatcherSerializerMixin(serializers.Serializer):
         else:
             self.check_form_submit_time(attrs)
         # remove so that the serializer doesn't attempt to save these fields
-        for field in ["content", "loaded_time", "submit_time"]:
+        for field in ["content", "loaded_time"]:
             attrs.pop(field, None)
 
         return attrs
