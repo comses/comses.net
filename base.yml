@@ -50,7 +50,7 @@ services:
       POSTGRES_PASSWORD_FILE: /run/secrets/db_password
   vite:
     build: frontend
-    image: comses/comsesnet-vite
+    image: comses/vite
     volumes:
       - /code/node_modules
       - ./docker/shared:/shared

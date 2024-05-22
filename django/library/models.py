@@ -499,7 +499,7 @@ class CodebaseQuerySet(models.QuerySet):
 
 
 @add_to_comses_permission_whitelist
-class Codebase(ModeratedContent, ClusterableModel):
+class Codebase(index.Indexed, ModeratedContent, ClusterableModel):
     """
     Metadata applicable across a set of CodebaseReleases
     """

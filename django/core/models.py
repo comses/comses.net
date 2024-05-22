@@ -138,8 +138,13 @@ class SpamModeration(models.Model):
             related_object.is_marked_spam = self.status != self.Status.NOT_SPAM
             related_object.save()
 
+    def __str__(self):
+        return (
+            f"SpamModeration: {self.status} - {self.reviewer} - {self.content_object}"
+        )
 
-class ModeratedContent(index.Indexed, models.Model):
+
+class ModeratedContent(models.Model):
     spam_moderation = models.ForeignKey(
         SpamModeration, null=True, blank=True, on_delete=models.SET_NULL
     )
@@ -151,6 +156,15 @@ class ModeratedContent(index.Indexed, models.Model):
             "cached boolean representation of spam_moderation for search indexing"
         ),
     )
+
+    def mark_spam(self, status=SpamModeration.Status.SPAM, **kwargs):
+        content_type = ContentType.objects.get_for_model(type(self))
+        self.spam_moderation, created = SpamModeration.objects.get_or_create(
+            status=status,
+            object_id=self.pk,
+            content_type=content_type,
+            **kwargs,
+        )
 
     class Meta:
         abstract = True
@@ -634,7 +648,7 @@ class EventQuerySet(models.QuerySet):
 
 
 @add_to_comses_permission_whitelist
-class Event(ModeratedContent, ClusterableModel):
+class Event(index.Indexed, ModeratedContent, ClusterableModel):
     title = models.CharField(max_length=300)
     date_created = models.DateTimeField(default=timezone.now)
     last_modified = models.DateTimeField(auto_now=True)
@@ -767,7 +781,7 @@ class JobQuerySet(models.QuerySet):
 
 
 @add_to_comses_permission_whitelist
-class Job(ModeratedContent, ClusterableModel):
+class Job(index.Indexed, ModeratedContent, ClusterableModel):
     title = models.CharField(max_length=300, help_text=_("Job posting title"))
     date_created = models.DateTimeField(default=timezone.now)
     application_deadline = models.DateField(

@@ -280,7 +280,7 @@ class SpamCatcherViewSetMixin:
 
     def _record_spam(self, instance, spam_context: dict):
         content_type = ContentType.objects.get_for_model(type(instance))
-        # SpamContent updates the content instance on save
+        # SpamModeration updates the content instance on save
         spam_moderation, created = SpamModeration.objects.get_or_create(
             content_type=content_type,
             object_id=instance.pk,

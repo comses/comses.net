@@ -34,7 +34,7 @@ services:
       - esdata2:/usr/share/elasticsearch/data
   vite:
     build: frontend
-    image: comses/comsesnet-vite:${RELEASE_VERSION}
+    image: comses/vite:${RELEASE_VERSION}
     command: ["npm", "run", "build"]
     environment:
       NODE_ENV: "production"
