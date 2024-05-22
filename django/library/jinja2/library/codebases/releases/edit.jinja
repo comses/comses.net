@@ -1,13 +1,13 @@
 {% extends "base.jinja" %}
-{% from "common.jinja" import spam_detected_alert %}
+{% from "common.jinja" import alert_if_spam %}
 
 {% block introduction %}
 <h1><i class='fas fa-cloud-upload-alt'></i> Publish your computational model</h1>
 {% endblock %}
 {% block content %}
 {% if release.codebase.is_marked_spam %}
-    {{ spam_detected_alert() }}
-{% endif %}
+    {{ alert_if_spam(true) }}
+{% else %}
 <div id="app" data-version-number="{{ release.version_number }}" data-identifier="{{ release.codebase.identifier }}"
     data-review-status-enum="{{ review_status_enum_json }}"></div>
 <div id="release-editor" data-version-number="{{ release.version_number }}"
@@ -15,7 +15,9 @@
     data-review-status="{{ release.get_review().get_status_display() if release.get_review() else 'Unreviewed' }}"
     data-is-live="{{ release.live }}"
     data-can-edit-originals="{{ release.can_edit_originals }}"
-    ></div>
+    >
+</div>
+{% endif %}
 {% endblock %}
 
 {% block js %}

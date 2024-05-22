@@ -143,6 +143,8 @@ class ModeratedContent(index.Indexed, models.Model):
     spam_moderation = models.ForeignKey(
         SpamModeration, null=True, blank=True, on_delete=models.SET_NULL
     )
+    # need to have this denormalized field to allow for filtering out spam content
+    # https://docs.wagtail.org/en/stable/topics/search/indexing.html#filtering-on-index-relatedfields
     is_marked_spam = models.BooleanField(
         default=False,
         help_text=_(
@@ -647,9 +649,6 @@ class Event(ModeratedContent, ClusterableModel):
     tags = ClusterTaggableManager(through=EventTag, blank=True)
     external_url = models.URLField(blank=True)
     is_deleted = models.BooleanField(default=False)
-    # need to have this denormalized field to allow for filtering out spam content
-    # https://docs.wagtail.org/en/stable/topics/search/indexing.html#filtering-on-index-relatedfields
-
     objects = EventQuerySet.as_manager()
 
     submitter = models.ForeignKey(
@@ -782,8 +781,6 @@ class Job(ModeratedContent, ClusterableModel):
     tags = ClusterTaggableManager(through=JobTag, blank=True)
     external_url = models.URLField(blank=True)
     is_deleted = models.BooleanField(default=False)
-    # need to have this denormalized field to allow for filtering out spam content
-    # https://docs.wagtail.org/en/stable/topics/search/indexing.html#filtering-on-index-relatedfields
 
     submitter = models.ForeignKey(
         settings.AUTH_USER_MODEL,

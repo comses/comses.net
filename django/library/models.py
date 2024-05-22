@@ -526,9 +526,6 @@ class Codebase(ModeratedContent, ClusterableModel):
     doi = models.CharField(max_length=128, unique=True, null=True)
     uuid = models.UUIDField(unique=True, default=uuid.uuid4, editable=False)
 
-    # need to have this denormalized field to allow for filtering out spam content
-    # https://docs.wagtail.org/en/stable/topics/search/indexing.html#filtering-on-index-relatedfields
-
     latest_version = models.ForeignKey(
         "CodebaseRelease",
         null=True,
