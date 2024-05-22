@@ -8,6 +8,7 @@ from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.models import User
+from django.contrib.contenttypes.models import ContentType
 from django.core.files.images import ImageFile
 from django.core.exceptions import PermissionDenied
 from django.http import (
@@ -54,6 +55,7 @@ from .mixins import (
     HtmlListModelMixin,
     HtmlRetrieveModelMixin,
     PermissionRequiredByHttpMethodMixin,
+    SpamCatcherViewSetMixin,
 )
 from .pagination import SmallResultSetPagination
 from .permissions import ObjectPermissions, ViewRestrictedObjectPermissions
@@ -426,11 +428,12 @@ class EventFilter(filters.BaseFilterBackend):
         return get_search_queryset(query_string, queryset, tags=tags, criteria=criteria)
 
 
-class EventViewSet(CommonViewSetMixin, OnlyObjectPermissionModelViewSet):
+class EventViewSet(
+    SpamCatcherViewSetMixin, CommonViewSetMixin, OnlyObjectPermissionModelViewSet
+):
     serializer_class = EventSerializer
     queryset = (
-        Event.objects.live()
-        .with_tags()
+        Event.objects.with_tags()
         .with_submitter()
         .with_expired()
         .with_started()
@@ -446,6 +449,12 @@ class EventViewSet(CommonViewSetMixin, OnlyObjectPermissionModelViewSet):
         "submission_deadline",
         "start_date",
     )
+
+    def get_queryset(self):
+        # exclude spam from list view
+        if self.action == "list":
+            return self.queryset.public()
+        return self.queryset
 
     def retrieve(self, request, *args, **kwargs):
         return retrieve_with_perms(self, request, *args, **kwargs)
@@ -550,12 +559,13 @@ class JobFilter(filters.BaseFilterBackend):
         return get_search_queryset(qs, queryset, tags=tags, criteria=criteria)
 
 
-class JobViewSet(CommonViewSetMixin, OnlyObjectPermissionModelViewSet):
+class JobViewSet(
+    SpamCatcherViewSetMixin, CommonViewSetMixin, OnlyObjectPermissionModelViewSet
+):
     serializer_class = JobSerializer
     pagination_class = SmallResultSetPagination
     queryset = (
-        Job.objects.live()
-        .with_tags()
+        Job.objects.with_tags()
         .with_submitter()
         .with_expired()
         .order_by("-date_created")
@@ -567,6 +577,12 @@ class JobViewSet(CommonViewSetMixin, OnlyObjectPermissionModelViewSet):
         "date_created",
         "last_modified",
     )
+
+    def get_queryset(self):
+        # exclude spam from list view
+        if self.action == "list":
+            return self.queryset.public()
+        return self.queryset
 
     def retrieve(self, request, *args, **kwargs):
         return retrieve_with_perms(self, request, *args, **kwargs)

@@ -41,7 +41,7 @@ from wagtail.snippets.models import register_snippet
 from core import fs
 from core.backends import add_to_comses_permission_whitelist
 from core.fields import MarkdownField
-from core.models import Platform, MemberProfile
+from core.models import Platform, MemberProfile, ModeratedContent, SpamModeration
 from core.queryset import get_viewable_objects_for_user
 from core.utils import send_markdown_email
 from core.view_helpers import get_search_queryset
@@ -362,6 +362,10 @@ class CodebaseQuerySet(models.QuerySet):
     def with_submitter(self):
         return self.select_related("submitter")
 
+    def exclude_spam(self):
+        # FIXME: duplicated across Event/Job/Codebase querysets
+        return self.exclude(is_marked_spam=True)
+
     def accessible(self, user):
         return get_viewable_objects_for_user(
             user=user, queryset=self.with_viewable_releases(user=user)
@@ -433,7 +437,7 @@ class CodebaseQuerySet(models.QuerySet):
 
     def public(self, **kwargs):
         """Returns a queryset of all live codebases and their live releases"""
-        return self.with_contributors(**kwargs)
+        return self.with_contributors(**kwargs).exclude_spam()
 
     def peer_reviewed(self):
         return self.public().filter(peer_reviewed=True)
@@ -495,7 +499,7 @@ class CodebaseQuerySet(models.QuerySet):
 
 
 @add_to_comses_permission_whitelist
-class Codebase(index.Indexed, ClusterableModel):
+class Codebase(ModeratedContent, ClusterableModel):
     """
     Metadata applicable across a set of CodebaseReleases
     """
@@ -585,6 +589,7 @@ class Codebase(index.Indexed, ClusterableModel):
             ],
         ),
         # filter and sort fields
+        index.FilterField("is_marked_spam"),
         index.FilterField("last_modified"),
         index.FilterField("peer_reviewed"),
         index.FilterField("featured"),

@@ -8,7 +8,10 @@ from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group, User
 from django.contrib.postgres.fields import ArrayField
+from django.contrib.contenttypes.fields import GenericForeignKey
+from django.contrib.contenttypes.models import ContentType
 from django.db import models, transaction
+from django.db.models import Q
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.functional import cached_property
@@ -88,6 +91,69 @@ class SiteSettings(BaseSiteSetting):
 
     def deploy_environment(self):
         return settings.DEPLOY_ENVIRONMENT
+
+
+class SpamModeration(models.Model):
+    class Status(models.TextChoices):
+        UNREVIEWED = "unreviewed", _("Unreviewed")
+        SPAM = "spam", _("Confirmed spam")
+        NOT_SPAM = "not_spam", _("Confirmed not spam")
+
+    status = models.CharField(
+        choices=Status.choices,
+        default=Status.UNREVIEWED,
+        max_length=32,
+    )
+    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
+    object_id = models.PositiveIntegerField()
+    content_object = GenericForeignKey("content_type", "object_id")
+    date_created = models.DateTimeField(auto_now_add=True)
+    last_modified = models.DateTimeField(auto_now=True)
+    notes = models.TextField(
+        blank=True, null=True, help_text=_("Additional notes left by the reviewer")
+    )
+    # FIXME: should we start an enum / choices for this?
+    detection_method = models.CharField(max_length=255, blank=True, null=True)
+    detection_details = models.JSONField(
+        default=dict,
+        help_text=_(
+            "Extra context from the detection method, e.g. NLP results, elapsed time"
+        ),
+    )
+    reviewer = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET(get_sentinel_user),
+        null=True,
+        blank=True,
+    )
+
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        self.update_related_object()
+
+    def update_related_object(self):
+        related_object = self.content_object
+        if hasattr(related_object, "is_marked_spam"):
+            related_object.spam_moderation = self
+            related_object.is_marked_spam = self.status != self.Status.NOT_SPAM
+            related_object.save()
+
+
+class ModeratedContent(index.Indexed, models.Model):
+    spam_moderation = models.ForeignKey(
+        SpamModeration, null=True, blank=True, on_delete=models.SET_NULL
+    )
+    # need to have this denormalized field to allow for filtering out spam content
+    # https://docs.wagtail.org/en/stable/topics/search/indexing.html#filtering-on-index-relatedfields
+    is_marked_spam = models.BooleanField(
+        default=False,
+        help_text=_(
+            "cached boolean representation of spam_moderation for search indexing"
+        ),
+    )
+
+    class Meta:
+        abstract = True
 
 
 @register_setting
@@ -409,6 +475,10 @@ class MemberProfile(index.Indexed, ClusterableModel):
             user_metadata["affiliation"] = self.affiliations[0]
         return user_metadata
 
+    @classmethod
+    def get_indexed_objects(cls):
+        return cls.objects.public()
+
     def __str__(self):
         return str(self.user)
 
@@ -548,6 +618,10 @@ class EventQuerySet(models.QuerySet):
     def live(self, **kwargs):
         return self.filter(is_deleted=False, **kwargs)
 
+    def exclude_spam(self):
+        # FIXME: duplicated across Event/Job/Codebase querysets
+        return self.exclude(is_marked_spam=True)
+
     def latest_for_feed(self, number=10):
         return (
             self.live()
@@ -556,11 +630,11 @@ class EventQuerySet(models.QuerySet):
         )
 
     def public(self):
-        return self
+        return self.filter(is_deleted=False).exclude_spam()
 
 
 @add_to_comses_permission_whitelist
-class Event(index.Indexed, ClusterableModel):
+class Event(ModeratedContent, ClusterableModel):
     title = models.CharField(max_length=300)
     date_created = models.DateTimeField(default=timezone.now)
     last_modified = models.DateTimeField(auto_now=True)
@@ -575,16 +649,16 @@ class Event(index.Indexed, ClusterableModel):
     tags = ClusterTaggableManager(through=EventTag, blank=True)
     external_url = models.URLField(blank=True)
     is_deleted = models.BooleanField(default=False)
-
     objects = EventQuerySet.as_manager()
 
     submitter = models.ForeignKey(
-        settings.AUTH_USER_MODEL, on_delete=models.SET(get_sentinel_user)
+        settings.AUTH_USER_MODEL, on_delete=models.SET(get_sentinel_user), blank=True
     )
 
     search_fields = [
         index.SearchField("title"),
         index.SearchField("description"),
+        index.FilterField("is_marked_spam"),
         index.FilterField("is_deleted"),
         index.FilterField("date_created"),
         index.FilterField("start_date"),
@@ -621,6 +695,10 @@ class Event(index.Indexed, ClusterableModel):
     def get_list_url(cls):
         return reverse("core:event-list")
 
+    @classmethod
+    def get_indexed_objects(cls):
+        return cls.objects.public()
+
     def __str__(self):
         return "{0} posted by {1} on {2}".format(
             self.title, self.submitter.username, self.date_created.strftime("%c")
@@ -639,7 +717,7 @@ class JobQuerySet(models.QuerySet):
         return self.prefetch_related("tagged_jobs__tag")
 
     def public(self):
-        return self
+        return self.filter(is_deleted=False).exclude_spam()
 
     def with_expired(self):
         return self.annotate(
@@ -676,6 +754,10 @@ class JobQuerySet(models.QuerySet):
     def live(self, **kwargs):
         return self.filter(is_deleted=False, **kwargs)
 
+    def exclude_spam(self):
+        # FIXME: duplicated across Event/Job/Codebase querysets
+        return self.exclude(is_marked_spam=True)
+
     def latest_for_feed(self, number=10):
         return (
             self.live()
@@ -685,7 +767,7 @@ class JobQuerySet(models.QuerySet):
 
 
 @add_to_comses_permission_whitelist
-class Job(index.Indexed, ClusterableModel):
+class Job(ModeratedContent, ClusterableModel):
     title = models.CharField(max_length=300, help_text=_("Job posting title"))
     date_created = models.DateTimeField(default=timezone.now)
     application_deadline = models.DateField(
@@ -711,6 +793,7 @@ class Job(index.Indexed, ClusterableModel):
     search_fields = [
         index.SearchField("title"),
         index.SearchField("description"),
+        index.FilterField("is_marked_spam"),
         index.FilterField("is_deleted"),
         index.FilterField("date_created"),
         index.FilterField("last_modified"),
@@ -741,6 +824,10 @@ class Job(index.Indexed, ClusterableModel):
     @classmethod
     def get_list_url(cls):
         return reverse("core:job-list")
+
+    @classmethod
+    def get_indexed_objects(cls):
+        return cls.objects.public()
 
     def __str__(self):
         return "{0} posted by {1} on {2}".format(

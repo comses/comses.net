@@ -35,7 +35,7 @@ from rest_framework.response import Response
 from core.models import MemberProfile
 from core.permissions import ViewRestrictedObjectPermissions
 from core.view_helpers import add_change_delete_perms, get_search_queryset
-from core.mixins import CommonViewSetMixin
+from core.mixins import CommonViewSetMixin, SpamCatcherViewSetMixin
 from core.views import (
     FormUpdateView,
     FormCreateView,
@@ -385,7 +385,7 @@ class CodebaseFilter(filters.BaseFilterBackend):
         return get_search_queryset(qs, queryset, tags=tags, criteria=criteria)
 
 
-class CodebaseViewSet(CommonViewSetMixin, HtmlNoDeleteViewSet):
+class CodebaseViewSet(SpamCatcherViewSetMixin, CommonViewSetMixin, HtmlNoDeleteViewSet):
     lookup_field = "identifier"
     lookup_value_regex = r"[\w\-\.]+"
     pagination_class = SmallResultSetPagination
@@ -404,13 +404,13 @@ class CodebaseViewSet(CommonViewSetMixin, HtmlNoDeleteViewSet):
 
     def get_queryset(self):
         if self.action == "list":
-            # On detail pages we want to see unpublished releases
             return self.queryset.public()
-        else:
-            return self.queryset.accessible(user=self.request.user)
+        # On detail pages we want to see unpublished releases and spam
+        return self.queryset.accessible(user=self.request.user)
 
     def perform_create(self, serializer):
-        codebase = serializer.save()
+        super().perform_create(serializer)
+        codebase = serializer.instance
         return codebase.get_or_create_draft()
 
     def retrieve(self, request, *args, **kwargs):

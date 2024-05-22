@@ -324,3 +324,23 @@ Currently in <em><mark>{{ constants.DEPLOY_ENVIRONMENT }}</mark></em> mode.
     <meta property="og:description" content="{{ description }}" />
     <meta property="og:image" content="{{ absolute_image_url }}" />
 {% endmacro %}
+
+{% macro alert_if_spam(is_marked_spam) %}
+{% if is_marked_spam %}
+    <div class="alert alert-danger" role="alert">
+        <i class="fas fa-exclamation-triangle"></i>
+        <b>This submission has been flagged as spam and is awaiting moderator approval.</b>
+        <hr>
+        Believe this is a mistake? Please <a href="{{ slugurl('contact') }}">contact us</a>!
+    </div>
+{% endif %}
+{% endmacro %}
+
+{% macro alert_if_deleted(is_deleted, content_type="content") %}
+{% if is_deleted %}
+    <div class="alert alert-danger" role="alert">
+        <i class="fas fa-trash"></i>
+        <b>This {{ content_type }} has been deleted. It will remain archived but will not be publicly visible.</b>
+    </div>
+{% endif %}
+{% endmacro%}

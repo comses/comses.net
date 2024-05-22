@@ -1,6 +1,7 @@
 <template>
   <form @submit="handleSubmit">
     <TextField class="mb-3" name="title" label="Title" help="The name of this event" required />
+    <HoneypotField />
     <TextField
       class="mb-3"
       name="location"
@@ -105,6 +106,7 @@ import TextField from "@/components/form/TextField.vue";
 import MarkdownField from "@/components/form/MarkdownField.vue";
 import DatepickerField from "@/components/form/DatepickerField.vue";
 import TaggerField from "@/components/form/TaggerField.vue";
+import HoneypotField from "@/components/form/HoneypotField.vue";
 import FormAlert from "@/components/form/FormAlert.vue";
 import FieldLabel from "@/components/form/FieldLabel.vue";
 import { useForm } from "@/composables/form";
@@ -138,7 +140,7 @@ const {
   errors,
   handleSubmit,
   values,
-  setValues,
+  setValuesWithLoadTime,
   addUnsavedAlertListener,
   removeUnsavedAlertListener,
 } = useForm<EventEditFields>({
@@ -155,7 +157,7 @@ const {
 onMounted(async () => {
   if (props.eventId) {
     await retrieve(props.eventId);
-    setValues(data.value);
+    setValuesWithLoadTime(data.value);
   }
   addUnsavedAlertListener();
 });

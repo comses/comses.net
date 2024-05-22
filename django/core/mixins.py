@@ -2,10 +2,14 @@ import logging
 
 from django.conf import settings
 from django.contrib.auth.views import redirect_to_login
+from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import PermissionDenied
+from django.utils import timezone
+from rest_framework import serializers
 from rest_framework.exceptions import NotFound
 from rest_framework.response import Response
 
+from .models import SpamModeration
 from .permissions import ViewRestrictedObjectPermissions
 
 logger = logging.getLogger(__name__)
@@ -180,3 +184,112 @@ class HtmlListModelMixin:
 
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data)
+
+
+class SpamCatcherSerializerMixin(serializers.Serializer):
+    """
+    sets a "spam_context" flag on the serializer context using some simple heuristics:
+    - if the honeypot field (named "content") is filled in
+    - if the time between the page being loaded and the form being submitted is less than
+      SPAM_LIKELY_SECONDS_THRESHOLD
+
+    Note: a serializer using this mixin that overrides the validate method must call
+    super().validate(attrs) to chain the validation logic
+    """
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["content"] = serializers.CharField(
+            required=False, allow_blank=True, write_only=True
+        )
+        self.fields["loaded_time"] = serializers.DateTimeField(required=False)
+
+    def validate(self, attrs):
+        super().validate(attrs)
+        if attrs.get("content"):
+            self.context["spam_context"] = self.format_spam_context(
+                "honeypot",
+                {
+                    "field_name": "content",
+                    "field_value": attrs["content"],
+                },
+            )
+        else:
+            self.check_form_submit_time(attrs)
+        # remove so that the serializer doesn't attempt to save these fields
+        for field in ["content", "loaded_time"]:
+            attrs.pop(field, None)
+
+        return attrs
+
+    def check_form_submit_time(self, attrs):
+        loaded_time = attrs.get("loaded_time")
+        submit_time = timezone.now()
+        if loaded_time and submit_time:
+            elapsed = submit_time - loaded_time
+            if elapsed.total_seconds() < settings.SPAM_LIKELY_SECONDS_THRESHOLD:
+                self.context["spam_context"] = self.format_spam_context(
+                    "form_submit_time", {"elapsed_seconds": elapsed.total_seconds()}
+                )
+
+    def format_spam_context(self, method: str, value: dict):
+        return {
+            "detection_method": method,
+            "detection_details": value,
+        }
+
+
+class SpamCatcherViewSetMixin:
+    """
+    creates a SpamContent object on create and update if the spam_context
+    flag is set by the serializer (see SpamCatcherSerializerMixin)
+    """
+
+    def perform_create(self, serializer: serializers.Serializer):
+        super().perform_create(serializer)
+        self.handle_spam_detection(serializer)
+
+    def perform_update(self, serializer):
+        super().perform_update(serializer)
+        self.handle_spam_detection(serializer)
+
+    def _validate_content_object(self, instance):
+        # make sure that the instance has a spam_moderation attribute as well as the
+        # necessary fields for displaying the spam content in the admin
+        required_fields = [
+            "spam_moderation",
+            "is_marked_spam",
+            "get_absolute_url",
+            "title",
+        ]
+        for field in required_fields:
+            if not hasattr(instance, field):
+                raise ValueError(
+                    f"instance {instance} does not have a {field} attribute"
+                )
+
+    def handle_spam_detection(self, serializer: serializers.Serializer):
+        if "spam_context" in serializer.context:
+            try:
+                self._validate_content_object(serializer.instance)
+                self._record_spam(
+                    serializer.instance, serializer.context["spam_context"]
+                )
+            except ValueError as e:
+                logger.warning("Cannot flag %s as spam: %s", serializer.instance, e)
+
+    def _record_spam(self, instance, spam_context: dict):
+        content_type = ContentType.objects.get_for_model(type(instance))
+        # SpamContent updates the content instance on save
+        spam_moderation, created = SpamModeration.objects.get_or_create(
+            content_type=content_type,
+            object_id=instance.pk,
+            defaults={
+                "status": SpamModeration.Status.UNREVIEWED,
+                "detection_method": spam_context["detection_method"],
+                "detection_details": spam_context["detection_details"],
+            },
+        )
+        if not created:
+            spam_moderation.status = SpamModeration.Status.UNREVIEWED
+            spam_moderation.save()

@@ -1,5 +1,5 @@
 {% extends "sidebar_layout.jinja" %}
-{% from "common.jinja" import permission_button_group, breadcrumb, embed_discourse_comments, share_card, member_profile_href, search_tag_href, delete_confirm_modal, render_ogp_tags %}
+{% from "common.jinja" import permission_button_group, breadcrumb, embed_discourse_comments, share_card, member_profile_href, search_tag_href, delete_confirm_modal, render_ogp_tags, alert_if_spam, alert_if_deleted %}
 
 {% block title %}{{ title }}{% endblock %}
 
@@ -21,6 +21,8 @@
 {% endblock ogp_tags %}
 
 {% block content %}
+    {{ alert_if_spam(is_marked_spam) }}
+    {{ alert_if_deleted(is_deleted, "job") }}
     <div id="discourse-content">
         <h1>{{ title }}</h1>
         {% if tags %}

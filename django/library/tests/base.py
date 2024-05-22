@@ -2,7 +2,7 @@ import io
 import random
 from uuid import UUID
 
-from core.tests.base import UserFactory
+from core.tests.base import ContentModelFactory, UserFactory
 from library.fs import FileCategoryDirectories
 from library.models import (
     Codebase,
@@ -16,10 +16,13 @@ from library.models import (
 from library.serializers import CodebaseSerializer
 
 
-class CodebaseFactory:
+class CodebaseFactory(ContentModelFactory):
+    model = Codebase
+    serializer = CodebaseSerializer
+
     def __init__(self, submitter):
+        super().__init__(submitter)
         self.id = 0
-        self.submitter = submitter
 
     def get_default_data(self):
         uuid = UUID(int=random.getrandbits(128))
@@ -30,16 +33,6 @@ class CodebaseFactory:
             "identifier": str(uuid),
             "submitter": self.submitter,
         }
-
-    def create(self, **overrides) -> Codebase:
-        codebase = self.create_unsaved(**overrides)
-        codebase.save()
-        return codebase
-
-    def create_unsaved(self, **overrides):
-        kwargs = self.get_default_data()
-        kwargs.update(overrides)
-        return Codebase(**kwargs)
 
     def data_for_create_request(self, **overrides):
         codebase = self.create_unsaved(**overrides)

@@ -87,9 +87,9 @@ WAGTAIL_APPS = [
     "wagtail.search",
     "wagtail.admin",
     "wagtail",
-    "wagtail.contrib.modeladmin",
     "wagtail.contrib.settings",
     "wagtail.contrib.search_promotions",
+    "wagtail_modeladmin",
     "taggit",
     "modelcluster",
     "search",
@@ -259,14 +259,16 @@ PEER_REVIEW_INVITATION_EXPIRATION = 21
 
 # sentry DSN
 SENTRY_DSN = os.getenv("SENTRY_DSN", "https://sentry.example.com/2")
-
 SECRET_KEY = read_secret("django_secret_key", os.getenv("SECRET_KEY"))
 
 # regular settings
 
 EXPIRED_JOB_DAYS_THRESHOLD = int(os.getenv("EXPIRED_JOB_DAYS_THRESHOLD", 180))
-
 EXPIRED_EVENT_DAYS_THRESHOLD = int(os.getenv("EXPIRED_EVENT_DAYS_THRESHOLD", 2))
+
+# number of seconds between the load time and submit time of a form
+# submission that is considered likely spam
+SPAM_LIKELY_SECONDS_THRESHOLD = 3
 
 # Database configuration
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases

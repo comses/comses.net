@@ -7,6 +7,7 @@
       help="A short title describing this computational model, limited to 300 characters"
       required
     />
+    <HoneypotField />
     <MarkdownField
       class="mb-3"
       name="description"
@@ -61,6 +62,7 @@ import TextField from "@/components/form/TextField.vue";
 import TextareaField from "@/components/form/TextareaField.vue";
 import MarkdownField from "@/components/form/MarkdownField.vue";
 import TaggerField from "@/components/form/TaggerField.vue";
+import HoneypotField from "@/components/form/HoneypotField.vue";
 import FormAlert from "@/components/form/FormAlert.vue";
 import { useForm } from "@/composables/form";
 import { useCodebaseAPI, useReleaseEditorAPI } from "@/composables/api";
@@ -98,7 +100,7 @@ const {
   errors,
   handleSubmit,
   values,
-  setValues,
+  setValuesWithLoadTime,
   addUnsavedAlertListener,
   removeUnsavedAlertListener,
 } = useForm<CodebaseEditFields>({
@@ -116,7 +118,7 @@ onMounted(async () => {
   if (props.identifier) {
     await retrieve(props.identifier);
     console.log(data.value);
-    setValues(data.value);
+    setValuesWithLoadTime(data.value);
   }
   addUnsavedAlertListener();
 });
