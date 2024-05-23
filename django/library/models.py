@@ -41,7 +41,7 @@ from wagtail.snippets.models import register_snippet
 from core import fs
 from core.backends import add_to_comses_permission_whitelist
 from core.fields import MarkdownField
-from core.models import Platform, MemberProfile, ModeratedContent, SpamModeration
+from core.models import Platform, MemberProfile, ModeratedContent
 from core.queryset import get_viewable_objects_for_user
 from core.utils import send_markdown_email
 from core.view_helpers import get_search_queryset
@@ -138,7 +138,7 @@ class Contributor(index.Indexed, ClusterableModel):
     affiliations = ClusterTaggableManager(through=ContributorAffiliation)
 
     json_affiliations = models.JSONField(
-         default=list, help_text=_("JSON-LD list of affiliated institutions")
+        default=list, help_text=_("JSON-LD list of affiliated institutions")
     )
 
     type = models.CharField(
@@ -187,7 +187,7 @@ class Contributor(index.Indexed, ClusterableModel):
     def from_user(user):
         """
         Returns a tuple of (object, created) based on the
-        https://docs.djangoproject.com/en/3.1/ref/models/querysets/#get-or-create
+        https://docs.djangoproject.com/en/4.2/ref/models/querysets/#get-or-create
         contract
         """
         try:
@@ -197,6 +197,8 @@ class Contributor(index.Indexed, ClusterableModel):
                     "given_name": user.first_name,
                     "family_name": user.last_name,
                     "email": user.email,
+                    # FIXME: rename to affiliations eventually
+                    "json_affiliations": user.member_profile.affiliations,
                 },
             )
         except Contributor.MultipleObjectsReturned:
@@ -231,10 +233,11 @@ class Contributor(index.Indexed, ClusterableModel):
             "givenName": self.given_name,
             "familyName": self.family_name,
         }
+        # FIXME: should we proxy to User / MemberProfile fields if User is available
         if self.orcid_url:
             codemeta["@id"] = self.orcid_url
-        if self.affiliations.exists():
-            codemeta["affiliation"] = self.formatted_json_affiliations
+        if self.json_affiliations:
+            codemeta["affiliation"] = self.codemeta_affiliation
         if self.email:
             codemeta["email"] = self.email
         return codemeta
@@ -280,8 +283,12 @@ class Contributor(index.Indexed, ClusterableModel):
         return ", ".join(self.affiliations.values_list("name", flat=True))
 
     @property
-    def formatted_json_affiliations(self):
-        return ", ".join(item["name"] for item in self.json_affiliations)
+    def codemeta_affiliation(self):
+        """
+        For now codemeta affiliations appear to be a single https://schema.org/Organization
+        """
+        if self.json_affiliations:
+            return self.to_codemeta_affiliation(self.json_affiliations[0])
 
     @property
     def primary_affiliation_name(self):
@@ -290,6 +297,19 @@ class Contributor(index.Indexed, ClusterableModel):
     @property
     def primary_json_affiliation_name(self):
         return self.json_affiliations[0]["name"] if self.json_affiliations else ""
+
+    def to_codemeta_affiliation(self, affiliation):
+        if affiliation:
+            return {
+                # FIXME: may switch to https://schema.org/ResearchOrganization at some point
+                "@type": "Organization",
+                "@id": affiliation.get("ror_id"),
+                "name": affiliation.get("name"),
+                "url": affiliation.get("url"),
+                "identifier": affiliation.get("ror_id"),
+                "sameAs": affiliation.get("ror_id"),
+            }
+        return {}
 
     def get_profile_url(self):
         user = self.user

@@ -48,7 +48,6 @@ RESOURCES_PAGE_NAVIGATION_LINKS = (
 
 
 class Command(BaseCommand):
-
     """
     create or update education index page and tutorial detail pages from markdown formatted files
     """

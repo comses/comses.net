@@ -1,10 +1,11 @@
 from collections import defaultdict
 from django.core.management.base import BaseCommand
 from fuzzywuzzy import fuzz
+from requests.adapters import HTTPAdapter
+from urllib3 import Retry
 
 import logging
 import requests
-import time
 
 from library.models import ContributorAffiliation, Contributor
 
@@ -12,8 +13,7 @@ logger = logging.getLogger(__name__)
 
 
 class Command(BaseCommand):
-    help = """Migrate data from ContributorAffiliation Tags to Contributor.json_affiliations
-    with an attempt to add more data from ROR database"""
+    help = """Migrate data from ContributorAffiliation Tags to Contributor.json_affiliations; attempts to augment data with a basic ROR API lookup"""
 
     def add_arguments(self, parser):
         parser.add_argument(
@@ -22,12 +22,24 @@ class Command(BaseCommand):
             type=int,
             choices=range(1, 100),
             metavar="[1-100]",
-            default=75,
-            help="ratio threshold used in fuzzy matching, defaults to 75",
+            default=80,
+            help="""threshold used in fuzzy matching and ROR API score (divided by 100 for a floating point number between 0.0 and 1.0). Defaults to 80""",
         )
 
     def handle(self, *args, **options):
         session = requests.Session()
+        fuzzy_match_threshold = options["ratio"]
+        ror_score_threshold = fuzzy_match_threshold / 100.0
+        adapter = HTTPAdapter(
+            max_retries=Retry(
+                total=6,
+                backoff_factor=1.5,
+                allowed_methods=None,
+                status_forcelist=[429, 500, 502, 503, 504],
+            ),
+        )
+        session.mount("http://", adapter)
+        session.mount("https://", adapter)
 
         ordered_contributor_affiliations = (
             ContributorAffiliation.objects.all().order_by("content_object_id")
@@ -36,25 +48,65 @@ class Command(BaseCommand):
         logger.info("Looking up affiliations against ROR API")
 
         # build affiliations_by_contributor_id dictionary
-        contributor_affiliations_dict = defaultdict(list)
+        contributor_affiliations = defaultdict(list)
         for ca in ordered_contributor_affiliations:
             if not (ca.tag and ca.tag.name and ca.content_object_id):
                 continue
 
             contributor_id = ca.content_object_id
+            affiliation_name = ca.tag.name
+            best_match = self.lookup(session, affiliation_name)
+            new_affiliation = self.to_affiliation(
+                affiliation_name,
+                best_match,
+                match_threshold=fuzzy_match_threshold,
+                ror_score_threshold=ror_score_threshold,
+            )
+            # register the new affiliation with this contributor
+            contributor_affiliations[contributor_id].append(new_affiliation)
 
-            new_affiliation = {}
-            new_affiliation["name"] = ca.tag.name
-            best_match = self.lookup(session, ca.tag.name)
+        # Loop through enriched affiliations and save the json_affiliations
+        # on each contributor
+        for contributor_id, affiliations in contributor_affiliations.items():
+            logger.info(
+                "updating [contributor_id: %s] affiliations=%s",
+                contributor_id,
+                affiliations,
+            )
+            Contributor.objects.filter(pk=contributor_id).update(
+                json_affiliations=affiliations
+            )
 
-            if best_match and self.is_good_match(
-                score=best_match["score"],
-                name=ca.tag.name,
-                match_name=best_match["organization"]["name"],
-                ratio=options["ratio"],
+    def lookup(self, session, name):
+        ror_api_url = f"https://api.ror.org/organizations?affiliation={name}"
+        try:
+            response = session.get(ror_api_url, timeout=10)
+            items = response.json()["items"]
+            logger.debug("[lookup %s] found %s", name, items)
+            return items[0] if items else None
+        except Exception as e:
+            logger.warning(e)
+        return None
+
+    def to_affiliation(
+        self, name, best_match, match_threshold=85, ror_score_threshold=1.0
+    ):
+        """
+        Returns a new affiliation dictionary with ROR data if a good match
+        or a dict of the original data { "name": name } otherwise
+        """
+        if best_match:
+            score = best_match["score"]
+            ror_name = best_match["organization"]["name"]
+            if (
+                score >= ror_score_threshold
+                or fuzz.partial_ratio(ror_name, name) >= match_threshold
             ):
-                # ror_id is guaranteed to exist in the lookup
-                new_affiliation["ror_id"] = best_match["organization"]["id"]
+                new_affiliation = {
+                    "name": ror_name,
+                    # ror id is guaranteed if lookup was successful
+                    "ror_id": best_match["organization"]["id"],
+                }
                 # acronyms and links are not guaranteed to exist
                 if best_match["organization"]["acronyms"]:
                     new_affiliation["acronym"] = best_match["organization"]["acronyms"][
@@ -62,43 +114,13 @@ class Command(BaseCommand):
                     ]
                 if best_match["organization"]["links"]:
                     new_affiliation["url"] = best_match["organization"]["links"][0]
+                # FIXME: additional geodata to include from the returned ROR API data?
+                # e.g., GRID id, 'country', 'aliases', 'types', etc.
+                return new_affiliation
+            else:
+                logger.warning("No reasonable match found for %s: %s", name, best_match)
 
-            # Check if the ID already exists in the affiliations_by_contributor_id dictionary
-            contributor_affiliations_dict[contributor_id].append(new_affiliation)
-
-        # Loop through enriched affiliations and save the json_affiliations on contributor
-        for contributor_id, affiliations in contributor_affiliations_dict.items():
-            # Check if the affiliations list is not empty
-            if affiliations:
-                logger.info(
-                    "Saving affiliations=%s for contributor_id=%s",
-                    affiliations,
-                    contributor_id,
-                )
-                contributor = Contributor.objects.get(pk=contributor_id)
-                contributor.json_affiliations = affiliations
-                contributor.save()
-
-    def lookup(self, session, name):
-        # FIXME: replace with exponential backoff (con: adds another dependency)
-        # or https://majornetwork.net/2022/04/handling-retries-in-python-requests/
-        # lookup the name with the affiliations parameter in the ror db
-        connected = False
-        ror_api_url = f"https://api.ror.org/organizations?affiliation={name}"
-        res = None
-        while not connected:
-            try:
-                res = session.get(ror_api_url, timeout=10)
-                connected = True
-                e = None
-            except Exception as e:
-                pass
-            if e:
-                logger.warning("connection error. sleeping and trying again..")
-                time.sleep(2)
-        items = res.json()["items"]
-        return items[0] if items else None
-
-    def is_good_match(self, score, name, match_name, ratio):
-        # returns True if we have high confidence in name matching
-        return score >= 1.0 and fuzz.partial_ratio(match_name, name) >= ratio
+        # either no best_match or failed the match_threshold fuzz test
+        return {
+            "name": name,
+        }

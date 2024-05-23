@@ -33,7 +33,6 @@ ABOUT_NAVIGATION_LINKS = (
 
 
 class Command(BaseCommand):
-
     """
     Adjust the Community page for  https://github.com/comses/comses.net/issues/584
     this can't be in a data migration for arcane wagtail reasons related to CategoryIndexPage subclassing

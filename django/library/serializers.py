@@ -74,6 +74,7 @@ class ContributorSerializer(serializers.ModelSerializer):
     mutable = serializers.SerializerMethodField(read_only=True)
 
     profile_url = serializers.SerializerMethodField(read_only=True)
+
     def get_mutable(self, obj):
         return self._is_exclusive_to_one_codebase(obj)
 
@@ -89,28 +90,32 @@ class ContributorSerializer(serializers.ModelSerializer):
                 "type",
                 "json_affiliations",
             ]:
-                if key in validated_data and getattr(instance, key) != validated_data[key]:
+                if (
+                    key in validated_data
+                    and getattr(instance, key) != validated_data[key]
+                ):
                     if key == "affiliations":
                         instance_affiliations = getattr(instance, "affiliations", None)
                         incoming_affiliations = validated_data.get("affiliations", None)
 
-                        if instance_affiliations and instance_affiliations.count() == 0 and not incoming_affiliations:
+                        if (
+                            instance_affiliations
+                            and instance_affiliations.count() == 0
+                            and not incoming_affiliations
+                        ):
                             logger.debug(
-                                "Skipping update for affiliations because both instance.affiliations and validated_data.affiliations are None and empty list respectively")
+                                "Skipping update for affiliations because both instance.affiliations and validated_data.affiliations are None and empty list respectively"
+                            )
                             continue
 
                     logger.debug(
                         f"{key} is not the same! {getattr(instance, key)} != {validated_data[key]}. Contributors can only be updated when they are exclusive to one codebase"
                     )
                     return True
-            logger.debug(
-                f"not trying to update, all attributes match!"
-            )
+            logger.debug(f"not trying to update, all attributes match!")
             return False
         except Exception as e:
-            logger.error(
-                f"Some Exception here {e}"
-            )
+            logger.error(f"Some Exception here {e}")
             return True
 
     def _is_exclusive_to_one_codebase(self, obj):
@@ -122,6 +127,7 @@ class ContributorSerializer(serializers.ModelSerializer):
 
         times_used_in_codebases = distinct_codebases.count()
         return times_used_in_codebases <= 1
+
     def _is_not_used_or_used_by_current_release_only(self, contributor):
         # codebase instead of release so we allow a submitter to update a contributor on their own codebase
         release_id = self.context.get("release_id")
@@ -140,7 +146,12 @@ class ContributorSerializer(serializers.ModelSerializer):
         if times_used_in_codebases == 0:
             return True
         elif times_used_in_codebases == 1:
-            if ReleaseContributor.objects.filter(contributor=contributor).first().release_id == release_id:
+            if (
+                ReleaseContributor.objects.filter(contributor=contributor)
+                .first()
+                .release_id
+                == release_id
+            ):
                 return True
             else:
                 return False
@@ -208,15 +219,15 @@ class ContributorSerializer(serializers.ModelSerializer):
         # 'type'
         # 'affiliations'
         # 'json_affiliations'
-        user_id  = validated_data.pop("user_id", None)
+        user_id = validated_data.pop("user_id", None)
         if user_id:
-            validated_data.pop('given_name', None)
-            validated_data.pop('middle_name', None)
-            validated_data.pop('family_name', None)
-            validated_data.pop('email', None)
-            validated_data.pop('type', None)
-            validated_data.pop('affiliations', None)
-            validated_data.pop('json_affiliations', None)
+            validated_data.pop("given_name", None)
+            validated_data.pop("middle_name", None)
+            validated_data.pop("family_name", None)
+            validated_data.pop("email", None)
+            validated_data.pop("type", None)
+            validated_data.pop("affiliations", None)
+            validated_data.pop("json_affiliations", None)
 
         instance = super().update(instance, validated_data)
         # affiliations = validated_data.pop("affiliations", None)
@@ -257,6 +268,7 @@ class ContributorSerializer(serializers.ModelSerializer):
             "profile_url",
             "mutable",
         )
+
 
 class ListReleaseContributorSerializer(serializers.ListSerializer):
     def validate(self, attrs):
@@ -347,7 +359,9 @@ class ReleaseContributorSerializer(serializers.ModelSerializer):
     @staticmethod
     def create_unsaved(context, validated_data):
         raw_contributor = validated_data.pop("contributor")
-        contributor_serializer = ContributorSerializer(data=raw_contributor, context=context)
+        contributor_serializer = ContributorSerializer(
+            data=raw_contributor, context=context
+        )
         contributor_serializer.is_valid(raise_exception=True)
         contributor = contributor_serializer.save()
 

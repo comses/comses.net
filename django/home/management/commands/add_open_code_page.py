@@ -29,7 +29,6 @@ These badges are derived from the [“Badges to Acknowledge Open Practices” pr
 
 
 class Command(BaseCommand):
-
     """
     Create CoMSES trusted digital repository landing page and add it as a child to the /resources/ CategoryIndexPage
     """

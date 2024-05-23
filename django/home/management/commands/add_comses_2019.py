@@ -55,7 +55,6 @@ COMSES_2019_SUBMISSION_INFO = """
 
 
 class Command(BaseCommand):
-
     """
     Create CoMSES 2019 virtual conference conference landing page
     """
