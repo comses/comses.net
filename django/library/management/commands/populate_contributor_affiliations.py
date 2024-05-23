@@ -1,6 +1,6 @@
 from collections import defaultdict
 from django.core.management.base import BaseCommand
-from fuzzywuzzy import fuzz
+from rapidfuzz import fuzz
 from requests.adapters import HTTPAdapter
 from urllib3 import Retry
 
