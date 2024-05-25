@@ -7,7 +7,7 @@ import pathlib
 from typing import List
 import uuid
 from collections import OrderedDict
-from datetime import timedelta
+from datetime import datetime, timedelta
 
 import semver
 from django.conf import settings
@@ -2709,10 +2709,11 @@ class DataCiteMetadata:
         metadata = {}
         # FIXME: set more codebase attributes???
         # https://support.datacite.org/docs/what-is-the-identifiers-attribute-in-the-rest-api
+        # future consideration: adding references_text and associated_publication_text fields when more info for those fiels are added
 
         metadata["identifiers"] = [
             {
-                "identifierType": "URL",
+                "identifierType": "DOI", # only "DOI" allowed according to DataCite schema
                 "identifier": codebase.permanent_url,
             }
         ]
@@ -2726,21 +2727,34 @@ class DataCiteMetadata:
             )
 
         # FIXME: creators should never be empty!
+        # FIXME: when additional info is available for codebase creator, update this
         metadata["creators"] = [
-            {"name": author_string_name} for author_string_name in codebase.author_list
+            {"name": author_string_name, "creatorType": "Personal"}
+            for author_string_name in codebase.author_list
         ]
         metadata["titles"] = [{"title": codebase.title}]
+        metadata["descriptions"] = [
+            {
+                "description": codebase.summarized_description,
+                "descriptionType": "Abstract",
+            }
+        ]  # or codebase.description.raw?
 
         # FIXME: include more info!
         metadata["publisher"] = str(
             f'{CommonMetadata.COMSES_ORGANIZATION["name"]} {CommonMetadata.COMSES_ORGANIZATION["url"]}'
         )
+
+        # Use this year if no publication year found
+        currentDateTime = datetime.now()
+        date = currentDateTime.date()
+        year = date.strftime("%Y")
         metadata["publicationYear"] = str(
             codebase.first_published_at.year
             if codebase is not None
             and codebase.first_published_at is not None
             and codebase.first_published_at.year is not None
-            else None
+            else year
         )
         metadata["types"] = {"resourceType": "Model", "resourceTypeGeneral": "Software"}
         metadata["schemaVersion"] = "http://datacite.org/schema/kernel-4"
