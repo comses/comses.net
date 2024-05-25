@@ -4,7 +4,7 @@ import logging
 import random
 import string
 
-from django.contrib.auth.models import get_user_model
+from django.contrib.auth import get_user_model
 from hypothesis import (
     HealthCheck,
     Verbosity,
