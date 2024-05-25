@@ -55,7 +55,10 @@
       <ContributorEditForm
         id="add-contributor-form"
         :show-custom-input="showCustomInput"
+        :disable-edit-form="disableEditForm"
+        :is-edit="false"
         ref="editFormRef"
+        @reset="resetForm"
         @success="() => editContributorModal?.hide()"
       />
     </template>
@@ -83,6 +86,7 @@ const editFormRef = ref<InstanceType<typeof ContributorEditForm> | null>(null);
 const contributorSearchRef = ref<InstanceType<typeof ContributorSearch> | null>(null);
 
 const showCustomInput = ref(false);
+const disableEditForm = ref(true);
 
 function populateFromContributor(contributor: Contributor) {
   if (editFormRef.value) {
@@ -93,6 +97,7 @@ function populateFromContributor(contributor: Contributor) {
 function createNewContributor() {
   resetForm();
   if (editFormRef.value) {
+    disableEditForm.value = false;
     showCustomInput.value = true;
   }
 }

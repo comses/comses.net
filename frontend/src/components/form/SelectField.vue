@@ -7,6 +7,7 @@
     <select
       v-else
       :id="id"
+      :disabled="disabled"
       v-bind="attrs"
       :class="{ 'form-select': true, 'is-invalid': error }"
       @change="updateValue"
@@ -45,6 +46,7 @@ export interface SelectFieldProps {
   help?: string;
   placeholder?: string;
   required?: boolean;
+  disabled?: boolean;
   options: { value: any; label: string }[];
 }
 

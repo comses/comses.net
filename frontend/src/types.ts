@@ -139,7 +139,6 @@ export interface ReleaseContributor {
 export interface Contributor {
   affiliations: any[];
   jsonAffiliations: any[];
-  mutable: boolean;
   primaryAffiliationName: string;
   primaryJsonAffiliationName: string;
   email: string;

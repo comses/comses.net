@@ -2,8 +2,8 @@
   <div>
     <p>
       Please list the contributors that should be included in a citation for this software release.
-      Ordering is important, as is the role of the contributor. You can change ordering by dragging
-      contributors in the list.
+      Ordering is important, as are the contributor's role(s). Change contributor ordering by
+      dragging them in the list.
     </p>
     <p>
       By default, we will always add the submitter (you) as a release contributor. There must be at
@@ -14,7 +14,8 @@
       <div v-if="reordered">
         <div class="alert alert-warning px-1 py-0 mb-2">
           <small class="">
-            <i class="fas fa-info-circle"></i> Please save your changes once finished re-ordering
+            <i class="fas fa-info-circle"></i> Please save your changes after you're finished
+            re-ordering
           </small>
         </div>
         <div class="d-flex justify-content-end">
@@ -40,7 +41,7 @@
     </div>
     <Sortable
       :list="releaseContributors"
-      :item-key="item => item.contributor.email"
+      :item-key="item => item.contributor.id"
       class="list-group my-3"
       @end="sort"
       tag="ul"

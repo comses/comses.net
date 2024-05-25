@@ -66,23 +66,19 @@ class ContributorSerializer(serializers.ModelSerializer):
     # Need an ID for Vue-Multiselect
     id = serializers.IntegerField(read_only=True)
     user = RelatedUserSerializer(required=False, allow_null=True)
-    affiliations = TagSerializer(many=True)
-
     json_affiliations = models.JSONField(
         default=list, help_text=_("JSON-LD list of affiliated institutions")
     )
-    mutable = serializers.SerializerMethodField(read_only=True)
 
-    profile_url = serializers.SerializerMethodField(read_only=True)
-
-    def get_mutable(self, obj):
-        return self._is_exclusive_to_one_codebase(obj)
+    profile_url = serializers.SerializerMethodField()
 
     def _trying_to_modify_attributes(self, instance, validated_data):
         try:
+            if "user_id" in validated_data:
+                # is user_id is present, then proxy user has been changed, skip the attribute check
+                return False
+
             for key in [
-                "id",
-                "user_id",
                 "given_name",
                 "middle_name",
                 "family_name",
@@ -94,69 +90,18 @@ class ContributorSerializer(serializers.ModelSerializer):
                     key in validated_data
                     and getattr(instance, key) != validated_data[key]
                 ):
-                    if key == "affiliations":
-                        instance_affiliations = getattr(instance, "affiliations", None)
-                        incoming_affiliations = validated_data.get("affiliations", None)
-
-                        if (
-                            instance_affiliations
-                            and instance_affiliations.count() == 0
-                            and not incoming_affiliations
-                        ):
-                            logger.debug(
-                                "Skipping update for affiliations because both instance.affiliations and validated_data.affiliations are None and empty list respectively"
-                            )
-                            continue
-
                     logger.debug(
-                        f"{key} is not the same! {getattr(instance, key)} != {validated_data[key]}. Contributors can only be updated when they are exclusive to one codebase"
+                        "[key %s] has different incoming value %s != %s - Contributors can only be updated when exclusive to one codebase",
+                        key,
+                        getattr(instance, key),
+                        validated_data[key],
                     )
                     return True
-            logger.debug(f"not trying to update, all attributes match!")
+            logger.debug("no update detected, all attributes match")
             return False
         except Exception as e:
-            logger.error(f"Some Exception here {e}")
+            logger.exception(e)
             return True
-
-    def _is_exclusive_to_one_codebase(self, obj):
-        distinct_codebases = (
-            ReleaseContributor.objects.filter(contributor=obj)
-            .values_list("release__codebase", flat=True)
-            .distinct()
-        )
-
-        times_used_in_codebases = distinct_codebases.count()
-        return times_used_in_codebases <= 1
-
-    def _is_not_used_or_used_by_current_release_only(self, contributor):
-        # codebase instead of release so we allow a submitter to update a contributor on their own codebase
-        release_id = self.context.get("release_id")
-        if not release_id:
-            return False
-
-        distinct_codebases = (
-            ReleaseContributor.objects.filter(contributor=contributor)
-            .values_list("release__codebase", flat=True)
-            .distinct()
-        )
-
-        times_used_in_codebases = distinct_codebases.count()
-        logger.debug(f"distinct_codebases={distinct_codebases}")
-
-        if times_used_in_codebases == 0:
-            return True
-        elif times_used_in_codebases == 1:
-            if (
-                ReleaseContributor.objects.filter(contributor=contributor)
-                .first()
-                .release_id
-                == release_id
-            ):
-                return True
-            else:
-                return False
-        else:
-            return False
 
     def get_existing_contributor(self, validated_data):
         user = validated_data.get("user")
@@ -166,10 +111,13 @@ class ContributorSerializer(serializers.ModelSerializer):
         # attempt to find contributor by username, then email, then name without an email
         if username:
             user = User.objects.filter(username=username).first()
-            contributor = Contributor.objects.filter(user__username=username).first()
+            if user:
+                contributor = Contributor.objects.filter(user=user).first()
         elif email:
+            user = User.objects.filter(email=email).first()
             contributor = Contributor.objects.filter(email=email).first()
-            user = contributor.user if contributor else None
+            if not user:
+                user = contributor.user if contributor else None
         else:
             contrib_filter = {
                 k: validated_data.get(k, "")
@@ -202,22 +150,16 @@ class ContributorSerializer(serializers.ModelSerializer):
             )
 
     def update(self, instance, validated_data):
-        if not self._is_not_used_or_used_by_current_release_only(instance):
-            if self._trying_to_modify_attributes(instance, validated_data):
-                raise ValidationError(
-                    _(
-                        "Contributors can only be updated when they are exclusive to one codebase"
-                    )
-                )
+        if self._trying_to_modify_attributes(instance, validated_data):
+            raise ValidationError("Updating contributors is not allowed.")
         # Server side validation:
-        # if a contributor is made from a user, do not allow to modify it's data.
+        # if a contributor proxies a User, do not allow modification of its data.
         # POP following:
         # 'given_name'
         # 'middle_name'
         # 'family_name'
         # 'email'
         # 'type'
-        # 'affiliations'
         # 'json_affiliations'
         user_id = validated_data.pop("user_id", None)
         if user_id:
@@ -226,27 +168,15 @@ class ContributorSerializer(serializers.ModelSerializer):
             validated_data.pop("family_name", None)
             validated_data.pop("email", None)
             validated_data.pop("type", None)
-            validated_data.pop("affiliations", None)
             validated_data.pop("json_affiliations", None)
 
         instance = super().update(instance, validated_data)
-        # affiliations = validated_data.pop("affiliations", None)
-        #
-        # if affiliations:  # dont overwrite affiliations if not provided
-        #     affiliations_serializer = TagSerializer(
-        #         many=True, data=affiliations, context=self.context
-        #     )
-        #     set_tags(instance, affiliations_serializer, "affiliations")
         instance.save()
         return instance
 
     def create(self, validated_data):
-        print(f"CREATE TRIGGERED with: {validated_data}")
-        affiliations_serializer = TagSerializer(
-            many=True, data=validated_data.pop("affiliations")
-        )
+        logger.debug("CREATE with: %s", validated_data)
         instance = super().create(validated_data)
-        set_tags(instance, affiliations_serializer, "affiliations")
         instance.save()
         return instance
 
@@ -261,12 +191,9 @@ class ContributorSerializer(serializers.ModelSerializer):
             "email",
             "user",
             "type",
-            "affiliations",
             "json_affiliations",
-            "primary_affiliation_name",
             "primary_json_affiliation_name",
             "profile_url",
-            "mutable",
         )
 
 
@@ -284,8 +211,10 @@ class ListReleaseContributorSerializer(serializers.ListSerializer):
             if raw_user:
                 username = raw_user["username"]
                 user_map[username].append(contributor)
-            else:
+            elif contributor["type"] == "person":
                 contributors_map[contributor["email"]].append(contributor)
+            else:
+                contributors_map[contributor["given_name"]].append(contributor)
 
         error_messages = []
         for username, related_contributors in user_map.items():
@@ -343,7 +272,7 @@ class FeaturedImageMixin(serializers.Serializer):
 
 class ReleaseContributorSerializer(serializers.ModelSerializer):
     contributor = ContributorSerializer()
-    profile_url = serializers.SerializerMethodField(read_only=True)
+    profile_url = serializers.SerializerMethodField()
     index = serializers.IntegerField(required=False)
 
     def get_profile_url(self, instance):
