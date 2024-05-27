@@ -1,13 +1,13 @@
 import { loginBeforeEach } from "./setup.spec";
 
 //login
+
 describe("Login", () => {
   it("should log into comses homepage with test user", () => {
     loginBeforeEach('testuser', 'test12345');
     assert(cy.get("h1").contains("A growing collection of resources for computational model-based science."));
   })
 })
-
 
 //visit various pages
 describe("Visit about page", () => { //ABOUT PAGE
@@ -68,19 +68,11 @@ describe("Visit education page", () =>{ //EDUCATION PAGE
     cy.get('.card-body').eq(1).find('.stretched-link').click({force: true});
     assert(cy.get("h1").contains("Introduction to Git and GitHub"));
   })
-
-  
 })
-
-
-
 
 describe("Visit events page", () =>{ //EVENTS PAGE
 
-  
   it("should visit the events page", () =>{
-
-    
     cy.visit("/events");
     assert(cy.get("h1").contains("Community Events"));
     cy.get('.card-body').first().find('a').first().click();
@@ -88,7 +80,6 @@ describe("Visit events page", () =>{ //EVENTS PAGE
     
   })
   
-
   it("should be able to search for a specific event", () =>{
     cy.visit("/events");
     cy.get('input[class="form-control"]').type("Call for applications to organize a 2022 CECAM-Lorentz funded workshop on modeling");
@@ -118,10 +109,7 @@ describe("Visit events page", () =>{ //EVENTS PAGE
     cy.contains('button.btn.btn-primary', 'Create').click();
   })
 
-
-  
   it("should be able to verify event was submitted correctly", () =>{
-
     cy.visit("/events");
     cy.get('#djHideToolBarButton').click();
     assert(cy.get("h1").contains("Community Events"));
@@ -129,6 +117,38 @@ describe("Visit events page", () =>{ //EVENTS PAGE
     assert(cy.get("h1").contains("Title"));
     assert(cy.get("p").contains("Description"));
     assert(cy.get("p").contains("Location"));
+  })
+  
+})
+
+describe("Visit jobs page", () =>{ //JOBS PAGE
+
+  it("should visit the events page", () =>{
+    cy.visit("/jobs");
+    assert(cy.get("h1").contains("Jobs & Appointments"));
+  })
+
+  it("should be able to submit a job posting", () =>{
+    loginBeforeEach('testuser', 'test12345');
+    cy.visit("/jobs");
+    cy.get('#djHideToolBarButton').click();
+    cy.get('.text-white').first().click({force:true});
+    cy.get('input[name="title"]').type("Job Title");
+    cy.get('#form-field-description').type('Job Description');
+    cy.get('#form-field-summary').type('Job Summary');
+    cy.get('#form-field-externalUrl').type('https://www.comses.net/');
+    cy.get('input[class="dp__pointer dp__input_readonly dp__input dp__input_reg"]').first().click(); //event start date
+    cy.get('.dp__cell_inner.dp__pointer.dp__date_hover').contains('29').click();
+    cy.contains('button.btn.btn-primary', 'Create').click();
+  })
+
+  it("should be able to verify event was submitted correctly", () =>{
+    cy.visit("/jobs");
+    cy.get('#djHideToolBarButton').click();
+    assert(cy.get("h1").contains("Jobs & Appointments"));
+    cy.get('.card-body').first().find('a').first().click();
+    assert(cy.get("h1").contains("Job Title"));
+    assert(cy.get("p").contains("Job Description"));
   })
   
 })
