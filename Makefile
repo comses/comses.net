@@ -18,7 +18,7 @@ ENV_TEMPLATE=${DEPLOY_CONF_DIR}/.env.template
 
 # assumes a .tar.xz file
 BORG_REPO_URL := https://example.com/repo.tar.xz
-BORG_REPO_PATH=${BUILD_DIR}/sparse-repo.tar.xz
+BORG_REPO_PATH=${BUILD_DIR}/repo.tar.xz
 REPO_BACKUPS_PATH=docker/shared/backups
 
 include config.mk
@@ -34,7 +34,7 @@ build: docker-compose.yml secrets $(DOCKER_SHARED_DIR)
 	docker compose build --pull
 
 $(BORG_REPO_PATH):
-	wget ${BORG_REPO_URL} -P ${BUILD_DIR}
+	rsync -avzP ${BORG_REPO_URL} ${BUILD_DIR}/
 
 config.mk:
 	DEPLOY_ENVIRONMENT=${DEPLOY_ENVIRONMENT} envsubst < ${DEPLOY_CONF_DIR}/config.mk.template > config.mk
