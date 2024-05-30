@@ -34,7 +34,7 @@ build: docker-compose.yml secrets $(DOCKER_SHARED_DIR)
 	docker compose build --pull
 
 $(BORG_REPO_PATH):
-	rsync -avzP ${BORG_REPO_URL} ${BUILD_DIR}/
+	wget -c ${BORG_REPO_URL} -P ${BUILD_DIR}
 
 config.mk:
 	DEPLOY_ENVIRONMENT=${DEPLOY_ENVIRONMENT} envsubst < ${DEPLOY_CONF_DIR}/config.mk.template > config.mk
