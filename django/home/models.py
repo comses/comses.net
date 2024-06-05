@@ -157,14 +157,12 @@ class LandingPage(Page):
         ).all()[: self.FEATURED_CONTENT_COUNT]
 
     def get_canned_forum_activity(self):
-        random_submitters = User.objects.select_related("member_profile").filter(
-            pk__in=(3, 5, 7, 11, 13, 17)
-        )
+        submitter = User.objects.select_related("member_profile").last()
         return [
             {
                 "title": f"Generated Forum Topic {i}",
-                "submitter_name": random_submitters[i].member_profile.name,
-                "submitter_url": random_submitters[i].member_profile.get_absolute_url(),
+                "submitter_name": submitter.member_profile.name,
+                "submitter_url": submitter.member_profile.get_absolute_url(),
                 "date_created": datetime.now(),
                 "url": f"https://forum.example.com/topic/{i}",
             }
