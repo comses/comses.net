@@ -10,6 +10,7 @@
           class="form-check-input me-1"
           v-model="showCustomInput"
           :id="`${id}-custom-input-check`"
+          :disabled="disabled"
         />
         <small class="text-muted">Enter manually</small>
       </label>
@@ -54,6 +55,7 @@
       :placeholder="placeholder"
       :clear-on-select="true"
       @select="create"
+      :disabled="disabled"
     />
     <Sortable :list="value" :item-key="item => item" @end="sort($event)">
       <template #item="{ element, index }">
@@ -71,15 +73,16 @@
               <small>Set primary</small>
             </button>
           </span>
-          <input :value="element.name" class="form-control w-25" readonly />
-          <span class="input-group-text bg-white flex-grow-1 flex-shrink-1 w-25">
-            <a :href="element.url">{{ element.url }}</a>
+          <input :value="element.name" class="form-control w-25" readonly :disabled="disabled" />
+          <span class="input-group-text bg-white flex-grow-1 flex-shrink-1 w-25 overflow-hidden">
+            <a :href="element.url" target="_blank">{{ element.url }}</a>
           </span>
           <button
             type="button"
             class="btn btn-delete-item"
             tabindex="-1"
             @click.once="remove(index)"
+            :disabled="disabled"
           >
             &times;
           </button>
@@ -96,7 +99,7 @@
 </template>
 
 <script setup lang="ts">
-import { inject, ref, onMounted, reactive, computed } from "vue";
+import { inject, ref, onMounted, reactive, computed, watch } from "vue";
 import { string } from "yup";
 import { Sortable } from "sortablejs-vue3";
 import type { SortableEvent } from "sortablejs";
@@ -115,15 +118,27 @@ export interface ResearchOrgListFieldProps {
   help?: string;
   placeholder?: string;
   required?: boolean;
+  disabled?: boolean;
+  isContributorOrganization?: boolean;
 }
 
 const props = defineProps<ResearchOrgListFieldProps>();
-
+const emit = defineEmits(["change"]);
 onMounted(() => {
+  // FIXME: see if we can change `value` to a more meaningful variable name, e.g., `organizations`
   if (!value.value) {
     // force initialize to empty array
     value.value = [];
   }
+
+  // set givenName in the ContributorEditForm whenever value (selected organization) changes
+  watch(
+    () => value,
+    () => {
+      emit("change");
+    },
+    { deep: true }
+  );
 });
 
 const showCustomInput = ref(false);
@@ -168,6 +183,13 @@ function createCustom() {
 }
 
 function create(organization: Organization) {
+  // only one organization is allowed if Contributor is Organization
+  if (props.isContributorOrganization && value.value.length > 0) {
+    value.value = [];
+    value.value.push(organization);
+    return;
+  }
+
   if (!value.value.some(e => e.name === organization.name)) {
     value.value.push(organization);
   }

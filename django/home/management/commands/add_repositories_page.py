@@ -31,7 +31,6 @@ This is not an exhaustive list and consists of DOI or other permanent identifier
 
 
 class Command(BaseCommand):
-
     """
     Create CoMSES trusted digital repository landing page and add it as a child to the /resources/ CategoryIndexPage
     """

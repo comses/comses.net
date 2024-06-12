@@ -138,7 +138,9 @@ export interface ReleaseContributor {
 
 export interface Contributor {
   affiliations: any[];
+  jsonAffiliations: any[];
   primaryAffiliationName: string;
+  primaryJsonAffiliationName: string;
   email: string;
   id: number;
   name: string;
@@ -155,11 +157,13 @@ export interface RelatedMemberProfile {
   avatarUrl?: string;
   degrees: string[];
   givenName: string;
+  middleName?: string;
   familyName: string;
   name: string;
   email: string;
   profileUrl: string;
   primaryAffiliationName?: string;
+  primaryJsonAffiliationName?: string;
   tags: Tag[];
   username: string;
 }

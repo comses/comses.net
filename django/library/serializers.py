@@ -1,6 +1,7 @@
 import logging
 from collections import defaultdict
 
+from django.db import models
 from django.contrib.auth.models import User
 from django.urls import reverse
 from django.utils import timezone
@@ -65,8 +66,42 @@ class ContributorSerializer(serializers.ModelSerializer):
     # Need an ID for Vue-Multiselect
     id = serializers.IntegerField(read_only=True)
     user = RelatedUserSerializer(required=False, allow_null=True)
-    affiliations = TagSerializer(many=True)
-    profile_url = serializers.SerializerMethodField(read_only=True)
+    json_affiliations = models.JSONField(
+        default=list, help_text=_("JSON-LD list of affiliated institutions")
+    )
+
+    profile_url = serializers.SerializerMethodField()
+
+    def _trying_to_modify_attributes(self, instance, validated_data):
+        try:
+            if "user_id" in validated_data:
+                # is user_id is present, then proxy user has been changed, skip the attribute check
+                return False
+
+            for key in [
+                "given_name",
+                "middle_name",
+                "family_name",
+                "email",
+                "type",
+                "json_affiliations",
+            ]:
+                if (
+                    key in validated_data
+                    and getattr(instance, key) != validated_data[key]
+                ):
+                    logger.debug(
+                        "[key %s] has different incoming value %s != %s - Contributors can only be updated when exclusive to one codebase",
+                        key,
+                        getattr(instance, key),
+                        validated_data[key],
+                    )
+                    return True
+            logger.debug("no update detected, all attributes match")
+            return False
+        except Exception as e:
+            logger.exception(e)
+            return True
 
     def get_existing_contributor(self, validated_data):
         user = validated_data.get("user")
@@ -76,10 +111,13 @@ class ContributorSerializer(serializers.ModelSerializer):
         # attempt to find contributor by username, then email, then name without an email
         if username:
             user = User.objects.filter(username=username).first()
-            contributor = Contributor.objects.filter(user__username=username).first()
+            if user:
+                contributor = Contributor.objects.filter(user=user).first()
         elif email:
+            user = User.objects.filter(email=email).first()
             contributor = Contributor.objects.filter(email=email).first()
-            user = contributor.user if contributor else None
+            if not user:
+                user = contributor.user if contributor else None
         else:
             contrib_filter = {
                 k: validated_data.get(k, "")
@@ -98,6 +136,7 @@ class ContributorSerializer(serializers.ModelSerializer):
             user, self.instance = self.get_existing_contributor(validated_data)
             if user:
                 kwargs["user_id"] = user.id
+
         self.validated_data.pop("user")
         return super().save(**kwargs)
 
@@ -111,24 +150,33 @@ class ContributorSerializer(serializers.ModelSerializer):
             )
 
     def update(self, instance, validated_data):
-        affiliations = validated_data.pop("affiliations", None)
-        validated_data.pop("given_name", None)
-        validated_data.pop("family_name", None)
+        if self._trying_to_modify_attributes(instance, validated_data):
+            raise ValidationError("Updating contributors is not allowed.")
+        # Server side validation:
+        # if a contributor proxies a User, do not allow modification of its data.
+        # POP following:
+        # 'given_name'
+        # 'middle_name'
+        # 'family_name'
+        # 'email'
+        # 'type'
+        # 'json_affiliations'
+        user_id = validated_data.pop("user_id", None)
+        if user_id:
+            validated_data.pop("given_name", None)
+            validated_data.pop("middle_name", None)
+            validated_data.pop("family_name", None)
+            validated_data.pop("email", None)
+            validated_data.pop("type", None)
+            validated_data.pop("json_affiliations", None)
+
         instance = super().update(instance, validated_data)
-        if affiliations:  # dont overwrite affiliations if not provided
-            affiliations_serializer = TagSerializer(
-                many=True, data=affiliations, context=self.context
-            )
-            set_tags(instance, affiliations_serializer, "affiliations")
         instance.save()
         return instance
 
     def create(self, validated_data):
-        affiliations_serializer = TagSerializer(
-            many=True, data=validated_data.pop("affiliations")
-        )
+        logger.debug("CREATE with: %s", validated_data)
         instance = super().create(validated_data)
-        set_tags(instance, affiliations_serializer, "affiliations")
         instance.save()
         return instance
 
@@ -143,8 +191,8 @@ class ContributorSerializer(serializers.ModelSerializer):
             "email",
             "user",
             "type",
-            "affiliations",
-            "primary_affiliation_name",
+            "json_affiliations",
+            "primary_json_affiliation_name",
             "profile_url",
         )
 
@@ -157,11 +205,16 @@ class ListReleaseContributorSerializer(serializers.ListSerializer):
 
     def check_unique_users(self, contributors):
         user_map = defaultdict(list)
+        contributors_map = defaultdict(list)
         for contributor in contributors:
             raw_user = contributor["user"]
             if raw_user:
                 username = raw_user["username"]
                 user_map[username].append(contributor)
+            elif contributor["type"] == "person":
+                contributors_map[contributor["email"]].append(contributor)
+            else:
+                contributors_map[contributor["given_name"]].append(contributor)
 
         error_messages = []
         for username, related_contributors in user_map.items():
@@ -169,8 +222,15 @@ class ListReleaseContributorSerializer(serializers.ListSerializer):
             if related_contributor_count > 1:
                 error_messages.append(
                     (
-                        f'Validation Error: "{username}" was listed {related_contributor_count} times in the contributors list.'
-                        f"Please remove all duplicates and assign multiple roles to them instead."
+                        f'Contributor with username "{username}" was listed {related_contributor_count} times in the contributors list. Please remove all duplicates and assign multiple roles to them instead.'
+                    )
+                )
+        for email, related_contributors in contributors_map.items():
+            related_contributor_count = len(related_contributors)
+            if related_contributor_count > 1:
+                error_messages.append(
+                    (
+                        f'Contributor with email "{email}" was listed {related_contributor_count} times in the contributors list. Please remove all duplicates and assign multiple roles to them instead.'
                     )
                 )
         if error_messages:
@@ -212,7 +272,7 @@ class FeaturedImageMixin(serializers.Serializer):
 
 class ReleaseContributorSerializer(serializers.ModelSerializer):
     contributor = ContributorSerializer()
-    profile_url = serializers.SerializerMethodField(read_only=True)
+    profile_url = serializers.SerializerMethodField()
     index = serializers.IntegerField(required=False)
 
     def get_profile_url(self, instance):
@@ -228,7 +288,9 @@ class ReleaseContributorSerializer(serializers.ModelSerializer):
     @staticmethod
     def create_unsaved(context, validated_data):
         raw_contributor = validated_data.pop("contributor")
-        contributor_serializer = ContributorSerializer(data=raw_contributor)
+        contributor_serializer = ContributorSerializer(
+            data=raw_contributor, context=context
+        )
         contributor_serializer.is_valid(raise_exception=True)
         contributor = contributor_serializer.save()
 

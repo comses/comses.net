@@ -1,18 +1,20 @@
 <template>
   <div class="modal-body">
-    <form @submit="handleSubmit" :id="id">
+    <form @submit="handleSubmit" @reset="handleReset" :id="id">
       <span v-if="showCustomInput">
         <SelectField
           class="mb-3"
           name="type"
           label="Contributor Type"
+          @change="changeContributorType"
           :options="typeOptions"
+          :disabled="disableEditForm"
           required
         />
         <div class="card mb-3">
           <div v-if="isPerson" class="card-header">
             <UserSearch
-              label="Search for an Existing User"
+              label="Search for an existing User"
               placeholder="Skip entering contributor details by searching for users already in our system"
               :search-fn="search"
               :errors="profileErrors"
@@ -22,31 +24,74 @@
               show-affiliation
             />
           </div>
-          <div class="card-body">
-            <TextField
-              v-if="!isPerson"
-              class="mb-3"
-              name="givenName"
-              label="Organization Name"
-              required
-            />
-            <div v-else class="row">
-              <div class="col-4 pe-0">
-                <TextField class="mb-3" name="givenName" label="First Name" required />
+          <div style="position: relative">
+            <!-- Container element with relative positioning -->
+            <div
+              v-if="disableEditForm"
+              class="position-absolute top-0 start-0 w-100 h-100 bg-light opacity-50"
+              style="z-index: 3"
+            ></div>
+            <div class="card-body">
+              <div v-if="!isPerson">
+                <ResearchOrgListField
+                  name="jsonAffiliations"
+                  placeholder="Type to find organizations"
+                  @change="setOrganizationGivenName"
+                  :is-contributor-organization="!isPerson"
+                  label="Research Organization Registry Lookup"
+                />
+                <TextField
+                  class="mb-3"
+                  name="givenName"
+                  label="Organization Name"
+                  disabled
+                  required
+                />
               </div>
-              <div class="col-3 pe-0">
-                <TextField class="mb-3" name="middleName" label="Middle Name" />
+              <div v-else class="row">
+                <div class="col-4 pe-0">
+                  <TextField
+                    class="mb-3"
+                    name="givenName"
+                    label="First Name"
+                    required
+                    :disabled="disableEditForm"
+                  />
+                </div>
+                <div class="col-3 pe-0">
+                  <TextField
+                    class="mb-3"
+                    name="middleName"
+                    label="Middle Name"
+                    :disabled="disableEditForm"
+                  />
+                </div>
+                <div class="col-5">
+                  <TextField
+                    class="mb-3"
+                    name="familyName"
+                    label="Last Name"
+                    required
+                    :disabled="disableEditForm"
+                  />
+                </div>
               </div>
-              <div class="col-5">
-                <TextField class="mb-3" name="familyName" label="Last Name" required />
+              <div v-if="isPerson">
+                <TextField
+                  class="mb-3"
+                  name="email"
+                  label="Email"
+                  required
+                  :disabled="disableEditForm"
+                />
+                <ResearchOrgListField
+                  name="jsonAffiliations"
+                  placeholder="Type to find organizations"
+                  label="Affiliations"
+                  :disabled="disableEditForm"
+                />
               </div>
             </div>
-            <TextField v-if="isPerson" class="mb-3" name="email" label="Email" required />
-            <ResearchOrgListField
-              name="affiliations"
-              placeholder="Type to find organizations"
-              label="Affiliations"
-            />
           </div>
         </div>
       </span>
@@ -60,14 +105,18 @@
         placeholder="Add contributor's role(s)"
         multiple
         required
+        :disabled="disableEditForm"
       />
-      <CheckboxField name="includeInCitation" label="Include in Citation?" />
+      <CheckboxField name="includeInCitation" label="Include in citation?" />
       <FormAlert :validation-errors="Object.values(errors)" :server-errors="serverErrors" />
     </form>
   </div>
   <div class="modal-footer border-0">
+    <button v-if="!isEdit" type="button" class="btn btn-outline-gray" @click="emit('reset')">
+      Reset
+    </button>
     <button
-      type="button"
+      type="reset"
       class="btn btn-outline-gray"
       :class="{ disabled: isLoading }"
       data-bs-dismiss="modal"
@@ -105,20 +154,24 @@ const props = withDefaults(
   defineProps<{
     id: string;
     showCustomInput?: boolean;
+    disableEditForm?: boolean;
     contributor?: ReleaseContributor;
     onSuccess?: () => void;
+    isEdit?: boolean;
   }>(),
   {
     showCustomInput: false,
+    disableEditForm: true,
+    isEdit: true,
   }
 );
 
-const emit = defineEmits(["success"]);
+const emit = defineEmits(["success", "reset"]);
 
 const { serverErrors: profileErrors, search } = useProfileAPI();
 
 const store = useReleaseEditorStore();
-
+const disableEditForm = computed(() => !!values.user || props.disableEditForm);
 const roleLookup = {
   author: "Author",
   publisher: "Publisher",
@@ -155,6 +208,17 @@ const schema = yup.object().shape({
       })
     )
     .label("Affiliations"),
+  jsonAffiliations: yup
+    .array()
+    .of(
+      yup.object({
+        name: yup.string().required(),
+        url: yup.string().url().nullable(),
+        acronym: yup.string().nullable(),
+        rorId: yup.string().nullable(), // assuming "rorId" is the correct key, not "ror_id"
+      })
+    )
+    .label("JSON Affiliations"),
   type: yup.string().oneOf(["person", "organization"]).default("person"),
   roles: yup.array().of(yup.string()).min(1).label("Roles"),
   includeInCitation: yup.bool().required().label("Include in citation"),
@@ -168,16 +232,17 @@ const initialValues: ContributorFields = {
   type: "person",
   user: null,
   affiliations: [],
+  jsonAffiliations: [],
   roles: [],
   includeInCitation: true,
 };
 
-const { errors, handleSubmit, values, setValues } = useForm<ContributorFields>({
+const { errors, handleSubmit, handleReset, values, setValues } = useForm<ContributorFields>({
   schema,
   initialValues,
   onSubmit: async () => {
     if (!hasName.value) return;
-
+    isLoading.value = true;
     let contributors = JSON.parse(JSON.stringify(store.releaseContributors));
     const newContributor = {
       contributor: {
@@ -188,6 +253,7 @@ const { errors, handleSubmit, values, setValues } = useForm<ContributorFields>({
         familyName: values.familyName,
         middleName: values.middleName,
         affiliations: values.affiliations,
+        jsonAffiliations: values.jsonAffiliations,
       },
       roles: values.roles,
       includeInCitation: values.includeInCitation,
@@ -203,11 +269,11 @@ const { errors, handleSubmit, values, setValues } = useForm<ContributorFields>({
     } else {
       contributors.push(newContributor);
     }
+
     await updateContributors(store.identifier, store.versionNumber, contributors);
+    isLoading.value = false;
     if (serverErrors.value.length === 0) {
-      isLoading.value = true;
       await store.fetchCodebaseRelease(store.identifier, store.versionNumber);
-      isLoading.value = false;
       setValues(initialValues);
       emit("success");
     }
@@ -216,20 +282,30 @@ const { errors, handleSubmit, values, setValues } = useForm<ContributorFields>({
 
 const isLoading = ref(false);
 const isPerson = computed(() => values.type === "person");
-
 const hasName = computed(() => values.user || values.givenName);
 
-function populateFromReleaseContributor(contributor: ReleaseContributor) {
+function populateFromReleaseContributor(releaseContributor: ReleaseContributor) {
+  const user = releaseContributor.contributor.user;
+
+  // releaseContributor has an associated user! Take values from the user.
+  const givenName = user ? user.memberProfile.givenName : releaseContributor.contributor.givenName;
+  const familyName = user
+    ? user.memberProfile.familyName
+    : releaseContributor.contributor.familyName;
+
   setValues({
-    user: contributor.contributor.user || null,
-    email: contributor.contributor.email,
-    givenName: contributor.contributor.givenName,
-    familyName: contributor.contributor.familyName,
-    middleName: contributor.contributor.middleName,
-    affiliations: contributor.contributor.affiliations,
-    type: contributor.contributor.type,
-    roles: contributor.roles,
-    includeInCitation: contributor.includeInCitation,
+    // set this to get the id from autocomplete contributor
+    // id: releaseContributor.contributor.id,
+    user: releaseContributor.contributor.user || null,
+    email: releaseContributor.contributor.email,
+    givenName: givenName,
+    familyName: familyName,
+    middleName: releaseContributor.contributor.middleName,
+    // affiliations: releaseContributor.contributor.affiliations,
+    jsonAffiliations: releaseContributor.contributor.jsonAffiliations,
+    type: releaseContributor.contributor.type,
+    roles: releaseContributor.roles,
+    includeInCitation: releaseContributor.includeInCitation,
   });
 }
 
@@ -240,8 +316,26 @@ function populateFromContributor(contributor: Contributor | null) {
   });
 }
 
+function hasPersonData() {
+  return values.user || values.givenName || values.familyName || values.email;
+}
+
+function changeContributorType() {
+  // reset contributors if we switch to an organization and there was a previous user set
+  if (values.type === "organization" && hasPersonData()) {
+    resetContributor();
+  }
+}
+
 function resetContributor() {
   setValues(initialValues);
+  serverErrors.value = [];
+  handleReset();
+}
+
+function setOrganizationGivenName() {
+  const firstOrganization = (values as any).jsonAffiliations[0];
+  values.givenName = firstOrganization ? firstOrganization.name : "";
 }
 
 function populateFromUser(user: any) {
@@ -250,7 +344,9 @@ function populateFromUser(user: any) {
     user,
     givenName: user.givenName,
     familyName: user.familyName,
+    middleName: "",
     email: user.email,
+    jsonAffiliations: user.affiliations,
   });
 }
 

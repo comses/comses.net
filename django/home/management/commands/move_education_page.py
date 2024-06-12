@@ -133,7 +133,6 @@ Once you have finished the above modules, please complete the following assessme
 
 
 class Command(BaseCommand):
-
     """
     Move existing Education page from under Resources to a top level Page
     """

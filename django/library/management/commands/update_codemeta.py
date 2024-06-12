@@ -13,7 +13,6 @@ logger = logging.getLogger(__name__)
 
 
 class Command(BaseCommand):
-
     """
     Updates all codemeta files for all Codebases and updates archive
     """

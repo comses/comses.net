@@ -4,7 +4,10 @@
     class="btn btn-primary"
     :class="{ disabled: disabled }"
     rel="nofollow"
-    @click="editContributorModal?.show()"
+    @click="
+      resetForm();
+      editContributorModal?.show();
+    "
   >
     <i class="fas fa-plus-square me-1"></i> Add a Contributor
   </button>
@@ -20,7 +23,10 @@
       <div class="modal-body pb-0">
         <div v-if="!showCustomInput" class="d-flex align-items-end justify-content-between mb-3">
           <div class="flex-grow-1">
-            <ContributorSearch @select="populateFromContributor($event)" />
+            <ContributorSearch
+              ref="contributorSearchRef"
+              @select="populateFromContributor($event)"
+            />
           </div>
           <div class="text-center mb-2 mx-3">
             <small class="text-muted">OR</small>
@@ -49,7 +55,10 @@
       <ContributorEditForm
         id="add-contributor-form"
         :show-custom-input="showCustomInput"
+        :disable-edit-form="disableEditForm"
+        :is-edit="false"
         ref="editFormRef"
+        @reset="resetForm"
         @success="() => editContributorModal?.hide()"
       />
     </template>
@@ -74,8 +83,10 @@ const props = withDefaults(
 
 const editContributorModal = ref<Modal>();
 const editFormRef = ref<InstanceType<typeof ContributorEditForm> | null>(null);
+const contributorSearchRef = ref<InstanceType<typeof ContributorSearch> | null>(null);
 
 const showCustomInput = ref(false);
+const disableEditForm = ref(true);
 
 function populateFromContributor(contributor: Contributor) {
   if (editFormRef.value) {
@@ -84,9 +95,19 @@ function populateFromContributor(contributor: Contributor) {
 }
 
 function createNewContributor() {
+  resetForm();
   if (editFormRef.value) {
+    disableEditForm.value = false;
     showCustomInput.value = true;
+  }
+}
+
+function resetForm() {
+  if (editFormRef.value) {
     editFormRef.value.resetContributor();
+  }
+  if (contributorSearchRef.value) {
+    contributorSearchRef.value.resetSelectField(); // Call the reset method
   }
 }
 </script>

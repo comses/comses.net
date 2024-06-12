@@ -38,7 +38,6 @@ We welcome presentations dealing with agent-based modeling of social, ecological
 
 
 class Command(BaseCommand):
-
     """
     Create CoMSES virtual conference landing pages, including wagtail replacement for archived CoMSES 2017 page.
     See https://github.com/wagtail/wagtail/issues/742 for more details - this can't be in a data migration because the

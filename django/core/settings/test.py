@@ -1,10 +1,12 @@
-from .dev import *
+from .defaults import *
 
 from os import path
 
 DEPLOY_ENVIRONMENT = Environment.TEST
 
 ALLOWED_HOSTS = ["localhost", "127.0.0.1", "server"]
+
+EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
 
 LOGGING["loggers"]["core.views"] = {
     "level": "ERROR",

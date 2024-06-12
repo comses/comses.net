@@ -51,8 +51,8 @@
               <small v-if="showEmail && option.email" class="text-muted">
                 ({{ option.email }})</small
               >
-              <small v-if="showAffiliation && option.primaryAffiliationName"
-                >, {{ option.primaryAffiliationName }}</small
+              <small v-if="showAffiliation && option.primaryJsonAffiliationName"
+                >, {{ option.primaryJsonAffiliationName }}</small
               >
             </div>
             <div v-if="showTags" class="tag-list">

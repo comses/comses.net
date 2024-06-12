@@ -287,6 +287,7 @@ class RelatedMemberProfileSerializer(serializers.ModelSerializer):
             "email",
             "profile_url",
             "primary_affiliation_name",
+            "affiliations",
             "tags",
             "username",
         )

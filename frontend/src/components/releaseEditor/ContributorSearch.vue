@@ -98,8 +98,8 @@ function contributorEmail(contributor: Contributor) {
 
 function contributorAffiliation(contributor: Contributor) {
   let affiliation = "";
-  if (contributor.primaryAffiliationName) {
-    affiliation = contributor.primaryAffiliationName || "";
+  if (contributor.primaryJsonAffiliationName) {
+    affiliation = contributor.primaryJsonAffiliationName || "";
   } else if (contributor.user) {
     affiliation = contributor.user.memberProfile.primaryAffiliationName || "";
   }
@@ -109,4 +109,12 @@ function contributorAffiliation(contributor: Contributor) {
 function handleSelect(contributor: Contributor) {
   emit("select", contributor);
 }
+
+// Expose a reset method
+function resetSelectField() {
+  candidateContributor.value = null;
+}
+
+// Export the reset method
+defineExpose({ resetSelectField });
 </script>

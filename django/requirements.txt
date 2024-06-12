@@ -35,6 +35,8 @@ numpy==1.24.3
 pandas==1.5.3
 psycopg2-binary==2.9.9
 pytz==2024.1
+# used for institution -> affiliation data migration
+rapidfuzz==3.9.1
 redis==4.5.5
 requests==2.31.0
 semver==3.0.2
@@ -46,8 +48,6 @@ uwsgi==2.0.24
 uwsgitop==0.11
 wagtail==5.2.3
 wagtail-modeladmin==2.0.0
-# used for institution -> affiliation data migration, unused afterwards
-fuzzywuzzy==0.18.0
 invoke
 ipython
 pgcli
