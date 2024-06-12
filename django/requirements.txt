@@ -38,7 +38,7 @@ pytz==2024.1
 # used for institution -> affiliation data migration
 rapidfuzz==3.9.1
 redis==4.5.5
-requests==2.31.0
+requests==2.32.2
 semver==3.0.2
 sentry-cli==2.30.2
 sentry-sdk==1.40.3
