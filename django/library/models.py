@@ -968,12 +968,15 @@ class Codebase(index.Indexed, ModeratedContent, ClusterableModel):
         programming_languages = source_release.programming_languages.all()
 
         source_release.id = None
+        # FIXME: not sure why most of this is needed. I *think* setting source_release.id=None and clearing fields that
+        # should be cleared would be sufficient and less code.
         release = source_release
         for k, v in release_metadata.items():
             setattr(release, k, v)
         release.peer_reviewed = False
         release.last_published_on = None
         release.first_published_at = None
+        release.doi = None
         release.platform_tags.add(*platform_tags)
         release.programming_languages.add(*programming_languages)
         release.save()
