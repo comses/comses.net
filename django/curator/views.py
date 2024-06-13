@@ -1,8 +1,7 @@
 from django.contrib.auth.decorators import permission_required
 from django.contrib import messages
-from django.shortcuts import get_object_or_404, redirect
+from django.shortcuts import get_object_or_404
 from django.http import HttpResponseRedirect, HttpResponseBadRequest
-from django.urls import reverse
 from django.views.decorators.http import require_POST
 from wagtail_modeladmin.helpers import AdminURLHelper
 
@@ -50,7 +49,7 @@ def confirm_spam_view(request, instance_id):
     spam_moderation.status = SpamModeration.Status.SPAM
     spam_moderation.reviewer = request.user
     spam_moderation.save()
-    messages.success(request, f"Content confirmed as spam.")
+    messages.success(request, "Content confirmed as spam.")
     return HttpResponseRedirect(AdminURLHelper(SpamModeration).index_url)
 
 

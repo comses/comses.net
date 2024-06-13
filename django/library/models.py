@@ -673,8 +673,9 @@ class Codebase(index.Indexed, ModeratedContent, ClusterableModel):
             try:
                 rendition = image.get_rendition(Filter(spec=spec))
                 urls.append(rendition.url)
-            except:
-                pass  # image does not exist
+            except Exception:
+                logger.warn("Unable to find featured image %s for %s", image, self)
+                pass  # image does not exist, ignore
         return urls
 
     def get_featured_rendition_url(self):

@@ -391,7 +391,7 @@ class CodebaseSerializer(
         request = self.context.get("request")
         user = request.user if request else User.get_anonymous()
         queryset = (
-            CodebaseRelease.objects.filter(codebase_id=obj.pk)
+            CodebaseRelease.objects.filter(codebase_id=obj.id)
             .accessible(user)
             .order_by("-version_number")
         )

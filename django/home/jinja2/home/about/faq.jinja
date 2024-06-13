@@ -18,8 +18,8 @@
         {% for category, group_list in faq_entries|groupby('category') %}
             <h2 id='{{category}}' class='py-3 title'>{{ get_choices_display(category, faq_categories) }}</h3>
             {% for entry in group_list %}
-                {% set entry_id = category ~ "_" ~ entry.pk %}
-                {% set heading_id = "faqHeading_" ~ entry.pk %}
+                {% set entry_id = category ~ "_" ~ entry.id %}
+                {% set heading_id = "faqHeading_" ~ entry.id %}
                 <div class='card'>
                     <div class='card-header' role='tab' id='{{ heading_id }}'>
                         <h5 class='mb-0'>

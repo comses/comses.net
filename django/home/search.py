@@ -201,8 +201,8 @@ class GeneralSearch:
     @classmethod
     def set_page_urls(cls, results: Dict[int, OtherSearchResult]):
         pages = Page.objects.filter(id__in=results.keys()).in_bulk()
-        for id in results.keys():
-            results[id].url = pages[id].url
+        for pk in results.keys():
+            results[pk].url = pages[pk].url
 
     def process(self, results):
         # FIXME: this method and all its collaborators needs to be refactored to use elasticsearch-dsl response object

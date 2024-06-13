@@ -1,15 +1,11 @@
 import abc
 import logging
-import os
-import re
-import enum
-from typing import List
 import pathlib
 
 import dedupe
 from taggit.models import Tag
 
-from curator.models import CanonicalTagMapping, CanonicalTag, TagCluster
+from curator.models import CanonicalTag, TagCluster
 
 
 class AbstractTagDeduper(abc.ABC):

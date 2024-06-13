@@ -2,9 +2,6 @@ import json
 import string
 from hypothesis.extra.django import (
     TestCase,
-    TransactionTestCase,
-    from_model,
-    register_field_strategy,
 )
 
 from hypothesis.stateful import (
@@ -12,8 +9,6 @@ from hypothesis.stateful import (
     initialize,
     invariant,
     rule,
-    multiple,
-    consumes,
     Bundle,
 )
 
@@ -28,7 +23,6 @@ from hypothesis import (
     Verbosity,
     given,
     settings,
-    example,
     strategies as st,
 )
 
@@ -37,7 +31,6 @@ from hypothesis.strategies import data
 import logging
 
 st.dictionaries
-from hypothesis import settings, Verbosity
 
 from core.tests.base import UserFactory
 from library.models import Codebase, CodebaseRelease
@@ -589,7 +582,7 @@ class CodeMetaValidationTest(RuleBasedStateMachine):
             logger.debug("codemeta.json is valid.")
             assert True, "codemeta.json is valid."
 
-        except Exception as e:
+        except Exception:
             logger.error("codemeta.json is invalid! {e}")
             assert False, "CodeMeta validation error: {e}"
 

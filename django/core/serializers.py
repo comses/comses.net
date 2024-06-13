@@ -126,7 +126,7 @@ class MemberProfileSerializer(serializers.ModelSerializer):
     family_name = serializers.CharField(source="user.last_name")
     given_name = serializers.CharField(source="user.first_name")
     username = serializers.CharField(source="user.username", read_only=True)
-    user_pk = serializers.IntegerField(source="user.pk", read_only=True)
+    user_pk = serializers.IntegerField(source="user.id", read_only=True)
     email = serializers.SerializerMethodField()
 
     # Followers

@@ -1,8 +1,7 @@
-import logging
 
 from django.core.management.base import BaseCommand
 
-from curator.tag_deduplication import TagClusterer, TagClusterManager
+from curator.tag_deduplication import TagClusterManager
 
 
 class Command(BaseCommand):

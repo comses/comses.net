@@ -5,8 +5,8 @@
         <ul class="actions">
             {% for new_account in new_accounts %}
                 <li>
-                    <a class="button button-secondary button-small" href="{% url 'wagtailusers_users:edit' new_account.pk %}">edit in wagtail</a>
-                    <a class="button button-secondary button-small" href="{% url 'admin:auth_user_change' new_account.pk %}">edit in django admin</a>
+                    <a class="button button-secondary button-small" href="{% url 'wagtailusers_users:edit' new_account.id %}">edit in wagtail</a>
+                    <a class="button button-secondary button-small" href="{% url 'admin:auth_user_change' new_account.id %}">edit in django admin</a>
                     <a href="{% url 'core:profile-detail' new_account.id %}">{{ new_account.username }}</a>
                     - joined 
                         <em>{{ new_account.date_joined }}</em></a>

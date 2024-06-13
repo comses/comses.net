@@ -68,7 +68,7 @@ class Command(BaseCommand):
                 res = session.get(ror_url + name, timeout=10)
                 connected = True
                 e = None
-            except Exception as e:
+            except Exception:
                 pass
             if e:
                 print("connection error. sleeping and trying again..")

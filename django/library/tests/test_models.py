@@ -15,7 +15,7 @@ from .base import (
     ReleaseContributorFactory,
     ReleaseSetup,
 )
-from ..models import Codebase, CodebaseRelease, Contributor, License, CodeMeta
+from ..models import Codebase, CodebaseRelease, Contributor, License
 
 logger = logging.getLogger(__name__)
 

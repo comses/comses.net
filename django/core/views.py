@@ -8,7 +8,6 @@ from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.models import User
-from django.contrib.contenttypes.models import ContentType
 from django.core.files.images import ImageFile
 from django.core.exceptions import PermissionDenied
 from django.http import (
@@ -272,7 +271,7 @@ class ProfileRedirectView(LoginRequiredMixin, RedirectView):
     query_string = False
 
     def get_redirect_url(self, *args, **kwargs):
-        return reverse("core:profile-detail", kwargs={"pk": self.request.user.pk})
+        return reverse("core:profile-detail", kwargs={"pk": self.request.user.id})
 
 
 class ToggleFollowUser(APIView):

@@ -133,8 +133,8 @@ class SerializerTestCase(BaseModelTestCase):
         data = {
             "ip_address": "127.0.0.1",
             "referrer": "https://comses.net",
-            "user": user.pk,
-            "release": release.pk,
+            "user": user.id,
+            "release": release.id,
             "reason": "policy",
             "industry": "university",
             "affiliation": {"name": "ASU", "url": "https://asu.edu/"},
@@ -158,8 +158,8 @@ class SerializerTestCase(BaseModelTestCase):
         data = {
             "ip_address": "127.0.0.1",
             "referrer": "https://comses.net",
-            "user": user.pk,
-            "release": release.pk,
+            "user": user.id,
+            "release": release.id,
             "reason": "policy",
             "industry": "university",
             "affiliation": {"name": "ASU", "url": "www.foo.org", "ror_id": "foo8j8sd"},

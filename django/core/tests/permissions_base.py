@@ -225,7 +225,7 @@ class BaseViewSetTestCase(ApiAccountMixin, ResponseStatusCodesMixin, APITestCase
         self.assertResponseOk(list_response)
         is_visible_in_list = len(list_response.data["results"]) > 0
         is_instance_public = (
-            instance._meta.model.objects.public().filter(pk=instance.pk).exists()
+            instance._meta.model.objects.public().filter(id=instance.id).exists()
         )
         self.assertEqual(is_visible_in_list, is_instance_public)
 

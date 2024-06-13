@@ -1,13 +1,11 @@
 import random
 import shortuuid
-import string
 
 from django.test import TestCase
-from django.utils.text import slugify
 from taggit.models import Tag
 
 from curator.tag_deduplication import TagClusterer, TagGazetteer
-from curator.models import CanonicalTag, CanonicalTagMapping
+from curator.models import CanonicalTag
 
 random.seed(0)
 

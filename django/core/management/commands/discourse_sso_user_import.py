@@ -3,7 +3,6 @@ from core.discourse import create_discourse_user
 from django.contrib.auth.models import User
 from django.core.management.base import BaseCommand
 
-from library.models import CodebaseRelease
 
 
 class Command(BaseCommand):

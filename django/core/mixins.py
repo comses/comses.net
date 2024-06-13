@@ -283,7 +283,7 @@ class SpamCatcherViewSetMixin:
         # SpamModeration updates the content instance on save
         spam_moderation, created = SpamModeration.objects.get_or_create(
             content_type=content_type,
-            object_id=instance.pk,
+            object_id=instance.id,
             defaults={
                 "status": SpamModeration.Status.UNREVIEWED,
                 "detection_method": spam_context["detection_method"],

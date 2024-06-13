@@ -1,5 +1,7 @@
+import logging
 import os
 import sys
+
 
 # push current directory onto the path to access core.settings
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
@@ -9,3 +11,7 @@ import django
 django.setup()
 
 from curator.invoke_tasks import ns
+
+logger = logging.getLogger(__name__)
+
+logger.debug("Invoke tasks initialized %s", ns)

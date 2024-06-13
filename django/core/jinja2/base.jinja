@@ -7,7 +7,7 @@
 {% set logout_url = url("account_logout") %}
 {% set signup_url = url("account_signup") %}
 {% set contact_url = slugurl('contact') %}
-{% set profile_url = url('core:profile-detail', pk=user.pk) if user.is_authenticated else signup_url %}
+{% set profile_url = url('core:profile-detail', pk=user.id) if user.is_authenticated else signup_url %}
 
 {% macro navbar() %}
     <div class="fixed-top bg-light">
