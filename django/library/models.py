@@ -958,13 +958,10 @@ class Codebase(index.Indexed, ModeratedContent, ClusterableModel):
         contributors = ReleaseContributor.objects.filter(release_id=source_release.id)
         platform_tags = source_release.platform_tags.all()
         programming_languages = source_release.programming_languages.all()
-        release_metadata.update(
-            doi=None,
-            last_published_on=None,
-            peer_reviewed=False,
-            first_published_at=None,
-        )
+        # set source_release.id to None to create a new release
+        # see https://docs.djangoproject.com/en/4.2/topics/db/queries/#copying-model-instances
         source_release.id = None
+        source_release._state.adding = True
         source_release.__dict__.update(**release_metadata)
         source_release.save()
         source_release.platform_tags.add(*platform_tags)
@@ -994,6 +991,10 @@ class Codebase(index.Indexed, ModeratedContent, ClusterableModel):
             identifier=None,
             status=status,
             share_uuid=uuid.uuid4(),
+            first_published_at=None,
+            last_published_on=None,
+            doi=None,
+            peer_reviewed=False,
         )
 
         if source_release is None:  # this is the first release of the codebase
