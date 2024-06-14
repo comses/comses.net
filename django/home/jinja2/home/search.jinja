@@ -18,7 +18,7 @@
     <div class="card-header">{{ result.type.title() }} - <a href="{{ result.url }}">{{ result.title|default("Not
             available") }}</a></div>
     <div class="card-body">
-        {{ result.description|default("No description available") }}
+        {{ result.description|default("No description available", true) }}
     </div>
 </div>
 {% else %}
