@@ -3,7 +3,6 @@ import logging
 from django.contrib.auth.models import Permission
 from django.contrib.contenttypes.models import ContentType
 from rest_framework import status
-from rest_framework.test import APIClient
 
 from django.urls import reverse
 from django.test import TestCase

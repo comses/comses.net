@@ -55,7 +55,7 @@
                     {% endif %}
                 </p>
                 <b class="card-title">Where</b>
-                <p class='card-text'>{{ location|default("No location specified") }}</p>
+                <p class='card-text'>{{ location|default("No location specified", true) }}</p>
                 {% if external_url %}
                     <b class='card-title'>More information</b>
                     <p class='card-text'>

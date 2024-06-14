@@ -1,6 +1,5 @@
 import logging
 
-from dateutil.parser import parse as parse_date
 from django.core.management.base import BaseCommand
 
 from home.metrics import Metrics

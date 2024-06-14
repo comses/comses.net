@@ -4,7 +4,7 @@ from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib import admin
 from django.contrib.contenttypes.models import ContentType
-from django.urls import reverse, path, include
+from django.urls import reverse
 from django.utils.html import format_html
 from enum import Enum
 
@@ -143,9 +143,9 @@ class SpamContentButtonHelper(ButtonHelper):
         self, obj, exclude=None, classnames_add=None, classnames_exclude=None
     ):
         buttons = []
-        buttons.append(self.reject_button(obj.pk))
-        buttons.append(self.confirm_button(obj.pk))
-        buttons.append(self.confirm_and_deactivate_user_button(obj.pk))
+        buttons.append(self.reject_button(obj.id))
+        buttons.append(self.confirm_button(obj.id))
+        buttons.append(self.confirm_and_deactivate_user_button(obj.id))
         return buttons
 
 

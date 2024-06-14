@@ -1,8 +1,6 @@
 from pathlib import Path
 
-import os
 from django.test import TestCase
-from django.conf import settings
 
 from core.tests.base import (
     UserFactory,

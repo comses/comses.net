@@ -296,7 +296,7 @@ class PeerReviewFeedbackUpdateView(UpdateView):
         return super().get(request, *args, **kwargs)
 
     def get_context_data(self, **kwargs):
-        other_feedback = self.object.invitation.feedback_set.exclude(pk=self.object.pk)
+        other_feedback = self.object.invitation.feedback_set.exclude(pk=self.object.id)
         context = super().get_context_data(**kwargs)
         context["feedback_set"] = other_feedback
         return context
@@ -652,7 +652,7 @@ class CodebaseReleaseShareViewSet(
         except FileNotFoundError:
             logger.error(
                 "Unable to find review archive for codebase release %s (%s)",
-                codebase_release.pk,
+                codebase_release.id,
                 codebase_release.get_absolute_url(),
             )
             raise Http404
@@ -881,7 +881,7 @@ class CodebaseReleaseViewSet(CommonViewSetMixin, NoDeleteViewSet):
         except FileNotFoundError:
             logger.error(
                 "Unable to find archive for codebase release %s (%s)",
-                codebase_release.pk,
+                codebase_release.id,
                 codebase_release.get_absolute_url(),
             )
             raise Http404
@@ -899,7 +899,7 @@ class CodebaseReleaseViewSet(CommonViewSetMixin, NoDeleteViewSet):
         except FileNotFoundError:
             logger.error(
                 "Unable to find archive for codebase release %s (%s)",
-                codebase_release.pk,
+                codebase_release.id,
                 codebase_release.get_absolute_url(),
             )
             raise Http404
@@ -1138,4 +1138,4 @@ class CCLicenseChangeView(LoginRequiredMixin, FormView):
             return super().form_invalid(form)
 
     def get_success_url(self):
-        return reverse("core:profile-detail", kwargs={"pk": self.request.user.pk})
+        return reverse("core:profile-detail", kwargs={"pk": self.request.user.id})

@@ -125,7 +125,7 @@ class ProfilePageRenderTestCase(TestCase):
 
     def test_detail(self):
         response = self.client.get(
-            reverse("core:profile-detail", kwargs={"pk": self.submitter.pk})
+            reverse("core:profile-detail", kwargs={"pk": self.submitter.id})
         )
         self.assertEqual(response.status_code, 200)
 

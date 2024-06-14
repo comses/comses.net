@@ -48,7 +48,7 @@
         </div>
         <div class='tag-list'>
             {% for tag in p.platform.tags.all() %}
-                {{ search_tag_href(tag) }}
+                {{ search_tag_href(tag, category="codebases") }}
             {% endfor %}
         </div>
         <hr/>

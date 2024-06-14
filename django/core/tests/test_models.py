@@ -54,7 +54,7 @@ class JobTest(BaseModelTestCase):
             title="No Deadline Expired Job",
         )
         # manually override last_modified to be expired
-        Job.objects.filter(pk=self.no_deadline_expired_job.pk).update(
+        Job.objects.filter(id=self.no_deadline_expired_job.id).update(
             last_modified=expired_post_date
         )
         self.no_deadline_active_job.refresh_from_db()
@@ -64,7 +64,7 @@ class JobTest(BaseModelTestCase):
             date_created=barely_expired_post_date,
             title="No Deadline Barely Expired Job",
         )
-        Job.objects.filter(pk=self.no_deadline_barely_expired_job.pk).update(
+        Job.objects.filter(id=self.no_deadline_barely_expired_job.id).update(
             last_modified=barely_expired_post_date
         )
         self.no_deadline_barely_active_job.refresh_from_db()

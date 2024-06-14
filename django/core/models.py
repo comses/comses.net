@@ -11,7 +11,6 @@ from django.contrib.postgres.fields import ArrayField
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.db import models, transaction
-from django.db.models import Q
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.functional import cached_property
@@ -161,7 +160,7 @@ class ModeratedContent(models.Model):
         content_type = ContentType.objects.get_for_model(type(self))
         self.spam_moderation, created = SpamModeration.objects.get_or_create(
             status=status,
-            object_id=self.pk,
+            object_id=self.id,
             content_type=content_type,
             **kwargs,
         )
@@ -268,7 +267,7 @@ class MemberProfileQuerySet(models.QuerySet):
 
     def find_users_with_email(self, candidate_email, exclude_user=None):
         """
-        Return a queryset of user pks with the given email
+        Return a queryset of user ids with the given email
         """
         if exclude_user is None:
             exclude_user = User.get_anonymous()
@@ -278,8 +277,8 @@ class MemberProfileQuerySet(models.QuerySet):
             .values_list("user")
             .union(
                 User.objects.filter(email=candidate_email)
-                .exclude(pk=exclude_user.pk)
-                .values_list("pk")
+                .exclude(id=exclude_user.id)
+                .values_list("id")
             )
         )
 
@@ -430,10 +429,10 @@ class MemberProfile(index.Indexed, ClusterableModel):
         return self.get_absolute_url()
 
     def get_absolute_url(self):
-        return reverse("core:profile-detail", kwargs={"pk": self.user.pk})
+        return reverse("core:profile-detail", kwargs={"pk": self.user.id})
 
     def get_edit_url(self):
-        return reverse("core:profile-edit", kwargs={"user__pk": self.user.pk})
+        return reverse("core:profile-edit", kwargs={"user__pk": self.user.id})
 
     @classmethod
     def get_list_url(cls):
@@ -703,7 +702,7 @@ class Event(index.Indexed, ModeratedContent, ClusterableModel):
         return not self.is_deleted
 
     def get_absolute_url(self):
-        return reverse("core:event-detail", kwargs={"pk": self.pk})
+        return reverse("core:event-detail", kwargs={"pk": self.id})
 
     @classmethod
     def get_list_url(cls):
@@ -833,7 +832,7 @@ class Job(index.Indexed, ModeratedContent, ClusterableModel):
         return not self.is_deleted
 
     def get_absolute_url(self):
-        return reverse("core:job-detail", kwargs={"pk": self.pk})
+        return reverse("core:job-detail", kwargs={"pk": self.id})
 
     @classmethod
     def get_list_url(cls):

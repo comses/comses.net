@@ -1,10 +1,8 @@
 import logging
 
 from django.core.management.base import BaseCommand
-from taggit.models import Tag
 
-from curator.tag_deduplication import TagGazetteer, TagClusterManager
-from curator.models import CanonicalTag, CanonicalTagMapping
+from curator.tag_deduplication import TagClusterManager
 
 logger = logging.getLogger(__name__)
 

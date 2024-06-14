@@ -141,7 +141,7 @@
             {% if release.release_notes.raw %}
             <h4><u>Release Notes</u></h4>
             <p>
-                {{ release.release_notes.rendered|default("No release notes entered with this release.")|safe }}
+                {{ release.release_notes.rendered|default("No release notes entered with this release.", true)|safe }}
             </p>
             {% endif %}
         </div>

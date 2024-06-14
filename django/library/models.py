@@ -266,7 +266,7 @@ class Contributor(index.Indexed, ClusterableModel):
 
     def _get_person_full_name(self, family_name_first=False):
         if not self.has_name:
-            logger.warning("No usable name found for contributor %s", self.pk)
+            logger.warning("No usable name found for contributor %s", self.id)
             return ""
         if self.user and not any([self.given_name, self.family_name]):
             return self.user.member_profile.name
@@ -472,17 +472,6 @@ class CodebaseQuerySet(models.QuerySet):
             .annotate(max_last_modified=Max("releases__review__last_modified"))
         )
 
-    @staticmethod
-    def cache_contributors(codebases):
-        """Add all_contributors property to all codebases in queryset.
-
-        Returns a list so that it is impossible to call queryset methods on the result and destroy the
-        all_contributors property. Should be called after with_contributors for query efficiency. `with_contributors`
-        is a seperate function"""
-
-        for codebase in codebases:
-            codebase.compute_contributors(force=True)
-
     def public(self, **kwargs):
         """Returns a queryset of all live codebases and their live releases"""
         return self.with_contributors(**kwargs).exclude_spam()
@@ -684,8 +673,9 @@ class Codebase(index.Indexed, ModeratedContent, ClusterableModel):
             try:
                 rendition = image.get_rendition(Filter(spec=spec))
                 urls.append(rendition.url)
-            except:
-                pass  # image does not exist
+            except Exception:
+                logger.warn("Unable to find featured image %s for %s", image, self)
+                pass  # image does not exist, ignore
         return urls
 
     def get_featured_rendition_url(self):
@@ -732,8 +722,13 @@ class Codebase(index.Indexed, ModeratedContent, ClusterableModel):
     def codebase_contributors_redis_key(self):
         return f"codebase:contributors:{self.identifier}"
 
+    @property
     def codebase_authors_redis_key(self):
         return f"codebase:authors:{self.identifier}"
+
+    def clear_contributors_cache(self):
+        cache.delete(self.codebase_contributors_redis_key)
+        cache.delete(self.codebase_authors_redis_key)
 
     def compute_contributors(self, force=False):
         """
@@ -743,24 +738,21 @@ class Codebase(index.Indexed, ModeratedContent, ClusterableModel):
         """
         contributors_redis_key = self.codebase_contributors_redis_key
         codebase_contributors = cache.get(contributors_redis_key) if not force else None
-        codebase_authors = None
+        codebase_authors = (
+            cache.get(self.codebase_authors_redis_key) if not force else None
+        )
 
         codebase_authors_dict = OrderedDict()
 
         if codebase_contributors is None:
             codebase_contributors_dict = OrderedDict()
-            for release in self.releases.prefetch_related(
-                "codebase_contributors"
-            ).all():
-                for release_contributor in release.codebase_contributors.select_related(
-                    "contributor__user__member_profile"
-                ).order_by("index"):
-                    contributor = release_contributor.contributor
-                    # set to None as a makeshift OrderedSet implementation
-                    codebase_contributors_dict[contributor] = None
-                    # only include citable authors in returned codebase_authors
-                    if release_contributor.include_in_citation:
-                        codebase_authors_dict[contributor] = None
+            for release_contributor in ReleaseContributor.objects.for_codebase(self):
+                contributor = release_contributor.contributor
+                # set to None as a makeshift OrderedSet implementation
+                codebase_contributors_dict[contributor] = None
+                # only include citable authors in returned codebase_authors
+                if release_contributor.include_in_citation:
+                    codebase_authors_dict[contributor] = None
             # PEP 448 syntax to unpack dict keys into list literal
             # https://www.python.org/dev/peps/pep-0448/
             codebase_contributors = [*codebase_contributors_dict]
@@ -812,7 +804,7 @@ class Codebase(index.Indexed, ModeratedContent, ClusterableModel):
 
     def download_count(self):
         return CodebaseReleaseDownload.objects.filter(
-            release__codebase__id=self.pk
+            release__codebase__id=self.id
         ).count()
 
     def ordered_releases(self, has_change_perm=False, **kwargs):
@@ -966,22 +958,16 @@ class Codebase(index.Indexed, ModeratedContent, ClusterableModel):
         contributors = ReleaseContributor.objects.filter(release_id=source_release.id)
         platform_tags = source_release.platform_tags.all()
         programming_languages = source_release.programming_languages.all()
-
+        # set source_release.id to None to create a new release
+        # see https://docs.djangoproject.com/en/4.2/topics/db/queries/#copying-model-instances
         source_release.id = None
-        # FIXME: not sure why most of this is needed. I *think* setting source_release.id=None and clearing fields that
-        # should be cleared would be sufficient and less code.
-        release = source_release
-        for k, v in release_metadata.items():
-            setattr(release, k, v)
-        release.peer_reviewed = False
-        release.last_published_on = None
-        release.first_published_at = None
-        release.doi = None
-        release.platform_tags.add(*platform_tags)
-        release.programming_languages.add(*programming_languages)
-        release.save()
-        contributors.copy_to(release)
-        return release
+        source_release._state.adding = True
+        source_release.__dict__.update(**release_metadata)
+        source_release.save()
+        source_release.platform_tags.add(*platform_tags)
+        source_release.programming_languages.add(*programming_languages)
+        contributors.copy_to(source_release)
+        return source_release
 
     @transaction.atomic
     def create_release(
@@ -1005,6 +991,10 @@ class Codebase(index.Indexed, ModeratedContent, ClusterableModel):
             identifier=None,
             status=status,
             share_uuid=uuid.uuid4(),
+            first_published_at=None,
+            last_published_on=None,
+            doi=None,
+            peer_reviewed=False,
         )
 
         if source_release is None:  # this is the first release of the codebase
@@ -1719,12 +1709,12 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
             raise ValidationError(
                 {
                     "version_number": [
-                        f"The version number {version_number} is not a valid semantic version string."
+                        f"{version_number} is not a valid semantic version string."
                     ]
                 }
             )
         existing_version_numbers = (
-            self.codebase.releases.exclude(pk=self.pk)
+            self.codebase.releases.exclude(id=self.id)
             .order_by("version_number")
             .values_list("version_number", flat=True)
         )
@@ -1750,10 +1740,18 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
 
 
 class ReleaseContributorQuerySet(models.QuerySet):
+    def for_codebase(self, codebase, ordered=True):
+        qs = self.select_related("contributor").filter(
+            release__codebase=codebase, release__status=CodebaseRelease.Status.PUBLISHED
+        )
+        if ordered:
+            return qs.order_by("release__date_created", "index")
+        return qs
+
     def copy_to(self, release: CodebaseRelease):
         release_contributors = list(self)
         for release_contributor in release_contributors:
-            release_contributor.pk = None
+            release_contributor.id = None
             release_contributor.release = release
         return self.bulk_create(release_contributors)
 
@@ -1995,7 +1993,7 @@ class PeerReview(models.Model):
         return ReviewStatus(self.status).simple_display_message
 
     def get_edit_url(self):
-        return reverse("library:profile-edit", kwargs={"user_pk": self.user.pk})
+        return reverse("library:profile-edit", kwargs={"user_pk": self.user.id})
 
     def get_change_closed_url(self):
         return reverse("library:peer-review-change-closed", kwargs={"slug": self.slug})

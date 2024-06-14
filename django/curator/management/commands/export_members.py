@@ -41,7 +41,7 @@ class Command(BaseCommand):
         qs = (
             ComsesGroups.FULL_MEMBER.users(**criteria)
             if full_member
-            else User.objects.filter(**criteria).exclude(pk=anonymous_user.pk)
+            else User.objects.filter(**criteria).exclude(id=anonymous_user.id)
         )
         csv_writer = csv.DictWriter(
             sys.stdout,
