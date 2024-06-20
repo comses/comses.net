@@ -2816,10 +2816,14 @@ class DataCiteMetadata:
             {"identifier": common_metadata.identifier, "identifierType": "DOI"}
         ]
 
+        # Use this year if no publication year found
+        currentDateTime = datetime.now()
+        date = currentDateTime.date()
+        year = date.strftime("%Y")
         metadata["publicationYear"] = str(
             cls.convert_publication_year(common_metadata)
             if cls.convert_publication_year(common_metadata) is not None
-            else None
+            else year
         )
         # FIXME: include more info!
         metadata["publisher"] = str(
