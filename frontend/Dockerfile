@@ -2,7 +2,7 @@ FROM node:lts-bookworm-slim
 
 WORKDIR /code
 RUN apt-get update \
-    && apt-get install -y libjpeg-turbo-progs \
+    && apt-get install -y -q libjpeg-turbo-progs \
     git \
     nasm \
     vim \

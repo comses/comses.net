@@ -1,10 +1,13 @@
+from enum import Enum
+import hashlib
 import json
 import logging
 import os
 import pathlib
+from typing import List
 import uuid
 from collections import OrderedDict
-from datetime import timedelta
+from datetime import datetime, timedelta
 
 import semver
 from django.conf import settings
@@ -638,6 +641,10 @@ class Codebase(index.Indexed, ModeratedContent, ClusterableModel):
 
     HAS_PUBLISHED_KEY = True
 
+    @cached_property
+    def datacite(self):
+        return DataCiteMetadata.build_codebase_metadata(self)
+
     @property
     def is_replication(self):
         return bool(self.replication_text.strip())
@@ -679,10 +686,16 @@ class Codebase(index.Indexed, ModeratedContent, ClusterableModel):
         return urls
 
     def get_featured_rendition_url(self):
-        featured_image = self.get_featured_image()
-        if featured_image:
-            return featured_image.get_rendition("max-900x600").url
-        return None
+        try:
+            featured_image = self.get_featured_image()
+            if featured_image:
+                return featured_image.get_rendition("max-900x600").url
+            return None
+        except Exception as e:
+            logger.error(
+                f"Failed to get featured image for codebase {self.pk}. Error{e}"
+            )
+            return None
 
     def subpath(self, *args):
         return pathlib.Path(self.base_library_dir, *args)
@@ -980,7 +993,7 @@ class Codebase(index.Indexed, ModeratedContent, ClusterableModel):
 
         existing_draft = self.releases.filter(status=status).first()
         if existing_draft:
-            logger.warn(
+            logger.warning(
                 "Creating a new %s release when one already exists: %s",
                 status,
                 existing_draft.identifier,
@@ -1125,6 +1138,11 @@ class CodebaseReleaseQuerySet(models.QuerySet):
 
     def accessible(self, user):
         return get_viewable_objects_for_user(user, queryset=self)
+
+    def reviewed_without_doi(self, **kwargs):
+        return self.filter(peer_reviewed=True, **kwargs).filter(
+            Q(doi__isnull=True) | Q(doi="")
+        )
 
     def latest_for_feed(self, number=10, include_all=False):
         qs = (
@@ -1536,6 +1554,24 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
     def download_count(self):
         return self.downloads.count()
 
+    def get_previous_release(self):
+        return (
+            CodebaseRelease.objects.filter(
+                codebase=self.codebase, version_number__lt=self.version_number
+            )
+            .order_by("-version_number")
+            .first()
+        )
+
+    def get_next_release(self):
+        return (
+            CodebaseRelease.objects.filter(
+                codebase=self.codebase, version_number__gt=self.version_number
+            )
+            .order_by("-version_number")
+            .last()
+        )
+
     @property
     def title(self):
         return f"{self.codebase.title} v{self.version_number}"
@@ -1572,9 +1608,18 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
         }
 
     @cached_property
+    def common_metadata(self):
+        """Returns a CommonMetadata object used to build specific metadata objects: for example CodeMeta or DataCite"""
+        return CommonMetadata(self)
+
+    @cached_property
     def codemeta(self):
-        """Returns a CodeMeta object that can be dumped to json"""
-        return CodeMeta.build(self)
+        """Returns a CodeMetaMetadata object that can be dumped to json"""
+        return CodeMetaMetadata.build(self.common_metadata)
+
+    @cached_property
+    def datacite(self):
+        return DataCiteMetadata.build_release_metadata(self.common_metadata)
 
     @property
     def is_draft(self):
@@ -2438,14 +2483,87 @@ class PeerReviewerFeedback(models.Model):
         return f"[peer review] {invitation.candidate_reviewer} submitted? {self.reviewer_submitted}, recommendation: {self.get_recommendation_display()}"
 
 
-class CodeMeta:
+class CommonMetadata:
     DATE_PUBLISHED_FORMAT = "%Y-%m-%d"
+
     COMSES_ORGANIZATION = {
-        "@id": "https://ror.org/015bsfc29",
-        "@type": "Organization",
         "name": "CoMSES Net",
         "url": "https://www.comses.net",
     }
+
+    def __init__(self, release: CodebaseRelease):
+        codebase = release.codebase
+
+        self.codebase_release = release
+
+        self.name = codebase.title
+        self.release_title = release.title
+        self.abstract = codebase.summary
+        self.description = codebase.description.raw
+        self.version = release.version_number
+        self.programming_languages = release.programming_languages.all()
+        self.os = release.os
+        self.identifier = release.permanent_url
+        self.date_created = release.date_created.isoformat()
+        self.date_modified = release.last_modified.isoformat()
+        self.keywords = self.convert_keywords()
+        self.runtime_platform = self.convert_platforms()
+        self.url = release.permanent_url
+        self.download_url = release.get_download_url()
+        self.comses_permanent_url = release.comses_permanent_url
+        self.get_featured_rendition_url = codebase.get_featured_rendition_url()
+
+        self.live = release.live
+
+        # used for citations
+        self.citations = [
+            text
+            for text in [
+                codebase.references_text,
+                codebase.replication_text,
+                codebase.associated_publication_text,
+            ]
+            if text
+        ]
+
+        if release.live:
+            date_published = release.last_published_on
+            if date_published:
+                self.date_published = date_published.strftime(
+                    self.DATE_PUBLISHED_FORMAT
+                )
+                self.copyright_year = date_published.year
+
+        if release.first_published_at:
+            self.first_published_at = release.first_published_at
+
+        if release.license:
+            self.license = release.license
+
+        if codebase.repository_url:
+            self.code_repository = codebase.repository_url
+
+        if release.release_notes:
+            self.release_notes = release.release_notes.raw
+
+        self.permanent_url = release.permanent_url
+
+    def convert_keywords(self):
+        return [tag.name for tag in self.codebase_release.codebase.tags.all()]
+
+    def convert_platforms(self):
+        return [tag.name for tag in self.codebase_release.platform_tags.all()]
+
+    @cached_property
+    def release_contributor_nonauthors(self):
+        return ReleaseContributor.objects.nonauthors(self.codebase_release)
+
+    @cached_property
+    def release_contributor_authors(self):
+        return ReleaseContributor.objects.authors(self.codebase_release)
+
+
+class CodeMetaMetadata:
     INITIAL_DATA = {
         "@context": "http://schema.org",
         "@type": "SoftwareSourceCode",
@@ -2456,8 +2574,11 @@ class CodeMeta:
             "name": "CoMSES Model Library",
             "url": "https://www.comses.net/codebases",
         },
-        "publisher": COMSES_ORGANIZATION,
-        "provider": COMSES_ORGANIZATION,
+    }
+
+    COMSES_ORGANIZATION_FOR_CODEMETA = {
+        "@id": "https://ror.org/015bsfc29",
+        "@type": "Organization",
     }
 
     def __init__(self, metadata: dict):
@@ -2468,104 +2589,422 @@ class CodeMeta:
         self.metadata = metadata
 
     @classmethod
-    def convert_target_product(cls, codebase_release: CodebaseRelease):
-        target_product = {
-            "@type": "SoftwareApplication",
-            "name": codebase_release.title,
-            "operatingSystem": codebase_release.os,
-            "applicationCategory": "Computational Model",
-        }
-        if codebase_release.live:
-            target_product.update(
-                downloadUrl=f"{settings.BASE_URL}{codebase_release.get_download_url()}",
-                releaseNotes=codebase_release.release_notes.raw,
-                softwareVersion=codebase_release.version_number,
-                identifier=codebase_release.permanent_url,
-                sameAs=codebase_release.comses_permanent_url,
-            )
-        image_urls = codebase_release.codebase.get_image_urls()
-        if image_urls:
-            target_product.update(screenshot=f"{settings.BASE_URL}{image_urls[0]}")
-        return target_product
+    def build(cls, common_metadata: CommonMetadata):
+        metadata = {}
+        metadata.update(
+            **cls.INITIAL_DATA,
+            publisher={
+                **cls.COMSES_ORGANIZATION_FOR_CODEMETA,
+                **CommonMetadata.COMSES_ORGANIZATION,
+            },
+            provider={
+                **cls.COMSES_ORGANIZATION_FOR_CODEMETA,
+                **CommonMetadata.COMSES_ORGANIZATION,
+            },
+            name=common_metadata.name,
+            abstract=common_metadata.abstract,
+            description=common_metadata.description,
+            version=common_metadata.version,
+            targetProduct=cls.convert_target_product(common_metadata),
+            programmingLanguage=cls.convert_programming_languages(common_metadata),
+            author=cls.convert_authors(common_metadata),
+            identifier=common_metadata.identifier,
+            dateCreated=common_metadata.date_created,
+            dateModified=common_metadata.date_modified,
+            keywords=common_metadata.keywords,
+            runtimePlatform=common_metadata.runtime_platform,
+            url=common_metadata.url,
+            citation=cls.get_citations(common_metadata),
+        )
+
+        datePublished = getattr(common_metadata, "date_published", None)
+        if datePublished:
+            metadata.update(datePublished=datePublished)
+            metadata.update(copyrightYear=common_metadata.copyright_year)
+
+        license = getattr(common_metadata, "license", None)
+        if license:
+            metadata.update(license=license.url)
+
+        codeRepository = getattr(common_metadata, "codeRepository", None)
+        if codeRepository:
+            metadata.update(codeRepository=codeRepository)
+
+        release_notes = getattr(common_metadata, "release_notes", None)
+        if release_notes:
+            metadata.update(releaseNotes=release_notes)
+
+        metadata["@id"] = common_metadata.permanent_url
+
+        return CodeMetaMetadata(metadata)
 
     @classmethod
-    def convert_keywords(cls, codebase_release: CodebaseRelease):
-        return [tag.name for tag in codebase_release.codebase.tags.all()]
-
-    @classmethod
-    def convert_platforms(cls, codebase_release: CodebaseRelease):
-        return [tag.name for tag in codebase_release.platform_tags.all()]
-
-    @classmethod
-    def convert_authors(cls, codebase_release: CodebaseRelease):
-        return [
-            author.contributor.to_codemeta()
-            for author in ReleaseContributor.objects.authors(codebase_release)
-        ]
-
-    @classmethod
-    def convert_programming_languages(cls, codebase_release: CodebaseRelease):
+    def convert_programming_languages(cls, common_metadata: CommonMetadata):
         return [
             {"@type": "ComputerLanguage", "name": pl.name}
-            for pl in codebase_release.programming_languages.all()
+            for pl in common_metadata.programming_languages
         ]
 
     @classmethod
-    def build(cls, release: CodebaseRelease):
-        metadata = cls.INITIAL_DATA.copy()
-        codebase = release.codebase
-        metadata.update(
-            name=codebase.title,
-            abstract=codebase.summary,
-            description=codebase.description.raw,
-            version=release.version_number,
-            targetProduct=cls.convert_target_product(release),
-            programmingLanguage=cls.convert_programming_languages(release),
-            author=cls.convert_authors(release),
-            identifier=release.permanent_url,
-            dateCreated=release.date_created.isoformat(),
-            dateModified=release.last_modified.isoformat(),
-            keywords=cls.convert_keywords(release),
-            runtimePlatform=cls.convert_platforms(release),
-            url=release.permanent_url,
-            citation=[],
-        )
-        if release.live:
-            metadata.update(
-                datePublished=release.last_published_on.strftime(
-                    cls.DATE_PUBLISHED_FORMAT
-                )
-            )
-            metadata.update(copyrightYear=release.last_published_on.year)
-        if release.license:
-            metadata.update(license=release.license.url)
-        if codebase.repository_url:
-            metadata.update(codeRepository=codebase.repository_url)
-        cls.add_citation_text(metadata, codebase.references_text)
-        cls.add_citation_text(metadata, codebase.replication_text)
-        cls.add_citation_text(metadata, codebase.associated_publication_text)
-
-        if release.release_notes:
-            metadata.update(releaseNotes=release.release_notes.raw)
-        metadata["@id"] = release.permanent_url
-        return CodeMeta(metadata)
-
-    @classmethod
-    def add_citation_text(cls, metadata, text):
-        if text:
-            metadata.get("citation").append(cls.to_creative_work(text))
+    def get_citations(cls, common_metadata: CommonMetadata):
+        return [
+            cls.to_creative_work(citation_text)
+            for citation_text in common_metadata.citations
+        ]
 
     @classmethod
     def to_creative_work(cls, text):
         return {"@type": "CreativeWork", "text": text}
 
+    @classmethod
+    def convert_authors(cls, common_metadata: CommonMetadata):
+        return [
+            author.contributor.to_codemeta()
+            for author in common_metadata.release_contributor_authors
+        ]
+
+    @classmethod
+    def convert_target_product(cls, common_metadata: CommonMetadata):
+        target_product = {
+            "@type": "SoftwareApplication",
+            "name": common_metadata.release_title,
+            "operatingSystem": common_metadata.os,
+            "applicationCategory": "Computational Model",
+        }
+        if common_metadata.live:
+            target_product.update(
+                # FIXME: consider adding a convenience method to generate absolute urls
+                downloadUrl=f"{settings.BASE_URL}{common_metadata.download_url}",
+                releaseNotes=getattr(common_metadata, "release_notes", None),
+                softwareVersion=common_metadata.version,
+                identifier=common_metadata.identifier,
+                sameAs=common_metadata.comses_permanent_url,
+            )
+        image_url = common_metadata.get_featured_rendition_url
+        if image_url:
+            # FIXME: consider adding a convenience method to generate absolute urls
+            target_product.update(screenshot=f"{settings.BASE_URL}{image_url}")
+        return target_product
+
     def to_json(self):
         """Returns a JSON string of this codemeta data"""
-        # FIXME: should ideally validate metadata as well
-        return json.dumps(self.metadata)
+        return json.dumps(self.metadata, indent=4)
 
     def to_dict(self):
         return self.metadata.copy()
+
+
+class DataCiteMetadata:
+    def __init__(self, metadata: dict):
+        if not metadata:
+            raise ValueError(
+                "Initialize with a base dictionary with DataCite terms mapped to JSON-serializable values"
+            )
+        self.metadata = metadata
+
+    @classmethod
+    def build_codebase_metadata(cls, codebase: Codebase):
+        metadata = {}
+        # FIXME: set more codebase attributes???
+        # https://support.datacite.org/docs/what-is-the-identifiers-attribute-in-the-rest-api
+        # future consideration: adding references_text and associated_publication_text fields when more info for those fiels are added
+
+        metadata["identifiers"] = [
+            {
+                "identifierType": "DOI", # only "DOI" allowed according to DataCite schema
+                "identifier": codebase.permanent_url,
+            }
+        ]
+
+        if codebase.doi:
+            metadata["identifiers"].append(
+                {
+                    "identifierType": "DOI",
+                    "identifier": codebase.doi,
+                }
+            )
+
+        # FIXME: creators should never be empty!
+        # FIXME: when additional info is available for codebase creator, update this
+        metadata["creators"] = [
+            {"name": author_string_name, "creatorType": "Personal"}
+            for author_string_name in codebase.author_list
+        ]
+        metadata["titles"] = [{"title": codebase.title}]
+        metadata["descriptions"] = [
+            {
+                "description": codebase.summarized_description,
+                "descriptionType": "Abstract",
+            }
+        ]  # or codebase.description.raw?
+
+        # FIXME: include more info!
+        metadata["publisher"] = str(
+            f'{CommonMetadata.COMSES_ORGANIZATION["name"]} {CommonMetadata.COMSES_ORGANIZATION["url"]}'
+        )
+
+        # Use this year if no publication year found
+        currentDateTime = datetime.now()
+        metadata["publicationYear"] = str(
+            codebase.first_published_at.year
+            if codebase is not None
+            and codebase.first_published_at is not None
+            and codebase.first_published_at.year is not None
+            else currentDateTime.year
+        )
+        metadata["types"] = {"resourceType": "Model", "resourceTypeGeneral": "Software"}
+        metadata["schemaVersion"] = "http://datacite.org/schema/kernel-4"
+
+        """ 
+        Set codebase relatedIdentifiers
+        """
+
+        metadata["relatedIdentifiers"] = []
+
+        # set relatedIdentifiers
+        # FIXME: what is the difference between
+        # CodebaseRelease.objects.filter(codebase=r.codebase).order_by("-version_number").all()
+        # and
+        # ordered_codebase_releases: List[CodebaseRelease] = codebase.ordered_releases()
+        ordered_codebase_releases: List[CodebaseRelease] = (
+            CodebaseRelease.objects.filter(codebase=codebase)
+            .order_by("-version_number")
+            .all()
+        )
+
+        for release in ordered_codebase_releases:
+            if release.doi:
+                metadata["relatedIdentifiers"].append(
+                    {
+                        "relationType": "HasVersion",
+                        "relatedIdentifier": release.doi,
+                        "relatedIdentifierType": "DOI",
+                    }
+                )
+
+        return DataCiteMetadata(metadata)
+
+    @classmethod
+    def build_release_metadata(cls, common_metadata: CommonMetadata):
+        """
+        Build the DataCite schema 4.3 data in JSON format.
+        See documentation @ https://schema.datacite.org/meta/kernel-4.3/doc/DataCite-MetadataKernel_v4.3.pdf
+        page 7 for the require fields and page 8 for required and optional fields.
+        Also see https://support.datacite.org/reference/post_dois for current REST API field list
+        which shows a required field "type": "dois"
+        Important: this should be call AFTER the release has been published as DataCite
+        requires the copyrightYear information
+
+        See https://codemeta.github.io/crosswalk/datacite/ for documentation on CodeMeta to DataCite crosswalk.
+
+        We don't want to make a copy since some field names are different and also
+        some fields DataCite do not want or have.
+        """
+        metadata = {}
+
+        """
+        Set codebase and release common metadta
+        """
+        metadata["creators"] = cls.convert_authors(common_metadata)
+        metadata["descriptions"] = [
+            {"description": common_metadata.description, "descriptionType": "Abstract"}
+        ]
+
+        metadata["identifiers"] = [
+            {"identifier": common_metadata.identifier, "identifierType": "DOI"}
+        ]
+
+        # Use this year if no publication year found
+        currentDateTime = datetime.now()
+        metadata["publicationYear"] = str(
+            cls.convert_publication_year(common_metadata)
+            if cls.convert_publication_year(common_metadata) is not None
+            else currentDateTime.year
+        )
+        # FIXME: include more info!
+        metadata["publisher"] = str(
+            f'{CommonMetadata.COMSES_ORGANIZATION["name"]} {CommonMetadata.COMSES_ORGANIZATION["url"]}'
+        )
+
+        metadata["types"] = {"resourceType": "Model", "resourceTypeGeneral": "Software"}
+        metadata["titles"] = [{"title": common_metadata.name}]
+        metadata["version"] = common_metadata.version
+
+        codeRepository = getattr(common_metadata, "codeRepository", None)
+        if codeRepository:
+            metadata["contributors"] = common_metadata.contributors
+
+        keywords = getattr(common_metadata, "keywords", None)
+        if keywords:
+            metadata["subjects"] = cls.convert_keywords(common_metadata)
+
+        release_notes = getattr(common_metadata, "release_notes", None)
+        if release_notes:
+            metadata["descriptions"].append(
+                {"description": release_notes, "descriptionType": "TechnicalInfo"}
+            )
+
+        license = getattr(common_metadata, "license", None)
+        if license:
+            metadata["rightsList"] = [
+                {
+                    "rights": license.name,
+                    "rightsIdentifier": license.name,
+                    "rightsURI": license.url,
+                }
+            ]
+
+        """
+        Set release relatedIdentifiers
+        """
+
+        metadata["relatedIdentifiers"] = []
+
+        """
+        Set relationship to parent
+        """
+        codebase_doi = common_metadata.codebase_release.codebase.doi
+        if codebase_doi:
+            metadata["relatedIdentifiers"].append(
+                {
+                    "relationType": "IsVersionOf",
+                    "relatedIdentifier": codebase_doi,
+                    "relatedIdentifierType": "DOI",
+                }
+            )
+
+        """
+        Set relationships to siblings
+        """
+        previous_release = common_metadata.codebase_release.get_previous_release()
+        next_release = common_metadata.codebase_release.get_next_release()
+
+        # set relationship to previous_release
+        if previous_release and previous_release.doi:
+            metadata["relatedIdentifiers"].append(
+                {
+                    "relationType": "IsNewVersionOf",
+                    "relatedIdentifier": previous_release.doi,
+                    "relatedIdentifierType": "DOI",
+                }
+            )
+
+        # set relationship to next_release
+        if next_release and next_release.doi:
+            metadata["relatedIdentifiers"].append(
+                {
+                    "relationType": "IsPreviousVersionOf",
+                    "relatedIdentifier": next_release.doi,
+                    "relatedIdentifierType": "DOI",
+                }
+            )
+
+        metadata["schemaVersion"] = "http://datacite.org/schema/kernel-4"
+
+        return DataCiteMetadata(metadata)
+
+    @classmethod
+    def convert_keywords(cls, common_metadata: CommonMetadata):
+        unique_keywords = sorted(set(common_metadata.keywords))
+        return [{"subject": keyword} for keyword in unique_keywords]
+
+    @classmethod
+    def convert_authors(cls, common_metadata: CommonMetadata):
+        creators = []
+        for release_contributor in common_metadata.release_contributor_authors:
+            contributor = release_contributor.contributor
+            contributor_type = "Organizational"
+            # FIXME: is this check enough?
+            if contributor.type == "person":
+                contributor_type = "Personal"
+            item = {
+                "name": contributor.family_name + ", " + contributor.given_name,
+                "nameType": contributor_type,
+                "givenName": contributor.given_name,
+                "familyName": contributor.family_name,
+            }
+
+            # FIXME: more details on affiliation: see https://schema.datacite.org/meta/kernel-4.3/metadata.xsd
+            if contributor.affiliations.exists():
+                item["affiliation"] = []
+                for affiliation in contributor.affiliations.all():
+                    item["affiliation"].append({"name": affiliation.name})
+
+            creators.append(item)
+        return creators
+
+    @classmethod
+    def convert_publication_year(cls, common_metadata: CommonMetadata):
+        copyrightYear = getattr(common_metadata, "copyright_year", None)
+        if copyrightYear:
+            return copyrightYear
+
+        first_published_at = getattr(common_metadata, "first_published_at", None)
+        if first_published_at:
+            return first_published_at.year
+        return None
+
+    @classmethod
+    def convert_contributors(cls, common_metadata: CommonMetadata):
+        nonauthor_contributors = common_metadata.release_contributor_nonauthors
+
+        contributors = [
+            # FIXME: probably not the right way to bootstrap non author contributors
+            # perhaps this should be the provider institution, e.g., CML ROR
+            {
+                "contributorName": common_metadata.code_repository,
+                "contributorType": "hostingInstitution",
+            }
+        ]
+
+        if nonauthor_contributors:
+            role_mapping = {
+                "copyrightHolder": "RightsHolder",
+                "editor": "Editor",
+                "funder": "Sponsor",
+                "pointOfContact": "ContactPerson",
+                "resourceProvider": "Distributor",
+            }
+
+            for release_contributor in nonauthor_contributors:
+                # FIXME: what is other_role_added for?
+                other_role_added = False
+                for role in release_contributor.roles:
+                    contributor_type = role_mapping.get(role, "Other")
+                    if contributor_type == "Other" and not other_role_added:
+                        contributors.append(
+                            {
+                                "contributorName": release_contributor.contributor.name,
+                                "contributorType": "Other",
+                            }
+                        )
+                        other_role_added = True
+                    elif contributor_type != "Other":
+                        contributors.append(
+                            {
+                                "contributorName": release_contributor.contributor.name,
+                                "contributorType": contributor_type,
+                            }
+                        )
+
+        return contributors
+
+    def to_dict(self):
+        return self.metadata.copy()
+
+    def to_hash(self):
+        """
+        Compute SHA-256 hash from metadata dictionary.
+        """
+        # Convert metadata dictionary to JSON string
+        json_str = json.dumps(self.to_dict(), sort_keys=True)
+
+        # Compute hash using SHA-256
+        hash_obj = hashlib.sha256()
+        hash_obj.update(json_str.encode("utf-8"))
+        hash_value = hash_obj.hexdigest()
+
+        return hash_value
 
 
 @register_snippet
@@ -2592,3 +3031,70 @@ class PeerReviewEventLog(models.Model):
             self.message += f"\n\n{message}"
         else:
             self.message = message
+
+
+class DataciteAction(models.TextChoices):
+    CREATE_RELEASE_DOI = "CREATE_RELEASE_DOI", _("CREATE_RELEASE_DOI")
+    CREATE_CODEBASE_DOI = "CREATE_CODEBASE_DOI", _("CREATE_CODEBASE_DOI")
+    UPDATE_RELEASE_METADATA = "UPDATE_RELEASE_METADATA", _("UPDATE_RELEASE_METADATA")
+    UPDATE_CODEBASE_METADATA = "UPDATE_CODEBASE_METADATA", _("UPDATE_CODEBASE_METADATA")
+
+
+@register_snippet
+class DataciteRegistrationLog(models.Model):
+    release = models.ForeignKey(
+        CodebaseRelease,
+        related_name="datacite_logs",
+        on_delete=models.CASCADE,
+        null=True,
+    )
+    codebase = models.ForeignKey(
+        Codebase, related_name="datacite_logs", on_delete=models.CASCADE, null=True
+    )
+
+    action = models.CharField(max_length=50, choices=DataciteAction.choices)
+
+    timestamp = models.DateTimeField(default=timezone.now)
+    http_status = models.IntegerField(default=None, null=True)
+    message = models.TextField(default=None, null=True)
+    metadata_hash = models.CharField(max_length=255)
+    doi = models.CharField(max_length=25, null=True, blank=True)
+
+    @classmethod
+    def is_metadata_stale(cls, item):
+        try:
+            # remove cache
+            if hasattr(item, "datacite"):
+                del item.datacite
+
+            current_metadata_hash = item.datacite.to_hash()
+
+            newest_log_entry = None
+            if isinstance(item, Codebase):
+                newest_log_entry = (
+                    DataciteRegistrationLog.objects.filter(
+                        Q(codebase=item) & Q(http_status=200)
+                    )
+                    .order_by("-timestamp")
+                    .first()
+                )
+            if isinstance(item, CodebaseRelease):
+                newest_log_entry = (
+                    DataciteRegistrationLog.objects.filter(
+                        Q(release=item) & Q(http_status=200)
+                    )
+                    .order_by("-timestamp")
+                    .first()
+                )
+
+            if newest_log_entry:
+                last_successfuly_sent_metadata_hash = newest_log_entry.metadata_hash
+                return last_successfuly_sent_metadata_hash != current_metadata_hash
+
+        except Exception as e:
+            logger.error(e)
+
+        return True
+
+    def __str__(self):
+        return f"Metadata sent for { 'Codebase ' + str(self.codebase.pk) if self.codebase else 'CodebaseRelease '+ str(self.release.pk)} at {self.timestamp}, HTTP Status: {self.http_status}, Message: {self.message}, Hash: {self.metadata_hash}, DOI: {self.doi}"
