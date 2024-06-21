@@ -2745,14 +2745,12 @@ class DataCiteMetadata:
 
         # Use this year if no publication year found
         currentDateTime = datetime.now()
-        date = currentDateTime.date()
-        year = date.strftime("%Y")
         metadata["publicationYear"] = str(
             codebase.first_published_at.year
             if codebase is not None
             and codebase.first_published_at is not None
             and codebase.first_published_at.year is not None
-            else year
+            else currentDateTime.year
         )
         metadata["types"] = {"resourceType": "Model", "resourceTypeGeneral": "Software"}
         metadata["schemaVersion"] = "http://datacite.org/schema/kernel-4"
@@ -2818,12 +2816,10 @@ class DataCiteMetadata:
 
         # Use this year if no publication year found
         currentDateTime = datetime.now()
-        date = currentDateTime.date()
-        year = date.strftime("%Y")
         metadata["publicationYear"] = str(
             cls.convert_publication_year(common_metadata)
             if cls.convert_publication_year(common_metadata) is not None
-            else year
+            else currentDateTime.year
         )
         # FIXME: include more info!
         metadata["publisher"] = str(
