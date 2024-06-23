@@ -8,6 +8,7 @@
     <form @submit="handleSubmit">
       <MarkdownField
         class="mb-3"
+        data-cy="release-notes"
         name="releaseNotes"
         label="Release Notes"
         help="Details about this specific release: what's new, improvements to existing features, bug fixes, etc."
@@ -16,12 +17,14 @@
       />
       <DatepickerField
         class="mb-3"
+        data-cy="embargo-end-date"
         name="embargoEndDate"
         label="Embargo End Date"
         help="The date your private release will be automatically made public"
       />
       <SelectField
         class="mb-3"
+        data-cy="operating-system"
         name="os"
         label="Operating System"
         help="The operating system(s) this model is compatible with, e.g., Linux, MacOS, Windows"
@@ -30,6 +33,7 @@
       />
       <TaggerField
         class="mb-3"
+        data-cy="software-frameworks"
         name="platforms"
         label="Software Framework(s)"
         help=" Modeling software frameworks (e.g., NetLogo, RePast, Mason, CORMAS, Mesa, etc.) used by this model"
@@ -37,6 +41,7 @@
       />
       <TaggerField
         class="mb-3"
+        data-cy="programming-languages"
         name="programmingLanguages"
         label="Programming Language(s)"
         help=" Programming languages used in this model"
@@ -50,6 +55,7 @@
       />
       <MultiSelectField
         class="mb-3"
+        data-cy="license"
         name="license"
         label="License"
         track-by="name"
@@ -81,7 +87,7 @@
         </template>
       </MultiSelectField>
       <FormAlert :validation-errors="Object.values(errors)" :server-errors="serverErrors" />
-      <button type="submit" class="btn btn-primary mt-3">Save and Continue</button>
+      <button type="submit" data-cy="save-and-continue" class="btn btn-primary mt-3">Save and Continue</button>
     </form>
   </div>
 </template>
