@@ -5,9 +5,10 @@
     <div class="text-muted mb-1" v-if="instructions">{{ instructions }}</div>
     <div class="d-flex justify-content-between mb-2">
       <div>
-        <label :for="uploadId"><div class="btn btn-primary">Upload a file</div></label>
+        <label :for="uploadId"><div class="btn btn-primary" >Upload a file</div></label>
         <input
           class="invisible"
+          :data-cy="`upload-${category}`"
           :id="uploadId"
           type="file"
           @change="handleFiles($event)"
@@ -68,6 +69,7 @@ export interface FileUploadProps {
   instructions: string;
   uploadUrl: string;
   acceptedFileTypes: string;
+  category: string;
   originals: { name: string; identifier: string }[];
 }
 
