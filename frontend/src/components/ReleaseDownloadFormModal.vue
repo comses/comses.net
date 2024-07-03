@@ -19,6 +19,7 @@
         <form @submit="handleSubmit" id="download-request-form">
           <SelectField
             class="mb-3"
+            data-cy="industry options"
             name="industry"
             label="What industry do you work in?"
             :options="industryOptions"

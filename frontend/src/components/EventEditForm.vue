@@ -1,9 +1,10 @@
 <template>
   <form @submit="handleSubmit">
-    <TextField class="mb-3" name="title" label="Title" help="The name of this event" required />
+    <TextField class="mb-3" data-cy="event title" name="title" label="Title" help="The name of this event" required />
     <HoneypotField />
     <TextField
       class="mb-3"
+      data-cy="event location"
       name="location"
       label="Location"
       help="Please enter the city and country hosting the event, or 'online' or 'hybrid' for fully virtual or mixed events."
@@ -13,6 +14,7 @@
       <div class="col-6">
         <DatepickerField
           class="mb-3"
+          data-cy="event start date"
           name="startDate"
           label="Start Date"
           help="The date this event begins"
@@ -23,6 +25,7 @@
       <div class="col-6">
         <DatepickerField
           class="mb-3"
+          data-cy="event end date"
           name="endDate"
           label="End Date"
           help="The date this event ends"
@@ -34,6 +37,7 @@
       <div class="col-6 d-inline">
         <DatepickerField
           class="mb-3"
+          data-cy="early registration deadline"
           name="earlyRegistrationDeadline"
           label="Early Registration Deadline"
           help="The last day for early registration for this event (inclusive)"
@@ -43,6 +47,7 @@
       <div class="col-6 d-inline">
         <DatepickerField
           class="mb-3"
+          data-cy="registration deadline"
           name="registrationDeadline"
           label="Registration Deadline"
           help="The last day to register for this event (inclusive)"
@@ -53,6 +58,7 @@
     </div>
     <DatepickerField
       class="mb-3"
+      data-cy="submission deadline"
       name="submissionDeadline"
       label="Submission Deadline"
       help="The last day to make a submission for this event (inclusive)"
@@ -60,6 +66,7 @@
     />
     <MarkdownField
       class="mb-3"
+      data-cy="description"
       name="description"
       label="Description"
       help="A detailed description of this event."
@@ -67,6 +74,7 @@
     />
     <MarkdownField
       class="mb-3"
+      data-cy="summary"
       name="summary"
       label="Summary"
       :rows="5"
@@ -82,6 +90,7 @@
     </MarkdownField>
     <TextField
       class="mb-3"
+      data-cy="external url"
       name="externalUrl"
       label="Event website"
       help="URL to this event's website where people can register, etc."
@@ -93,7 +102,7 @@
       help="A list of tags to associate with this event. Tags can help people find relevant events."
     />
     <FormAlert :validation-errors="Object.values(errors)" :server-errors="serverErrors" />
-    <button type="submit" class="btn btn-primary" :disabled="isLoading">
+    <button type="submit" data-cy="create button" class="btn btn-primary" :disabled="isLoading">
       {{ props.eventId ? "Update" : "Create" }}
     </button>
   </form>

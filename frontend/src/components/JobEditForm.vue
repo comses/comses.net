@@ -1,9 +1,10 @@
 <template>
   <form @submit="handleSubmit">
-    <TextField class="mb-3" name="title" label="Title" help="Job title" required />
+    <TextField class="mb-3" data-cy="job title" name="title" label="Title" help="Job title" required />
     <HoneypotField />
     <MarkdownField
       class="mb-3"
+      data-cy="job description"
       name="description"
       label="Description"
       help="Detailed description of this job position, its responsibilities, requirements, expectations, etc."
@@ -11,6 +12,7 @@
     />
     <MarkdownField
       class="mb-3"
+      data-cy="job summary"
       name="summary"
       label="Summary"
       :rows="5"
@@ -26,12 +28,14 @@
     </MarkdownField>
     <TextField
       class="mb-3"
+      data-cy="external url"
       name="externalUrl"
       label="Job URL"
       help="External URL with more details for this job, including how to apply."
     />
     <DatepickerField
       class="mb-3"
+      data-cy="application deadline"
       name="applicationDeadline"
       label="Application Deadline"
       help="When applications for this job are due."
@@ -44,7 +48,7 @@
       help="A list of tags to associate with this job. Tags can help people find relevant jobs."
     />
     <FormAlert :validation-errors="Object.values(errors)" :server-errors="serverErrors" />
-    <button type="submit" class="btn btn-primary" :disabled="isLoading">
+    <button type="submit" data-cy="create button" class="btn btn-primary" :disabled="isLoading">
       {{ props.jobId ? "Update" : "Create" }}
     </button>
   </form>
