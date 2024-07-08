@@ -461,7 +461,7 @@ class EventViewSet(
     def get_calendar_queryset(self):
         start = parse_date(self.request.query_params["start"])
         end = parse_date(self.request.query_params["end"])
-        return self.queryset.find_by_interval(start, end), start, end
+        return self.queryset.public().find_by_interval(start, end), start, end
 
     @staticmethod
     def to_calendar_early_registration_deadline_event(event):
