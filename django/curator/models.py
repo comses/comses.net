@@ -1,20 +1,27 @@
-import json
-import logging
 import os
 import re
+import json
+import logging
 
 from collections import defaultdict
 from django.core.exceptions import FieldDoesNotExist
 from django.contrib.auth.models import User
 from django.contrib.postgres.aggregates import ArrayAgg
+from django.dispatch import receiver
 from django.db import models, transaction
+from django.db.models.signals import post_save
 from django.urls import reverse
+
 from modelcluster import fields
+
+from wagtail.snippets.models import register_snippet
+
 from nltk.corpus import stopwords
 from nltk.stem import PorterStemmer
 from nltk.tokenize import word_tokenize
 from taggit.models import Tag
 
+from core.models import MemberProfile
 from library.models import ProgrammingLanguage, CodebaseReleasePlatformTag
 
 logger = logging.getLogger(__name__)
@@ -359,3 +366,55 @@ class CanonicalTagMapping(models.Model):
 
     def __str__(self):
         return f"tag={self.tag} canonical_tag={self.canonical_tag.name} confidence={self.confidence_score}"
+
+
+class UserSpamStatusQuerySet(models.QuerySet):
+    def filter_by_user_ids(self, user_ids, **kwargs):
+        return self.filter(member_profile__user_id__in=user_ids, **kwargs)
+
+
+class UserSpamStatus(models.Model):
+    member_profile = models.OneToOneField(
+        MemberProfile, on_delete=models.CASCADE, primary_key=True
+    )
+    # TODO: add help_text
+    # None = not processed yet
+    # True = classifier thinks a user is spam
+    # False = classifier does not think a user is spam
+
+    label = models.BooleanField(default=None, null=True)
+    last_updated = models.DateTimeField(auto_now=True)
+    is_training_data = models.BooleanField(default=False)
+
+    objects = UserSpamStatusQuerySet.as_manager()
+
+    @staticmethod
+    def get_recommendations_sorted_by_confidence():
+        return UserSpamStatus.objects.all().order_by("text_classifier_confidence")
+
+    def __str__(self):
+        return (
+            "member_profile={}, label={}, last_updated={}, is_training_data={}".format(
+                str(self.member_profile),
+                str(self.label),
+                str(self.last_updated),
+                str(self.is_training_data),
+            )
+        )
+
+
+# Create a new UserSpamStatus whenever a new MemberProfile is created
+@receiver(post_save, sender=MemberProfile)
+def sync_member_profile_spam_status(sender, instance: MemberProfile, created, **kwargs):
+    if created:
+        spam_status, created = UserSpamStatus.objects.get_or_create(
+            member_profile=instance,
+        )
+
+
+class UserSpamPrediction(models.Model):
+    spam_status = models.ForeignKey(UserSpamStatus, on_delete=models.CASCADE)
+    context_id = models.CharField(max_length=300)
+    prediction = models.BooleanField(default=False)
+    confidence = models.FloatField(default=0)
+    date_created = models.DateTimeField(auto_now=True)
