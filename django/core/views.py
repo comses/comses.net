@@ -450,10 +450,7 @@ class EventViewSet(
     )
 
     def get_queryset(self):
-        # exclude spam from list view
-        if self.action == "list":
-            return self.queryset.public()
-        return self.queryset
+        return self.queryset.public()
 
     def retrieve(self, request, *args, **kwargs):
         return retrieve_with_perms(self, request, *args, **kwargs)
