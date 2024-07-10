@@ -11,12 +11,12 @@ export default defineConfig({
   root: resolvePath("./src"),
   base:
     process.env.NODE_ENV === "development"
-      ? "http://localhost:5000/static/bundles/"
+      ? "http://localhost:5173/static/bundles/"
       : "/static/bundles/",
   server: {
     host: "0.0.0.0",
-    port: 5000,
-    origin: "http://localhost:5000",
+    port: 5173,
+    origin: "http://localhost:5173",
     watch: {
       usePolling: true,
       disableGlobbing: false,
