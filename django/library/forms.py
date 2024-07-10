@@ -77,14 +77,21 @@ class PeerReviewerFeedbackReviewerForm(CheckCharFieldLengthMixin, forms.ModelFor
         return recommendation
 
     def clean_narrative_documentation_comments(self):
+        # allow empty comments is narrative documentation is approved (checked)
+        if self.cleaned_data["has_narrative_documentation"]:
+            return self.cleaned_data["narrative_documentation_comments"]
         return self._check_char_field_has_content(
             field_name="narrative_documentation_comments"
         )
 
     def clean_clean_code_comments(self):
+        if self.cleaned_data["has_clean_code"]:
+            return self.cleaned_data["clean_code_comments"]
         return self._check_char_field_has_content(field_name="clean_code_comments")
 
     def clean_runnable_comments(self):
+        if self.cleaned_data["is_runnable"]:
+            return self.cleaned_data["runnable_comments"]
         return self._check_char_field_has_content(field_name="runnable_comments")
 
     def clean(self):
