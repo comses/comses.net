@@ -9,7 +9,7 @@
     delaycompress
     sharedscripts
     postrotate
-        cd /opt/comses.net && docker-compose exec cms touch /code/core/wsgi.py
+        cd /opt/comses.net && docker compose exec cms touch /code/core/wsgi.py
     endscript
 }
 
@@ -23,6 +23,6 @@
 	delaycompress
 	sharedscripts
 	postrotate
-		cd /opt/comses.net && docker-compose restart nginx
+		cd /opt/comses.net && docker compose restart nginx
 	endscript
 }
