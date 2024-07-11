@@ -46,7 +46,7 @@ shortuuid==1.0.13
 tzdata==2024.1
 uwsgi==2.0.26
 uwsgitop==0.12
-wagtail==5.2.5
+wagtail==5.2.6
 wagtail-modeladmin==2.0.0
 invoke
 ipython
