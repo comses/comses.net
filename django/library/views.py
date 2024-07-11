@@ -61,6 +61,7 @@ from .models import (
     CodebaseImage,
     License,
     PeerReview,
+    PeerReviewer,
     PeerReviewerFeedback,
     PeerReviewInvitation,
     ReviewStatus,
@@ -71,6 +72,7 @@ from .serializers import (
     CodebaseReleaseSerializer,
     ContributorSerializer,
     DownloadRequestSerializer,
+    PeerReviewerSerializer,
     ReleaseContributorSerializer,
     CodebaseReleaseEditSerializer,
     CodebaseImageSerializer,
@@ -173,6 +175,7 @@ class PeerReviewChangeClosedView(PermissionRequiredMixin, DetailView):
 
 
 class PeerReviewReviewerListView(mixins.ListModelMixin, viewsets.GenericViewSet):
+    # FIXME: this will be unused once the new reviewer selection UI is in place
     queryset = MemberProfile.objects.all()
     serializer_class = RelatedMemberProfileSerializer
 
@@ -180,6 +183,32 @@ class PeerReviewReviewerListView(mixins.ListModelMixin, viewsets.GenericViewSet)
         query = self.request.query_params.get("query", "")
         results = PeerReview.objects.find_candidate_reviewers(query)
         return results
+
+
+class ChangePeerReviewPermission(permissions.BasePermission):
+    def has_permission(self, request, view):
+        if request.user.has_perm("library.change_peerreview"):
+            return True
+        raise DrfPermissionDenied
+
+
+class PeerReviewerFilter(filters.BaseFilterBackend):
+    def filter_queryset(self, request, queryset, view):
+        # FIXME: when there query, return the full list of reviewers
+        query = request.query_params.get("query", None)
+        if query is None:
+            return queryset
+        return get_search_queryset(query, queryset)
+
+
+class PeerReviewerViewSet(CommonViewSetMixin, NoDeleteViewSet):
+    queryset = PeerReviewer.objects.exclude(is_active=False)
+    serializer_class = PeerReviewerSerializer
+    permission_classes = (ChangePeerReviewPermission,)
+    filter_backends = (PeerReviewerFilter,)
+
+    # def get_queryset(self):
+    #     pass
 
 
 @api_view(["PUT"])
@@ -200,16 +229,9 @@ def _change_peer_review_status(request):
     return Response(data={"status": new_status.name}, status=status.HTTP_200_OK)
 
 
-class NestedPeerReviewInvitation(permissions.BasePermission):
-    def has_permission(self, request, view):
-        if request.user.has_perm("library.change_peerreview"):
-            return True
-        raise DrfPermissionDenied
-
-
 class PeerReviewInvitationViewSet(NoDeleteNoUpdateViewSet):
     queryset = PeerReviewInvitation.objects.with_reviewer_statistics()
-    permission_classes = (NestedPeerReviewInvitation,)
+    permission_classes = (ChangePeerReviewPermission,)
     serializer_class = PeerReviewInvitationSerializer
     lookup_url_kwarg = "invitation_slug"
 

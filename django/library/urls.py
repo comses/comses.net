@@ -14,7 +14,7 @@ router.register(r"codebases/(?P<identifier>[\w\-.]+)/media", views.CodebaseImage
 router.register(
     r"codebases/(?P<identifier>[\w\-.]+)/releases", views.CodebaseReleaseViewSet
 )
-router.register(r"reviewers", views.PeerReviewReviewerListView),
+router.register(r"reviewers", views.PeerReviewerViewSet),
 router.register(
     r"reviews/(?P<slug>[\da-f\-]+)/editor/invitations",
     views.PeerReviewInvitationViewSet,

@@ -2135,6 +2135,42 @@ class PeerReview(models.Model):
         return f"[peer review] {self.title} (status: {self.status}, created: {self.date_created}, last_modified {self.last_modified})"
 
 
+@register_snippet
+class PeerReviewer(index.Indexed, models.Model):
+    date_created = models.DateTimeField(auto_now_add=True)
+    member_profile = models.OneToOneField(
+        MemberProfile, related_name="peer_reviewer", on_delete=models.CASCADE
+    )
+    is_active = models.BooleanField(default=True)
+    programming_languages = ArrayField(
+        models.CharField(max_length=100), default=list, blank=True
+    )
+    subject_areas = ArrayField(
+        models.CharField(max_length=100),
+        default=list,
+        blank=True,
+        help_text=_("Areas of expertise, e.g. social science, biology"),
+    )
+    notes = models.TextField(
+        blank=True, help_text=_("Any additional notes about this reviewer")
+    )
+
+    search_fields = [
+        index.FilterField("is_active"),
+        index.SearchField("programming_languages"),
+        index.SearchField("subject_areas"),
+        index.RelatedFields(
+            "member_profile",
+            [
+                index.SearchField("username"),
+                index.SearchField("email"),
+                index.SearchField("name"),
+                index.SearchField("research_interests"),
+            ],
+        ),
+    ]
+
+
 class PeerReviewInvitationQuerySet(models.QuerySet):
     def accepted(self, **kwargs):
         return self.filter(accepted=True, **kwargs)
