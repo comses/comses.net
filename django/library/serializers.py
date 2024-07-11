@@ -30,6 +30,7 @@ from core.serializers import (
     RelatedUserSerializer,
 )
 from .models import (
+    PeerReviewer,
     ReleaseContributor,
     Codebase,
     CodebaseRelease,
@@ -707,6 +708,15 @@ class PeerReviewFeedbackEditorSerializer(serializers.ModelSerializer):
             "reviewer_name",
             "runnable_comments",
         )
+
+
+class PeerReviewerSerializer(serializers.ModelSerializer):
+    member_profile = RelatedMemberProfileSerializer(read_only=True)
+
+    class Meta:
+        model = PeerReviewer
+        fields = "__all__"
+        read_only_fields = ("date_created",)
 
 
 class PeerReviewInvitationSerializer(serializers.ModelSerializer):
