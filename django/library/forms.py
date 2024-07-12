@@ -215,5 +215,5 @@ class PeerReviewFilterForm(forms.Form):
     def clean_order_by(self):
         data = self.cleaned_data["order_by"]
         if not data:
-            return "-last_modified"
+            return "-max_last_modified"
         return data

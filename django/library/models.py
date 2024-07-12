@@ -2242,6 +2242,8 @@ class PeerReviewInvitation(models.Model):
 
     @transaction.atomic
     def send_candidate_reviewer_email(self, resend=False):
+        self.date_sent = timezone.now()
+        self.save(update_fields=["date_sent"])
         send_markdown_email(
             subject="Peer review: request to review a computational model",
             template_name="library/review/email/review_invitation.jinja",
@@ -2251,15 +2253,13 @@ class PeerReviewInvitation(models.Model):
         )
         self.review.log(
             action=(
-                PeerReviewEvent.INVITATION_SENT
+                PeerReviewEvent.INVITATION_RESENT
                 if resend
-                else PeerReviewEvent.INVITATION_RESENT
+                else PeerReviewEvent.INVITATION_SENT
             ),
             author=self.editor,
             message=f"{self.editor} sent an invitation to candidate reviewer {self.candidate_reviewer}",
         )
-        self.date_sent = timezone.now()
-        self.save(update_fields=["date_sent"])
 
     @transaction.atomic
     def accept(self):
