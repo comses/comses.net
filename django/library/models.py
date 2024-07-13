@@ -1,4 +1,3 @@
-from enum import Enum
 import hashlib
 import json
 import logging
@@ -2713,7 +2712,7 @@ class DataCiteMetadata:
 
         metadata["identifiers"] = [
             {
-                "identifierType": "DOI", # only "DOI" allowed according to DataCite schema
+                "identifierType": "DOI",  # only "DOI" allowed according to DataCite schema
                 "identifier": codebase.permanent_url,
             }
         ]
@@ -2994,19 +2993,15 @@ class DataCiteMetadata:
     def to_dict(self):
         return self.metadata.copy()
 
-    def to_hash(self):
+    def hash(self):
         """
-        Compute SHA-256 hash from metadata dictionary.
+        Compute a repeatable hash from this DataCiteMetadata's underlying metadata dictionary
         """
-        # Convert metadata dictionary to JSON string
-        json_str = json.dumps(self.to_dict(), sort_keys=True)
-
-        # Compute hash using SHA-256
-        hash_obj = hashlib.sha256()
-        hash_obj.update(json_str.encode("utf-8"))
-        hash_value = hash_obj.hexdigest()
-
-        return hash_value
+        # Convert metadata dictionary to ordered JSON string
+        metadata_json = json.dumps(self.metadata, sort_keys=True)
+        # Use sha256 for balance of speed and collision resistance
+        hashing_function = hashlib.sha256
+        return hashing_function(metadata_json.encode("utf-8")).hexdigest()
 
 
 @register_snippet
@@ -3028,22 +3023,39 @@ class PeerReviewEventLog(models.Model):
     )
     message = models.CharField(blank=True, max_length=500)
 
-    def add_message(self, message):
-        if self.message:
-            self.message += f"\n\n{message}"
-        else:
-            self.message = message
+
+class DataCiteRegistrationLogQuerySet(models.QuerySet):
+
+    def latest_entry(self, codebase_or_release, **kwargs):
+        query = Q(http_status=200)
+        if isinstance(codebase_or_release, Codebase):
+            query &= Q(codebase=codebase_or_release)
+        elif isinstance(codebase_or_release, CodebaseRelease):
+            query &= Q(release=codebase_or_release)
+        return self.filter(query, **kwargs).latest("timestamp")
 
 
-class DataciteAction(models.TextChoices):
-    CREATE_RELEASE_DOI = "CREATE_RELEASE_DOI", _("CREATE_RELEASE_DOI")
-    CREATE_CODEBASE_DOI = "CREATE_CODEBASE_DOI", _("CREATE_CODEBASE_DOI")
-    UPDATE_RELEASE_METADATA = "UPDATE_RELEASE_METADATA", _("UPDATE_RELEASE_METADATA")
-    UPDATE_CODEBASE_METADATA = "UPDATE_CODEBASE_METADATA", _("UPDATE_CODEBASE_METADATA")
+class DataCiteAction(models.TextChoices):
+    CREATE_RELEASE_DOI = "CREATE_RELEASE_DOI", _("create release DOI")
+    CREATE_CODEBASE_DOI = "CREATE_CODEBASE_DOI", _("create codebase DOI")
+    UPDATE_RELEASE_METADATA = "UPDATE_RELEASE_METADATA", _("update release metadata")
+    UPDATE_CODEBASE_METADATA = "UPDATE_CODEBASE_METADATA", _("update codebase metadata")
+
+    def is_update_action(self):
+        return self in (
+            DataCiteAction.UPDATE_CODEBASE_METADATA,
+            DataCiteAction.UPDATE_RELEASE_METADATA,
+        )
+
+    def is_create_action(self):
+        return self in (
+            DataCiteAction.CREATE_CODEBASE_DOI,
+            DataCiteAction.CREATE_RELEASE_DOI,
+        )
 
 
 @register_snippet
-class DataciteRegistrationLog(models.Model):
+class DataCiteRegistrationLog(models.Model):
     release = models.ForeignKey(
         CodebaseRelease,
         related_name="datacite_logs",
@@ -3054,7 +3066,7 @@ class DataciteRegistrationLog(models.Model):
         Codebase, related_name="datacite_logs", on_delete=models.CASCADE, null=True
     )
 
-    action = models.CharField(max_length=50, choices=DataciteAction.choices)
+    action = models.CharField(max_length=50, choices=DataCiteAction.choices)
 
     timestamp = models.DateTimeField(default=timezone.now)
     http_status = models.IntegerField(default=None, null=True)
@@ -3062,41 +3074,33 @@ class DataciteRegistrationLog(models.Model):
     metadata_hash = models.CharField(max_length=255)
     doi = models.CharField(max_length=25, null=True, blank=True)
 
+    objects = DataCiteRegistrationLogQuerySet.as_manager()
+
     @classmethod
     def is_metadata_stale(cls, item):
         try:
-            # remove cache
-            if hasattr(item, "datacite"):
-                del item.datacite
+            newest_log_entry = DataCiteRegistrationLog.objects.latest_entry(item)
+            # make sure item does not have stale datacite metadata
+            del item.datacite
+            return newest_log_entry.metadata_hash != item.datacite.to_hash()
 
-            current_metadata_hash = item.datacite.to_hash()
-
-            newest_log_entry = None
-            if isinstance(item, Codebase):
-                newest_log_entry = (
-                    DataciteRegistrationLog.objects.filter(
-                        Q(codebase=item) & Q(http_status=200)
-                    )
-                    .order_by("-timestamp")
-                    .first()
-                )
-            if isinstance(item, CodebaseRelease):
-                newest_log_entry = (
-                    DataciteRegistrationLog.objects.filter(
-                        Q(release=item) & Q(http_status=200)
-                    )
-                    .order_by("-timestamp")
-                    .first()
-                )
-
-            if newest_log_entry:
-                last_successfuly_sent_metadata_hash = newest_log_entry.metadata_hash
-                return last_successfuly_sent_metadata_hash != current_metadata_hash
-
-        except Exception as e:
-            logger.error(e)
+        except DataCiteRegistrationLog.DoesNotExist:
+            # no logs for this item, metadata is stale
+            logger.info("No registration logs available for this item %s", item)
 
         return True
 
+    @property
+    def codebase_or_release_id(self):
+        if self.codebase:
+            return f"Codebase {self.codebase.pk}"
+        elif self.release:
+            return f"Codebase Release {self.release.pk}"
+        else:
+            return "No associated codebase or release"
+
     def __str__(self):
-        return f"Metadata sent for { 'Codebase ' + str(self.codebase.pk) if self.codebase else 'CodebaseRelease '+ str(self.release.pk)} at {self.timestamp}, HTTP Status: {self.http_status}, Message: {self.message}, Hash: {self.metadata_hash}, DOI: {self.doi}"
+        return f"""DataCiteRegistrationLog for {self.codebase_or_release_id} at {self.timestamp}
+                   HTTP Status: {self.http_status}, Message: {self.message},
+                   Hash: {self.metadata_hash}, DOI: {self.doi}
+                   """
