@@ -2,21 +2,34 @@ import logging
 import re
 import time
 import threading
-from concurrent.futures import ThreadPoolExecutor
 import queue
 import requests
+
+from collections import defaultdict
+from concurrent.futures import ThreadPoolExecutor
 
 from django.conf import settings
 
 from .models import (
     Codebase,
     CodebaseRelease,
-    DataciteAction,
-    DataciteRegistrationLog,
+    DataCiteAction,
+    DataCiteMetadata,
+    DataCiteRegistrationLog,
 )
 
 from datacite import DataCiteRESTClient, schema43
-from datacite.errors import *
+from datacite.errors import (
+    DataCiteError,
+    DataCiteNoContentError,
+    DataCiteBadRequestError,
+    DataCiteUnauthorizedError,
+    DataCiteForbiddenError,
+    DataCiteNotFoundError,
+    DataCiteGoneError,
+    DataCitePreconditionError,
+    DataCiteServerError,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -40,7 +53,8 @@ __   _____ _ __ _| |_ _   _ _ _ __   __ _
                       |___/         |___/             
 """
 
-def get_welcome_message(dry_run:bool):
+
+def get_welcome_message(dry_run: bool):
     ENV_MESSAGE = ""
     if IS_DEVELOPMENT:
         ENV_MESSAGE = """
@@ -85,6 +99,7 @@ def get_welcome_message(dry_run:bool):
         """
     return ENV_MESSAGE + DRY_RUN_MESSAGE
 
+
 def doi_matches_pattern(doi: str) -> bool:
     # checks if DOI is formatted like this "00.12345/q2xt-rj46"
     pattern = re.compile(f"{DATACITE_PREFIX}/[-._;()/:a-zA-Z0-9]+")
@@ -93,15 +108,44 @@ def doi_matches_pattern(doi: str) -> bool:
     else:
         return False
 
+
 class DataCiteApi:
     """
     Wrapper around the datacite package:
     https://datacite.readthedocs.io/
+
+    This class provides methods to interact with the DataCite REST API for minting DOIs, updating metadata,
+    and checking metadata consistency.
+
+    Attributes:
+        datacite_client (DataCiteRESTClient): The DataCite REST API client.
+        dry_run (bool): Flag indicating whether the operations should be performed in dry run mode.
     """
+
+    DATACITE_ERRORS_TO_STATUS_CODE = defaultdict(lambda: 500)
+    DATACITE_ERRORS_TO_STATUS_CODE.update(
+        {
+            DataCiteNoContentError: 204,
+            DataCiteBadRequestError: 400,
+            DataCiteUnauthorizedError: 401,
+            DataCiteForbiddenError: 403,
+            DataCiteNotFoundError: 404,
+            DataCiteGoneError: 410,
+            DataCitePreconditionError: 412,
+            DataCiteServerError: 500,
+        }
+    )
 
     def __init__(self, dry_run=True):
         """
-        Get a DataCite REST API client
+        Initializes a new instance of the DataCiteApi class.
+
+        Args:
+            dry_run (bool, optional): Flag indicating whether the operations should be performed in dry run mode.
+                Defaults to True.
+
+        Raises:
+            Exception: If failed to access the DataCite API.
         """
         self.datacite_client = DataCiteRESTClient(
             username=settings.DATACITE_API_USERNAME,
@@ -112,48 +156,140 @@ class DataCiteApi:
 
         self.dry_run = dry_run
 
-        if not self.heartbeat():
-            logger.error("Failed to access DataCite API!")
+        if not self.is_datacite_available():
             raise Exception("Failed to access DataCite API!")
 
-    def heartbeat(self) -> bool:
-        # Check if DataCite API is working
+    def is_datacite_available(self) -> bool:
+        """
+        Checks if the DataCite API is available.
+
+        Returns:
+            bool: True if the DataCite API is working, False otherwise.
+        """
         try:
-            datacite_heartbeat_url = "https://api.test.datacite.org/heartbeat"
-            if not self.dry_run and IS_PRODUCTION:
-                datacite_heartbeat_url = "https://api.datacite.org/heartbeat"
-
             headers = {"accept": "text/plain"}
-            response = requests.get(datacite_heartbeat_url, headers=headers)
-            logger.debug(f"DataCite API heartbeat: {response.text}")
-
-            if response.text == "OK":
-                return True
-            else:
-                return False
-
-        except Exception as e:
+            response = requests.get(self._datacite_heartbeat_url, headers=headers)
+            logger.debug("DataCite API heartbeat: %s", response.text)
+            return response.text == "OK"
+        except Exception:
             return False
 
+    @property
+    def _datacite_heartbeat_url(self):
+        return (
+            "https://api.datacite.org/heartbeat"
+            if IS_PRODUCTION and not self.dry_run
+            else "https://api.test.datacite.org/heartbeat"
+        )
+
+    def _validate_metadata(self, datacite_metadata: DataCiteMetadata):
+        metadata_dict = datacite_metadata.to_dict()
+        if not schema43.validate(metadata_dict):
+            logger.error("Invalid DataCite metadata: %s", metadata_dict)
+            raise DataCiteError(f"Invalid DataCite metadata: {metadata_dict}")
+        return datacite_metadata, metadata_dict
+
+    def mint_public_doi(self, codebase_or_release: Codebase | CodebaseRelease):
+        """
+        Mint a public DOI for the given codebase or release.
+
+        Args:
+            codebase_or_release (Codebase | CodebaseRelease): The codebase or release for which to mint a DOI.
+
+        Returns:
+            tuple: A tuple containing the DOI and a boolean indicating if the minting was successful.
+        """
+        if self.dry_run:
+            return "XX.DRYXX/XXXX-XRUN", True
+        if hasattr(codebase_or_release, "datacite"):
+            del codebase_or_release.datacite
+        datacite_metadata, metadata_dict = self._validate_metadata(
+            codebase_or_release.datacite
+        )
+        doi = "Unassigned"
+        http_status = 200
+        message = "Minted new DOI successfully."
+
+        try:
+            doi = self.datacite_client.public_doi(
+                metadata_dict, url=codebase_or_release.permanent_url
+            )
+        except DataCiteError as e:
+            logger.error(e)
+            message = str(e)
+            http_status = self.DATACITE_ERRORS_TO_STATUS_CODE[type(e)]
+
+        log_record_dict = {
+            "doi": doi,
+            "http_status": http_status,
+            "message": message,
+            "metadata_hash": datacite_metadata.hash(),
+        }
+        if isinstance(codebase_or_release, Codebase):
+            log_record_dict.update(
+                codebase=codebase_or_release, action=DataCiteAction.CREATE_CODEBASE_DOI
+            )
+        elif isinstance(codebase_or_release, CodebaseRelease):
+            log_record_dict.update(
+                release=codebase_or_release, action=DataCiteAction.CREATE_RELEASE_DOI
+            )
+        self._save_log_record(**log_record_dict)
+        return doi, http_status == 200
+
+    def update_doi_metadata(self, codebase_or_release: Codebase | CodebaseRelease):
+        doi = codebase_or_release.doi
+        if self.dry_run:
+            logger.debug("DRY RUN")
+            logger.debug(
+                "Updating DOI metadata for codebase_or_release: %s", codebase_or_release
+            )
+            logger.debug("Metadata: %s", codebase_or_release.datacite)
+            return doi, True
+        if hasattr(codebase_or_release, "datacite"):
+            del codebase_or_release.datacite
+        datacite_metadata, metadata_dict = self._validate_metadata(
+            codebase_or_release.datacite
+        )
+        http_status = 200
+        message = f"Successfully updated metadata for {doi}."
+        updated_metadata_dict = {"attributes": {**metadata_dict}}
+        try:
+            self.datacite_client.put_doi(doi, updated_metadata_dict)
+            logger.debug("Successfully updated metadta for DOI: %s", doi)
+        except DataCiteError as e:
+            logger.error(e)
+            message = f"Unable to update metadata for {doi}: {e}"
+            http_status = self.DATACITE_ERRORS_TO_STATUS_CODE[type(e)]
+        log_record_dict = {
+            "doi": doi,
+            "http_status": http_status,
+            "message": message,
+            "metadata_hash": datacite_metadata.hash(),
+        }
+        if isinstance(codebase_or_release, Codebase):
+            log_record_dict.update(
+                codebase=codebase_or_release,
+                action=DataCiteAction.UPDATE_CODEBASE_METADATA,
+            )
+        elif isinstance(codebase_or_release, CodebaseRelease):
+            log_record_dict.update(
+                release=codebase_or_release,
+                action=DataCiteAction.UPDATE_RELEASE_METADATA,
+            )
+        self._save_log_record(**log_record_dict)
+        return http_status == 200
+
     def mint_new_doi_for_codebase(self, codebase: Codebase) -> str:
-        action = DataciteAction.CREATE_CODEBASE_DOI
-        doi, _ = self._call_datacite_api(action, codebase)
-        return doi
+        return self.mint_public_doi(codebase)
 
     def mint_new_doi_for_release(self, release: CodebaseRelease) -> str:
-        action = DataciteAction.CREATE_RELEASE_DOI
-        doi, _ = self._call_datacite_api(action, release)
-        return doi
+        return self.mint_public_doi(release)
 
     def update_metadata_for_codebase(self, codebase: Codebase) -> bool:
-        action = DataciteAction.UPDATE_CODEBASE_METADATA
-        _, ok = self._call_datacite_api(action, codebase)
-        return ok
+        return self.update_doi_metadata(codebase)
 
     def update_metadata_for_release(self, release: CodebaseRelease) -> bool:
-        action = DataciteAction.UPDATE_RELEASE_METADATA
-        _, ok = self._call_datacite_api(action, release)
-        return ok
+        return self.update_doi_metadata(release)
 
     @staticmethod
     def _is_deep_inclusive(elem1, elem2):
@@ -198,6 +334,17 @@ class DataCiteApi:
 
     @staticmethod
     def _is_same_metadata(sent_data, received_data):
+        """
+        Checks if the metadata attributes in the sent_data dictionary are the same as the
+        corresponding attributes in the received_data dictionary.
+
+        Args:
+            sent_data (dict): The dictionary containing the sent metadata attributes.
+            received_data (dict): The dictionary containing the received metadata attributes.
+
+        Returns:
+            bool: True if all attributes are the same, False otherwise.
+        """
         # Extract keys (attributes) from both dictionaries
         sent_keys = set(sent_data.keys())
         received_keys = set(received_data.keys())
@@ -271,12 +418,8 @@ class DataCiteApi:
                     f"{'Codebase' if isinstance(item, Codebase) else 'CodebaseRelease'} metadata is in sync!"
                 )
                 return True
-
-        except DataCiteError as de:
-            logger.error(str(de))
-            return False
         except Exception as e:
-            logger.error(str(e))
+            logger.error(e)
             return False
 
     def threaded_metadata_check(self, items):
@@ -288,7 +431,9 @@ class DataCiteApi:
 
         def _check_metadata(q: queue.Queue):
             with ThreadPoolExecutor(max_workers=MAX_DATACITE_API_WORKERS) as executor:
-                results = executor.map(lambda item: (item.pk, self.check_metadata(item)), items)
+                results = executor.map(
+                    lambda item: (item.pk, self.check_metadata(item)), items
+                )
 
             q.put(results)
 
@@ -308,121 +453,6 @@ class DataCiteApi:
         results = result_queue.get()
         return results
 
-    def _call_datacite_api(self, action: DataciteAction, item):
-        """
-        item can be Codebase or CodebaseRelease
-        """
-        doi = None
-        http_status = None
-        message = None
-        metadata_hash = None
-
-        logger.debug(f"_call_datacite_api({action}, {type(item)}, pk={item.pk})")
-        try:
-            # remove from cache
-            if hasattr(item, "datacite"):
-                del item.datacite
-
-            metadata_dict = item.datacite.to_dict()
-            metadata_hash = item.datacite.to_hash()
-
-            # validate metadta. Will throw AssertionError (will not call DataCite) if metadata is invalid.
-            assert schema43.validate(metadata_dict), "Metadata is invalid!"
-
-            if (
-                action == DataciteAction.CREATE_RELEASE_DOI
-                or action == DataciteAction.CREATE_CODEBASE_DOI
-            ):
-                if self.dry_run:
-                    doi = "XX.XXXXX/XXXX-XXXX"
-                else:
-                    if IS_STAGING or IS_DEVELOPMENT:
-                        doi = self.datacite_client.draft_doi(metadata_dict)
-
-                    if IS_PRODUCTION:
-                        doi = self.datacite_client.public_doi(
-                            metadata_dict, url=item.permanent_url
-                        )
-
-                logger.debug(f"New DOI minted: {doi}")
-                http_status = 200
-            elif (
-                action == DataciteAction.UPDATE_RELEASE_METADATA
-                or action == DataciteAction.UPDATE_CODEBASE_METADATA
-            ):
-                doi = item.doi
-
-                if not self.dry_run:
-                    metadata_dict_enhanced = {"attributes": {**metadata_dict}}
-                    self.datacite_client.put_doi(item.doi, metadata_dict_enhanced)
-
-                logger.debug(f"Metadata successfully updated for DOI: {item.doi}")
-                http_status = 200
-            else:
-                raise Exception("DataCite action unknown!")
-
-        except DataCiteNoContentError as dc_nce:
-            logger.info(dc_nce)
-            http_status = 204
-            message = str(dc_nce)
-
-        except DataCiteBadRequestError as cd_bre:
-            logger.error(cd_bre)
-            http_status = 400
-            message = str(cd_bre)
-
-        except DataCiteUnauthorizedError as dc_ue:
-            logger.error(dc_ue)
-            http_status = 401
-            message = str(dc_ue)
-
-        except DataCiteForbiddenError as dc_fe:
-            logger.error(dc_fe)
-            http_status = 403
-            message = str(dc_fe)
-
-        except DataCiteNotFoundError as dc_nfe:
-            logger.error(dc_nfe)
-            http_status = 404
-            message = str(dc_nfe)
-
-        except DataCiteGoneError as dc_ge:
-            logger.error(dc_ge)
-            http_status = 410
-            message = str(dc_ge)
-
-        except DataCitePreconditionError as dc_pe:
-            logger.error(dc_pe)
-            http_status = 412
-            message = str(dc_pe)
-
-        except DataCiteServerError as dc_se:
-            logger.error(dc_se)
-            http_status = 500
-            message = str(dc_se)
-
-        except Exception as e:
-            # unexpected exception
-            logger.error(e)
-            http_status = 600
-            message = str(e)
-
-        self._save_log_record(
-            action=action,
-            doi=doi,
-            http_status=http_status,
-            message=message,
-            metadata_hash=metadata_hash,
-            release=item if isinstance(item, CodebaseRelease) else None,
-            codebase=item if isinstance(item, Codebase) else None,
-        )
-
-        ok = True
-        if http_status > 200:
-            ok = False
-
-        return doi, ok
-
     def _save_log_record(
         self,
         action,
@@ -434,14 +464,15 @@ class DataCiteApi:
         codebase=None,
     ):
         item = release or codebase
-
         logger.debug(
-            f"save_log_record(action={action}, item={type(item)}, http_status={http_status})"
+            "logging DOI action %s for item=%s, http_status=%s",
+            action,
+            item,
+            http_status,
         )
 
         if not self.dry_run:
-            # Create DataciteRegistrationLog record
-            DataciteRegistrationLog.objects.create(
+            DataCiteRegistrationLog.objects.create(
                 release=release,
                 codebase=codebase,
                 doi=doi,
