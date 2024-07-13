@@ -8,7 +8,7 @@ RUN rm -f /etc/apt/apt.conf.d/docker-clean; echo 'Binary::apt::APT::Keep-Downloa
 RUN --mount=type=cache,target=/var/lib/apt,sharing=locked \
     --mount=type=cache,target=/var/cache/apt,sharing=locked \
     sed -i "s|archive.ubuntu.com|${UBUNTU_MIRROR}|" /etc/apt/sources.list \
-        && apt-get update && apt-get install -y --no-install-recommends curl ca-certificates \
+        && apt-get update && apt-get install -q -y --no-install-recommends curl ca-certificates \
         && install -d /usr/share/postgresql-common/pgdg && curl -o /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc --fail https://www.postgresql.org/media/keys/ACCC4CF8.asc \
         && echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list \
         && apt-get update \
@@ -37,7 +37,7 @@ RUN --mount=type=cache,target=/var/lib/apt,sharing=locked \
         unrar-free \
         unzip \
         && update-alternatives --install /usr/bin/python python /usr/bin/python3 1000 \
-        && apt-get upgrade -y -o Dpkg::Options::="--force-confold" \
+        && apt-get upgrade -q -y -o Dpkg::Options::="--force-confold" \
         && mkdir -p /etc/service/django \
         && touch /etc/service/django/run /etc/postgresql-backup-pre \
         && chmod a+x /etc/service/django/run /etc/postgresql-backup-pre \
