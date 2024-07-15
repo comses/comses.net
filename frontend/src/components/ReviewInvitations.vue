@@ -4,17 +4,10 @@
     <div class="container-fluid" v-if="!candidateReviewer">
       <div class="row">
         <div class="col-12 px-0 mb-3">
-          <UserSearch
+          <ReviewerSearch
             v-model="candidateReviewer"
             label="Search by name, email address, or username among existing CoMSES Net members"
             placeholder="Find a reviewer"
-            :search-fn="findReviewers"
-            :errors="serverErrors"
-            show-avatar
-            show-affiliation
-            show-tags
-            show-link
-            :disabled="disabled"
           />
         </div>
       </div>
@@ -23,9 +16,9 @@
       <div class="row py-2">
         <div class="col-2 ps-0">
           <img
-            v-if="candidateReviewer.avatarUrl"
+            v-if="candidateReviewer.memberProfile.avatarUrl"
             class="d-block img-thumbnail"
-            :src="candidateReviewer.avatarUrl"
+            :src="candidateReviewer.memberProfile.avatarUrl"
             alt="Profile Image"
           />
           <img
@@ -37,7 +30,7 @@
         </div>
         <div class="col-10 pe-0">
           <h2>
-            {{ candidateReviewer.name }}
+            {{ candidateReviewer.memberProfile.name }}
             <div class="btn-group float-end" role="group">
               <button class="btn btn-primary" @click="sendEmail" type="button">Invite</button>
               <button class="btn btn-danger" @click="candidateReviewer = null" type="button">
@@ -46,7 +39,7 @@
             </div>
           </h2>
           <div class="tag-list">
-            <div class="tag mx-1" v-for="tag in candidateReviewer.tags" :key="tag.name">
+            <div class="tag mx-1" v-for="tag in candidateReviewer.memberProfile.tags" :key="tag.name">
               {{ tag.name }}
             </div>
           </div>
@@ -102,7 +95,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from "vue";
 import { useReviewEditorAPI } from "@/composables/api";
-import UserSearch from "@/components/UserSearch.vue";
+import ReviewerSearch from "@/components/ReviewerSearch.vue";
 import type { Reviewer, ReviewInvitation } from "@/types";
 
 const props = defineProps<{
@@ -128,8 +121,8 @@ async function retrieveInvitations() {
 }
 
 async function sendEmail() {
-  if (candidateReviewer.value) {
-    await sendInvitation(props.reviewId, candidateReviewer.value);
+  if (candidateReviewer.value && candidateReviewer.value.memberProfile) {
+    await sendInvitation(props.reviewId, candidateReviewer.value.memberProfile);
     candidateReviewer.value = null;
     await retrieveInvitations();
     emit("pollEvents");

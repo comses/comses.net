@@ -1,6 +1,6 @@
 import { useAxios } from "@/composables/api";
 import { toRefs } from "vue";
-import type { UserSearchQueryParams } from "@/types";
+import type { RelatedMemberProfile, UserSearchQueryParams } from "@/types";
 
 export function useReviewEditorAPI() {
   /**
@@ -16,7 +16,7 @@ export function useReviewEditorAPI() {
     return get(detailUrl(reviewUUID, ["editor", "invitations"]));
   }
 
-  async function sendInvitation(reviewUUID: string, candidateReviewer: any) {
+  async function sendInvitation(reviewUUID: string, candidateReviewer: RelatedMemberProfile) {
     return post(
       detailUrl(reviewUUID, ["editor", "invitations", "send_invitation"]),
       candidateReviewer
