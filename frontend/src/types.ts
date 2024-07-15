@@ -85,7 +85,12 @@ export interface ReviewEvent {
   };
 }
 
-export type Reviewer = RelatedMemberProfile;
+export interface Reviewer {
+  memberProfile: RelatedMemberProfile;
+  programmingLanguages: string[];
+  subjectAreas: string[];
+  notes: string;
+};
 
 export interface ReviewInvitation {
   id: number;
