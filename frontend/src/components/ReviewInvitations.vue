@@ -5,6 +5,7 @@
       <div class="row">
         <div class="col-12 px-0 mb-3">
           <ReviewerSearch
+            v-model="candidateReviewer"
             label="Search by name, email address, or username among existing CoMSES Net members"
             placeholder="Find a reviewer"
           />
@@ -15,9 +16,9 @@
       <div class="row py-2">
         <div class="col-2 ps-0">
           <img
-            v-if="candidateReviewer.avatarUrl"
+            v-if="candidateReviewer.memberProfile.avatarUrl"
             class="d-block img-thumbnail"
-            :src="candidateReviewer.avatarUrl"
+            :src="candidateReviewer.memberProfile.avatarUrl"
             alt="Profile Image"
           />
           <img
@@ -29,7 +30,7 @@
         </div>
         <div class="col-10 pe-0">
           <h2>
-            {{ candidateReviewer.name }}
+            {{ candidateReviewer.memberProfile.name }}
             <div class="btn-group float-end" role="group">
               <button class="btn btn-primary" @click="sendEmail" type="button">Invite</button>
               <button class="btn btn-danger" @click="candidateReviewer = null" type="button">
@@ -38,7 +39,7 @@
             </div>
           </h2>
           <div class="tag-list">
-            <div class="tag mx-1" v-for="tag in candidateReviewer.tags" :key="tag.name">
+            <div class="tag mx-1" v-for="tag in candidateReviewer.memberProfile.tags" :key="tag.name">
               {{ tag.name }}
             </div>
           </div>
@@ -95,7 +96,7 @@
 import { ref, onMounted } from "vue";
 import { useReviewEditorAPI } from "@/composables/api";
 import ReviewerSearch from "@/components/ReviewerSearch.vue";
-import type { RelatedMemberProfile, ReviewInvitation } from "@/types";
+import type { Reviewer, ReviewInvitation } from "@/types";
 
 const props = defineProps<{
   reviewId: string;
@@ -108,7 +109,7 @@ const { serverErrors, listInvitations, sendInvitation, resendInvitation, findRev
   useReviewEditorAPI();
 
 const invitations = ref<ReviewInvitation[]>([]);
-const candidateReviewer = ref<RelatedMemberProfile | null>(null);
+const candidateReviewer = ref<Reviewer | null>(null);
 
 onMounted(async () => {
   await retrieveInvitations();
@@ -120,8 +121,8 @@ async function retrieveInvitations() {
 }
 
 async function sendEmail() {
-  if (candidateReviewer.value) {
-    await sendInvitation(props.reviewId, candidateReviewer.value);
+  if (candidateReviewer.value && candidateReviewer.value.memberProfile) {
+    await sendInvitation(props.reviewId, candidateReviewer.value.memberProfile);
     candidateReviewer.value = null;
     await retrieveInvitations();
     emit("pollEvents");

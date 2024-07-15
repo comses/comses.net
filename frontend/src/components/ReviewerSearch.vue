@@ -41,7 +41,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from "vue";
+import { computed, onMounted, ref } from "vue";
 import VueMultiSelect from "vue-multiselect";
 import { useDebounceFn } from "@vueuse/core";
 import { useReviewEditorAPI } from "@/composables/api";
@@ -64,6 +64,10 @@ const { findReviewers } = useReviewEditorAPI();
 const matchingReviewers = ref<Reviewer[]>([]);
 const isLoading = ref(false);
 
+onMounted(async () => {
+  await fetchMatchingReviewers("");
+});
+
 const value = computed({
   get() {
     return props.modelValue;
@@ -74,7 +78,6 @@ const value = computed({
 });
 
 const fetchMatchingReviewers = useDebounceFn(async (query: string) => {
-  if (query) {
     isLoading.value = true;
     try {
       const response = await findReviewers({ query });
@@ -84,7 +87,6 @@ const fetchMatchingReviewers = useDebounceFn(async (query: string) => {
     } finally {
       isLoading.value = false;
     }
-  }
 }, 600);
 
 function handleSelect(selection: Reviewer) {
