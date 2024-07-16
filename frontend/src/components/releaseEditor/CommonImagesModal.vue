@@ -1,5 +1,11 @@
 <template>
-  <button type="button" :class="buttonClass" data-cy="add image" rel="nofollow" @click="imagesModal?.show()">
+  <button
+    type="button"
+    :class="buttonClass"
+    data-cy="add image"
+    rel="nofollow"
+    @click="imagesModal?.show()"
+  >
     <i class="fas fa-image"></i> Add Images
   </button>
   <BootstrapModal id="images-modal" title="Upload Images" ref="imagesModal" size="lg" centered>

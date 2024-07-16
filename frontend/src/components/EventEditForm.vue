@@ -1,6 +1,13 @@
 <template>
   <form @submit="handleSubmit">
-    <TextField class="mb-3" data-cy="event title" name="title" label="Title" help="The name of this event" required />
+    <TextField
+      class="mb-3"
+      data-cy="event title"
+      name="title"
+      label="Title"
+      help="The name of this event"
+      required
+    />
     <HoneypotField />
     <TextField
       class="mb-3"

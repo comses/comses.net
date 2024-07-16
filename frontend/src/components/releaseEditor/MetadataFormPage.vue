@@ -87,7 +87,9 @@
         </template>
       </MultiSelectField>
       <FormAlert :validation-errors="Object.values(errors)" :server-errors="serverErrors" />
-      <button type="submit" data-cy="save-and-continue" class="btn btn-primary mt-3">Save and Continue</button>
+      <button type="submit" data-cy="save-and-continue" class="btn btn-primary mt-3">
+        Save and Continue
+      </button>
     </form>
   </div>
 </template>

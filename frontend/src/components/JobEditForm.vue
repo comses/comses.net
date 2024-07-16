@@ -1,6 +1,13 @@
 <template>
   <form @submit="handleSubmit">
-    <TextField class="mb-3" data-cy="job title" name="title" label="Title" help="Job title" required />
+    <TextField
+      class="mb-3"
+      data-cy="job title"
+      name="title"
+      label="Title"
+      help="Job title"
+      required
+    />
     <HoneypotField />
     <MarkdownField
       class="mb-3"

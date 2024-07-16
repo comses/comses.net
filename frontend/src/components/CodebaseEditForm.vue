@@ -23,7 +23,6 @@
       label="Replication of an existing model?"
       help="Is this model a replication of a previously published computational model? Please enter a DOI or other permanent identifier to the model, or citation text. Separate multiple entries with newlines."
       data-cy="codebase replication-text"
-      
       :rows="3"
     />
     <TextareaField
@@ -55,7 +54,13 @@
       help="Is this model being developed on GitHub, BitBucket, GitLab, or other Git-based version control repository? Enter its root repository URL (e.g., https://github.com/comses/water-markets-model) for future CoMSES and Git integration."
     />
     <FormAlert :validation-errors="Object.values(errors)" :server-errors="serverErrors" />
-    <button v-if="!asModal" type="submit" class="btn btn-primary" :disabled="isLoading" data-cy="next">
+    <button
+      v-if="!asModal"
+      type="submit"
+      class="btn btn-primary"
+      :disabled="isLoading"
+      data-cy="next"
+    >
       {{ props.identifier ? "Update" : "Next" }}
     </button>
   </form>
