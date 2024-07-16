@@ -121,6 +121,7 @@ THIRD_PARTY_APPS = [
     "allauth.account",
     "allauth.socialaccount",
     "allauth.socialaccount.providers.github",
+    "allauth.socialaccount.providers.google",
     "allauth.socialaccount.providers.orcid",
 ]
 
@@ -505,9 +506,11 @@ SOCIALACCOUNT_PROVIDERS = {
     # https://developer.github.com/apps/building-integrations/setting-up-and-registering-oauth-apps/about-scopes-for-oauth-apps/
     "github": {
         "SCOPE": [
+            "read:user",
             "user:email",
             "read:org",
         ],
+        # "VERIFIED_EMAIL": True,
     },
     # http://django-allauth.readthedocs.io/en/latest/providers.html#orcid
     # NOTE: must be deleted in production settings
@@ -516,7 +519,6 @@ SOCIALACCOUNT_PROVIDERS = {
         "MEMBER_API": True,
     },
 }
-
 
 DISCOURSE_BASE_URL = os.getenv(
     "DISCOURSE_BASE_URL", "https://staging-discourse.comses.net"
