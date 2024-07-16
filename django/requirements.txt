@@ -54,3 +54,4 @@ pgcli
 rarfile
 # CoMSES citation app - disabled until migration to django 2.0 https://github.com/comses/citation/issues/20
 # -e git+https://github.com/comses/citation.git#egg=citation
+setuptools>=70.0.0 # not directly required, pinned by Snyk to avoid a vulnerability
