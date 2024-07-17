@@ -14,36 +14,46 @@ from core.models import MemberProfile, EXCLUDED_USERNAMES
 logger = logging.getLogger(__name__)
 
 
+def sync_member_profile(user: User):
+    suid = shortuuid.uuid()
+    mp, mp_created = MemberProfile.objects.get_or_create(
+        user=user, defaults={"short_uuid": suid}
+    )
+    if mp_created and not mp.short_uuid:
+        mp.short_uuid = suid
+        mp.save()
+
+    return mp
+
+
+def sync_discourse_user(user: User):
+    response = create_discourse_user(user)
+    # dont think we want to raise an exception
+    # response.raise_for_status()
+    data = response.json()
+    if data.get("success"):
+        logger.debug("synced user %s with discourse: %s", user, response.json())
+    else:
+        logger.error("failed to sync user %s with discourse: %s", user, response.json())
+
+
 @receiver(post_save, sender=User, dispatch_uid="member_profile_sync")
-def sync_user_member_profiles(sender, instance: User, created, **kwargs):
+def on_user_save(sender, instance: User, created, **kwargs):
     """
     Ensure every created User has an associated MemberProfile
     """
     if instance.username in EXCLUDED_USERNAMES:
         return
     if created:
-        suid = shortuuid.uuid()
-        mp, mp_created = MemberProfile.objects.get_or_create(
-            user=instance, defaults={"short_uuid": suid}
-        )
-        if mp_created and not mp.short_uuid:
-            mp.short_uuid = suid
-            mp.save()
-        """Create a discourse user account when a user is created"""
+        sync_member_profile(instance)
+    # FIXME: discourse_username is a computed property, set it when we successfully sync with discourse instead?
+    if instance.email and not instance.member_profile.discourse_username:
         # sync with discourse
         # to test discourse synchronization locally eliminate the DEPLOY_ENVIRONMENT check
         # but this will produce many test accounts if enabled in testing
         if not settings.DEPLOY_ENVIRONMENT.is_staging_or_production:
             return
-        response = create_discourse_user(instance)
-        response.raise_for_status()
-        data = response.json()
-        if data.get("success"):
-            logger.debug("synced user %s with discourse: %s", instance, response.json())
-        else:
-            logger.error(
-                "failed to sync user %s with discourse: %s", instance, response.json()
-            )
+        sync_discourse_user(instance)
 
 
 @receiver(post_save, sender=WagtailSite, dispatch_uid="wagtail_site_sync")
