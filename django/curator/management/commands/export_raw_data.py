@@ -1,3 +1,4 @@
+import csv
 import logging
 import os
 
@@ -45,9 +46,12 @@ class Command(BaseCommand):
             select_statement = f"SELECT * FROM {table_name} ORDER BY id"
         destination_path = Path(self.directory) / filename
         with connection.cursor() as cursor:
-            cursor.execute(
-                f"COPY ({select_statement}) TO '{destination_path}' WITH CSV HEADER"
-            )
+            cursor.execute(select_statement)
+            with open(destination_path, "w") as f:
+                writer = csv.writer(f)
+                writer.writerow([col[0] for col in cursor.description])
+                for row in cursor.fetchall():
+                    writer.writerow(row)
 
     def export_codebases(self):
         self._export("codebases.csv", "library_codebase")
