@@ -39,6 +39,7 @@ services:
     volumes:
       - ./docker/pgdata:/var/lib/postgresql/data
       - ./build/secrets/db_password:/run/secrets/db_password
+      - ./docker/shared:/shared
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
       interval: 30s

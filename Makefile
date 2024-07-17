@@ -2,7 +2,10 @@
 DEPLOY_ENVIRONMENT := dev
 
 DOCKER_SHARED_DIR=docker/shared
-DOCKER_DB_DATA_DIR=docker/pgdata
+# shared directory subdirectories for postgres (data), frontend (vite), logs, static assets to be delivered by nginx
+# `data` directory is used for direct postgres db server-side outputs, e.g., postgres COPY commands issued in
+# ./manage.py export_raw_data
+DOCKER_SHARED_SUBDIRS=data vite logs library media static
 
 BUILD_DIR=build
 SECRETS_DIR=${BUILD_DIR}/secrets
@@ -19,7 +22,7 @@ ENV_TEMPLATE=${DEPLOY_CONF_DIR}/.env.template
 # assumes a .tar.xz file
 BORG_REPO_URL := https://example.com/repo.tar.xz
 BORG_REPO_PATH=${BUILD_DIR}/repo.tar.xz
-REPO_BACKUPS_PATH=docker/shared/backups
+REPO_BACKUPS_PATH=${DOCKER_SHARED_DIR}/backups
 
 include config.mk
 include .env
@@ -41,10 +44,9 @@ config.mk:
 
 .PHONY: $(DOCKER_SHARED_DIR)
 $(DOCKER_SHARED_DIR):
-	for d in vite logs library media static ; do \
+	for d in ${DOCKER_SHARED_SUBDIRS} ; do \
 		mkdir -p ${DOCKER_SHARED_DIR}/$$d ; \
 	done
-	mkdir -p ${DOCKER_DB_DATA_DIR}
 
 ${SECRETS_DIR}:
 	mkdir -p ${SECRETS_DIR}

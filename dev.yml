@@ -10,6 +10,9 @@ services:
     environment:
       NODE_ENV: "development"
   server:
+    build:
+      args:
+        UBUNTU_MIRROR: "${UBUNTU_MIRROR}"
     image: comses/server:dev
     volumes:
       - ./django:/code
