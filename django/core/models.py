@@ -375,7 +375,7 @@ class MemberProfile(index.Indexed, ClusterableModel):
 
     @property
     def discourse_username(self):
-        return sanitize_username(self.username)
+        return sanitize_username(self.username, uid=self.short_uuid)
 
     @property
     def is_active(self):

@@ -14,36 +14,49 @@ from core.models import MemberProfile, EXCLUDED_USERNAMES
 logger = logging.getLogger(__name__)
 
 
+def sync_member_profile(user: User):
+    mp, mp_created = MemberProfile.objects.get_or_create(user=user)
+    if not mp_created:
+        logger.warning("member profile already exists for user %s", user)
+    return mp
+
+
+def sync_discourse_user(user: User):
+    response = create_discourse_user(user)
+    # dont think we want to raise an exception
+    # response.raise_for_status()
+    data = response.json()
+    success = data.get("success")
+    if success:
+        logger.debug("synced user %s with discourse: %s", user, data)
+    else:
+        logger.error("failed to sync user %s with discourse: %s", user, data)
+    return success
+
+
 @receiver(post_save, sender=User, dispatch_uid="member_profile_sync")
-def sync_user_member_profiles(sender, instance: User, created, **kwargs):
+def on_user_save(sender, instance: User, created, **kwargs):
     """
     Ensure every created User has an associated MemberProfile
     """
     if instance.username in EXCLUDED_USERNAMES:
         return
     if created:
-        suid = shortuuid.uuid()
-        mp, mp_created = MemberProfile.objects.get_or_create(
-            user=instance, defaults={"short_uuid": suid}
-        )
-        if mp_created and not mp.short_uuid:
-            mp.short_uuid = suid
-            mp.save()
-        """Create a discourse user account when a user is created"""
+        sync_member_profile(instance)
+    if instance.email:
         # sync with discourse
         # to test discourse synchronization locally eliminate the DEPLOY_ENVIRONMENT check
         # but this will produce many test accounts if enabled in testing
         if not settings.DEPLOY_ENVIRONMENT.is_staging_or_production:
             return
-        response = create_discourse_user(instance)
-        response.raise_for_status()
-        data = response.json()
-        if data.get("success"):
-            logger.debug("synced user %s with discourse: %s", instance, response.json())
+        member_profile = instance.member_profile
+        if member_profile.short_uuid:
+            return
         else:
-            logger.error(
-                "failed to sync user %s with discourse: %s", instance, response.json()
-            )
+            member_profile.short_uuid = shortuuid.uuid()
+            successful_discourse_sync = sync_discourse_user(instance)
+            if successful_discourse_sync:
+                member_profile.save()
 
 
 @receiver(post_save, sender=WagtailSite, dispatch_uid="wagtail_site_sync")
