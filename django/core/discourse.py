@@ -17,7 +17,7 @@ INVALID_SUFFIXES_PATTERN = re.compile(
 )
 
 
-DEFAULT_USERNAME_MAX_LENGTH = 150
+DEFAULT_USERNAME_MAX_LENGTH = 60
 
 
 def build_discourse_url(uri):
@@ -46,7 +46,8 @@ def create_discourse_user(user):
 def sanitize_username(username, uid=None):
     # defaults: 3 <= username length <= 150
     if uid is None:
-        uid = shortuuid.uuid()[:7]
+        uid = shortuuid.uuid()
+    unique_id = uid[:6]
     sanitized_username = INVALID_CHARACTERS_PATTERN.sub(lambda x: "_", username)
     logger.debug("no invalid characters username: %s", sanitized_username)
     sanitized_username = REPEATED_SPECIAL_CHAR_PATTERN.sub(
@@ -54,15 +55,15 @@ def sanitize_username(username, uid=None):
     )
     logger.debug("repeated special chars replaced: %s", sanitized_username)
     sanitized_username = INVALID_LEADING_CHAR_PATTERN.sub(
-        lambda x: f"_{uid}_", sanitized_username
+        lambda x: f"_{unique_id}_", sanitized_username
     )
     logger.debug("invalid leading chars replaced: %s", sanitized_username)
     sanitized_username = INVALID_TRAILING_CHAR_PATTERN.sub(
-        lambda x: f"_{uid}", sanitized_username
+        lambda x: f"_{unique_id}", sanitized_username
     )
     logger.debug("invalid trailing chars replaced: %s", sanitized_username)
     sanitized_username = INVALID_SUFFIXES_PATTERN.sub(
-        lambda x: f"_{uid}", sanitized_username
+        lambda x: f"_{unique_id}", sanitized_username
     )
     logger.debug("invalid suffixes replaced: %s", sanitized_username)
     return sanitized_username[:DEFAULT_USERNAME_MAX_LENGTH]
