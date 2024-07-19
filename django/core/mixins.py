@@ -4,13 +4,15 @@ from django.conf import settings
 from django.contrib.auth.views import redirect_to_login
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import PermissionDenied
+from django.shortcuts import redirect
 from django.utils import timezone
 from rest_framework import serializers
 from rest_framework.exceptions import NotFound
 from rest_framework.response import Response
+from rest_framework.decorators import action
 
 from .models import SpamModeration
-from .permissions import ViewRestrictedObjectPermissions
+from .permissions import ViewRestrictedObjectPermissions, MarkSpamPermissions
 
 logger = logging.getLogger(__name__)
 
@@ -267,6 +269,30 @@ class SpamCatcherViewSetMixin:
                 raise ValueError(
                     f"instance {instance} does not have a {field} attribute"
                 )
+
+    @action(detail=True, methods=["post"], permission_classes=[MarkSpamPermissions])
+    def mark_spam(self, request, **kwargs):
+        instance = self.get_object()
+        self._validate_content_object(instance)
+        content_type = ContentType.objects.get_for_model(type(instance))
+        notes = request.data.get("notes")
+        spam_moderation, created = SpamModeration.objects.get_or_create(
+            content_type=content_type,
+            object_id=instance.id,
+            defaults={
+                "status": SpamModeration.Status.SPAM,
+                "detection_method": "manual",
+                "reviewer": request.user,
+                "notes": notes,
+            },
+        )
+        if not created:
+            spam_moderation.status = SpamModeration.Status.SPAM
+            spam_moderation.detection_method = "manual"
+            spam_moderation.reviewer = request.user
+            spam_moderation.notes = notes
+            spam_moderation.save()
+        return redirect(instance.get_list_url())
 
     def handle_spam_detection(self, serializer: serializers.Serializer):
         if "spam_context" in serializer.context:

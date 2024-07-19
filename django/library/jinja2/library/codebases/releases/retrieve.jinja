@@ -1,5 +1,5 @@
 {% extends "sidebar_layout.jinja" %}
-{% from "common.jinja" import breadcrumb, embed_discourse_comments, share_card, search_tag_href, member_profile_href, render_ogp_tags, alert_if_spam %}
+{% from "common.jinja" import breadcrumb, embed_discourse_comments, share_card, search_tag_href, member_profile_href, render_ogp_tags, alert_if_spam, mark_spam_confirm_modal %}
 {% from "library/review/includes/macros.jinja" import include_review_reminders, confirm_change_closed_modal %}
 
 {% set open_code_badge_png_url = request.build_absolute_uri(static("images/icons/open-code-badge.png")) %}
@@ -465,6 +465,9 @@
         {% endif %}
     {% endwith %}
     {# end has_change_perm #}
+    {% if user.is_superuser and not codebase.is_marked_spam %}
+        {{ mark_spam_confirm_modal("Mark spam", codebase.title, url("library:codebase-mark-spam", identifier=codebase.identifier), csrf_input) }}
+    {% endif %}
 {% endif %}
 {% with review=release.get_review() %}
     {% if review %}

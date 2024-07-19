@@ -1,5 +1,5 @@
 {% extends "sidebar_layout.jinja" %}
-{% from "common.jinja" import permission_button_group, breadcrumb, embed_discourse_comments, share_card, member_profile_href, search_tag_href, delete_confirm_modal, render_ogp_tags, alert_if_spam, alert_if_deleted %}
+{% from "common.jinja" import permission_button_group, breadcrumb, embed_discourse_comments, share_card, member_profile_href, search_tag_href, delete_confirm_modal, render_ogp_tags, alert_if_spam, alert_if_deleted, mark_spam_confirm_modal %}
 
 {% block title %}{{ title }}{% endblock %}
 
@@ -69,6 +69,9 @@
         <a href="{{ url('core:job-edit', pk=id) }}">
             <div class="btn btn-primary my-1 w-100">Edit</div>
         </a>
+        {% if user.is_superuser and not is_marked_spam %}
+            {{ mark_spam_confirm_modal("Mark spam", title, url("core:job-mark-spam", pk=id), csrf_input) }}
+        {% endif %}
     {% endif %}
     {% if has_delete_perm %}
         {{ delete_confirm_modal("Delete Job Posting", title, url("core:job-delete", pk=id), csrf_input) }}
