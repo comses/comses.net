@@ -42,7 +42,7 @@ def create_pgpass_file(ctx, db_key=_DEFAULT_DATABASE, force=False):
     if os.path.isfile(pgpass_path) and not force:
         return
     with open(pgpass_path, "w+") as pgpass:
-        pgpass.write("db:*:*:{db_user}:{db_password}\n".format(**db_config))
+        pgpass.write("{db_host}:*:*:{db_user}:{db_password}\n".format(**db_config))
         ctx.run("chmod 0600 ~/.pgpass")
 
 
@@ -132,7 +132,7 @@ def restore_from_dump(
             cat_cmd = "zcat"
         drop(ctx, database=target_database, create=True)
         ctx.run(
-            "{cat_cmd} {dumpfile} | psql -w -q -o restore-from-dump-log.txt -h db {db_name} {db_user}".format(
+            "{cat_cmd} {dumpfile} | psql -w -q -o restore-from-dump-log.txt -h {db_host} {db_name} {db_user}".format(
                 cat_cmd=cat_cmd, dumpfile=dumpfile, **db_config
             ),
             echo=True,
