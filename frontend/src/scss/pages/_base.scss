@@ -20,8 +20,10 @@
 }
 
 .introduction {
+  box-shadow: inset 0 10px 10px -10px rgba(0, 0, 0, 0.3),
+    inset 0 -10px 10px -10px rgba(0, 0, 0, 0.3);
   overflow: hidden;
-  margin-top: 105px;
+  margin-top: 85px;
   background: url("../assets/images/background-introduction-200.png") repeat top center;
   text-align: left;
   vertical-align: middle;
