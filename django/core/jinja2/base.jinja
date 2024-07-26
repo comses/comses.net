@@ -156,13 +156,15 @@
                         <ul class="nav flex-column">
                             {% if not user.is_authenticated or not user.member_profile.full_member %}
                             <li class="nav-item mb-2">
-                                <a href="{{ profile_url }}">
                                 {% if user.is_authenticated %}
+                                <a href="{{ profile_url }}">
                                     Become a CoMSES Full Member
-                                {% else %}
-                                    Become a Member
-                                {% endif %}
                                 </a>
+                                {% else %}
+                                <a href='{{ signup_url }}'>
+                                    Join CoMSES
+                                </a>
+                                {% endif %}
                             </li>
                             {% endif %}
                             <li class="nav-item mb-2">
@@ -181,40 +183,40 @@
                         <ul class="nav flex-column">
                             <li class="nav-item mb-2">
                                 <a href="{{ social_settings.youtube_url }}" title="YouTube Channel" target="_blank">
-                                    <i class="fab fa-youtube me-2"></i>Youtube
+                                    YouTube <i class="fab fa-youtube me-2"></i>
                                 </a>
                             </li>
                             <li class="nav-item mb-2">
-                                <a href="https://twitter.com/{{ social_settings.twitter_account }}"
+                                <a href="//x.com/{{ social_settings.twitter_account }}"
                                    title="Follow us @{{ social_settings.twitter_account }}" target="_blank">
-                                    <i class="fab fa-twitter me-2"></i></span>Twitter
+                                    Twitter <i class="fab fa-twitter me-2"></i>
                                 </a>
                             </li>
                             <li class="nav-item mb-2">
                                 <a href="{{ url('rss') }}" title="RSS Feed">
-                                    <i class="fas fa-rss me-2"></i>RSS Feed
+                                    RSS Feed <i class="fas fa-rss me-2"></i>
                                 </a>
                             </li>
                         </ul>
                     </div>
                     <div class="col-12 col-md-8 order-md-2 mb-3 text-center">
                         <div class="d-flex flex-wrap justify-content-center">
-                            <a class="logo-footer-primary" href="http://www.nsf.gov/" target="_blank">
+                            <a class="logo-footer-primary" href="//www.nsf.gov/" target="_blank">
                                 <img src="{{ static('images/logo-nsf-2.png') }}" alt="National Science Foundation">
                             </a>
-                            <a class="logo-footer-secondary" href="http://www.asu.edu/" target="_blank">
+                            <a class="logo-footer-secondary" href="//www.asu.edu/" target="_blank">
                                 <img src="{{ static('images/logo-asu.png') }}" alt="Arizona State University">
                             </a>
-                            <a class="logo-footer-secondary" href="https://alliancecan.ca/en" target="_blank">
+                            <a class="logo-footer-secondary" href="//alliancecan.ca/en" target="_blank">
                                 <img src="{{ static('images/logo-drac-small.png') }}" alt="Digital Research Alliance of Canada">
                             </a>
                             <a class="logo-footer-secondary" href="//datacite.org" target="_blank">
                                 <img height="100" src="{{ static('images/logo-datacite.svg') }}" alt="DataCite member">
                             </a>
-                            <a class="logo-footer-secondary" href="https://sciencegateways.org" target="_blank">
+                            <a class="logo-footer-secondary" href="//sciencegateways.org" target="_blank">
                                 <img src="{{ static('images/logo-sgci.png') }}" alt="Science Gateways Community Institute">
                             </a>
-                            <a class="logo-footer-secondary" href="http://orcid.org/" target="_blank">
+                            <a class="logo-footer-secondary" href="//orcid.org/" target="_blank">
                                 <img src="{{ static('images/logo-orcid-white.png') }}" alt="ORCID Member">
                             </a>
                             <a class="logo-footer-secondary" href="//westbigdatahub.org/" target="_blank">
@@ -226,7 +228,7 @@
             </div>
             <p class="copyright text-center"><small>
                 <b>&copy; 2007 - {{ now('Y') }} CoMSES Net</b> |
-                <a href="https://github.com/{{ social_settings.github_account }}" title="CoMSES Net on GitHub" target="_blank">
+                <a href="//github.com/{{ social_settings.github_account }}" title="CoMSES Net on GitHub" target="_blank">
                     <i class="fab fa-github me-2"></i>{{ constants.RELEASE_VERSION }}
                 </a>
             </small></p>
