@@ -711,12 +711,28 @@ class PeerReviewFeedbackEditorSerializer(serializers.ModelSerializer):
 
 
 class PeerReviewerSerializer(serializers.ModelSerializer):
+    member_profile_id = serializers.PrimaryKeyRelatedField(
+        queryset=MemberProfile.objects.all(),
+        source="member_profile",
+        write_only=True,
+    )
     member_profile = RelatedMemberProfileSerializer(read_only=True)
+    date_created = serializers.DateTimeField(
+        format=DATE_PUBLISHED_FORMAT, read_only=True
+    )
 
     class Meta:
         model = PeerReviewer
-        fields = "__all__"
-        read_only_fields = ("date_created",)
+        fields = (
+            "id",
+            "member_profile",
+            "member_profile_id",
+            "date_created",
+            "is_active",
+            "programming_languages",
+            "subject_areas",
+            "notes",
+        )
 
 
 class PeerReviewInvitationSerializer(serializers.ModelSerializer):

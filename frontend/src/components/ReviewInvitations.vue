@@ -39,7 +39,11 @@
             </div>
           </h2>
           <div class="tag-list">
-            <div class="tag mx-1" v-for="tag in candidateReviewer.memberProfile.tags" :key="tag.name">
+            <div
+              class="tag mx-1"
+              v-for="tag in candidateReviewer.memberProfile.tags"
+              :key="tag.name"
+            >
               {{ tag.name }}
             </div>
           </div>

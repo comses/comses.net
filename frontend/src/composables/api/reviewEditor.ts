@@ -1,5 +1,6 @@
 import { useAxios } from "@/composables/api";
 import { toRefs } from "vue";
+import type { RequestOptions } from "@/composables/api";
 import type { RelatedMemberProfile, UserSearchQueryParams } from "@/types";
 
 export function useReviewEditorAPI() {
@@ -10,6 +11,7 @@ export function useReviewEditorAPI() {
    */
 
   const baseUrl = "/reviews/";
+  const reviewersUrl = "/reviewers/";
   const { state, get, post, put, detailUrl, searchUrl } = useAxios(baseUrl);
 
   async function listInvitations(reviewUUID: string) {
@@ -43,6 +45,18 @@ export function useReviewEditorAPI() {
     return get(searchUrl(params, "/reviewers/"));
   }
 
+  async function createReviewer(data: any, options?: RequestOptions) {
+    return post(reviewersUrl, data, options);
+  }
+
+  async function updateReviewer(id: string | number, data: any, options?: RequestOptions) {
+    return put(detailUrl(id, [], reviewersUrl), data, options);
+  }
+
+  async function retrieveReviewer(id: string | number, options?: RequestOptions) {
+    return get(detailUrl(id, [], reviewersUrl), options);
+  }
+
   return {
     ...toRefs(state),
     listInvitations,
@@ -52,5 +66,8 @@ export function useReviewEditorAPI() {
     sendInvitation,
     resendInvitation,
     changeStatus,
+    createReviewer,
+    updateReviewer,
+    retrieveReviewer,
   };
 }
