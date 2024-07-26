@@ -57,6 +57,11 @@ urlpatterns = [
         name="peer-review-dashboard",
     ),
     path(
+        "reviews/reviewers/",
+        views.PeerReviewerDashboardView.as_view(),
+        name="peer-reviewer-dashboard",
+    ),
+    path(
         "reviews/<uuid:slug>/editor/",
         views.PeerReviewEditorView.as_view(),
         name="peer-review-detail",

@@ -174,22 +174,22 @@ class PeerReviewChangeClosedView(PermissionRequiredMixin, DetailView):
         return redirect(request.META.get("HTTP_REFERER", ""))
 
 
-class PeerReviewReviewerListView(mixins.ListModelMixin, viewsets.GenericViewSet):
-    # FIXME: this will be unused once the new reviewer selection UI is in place
-    queryset = MemberProfile.objects.all()
-    serializer_class = RelatedMemberProfileSerializer
-
-    def get_queryset(self):
-        query = self.request.query_params.get("query", "")
-        results = PeerReview.objects.find_candidate_reviewers(query)
-        return results
-
-
 class ChangePeerReviewPermission(permissions.BasePermission):
     def has_permission(self, request, view):
         if request.user.has_perm("library.change_peerreview"):
             return True
         raise DrfPermissionDenied
+
+
+class PeerReviewerDashboardView(PermissionRequiredMixin, ListView):
+    template_name = "library/review/reviewers.jinja"
+    model = PeerReviewer
+    permission_required = "library.change_peerreview"
+    context_object_name = "reviewers"
+    paginate_by = 15
+
+    def get_queryset(self):
+        return PeerReviewer.objects.all()
 
 
 class PeerReviewerFilter(filters.BaseFilterBackend):

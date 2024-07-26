@@ -86,11 +86,13 @@ export interface ReviewEvent {
 }
 
 export interface Reviewer {
+  id: number;
+  isActive: boolean;
   memberProfile: RelatedMemberProfile;
   programmingLanguages: string[];
   subjectAreas: string[];
   notes: string;
-};
+}
 
 export interface ReviewInvitation {
   id: number;
