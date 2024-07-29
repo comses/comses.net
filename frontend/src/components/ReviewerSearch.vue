@@ -64,9 +64,42 @@
         </div>
       </template>
       <template #singleLabel="{ option }">
-        <b>{{ option.memberProfile.name }}</b>
-        <small class="text-muted">{{ option.memberProfile.email }}</small>
-        <small>{{ option.programmingLanguages }}</small>
+        <div class="d-flex flex-row">
+          <div style="width: 3rem; height: 3rem">
+            <img
+              v-if="option.avatarUrl"
+              :src="option.avatarUrl"
+              class="d-block img-fluid img-thumbnail"
+            />
+            <div v-else class="img-thumbnail w-100 h-100"></div>
+          </div>
+          <div class="d-flex flex-column justify-content-center ms-3">
+            <div class="mb-1">
+              <b>{{ option.memberProfile.name }}</b>
+              <small v-if="option.memberProfile.email" class="text-muted">
+                ({{ option.memberProfile.email }})</small
+              >
+            </div>
+          </div>
+        </div>
+        <div class="d-flex flex-row">
+          <div class="d-flex flex-column justify-content-center ms-5">
+            <div class="ms-1 mb-1">
+              <span v-if="option.programmingLanguages"
+                >Programming Lanugages: {{ option.programmingLanguages.join(", ") }}</span
+              >
+            </div>
+          </div>
+        </div>
+        <div class="d-flex flex-row">
+          <div class="d-flex flex-column justify-content-center ms-5">
+            <div class="ms-1 mb-1">
+              <span v-if="option.subjectAreas"
+                >Subject Areas: {{ option.subjectAreas.join(", ") }}</span
+              >
+            </div>
+          </div>
+        </div>
       </template>
       <template #noOptions>No matching users found.</template>
     </VueMultiSelect>
