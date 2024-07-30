@@ -543,7 +543,7 @@ class CodebaseGitMirror(models.Model):
 
     @property
     def unmirrored_local_releases(self):
-        return self.codebase.ordered_releases().exclude(
+        return self.codebase.public_releases().exclude(
             id__in=self.local_releases.values_list("id", flat=True)
         )
 
@@ -868,19 +868,20 @@ class Codebase(index.Indexed, ModeratedContent, ClusterableModel):
             release__codebase__id=self.id
         ).count()
 
-    def ordered_releases(self, has_change_perm=False, asc=True, **kwargs):
+    def ordered_releases_list(self, has_change_perm=False, asc=True, **kwargs):
         """
         list public releases (or all release if has_change_perm is True) in ascending (default) or descending order
         """
         if has_change_perm:
             releases = self.releases.filter(**kwargs)
         else:
-            releases = self.releases.filter(
-                status=CodebaseRelease.Status.PUBLISHED, **kwargs
-            )
+            releases = self.public_releases(**kwargs)
         releases_list = list(releases)
         releases_list.sort(key=lambda r: Version(r.version_number), reverse=not asc)
         return releases_list
+
+    def public_releases(self, **kwargs):
+        return self.releases.filter(status=CodebaseRelease.Status.PUBLISHED, **kwargs)
 
     @classmethod
     def get_list_url(cls):

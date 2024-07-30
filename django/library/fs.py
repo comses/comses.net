@@ -908,7 +908,9 @@ class CodebaseGitRepositoryApi:
         mirror for the first time or need to rebuild the entire history
         """
         try:
-            releases = self.codebase.ordered_releases()
+            releases = self.codebase.ordered_releases_list()
+            if not releases:
+                raise ValidationError("Must have at least one public release to build from")
             with self.use_temporary_repo():
                 self.initialize()
                 for release in releases:
