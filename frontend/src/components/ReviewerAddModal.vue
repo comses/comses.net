@@ -4,8 +4,8 @@
     class="btn btn-primary"
     rel="nofollow"
     @click="
-      resetForm();
-      editReviewerModal?.show();
+      addFormRef?.resetForm();
+      addReviewerModal?.show();
     "
   >
     <i class="fas fa-plus-square me-1"></i> Add a Reviewer
@@ -13,7 +13,7 @@
   <BootstrapModal
     id="add-reviewer-modal"
     title="Add a Reviewer"
-    ref="editReviewerModal"
+    ref="addReviewerModal"
     size="lg"
     centered
   >
@@ -21,9 +21,8 @@
       <ReviewerEditForm
         id="add-reviewer-form"
         :is-edit="false"
-        ref="editFormRef"
-        @reset="resetForm"
-        @success="() => editReviewerModal?.hide()"
+        ref="addFormRef"
+        @success="() => addReviewerModal?.hide()"
       />
     </template>
   </BootstrapModal>
@@ -34,12 +33,6 @@ import type Modal from "bootstrap/js/dist/modal";
 import BootstrapModal from "@/components/BootstrapModal.vue";
 import ReviewerEditForm from "@/components/ReviewerEditForm.vue";
 
-const editReviewerModal = ref<Modal>();
-const editFormRef = ref<InstanceType<typeof ReviewerEditForm> | null>(null);
-
-function resetForm() {
-  if (editFormRef.value) {
-    editFormRef.value.resetReviewer();
-  }
-}
+const addReviewerModal = ref<Modal>();
+const addFormRef = ref<InstanceType<typeof ReviewerEditForm> | null>(null);
 </script>

@@ -13,7 +13,6 @@
         show-avatar
         show-email
         show-affiliation
-        :disabled="isEdit"
       />
       <div class="container" v-else>
         <div class="row py-2">
@@ -73,12 +72,10 @@
       />
       <FormAlert :validation-errors="Object.values(errors)" :server-errors="serverErrors" />
       <div class="modal-footer border-0">
-      <button v-if="!isEdit" type="button" class="btn btn-outline-gray" @click="emit('reset')">
-        Reset
-      </button>
-      <button type="submit" class="btn btn-primary" :disabled="isLoading">
-        {{ props.isEdit ? "Update" : "Create" }}
-      </button>
+        <button type="button" class="btn btn-outline-gray" @click="resetForm">Reset</button>
+        <button type="submit" class="btn btn-primary" :disabled="isLoading">
+          {{ props.isEdit ? "Update" : "Create" }}
+        </button>
       </div>
     </form>
   </div>
@@ -86,7 +83,7 @@
 
 <script setup lang="ts">
 import * as yup from "yup";
-import { computed, onBeforeUnmount, onMounted } from "vue";
+import { onBeforeUnmount, onMounted, watch } from "vue";
 import UserSearch from "@/components/UserSearch.vue";
 import TextareaField from "@/components/form/TextareaField.vue";
 import TextListField from "@/components/form/TextListField.vue";
@@ -117,9 +114,7 @@ const emit = defineEmits(["success", "reset"]);
 
 const { serverErrors: profileErrors, search } = useProfileAPI();
 const {
-  data,
   serverErrors,
-  retrieveReviewer: retrieve,
   createReviewer: create,
   updateReviewer: update,
   isLoading,
@@ -154,10 +149,10 @@ onBeforeUnmount(() => {
   removeUnsavedAlertListener();
 });
 
-function resetReviewer() {
-  setValues({ ...props.reviewer });
+function resetForm() {
   serverErrors.value = [];
   handleReset();
+  setValues({ ...props.reviewer });
 }
 
 function setMemberProfile(profile: RelatedMemberProfile) {
@@ -183,5 +178,12 @@ async function createOrUpdate() {
   emit("success");
 }
 
-defineExpose({ resetReviewer });
+watch(
+  () => props.reviewer,
+  () => {
+    if (props.reviewer) resetForm();
+  }
+);
+
+defineExpose({ resetForm });
 </script>

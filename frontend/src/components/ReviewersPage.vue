@@ -16,6 +16,7 @@
             class="btn btn-primary"
             @click="
               editCandidate = reviewer;
+              editFormRef?.resetForm();
               editModal?.show();
             "
             >Edit</a
