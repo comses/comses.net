@@ -2143,7 +2143,10 @@ class PeerReviewer(index.Indexed, models.Model):
     )
     is_active = models.BooleanField(default=True)
     programming_languages = ArrayField(
-        models.CharField(max_length=100), default=list, blank=True
+        models.CharField(max_length=100),
+        default=list,
+        blank=True,
+        help_text=_("Programming Languages this reviewer knows, e.g. Python, Java"),
     )
     subject_areas = ArrayField(
         models.CharField(max_length=100),
