@@ -1,7 +1,7 @@
 <template>
   <div class="row">
     <div class="col-sm-12 col-md-9">
-      <div v-for="reviewer of reviewers" class="card mb-3">
+      <div v-for="reviewer of reviewers" :key="reviewer.id" class="card mb-3">
         <div class="card-header">
           <h5 class="card-title">{{ reviewer.memberProfile.name }}</h5>
         </div>

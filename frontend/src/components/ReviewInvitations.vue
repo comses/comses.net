@@ -109,8 +109,7 @@ const props = defineProps<{
 
 const emit = defineEmits(["pollEvents"]);
 
-const { serverErrors, listInvitations, sendInvitation, resendInvitation, findReviewers } =
-  useReviewEditorAPI();
+const { listInvitations, sendInvitation, resendInvitation } = useReviewEditorAPI();
 
 const invitations = ref<ReviewInvitation[]>([]);
 const candidateReviewer = ref<Reviewer | null>(null);

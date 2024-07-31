@@ -185,11 +185,6 @@ class PeerReviewerDashboardView(PermissionRequiredMixin, ListView):
     template_name = "library/review/reviewers.jinja"
     model = PeerReviewer
     permission_required = "library.change_peerreview"
-    context_object_name = "reviewers"
-    paginate_by = 15
-
-    def get_queryset(self):
-        return PeerReviewer.objects.all()
 
 
 class PeerReviewerFilter(filters.BaseFilterBackend):
