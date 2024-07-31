@@ -8,8 +8,9 @@
         <div class="card-body">
           <p class="card-text">
             <strong>Email:</strong> {{ reviewer.memberProfile.email }}<br />
-            <strong>Programming Languages:</strong> {{ reviewer.programmingLanguages }}<br />
-            <strong>Subject Areas:</strong> {{ reviewer.subjectAreas }}<br />
+            <strong>Programming Languages:</strong> {{ reviewer.programmingLanguages.join(", ")
+            }}<br />
+            <strong>Subject Areas:</strong> {{ reviewer.subjectAreas.join(", ") }}<br />
             {{ reviewer.notes }}
           </p>
           <a
