@@ -46,7 +46,7 @@
 </template>
 
 <script setup lang="ts">
-import { inject, ref, onMounted } from "vue";
+import { inject, ref } from "vue";
 import { Sortable } from "sortablejs-vue3";
 import type { SortableEvent } from "sortablejs";
 import { useField } from "@/composables/form";
