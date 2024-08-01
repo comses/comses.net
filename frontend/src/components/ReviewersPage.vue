@@ -17,7 +17,7 @@
             class="btn btn-primary"
             @click="
               editCandidate = reviewer;
-              editFormRef?.resetForm();
+              editForm?.resetForm();
               editModal?.show();
             "
             >Edit</a
@@ -27,7 +27,17 @@
       </div>
     </div>
     <div class="col-sm-12 col-md-3">
-      <ReviewerAddModal />
+      <button
+        type="button"
+        class="btn btn-primary"
+        rel="nofollow"
+        @click="
+          addForm?.resetForm();
+          addModal?.show();
+        "
+      >
+        <i class="fas fa-plus-square me-1"></i> Add a Reviewer
+      </button>
     </div>
     <BootstrapModal
       id="edit-reviewer-modal"
@@ -39,10 +49,30 @@
       <template #content>
         <ReviewerEditForm
           id="edit-reviewer-form"
-          ref="editFormRef"
+          ref="editForm"
           :is-edit="true"
           :reviewer="editCandidate"
-          @success="() => editModal?.hide()"
+          @success="
+            async () => {
+              await retrieveReviewers();
+              editModal?.hide();
+            }
+          "
+        />
+      </template>
+    </BootstrapModal>
+    <BootstrapModal id="add-reviewer-modal" title="Add Reviewer" ref="addModal" size="lg" centered>
+      <template #content>
+        <ReviewerEditForm
+          id="add-reviewer-form"
+          :is-edit="false"
+          ref="addForm"
+          @success="
+            async () => {
+              await retrieveReviewers();
+              addModal?.hide();
+            }
+          "
         />
       </template>
     </BootstrapModal>
@@ -54,11 +84,12 @@ import { ref, onMounted } from "vue";
 import { useReviewEditorAPI } from "@/composables/api";
 import BootstrapModal from "@/components/BootstrapModal.vue";
 import ReviewerEditForm from "@/components/ReviewerEditForm.vue";
-import ReviewerAddModal from "@/components/ReviewerAddModal.vue";
 import type { Reviewer } from "@/types";
 
 const reviewers = ref<Reviewer[]>([]);
-const editFormRef = ref<InstanceType<typeof ReviewerEditForm> | null>(null);
+const addForm = ref<InstanceType<typeof ReviewerEditForm> | null>(null);
+const addModal = ref<InstanceType<typeof BootstrapModal> | null>(null);
+const editForm = ref<InstanceType<typeof ReviewerEditForm> | null>(null);
 const editModal = ref<InstanceType<typeof BootstrapModal> | null>(null);
 const editCandidate = ref<Reviewer>();
 
