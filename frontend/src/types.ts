@@ -284,3 +284,7 @@ export interface UserSearchQueryParams {
   page?: number;
   tags?: string[];
 }
+
+export interface ReviewerFilterParams {
+  includeInactive?: boolean;
+}

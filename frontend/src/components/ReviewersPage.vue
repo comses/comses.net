@@ -14,7 +14,7 @@
             {{ reviewer.notes }}
           </p>
           <a
-            class="btn btn-primary"
+            class="btn btn-primary me-1"
             @click="
               editCandidate = reviewer;
               editForm?.resetForm();
@@ -22,30 +22,30 @@
             "
             >Edit</a
           >
-          <a class="btn btn-danger" @click="deleteReviewer(reviewer)">Delete</a>
+          <a
+            v-if="reviewer.isActive"
+            class="btn btn-danger"
+            @click="changeReviwerActiveState(reviewer, false)"
+            >Deactivate</a
+          >
+          <a v-else class="btn btn-success" @click="changeReviwerActiveState(reviewer, true)"
+            >Activate</a
+          >
         </div>
       </div>
     </div>
     <div class="col-sm-12 col-md-3">
-      <button
-        type="button"
-        class="btn btn-primary"
-        rel="nofollow"
-        @click="
-          addForm?.resetForm();
-          addModal?.show();
+      <ReviewersListSidebar
+        @filter="
+          async values => {
+            reviewerFilters = values;
+            await retrieveReviewers();
+          }
         "
-      >
-        <i class="fas fa-plus-square me-1"></i> Add a Reviewer
-      </button>
+        @add-success="retrieveReviewers"
+      />
     </div>
-    <BootstrapModal
-      id="edit-reviewer-modal"
-      title="Edit Reviewer"
-      ref="editModal"
-      size="lg"
-      centered
-    >
+    <BootstrapModal id="edit-modal" title="Edit Reviewer" ref="editModal" size="lg" centered>
       <template #content>
         <ReviewerEditForm
           id="edit-reviewer-form"
@@ -61,21 +61,6 @@
         />
       </template>
     </BootstrapModal>
-    <BootstrapModal id="add-reviewer-modal" title="Add Reviewer" ref="addModal" size="lg" centered>
-      <template #content>
-        <ReviewerEditForm
-          id="add-reviewer-form"
-          :is-edit="false"
-          ref="addForm"
-          @success="
-            async () => {
-              await retrieveReviewers();
-              addModal?.hide();
-            }
-          "
-        />
-      </template>
-    </BootstrapModal>
   </div>
 </template>
 
@@ -84,11 +69,11 @@ import { ref, onMounted } from "vue";
 import { useReviewEditorAPI } from "@/composables/api";
 import BootstrapModal from "@/components/BootstrapModal.vue";
 import ReviewerEditForm from "@/components/ReviewerEditForm.vue";
-import type { Reviewer } from "@/types";
+import ReviewersListSidebar from "./ReviewersListSidebar.vue";
+import type { Reviewer, ReviewerFilterParams } from "@/types";
 
 const reviewers = ref<Reviewer[]>([]);
-const addForm = ref<InstanceType<typeof ReviewerEditForm> | null>(null);
-const addModal = ref<InstanceType<typeof BootstrapModal> | null>(null);
+const reviewerFilters = ref<ReviewerFilterParams>({ includeInactive: false });
 const editForm = ref<InstanceType<typeof ReviewerEditForm> | null>(null);
 const editModal = ref<InstanceType<typeof BootstrapModal> | null>(null);
 const editCandidate = ref<Reviewer>();
@@ -101,12 +86,16 @@ onMounted(async () => {
 
 async function retrieveReviewers() {
   const response = await findReviewers({});
-  reviewers.value = response.data.results;
+  let results: Reviewer[] = response.data.results;
+  if (!reviewerFilters.value.includeInactive) {
+    results = results.filter(reviewer => reviewer.isActive);
+  }
+  reviewers.value = results;
 }
 
-async function deleteReviewer(reviewer: Reviewer) {
+async function changeReviwerActiveState(reviewer: Reviewer, isActive: boolean) {
   // FIXME: Make server accept partial reviewer object without defining memberProfileId
-  await update(reviewer.id, { memberProfileId: reviewer.memberProfile.id, isActive: false });
+  await update(reviewer.id, { memberProfileId: reviewer.memberProfile.id, isActive });
   await retrieveReviewers();
 }
 </script>
