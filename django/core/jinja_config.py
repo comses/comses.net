@@ -1,4 +1,5 @@
 from allauth.socialaccount.adapter import get_adapter
+import urllib
 from datetime import datetime
 from django.conf import settings
 from django.contrib.sites.models import Site
@@ -66,6 +67,7 @@ def environment(**options):
             "build_absolute_uri": build_absolute_uri,
             "cookielaw": cookielaw,
             "now": now,
+            "url_decode": url_decode,
             "should_enable_discourse": should_enable_discourse,
             "is_production": is_production,
             "provider_login_url": provider_login_url,
@@ -111,6 +113,10 @@ def now(format_string):
     """
     tzinfo = get_current_timezone() if settings.USE_TZ else None
     return defaultfilters.date(datetime.now(tz=tzinfo), format_string)
+
+
+def url_decode(value):
+    return urllib.parse.unquote(value)
 
 
 def should_enable_discourse(is_public: bool):

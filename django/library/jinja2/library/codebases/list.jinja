@@ -19,7 +19,8 @@
 {% endblock %}
 
 {% block search %}
-{{ search_bar(url("library:codebase-list"), "Search Codebases") }}
+{% set current_query = request.GET.get('query', '') %}
+{{ search_bar(url("library:codebase-list"), "Search Codebases", current_query, paginator_data.query_params) }}
 {{ pagination_block }}
 {% endblock %}
 
@@ -45,5 +46,12 @@
 {% endblock %}
 
 {% block js %}
+<script nonce="{{ request.csp_nonce }}" >
+    {% if language_facets %}
+        window.language_facets = {{ language_facets|tojson| safe }};    
+    {% else %}
+        window.language_facets = [];    
+    {% endif %}    
+</script>
 {{ vite_asset('apps/codebase_list.ts') }}
 {% endblock %}

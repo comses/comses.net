@@ -23,7 +23,17 @@ class SmallResultSetPagination(PageNumberPagination):
         for key, values in query_params.lists():
             if key == "query":
                 continue
-            if key == "tags":
+            elif key == "ordering":
+                for v in values:
+                    if v == "":
+                        filters.append("Sort by: Relevance")
+                    elif v == "-first_published_at":
+                        filters.append("Sort by: Publish date: newest")
+                    elif v == "first_published_at":
+                        filters.append("Sort by: Publish date: oldest")
+                    elif v == "-last_modified":
+                        filters.append("Sort by: Recently Modified")
+            elif key == "tags":
                 filters.extend(tag for tag in values)
             else:
                 try:

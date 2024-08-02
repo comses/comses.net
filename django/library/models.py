@@ -614,14 +614,14 @@ class Codebase(index.Indexed, ModeratedContent, ClusterableModel):
     objects = CodebaseQuerySet.as_manager()
 
     search_fields = [
-        index.SearchField("title"),
-        index.SearchField("description"),
-        index.SearchField("get_all_contributors_search_fields"),
+        index.SearchField("title", boost=10.0),
+        index.SearchField("description", boost=8.0),
+        index.SearchField("get_all_contributors_search_fields", boost=5.0),
         index.SearchField("get_all_release_frameworks"),
         index.SearchField("get_all_release_programming_languages"),
-        index.SearchField("references_text"),
+        index.SearchField("references_text", boost=2.0),
         index.SearchField("permanent_url"),
-        index.SearchField("associated_publication_text"),
+        index.SearchField("associated_publication_text", boost=4.0),
         index.RelatedFields(
             "tags",
             [
@@ -629,6 +629,8 @@ class Codebase(index.Indexed, ModeratedContent, ClusterableModel):
             ],
         ),
         # filter and sort fields
+        index.FilterField("id"),
+        index.FilterField("release_language_names"),
         index.FilterField("is_marked_spam"),
         index.FilterField("last_modified"),
         index.FilterField("peer_reviewed"),
@@ -804,6 +806,13 @@ class Codebase(index.Indexed, ModeratedContent, ClusterableModel):
 
     def get_all_release_programming_languages(self):
         return " ".join(Codebase.objects.get_all_release_programming_languages(self))
+
+    def release_language_names(self):
+        return list(
+            self.releases.exclude(programming_languages__isnull=True).values_list(
+                "programming_languages__name", flat=True
+            )
+        )
 
     def download_count(self):
         return CodebaseReleaseDownload.objects.filter(
