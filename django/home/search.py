@@ -4,14 +4,16 @@ from textwrap import shorten
 from typing import Dict
 
 from django.apps import apps
-from elasticsearch_dsl import Search
+from elasticsearch_dsl import Search, Q
+from itertools import combinations
 from wagtail.models import Page
 from wagtail.search.backends import get_search_backend
 
+from core.models import Platform
 from library.models import Codebase
 
 # FIXME: eventually these should live in the `home` app
-from .models import Event, Job, MemberProfile
+from .models import Event, FaqEntry, Job, Journal, MemberProfile
 
 logger = logging.getLogger(__name__)
 
@@ -134,6 +136,67 @@ class CodebaseSearchResult(BaseSearchResult):
         )
 
 
+class PlatformSearchResult(BaseSearchResult):
+    @staticmethod
+    def get_title(result):
+        return result["_source"]["name"]
+
+    @classmethod
+    def from_result(cls, result):
+        pk = cls.get_pk(result)
+        return cls(
+            description=cls.get_description(result),
+            pk=pk,
+            score=cls.get_score(result),
+            title=cls.get_title(result),
+            tags=cls.get_tags(result),
+            type=get_content_type(result)._meta.verbose_name,
+            url="/resources/modeling-frameworks/",
+        )
+
+
+class JournalSearchResult(BaseSearchResult):
+    @staticmethod
+    def get_title(result):
+        return result["_source"]["name"]
+
+    @classmethod
+    def from_result(cls, result):
+        pk = cls.get_pk(result)
+        return cls(
+            description=cls.get_description(result),
+            pk=pk,
+            score=cls.get_score(result),
+            title=cls.get_title(result),
+            tags=[],
+            type=get_content_type(result)._meta.verbose_name,
+            url="/resources/journals/",
+        )
+
+
+class FaqEntrySearchResult(BaseSearchResult):
+    @staticmethod
+    def get_title(result):
+        return result["_source"]["question"]
+
+    @staticmethod
+    def get_description(result):
+        return result["_source"]["answer"]
+
+    @classmethod
+    def from_result(cls, result):
+        pk = cls.get_pk(result)
+        return cls(
+            description=cls.get_description(result),
+            pk=pk,
+            score=cls.get_score(result),
+            title=cls.get_title(result),
+            tags=[],
+            type=get_content_type(result)._meta.verbose_name,
+            url="/about/faq/",
+        )
+
+
 class OtherSearchResult(BaseSearchResult):
     @classmethod
     def from_result(cls, result):
@@ -157,7 +220,16 @@ class OtherSearchResult(BaseSearchResult):
 class GeneralSearch:
     """Search across all content types in Elasticsearch for matching objects"""
 
-    DEFAULT_MODELS = [Codebase, Event, Job, MemberProfile, Page]
+    DEFAULT_MODELS = [
+        Codebase,
+        Event,
+        Job,
+        MemberProfile,
+        Page,
+        Platform,
+        Journal,
+        FaqEntry,
+    ]
 
     def __init__(self):
         self.backend = get_search_backend()
@@ -168,13 +240,44 @@ class GeneralSearch:
     def search(self, text, models=None, start=0, size=10):
         if models is None:
             models = self.DEFAULT_MODELS
+
         index = ",".join(self.get_index_names(models))
-        s = Search(index=index, using=self.backend.es).query(
+        s = Search(index=index, using=self.backend.es)
+
+        # Create a multi_match query for the main search
+        main_query = Q(
             "multi_match",
             query=text,
+            fields=[
+                "title^3",
+                "name^3",
+                "description^2",
+                "question",
+                "answer",
+                "research_interests",
+                "affiliations_string",
+                "given_name",
+                "family_name",
+            ],
             type="best_fields",
+            fuzziness="AUTO",
         )
-        # slice from start -> start + size
+
+        # Create a phrase match query for the title with high boost
+        title_phrase_query = Q("match_phrase", title={"query": text, "boost": 10})
+        name_phrase_query = Q("match_phrase", name={"query": text, "boost": 10})
+
+        # Combine queries
+        combined_query = Q(
+            "bool",
+            should=[main_query, title_phrase_query | name_phrase_query],
+            minimum_should_match=1,
+        )
+
+        # Apply the query to the search object
+        s = s.query(combined_query)
+
+        # Execute the search
         response = s[start : start + size].execute()
         total = response.hits.total.value
         results = response.hits.hits
@@ -233,6 +336,9 @@ PROCESS_DISPATCH = {
     Event: EventSearchResult.from_result,
     Job: JobSearchResult.from_result,
     MemberProfile: MemberProfileSearchResult.from_result,
+    FaqEntry: FaqEntrySearchResult.from_result,
+    Journal: JournalSearchResult.from_result,
+    Platform: PlatformSearchResult.from_result,
 }
 
 URL_DISPATCH = {
