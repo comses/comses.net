@@ -223,7 +223,7 @@ WAGTAILSEARCH_BACKENDS = {
         "OPTIONS": {
             "max_retries": 2,
         },
-        "INDEX_SETTINGS": {},
+        "INDEX_SETTINGS": {"settings": {"index": {"max_result_window": 2500}}},
     }
 }
 
