@@ -182,7 +182,8 @@
 {% endif %}
 {% endmacro %}
 
-{% macro search_bar(search_url, placeholder, current_query='', query_params='') %}
+{% macro search_bar(request, search_url, placeholder, query_params='') %}
+{% set current_query = request.GET.get('query', '') %}
 <form class="mb-3" action="{{ search_url }}" method="get">
     <label class="sr-only" for="search-query">Search</label>
     <div class="input-group">

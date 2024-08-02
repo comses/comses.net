@@ -19,8 +19,7 @@
 {% endblock %}
 
 {% block search %}
-{% set current_query = request.GET.get('query', '') %}
-{{ search_bar(url("library:codebase-list"), "Search Codebases", current_query, paginator_data.query_params) }}
+{{ search_bar(request, url("library:codebase-list"), "Search Codebases", paginator_data.query_params) }}
 {{ pagination_block }}
 {% endblock %}
 
