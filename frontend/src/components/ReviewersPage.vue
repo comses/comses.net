@@ -1,9 +1,9 @@
 <template>
   <div class="row">
     <div class="col-sm-12 col-md-9">
-      <div v-for="reviewer of reviewers" :key="reviewer.id" class="card mb-3">
+      <div v-for="reviewer of filteredReviewers" :key="reviewer.id" class="card mb-3">
         <div class="card-header">
-          <h5 class="card-title">{{ reviewer.memberProfile.name }}</h5>
+          <h5 class="card-title">{{ reviewer.memberProfile.name }} ({{ reviewer.memberProfile.username }})</h5>
         </div>
         <div class="card-body">
           <p class="card-text">
@@ -14,7 +14,7 @@
             {{ reviewer.notes }}
           </p>
           <a
-            class="btn btn-primary"
+            class="btn btn-primary me-1"
             @click="
               editCandidate = reviewer;
               editForm?.resetForm();
@@ -22,30 +22,31 @@
             "
             >Edit</a
           >
-          <a class="btn btn-danger" @click="deleteReviewer(reviewer)">Delete</a>
+          <a
+            v-if="reviewer.isActive"
+            class="btn btn-danger"
+            @click="changeReviwerActiveState(reviewer, false)"
+            >Deactivate</a
+          >
+          <a v-else class="btn btn-success" @click="changeReviwerActiveState(reviewer, true)"
+            >Activate</a
+          >
         </div>
       </div>
     </div>
     <div class="col-sm-12 col-md-3">
-      <button
-        type="button"
-        class="btn btn-primary"
-        rel="nofollow"
-        @click="
-          addForm?.resetForm();
-          addModal?.show();
+      <ReviewersListSidebar
+        @filter="
+          values => {
+            filters = values;
+            applyFilters();
+          }
         "
-      >
-        <i class="fas fa-plus-square me-1"></i> Add a Reviewer
-      </button>
+        @add-success="retrieveReviewers"
+        :programming-languages="programmingLanguages"
+      />
     </div>
-    <BootstrapModal
-      id="edit-reviewer-modal"
-      title="Edit Reviewer"
-      ref="editModal"
-      size="lg"
-      centered
-    >
+    <BootstrapModal id="edit-modal" title="Edit Reviewer" ref="editModal" size="lg" centered>
       <template #content>
         <ReviewerEditForm
           id="edit-reviewer-form"
@@ -61,34 +62,20 @@
         />
       </template>
     </BootstrapModal>
-    <BootstrapModal id="add-reviewer-modal" title="Add Reviewer" ref="addModal" size="lg" centered>
-      <template #content>
-        <ReviewerEditForm
-          id="add-reviewer-form"
-          :is-edit="false"
-          ref="addForm"
-          @success="
-            async () => {
-              await retrieveReviewers();
-              addModal?.hide();
-            }
-          "
-        />
-      </template>
-    </BootstrapModal>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from "vue";
+import { ref, onMounted, computed } from "vue";
 import { useReviewEditorAPI } from "@/composables/api";
 import BootstrapModal from "@/components/BootstrapModal.vue";
 import ReviewerEditForm from "@/components/ReviewerEditForm.vue";
-import type { Reviewer } from "@/types";
+import ReviewersListSidebar from "./ReviewersListSidebar.vue";
+import type { Reviewer, ReviewerFilterParams } from "@/types";
 
-const reviewers = ref<Reviewer[]>([]);
-const addForm = ref<InstanceType<typeof ReviewerEditForm> | null>(null);
-const addModal = ref<InstanceType<typeof BootstrapModal> | null>(null);
+const allReviewers = ref<Reviewer[]>([]);
+const filteredReviewers = ref<Reviewer[]>([]);
+const filters = ref<ReviewerFilterParams>({ includeInactive: false });
 const editForm = ref<InstanceType<typeof ReviewerEditForm> | null>(null);
 const editModal = ref<InstanceType<typeof BootstrapModal> | null>(null);
 const editCandidate = ref<Reviewer>();
@@ -101,12 +88,45 @@ onMounted(async () => {
 
 async function retrieveReviewers() {
   const response = await findReviewers({});
-  reviewers.value = response.data.results;
+  allReviewers.value = response.data.results;
+  applyFilters();
 }
 
-async function deleteReviewer(reviewer: Reviewer) {
+function applyFilters() {
+  let reviewers = allReviewers.value;
+  const curFilters = filters.value;
+  if (!curFilters.includeInactive) {
+    reviewers = reviewers.filter(reviewer => reviewer.isActive);
+  }
+  if (curFilters.name) {
+    reviewers = reviewers.filter(reviewer =>
+      reviewer.memberProfile.name.toLowerCase().includes(curFilters.name!.toLowerCase()) ||
+      reviewer.memberProfile.username.toLowerCase().includes(curFilters.name!.toLowerCase())
+    );
+  }
+  if (curFilters.programmingLanguages?.length) {
+    reviewers = reviewers.filter(reviewer =>
+      curFilters.programmingLanguages!.some(language =>
+        reviewer.programmingLanguages.includes(language)
+      )
+    );
+  }
+  filteredReviewers.value = reviewers;
+}
+
+async function changeReviwerActiveState(reviewer: Reviewer, isActive: boolean) {
   // FIXME: Make server accept partial reviewer object without defining memberProfileId
-  await update(reviewer.id, { memberProfileId: reviewer.memberProfile.id, isActive: false });
+  await update(reviewer.id, { memberProfileId: reviewer.memberProfile.id, isActive });
   await retrieveReviewers();
 }
+
+const programmingLanguages = computed(() => {
+  const languages = new Set<string>();
+  for (const reviewer of allReviewers.value) {
+    for (const language of reviewer.programmingLanguages) {
+      languages.add(language);
+    }
+  }
+  return Array.from(languages);
+});
 </script>

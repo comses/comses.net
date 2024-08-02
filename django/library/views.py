@@ -197,7 +197,7 @@ class PeerReviewerFilter(filters.BaseFilterBackend):
 
 
 class PeerReviewerViewSet(CommonViewSetMixin, NoDeleteViewSet):
-    queryset = PeerReviewer.objects.exclude(is_active=False)
+    queryset = PeerReviewer.objects.all()
     serializer_class = PeerReviewerSerializer
     permission_classes = (ChangePeerReviewPermission,)
     filter_backends = (PeerReviewerFilter,)
