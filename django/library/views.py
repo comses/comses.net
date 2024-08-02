@@ -361,6 +361,7 @@ class CodebaseFilter(filters.BaseFilterBackend):
         peer_review_status = query_params.get("peer_review_status")
         # platform = query_params.get("platform")
         programming_languages = query_params.getlist("programming_languages")
+
         tags = query_params.getlist("tags")
 
         # Handle filtering criteria
@@ -393,10 +394,6 @@ class CodebaseFilter(filters.BaseFilterBackend):
             )
 
             filtered_codebase_ids = [c.id for c in codebases]
-
-            logger.debug(
-                f"Setting criteria: filtered_codebase_ids={filtered_codebase_ids}"
-            )
             criteria.update(id__in=filtered_codebase_ids)
 
         return get_search_queryset(qs, queryset, tags=tags, criteria=criteria)
