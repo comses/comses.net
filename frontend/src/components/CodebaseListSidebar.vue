@@ -9,16 +9,30 @@
   >
     <template #form>
       <form @submit.prevent="handleSubmit">
-        <TaggerField
-          class="mb-3 py-2"
-          name="tags"
-          label="Tags"
-          type="Codebase"
-          placeholder="Language, framework, etc."
-        />
+        <div class="mb-3" v-if="selectedFilters.length > 0">
+          <label class="form-label fw-bold"
+            >Selected Filters
+            <a @click="clearAllFilters" class="p-2" aria-label="clear all">Clear all</a>
+          </label>
+          <div class="d-flex flex-wrap gap-2">
+            <span
+              v-for="filter in selectedFilters"
+              :key="filter.key"
+              class="badge bg-light text-dark text-wrap d-flex align-items-center"
+            >
+              {{ filter.label }}
+              <button
+                @click="removeFilter(filter.key)"
+                class="btn-close ms-2"
+                aria-label="Close"
+              ></button>
+            </span>
+          </div>
+          <hr class="hr" />
+        </div>
 
         <div class="mb-3">
-          <label class="form-label fw-bold py-2">Peer Review Status</label>
+          <label class="form-label fw-bold">Peer Review Status</label>
           <div v-for="option in peerReviewOptions" :key="option.value" class="form-check">
             <input
               class="form-check-input"
@@ -35,7 +49,7 @@
         </div>
 
         <div class="mb-3">
-          <label v-if="parsedLanguageFacets.length > 0" class="form-label fw-bold py-2">
+          <label v-if="parsedLanguageFacets.length > 0" class="form-label fw-bold">
             Programming Languages
           </label>
           <div class="row">
@@ -58,29 +72,17 @@
         </div>
 
         <div class="row mb-4 fw-bold">
-          <DatepickerField name="startDate" label="Published After" />
-        </div>
-        <div class="row mb-4 fw-bold">
-          <DatepickerField name="endDate" label="Published Before" />
+          <DatepickerField name="startDate" label="Published After" class="col-12 col-md-6" />
+          <DatepickerField name="endDate" label="Published Before" class="col-12 col-md-6" />
         </div>
 
-        <div class="mb-3" v-if="selectedFilters.length > 0">
-          <label class="form-label fw-bold py-2">Selected Filters</label>
-          <div class="d-flex flex-wrap gap-2">
-            <span
-              v-for="filter in selectedFilters"
-              :key="filter.key"
-              class="badge bg-light text-dark text-wrap d-flex align-items-center"
-            >
-              {{ filter.label }}
-              <button
-                @click="removeFilter(filter.key)"
-                class="btn-close ms-2"
-                aria-label="Close"
-              ></button>
-            </span>
-          </div>
-        </div>
+        <TaggerField
+          class="mb-3"
+          name="tags"
+          label="Tags"
+          type="Codebase"
+          placeholder="Language, framework, etc."
+        />
       </form>
     </template>
   </ListSidebar>
@@ -88,23 +90,35 @@
 
 <script setup lang="ts">
 import * as yup from "yup";
-import { computed, ref, watch } from "vue";
+import { onMounted, computed, ref, watch } from "vue";
 import { defineProps } from "vue";
 import ListSidebar from "@/components/ListSidebar.vue";
 import DatepickerField from "@/components/form/DatepickerField.vue";
 import TaggerField from "@/components/form/TaggerField.vue";
 import { useForm } from "@/composables/form";
 import { useCodebaseAPI } from "@/composables/api";
-import type { LanguageFacet } from "@/apps/codebase_list";
 
-const props = defineProps<{ languageFacets: LanguageFacet[] }>();
+const props = defineProps<{
+  languageFacets?: Record<string, number>;
+}>();
 
-// Create a local copy of the prop data to avoid mutating the prop
-const localLanguageFacets = [...props.languageFacets];
+// Define a variable to store the parsed language facets
+let parsedLanguageFacets: { value: string; label: string }[] = [];
 
-const parsedLanguageFacets = localLanguageFacets
-  .sort((a, b) => b.value - a.value) // Sort by value in descending order
-  .map(({ name, value }) => ({ value: name, label: `${name} (${value})` }));
+onMounted(() => {
+  if (props.languageFacets) {
+    const localLanguageFacets = { ...props.languageFacets };
+
+    parsedLanguageFacets = Object.entries(localLanguageFacets)
+      .sort(([, valueA], [, valueB]) => valueB - valueA) // Sort by value in descending order
+      .map(([name, value]) => ({ value: name, label: `${name} (${value})` }));
+  } else {
+    console.warn("languageFacets is undefined");
+  }
+
+  initializeFilters();
+  watch([() => values.startDate, () => values.endDate, () => values.tags], updateFilters);
+});
 
 const peerReviewOptions = [
   { value: "reviewed", label: "Reviewed" },
@@ -213,28 +227,27 @@ const query = computed(() => {
 
   return searchUrl({
     query: searchQuery,
-    published_after: values.startDate?.toISOString(),
-    published_before: values.endDate?.toISOString(),
+    publishedAfter: values.startDate?.toISOString(),
+    publishedBefore: values.endDate?.toISOString(),
     tags: values.tags?.map(tag => tag.name),
-    peer_review_status: values.peerReviewStatus,
-    programming_languages: values.programmingLanguages,
+    peerReviewStatus: values.peerReviewStatus,
+    programmingLanguages: values.programmingLanguages,
     ordering: values.ordering,
   });
 });
 
 const initializeFilters = () => {
   const urlParams = new URLSearchParams(window.location.search);
-
-  values.peerReviewStatus = urlParams.get("peer_review_status") || "";
-  values.programmingLanguages = urlParams.getAll("programming_languages") || [];
+  values.peerReviewStatus = urlParams.get("peerReviewStatus") || "";
+  values.programmingLanguages = urlParams.getAll("programmingLanguages") || [];
   values.tags = urlParams.getAll("tags").map(tag => ({ name: tag })) || [];
-  values.startDate = urlParams.get("published_after")
-    ? new Date(urlParams.get("published_after")!)
+  values.startDate = urlParams.get("publishedAfter")
+    ? new Date(urlParams.get("publishedAfter")!)
     : null;
-  values.endDate = urlParams.get("published_before")
-    ? new Date(urlParams.get("published_before")!)
+  values.endDate = urlParams.get("publishedBefore")
+    ? new Date(urlParams.get("publishedBefore")!)
     : null;
-  values.ordering = urlParams.get("ordering") || "";
+  values.ordering = urlParams.get("ordering") || "-first_published_at";
 
   updateFilters();
 };
@@ -245,16 +258,12 @@ const clearAllFilters = () => {
   values.tags = [];
   values.startDate = null;
   values.endDate = null;
-  values.ordering = "";
+  values.ordering = "-first_published_at";
 
   updateFilters();
 
   window.location.href = query.value;
 };
-
-watch([() => values.startDate, () => values.endDate, () => values.tags], updateFilters);
-
-initializeFilters();
 
 defineExpose({ clearAllFilters });
 </script>

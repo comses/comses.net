@@ -1,6 +1,4 @@
 from allauth.socialaccount.adapter import get_adapter
-import urllib
-from datetime import datetime
 from django.conf import settings
 from django.contrib.sites.models import Site
 from django.contrib import messages
@@ -21,7 +19,8 @@ from hcaptcha_field import hCaptchaField
 import re
 import json
 import logging
-
+from datetime import datetime
+from urllib.parse import parse_qsl
 
 from core.fields import render_sanitized_markdown
 from core.serializers import FULL_DATE_FORMAT, FULL_DATETIME_FORMAT
@@ -67,7 +66,8 @@ def environment(**options):
             "build_absolute_uri": build_absolute_uri,
             "cookielaw": cookielaw,
             "now": now,
-            "url_decode": url_decode,
+            "convert_keys_to_camel_case": convert_keys_to_camel_case,
+            "generate_hidden_inputs": generate_hidden_inputs,
             "should_enable_discourse": should_enable_discourse,
             "is_production": is_production,
             "provider_login_url": provider_login_url,
@@ -115,8 +115,24 @@ def now(format_string):
     return defaultfilters.date(datetime.now(tz=tzinfo), format_string)
 
 
-def url_decode(value):
-    return urllib.parse.unquote(value)
+def to_camel_case(snake_str):
+    components = snake_str.split("_")
+    return components[0] + "".join(x.title() for x in components[1:])
+
+
+def convert_keys_to_camel_case(d: list):
+    return [(to_camel_case(k), v) for k, v in d]
+
+
+def generate_hidden_inputs(query_params):
+    hidden_inputs = []
+    if query_params:
+        # parse_qsl handles splitting and unquoting key-value pairs
+        parsed_params = parse_qsl(query_params)
+        for key, value in convert_keys_to_camel_case(parsed_params):
+            if key != "query":
+                hidden_inputs.append((key, value))
+    return hidden_inputs
 
 
 def should_enable_discourse(is_public: bool):

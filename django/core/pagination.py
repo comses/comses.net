@@ -4,8 +4,19 @@ from dateutil import parser
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 from django.conf import settings
+from collections import defaultdict
 
 logger = logging.getLogger(__name__)
+
+
+SORT_BY_FILTERS = defaultdict(
+    lambda: "Sort by: Relevance",
+    {
+        "-first_published_at": "Sort by: Publish date: newest",
+        "first_published_at": "Sort by: Publish date: oldest",
+        "-last_modified": "Sort by: Recently Modified",
+    },
+)
 
 
 class SmallResultSetPagination(PageNumberPagination):
@@ -22,26 +33,19 @@ class SmallResultSetPagination(PageNumberPagination):
         filters = []
         for key, values in query_params.lists():
             if key == "query":
-                continue
+                pass
             elif key == "ordering":
-                for v in values:
-                    if v == "":
-                        filters.append("Sort by: Relevance")
-                    elif v == "-first_published_at":
-                        filters.append("Sort by: Publish date: newest")
-                    elif v == "first_published_at":
-                        filters.append("Sort by: Publish date: oldest")
-                    elif v == "-last_modified":
-                        filters.append("Sort by: Recently Modified")
+                filters.extend(SORT_BY_FILTERS[v] for v in values)
             elif key == "tags":
                 filters.extend(tag for tag in values)
-            else:
+            elif key in ["published_before", "published_after"]:
                 try:
                     date = parser.isoparse(values[0]).date()
                     filters.append(f"{key.replace('_', ' ')} {date.isoformat()}")
                 except ValueError:
                     filters.extend(v.replace("_", " ") for v in values)
-
+            else:
+                filters.extend(v.replace("_", " ") for v in values)
         return filters
 
     @classmethod
@@ -56,9 +60,9 @@ class SmallResultSetPagination(PageNumberPagination):
                 .get("max_result_window", cls.max_result_window)
             )
 
-            logger.info(f"max_result_window from settings: {max_result_window} ")
+            logger.info("max_result_window from settings: %s", max_result_window)
         except Exception as e:
-            logger.info("max_result_window not set for Elasticsearch: %s", e)
+            logger.warning("max_result_window not set for Elasticsearch:", exc_info=e)
 
         # limit the result count to max_result_window
         limited_count = min(count, max_result_window)
@@ -86,7 +90,7 @@ class SmallResultSetPagination(PageNumberPagination):
         Args:
             query: request query
             data: results from Elasticsearch
-            current_page_number: request parameter
+            page: requested page
             count: total number of results
             query_params: query dictionary
             size (optional): number of results per page (default=cls.page_size)

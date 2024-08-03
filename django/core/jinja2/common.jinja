@@ -187,21 +187,17 @@
 <form class="mb-3" action="{{ search_url }}" method="get">
     <label class="sr-only" for="search-query">Search</label>
     <div class="input-group">
-        <input id="search-query" data-cy="search-bar" class="form-control" name="query" type="search" value="{{ current_query }}"
-            placeholder="{{ placeholder }}">
+        <input id="search-query" data-cy="search-bar" class="form-control" name="query" type="search" value="{{ current_query }}" placeholder="{{ placeholder }}">
+        {% if query_params %}
+            {% for key, value in generate_hidden_inputs(query_params) %}
+                <input type="hidden" name="{{ key }}" value="{{ value }}">
+            {% endfor %}
+        {% endif %}
         <button type="submit" data-cy="search-button" class="btn btn-primary">
             <i class="fas fa-search px-1"></i>
         </button>
     </div>
-    {% if query_params %}
-        {% set params = query_params.split('&') %}
-        {% for param in params %}
-            {% set key_value = param.split('=') %}
-            {% if key_value|length == 2 and key_value[0] != 'query' %}
-                <input type="hidden" name="{{ url_decode(key_value[0]) }}" value="{{ url_decode(key_value[1]) }}">
-            {% endif %}
-        {% endfor %}
-    {% endif %}
+   
 </form>
 {% endmacro %}
 
