@@ -87,23 +87,35 @@
 
 <script setup lang="ts">
 import * as yup from "yup";
-import { computed, ref, watch } from "vue";
+import { onMounted, computed, ref, watch } from "vue";
 import { defineProps } from "vue";
 import ListSidebar from "@/components/ListSidebar.vue";
 import DatepickerField from "@/components/form/DatepickerField.vue";
 import TaggerField from "@/components/form/TaggerField.vue";
 import { useForm } from "@/composables/form";
 import { useCodebaseAPI } from "@/composables/api";
-import type { LanguageFacet } from "@/apps/codebase_list";
 
-const props = defineProps<{ languageFacets: LanguageFacet[] }>();
+const props = defineProps<{
+  languageFacets?: Record<string, number>;
+}>();
 
-// Create a local copy of the prop data to avoid mutating the prop
-const localLanguageFacets = [...props.languageFacets];
+// Define a variable to store the parsed language facets
+let parsedLanguageFacets: { value: string; label: string }[] = [];
 
-const parsedLanguageFacets = localLanguageFacets
-  .sort((a, b) => b.value - a.value) // Sort by value in descending order
-  .map(({ name, value }) => ({ value: name, label: `${name} (${value})` }));
+onMounted(() => {
+  if (props.languageFacets) {
+    const localLanguageFacets = { ...props.languageFacets };
+
+    parsedLanguageFacets = Object.entries(localLanguageFacets)
+      .sort(([, valueA], [, valueB]) => valueB - valueA) // Sort by value in descending order
+      .map(([name, value]) => ({ value: name, label: `${name} (${value})` }));
+
+    watch([() => values.startDate, () => values.endDate, () => values.tags], updateFilters);
+    initializeFilters();
+  } else {
+    console.warn("languageFacets is undefined");
+  }
+});
 
 const peerReviewOptions = [
   { value: "reviewed", label: "Reviewed" },
@@ -250,10 +262,6 @@ const clearAllFilters = () => {
 
   window.location.href = query.value;
 };
-
-watch([() => values.startDate, () => values.endDate, () => values.tags], updateFilters);
-
-initializeFilters();
 
 defineExpose({ clearAllFilters });
 </script>

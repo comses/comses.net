@@ -41,16 +41,9 @@
 {% endblock %}
 
 {% block sidebar %}
-<div id="sidebar"></div>
+<div id="sidebar" {% if language_facets %} data-language-facets="{{ language_facets }}" {% endif %} />
 {% endblock %}
 
 {% block js %}
-<script nonce="{{ request.csp_nonce }}" >
-    {% if language_facets %}
-        window.language_facets = {{ language_facets|tojson| safe }};    
-    {% else %}
-        window.language_facets = [];    
-    {% endif %}    
-</script>
 {{ vite_asset('apps/codebase_list.ts') }}
 {% endblock %}
