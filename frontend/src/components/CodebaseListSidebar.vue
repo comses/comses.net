@@ -94,7 +94,7 @@ import DatepickerField from "@/components/form/DatepickerField.vue";
 import TaggerField from "@/components/form/TaggerField.vue";
 import { useForm } from "@/composables/form";
 import { useCodebaseAPI } from "@/composables/api";
-import type {LanguageFacet} from "@/apps/codebase_list";
+import type { LanguageFacet } from "@/apps/codebase_list";
 
 const props = defineProps<{ languageFacets: LanguageFacet[] }>();
 
@@ -117,9 +117,7 @@ const schema = yup.object({
     })
   ),
   peerReviewStatus: yup.string(),
-  programmingLanguages: yup.array().of(
-      yup.string().required()
-  ),
+  programmingLanguages: yup.array().of(yup.string().required()),
   ordering: yup.string(),
 });
 
@@ -162,7 +160,9 @@ const updateFilters = () => {
     ...(values.programmingLanguages && values.programmingLanguages.length > 0
       ? values.programmingLanguages.map(lang => ({
           key: `lang_${lang}`,
-          label: `Language: ${parsedLanguageFacets.find(l => l.value === lang)?.value || `${lang}`}`,
+          label: `Language: ${
+            parsedLanguageFacets.find(l => l.value === lang)?.value || `${lang}`
+          }`,
         }))
       : []),
 
@@ -190,16 +190,15 @@ const removeFilter = (key: string) => {
   if (key.startsWith("peerReview_")) {
     values.peerReviewStatus = "";
   } else if (key.startsWith("lang_")) {
-    values.programmingLanguages = values.programmingLanguages?.filter(
-      lang => `lang_${lang}` !== key
-    )  || [];
+    values.programmingLanguages =
+      values.programmingLanguages?.filter(lang => `lang_${lang}` !== key) || [];
   } else if (key === "startDate") {
     values.startDate = null;
   } else if (key === "endDate") {
     values.endDate = null;
   } else if (key.startsWith("tag_")) {
     const tagName = key.slice(4); // Remove 'tag_' prefix
-    values.tags = values.tags?.filter(tag => tag.name !== tagName)  || [];
+    values.tags = values.tags?.filter(tag => tag.name !== tagName) || [];
   }
   updateFilters();
 };
@@ -207,7 +206,7 @@ const removeFilter = (key: string) => {
 const query = computed(() => {
   const url = new URLSearchParams(window.location.search);
   const searchQuery = url.get("query") ?? "";
-  
+
   return searchUrl({
     query: searchQuery,
     published_after: values.startDate?.toISOString(),
@@ -223,8 +222,8 @@ const initializeFilters = () => {
   const urlParams = new URLSearchParams(window.location.search);
 
   values.peerReviewStatus = urlParams.get("peer_review_status") || "";
-  values.programmingLanguages = urlParams.getAll("programming_languages")  || [];
-  values.tags = urlParams.getAll("tags").map(tag => ({ name: tag }))  || [];
+  values.programmingLanguages = urlParams.getAll("programming_languages") || [];
+  values.tags = urlParams.getAll("tags").map(tag => ({ name: tag })) || [];
   values.startDate = urlParams.get("published_after")
     ? new Date(urlParams.get("published_after")!)
     : null;
