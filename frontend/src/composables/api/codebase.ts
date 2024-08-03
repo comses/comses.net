@@ -3,11 +3,12 @@ import { useAxios, type RequestOptions } from "@/composables/api";
 
 interface CodebaseQueryParams {
   query?: string;
-  publishedAfter?: string;
-  publishedBefore?: string;
+  published_after?: string;
+  published_before?: string;
   tags?: string[];
-  peerReviewStatus?: string;
-  programmingLanguage?: string[];
+  peer_review_status?: string;
+  programming_languages?: string[];
+  ordering?: string;
 }
 
 export function useCodebaseAPI() {

@@ -34,11 +34,11 @@
         </div>
 
         <div class="mb-3">
-          <label v-if="programmingLanguages.length > 0" class="form-label fw-bold py-2">
+          <label v-if="parsedLanguageFacets.length > 0" class="form-label fw-bold py-2">
             Programming Languages
           </label>
           <div class="row">
-            <div v-for="lang in programmingLanguages" :key="lang.value" class="col-12 col-md-12">
+            <div v-for="lang in parsedLanguageFacets" :key="lang.value" class="col-12 col-md-12">
               <div class="form-check">
                 <input
                   class="form-check-input"
@@ -94,15 +94,13 @@ import DatepickerField from "@/components/form/DatepickerField.vue";
 import TaggerField from "@/components/form/TaggerField.vue";
 import { useForm } from "@/composables/form";
 import { useCodebaseAPI } from "@/composables/api";
+import type {LanguageFacet} from "@/apps/codebase_list";
 
-// Define the props
-const props = defineProps<{
-  programmingLanguages: Record<string, number>;
-}>();
+const props = defineProps<{ parsedLanguageFacets: LanguageFacet[] }>();
 
-const programmingLanguages = Object.entries(props.programmingLanguages)
-  .sort(([, countA], [, countB]) => countB - countA) // Sort by count in descending order
-  .map(([lang, count]) => ({ value: lang, label: `${lang} (${count})` }));
+const parsedLanguageFacets = props.parsedLanguageFacets
+  .sort((a, b) => b.value - a.value) // Sort by count in descending order
+  .map(facet => ({ value: facet.name, label: `${facet.name} (${facet.value})` }));
 
 const peerReviewOptions = [
   { value: "reviewed", label: "Reviewed" },
@@ -119,7 +117,9 @@ const schema = yup.object({
     })
   ),
   peerReviewStatus: yup.string(),
-  programmingLanguages: yup.array().of(yup.string()),
+  programmingLanguages: yup.array().of(
+      yup.string().required()
+  ),
   ordering: yup.string(),
 });
 
@@ -159,10 +159,10 @@ const updateFilters = () => {
       : []),
 
     // Programming Languages
-    ...(values.programmingLanguages.length > 0
+    ...(values.programmingLanguages && values.programmingLanguages.length > 0
       ? values.programmingLanguages.map(lang => ({
           key: `lang_${lang}`,
-          label: `Language: ${programmingLanguages.find(l => l.value === lang)?.label || lang}`,
+          label: `Language: ${parsedLanguageFacets.find(l => l.value === lang)?.value || `${lang}`}`,
         }))
       : []),
 
@@ -177,7 +177,7 @@ const updateFilters = () => {
       : []),
 
     // Tags
-    ...(values.tags.length > 0
+    ...(values.tags && values.tags.length > 0
       ? values.tags.map(tag => ({
           key: `tag_${tag.name}`,
           label: `Tag: ${tag.name}`,
@@ -190,16 +190,16 @@ const removeFilter = (key: string) => {
   if (key.startsWith("peerReview_")) {
     values.peerReviewStatus = "";
   } else if (key.startsWith("lang_")) {
-    values.programmingLanguages = values.programmingLanguages.filter(
+    values.programmingLanguages = values.programmingLanguages?.filter(
       lang => `lang_${lang}` !== key
-    );
+    )  || [];
   } else if (key === "startDate") {
     values.startDate = null;
   } else if (key === "endDate") {
     values.endDate = null;
   } else if (key.startsWith("tag_")) {
     const tagName = key.slice(4); // Remove 'tag_' prefix
-    values.tags = values.tags.filter(tag => tag.name !== tagName);
+    values.tags = values.tags?.filter(tag => tag.name !== tagName)  || [];
   }
   updateFilters();
 };
@@ -207,12 +207,12 @@ const removeFilter = (key: string) => {
 const query = computed(() => {
   const url = new URLSearchParams(window.location.search);
   const searchQuery = url.get("query") ?? "";
-
+  
   return searchUrl({
     query: searchQuery,
     published_after: values.startDate?.toISOString(),
     published_before: values.endDate?.toISOString(),
-    tags: values.tags.map(tag => tag.name),
+    tags: values.tags?.map(tag => tag.name),
     peer_review_status: values.peerReviewStatus,
     programming_languages: values.programmingLanguages,
     ordering: values.ordering,
@@ -223,8 +223,8 @@ const initializeFilters = () => {
   const urlParams = new URLSearchParams(window.location.search);
 
   values.peerReviewStatus = urlParams.get("peer_review_status") || "";
-  values.programmingLanguages = urlParams.getAll("programming_languages");
-  values.tags = urlParams.getAll("tags").map(tag => ({ name: tag }));
+  values.programmingLanguages = urlParams.getAll("programming_languages")  || [];
+  values.tags = urlParams.getAll("tags").map(tag => ({ name: tag }))  || [];
   values.startDate = urlParams.get("published_after")
     ? new Date(urlParams.get("published_after")!)
     : null;
