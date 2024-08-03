@@ -20,7 +20,6 @@ describe("Visit codebases page", () => {
   it("should  be able to download a codebase", () => {
     cy.visit("/codebases");
     cy.get(".search-result").first().find("a").first().click();
-    cy.get("#djHideToolBarButton").click();
     cy.get('button.btn.btn-primary.my-1.w-100[rel="nofollow"]').click();
     cy.get("#form-field-industry").select("College/University");
     cy.get("#form-field-affiliation").type("Arizona State University{enter}", {
@@ -30,13 +29,13 @@ describe("Visit codebases page", () => {
     cy.get(
       'button[type="submit"][form="download-request-form"].btn.btn-success'
     ).click();
+    cy.wait(1000)
   });
 
   it("should be able to upload a codebase", () => {
     loginBeforeEach("test_user", "123456");
     cy.visit("/codebases");
     assert(cy.get("h1").contains("Computational Model Library"));
-    cy.get("#djHideToolBarButton").click();
     cy.contains("Publish a model").click();
     cy.get('[data-cy="codebase title"]').type("Codebase Title");
     cy.get('[data-cy="codebase description"]').type("Codebase Description");
@@ -64,8 +63,9 @@ describe("Visit codebases page", () => {
       .and("not.be.disabled")
       .first()
       .click({ force: true });
+    cy.wait(1000)
     cy.get("body").click(0, 0);
-    cy.get("body").click(0, 0); //FIX: find a more precise way of closing the image upload modal
+    cy.get("body").click(0, 0);
 
     //add source code files
     cy.get('[data-cy="upload-code"]')
@@ -106,6 +106,7 @@ describe("Visit codebases page", () => {
     cy.get('[data-cy="save-and-continue"]').click();
     cy.get('button.btn.btn-danger[rel="nofollow"]').click();
     cy.get('button[type="submit"].btn.btn-danger[form="publish-form"]').click();
+    cy.wait(2000);
   });
 
   it("should verify that the codebase was uploaded correctly", () => {

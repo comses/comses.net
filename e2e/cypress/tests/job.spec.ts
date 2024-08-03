@@ -12,7 +12,6 @@ describe("Visit jobs page", () => {
     it("should be able to submit a job posting", () => {
       loginBeforeEach("test_user", "123456");
       cy.visit("/jobs");
-      cy.get("#djHideToolBarButton").click();
       cy.get(".text-white").first().click({ force: true });
       cy.get('[data-cy="job title"]').type("Job Title");
       cy.get('[data-cy="job description"]').type("Job Description");
@@ -21,11 +20,11 @@ describe("Visit jobs page", () => {
       cy.get('[data-cy="application deadline"]').first().click();
       cy.get('[data-cy="application deadline"]').contains("29").click();
       cy.get('[data-cy="create button"]').click();
+      cy.wait(2000)
     });
   
     it("should be able to verify job was submitted correctly", () => {
       cy.visit("/jobs");
-      cy.get("#djHideToolBarButton").click();
       assert(cy.get("h1").contains("Jobs & Appointments"));
       cy.get(".card-body").first().find("a").first().click();
       assert(cy.get("h1").contains("Job Title"));

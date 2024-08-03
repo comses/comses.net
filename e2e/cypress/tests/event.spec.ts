@@ -9,7 +9,7 @@ describe("Visit events page", () => {
       cy.visit("/events");
       assert(cy.get("h1").contains("Community Events"));
       cy.get(".card-body").first().find("a").first().click();
-      assert(cy.get("h1").contains("Title"));
+      assert(cy.get("h1").contains("25th International Congress on Environmental Modelling and Software"));
     });
   
     it("should be able to search for a specific event", () => {
@@ -23,7 +23,6 @@ describe("Visit events page", () => {
     it("should be able to submit an event", () => {
       loginBeforeEach("test_user", "123456");
       cy.visit("/events");
-      cy.get("#djHideToolBarButton").click();
       cy.get(".text-white").first().click({ force: true });
       cy.get('[data-cy="event title"]').type("Title");
       cy.get('[data-cy="event location"]').type("Location");
@@ -41,11 +40,11 @@ describe("Visit events page", () => {
       cy.get('[data-cy="summary"]').type("Summary");
       cy.get('[data-cy="external url"]').type("https://www.comses.net/");
       cy.get('[data-cy="create button"]').click();
+      cy.wait(2000);
     });
   
     it("should be able to verify event was submitted correctly", () => {
       cy.visit("/events");
-      cy.get("#djHideToolBarButton").click();
       assert(cy.get("h1").contains("Community Events"));
       cy.get(".card-body").first().find("a").first().click();
       assert(cy.get("h1").contains("Title"));

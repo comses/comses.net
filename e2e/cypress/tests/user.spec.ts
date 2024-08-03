@@ -6,7 +6,6 @@ describe("User tests", () => {
     it("should visit the users page", () => {
         loginBeforeEach("admin_user", "123456");
         cy.visit("/users");
-        cy.get("#djHideToolBarButton").click();
         cy.contains('div', 'My profile').click();
         cy.contains('a', 'Edit Profile').click();
         cy.get('#form-field-givenName').clear()
