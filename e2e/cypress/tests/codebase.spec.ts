@@ -19,7 +19,7 @@ describe("Visit codebases page", () => {
 
   it("should  be able to download a codebase", () => {
     cy.visit("/codebases");
-    cy.get(".search-result").first().find("a").first().click();
+    cy.get('[data-cy="codebase-search-result"]').first().find("a").first().click();
     cy.get('button.btn.btn-primary.my-1.w-100[rel="nofollow"]').click();
     cy.get("#form-field-industry").select("College/University");
     cy.get("#form-field-affiliation").type("Arizona State University{enter}", {
@@ -70,7 +70,7 @@ describe("Visit codebases page", () => {
     //add source code files
     cy.get('[data-cy="upload-code"]')
       .first()
-      .selectFile("cypress/fixtures/codebase/testSourceCode.txt", {
+      .selectFile("cypress/fixtures/codebase/testCodebase.zip", {
         force: true,
       });
     cy.get('[data-cy="upload-docs"]')
@@ -111,12 +111,12 @@ describe("Visit codebases page", () => {
 
   it("should verify that the codebase was uploaded correctly", () => {
     cy.visit("/codebases");
-    cy.get(".search-result").first().find("a").first().click();
-    assert(cy.get("h1").contains("Codebase Title"));
-    assert(cy.get("p").contains("Codebase Description"));
-    assert(cy.get("p").contains("Codebase Replication Text"));
-    assert(cy.get("p").contains("Codebase Associated Publications"));
-    assert(cy.get("p").contains("Codebase References"));
+    cy.get('[data-cy="codebase-search-result"]').first().find("a").first().click();
+    cy.contains("Codebase Title").should('exist');
+    cy.contains("Codebase Description").should('exist');
+    cy.contains("Codebase Replication Text").should('exist');
+    cy.contains("Codebase Associated Publications").should('exist');
+    cy.contains("Codebase References").should('exist');
 
   })
 });

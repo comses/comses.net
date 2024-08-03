@@ -13,7 +13,8 @@ describe("User tests", () => {
         cy.get('#form-field-familyName').clear()
         cy.get('[data-cy="last name"]').type("New last name");
         cy.get('[data-cy="submit"]').click();
-        assert(cy.get("h4").contains("New first name New last name"));
+        cy.contains("New first name New last name").should('exist');
         
     });
   });
+
