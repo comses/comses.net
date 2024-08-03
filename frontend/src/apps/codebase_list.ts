@@ -22,12 +22,12 @@ export interface LanguageFacet {
 }
 
 // Parse language facets from the global window object
-let parsedLanguageFacets: LanguageFacet[] = [];
+let languageFacets: LanguageFacet[] = [];
 
 if (window.language_facets !== undefined) {
   try {
-    const languageFacets: LanguageFacets = JSON.parse(window.language_facets);
-    parsedLanguageFacets = Object.entries(languageFacets).map(([name, value]) => ({
+    const parsedLanguageFacets: LanguageFacets = JSON.parse(window.language_facets);
+    languageFacets = Object.entries(parsedLanguageFacets).map(([name, value]) => ({
       name,
       value,
     }));
@@ -37,7 +37,7 @@ if (window.language_facets !== undefined) {
 }
 
 // Initialize the Vue app with the parsed data
-createApp(CodebaseListSidebar, { parsedLanguageFacets }).mount("#sidebar");
+createApp(CodebaseListSidebar, { languageFacets }).mount("#sidebar");
 
 createApp(SortBy, {
   sortOptions: [

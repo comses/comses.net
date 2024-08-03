@@ -96,9 +96,9 @@ import { useForm } from "@/composables/form";
 import { useCodebaseAPI } from "@/composables/api";
 import type {LanguageFacet} from "@/apps/codebase_list";
 
-const props = defineProps<{ parsedLanguageFacets: LanguageFacet[] }>();
+const props = defineProps<{ languageFacets: LanguageFacet[] }>();
 
-const parsedLanguageFacets = props.parsedLanguageFacets
+const parsedLanguageFacets = props.languageFacets
   .sort((a, b) => b.value - a.value) // Sort by count in descending order
   .map(facet => ({ value: facet.name, label: `${facet.name} (${facet.value})` }));
 
