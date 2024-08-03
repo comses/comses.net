@@ -98,9 +98,12 @@ import type { LanguageFacet } from "@/apps/codebase_list";
 
 const props = defineProps<{ languageFacets: LanguageFacet[] }>();
 
-const parsedLanguageFacets = props.languageFacets
-  .sort((a, b) => b.value - a.value) // Sort by count in descending order
-  .map(facet => ({ value: facet.name, label: `${facet.name} (${facet.value})` }));
+// Create a local copy of the prop data to avoid mutating the prop
+const localLanguageFacets = [...props.languageFacets];
+
+const parsedLanguageFacets = localLanguageFacets
+  .sort((a, b) => b.value - a.value) // Sort by value in descending order
+  .map(({ name, value }) => ({ value: name, label: `${name} (${value})` }));
 
 const peerReviewOptions = [
   { value: "reviewed", label: "Reviewed" },
