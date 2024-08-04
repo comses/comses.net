@@ -1,0 +1,49 @@
+{
+    "codebases": [
+      {
+        "title": "Codebase Title",
+        "description": "Codebase Description",
+        "replication-text": "Codebase Replication Text",
+        "associated-publications": "Codebase Associated Publications",
+        "references": "Codebase References"
+      }
+    ],
+    "users": [
+      {
+        "username": "test_user",
+        "password": "123456"
+      },
+      {
+        "username": "admin_user",
+        "password": "123456"
+      },
+      {
+        "first-name": "New first name",
+        "last-name": "New last name"
+      }
+    ],
+    "events": [
+      {
+        "title": "Title",
+        "location": "Location",
+        "start-date": "22",
+        "end-date": "27",
+        "early-registration-deadline": "22",
+        "registration-deadline": "25",
+        "submission-deadline": "22",
+        "description": "Description",
+        "summary": "Summary",
+        "external-url": "https://www.comses.net/"
+      }
+    ],
+    "jobs": [
+      {
+        "title": "Job Title",
+        "description": "Job Description",
+        "summary": "Job Summary",
+        "external-url": "https://www.comses.net/",
+        "application-deadline": "29"
+      }
+    ]
+  }
+  

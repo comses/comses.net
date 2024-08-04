@@ -9,26 +9,35 @@ describe("Visit jobs page", () => {
       assert(cy.get("h1").contains("Jobs & Appointments"));
     });
   
-    it("should be able to submit a job posting", () => {
-      loginBeforeEach("test_user", "123456");
-      cy.visit("/jobs");
-      cy.get(".text-white").first().click({ force: true });
-      cy.get('[data-cy="job title"]').type("Job Title");
-      cy.get('[data-cy="job description"]').type("Job Description");
-      cy.get('[data-cy="job summary"]').type("Job Summary");
-      cy.get('[data-cy="external url"]').type("https://www.comses.net/");
-      cy.get('[data-cy="application deadline"]').first().click();
-      cy.get('[data-cy="application deadline"]').contains("29").click();
-      cy.get('[data-cy="create button"]').click();
-      cy.wait(2000)
+    it("should be able to submit a job posting", function() {
+      cy.fixture('codebase/data.json').then((data) => {
+        const user = data.users[0];
+        const job = data.jobs[0];
+        loginBeforeEach(user.username, user.password);
+        cy.visit("/jobs");
+        cy.get(".text-white").first().click({ force: true });
+        cy.get('[data-cy="job title"]').type(job.title);
+        cy.get('[data-cy="job description"]').type(job.description);
+        cy.get('[data-cy="job summary"]').type(job.summary);
+        cy.get('[data-cy="external url"]').type(job['external-url']);
+        cy.get('[data-cy="application deadline"]').first().click();
+        cy.get('[data-cy="application deadline"]').contains(job['application-deadline']).click();
+        cy.get('[data-cy="create button"]').click();
+        cy.wait(2000);
+      });
     });
   
-    it("should be able to verify job was submitted correctly", () => {
-      cy.visit("/jobs");
-      assert(cy.get("h1").contains("Jobs & Appointments"));
-      cy.get(".card-body").first().find("a").first().click();
-      assert(cy.get("h1").contains("Job Title"));
-      assert(cy.get("p").contains("Job Description"));
+    it("should be able to verify job was submitted correctly", function() {
+      cy.fixture('codebase/data.json').then((data) => {
+        const job = data.jobs[0];
+  
+        cy.visit("/jobs");
+        assert(cy.get("h1").contains("Jobs & Appointments"));
+        cy.get(".card-body").first().find("a").first().click();
+  
+        assert(cy.get("h1").contains(job.title));
+        assert(cy.get("p").contains(job.description));
+      });
     });
   });
   
