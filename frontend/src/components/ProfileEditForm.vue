@@ -83,10 +83,10 @@
 
     <div class="row">
       <div class="col-6">
-        <TextField class="mb-3" name="givenName" label="First Name" required />
+        <TextField class="mb-3" data-cy="first name" name="givenName" label="First Name" required />
       </div>
       <div class="col-6">
-        <TextField class="mb-3" name="familyName" label="Last Name" required />
+        <TextField class="mb-3" data-cy="last name" name="familyName" label="Last Name" required />
       </div>
     </div>
     <TextField
@@ -143,7 +143,9 @@
     />
     <TaggerField class="mb-3" name="tags" label="Keywords" type="Profile" />
     <FormAlert :validation-errors="Object.values(errors)" :server-errors="serverErrors" />
-    <button type="submit" class="btn btn-primary mb-3" :disabled="isLoading">Save</button>
+    <button type="submit" data-cy="submit" class="btn btn-primary mb-3" :disabled="isLoading">
+      Save
+    </button>
   </form>
 </template>
 
