@@ -1,4 +1,5 @@
-import { loginBeforeEach } from "./setup.spec";
+import { loginBeforeEach } from "../support/setup";
+import { getDataCy } from "../support/util";
 import "cypress-file-upload";
 
 
@@ -21,7 +22,7 @@ describe("Visit events page", () => {
     });
   
     it("should be able to submit an event", function() {
-      cy.fixture('codebase/data.json').then((data) => {
+      cy.fixture('data.json').then((data) => {
         const user = data.users[0];
         const event = data.events[0];
   
@@ -29,28 +30,28 @@ describe("Visit events page", () => {
   
         cy.visit("/events");
         cy.get(".text-white").first().click({ force: true });
-        cy.get('[data-cy="event title"]').type(event.title);
-        cy.get('[data-cy="event location"]').type(event.location);
-        cy.get('[data-cy="event start date"]').first().click();
-        cy.get('[data-cy="event start date"]').contains(event['start-date']).click();
-        cy.get('[data-cy="event end date"]').first().click();
-        cy.get('[data-cy="event end date"]').contains(event['end-date']).click();
-        cy.get('[data-cy="early registration deadline"]').first().click();
-        cy.get('[data-cy="early registration deadline"]').contains(event['early-registration-deadline']).click();
-        cy.get('[data-cy="registration deadline"]').first().click();
-        cy.get('[data-cy="registration deadline"]').contains(event['registration-deadline']).click();
-        cy.get('[data-cy="submission deadline"]').first().click();
-        cy.get('[data-cy="submission deadline"]').contains(event['submission-deadline']).click();
-        cy.get('[data-cy="description"]').type(event.description);
-        cy.get('[data-cy="summary"]').type(event.summary);
-        cy.get('[data-cy="external url"]').type(event['external-url']);
-        cy.get('[data-cy="create button"]').click();
+        getDataCy("event title").type(event.title);
+        getDataCy("event location").type(event.location);
+        getDataCy("event start date").first().click();
+        getDataCy("event start date").contains(event['start-date']).click();
+        getDataCy("event end date").first().click();
+        getDataCy("event end date").contains(event['end-date']).click();
+        getDataCy("early registration deadline").first().click();
+        getDataCy("early registration deadline").contains(event['early-registration-deadline']).click();
+        getDataCy("registration deadline").first().click();
+        getDataCy("registration deadline").contains(event['registration-deadline']).click();
+        getDataCy("submission deadline").first().click();
+        getDataCy("submission deadline").contains(event['submission-deadline']).click();
+        getDataCy("description").type(event.description);
+        getDataCy("summary").type(event.summary);
+        getDataCy("external url").type(event['external-url']);
+        getDataCy("create button").click();
         cy.wait(2000);
       });
     });
   
     it("should be able to verify event was submitted correctly", function() {
-      cy.fixture('codebase/data.json').then((data) => {
+      cy.fixture('data.json').then((data) => {
         const event = data.events[0];
   
         cy.visit("/events");

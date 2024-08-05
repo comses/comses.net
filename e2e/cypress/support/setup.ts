@@ -1,3 +1,5 @@
+import { getDataCy } from "./util";
+
 //contains setup function for smoke tests
 export const loginBeforeEach = (username, password) => {
   cy.visit("/accounts/login/?next=/");
