@@ -105,16 +105,17 @@ let parsedLanguageFacets: { value: string; label: string }[] = [];
 onMounted(() => {
   if (props.languageFacets) {
     const localLanguageFacets = { ...props.languageFacets };
-
+    
     parsedLanguageFacets = Object.entries(localLanguageFacets)
       .sort(([, valueA], [, valueB]) => valueB - valueA) // Sort by value in descending order
       .map(([name, value]) => ({ value: name, label: `${name} (${value})` }));
-
-    watch([() => values.startDate, () => values.endDate, () => values.tags], updateFilters);
-    initializeFilters();
   } else {
     console.warn("languageFacets is undefined");
   }
+
+  initializeFilters();
+  watch([() => values.startDate, () => values.endDate, () => values.tags], updateFilters);
+    
 });
 
 const peerReviewOptions = [
@@ -224,26 +225,25 @@ const query = computed(() => {
 
   return searchUrl({
     query: searchQuery,
-    published_after: values.startDate?.toISOString(),
-    published_before: values.endDate?.toISOString(),
+    publishedAfter: values.startDate?.toISOString(),
+    publishedBefore: values.endDate?.toISOString(),
     tags: values.tags?.map(tag => tag.name),
-    peer_review_status: values.peerReviewStatus,
-    programming_languages: values.programmingLanguages,
+    peerReviewStatus: values.peerReviewStatus,
+    programmingLanguages: values.programmingLanguages,
     ordering: values.ordering,
   });
 });
 
 const initializeFilters = () => {
   const urlParams = new URLSearchParams(window.location.search);
-
-  values.peerReviewStatus = urlParams.get("peer_review_status") || "";
-  values.programmingLanguages = urlParams.getAll("programming_languages") || [];
+  values.peerReviewStatus = urlParams.get("peerReviewStatus") || "";
+  values.programmingLanguages = urlParams.getAll("programmingLanguages") || [];
   values.tags = urlParams.getAll("tags").map(tag => ({ name: tag })) || [];
-  values.startDate = urlParams.get("published_after")
-    ? new Date(urlParams.get("published_after")!)
+  values.startDate = urlParams.get("publishedAfter")
+    ? new Date(urlParams.get("publishedAfter")!)
     : null;
-  values.endDate = urlParams.get("published_before")
-    ? new Date(urlParams.get("published_before")!)
+  values.endDate = urlParams.get("publishedBefore")
+    ? new Date(urlParams.get("publishedBefore")!)
     : null;
   values.ordering = urlParams.get("ordering") || "";
 

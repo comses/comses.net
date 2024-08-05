@@ -102,11 +102,11 @@ def get_search_queryset(
     Filter queryset 
     """
     if criteria:
-        logger.debug(f"criteria={criteria}")
+        logger.debug("criteria=%s", criteria)
         try:
             queryset = queryset.filter(**criteria)
         except FieldError as e:
-            logger.warning(f"Invalid filter criteria: {criteria}. Error: {str(e)}")
+            logger.warning("Invalid filter criteria:", exc_info=e)
 
     """
     Order by relevance if the queryset is not ordered
