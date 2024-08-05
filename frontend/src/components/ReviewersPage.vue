@@ -1,7 +1,7 @@
 <template>
   <div class="row">
     <div class="col-sm-12 col-md-9">
-      <div v-for="reviewer of reviewers" :key="reviewer.id" class="card mb-3">
+      <div v-for="reviewer of filteredReviewers" :key="reviewer.id" class="card mb-3">
         <div class="card-header">
           <h5 class="card-title">{{ reviewer.memberProfile.name }}</h5>
         </div>
@@ -37,12 +37,13 @@
     <div class="col-sm-12 col-md-3">
       <ReviewersListSidebar
         @filter="
-          async values => {
-            reviewerFilters = values;
-            await retrieveReviewers();
+          values => {
+            filters = values;
+            applyFilters();
           }
         "
         @add-success="retrieveReviewers"
+        :programming-languages="programmingLanguages"
       />
     </div>
     <BootstrapModal id="edit-modal" title="Edit Reviewer" ref="editModal" size="lg" centered>
@@ -65,15 +66,16 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from "vue";
+import { ref, onMounted, computed } from "vue";
 import { useReviewEditorAPI } from "@/composables/api";
 import BootstrapModal from "@/components/BootstrapModal.vue";
 import ReviewerEditForm from "@/components/ReviewerEditForm.vue";
 import ReviewersListSidebar from "./ReviewersListSidebar.vue";
 import type { Reviewer, ReviewerFilterParams } from "@/types";
 
-const reviewers = ref<Reviewer[]>([]);
-const reviewerFilters = ref<ReviewerFilterParams>({ includeInactive: false });
+const allReviewers = ref<Reviewer[]>([]);
+const filteredReviewers = ref<Reviewer[]>([]);
+const filters = ref<ReviewerFilterParams>({ includeInactive: false });
 const editForm = ref<InstanceType<typeof ReviewerEditForm> | null>(null);
 const editModal = ref<InstanceType<typeof BootstrapModal> | null>(null);
 const editCandidate = ref<Reviewer>();
@@ -86,11 +88,29 @@ onMounted(async () => {
 
 async function retrieveReviewers() {
   const response = await findReviewers({});
-  let results: Reviewer[] = response.data.results;
-  if (!reviewerFilters.value.includeInactive) {
-    results = results.filter(reviewer => reviewer.isActive);
+  allReviewers.value = response.data.results;
+  applyFilters();
+}
+
+function applyFilters() {
+  let reviewers = allReviewers.value;
+  const curFilters = filters.value;
+  if (!curFilters.includeInactive) {
+    reviewers = reviewers.filter(reviewer => reviewer.isActive);
   }
-  reviewers.value = results;
+  if (curFilters.name) {
+    reviewers = reviewers.filter(reviewer =>
+      reviewer.memberProfile.name.toLowerCase().includes(curFilters.name!.toLowerCase())
+    );
+  }
+  if (curFilters.programmingLanguages?.length) {
+    reviewers = reviewers.filter(reviewer =>
+      curFilters.programmingLanguages!.some(language =>
+        reviewer.programmingLanguages.includes(language)
+      )
+    );
+  }
+  filteredReviewers.value = reviewers;
 }
 
 async function changeReviwerActiveState(reviewer: Reviewer, isActive: boolean) {
@@ -98,4 +118,16 @@ async function changeReviwerActiveState(reviewer: Reviewer, isActive: boolean) {
   await update(reviewer.id, { memberProfileId: reviewer.memberProfile.id, isActive });
   await retrieveReviewers();
 }
+
+const programmingLanguages = computed(() => {
+  const languages = new Set<string>();
+  for (const reviewer of allReviewers.value) {
+    console.log(reviewer);
+    for (const language of reviewer.programmingLanguages) {
+      languages.add(language);
+    }
+  }
+  console.log(languages);
+  return Array.from(languages);
+});
 </script>

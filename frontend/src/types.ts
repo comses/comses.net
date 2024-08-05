@@ -287,4 +287,6 @@ export interface UserSearchQueryParams {
 
 export interface ReviewerFilterParams {
   includeInactive?: boolean;
+  name?: string;
+  programmingLanguages?: string[];
 }
