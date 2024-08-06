@@ -370,6 +370,8 @@ class CodebaseReleaseFsApi:
         self.version_number = codebase_release.version_number
         self.release_id = codebase_release.id
         self.codemeta = codebase_release.codemeta
+        self.citation_cff = codebase_release.citation_cff
+        self.license_text = codebase_release.license_text
         self.bagit_info = codebase_release.bagit_info
         self.mimetype_mismatch_message_level = mimetype_mismatch_message_level
 
@@ -413,6 +415,14 @@ class CodebaseReleaseFsApi:
     @property
     def codemeta_path(self):
         return self.sip_contents_dir.joinpath("codemeta.json")
+
+    @property
+    def citation_cff_path(self):
+        return self.sip_contents_dir.joinpath("CITATION.cff")
+
+    @property
+    def license_path(self):
+        return self.sip_contents_dir.joinpath("LICENSE")
 
     @property
     def sip_contents_dir(self):
@@ -516,13 +526,33 @@ class CodebaseReleaseFsApi:
     def create_or_update_codemeta(self, force=False):
         """
         Returns True if a codemeta.json file was created, False otherwise
-        :param metadata: an optional dictionary with codemeta properties
-        :return:
         """
         path = self.codemeta_path
         if force or not path.exists():
             with path.open(mode="w", encoding="utf-8") as codemeta_out:
                 json.dump(self.codemeta.to_dict(), codemeta_out)
+            return True
+        return False
+
+    def create_or_update_citation_cff(self, force=False):
+        """
+        Returns True if a CITATION.cff file was created, False otherwise
+        """
+        path = self.citation_cff_path
+        if force or not path.exists():
+            with path.open(mode="w", encoding="utf-8") as citation_out:
+                citation_out.write(self.citation_cff.build().to_yaml())
+            return True
+        return False
+
+    def create_or_update_license(self, force=False):
+        """
+        Returns True if a LICENSE file was created, False otherwise
+        """
+        path = self.license_path
+        if force or not path.exists():
+            with path.open(mode="w", encoding="utf-8") as license_out:
+                license_out.write(self.license_text)
             return True
         return False
 
@@ -534,12 +564,16 @@ class CodebaseReleaseFsApi:
         FIXME: some of this should be moved to an async processing task.
         """
         self.create_or_update_codemeta(force=force)
+        self.create_or_update_citation_cff(force=force)
+        self.create_or_update_license(force=force)
         bag = self.get_or_create_sip_bag(self.bagit_info)
         self.validate_bagit(bag)
         self.build_archive(force=force)
 
     def build_review_archive(self):
         self.create_or_update_codemeta(force=True)
+        self.create_or_update_citation_cff(force=True)
+        self.create_or_update_license(force=True)
         shutil.make_archive(
             str(self.review_archivepath.with_suffix("")),
             format="zip",
@@ -741,6 +775,8 @@ class CodebaseReleaseFsApi:
     def rebuild(self):
         msgs = self.build_sip()
         self.create_or_update_codemeta(force=True)
+        self.create_or_update_citation_cff(force=True)
+        self.create_or_update_license(force=True)
         self.build_archive(force=True)
         return msgs
 
@@ -826,6 +862,11 @@ class CodebaseGitRepositoryApi:
                     shutil.rmtree(item)
                 else:
                     item.unlink()
+                self.repo.index.remove(
+                    [str(item.relative_to(self.repo_dir))],
+                    working_tree=True,
+                    r=True,
+                )
         # copy over files from the sip storage and add to the index
         for file in sip_storage.list(absolute=True):
             rel_path = file.relative_to(sip_storage.location)
@@ -837,19 +878,20 @@ class CodebaseGitRepositoryApi:
     def add_release_meta_files(self, release):
         """
         helper for adding all 'meta' files (readme, citation, license) for a release
-
-        TODO: missing logic for building citation and license files (should also be included in our normal archives)
+        if they do not already exist
         """
-        # FIXME: README should be codebase metadata, so description + title + image, etc.
-        self._add_meta_file("README.md", release.release_notes.raw)
-        self._add_meta_file("CITATION.cff", "nothing yet")
-        self._add_meta_file("LICENSE", "nothing yet")
+        self._add_meta_file_if_missing("README.md", self.generate_readme())
+        self._add_meta_file_if_missing(
+            "CITATION.cff", release.citation_cff.build().to_yaml()
+        )
+        self._add_meta_file_if_missing("LICENSE", release.license_text)
 
-    def _add_meta_file(self, filename, content):
+    def _add_meta_file_if_missing(self, filename, content):
         dest_path = self.repo_dir / filename
-        with dest_path.open("w") as f:
-            f.write(content + "\n")
-        self.repo.index.add([filename])
+        if not dest_path.exists():
+            with dest_path.open("w") as f:
+                f.write(content + "\n")
+            self.repo.index.add([filename])
 
     def commit_release(self, release, tag=True):
         """
@@ -910,7 +952,9 @@ class CodebaseGitRepositoryApi:
         try:
             releases = self.codebase.ordered_releases_list()
             if not releases:
-                raise ValidationError("Must have at least one public release to build from")
+                raise ValidationError(
+                    "Must have at least one public release to build from"
+                )
             with self.use_temporary_repo():
                 self.initialize()
                 for release in releases:
@@ -948,6 +992,12 @@ class CodebaseGitRepositoryApi:
                 if not self.dirs_equal(dir1 / subdir, dir2 / subdir):
                     return False
             return True
+
+    def generate_readme(self):
+        """
+        create a README.md file for the repository based on the codebase metadata
+        """
+        return f"# {self.codebase.title}\n\n" f"{self.codebase.description.raw}\n"
 
 
 class ArchiveExtractor:

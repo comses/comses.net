@@ -3,6 +3,7 @@ import json
 import logging
 import os
 import pathlib
+from string import Template
 import uuid
 import semver
 import uuid
@@ -126,6 +127,7 @@ class License(models.Model):
         max_length=200, help_text=_("SPDX license code from https://spdx.org/licenses/")
     )
     url = models.URLField(blank=True)
+    text = models.TextField(blank=True, help_text=_("Full license text"))
 
     def __str__(self):
         return f"{self.name} ({self.url})"
@@ -286,6 +288,15 @@ class Contributor(index.Indexed, ClusterableModel):
         else:
             # organizations only use given_name
             return self.given_name
+
+    def get_given_name(self):
+        return self.given_name or (self.user.first_name if self.user else "")
+
+    def get_family_name(self):
+        return self.family_name or (self.user.last_name if self.user else "")
+
+    def get_email(self):
+        return self.email or (self.user.email if self.user else "")
 
     def _get_person_full_name(self, family_name_first=False):
         if not self.has_name:
@@ -1674,6 +1685,22 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
                 "Attempting to generate datacite for an unpublished release: %s", self
             )
         return DataCiteSchema.from_release(self)
+
+    @cached_property
+    def citation_cff(self):
+        from .transformers import ReleaseCitation
+
+        return ReleaseCitation(self)
+
+    @cached_property
+    def license_text(self):
+        template = Template(self.license.text)
+        return template.substitute(
+            {
+                "copyright_year": timezone.now().year,
+                "copyright_name": self.citation_authors,
+            }
+        )
 
     @property
     def is_draft(self):

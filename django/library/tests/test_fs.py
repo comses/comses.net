@@ -121,6 +121,7 @@ class GitRepoApiTestCase(TestCase):
         self.assertTrue(os.path.exists(api.repo_dir))
         # check git stuff
         repo = Repo(api.repo_dir)
+        self.assertFalse(repo.is_dirty())
         self.assertEqual(sum(1 for _ in repo.iter_commits()), public_release_count)
         self.assertEqual(len(repo.tags), public_release_count)
         # check contents
@@ -154,6 +155,7 @@ class GitRepoApiTestCase(TestCase):
         self.assertEqual(self.git_mirror.local_releases.count(), 2)
         # check git stuff
         repo = Repo(api.repo_dir)
+        self.assertFalse(repo.is_dirty())
         public_release_count = self.codebase.public_releases().count()
         self.assertEqual(sum(1 for _ in repo.iter_commits()), public_release_count)
         self.assertEqual(len(repo.tags), public_release_count)
@@ -204,6 +206,7 @@ class GitRepoApiTestCase(TestCase):
         self.assertEqual(self.git_mirror.local_releases.count(), 2)
         # check git stuff
         repo = Repo(api.repo_dir)
+        self.assertFalse(repo.is_dirty())
         public_release_count = self.codebase.public_releases().count()
         self.assertEqual(sum(1 for _ in repo.iter_commits()), public_release_count)
         self.assertEqual(len(repo.tags), public_release_count)
