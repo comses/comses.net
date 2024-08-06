@@ -3,7 +3,9 @@
     <div class="col-sm-12 col-md-9">
       <div v-for="reviewer of filteredReviewers" :key="reviewer.id" class="card mb-3">
         <div class="card-header">
-          <h5 class="card-title">{{ reviewer.memberProfile.name }} ({{ reviewer.memberProfile.username }})</h5>
+          <h5 class="card-title">
+            {{ reviewer.memberProfile.name }} ({{ reviewer.memberProfile.username }})
+          </h5>
         </div>
         <div class="card-body">
           <p class="card-text">
@@ -99,9 +101,10 @@ function applyFilters() {
     reviewers = reviewers.filter(reviewer => reviewer.isActive);
   }
   if (curFilters.name) {
-    reviewers = reviewers.filter(reviewer =>
-      reviewer.memberProfile.name.toLowerCase().includes(curFilters.name!.toLowerCase()) ||
-      reviewer.memberProfile.username.toLowerCase().includes(curFilters.name!.toLowerCase())
+    reviewers = reviewers.filter(
+      reviewer =>
+        reviewer.memberProfile.name.toLowerCase().includes(curFilters.name!.toLowerCase()) ||
+        reviewer.memberProfile.username.toLowerCase().includes(curFilters.name!.toLowerCase())
     );
   }
   if (curFilters.programmingLanguages?.length) {

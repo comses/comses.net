@@ -1,10 +1,23 @@
 {% extends 'base.jinja' %}
+{% from "common.jinja" import breadcrumb %}
 
 {% block introduction %}
     <h1>Manage Peer Reviewers</h1>
 {% endblock %}
 
 {% block content %}
+    {{ breadcrumb([
+        {'url': '/reviews/', 'text': 'Reviews'},
+        {'text': 'Manage Reviewers' }])
+    }}
+    <ul class="nav nav-tabs justify-content-center mb-4">
+        <li class="nav-item">
+            <a href="/reviews/dashboard" class="nav-link">Reviews</a>
+        </li>
+        <li class="nav-item">
+            <a href="/reviews/reviewers" class="nav-link active">Reviewers</a>
+        </li>
+    </ul>
     <div id="reviewer-list"></div>
 {% endblock %}
 
