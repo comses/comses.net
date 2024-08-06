@@ -3,7 +3,7 @@
     <div class="col-sm-12 col-md-9">
       <div v-for="reviewer of filteredReviewers" :key="reviewer.id" class="card mb-3">
         <div class="card-header">
-          <h5 class="card-title">{{ reviewer.memberProfile.name }}</h5>
+          <h5 class="card-title">{{ reviewer.memberProfile.name }} ({{ reviewer.memberProfile.username }})</h5>
         </div>
         <div class="card-body">
           <p class="card-text">
@@ -100,7 +100,8 @@ function applyFilters() {
   }
   if (curFilters.name) {
     reviewers = reviewers.filter(reviewer =>
-      reviewer.memberProfile.name.toLowerCase().includes(curFilters.name!.toLowerCase())
+      reviewer.memberProfile.name.toLowerCase().includes(curFilters.name!.toLowerCase()) ||
+      reviewer.memberProfile.username.toLowerCase().includes(curFilters.name!.toLowerCase())
     );
   }
   if (curFilters.programmingLanguages?.length) {
@@ -122,12 +123,10 @@ async function changeReviwerActiveState(reviewer: Reviewer, isActive: boolean) {
 const programmingLanguages = computed(() => {
   const languages = new Set<string>();
   for (const reviewer of allReviewers.value) {
-    console.log(reviewer);
     for (const language of reviewer.programmingLanguages) {
       languages.add(language);
     }
   }
-  console.log(languages);
   return Array.from(languages);
 });
 </script>
