@@ -3,11 +3,11 @@ import { useAxios, type RequestOptions } from "@/composables/api";
 
 interface CodebaseQueryParams {
   query?: string;
-  published_after?: string;
-  published_before?: string;
+  publishedAfter?: string;
+  publishedBefore?: string;
   tags?: string[];
-  peer_review_status?: string;
-  programming_languages?: string[];
+  peerReviewStatus?: string;
+  programmingLanguages?: string[];
   ordering?: string;
 }
 
