@@ -17,9 +17,38 @@ from itertools import combinations
 
 logger = logging.getLogger(__name__)
 
+# Define a list of stop words (prepositions, conjunctions, etc.)
+STOP_WORDS = {
+    "a",
+    "an",
+    "and",
+    "are",
+    "as",
+    "at",
+    "be",
+    "by",
+    "for",
+    "from",
+    "has",
+    "he",
+    "in",
+    "is",
+    "it",
+    "its",
+    "of",
+    "on",
+    "that",
+    "the",
+    "to",
+    "was",
+    "were",
+    "will",
+    "with",
+}
+
 
 def build_search_query(input_text: str) -> SearchQuery:
-    words = input_text.split()
+    words = [word for word in input_text.split() if word.lower() not in STOP_WORDS]
 
     # Highest priority: Fuzzy match of the entire input text
     fuzzy_full_query = Boost(Fuzzy(input_text), boost=20.0)
@@ -98,6 +127,16 @@ def get_search_queryset(
     for tag in tags:
         query = query & Phrase(tag)
 
+    """
+    Order by relevance
+    """
+    order_by_relevance = False
+    ordering = criteria.get("ordering")
+    if ordering:
+        if ordering == "relevance":
+            order_by_relevance = True
+        criteria.pop("ordering")
+
     """ 
     Filter queryset 
     """
@@ -107,11 +146,6 @@ def get_search_queryset(
             queryset = queryset.filter(**criteria)
         except FieldError as e:
             logger.warning("Invalid filter criteria:", exc_info=e)
-
-    """
-    Order by relevance if the queryset is not ordered
-    """
-    order_by_relevance = not queryset.ordered
 
     logger.debug(
         f"parsed query: {query}, filters: {criteria}, fields: {fields}, order_by_relevance: {order_by_relevance}"

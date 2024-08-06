@@ -8,16 +8,30 @@
   >
     <template #form>
       <form @submit.prevent="handleSubmit">
-        <TaggerField
-          class="mb-3 py-2"
-          name="tags"
-          label="Tags"
-          type="Codebase"
-          placeholder="Language, framework, etc."
-        />
+        <div class="mb-3" v-if="selectedFilters.length > 0">
+          <label class="form-label fw-bold"
+            >Selected Filters
+            <a @click="clearAllFilters" class="p-2" aria-label="clear all">Clear all</a>
+          </label>
+          <div class="d-flex flex-wrap gap-2">
+            <span
+              v-for="filter in selectedFilters"
+              :key="filter.key"
+              class="badge bg-light text-dark text-wrap d-flex align-items-center"
+            >
+              {{ filter.label }}
+              <button
+                @click="removeFilter(filter.key)"
+                class="btn-close ms-2"
+                aria-label="Close"
+              ></button>
+            </span>
+          </div>
+          <hr class="hr" />
+        </div>
 
         <div class="mb-3">
-          <label class="form-label fw-bold py-2">Peer Review Status</label>
+          <label class="form-label fw-bold">Peer Review Status</label>
           <div v-for="option in peerReviewOptions" :key="option.value" class="form-check">
             <input
               class="form-check-input"
@@ -34,7 +48,7 @@
         </div>
 
         <div class="mb-3">
-          <label v-if="parsedLanguageFacets.length > 0" class="form-label fw-bold py-2">
+          <label v-if="parsedLanguageFacets.length > 0" class="form-label fw-bold">
             Programming Languages
           </label>
           <div class="row">
@@ -57,29 +71,17 @@
         </div>
 
         <div class="row mb-4 fw-bold">
-          <DatepickerField name="startDate" label="Published After" />
-        </div>
-        <div class="row mb-4 fw-bold">
-          <DatepickerField name="endDate" label="Published Before" />
+          <DatepickerField name="startDate" label="Published After" class="col-12 col-md-6" />
+          <DatepickerField name="endDate" label="Published Before" class="col-12 col-md-6" />
         </div>
 
-        <div class="mb-3" v-if="selectedFilters.length > 0">
-          <label class="form-label fw-bold py-2">Selected Filters</label>
-          <div class="d-flex flex-wrap gap-2">
-            <span
-              v-for="filter in selectedFilters"
-              :key="filter.key"
-              class="badge bg-light text-dark text-wrap d-flex align-items-center"
-            >
-              {{ filter.label }}
-              <button
-                @click="removeFilter(filter.key)"
-                class="btn-close ms-2"
-                aria-label="Close"
-              ></button>
-            </span>
-          </div>
-        </div>
+        <TaggerField
+          class="mb-3"
+          name="tags"
+          label="Tags"
+          type="Codebase"
+          placeholder="Language, framework, etc."
+        />
       </form>
     </template>
   </ListSidebar>
@@ -105,7 +107,7 @@ let parsedLanguageFacets: { value: string; label: string }[] = [];
 onMounted(() => {
   if (props.languageFacets) {
     const localLanguageFacets = { ...props.languageFacets };
-    
+
     parsedLanguageFacets = Object.entries(localLanguageFacets)
       .sort(([, valueA], [, valueB]) => valueB - valueA) // Sort by value in descending order
       .map(([name, value]) => ({ value: name, label: `${name} (${value})` }));
@@ -115,7 +117,6 @@ onMounted(() => {
 
   initializeFilters();
   watch([() => values.startDate, () => values.endDate, () => values.tags], updateFilters);
-    
 });
 
 const peerReviewOptions = [
@@ -245,7 +246,7 @@ const initializeFilters = () => {
   values.endDate = urlParams.get("publishedBefore")
     ? new Date(urlParams.get("publishedBefore")!)
     : null;
-  values.ordering = urlParams.get("ordering") || "";
+  values.ordering = urlParams.get("ordering") || "-first_published_at";
 
   updateFilters();
 };
@@ -256,7 +257,7 @@ const clearAllFilters = () => {
   values.tags = [];
   values.startDate = null;
   values.endDate = null;
-  values.ordering = "";
+  values.ordering = "-first_published_at";
 
   updateFilters();
 

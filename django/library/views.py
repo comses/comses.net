@@ -361,6 +361,7 @@ class CodebaseFilter(filters.BaseFilterBackend):
         peer_review_status = query_params.get("peer_review_status")
         # platform = query_params.get("platform")
         programming_languages = query_params.getlist("programming_languages")
+        ordering = query_params.get("ordering")
 
         tags = query_params.getlist("tags")
 
@@ -395,6 +396,8 @@ class CodebaseFilter(filters.BaseFilterBackend):
 
             filtered_codebase_ids = [c.id for c in codebases]
             criteria.update(id__in=filtered_codebase_ids)
+        if ordering:
+            criteria.update(ordering=ordering)
 
         return get_search_queryset(qs, queryset, tags=tags, criteria=criteria)
 
@@ -403,7 +406,9 @@ class CodebaseViewSet(SpamCatcherViewSetMixin, CommonViewSetMixin, HtmlNoDeleteV
     lookup_field = "identifier"
     lookup_value_regex = r"[\w\-\.]+"
     pagination_class = SmallResultSetPagination
-    queryset = Codebase.objects.with_tags().with_featured_images()
+    queryset = (
+        Codebase.objects.with_tags().with_featured_images().order_by("-last_modified")
+    )
     filter_backends = (OrderingFilter, CodebaseFilter)
     permission_classes = (ViewRestrictedObjectPermissions,)
     serializer_class = CodebaseSerializer

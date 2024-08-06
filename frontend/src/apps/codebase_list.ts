@@ -10,7 +10,7 @@ createApp(CodebaseListSidebar, props).mount("#sidebar");
 
 createApp(SortBy, {
   sortOptions: [
-    { value: "", label: "Relevance" },
+    { value: "relevance", label: "Relevance" },
     { value: "-first_published_at", label: "Publish date: newest" },
     { value: "first_published_at", label: "Publish date: oldest" },
     { value: "-last_modified", label: "Recently Modified" },

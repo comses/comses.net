@@ -32,7 +32,9 @@ class SmallResultSetPagination(PageNumberPagination):
     def _to_filter_display_terms(query_params):
         filters = []
         for key, values in query_params.lists():
-            if key == "ordering":
+            if key == "query":
+                pass
+            elif key == "ordering":
                 filters.extend(SORT_BY_FILTERS[v] for v in values)
             elif key == "tags":
                 filters.extend(tag for tag in values)
@@ -44,7 +46,6 @@ class SmallResultSetPagination(PageNumberPagination):
                     filters.extend(v.replace("_", " ") for v in values)
             else:
                 filters.extend(v.replace("_", " ") for v in values)
-
         return filters
 
     @classmethod
