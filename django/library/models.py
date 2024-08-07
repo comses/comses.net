@@ -129,6 +129,15 @@ class License(models.Model):
     url = models.URLField(blank=True)
     text = models.TextField(blank=True, help_text=_("Full license text"))
 
+    def get_formatted_text(self, authors: str):
+        template = Template(self.text)
+        return template.substitute(
+            {
+                "copyright_year": timezone.now().year,
+                "copyright_name": authors,
+            }
+        )
+
     def __str__(self):
         return f"{self.name} ({self.url})"
 
@@ -1693,13 +1702,12 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
         return ReleaseCitation(self)
 
     @cached_property
-    def license_text(self):
-        template = Template(self.license.text)
-        return template.substitute(
-            {
-                "copyright_year": timezone.now().year,
-                "copyright_name": self.citation_authors,
-            }
+    def license_text(self) -> str:
+        """return the license text with the copyright notice filled in"""
+        return (
+            self.license.get_formatted_text(self.citation_authors)
+            if self.license
+            else ""
         )
 
     @property

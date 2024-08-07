@@ -365,13 +365,13 @@ class CodebaseReleaseFsApi:
         system_file_presence_message_level=MessageLevels.error,
         mimetype_mismatch_message_level=MessageLevels.error,
     ):
+        self.release = codebase_release
         self.uuid = str(codebase_release.codebase.uuid)
         self.identifier = codebase_release.codebase.identifier
         self.version_number = codebase_release.version_number
         self.release_id = codebase_release.id
         self.codemeta = codebase_release.codemeta
         self.citation_cff = codebase_release.citation_cff
-        self.license_text = codebase_release.license_text
         self.bagit_info = codebase_release.bagit_info
         self.mimetype_mismatch_message_level = mimetype_mismatch_message_level
 
@@ -550,9 +550,9 @@ class CodebaseReleaseFsApi:
         Returns True if a LICENSE file was created, False otherwise
         """
         path = self.license_path
-        if force or not path.exists():
+        if self.release.license and (force or not path.exists()):
             with path.open(mode="w", encoding="utf-8") as license_out:
-                license_out.write(self.license_text)
+                license_out.write(self.release.license_text)
             return True
         return False
 
@@ -884,7 +884,8 @@ class CodebaseGitRepositoryApi:
         self._add_meta_file_if_missing(
             "CITATION.cff", release.citation_cff.build().to_yaml()
         )
-        self._add_meta_file_if_missing("LICENSE", release.license_text)
+        if release.license:
+            self._add_meta_file_if_missing("LICENSE", release.license_text)
 
     def _add_meta_file_if_missing(self, filename, content):
         dest_path = self.repo_dir / filename
