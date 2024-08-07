@@ -721,6 +721,18 @@ class PeerReviewerSerializer(serializers.ModelSerializer):
         format=DATE_PUBLISHED_FORMAT, read_only=True
     )
 
+    def create(self, validated_data):
+        member_profile = validated_data.pop("member_profile")
+        instance, created = PeerReviewer.objects.get_or_create(
+            member_profile=member_profile
+        )
+        # assuming we want to override the existing instance with the new data
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        instance.is_active = True
+        instance.save()
+        return instance
+
     class Meta:
         model = PeerReviewer
         fields = (

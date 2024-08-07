@@ -196,14 +196,33 @@ class PeerReviewerFilter(filters.BaseFilterBackend):
         return get_search_queryset(query, queryset)
 
 
+class PeerReviewerPermission(permissions.BasePermission):
+    def has_permission(self, request, view):
+        if view.action == "list":
+            if not request.user.has_perm("library.change_peerreview"):
+                raise DrfPermissionDenied
+        if view.action == "create":
+            user_member_profile_id = request.user.member_profile.id
+            request_member_profile_id = request.data.get("member_profile_id")
+            if user_member_profile_id != request_member_profile_id:
+                raise DrfPermissionDenied
+        return True
+
+    def has_object_permission(self, request, view, obj: PeerReviewer):
+        if request.user.has_perm("library.change_peerreview"):
+            return True
+        user_member_profile_id = request.user.member_profile.id
+        request_member_profile_id = request.data.get("member_profile_id")
+        if user_member_profile_id == request_member_profile_id == obj.member_profile_id:
+            return True
+        raise DrfPermissionDenied
+
+
 class PeerReviewerViewSet(CommonViewSetMixin, NoDeleteViewSet):
     queryset = PeerReviewer.objects.all()
     serializer_class = PeerReviewerSerializer
-    permission_classes = (ChangePeerReviewPermission,)
+    permission_classes = (PeerReviewerPermission,)
     filter_backends = (PeerReviewerFilter,)
-
-    # def get_queryset(self):
-    #     pass
 
 
 @api_view(["PUT"])
