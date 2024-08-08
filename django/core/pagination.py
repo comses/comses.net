@@ -37,7 +37,7 @@ class SmallResultSetPagination(PageNumberPagination):
             elif key == "ordering":
                 filters.extend(SORT_BY_FILTERS[v] for v in values)
             elif key == "tags":
-                filters.extend(tag for tag in values)
+                filters.extend(values)
             elif key in ["published_before", "published_after"]:
                 try:
                     date = parser.isoparse(values[0]).date()
@@ -90,10 +90,10 @@ class SmallResultSetPagination(PageNumberPagination):
         Args:
             query: request query
             data: results from Elasticsearch
-            page: requested page
+            page: requested page (typically from http query params)
             count: total number of results
             query_params: query dictionary
-            size (optional): number of results per page (default=cls.page_size)
+            size (optional): number of results per page, defaults to cls.page_size (currently: 10)
 
         Returns:
             dict: paginated context data

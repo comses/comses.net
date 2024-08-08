@@ -169,8 +169,8 @@
     {% for term in list_state.filter_display_terms %}
     <span class="badge bg-gray ms-1">{{ term }}</span>
     {% endfor %}
-    <a class="text-danger ms-1" href="{{ url(url_name) }}">
-        <i class="fas fa-times"></i> clear
+    <a class="text-warn ms-1" href="{{ url(url_name) }}">
+        <i class="fas fa-times"></i> clear filters
     </a>
     {% endif %}
 </p>

@@ -390,14 +390,15 @@ class CodebaseFilter(filters.BaseFilterBackend):
             elif peer_review_status == "not_reviewed":
                 criteria.update(peer_reviewed=False)
         if programming_languages:
-            codebases = Codebase.objects.filter(
+            criteria.update(
                 releases__programming_languages__name__in=programming_languages
             )
-
-            filtered_codebase_ids = [c.id for c in codebases]
-            criteria.update(id__in=filtered_codebase_ids)
         if ordering:
             criteria.update(ordering=ordering)
+        else:
+            if qs:
+                # set default ordering for search when ordering is not specified
+                criteria.update(ordering="relevance")
 
         return get_search_queryset(qs, queryset, tags=tags, criteria=criteria)
 

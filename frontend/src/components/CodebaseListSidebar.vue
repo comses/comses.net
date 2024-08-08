@@ -5,32 +5,11 @@
     search-label="Apply Filters"
     data-cy="publish"
     :clear-all-filters="clearAllFilters"
+    :is-filter-changed="isFilterChanged"
     :search-url="query"
   >
     <template #form>
       <form @submit.prevent="handleSubmit">
-        <div class="mb-3" v-if="selectedFilters.length > 0">
-          <label class="form-label fw-bold"
-            >Selected Filters
-            <a @click="clearAllFilters" class="p-2" aria-label="clear all">Clear all</a>
-          </label>
-          <div class="d-flex flex-wrap gap-2">
-            <span
-              v-for="filter in selectedFilters"
-              :key="filter.key"
-              class="badge bg-light text-dark text-wrap d-flex align-items-center"
-            >
-              {{ filter.label }}
-              <button
-                @click="removeFilter(filter.key)"
-                class="btn-close ms-2"
-                aria-label="Close"
-              ></button>
-            </span>
-          </div>
-          <hr class="hr" />
-        </div>
-
         <div class="mb-3">
           <label class="form-label fw-bold">Peer Review Status</label>
           <div v-for="option in peerReviewOptions" :key="option.value" class="form-check">
@@ -40,7 +19,6 @@
               :id="option.value"
               :value="option.value"
               v-model="values.peerReviewStatus"
-              @change="updateFilters"
             />
             <label class="form-check-label" :for="option.value">
               {{ option.label }}
@@ -48,10 +26,8 @@
           </div>
         </div>
 
-        <div class="mb-3">
-          <label v-if="parsedLanguageFacets.length > 0" class="form-label fw-bold">
-            Programming Languages
-          </label>
+        <div class="mb-3" v-if="parsedLanguageFacets.length > 0">
+          <label class="form-label fw-bold"> Programming Languages </label>
           <div class="row">
             <div v-for="lang in parsedLanguageFacets" :key="lang.value" class="col-12 col-md-12">
               <div class="form-check">
@@ -61,7 +37,6 @@
                   :id="lang.value"
                   :value="lang.value"
                   v-model="values.programmingLanguages"
-                  @change="updateFilters"
                 />
                 <label class="form-check-label" :for="lang.value">
                   {{ lang.label }}
@@ -71,13 +46,13 @@
           </div>
         </div>
 
-        <div class="row mb-4 fw-bold">
-          <DatepickerField name="startDate" label="Published After" class="col-12 col-md-6" />
-          <DatepickerField name="endDate" label="Published Before" class="col-12 col-md-6" />
+        <div class="row mb-3 fw-bold">
+          <DatepickerField name="startDate" label="Published After" class="col-12 col-md-12 py-2" />
+          <DatepickerField name="endDate" label="Published Before" class="col-12 col-md-12 py-2" />
         </div>
 
         <TaggerField
-          class="mb-3"
+          class="mb-1"
           name="tags"
           label="Tags"
           type="Codebase"
@@ -90,35 +65,13 @@
 
 <script setup lang="ts">
 import * as yup from "yup";
-import { onMounted, computed, ref, watch } from "vue";
+import { onMounted, computed } from "vue";
 import { defineProps } from "vue";
 import ListSidebar from "@/components/ListSidebar.vue";
 import DatepickerField from "@/components/form/DatepickerField.vue";
 import TaggerField from "@/components/form/TaggerField.vue";
 import { useForm } from "@/composables/form";
 import { useCodebaseAPI } from "@/composables/api";
-
-const props = defineProps<{
-  languageFacets?: Record<string, number>;
-}>();
-
-// Define a variable to store the parsed language facets
-let parsedLanguageFacets: { value: string; label: string }[] = [];
-
-onMounted(() => {
-  if (props.languageFacets) {
-    const localLanguageFacets = { ...props.languageFacets };
-
-    parsedLanguageFacets = Object.entries(localLanguageFacets)
-      .sort(([, valueA], [, valueB]) => valueB - valueA) // Sort by value in descending order
-      .map(([name, value]) => ({ value: name, label: `${name} (${value})` }));
-  } else {
-    console.warn("languageFacets is undefined");
-  }
-
-  initializeFilters();
-  watch([() => values.startDate, () => values.endDate, () => values.tags], updateFilters);
-});
 
 const peerReviewOptions = [
   { value: "reviewed", label: "Reviewed" },
@@ -140,86 +93,71 @@ const schema = yup.object({
 });
 
 type SearchFields = yup.InferType<typeof schema>;
-
 const { handleSubmit, values } = useForm<SearchFields>({
   schema,
-  initialValues: {
-    peerReviewStatus: "",
-    programmingLanguages: [],
-    tags: [],
-    startDate: null,
-    endDate: null,
-    ordering: "",
-  },
+  initialValues: {},
   onSubmit: () => {
     window.location.href = query.value;
   },
 });
 
 const { searchUrl } = useCodebaseAPI();
-const selectedFilters = ref<Array<{ key: string; label: string }>>([]);
 
-const updateFilters = () => {
-  selectedFilters.value = [
-    // Peer Review Status
-    ...(values.peerReviewStatus
-      ? [
-          {
-            key: `peerReview_${values.peerReviewStatus}`,
-            label: `Peer Review: ${
-              peerReviewOptions.find(o => o.value === values.peerReviewStatus)?.label ||
-              values.peerReviewStatus
-            }`,
-          },
-        ]
-      : []),
+type LanguageFacet = {
+  value: string;
+  label: string;
+};
+const props = defineProps<{
+  languageFacets?: Record<string, number>;
+}>();
 
-    // Programming Languages
-    ...(values.programmingLanguages && values.programmingLanguages.length > 0
-      ? values.programmingLanguages.map(lang => ({
-          key: `lang_${lang}`,
-          label: `Language: ${
-            parsedLanguageFacets.find(l => l.value === lang)?.value || `${lang}`
-          }`,
-        }))
-      : []),
+let parsedLanguageFacets: LanguageFacet[] = [];
 
-    // Start Date
-    ...(values.startDate
-      ? [{ key: "startDate", label: `After: ${values.startDate.toLocaleDateString()}` }]
-      : []),
-
-    // End Date
-    ...(values.endDate
-      ? [{ key: "endDate", label: `Before: ${values.endDate.toLocaleDateString()}` }]
-      : []),
-
-    // Tags
-    ...(values.tags && values.tags.length > 0
-      ? values.tags.map(tag => ({
-          key: `tag_${tag.name}`,
-          label: `Tag: ${tag.name}`,
-        }))
-      : []),
-  ];
+const initialFilterValues = {
+  value: { ...values },
 };
 
-const removeFilter = (key: string) => {
-  if (key.startsWith("peerReview_")) {
-    values.peerReviewStatus = "";
-  } else if (key.startsWith("lang_")) {
-    values.programmingLanguages =
-      values.programmingLanguages?.filter(lang => `lang_${lang}` !== key) || [];
-  } else if (key === "startDate") {
-    values.startDate = null;
-  } else if (key === "endDate") {
-    values.endDate = null;
-  } else if (key.startsWith("tag_")) {
-    const tagName = key.slice(4); // Remove 'tag_' prefix
-    values.tags = values.tags?.filter(tag => tag.name !== tagName) || [];
+onMounted(() => {
+  if (props.languageFacets) {
+    const localLanguageFacets = { ...props.languageFacets };
+    console.log(localLanguageFacets);
+    parsedLanguageFacets = Object.entries(localLanguageFacets)
+      .sort(([, valueA], [, valueB]) => valueB - valueA) // Sort by value in descending order
+      .map(([name, value]) => ({ value: name, label: `${name} (${value})` }));
+  } else {
+    console.warn("languageFacets is undefined");
   }
-  updateFilters();
+  initializeFilterValues();
+});
+
+const initializeFilterValues = () => {
+  const urlParams = new URLSearchParams(window.location.search);
+  values.peerReviewStatus = urlParams.get("peerReviewStatus") || "";
+  values.programmingLanguages = urlParams.getAll("programmingLanguages").sort() || [];
+  values.tags = urlParams.getAll("tags").map(tag => ({ name: tag })) || [];
+  values.startDate = urlParams.get("publishedAfter")
+    ? new Date(urlParams.get("publishedAfter")!)
+    : null;
+  values.endDate = urlParams.get("publishedBefore")
+    ? new Date(urlParams.get("publishedBefore")!)
+    : null;
+  values.ordering = urlParams.get("ordering") || "-first_published_at";
+
+  initialFilterValues.value = { ...values };
 };
+
+const isFilterChanged = computed(() => {
+  const currentValues = {
+    ...values,
+    programmingLanguages: sortedProgrammingLanguages.value, // Use sorted values for comparison
+  };
+  return !deepEqual(currentValues, initialFilterValues.value);
+});
+
+// Computed property for sorted programming languages
+const sortedProgrammingLanguages = computed(() => {
+  return values.programmingLanguages?.slice().sort(); // Sort the programming languages
+});
 
 const query = computed(() => {
   const url = new URLSearchParams(window.location.search);
@@ -236,22 +174,6 @@ const query = computed(() => {
   });
 });
 
-const initializeFilters = () => {
-  const urlParams = new URLSearchParams(window.location.search);
-  values.peerReviewStatus = urlParams.get("peerReviewStatus") || "";
-  values.programmingLanguages = urlParams.getAll("programmingLanguages") || [];
-  values.tags = urlParams.getAll("tags").map(tag => ({ name: tag })) || [];
-  values.startDate = urlParams.get("publishedAfter")
-    ? new Date(urlParams.get("publishedAfter")!)
-    : null;
-  values.endDate = urlParams.get("publishedBefore")
-    ? new Date(urlParams.get("publishedBefore")!)
-    : null;
-  values.ordering = urlParams.get("ordering") || "-first_published_at";
-
-  updateFilters();
-};
-
 const clearAllFilters = () => {
   values.peerReviewStatus = "";
   values.programmingLanguages = [];
@@ -259,11 +181,25 @@ const clearAllFilters = () => {
   values.startDate = null;
   values.endDate = null;
   values.ordering = "-first_published_at";
-
-  updateFilters();
-
   window.location.href = query.value;
 };
 
-defineExpose({ clearAllFilters });
+function deepEqual(obj1: any, obj2: any): boolean {
+  if (obj1 === obj2) return true; // Same reference or both are null/undefined
+
+  if (typeof obj1 !== "object" || obj1 === null || typeof obj2 !== "object" || obj2 === null)
+    return false;
+
+  const keys1 = Object.keys(obj1);
+  const keys2 = Object.keys(obj2);
+
+  if (keys1.length !== keys2.length) return false;
+
+  for (const key of keys1) {
+    // Check if the key exists in both objects and deeply compare the values
+    if (!keys2.includes(key) || !deepEqual(obj1[key], obj2[key])) return false;
+  }
+
+  return true;
+}
 </script>
