@@ -85,7 +85,14 @@ export interface ReviewEvent {
   };
 }
 
-export type Reviewer = RelatedMemberProfile;
+export interface Reviewer {
+  id: number;
+  isActive: boolean;
+  memberProfile: RelatedMemberProfile;
+  programmingLanguages: string[];
+  subjectAreas: string[];
+  notes: string;
+}
 
 export interface ReviewInvitation {
   id: number;
@@ -276,4 +283,10 @@ export interface UserSearchQueryParams {
   query?: string;
   page?: number;
   tags?: string[];
+}
+
+export interface ReviewerFilterParams {
+  includeInactive?: boolean;
+  name?: string;
+  programmingLanguages?: string[];
 }

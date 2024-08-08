@@ -30,6 +30,7 @@ from core.serializers import (
     RelatedUserSerializer,
 )
 from .models import (
+    PeerReviewer,
     ReleaseContributor,
     Codebase,
     CodebaseRelease,
@@ -706,6 +707,43 @@ class PeerReviewFeedbackEditorSerializer(serializers.ModelSerializer):
             "is_runnable",
             "reviewer_name",
             "runnable_comments",
+        )
+
+
+class PeerReviewerSerializer(serializers.ModelSerializer):
+    member_profile_id = serializers.PrimaryKeyRelatedField(
+        queryset=MemberProfile.objects.all(),
+        source="member_profile",
+        write_only=True,
+    )
+    member_profile = RelatedMemberProfileSerializer(read_only=True)
+    date_created = serializers.DateTimeField(
+        format=DATE_PUBLISHED_FORMAT, read_only=True
+    )
+
+    def create(self, validated_data):
+        member_profile = validated_data.pop("member_profile")
+        instance, created = PeerReviewer.objects.get_or_create(
+            member_profile=member_profile
+        )
+        # assuming we want to override the existing instance with the new data
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        instance.is_active = True
+        instance.save()
+        return instance
+
+    class Meta:
+        model = PeerReviewer
+        fields = (
+            "id",
+            "member_profile",
+            "member_profile_id",
+            "date_created",
+            "is_active",
+            "programming_languages",
+            "subject_areas",
+            "notes",
         )
 
 

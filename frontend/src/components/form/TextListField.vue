@@ -46,7 +46,7 @@
 </template>
 
 <script setup lang="ts">
-import { inject, ref, onMounted } from "vue";
+import { inject, ref } from "vue";
 import { Sortable } from "sortablejs-vue3";
 import type { SortableEvent } from "sortablejs";
 import { useField } from "@/composables/form";
@@ -66,14 +66,8 @@ export interface TextListFieldProps {
 
 const props = defineProps<TextListFieldProps>();
 
-onMounted(() => {
-  if (!value.value) {
-    // force initialize to empty array
-    value.value = [];
-  }
-});
-
 function create() {
+  if (!value.value) value.value = [];
   if (candidateItem.value && !value.value.includes(candidateItem.value)) {
     value.value.push(candidateItem.value);
     candidateItem.value = "";

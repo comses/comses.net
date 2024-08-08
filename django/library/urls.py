@@ -14,7 +14,7 @@ router.register(r"codebases/(?P<identifier>[\w\-.]+)/media", views.CodebaseImage
 router.register(
     r"codebases/(?P<identifier>[\w\-.]+)/releases", views.CodebaseReleaseViewSet
 )
-router.register(r"reviewers", views.PeerReviewReviewerListView),
+router.register(r"reviewers", views.PeerReviewerViewSet),
 router.register(
     r"reviews/(?P<slug>[\da-f\-]+)/editor/invitations",
     views.PeerReviewInvitationViewSet,
@@ -55,6 +55,11 @@ urlpatterns = [
         "reviews/dashboard/",
         views.PeerReviewDashboardView.as_view(),
         name="peer-review-dashboard",
+    ),
+    path(
+        "reviews/reviewers/",
+        views.PeerReviewerDashboardView.as_view(),
+        name="peer-reviewer-dashboard",
     ),
     path(
         "reviews/<uuid:slug>/editor/",
