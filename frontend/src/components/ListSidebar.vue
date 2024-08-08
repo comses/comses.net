@@ -11,24 +11,25 @@
         <slot name="form" />
       </div>
     </div>
-    <a class="text-white" :href="searchUrl">
-      <div
-        :class="{ disabled: isApplyingFiltersLoading }"
-        class="btn btn-primary w-100"
-        tabindex="0"
-        v-on:click="isApplyingFiltersLoading = true"
+    <button
+      type="button"
+      class="btn btn-primary w-100"
+      tabindex="0"
+      :class="{
+        disabled: isApplyingFiltersLoading || isClearingFiltersLoading || !isFilterChanged,
+      }"
+      @click="handleApplyFilters"
+    >
+      <span v-if="isApplyingFiltersLoading">
+        <i class="fas fa-spinner fa-spin me-1"></i>Applying Filters</span
       >
-        <span v-if="isApplyingFiltersLoading">
-          <i class="fas fa-spinner fa-spin me-1"></i>Applying Filters</span
-        >
-        <span v-else>{{ searchLabel }}</span>
-      </div>
-    </a>
+      <span v-else>{{ searchLabel }}</span>
+    </button>
 
     <button
       v-if="clearAllFilters"
       type="button"
-      :class="{ disabled: isClearingFiltersLoading }"
+      :class="{ disabled: isClearingFiltersLoading || isApplyingFiltersLoading }"
       class="btn btn-secondary mt-2 w-100"
       v-on:click="isClearingFiltersLoading = true"
       @click="clearAllFilters"
@@ -51,8 +52,14 @@ export interface SearchProps {
   createUrl?: string;
   searchLabel: string;
   searchUrl: string;
+  isFilterChanged?: boolean;
   clearAllFilters?: () => void;
 }
 
 const props = defineProps<SearchProps>();
+
+function handleApplyFilters() {
+  isApplyingFiltersLoading.value = true;
+  window.location.href = props.searchUrl;
+}
 </script>

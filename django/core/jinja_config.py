@@ -129,9 +129,18 @@ def generate_hidden_inputs(query_params):
     if query_params:
         # parse_qsl handles splitting and unquoting key-value pairs
         parsed_params = parse_qsl(query_params)
+
+        # set default ordering, if it is not specified
+        if not any(key == "ordering" for key, value in parsed_params):
+            hidden_inputs.append(("ordering", "relevance"))
+
         for key, value in convert_keys_to_camel_case(parsed_params):
             if key != "query":
                 hidden_inputs.append((key, value))
+    else:
+        # initial ordering of the codebase search results
+        hidden_inputs.append(("ordering", "relevance"))
+
     return hidden_inputs
 
 
