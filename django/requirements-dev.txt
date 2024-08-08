@@ -10,3 +10,4 @@ django-fixture-magic
 hypothesis[django]
 sphinx
 sphinx_rtd_theme
+django>=4.2.15 # not directly required, pinned by Snyk to avoid a vulnerability
