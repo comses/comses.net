@@ -47,13 +47,13 @@
           </div>
         </div>
 
-        <div class="row mb-4 fw-bold">
-          <DatepickerField name="startDate" label="Published After" class="col-12 col-md-6" />
-          <DatepickerField name="endDate" label="Published Before" class="col-12 col-md-6" />
+        <div class="row mb-3 fw-bold">
+          <DatepickerField name="startDate" label="Published After" class="col-12 col-md-12 py-2" />
+          <DatepickerField name="endDate" label="Published Before" class="col-12 col-md-12 py-2" />
         </div>
 
         <TaggerField
-          class="mb-3"
+          class="mb-1"
           name="tags"
           label="Tags"
           type="Codebase"
