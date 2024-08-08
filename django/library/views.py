@@ -398,6 +398,10 @@ class CodebaseFilter(filters.BaseFilterBackend):
             criteria.update(id__in=filtered_codebase_ids)
         if ordering:
             criteria.update(ordering=ordering)
+        else:
+            if qs:
+                # set default ordering for search when ordering is not specified
+                criteria.update(ordering="relevance")
 
         return get_search_queryset(qs, queryset, tags=tags, criteria=criteria)
 

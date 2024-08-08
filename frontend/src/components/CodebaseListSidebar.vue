@@ -25,10 +25,8 @@
           </div>
         </div>
 
-        <div class="mb-3">
-          <label v-if="parsedLanguageFacets.length > 0" class="form-label fw-bold">
-            Programming Languages
-          </label>
+        <div class="mb-3" v-if="parsedLanguageFacets.length > 0">
+          <label class="form-label fw-bold"> Programming Languages </label>
           <div class="row">
             <div v-for="lang in parsedLanguageFacets" :key="lang.value" class="col-12 col-md-12">
               <div class="form-check">
@@ -134,7 +132,7 @@ onMounted(() => {
 const initializeFilterValues = () => {
   const urlParams = new URLSearchParams(window.location.search);
   values.peerReviewStatus = urlParams.get("peerReviewStatus") || "";
-  values.programmingLanguages = urlParams.getAll("programmingLanguages") || [];
+  values.programmingLanguages = urlParams.getAll("programmingLanguages").sort() || [];
   values.tags = urlParams.getAll("tags").map(tag => ({ name: tag })) || [];
   values.startDate = urlParams.get("publishedAfter")
     ? new Date(urlParams.get("publishedAfter")!)
