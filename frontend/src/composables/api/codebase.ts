@@ -7,6 +7,8 @@ interface CodebaseQueryParams {
   publishedBefore?: string;
   tags?: string[];
   peerReviewStatus?: string;
+  programmingLanguages?: string[];
+  ordering?: string;
 }
 
 export function useCodebaseAPI() {

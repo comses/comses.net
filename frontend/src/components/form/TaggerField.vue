@@ -1,7 +1,7 @@
 <template>
   <div>
     <slot name="label">
-      <FieldLabel v-if="label" :label="label" :id-for="id" :required="required" />
+      <FieldLabel v-if="label" :label="label" :id-for="id" class="fw-bold" :required="required" />
     </slot>
     <FormPlaceholder v-if="showPlaceholder" />
     <VueMultiSelect

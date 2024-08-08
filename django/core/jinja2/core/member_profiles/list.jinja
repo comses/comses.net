@@ -70,7 +70,7 @@ breadcrumb([
 {% endblock %}
 
 {% block search %}
-{{ search_bar(url("core:profile-list"), "Search by name") }}
+{{ search_bar(request, url("core:profile-list"), "Search by name") }}
 {{ pagination_block }}
 {% endblock %}
 

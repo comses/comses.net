@@ -33,7 +33,12 @@ const selectedOrdering = ref("");
 
 onMounted(() => {
   const url = new URL(window.location.href);
-  selectedOrdering.value = url.searchParams.get("ordering") || "";
+  let initialOrdering = "";
+
+  if (url.pathname.includes("codebases")) {
+    initialOrdering = "-first_published_at";
+  }
+  selectedOrdering.value = url.searchParams.get("ordering") || initialOrdering;
 });
 
 function handleChange() {
