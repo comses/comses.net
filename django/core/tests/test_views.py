@@ -9,8 +9,9 @@ from django.test import TestCase
 from core.tests.base import UserFactory
 from core.tests.permissions_base import BaseViewSetTestCase
 from core.views import EventViewSet, JobViewSet
-from core.models import Job, Event
+from core.models import Job, Event, SpamModeration
 from .base import JobFactory, EventFactory
+
 
 logger = logging.getLogger(__name__)
 
@@ -178,6 +179,30 @@ class SpamDetectionTestCase(BaseViewSetTestCase):
         self.assertTrue(job.is_marked_spam)
         self.assertIsNotNone(job.spam_moderation)
         self.assertEqual(job.spam_moderation.detection_method, "form_submit_time")
+
+    def test_mark_spam(self):
+        data = self.event_factory.get_request_data()
+        # create Job or Event (ModeratedContent)
+        response = self.client.post(
+            reverse("core:event-list"),
+            data,
+            HTTP_ACCEPT="application/json",
+            format="json",
+        )
+        event = Event.objects.get(title=data["title"])
+        self.assertFalse(event.is_marked_spam)
+        self.assertIsNone(event.spam_moderation)
+        response = self.client.post(
+            reverse("core:event-mark-spam", kwargs={"pk": event.id}),
+            data,
+            HTTP_ACCEPT="application/json",
+            format="json",
+        )
+        event.refresh_from_db()
+        self.assertTrue(event.is_marked_spam)
+        self.assertIsNotNone(event.spam_moderation)
+        self.assertEqual(event.spam_moderation.status, SpamModeration.Status.SPAM)
+
 
     def test_event_creation_without_spam(self):
         data = self.event_factory.get_request_data()

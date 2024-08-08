@@ -336,6 +336,34 @@ Currently in <em><mark>{{ constants.DEPLOY_ENVIRONMENT }}</mark></em> mode.
 {% endif %}
 {% endmacro %}
 
+{% macro mark_spam_confirm_modal(modal_title, identifier, mark_spam_url, csrf_input) %}
+<button type="button" class="btn btn-danger my-1 w-100" data-bs-toggle="modal" data-bs-target="#mark-spam-modal">
+    Mark spam
+</button>
+<div class="modal fade" id="mark-spam-modal" tabindex="-1" aria-labelledby="mark-spam-label" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h1 class="modal-title fs-5" id="mark-spam-label">{{ modal_title }}</h1>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="post" action="{{ mark_spam_url }}">
+                <div class="modal-body">
+                    <p>Are you sure you want to mark "<b>{{ identifier }}</b>" as spam?</p>
+                    <label for="notes">Any notes about this content for our devs? </label><br>
+                    <textarea class="form-control" id="notes" name="notes" rows=3></textarea><br>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-gray" data-bs-dismiss="modal">Cancel</button>
+                    {{ csrf_input }}
+                    <button type="submit" class="btn btn-danger">Mark as spam</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endmacro %}
+
 {% macro alert_if_deleted(is_deleted, content_type="content") %}
 {% if is_deleted %}
     <div class="alert alert-danger" role="alert">

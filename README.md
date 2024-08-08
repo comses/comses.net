@@ -13,7 +13,6 @@ The Computational Model Library maintains distinct submission information packag
 Members who participate in this project agree to abide by the [CoMSES Net Code of Conduct](https://github.com/comses/comses.net/blob/main/CODE_OF_CONDUCT.md). By participating, you are expected to uphold this code. Please report unacceptable behavior to [editors@comses.net](mailto:editors@comses.net).
 
 ## Ways to Contribute to CoMSES Net
-
 Members are encouraged to participate and we welcome contributions of all kinds to our collective effort. Here's how you can contribute:
 
 ### Publish your Model Source Code
