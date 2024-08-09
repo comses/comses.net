@@ -1,40 +1,18 @@
 <template>
   <div class="row">
     <div class="col-sm-12 col-md-9">
-      <div v-for="reviewer of filteredReviewers" :key="reviewer.id" class="card mb-3">
-        <div class="card-header">
-          <h5 class="card-title">
-            {{ reviewer.memberProfile.name }} ({{ reviewer.memberProfile.username }})
-          </h5>
-        </div>
-        <div class="card-body">
-          <p class="card-text">
-            <strong>Email:</strong> {{ reviewer.memberProfile.email }}<br />
-            <strong>Programming Languages:</strong> {{ reviewer.programmingLanguages.join(", ")
-            }}<br />
-            <strong>Subject Areas:</strong> {{ reviewer.subjectAreas.join(", ") }}<br />
-            {{ reviewer.notes }}
-          </p>
-          <a
-            class="btn btn-primary me-1"
-            @click="
-              editCandidate = reviewer;
-              editForm?.resetForm();
-              editModal?.show();
-            "
-            >Edit</a
-          >
-          <a
-            v-if="reviewer.isActive"
-            class="btn btn-danger"
-            @click="changeReviwerActiveState(reviewer, false)"
-            >Deactivate</a
-          >
-          <a v-else class="btn btn-success" @click="changeReviwerActiveState(reviewer, true)"
-            >Activate</a
-          >
-        </div>
-      </div>
+      <ReviewerCard
+        v-for="reviewer of filteredReviewers"
+        :key="reviewer.id"
+        :reviewer="reviewer"
+        @edit="
+          editCandidate = reviewer;
+          editForm?.resetForm();
+          editModal?.show();
+        "
+        @activate="changeReviwerActiveState(reviewer, true)"
+        @deactivate="changeReviwerActiveState(reviewer, false)"
+      />
     </div>
     <div class="col-sm-12 col-md-3">
       <ReviewersListSidebar
@@ -71,6 +49,7 @@
 import { ref, onMounted, computed } from "vue";
 import { useReviewEditorAPI } from "@/composables/api";
 import BootstrapModal from "@/components/BootstrapModal.vue";
+import ReviewerCard from "./ReviewerCard.vue";
 import ReviewerEditForm from "@/components/ReviewerEditForm.vue";
 import ReviewersListSidebar from "./ReviewersListSidebar.vue";
 import type { Reviewer, ReviewerFilterParams } from "@/types";

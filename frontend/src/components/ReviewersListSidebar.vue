@@ -29,7 +29,7 @@
   />
   <label class="form-label">Programming Languages</label>
   <div style="max-height: 300px; overflow-y: scroll">
-    <div v-for="language of programmingLanguages" class="form-check">
+    <div v-for="language of programmingLanguages" :key="language" class="form-check">
       <input
         type="checkbox"
         :id="'lang-' + language"
