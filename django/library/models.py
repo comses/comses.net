@@ -834,13 +834,18 @@ class Codebase(index.Indexed, ModeratedContent, ClusterableModel):
         return reverse("library:codebase-list")
 
     @staticmethod
-    def format_doi_url(doi_string):
-        return f"https://doi.org/{doi_string}" if doi_string else ""
+    def format_doi_url(doi):
+        return f"https://doi.org/{doi}" if doi else ""
 
     @cached_property
     def permanent_url(self):
+        """Returns a persistent, absolute URL to this codebase"""
         if self.doi:
-            return self.doi_url
+            return Codebase.format_doi_url(self.doi)
+        return self.comses_permanent_url
+
+    @property
+    def comses_permanent_url(self):
         return f"{settings.BASE_URL}{self.get_absolute_url()}"
 
     def get_absolute_url(self):
@@ -855,10 +860,6 @@ class Codebase(index.Indexed, ModeratedContent, ClusterableModel):
 
     def media_url(self, name):
         return f"{self.get_absolute_url()}/media/{name}"
-
-    @cached_property
-    def doi_url(self):
-        return Codebase.format_doi_url(self.doi)
 
     def latest_accessible_release(self, user):
         return (
@@ -1511,19 +1512,14 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
         return True
 
     @property
-    def doi_url(self):
-        if self.doi:
-            return Codebase.format_doi_url(self.doi)
-        return self.comses_permanent_url
-
-    @property
     def comses_permanent_url(self):
+        """returns a comses.net based permanent URL to this codebase release"""
         return f"{settings.BASE_URL}{self.get_absolute_url()}"
 
     @property
     def permanent_url(self):
         if self.doi:
-            return self.doi_url
+            return Codebase.format_doi_url(self.doi)
         return self.comses_permanent_url
 
     @cached_property
