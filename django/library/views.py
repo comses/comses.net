@@ -34,7 +34,7 @@ from rest_framework.response import Response
 
 from core.models import MemberProfile
 from core.permissions import ViewRestrictedObjectPermissions
-from core.view_helpers import add_change_delete_perms, get_search_queryset
+from core.view_helpers import add_user_retrieve_perms, get_search_queryset
 from core.mixins import CommonViewSetMixin, SpamCatcherViewSetMixin
 from core.views import (
     FormUpdateView,
@@ -427,7 +427,7 @@ class CodebaseViewSet(SpamCatcherViewSetMixin, CommonViewSetMixin, HtmlNoDeleteV
             return redirect(current_version)
         else:
             serializer = self.get_serializer(instance)
-            data = add_change_delete_perms(instance, serializer.data, request.user)
+            data = add_user_retrieve_perms(instance, serializer.data, request.user)
             return Response(data)
 
 
@@ -632,7 +632,7 @@ class CodebaseReleaseShareViewSet(
         instance = self.get_object()
         if request.accepted_renderer.format == "html":
             perms = {}
-            add_change_delete_perms(instance, perms, request.user)
+            add_user_retrieve_perms(instance, perms, request.user)
             return Response({"release": instance, **perms})
         serializer = self.get_serializer(instance)
         return Response(serializer.data)
@@ -708,10 +708,10 @@ class CodebaseReleaseViewSet(CommonViewSetMixin, NoDeleteViewSet):
         instance = self.get_object()
         if request.accepted_renderer.format == "html":
             perms = {}
-            add_change_delete_perms(instance, perms, request.user)
+            add_user_retrieve_perms(instance, perms, request.user)
             return Response({"release": instance, **perms})
         serializer = self.get_serializer(instance)
-        data = add_change_delete_perms(instance, serializer.data, request.user)
+        data = add_user_retrieve_perms(instance, serializer.data, request.user)
         return Response(data)
 
     def get_queryset(self):

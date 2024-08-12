@@ -60,7 +60,7 @@ from .pagination import SmallResultSetPagination
 from .permissions import ObjectPermissions, ViewRestrictedObjectPermissions
 from .discourse import build_discourse_url
 from .view_helpers import (
-    add_change_delete_perms,
+    add_user_retrieve_perms,
     get_search_queryset,
     retrieve_with_perms,
 )
@@ -349,7 +349,7 @@ class MemberProfileViewSet(CommonViewSetMixin, HtmlNoDeleteViewSet):
             .with_featured_images()
             .order_by("-last_modified")
         )
-        add_change_delete_perms(instance, context, accessing_user)
+        add_user_retrieve_perms(instance, context, accessing_user)
         return context
 
 

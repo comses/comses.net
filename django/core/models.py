@@ -35,6 +35,7 @@ EXCLUDED_USERNAMES = ("AnonymousUser", "openabm")
 
 class ComsesGroups(Enum):
     ADMIN = "Admins"
+    MODERATOR = "Moderators"
     EDITOR = "Editors"
     FULL_MEMBER = "Full Members"
     REVIEWER = "Reviewers"

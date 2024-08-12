@@ -75,7 +75,7 @@
         <a href="{{ url('core:event-edit', pk=id) }}">
             <div class="btn btn-primary my-1 w-100">Edit</div>
         </a>
-        {% if (user.is_superuser or user.groups.filter(name='Moderators').exists()) and not is_marked_spam %}
+        {% if can_moderate and not is_marked_spam %}
             {{ mark_spam_confirm_modal("Mark spam", title, url("core:event-mark-spam", pk=id), csrf_input) }}
         {% endif %}
     {% endif %}
