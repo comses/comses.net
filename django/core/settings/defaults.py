@@ -62,6 +62,10 @@ PROJECT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # base directory is one level above the project directory
 BASE_DIR = os.path.dirname(PROJECT_DIR)
 
+# default to datacite sandbox and test mode
+DATACITE_PREFIX = "10.82853"
+DATACITE_TEST_MODE = True
+
 DEBUG = True
 
 DJANGO_VITE_DEV_MODE = True

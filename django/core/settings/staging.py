@@ -7,9 +7,9 @@ DEBUG = False
 DJANGO_VITE_DEV_MODE = False
 DEPLOY_ENVIRONMENT = Environment.STAGING
 
-# datacite sandbox configuration
-DATACITE_PREFIX = "10.82853"
-DATACITE_TEST_MODE = True
+# datacite sandbox configuration inherited from defaults should suffice
+# DATACITE_PREFIX = "10.82853"
+# DATACITE_TEST_MODE = True
 
 # configure sentry
 sentry_sdk.init(

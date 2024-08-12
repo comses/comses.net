@@ -3,9 +3,6 @@ from .defaults import *
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-DATACITE_PREFIX = "10.82853"
-DATACITE_TEST_MODE = True
-
 EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
 
 MIDDLEWARE += ["debug_toolbar.middleware.DebugToolbarMiddleware"]
