@@ -465,7 +465,7 @@
         {% endif %}
     {% endwith %}
     {# end has_change_perm #}
-    {% if user.is_superuser and not codebase.is_marked_spam %}
+    {% if (user.is_superuser or user.groups.filter(name='Moderators').exists()) and not codebase.is_marked_spam %}
         {{ mark_spam_confirm_modal("Mark spam", codebase.title, url("library:codebase-mark-spam", identifier=codebase.identifier), csrf_input) }}
     {% endif %}
 {% endif %}
