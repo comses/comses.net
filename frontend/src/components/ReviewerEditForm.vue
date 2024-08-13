@@ -141,7 +141,7 @@ const {
 });
 
 onMounted(() => {
-  setValues({ ...props.reviewer });
+  if (props.reviewer) setValues(JSON.parse(JSON.stringify(props.reviewer)));
   addUnsavedAlertListener();
 });
 
@@ -152,7 +152,7 @@ onBeforeUnmount(() => {
 function resetForm() {
   serverErrors.value = [];
   handleReset();
-  setValues({ ...props.reviewer });
+  if (props.reviewer) setValues(JSON.parse(JSON.stringify(props.reviewer)));
 }
 
 function setMemberProfile(profile: RelatedMemberProfile) {

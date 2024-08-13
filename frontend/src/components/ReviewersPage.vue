@@ -109,6 +109,6 @@ const programmingLanguages = computed(() => {
       languages.add(language);
     }
   }
-  return Array.from(languages);
+  return [...languages];
 });
 </script>
