@@ -137,6 +137,7 @@ class Contributor(index.Indexed, ClusterableModel):
     )
     middle_name = models.CharField(max_length=100, blank=True)
     family_name = models.CharField(max_length=100, blank=True)
+    # FIXME: deprecated, remove in future release
     affiliations = ClusterTaggableManager(through=ContributorAffiliation)
 
     json_affiliations = models.JSONField(
@@ -218,10 +219,23 @@ class Contributor(index.Indexed, ClusterableModel):
         return self.get_full_name()
 
     @property
+    def is_person(self):
+        return self.type == "person"
+
+    @property
+    def is_organization(self):
+        # or explicit check on type == "organization"
+        return not self.is_person
+
+    @property
     def orcid_url(self):
         if self.user:
             return self.user.member_profile.orcid_url
         return None
+
+    @property
+    def affiliation_ror_ids(self):
+        return [affiliation.get("ror_id") for affiliation in self.json_affiliations]
 
     @property
     def member_profile_url(self):
@@ -232,13 +246,14 @@ class Contributor(index.Indexed, ClusterableModel):
     def get_markdown_link(self):
         return f"[{self.get_full_name()}]({self.member_profile_url})"
 
+    # FIXME: move to CodeMeta transformer class
     def to_codemeta(self):
         codemeta = {
             "@type": "Person",
+            # FIXME: Contributor should proxy to User / MemberProfile fields if User is available and given_name and family_name are not set
             "givenName": self.given_name,
             "familyName": self.family_name,
         }
-        # FIXME: should we proxy to User / MemberProfile fields if User is available
         if self.orcid_url:
             codemeta["@id"] = self.orcid_url
         if self.json_affiliations:
@@ -290,6 +305,7 @@ class Contributor(index.Indexed, ClusterableModel):
     @property
     def codemeta_affiliation(self):
         """
+        FIXME: move to CodeMeta class
         For now codemeta affiliations appear to be a single https://schema.org/Organization
         """
         if self.json_affiliations:
@@ -304,6 +320,7 @@ class Contributor(index.Indexed, ClusterableModel):
         return self.json_affiliations[0]["name"] if self.json_affiliations else ""
 
     def to_codemeta_affiliation(self, affiliation):
+        # FIXME: move to CodeMeta class
         if affiliation:
             return {
                 # FIXME: may switch to https://schema.org/ResearchOrganization at some point
@@ -634,7 +651,7 @@ class Codebase(index.Indexed, ModeratedContent, ClusterableModel):
 
     @cached_property
     def datacite(self):
-        return DataCiteMetadata.build_codebase_metadata(self)
+        return DataCiteMetadata.from_codebase(self)
 
     @property
     def is_replication(self):
@@ -739,6 +756,8 @@ class Codebase(index.Indexed, ModeratedContent, ClusterableModel):
         caches and returns a two values: codebase_contributors and codebase_authors
         codebase_contributors are all contributors to the release
         codebase_authors are the contributors to the release that should be included in the citation
+
+        both return types should be ordered, distinct lists of ReleaseContributor objects
         """
         contributors_redis_key = self.codebase_contributors_redis_key
         codebase_contributors = cache.get(contributors_redis_key) if not force else None
@@ -752,15 +771,14 @@ class Codebase(index.Indexed, ModeratedContent, ClusterableModel):
             codebase_contributors_dict = OrderedDict()
             for release_contributor in ReleaseContributor.objects.for_codebase(self):
                 contributor = release_contributor.contributor
-                # set to None as a makeshift OrderedSet implementation
-                codebase_contributors_dict[contributor] = None
+                codebase_contributors_dict[contributor] = release_contributor
                 # only include citable authors in returned codebase_authors
                 if release_contributor.include_in_citation:
-                    codebase_authors_dict[contributor] = None
+                    codebase_authors_dict[contributor] = release_contributor
             # PEP 448 syntax to unpack dict keys into list literal
             # https://www.python.org/dev/peps/pep-0448/
-            codebase_contributors = [*codebase_contributors_dict]
-            codebase_authors = [*codebase_authors_dict]
+            codebase_contributors = [*codebase_contributors_dict.values()]
+            codebase_authors = [*codebase_authors_dict.values()]
             cache.set(contributors_redis_key, codebase_contributors)
             cache.set(self.codebase_authors_redis_key, codebase_authors)
         return codebase_contributors, codebase_authors
@@ -1616,7 +1634,7 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
 
     @cached_property
     def datacite(self):
-        return DataCiteMetadata.build_release_metadata(self.common_metadata)
+        return DataCiteMetadata.from_release(self.common_metadata)
 
     @property
     def is_draft(self):
@@ -1839,6 +1857,20 @@ class ReleaseContributor(models.Model):
     )
 
     objects = ReleaseContributorQuerySet.as_manager()
+
+    def __getattr__(self, name):
+        if name in [
+            "family_name",
+            "given_name",
+            "has_name",
+            "name",
+            "email",
+            "json_affiliations",
+            "type",
+            "user",
+        ]:
+            return getattr(self.contributor, name)
+        return super().__getattr__(name)
 
     def __str__(self):
         return f"[release_contributor] (release:{self.release}, contributor:{self.contributor})"
@@ -2481,6 +2513,12 @@ class PeerReviewerFeedback(models.Model):
 
 
 class CommonMetadata:
+    """
+    This class caches metadata from a CodebaseRelease common to both CodeMeta and DataCite metadata.
+
+    FIXME: currently CodebaseRelease specific should consider making it universal for both Codebase and CodebaseRelease
+    """
+
     DATE_PUBLISHED_FORMAT = "%Y-%m-%d"
 
     COMSES_ORGANIZATION = {
@@ -2490,9 +2528,7 @@ class CommonMetadata:
 
     def __init__(self, release: CodebaseRelease):
         codebase = release.codebase
-
         self.codebase_release = release
-
         self.name = codebase.title
         self.release_title = release.title
         self.abstract = codebase.summary
@@ -2509,7 +2545,6 @@ class CommonMetadata:
         self.download_url = release.get_download_url()
         self.comses_permanent_url = release.comses_permanent_url
         self.get_featured_rendition_url = codebase.get_featured_rendition_url()
-
         self.live = release.live
 
         # used for citations
@@ -2524,19 +2559,19 @@ class CommonMetadata:
         ]
 
         if release.live:
-            date_published = release.last_published_on
-            if date_published:
-                self.date_published = date_published.strftime(
-                    self.DATE_PUBLISHED_FORMAT
-                )
-                self.copyright_year = date_published.year
-
-        if release.first_published_at:
-            self.first_published_at = release.first_published_at
+            self.first_published = release.first_published_at
+            self.copyright_year = release.first_published_at.year
+            self.last_published = release.last_published_on
 
         if release.license:
             self.license = release.license
+        else:
+            logger.error(
+                "Trying to build common metadata for a degenerate release with no license: %s",
+                release,
+            )
 
+        # FIXME: set all of these fields explicitly
         if codebase.repository_url:
             self.code_repository = codebase.repository_url
 
@@ -2614,10 +2649,11 @@ class CodeMetaMetadata:
             citation=cls.get_citations(common_metadata),
         )
 
-        datePublished = getattr(common_metadata, "date_published", None)
-        if datePublished:
-            metadata.update(datePublished=datePublished)
-            metadata.update(copyrightYear=common_metadata.copyright_year)
+        if common_metadata.live:
+            metadata.update(
+                datePublished=common_metadata.last_published,
+                copyrightYear=common_metadata.copyright_year,
+            )
 
         license = getattr(common_metadata, "license", None)
         if license:
@@ -2700,19 +2736,11 @@ class DataCiteMetadata:
         self.metadata = metadata
 
     @classmethod
-    def build_codebase_metadata(cls, codebase: Codebase):
+    def from_codebase(cls, codebase: Codebase):
         metadata = {}
-        # FIXME: set more codebase attributes???
         # https://support.datacite.org/docs/what-is-the-identifiers-attribute-in-the-rest-api
-        # future consideration: adding references_text and associated_publication_text fields when more info for those fiels are added
-
-        metadata["identifiers"] = [
-            {
-                "identifierType": "DOI",  # only "DOI" allowed according to DataCite schema
-                "identifier": codebase.permanent_url,
-            }
-        ]
-
+        # FIXME: add references_text and associated_publication_text fields when better structured metadata for those fields are available
+        # this is a self-referential identifier and should be automatically added to the metadata
         if codebase.doi:
             metadata["identifiers"].append(
                 {
@@ -2723,10 +2751,7 @@ class DataCiteMetadata:
 
         # FIXME: creators should never be empty!
         # FIXME: when additional info is available for codebase creator, update this
-        metadata["creators"] = [
-            {"name": author_string_name, "creatorType": "Personal"}
-            for author_string_name in codebase.author_list
-        ]
+        metadata["creators"] = cls.convert_authors(codebase.all_authors)
         metadata["titles"] = [{"title": codebase.title}]
         metadata["descriptions"] = [
             {
@@ -2782,7 +2807,7 @@ class DataCiteMetadata:
         return DataCiteMetadata(metadata)
 
     @classmethod
-    def build_release_metadata(cls, common_metadata: CommonMetadata):
+    def from_release(cls, common_metadata: CommonMetadata):
         """
         Build the DataCite schema 4.3 data in JSON format.
         See documentation @ https://schema.datacite.org/meta/kernel-4.3/doc/DataCite-MetadataKernel_v4.3.pdf
@@ -2802,14 +2827,14 @@ class DataCiteMetadata:
         """
         Set codebase and release common metadta
         """
-        metadata["creators"] = cls.convert_authors(common_metadata)
+        metadata["creators"] = cls.convert_authors(
+            common_metadata.release_contributor_authors
+        )
         metadata["descriptions"] = [
             {"description": common_metadata.description, "descriptionType": "Abstract"}
         ]
 
-        metadata["identifiers"] = [
-            {"identifier": common_metadata.identifier, "identifierType": "DOI"}
-        ]
+        # FIXME: identifiers should not be required in the payload
 
         # Use this year if no publication year found
         currentDateTime = datetime.now()
@@ -2906,40 +2931,66 @@ class DataCiteMetadata:
         return [{"subject": keyword} for keyword in unique_keywords]
 
     @classmethod
-    def convert_authors(cls, common_metadata: CommonMetadata):
-        creators = []
-        for release_contributor in common_metadata.release_contributor_authors:
-            contributor = release_contributor.contributor
-            contributor_type = "Organizational"
-            # FIXME: is this check enough?
-            if contributor.type == "person":
-                contributor_type = "Personal"
-            item = {
-                "name": contributor.family_name + ", " + contributor.given_name,
-                "nameType": contributor_type,
-                "givenName": contributor.given_name,
-                "familyName": contributor.family_name,
-            }
+    def convert_release_contributor(cls, release_contributor: ReleaseContributor):
+        """
+        Converts a ReleaseContributor to a DataCite creator dictionary
+        """
+        contributor = release_contributor.contributor
+        creator = {}
+        # check for ORCID name identifier first: https://datacite-metadata-schema.readthedocs.io/en/4.5/properties/creator/#nameidentifier
+        if contributor.is_person:
+            if contributor.orcid_url:
+                # FIXME: need to confirm if setting the orcid_url as a nameIdentifier will auto-fill the given name, family name, etc., as it does in the
+                # manual intake form
+                creator.update(
+                    nameType="Personal",
+                    nameIdentifier=contributor.orcid_url,
+                    nameIdentifierScheme="ORCID",
+                    schemeURI="https://orcid.org",
+                )
+            else:
+                creator.update(
+                    nameType="Personal",
+                    givenName=contributor.given_name,
+                    familyName=contributor.family_name,
+                    creatorName=f"{contributor.family_name}, {contributor.given_name}",
+                )
+        else:
+            creator.update(nameType="Organizational", creatorName=contributor.name)
 
-            # FIXME: more details on affiliation: see https://schema.datacite.org/meta/kernel-4.3/metadata.xsd
-            if contributor.affiliations.exists():
-                item["affiliation"] = []
-                for affiliation in contributor.affiliations.all():
-                    item["affiliation"].append({"name": affiliation.name})
+        # check for ROR affiliations (or freetext): https://datacite-metadata-schema.readthedocs.io/en/4.5/properties/creator/#affiliation
+        affiliations = contributor.json_affiliations
+        if affiliations:
+            ror_ids = contributor.affiliation_ror_ids
+            if ror_ids:
+                # set affiliationIdentifier to first ROR ID
+                creator.update(
+                    affiliationIdentifier=ror_ids[0],
+                    affiliationIdentifierScheme="ROR",
+                    schemeURI="https://ror.org",
+                )
+            else:
+                # otherwise set to the first affiliation freetext name
+                creator.update(
+                    affiliation=[af[0]["name"] for af in contributor.affiliations]
+                )
+        return creator
 
-            creators.append(item)
-        return creators
+    @classmethod
+    def convert_authors(cls, release_contributors):
+        """
+        Maps a Set of ReleaseContributors to a list dictionaries representing DataCite creators
+
+        (we're using DataCite schema 4.3 but this is still pretty much the same)
+        https://datacite-metadata-schema.readthedocs.io/en/4.5/properties/creator/
+        """
+        return [cls.convert_release_contributor(rc) for rc in release_contributors]
 
     @classmethod
     def convert_publication_year(cls, common_metadata: CommonMetadata):
-        copyrightYear = getattr(common_metadata, "copyright_year", None)
-        if copyrightYear:
-            return copyrightYear
-
-        first_published_at = getattr(common_metadata, "first_published_at", None)
-        if first_published_at:
-            return first_published_at.year
-        return None
+        if common_metadata.live:
+            return common_metadata.first_published.year
+        return datetime.now().year
 
     @classmethod
     def convert_contributors(cls, common_metadata: CommonMetadata):
