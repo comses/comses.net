@@ -27,7 +27,7 @@
         {% if c.email -%}
     <meta name='citation_author_email' content='{{ c.email }}'>
         {%- endif %}
-        {% for affiliation in c.affiliations.all() -%}
+        {% for affiliation in c.affiliations -%}
     <meta name='citation_author_institution' content='{{ affiliation }}'>
         {%- endfor %}
     {%- endfor %}
