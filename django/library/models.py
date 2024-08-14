@@ -97,12 +97,6 @@ class CodebaseReleasePlatformTag(TaggedItemBase):
     )
 
 
-class ContributorAffiliation(TaggedItemBase):
-    content_object = ParentalKey(
-        "library.Contributor", related_name="tagged_contributors"
-    )
-
-
 class LicenseQuerySet(models.QuerySet):
     def software(self, **kwargs):
         return self.no_cc(**kwargs)
@@ -137,8 +131,6 @@ class Contributor(index.Indexed, ClusterableModel):
     )
     middle_name = models.CharField(max_length=100, blank=True)
     family_name = models.CharField(max_length=100, blank=True)
-    # FIXME: deprecated, remove in future release
-    affiliations = ClusterTaggableManager(through=ContributorAffiliation)
 
     json_affiliations = models.JSONField(
         default=list, help_text=_("JSON-LD list of affiliated institutions")
@@ -158,7 +150,6 @@ class Contributor(index.Indexed, ClusterableModel):
     search_fields = [
         index.SearchField("given_name"),
         index.SearchField("family_name"),
-        index.RelatedFields("affiliations", [index.SearchField("name")]),
         index.SearchField("json_affiliations_string"),
         index.SearchField("email"),
         index.RelatedFields(
@@ -171,6 +162,15 @@ class Contributor(index.Indexed, ClusterableModel):
             ],
         ),
     ]
+
+    @property
+    def affiliations(self):
+        return self.json_affiliations
+
+    @property
+    def affiliation_ror_ids(self):
+        return [affiliation.get("ror_id") for affiliation in self.json_affiliations]
+
 
     @cached_property
     def json_affiliations_string(self):
@@ -185,6 +185,37 @@ class Contributor(index.Indexed, ClusterableModel):
     def to_affiliation_string(cls, afl):
         # e.g., "Arizona State University https://www.asu.edu ASU"
         return f"{afl.get('name')} {afl.get('url')} {afl.get('acronym')}"
+
+    @property
+    def codemeta_affiliation(self):
+        """
+        FIXME: move to CodeMeta class
+        For now codemeta affiliations appear to be a single https://schema.org/Organization
+        """
+        if self.json_affiliations:
+            return self.to_codemeta_affiliation(self.json_affiliations[0])
+
+    @property
+    def primary_affiliation_name(self):
+        return self.primary_json_affiliation_name
+
+    @property
+    def primary_json_affiliation_name(self):
+        return self.json_affiliations[0]["name"] if self.json_affiliations else ""
+
+    def to_codemeta_affiliation(self, affiliation):
+        # FIXME: move to CodeMeta class
+        if affiliation:
+            return {
+                # FIXME: may switch to https://schema.org/ResearchOrganization at some point
+                "@type": "Organization",
+                "@id": affiliation.get("ror_id"),
+                "name": affiliation.get("name"),
+                "url": affiliation.get("url"),
+                "identifier": affiliation.get("ror_id"),
+                "sameAs": affiliation.get("ror_id"),
+            }
+        return {}
 
     @staticmethod
     def from_user(user):
@@ -232,10 +263,6 @@ class Contributor(index.Indexed, ClusterableModel):
         if self.user:
             return self.user.member_profile.orcid_url
         return None
-
-    @property
-    def affiliation_ror_ids(self):
-        return [affiliation.get("ror_id") for affiliation in self.json_affiliations]
 
     @property
     def member_profile_url(self):
@@ -297,41 +324,6 @@ class Contributor(index.Indexed, ClusterableModel):
                 f"{self.given_name} {self.middle_name}".strip()
                 + f" {self.family_name}".rstrip()
             )
-
-    @property
-    def formatted_affiliations(self):
-        return ", ".join(self.affiliations.values_list("name", flat=True))
-
-    @property
-    def codemeta_affiliation(self):
-        """
-        FIXME: move to CodeMeta class
-        For now codemeta affiliations appear to be a single https://schema.org/Organization
-        """
-        if self.json_affiliations:
-            return self.to_codemeta_affiliation(self.json_affiliations[0])
-
-    @property
-    def primary_affiliation_name(self):
-        return self.affiliations.first().name if self.affiliations.exists() else ""
-
-    @property
-    def primary_json_affiliation_name(self):
-        return self.json_affiliations[0]["name"] if self.json_affiliations else ""
-
-    def to_codemeta_affiliation(self, affiliation):
-        # FIXME: move to CodeMeta class
-        if affiliation:
-            return {
-                # FIXME: may switch to https://schema.org/ResearchOrganization at some point
-                "@type": "Organization",
-                "@id": affiliation.get("ror_id"),
-                "name": affiliation.get("name"),
-                "url": affiliation.get("url"),
-                "identifier": affiliation.get("ror_id"),
-                "sameAs": affiliation.get("ror_id"),
-            }
-        return {}
 
     def get_profile_url(self):
         user = self.user
@@ -1858,19 +1850,22 @@ class ReleaseContributor(models.Model):
 
     objects = ReleaseContributorQuerySet.as_manager()
 
-    def __getattr__(self, name):
+    def __getattribute__(self, name):
         if name in [
             "family_name",
             "given_name",
             "has_name",
+            "get_full_name",
+            "get_profile_url",
             "name",
             "email",
+            "affiliations",
             "json_affiliations",
             "type",
             "user",
         ]:
             return getattr(self.contributor, name)
-        return super().__getattr__(name)
+        return object.__getattribute__(self, name)
 
     def __str__(self):
         return f"[release_contributor] (release:{self.release}, contributor:{self.contributor})"
@@ -2537,8 +2532,8 @@ class CommonMetadata:
         self.programming_languages = release.programming_languages.all()
         self.os = release.os
         self.identifier = release.permanent_url
-        self.date_created = release.date_created.isoformat()
-        self.date_modified = release.last_modified.isoformat()
+        self.date_created = release.date_created.date()
+        self.date_modified = release.last_modified.date()
         self.keywords = self.convert_keywords()
         self.runtime_platform = self.convert_platforms()
         self.url = release.permanent_url
@@ -2559,17 +2554,18 @@ class CommonMetadata:
         ]
 
         if release.live:
-            self.first_published = release.first_published_at
-            self.copyright_year = release.first_published_at.year
-            self.last_published = release.last_published_on
+            self.first_published = release.first_published_at.date()
+            self.copyright_year = self.first_published.year
+            self.last_published = release.last_published_on.date()
 
         if release.license:
             self.license = release.license
         else:
             logger.error(
-                "Trying to build common metadata for a degenerate release with no license: %s",
+                "Attempting to build common metadata for a degenerate release with no license: %s",
                 release,
             )
+            raise ValueError("Invalid release with no License")
 
         # FIXME: set all of these fields explicitly
         if codebase.repository_url:
@@ -2641,8 +2637,8 @@ class CodeMetaMetadata:
             programmingLanguage=cls.convert_programming_languages(common_metadata),
             author=cls.convert_authors(common_metadata),
             identifier=common_metadata.identifier,
-            dateCreated=common_metadata.date_created,
-            dateModified=common_metadata.date_modified,
+            dateCreated=common_metadata.date_created.isoformat(),
+            dateModified=common_metadata.date_modified.isoformat(),
             keywords=common_metadata.keywords,
             runtimePlatform=common_metadata.runtime_platform,
             url=common_metadata.url,
@@ -2651,7 +2647,7 @@ class CodeMetaMetadata:
 
         if common_metadata.live:
             metadata.update(
-                datePublished=common_metadata.last_published,
+                datePublished=common_metadata.last_published.isoformat(),
                 copyrightYear=common_metadata.copyright_year,
             )
 
@@ -2749,8 +2745,7 @@ class DataCiteMetadata:
                 }
             )
 
-        # FIXME: creators should never be empty!
-        # FIXME: when additional info is available for codebase creator, update this
+        # creators should never be empty
         metadata["creators"] = cls.convert_authors(codebase.all_authors)
         metadata["titles"] = [{"title": codebase.title}]
         metadata["descriptions"] = [
@@ -2939,21 +2934,17 @@ class DataCiteMetadata:
         creator = {}
         # check for ORCID name identifier first: https://datacite-metadata-schema.readthedocs.io/en/4.5/properties/creator/#nameidentifier
         if contributor.is_person:
+            creator.update(
+                nameType="Personal",
+                givenName=contributor.given_name,
+                familyName=contributor.family_name,
+                creatorName=f"{contributor.family_name}, {contributor.given_name}",
+            )
             if contributor.orcid_url:
-                # FIXME: need to confirm if setting the orcid_url as a nameIdentifier will auto-fill the given name, family name, etc., as it does in the
-                # manual intake form
                 creator.update(
-                    nameType="Personal",
                     nameIdentifier=contributor.orcid_url,
                     nameIdentifierScheme="ORCID",
                     schemeURI="https://orcid.org",
-                )
-            else:
-                creator.update(
-                    nameType="Personal",
-                    givenName=contributor.given_name,
-                    familyName=contributor.family_name,
-                    creatorName=f"{contributor.family_name}, {contributor.given_name}",
                 )
         else:
             creator.update(nameType="Organizational", creatorName=contributor.name)
@@ -2971,9 +2962,7 @@ class DataCiteMetadata:
                 )
             else:
                 # otherwise set to the first affiliation freetext name
-                creator.update(
-                    affiliation=[af[0]["name"] for af in contributor.affiliations]
-                )
+                creator.update(affiliation=[af[0]["name"] for af in affiliations])
         return creator
 
     @classmethod
