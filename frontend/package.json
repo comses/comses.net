@@ -29,7 +29,7 @@
     "@vorms/resolvers": "^1.1.0",
     "@vuepic/vue-datepicker": "^4.5.1",
     "@vueuse/core": "^9.13.0",
-    "axios": "^1.6.7",
+    "axios": "^1.7.4",
     "bootstrap": "5.2.3",
     "highcharts": "^11.3.0",
     "highcharts-vue": "^1.4.3",
