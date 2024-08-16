@@ -786,15 +786,18 @@ class CodebaseGitRepositoryApi:
     Manage a (local) git repository mirror of a codebase
     """
 
+    FILE_SIZE_LIMIT = 100 * 1024 * 1024
+
     def __init__(self, codebase):
         self.codebase = codebase
         self.mirror = codebase.git_mirror
         if not self.mirror:
             raise ValueError("Codebase must have a git_mirror")
-        self.repo_name = codebase.git_mirror.repository_name
-        if not self.repo_name:
-            raise ValueError("Repository name not set")
         self.repo_dir = Path(self.codebase.base_git_dir, str(self.repo_name)).absolute()
+
+    @property
+    def repo_name(self):
+        return self.mirror.repository_name
 
     @property
     def committer(self):
@@ -809,6 +812,19 @@ class CodebaseGitRepositoryApi:
             else profile.email
         )
         return Actor(profile.name, author_email)
+
+    @classmethod
+    def check_file_sizes(cls, codebase):
+        releases = codebase.ordered_releases_list()
+        for release in releases:
+            release_fs_api = release.get_fs_api()
+            sip_storage = release_fs_api.get_sip_storage()
+            for file in sip_storage.list(absolute=True):
+                if file.stat().st_size > cls.FILE_SIZE_LIMIT:
+                    file_size_mb = file.stat().st_size / (1024 * 1024)
+                    raise ValueError(
+                        f"File {file} is too large ({file_size_mb}MB), individual files must be under {cls.FILE_SIZE_LIMIT / (1024 * 1024)}MB"
+                    )
 
     @contextmanager
     def use_temporary_repo(self, from_existing=False):
@@ -898,18 +914,18 @@ class CodebaseGitRepositoryApi:
         """
         commit the the release and tag it, should only be called after adding all necessary files
         """
-        commit_msg = f"Release {release.version_number}"
+        # FIXME: add co-authors from contributors?
+        commit_msg = f"Release {release.version_number}\n\n{release.release_notes.raw}"
         self.repo.index.commit(
             message=commit_msg,
             committer=self.committer,
             author=self.author,
             author_date=release.last_published_on,
-            # TODO: add co-authors from contributors?
         )
         if tag:
             self.repo.create_tag(f"v{release.version_number}")
 
-    def append_releases(self, releases=None):
+    def append_releases(self, releases=None) -> Repo:
         """
         add new releases to the git repository.
         releases must be newer/higher than the latest mirrored release so that they can be added on top
@@ -919,6 +935,7 @@ class CodebaseGitRepositoryApi:
 
         :param releases: list of releases to append, if None, all unmirrored releases will be appended
         """
+        self.check_file_sizes(self.codebase)
         with self.use_temporary_repo(from_existing=True):
             if not releases:
                 releases = self.mirror.unmirrored_local_releases
@@ -939,36 +956,29 @@ class CodebaseGitRepositoryApi:
                 self.add_release_meta_files(release)
                 self.commit_release(release)
         # record newly mirrored releases and update timestamp
-        self.mirror.local_releases.add(*releases)
-        self.mirror.last_local_update = timezone.now()
-        self.mirror.save()
+        self.mirror.update_local_releases(releases)
+        return Repo(self.repo_dir)
 
-    def build(self):
+    def build(self) -> Repo:
         """
         builds or rebuilds the git repository from codebase releases
 
         this will create an entirely new repository and should only be used if we are creating the
         mirror for the first time or need to rebuild the entire history
         """
-        try:
-            releases = self.codebase.ordered_releases_list()
-            if not releases:
-                raise ValidationError(
-                    "Must have at least one public release to build from"
-                )
-            with self.use_temporary_repo():
-                self.initialize()
-                for release in releases:
-                    self.add_release_files(release)
-                    self.add_release_meta_files(release)
-                    self.commit_release(release)
-            # record mirrored releases and update timestamp
-            self.mirror.local_releases.set(releases)
-            self.mirror.last_local_update = timezone.now()
-            self.mirror.save()
-        except Exception as e:
-            logger.exception(e)
-            raise ValidationError("Failed to build git repository")
+        self.check_file_sizes(self.codebase)
+        releases = self.codebase.ordered_releases_list()
+        if not releases:
+            raise ValidationError("Must have at least one public release to build from")
+        with self.use_temporary_repo():
+            self.initialize()
+            for release in releases:
+                self.add_release_files(release)
+                self.add_release_meta_files(release)
+                self.commit_release(release)
+        # record mirrored releases and update timestamp
+        self.mirror.update_local_releases(releases)
+        return Repo(self.repo_dir)
 
     def dirs_equal(self, dir1: Path, dir2: Path, ignore=[".git"]):
         """

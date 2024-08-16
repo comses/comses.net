@@ -501,11 +501,17 @@ ACCOUNT_LOGIN_ON_EMAIL_CONFIRMATION = True
 ACCOUNT_CHANGE_EMAIL = True
 
 ORCID_CLIENT_ID = os.getenv("ORCID_CLIENT_ID", "")
-
 ORCID_CLIENT_SECRET = read_secret("orcid_client_secret")
-
 GITHUB_CLIENT_ID = os.getenv("GITHUB_CLIENT_ID", "")
 GITHUB_CLIENT_SECRET = read_secret("github_client_secret")
+
+GITHUB_APP_ID = int(os.getenv("GITHUB_APP_ID", -1))
+# FIXME: should the main socialauth app be the same as the mirroring app?
+GITHUB_APP_CLIENT_ID = os.getenv("GITHUB_APP_ID", "")
+GITHUB_APP_CLIENT_SECRET = read_secret("github_app_client_secret")
+GITHUB_APP_PRIVATE_KEY = read_secret("github_app_private_key")
+GITHUB_APP_INSTALLATION_ID = int(os.getenv("GITHUB_APP_INSTALLATION_ID", -1))
+GITHUB_MODEL_LIBRARY_ORG_NAME = os.getenv("GITHUB_MODEL_LIBRARY_ORG_NAME", "")
 
 TEST_BASIC_AUTH_PASSWORD = os.getenv("TEST_BASIC_AUTH_PASSWORD", "test password")
 TEST_USER_ID = os.getenv("TEST_USER_ID", 1000000)

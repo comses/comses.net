@@ -538,9 +538,12 @@ class CodebaseQuerySet(models.QuerySet):
 
 class CodebaseGitMirror(models.Model):
     """
-    model to keep track of the state of a git mirror for a codebase
+    # FIXME: rename to CodebaseGitRepository?
+    model to keep track of the state of a git repository for a codebase
+    that can either be mirrored (1-way, auto-updating) or synced (2-way, 1 time push)
     """
 
+    # is_active = models.BooleanField(default=True)
     repository_name = models.CharField(max_length=100, unique=True)
     remote_url = models.URLField(
         blank=True,
@@ -552,6 +555,7 @@ class CodebaseGitMirror(models.Model):
     # keep track of timestamp and releases that have been synced to the remote
     last_remote_update = models.DateTimeField(null=True, blank=True)
     remote_releases = models.ManyToManyField("CodebaseRelease", related_name="+")
+    # user_access_token = models.CharField(max_length=200, blank=True)
 
     @property
     def latest_local_release(self):
@@ -567,8 +571,22 @@ class CodebaseGitMirror(models.Model):
             id__in=self.local_releases.values_list("id", flat=True)
         )
 
-    def get_repo_api(self):
-        return CodebaseGitRepositoryApi(self.codebase)
+    @property
+    def unmirrored_remote_releases(self):
+        return self.local_releases.exclude(
+            id__in=self.remote_releases.values_list("id", flat=True)
+        )
+
+    def update_local_releases(self, releases: models.QuerySet | list):
+        self.local_releases.set(releases)
+        self.last_local_update = timezone.now()
+        self.save()
+
+    def update_remote_releases(self):
+        releases = self.local_releases.all()
+        self.remote_releases.set(releases)
+        self.last_remote_update = timezone.now()
+        self.save()
 
 
 @add_to_comses_permission_whitelist

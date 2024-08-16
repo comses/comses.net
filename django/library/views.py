@@ -53,7 +53,12 @@ from .forms import (
     PeerReviewerFeedbackEditorForm,
     PeerReviewFilterForm,
 )
-from .fs import FileCategoryDirectories, StagingDirectories, MessageLevels
+from .fs import (
+    CodebaseGitRepositoryApi,
+    FileCategoryDirectories,
+    StagingDirectories,
+    MessageLevels,
+)
 from .models import (
     Codebase,
     CodebaseRelease,
@@ -80,6 +85,7 @@ from .serializers import (
     PeerReviewFeedbackEditorSerializer,
     PeerReviewEventLogSerializer,
 )
+from .github import GithubService
 
 import logging
 import pathlib
@@ -518,6 +524,32 @@ class CodebaseViewSet(SpamCatcherViewSetMixin, CommonViewSetMixin, HtmlNoDeleteV
             serializer = self.get_serializer(instance)
             data = add_user_retrieve_perms(instance, serializer.data, request.user)
             return Response(data)
+
+    # @action(detail=True, methods=["post"])
+    # def github_sync(self, request, *args, **kwargs):
+    #     pass
+
+    @action(detail=True, methods=["post"])
+    def github_mirror(self, request, *args, **kwargs):
+        codebase = self.get_object()
+        if codebase.git_mirror:
+            return Response(
+                data={"error": "This codebase is already mirrored to a GitHub repo"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        try:
+            CodebaseGitRepositoryApi.check_file_sizes(codebase)
+        except Exception as e:
+            return Response(
+                data={"error": str(e)},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        repo_name = request.data.get("repo_name")
+        codebase.create_git_mirror(repo_name)
+        # TODO: do this with a celery task
+        service = GithubService(codebase, debug=True)
+        service.mirror_org_repo()
+        return Response(data={"job_id": "1234"}, status=status.HTTP_202_ACCEPTED)
 
 
 class DevelopmentCodebaseDeleteView(mixins.DestroyModelMixin, CodebaseViewSet):

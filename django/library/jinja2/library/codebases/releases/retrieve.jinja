@@ -289,6 +289,35 @@
     {% endif %}
 {% endwith %}
 
+{% if codebase.git_mirror or has_change_perm %}
+<div class="card-metadata">
+    <div class="card-body">
+        <div class="section mb-0">
+            <div class="d-flex justify-content-between">
+                <b class="card-title">
+                    <i class="fab fa-github"></i>
+                    Github Integration
+                </b>
+                <a href="/github/" target="_blank">
+                    <i class="fas fa-question-circle"></i>
+                </a>
+            </div>
+            {% if codebase.git_mirror %}
+                <a href="{{ codebase.git_mirror.remote_url }}">
+                    <span class='badge bg-info'>view on Github</span>
+                </a>
+            {% elif has_change_perm %}
+                <div
+                    id="github-mirror"
+                    data-identifier="{{ codebase.identifier }}"
+                    data-default-repo-name="{{ slugify(codebase.title) }}"
+                ></div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endif %}
+
 <div class="card-metadata">
     <div class="card-body">
         <div class="section">
@@ -572,5 +601,6 @@
     {{ vite_asset("apps/release_download.ts") }}
     {% if has_change_perm %}
         {{ vite_asset("apps/release_regenerate_share_uuid.ts") }}
+        {{ vite_asset("apps/github_mirror.ts") }}
     {% endif %}
 {% endblock %}
