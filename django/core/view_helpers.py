@@ -80,8 +80,5 @@ def add_user_retrieve_perms(instance, data, user):
         f"{instance._meta.app_label}.delete_{instance._meta.model_name}",
         instance,
     )
-    data["can_moderate"] = (
-        user.is_superuser
-        or ComsesGroups.MODERATOR.is_group_member(user)
-    )
+    data["can_moderate"] = user.is_superuser or ComsesGroups.is_moderator(user)
     return data

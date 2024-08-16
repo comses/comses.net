@@ -1,3 +1,4 @@
+import logging
 import pathlib
 from datetime import timedelta
 from enum import Enum
@@ -33,6 +34,9 @@ from .fields import MarkdownField
 EXCLUDED_USERNAMES = ("AnonymousUser", "openabm")
 
 
+logger = logging.getLogger(__name__)
+
+
 class ComsesGroups(Enum):
     ADMIN = "Admins"
     MODERATOR = "Moderators"
@@ -57,14 +61,43 @@ class ComsesGroups(Enum):
         if _group is None:
             _group = self.group = Group.objects.get(name=self.value)
         return _group
-    
-    # can be called like #ComsesGroups.ADMIN.is_group_member(user)
-    def is_group_member(self, user):
-        for member in self.users():
-            if member.username == user.username:
-                return True
-        
+
+    def is_member(self, user):
+        return ComsesGroups.is_group_member(user, self.value)
+
+    def set_membership(self, user: User, value: bool):
+        """
+        Add or remove a user from this Group
+
+        Parameters:
+        - user (User): The user to add or remove from the group.
+        - value (bool): set to True to add, False to remove
+        """
+        if value:
+            self.add(user)
+        else:
+            self.remove(user)
+
+    def add(self, user):
+        user.groups.add(Group.objects.get(name=self.value))
+
+    def remove(self, user):
+        user.groups.remove(Group.objects.get(name=self.value))
+
+    @staticmethod
+    def is_moderator(user):
+        return ComsesGroups.MODERATOR.is_member(user)
+
+    @staticmethod
+    def is_full_member(user):
+        return ComsesGroups.FULL_MEMBER.is_member(user)
+
+    @staticmethod
+    def is_group_member(user, group_name: str):
+        if group_name:
+            return user.groups.filter(name=group_name).exists()
         return False
+
 
 def get_sentinel_user():
     return get_user_model().get_anonymous()
@@ -134,6 +167,14 @@ class SpamModeration(models.Model):
         blank=True,
     )
 
+    def mark_not_spam(self, reviewer: User, detection_details=None):
+        logger.info("user %s marking %s as not spam", reviewer, self)
+        self.status = self.Status.NOT_SPAM
+        self.reviewer = reviewer
+        if detection_details:
+            self.detection_details = detection_details
+        self.save()
+
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)
         self.update_related_object()
@@ -163,6 +204,13 @@ class ModeratedContent(models.Model):
             "cached boolean representation of spam_moderation for search indexing"
         ),
     )
+
+    def mark_not_spam(self, user: User):
+        """
+        Clear spam status for this object
+        """
+        if self.spam_moderation:
+            self.spam_moderation.mark_not_spam(user)
 
     def mark_spam(self, status=SpamModeration.Status.SPAM, **kwargs):
         content_type = ContentType.objects.get_for_model(type(self))
@@ -464,7 +512,7 @@ class MemberProfile(index.Indexed, ClusterableModel):
 
     @cached_property
     def is_reviewer(self):
-        return self.user.groups.filter(name=ComsesGroups.REVIEWER.value).exists()
+        return ComsesGroups.REVIEWER.is_member(self.user)
 
     @cached_property
     def name(self):
@@ -472,15 +520,11 @@ class MemberProfile(index.Indexed, ClusterableModel):
 
     @property
     def full_member(self):
-        return self.user.groups.filter(name=ComsesGroups.FULL_MEMBER.value).exists()
+        return ComsesGroups.is_full_member(self.user)
 
     @full_member.setter
     def full_member(self, value):
-        group = Group.objects.get(name=ComsesGroups.FULL_MEMBER.value)
-        if value:
-            self.user.groups.add(group)
-        else:
-            self.user.groups.remove(group)
+        ComsesGroups.FULL_MEMBER.set_membership(self.user, value)
 
     def is_messageable(self, user):
         return user.is_authenticated and user != self.user

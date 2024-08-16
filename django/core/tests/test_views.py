@@ -9,7 +9,7 @@ from django.test import TestCase
 from core.tests.base import UserFactory
 from core.tests.permissions_base import BaseViewSetTestCase
 from core.views import EventViewSet, JobViewSet
-from core.models import Job, Event, SpamModeration
+from core.models import Job, Event, SpamModeration, ComsesGroups
 from .base import JobFactory, EventFactory
 
 
@@ -140,6 +140,8 @@ class SpamDetectionTestCase(BaseViewSetTestCase):
     def setUp(self):
         self.user_factory = UserFactory()
         self.submitter = self.user_factory.create(username="submitter")
+        self.moderator = self.user_factory.create(username="moderator")
+        self.moderator.groups.add(ComsesGroups.MODERATOR.get_group())
         self.superuser = self.user_factory.create(username="admin", is_superuser=True)
         self.client.login(
             username=self.submitter.username, password=self.user_factory.password
@@ -203,6 +205,25 @@ class SpamDetectionTestCase(BaseViewSetTestCase):
         # non-moderators cannot mark content as spam
         self.assertEquals(response.status_code, 403)
         self.assertFalse(event.is_marked_spam)
+        # check moderator
+        self.client.login(
+            username=self.moderator.username, password=self.user_factory.password
+        )
+        self.assertTrue(ComsesGroups.is_moderator(self.moderator))
+        response = self.client.post(
+            reverse("core:event-mark-spam", kwargs={"pk": event.id}),
+            data,
+            HTTP_ACCEPT="application/json",
+            format="json",
+        )
+        event.refresh_from_db()
+        self.assertTrue(event.is_marked_spam)
+        self.assertIsNotNone(event.spam_moderation)
+        event.mark_not_spam(self.moderator)
+        event.refresh_from_db()
+        self.assertFalse(event.is_marked_spam)
+        self.assertIsNotNone(event.spam_moderation)
+        # check superuser
         self.client.login(
             username=self.superuser.username, password=self.user_factory.password
         )

@@ -57,7 +57,7 @@ class ViewRestrictedObjectPermissions(ObjectPermissions):
 
 class ModeratorPermissions(permissions.BasePermission):
     def has_permission(self, request, view):
-        if not request.user or not request.user.is_authenticated:
-            return False
-        if ComsesGroups.MODERATOR.is_group_member(request.user) or request.user.is_superuser:
-            return True
+        user = request.user
+        if user and user.is_authenticated:
+            return user.is_superuser or ComsesGroups.is_moderator(user)
+        return False
