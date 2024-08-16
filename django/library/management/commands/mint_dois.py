@@ -1,9 +1,15 @@
 import logging
 from django.core.management.base import BaseCommand
 from library.models import CodebaseRelease
-from library.doi import DataCiteApi, VERIFICATION_MESSAGE, doi_matches_pattern, get_welcome_message
+from library.doi import (
+    DataCiteApi,
+    VERIFICATION_MESSAGE,
+    doi_matches_pattern,
+    get_welcome_message,
+)
 
 logger = logging.getLogger(__name__)
+
 
 def mint_dois_for_peer_reviewed_releases_without_dois(interactive=True, dry_run=True):
     """
@@ -98,44 +104,68 @@ def mint_dois_for_peer_reviewed_releases_without_dois(interactive=True, dry_run=
                     f"Failed to update metadata for next_release {next_release.pk}"
                 )
 
-    logger.info(f"Minted {len(peer_reviewed_releases_without_dois)} DOIs for peer reviewed releases without DOIs.")
+    logger.info(
+        f"Minted {len(peer_reviewed_releases_without_dois)} DOIs for peer reviewed releases without DOIs."
+    )
 
     """
     assert correctness
     """
     if not dry_run:
         print(VERIFICATION_MESSAGE)
-        logger.info(f"Checking that: all peer reviewed releases (previously) without DOIs (and their parent codebases) have valid DOIs now...")
+        logger.info(
+            f"Checking that: all peer reviewed releases (previously) without DOIs (and their parent codebases) have valid DOIs now..."
+        )
         invalid_codebases = []
         invalid_releases = []
 
         for i, release in enumerate(peer_reviewed_releases_without_dois):
-            print(f"Verifying release: {i}/{len(peer_reviewed_releases_without_dois)} {'' if (i+1)%8 == 0 else '.'*((i+1)%8)}", end=" \r")
+            print(
+                f"Verifying release: {i}/{len(peer_reviewed_releases_without_dois)} {'' if (i+1)%8 == 0 else '.'*((i+1)%8)}",
+                end=" \r",
+            )
 
             if not release.doi or not doi_matches_pattern(release.doi):
                 invalid_releases.append(release.pk)
-            if not release.codebase.doi or not doi_matches_pattern(release.codebase.doi):
+            if not release.codebase.doi or not doi_matches_pattern(
+                release.codebase.doi
+            ):
                 invalid_codebases.append(release.codebase.pk)
 
         if invalid_codebases:
-            logger.error(f"Failure. Codebases with invalid or missing DOIs ({len(invalid_codebases)}): {invalid_codebases}")
+            logger.error(
+                f"Failure. Codebases with invalid or missing DOIs ({len(invalid_codebases)}): {invalid_codebases}"
+            )
         else:
-            logger.info("Success. All parent codebases for peer reviewed releases previously without DOIs have valid DOIs now.")
+            logger.info(
+                "Success. All parent codebases for peer reviewed releases previously without DOIs have valid DOIs now."
+            )
         if invalid_releases:
-            logger.error(f"Failure. CodebaseReleases with invalid or missing DOIs ({len(invalid_releases)}): {invalid_releases}")
+            logger.error(
+                f"Failure. CodebaseReleases with invalid or missing DOIs ({len(invalid_releases)}): {invalid_releases}"
+            )
         else:
-            logger.info("Success. All peer reviewed releases previously without DOIs have valid DOIs now.")
-class Command(BaseCommand):
+            logger.info(
+                "Success. All peer reviewed releases previously without DOIs have valid DOIs now."
+            )
 
+
+class Command(BaseCommand):
     """
     Mints DOIs for all peer reviewed CodebaseReleases.
     """
 
     def add_arguments(self, parser):
-        parser.add_argument('--interactive', action='store_true', help='Wait for user to press enter to continue.')
-        parser.add_argument('--dry-run', action='store_true', help='Output what would have happened.')
+        parser.add_argument(
+            "--interactive",
+            action="store_true",
+            help="Wait for user to press enter to continue.",
+        )
+        parser.add_argument(
+            "--dry-run", action="store_true", help="Output what would have happened."
+        )
 
     def handle(self, *args, **options):
-        interactive = options['interactive']
-        dry_run = options['dry_run']
+        interactive = options["interactive"]
+        dry_run = options["dry_run"]
         mint_dois_for_peer_reviewed_releases_without_dois(interactive, dry_run)

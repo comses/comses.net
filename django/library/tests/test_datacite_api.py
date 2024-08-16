@@ -19,7 +19,6 @@ for the overall goal.
 
 
 class DataCiteApiTest(BaseModelTestCase):
-
     """
     Create a codebase with an initial release
     """

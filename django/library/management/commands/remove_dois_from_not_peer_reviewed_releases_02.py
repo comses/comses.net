@@ -5,6 +5,7 @@ from library.doi import VERIFICATION_MESSAGE, get_welcome_message
 
 logger = logging.getLogger(__name__)
 
+
 def remove_dois_from_not_peer_reviewed_releases_02(interactive=True, dry_run=True):
     print(get_welcome_message(dry_run))
 
@@ -36,20 +37,35 @@ def remove_dois_from_not_peer_reviewed_releases_02(interactive=True, dry_run=Tru
     if not dry_run:
         print(VERIFICATION_MESSAGE)
         logger.info(
-            "Checking that DOIs for all not peer reviewed releases have been deleted...")
+            "Checking that DOIs for all not peer reviewed releases have been deleted..."
+        )
         for i, release in enumerate(not_peer_reviewed_releases_with_dois):
-            print(f"Processing Codebase {i}/{len(not_peer_reviewed_releases_with_dois)} {'' if (i+1)%8 == 0 else '.'*((i+1)%8)}", end=" \r")
+            print(
+                f"Processing Codebase {i}/{len(not_peer_reviewed_releases_with_dois)} {'' if (i+1)%8 == 0 else '.'*((i+1)%8)}",
+                end=" \r",
+            )
             if release.doi is not None:
-                logger.error(f"DOI for not peer reviewed release {release.pk} should be None!")
-        logger.info("Success. All existing DOIs for non peer reviewed releases have been deleted.")
+                logger.error(
+                    f"DOI for not peer reviewed release {release.pk} should be None!"
+                )
+        logger.info(
+            "Success. All existing DOIs for non peer reviewed releases have been deleted."
+        )
+
 
 class Command(BaseCommand):
 
     def add_arguments(self, parser):
-        parser.add_argument('--interactive', action='store_true', help='Wait for user to press enter to continue.')
-        parser.add_argument('--dry-run', action='store_true', help='Output what would have happened.')
+        parser.add_argument(
+            "--interactive",
+            action="store_true",
+            help="Wait for user to press enter to continue.",
+        )
+        parser.add_argument(
+            "--dry-run", action="store_true", help="Output what would have happened."
+        )
 
     def handle(self, *args, **options):
-        interactive = options['interactive']
-        dry_run = options['dry_run']
+        interactive = options["interactive"]
+        dry_run = options["dry_run"]
         remove_dois_from_not_peer_reviewed_releases_02(interactive, dry_run)

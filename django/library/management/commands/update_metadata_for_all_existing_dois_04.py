@@ -6,6 +6,7 @@ from library.doi import DataCiteApi, VERIFICATION_MESSAGE, get_welcome_message
 
 logger = logging.getLogger(__name__)
 
+
 def update_metadata_for_all_existing_dois_04(interactive=True, dry_run=True):
     print(get_welcome_message(dry_run))
 
@@ -54,9 +55,7 @@ def update_metadata_for_all_existing_dois_04(interactive=True, dry_run=True):
                     + f'{"Release is not peer reviewed." if not release.peer_reviewed else ""} Skipping.'
                 )
 
-    logger.info(
-        f"Metadata updated for all existing (Codebase & CodebaseRelease) DOIs."
-    )
+    logger.info(f"Metadata updated for all existing (Codebase & CodebaseRelease) DOIs.")
     """
     assert correctness
     """
@@ -72,10 +71,13 @@ def update_metadata_for_all_existing_dois_04(interactive=True, dry_run=True):
                 invalid_codebases.append(pk)
 
         if invalid_codebases:
-            logger.error(f"Failure. Metadata not in sync with DataCite for {len(invalid_codebases)} codebases: {invalid_codebases}")
+            logger.error(
+                f"Failure. Metadata not in sync with DataCite for {len(invalid_codebases)} codebases: {invalid_codebases}"
+            )
         else:
             logger.info(
-                f"Success. Metadata in sync with DataCite for all codebases with DOI.")
+                f"Success. Metadata in sync with DataCite for all codebases with DOI."
+            )
 
         all_releases_with_dois = CodebaseRelease.objects.exclude(doi__isnull=True)
         results = datacite_api.threaded_metadata_check(all_releases_with_dois)
@@ -84,19 +86,28 @@ def update_metadata_for_all_existing_dois_04(interactive=True, dry_run=True):
                 invalid_releases.append(pk)
 
         if invalid_releases:
-            logger.error(f"Failure. Metadata not in sync with DataCite for {len(invalid_releases)} releases: {invalid_releases}")
+            logger.error(
+                f"Failure. Metadata not in sync with DataCite for {len(invalid_releases)} releases: {invalid_releases}"
+            )
         else:
             logger.info(
-                f"Success. Metadata in sync with DataCite for all releases with DOI.")
+                f"Success. Metadata in sync with DataCite for all releases with DOI."
+            )
 
 
 class Command(BaseCommand):
 
     def add_arguments(self, parser):
-        parser.add_argument('--interactive', action='store_true', help='Wait for user to press enter to continue.')
-        parser.add_argument('--dry-run', action='store_true', help='Output what would have happened.')
+        parser.add_argument(
+            "--interactive",
+            action="store_true",
+            help="Wait for user to press enter to continue.",
+        )
+        parser.add_argument(
+            "--dry-run", action="store_true", help="Output what would have happened."
+        )
 
     def handle(self, *args, **options):
-        interactive = options['interactive']
-        dry_run = options['dry_run']
+        interactive = options["interactive"]
+        dry_run = options["dry_run"]
         update_metadata_for_all_existing_dois_04(interactive, dry_run)

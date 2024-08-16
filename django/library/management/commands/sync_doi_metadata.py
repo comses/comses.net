@@ -5,6 +5,7 @@ from library.doi import DataCiteApi, VERIFICATION_MESSAGE, get_welcome_message
 
 logger = logging.getLogger(__name__)
 
+
 def update_stale_metadata_for_all_codebases_with_dois(interactive=True, dry_run=True):
     print(get_welcome_message(dry_run))
 
@@ -41,12 +42,16 @@ def update_stale_metadata_for_all_codebases_with_dois(interactive=True, dry_run=
     if not dry_run:
         print(VERIFICATION_MESSAGE)
         logger.info(
-            f"Checking that: metadata for all codebases with DOIs is in sync with DataCite...")
+            f"Checking that: metadata for all codebases with DOIs is in sync with DataCite..."
+        )
 
         results = datacite_api.threaded_metadata_check(all_codebases_with_dois)
 
         if all([is_meta_valid for pk, is_meta_valid in results]):
-            logger.info(f"Success. Metadata for all codebases with DOIs is in sync with DataCite.")
+            logger.info(
+                f"Success. Metadata for all codebases with DOIs is in sync with DataCite."
+            )
+
 
 def update_stale_metadata_for_all_releases_with_dois(interactive=True, dry_run=True):
     print(get_welcome_message(dry_run))
@@ -79,9 +84,7 @@ def update_stale_metadata_for_all_releases_with_dois(interactive=True, dry_run=T
             input("Press Enter to continue or CTRL+C to quit...")
         continue
 
-    logger.info(
-        f"Updated {len(all_releases_with_dois)} releases with stale metadata."
-    )
+    logger.info(f"Updated {len(all_releases_with_dois)} releases with stale metadata.")
 
     """
     assert correctness
@@ -89,25 +92,34 @@ def update_stale_metadata_for_all_releases_with_dois(interactive=True, dry_run=T
     if not dry_run:
         print(VERIFICATION_MESSAGE)
         logger.info(
-            f"Checking that: metadata for all releases with DOIs is in sync with DataCite...")
+            f"Checking that: metadata for all releases with DOIs is in sync with DataCite..."
+        )
 
         results = datacite_api.threaded_metadata_check(all_releases_with_dois)
 
         if all([is_meta_valid for pk, is_meta_valid in results]):
-            logger.info(f"Success. Metadata for all releases with DOIs is in sync with DataCite.")
+            logger.info(
+                f"Success. Metadata for all releases with DOIs is in sync with DataCite."
+            )
+
 
 class Command(BaseCommand):
-
     """
     Syncs metadata for all codebases and releases with Datacite metadata service.
     """
 
     def add_arguments(self, parser):
-        parser.add_argument('--interactive', action='store_true', help='Wait for user to press enter to continue.')
-        parser.add_argument('--dry-run', action='store_true', help='Output what would have happened.')
+        parser.add_argument(
+            "--interactive",
+            action="store_true",
+            help="Wait for user to press enter to continue.",
+        )
+        parser.add_argument(
+            "--dry-run", action="store_true", help="Output what would have happened."
+        )
 
     def handle(self, *args, **options):
-        interactive = options['interactive']
-        dry_run = options['dry_run']
+        interactive = options["interactive"]
+        dry_run = options["dry_run"]
         update_stale_metadata_for_all_codebases_with_dois(interactive, dry_run)
         update_stale_metadata_for_all_releases_with_dois(interactive, dry_run)
