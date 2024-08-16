@@ -71,16 +71,17 @@ def retrieve_with_perms(self, request, *args, **kwargs):
 
 
 def add_user_retrieve_perms(instance, data, user):
+    print(user.get_all_permissions())
     data["has_change_perm"] = user.has_perm(
-        "{}.change_{}".format(instance._meta.app_label, instance._meta.model_name),
+        f"{instance._meta.app_label}.change_{instance._meta.model_name}",
         instance,
     )
     data["has_delete_perm"] = user.has_perm(
-        "{}.delete_{}".format(instance._meta.app_label, instance._meta.model_name),
+        f"{instance._meta.app_label}.delete_{instance._meta.model_name}",
         instance,
     )
     data["can_moderate"] = (
         user.is_superuser
-        or user.groups.filter(name=ComsesGroups.MODERATOR.value).exists()
+        or ComsesGroups.MODERATOR.is_group_member(user)
     )
     return data

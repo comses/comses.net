@@ -12,7 +12,7 @@ from rest_framework.response import Response
 from rest_framework.decorators import action
 
 from .models import SpamModeration
-from .permissions import ViewRestrictedObjectPermissions, ModeratorPermission
+from .permissions import ViewRestrictedObjectPermissions, ModeratorPermissions
 
 logger = logging.getLogger(__name__)
 
@@ -270,7 +270,7 @@ class SpamCatcherViewSetMixin:
                     f"instance {instance} does not have a {field} attribute"
                 )
 
-    @action(detail=True, methods=["post"], permission_classes=[ModeratorPermission])
+    @action(detail=True, methods=["post"], permission_classes=[ModeratorPermissions])
     def mark_spam(self, request, **kwargs):
         instance = self.get_object()
         self._validate_content_object(instance)

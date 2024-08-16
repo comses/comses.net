@@ -57,7 +57,14 @@ class ComsesGroups(Enum):
         if _group is None:
             _group = self.group = Group.objects.get(name=self.value)
         return _group
-
+    
+    # can be called like #ComsesGroups.ADMIN.is_group_member(user)
+    def is_group_member(self, user):
+        for member in self.users():
+            if member.username == user.username:
+                return True
+        
+        return False
 
 def get_sentinel_user():
     return get_user_model().get_anonymous()

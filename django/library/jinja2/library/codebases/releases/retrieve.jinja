@@ -464,9 +464,9 @@
             {% endif %}
         {% endif %}
     {% endwith %}
-    {% if can_moderate and not codebase.is_marked_spam %}
+{% endif %}
+{% if can_moderate and not codebase.is_marked_spam %}
         {{ mark_spam_confirm_modal("Mark spam", codebase.title, url("library:codebase-mark-spam", identifier=codebase.identifier), csrf_input) }}
-    {% endif %}
 {% endif %}
 {% with review=release.get_review() %}
     {% if review %}
