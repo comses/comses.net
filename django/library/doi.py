@@ -14,7 +14,7 @@ from .models import (
     Codebase,
     CodebaseRelease,
     DataCiteAction,
-    DataCiteMetadata,
+    DataCiteSchema,
     DataCiteRegistrationLog,
 )
 
@@ -182,7 +182,7 @@ class DataCiteApi:
             else "https://api.test.datacite.org/heartbeat"
         )
 
-    def _validate_metadata(self, datacite_metadata: DataCiteMetadata):
+    def _validate_metadata(self, datacite_metadata: DataCiteSchema):
         metadata_dict = datacite_metadata.to_dict()
         if not schema43.validate(metadata_dict):
             logger.error("Invalid DataCite metadata: %s", metadata_dict)

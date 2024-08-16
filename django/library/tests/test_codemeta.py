@@ -26,7 +26,7 @@ from core.tests.base import UserFactory
 from library.models import (
     Codebase,
     CodebaseRelease,
-    CodeMetaMetadata,
+    CodeMetaSchema,
     CommonMetadata,
     Contributor,
     ReleaseContributor,
@@ -282,7 +282,7 @@ class CodeMetaTest(TestCase):
             st.text(min_size=1, alphabet=string.printable),
             min_size=1,
             max_size=20,
-            unique_by=(lambda x: x.upper(), lambda x: x.upper())
+            unique_by=(lambda x: x.upper(), lambda x: x.upper()),
         ),
     )
     def test_languages(self, submitter_dict, programming_language_names: List[str]):
@@ -321,7 +321,7 @@ class CodeMetaTest(TestCase):
             st.text(min_size=1, alphabet=string.printable),
             min_size=1,
             max_size=20,
-            unique_by=(lambda x: x.upper(), lambda x: x.upper())
+            unique_by=(lambda x: x.upper(), lambda x: x.upper()),
         ),
     )
     def test_keywords(self, submitter_dict, tags: List[str]):
@@ -364,7 +364,9 @@ class CodeMetaTest(TestCase):
 
         self.codebase_release.codebase.references_text = references_text
         self.codebase_release.codebase.replication_text = replication_text
-        self.codebase_release.codebase.associated_publication_text = associated_publication_text
+        self.codebase_release.codebase.associated_publication_text = (
+            associated_publication_text
+        )
 
         expected_citation_flat = [
             references_text,
@@ -377,7 +379,8 @@ class CodeMetaTest(TestCase):
             del self.codebase_release.codemeta
         # Extract text from CodeMeta.metadata
         codemeta_citation_flat_text = [
-            creative_work["text"] for creative_work in self.codebase_release.codemeta.metadata["citation"]
+            creative_work["text"]
+            for creative_work in self.codebase_release.codemeta.metadata["citation"]
         ]
 
         self.assertEqual(expected_citation_flat, codemeta_citation_flat_text)
@@ -400,7 +403,9 @@ class CodeMetaTest(TestCase):
         if hasattr(self.codebase_release, "codemeta"):
             del self.codebase_release.codemeta
         try:
-            jsonschema.validate(self.codebase_release.codemeta.to_json(), schema=CODEMETA_SCHEMA)
+            jsonschema.validate(
+                self.codebase_release.codemeta.to_json(), schema=CODEMETA_SCHEMA
+            )
             logger.debug("codemeta.json is valid.")
         except Exception as e:
             logger.error("codemeta.json is invalid! Validation error:", e)
@@ -545,8 +550,12 @@ class CodeMetaValidationTest(RuleBasedStateMachine):
         logger.debug("add_existing_contributor()")
 
         # pick an existing contributor on the release
-        contributor = random.choice(Contributor.objects.filter(codebaserelease=self.codebase_release))
-        existing_contributor_roles = ReleaseContributor.objects.filter(contributor=contributor).get().roles
+        contributor = random.choice(
+            Contributor.objects.filter(codebaserelease=self.codebase_release)
+        )
+        existing_contributor_roles = (
+            ReleaseContributor.objects.filter(contributor=contributor).get().roles
+        )
 
         logger.debug(f"adding existing contributor: {contributor.id}")
 
@@ -564,13 +573,17 @@ class CodeMetaValidationTest(RuleBasedStateMachine):
     @rule(
         reference=st.text(min_size=300, max_size=900, alphabet=string.printable),
         replication=st.text(min_size=300, max_size=900, alphabet=string.printable),
-        associated_publication=st.text(min_size=300, max_size=900, alphabet=string.printable),
+        associated_publication=st.text(
+            min_size=300, max_size=900, alphabet=string.printable
+        ),
     )
     def add_citation(self, reference, replication, associated_publication):
         logger.debug("add_citation()")
         self.codebase_release.codebase.references_text = reference
         self.codebase_release.codebase.replication_text = replication
-        self.codebase_release.codebase.associated_publication_text = associated_publication
+        self.codebase_release.codebase.associated_publication_text = (
+            associated_publication
+        )
         logger.debug("add_citation() done.")
 
     @rule(programming_language=st.text(min_size=1, alphabet=string.printable))
@@ -609,24 +622,36 @@ class CodeMetaValidationTest(RuleBasedStateMachine):
 
         # total number of added unique contributors should match
         expected_contributors_count = self.release_contributors_count
-        real_contributors_count = self.codebase_release.codebase_contributors.all().count()
+        real_contributors_count = (
+            self.codebase_release.codebase_contributors.all().count()
+        )
 
         assert expected_contributors_count == real_contributors_count
 
         """
         total number of added unique authors and non-author contributors should match
         """
-        real_author_contributors_count = ReleaseContributor.objects.authors(self.codebase_release).all().count()
-        real_nonauthor_contributors_count = ReleaseContributor.objects.nonauthors(self.codebase_release).all().count()
+        real_author_contributors_count = (
+            ReleaseContributor.objects.authors(self.codebase_release).all().count()
+        )
+        real_nonauthor_contributors_count = (
+            ReleaseContributor.objects.nonauthors(self.codebase_release).all().count()
+        )
 
         assert (
             expected_contributors_count
-            == self.release_author_contributors_count + self.release_nonauthor_contributors_count
+            == self.release_author_contributors_count
+            + self.release_nonauthor_contributors_count
         )
 
-        assert expected_contributors_count == real_author_contributors_count + real_nonauthor_contributors_count
+        assert (
+            expected_contributors_count
+            == real_author_contributors_count + real_nonauthor_contributors_count
+        )
 
-        expected_codemeta_authors_count = len(CodeMetaMetadata.convert_authors(CommonMetadata(self.codebase_release)))
+        expected_codemeta_authors_count = len(
+            CodeMetaSchema.convert_authors(CommonMetadata(self.codebase_release))
+        )
         assert expected_codemeta_authors_count == self.release_author_contributors_count
 
         """ 
@@ -641,7 +666,9 @@ class CodeMetaValidationTest(RuleBasedStateMachine):
         programming_languages
         """
         expected_programming_languages_count = self.programming_languages_count
-        real_programming_languages_count = self.codebase_release.programming_languages.all().count()
+        real_programming_languages_count = (
+            self.codebase_release.programming_languages.all().count()
+        )
 
         assert expected_programming_languages_count == real_programming_languages_count
 
@@ -659,10 +686,11 @@ class CodeMetaValidationTest(RuleBasedStateMachine):
             if citation
         ]
 
-        fresh_codemeta = CodeMetaMetadata.build(CommonMetadata(self.codebase_release))
+        fresh_codemeta = CodeMetaSchema.build(CommonMetadata(self.codebase_release))
         # Extract text from CodeMeta.metadata
         real_codemeta_citation_flat_text = [
-            creative_work["text"] for creative_work in fresh_codemeta.metadata["citation"]
+            creative_work["text"]
+            for creative_work in fresh_codemeta.metadata["citation"]
         ]
 
         assert expected_citation == real_codemeta_citation_flat_text
@@ -676,7 +704,7 @@ class CodeMetaValidationTest(RuleBasedStateMachine):
         """
         logger.debug("validate_against_schema()")
 
-        fresh_codemeta = CodeMetaMetadata.build(CommonMetadata(self.codebase_release))
+        fresh_codemeta = CodeMetaSchema.build(CommonMetadata(self.codebase_release))
         try:
             jsonschema.validate(
                 json.loads(fresh_codemeta.to_json()),
@@ -705,7 +733,9 @@ class CodeMetaValidationTest(RuleBasedStateMachine):
                 # Delete Submitter
                 User.objects.filter(id=self.submitter.id).delete()
                 # Delete generated users which were added as contributors
-                User.objects.filter(id__in=[user.id for user in self.popped_users]).delete()
+                User.objects.filter(
+                    id__in=[user.id for user in self.popped_users]
+                ).delete()
                 # Delete the rest of user objects
                 User.objects.filter(id__in=[user.id for user in self.users]).delete()
 
