@@ -1,12 +1,12 @@
 import logging
-
 from django.core.exceptions import FieldError
-
 from rest_framework.response import Response
 from wagtail.search.backends import get_search_backend
 from wagtail.contrib.search_promotions.models import Query
 from wagtail.search.query import MATCH_ALL, Phrase
 from wagtail.search.utils import parse_query_string
+
+from .models import ComsesGroups
 
 logger = logging.getLogger(__name__)
 
@@ -66,17 +66,19 @@ def retrieve_with_perms(self, request, *args, **kwargs):
     instance = self.get_object()
     serializer = self.get_serializer(instance)
     data = serializer.data
-    data = add_change_delete_perms(instance, data, request.user)
+    data = add_user_retrieve_perms(instance, data, request.user)
     return Response(data)
 
 
-def add_change_delete_perms(instance, data, user):
+def add_user_retrieve_perms(instance, data, user):
+    print(user.get_all_permissions())
     data["has_change_perm"] = user.has_perm(
-        "{}.change_{}".format(instance._meta.app_label, instance._meta.model_name),
+        f"{instance._meta.app_label}.change_{instance._meta.model_name}",
         instance,
     )
     data["has_delete_perm"] = user.has_perm(
-        "{}.delete_{}".format(instance._meta.app_label, instance._meta.model_name),
+        f"{instance._meta.app_label}.delete_{instance._meta.model_name}",
         instance,
     )
+    data["can_moderate"] = user.is_superuser or ComsesGroups.is_moderator(user)
     return data

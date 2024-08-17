@@ -2,6 +2,8 @@ import logging
 
 from rest_framework import permissions, exceptions
 
+from .models import ComsesGroups
+
 logger = logging.getLogger(__name__)
 
 
@@ -51,3 +53,11 @@ class ViewRestrictedObjectPermissions(ObjectPermissions):
         "PATCH": ["%(app_label)s.change_%(model_name)s"],
         "DELETE": ["%(app_label)s.delete_%(model_name)s"],
     }
+
+
+class ModeratorPermissions(permissions.BasePermission):
+    def has_permission(self, request, view):
+        user = request.user
+        if user and user.is_authenticated:
+            return user.is_superuser or ComsesGroups.is_moderator(user)
+        return False
