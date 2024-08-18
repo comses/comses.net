@@ -2,7 +2,8 @@ services:
   db:
     image: alpine # disable the normal db container
     command: tail -f /dev/null
-    healthcheck: null
+    healthcheck:
+      disable: true
   e2edb:
     image: postgis/postgis:15-3.4
     secrets:

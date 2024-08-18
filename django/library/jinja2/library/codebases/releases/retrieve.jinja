@@ -267,13 +267,13 @@
             </a>
         {% else %}
             {# use survey form #}
-            <div id='download-form' data-user-data="{{ get_download_request_metadata(request.user) }}"
+            <div id='download-form' data-cy="release-version" data-user-data="{{ get_download_request_metadata(request.user) }}"
              data-version-number="{{ release.version_number }}"
              data-identifier="{{ codebase.identifier }}"></div>
         {% endif %}
     {% else %}
         {# direct review archive download #}
-        <a rel='nofollow' class='btn btn-primary my-1 w-100' href="{{ release.get_review_download_url() }}">
+        <a rel='nofollow' data-cy="release-version" class='btn btn-primary my-1 w-100' href="{{ release.get_review_download_url() }}">
             Download for Review
         </a>
     {% endif %}

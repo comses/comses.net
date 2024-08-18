@@ -3,6 +3,7 @@
     :create-label="userId ? 'My profile' : 'Become a member'"
     :create-url="userId ? `/users/${userId}` : '/accounts/signup/'"
     search-label="Apply Filters"
+    data-cy="my-profile"
     :search-url="query"
   >
     <template #form>

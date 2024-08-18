@@ -4,6 +4,7 @@
     create-url="/jobs/add/"
     search-label="Apply Filters"
     :search-url="query"
+    data-cy="post a job"
   >
     <template #form>
       <form @submit="handleSubmit">

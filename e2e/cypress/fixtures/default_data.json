@@ -1,0 +1,70 @@
+{
+  "codebases": [
+    {
+      "title": "Artificial Anasazi",
+      "description": "Replication of the well known Artificial Anasazi model that simulates the population dynamics between 800 and 1350 in the Long House Valley in Arizona. See also Marco A. Janssen (2009) Understanding Artificial Anasazi, Journal of Artificial Societies and Social Simulation 12 (4) 13",
+      "replication-text": "Axtell, Epstein, Dean, Gumerman, Swedlund, Harburger, Chakravarty, Hammond, Parker and Parker (2002) Population Growth and Collapse in a Multi-Agent Model of the Kayenta Anasazi in Long House Valley. PNAS 99(3): 7275-7279",
+      "associated-publications": "Marco A. Janssen (2009) Understanding Artificial Anasazi, Journal of Artificial Societies and Social Simulation 12 (4) 13 http://jasss.soc.surrey.ac.uk",
+      "references": "Codebase References",
+      "model-version": "1.1.0",
+      "license": "GPL-2.0",
+      "programming-language": "Netlogo",
+      "software-framework": "Netlogo",
+      "operating-system": "Operating System Independant",
+      "publish-date": "Wednesday, June 05, 2024",
+      "last-updated": "Wednesday, June 05, 2024"
+    }
+  ],
+  "users": [
+    {
+      "username": "test_user",
+      "password": "123456"
+    },
+    {
+      "username": "admin_user",
+      "password": "123456"
+    }
+  ],
+  "events": [
+    {
+      "title": "25th International Congress on Environmental Modelling and Software",
+      "location": "Michigan, USA",
+      "start-date": "Monday, June 19, 2045",
+      "end-date": "Sunday, June 25, 2045",
+      "early-registration-deadline": "None",
+      "registration-deadline": "Saturday, April 01, 2045",
+      "submission-deadline": "Monday, May 01, 2045",
+      "description": "The College of Agriculture and Natural Resources at Michigan State University is excited and honored to host the International Congress on Environmental Modelling & Software in 2045. Every day, Spartans work to solve the most pressing global challenges in our post-apocalyptic world. Michigan State University is beautiful during the summer and offers special access to cutting edge labs, affordable housing for student attendees and real-life examples of environments being modelled by researchers attending the 25th International Congress on Environmental Modelling & Software.",
+      "summary": "Michigan State University is proud to host the 25th International Congress on Environmental Modelling and Software June 18-25, 2045 in East Lansing on our beautiful campus.",
+      "external-url": "https://conference2045.iemss.org/ "
+    },
+    {
+      "title": "Epistemology of Modeling and Simulation",
+      "location": "Pittsburgh, USA",
+      "start-date": "Friday, April 01, 2011",
+      "end-date": "Sunday, April 03, 2011",
+      "early-registration-deadline": "Friday, January 07, 2011",
+      "registration-deadline": "Tuesday, March 01, 2011",
+      "submission-deadline": "None",
+      "description": "The conference will focus on philosophical issues that arise within the practice and application of contemporary research using modeling and simulation. The goal of this event is to bring together sophisticated work in philosophy of science and on-going efforts in modeling in order to build more effective collaboration between philosophers of science and those who build and employ models in a range of disciplines and applications.\n\nTopics will include:\n\n- The scientific status of computational techniques\n- Does simulation require a new epistemology?\n- The role of theory, experiment, model, and simulation\n- Varieties and purposes of scientific simulation\n- Analytic modeling versus computer simulation\n- Problems of juggling multiple and competing models\n- How do models fail?\n- Validation and verification of models and simulations\n- Promises and pitfalls of large, detailed, and realistic models",
+      "summary": "The conference will focus on philosophical issues that arise within the practice and application of contemporary research using modeling and simulation",
+      "external-url": "http://www.modelingepistemology.pitt.edu/ "
+    }
+  ],
+  "jobs": [
+    {
+      "title": "Post Doc Agent Based Modeler",
+      "description": "Seeking a post-doctoral scholar to help with creating models",
+      "summary": "Seeking a post-doctoral scholar to help with creating models",
+      "external-url": "https://university.edu/jobs/19823823908298",
+      "application-deadline": "Sunday, June 30, 2024"
+    },
+    {
+      "title": "Synergistic Solutions Consultant VI",
+      "description": "Are you ready to join a dynamic team of synergistic thought leaders and leverage your disruptive ideation skills? We are seeking a forward-thinking Solutions Consultant to spearhead our transformative paradigm shift. In this role, you will harness cutting-edge methodologies to facilitate cross-functional synergies and drive holistic stakeholder engagement.",
+      "summary": "Are you ready to join a dynamic team of synergistic thought leaders and leverage your disruptive ideation skills? We are seeking a forward-thinking Solutions Consultant to spearhead our transformative paradigm shift. In this role, you will harness cutting-edge methodologies to facilitate cross-functional synergies and drive holistic stakeholder engagement.",
+      "external-url": "https://quantumweb3solutions.com",
+      "application-deadline": "Saturday, November 01, 2025"
+    }
+  ]
+}

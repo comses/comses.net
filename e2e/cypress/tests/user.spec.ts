@@ -10,8 +10,9 @@ describe("User tests", () => {
       const newUser = data.users.find(user => user["first-name"] && user["last-name"]);
       loginBeforeEach(adminUser.username, adminUser.password);
       cy.visit("/users");
-      cy.contains("div", "My profile").click();
-      cy.contains("a", "Edit Profile").click();
+      cy.contains("My profile").click();
+      //getDataCy("my-profile").click(); TODO: Find a way to use the data-cy tag instead of current method
+      getDataCy("edit-profile").click();
       getDataCy("first name").find("input").clear().type(newUser["first-name"]);
       getDataCy("last name").find("input").clear().type(newUser["last-name"]);
       getDataCy("submit").click();
