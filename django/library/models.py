@@ -1121,14 +1121,9 @@ class CodebaseReleaseQuerySet(models.QuerySet):
             release_contributor_qs = ReleaseContributor.objects.only(
                 "id", "contributor_id", "release_id"
             )
-
-        contributor_qs = Contributor.objects.prefetch_related("user").prefetch_related(
-            "tagged_contributors__tag"
-        )
         release_contributor_qs = release_contributor_qs.prefetch_related(
-            Prefetch("contributor", contributor_qs)
+            Prefetch("contributor", Contributor.objects.prefetch_related("user"))
         )
-
         return self.prefetch_related(
             Prefetch("codebase_contributors", release_contributor_qs)
         )
