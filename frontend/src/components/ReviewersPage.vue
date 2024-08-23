@@ -10,8 +10,7 @@
           editForm?.resetForm();
           editModal?.show();
         "
-        @activate="changeReviwerActiveState(reviewer, true)"
-        @deactivate="changeReviwerActiveState(reviewer, false)"
+        @changeActiveState="retrieveReviewers"
       />
     </div>
     <div class="col-sm-12 col-md-3">
@@ -61,7 +60,7 @@ const editForm = ref<InstanceType<typeof ReviewerEditForm> | null>(null);
 const editModal = ref<InstanceType<typeof BootstrapModal> | null>(null);
 const editCandidate = ref<Reviewer>();
 
-const { updateReviewer: update, findReviewers } = useReviewEditorAPI();
+const { findReviewers } = useReviewEditorAPI();
 
 onMounted(async () => {
   await retrieveReviewers();
@@ -94,12 +93,6 @@ function applyFilters() {
     );
   }
   filteredReviewers.value = reviewers;
-}
-
-async function changeReviwerActiveState(reviewer: Reviewer, isActive: boolean) {
-  // FIXME: Make server accept partial reviewer object without defining memberProfileId
-  await update(reviewer.id, { memberProfileId: reviewer.memberProfile.id, isActive });
-  await retrieveReviewers();
 }
 
 const programmingLanguages = computed(() => {

@@ -34,6 +34,7 @@
             <h2>
               {{ values.memberProfile.name }}
               <button
+                v-if="!props.memberProfile && !isEdit"
                 class="btn btn-danger float-end"
                 @click="values.memberProfile = null"
                 type="button"
@@ -94,6 +95,7 @@ import type { RelatedMemberProfile, Reviewer } from "@/types";
 
 export interface ReviewerEditFormProps {
   reviewer?: Reviewer;
+  memberProfile?: RelatedMemberProfile;
   isEdit?: boolean;
 }
 
@@ -110,7 +112,10 @@ const schema = yup.object().shape({
 
 type ReviewerEditFields = yup.InferType<typeof schema>;
 
-const emit = defineEmits(["success", "reset"]);
+const emit = defineEmits<{
+  success: [Reviewer];
+  reset: [];
+}>();
 
 const { serverErrors: profileErrors, search } = useProfileAPI();
 const {
@@ -142,6 +147,7 @@ const {
 
 onMounted(() => {
   if (props.reviewer) setValues(JSON.parse(JSON.stringify(props.reviewer)));
+  if (props.memberProfile) setMemberProfile(props.memberProfile);
   addUnsavedAlertListener();
 });
 
@@ -153,6 +159,7 @@ function resetForm() {
   serverErrors.value = [];
   handleReset();
   if (props.reviewer) setValues(JSON.parse(JSON.stringify(props.reviewer)));
+  if (props.memberProfile) setMemberProfile(props.memberProfile);
 }
 
 function setMemberProfile(profile: RelatedMemberProfile) {
@@ -170,12 +177,13 @@ async function createOrUpdate() {
     ...values,
     memberProfileId: values.memberProfile.id,
   };
+  let response;
   if (props.isEdit && props.reviewer) {
-    await update(props.reviewer.id, data);
+    response = await update(props.reviewer.id, data);
   } else {
-    await create(data);
+    response = await create(data);
   }
-  emit("success");
+  emit("success", response.data);
 }
 
 watch(

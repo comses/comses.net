@@ -13,15 +13,32 @@
         {{ reviewer.notes }}
       </p>
       <a class="btn btn-primary me-1" @click="emit('edit')">Edit</a>
-      <a v-if="reviewer.isActive" class="btn btn-danger" @click="emit('deactivate')">Deactivate</a>
-      <a v-else class="btn btn-success" @click="emit('activate')">Activate</a>
+      <a v-if="reviewer.isActive" class="btn btn-danger" @click="changeActiveState(reviewer, false)"
+        >Deactivate</a
+      >
+      <a v-else class="btn btn-success" @click="changeActiveState(reviewer, true)">Activate</a>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import type { Reviewer } from "@/types";
+import { useReviewEditorAPI } from "@/composables/api";
 
 const props = defineProps<{ reviewer: Reviewer }>();
-const emit = defineEmits(["edit", "activate", "deactivate"]);
+const emit = defineEmits<{
+  edit: [];
+  changeActiveState: [Reviewer];
+}>();
+
+const { updateReviewer: update } = useReviewEditorAPI();
+
+async function changeActiveState(reviewer: Reviewer, isActive: boolean) {
+  // FIXME: Make server accept partial reviewer object without defining memberProfileId
+  const response = await update(reviewer.id, {
+    memberProfileId: reviewer.memberProfile.id,
+    isActive,
+  });
+  emit("changeActiveState", response.data);
+}
 </script>
