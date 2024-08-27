@@ -3,65 +3,80 @@
     <p>
       <i class="fas fa-exclamation-triangle"></i> Peer reviews must be requested on
       <strong>unpublished model releases</strong> so that you can continue to revise your submission
-      based on reviewer guidance.
-    </p>
-    <p>
-      If you have already published your model
+      based on reviewer guidance. If you have already published your model
       <strong>a new draft release will be created</strong> as an exact copy of your most recent
-      published release. If your model successfully passes peer review you can then choose to
-      publish the reviewed release as the latest version.
+      published release.
     </p>
     <p class="mb-0">
-      <b>
-        Once a model release passes peer review, uploaded files can no longer be modified, though
-        metadata will remain editable.
-      </b>
+      Once a model release passes peer review it will remain private until you choose to publish it,
+      at which point you may set a version number. Please note that
+      <strong>uploaded files cannot be modified after review</strong>
+      regardless of published status, though metadata will remain editable.
     </p>
   </div>
   <p>
     Before submitting your peer review request, please ensure that your model conforms to the
     following <a href="/reviews/" target="_blank">review criteria</a>:
   </p>
-  <ul class="mb-4">
-    <li>
-      <strong>Has "clean" source code</strong> that uses meaningful variable, method, and/or class
-      names, is well-structured and consistently formatted for readability, has thorough comments
-      that describe the semantics and intent of the code, and is in general
-      <q cite="https://doi.org/10.1038/d41586-018-05004-4">as simple as possible but no simpler</q>.
-      The ideal goal we are striving for here is to make it as easy as possible for others
-      (including your future self) to understand your code.
-    </li>
-    <li>
-      <strong>Has detailed narrative documentation</strong> containing equations, flowcharts, or
-      other diagrams in a structured format like the
-      <a href="https://www.ufz.de/index.php?de=40429" target="_blank">ODD protocol</a> or
-      equivalent. We <strong>do not recommend submitting a published journal article</strong> as
-      your model's narrative documentation as they are often not detailed enough to allow others to
-      fully reproduce your model and pose copyright issues for us to host.
-    </li>
-    <li>
-      <strong>Is easily runnable</strong> without substantive changes to the downloaded package.
-      Make sure to remove any absolute paths (e.g.,
-      <code>/home/twubc/project/psyche/2023-01-14/data/hurn.nc</code> or
-      <code>C:\Users\twubc\Downloads\data\ferns-and-wells.zip</code> or
-      <code>/Users/twubc/data/ferns.nc</code>) from your source code and read the following note
-      carefully for more details on how to reference any data files you upload to the Computational
-      Model Library.
-    </li>
-  </ul>
+  <div class="d-flex">
+    <i class="fas fa-code pt-1" style="width: 1rem"></i>
+    <div class="ps-3 flex-grow-1"><strong>Has "clean" source code</strong></div>
+  </div>
+  <small>
+    <ul class="ps-5">
+      <li>Uses meaningful variable, method, and/or class names</li>
+      <li>Well structured and consistently formatted for readability</li>
+      <li>Thorough comments that describe the semantics and intent of the code</li>
+      <li>"As simple as possible but no simpler"</li>
+    </ul>
+  </small>
+  <div class="d-flex">
+    <i class="far fa-file-alt pt-1" style="width: 1rem"></i>
+    <div class="ps-3 flex-grow-1"><strong>Has detailed narrative documentation</strong></div>
+  </div>
+  <small>
+    <ul class="ps-5">
+      <li>
+        Contains equations, flowcharts, or other diagrams in a structured format like the
+        <a href="https://www.ufz.de/index.php?de=40429" target="_blank">ODD protocol</a> or
+        equivalent
+      </li>
+      <li>
+        We <strong>do not recommend submitting a published journal article</strong> as narrative
+        documentation as they are often not detailed enough to allow others to fully reproduce your
+        model and pose copyright issues for us to host
+      </li>
+    </ul>
+  </small>
+  <div class="d-flex">
+    <i class="fas fa-terminal pt-1" style="width: 1rem"></i>
+    <div class="ps-3 flex-grow-1"><strong>Is easily runnable</strong></div>
+  </div>
+  <small>
+    <ul class="ps-5">
+      <li>Does not require substantive changes to the downloaded package to run</li>
+      <li>
+        The source code does not contain any absolute paths (e.g.
+        <code>"/Users/twubc/Desktop/ferns.nc"</code>) and correctly references any uploaded data
+        files (see note below)
+      </li>
+    </ul>
+  </small>
   <div class="alert bg-gray" role="alert">
     <p><strong>Note on Uploaded Data</strong></p>
     <p class="mb-0">
-      CoMSES Net stores uploaded data files in <code>&lt;project-root&gt;/data/</code> and code in
-      <code>&lt;project-root&gt;/code/</code>. This means that your model will need to reference
-      uploaded data files via a relative path like <code>"../data/my-input-data.csv"</code>. If you
-      uploaded a zipfile with a nested directory structure you may need to go up several directories
-      to get to the project root before descending back down into the data directory, depending on
-      where your source code files exist within that nested directory structure. For example, a
-      Python script in a <code>src/python/</code> directory would have to reference uploaded data
-      files in <code>"../../../data/"</code>). This limitation can be sidestepped by including your
-      data in your source code zipfile and referencing relative paths to your input data directly in
-      your code and ignoring the CoMSES data upload slot.
+      <small>
+        CoMSES Net stores uploaded data files in <code>&lt;project-root&gt;/data/</code> and code in
+        <code>&lt;project-root&gt;/code/</code>. This means that your model will need to reference
+        uploaded data files via a relative path like <code>"../data/my-input-data.csv"</code>. If
+        you uploaded a zipfile with a nested directory structure you may need to go up several
+        directories to get to the project root before descending back down into the data directory,
+        depending on where your source code files exist within that nested directory structure. For
+        example, a Python script in a <code>src/python/</code> directory would have to reference
+        uploaded data files in <code>"../../../data/"</code>). This limitation can be sidestepped by
+        including your data in your source code zipfile and referencing relative paths to your input
+        data directly in your code and ignoring the CoMSES data upload slot.
+      </small>
     </p>
   </div>
 </template>
