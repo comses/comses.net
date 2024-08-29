@@ -25,9 +25,21 @@
   <small>
     <ul class="ps-5">
       <li>Uses meaningful variable, method, and/or class names</li>
-      <li>Well structured and consistently formatted for readability</li>
-      <li>Thorough comments that describe the semantics and intent of the code</li>
-      <li>"As simple as possible but no simpler"</li>
+      <li>Is well structured and consistently formatted for readability</li>
+      <li>
+        Has thorough comments that describe the semantics, intent, and assumptions of the code and
+        its associated data structures, in every class | module | method | function
+      </li>
+      <li>
+        Clearly documented inputs and outputs with properly described semantic types and adhering to
+        community standard names (e.g.,
+        <a href="https://csdms.colorado.edu/wiki/CSN_Searchable_List">CSDMS Standard Names</a>)
+      </li>
+      <li>
+        <a href="https://en.wikiquote.org/wiki/Albert_Einstein"
+          >"As simple as possible but no simpler"</a
+        >
+      </li>
     </ul>
   </small>
   <div class="d-flex">
@@ -37,14 +49,17 @@
   <small>
     <ul class="ps-5">
       <li>
-        Contains equations, flowcharts, or other diagrams in a structured format like the
-        <a href="https://www.ufz.de/index.php?de=40429" target="_blank">ODD protocol</a> or
-        equivalent
+        Contains equations, flowcharts, and other visual diagrams, and follows a structured
+        documentation protocol like the
+        <a href="https://doi.org/10.1016/j.ecolmodel.2010.08.019" target="_blank"
+          >Overview, Design Concepts, and Details (ODD) protocol</a
+        >
+        or equivalent
       </li>
       <li>
-        We <strong>do not recommend submitting a published journal article</strong> as narrative
-        documentation as they are often not detailed enough to allow others to fully reproduce your
-        model and pose copyright issues for us to host
+        <strong>Do not submit a published journal article</strong> as narrative documentation
+        <em>unless</em> it is 1. legally permissible to do so and 2. detailed enough to fully
+        reproduce the model.
       </li>
     </ul>
   </small>
@@ -54,11 +69,14 @@
   </div>
   <small>
     <ul class="ps-5">
-      <li>Does not require substantive changes to the downloaded package to run</li>
+      <li>Has clear instructions for how to build, run, and parameterize the model</li>
       <li>
-        The source code does not contain any absolute paths (e.g.
-        <code>"/Users/twubc/Desktop/ferns.nc"</code>) and correctly references any uploaded data
-        files (see note below)
+        Can be compiled (if needed) and run with minimal effort after downloading and extracting the
+        published codebase
+      </li>
+      <li>
+        Does not contain references to absolute paths that fail to resolve (e.g.
+        <code>"/Users/turing/Desktop/ferns.nc"</code>)
       </li>
     </ul>
   </small>
@@ -66,16 +84,17 @@
     <p><strong>Note on Uploaded Data</strong></p>
     <p class="mb-0">
       <small>
-        CoMSES Net stores uploaded data files in <code>&lt;project-root&gt;/data/</code> and code in
-        <code>&lt;project-root&gt;/code/</code>. This means that your model will need to reference
-        uploaded data files via a relative path like <code>"../data/my-input-data.csv"</code>. If
-        you uploaded a zipfile with a nested directory structure you may need to go up several
-        directories to get to the project root before descending back down into the data directory,
-        depending on where your source code files exist within that nested directory structure. For
-        example, a Python script in a <code>src/python/</code> directory would have to reference
-        uploaded data files in <code>"../../../data/"</code>). This limitation can be sidestepped by
-        including your data in your source code zipfile and referencing relative paths to your input
-        data directly in your code and ignoring the CoMSES data upload slot.
+        The CoMSES Computational Model Library stores uploaded data files in
+        <code>&lt;project-root&gt;/data/</code> and code in <code>&lt;project-root&gt;/code/</code>.
+        Uploaded data files can be referenced by your model with a relative path like
+        <code>"../data/my-input-data.csv"</code>. If you uploaded a zipfile with a nested directory
+        structure you may need to go up several directories to get to the project root before
+        descending back down into the data directory, depending on where your source code files
+        exist within that nested directory structure. For example, a Python script in a
+        <code>src/python/</code> directory would have to reference uploaded data files in
+        <code>"../../../data/"</code>). This limitation can be circumvented by including your data
+        in your source code zipfile, referencing relative paths to your input data directly in your
+        code, and ignoring the CoMSES data upload slot.
       </small>
     </p>
   </div>
