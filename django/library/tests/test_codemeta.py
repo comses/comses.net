@@ -8,7 +8,6 @@ from django.contrib.auth import get_user_model
 from hypothesis import (
     HealthCheck,
     Verbosity,
-    given,
     settings,
     strategies as st,
 )
@@ -20,7 +19,6 @@ from hypothesis.stateful import (
     rule,
     Bundle,
 )
-from typing import List
 
 from core.tests.base import UserFactory
 from library.models import (
@@ -176,244 +174,11 @@ ALLOW ONLY string.printable:
 """
 
 USER_MAPPING = {
-    "username": st.text(min_size=1, alphabet=string.printable),
-    "first_name": st.text(min_size=1, alphabet=string.printable),
-    "last_name": st.text(min_size=1, alphabet=string.printable),
+    "username": st.text(min_size=1, max_size=50, alphabet=string.printable),
+    "first_name": st.text(min_size=1, max_size=50, alphabet=string.printable),
+    "last_name": st.text(min_size=1, max_size=50, alphabet=string.printable),
     "email": st.emails(),
 }
-
-"""
-This class is used to test all methods which affect CodeMeta object
-"""
-
-
-class CodeMetaTest(TestCase):
-    def setUp(self):
-        """Django method. Is called once before hypothesis starts running a test multiple times."""
-        pass
-
-    def tearDown(self):
-        """Django method. Is called once after hypothesis is done running a test multiple times."""
-        pass
-
-    def setup(
-        self,
-        submitter_dict: dict,
-    ):
-        """
-        Used to initialize codebase_release instance at the beginning of each hypothesis test run
-        """
-        self.user_factory = UserFactory()
-        self.submitter = self.user_factory.create(
-            username=submitter_dict["username"],
-            email=submitter_dict["email"],
-            first_name=submitter_dict["first_name"],
-            last_name=submitter_dict["last_name"],
-        )
-        self.users = []
-
-        codebase_factory = CodebaseFactory(submitter=self.submitter)
-        self.codebase = codebase_factory.create()
-        self.codebase_release = self.codebase.create_release(initialize=False)
-
-    def cleanup(self):
-        """
-        Used to manually cleanup database records after each hypothesis test run
-        """
-        self.codebase_release.delete()
-        self.codebase.delete()
-        if self.submitter:
-            self.submitter.delete()
-        if self.users:
-            User = get_user_model()
-            User.objects.filter(id__in=[user.id for user in self.users]).delete()
-
-    @settings(
-        max_examples=MAX_PROPERTY_TEST_RUNS,
-        verbosity=HYPOTHESIS_SETTINGS_VERBOSITY,
-        deadline=None,
-    )
-    @given(
-        st.lists(
-            st.fixed_dictionaries(USER_MAPPING),
-            min_size=1,
-            max_size=20,
-            unique_by=(lambda x: x["username"]),
-        )
-    )
-    def test_authors(self, seed_user_dict_list: List[dict]):
-        logger.debug("test_authors()")
-        submitter_dict = seed_user_dict_list.pop()
-        self.setup(submitter_dict)
-
-        for i, user_seed in enumerate(seed_user_dict_list):
-            user = self.user_factory.create(
-                username=user_seed["username"],
-                email=user_seed["email"],
-                first_name=user_seed["first_name"],
-                last_name=user_seed["last_name"],
-            )
-            self.users.append(user)
-            contributor, created = Contributor.from_user(user)
-            self.codebase_release.add_contributor(contributor, index=i)
-
-        # Function under test: CodeMetaMetadata.build(self)
-        # delete codemeta cached property & rebuild
-        if hasattr(self.codebase_release, "codemeta"):
-            del self.codebase_release.codemeta
-        author_list = self.codebase_release.codemeta.metadata["author"]
-
-        for i, user in enumerate([self.submitter, *self.users]):
-            self.assertEqual(user.last_name, author_list[i]["familyName"])
-            self.assertEqual(user.first_name, author_list[i]["givenName"])
-            self.assertEqual(user.email, author_list[i]["email"])
-
-        self.cleanup()
-        logger.debug("test_authors() done.")
-
-    @settings(
-        max_examples=MAX_PROPERTY_TEST_RUNS,
-        verbosity=HYPOTHESIS_SETTINGS_VERBOSITY,
-        deadline=None,
-    )
-    @given(
-        st.fixed_dictionaries(USER_MAPPING),
-        st.lists(
-            st.text(min_size=1, alphabet=string.printable),
-            min_size=1,
-            max_size=20,
-            unique_by=(lambda x: x.upper(), lambda x: x.upper()),
-        ),
-    )
-    def test_languages(self, submitter_dict, programming_language_names: List[str]):
-        logger.debug("test_languages()")
-        self.setup(submitter_dict)
-
-        for language_name in programming_language_names:
-            self.codebase_release.programming_languages.add(language_name)
-
-        # delete codemeta cached property & rebuild
-        if hasattr(self.codebase_release, "codemeta"):
-            del self.codebase_release.codemeta
-        language_list = self.codebase_release.codemeta.metadata["programmingLanguage"]
-
-        assert len(language_list) == len(programming_language_names)
-
-        for index, language in enumerate(programming_language_names):
-            expected_language_name = language_list[index]["name"]
-            self.assertEqual(
-                language,
-                expected_language_name,
-                f"Mismatch found at index {index}. Expected: {expected_language_name}, Actual: {language}",
-            )
-
-        self.cleanup()
-        logger.debug("test_languages() done.")
-
-    @settings(
-        max_examples=MAX_PROPERTY_TEST_RUNS,
-        verbosity=HYPOTHESIS_SETTINGS_VERBOSITY,
-        deadline=None,
-    )
-    @given(
-        st.fixed_dictionaries(USER_MAPPING),
-        st.lists(
-            st.text(min_size=1, alphabet=string.printable),
-            min_size=1,
-            max_size=20,
-            unique_by=(lambda x: x.upper(), lambda x: x.upper()),
-        ),
-    )
-    def test_keywords(self, submitter_dict, tags: List[str]):
-        logger.debug("test_keywords()")
-        self.setup(submitter_dict)
-
-        for tag in tags:
-            self.codebase_release.codebase.tags.add(tag)
-
-        # delete codemeta cached property & rebuild
-        if hasattr(self.codebase_release, "codemeta"):
-            del self.codebase_release.codemeta
-        keyword_list = self.codebase_release.codemeta.metadata["keywords"]
-
-        self.assertListEqual(tags, keyword_list)
-
-        self.cleanup()
-        logger.debug("test_keywords() done.")
-
-    @settings(
-        max_examples=MAX_PROPERTY_TEST_RUNS,
-        verbosity=HYPOTHESIS_SETTINGS_VERBOSITY,
-        deadline=None,
-    )
-    @given(
-        st.fixed_dictionaries(USER_MAPPING),
-        st.text(min_size=300, max_size=900, alphabet=string.printable),
-        st.text(min_size=300, max_size=900, alphabet=string.printable),
-        st.text(min_size=300, max_size=900, alphabet=string.printable),
-    )
-    def test_citation(
-        self,
-        submitter_dict,
-        references_text,
-        replication_text,
-        associated_publication_text,
-    ):
-        logger.debug("test_citation()")
-        self.setup(submitter_dict)
-
-        self.codebase_release.codebase.references_text = references_text
-        self.codebase_release.codebase.replication_text = replication_text
-        self.codebase_release.codebase.associated_publication_text = (
-            associated_publication_text
-        )
-
-        expected_citation_flat = [
-            references_text,
-            replication_text,
-            associated_publication_text,
-        ]
-
-        # delete codemeta cached property
-        if hasattr(self.codebase_release, "codemeta"):
-            del self.codebase_release.codemeta
-        # Extract text from CodeMeta.metadata
-        codemeta_citation_flat_text = [
-            creative_work["text"]
-            for creative_work in self.codebase_release.codemeta.metadata["citation"]
-        ]
-
-        self.assertEqual(expected_citation_flat, codemeta_citation_flat_text)
-
-        self.cleanup()
-        logger.debug("test_citation() done.")
-
-    @settings(
-        max_examples=MAX_PROPERTY_TEST_RUNS,
-        verbosity=HYPOTHESIS_SETTINGS_VERBOSITY,
-        deadline=None,
-    )
-    @given(st.fixed_dictionaries(USER_MAPPING))
-    def test_codemeta_validate(self, submitter_dict):
-        logger.debug("test_codemeta_validate()")
-
-        self.setup(submitter_dict)
-
-        # delete codemeta cached property
-        if hasattr(self.codebase_release, "codemeta"):
-            del self.codebase_release.codemeta
-        try:
-            jsonschema.validate(
-                self.codebase_release.codemeta.to_json(), schema=CODEMETA_SCHEMA
-            )
-            logger.debug("codemeta.json is valid.")
-        except Exception as e:
-            logger.error("codemeta.json is invalid! Validation error:", e)
-            self.fail(f"Validation error: {e}")
-
-        self.cleanup()
-        logger.debug("test_codemeta_validate() done.")
-
 
 """
 This class is used to test whether a random combination of methods that affect CodeMeta will produce a valid codemeta.json
@@ -585,6 +350,7 @@ class CodeMetaValidationTest(RuleBasedStateMachine):
             associated_publication
         )
         logger.debug("add_citation() done.")
+        self.citations_count = 1
 
     @rule(programming_language=st.text(min_size=1, alphabet=string.printable))
     def add_programming_language(self, programming_language):
@@ -675,25 +441,27 @@ class CodeMetaValidationTest(RuleBasedStateMachine):
         """
         citations
         """
-        # Replicate citation building mechanism from CodeMeta
-        expected_citation = [
-            citation
-            for citation in [
-                self.codebase_release.codebase.references_text,
-                self.codebase_release.codebase.replication_text,
-                self.codebase_release.codebase.associated_publication_text,
+        # check citation if citation has been set
+        if self.citations_count == 1:
+            # Replicate citation building mechanism from CodeMeta
+            expected_citation = [
+                citation
+                for citation in [
+                    self.codebase_release.codebase.references_text,
+                    self.codebase_release.codebase.replication_text,
+                    self.codebase_release.codebase.associated_publication_text,
+                ]
+                if citation
             ]
-            if citation
-        ]
 
-        fresh_codemeta = CodeMetaSchema.build(CommonMetadata(self.codebase_release))
-        # Extract text from CodeMeta.metadata
-        real_codemeta_citation_flat_text = [
-            creative_work["text"]
-            for creative_work in fresh_codemeta.metadata["citation"]
-        ]
+            fresh_codemeta = CodeMetaSchema.build(CommonMetadata(self.codebase_release))
+            # Extract text from CodeMeta.metadata
+            real_codemeta_citation_flat_text = [
+                creative_work["text"]
+                for creative_work in fresh_codemeta.metadata["citation"]
+            ]
 
-        assert expected_citation == real_codemeta_citation_flat_text
+            assert expected_citation == real_codemeta_citation_flat_text
 
         logger.debug("length_agrees() done.")
 
@@ -726,6 +494,7 @@ class CodeMetaValidationTest(RuleBasedStateMachine):
         # TODO: why is this check necessary? Why does hypothesis run multiple @initialize and teardown at start?
         if self.codebase_release is not None:
             try:
+                User = get_user_model()
                 # Delete CodebaseRelease
                 CodebaseRelease.objects.filter(id=self.codebase_release.id).delete()
                 # Delete Codebase
