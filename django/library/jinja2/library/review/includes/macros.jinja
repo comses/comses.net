@@ -6,10 +6,6 @@
 {{ markdown(include_review_criteria()) }}
 {% endmacro %}
 
-{% macro include_review_reminders() %}
-{% include "library/review/includes/reminders.jinja" %}
-{% endmacro %}
-
 {% macro displayCheck(q) %}
     fas {% if q %}fa-check text-success{% else %}fa-times text-danger{% endif %}
 {% endmacro %}

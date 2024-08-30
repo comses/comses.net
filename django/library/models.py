@@ -207,6 +207,9 @@ class Contributor(index.Indexed, ClusterableModel):
                 user,
             )
             return (Contributor.objects.filter(user=user).first(), False)
+        except Exception:
+            logger.exception("Unable to create Contributor for user %s", user)
+            return (None, False)
 
     @property
     def name(self):
