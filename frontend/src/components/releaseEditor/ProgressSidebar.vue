@@ -27,7 +27,7 @@
       >
         <div
           class="card-header nav-link d-flex justify-content-between align-items-center text-decoration-none"
-          data-cy="add metadata"
+          data-cy="add-metadata"
         >
           <b>Add Metadata</b>
           <i class="fas fa-angle-right text-secondary"></i>

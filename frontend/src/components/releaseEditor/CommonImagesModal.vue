@@ -2,7 +2,7 @@
   <button
     type="button"
     :class="buttonClass"
-    data-cy="add image"
+    data-cy="add-image"
     rel="nofollow"
     @click="imagesModal?.show()"
   >

@@ -13,8 +13,8 @@ describe("User tests", () => {
       cy.contains("My profile").click();
       //getDataCy("my-profile").click(); TODO: Find a way to use the data-cy tag instead of current method
       getDataCy("edit-profile").click();
-      getDataCy("first name").find("input").clear().type(newUser["first-name"]);
-      getDataCy("last name").find("input").clear().type(newUser["last-name"]);
+      getDataCy("first-name").find("input").clear().type(newUser["first-name"]);
+      getDataCy("last-name").find("input").clear().type(newUser["last-name"]);
       getDataCy("submit").click();
       cy.contains(`${newUser["first-name"]} ${newUser["last-name"]}`).should("exist");
     });

@@ -42,15 +42,15 @@ describe("Visit codebases page", () => {
       cy.visit("/codebases");
       assert(cy.get("h1").contains("Computational Model Library"));
       cy.contains("Publish a model").click();
-      getDataCy("codebase title").type(codebase.title);
-      getDataCy("codebase description").type(codebase.description);
-      getDataCy("codebase replication-text").type(codebase["replication-text"]);
-      getDataCy("codebase associated publications").type(codebase["associated-publications"]);
-      getDataCy("codebase references").type(codebase.references);
+      getDataCy("codebase-title").type(codebase.title);
+      getDataCy("codebase-description").type(codebase.description);
+      getDataCy("codebase-replication-text").type(codebase["replication-text"]);
+      getDataCy("codebase-associated-publications").type(codebase["associated-publications"]);
+      getDataCy("codebase-references").type(codebase.references);
       getDataCy("next").click();
 
       //add images
-      getDataCy("add image").click();
+      getDataCy("add-image").click();
       getDataCy("upload-image")
         .first()
         .selectFile("cypress/fixtures/codebase/codebasetestimage.png", { force: true });
@@ -58,7 +58,7 @@ describe("Visit codebases page", () => {
       cy.get("body").click(0, 0);
       cy.get("body").click(0, 0);
 
-      //add images
+      //upload files
       getDataCy("upload-code")
         .first()
         .selectFile("cypress/fixtures/codebase/testCodebase.zip", { force: true });
@@ -72,7 +72,7 @@ describe("Visit codebases page", () => {
         .first()
         .selectFile("cypress/fixtures/codebase/testSimulationOutput.txt", { force: true });
 
-      getDataCy("add metadata").click();
+      getDataCy("add-metadata").click();
       getDataCy("release-notes").type("Release notes");
       getDataCy("embargo-end-date").click();
       getDataCy("embargo-end-date").contains("29").click();

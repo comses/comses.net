@@ -83,10 +83,10 @@
 
     <div class="row">
       <div class="col-6">
-        <TextField class="mb-3" data-cy="first name" name="givenName" label="First Name" required />
+        <TextField class="mb-3" data-cy="first-name" name="givenName" label="First Name" required />
       </div>
       <div class="col-6">
-        <TextField class="mb-3" data-cy="last name" name="familyName" label="Last Name" required />
+        <TextField class="mb-3" data-cy="last-name" name="familyName" label="Last Name" required />
       </div>
     </div>
     <TextField

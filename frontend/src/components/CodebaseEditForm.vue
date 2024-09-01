@@ -5,7 +5,7 @@
       name="title"
       label="Title"
       help="A short title describing this computational model, limited to 300 characters"
-      data-cy="codebase title"
+      data-cy="codebase-title"
       required
     />
     <HoneypotField />
@@ -14,7 +14,7 @@
       name="description"
       label="Description"
       help="A summary description of your model similar to an abstract. There is no limit on length but it should be kept as succinct as possible."
-      data-cy="codebase description"
+      data-cy="codebase-description"
       required
     />
     <TextareaField
@@ -22,7 +22,7 @@
       name="replicationText"
       label="Replication of an existing model?"
       help="Is this model a replication of a previously published computational model? Please enter a DOI or other permanent identifier to the model, or citation text. Separate multiple entries with newlines."
-      data-cy="codebase replication-text"
+      data-cy="codebase-replication-text"
       :rows="3"
     />
     <TextareaField
@@ -30,7 +30,7 @@
       name="associatedPublicationText"
       label="Associated Publications"
       help="Is this model associated with any publications? Please enter a DOI or other permanent identifier, or citation text. Separate multiple entries with newlines."
-      data-cy="codebase associated publications"
+      data-cy="codebase-associated-publications"
       :rows="3"
     />
     <TextareaField
@@ -38,7 +38,7 @@
       name="referencesText"
       label="References"
       help="Other related publications. Please enter a DOI or other permanent identifier, or citation text. Separate multiple entries with newlines."
-      data-cy="codebase references"
+      data-cy="codebase-references"
       :rows="3"
     />
     <TaggerField
