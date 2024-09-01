@@ -66,8 +66,7 @@ def environment(**options):
             "build_absolute_uri": build_absolute_uri,
             "cookielaw": cookielaw,
             "now": now,
-            "convert_keys_to_camel_case": convert_keys_to_camel_case,
-            "generate_hidden_inputs": generate_hidden_inputs,
+            "generate_search_form_inputs": generate_search_form_inputs,
             "should_enable_discourse": should_enable_discourse,
             "is_production": is_production,
             "provider_login_url": provider_login_url,
@@ -124,24 +123,28 @@ def convert_keys_to_camel_case(d: list):
     return [(to_camel_case(k), v) for k, v in d]
 
 
-def generate_hidden_inputs(query_params):
-    hidden_inputs = []
+def generate_search_form_inputs(query_params):
+    """
+    Generate hidden input fields for the search form based on incoming query parameters.
+    Args:
+        query_params (str): The query parameters to be used for generating the hidden inputs.
+    Returns:
+        list: A list of tuples representing the hidden input fields.
+    """
+    # set default ordering to relevance, if it is not specified
+    search_parameters = {
+        "ordering": "relevance",
+    }
     if query_params:
-        # parse_qsl handles splitting and unquoting key-value pairs
-        parsed_params = parse_qsl(query_params)
+        # parse_qsl handles splitting and unquoting key-value pairs and generates a list of tuples
+        # do not include the actual query in the query parameters
+        incoming_query_params = [
+            pair for pair in parse_qsl(query_params) if pair[0] != "query"
+        ]
+        search_parameters.update(convert_keys_to_camel_case(incoming_query_params))
 
-        # set default ordering, if it is not specified
-        if not any(key == "ordering" for key, value in parsed_params):
-            hidden_inputs.append(("ordering", "relevance"))
-
-        for key, value in convert_keys_to_camel_case(parsed_params):
-            if key != "query":
-                hidden_inputs.append((key, value))
-    else:
-        # initial ordering of the codebase search results
-        hidden_inputs.append(("ordering", "relevance"))
-
-    return hidden_inputs
+    logger.debug("search parameters: %s", search_parameters)
+    return search_parameters.items()
 
 
 def should_enable_discourse(is_public: bool):

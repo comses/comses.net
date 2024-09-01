@@ -355,7 +355,7 @@ class CodebaseFilter(filters.BaseFilterBackend):
 
         # Get request params
         query_params = request.query_params
-        qs = query_params.get("query")
+        qs = query_params.get("query", "")
         published_start_date = query_params.get("published_after")
         published_end_date = query_params.get("published_before")
         peer_review_status = query_params.get("peer_review_status")
@@ -390,9 +390,10 @@ class CodebaseFilter(filters.BaseFilterBackend):
             elif peer_review_status == "not_reviewed":
                 criteria.update(peer_reviewed=False)
         if programming_languages:
-            criteria.update(
-                releases__programming_languages__name__in=programming_languages
-            )
+            # FIXME: this does not work for the same reason tags__name__in does not work, e.g.,
+            # https://docs.wagtail.org/en/stable/topics/search/indexing.html#filtering-on-index-relatedfields
+            # criteria.update(releases__programming_languages__name__in=programming_languages)
+            qs += " ".join(programming_languages)
         if ordering:
             criteria.update(ordering=ordering)
         else:
@@ -433,10 +434,10 @@ class CodebaseViewSet(SpamCatcherViewSetMixin, CommonViewSetMixin, HtmlNoDeleteV
         if request.accepted_renderer.format == "html":
             context = self.get_list_context(page or queryset)
 
-            language_facets = queryset.facet("release_language_names")
+            language_facets = queryset.facet("all_release_programming_languages")
             if language_facets:
                 logger.debug(
-                    f"Appending language_facets to response: {language_facets}"
+                    "Appending language_facets to response: %s", language_facets
                 )
                 context["language_facets"] = json.dumps(language_facets)
 

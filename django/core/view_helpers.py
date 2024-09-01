@@ -142,7 +142,7 @@ def get_search_queryset(
     Filter queryset 
     """
     if criteria:
-        logger.debug("criteria=%s", criteria)
+        logger.debug("filter criteria=%s", criteria)
         try:
             queryset = queryset.filter(**criteria)
         except FieldError as e:

@@ -30,10 +30,17 @@ class SmallResultSetPagination(PageNumberPagination):
 
     @staticmethod
     def _to_filter_display_terms(query_params):
+        """
+        Convert query parameters into a list of displayable filter terms.
+        Args:
+            query_params (QueryDict): The query parameters.
+        Returns:
+            list: A list of display filter terms.
+        """
         filters = []
         for key, values in query_params.lists():
             if key == "query":
-                pass
+                continue
             elif key == "ordering":
                 filters.extend(SORT_BY_FILTERS[v] for v in values)
             elif key == "tags":
@@ -52,17 +59,19 @@ class SmallResultSetPagination(PageNumberPagination):
     def limit_page_range(cls, page=1, count=max_result_window, size=page_size):
         try:
             es_settings = getattr(settings, "WAGTAILSEARCH_BACKENDS", {})
-            max_result_window = (
-                es_settings.get("default", {})
-                .get("INDEX_SETTINGS", {})
-                .get("settings", {})
-                .get("index", {})
-                .get("max_result_window", cls.max_result_window)
+            max_result_window = es_settings["default"]["INDEX_SETTINGS"]["settings"][
+                "index"
+            ]["max_result_window"]
+            logger.debug(
+                "max_result_window from elasticsearch settings: %s", max_result_window
             )
-
-            logger.info("max_result_window from settings: %s", max_result_window)
-        except Exception as e:
-            logger.warning("max_result_window not set for Elasticsearch:", exc_info=e)
+        except KeyError as e:
+            logger.warning(
+                "max_result_window not set for Elasticsearch, setting to default %s",
+                cls.max_result_window,
+                exc_info=e,
+            )
+            max_result_window = cls.max_result_window
 
         # limit the result count to max_result_window
         limited_count = min(count, max_result_window)

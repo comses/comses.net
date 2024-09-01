@@ -636,6 +636,21 @@ class CodebaseReleaseRenderPageTestCase(TestCase):
         self.assertTrue(response.status_code, True)
 
 
+class CodebaseSearchTestCase(TestCase):
+    def setUp(self):
+        user_factory = UserFactory()
+        self.submitter = user_factory.create()
+        codebase_factory = CodebaseFactory(submitter=self.submitter)
+        self.codebase = codebase_factory.create()
+
+    def test_search(self):
+        response = self.client.get(
+            reverse("library:codebase-list"),
+            {"q": "fauna"},
+        )
+        self.assertEqual(response.status_code, 200)
+
+
 class PeerReviewInvitationTestCase(ReviewSetup, ResponseStatusCodesMixin, TestCase):
     @classmethod
     def setUpClass(cls):

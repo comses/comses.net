@@ -67,6 +67,7 @@
 import * as yup from "yup";
 import { onMounted, computed } from "vue";
 import { defineProps } from "vue";
+import { isEqual } from "lodash-es";
 import ListSidebar from "@/components/ListSidebar.vue";
 import DatepickerField from "@/components/form/DatepickerField.vue";
 import TaggerField from "@/components/form/TaggerField.vue";
@@ -151,7 +152,7 @@ const isFilterChanged = computed(() => {
     ...values,
     programmingLanguages: sortedProgrammingLanguages.value, // Use sorted values for comparison
   };
-  return !deepEqual(currentValues, initialFilterValues.value);
+  return !isEqual(currentValues, initialFilterValues.value);
 });
 
 // Computed property for sorted programming languages
@@ -183,23 +184,4 @@ const clearAllFilters = () => {
   values.ordering = "-first_published_at";
   window.location.href = query.value;
 };
-
-function deepEqual(obj1: any, obj2: any): boolean {
-  if (obj1 === obj2) return true; // Same reference or both are null/undefined
-
-  if (typeof obj1 !== "object" || obj1 === null || typeof obj2 !== "object" || obj2 === null)
-    return false;
-
-  const keys1 = Object.keys(obj1);
-  const keys2 = Object.keys(obj2);
-
-  if (keys1.length !== keys2.length) return false;
-
-  for (const key of keys1) {
-    // Check if the key exists in both objects and deeply compare the values
-    if (!keys2.includes(key) || !deepEqual(obj1[key], obj2[key])) return false;
-  }
-
-  return true;
-}
 </script>
