@@ -42,7 +42,9 @@
     </template>
     <template #footer>
       <button type="button" class="btn btn-outline-gray" data-bs-dismiss="modal">Cancel</button>
-      <button type="submit" class="btn btn-danger" form="publish-form">Publish</button>
+      <button type="submit" data-cy="publish" class="btn btn-danger" form="publish-form">
+        Publish
+      </button>
     </template>
   </BootstrapModal>
 </template>

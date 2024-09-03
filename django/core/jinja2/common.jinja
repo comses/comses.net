@@ -186,9 +186,9 @@
 <form class="mb-3" action="{{ search_url }}" method="get">
     <label class="sr-only" for="search-query">Search</label>
     <div class="input-group">
-        <input id="search-query" class="form-control" name="query" type="search" value=""
+        <input id="search-query" data-cy="search-bar" class="form-control" name="query" type="search" value=""
             placeholder="{{ placeholder }}">
-        <button type="submit" class="btn btn-primary">
+        <button type="submit" data-cy="search-button" class="btn btn-primary">
             <i class="fas fa-search px-1"></i>
         </button>
     </div>

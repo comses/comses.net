@@ -1,0 +1,113 @@
+//test source code from chatgpt
+
+globals [
+  grass         ; the total amount of grass
+]
+
+turtles-own [
+  energy         ; energy of the turtles
+]
+
+patches-own [
+  grass?         ; whether or not there is grass on this patch
+  countdown      ; number of ticks until grass grows back
+]
+
+to setup
+  clear-all
+  setup-patches
+  setup-turtles
+  reset-ticks
+end
+
+to setup-patches
+  ask patches [
+    set pcolor green
+    set grass? true
+    set countdown random 30
+  ]
+end
+
+to setup-turtles
+  create-turtles 50 [
+    ifelse random 2 = 0
+      [ set breed sheep set color white ]
+      [ set breed wolves set color black ]
+    set size 1.5
+    setxy random-xcor random-ycor
+    set energy random 10
+  ]
+end
+
+to go
+  if not any? turtles [ stop ]
+  ask patches [ grow-grass ]
+  ask turtles [
+    move
+    if breed = sheep [
+      set energy energy - 1
+      eat-grass
+      reproduce-sheep
+    ]
+    if breed = wolves [
+      set energy energy - 2
+      hunt-sheep
+      reproduce-wolves
+    ]
+    if energy <= 0 [ die ]
+  ]
+  tick
+end
+
+to grow-grass
+  if not grass? [
+    set countdown countdown - 1
+    if countdown <= 0 [
+      set grass? true
+      set pcolor green
+      set countdown random 30
+    ]
+  ]
+end
+
+to move
+  rt random 50
+  lt random 50
+  fd 1
+end
+
+to eat-grass
+  if grass? [
+    set grass? false
+    set pcolor brown
+    set energy energy + 4
+  ]
+end
+
+to hunt-sheep
+  let prey one-of sheep-here
+  if prey != nobody [
+    ask prey [ die ]
+    set energy energy + 10
+  ]
+end
+
+to reproduce-sheep
+  if energy > 20 [
+    set energy energy / 2
+    hatch 1 [
+      rt random-float 360
+      fd 1
+    ]
+  ]
+end
+
+to reproduce-wolves
+  if energy > 30 [
+    set energy energy / 2
+    hatch 1 [
+      rt random-float 360
+      fd 1
+    ]
+  ]
+end

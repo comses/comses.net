@@ -171,7 +171,7 @@
     <div class='card-metadata'>
         <div class='card-body'>
             {% if has_change_perm %}
-                <a href="{{ profile.get_edit_url() }}" class='btn btn-primary w-100 my-1'>
+                <a href="{{ profile.get_edit_url() }}" class='btn btn-primary w-100 my-1' data-cy="edit-profile">
                     Edit Profile</a>
                 <a href="{{ url('library:codebase-add') }}" class="btn btn-secondary w-100 my-1">
                     Publish a model

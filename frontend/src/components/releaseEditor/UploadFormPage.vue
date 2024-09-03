@@ -29,6 +29,7 @@
         :originals="store.getFilesInCategory(config.uploadType)"
         :upload-url="uploadUrl(config.uploadType)"
         :title="config.title"
+        :category="config.uploadType"
         @delete-file="handleDeleteFile(config.uploadType, $event)"
         @clear="handleClear(config.uploadType)"
         @upload-done="handleUploadDone(config.uploadType)"

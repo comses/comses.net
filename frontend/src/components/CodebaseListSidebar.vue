@@ -3,6 +3,7 @@
     create-label="Publish a model"
     create-url="/codebases/add/"
     search-label="Apply Filters"
+    data-cy="publish"
     :search-url="query"
   >
     <template #form>

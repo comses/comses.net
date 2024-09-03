@@ -84,7 +84,7 @@ release-version: .env
 .PHONY: docker-compose.yml
 docker-compose.yml: base.yml dev.yml staging.yml prod.yml config.mk $(PGPASS_PATH) release-version
 	case "$(DEPLOY_ENVIRONMENT)" in \
-	  dev|staging|e2e) docker compose -f base.yml -f $(DEPLOY_ENVIRONMENT).yml config > docker-compose.yml;; \
+	  dev|staging) docker compose -f base.yml -f $(DEPLOY_ENVIRONMENT).yml config > docker-compose.yml;; \
 	  prod) docker compose -f base.yml -f staging.yml -f $(DEPLOY_ENVIRONMENT).yml config > docker-compose.yml;; \
 	  *) echo "invalid environment. must be either dev, staging or prod" 1>&2; exit 1;; \
 	esac
@@ -140,9 +140,21 @@ clean_deploy: clean
 test: build
 	docker compose run --rm server /code/deploy/test.sh
 
+# e2e testing setup
+
+E2E_SHARED_DIR=${DOCKER_SHARED_DIR}/e2e
+E2E_BACKUPS_PATH=${E2E_SHARED_DIR}/backups
+E2E_REPO_PATH=${E2E_BACKUPS_PATH}/repo
+
+$(E2E_REPO_PATH):
+	mkdir -p $(E2E_BACKUPS_PATH)
+	wget -c ${BORG_REPO_URL} -P $(E2E_BACKUPS_PATH)
+	tar -Jxf $(E2E_BACKUPS_PATH)/repo.tar.xz -C $(E2E_BACKUPS_PATH)
+
 .PHONY: e2e
-e2e: DEPLOY_ENVIRONMENT=e2e
-e2e: build
-	docker compose run server inv collectstatic
-	docker compose run --rm e2e npm run test
-	docker compose down
+e2e: docker-compose.yml secrets $(DOCKER_SHARED_DIR) $(E2E_REPO_PATH)
+	docker compose -f docker-compose.yml -f e2e.yml up -d --build
+	docker compose -f docker-compose.yml -f e2e.yml exec server bash -c "\
+		inv borg.restore --force && \
+		./manage.py migrate && \
+		inv prepare"

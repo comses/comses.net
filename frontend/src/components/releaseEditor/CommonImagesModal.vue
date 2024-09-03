@@ -1,5 +1,11 @@
 <template>
-  <button type="button" :class="buttonClass" rel="nofollow" @click="imagesModal?.show()">
+  <button
+    type="button"
+    :class="buttonClass"
+    data-cy="add-image"
+    rel="nofollow"
+    @click="imagesModal?.show()"
+  >
     <i class="fas fa-image"></i> Add Images
   </button>
   <BootstrapModal id="images-modal" title="Upload Images" ref="imagesModal" size="lg" centered>
@@ -11,6 +17,7 @@
           :upload-url="uploadUrl"
           instructions="Upload media files here. Images are displayed on the detail page of every release for this codebase. GIF, JPEG and PNG files only."
           :originals="files"
+          category="image"
           @delete-file="handleDeleteFile"
           @clear="handleClear"
           @upload-done="getMediaFiles"

@@ -19,6 +19,7 @@
         <form @submit="handleSubmit" id="download-request-form">
           <SelectField
             class="mb-3"
+            data-cy="industry"
             name="industry"
             label="What industry do you work in?"
             :options="industryOptions"
@@ -26,6 +27,7 @@
           />
           <ResearchOrgField
             class="mb-3"
+            data-cy="affiliation"
             name="affiliation"
             label="What is your institutional affiliation?"
             help=""
@@ -47,6 +49,7 @@
           </ResearchOrgField>
           <SelectField
             name="reason"
+            data-cy="reason"
             label="What do you plan on using this model for?"
             :options="reasonOptions"
             required
@@ -63,7 +66,12 @@
           label="Remember my answers"
         />
         <button type="button" data-bs-dismiss="modal" class="btn btn-outline-gray">Cancel</button>
-        <button type="submit" form="download-request-form" class="btn btn-success">
+        <button
+          type="submit"
+          data-cy="submit-download"
+          form="download-request-form"
+          class="btn btn-success"
+        >
           <i class="fas fa-download"></i> Download
         </button>
       </template>
@@ -138,21 +146,21 @@ const { errors, handleSubmit, values } = useForm<ReleaseDownloadFields>({
 });
 
 const industryOptions = [
-  { value: "university", label: "College/University" },
-  { value: "educator", label: "K-12 Educator" },
-  { value: "government", label: "Government" },
-  { value: "private", label: "Private" },
-  { value: "nonprofit", label: "Non-Profit" },
-  { value: "student", label: "Student" },
-  { value: "other", label: "Other" },
+  { value: "university", label: "College/University", "data-cy": "industry-university" },
+  { value: "educator", label: "K-12 Educator", "data-cy": "industry-educator" },
+  { value: "government", label: "Government", "data-cy": "industry-government" },
+  { value: "private", label: "Private", "data-cy": "industry-private" },
+  { value: "nonprofit", label: "Non-Profit", "data-cy": "industry-nonprofit" },
+  { value: "student", label: "Student", "data-cy": "industry-student" },
+  { value: "other", label: "Other", "data-cy": "industry-other" },
 ];
 
 const reasonOptions = [
-  { value: "research", label: "Research" },
-  { value: "education", label: "Education" },
-  { value: "commercial", label: "Commercial" },
-  { value: "policy", label: "Policy / Planning" },
-  { value: "other", label: "Other" },
+  { value: "research", label: "Research", "data-cy": "reason-research" },
+  { value: "education", label: "Education", "data-cy": "reason-education" },
+  { value: "commercial", label: "Commercial", "data-cy": "reason-commercial" },
+  { value: "policy", label: "Policy / Planning", "data-cy": "reason-policy" },
+  { value: "other", label: "Other", "data-cy": "reason-other" },
 ];
 
 const isNullAffiliation = ref(false);
