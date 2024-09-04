@@ -1,5 +1,4 @@
 from allauth.socialaccount.adapter import get_adapter
-from datetime import datetime
 from django.conf import settings
 from django.contrib.sites.models import Site
 from django.contrib import messages
@@ -20,7 +19,8 @@ from hcaptcha_field import hCaptchaField
 import re
 import json
 import logging
-
+from datetime import datetime
+from urllib.parse import parse_qsl
 
 from core.fields import render_sanitized_markdown
 from core.serializers import FULL_DATE_FORMAT, FULL_DATETIME_FORMAT
@@ -66,6 +66,7 @@ def environment(**options):
             "build_absolute_uri": build_absolute_uri,
             "cookielaw": cookielaw,
             "now": now,
+            "generate_search_form_inputs": generate_search_form_inputs,
             "should_enable_discourse": should_enable_discourse,
             "is_production": is_production,
             "provider_login_url": provider_login_url,
@@ -111,6 +112,39 @@ def now(format_string):
     """
     tzinfo = get_current_timezone() if settings.USE_TZ else None
     return defaultfilters.date(datetime.now(tz=tzinfo), format_string)
+
+
+def to_camel_case(snake_str):
+    components = snake_str.split("_")
+    return components[0] + "".join(x.title() for x in components[1:])
+
+
+def convert_keys_to_camel_case(d: list):
+    return [(to_camel_case(k), v) for k, v in d]
+
+
+def generate_search_form_inputs(query_params):
+    """
+    Generate hidden input fields for the search form based on incoming query parameters.
+    Args:
+        query_params (str): The query parameters to be used for generating the hidden inputs.
+    Returns:
+        list: A list of tuples representing the hidden input fields.
+    """
+    # set default ordering to relevance, if it is not specified
+    search_parameters = {
+        "ordering": "relevance",
+    }
+    if query_params:
+        # parse_qsl handles splitting and unquoting key-value pairs and generates a list of tuples
+        # do not include the actual query in the query parameters
+        incoming_query_params = [
+            pair for pair in parse_qsl(query_params) if pair[0] != "query"
+        ]
+        search_parameters.update(convert_keys_to_camel_case(incoming_query_params))
+
+    logger.debug("search parameters: %s", search_parameters)
+    return search_parameters.items()
 
 
 def should_enable_discourse(is_public: bool):

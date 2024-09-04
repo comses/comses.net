@@ -105,7 +105,7 @@
 {% endblock %}
 
 {% block search %}
-{{ search_bar(url("core:event-list"), "Search Events") }}
+{{ search_bar(request, url("core:event-list"), "Search Events") }}
 {{ pagination_block }}
 {% endblock %}
 

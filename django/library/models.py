@@ -525,18 +525,6 @@ class CodebaseQuerySet(models.QuerySet):
         )
         return new_codebases, updated_codebases, releases
 
-    def get_all_release_frameworks(self, codebase):
-        # FIXME: this probably just belongs on Codebase
-        return codebase.releases.exclude(platform_tags__isnull=True).values_list(
-            "platform_tags__name", flat=True
-        )
-
-    def get_all_release_programming_languages(self, codebase):
-        # FIXME: this probably just belongs on Codebase
-        return codebase.releases.exclude(
-            programming_languages__isnull=True
-        ).values_list("programming_languages__name", flat=True)
-
 
 @add_to_comses_permission_whitelist
 class Codebase(index.Indexed, ModeratedContent, ClusterableModel):
@@ -614,14 +602,12 @@ class Codebase(index.Indexed, ModeratedContent, ClusterableModel):
     objects = CodebaseQuerySet.as_manager()
 
     search_fields = [
-        index.SearchField("title"),
-        index.SearchField("description"),
-        index.SearchField("get_all_contributors_search_fields"),
-        index.SearchField("get_all_release_frameworks"),
-        index.SearchField("get_all_release_programming_languages"),
-        index.SearchField("references_text"),
+        index.SearchField("title", boost=10.0),
+        index.SearchField("description", boost=8.0),
+        index.SearchField("get_all_contributors_search_fields", boost=5.0),
+        index.SearchField("references_text", boost=2.0),
         index.SearchField("permanent_url"),
-        index.SearchField("associated_publication_text"),
+        index.SearchField("associated_publication_text", boost=4.0),
         index.RelatedFields(
             "tags",
             [
@@ -629,6 +615,9 @@ class Codebase(index.Indexed, ModeratedContent, ClusterableModel):
             ],
         ),
         # filter and sort fields
+        index.FilterField("id"),
+        index.FilterField("all_release_frameworks"),
+        index.FilterField("all_release_programming_languages"),
         index.FilterField("is_marked_spam"),
         index.FilterField("last_modified"),
         index.FilterField("peer_reviewed"),
@@ -799,11 +788,21 @@ class Codebase(index.Indexed, ModeratedContent, ClusterableModel):
             [c.get_aggregated_search_fields() for c in self.all_contributors]
         )
 
-    def get_all_release_frameworks(self):
-        return " ".join(Codebase.objects.get_all_release_frameworks(self))
+    @property
+    def all_release_frameworks(self):
+        return list(
+            self.releases.exclude(platform_tags__isnull=True).values_list(
+                "platform_tags__name", flat=True
+            )
+        )
 
-    def get_all_release_programming_languages(self):
-        return " ".join(Codebase.objects.get_all_release_programming_languages(self))
+    @property
+    def all_release_programming_languages(self):
+        return list(
+            self.releases.exclude(programming_languages__isnull=True).values_list(
+                "programming_languages__name", flat=True
+            )
+        )
 
     def download_count(self):
         return CodebaseReleaseDownload.objects.filter(

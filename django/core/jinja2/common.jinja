@@ -169,8 +169,8 @@
     {% for term in list_state.filter_display_terms %}
     <span class="badge bg-gray ms-1">{{ term }}</span>
     {% endfor %}
-    <a class="text-danger ms-1" href="{{ url(url_name) }}">
-        <i class="fas fa-times"></i> clear
+    <a class="text-warn ms-1" href="{{ url(url_name) }}">
+        <i class="fas fa-times"></i> clear filters
     </a>
     {% endif %}
 </p>
@@ -182,16 +182,22 @@
 {% endif %}
 {% endmacro %}
 
-{% macro search_bar(search_url, placeholder) %}
+{% macro search_bar(request, search_url, placeholder, query_params='') %}
+{% set current_query = request.GET.get('query', '') %}
 <form class="mb-3" action="{{ search_url }}" method="get">
     <label class="sr-only" for="search-query">Search</label>
     <div class="input-group">
-        <input id="search-query" data-cy="search-bar" class="form-control" name="query" type="search" value=""
-            placeholder="{{ placeholder }}">
+        <input id="search-query" data-cy="search-bar" class="form-control" name="query" type="search" value="{{ current_query }}" placeholder="{{ placeholder }}">
+        {% if query_params %}
+            {% for key, value in generate_search_form_inputs(query_params) %}
+                <input type="hidden" name="{{ key }}" value="{{ value }}">
+            {% endfor %}
+        {% endif %}
         <button type="submit" data-cy="search-button" class="btn btn-primary">
             <i class="fas fa-search px-1"></i>
         </button>
     </div>
+   
 </form>
 {% endmacro %}
 

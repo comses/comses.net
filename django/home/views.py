@@ -67,20 +67,42 @@ class SearchView(TemplateView):
 
         query = self.request.GET.get("query")
         page = self.request.GET.get("page", 1)
-        try:
-            # clamp page to range [1, n)
-            page = max(1, int(page))
-        except ValueError:
-            page = 1
+
         if query is not None:
-            results, total = search.search(query, start=(page - 1) * 10)
+
+            # set max limit based on elastic settings
+            _, limited_page_number_ceiling = SmallResultSetPagination.limit_page_range(
+                page=page
+            )
+
+            page = limited_page_number_ceiling
+
+            results, total = search.search(
+                query, start=(limited_page_number_ceiling - 1) * 10
+            )
+
+            if total != 0:
+                limited_count, limited_page_number_floor = (
+                    SmallResultSetPagination.limit_page_range(page=page, count=total)
+                )
+
+                # if there are less pages in the result,
+                # perform the search again to get the actual last page results
+
+                if limited_page_number_ceiling > limited_page_number_floor:
+                    results, total = search.search(
+                        query, start=(limited_page_number_floor - 1) * 10
+                    )
+                    page = limited_page_number_floor
+
+                total = min(total, limited_count)
         else:
             results, total = [], 0
 
         pagination_context = SmallResultSetPagination.create_paginated_context_data(
             query=query,
             data=results,
-            current_page_number=page,
+            page=page,
             count=total,
             query_params=QueryDict(query_string="query={}".format(query)),
         )

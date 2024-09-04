@@ -1,3 +1,4 @@
+import json
 from django.forms import Form
 from django.contrib import messages
 from django.contrib.auth.mixins import PermissionRequiredMixin, LoginRequiredMixin
@@ -351,14 +352,20 @@ class CodebaseFilter(filters.BaseFilterBackend):
     def filter_queryset(self, request, queryset, view):
         if view.action != "list":
             return queryset
+
+        # Get request params
         query_params = request.query_params
-        qs = query_params.get("query")
+        qs = query_params.get("query", "")
         published_start_date = query_params.get("published_after")
         published_end_date = query_params.get("published_before")
         peer_review_status = query_params.get("peer_review_status")
-        # platform = query_params.get('platform')
-        # programming_language = query_params.get('programming_language')
+        # platform = query_params.get("platform")
+        programming_languages = query_params.getlist("programming_languages")
+        ordering = query_params.get("ordering")
+
         tags = query_params.getlist("tags")
+
+        # Handle filtering criteria
         criteria = {}
         if published_start_date and published_end_date:
             if published_start_date < published_end_date:
@@ -382,6 +389,18 @@ class CodebaseFilter(filters.BaseFilterBackend):
                 criteria.update(peer_reviewed=True)
             elif peer_review_status == "not_reviewed":
                 criteria.update(peer_reviewed=False)
+        if programming_languages:
+            # FIXME: this does not work for the same reason tags__name__in does not work, e.g.,
+            # https://docs.wagtail.org/en/stable/topics/search/indexing.html#filtering-on-index-relatedfields
+            # criteria.update(releases__programming_languages__name__in=programming_languages)
+            qs += " ".join(programming_languages)
+        if ordering:
+            criteria.update(ordering=ordering)
+        else:
+            if qs:
+                # set default ordering for search when ordering is not specified
+                criteria.update(ordering="relevance")
+
         return get_search_queryset(qs, queryset, tags=tags, criteria=criteria)
 
 
@@ -401,6 +420,35 @@ class CodebaseViewSet(SpamCatcherViewSetMixin, CommonViewSetMixin, HtmlNoDeleteV
         "last_modified",
     )
     context_list_name = "codebases"
+
+    def get_list_context(self, page_or_queryset):
+        context = {self.context_list_name: page_or_queryset}
+        if self.paginator:
+            context["paginator_data"] = self.paginator.get_context_data(context)
+        return context
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.filter_queryset(self.get_queryset())
+        page = self.paginate_queryset(queryset)
+
+        if request.accepted_renderer.format == "html":
+            context = self.get_list_context(page or queryset)
+
+            language_facets = queryset.facet("all_release_programming_languages")
+            if language_facets:
+                logger.debug(
+                    "Appending language_facets to response: %s", language_facets
+                )
+                context["language_facets"] = json.dumps(language_facets)
+
+            return Response(context)
+
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
 
     def get_queryset(self):
         if self.action == "list":

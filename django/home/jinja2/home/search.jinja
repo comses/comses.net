@@ -6,7 +6,8 @@
 
 {% block breadcrumb %}
 {{ breadcrumb([{'text': 'Computational Model Library'}]) }}
-{{ search_bar("/search/", "Search CoMSES.Net") }}
+
+{{ search_bar(request, "/search/", "Search CoMSES.Net", current_query) }}
 <div class="pb-1">
     {{ paginator('home:search', __all__) }}
 </div>

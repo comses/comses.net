@@ -19,7 +19,7 @@
 {% endblock %}
 
 {% block search %}
-{{ search_bar(url("library:codebase-list"), "Search Codebases") }}
+{{ search_bar(request, url("library:codebase-list"), "Search Codebases", paginator_data.query_params) }}
 {{ pagination_block }}
 {% endblock %}
 
@@ -41,7 +41,7 @@
 {% endblock %}
 
 {% block sidebar %}
-<div id="sidebar"></div>
+<div id="sidebar" {% if language_facets %} data-language-facets="{{ language_facets }}" {% endif %} />
 {% endblock %}
 
 {% block js %}

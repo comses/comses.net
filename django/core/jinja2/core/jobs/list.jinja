@@ -69,7 +69,7 @@
 {% endblock %}
 
 {% block search %}
-{{ search_bar(url("core:job-list"), "Search Jobs") }}
+{{ search_bar(request, url("core:job-list"), "Search Jobs") }}
 {{ pagination_block }}
 {% endblock %}
 
