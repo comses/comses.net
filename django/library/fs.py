@@ -822,7 +822,7 @@ class CodebaseGitRepositoryApi:
             for file in sip_storage.list(absolute=True):
                 if file.stat().st_size > cls.FILE_SIZE_LIMIT:
                     file_size_mb = file.stat().st_size / (1024 * 1024)
-                    raise ValueError(
+                    raise ValidationError(
                         f"File {file} is too large ({file_size_mb}MB), individual files must be under {cls.FILE_SIZE_LIMIT / (1024 * 1024)}MB"
                     )
 

@@ -537,13 +537,7 @@ class CodebaseViewSet(SpamCatcherViewSetMixin, CommonViewSetMixin, HtmlNoDeleteV
                 data={"error": "This codebase is already mirrored to a GitHub repo"},
                 status=status.HTTP_400_BAD_REQUEST,
             )
-        try:
-            CodebaseGitRepositoryApi.check_file_sizes(codebase)
-        except Exception as e:
-            return Response(
-                data={"error": str(e)},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+        CodebaseGitRepositoryApi.check_file_sizes(codebase)
         repo_name = request.data.get("repo_name")
         codebase.create_git_mirror(repo_name)
         # TODO: do this with a celery task
