@@ -270,13 +270,8 @@ class CodeMetaValidationTest(RuleBasedStateMachine):
         Create Codebase and CodebaseRelease
         """
         codebase_factory = CodebaseFactory(submitter=self.submitter)
-        self.codebase = codebase_factory.create()
-        self.codebase_release = self.codebase.create_release(initialize=False)
-
-        #  set initial texts used for citation
-        self.codebase_release.codebase.references_text = ""
-        self.codebase_release.codebase.replication_text = ""
-        self.codebase_release.codebase.associated_publication_text = ""
+        self.codebase_release = codebase_factory.create_published_release()
+        self.codebase = self.codebase_release.codebase
 
         logger.debug("setup() done.")
 
@@ -295,7 +290,7 @@ class CodeMetaValidationTest(RuleBasedStateMachine):
         logger.debug(f"adding unique contributor: {contributor.name}")
 
         # Function under test: CodebaseRelease.add_contributor()
-        release_contributor = self.codebase_release.add_contributor(contributor, role)
+        self.codebase_release.add_contributor(contributor, role)
         self.codebase_release.save()
 
         # since we are always adding a unique user, the contributors count will always increase by one
@@ -325,7 +320,7 @@ class CodeMetaValidationTest(RuleBasedStateMachine):
         logger.debug(f"adding existing contributor: {contributor.id}")
 
         # Function under test: CodebaseRelease.add_contributor()
-        release_contributor = self.codebase_release.add_contributor(contributor, role)
+        self.codebase_release.add_contributor(contributor, role)
         self.codebase_release.save()
 
         # if an existing contributor is added again, but with AUTHOR role -> it will be considered "author" and not "nonauthor"
@@ -392,6 +387,7 @@ class CodeMetaValidationTest(RuleBasedStateMachine):
             self.codebase_release.codebase_contributors.all().count()
         )
 
+        logger.debug("XXXXX expected contributors: %s, actual contributors: %s", expected_contributors_count, real_contributors_count)
         assert expected_contributors_count == real_contributors_count
 
         """
@@ -454,7 +450,7 @@ class CodeMetaValidationTest(RuleBasedStateMachine):
                 if citation
             ]
 
-            fresh_codemeta = CodeMetaSchema.build(CommonMetadata(self.codebase_release))
+            fresh_codemeta = CodeMetaSchema.build(self.codebase_release)
             # Extract text from CodeMeta.metadata
             real_codemeta_citation_flat_text = [
                 creative_work["text"]
@@ -472,7 +468,7 @@ class CodeMetaValidationTest(RuleBasedStateMachine):
         """
         logger.debug("validate_against_schema()")
 
-        fresh_codemeta = CodeMetaSchema.build(CommonMetadata(self.codebase_release))
+        fresh_codemeta = CodeMetaSchema.build(self.codebase_release)
         try:
             jsonschema.validate(
                 json.loads(fresh_codemeta.to_json()),
