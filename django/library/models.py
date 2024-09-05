@@ -190,11 +190,14 @@ class Contributor(index.Indexed, ClusterableModel):
     @property
     def codemeta_affiliation(self):
         """
-        FIXME: move to CodeMeta class
         For now codemeta affiliations appear to be a single https://schema.org/Organization
         """
         if self.json_affiliations:
-            return self.to_codemeta_affiliation(self.json_affiliations[0])
+            return CodeMetaSchema.convert_affiliation(self.json_affiliations[0])
+
+    @property
+    def primary_affiliation(self):
+        return self.json_affiliations[0] if self.json_affiliations else {}
 
     @property
     def primary_affiliation_name(self):
@@ -203,20 +206,6 @@ class Contributor(index.Indexed, ClusterableModel):
     @property
     def primary_json_affiliation_name(self):
         return self.json_affiliations[0]["name"] if self.json_affiliations else ""
-
-    def to_codemeta_affiliation(self, affiliation):
-        # FIXME: move to CodeMeta class
-        if affiliation:
-            return {
-                # FIXME: may switch to https://schema.org/ResearchOrganization at some point
-                "@type": "Organization",
-                "@id": affiliation.get("ror_id"),
-                "name": affiliation.get("name"),
-                "url": affiliation.get("url"),
-                "identifier": affiliation.get("ror_id"),
-                "sameAs": affiliation.get("ror_id"),
-            }
-        return {}
 
     @staticmethod
     def from_user(user):
@@ -274,21 +263,8 @@ class Contributor(index.Indexed, ClusterableModel):
     def get_markdown_link(self):
         return f"[{self.get_full_name()}]({self.member_profile_url})"
 
-    # FIXME: move to CodeMeta transformer class
     def to_codemeta(self):
-        codemeta = {
-            "@type": "Person",
-            # FIXME: Contributor should proxy to User / MemberProfile fields if User is available and given_name and family_name are not set
-            "givenName": self.given_name,
-            "familyName": self.family_name,
-        }
-        if self.orcid_url:
-            codemeta["@id"] = self.orcid_url
-        if self.json_affiliations:
-            codemeta["affiliation"] = self.codemeta_affiliation
-        if self.email:
-            codemeta["email"] = self.email
-        return codemeta
+        return CodeMetaSchema.convert_contributor(self)
 
     def get_aggregated_search_fields(self):
         return " ".join(
@@ -1688,6 +1664,7 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
 
     def add_contributor(self, contributor: Contributor, role=Role.AUTHOR, index=None):
         # Check if a ReleaseContributor with the same contributor already exists
+        logger.debug("Adding contributor with role: %s, %s", contributor, role)
         existing_release_contributor = self.codebase_contributors.filter(
             contributor=contributor
         ).first()
@@ -2596,7 +2573,7 @@ class CommonMetadata:
     def license_url(self):
         if self.license:
             return self.license.url
-        return "DEFAULT LICENSE - https://opensource.org/licenses/MIT"
+        return "DEFAULT LICENSE: https://opensource.org/licenses/MIT"
 
     @property
     def descriptions(self):
@@ -2670,13 +2647,14 @@ class CodeMetaSchema:
 
     @classmethod
     def convert(cls, codebase_release: CodebaseRelease):
+        """
+        Converts the given CodebaseRelease into a Python dictionary.
+        """
         common_metadata = codebase_release.common_metadata
         metadata = {
             **cls.INITIAL_METADATA,
-            # FIXME: inherit fields from common_metadata, look into how to do this
-            # better, snake_case to camelCase of variable names is also an issue
-            **common_metadata.to_dict(),
             "@id": common_metadata.permanent_url,
+            "name": common_metadata.name,
             "copyrightYear": common_metadata.copyright_year,
             "dateCreated": common_metadata.date_created.isoformat(),
             "dateModified": common_metadata.date_modified.isoformat(),
@@ -2693,8 +2671,7 @@ class CodeMetaSchema:
             metadata.update(codeRepository=common_metadata.code_repository)
         if hasattr(common_metadata, "release_notes"):
             metadata.update(releaseNotes=common_metadata.release_notes)
-
-        return CodeMetaSchema(metadata)
+        return metadata
 
     @classmethod
     def convert_programming_languages(cls, common_metadata: CommonMetadata):
@@ -2717,9 +2694,41 @@ class CodeMetaSchema:
     @classmethod
     def convert_authors(cls, common_metadata: CommonMetadata):
         return [
-            author.contributor.to_codemeta()
+            cls.convert_contributor(author.contributor)
             for author in common_metadata.release_contributor_authors
         ]
+
+    @classmethod
+    def convert_ror_affiliation(cls, affiliation: dict):
+        if affiliation:
+            return {
+                # FIXME: may switch to https://schema.org/ResearchOrganization at some point
+                "@type": "Organization",
+                "@id": affiliation.get("ror_id"),
+                "name": affiliation.get("name"),
+                "url": affiliation.get("url"),
+                "identifier": affiliation.get("ror_id"),
+                "sameAs": affiliation.get("ror_id"),
+            }
+        return {}
+
+    @classmethod
+    def convert_contributor(cls, contributor: Contributor):
+        codemeta = {
+            "@type": "Person",
+            # FIXME: Contributor should proxy to User / MemberProfile fields if User is available and given_name and family_name are not set
+            "givenName": contributor.given_name,
+            "familyName": contributor.family_name,
+        }
+        if contributor.orcid_url:
+            codemeta["@id"] = contributor.orcid_url
+        if contributor.json_affiliations:
+            codemeta["affiliation"] = cls.convert_ror_affiliation(
+                contributor.primary_affiliation
+            )
+        if contributor.email:
+            codemeta["email"] = contributor.email
+        return codemeta
 
     @classmethod
     def convert_target_product(cls, common_metadata: CommonMetadata):
