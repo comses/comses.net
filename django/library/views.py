@@ -85,7 +85,7 @@ from .serializers import (
     PeerReviewFeedbackEditorSerializer,
     PeerReviewEventLogSerializer,
 )
-from .github import GithubService
+from .tasks import mirror_codebase
 
 import logging
 import pathlib
@@ -540,9 +540,7 @@ class CodebaseViewSet(SpamCatcherViewSetMixin, CommonViewSetMixin, HtmlNoDeleteV
         CodebaseGitRepositoryApi.check_file_sizes(codebase)
         repo_name = request.data.get("repo_name")
         codebase.create_git_mirror(repo_name)
-        # TODO: do this with a celery task
-        service = GithubService(codebase, debug=True)
-        service.mirror_org_repo()
+        mirror_codebase(codebase.id, debug=True)
         return Response(data={"job_id": "1234"}, status=status.HTTP_202_ACCEPTED)
 
 

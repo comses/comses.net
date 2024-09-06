@@ -51,10 +51,9 @@ from core.backends import add_to_comses_permission_whitelist
 from core.fields import MarkdownField
 from core.models import Platform, MemberProfile, ModeratedContent
 from core.queryset import get_viewable_objects_for_user
-from core.tasks import send_markdown_email
+from core.utils import send_markdown_email
 from core.view_helpers import get_search_queryset
 from .fs import (
-    CodebaseGitRepositoryApi,
     CodebaseReleaseFsApi,
     StagingDirectories,
     FileCategoryDirectories,
