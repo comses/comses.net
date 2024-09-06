@@ -89,6 +89,7 @@ export interface Reviewer {
   id: number;
   isActive: boolean;
   memberProfile: RelatedMemberProfile;
+  memberProfileId: number;
   programmingLanguages: string[];
   subjectAreas: string[];
   notes: string;

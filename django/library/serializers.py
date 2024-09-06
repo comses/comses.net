@@ -714,7 +714,6 @@ class PeerReviewerSerializer(serializers.ModelSerializer):
     member_profile_id = serializers.PrimaryKeyRelatedField(
         queryset=MemberProfile.objects.all(),
         source="member_profile",
-        write_only=True,
     )
     member_profile = RelatedMemberProfileSerializer(read_only=True)
     date_created = serializers.DateTimeField(
