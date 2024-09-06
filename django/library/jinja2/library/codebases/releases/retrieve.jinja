@@ -303,9 +303,17 @@
                 </a>
             </div>
             {% if codebase.git_mirror %}
-                <a href="{{ codebase.git_mirror.remote_url }}">
-                    <span class='badge bg-info'>view on Github</span>
-                </a>
+                {% if codebase.git_mirror.remote_url %}
+                    <a href="{{ codebase.git_mirror.remote_url }}">
+                        <span class="badge bg-info">view on Github</span>
+                    </a>
+                {% else %}
+                    <div class="alert alert-info">
+                        Mirroring in progress. This may take a few seconds.
+                        <hr>
+                        <a href=".">Refresh</a>
+                    </div>
+                {% endif %}
             {% elif has_change_perm %}
                 <div
                     id="github-mirror"
