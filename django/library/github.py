@@ -1,4 +1,5 @@
-from github import GithubIntegration, Auth, Github, Repository as GithubRepo
+from github import GithubIntegration, Auth, Github
+from github.Repository import Repository as GithubRepo
 from git import Repo as GitRepo
 from django.conf import settings
 from django.core.cache import cache
@@ -114,15 +115,21 @@ class GithubApi:
         self._push_to_url(local_repo, push_url)
 
     def create_releases(self, local_repo: GitRepo):
-        """create Github releases for each tag in the local repository"""
+        """create Github releases for each tag in the local repository that
+        does not already have a corresponding release in the remote repository"""
         for tag in local_repo.tags:
-            self.github_repo.create_git_release(
-                tag.name,
-                name=tag.name,
-                message=tag.commit.message,
-                draft=False,
-                prerelease=False,
-            )
+            try:
+                existing_release = self.github_repo.get_release(tag.name)
+            except:
+                existing_release = None
+            if not existing_release:
+                self.github_repo.create_git_release(
+                    tag.name,
+                    name=tag.name,
+                    message=tag.commit.message,
+                    draft=False,
+                    prerelease=False,
+                )
 
     def _get_existing_repo(self):
         """attempt to get an existing repository for the authenticated user or organization"""
