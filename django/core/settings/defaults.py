@@ -118,6 +118,7 @@ THIRD_PARTY_APPS = [
     "django_extensions",
     "django_vite",
     "guardian",
+    "huey.contrib.djhuey",
     "rest_framework",
     "rest_framework_swagger",
     "robots",
@@ -396,6 +397,11 @@ LOGGING = {
             "handlers": ["console", "comsesfile"],
             "propagate": False,
         },
+        "huey": {
+            "level": "INFO",
+            "handlers": ["console", "comsesfile"],
+            "propagate": False,
+        },  # FIXME: change this in prod
     },
 }
 
@@ -479,8 +485,15 @@ CACHES = {
         "LOCATION": "unix:///shared/redis/redis.sock",
         "OPTIONS": {
             "CLIENT_CLASS": "django_redis.client.DefaultClient",
+            "CONNECTION_POOL_KWARGS": {"max_connections": 20},
         },
     }
+}
+
+HUEY = {
+    "name": "comses",
+    "huey_class": "core.huey.DjangoRedisHuey",
+    "immediate": False,  # always run tasks in the background, even in dev (for now)
 }
 
 # SSO, user registration, and django-allauth configuration, see

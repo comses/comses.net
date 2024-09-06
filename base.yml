@@ -86,6 +86,32 @@ services:
         condition: service_started
     env_file:
       - ./.env
+  huey:
+    build: django
+    image: comses/huey
+    secrets:
+      - db_password
+      - discourse_api_key
+      - discourse_sso_secret
+      - django_secret_key
+      - github_client_secret
+      - orcid_client_secret
+      - github_app_private_key
+      - github_app_client_secret
+      - hcaptcha_secret
+      - mail_api_key
+    volumes:
+      - ./deploy/elasticsearch.conf.d:/etc/elasticsearch
+      - ./docker/shared:/shared
+      - ./.env:/etc/environment
+    command: ["/code/manage.py", "run_huey"]
+    depends_on:
+      server:
+        condition: service_started
+      redis:
+        condition: service_started
+    env_file:
+      - ./.env
 
 secrets:
   datacite_api_password:
