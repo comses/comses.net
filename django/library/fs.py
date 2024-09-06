@@ -936,9 +936,12 @@ class CodebaseGitRepositoryApi:
         :param releases: list of releases to append, if None, all unmirrored releases will be appended
         """
         self.check_file_sizes(self.codebase)
+        if not releases:
+            releases = self.mirror.unmirrored_local_releases
+        if not releases:
+            # nothing to do, return the existing repo
+            return Repo(self.repo_dir)
         with self.use_temporary_repo(from_existing=True):
-            if not releases:
-                releases = self.mirror.unmirrored_local_releases
             # make sure the releases are higher than the latest mirrored release
             if not all(
                 Version(release.version_number)
@@ -979,6 +982,12 @@ class CodebaseGitRepositoryApi:
         # record mirrored releases and update timestamp
         self.mirror.update_local_releases(releases)
         return Repo(self.repo_dir)
+
+    def get_or_build(self) -> Repo:
+        if self.repo_dir.exists() and self.repo_dir.joinpath(".git").exists():
+            return self.append_releases()
+        else:
+            return self.build()
 
     def dirs_equal(self, dir1: Path, dir2: Path, ignore=[".git"]):
         """

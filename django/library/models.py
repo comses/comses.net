@@ -51,7 +51,7 @@ from core.backends import add_to_comses_permission_whitelist
 from core.fields import MarkdownField
 from core.models import Platform, MemberProfile, ModeratedContent
 from core.queryset import get_viewable_objects_for_user
-from core.utils import send_markdown_email
+from core.tasks import send_markdown_email
 from core.view_helpers import get_search_queryset
 from .fs import (
     CodebaseGitRepositoryApi,
@@ -538,9 +538,13 @@ class CodebaseQuerySet(models.QuerySet):
 
 class CodebaseGitMirror(models.Model):
     """
-    # FIXME: rename to CodebaseGitRepository?
+    # FIXME: should this manage both mirroring and syncing?
+    alt name ideas:
+    - CodebaseGithubIntegration
+    - CodebaseGitRepository
+    mirror makes sense if this is only responsible for the mirroring (1-way workflow)
+
     model to keep track of the state of a git repository for a codebase
-    that can either be mirrored (1-way, auto-updating) or synced (2-way, 1 time push)
     """
 
     # is_active = models.BooleanField(default=True)
@@ -555,7 +559,8 @@ class CodebaseGitMirror(models.Model):
     # keep track of timestamp and releases that have been synced to the remote
     last_remote_update = models.DateTimeField(null=True, blank=True)
     remote_releases = models.ManyToManyField("CodebaseRelease", related_name="+")
-    # user_access_token = models.CharField(max_length=200, blank=True)
+    user_access_token = models.CharField(max_length=200, null=True, blank=True)
+    organization_login = models.CharField(max_length=100, null=True, blank=True)
 
     @property
     def latest_local_release(self):
