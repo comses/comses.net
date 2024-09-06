@@ -25,7 +25,7 @@
       <ReviewerEditForm
         id="add-reviewer-form"
         ref="addForm"
-        :memberProfile="memberProfile"
+        :memberProfileId="memberProfileId"
         :isEdit="false"
         @success="
           r => {
@@ -50,6 +50,7 @@
         ref="editForm"
         :isEdit="true"
         :reviewer="reviewer"
+        :memberProfileId="memberProfileId"
         @success="
           r => {
             emit('update', r);
@@ -66,11 +67,11 @@ import { ref } from "vue";
 import BootstrapModal from "@/components/BootstrapModal.vue";
 import ReviewerCard from "./ReviewerCard.vue";
 import ReviewerEditForm from "@/components/ReviewerEditForm.vue";
-import type { RelatedMemberProfile, Reviewer } from "@/types";
+import type { Reviewer } from "@/types";
 
 const props = defineProps<{
   reviewer?: Reviewer | null;
-  memberProfile?: RelatedMemberProfile;
+  memberProfileId?: number;
 }>();
 
 const emit = defineEmits<{

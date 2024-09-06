@@ -2,49 +2,51 @@
   <div class="modal-body">
     <form @submit="handleSubmit" @reset="handleReset">
       <!-- FIXME: hide this and show profile after setting -->
-      <UserSearch
-        v-if="!values.memberProfile"
-        class="mb-3"
-        label="Search for an existing User"
-        placeholder="Skip entering contributor details by searching for users already in our system"
-        :search-fn="search"
-        :errors="profileErrors"
-        @select="setMemberProfile($event)"
-        show-avatar
-        show-email
-        show-affiliation
-      />
-      <div class="container" v-else>
-        <div class="row py-2">
-          <div class="col-2 ps-0">
-            <img
-              v-if="values.memberProfile.avatarUrl"
-              class="d-block img-thumbnail"
-              :src="values.memberProfile.avatarUrl"
-              alt="Profile Image"
-            />
-            <img
-              v-else
-              class="d-block img-thumbnail"
-              data-src="holder.js/100x100?text=No Picture Available"
-              alt="No Picture Available"
-            />
-          </div>
-          <div class="col-10 pe-0">
-            <h2>
-              {{ values.memberProfile.name }}
-              <button
-                v-if="!props.memberProfile && !isEdit"
-                class="btn btn-danger float-end"
-                @click="values.memberProfile = null"
-                type="button"
-              >
-                Remove
-              </button>
-            </h2>
-            <div class="tag-list">
-              <div class="tag mx-1" v-for="tag in values.memberProfile.tags" :key="tag.name">
-                {{ tag.name }}
+      <div v-if="!props.memberProfileId">
+        <UserSearch
+          v-if="!values.memberProfile"
+          class="mb-3"
+          label="Search for an existing User"
+          placeholder="Skip entering contributor details by searching for users already in our system"
+          :search-fn="search"
+          :errors="profileErrors"
+          @select="setMemberProfile($event)"
+          show-avatar
+          show-email
+          show-affiliation
+        />
+        <div class="container" v-else>
+          <div class="row py-2">
+            <div class="col-2 ps-0">
+              <img
+                v-if="values.memberProfile.avatarUrl"
+                class="d-block img-thumbnail"
+                :src="values.memberProfile.avatarUrl"
+                alt="Profile Image"
+              />
+              <img
+                v-else
+                class="d-block img-thumbnail"
+                data-src="holder.js/100x100?text=No Picture Available"
+                alt="No Picture Available"
+              />
+            </div>
+            <div class="col-10 pe-0">
+              <h2>
+                {{ values.memberProfile.name }}
+                <button
+                  v-if="!props.memberProfileId && !isEdit"
+                  class="btn btn-danger float-end"
+                  @click="values.memberProfile = null"
+                  type="button"
+                >
+                  Remove
+                </button>
+              </h2>
+              <div class="tag-list">
+                <div class="tag mx-1" v-for="tag in values.memberProfile.tags" :key="tag.name">
+                  {{ tag.name }}
+                </div>
               </div>
             </div>
           </div>
@@ -95,7 +97,7 @@ import type { RelatedMemberProfile, Reviewer } from "@/types";
 
 export interface ReviewerEditFormProps {
   reviewer?: Reviewer;
-  memberProfile?: RelatedMemberProfile;
+  memberProfileId?: number;
   isEdit?: boolean;
 }
 
@@ -104,6 +106,7 @@ const props = withDefaults(defineProps<ReviewerEditFormProps>(), {
 });
 
 const schema = yup.object().shape({
+  memberProfileId: yup.number().required(),
   memberProfile: yup.mixed<RelatedMemberProfile>().nullable().label("Member profile"),
   programmingLanguages: yup.array().of(yup.string().required()).label("Programming Languages"),
   subjectAreas: yup.array().of(yup.string().required()).label("Subject Areas"),
@@ -147,7 +150,7 @@ const {
 
 onMounted(() => {
   if (props.reviewer) setValues(JSON.parse(JSON.stringify(props.reviewer)));
-  if (props.memberProfile) setMemberProfile(props.memberProfile);
+  if (props.memberProfileId) values.memberProfileId = props.memberProfileId;
   addUnsavedAlertListener();
 });
 
@@ -159,10 +162,11 @@ function resetForm() {
   serverErrors.value = [];
   handleReset();
   if (props.reviewer) setValues(JSON.parse(JSON.stringify(props.reviewer)));
-  if (props.memberProfile) setMemberProfile(props.memberProfile);
+  if (props.memberProfileId) values.memberProfileId = props.memberProfileId;
 }
 
 function setMemberProfile(profile: RelatedMemberProfile) {
+  values.memberProfileId = profile.id;
   values.memberProfile = profile;
 }
 
@@ -172,16 +176,12 @@ async function createOrUpdate() {
   // const onSuccess = (response: any) => {
   //   window.location.href = detailUrl(response.data.id);
   // };
-  if (!values.memberProfile) return;
-  const data = {
-    ...values,
-    memberProfileId: values.memberProfile.id,
-  };
+  if (!values.memberProfileId) return;
   let response;
   if (props.isEdit && props.reviewer) {
-    response = await update(props.reviewer.id, data);
+    response = await update(props.reviewer.id, values);
   } else {
-    response = await create(data);
+    response = await create(values);
   }
   emit("success", response.data);
 }

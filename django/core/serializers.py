@@ -241,6 +241,7 @@ class MemberProfileSerializer(serializers.ModelSerializer):
         model = MemberProfile
         fields = (
             # User
+            "id",
             "date_joined",
             "family_name",
             "given_name",

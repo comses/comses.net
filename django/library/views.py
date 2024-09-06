@@ -212,8 +212,7 @@ class PeerReviewerPermission(permissions.BasePermission):
         if request.user.has_perm("library.change_peerreview"):
             return True
         user_member_profile_id = request.user.member_profile.id
-        request_member_profile_id = request.data.get("member_profile_id")
-        if user_member_profile_id == request_member_profile_id == obj.member_profile_id:
+        if user_member_profile_id == obj.member_profile_id:
             return True
         raise DrfPermissionDenied
 

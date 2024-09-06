@@ -81,7 +81,7 @@
             <p>Peer Reviewer Profile</p>
             <ProfileEditReviewer
               :reviewer="reviewer"
-              :memberProfile="data"
+              :memberProfileId="values.id"
               @update="r => (reviewer = r)"
             />
           </li>
@@ -181,6 +181,7 @@ const props = defineProps<{
 const reviewer = ref<Reviewer | null>();
 
 const schema = yup.object().shape({
+  id: yup.number().required(),
   avatar: yup.string().nullable(),
   givenName: yup.string().required().label("First name"),
   familyName: yup.string().required().label("Last name"),
