@@ -85,7 +85,7 @@ from .serializers import (
     PeerReviewFeedbackEditorSerializer,
     PeerReviewEventLogSerializer,
 )
-from .tasks import mirror_codebase
+from .tasks import mirror_codebase, update_mirrored_codebase
 
 import logging
 import pathlib
@@ -541,7 +541,18 @@ class CodebaseViewSet(SpamCatcherViewSetMixin, CommonViewSetMixin, HtmlNoDeleteV
         repo_name = request.data.get("repo_name")
         codebase.create_git_mirror(repo_name)
         mirror_codebase(codebase.id, debug=True)
-        return Response(data={"job_id": "1234"}, status=status.HTTP_202_ACCEPTED)
+        return Response(status=status.HTTP_202_ACCEPTED)
+
+    @action(detail=True, methods=["post"])
+    def update_github_mirror(self, request, *args, **kwargs):
+        codebase = self.get_object()
+        if not codebase.git_mirror:
+            return Response(
+                data={"error": "This codebase is not mirrored to a GitHub repo"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        update_mirrored_codebase(codebase.id)
+        return Response(status=status.HTTP_202_ACCEPTED)
 
 
 class DevelopmentCodebaseDeleteView(mixins.DestroyModelMixin, CodebaseViewSet):

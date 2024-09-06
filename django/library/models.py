@@ -581,8 +581,11 @@ class CodebaseGitMirror(models.Model):
             id__in=self.remote_releases.values_list("id", flat=True)
         )
 
-    def update_local_releases(self, releases: models.QuerySet | list):
-        self.local_releases.set(releases)
+    def update_local_releases(self, new_releases: models.QuerySet | list):
+        if self.local_releases.exists():
+            self.local_releases.add(*new_releases)
+        else:
+            self.local_releases.set(new_releases)
         self.last_local_update = timezone.now()
         self.save()
 
@@ -1811,6 +1814,10 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
     def publish(self, defer_fs=False):
         self.validate_publishable()
         self._publish(defer_fs)
+        if self.codebase.git_mirror:
+            from .tasks import update_mirrored_codebase
+
+            update_mirrored_codebase(self.codebase.id)
 
     def _publish(self, defer_fs=False):
         if not self.live:

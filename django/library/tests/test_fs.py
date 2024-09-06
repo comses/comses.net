@@ -15,6 +15,7 @@ from library.fs import (
     StagingDirectories,
     MessageLevels,
     import_archive,
+    CodebaseGitRepositoryApi,
 )
 from library.tests.base import CodebaseFactory, TEST_SAMPLES_DIR
 from library.models import License
@@ -113,7 +114,7 @@ class GitRepoApiTestCase(TestCase):
         self.release_1.publish()
         public_release_count = self.codebase.public_releases().count()
         self.assertEqual(public_release_count, 1)
-        api = self.git_mirror.get_repo_api()
+        api = CodebaseGitRepositoryApi(self.codebase)
         api.build()
         # check that the mirror model is updated and the repo is built
         self.assertIsNotNone(self.git_mirror.last_local_update)
@@ -143,7 +144,7 @@ class GitRepoApiTestCase(TestCase):
             self.release_1, self.release_1_dir, version_number="1.0.0"
         )
         self.release_1.publish()
-        api = self.git_mirror.get_repo_api()
+        api = CodebaseGitRepositoryApi(self.codebase)
         api.build()
         self.release_2 = self.codebase.create_release()
         update_release_from_sample(
@@ -183,7 +184,7 @@ class GitRepoApiTestCase(TestCase):
             self.release_2, self.release_2_dir, version_number="2.0.0"
         )
         self.release_2.publish()
-        api = self.git_mirror.get_repo_api()
+        api = CodebaseGitRepositoryApi(self.codebase)
         api.build()
         # now publish release 1.0.0
         self.release_1.publish()
@@ -194,7 +195,7 @@ class GitRepoApiTestCase(TestCase):
             self.release_1, self.release_1_dir, version_number="1.0.0"
         )
         self.release_1.publish()
-        api = self.git_mirror.get_repo_api()
+        api = CodebaseGitRepositoryApi(self.codebase)
         api.build()
         self.release_2 = self.codebase.create_release()
         update_release_from_sample(

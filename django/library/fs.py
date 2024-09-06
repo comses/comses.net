@@ -983,7 +983,7 @@ class CodebaseGitRepositoryApi:
         self.mirror.update_local_releases(releases)
         return Repo(self.repo_dir)
 
-    def get_or_build(self) -> Repo:
+    def update_or_build(self) -> Repo:
         if self.repo_dir.exists() and self.repo_dir.joinpath(".git").exists():
             return self.append_releases()
         else:
