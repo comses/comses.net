@@ -66,7 +66,6 @@
 <script setup lang="ts">
 import * as yup from "yup";
 import { onMounted, computed } from "vue";
-import { defineProps } from "vue";
 import { isEqual } from "lodash-es";
 import ListSidebar from "@/components/ListSidebar.vue";
 import DatepickerField from "@/components/form/DatepickerField.vue";
