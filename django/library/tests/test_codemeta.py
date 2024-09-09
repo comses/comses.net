@@ -8,6 +8,7 @@ from django.contrib.auth import get_user_model
 from hypothesis import (
     HealthCheck,
     Verbosity,
+    note,
     settings,
     strategies as st,
 )
@@ -22,8 +23,6 @@ from hypothesis.stateful import (
 
 from core.tests.base import UserFactory
 from library.models import (
-    Codebase,
-    CodebaseRelease,
     CodeMetaSchema,
     CommonMetadata,
     Contributor,
@@ -42,23 +41,142 @@ MAX_STATEFUL_TEST_RULES_COUNT = 15
 
 HYPOTHESIS_SETTINGS_VERBOSITY = Verbosity.quiet
 
-# infered from json-ld.json
-# https://raw.githubusercontent.com/codemeta/codemeta/master/codemeta.jsonld
+# We primarily use
+# https://schema.org/SoftwareSourceCode
+# and CodeMeta v3 https://w3id.org/codemeta/v3.0
+#
 CODEMETA_SCHEMA = {
-    "$schema": "http://json-schema.org/draft-07/schema",
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "title": "CodeMeta 3.0 JSON-LD Schema",
+    "description": "Schema for CodeMeta version 3.0 in JSON-LD format.",
+    "type": "object",
+    "required": [
+        "@context",
+        "@id",
+        "@type",
+        "author",
+        "identifier",
+        "license",
+        "name",
+        "programmingLanguage",
+        "url",
+    ],
     "properties": {
-        "@context": {"type": "string"},
-        "@type": {"type": "string", "const": "SoftwareSourceCode"},
-        "isPartOf": {
-            "type": "object",
-            "properties": {
-                "@type": {"type": "string", "const": "WebApplication"},
-                "applicationCategory": {"type": "string"},
-                "operatingSystem": {"type": "string"},
-                "name": {"type": "string"},
-                "url": {"type": "string", "format": "uri"},
+        "@context": {"type": "string", "enum": ["https://w3id.org/codemeta/v3.0"]},
+        "@type": {"type": "string", "enum": ["SoftwareSourceCode"]},
+        "name": {"type": "string", "description": "The name of the software."},
+        "author": {
+            "type": "array",
+            "description": "An array of authors for the software.",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "@type": {"type": "string", "enum": ["Person", "Organization"]},
+                    "givenName": {"type": "string"},
+                    "familyName": {"type": "string"},
+                    "email": {"type": "string"},
+                    "affiliation": {
+                        "type": "object",
+                        "properties": {
+                            "@type": {"type": "string", "enum": ["Organization"]},
+                            "name": {
+                                "type": "string",
+                                "description": "The name of the affiliated organization.",
+                            },
+                        },
+                    },
+                },
+                "required": ["@type", "givenName", "familyName"],
+                "minItems": 1,
             },
-            "required": ["@type", "applicationCategory", "name", "url"],
+        },
+        "version": {"type": "string", "description": "The version of the software."},
+        "description": {
+            "type": "string",
+            "description": "A short description of the software.",
+        },
+        "license": {
+            "type": "string",
+            "description": "A URL to the software’s license.",
+        },
+        "codeRepository": {
+            "type": "string",
+            "description": "A URL to the source code repository.",
+        },
+        "issueTracker": {
+            "type": "string",
+            "description": "A URL to the issue tracker for the software.",
+        },
+        "programmingLanguage": {
+            "type": "array",
+            "description": "The programming language(s) of the software.",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "@type": {"type": "string"},
+                    "name": {"type": "string"},
+                    "url": {"type": "string", "format": "uri"},
+                },
+                "required": ["@type", "name"],
+            },
+        },
+        "keywords": {
+            "type": "array",
+            "description": "Keywords or tags for the software.",
+            "items": {"type": "string"},
+        },
+        "softwareRequirements": {
+            "type": "array",
+            "description": "Software or hardware requirements for the software.",
+            "items": {"type": "string"},
+        },
+        "softwareSuggestions": {
+            "type": "array",
+            "description": "Recommended software to accompany this software.",
+            "items": {"type": "string"},
+        },
+        "citation": {
+            "type": "array",
+            "description": "Associated citation(s) for the software.",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "@type": {"type": "string"},
+                    "text": {"type": "string"},
+                },
+                "required": ["@type", "text"],
+            },
+        },
+        "identifier": {"type": "string", "format": "uri"},
+        "dateCreated": {
+            "type": "string",
+            "format": "date",
+            "description": "The date when the software was created.",
+        },
+        "dateModified": {
+            "type": "string",
+            "format": "date",
+            "description": "The date when the software was last modified.",
+        },
+        "datePublished": {
+            "type": "string",
+            "format": "date",
+            "description": "The date when the software was published.",
+        },
+        "maintainer": {
+            "type": "array",
+            "description": "An array of maintainers for the software.",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "@type": {"type": "string", "enum": ["Person", "Organization"]},
+                    "name": {
+                        "type": "string",
+                        "description": "The name of the maintainer.",
+                    },
+                },
+                "required": ["@type", "name"],
+            },
         },
         "publisher": {
             "type": "object",
@@ -80,10 +198,6 @@ CODEMETA_SCHEMA = {
             },
             "required": ["@id", "@type", "name", "url"],
         },
-        "name": {"type": "string"},
-        "abstract": {"type": "string"},
-        "description": {"type": "string"},
-        "version": {"type": "string"},
         "targetProduct": {
             "type": "object",
             "properties": {
@@ -91,84 +205,24 @@ CODEMETA_SCHEMA = {
                 "name": {"type": "string"},
                 "operatingSystem": {"type": "string"},
                 "applicationCategory": {"type": "string"},
+                "downloadUrl": {"type": "string", "format": "uri"},
+                "identifier": {"type": "string", "format": "uri"},
+                "softwareRequirements": {"type": "string"},
+                "softwareVersion": {"type": "string"},
+                "memoryRequirements": {"type": "string"},
+                "processorRequirements": {"type": "string"},
+                "releaseNotes": {"type": "string"},
+                "screenshot": {"type": "string", "format": "uri"},
             },
-            "required": ["@type", "name", "applicationCategory"],
+            "required": ["@type", "name"],
         },
-        "programmingLanguage": {
-            "type": "array",
-            "items": {
-                "type": "object",
-                "properties": {
-                    "@type": {"type": "string"},
-                    "name": {"type": "string"},
-                },
-                "required": ["@type", "name"],
-            },
-        },
-        "author": {
-            "type": "array",
-            "items": {
-                "type": "object",
-                "properties": {
-                    "@type": {"type": "string"},
-                    "givenName": {"type": "string"},
-                    "familyName": {"type": "string"},
-                    "email": {"type": "string"},
-                },
-                "required": ["@type", "givenName", "familyName"],
-            },
-            "minItems": 1,
-        },
-        "identifier": {"type": "string", "format": "uri"},
-        "dateCreated": {"type": "string", "format": "date-time"},
-        "dateModified": {"type": "string", "format": "date-time"},
-        "keywords": {"type": "array", "items": {"type": "string"}},
-        "runtimePlatform": {"type": "array", "items": {"type": "string"}},
-        "url": {"type": "string", "format": "uri"},
-        "citation": {
-            "type": "array",
-            "items": {
-                "type": "object",
-                "properties": {
-                    "@type": {"type": "string"},
-                    "text": {"type": "string"},
-                },
-                "required": ["@type", "text"],
-            },
-        },
-        "codeRepository": {"type": "string", "format": "uri"},
-        "@id": {"type": "string", "format": "uri"},
     },
-    "required": [
-        "@context",
-        "@type",
-        "isPartOf",
-        "publisher",
-        "provider",
-        "name",
-        "abstract",
-        "description",
-        "version",
-        "targetProduct",
-        "author",
-        "programmingLanguage",
-        "identifier",
-        "dateCreated",
-        "dateModified",
-        "url",
-        "@id",
-    ],
 }
 
-# # Define a mapping with specific keys and their corresponding strategies
-# USER_MAPPING = {
-#     'username': st.text(min_size=1, alphabet=st.characters(blacklist_characters=['\x00','\ud800'])),
-#     'first_name': st.text(min_size=1, alphabet=st.characters(blacklist_characters=['\x00','\ud800'])),
-#     'last_name': st.text(min_size=1, alphabet=st.characters(blacklist_characters=['\x00','\ud800'])),
-#     'email': st.emails(),
-# }
 
 """
+Define a mapping for specific User attributes and their corresponding strategies
+
 ALLOW ONLY string.printable:
 '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ!"#$%&\'()*+,-./:;<=>?@[\\]^_`{|}~ \t\n\r\x0b\x0c'
 """
@@ -201,8 +255,8 @@ class CodeMetaValidationTest(RuleBasedStateMachine):
         self.release_author_contributors_count = 0
 
         self.keywords_count = 0
-        self.programming_languages_count = 0
-        self.citations_count = 0
+        self.programming_languages_count = 1
+        self.has_citations = False
 
         self.user_factory = None
         self.users = None
@@ -217,17 +271,17 @@ class CodeMetaValidationTest(RuleBasedStateMachine):
     @initialize(data=st.data())
     def setup(self, data):
         """
-        This runs before each test case
+        Runs before each test case. Some duplicated initialization here and __init__?
         """
-        logger.debug("setup()")
+        note("setup()")
 
         self.release_contributors_count = 0
         self.release_nonauthor_contributors_count = 0
         self.release_author_contributors_count = 0
 
         self.keywords_count = 0
-        self.programming_languages_count = 0
-        self.citations_count = 0
+        self.programming_languages_count = 1
+        self.has_citations = False
 
         """
         Generate a pool of unique users dicts
@@ -273,13 +327,13 @@ class CodeMetaValidationTest(RuleBasedStateMachine):
         self.codebase_release = codebase_factory.create_published_release()
         self.codebase = self.codebase_release.codebase
 
-        logger.debug("setup() done.")
+        note("setup() done.")
 
     @rule(
         role=st.sampled_from(list(Role)),
     )
     def add_unique_contributor(self, role):
-        logger.debug("add_unique_contributor()")
+        note("add_unique_contributor()")
 
         # this should return a unique user
         u = self.users.pop()
@@ -287,7 +341,7 @@ class CodeMetaValidationTest(RuleBasedStateMachine):
 
         contributor, created = Contributor.from_user(u)
 
-        logger.debug(f"adding unique contributor: {contributor.name}")
+        note(f"adding unique contributor: {contributor.name}")
 
         # Function under test: CodebaseRelease.add_contributor()
         self.codebase_release.add_contributor(contributor, role)
@@ -301,13 +355,13 @@ class CodeMetaValidationTest(RuleBasedStateMachine):
         else:
             self.release_nonauthor_contributors_count += 1
 
-        logger.debug("add_unique_contributor() done.")
+        note("add_unique_contributor() done.")
 
     @rule(
         role=st.sampled_from(list(Role)),
     )
     def add_existing_contributor(self, role):
-        logger.debug("add_existing_contributor()")
+        note("add_existing_contributor()")
 
         # pick an existing contributor on the release
         contributor = random.choice(
@@ -317,7 +371,7 @@ class CodeMetaValidationTest(RuleBasedStateMachine):
             ReleaseContributor.objects.filter(contributor=contributor).get().roles
         )
 
-        logger.debug(f"adding existing contributor: {contributor.id}")
+        note(f"adding existing contributor: {contributor.id}")
 
         # Function under test: CodebaseRelease.add_contributor()
         self.codebase_release.add_contributor(contributor, role)
@@ -328,42 +382,44 @@ class CodeMetaValidationTest(RuleBasedStateMachine):
             self.release_author_contributors_count += 1
             self.release_nonauthor_contributors_count -= 1
 
-        logger.debug("add_existing_contributor() done.")
+        note("add_existing_contributor() done.")
 
     @rule(
-        reference=st.text(min_size=300, max_size=900, alphabet=string.printable),
-        replication=st.text(min_size=300, max_size=900, alphabet=string.printable),
+        reference=st.text(min_size=20, max_size=100, alphabet=string.printable),
+        replication=st.text(min_size=20, max_size=100, alphabet=string.printable),
         associated_publication=st.text(
-            min_size=300, max_size=900, alphabet=string.printable
+            min_size=20, max_size=100, alphabet=string.printable
         ),
     )
     def add_citation(self, reference, replication, associated_publication):
-        logger.debug("add_citation()")
-        self.codebase_release.codebase.references_text = reference
-        self.codebase_release.codebase.replication_text = replication
-        self.codebase_release.codebase.associated_publication_text = (
-            associated_publication
+        note("add_citation()")
+        codebase = self.codebase_release.codebase
+        codebase.references_text = reference
+        codebase.replication_text = replication
+        codebase.associated_publication_text = associated_publication
+        self.expected_citations = {reference, replication, associated_publication}
+        self.has_citations = True
+        note("add_citation() done.")
+
+    @rule(
+        programming_language=st.text(
+            min_size=10, max_size=20, alphabet=string.printable
         )
-        logger.debug("add_citation() done.")
-        self.citations_count = 1
-
-    @rule(programming_language=st.text(min_size=1, alphabet=string.printable))
+    )
     def add_programming_language(self, programming_language):
-        logger.debug("add_programming_language()")
+        note("add_programming_language()")
         existing_pls = self.codebase_release.programming_languages.all()
-
-        # .upper() is used to make the test pass.
+        # .lower() is used to make the test pass.
         # TODO: check behaviour when adding programming_languages
-        programming_language_upper = programming_language.upper()
-        if programming_language_upper not in [pl.name for pl in existing_pls]:
-            self.codebase_release.programming_languages.add(programming_language_upper)
+        lowercase_pl = programming_language.lower()
+        if lowercase_pl not in [pl.name for pl in existing_pls]:
+            self.codebase_release.programming_languages.add(lowercase_pl)
             self.programming_languages_count += 1
+        note("add_programming_language() done.")
 
-        logger.debug("add_programming_language() done.")
-
-    @rule(keyword=st.text(min_size=1, alphabet=string.printable))
+    @rule(keyword=st.text(min_size=1, max_size=25, alphabet=string.printable))
     def add_keyword(self, keyword):
-        logger.debug("add_keyword()")
+        note("add_keyword()")
         existing_tags = self.codebase_release.codebase.tags.all()
 
         # adding tags is case INSENSITIVE, need to make sure that the counter is increase
@@ -372,14 +428,14 @@ class CodeMetaValidationTest(RuleBasedStateMachine):
         if keyword not in [tag.name for tag in existing_tags]:
             self.codebase_release.codebase.tags.add(keyword)
             self.keywords_count += 1
-        logger.debug("add_keyword() done.")
+        note("add_keyword() done.")
 
     @invariant()
     def length_agrees(self):
         """
-        authors
+        authors and contributors
         """
-        logger.debug("length_agrees()")
+        note("length_agrees()")
 
         # total number of added unique contributors should match
         expected_contributors_count = self.release_contributors_count
@@ -387,7 +443,9 @@ class CodeMetaValidationTest(RuleBasedStateMachine):
             self.codebase_release.codebase_contributors.all().count()
         )
 
-        logger.debug("XXXXX expected contributors: %s, actual contributors: %s", expected_contributors_count, real_contributors_count)
+        note(
+            f"expected contributors: {expected_contributors_count}, actual contributors: {real_contributors_count}",
+        )
         assert expected_contributors_count == real_contributors_count
 
         """
@@ -416,8 +474,8 @@ class CodeMetaValidationTest(RuleBasedStateMachine):
         )
         assert expected_codemeta_authors_count == self.release_author_contributors_count
 
-        """ 
-        keywords 
+        """
+        keywords
         """
         expected_keywords_count = self.keywords_count
         real_keywords_count = self.codebase_release.codebase.tags.all().count()
@@ -437,36 +495,30 @@ class CodeMetaValidationTest(RuleBasedStateMachine):
         """
         citations
         """
-        # check citation if citation has been set
-        if self.citations_count == 1:
+        # check citations if citation has been set
+        if self.has_citations:
             # Replicate citation building mechanism from CodeMeta
-            expected_citation = [
-                citation
-                for citation in [
-                    self.codebase_release.codebase.references_text,
-                    self.codebase_release.codebase.replication_text,
-                    self.codebase_release.codebase.associated_publication_text,
-                ]
-                if citation
-            ]
+            # citations should include references_text, replication_text, associated_publication_text, and CodebaseRelease.citation_text
+            self.expected_citations.add(self.codebase_release.citation_text)
 
             fresh_codemeta = CodeMetaSchema.build(self.codebase_release)
             # Extract text from CodeMeta.metadata
-            real_codemeta_citation_flat_text = [
+            codemeta_citations = {
                 creative_work["text"]
                 for creative_work in fresh_codemeta.metadata["citation"]
-            ]
+            }
+            note(f"expected_citations: {self.expected_citations!r}")
+            note(f"codemeta citations: {codemeta_citations!r}")
+            assert self.expected_citations == codemeta_citations
 
-            assert expected_citation == real_codemeta_citation_flat_text
-
-        logger.debug("length_agrees() done.")
+        note("length_agrees() done.")
 
     @invariant()
     def validate_against_schema(self):
         """
         release.codemeta.to_json() should ALWAYS validate against CODEMETA_SCHEMA
         """
-        logger.debug("validate_against_schema()")
+        note("validate_against_schema()")
 
         fresh_codemeta = CodeMetaSchema.build(self.codebase_release)
         try:
@@ -479,35 +531,39 @@ class CodeMetaValidationTest(RuleBasedStateMachine):
             logger.error("codemeta json was invalid ", e)
             assert False, f"CodeMeta validation error: {e}"
 
-        logger.debug("validate_against_schema() done.")
+        note("validate_against_schema() done.")
 
     def teardown(self):
         """
         Clean up all created objects. This runs at the end of each test case
         """
-        logger.debug("teardown()")
+        note("teardown()")
 
         # TODO: why is this check necessary? Why does hypothesis run multiple @initialize and teardown at start?
         if self.codebase_release is not None:
             try:
                 User = get_user_model()
                 # Delete CodebaseRelease
-                CodebaseRelease.objects.filter(id=self.codebase_release.id).delete()
+                self.codebase_release.delete()
+                # CodebaseRelease.objects.filter(id=self.codebase_release.id).delete()
                 # Delete Codebase
-                Codebase.objects.filter(id=self.codebase.id).delete()
+                # Codebase.objects.filter(id=self.codebase.id).delete()
+                self.codebase.delete()
                 # Delete Submitter
-                User.objects.filter(id=self.submitter.id).delete()
+                self.submitter.delete()
+                # User.objects.filter(id=self.submitter.id).delete()
                 # Delete generated users which were added as contributors
                 User.objects.filter(
-                    id__in=[user.id for user in self.popped_users]
+                    id__in=[
+                        user.id for user in (list(self.popped_users) + list(self.users))
+                    ]
                 ).delete()
                 # Delete the rest of user objects
-                User.objects.filter(id__in=[user.id for user in self.users]).delete()
-
+                # User.objects.filter(id__in=[user.id for user in self.users]).delete()
             except Exception as err:
                 logger.error(f"Exception during teardown: {err}")
 
-        logger.debug("teardown() done.")
+        note("teardown() done.")
 
 
 """

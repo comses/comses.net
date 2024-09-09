@@ -9,7 +9,7 @@ from library.models import (
     Codebase,
     CodebaseRelease,
     License,
-    ReleaseContributor,
+    Role,
     Contributor,
     PeerReviewInvitation,
     PeerReview,
@@ -91,14 +91,14 @@ class ReleaseContributorFactory:
         self.index = 0
 
     def get_default_data(self):
-        defaults = {"release": self.codebase_release, "index": self.index}
+        defaults = {"role": Role.AUTHOR, "index": self.index}
         self.index += 1
         return defaults
 
     def create(self, contributor: Contributor, **overrides):
         kwargs = self.get_default_data()
         kwargs.update(overrides)
-        return ReleaseContributor.objects.create(contributor=contributor, **kwargs)
+        return self.codebase_release.add_contributor(contributor, **kwargs)
 
 
 class PeerReviewFactory:
