@@ -2514,6 +2514,7 @@ class CommonMetadata:
         self.abstract = codebase.summary
         self.comses_permanent_url = release.comses_permanent_url
         self.description = codebase.description.raw
+        self.release_notes = release.release_notes.raw if release.release_notes else ""
         self.version = release.version_number
         self.programming_languages = release.programming_languages.all()
         self.os = release.os
@@ -2530,6 +2531,7 @@ class CommonMetadata:
         self.citations = [
             text
             for text in [
+                release.citation_text,
                 codebase.references_text,
                 codebase.replication_text,
                 codebase.associated_publication_text,
@@ -2542,7 +2544,11 @@ class CommonMetadata:
             self.first_published = release.first_published_at.date()
             self.last_published = release.last_published_on.date()
             self.copyright_year = self.last_published.year
-
+        else:
+            # FIXME: default values?
+            self.first_published = self.last_published = self.copyright_year = (
+                date.today()
+            )
         if release.license:
             self.license = release.license
         else:
@@ -2557,10 +2563,6 @@ class CommonMetadata:
         self.code_repository = (
             codebase.repository_url or "https://github.com/comses-model-library/"
         )
-
-        if release.release_notes:
-            self.release_notes = release.release_notes.raw
-
         self.permanent_url = release.permanent_url
 
     def convert_keywords(self):
@@ -2605,7 +2607,7 @@ class CodeMetaSchema:
     }
 
     INITIAL_METADATA = {
-        "@context": "http://schema.org",
+        "@context": "https://w3id.org/codemeta/v3.0",
         "@type": "SoftwareSourceCode",
         "isPartOf": {
             "@type": "WebApplication",
@@ -2616,14 +2618,7 @@ class CodeMetaSchema:
         },
         "publisher": COMSES_ORGANIZATION,
         "provider": COMSES_ORGANIZATION,
-        "creators": [],
-        "descriptions": [
-            {
-                "descriptionType": "TechnicalInfo",
-                "description": "Default CoMSES Description",
-            }
-        ],
-        "titles": [],
+        "description": "Default CoMSES Description",
         "keywords": [],
         "author": [],
         "license": "https://opensource.org/license/mit",
@@ -2653,17 +2648,23 @@ class CodeMetaSchema:
         common_metadata = codebase_release.common_metadata
         metadata = {
             **cls.INITIAL_METADATA,
-            "@id": common_metadata.permanent_url,
+            # base metadata from CommonMetadata
+            "@id": common_metadata.identifier,
+            "identifier": common_metadata.identifier,
             "name": common_metadata.name,
             "copyrightYear": common_metadata.copyright_year,
             "dateCreated": common_metadata.date_created.isoformat(),
             "dateModified": common_metadata.date_modified.isoformat(),
             "datePublished": common_metadata.last_published.isoformat(),
+            "description": common_metadata.description,
+            "keywords": common_metadata.keywords,
+            "releaseNotes": common_metadata.release_notes,
             "license": common_metadata.license_url,
             "runtimePlatform": common_metadata.runtime_platform,
-            # metadata that requires additional processing
+            "url": common_metadata.permanent_url,
+            # requires additional CodeMeta specific processing
             "author": cls.convert_authors(common_metadata),
-            "citation": cls.get_citations(common_metadata),
+            "citation": cls.convert_citations(common_metadata),
             "programmingLanguage": cls.convert_programming_languages(common_metadata),
             "targetProduct": cls.convert_target_product(common_metadata),
         }
@@ -2681,7 +2682,7 @@ class CodeMetaSchema:
         ]
 
     @classmethod
-    def get_citations(cls, common_metadata: CommonMetadata):
+    def convert_citations(cls, common_metadata: CommonMetadata):
         return [
             cls.to_creative_work(citation_text)
             for citation_text in common_metadata.citations
