@@ -401,7 +401,7 @@ LOGGING = {
             "level": "INFO",
             "handlers": ["console", "comsesfile"],
             "propagate": False,
-        },  # FIXME: change this in prod
+        },
     },
 }
 
@@ -494,6 +494,7 @@ HUEY = {
     "name": "comses",
     "huey_class": "core.huey.DjangoRedisHuey",
     "immediate": False,  # always run tasks in the background, even in dev (for now)
+    # if removed here, it will default to DEBUG
 }
 
 # SSO, user registration, and django-allauth configuration, see

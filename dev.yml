@@ -21,12 +21,3 @@ services:
       DJANGO_SETTINGS_MODULE: "core.settings.dev"
     ports:
       - "127.0.0.1:8000:8000"
-  huey:
-    build:
-      args:
-        UBUNTU_MIRROR: "${UBUNTU_MIRROR}"
-    image: comses/huey:dev
-    volumes:
-      - ./django:/code
-    environment:
-      DJANGO_SETTINGS_MODULE: "core.settings.dev"

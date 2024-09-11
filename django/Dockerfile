@@ -40,9 +40,9 @@ RUN --mount=type=cache,target=/var/lib/apt,sharing=locked \
         unzip \
         && update-alternatives --install /usr/bin/python python /usr/bin/python3 1000 \
         && apt-get upgrade -q -y -o Dpkg::Options::="--force-confold" \
-        && mkdir -p /etc/service/django \
-        && touch /etc/service/django/run /etc/postgresql-backup-pre \
-        && chmod a+x /etc/service/django/run /etc/postgresql-backup-pre \
+        && mkdir -p /etc/service/django /etc/service/huey \
+        && touch /etc/service/django/run /etc/service/huey/run /etc/postgresql-backup-pre \
+        && chmod a+x /etc/service/django/run /etc/service/huey/run /etc/postgresql-backup-pre \
         && apt-get autoremove -y && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 WORKDIR /code
@@ -58,5 +58,6 @@ COPY ./deploy/cron.weekly/* /etc/cron.weekly/
 COPY ./deploy/db/autopostgresqlbackup.conf /etc/default/autopostgresqlbackup
 COPY ./deploy/db/postgresql-backup-pre /etc/
 COPY ${RUN_SCRIPT} /etc/service/django/run
+COPY ./deploy/huey.sh /etc/service/huey/run
 COPY . /code
 CMD ["/sbin/my_init"]
