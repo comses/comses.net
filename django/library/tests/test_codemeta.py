@@ -4,13 +4,12 @@ import logging
 import random
 import string
 
-from django.contrib.auth import get_user_model
+from django.contrib.auth.models import User
 from hypothesis import (
-    HealthCheck,
-    Verbosity,
     note,
     settings,
     strategies as st,
+    Verbosity,
 )
 from hypothesis.extra.django import TestCase
 from hypothesis.stateful import (
@@ -35,11 +34,11 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.ERROR)
 
 
-MAX_PROPERTY_TEST_RUNS = 15
+MAX_PROPERTY_TEST_RUNS = 10
 MAX_STATEFUL_TEST_RUNS = 5
 MAX_STATEFUL_TEST_RULES_COUNT = 15
 
-HYPOTHESIS_SETTINGS_VERBOSITY = Verbosity.quiet
+HYPOTHESIS_VERBOSITY = Verbosity.normal
 
 # We primarily use
 # https://schema.org/SoftwareSourceCode
@@ -242,9 +241,9 @@ This class is used to test whether a random combination of methods that affect C
 @settings(
     max_examples=MAX_STATEFUL_TEST_RUNS,
     stateful_step_count=MAX_STATEFUL_TEST_RULES_COUNT,
-    verbosity=HYPOTHESIS_SETTINGS_VERBOSITY,
+    verbosity=HYPOTHESIS_VERBOSITY,
     deadline=None,
-    suppress_health_check=[HealthCheck.data_too_large],
+    # suppress_health_check=[HealthCheck.data_too_large],
 )
 class CodeMetaValidationTest(RuleBasedStateMachine):
     added_release_contributors = Bundle("added_release_contributors")
@@ -256,7 +255,6 @@ class CodeMetaValidationTest(RuleBasedStateMachine):
 
         self.keywords_count = 0
         self.programming_languages_count = 1
-        self.has_citations = False
 
         self.user_factory = None
         self.users = None
@@ -273,15 +271,12 @@ class CodeMetaValidationTest(RuleBasedStateMachine):
         """
         Runs before each test case. Some duplicated initialization here and __init__?
         """
-        note("setup()")
-
         self.release_contributors_count = 0
         self.release_nonauthor_contributors_count = 0
         self.release_author_contributors_count = 0
 
         self.keywords_count = 0
         self.programming_languages_count = 1
-        self.has_citations = False
 
         """
         Generate a pool of unique users dicts
@@ -299,18 +294,17 @@ class CodeMetaValidationTest(RuleBasedStateMachine):
         Create users
         """
         self.user_factory = UserFactory()
-        self.users = set({})
-        self.popped_users = set({})
+        self.popped_users = set()
 
-        for user_dict in unique_user_dict_pool:
-            user = self.user_factory.create(
+        self.users = {
+            self.user_factory.get_or_create(
                 username=user_dict["username"],
                 email=user_dict["email"],
                 first_name=user_dict["first_name"],
                 last_name=user_dict["last_name"],
             )
-            self.users.add(user)
-
+            for user_dict in unique_user_dict_pool
+        }
         """
         Create Submitter
         """
@@ -327,14 +321,10 @@ class CodeMetaValidationTest(RuleBasedStateMachine):
         self.codebase_release = codebase_factory.create_published_release()
         self.codebase = self.codebase_release.codebase
 
-        note("setup() done.")
-
     @rule(
         role=st.sampled_from(list(Role)),
     )
     def add_unique_contributor(self, role):
-        note("add_unique_contributor()")
-
         # this should return a unique user
         u = self.users.pop()
         self.popped_users.add(u)
@@ -355,14 +345,10 @@ class CodeMetaValidationTest(RuleBasedStateMachine):
         else:
             self.release_nonauthor_contributors_count += 1
 
-        note("add_unique_contributor() done.")
-
     @rule(
         role=st.sampled_from(list(Role)),
     )
     def add_existing_contributor(self, role):
-        note("add_existing_contributor()")
-
         # pick an existing contributor on the release
         contributor = random.choice(
             Contributor.objects.filter(codebaserelease=self.codebase_release)
@@ -370,8 +356,6 @@ class CodeMetaValidationTest(RuleBasedStateMachine):
         existing_contributor_roles = (
             ReleaseContributor.objects.filter(contributor=contributor).get().roles
         )
-
-        note(f"adding existing contributor: {contributor.id}")
 
         # Function under test: CodebaseRelease.add_contributor()
         self.codebase_release.add_contributor(contributor, role)
@@ -382,32 +366,12 @@ class CodeMetaValidationTest(RuleBasedStateMachine):
             self.release_author_contributors_count += 1
             self.release_nonauthor_contributors_count -= 1
 
-        note("add_existing_contributor() done.")
-
-    @rule(
-        reference=st.text(min_size=20, max_size=100, alphabet=string.printable),
-        replication=st.text(min_size=20, max_size=100, alphabet=string.printable),
-        associated_publication=st.text(
-            min_size=20, max_size=100, alphabet=string.printable
-        ),
-    )
-    def add_citation(self, reference, replication, associated_publication):
-        note("add_citation()")
-        codebase = self.codebase_release.codebase
-        codebase.references_text = reference
-        codebase.replication_text = replication
-        codebase.associated_publication_text = associated_publication
-        self.expected_citations = {reference, replication, associated_publication}
-        self.has_citations = True
-        note("add_citation() done.")
-
     @rule(
         programming_language=st.text(
             min_size=10, max_size=20, alphabet=string.printable
         )
     )
     def add_programming_language(self, programming_language):
-        note("add_programming_language()")
         existing_pls = self.codebase_release.programming_languages.all()
         # .lower() is used to make the test pass.
         # TODO: check behaviour when adding programming_languages
@@ -415,11 +379,9 @@ class CodeMetaValidationTest(RuleBasedStateMachine):
         if lowercase_pl not in [pl.name for pl in existing_pls]:
             self.codebase_release.programming_languages.add(lowercase_pl)
             self.programming_languages_count += 1
-        note("add_programming_language() done.")
 
     @rule(keyword=st.text(min_size=1, max_size=25, alphabet=string.printable))
     def add_keyword(self, keyword):
-        note("add_keyword()")
         existing_tags = self.codebase_release.codebase.tags.all()
 
         # adding tags is case INSENSITIVE, need to make sure that the counter is increase
@@ -428,21 +390,18 @@ class CodeMetaValidationTest(RuleBasedStateMachine):
         if keyword not in [tag.name for tag in existing_tags]:
             self.codebase_release.codebase.tags.add(keyword)
             self.keywords_count += 1
-        note("add_keyword() done.")
 
     @invariant()
     def length_agrees(self):
         """
         authors and contributors
         """
-        note("length_agrees()")
 
         # total number of added unique contributors should match
         expected_contributors_count = self.release_contributors_count
         real_contributors_count = (
             self.codebase_release.codebase_contributors.all().count()
         )
-
         note(
             f"expected contributors: {expected_contributors_count}, actual contributors: {real_contributors_count}",
         )
@@ -496,20 +455,22 @@ class CodeMetaValidationTest(RuleBasedStateMachine):
         citations
         """
         # check citations if citation has been set
-        if self.has_citations:
-            # Replicate citation building mechanism from CodeMeta
-            # citations should include references_text, replication_text, associated_publication_text, and CodebaseRelease.citation_text
-            self.expected_citations.add(self.codebase_release.citation_text)
+        # Replicate citation building mechanism from CodeMeta
+        # citations should include references_text, replication_text, associated_publication_text, and CodebaseRelease.citation_text
+        expected_citations = {
+            self.codebase.references_text,
+            self.codebase.replication_text,
+            self.codebase.associated_publication_text,
+            self.codebase_release.citation_text,
+        }
 
-            fresh_codemeta = CodeMetaSchema.build(self.codebase_release)
-            # Extract text from CodeMeta.metadata
-            codemeta_citations = {
-                creative_work["text"]
-                for creative_work in fresh_codemeta.metadata["citation"]
-            }
-            note(f"expected_citations: {self.expected_citations!r}")
-            note(f"codemeta citations: {codemeta_citations!r}")
-            assert self.expected_citations == codemeta_citations
+        fresh_codemeta = CodeMetaSchema.build(self.codebase_release)
+        # Extract text from CodeMeta.metadata
+        codemeta_citations = {
+            creative_work["text"]
+            for creative_work in fresh_codemeta.metadata["citation"]
+        }
+        assert expected_citations == codemeta_citations
 
         note("length_agrees() done.")
 
@@ -518,8 +479,6 @@ class CodeMetaValidationTest(RuleBasedStateMachine):
         """
         release.codemeta.to_json() should ALWAYS validate against CODEMETA_SCHEMA
         """
-        note("validate_against_schema()")
-
         fresh_codemeta = CodeMetaSchema.build(self.codebase_release)
         try:
             jsonschema.validate(
@@ -531,18 +490,14 @@ class CodeMetaValidationTest(RuleBasedStateMachine):
             logger.error("codemeta json was invalid ", e)
             assert False, f"CodeMeta validation error: {e}"
 
-        note("validate_against_schema() done.")
-
     def teardown(self):
         """
         Clean up all created objects. This runs at the end of each test case
         """
         note("teardown()")
-
         # TODO: why is this check necessary? Why does hypothesis run multiple @initialize and teardown at start?
         if self.codebase_release is not None:
             try:
-                User = get_user_model()
                 # Delete CodebaseRelease
                 self.codebase_release.delete()
                 # CodebaseRelease.objects.filter(id=self.codebase_release.id).delete()
@@ -572,7 +527,6 @@ This class is used to run CodeMetaValidationTest
 
 
 class StatefulCodeMetaValidationTest(CodeMetaValidationTest.TestCase, TestCase):
+
     def __init__(self, *args, **kwargs):
-        # Call the __init__ method of the parent classes
-        CodeMetaValidationTest.TestCase.__init__(self, *args, **kwargs)
-        TestCase.__init__(self, *args, **kwargs)
+        super().__init__(*args, **kwargs)

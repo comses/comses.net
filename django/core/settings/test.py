@@ -1,6 +1,7 @@
+from os import path
+
 from .defaults import *
 
-from os import path
 
 DEPLOY_ENVIRONMENT = Environment.TEST
 

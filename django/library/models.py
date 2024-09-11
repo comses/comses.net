@@ -347,7 +347,7 @@ class CodebaseReleaseDownload(models.Model):
         POLICY = "policy", _("Policy / Planning")
         OTHER = "other", _("Other")
 
-    date_created = models.DateTimeField(default=timezone.now)
+    date_created = models.DateTimeField(auto_now_add=True)
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL, null=True, on_delete=models.SET_NULL
     )
@@ -533,7 +533,7 @@ class Codebase(index.Indexed, ModeratedContent, ClusterableModel):
     first_published_at = models.DateTimeField(null=True, blank=True)
     last_published_on = models.DateTimeField(null=True, blank=True)
 
-    date_created = models.DateTimeField(default=timezone.now)
+    date_created = models.DateTimeField(auto_now_add=True)
     last_modified = models.DateTimeField(auto_now=True)
     # set to true if any of this Codebase's releases have passed peer review
     peer_reviewed = models.BooleanField(default=False)
@@ -989,7 +989,7 @@ class Codebase(index.Indexed, ModeratedContent, ClusterableModel):
         existing_draft = self.releases.filter(status=status).first()
         if existing_draft:
             logger.warning(
-                "Creating a new %s release when one already exists: %s",
+                "Attempting to create a new %s release when one already exists: %s",
                 status,
                 existing_draft.identifier,
             )
@@ -1179,7 +1179,7 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
         # indicates a release that was once published but has been unpublished
         UNPUBLISHED = "unpublished", _("Unpublished")
 
-    date_created = models.DateTimeField(default=timezone.now)
+    date_created = models.DateTimeField(auto_now_add=True)
     last_modified = models.DateTimeField(auto_now=True)
 
     status = models.CharField(
@@ -1686,17 +1686,20 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
             return existing_release_contributor
 
     @transaction.atomic
-    def publish(self):
+    def publish(self, defer_fs=False):
         self.validate_publishable()
-        self._publish()
+        self._publish(defer_fs)
 
-    def _publish(self):
+    def _publish(self, defer_fs=False):
         if not self.live:
             now = timezone.now()
             self.first_published_at = now
             self.last_published_on = now
             self.status = self.Status.PUBLISHED
-            self.get_fs_api().build_published_archive(force=True)
+            if defer_fs:
+                logger.debug("FIXME: set up async publish archive task")
+            else:
+                self.get_fs_api().build_published_archive(force=True)
             self.save()
             codebase = self.codebase
             codebase.latest_version = self
@@ -2213,7 +2216,7 @@ class PeerReviewInvitationQuerySet(models.QuerySet):
 @register_snippet
 class PeerReviewInvitation(models.Model):
     date_created = models.DateTimeField(auto_now_add=True)
-    date_sent = models.DateTimeField(default=timezone.now)
+    date_sent = models.DateTimeField(auto_now=True)
     review = models.ForeignKey(
         PeerReview, related_name="invitation_set", on_delete=models.CASCADE
     )
@@ -2552,8 +2555,9 @@ class CommonMetadata:
         if release.license:
             self.license = release.license
         else:
+            self.license = CommonMetadata.default_license()
             logger.error(
-                "WARNING: Attempting to build common metadata for a degenerate release with no license: %s",
+                "WARNING: Attempting to build common metadata for a degenerate release with no license, setting to MIT default: %s",
                 release,
             )
             # FIXME: turns out there are quite a number of releases without Licenses (incomplete / draft form), though we should not be creating CodeMeta for them if they are incomplete
@@ -2571,11 +2575,15 @@ class CommonMetadata:
     def convert_platforms(self):
         return [tag.name for tag in self.codebase_release.platform_tags.all()]
 
+    @classmethod
+    def default_license(cls):
+        return License.objects.get(name="MIT")
+
     @property
     def license_url(self):
         if self.license:
             return self.license.url
-        return "DEFAULT LICENSE: https://opensource.org/licenses/MIT"
+        return CommonMetadata.default_license().url
 
     @property
     def descriptions(self):
@@ -3097,6 +3105,10 @@ class PeerReviewEventLog(models.Model):
 class DataCiteRegistrationLogQuerySet(models.QuerySet):
 
     def latest_entry(self, codebase_or_release, **kwargs):
+        """
+        Returns the latest "successful" (200 status code from DataCite)
+        registration log entry for a given codebase or release
+        """
         query = Q(http_status=200)
         if isinstance(codebase_or_release, Codebase):
             query &= Q(codebase=codebase_or_release)
@@ -3135,14 +3147,12 @@ class DataCiteRegistrationLog(models.Model):
     codebase = models.ForeignKey(
         Codebase, related_name="datacite_logs", on_delete=models.CASCADE, null=True
     )
-
     action = models.CharField(max_length=50, choices=DataCiteAction.choices)
-
-    timestamp = models.DateTimeField(default=timezone.now)
+    timestamp = models.DateTimeField(auto_now_add=True)
     http_status = models.IntegerField(default=None, null=True)
     message = models.TextField(default=None, null=True)
     metadata_hash = models.CharField(max_length=255)
-    doi = models.CharField(max_length=25, null=True, blank=True)
+    doi = models.CharField(max_length=255, null=True, blank=True)
 
     objects = DataCiteRegistrationLogQuerySet.as_manager()
 
