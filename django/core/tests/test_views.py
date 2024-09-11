@@ -6,8 +6,8 @@ from rest_framework.test import APIClient
 from django.urls import reverse
 from django.test import TestCase
 
-from core.tests.base import UserFactory
-from core.tests.permissions_base import BaseViewSetTestCase
+from .base import create_test_user
+from .permissions_base import BaseViewSetTestCase
 from core.views import EventViewSet, JobViewSet
 from core.models import Job, Event, SpamModeration, ComsesGroups
 from .base import JobFactory, EventFactory
@@ -20,10 +20,9 @@ class JobViewSetTestCase(BaseViewSetTestCase):
     _view = JobViewSet
 
     def setUp(self):
-        self.user_factory = UserFactory()
-        submitter = self.user_factory.create(username="submitter")
-        self.instance_factory = JobFactory(submitter=submitter)
-        self.create_representative_users(submitter)
+        self.submitter = self.user_factory.create(username="submitter")
+        self.instance_factory = JobFactory(submitter=self.submitter)
+        self.create_representative_users(self.submitter)
         self.instance = self.instance_factory.create()
 
     def test_retrieve(self):
@@ -46,7 +45,6 @@ class EventViewSetTestCase(BaseViewSetTestCase):
     _view = EventViewSet
 
     def setUp(self):
-        self.user_factory = UserFactory()
         submitter = self.user_factory.create(username="submitter")
         self.instance_factory = EventFactory(submitter=submitter)
         self.create_representative_users(submitter)
@@ -72,10 +70,9 @@ class JobPageRenderTestCase(TestCase):
     client_class = APIClient
 
     def setUp(self):
-        user_factory = UserFactory()
-        self.submitter = user_factory.create(username="submitter")
-        job_factory = JobFactory(submitter=self.submitter)
-        self.job = job_factory.create()
+        self.submitter, self.user_factory = create_test_user(username="submitter")
+        self.job_factory = JobFactory(submitter=self.submitter)
+        self.job = self.job_factory.create()
 
     def test_detail(self):
         response = self.client.get(
@@ -92,10 +89,9 @@ class EventPageRenderTestCase(TestCase):
     client_class = APIClient
 
     def setUp(self):
-        user_factory = UserFactory()
-        self.submitter = user_factory.create(username="submitter")
-        event_factory = EventFactory(submitter=self.submitter)
-        self.event = event_factory.create()
+        self.submitter, self.user_factory = create_test_user(username="submitter")
+        self.event_factory = EventFactory(submitter=self.submitter)
+        self.event = self.event_factory.create()
 
     def test_detail(self):
         response = self.client.get(
@@ -116,8 +112,7 @@ class ProfilePageRenderTestCase(TestCase):
     client_class = APIClient
 
     def setUp(self):
-        user_factory = UserFactory()
-        self.submitter = user_factory.create()
+        self.submitter, self.user_factory = create_test_user()
         self.profile = self.submitter.member_profile
         self.profile.personal_url = "https://geocities.com/{}".format(
             self.submitter.username
@@ -138,10 +133,9 @@ class ProfilePageRenderTestCase(TestCase):
 class SpamDetectionTestCase(BaseViewSetTestCase):
 
     def setUp(self):
-        self.user_factory = UserFactory()
-        self.submitter = self.user_factory.create(username="submitter")
+        self.submitter, self.user_factory = create_test_user(username="submitter")
         self.moderator = self.user_factory.create(username="moderator")
-        self.moderator.groups.add(ComsesGroups.MODERATOR.get_group())
+        ComsesGroups.MODERATOR.add(self.moderator)
         self.superuser = self.user_factory.create(username="admin", is_superuser=True)
         self.client.login(
             username=self.submitter.username, password=self.user_factory.password

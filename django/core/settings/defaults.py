@@ -10,6 +10,8 @@ Wagtail settings reference:
 """
 
 import os
+import warnings
+from elasticsearch.exceptions import ElasticsearchWarning
 from enum import Enum
 from pathlib import Path
 
@@ -215,6 +217,9 @@ CSP_EXCLUDE_URL_PREFIXES = ("/wagtail/admin", "/django/admin")
 SITE_ID = 1
 
 ROOT_URLCONF = "core.urls"
+
+# tune down elasticsearch complaints
+warnings.simplefilter("ignore", category=ElasticsearchWarning)
 
 # configure elasticsearch 7 wagtail backend
 WAGTAILSEARCH_BACKENDS = {

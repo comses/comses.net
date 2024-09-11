@@ -48,11 +48,13 @@ class CodebaseFactory(ContentModelFactory):
         del serialized["id"]
         return serialized
 
-    def create_published_release(self, codebase=None, **overrides):
+    def create_published_release(self, codebase=None, **kwargs):
         if codebase is None:
-            codebase = self.create(**overrides)
+            codebase, created = self.get_or_create(
+                **kwargs, defaults=self.get_default_data()
+            )
         release = ReleaseSetup.setUpPublishableDraftRelease(codebase)
-        release.publish()
+        release.publish(defer_fs=True)
         return release
 
 
@@ -78,11 +80,7 @@ class ContributorFactory:
         contributor, created = Contributor.objects.get_or_create(
             user=user, defaults=default_data
         )
-        if created:
-            return contributor
-        else:
-            logger.warning("Contributor with user already exists: %s", user)
-            return contributor
+        return contributor
 
 
 class ReleaseContributorFactory:
@@ -165,8 +163,8 @@ class ReleaseSetup:
             status=CodebaseRelease.Status.DRAFT,
             initialize=True,
         )
-        draft_release.license = License.objects.create(name="MIT")
-        draft_release.os = "Linux"
+        draft_release.license, created = License.objects.get_or_create(name="MIT")
+        draft_release.os = "Any"
         draft_release.programming_languages.add("Python")
         contributor_factory = ContributorFactory(user=draft_release.submitter)
         release_contributor_factory = ReleaseContributorFactory(draft_release)
