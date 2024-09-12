@@ -393,7 +393,12 @@ class CodebaseFilter(filters.BaseFilterBackend):
             # FIXME: this does not work for the same reason tags__name__in does not work, e.g.,
             # https://docs.wagtail.org/en/stable/topics/search/indexing.html#filtering-on-index-relatedfields
             # criteria.update(releases__programming_languages__name__in=programming_languages)
-            qs += " ".join(programming_languages)
+            codebases = Codebase.objects.public(
+                releases__programming_languages__name__in=programming_languages
+            )
+            criteria.update(id__in=codebases.values_list("id", flat=True))
+            # or we could include the PL in the query
+            # qs += " ".join(programming_languages)
         if ordering:
             criteria.update(ordering=ordering)
         else:

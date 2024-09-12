@@ -129,20 +129,18 @@ def get_search_queryset(
         query = query & Phrase(tag)
 
     """
-    Order by relevance
+    Set up order by relevance override for search
+    other sort orders are handled by SmallResultSetPagination filtering and SORT_BY_FILTERS
     """
     order_by_relevance = False
-    ordering = criteria.get("ordering")
-    if ordering:
-        if ordering == "relevance":
+    if "ordering" in criteria:
+        sort_order = criteria.pop("ordering")
+        if sort_order == "relevance":
             order_by_relevance = True
-        criteria.pop("ordering")
-
-    """ 
-    Filter queryset 
+    """
+    Filter queryset
     """
     if criteria:
-        logger.debug("filter criteria=%s", criteria)
         try:
             queryset = queryset.filter(**criteria)
         except FieldError as e:
