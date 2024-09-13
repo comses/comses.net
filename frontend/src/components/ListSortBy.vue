@@ -36,7 +36,15 @@ onMounted(() => {
   let initialOrdering = "";
 
   if (url.pathname.includes("codebases")) {
-    initialOrdering = "-first_published_at";
+    // special case for model library: initial load should sort by latest published
+    // if given a bare query with no ordering, sort by relevance
+    if (url.searchParams.get("query")) {
+      initialOrdering = "relevance";
+    } else {
+      // FIXME: should probably remove "Relevance" if there's no query as it doesn't really make sense to sort by
+      // "relevance" when there's no criteria in play
+      initialOrdering = "-first_published_at";
+    }
   }
   selectedOrdering.value = url.searchParams.get("ordering") || initialOrdering;
 });

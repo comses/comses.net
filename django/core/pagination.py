@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 
 
 SORT_BY_FILTERS = defaultdict(
-    lambda: "Sort by: Relevance",
+    lambda: "Sort by: Relevance",  # default sort by relevance
     {
         "-first_published_at": "Sort by: Publish date: newest",
         "first_published_at": "Sort by: Publish date: oldest",
@@ -62,9 +62,6 @@ class SmallResultSetPagination(PageNumberPagination):
             max_result_window = es_settings["default"]["INDEX_SETTINGS"]["settings"][
                 "index"
             ]["max_result_window"]
-            logger.debug(
-                "max_result_window from elasticsearch settings: %s", max_result_window
-            )
         except KeyError as e:
             logger.warning(
                 "max_result_window not set for Elasticsearch, setting to default %s",
