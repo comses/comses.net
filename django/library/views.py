@@ -46,6 +46,7 @@ from core.views import (
 )
 from core.pagination import SmallResultSetPagination
 from core.serializers import RelatedMemberProfileSerializer
+from .github import GithubRepoNameValidator
 from .forms import (
     PeerReviewerFeedbackReviewerForm,
     PeerReviewInvitationReplyForm,
@@ -532,16 +533,22 @@ class CodebaseViewSet(SpamCatcherViewSetMixin, CommonViewSetMixin, HtmlNoDeleteV
     @action(detail=True, methods=["post"])
     def github_mirror(self, request, *args, **kwargs):
         codebase = self.get_object()
+        if not codebase.live:
+            raise ValidationError("This model does not have any published releases")
         if codebase.git_mirror:
-            return Response(
-                data={"error": "This codebase is already mirrored to a GitHub repo"},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+            raise ValidationError("This codebase is already mirrored to a GitHub repo")
         CodebaseGitRepositoryApi.check_file_sizes(codebase)
         repo_name = request.data.get("repo_name")
+        try:
+            GithubRepoNameValidator.validate(repo_name)
+        except ValueError as e:
+            raise ValidationError(str(e))
         codebase.create_git_mirror(repo_name)
         mirror_codebase(codebase.id, debug=True)
-        return Response(status=status.HTTP_202_ACCEPTED)
+        return Response(
+            status=status.HTTP_202_ACCEPTED,
+            data="Mirroring process started, this should take only a few seconds. Refresh this page to see the status.",
+        )
 
     @action(detail=True, methods=["post"])
     def update_github_mirror(self, request, *args, **kwargs):

@@ -293,33 +293,48 @@
 <div class="card-metadata">
     <div class="card-body">
         <div class="section mb-0">
-            <div class="d-flex justify-content-between">
-                <b class="card-title">
-                    <i class="fab fa-github"></i>
-                    Github Integration
-                </b>
-                <a href="/github/" target="_blank">
-                    <i class="fas fa-question-circle"></i>
+            <div>
+                <b class="card-title">Github Integration</b>
+                <span class="badge bg-gray">beta</span>
+            </div>
+            <div class="card-text pt-0 mb-3">
+                <a class="small" href="/github/" target="_blank">
+                    <i class="fas fa-question-circle"></i> What is this?
                 </a>
             </div>
             {% if codebase.git_mirror %}
                 {% if codebase.git_mirror.remote_url %}
-                    <a href="{{ codebase.git_mirror.remote_url }}">
-                        <span class="badge bg-info">view on Github</span>
-                    </a>
+                    <div class="d-flex align-items-center">
+                        <i class="fab fa-github me-1"></i>
+                        <a href="{{ codebase.git_mirror.remote_url }}" class="d-block text-truncate" target="_blank">
+                            <span class='badge bg-info'>
+                                {{ codebase.git_mirror.repository_name }}
+                                <i class="fas fa-external-link-alt"></i>
+                            </span>
+                        </a>
+                    </div>
                 {% else %}
-                    <div class="alert alert-info">
-                        Mirroring in progress. This may take a few seconds.
-                        <hr>
-                        <a href=".">Refresh</a>
+                    <div class="alert alert-info mb-0">
+                        <small>
+                            <p>
+                                Mirroring in progress. This may take a few seconds.
+                            </p>
+                            <a href=".">Refresh this page.</a>
+                        </small>
                     </div>
                 {% endif %}
             {% elif has_change_perm %}
-                <div
-                    id="github-mirror"
-                    data-identifier="{{ codebase.identifier }}"
-                    data-default-repo-name="{{ slugify(codebase.title) }}"
-                ></div>
+                {% if codebase.live %}
+                    <div
+                        id="github-mirror"
+                        data-identifier="{{ codebase.identifier }}"
+                        data-default-repo-name="{{ slugify(codebase.title) }}"
+                    ></div>
+                {% else %}
+                    <div class="card-text">
+                        Only available for published models
+                    </div>
+                {% endif %}
             {% endif %}
         </div>
     </div>

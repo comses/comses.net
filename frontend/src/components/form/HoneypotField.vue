@@ -36,7 +36,7 @@ import FieldHelp from "@/components/form/FieldHelp.vue";
 
 export interface HoneypotFieldProps {
   name?: string;
-  show: boolean;
+  show?: boolean;
 }
 
 const props = withDefaults(defineProps<HoneypotFieldProps>(), {

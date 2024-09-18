@@ -1,6 +1,6 @@
 <template>
   <div>
-    <button class="btn btn-primary my-1 w-100" rel="nofollow" @click="modal?.show()">
+    <button class="btn btn-sm btn-primary my-1 w-100" rel="nofollow" @click="modal?.show()">
       Mirror on Github
     </button>
     <BootstrapModal
@@ -13,11 +13,15 @@
         <form @submit="handleSubmit" id="github-mirror-form">
           <TextField class="mb-3" name="repoName" label="Repository Name" required />
           <FormAlert :validation-errors="Object.values(errors)" :server-errors="serverErrors" />
+          <div v-if="successMessage" class="alert alert-info alert-dismissible fade show mb-0 mt-3">
+            {{ successMessage }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close" />
+          </div>
         </form>
       </template>
       <template #footer>
         <button type="button" data-bs-dismiss="modal" class="btn btn-outline-gray">Cancel</button>
-        <button type="submit" form="github-mirror-form" class="btn btn-success">Mirror</button>
+        <button type="submit" form="github-mirror-form" class="btn btn-primary">Mirror</button>
       </template>
     </BootstrapModal>
   </div>
@@ -47,7 +51,7 @@ const schema = yup.object().shape({
 });
 type GithubMirrorModalFields = yup.InferType<typeof schema>;
 
-const { serverErrors, githubMirror } = useCodebaseAPI();
+const { serverErrors, githubMirror, data: successMessage } = useCodebaseAPI();
 
 const { errors, handleSubmit, values } = useForm<GithubMirrorModalFields>({
   schema,
@@ -55,12 +59,7 @@ const { errors, handleSubmit, values } = useForm<GithubMirrorModalFields>({
     repoName: props.defaultRepoName,
   },
   onSubmit: async () => {
-    await githubMirror(props.identifier, values.repoName!, {
-      onSuccess: () => {
-        modal.value?.hide();
-        window.location.reload();
-      },
-    });
+    await githubMirror(props.identifier, values.repoName!);
   },
 });
 </script>
