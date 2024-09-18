@@ -36,7 +36,7 @@
     "lodash-es": "^4.17.21",
     "pinia": "^2.1.7",
     "query-string": "^8.2.0",
-    "sass": "^1.71.1",
+    "sass": "^1.79.0",
     "sortablejs": "^1.15.2",
     "sortablejs-vue3": "^1.2.11",
     "vue": "^3.2.47",
