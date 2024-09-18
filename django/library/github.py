@@ -1,4 +1,6 @@
+import re
 from github import GithubIntegration, Auth, Github
+from github.GithubException import UnknownObjectException
 from github.Repository import Repository as GithubRepo
 from git import Repo as GitRepo
 from django.conf import settings
@@ -8,6 +10,70 @@ from django.utils import timezone
 from .models import Codebase
 
 INSTALLATION_ACCESS_TOKEN_REDIS_KEY = "github_installation_access_token"
+
+
+class GithubRepoNameValidator:
+    @classmethod
+    def validate(
+        cls,
+        repo_name: str,
+        username: str | None = None,
+        user_access_token: str | None = None,
+    ):
+        cls._validate_format(repo_name)
+        if username and user_access_token:
+            cls._check_user_repo_name_unused(repo_name, username, user_access_token)
+        elif username:
+            raise ValueError("User access token required for user repository")
+        else:
+            cls._check_org_repo_name_unused(repo_name)
+
+    @staticmethod
+    def _validate_format(repo_name: str):
+        if not re.fullmatch(r"[A-Za-z0-9_.-]+", repo_name):
+            raise ValueError(
+                "The repository name can only contain ASCII letters, digits, and the characters ., -, and _"
+            )
+        if not (1 <= len(repo_name) <= 100):
+            raise ValueError("Repository name is too long (maximum is 100 characters)")
+        if repo_name.endswith(".git"):
+            raise ValueError("Repository name cannot end with '.git'")
+        if "github" in repo_name:
+            raise ValueError("Repository name cannot contain 'github'")
+
+    @staticmethod
+    def _check_user_repo_name_unused(
+        repo_name: str, username: str, user_access_token: str
+    ):
+        if username in repo_name:
+            raise ValueError(
+                f"Repository name cannot contain your username: '{username}'"
+            )
+        github = Github(user_access_token)
+        try:
+            github.get_user(username).get_repo(repo_name)
+            raise ValueError(
+                f"Repository name already exists at https://github.com/{username}/{repo_name}"
+            )
+        except UnknownObjectException:
+            return True
+
+    @staticmethod
+    def _check_org_repo_name_unused(repo_name: str):
+        if settings.GITHUB_MODEL_LIBRARY_ORG_NAME in repo_name:
+            raise ValueError(
+                f"Repository name cannot contain the organization name: '{settings.GITHUB_MODEL_LIBRARY_ORG_NAME}'"
+            )
+        github = Github(GithubApi.get_installation_access_token())
+        try:
+            github.get_organization(settings.GITHUB_MODEL_LIBRARY_ORG_NAME).get_repo(
+                repo_name
+            )
+            raise ValueError(
+                f"Repository name already exists at https://github.com/{settings.GITHUB_MODEL_LIBRARY_ORG_NAME}/{repo_name}"
+            )
+        except UnknownObjectException:
+            return True
 
 
 class GithubApi:
@@ -25,6 +91,8 @@ class GithubApi:
         user_access_token: str | None = None,
         debug=False,
     ):
+        if is_user_repo:
+            raise NotImplementedError("User repositories not yet supported")
         self.debug = debug  # private repos
         self.codebase = codebase
         self.local_repo = local_repo
@@ -49,10 +117,14 @@ class GithubApi:
 
     @property
     def installation_access_token(self):
+        return self.get_installation_access_token()
+
+    @classmethod
+    def get_installation_access_token(cls):
         cached_token = cache.get(INSTALLATION_ACCESS_TOKEN_REDIS_KEY)
         if cached_token:
             return cached_token
-        return self.refresh_installation_access_token()
+        return cls.refresh_installation_access_token()
 
     @staticmethod
     def refresh_installation_access_token():
@@ -108,7 +180,7 @@ class GithubApi:
     def push(self, local_repo: GitRepo):
         """push the local git repository to the Github repository"""
         if self.is_user_repo:
-            push_url = "FIXME: what should this be?"
+            raise NotImplementedError("User repositories not yet supported")
         else:
             token = self.installation_access_token
             push_url = f"https://x-access-token:{token}@github.com/{self.github_repo.full_name}.git"
