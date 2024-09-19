@@ -7,61 +7,68 @@ from library.doi import DataCiteApi, VERIFICATION_MESSAGE, get_welcome_message
 logger = logging.getLogger(__name__)
 
 
-def update_metadata_for_all_existing_dois_04(interactive=True, dry_run=True):
+def update_doi_metadata(interactive=True, dry_run=True):
     print(get_welcome_message(dry_run))
 
     datacite_api = DataCiteApi(dry_run=dry_run)
-    all_codebases_with_dois = Codebase.objects.exclude(doi__isnull=True)
+    all_codebases_with_dois = Codebase.objects.with_doi()
 
     logger.info(
-        f"Updating metadata for all codebases ({len(all_codebases_with_dois)}) with DOIs and their releases with DOIs. Query: Codebase.objects.exclude(doi__isnull=True) ..."
+        "Updating metadata for all codebases (%s) with DOIs and their releases with DOIs. ...",
+        all_codebases_with_dois.count(),
     )
 
     for i, codebase in enumerate(all_codebases_with_dois):
         logger.debug(
-            f"Processing codebase {i+1}/{len(all_codebases_with_dois)} codebase.pk={codebase.pk}..."
+            "Processing codebase %s - %s/%s",
+            codebase.pk,
+            i + 1,
+            all_codebases_with_dois.count(),
         )
         if interactive:
             input("Press Enter to continue or CTRL+C to quit...")
 
         if DataciteRegistrationLog.is_metadata_stale(codebase):
-            logger.debug(f"Metadata is stale. Updating metadata in DataCite...")
+            logger.debug("Metadata is stale. Updating metadata in DataCite...")
             ok = datacite_api.update_metadata_for_codebase(codebase)
             if not ok:
-                logger.error(f"Failed to update metadata for codebase {codebase.pk}")
+                logger.error("Failed to update metadata for codebase {codebase.pk}")
         else:
-            logger.debug(f"Metadata for codebase {codebase.pk} is in sync!")
+            logger.debug("Metadata for codebase {codebase.pk} is in sync!")
 
         for j, release in enumerate(codebase.releases.all()):
             logger.debug(
-                f"Processing release {j+1}/{codebase.releases.count()} release.pk={release.pk}..."
+                "Processing release #%s (%s/%s)",
+                release.pk,
+                j + 1,
+                codebase.releases.count(),
             )
             if interactive:
                 input("Press Enter to continue or CTRL+C to quit...")
 
             if release.peer_reviewed and release.doi:
                 if DataciteRegistrationLog.is_metadata_stale(release):
-                    logger.debug(f"Metadata is stale. Updating metadata in DataCite...")
+                    logger.debug("Metadata is stale. Updating metadata in DataCite...")
                     ok = datacite_api.update_metadata_for_release(release)
                     if not ok:
                         logger.error(
-                            f"Failed to update metadata for release {release.pk}"
+                            "Failed to update metadata for release %s", release.pk
                         )
                 else:
-                    logger.debug(f"Metadata for release {release.pk} is in sync!")
+                    logger.debug("Metadata for release %s is synced", release.pk)
             else:
-                logger.debug(
-                    f'{"Release has no DOI. " if not release.doi else ""}'
-                    + f'{"Release is not peer reviewed." if not release.peer_reviewed else ""} Skipping.'
-                )
+                if not release.doi:
+                    logger.warning("Release has no DOI")
+                if not release.peer_reviewed:
+                    logger.warning("Release is not peer reviewed")
 
-    logger.info(f"Metadata updated for all existing (Codebase & CodebaseRelease) DOIs.")
+    logger.info("Metadata updated for all existing (Codebase & CodebaseRelease) DOIs.")
     """
     assert correctness
     """
     if not dry_run:
         print(VERIFICATION_MESSAGE)
-        logger.info(f"Checking that Comses metadata is in sync with DataCite...")
+        logger.info("Checking that Comses metadata is in sync with DataCite...")
         invalid_codebases = []
         invalid_releases = []
 
@@ -72,14 +79,16 @@ def update_metadata_for_all_existing_dois_04(interactive=True, dry_run=True):
 
         if invalid_codebases:
             logger.error(
-                f"Failure. Metadata not in sync with DataCite for {len(invalid_codebases)} codebases: {invalid_codebases}"
+                "Failure. Metadata not in sync with DataCite for %s codebases: %s",
+                invalid_codebases.count(),
+                invalid_codebases,
             )
         else:
             logger.info(
-                f"Success. Metadata in sync with DataCite for all codebases with DOI."
+                "Success. Metadata in sync with DataCite for all codebases with DOI."
             )
 
-        all_releases_with_dois = CodebaseRelease.objects.exclude(doi__isnull=True)
+        all_releases_with_dois = CodebaseRelease.objects.with_doi()
         results = datacite_api.threaded_metadata_check(all_releases_with_dois)
         for pk, is_meta_valid in results:
             if not is_meta_valid:
@@ -110,4 +119,4 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         interactive = options["interactive"]
         dry_run = options["dry_run"]
-        update_metadata_for_all_existing_dois_04(interactive, dry_run)
+        update_doi_metadata(interactive, dry_run)

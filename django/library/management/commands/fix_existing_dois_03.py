@@ -1,7 +1,6 @@
-import logging
 from django.core.management.base import BaseCommand
-from django.db.models import Q
 from django.conf import settings
+import logging
 
 from library.models import CodebaseRelease
 from library.doi import (
@@ -11,61 +10,77 @@ from library.doi import (
     get_welcome_message,
 )
 
+
 logger = logging.getLogger(__name__)
 
 
-def fix_existing_dois_03(interactive=True, dry_run=True):
+def update_existing_dois(interactive=True, dry_run=True):
+    """
+    Updates existing DOIs for peer reviewed CodebaseReleases and their parent Codebases.
+
+    1. Mint a conceptual parent DOI for a given release's parent codebase and assign it to the Codebase
+    2.
+    """
     print(get_welcome_message(dry_run))
 
     datacite_api = DataCiteApi(dry_run=dry_run)
 
-    peer_reviewed_releases_with_dois = CodebaseRelease.objects.filter(
-        peer_reviewed=True
-    ).filter(Q(doi__isnull=False) | Q(doi=""))
+    peer_reviewed_releases = CodebaseRelease.objects.reviewed().with_doi()
+    total_peer_reviewed_releases_count = peer_reviewed_releases.count()
 
     logger.info(
-        f'Fixing existing DOIs for {len(peer_reviewed_releases_with_dois)} peer reviewed CodebaseReleases with DOIs. Query: CodebaseRelease.objects.filter(peer_reviewed=True).filter(Q(doi__isnull=False) | Q(doi="")) ...'
+        "Updating DOIs for %s peer reviewed CodebaseReleases with DOIs",
+        total_peer_reviewed_releases_count,
     )
 
-    for i, release in enumerate(peer_reviewed_releases_with_dois):
+    for i, release in enumerate(peer_reviewed_releases):
         logger.debug(
-            f"Processing release {i+1}/{len(peer_reviewed_releases_with_dois)}, release.pk={release.pk}..."
+            "Processing release %s (%s / %s)...",
+            release.pk,
+            i + 1,
+            total_peer_reviewed_releases_count,
         )
         if interactive:
             input("Press Enter to continue or CTRL+C to quit...")
 
+        # always refresh from DB in case a previous operation changed a parent Codebase's DOI
+        release.refresh_from_db()
         codebase = release.codebase
+        codebase.refresh_from_db()
         codebase_doi = codebase.doi
 
         """
         Mint DOI for codebase(parent) if it doesn't exist. 
-        Since we deleted all Codebase DOIs in 01_delete_all_existing_codebase_dois(), codebase_doi is None
+        All Codebase DOIs should be reset before this operation
         """
         if not codebase_doi:
             # request to DataCite API
-            logger.debug(f"Minting DOI for parent codebase: {codebase.pk}...")
-            codebase_doi = datacite_api.mint_new_doi_for_codebase(codebase)
+            logger.debug("Minting DOI for parent codebase: %s", codebase.pk)
+            codebase_doi, success = datacite_api.mint_new_doi_for_codebase(codebase)
 
-            if not codebase_doi:
+            if not success:
                 logger.error(
-                    f"Could not mint DOI for parent codebase {codebase.pk}. Skipping release {release.pk}."
+                    "Could not mint DOI for parent codebase %s. Skipping release %s.",
+                    codebase.pk,
+                    release.pk,
                 )
                 if interactive:
                     input("Press Enter to continue or CTRL+C to quit...")
                 continue
 
-            logger.debug(f"New codebase DOI: {codebase_doi}. Saving codebase...")
-
+            logger.debug("New codebase DOI: %s. Saving codebase...", codebase_doi)
             if not dry_run:
                 codebase.doi = codebase_doi
                 codebase.save()
         else:
             logger.debug(
-                f"Parent codebase: codebase.pk={codebase.pk} already has a DOI: {codebase.doi}. Skipping..."
+                "Parent codebase %s already has a DOI %s - Skipping...",
+                codebase.pk,
+                codebase_doi,
             )
 
         """
-        Handle DOI for release
+        Verify release DOI itself. Update release DOIs with legacy handle.net DOIs
         """
         release_doi = release.doi
 
@@ -76,28 +91,39 @@ def fix_existing_dois_03(interactive=True, dry_run=True):
             #     logger.error("Could not update DOI metadata for release {release.pk}, DOI: {release_doi}. Error: {message}. Skipping.")
             #     continue
             logger.debug(
-                f"Release {release.pk} already has a valid DataCite DOI {release.doi}. Skipping..."
+                "Release %s already has a valid DataCite DOI %s. Skipping...",
+                release.pk,
+                release.doi,
             )
             if interactive:
                 input("Press Enter to continue or CTRL+C to quit...")
             continue
 
-        elif release_doi == "" or "2286.0" in release_doi:
+        elif "2286.0" in release_doi:
+            # FIXME: there is only one release with a DOI that matches this pattern, fix it in the db and remove this unnecessary check
+            # handle legacy handle.net DOIs
             logger.debug(
-                f"Release {release.pk} has an empty DOI or a hanlde.net DOI: ({release.doi}). Minting new DOI for release..."
+                "Release %s has a handle.net DOI: (%s). Minting new DOI for release...",
+                release.pk,
+                release_doi,
             )
-            # request to DataCite API: mint new DOI!
-            release_doi = datacite_api.mint_new_doi_for_release(release)
-            if not release_doi:
+            # set up DataCite API request to mint new DOI
+            release_doi, success = datacite_api.mint_new_doi_for_release(release)
+            if not success:
                 logger.error(
-                    "Could not mint DOI for release {release.pk}. Error: {message}. Skipping."
+                    "Could not mint DOI for release %s. DOI: %s. Skipping.",
+                    release.pk,
+                    release_doi,
                 )
                 if interactive:
                     input("Press Enter to continue or CTRL+C to quit...")
                 continue
 
             logger.debug(
-                f"Saving new doi {release_doi} for release {release.pk}. Previous doi: {release.doi}"
+                "Saving new doi %s for release %s. Previous doi: %s",
+                release_doi,
+                release.pk,
+                release.doi,
             )
             if not dry_run:
                 release.doi = release_doi
@@ -108,20 +134,27 @@ def fix_existing_dois_03(interactive=True, dry_run=True):
             continue
         else:
             logger.debug(
-                f"Release {release.pk} has a 'bad' DOI: ({release.doi}). Minting new DOI for release..."
+                "Release %s has an invalid DOI: (%s). Minting new DOI for release...",
+                release.pk,
+                release_doi,
             )
             # request to DataCite API: mint new DOI!
-            release_doi = datacite_api.mint_new_doi_for_release(release)
-            if not release_doi:
+            release_doi, success = datacite_api.mint_new_doi_for_release(release)
+            if not success:
                 logger.error(
-                    "Could not mint DOI for release {release.pk}. Error: {message}. Skipping."
+                    "Could not mint DOI for release %s. DOI: %s. Skipping.",
+                    release.pk,
+                    release_doi,
                 )
                 if interactive:
                     input("Press Enter to continue or CTRL+C to quit...")
                 continue
 
             logger.debug(
-                f"Saving new doi {release_doi} for release {release.pk}. Previous doi: {release.doi}"
+                "Saving new doi %s for release %s. Previous doi: %s",
+                release_doi,
+                release.pk,
+                release.doi,
             )
             if not dry_run:
                 release.doi = release_doi
@@ -129,7 +162,8 @@ def fix_existing_dois_03(interactive=True, dry_run=True):
             continue
 
     logger.info(
-        f"Successfully fixed DOIs for existing {len(peer_reviewed_releases_with_dois)} peer reviewed CodebaseReleases with DOIs and their Codebases."
+        "Successfully fixed DOIs for existing %s peer reviewed CodebaseReleases with DOIs and their Codebases.",
+        peer_reviewed_releases.count(),
     )
 
     """
@@ -138,29 +172,34 @@ def fix_existing_dois_03(interactive=True, dry_run=True):
     if not dry_run:
         print(VERIFICATION_MESSAGE)
         logger.info(
-            "Checking that  all existing peer reviewed releases with DOIs (and their parent codebases) have valid DOIs..."
+            "Checking that all existing peer reviewed releases with DOIs (and their parent codebases) have valid DOIs"
         )
-        for i, release in enumerate(peer_reviewed_releases_with_dois):
-            print(
-                f"Processing Codebase {i}/{len(peer_reviewed_releases_with_dois)} {'' if (i+1)%8 == 0 else '.'*((i+1)%8)}",
-                end=" \r",
+        for i, release in enumerate(peer_reviewed_releases):
+            logger.debug(
+                "Processing Codebase %s/%s - %s",
+                i,
+                peer_reviewed_releases.count(),
+                "" if (i + 1) % 8 == 0 else "." * ((i + 1) % 8),
             )
             if release.codebase.doi is None:
                 logger.error(
-                    f"Codebase DOI should not be None for codebase {release.codebase.pk}"
+                    "Codebase DOI should not be None for codebase %s",
+                    release.codebase.pk,
                 )
 
             if release.doi is None:
-                logger.error(f"DOI should not be None for release {release.pk}")
+                logger.error("DOI should not be None for release %s", release.pk)
 
             if not doi_matches_pattern(release.codebase.doi):
                 logger.error(
-                    f"{release.codebase.doi} Codebase DOI doesn't match DataCite pattern!"
+                    "%s Codebase DOI doesn't match DataCite pattern!",
+                    release.codebase.doi,
                 )
 
             if not doi_matches_pattern(release.doi):
                 logger.error(
-                    f"{release.doi} CodebaseRelease DOI doesn't match DataCite pattern!"
+                    "%s CodebaseRelease DOI doesn't match DataCite pattern!",
+                    release.doi,
                 )
 
         logger.info(
@@ -175,6 +214,7 @@ class Command(BaseCommand):
             "--interactive",
             action="store_true",
             help="Wait for user to press enter to continue.",
+            default=True,
         )
         parser.add_argument(
             "--dry-run", action="store_true", help="Output what would have happened."
@@ -183,4 +223,4 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         interactive = options["interactive"]
         dry_run = options["dry_run"]
-        fix_existing_dois_03(interactive, dry_run)
+        update_existing_dois(interactive, dry_run)
