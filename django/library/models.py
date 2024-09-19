@@ -463,6 +463,9 @@ class CodebaseQuerySet(models.QuerySet):
             .annotate(max_last_modified=Max("releases__review__last_modified"))
         )
 
+    def with_doi(self, **kwargs):
+        return self.exclude(Q(doi__isnull=True) | Q(doi=""), **kwargs)
+
     def public(self, **kwargs):
         """Returns a queryset of all live codebases and their live releases"""
         return self.with_contributors(**kwargs).exclude_spam()
@@ -1123,16 +1126,17 @@ class CodebaseReleaseQuerySet(models.QuerySet):
     def public(self, **kwargs):
         return self.filter(status=CodebaseRelease.Status.PUBLISHED, **kwargs)
 
-    def accessible_without_codebase(self, user):
-        return get_viewable_objects_for_user(user, queryset=self)
-
     def accessible(self, user):
         return get_viewable_objects_for_user(user, queryset=self)
 
-    def reviewed_without_doi(self, **kwargs):
-        return self.filter(peer_reviewed=True, **kwargs).filter(
-            Q(doi__isnull=True) | Q(doi="")
-        )
+    def reviewed(self, **kwargs):
+        return self.filter(peer_reviewed=True, **kwargs)
+
+    def with_doi(self, **kwargs):
+        return self.exclude(Q(doi__isnull=True) | Q(doi="")).filter(**kwargs)
+
+    def without_doi(self, **kwargs):
+        return self.filter(Q(doi__isnull=True) | Q(doi=""), **kwargs)
 
     def latest_for_feed(self, number=10, include_all=False):
         qs = (
@@ -3162,7 +3166,7 @@ class DataCiteRegistrationLog(models.Model):
             newest_log_entry = DataCiteRegistrationLog.objects.latest_entry(item)
             # make sure item does not have stale datacite metadata
             del item.datacite
-            return newest_log_entry.metadata_hash != item.datacite.to_hash()
+            return newest_log_entry.metadata_hash != item.datacite.hash()
 
         except DataCiteRegistrationLog.DoesNotExist:
             # no logs for this item, metadata is stale

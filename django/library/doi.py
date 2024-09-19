@@ -103,10 +103,7 @@ def get_welcome_message(dry_run: bool):
 def doi_matches_pattern(doi: str) -> bool:
     # checks if DOI is formatted like this "00.12345/q2xt-rj46"
     pattern = re.compile(f"{DATACITE_PREFIX}/[-._;()/:a-zA-Z0-9]+")
-    if re.match(pattern, doi):
-        return True
-    else:
-        return False
+    return re.match(pattern, doi)
 
 
 class DataCiteApi:
@@ -122,8 +119,10 @@ class DataCiteApi:
         dry_run (bool): Flag indicating whether the operations should be performed in dry run mode.
     """
 
-    DATACITE_ERRORS_TO_STATUS_CODE = defaultdict(lambda: 500)
-    DATACITE_ERRORS_TO_STATUS_CODE.update(
+    # this is only needed right now because incoming DataCiteErrors do not keep track of the status code
+    # maps datacite error classes to the http status codes that caused them
+    DATACITE_ERRORS_TO_STATUS_CODE = defaultdict(
+        lambda: 500,
         {
             DataCiteNoContentError: 204,
             DataCiteBadRequestError: 400,
@@ -133,7 +132,7 @@ class DataCiteApi:
             DataCiteGoneError: 410,
             DataCitePreconditionError: 412,
             DataCiteServerError: 500,
-        }
+        },
     )
 
     def __init__(self, dry_run=True):
@@ -480,4 +479,160 @@ class DataCiteApi:
                 http_status=http_status,
                 message=message,
                 metadata_hash=metadata_hash,
+            )
+
+
+def mint_dois_for_peer_reviewed_releases_without_dois(interactive=True, dry_run=True):
+    """
+    for ALL peer_reviewed releases without DOIs:
+    1. Mints DOI for parent codebase, if codebase.doi doesn’t exist.
+    2. Mints DOI for release.
+    3. Updates metadata for parent codebase and sibling releases
+    """
+
+    print(get_welcome_message(dry_run))
+    datacite_api = DataCiteApi()
+
+    # CodebaseRelease.objects.filter(peer_reviewed=True).filter(Q(doi__isnull=True) | Q(doi=""))
+    peer_reviewed_releases_without_dois = (
+        CodebaseRelease.objects.reviewed().without_doi()
+    )
+
+    total_peer_reviewed_releases_without_dois = (
+        peer_reviewed_releases_without_dois.count()
+    )
+    logger.info(
+        "Minting DOIs for %s peer reviewed releases without DOIs",
+        total_peer_reviewed_releases_without_dois,
+    )
+
+    for i, release in enumerate(peer_reviewed_releases_without_dois):
+        logger.debug(
+            "Processing release %s/%s - %s",
+            i + 1,
+            total_peer_reviewed_releases_without_dois,
+            release.pk,
+        )
+        if interactive:
+            input("Press Enter to continue or CTRL+C to quit...")
+
+        codebase = release.codebase
+        codebase_doi = codebase.doi
+
+        """
+        Mint DOI for codebase(parent) if it doesn't exist.
+        """
+        if not codebase_doi:
+            # request to DataCite API
+            codebase_doi = datacite_api.mint_new_doi_for_codebase(codebase)
+
+            if not codebase_doi:
+                logger.error(
+                    "Could not mint DOI for parent codebase %s. Skipping release %s.",
+                    codebase.pk,
+                    release.pk,
+                )
+                if interactive:
+                    input("Press Enter to continue or CTRL+C to quit...")
+                continue
+
+            if not dry_run:
+                codebase.doi = codebase_doi
+                codebase.save()
+
+        """
+        Mint DOI for release
+        """
+        # request to DataCite API
+        release_doi = datacite_api.mint_new_doi_for_release(release)
+        if not release_doi:
+            logger.error("Could not mint DOI for release %s. Skipping.", release.pk)
+            if interactive:
+                input("Press Enter to continue or CTRL+C to quit...")
+            continue
+
+        if not dry_run:
+            release.doi = release_doi
+            release.save()
+
+        logger.debug("Updating metadata for parent codebase of release %s", release.pk)
+        """
+        Since a new DOI has been minted for the release, we need to update it's parent's metadata (HasVersion)
+        """
+        ok = datacite_api.update_metadata_for_codebase(codebase)
+        if not ok:
+            logger.error("Failed to update metadata for codebase %s", codebase.pk)
+
+        """
+        Since a new DOI has been minted for the release, we need to update its siblings' metadata (isNewVersionOf, isPreviousVersionOf)
+        """
+        logger.debug("Updating metadata for sibling releases of release %s", release.pk)
+
+        previous_release = release.get_previous_release()
+        next_release = release.get_next_release()
+
+        if previous_release and previous_release.doi:
+            ok = datacite_api.update_metadata_for_release(previous_release)
+            if not ok:
+                logger.error(
+                    "Failed to update metadata for previous_release %s",
+                    previous_release.pk,
+                )
+
+        if next_release and next_release.doi:
+            ok = datacite_api.update_metadata_for_release(next_release)
+            if not ok:
+                logger.error(
+                    "Failed to update metadata for next_release %s", next_release.pk
+                )
+
+    logger.info(
+        "Minted %s DOIs for peer reviewed releases without DOIs.",
+        total_peer_reviewed_releases_without_dois,
+    )
+
+    """
+    assert correctness
+    """
+    if not dry_run:
+        print(VERIFICATION_MESSAGE)
+        logger.info(
+            "Verifying: all peer reviewed releases without DOIs and their parent codebases have valid DOIs"
+        )
+        invalid_codebases = []
+        invalid_releases = []
+
+        for i, release in enumerate(peer_reviewed_releases_without_dois):
+            logger.debug(
+                "Verifying release: %s / %s",
+                i + 1,
+                total_peer_reviewed_releases_without_dois,
+            )
+
+            if not release.doi or not doi_matches_pattern(release.doi):
+                invalid_releases.append(release.pk)
+            if not release.codebase.doi or not doi_matches_pattern(
+                release.codebase.doi
+            ):
+                invalid_codebases.append(release.codebase.pk)
+
+        if invalid_codebases:
+            logger.error(
+                "FAILURE: %s Codebases with invalid or missing DOIs: %s",
+                invalid_codebases.count(),
+                invalid_codebases,
+            )
+        else:
+            logger.info(
+                "Success. All parent codebases for peer reviewed releases previously without DOIs have valid DOIs now."
+            )
+        if invalid_releases:
+            logger.error(
+                "Failure. %s CodebaseReleases with invalid or missing DOIs: %s",
+                invalid_releases.count(),
+                invalid_releases,
+            )
+        else:
+            logger.info(
+                "Success. All peer reviewed releases previously without DOIs have valid DOIs now."
             )
