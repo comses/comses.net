@@ -99,6 +99,7 @@ export interface ReviewInvitation {
   id: number;
   slug: string;
   candidateReviewer: RelatedMemberProfile;
+  reviewer: Reviewer;
   dateCreated: string;
   dateSent: string;
   expirationDate: string;

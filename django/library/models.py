@@ -1892,6 +1892,7 @@ class PeerReviewEvent(models.TextChoices):
 
 
 class PeerReviewQuerySet(models.QuerySet):
+    # Does not seem to be in use currently, move this to PeerReviewerViewSet when implementing fully
     def find_candidate_reviewers(self, query=None):
         # TODO: return a MemberProfile queryset annotated with number of invitations, accepted invitations, and completed
         # reviews
@@ -2001,7 +2002,10 @@ class PeerReview(models.Model):
         return reverse("library:peer-review-change-closed", kwargs={"slug": self.slug})
 
     def get_invite(self, member_profile):
-        return self.invitation_set.filter(candidate_reviewer=member_profile).first()
+        # return self.invitation_set.filter(candidate_reviewer=member_profile).first()
+        return self.invitation_set.filter(
+            reviewer__member_profile=member_profile
+        ).first()
 
     @transaction.atomic
     def get_absolute_url(self):
@@ -2184,12 +2188,6 @@ class PeerReviewInvitationQuerySet(models.QuerySet):
     def pending(self, **kwargs):
         return self.filter(accepted__isnull=True, **kwargs)
 
-    def candidate_reviewers(self, **kwargs):
-        # FIXME: fairly horribly inefficient
-        return MemberProfile.objects.filter(
-            id__in=self.values_list("candidate_reviewer", flat=True)
-        )
-
     def with_reviewer_statistics(self):
         return self.prefetch_related(
             models.Prefetch(
@@ -2212,6 +2210,9 @@ class PeerReviewInvitation(models.Model):
         MemberProfile,
         related_name="peer_review_invitation_set",
         on_delete=models.CASCADE,
+    )
+    reviewer = models.ForeignKey(
+        PeerReviewer, related_name="invitation_set", on_delete=models.PROTECT, null=True
     )
     optional_message = MarkdownField(
         help_text=_("Optional markdown text to be added to the email")
@@ -2248,7 +2249,7 @@ class PeerReviewInvitation(models.Model):
 
     @property
     def reviewer_email(self):
-        return self.candidate_reviewer.email
+        return self.reviewer.member_profile.email
 
     @property
     def editor_email(self):
@@ -2256,7 +2257,7 @@ class PeerReviewInvitation(models.Model):
 
     @property
     def invitee(self):
-        return self.candidate_reviewer.name
+        return self.reviewer.member_profile.name
 
     @property
     def from_email(self):
@@ -2299,7 +2300,7 @@ class PeerReviewInvitation(models.Model):
                 else PeerReviewEvent.INVITATION_SENT
             ),
             author=self.editor,
-            message=f"{self.editor} sent an invitation to candidate reviewer {self.candidate_reviewer}",
+            message=f"{self.editor} sent an invitation to reviewer {self.reviewer.member_profile}",
         )
 
     @transaction.atomic
@@ -2309,8 +2310,8 @@ class PeerReviewInvitation(models.Model):
         feedback = self.latest_feedback
         self.review.log(
             action=PeerReviewEvent.INVITATION_ACCEPTED,
-            author=self.candidate_reviewer,
-            message=f"Invitation accepted by {self.candidate_reviewer}",
+            author=self.reviewer.member_profile,
+            message=f"Invitation accepted by {self.reviewer.member_profile}",
         )
         send_markdown_email(
             subject="Peer review: accepted invitation to review model",
@@ -2327,8 +2328,8 @@ class PeerReviewInvitation(models.Model):
         self.save()
         self.review.log(
             action=PeerReviewEvent.INVITATION_DECLINED,
-            author=self.candidate_reviewer,
-            message=f"Invitation declined by {self.candidate_reviewer}",
+            author=self.reviewer.member_profile,
+            message=f"Invitation declined by {self.reviewer.member_profile}",
         )
         send_markdown_email(
             subject="Peer review: declined invitation to review model",
@@ -2341,7 +2342,7 @@ class PeerReviewInvitation(models.Model):
         return reverse("library:peer-review-invitation", kwargs=dict(slug=self.slug))
 
     class Meta:
-        unique_together = (("review", "candidate_reviewer"),)
+        unique_together = (("review", "reviewer"),)
 
 
 @register_snippet
@@ -2429,7 +2430,7 @@ class PeerReviewerFeedback(models.Model):
         review = self.invitation.review
         review.status = ReviewStatus.AWAITING_EDITOR_FEEDBACK
         review.save()
-        reviewer = self.invitation.candidate_reviewer
+        reviewer = self.invitation.reviewer.member_profile
         review.log(
             action=PeerReviewEvent.REVIEWER_FEEDBACK_SUBMITTED,
             author=reviewer,
@@ -2476,7 +2477,7 @@ class PeerReviewerFeedback(models.Model):
 
     def __str__(self):
         invitation = self.invitation
-        return f"[peer review] {invitation.candidate_reviewer} submitted? {self.reviewer_submitted}, recommendation: {self.get_recommendation_display()}"
+        return f"[peer review] {invitation.reviewer.member_profile} submitted? {self.reviewer_submitted}, recommendation: {self.get_recommendation_display()}"
 
 
 class CodeMeta:

@@ -687,7 +687,7 @@ class PeerReviewFeedbackEditorSerializer(serializers.ModelSerializer):
         return instance.invitation.review.get_status_display()
 
     def get_reviewer_name(self, instance):
-        return instance.invitation.candidate_reviewer.name
+        return instance.invitation.reviewer.member_profile.name
 
     class Meta:
         model = PeerReviewerFeedback
@@ -752,7 +752,7 @@ class PeerReviewInvitationSerializer(serializers.ModelSerializer):
     already been sent)"""
 
     url = serializers.ReadOnlyField(source="get_absolute_url")
-    candidate_reviewer = RelatedMemberProfileSerializer(read_only=True)
+    reviewer = PeerReviewerSerializer(read_only=True)
     expiration_date = serializers.SerializerMethodField()
 
     def get_expiration_date(self, obj):

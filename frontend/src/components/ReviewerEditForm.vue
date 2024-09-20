@@ -86,7 +86,7 @@
 
 <script setup lang="ts">
 import * as yup from "yup";
-import { onBeforeUnmount, onMounted, watch } from "vue";
+import { onMounted, watch } from "vue";
 import UserSearch from "@/components/UserSearch.vue";
 import TextareaField from "@/components/form/TextareaField.vue";
 import TextListField from "@/components/form/TextListField.vue";
@@ -128,15 +128,7 @@ const {
   isLoading,
 } = useReviewEditorAPI();
 
-const {
-  errors,
-  handleSubmit,
-  handleReset,
-  values,
-  setValues,
-  addUnsavedAlertListener,
-  removeUnsavedAlertListener,
-} = useForm<ReviewerEditFields>({
+const { errors, handleSubmit, handleReset, values, setValues } = useForm<ReviewerEditFields>({
   schema,
   initialValues: {
     programmingLanguages: [],
@@ -151,11 +143,6 @@ const {
 onMounted(() => {
   if (props.reviewer) setValues(JSON.parse(JSON.stringify(props.reviewer)));
   if (props.memberProfileId) values.memberProfileId = props.memberProfileId;
-  addUnsavedAlertListener();
-});
-
-onBeforeUnmount(() => {
-  removeUnsavedAlertListener();
 });
 
 function resetForm() {
@@ -183,7 +170,7 @@ async function createOrUpdate() {
   } else {
     response = await create(values);
   }
-  emit("success", response.data);
+  if (Object.keys(errors.value).length === 0) emit("success", response.data);
 }
 
 watch(

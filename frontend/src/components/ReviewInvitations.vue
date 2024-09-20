@@ -55,9 +55,9 @@
       <div class="row border-bottom py-2" v-for="inv in invitations" :key="inv.dateCreated">
         <div class="col-xs-12 col-sm-2 ps-0">
           <img
-            v-if="inv.candidateReviewer.avatarUrl"
+            v-if="inv.reviewer.memberProfile.avatarUrl"
             class="d-block img-thumbnail"
-            :src="inv.candidateReviewer.avatarUrl"
+            :src="inv.reviewer.memberProfile.avatarUrl"
             alt="Profile Image"
           />
           <img
@@ -69,7 +69,7 @@
         </div>
         <div class="col-xs-12 col-sm-10 pe-0">
           <h3>
-            {{ inv.candidateReviewer.name }}
+            {{ inv.reviewer.memberProfile.name }}
             <span :class="`badge bg-${getStatusDisplay(inv).variant}`">{{
               getStatusDisplay(inv).label
             }}</span>
@@ -85,7 +85,7 @@
           </h3>
           <span v-if="!inv.accepted" class="badge bg-gray">Expires {{ inv.expirationDate }}</span>
           <div class="tag-list">
-            <div class="tag mx-1" v-for="tag in inv.candidateReviewer.tags" :key="tag.name">
+            <div class="tag mx-1" v-for="tag in inv.reviewer.memberProfile.tags" :key="tag.name">
               {{ tag.name }}
             </div>
           </div>
@@ -121,11 +121,12 @@ onMounted(async () => {
 async function retrieveInvitations() {
   const response = await listInvitations(props.reviewId);
   invitations.value = response.data.results;
+  console.log(invitations.value);
 }
 
 async function sendEmail() {
-  if (candidateReviewer.value && candidateReviewer.value.memberProfile) {
-    await sendInvitation(props.reviewId, candidateReviewer.value.memberProfile);
+  if (candidateReviewer.value) {
+    await sendInvitation(props.reviewId, candidateReviewer.value);
     candidateReviewer.value = null;
     await retrieveInvitations();
     emit("pollEvents");

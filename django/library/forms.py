@@ -27,6 +27,7 @@ class PeerReviewInvitationForm(forms.ModelForm):
             "review",
             "editor",
             "candidate_reviewer",
+            "reviewer",
         ]
 
 
