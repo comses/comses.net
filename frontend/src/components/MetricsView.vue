@@ -68,11 +68,11 @@ function initalizeChartMap() {
   chartOptionsMap.value = new Map<MetricsChartSelection, any>([
     ["total-members", createCumulativeChart(props.metricsData.totalMembers)],
     ["full-members", createCumulativeChart(props.metricsData.fullMembers)],
-    ["total-codebases", createCumulativeChart(props.metricsData.totalCodebases)],
-    ["reviewed-codebases", createCumulativeChart(props.metricsData.reviewedCodebases)],
-    ["codebases-by-os", createAreaPercentageChart(props.metricsData.codebasesByOs)],
-    ["codebases-by-language", createAreaPercentageChart(props.metricsData.codebasesByLanguage)],
-    ["codebases-by-platform", createAreaPercentageChart(props.metricsData.codebasesByPlatform)],
+    ["total-releases", createCumulativeChart(props.metricsData.totalReleases)],
+    ["reviewed-releases", createCumulativeChart(props.metricsData.reviewedReleases)],
+    ["releases-by-os", createAreaPercentageChart(props.metricsData.releasesByOs)],
+    ["releases-by-language", createAreaPercentageChart(props.metricsData.releasesByLanguage)],
+    ["releases-by-platform", createAreaPercentageChart(props.metricsData.releasesByPlatform)],
     ["total-downloads", createCumulativeChart(props.metricsData.totalDownloads)],
   ]);
 }

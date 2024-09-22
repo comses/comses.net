@@ -1,5 +1,6 @@
 from core.models import MemberProfile, ComsesGroups
 from library.models import CodebaseRelease, CodebaseReleaseDownload
+from collections import defaultdict
 
 from django.core.cache import cache
 from django.db.models import Count, F
@@ -41,9 +42,9 @@ class Metrics:
                     "data": [40, 30, 30, 40, 40],
                 }]
             },
-            codebasesByOs: {
-                "title": "Codebases by OS",
-                "yLabel": "# Codebases",
+            releasesByOs: {
+                "title": "Models by OS",
+                "yLabel": "# Releases",
                 "startYear": 2008,
                 "series": [
                 {
@@ -53,9 +54,9 @@ class Metrics:
                 ...
                 ]
             },
-            codebasesByPlatform : {
-                "title": "Codebases by Platform",
-                "yLabel": "# Codebases",
+            releasesByPlatform : {
+                "title": "Models by Platform",
+                "yLabel": "# Releases",
                 "startYear": 2008,
                 "series": [
                 {
@@ -67,10 +68,10 @@ class Metrics:
         }
         """
         member_metrics, members_start_year = self.get_members_by_year_timeseries()
-        codebase_metrics, codebase_start_year = self.get_codebase_metrics_timeseries()
-        min_start_year = min(members_start_year, codebase_start_year)
+        release_metrics, release_start_year = self.get_release_metrics_timeseries()
+        min_start_year = min(members_start_year, release_start_year)
         all_metrics = dict(
-            startYear=min_start_year, **member_metrics, **codebase_metrics
+            startYear=min_start_year, **member_metrics, **release_metrics
         )
         return all_metrics
 
@@ -125,11 +126,11 @@ class Metrics:
         }
         return member_metrics, min_start_year
 
-    def get_codebase_metrics_timeseries(self):
+    def get_release_metrics_timeseries(self):
         """
-        codebases_by_os: {
-                "title": "Codebases by OS",
-                "yLabel": "# Codebases",
+        releases_by_os: {
+                "title": "Releases by OS",
+                "yLabel": "# Releases",
                 "startYear": 2008,
                 "series": [
                 {
@@ -140,47 +141,47 @@ class Metrics:
                 ]
             },
         """
-        total_codebases_by_year = list(
+        total_releases_by_year = list(
             CodebaseRelease.objects.public()
             .values(year=F("first_published_at__year"))
             .annotate(total=Count("year"))
             .order_by("year")
         )
-        reviewed_codebases_by_year = list(
+        reviewed_releases_by_year = list(
             CodebaseRelease.objects.public(peer_reviewed=True)
             .values(year=F("first_published_at__year"))
             .annotate(total=Count("year"))
             .order_by("year")
         )
-        codebase_downloads = list(
+        release_downloads = list(
             CodebaseReleaseDownload.objects.values(year=F("date_created__year"))
             .annotate(total=Count("year"))
             .order_by("year")
         )
-        min_start_year = total_codebases_by_year[0]["year"]
-        codebase_metrics = {
-            "totalCodebases": {
-                "title": "Total Codebases",
+        min_start_year = total_releases_by_year[0]["year"]
+        release_metrics = {
+            "totalReleases": {
+                "title": "Total Models",
                 "yLabel": "# Models",
                 "startYear": min_start_year,
                 "series": [
                     {
-                        "name": "Codebases",
+                        "name": "Releases",
                         "data": self.to_timeseries(
-                            total_codebases_by_year, min_start_year
+                            total_releases_by_year, min_start_year
                         ),
                     }
                 ],
             },
-            "reviewedCodebases": {
-                "title": "Peer Reviewed Codebases",
-                "yLabel": "# Codebases",
+            "reviewedReleases": {
+                "title": "Peer Reviewed Models",
+                "yLabel": "# Releases",
                 "startYear": min_start_year,
                 "series": [
                     {
-                        "name": "Peer Reviewed Codebases",
+                        "name": "Peer Reviewed Models",
                         "data": self.to_timeseries(
-                            reviewed_codebases_by_year, min_start_year
+                            reviewed_releases_by_year, min_start_year
                         ),
                     }
                 ],
@@ -191,30 +192,30 @@ class Metrics:
                 "startYear": min_start_year,
                 "series": [
                     {
-                        "name": "Codebase Downloads",
-                        "data": self.to_timeseries(codebase_downloads, min_start_year),
+                        "name": "Release Downloads",
+                        "data": self.to_timeseries(release_downloads, min_start_year),
                     }
                 ],
             },
-            "codebasesByOs": self.get_codebase_os_timeseries(min_start_year),
-            "codebasesByPlatform": self.get_codebase_platform_timeseries(
+            "releasesByOs": self.get_release_os_timeseries(min_start_year),
+            "releasesByPlatform": self.get_release_platform_timeseries(
                 min_start_year
             ),
-            "codebasesByLanguage": self.get_codebase_programming_language_timeseries(
+            "releasesByLanguage": self.get_release_programming_language_timeseries(
                 min_start_year
             ),
         }
-        return codebase_metrics, min_start_year
+        return release_metrics, min_start_year
 
-    def get_codebase_os_timeseries(self, start_year):
+    def get_release_os_timeseries(self, start_year):
         """
-        Generate timeseries data for each possible codebase OS option
+        Generate timeseries data for each possible release OS option
 
         Platform independent, macos, linux, windows, other
 
-        codebases_by_os: {
-            "title": "Codebases by OS",
-            "yLabel": "# Codebases",
+        releases_by_os: {
+            "title": "Models by OS",
+            "yLabel": "# Releases",
             "startYear": 2008,
             "series": [
             {
@@ -233,15 +234,15 @@ class Metrics:
         )
 
         return {
-            "title": "Codebases by OS",
-            "yLabel": "# Codebases",
+            "title": "Models by OS",
+            "yLabel": "# Releases",
             "startYear": start_year,
-            "series": self.convert_codebase_metrics_to_timeseries(
+            "series": self.convert_release_metrics_to_timeseries(
                 os_metrics, start_year, "operating_systems"
             ),
         }
 
-    def get_codebase_platform_timeseries(self, start_year):
+    def get_release_platform_timeseries(self, start_year):
         platform_metrics = list(
             CodebaseRelease.objects.public()
             .values(
@@ -251,15 +252,15 @@ class Metrics:
             .order_by("year")
         )
         return {
-            "title": "Codebases by Platform",
-            "yLabel": "# Codebases",
+            "title": "Models by Platform",
+            "yLabel": "# Releases",
             "startYear": start_year,
-            "series": self.convert_codebase_metrics_to_timeseries(
+            "series": self.convert_release_metrics_to_timeseries(
                 platform_metrics, start_year, "platform"
             ),
         }
 
-    def get_codebase_programming_language_timeseries(self, start_year):
+    def get_release_programming_language_timeseries(self, start_year):
         programming_language_metrics = list(
             CodebaseRelease.objects.public()
             .values(
@@ -269,12 +270,35 @@ class Metrics:
             .annotate(count=Count("year"))
             .order_by("year")
         )
+
+        #temporary fix to combine netlogo and logo
+        combined_metrics = defaultdict(lambda: defaultdict(int))
+
+        for metric in programming_language_metrics:
+            language = metric['programming_language_names']
+            if language in ['NetLogo', 'Logo']:
+                language = 'NetLogo/Logo'
+            
+            year = metric['year']
+            combined_metrics[year][language] += metric['count']
+        
+        flattened_metrics = []
+
+        for year, languages in combined_metrics.items():
+            for language, count in languages.items():
+                flattened_metrics.append({
+                    'programming_language_names': language,
+                    'year': year,
+                    'count': count
+                })
+
+
         return {
-            "title": "Codebases by Language",
-            "yLabel": "# Codebases",
+            "title": "Models by Language",
+            "yLabel": "# Releases",
             "startYear": start_year,
-            "series": self.convert_codebase_metrics_to_timeseries(
-                programming_language_metrics, start_year, "programming_language_names"
+            "series": self.convert_release_metrics_to_timeseries(
+                flattened_metrics, start_year, "programming_language_names"
             ),
         }
 
@@ -291,7 +315,7 @@ class Metrics:
             data.append(queryset_dict[year] if year in queryset_dict else 0)
         return data
 
-    def convert_codebase_metrics_to_timeseries(
+    def convert_release_metrics_to_timeseries(
         self, metrics, start_year, category=None
     ):
         """

@@ -56,11 +56,11 @@ export type MetricsData = Record<
   | "startYear"
   | "totalMembers"
   | "fullMembers"
-  | "totalCodebases"
-  | "codebasesByOs"
-  | "codebasesByPlatform"
-  | "codebasesByLanguage"
-  | "reviewedCodebases"
+  | "totalReleases"
+  | "releasesByOs"
+  | "releasesByPlatform"
+  | "releasesByLanguage"
+  | "reviewedReleases"
   | "totalDownloads",
   Metric
 >;
@@ -68,11 +68,11 @@ export type MetricsData = Record<
 export type MetricsChartSelection =
   | "total-members"
   | "full-members"
-  | "total-codebases"
-  | "reviewed-codebases"
-  | "codebases-by-language"
-  | "codebases-by-platform"
-  | "codebases-by-os"
+  | "total-releases"
+  | "reviewed-releases"
+  | "releases-by-language"
+  | "releases-by-platform"
+  | "releases-by-os"
   | "total-downloads";
 
 export interface ReviewEvent {
