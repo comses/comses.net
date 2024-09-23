@@ -2,6 +2,7 @@
   {
     "external": false,
     "slug": "responsible-practices",
+    "category": "in-house",
     "title": "Responsible Practices for Scientific Software",
     "description": "A collection of responsible practices for developing and publishing FAIR+ computational models in efforts to be more transparent, interoperable, and reusable in our work.",
     "tags": ["FAIR4RS"]
@@ -9,6 +10,7 @@
   {
     "external": false,
     "slug": "intro-to-git-github",
+    "category": "in-house",
     "title": "Introduction to Git and GitHub",
     "description": "Familiarize yourself with Git and GitHub by working through a interactive introductory course hosted on GitHub classrooms.",
     "tags": ["git", "github"]
@@ -16,9 +18,73 @@
   {
     "external": true,
     "link": "https://classroom.github.com/a/WuDb62qc",
+    "category": "in-house",
     "slug": "intro-to-containerization",
     "title": "Introduction to Containerization",
     "description": "Join this GitHub classroom to learn about containerization, a way to bundle and archive your code in a reproducible manner.",
     "tags": ["containerization", "docker"]
+  },
+  {
+    "external": true,
+    "link": "https://csdms.colorado.edu/wiki/ESPIn",
+    "category": "partner",
+    "slug": "espin",
+    "title": "Earth Surface Processes Institute (ESPIn)",
+    "description": "Join us for a week-long summer school on numerical modeling, collaborative scientific software development, and the use of open source community cyberinfrastructure.",
+    "tags": ["CSDMS", "summer school", "earth sciences"]
+  },
+  {
+    "external": true,
+    "link": "https://csdms.colorado.edu/wiki/Labs_portal",
+    "category": "partner",
+    "slug": "csdms-teaching-labs",
+    "title": "CSDMS Teaching Labs / Notebooks",
+    "description": "Supplement a course with these curated teaching notebooks covering current topics in earth surface processes research.",
+    "tags": ["CSDMS", "notebook", "earth sciences"]
+  },
+  {
+    "external": true,
+    "link": "https://csdms.colorado.edu/wiki/Roadshows",
+    "category": "partner",
+    "slug": "csdms-roadshow",
+    "title": "CSDMS Roadshow",
+    "description": "CSDMS research software engineers visit your group, lab, or department and present one to three days of interactive instruction on modern scientific software development.",
+    "tags": ["CSDMS", "research software engineering", "earth sciences"]
+  },
+  {
+    "external": true,
+    "link": "https://csdms.colorado.edu/wiki/JupyterHub",
+    "category": "partner",
+    "slug": "csdms-jupyterhub",
+    "title": "CSDMS EarthscapeHub",
+    "description": "Use a CSDMS JupyterHub equipped with software for numerical modeling for teaching university classes or interactive workshops at a conference.",
+    "tags": ["CSDMS", "notebook", "jupyter", "earth sciences"]
+  },
+  {
+    "external": true,
+    "link": "https://www.cuahsi.org/virtual-university",
+    "category": "partner",
+    "slug": "cuahsi-virtual-university",
+    "title": "CUAHSI Virtual University",
+    "description": "The CUAHSI Virtual University (CVU) is a unique multi-institution, one semester graduate course consisting of a diverse set of 4-week modules on specialized hydrology topics. The CVU aims to enhance the depth and breadth of graduate course offerings at universities across the nation and facilitate networking among the hydrologic community.",
+    "tags": ["CUAHSI", "course", "hydrology"]
+  },
+  {
+    "external": true,
+    "link": "https://openscience101.org",
+    "slug": "open-science-101",
+    "category": "community",
+    "title": "NASA TOPS Open Science 101",
+    "description": "A free, online course that will introduce researchers, early-career scientists, and the general public to the principles and practices of open science.",
+    "tags": ["NASA", "TOPS", "course", "open science"]
+  },
+  {
+    "external": true,
+    "link": "https://book.the-turing-way.org/",
+    "slug": "the-turing-way",
+    "category": "community",
+    "title": "The Turing Way",
+    "description": "A handbook to reproducible, ethical, and collaborative data science.",
+    "tags": ["book", "open science", "data science"]
   }
 ]

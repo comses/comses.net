@@ -410,7 +410,7 @@ class CategoryIndexPage(NavigationMixin, Page):
         self, image_path, title, caption, sort_order=None, user=None, url=""
     ):
         if user is None:
-            user = User.objects.get(username="alee")
+            user = User.get_anonymous()
         _image = get_canonical_image(title=title, path=image_path, user=user)
         self.callouts.add(
             CategoryIndexItem(
@@ -446,12 +446,20 @@ class EducationPage(NavigationMixin, Page):
     )
 
     def add_card(
-        self, image_path, title, summary, tags=None, sort_order=None, user=None, url=""
+        self,
+        image_path,
+        title,
+        summary,
+        category,
+        tags=None,
+        sort_order=None,
+        user=None,
+        url="",
     ):
         if self.cards.filter(title=title):
             return
         if user is None:
-            user = User.objects.get(username="alee")
+            user = User.get_anonymous()
         _image = (
             get_canonical_image(title=title, path=image_path, user=user)
             if image_path
@@ -461,6 +469,7 @@ class EducationPage(NavigationMixin, Page):
             title=title,
             sort_order=sort_order,
             summary=summary,
+            category=category,
             thumbnail_image=_image,
             url=url,
         )
@@ -482,7 +491,13 @@ class EducationPage(NavigationMixin, Page):
             cards = cards.filter(tags__name=tag)
             context["cards"] = cards.filter(tags__name=tag)
         context["cards"] = cards
+        context["categories"] = TutorialCard.EducationalContentCategory.choices
+        context["jumbotron"] = self.jumbotron_dict
         return context
+
+    @property
+    def jumbotron_dict(self):
+        return TutorialCard.EducationalContentCategory.jumbotron_dict()
 
 
 class TutorialTag(TaggedItemBase):
@@ -490,8 +505,33 @@ class TutorialTag(TaggedItemBase):
 
 
 class TutorialCard(Orderable, ClusterableModel):
-    """Cards displayed in the Education Page"""
+    """Content cards displayed in the Education Page"""
 
+    class EducationalContentCategory(models.TextChoices):
+        IN_HOUSE = ("in-house", _("CoMSES"))
+        PARTNER = ("partner", _("Partners"))
+        COMMUNITY = ("community", _("Open Science Community"))
+
+        @classmethod
+        def jumbotron_dict(cls):
+            return {
+                cls.IN_HOUSE: _(
+                    """CoMSES Net training modules provide guidance on good practices for computational modeling and sharing your work with [FAIR principles for research software (FAIR4RS)](https://doi.org/10.15497/RDA00068) and general [good enough practices for scientific computation](https://carpentries-lab.github.io/good-enough-practices/) in mind.\n\nOur [education forum](https://forum.comses.net/c/education) also hosts a [community curated list of additional educational resources](https://forum.comses.net/t/educational-resources/9159/2) and can be freely used to discuss, collaborate, and share additional educational resources.
+                    """
+                ),
+                cls.PARTNER: _(
+                    """Educational resources produced by our partners and collaborators, [Community Surface Dynamics Modeling System (CSDMS)](https://csdms.colorado.edu/wiki/Main_Page) and [CUAHSI](https://www.cuahsi.org/)."""
+                ),
+                cls.COMMUNITY: _(
+                    """Educational content from the broader open science community."""
+                ),
+            }
+
+    category = models.CharField(
+        choices=EducationalContentCategory.choices,
+        default=EducationalContentCategory.IN_HOUSE,
+        max_length=32,
+    )
     page = ParentalKey("home.EducationPage", related_name="cards")
     url = models.CharField("Relative path, absolute path, or URL", max_length=200)
     title = models.CharField(max_length=256)
