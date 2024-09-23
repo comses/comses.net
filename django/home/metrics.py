@@ -1,5 +1,5 @@
 from core.models import MemberProfile, ComsesGroups
-from library.models import CodebaseRelease, CodebaseReleaseDownload
+from library.models import CodebaseRelease, CodebaseReleaseDownload, Codebase
 from collections import defaultdict
 
 from django.core.cache import cache
@@ -68,10 +68,11 @@ class Metrics:
         }
         """
         member_metrics, members_start_year = self.get_members_by_year_timeseries()
+        model_metrics, model_start_year = self.get_model_metrics_timeseries()
         release_metrics, release_start_year = self.get_release_metrics_timeseries()
-        min_start_year = min(members_start_year, release_start_year)
+        min_start_year = min(members_start_year, model_start_year, release_start_year)
         all_metrics = dict(
-            startYear=min_start_year, **member_metrics, **release_metrics
+            startYear=min_start_year, **member_metrics, **model_metrics, **release_metrics
         )
         return all_metrics
 
@@ -126,11 +127,11 @@ class Metrics:
         }
         return member_metrics, min_start_year
 
-    def get_release_metrics_timeseries(self):
+    def get_model_metrics_timeseries(self):
         """
-        releases_by_os: {
-                "title": "Releases by OS",
-                "yLabel": "# Releases",
+        model_by_os: {
+                "title": "Models by OS",
+                "yLabel": "# Models",
                 "startYear": 2008,
                 "series": [
                 {
@@ -141,26 +142,28 @@ class Metrics:
                 ]
             },
         """
-        total_releases_by_year = list(
-            CodebaseRelease.objects.public()
+        total_models_by_year = list(
+            Codebase.objects.public()
             .values(year=F("first_published_at__year"))
             .annotate(total=Count("year"))
             .order_by("year")
         )
-        reviewed_releases_by_year = list(
-            CodebaseRelease.objects.public(peer_reviewed=True)
+        reviewed_models_by_year = list(
+            Codebase.objects.public(peer_reviewed=True)
             .values(year=F("first_published_at__year"))
             .annotate(total=Count("year"))
             .order_by("year")
         )
+
+
         release_downloads = list(
             CodebaseReleaseDownload.objects.values(year=F("date_created__year"))
             .annotate(total=Count("year"))
             .order_by("year")
         )
-        min_start_year = total_releases_by_year[0]["year"]
-        release_metrics = {
-            "totalReleases": {
+        min_start_year = total_models_by_year[0]["year"]
+        model_metrics = {
+            "totalModels": {
                 "title": "Total Models",
                 "yLabel": "# Models",
                 "startYear": min_start_year,
@@ -168,12 +171,12 @@ class Metrics:
                     {
                         "name": "Releases",
                         "data": self.to_timeseries(
-                            total_releases_by_year, min_start_year
+                            total_models_by_year, min_start_year
                         ),
                     }
                 ],
             },
-            "reviewedReleases": {
+            "reviewedModels": {
                 "title": "Peer Reviewed Models",
                 "yLabel": "# Releases",
                 "startYear": min_start_year,
@@ -181,7 +184,7 @@ class Metrics:
                     {
                         "name": "Peer Reviewed Models",
                         "data": self.to_timeseries(
-                            reviewed_releases_by_year, min_start_year
+                            reviewed_models_by_year, min_start_year
                         ),
                     }
                 ],
@@ -192,7 +195,7 @@ class Metrics:
                 "startYear": min_start_year,
                 "series": [
                     {
-                        "name": "Release Downloads",
+                        "name": "Model Downloads",
                         "data": self.to_timeseries(release_downloads, min_start_year),
                     }
                 ],
@@ -205,7 +208,56 @@ class Metrics:
                 min_start_year
             ),
         }
+        return model_metrics, min_start_year
+    
+    def get_release_metrics_timeseries(self):
+
+        total_releases_by_year = list(
+            CodebaseRelease.objects.public()
+            .values(year=F("first_published_at__year"))
+            .annotate(total=Count("year"))
+            .order_by("year")
+        )
+        reviewed_releases_by_year = list(
+            CodebaseRelease.objects.public(peer_reviewed=True)
+            .values(year=F("first_published_at__year"))
+            .annotate(total=Count("year"))
+            .order_by("year")
+        )
+
+        min_start_year = total_releases_by_year[0]["year"]
+
+        release_metrics = {
+            "totalReleases": {
+                "title": "Total Releases",
+                "yLabel": "# Releases",
+                "startYear": min_start_year,
+                "series": [
+                    {
+                        "name": "Releases",
+                        "data": self.to_timeseries(
+                            total_releases_by_year, min_start_year
+                        ),
+                    }
+                ],
+            },
+            "reviewedReleases": {
+                "title": "Peer Reviewed Releases",
+                "yLabel": "# Releases",
+                "startYear": min_start_year,
+                "series": [
+                    {
+                        "name": "Peer Reviewed releases",
+                        "data": self.to_timeseries(
+                            reviewed_releases_by_year, min_start_year
+                        ),
+                    }
+                ],
+            }
+        }
+        
         return release_metrics, min_start_year
+
 
     def get_release_os_timeseries(self, start_year):
         """

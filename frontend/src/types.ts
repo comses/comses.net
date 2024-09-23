@@ -56,11 +56,13 @@ export type MetricsData = Record<
   | "startYear"
   | "totalMembers"
   | "fullMembers"
+  | "totalModels"
   | "totalReleases"
+  | "reviewedReleases"
   | "releasesByOs"
   | "releasesByPlatform"
   | "releasesByLanguage"
-  | "reviewedReleases"
+  | "reviewedModels"
   | "totalDownloads",
   Metric
 >;
@@ -68,8 +70,10 @@ export type MetricsData = Record<
 export type MetricsChartSelection =
   | "total-members"
   | "full-members"
+  | "total-models"
   | "total-releases"
   | "reviewed-releases"
+  | "reviewed-models"
   | "releases-by-language"
   | "releases-by-platform"
   | "releases-by-os"

@@ -68,6 +68,8 @@ function initalizeChartMap() {
   chartOptionsMap.value = new Map<MetricsChartSelection, any>([
     ["total-members", createCumulativeChart(props.metricsData.totalMembers)],
     ["full-members", createCumulativeChart(props.metricsData.fullMembers)],
+    ["total-models", createCumulativeChart(props.metricsData.totalModels)],
+    ["reviewed-models", createCumulativeChart(props.metricsData.reviewedModels)],
     ["total-releases", createCumulativeChart(props.metricsData.totalReleases)],
     ["reviewed-releases", createCumulativeChart(props.metricsData.reviewedReleases)],
     ["releases-by-os", createAreaPercentageChart(props.metricsData.releasesByOs)],
