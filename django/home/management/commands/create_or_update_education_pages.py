@@ -85,6 +85,7 @@ class Command(BaseCommand):
                 image_path=tut["thumbnail"],
                 title=tut["title"],
                 summary=tut["description"],
+                category=tut["category"],
                 tags=tut["tags"],
                 url=tut["slug"] if not tut["external"] else tut["link"],
                 sort_order=count,

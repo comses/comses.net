@@ -14,46 +14,63 @@
 
 {% block content %}
     {{ breadcrumb(page.get_breadcrumbs()) }}
-    <div class='jumbotron'>
-        <h1>{{ page.heading }}</h1>
-        <div class='pt-4 lead'>
-        {{ markdown(page.summary) }}
-        </div>
-   </div>
-   <div class="card-page">
-        <section class="cards mb-5">
-            {% set display_tag = request.GET.get("tag") %}
-            {% if display_tag %}
-                <div class="tag-display mb-3">
-                    <a href="{{ request.path }}"><span class="fas fa-times"></span></a>
-                    <span>{{ display_tag }}</span>
+    <ul class="nav nav-tabs justify-content-center" id="education-tabs" role="tablist">
+        {% for key, name in categories %}
+            <li class="nav-item">
+                <a class="nav-link {% if loop.first %}active{% endif %}" id="{{ key }}-tab" data-bs-toggle="tab" href="#{{ key }}" role="tab">
+                    {{ name }}
+                </a>
+            </li>
+        {% endfor %}
+    </ul>
+
+
+    <div class="tab-content">
+        {% for key, name in categories %}
+            <div class="tab-pane {% if loop.first %}show active{% endif %}" id="{{ key }}" role="tabpanel">
+                <div class='jumbotron'>
+                    <h1>{{ name }}</h1>
+                    <div class='pt-4 lead'>
+                    {{ markdown(jumbotron[key]) }}
+                    </div>
                 </div>
-            {% endif %}
-            {% for batched_cards in cards.all()|batch(3) %}
-                <div class="row">
-                    {% for card in batched_cards %}
-                        <div class="col-md-4 col-12 d-flex align-items-stretch" style="margin-bottom: 30px;">
-                            <div class="tutorial-card w-100">
-                                {{ image(card.thumbnail_image, "fill-426x240", class='card-image-top card-thumbnail') }}
-                                <div class="card-body">
-                                    <h2 class="card-title">{{ card.title }}</h5>
-                                    <p class="card-text">{{ markdown(card.summary) }}</p>
-                                    <a href="{{ card.url }}" class="stretched-link"></a>
-                                </div>
-                                {% if card.tags.all() %}
-                                    <div class="tag-list p-3">
-                                        {% for tag in card.tags.all() %}
-                                            <a class="tag" href="{{ request.path }}?tag={{ tag.name }}">
-                                                {{ tag.name }}
-                                            </a>
-                                        {% endfor %}
-                                    </div>
-                                {% endif %}
+                <div class="card-page">
+                    <section class="cards mb-5">
+                        {% set display_tag = request.GET.get("tag") %}
+                        {% if display_tag %}
+                            <div class="tag-display mb-3">
+                                <a href="{{ request.path }}"><span class="fas fa-times"></span></a>
+                                <span>{{ display_tag }}</span>
                             </div>
-                        </div>
-                    {% endfor %}
+                        {% endif %}
+                        {% for batched_cards in cards.filter(category=key)|batch(3) %}
+                            <div class="row">
+                                {% for card in batched_cards %}
+                                    <div class="col-md-4 col-12 d-flex align-items-stretch" style="margin-bottom: 30px;">
+                                        <div class="tutorial-card w-100">
+                                            {{ image(card.thumbnail_image, "max-350x150", class='card-image-top card-thumbnail') }}
+                                            <div class="card-body">
+                                                <h2 class="card-title">{{ card.title }}</h5>
+                                                <p class="card-text">{{ markdown(card.summary) }}</p>
+                                                <a href="{{ card.url }}" class="stretched-link"></a>
+                                            </div>
+                                            {% if card.tags.all() %}
+                                                <div class="tag-list p-3">
+                                                    {% for tag in card.tags.all() %}
+                                                        <a class="tag" href="{{ request.path }}?tag={{ tag.name }}">
+                                                            {{ tag.name }}
+                                                        </a>
+                                                    {% endfor %}
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        {% endfor %}
+                    </section>
                 </div>
-            {% endfor %}
-        </section>
-   </div>
+            </div>
+        {% endfor %}
+    </div>
 {% endblock %}
