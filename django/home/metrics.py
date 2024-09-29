@@ -329,7 +329,7 @@ class Metrics:
         for metric in programming_language_metrics:
             language = metric['programming_language_names']
             if language in ['NetLogo', 'Logo']:
-                language = 'NetLogo/Logo'
+                language = 'NetLogo'
             
             year = metric['year']
             combined_metrics[year][language] += metric['count']
