@@ -77,6 +77,14 @@
               </template>
             </CheckboxField>
           </li>
+          <li class="list-group-item">
+            <p>Peer Reviewer Profile</p>
+            <ProfileEditReviewer
+              :reviewer="reviewer"
+              :memberProfileId="values.id"
+              @update="r => (reviewer = r)"
+            />
+          </li>
         </ul>
       </div>
     </div>
@@ -151,7 +159,7 @@
 
 <script setup lang="ts">
 import * as yup from "yup";
-import { onBeforeUnmount, onMounted } from "vue";
+import { ref, onBeforeUnmount, onMounted } from "vue";
 import CheckboxField from "@/components/form/CheckboxField.vue";
 import TextField from "@/components/form/TextField.vue";
 import TextListField from "@/components/form/TextListField.vue";
@@ -160,15 +168,20 @@ import MarkdownField from "@/components/form/MarkdownField.vue";
 import TaggerField from "@/components/form/TaggerField.vue";
 import ResearchOrgListField from "@/components/form/ResearchOrgListField.vue";
 import FormAlert from "@/components/form/FormAlert.vue";
+import ProfileEditReviewer from "@/components/ProfileEditReviewer.vue";
 import { useForm } from "@/composables/form";
-import { useProfileAPI } from "@/composables/api";
+import { useProfileAPI, useReviewEditorAPI } from "@/composables/api";
+import type { Reviewer } from "@/types";
 
 const props = defineProps<{
   userId: number;
   connectionsUrl: string;
 }>();
 
+const reviewer = ref<Reviewer | null>();
+
 const schema = yup.object().shape({
+  id: yup.number().required(),
   avatar: yup.string().nullable(),
   givenName: yup.string().required().label("First name"),
   familyName: yup.string().required().label("Last name"),
@@ -198,6 +211,7 @@ const schema = yup.object().shape({
     .of(yup.object().shape({ name: yup.string().required() }))
     .label("Tags"),
   fullMember: yup.boolean().required().label("Full Member"),
+  peerReviewerId: yup.number().nullable(),
 });
 type ProfileEditFields = yup.InferType<typeof schema>;
 
@@ -213,6 +227,7 @@ const industryOptions = [
 
 const { data, serverErrors, retrieve, update, isLoading, detailUrl, uploadProfilePicture } =
   useProfileAPI();
+const { retrieveReviewer } = useReviewEditorAPI();
 
 const {
   errors,
@@ -239,6 +254,12 @@ const {
 onMounted(async () => {
   await retrieve(props.userId);
   setValues(data.value);
+  if (values.peerReviewerId) {
+    const response = await retrieveReviewer(values.peerReviewerId);
+    reviewer.value = response.data;
+  } else {
+    reviewer.value = null;
+  }
   addUnsavedAlertListener();
 });
 
