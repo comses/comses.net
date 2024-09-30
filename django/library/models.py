@@ -2334,7 +2334,7 @@ class PeerReviewInvitation(models.Model):
         send_markdown_email(
             subject="Peer review: declined invitation to review model",
             template_name="library/review/email/review_invitation_declined.jinja",
-            context={"invitation": self},
+            context={"invitation": self, "profile": self.reviewer.member_profile},
             to=[settings.REVIEW_EDITOR_EMAIL],
         )
 

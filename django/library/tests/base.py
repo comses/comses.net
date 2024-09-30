@@ -12,6 +12,7 @@ from library.models import (
     Contributor,
     PeerReviewInvitation,
     PeerReview,
+    PeerReviewer,
 )
 from library.serializers import CodebaseSerializer
 
@@ -136,7 +137,8 @@ class PeerReviewInvitationFactory:
 
     def get_default_data(self):
         return {
-            "candidate_reviewer": self.reviewer,
+            "candidate_reviewer": self.reviewer.member_profile,
+            "reviewer": self.reviewer,
             "editor": self.editor,
             "review": self.review,
         }
@@ -155,7 +157,8 @@ class ReviewSetup:
     def setUpReviewData(cls):
         cls.user_factory = UserFactory()
         cls.editor = cls.user_factory.create().member_profile
-        cls.reviewer = cls.user_factory.create().member_profile
+        reviewer = cls.user_factory.create().member_profile
+        cls.reviewer = PeerReviewer.objects.create(member_profile=reviewer)
         cls.submitter = cls.user_factory.create()
 
         cls.codebase_factory = CodebaseFactory(cls.submitter)
