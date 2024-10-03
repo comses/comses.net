@@ -1,4 +1,5 @@
 import json
+import yaml
 import logging
 import mimetypes
 import os
@@ -541,7 +542,7 @@ class CodebaseReleaseFsApi:
         path = self.citation_cff_path
         if force or not path.exists():
             with path.open(mode="w", encoding="utf-8") as citation_out:
-                citation_out.write(self.citation_cff.build().to_yaml())
+                citation_out.write(yaml.dump(self.citation_cff))
             return True
         return False
 
@@ -897,9 +898,7 @@ class CodebaseGitRepositoryApi:
         if they do not already exist
         """
         self._add_meta_file_if_missing("README.md", self.generate_readme())
-        self._add_meta_file_if_missing(
-            "CITATION.cff", release.citation_cff.build().to_yaml()
-        )
+        self._add_meta_file_if_missing("CITATION.cff", yaml.dump(release.citation_cff))
         if release.license:
             self._add_meta_file_if_missing("LICENSE", release.license_text)
 

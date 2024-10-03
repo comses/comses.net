@@ -1722,9 +1722,7 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
 
     @cached_property
     def citation_cff(self):
-        from .transformers import ReleaseCitation
-
-        return ReleaseCitation(self)
+        return self.codemeta.to_cff()
 
     @cached_property
     def license_text(self) -> str:
@@ -2962,6 +2960,38 @@ class CodeMetaSchema:
 
     def to_dict(self):
         return self.metadata.copy()
+
+    def to_cff(self):
+        """returns a dictionary of the metadata transformed to CFF
+        https://citation-file-format.github.io/"""
+        cff_dict = {
+            "cff-version": "1.2.0",
+            "date-released": self.metadata.get("datePublished"),
+        }
+        cff_dict.update(
+            message="If you use this software, please cite it using the metadata from this file.",
+            title=self.metadata.get("name"),
+            authors=[
+                self._clean_dict(
+                    {
+                        "given-names": author["givenName"],
+                        "family-names": author["familyName"],
+                        "orcid": author.get("@id"),
+                        "email": author.get("email"),
+                    }
+                )
+                for author in self.metadata.get("author", [])
+            ],
+            version=self.metadata.get("version"),
+            abstract=self.metadata.get("description"),
+            keywords=self.metadata.get("keywords"),
+            license=self.metadata.get("license"),
+        )
+        return self._clean_dict(cff_dict)
+
+    def _clean_dict(self, d: dict):
+        """helper for removing None values from a dictionary"""
+        return {k: v for k, v in d.items() if v is not None}
 
 
 class DataCiteSchema(ABC):
