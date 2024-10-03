@@ -537,13 +537,8 @@ class CodebaseQuerySet(models.QuerySet):
 
 class CodebaseGitMirror(models.Model):
     """
-    # FIXME: should this manage both mirroring and syncing?
-    alt name ideas:
-    - CodebaseGithubIntegration
-    - CodebaseGitRepository
-    mirror makes sense if this is only responsible for the mirroring (1-way workflow)
-
-    model to keep track of the state of a git repository for a codebase
+    Keeps track of a git repository and its GitHub remote that were created
+    from a Codebase using the mirror (read-only archiving) workflow
     """
 
     # is_active = models.BooleanField(default=True)

@@ -1,6 +1,7 @@
 <template>
   <div>
-    <button class="btn btn-sm btn-primary my-1 w-100" rel="nofollow" @click="modal?.show()">
+    <button class="btn btn-sm btn-secondary my-1 w-100" rel="nofollow" @click="modal?.show()">
+      <i class="fab fa-github"></i>
       Mirror on Github
     </button>
     <BootstrapModal
@@ -10,6 +11,13 @@
       centered
     >
       <template #body>
+        <p>
+          This will transform your model into a git repository and archive it on GitHub under a
+          central CoMSES Model Library organization.
+          <a href="/github" target="_blank"
+            >Learn more <i class="small fas fa-chevron-right"></i
+          ></a>
+        </p>
         <form @submit="handleSubmit" id="github-mirror-form">
           <TextField class="mb-3" name="repoName" label="Repository Name" required />
           <FormAlert :validation-errors="Object.values(errors)" :server-errors="serverErrors" />
@@ -21,7 +29,15 @@
       </template>
       <template #footer>
         <button type="button" data-bs-dismiss="modal" class="btn btn-outline-gray">Cancel</button>
-        <button type="submit" form="github-mirror-form" class="btn btn-primary">Mirror</button>
+        <button
+          type="submit"
+          form="github-mirror-form"
+          class="btn btn-primary"
+          :disabled="isLoading"
+        >
+          <span v-if="isLoading"> <i class="fas fa-spinner fa-spin me-1"></i> Loading...</span>
+          <span v-else>Create Mirror</span>
+        </button>
       </template>
     </BootstrapModal>
   </div>
@@ -51,7 +67,7 @@ const schema = yup.object().shape({
 });
 type GithubMirrorModalFields = yup.InferType<typeof schema>;
 
-const { serverErrors, githubMirror, data: successMessage } = useCodebaseAPI();
+const { serverErrors, githubMirror, data: successMessage, isLoading } = useCodebaseAPI();
 
 const { errors, handleSubmit, values } = useForm<GithubMirrorModalFields>({
   schema,

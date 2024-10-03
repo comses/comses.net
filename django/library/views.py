@@ -1219,7 +1219,7 @@ class ContributorList(generics.ListAPIView):
 
 
 class CCLicenseChangeView(LoginRequiredMixin, FormView):
-    template_name = "library/cc_license_change.jinja"
+    template_name = "library/cc-license-change.jinja"
     form_class = Form  # just a confirmation form, we don't need any fields
     success_message = "Licenses updated successfully."
 

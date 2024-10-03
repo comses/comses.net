@@ -239,6 +239,7 @@ class GithubApi:
         org = github.get_organization(settings.GITHUB_MODEL_LIBRARY_ORG_NAME)
         repo = org.create_repo(
             name=self.repo_name,
+            description=f"Mirror of {self.codebase.get_absolute_url()}",
             private=self.debug,
         )
         return repo
