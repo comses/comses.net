@@ -1,5 +1,6 @@
 import json
 from django.forms import Form
+from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.mixins import PermissionRequiredMixin, LoginRequiredMixin
 from django.core.exceptions import PermissionDenied
@@ -544,7 +545,7 @@ class CodebaseViewSet(SpamCatcherViewSetMixin, CommonViewSetMixin, HtmlNoDeleteV
         except ValueError as e:
             raise ValidationError(str(e))
         codebase.create_git_mirror(repo_name)
-        mirror_codebase(codebase.id, debug=True)
+        mirror_codebase(codebase.id, private_repo=settings.DEBUG)
         return Response(
             status=status.HTTP_202_ACCEPTED,
             data="Mirroring process started, this should take only a few seconds. Refresh this page to see the status.",

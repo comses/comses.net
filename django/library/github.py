@@ -89,11 +89,11 @@ class GithubApi:
         is_user_repo=False,
         organization_login: str | None = None,
         user_access_token: str | None = None,
-        debug=False,
+        private_repo=False,
     ):
         if is_user_repo:
             raise NotImplementedError("User repositories not yet supported")
-        self.debug = debug  # private repos
+        self.private_repo = private_repo
         self.codebase = codebase
         self.local_repo = local_repo
         self.repo_name = repo_name
@@ -225,7 +225,7 @@ class GithubApi:
         repo = github.get_user().create_repo(
             name=self.repo_name,
             description=self.codebase.description,
-            private=self.debug,
+            private=self.private_repo,
         )
         return repo
 
@@ -240,7 +240,7 @@ class GithubApi:
         repo = org.create_repo(
             name=self.repo_name,
             description=f"Mirror of {self.codebase.get_absolute_url()}",
-            private=self.debug,
+            private=self.private_repo,
         )
         return repo
 
