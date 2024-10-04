@@ -11,7 +11,9 @@ logger = logging.getLogger(__name__)
 
 
 @db_task(retries=3, retry_delay=30)
-def mirror_codebase(codebase_id: int, is_user_repo=False, code=None, debug=False):
+def mirror_codebase(
+    codebase_id: int, is_user_repo=False, code=None, private_repo=False
+):
     """asynchronous task that mirrors a codebase to a remote Github repository"""
     codebase = Codebase.objects.get(id=codebase_id)
     mirror = codebase.git_mirror
@@ -35,7 +37,7 @@ def mirror_codebase(codebase_id: int, is_user_repo=False, code=None, debug=False
         is_user_repo=is_user_repo,
         organization_login=mirror.organization_login,
         user_access_token=mirror.user_access_token,
-        debug=debug,
+        private_repo=private_repo,
     )
     repo = gh_api.get_or_create_repo()
     mirror.remote_url = repo.html_url
