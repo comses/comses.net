@@ -12,9 +12,9 @@ logger = logging.getLogger(__name__)
 SORT_BY_FILTERS = defaultdict(
     lambda: "Sort by: Relevance",  # default sort by relevance
     {
-        "-first_published_at": "Sort by: Publish date: newest",
-        "first_published_at": "Sort by: Publish date: oldest",
-        "-last_modified": "Sort by: Recently Modified",
+        "-first_published_at": "Sort by: Recently published",
+        "first_published_at": "Sort by: Earliest published",
+        "-last_modified": "Sort by: Recently modified",
     },
 )
 

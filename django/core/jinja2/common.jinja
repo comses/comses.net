@@ -109,8 +109,9 @@
 </div>
 {% endmacro %}
 
-{% macro build_paginator_url_params(page_number, query_params) %}{%- if query_params %}{{ query_params }}&amp;{%endif
--%}page={{page_number}}{% endmacro %}
+{% macro build_paginator_url_params(page_number, query_params) %}
+{%- if query_params %}{{ query_params }}&amp;{%endif-%}page={{page_number}}
+{% endmacro %}
 
 {% macro page_nav(url_name, list_state) %}
 <nav aria-label="Page navigation">
@@ -127,7 +128,7 @@
             <a class='page-link'
                 href="{{ url(url_name) }}?{{ build_paginator_url_params(1, list_state.query_params) }}">1</a>
         </li>
-        {% for page in list_state.range -%}
+    {% for page in list_state.range -%}
         {% if loop.first and page > 2 %}
         <li class='page-item disabled'>
             <span class='page-link'>&hellip;</span>
@@ -137,42 +138,46 @@
             <a href="{{ url(url_name) }}?{{ build_paginator_url_params(page, list_state.query_params) }}"
                 class="page-link">{{ page }}</a>
         </li>
-        {% if loop.last and page < list_state.num_pages - 1 -%} <li class="page-item disabled">
+        {% if loop.last and page < list_state.num_pages - 1 -%}
+            <li class="page-item disabled">
             <span class='page-link'>&hellip;</span>
             </li>
-            {% endif %}
-            {% endfor %}
-            {% if list_state.num_pages > 1 -%}
-            <li class="page-item {{ " active" if list_state.is_last_page }}">
-                <a href="{{ url(url_name) }}?{{ build_paginator_url_params(list_state.num_pages, list_state.query_params) }}"
-                    class="page-link">{{ list_state.num_pages }}</a>
-            </li>
-            {% endif %}
-            <li class='page-item {{ "disabled" if list_state.is_last_page }}'>
-                <a class='page-link'
-                    href='{{ url(url_name) }}?{{ build_paginator_url_params(list_state.current_page + 1, list_state.query_params) }}'
-                    aria-label='Previous'>
-                    <span aria-hidden='true'>&raquo;</span>
-                    <span class='sr-only'>Next</span>
-                </a>
-            </li>
+        {% endif %}
+    {% endfor %}
+    {% if list_state.num_pages > 1 -%}
+        <li class="page-item {{ " active" if list_state.is_last_page }}">
+            <a href="{{ url(url_name) }}?{{ build_paginator_url_params(list_state.num_pages, list_state.query_params) }}"
+               class="page-link">{{ list_state.num_pages }}</a>
+        </li>
+    {% endif %}
+        <li class='page-item {{ "disabled" if list_state.is_last_page }}'>
+            <a class='page-link'
+               href='{{ url(url_name) }}?{{ build_paginator_url_params(list_state.current_page + 1, list_state.query_params) }}'
+               aria-label='Previous'>
+                <span aria-hidden='true'>&raquo;</span>
+                <span class='sr-only'>Next</span>
+            </a>
+        </li>
     </ul>
 </nav>
 {% endmacro %}
 
 {% macro paginator(url_name, list_state) %}
-<p>Displaying {{ list_state.num_results }} of <strong>{{ list_state.count }}</strong> results
-    {% if list_state.query %}
-    for <strong>'{{ list_state.query }}'</strong>
+    <p>Displaying {{ list_state.num_results }} of <strong>{{ list_state.count }}</strong> results
+    {% if list_state.query or list_state.filter_display_terms %}
+        {% if list_state.query %}
+            for <strong>&quot;{{ list_state.query }}&quot;</strong>
+        {% endif %}
+        {% if list_state.filter_display_terms %}
+            {% for term in list_state.filter_display_terms %}
+                <span class="badge bg-gray ms-1">{{ term }}</span>
+            {% endfor %}
+        {% endif %}
+        <a class="text-warn ms-1" href="{{ url(url_name) }}">
+            <i class="fas fa-times"></i> clear search
+        </a>
     {% endif %}
-    {% if list_state.filter_display_terms %}
-    {% for term in list_state.filter_display_terms %}
-    <span class="badge bg-gray ms-1">{{ term }}</span>
-    {% endfor %}
-    <a class="text-warn ms-1" href="{{ url(url_name) }}">
-        <i class="fas fa-times"></i> clear filters
-    </a>
-    {% endif %}
+
 </p>
 {% if list_state.count %}
 <div class="d-flex justify-content-between mb-3">
