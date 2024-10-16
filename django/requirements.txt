@@ -30,6 +30,7 @@ html2text>=2016.9.19
 jinja2==3.1.4
 jsonschema==4.19.0
 markdown==3.6
+MarkupSafe<3.0.0  # FIXME: remove after regression in 3.0.x is patched https://github.com/comses/planning/issues/277
 nltk>=3.8.1,<4.0.0
 numpy==1.26.4
 pandas==2.2.2

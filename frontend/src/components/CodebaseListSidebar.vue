@@ -141,7 +141,8 @@ const initializeFilterValues = () => {
   values.endDate = urlParams.get("publishedBefore")
     ? new Date(urlParams.get("publishedBefore")!)
     : null;
-  values.ordering = urlParams.get("ordering") || "-first_published_at";
+  values.ordering =
+    urlParams.get("ordering") || (urlParams.get("query") ? "relevance" : "-first_published_at");
 
   initialFilterValues.value = { ...values };
 };
