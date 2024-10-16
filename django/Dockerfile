@@ -39,7 +39,7 @@ RUN --mount=type=cache,target=/var/lib/apt,sharing=locked \
         unrar-free \
         unzip \
         && update-alternatives --install /usr/bin/python python /usr/bin/python3 1000 \
-        && apt-get upgrade -y -o Dpkg::Options::="--force-confold" \
+        && apt-get upgrade -q -y -o Dpkg::Options::="--force-confold" \
         && mkdir -p /etc/service/django \
         && touch /etc/service/django/run /etc/postgresql-backup-pre \
         && chmod a+x /etc/service/django/run /etc/postgresql-backup-pre \
