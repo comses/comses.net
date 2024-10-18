@@ -48,7 +48,8 @@ describe("Visit codebases page", () => {
       getDataCy("codebase-associated-publications").type(codebase["associated-publications"]);
       getDataCy("codebase-references").type(codebase.references);
       getDataCy("next").click();
-
+      // make sure the release editor is initialized
+      cy.wait(2000);
       //add images
       getDataCy("add-image").click();
       getDataCy("upload-image")
