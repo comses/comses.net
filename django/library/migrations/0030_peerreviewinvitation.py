@@ -14,7 +14,7 @@ def create_reviewers(apps, schema):
     one_year_ago = timezone.now() - timedelta(days=365)
     for invitation in PeerReviewInvitation.objects.all():
         member_profile = invitation.candidate_reviewer
-        reviewer = PeerReviewer.objects.get_or_create(
+        reviewer, created = PeerReviewer.objects.get_or_create(
             member_profile=member_profile,
             defaults={
                 "is_active": PeerReviewerFeedback.objects.filter(
