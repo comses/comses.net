@@ -4,17 +4,10 @@
     <div class="container-fluid" v-if="!candidateReviewer">
       <div class="row">
         <div class="col-12 px-0 mb-3">
-          <UserSearch
+          <ReviewerSearch
             v-model="candidateReviewer"
             label="Search by name, email address, or username among existing CoMSES Net members"
             placeholder="Find a reviewer"
-            :search-fn="findReviewers"
-            :errors="serverErrors"
-            show-avatar
-            show-affiliation
-            show-tags
-            show-link
-            :disabled="disabled"
           />
         </div>
       </div>
@@ -23,9 +16,9 @@
       <div class="row py-2">
         <div class="col-2 ps-0">
           <img
-            v-if="candidateReviewer.avatarUrl"
+            v-if="candidateReviewer.memberProfile.avatarUrl"
             class="d-block img-thumbnail"
-            :src="candidateReviewer.avatarUrl"
+            :src="candidateReviewer.memberProfile.avatarUrl"
             alt="Profile Image"
           />
           <img
@@ -37,7 +30,7 @@
         </div>
         <div class="col-10 pe-0">
           <h2>
-            {{ candidateReviewer.name }}
+            {{ candidateReviewer.memberProfile.name }}
             <div class="btn-group float-end" role="group">
               <button class="btn btn-primary" @click="sendEmail" type="button">Invite</button>
               <button class="btn btn-danger" @click="candidateReviewer = null" type="button">
@@ -46,7 +39,11 @@
             </div>
           </h2>
           <div class="tag-list">
-            <div class="tag mx-1" v-for="tag in candidateReviewer.tags" :key="tag.name">
+            <div
+              class="tag mx-1"
+              v-for="tag in candidateReviewer.memberProfile.tags"
+              :key="tag.name"
+            >
               {{ tag.name }}
             </div>
           </div>
@@ -58,9 +55,9 @@
       <div class="row border-bottom py-2" v-for="inv in invitations" :key="inv.dateCreated">
         <div class="col-xs-12 col-sm-2 ps-0">
           <img
-            v-if="inv.candidateReviewer.avatarUrl"
+            v-if="inv.reviewer.memberProfile.avatarUrl"
             class="d-block img-thumbnail"
-            :src="inv.candidateReviewer.avatarUrl"
+            :src="inv.reviewer.memberProfile.avatarUrl"
             alt="Profile Image"
           />
           <img
@@ -72,7 +69,7 @@
         </div>
         <div class="col-xs-12 col-sm-10 pe-0">
           <h3>
-            {{ inv.candidateReviewer.name }}
+            {{ inv.reviewer.memberProfile.name }}
             <span :class="`badge bg-${getStatusDisplay(inv).variant}`">{{
               getStatusDisplay(inv).label
             }}</span>
@@ -88,7 +85,7 @@
           </h3>
           <span v-if="!inv.accepted" class="badge bg-gray">Expires {{ inv.expirationDate }}</span>
           <div class="tag-list">
-            <div class="tag mx-1" v-for="tag in inv.candidateReviewer.tags" :key="tag.name">
+            <div class="tag mx-1" v-for="tag in inv.reviewer.memberProfile.tags" :key="tag.name">
               {{ tag.name }}
             </div>
           </div>
@@ -102,7 +99,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from "vue";
 import { useReviewEditorAPI } from "@/composables/api";
-import UserSearch from "@/components/UserSearch.vue";
+import ReviewerSearch from "@/components/ReviewerSearch.vue";
 import type { Reviewer, ReviewInvitation } from "@/types";
 
 const props = defineProps<{
@@ -112,8 +109,7 @@ const props = defineProps<{
 
 const emit = defineEmits(["pollEvents"]);
 
-const { serverErrors, listInvitations, sendInvitation, resendInvitation, findReviewers } =
-  useReviewEditorAPI();
+const { listInvitations, sendInvitation, resendInvitation } = useReviewEditorAPI();
 
 const invitations = ref<ReviewInvitation[]>([]);
 const candidateReviewer = ref<Reviewer | null>(null);
@@ -125,6 +121,7 @@ onMounted(async () => {
 async function retrieveInvitations() {
   const response = await listInvitations(props.reviewId);
   invitations.value = response.data.results;
+  console.log(invitations.value);
 }
 
 async function sendEmail() {

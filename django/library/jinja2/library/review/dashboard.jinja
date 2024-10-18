@@ -1,8 +1,24 @@
 {% extends 'sidebar_layout.jinja' %}
+{% from "common.jinja" import breadcrumb %}
 {% from "library/review/includes/macros.jinja" import display_closed_status %}
 
 {% block introduction %}
     <h1>Peer Review Editor Dashboard</h1>
+{% endblock %}
+
+{% block top %}
+    {{ breadcrumb([
+        {'url': '/reviews/', 'text': 'Reviews'},
+        {'text': 'Review Editor Dashboard' }])
+    }}
+    <ul class="nav nav-tabs justify-content-center mb-4">
+        <li class="nav-item">
+            <a href="/reviews/dashboard" class="nav-link active">Reviews</a>
+        </li>
+        <li class="nav-item">
+            <a href="/reviews/reviewers" class="nav-link">Reviewers</a>
+        </li>
+    </ul>
 {% endblock %}
 
 {% block content %}
