@@ -59,7 +59,7 @@
 
 <script setup lang="ts">
 import { defineEmits, ref, watch } from "vue";
-import FieldLabel from "./form/FieldLabel.vue";
+import FieldLabel from "@/components/form/FieldLabel.vue";
 import BootstrapModal from "@/components/BootstrapModal.vue";
 import ReviewerEditForm from "@/components/ReviewerEditForm.vue";
 import type { ReviewerFilterParams } from "@/types";

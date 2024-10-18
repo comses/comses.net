@@ -1,7 +1,6 @@
 <template>
   <div class="modal-body">
     <form @submit="handleSubmit" @reset="handleReset">
-      <!-- FIXME: hide this and show profile after setting -->
       <div v-if="!props.memberProfileId">
         <UserSearch
           v-if="!values.memberProfile"
@@ -158,11 +157,6 @@ function setMemberProfile(profile: RelatedMemberProfile) {
 }
 
 async function createOrUpdate() {
-  // FIXME: onsuccess should close the modal or emit something to tell the parent
-  // to close it, probably doing the same thing elsewhere
-  // const onSuccess = (response: any) => {
-  //   window.location.href = detailUrl(response.data.id);
-  // };
   if (!values.memberProfileId) return;
   let response;
   if (props.isEdit && props.reviewer) {

@@ -189,7 +189,6 @@ class PeerReviewerDashboardView(PermissionRequiredMixin, ListView):
 
 class PeerReviewerFilter(filters.BaseFilterBackend):
     def filter_queryset(self, request, queryset, view):
-        # FIXME: when there query, return the full list of reviewers
         query = request.query_params.get("query", None)
         if query is None:
             return queryset
