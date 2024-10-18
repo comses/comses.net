@@ -132,12 +132,12 @@ class GithubApi:
         and cache it for future use
         """
         auth = Auth.AppAuth(
-            settings.GITHUB_APP_ID,
-            settings.GITHUB_APP_PRIVATE_KEY,
+            settings.GITHUB_INTEGRATION_APP_ID,
+            settings.GITHUB_INTEGRATION_APP_PRIVATE_KEY,
         )
         integration = GithubIntegration(auth=auth)
         installation_auth = integration.get_access_token(
-            settings.GITHUB_APP_INSTALLATION_ID
+            settings.GITHUB_INTEGRATION_APP_INSTALLATION_ID
         )
         token = installation_auth.token
         seconds_until_expiration = (
@@ -161,8 +161,8 @@ class GithubApi:
         """
         github = Github()
         app = github.get_oauth_application(
-            settings.GITHUB_APP_CLIENT_ID,
-            settings.GITHUB_APP_CLIENT_SECRET,
+            settings.GITHUB_INTEGRATION_APP_CLIENT_ID,
+            settings.GITHUB_INTEGRATION_APP_CLIENT_SECRET,
         )
         return app.get_access_token(code).token
 
