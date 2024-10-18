@@ -1,9 +1,24 @@
 <template>
   <div class="card mb-3">
-    <div class="card-header">
-      <h5 class="card-title">
+    <div class="card-header d-flex justify-content-between align-items-center">
+      <h5 class="card-title mb-0">
         {{ reviewer.memberProfile.name }} ({{ reviewer.memberProfile.username }})
       </h5>
+      <span>
+        <a v-if="reviewer.isActive" class="btn btn-link" @click="emit('edit')">
+          <small><i class="fas fa-edit me-1"></i>Edit</small>
+        </a>
+        <a
+          v-if="reviewer.isActive"
+          class="btn btn-link text-danger"
+          @click="changeActiveState(reviewer, false)"
+        >
+          <small><i class="fas fa-trash me-1"></i>Deactivate</small>
+        </a>
+        <a v-else class="btn btn-link text-success" @click="changeActiveState(reviewer, true)">
+          <small><i class="fas fa-check-circle me-1"></i>Activate</small>
+        </a>
+      </span>
     </div>
     <div class="card-body">
       <p class="card-text">
@@ -12,11 +27,6 @@
         <strong>Subject Areas:</strong> {{ reviewer.subjectAreas.join(", ") }}<br />
         {{ reviewer.notes }}
       </p>
-      <a class="btn btn-primary me-1" @click="emit('edit')">Edit</a>
-      <a v-if="reviewer.isActive" class="btn btn-danger" @click="changeActiveState(reviewer, false)"
-        >Deactivate</a
-      >
-      <a v-else class="btn btn-success" @click="changeActiveState(reviewer, true)">Activate</a>
     </div>
   </div>
 </template>
