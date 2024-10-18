@@ -177,5 +177,10 @@ LOGGING = {
             "handlers": ["comsesfile"],
             "propagate": False,
         },
+        "huey": {
+            "level": "WARNING",
+            "handlers": ["comsesfile"],
+            "propagate": False,
+        },
     },
 }

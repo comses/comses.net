@@ -174,7 +174,6 @@ def retrieve_with_perms(self, request, *args, **kwargs):
 
 
 def add_user_retrieve_perms(instance, data, user):
-    print(user.get_all_permissions())
     data["has_change_perm"] = user.has_perm(
         f"{instance._meta.app_label}.change_{instance._meta.model_name}",
         instance,

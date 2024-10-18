@@ -26,7 +26,9 @@ djangorestframework-camel-case==1.4.2
 Django==4.2.15
 elasticsearch-dsl>=7.0.0,<8.0.0
 elasticsearch>=7.0.0,<8.0.0
+gitpython==3.1.43
 html2text>=2016.9.19
+huey==2.5.1
 jinja2==3.1.4
 jsonschema==4.19.0
 markdown==3.6
@@ -34,7 +36,9 @@ nltk>=3.8.1,<4.0.0
 numpy==1.26.4
 pandas==2.2.2
 psycopg2-binary==2.9.9
+PyGithub==2.3.0
 pytz==2024.1
+pyyaml>=6.0.1
 # used for institution -> affiliation data migration
 rapidfuzz==3.9.3
 redis==4.5.5

@@ -384,6 +384,22 @@ nav {
   }
 }
 
+.card-bridge::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: -100px;
+  left: 50%;
+  width: 1px;
+  background-color: #ccc;
+  z-index: -1;
+}
+
+.card-bridge .card {
+  position: relative;
+  z-index: 1;
+}
+
 .card-metadata {
   @extend .card;
   margin-top: 0.5em;
