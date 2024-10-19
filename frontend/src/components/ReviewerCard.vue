@@ -15,18 +15,19 @@
         >
           <small><i class="fas fa-trash me-1"></i>Deactivate</small>
         </a>
-        <a v-else class="btn btn-link text-success" @click="changeActiveState(reviewer, true)">
-          <small><i class="fas fa-check-circle me-1"></i>Activate</small>
+        <a v-else class="btn btn-link" @click="changeActiveState(reviewer, true)">
+          <small><i class="fas fa-sync-alt me-1"></i>Reactivate</small>
         </a>
       </span>
     </div>
     <div class="card-body">
-      <p class="card-text">
+      <p v-if="reviewer.isActive" class="card-text">
         <strong>Email:</strong> {{ reviewer.memberProfile.email }}<br />
         <strong>Programming Languages:</strong> {{ reviewer.programmingLanguages.join(", ") }}<br />
         <strong>Subject Areas:</strong> {{ reviewer.subjectAreas.join(", ") }}<br />
         {{ reviewer.notes }}
       </p>
+      <p v-else class="card-text text-muted">This reviewer is currently inactive.</p>
     </div>
   </div>
 </template>
