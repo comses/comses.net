@@ -399,12 +399,13 @@ class CodebaseFilter(filters.BaseFilterBackend):
             criteria.update(id__in=codebases.values_list("id", flat=True))
             # or we could include the PL in the query
             # qs += " ".join(programming_languages)
+
+        default_ordering = "-first_published_at"
         if ordering:
-            criteria.update(ordering=ordering)
+            criteria.update(ordering=ordering if qs else default_ordering)
         else:
-            if qs:
-                # set default ordering for search when ordering is not specified
-                criteria.update(ordering="relevance")
+            # set default ordering for search when ordering is not specified
+            criteria.update(ordering="relevance" if qs else default_ordering)
 
         return get_search_queryset(qs, queryset, tags=tags, criteria=criteria)
 
