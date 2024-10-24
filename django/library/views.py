@@ -401,8 +401,14 @@ class CodebaseFilter(filters.BaseFilterBackend):
             # qs += " ".join(programming_languages)
 
         # set order by relevance if there's a query string and no explicit ordering requested
-        order_by_relevance = qs and not ordering
-        return get_search_queryset(qs, queryset, tags=tags, criteria=criteria, order_by_relevance=order_by_relevance)
+        order_by_relevance = qs and (not ordering or ordering == "relevance")
+        return get_search_queryset(
+            qs,
+            queryset,
+            tags=tags,
+            criteria=criteria,
+            order_by_relevance=order_by_relevance,
+        )
 
 
 class CodebaseViewSet(SpamCatcherViewSetMixin, CommonViewSetMixin, HtmlNoDeleteViewSet):
