@@ -20,7 +20,7 @@
       :clear-on-select="false"
       :close-on-select="false"
       :options-limit="50"
-      :taggable="true"
+      :taggable="taggable"
       :limit="20"
       @tag="addTag"
       @search-change="fetchMatchingTags"
@@ -66,11 +66,13 @@ export interface TaggerFieldProps {
   help?: string;
   placeholder?: string;
   required?: boolean;
+  taggable?: boolean;
   type?: TagType;
 }
 
 const props = withDefaults(defineProps<TaggerFieldProps>(), {
   type: "",
+  taggable: true,
   placeholder: "Type to add tags",
 });
 

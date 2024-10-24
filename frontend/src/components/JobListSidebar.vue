@@ -8,7 +8,7 @@
   >
     <template #form>
       <form @submit="handleSubmit">
-        <TaggerField class="mb-3" name="tags" label="Keywords" type="Job" />
+        <TaggerField class="mb-3" name="tags" label="Keywords" type="Job" :taggable="false" />
         <DatepickerField class="mb-3" name="initialPostingAfter" label="Posted after" />
         <DatepickerField name="applicationDeadlineAfter" label="Application deadline after" />
       </form>

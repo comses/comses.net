@@ -57,6 +57,7 @@
           label="Tags"
           type="Codebase"
           placeholder="Language, framework, etc."
+          :taggable="false"
         />
       </form>
     </template>
