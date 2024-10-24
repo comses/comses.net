@@ -21,10 +21,7 @@ function mdeAttach(id) {
         var mde = new EasyMDE({
             element: document.getElementById(id),
             autosave: {
-                enabled: true,
-                delay: 3000,
-                submit_delay: 10000,
-                uniqueId: id,
+                enabled: false,
             },
             toolbar: [
                 "bold", "italic", "heading", "|",
