@@ -87,7 +87,13 @@ def build_search_query(input_text: str) -> SearchQuery:
 
 
 def get_search_queryset(
-    query, queryset, operator="or", fields=None, tags=None, criteria=None
+    query,
+    queryset,
+    operator="or",
+    fields=None,
+    tags=None,
+    criteria=None,
+    order_by_relevance=False,
 ):
     search_backend = get_search_backend()
 
@@ -132,11 +138,6 @@ def get_search_queryset(
     Set up order by relevance override for search
     other sort orders are handled by SmallResultSetPagination filtering and SORT_BY_FILTERS
     """
-    order_by_relevance = False
-    if "ordering" in criteria:
-        sort_order = criteria.pop("ordering")
-        if sort_order == "relevance":
-            order_by_relevance = True
     """
     Filter queryset
     """

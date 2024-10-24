@@ -56,7 +56,9 @@ export interface SearchProps {
   clearAllFilters?: () => void;
 }
 
-const props = defineProps<SearchProps>();
+const props = withDefaults(defineProps<SearchProps>(), {
+  isFilterChanged: true,
+});
 
 function handleApplyFilters() {
   isApplyingFiltersLoading.value = true;

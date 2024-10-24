@@ -8,7 +8,7 @@
   >
     <template #form>
       <form @submit="handleSubmit">
-        <TaggerField name="tags" label="Keywords" type="Profile" />
+        <TaggerField name="tags" label="Keywords" type="Profile" :taggable="false" />
         <!-- consider adding full member/peer reviewer filter -->
       </form>
     </template>

@@ -7,7 +7,7 @@
   >
     <template #form>
       <form @submit="handleSubmit">
-        <TaggerField class="mb-3" name="tags" label="Keywords" type="Event" />
+        <TaggerField class="mb-3" name="tags" label="Keywords" type="Event" :taggable="false" />
         <DatepickerField
           class="mb-3"
           name="submissionDeadlineAfter"

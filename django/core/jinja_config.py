@@ -131,10 +131,7 @@ def generate_search_form_inputs(query_params):
     Returns:
         list: A list of tuples representing the hidden input fields.
     """
-    # set default ordering to relevance, if it is not specified
-    search_parameters = {
-        "ordering": "relevance",
-    }
+    search_parameters = {}
     if query_params:
         # parse_qsl handles splitting and unquoting key-value pairs and generates a list of tuples
         # do not include the actual query in the query parameters
