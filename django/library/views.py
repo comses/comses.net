@@ -400,13 +400,9 @@ class CodebaseFilter(filters.BaseFilterBackend):
             # or we could include the PL in the query
             # qs += " ".join(programming_languages)
 
-        default_ordering = "-first_published_at"
-        if ordering:
-            criteria.update(ordering=ordering if qs else default_ordering)
-        else:
-            # set default ordering for search when ordering is not specified
-            criteria.update(ordering="relevance" if qs else default_ordering)
-
+        # default ordering is relevance if there's a query string, otherwise "-first_published_at"
+        default_ordering = "relevance" if qs else "-first_published_at"
+        criteria.update(ordering=ordering if ordering else default_ordering)
         return get_search_queryset(qs, queryset, tags=tags, criteria=criteria)
 
 
