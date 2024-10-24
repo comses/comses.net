@@ -5,6 +5,8 @@ from rest_framework import status
 from rest_framework.test import APITestCase
 from django.contrib.auth.models import AnonymousUser
 
+from core.tests.base import UserFactory
+
 import logging
 
 logger = logging.getLogger(__name__)
@@ -59,6 +61,9 @@ class LoginFailure(Exception):
 
 
 class ApiAccountMixin:
+
+    user_factory = UserFactory()
+
     def create_representative_users(self, submitter, user_factory=None):
         # Inactive users cannot login so are not included
         if not user_factory:
@@ -72,26 +77,28 @@ class ApiAccountMixin:
     def users_able_to_login(self):
         return [self.regular_user, self.superuser, self.submitter]
 
-    def login(self, user, password):
+    def login(self, user, password=None):
         if not user.is_active:
+            logger.debug("Inactive user, cannot login")
             return user, False
-        logged_in = self.client.login(username=user.username, password=password)
-        if not logged_in:
-            if user.is_active:
-                raise LoginFailure()
-        return user, logged_in
+        if password is None:
+            password = self.user_factory.password
+        authenticated = self.client.login(username=user.username, password=password)
+        if not authenticated:
+            raise LoginFailure(
+                f"Failed to login as {user.username} with password {password}"
+            )
+        return user, authenticated
 
 
 class ResponseStatusCodesMixin:
     def responseErrorMessage(self, response, name):
         user = response.wsgi_request.user
-        user_msg = "<{} is_superuser={} is_active={} is_anonymous={}>".format(
-            user.username, user.is_superuser, user.is_active, user.is_anonymous
-        )
+        user_msg = f"<{user} is_superuser={user.is_superuser} is_active={user.is_active} is_anonymous={user.is_anonymous}>"
         data = getattr(response, "data", None)
-        msg = "Response not {} for user {}".format(name, user_msg)
+        msg = f"Response not {name} for user {user_msg}"
         if data is not None:
-            msg += ". Got {}".format(data)
+            msg += f". Received {data}"
         return msg
 
     def assertResponseOk(self, response):
@@ -230,7 +237,7 @@ class BaseViewSetTestCase(ApiAccountMixin, ResponseStatusCodesMixin, APITestCase
         self.assertEqual(is_visible_in_list, is_instance_public)
 
     def with_logged_in(self, user, instance, method):
-        self.login(user, password=self.user_factory.password)
+        self.login(user)
         method(user, instance)
         self.client.logout()
 
