@@ -8,7 +8,7 @@
 {% block content %}
     <h2>Editor Peer Review Management</h2>
     <p class='lead'>
-    Feedback submitted by <mark>{{review_feedback.invitation.candidate_reviewer}}</mark> on {{format_datetime(review_feedback.last_modified)}}.
+    Feedback submitted by <mark>{{review_feedback.invitation.reviewer.member_profile}}</mark> on {{format_datetime(review_feedback.last_modified)}}.
     </p>
     <h2>{{ review_feedback.invitation.review.title }}<a href="{{ review_feedback.invitation.review.codebase_release.share_url }}">(click to view in a new window/tab)</a>
     </h2>
