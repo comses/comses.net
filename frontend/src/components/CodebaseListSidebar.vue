@@ -57,6 +57,7 @@
           label="Tags"
           type="Codebase"
           placeholder="Language, framework, etc."
+          :taggable="false"
         />
       </form>
     </template>
@@ -120,7 +121,7 @@ const initialFilterValues = {
 onMounted(() => {
   if (props.languageFacets) {
     const localLanguageFacets = { ...props.languageFacets };
-    console.log(localLanguageFacets);
+    // console.log(localLanguageFacets);
     parsedLanguageFacets = Object.entries(localLanguageFacets)
       .sort(([, valueA], [, valueB]) => valueB - valueA) // Sort by value in descending order
       .map(([name, value]) => ({ value: name, label: `${name} (${value})` }));

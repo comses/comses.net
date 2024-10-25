@@ -399,14 +399,16 @@ class CodebaseFilter(filters.BaseFilterBackend):
             criteria.update(id__in=codebases.values_list("id", flat=True))
             # or we could include the PL in the query
             # qs += " ".join(programming_languages)
-        if ordering:
-            criteria.update(ordering=ordering)
-        else:
-            if qs:
-                # set default ordering for search when ordering is not specified
-                criteria.update(ordering="relevance")
 
-        return get_search_queryset(qs, queryset, tags=tags, criteria=criteria)
+        # set order by relevance if there's a query string and no explicit ordering requested
+        order_by_relevance = qs and (not ordering or ordering == "relevance")
+        return get_search_queryset(
+            qs,
+            queryset,
+            tags=tags,
+            criteria=criteria,
+            order_by_relevance=order_by_relevance,
+        )
 
 
 class CodebaseViewSet(SpamCatcherViewSetMixin, CommonViewSetMixin, HtmlNoDeleteViewSet):
