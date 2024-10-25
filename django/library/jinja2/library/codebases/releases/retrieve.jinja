@@ -294,14 +294,13 @@
     <div class="card-body">
         <div class="section mb-0">
             <div>
-                <b class="card-title">Github Integration</b>
-                <span class="badge bg-gray">beta</span>
+                <b class="card-title">
+                    <i class="fab fa-github"></i>
+                    Github Integration
+                </b>
+                <sup class="badge bg-gray"><small>beta</small></sup>
             </div>
-            <div class="card-text pt-0 mb-3">
-                <a class="small" href="/github/" target="_blank">
-                    <i class="fas fa-question-circle"></i> What is this?
-                </a>
-            </div>
+
             {% if codebase.git_mirror %}
                 {% if codebase.git_mirror.remote_url %}
                     <div class="d-flex align-items-center">
@@ -336,6 +335,11 @@
                     </div>
                 {% endif %}
             {% endif %}
+            <div class="card-text">
+                <a class="small" href="/github/" target="_blank">
+                    <i class="fas fa-question-circle"></i> What is this?
+                </a>
+            </div>
         </div>
     </div>
 </div>

@@ -1,7 +1,11 @@
 <template>
   <div>
-    <button class="btn btn-sm btn-secondary my-1 w-100" rel="nofollow" @click="modal?.show()">
-      <i class="fab fa-github"></i>
+    <button
+      class="btn btn-sm btn-outline-secondary w-100-with-icon my-1"
+      rel="nofollow"
+      @click="modal?.show()"
+    >
+      <i class="icon-left fas fa-arrow-up"></i>
       Mirror on Github
     </button>
     <BootstrapModal
