@@ -7,8 +7,8 @@ import semver
 import uuid
 
 from abc import ABC
-from collections import OrderedDict
-from datetime import date, datetime, timedelta
+from collections import OrderedDict, defaultdict
+from datetime import date, timedelta
 from typing import List
 
 from django.conf import settings
@@ -167,11 +167,18 @@ class Contributor(index.Indexed, ClusterableModel):
 
     @property
     def affiliations(self):
-        return self.json_affiliations
+        if self.json_affiliations:
+            return self.json_affiliations
+        if self.user:
+            return self.user.member_profile.affiliations
+        return []
 
     @property
     def affiliation_ror_ids(self):
-        return [affiliation.get("ror_id") for affiliation in self.json_affiliations]
+        return [
+            {"name": affiliation.get("name"), "ror_id": affiliation.get("ror_id")}
+            for affiliation in self.affiliations
+        ]
 
     @cached_property
     def json_affiliations_string(self):
@@ -188,24 +195,12 @@ class Contributor(index.Indexed, ClusterableModel):
         return f"{afl.get('name')} {afl.get('url')} {afl.get('acronym')}"
 
     @property
-    def codemeta_affiliation(self):
-        """
-        For now codemeta affiliations appear to be a single https://schema.org/Organization
-        """
-        if self.json_affiliations:
-            return CodeMetaSchema.convert_affiliation(self.json_affiliations[0])
-
-    @property
     def primary_affiliation(self):
-        return self.json_affiliations[0] if self.json_affiliations else {}
+        return self.affiliations[0] if self.affiliations else {}
 
     @property
     def primary_affiliation_name(self):
-        return self.primary_json_affiliation_name
-
-    @property
-    def primary_json_affiliation_name(self):
-        return self.json_affiliations[0]["name"] if self.json_affiliations else ""
+        return self.affiliations[0]["name"] if self.affiliations else ""
 
     @staticmethod
     def from_user(user):
@@ -1131,6 +1126,9 @@ class CodebaseReleaseQuerySet(models.QuerySet):
 
     def reviewed(self, **kwargs):
         return self.filter(peer_reviewed=True, **kwargs)
+
+    def unreviewed(self, **kwargs):
+        return self.exclude(peer_reviewed=True).filter(**kwargs)
 
     def with_doi(self, **kwargs):
         return self.exclude(Q(doi__isnull=True) | Q(doi="")).filter(**kwargs)
@@ -2594,15 +2592,16 @@ class CommonMetadata:
         ]
 
         if release.live:
-            # should not generate CodeMeta or DataCite for non-published releases
             self.first_published = release.first_published_at.date()
             self.last_published = release.last_published_on.date()
-            self.copyright_year = self.last_published.year
         else:
-            # FIXME: default values?
-            self.first_published = self.last_published = self.copyright_year = (
-                date.today()
+            # FIXME: default to today for unpublished releases
+            # should not generate CodeMeta or DataCite for non-published releases but CodeMeta is generated even for unpublished
+            logger.warning(
+                "Generating CommonMetadata for an unpublished release: %s", release
             )
+            self.first_published = self.last_published = date.today()
+        self.copyright_year = self.last_published.year
         if release.license:
             self.license = release.license
         else:
@@ -2642,10 +2641,12 @@ class CommonMetadata:
             {
                 "description": self.description,
                 "descriptionType": "Abstract",
+                "lang": "en",  # FIXME: this might not always be the case
             },
             {
                 "description": self.release_notes,
                 "descriptionType": "TechnicalInfo",
+                "lang": "en",  # FIXME: this might not always be the case
             },
         ]
 
@@ -2759,18 +2760,24 @@ class CodeMetaSchema:
         ]
 
     @classmethod
-    def convert_ror_affiliation(cls, affiliation: dict):
+    def convert_affiliation(cls, affiliation: dict):
+        codemeta_affiliation = {}
         if affiliation:
-            return {
+            codemeta_affiliation = {
                 # FIXME: may switch to https://schema.org/ResearchOrganization at some point
                 "@type": "Organization",
-                "@id": affiliation.get("ror_id"),
                 "name": affiliation.get("name"),
                 "url": affiliation.get("url"),
-                "identifier": affiliation.get("ror_id"),
-                "sameAs": affiliation.get("ror_id"),
             }
-        return {}
+            if affiliation.get("ror_id"):
+                codemeta_affiliation.update(
+                    {
+                        "@id": affiliation.get("ror_id"),
+                        "identifier": affiliation.get("ror_id"),
+                        "sameAs": affiliation.get("ror_id"),
+                    }
+                )
+        return codemeta_affiliation
 
     @classmethod
     def convert_contributor(cls, contributor: Contributor):
@@ -2782,8 +2789,8 @@ class CodeMetaSchema:
         }
         if contributor.orcid_url:
             codemeta["@id"] = contributor.orcid_url
-        if contributor.json_affiliations:
-            codemeta["affiliation"] = cls.convert_ror_affiliation(
+        if contributor.affiliations:
+            codemeta["affiliation"] = cls.convert_affiliation(
                 contributor.primary_affiliation
             )
         if contributor.email:
@@ -2837,8 +2844,9 @@ class DataCiteSchema(ABC):
     COMSES_PUBLISHER = {
         "publisherIdentifier": CommonMetadata.COMSES_ORGANIZATION["ror_id"],
         "publisherIdentifierScheme": "ROR",
-        "schemeURI": "https://ror.org",
+        "schemeUri": "https://ror.org",
         "name": CommonMetadata.COMSES_ORGANIZATION["name"],
+        "lang": "en",
     }
 
     INITIAL_DATA = {
@@ -2848,6 +2856,7 @@ class DataCiteSchema(ABC):
             "resourceType": "Computational Model",
             "resourceTypeGeneral": "Software",
         },
+        "formats": ["text/plain"],
     }
 
     def __init__(self, metadata: dict):
@@ -2884,39 +2893,53 @@ class DataCiteSchema(ABC):
                 nameType="Personal",
                 givenName=contributor.given_name,
                 familyName=contributor.family_name,
-                creatorName=f"{contributor.family_name}, {contributor.given_name}",
+                name=f"{contributor.family_name}, {contributor.given_name}",
             )
             if contributor.orcid_url:
                 creator.update(
-                    nameIdentifier=contributor.orcid_url,
-                    nameIdentifierScheme="ORCID",
-                    schemeURI="https://orcid.org",
+                    nameIdentifiers=[
+                        {
+                            "nameIdentifier": contributor.orcid_url,
+                            "nameIdentifierScheme": "ORCID",
+                            "schemeUri": "https://orcid.org",
+                        }
+                    ]
                 )
         else:
             creator.update(nameType="Organizational", creatorName=contributor.name)
 
         # check for ROR affiliations or freetext: https://datacite-metadata-schema.readthedocs.io/en/4.5/properties/creator/#affiliation
-        affiliations = contributor.json_affiliations
+        affiliations = contributor.affiliations
         if affiliations:
-            ror_ids = contributor.affiliation_ror_ids
-            if ror_ids:
-                # set affiliationIdentifier to first ROR ID
-                creator.update(
-                    affiliationIdentifier=ror_ids[0],
-                    affiliationIdentifierScheme="ROR",
-                    schemeURI="https://ror.org",
-                )
-            else:
-                # otherwise set to the first affiliation freetext name
-                creator.update(affiliation=contributor.primary_affiliation_name)
+            creator_affiliations = [
+                cls.convert_affiliation(a) for a in affiliations if a
+            ]
+            creator.update(affiliation=creator_affiliations)
         return creator
+
+    @classmethod
+    def convert_affiliation(cls, affiliation: dict):
+        """
+        Converts a CoMSES affiliation dict into a DataCite affiliation dict
+        """
+        datacite_affiliation = {}
+        if affiliation.get("name"):
+            datacite_affiliation = {
+                "name": affiliation.get("name"),
+            }
+            # FIXME: should we validate the ror id
+            if affiliation.get("ror_id"):
+                affiliation.update(
+                    affiliationIdentifier=affiliation.get("ror_id"),
+                    affiliationIdentifierScheme="ROR",
+                )
+        return datacite_affiliation
 
     @classmethod
     def to_citable_authors(cls, release_contributors):
         """
-        Maps a Set of ReleaseContributors to a list dictionaries representing DataCite creators
+        Maps a set of ReleaseContributors to a list of dictionaries representing DataCite creators
 
-        (we're using DataCite schema 4.3 but this is still pretty much the same)
         https://datacite-metadata-schema.readthedocs.io/en/4.5/properties/creator/
         """
         return [cls.convert_release_contributor(rc) for rc in release_contributors]
@@ -2929,46 +2952,49 @@ class DataCiteSchema(ABC):
 
     @classmethod
     def to_contributors(cls, common_metadata: CommonMetadata):
+        """
+        Sets up non-author contributors in the DataCite metadata
+
+        https://datacite-metadata-schema.readthedocs.io/en/4.5/properties/contributor/
+        """
         nonauthor_contributors = common_metadata.release_contributor_nonauthors
 
-        contributors = [
-            # FIXME: probably not the right way to bootstrap non author contributors
-            # perhaps this should be the provider institution, e.g., CML ROR
-            {
-                "contributorName": common_metadata.code_repository,
-                "contributorType": "hostingInstitution",
-            }
-        ]
+        contributors = []
 
         if nonauthor_contributors:
-            role_mapping = {
-                "copyrightHolder": "RightsHolder",
-                "editor": "Editor",
-                "funder": "Sponsor",
-                "pointOfContact": "ContactPerson",
-                "resourceProvider": "Distributor",
-            }
-
+            role_mapping = defaultdict(
+                lambda: "Other",
+                {
+                    "copyrightHolder": "RightsHolder",
+                    "editor": "Editor",
+                    "funder": "Sponsor",
+                    "pointOfContact": "ContactPerson",
+                    "resourceProvider": "Distributor",
+                },
+            )
+            has_other_role_already = False
             for release_contributor in nonauthor_contributors:
-                # FIXME: what is other_role_added for?
-                other_role_added = False
                 for role in release_contributor.roles:
                     contributor_type = role_mapping.get(role, "Other")
-                    if contributor_type == "Other" and not other_role_added:
-                        contributors.append(
-                            {
-                                "contributorName": release_contributor.contributor.name,
-                                "contributorType": "Other",
-                            }
-                        )
-                        other_role_added = True
-                    elif contributor_type != "Other":
-                        contributors.append(
-                            {
-                                "contributorName": release_contributor.contributor.name,
-                                "contributorType": contributor_type,
-                            }
-                        )
+                    # only allow a single Other role per contributor
+                    if contributor_type == "Other":
+                        if has_other_role_already:
+                            continue
+                        else:
+                            has_other_role_already = True
+                    contributors.append(
+                        {
+                            "name": release_contributor.contributor.name,
+                            "contributorType": contributor_type,
+                        }
+                    )
+        if common_metadata.code_repository:
+            contributors.append(
+                {
+                    "name": common_metadata.code_repository,
+                    "contributorType": "HostingInstitution",
+                }
+            )
 
         return contributors
 
@@ -3012,17 +3038,16 @@ class ReleaseDataCiteSchema(DataCiteSchema):
                 common_metadata.release_contributor_authors
             ),
             "descriptions": common_metadata.descriptions,
-            "publicationYear": common_metadata.copyright_year,
+            "publicationYear": str(cls.to_publication_year(common_metadata)),
             "titles": [{"title": common_metadata.name}],
             "version": common_metadata.version,
-            "codeRepository": common_metadata.code_repository,
             "contributors": cls.to_contributors(common_metadata),
             "subjects": cls.convert_keywords(common_metadata),
             "rightsList": [
                 {
                     "rights": common_metadata.license.name,
                     "rightsIdentifier": common_metadata.license.name,
-                    "rightsURI": common_metadata.license.url,
+                    "rightsUri": common_metadata.license.url,
                 }
             ],
         }
@@ -3107,12 +3132,21 @@ class CodebaseDataCiteSchema(DataCiteSchema):
                 {
                     "description": codebase.description.raw,
                     "descriptionType": "Abstract",
-                }
+                },
+                {
+                    "description": """The DOI pointing to this resource is a `concept version` representing all
+                    versions of this computational model and will always redirect to the latest version of this
+                    computational model. See https://zenodo.org/help/versioning for more details on the rationale
+                    behind a concept version DOI that rolls up all versions of a given computational model or any
+                    other digital research object.
+                    """,
+                    "descriptionType": "Other",
+                },
             ],
-            "publicationYear": codebase.publication_year,
+            "publicationYear": str(codebase.publication_year),
         }
 
-        """ 
+        """
         Set codebase relatedIdentifiers
         """
 
@@ -3206,20 +3240,6 @@ class DataCiteRegistrationLog(models.Model):
     doi = models.CharField(max_length=255, null=True, blank=True)
 
     objects = DataCiteRegistrationLogQuerySet.as_manager()
-
-    @classmethod
-    def is_metadata_stale(cls, item):
-        try:
-            newest_log_entry = DataCiteRegistrationLog.objects.latest_entry(item)
-            # make sure item does not have stale datacite metadata
-            del item.datacite
-            return newest_log_entry.metadata_hash != item.datacite.hash()
-
-        except DataCiteRegistrationLog.DoesNotExist:
-            # no logs for this item, metadata is stale
-            logger.info("No registration logs available for this item %s", item)
-
-        return True
 
     @property
     def codebase_or_release_id(self):

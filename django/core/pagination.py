@@ -31,7 +31,7 @@ class SmallResultSetPagination(PageNumberPagination):
     @staticmethod
     def _to_filter_display_terms(query_params):
         """
-        Convert query parameters into a list of displayable filter terms (replaces underscores withs paces, etc)
+        Convert query parameters into a list of displayable filter terms (replaces underscores withs spaces, etc)
         Args:
             query_params (QueryDict): The query parameters.
         Returns:

@@ -1,12 +1,13 @@
+import argparse
+import logging
 from django.core.management.base import BaseCommand
 from django.conf import settings
-import logging
 
 from library.models import CodebaseRelease
 from library.doi import (
     DataCiteApi,
     VERIFICATION_MESSAGE,
-    doi_matches_pattern,
+    is_valid_doi,
     get_welcome_message,
 )
 
@@ -14,12 +15,13 @@ from library.doi import (
 logger = logging.getLogger(__name__)
 
 
-def update_existing_dois(interactive=True, dry_run=True):
+def mint_parent_codebases(interactive=True, dry_run=True):
     """
     Updates existing DOIs for peer reviewed CodebaseReleases and their parent Codebases.
 
     1. Mint a conceptual parent DOI for a given release's parent codebase and assign it to the Codebase
-    2.
+    2. Mint a new DOI for the release if it doesn't have already have one, if it has a legacy handle.net DOI,
+    or if its DOI doesn't match the settings-specified DataCite DOI prefix, i.e., settings.DATACITE_PREFIX
     """
     print(get_welcome_message(dry_run))
 
@@ -29,7 +31,7 @@ def update_existing_dois(interactive=True, dry_run=True):
     total_peer_reviewed_releases_count = peer_reviewed_releases.count()
 
     logger.info(
-        "Updating DOIs for %s peer reviewed CodebaseReleases with DOIs",
+        "Updating DOIs for parent Codebases of %s peer reviewed CodebaseReleases with DOIs",
         total_peer_reviewed_releases_count,
     )
 
@@ -56,13 +58,14 @@ def update_existing_dois(interactive=True, dry_run=True):
         if not codebase_doi:
             # request to DataCite API
             logger.debug("Minting DOI for parent codebase: %s", codebase.pk)
-            codebase_doi, success = datacite_api.mint_new_doi_for_codebase(codebase)
+            log, ok = datacite_api.mint_public_doi(codebase)
 
-            if not success:
+            if not ok:
                 logger.error(
-                    "Could not mint DOI for parent codebase %s. Skipping release %s.",
+                    "Unable to mint DOI for parent codebase %s of release %s: %s",
                     codebase.pk,
                     release.pk,
+                    log.status_code,
                 )
                 if interactive:
                     input("Press Enter to continue or CTRL+C to quit...")
@@ -70,7 +73,7 @@ def update_existing_dois(interactive=True, dry_run=True):
 
             logger.debug("New codebase DOI: %s. Saving codebase...", codebase_doi)
             if not dry_run:
-                codebase.doi = codebase_doi
+                codebase.doi = log.doi
                 codebase.save()
         else:
             logger.debug(
@@ -108,12 +111,12 @@ def update_existing_dois(interactive=True, dry_run=True):
                 release_doi,
             )
             # set up DataCite API request to mint new DOI
-            release_doi, success = datacite_api.mint_new_doi_for_release(release)
-            if not success:
+            log, ok = datacite_api.mint_public_doi(release)
+            if not ok:
                 logger.error(
-                    "Could not mint DOI for release %s. DOI: %s. Skipping.",
+                    "Could not mint DOI for release %s - status code: %s.",
                     release.pk,
-                    release_doi,
+                    log.status_code,
                 )
                 if interactive:
                     input("Press Enter to continue or CTRL+C to quit...")
@@ -126,7 +129,7 @@ def update_existing_dois(interactive=True, dry_run=True):
                 release.doi,
             )
             if not dry_run:
-                release.doi = release_doi
+                release.doi = log.doi
                 release.save()
 
             if interactive:
@@ -134,17 +137,18 @@ def update_existing_dois(interactive=True, dry_run=True):
             continue
         else:
             logger.debug(
-                "Release %s has an invalid DOI: (%s). Minting new DOI for release...",
+                "Release %s does not have a valid DOI: (%s). Minting new DOI for release.",
                 release.pk,
                 release_doi,
             )
-            # request to DataCite API: mint new DOI!
-            release_doi, success = datacite_api.mint_new_doi_for_release(release)
-            if not success:
+            # no available DOI for this release mint a fresh DOI for this release
+            log, ok = datacite_api.mint_public_doi(release)
+            release_doi = log.doi
+            if not ok:
                 logger.error(
-                    "Could not mint DOI for release %s. DOI: %s. Skipping.",
+                    "Could not mint DOI for release %s - status code: %s.",
                     release.pk,
-                    release_doi,
+                    log.status_code,
                 )
                 if interactive:
                     input("Press Enter to continue or CTRL+C to quit...")
@@ -190,13 +194,13 @@ def update_existing_dois(interactive=True, dry_run=True):
             if release.doi is None:
                 logger.error("DOI should not be None for release %s", release.pk)
 
-            if not doi_matches_pattern(release.codebase.doi):
+            if not is_valid_doi(release.codebase.doi):
                 logger.error(
                     "%s Codebase DOI doesn't match DataCite pattern!",
                     release.codebase.doi,
                 )
 
-            if not doi_matches_pattern(release.doi):
+            if not is_valid_doi(release.doi):
                 logger.error(
                     "%s CodebaseRelease DOI doesn't match DataCite pattern!",
                     release.doi,
@@ -212,15 +216,17 @@ class Command(BaseCommand):
     def add_arguments(self, parser):
         parser.add_argument(
             "--interactive",
-            action="store_true",
+            action=argparse.BooleanOptionalAction,
             help="Wait for user to press enter to continue.",
-            default=True,
+            default=False,
         )
         parser.add_argument(
-            "--dry-run", action="store_true", help="Output what would have happened."
+            "--dry-run",
+            action=argparse.BooleanOptionalAction,
+            help="Output what would have happened.",
         )
 
     def handle(self, *args, **options):
         interactive = options["interactive"]
         dry_run = options["dry_run"]
-        update_existing_dois(interactive, dry_run)
+        mint_parent_codebases(interactive, dry_run)

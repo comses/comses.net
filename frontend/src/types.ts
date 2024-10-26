@@ -149,7 +149,6 @@ export interface Contributor {
   affiliations: any[];
   jsonAffiliations: any[];
   primaryAffiliationName: string;
-  primaryJsonAffiliationName: string;
   email: string;
   id: number;
   name: string;
@@ -172,7 +171,6 @@ export interface RelatedMemberProfile {
   email: string;
   profileUrl: string;
   primaryAffiliationName?: string;
-  primaryJsonAffiliationName?: string;
   tags: Tag[];
   username: string;
 }

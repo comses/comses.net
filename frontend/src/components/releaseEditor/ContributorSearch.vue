@@ -98,8 +98,8 @@ function contributorEmail(contributor: Contributor) {
 
 function contributorAffiliation(contributor: Contributor) {
   let affiliation = "";
-  if (contributor.primaryJsonAffiliationName) {
-    affiliation = contributor.primaryJsonAffiliationName || "";
+  if (contributor.primaryAffiliationName) {
+    affiliation = contributor.primaryAffiliationName || "";
   } else if (contributor.user) {
     affiliation = contributor.user.memberProfile.primaryAffiliationName || "";
   }

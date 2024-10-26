@@ -1,122 +1,180 @@
 import logging
 
-from django.conf import settings
-from django.utils.crypto import get_random_string
 
-from .base import ReleaseSetup
 from core.tests.base import BaseModelTestCase
+from .base import ReleaseSetup
+from ..doi import DataCiteApi
 from ..models import Codebase
-from library.doi import DataCiteApi
 
 logger = logging.getLogger(__name__)
-
-"""
-The skelton python tests here need much more work but should pass successfully.
-See
-https://docs.google.com/document/d/19-FdJcLdNYpMW4rgc85EzBq1xuI3HqZ3PVagJ-1nXlM/edit#heading=h.73fadsz9a3mr
-for the overall goal.
-"""
 
 
 class DataCiteApiTest(BaseModelTestCase):
     """
-    Create a codebase with an initial release
+    Should exercise the DataCiteApi but currently can't test full integration with datacite sandbox.
+    Would also continue to "pollute" our sandbox repository on every test run.
+
+    FIXME: add better tests over is_metadata_equivalent with actual datacite metadata + responses
     """
 
     def setUp(self):
         super().setUp()
 
-        self.dc = DataCiteApi(dry_run=False)
-
-        # determine current server's datacite prefix
-        env = settings.DEPLOY_ENVIRONMENT
-        self.DATACITE_PREFIX = (
-            "10.82853" if env.is_development or env.is_staging else "10.25937"
-        )
+        self.api = DataCiteApi(dry_run=False)
 
         # create a codebase (which do NOT automatically create a required release)
-        self.cb = Codebase.objects.create(
-            title="Test codebase and releases to Datacite",
+        self.codebase = Codebase.objects.create(
+            title="Test codebase with releases for DataCite",
             description="Test codebase description",
-            identifier="cb",
+            identifier="test.cb.101",
             submitter=self.user,
         )
-
-        """
-        allowed_chars = string.ascii_lowercase + string.digits
-        # create 3 releases with fake DOIs to test the parent/child/sibling
-        for i in [1, 2, 3]:
-            r = self.cb.create_release()
-            r.doi = (
-                self.DATACITE_PREFIX + "/test-" + get_random_string(4, allowed_chars)
-            )
-            r.save()
-        """
-        self.create_release_ready_to_mint_doi()
+        self.release = ReleaseSetup.setUpPublishableDraftRelease(self.codebase)
+        self.release.publish()
 
     """
-    FIXME: when the issue with the creators metadata is solved, then this
-    function needs to be completed.  See
-    https://docs.google.com/document/d/19-FdJcLdNYpMW4rgc85EzBq1xuI3HqZ3PVagJ-1nXlM/edit#heading=h.qu5a82ym9f0r
-    for description of the problem with creators metadata
-    """
+    FIXME: DataCite test repository does not allow localhost urls so minting DOIs won't work
+    unless we mock out the permanent_url to a non-localhost value in test settings
 
     def test_mint_new_doi_for_codebase(self):
-        self.assertTrue(self.dc.is_datacite_available())
-        self.assertEqual(self.DATACITE_PREFIX, settings.DATACITE_PREFIX)
-        """
-        reply = self.dc.mint_public_doi(self.cb)
-        self.assertContains(reply, self.DATACITE_PREFIX + "/")
-        self.assertTrue(doi_matches_pattern(reply))
-        self.cb.doi = reply
-        self.cb.save()
-        """
-
-    """
-    Test by updating codebase title
-    """
+        self.assertTrue(self.api.is_datacite_available())
+        # verify datacite prefix logic ?
+        # self.assertEqual(self.DATACITE_PREFIX, settings.DATACITE_PREFIX)
 
     def test_update_metadata_for_codebase(self):
-        self.assertTrue(self.dc.is_datacite_available())
-        self.assertEqual(self.DATACITE_PREFIX, settings.DATACITE_PREFIX)
-        self.cb.title = self.cb.title + " (updated)"
+        self.assertTrue(self.api.is_datacite_available())
+        self.codebase.title = self.codebase.title + " (updated)"
         # self.assertTrue(self.dc.update_doi_metadata(self.cb))
 
     def test_mint_new_doi_for_release(self):
-        self.assertTrue(self.dc.is_datacite_available())
-        self.assertEqual(self.DATACITE_PREFIX, settings.DATACITE_PREFIX)
-        release = self.cb.releases.first()
-        """
-        reply = self.dc.mint_public_doi(release)
-        self.assertContains(reply, self.DATACITE_PREFIX + "/")
-        self.assertTrue(doi_matches_pattern(reply))
-        release.doi = reply
-        release.save()
-        """
-
-    """
-    Note updating the title will update title for codebase and all releases;
-    so instead we'll update the release note field for the first release
-    """
+        self.assertTrue(self.api.is_datacite_available())
+        release = self.codebase.releases.first()
+        doi, status_code = self.api.mint_public_doi(release)
+        self.assertEquals(status_code, 200, "should have successfully minted a DOI")
+        self.assertTrue(self.api.doi_matches_pattern(doi))
 
     def test_update_metadata_for_release(self):
-        self.assertTrue(self.dc.is_datacite_available())
-        self.assertEqual(self.DATACITE_PREFIX, settings.DATACITE_PREFIX)
-        release = self.cb.releases.first()
+        self.assertTrue(self.api.is_datacite_available())
+        release = self.codebase.releases.first()
         release.release_notes.raw += " (updated)"
-        # self.assertTrue(self.dc.update_doi_metadata(release))
+        # FIXME: won't work until we mock out the permanent_url to a non-localhost value in test settings
+        # self.assertTrue(self.api.update_doi_metadata(release))
+    """
 
-    def create_release_ready_to_mint_doi(self):
-        """
-        following copied from test_models.py but doesn't seem to work here...
-        the creators metadata ends up either being empty or 2 test_users...
-        not sure if that's the cause of the problem but _validate_metadata()
-        fails...
-        """
-        release = ReleaseSetup.setUpPublishableDraftRelease(self.cb)
+    def test_is_metadata_equivalent_publication_year(self):
+        comses_metadata = {
+            "title": "Sample Title",
+            "publicationYear": "2023",
+            "creators": [{"name": "John Doe"}],
+        }
+        datacite_metadata = {
+            "title": "Sample Title",
+            "publicationYear": 2023,
+            "creators": [{"name": "John Doe"}],
+        }
+        self.assertTrue(
+            DataCiteApi.is_metadata_equivalent(comses_metadata, datacite_metadata)
+        )
 
-        # publish() will call validate_publishable() so don't need to call here
-        # release.validate_publishable()
-        release.publish()
-        # release.save()
-        return release
+    def test_is_metadata_equivalent_different_title(self):
+        comses_metadata = {
+            "title": "Sample Title",
+            "publicationYear": "2023",
+            "creators": [{"name": "John Doe"}],
+        }
+        datacite_metadata = {
+            "title": "Different Title",
+            "publicationYear": 2023,
+            "creators": [{"name": "John Doe"}],
+        }
+        self.assertFalse(
+            DataCiteApi.is_metadata_equivalent(comses_metadata, datacite_metadata)
+        )
+
+    def test_is_metadata_equivalent_missing_keys(self):
+        comses_metadata = {
+            "title": "Sample Title",
+            "publicationYear": "2023",
+            "creators": [{"name": "John Doe"}],
+        }
+        datacite_metadata = {
+            "title": "Sample Title",
+            "creators": [{"name": "John Doe"}],
+        }
+        self.assertFalse(
+            DataCiteApi.is_metadata_equivalent(comses_metadata, datacite_metadata)
+        )
+
+    def test_is_same_metadata_empty_values(self):
+        comses_metadata = {
+            "title": "Sample Title",
+            "publicationYear": None,
+            "creators": [{"name": "John Doe"}],
+        }
+        dc_metadata = {
+            "title": "Sample Title",
+            "publicationYear": 0,
+            "creators": [{"name": "John Doe"}],
+        }
+        self.assertTrue(
+            DataCiteApi.is_metadata_equivalent(comses_metadata, dc_metadata)
+        )
+
+    def test_is_metadata_equivalent_nested_dict(self):
+        sent_data = {
+            "title": "Sample Title",
+            "publicationYear": "2023",
+            "creators": [
+                {
+                    "name": "John Doe",
+                    "affiliation": {
+                        "ror_id": "https://ror.org/12345",
+                        "name": "University of Earth",
+                    },
+                }
+            ],
+        }
+        received_data = {
+            "title": "Sample Title",
+            "publicationYear": 2023,
+            "creators": [
+                {
+                    "name": "John Doe",
+                    "affiliation": {
+                        "ror_id": "https://ror.org/12345",
+                        "name": "University of Earth",
+                    },
+                }
+            ],
+        }
+        self.assertTrue(DataCiteApi.is_metadata_equivalent(sent_data, received_data))
+
+    def test_is_metadata_equivalent_list_ordering(self):
+        comses_metadata = {
+            "title": "Sample Title",
+            "publicationYear": "2023",
+            "creators": [{"name": "John Doe"}, {"name": "Jane Doe"}],
+        }
+        dc_metadata = {
+            "title": "Sample Title",
+            "publicationYear": 2023,
+            "creators": [{"name": "Jane Doe"}, {"name": "John Doe"}],
+        }
+        self.assertTrue(
+            DataCiteApi.is_metadata_equivalent(comses_metadata, dc_metadata)
+        )
+
+    def test_is_same_metadata_different_nested_list(self):
+        comses_metadata = {
+            "title": "Sample Title",
+            "publicationYear": "2023",
+            "creators": [{"name": "John Doe"}, {"name": "Jane Doe"}],
+        }
+        dc_metadata = {
+            "title": "Sample Title",
+            "publicationYear": 2023,
+            "creators": [{"name": "John Doe"}, {"name": "Jane Smith"}],
+        }
+        self.assertFalse(
+            DataCiteApi.is_metadata_equivalent(comses_metadata, dc_metadata)
+        )
