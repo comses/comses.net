@@ -48,9 +48,9 @@
 import { ref, onMounted, computed } from "vue";
 import { useReviewEditorAPI } from "@/composables/api";
 import BootstrapModal from "@/components/BootstrapModal.vue";
-import ReviewerCard from "./ReviewerCard.vue";
+import ReviewerCard from "@/components/ReviewerCard.vue";
 import ReviewerEditForm from "@/components/ReviewerEditForm.vue";
-import ReviewersListSidebar from "./ReviewersListSidebar.vue";
+import ReviewersListSidebar from "@/components/ReviewersListSidebar.vue";
 import type { Reviewer, ReviewerFilterParams } from "@/types";
 
 const allReviewers = ref<Reviewer[]>([]);

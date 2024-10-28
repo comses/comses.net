@@ -199,20 +199,21 @@ class PeerReviewerPermission(permissions.BasePermission):
     def has_permission(self, request, view):
         if request.user.has_perm("library.change_peerreview"):
             return True
-        if view.action == "create":
-            user_member_profile_id = request.user.member_profile.id
-            request_member_profile_id = request.data.get("member_profile_id")
-            if user_member_profile_id == request_member_profile_id:
-                return True
-        raise DrfPermissionDenied
+        if view.action == "create" and not self._is_creating_self_reviewer(request):
+            raise DrfPermissionDenied
+        return True  # drop through to object permission check
 
     def has_object_permission(self, request, view, obj: PeerReviewer):
         if request.user.has_perm("library.change_peerreview"):
             return True
-        user_member_profile_id = request.user.member_profile.id
-        if user_member_profile_id == obj.member_profile_id:
+        if obj.member_profile_id == request.user.member_profile.id:
             return True
         raise DrfPermissionDenied
+
+    def _is_creating_self_reviewer(self, request):
+        user_member_profile_id = request.user.member_profile.id
+        request_member_profile_id = request.data.get("member_profile_id")
+        return user_member_profile_id == request_member_profile_id
 
 
 class PeerReviewerViewSet(CommonViewSetMixin, NoDeleteViewSet):

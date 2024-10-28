@@ -65,7 +65,7 @@
 <script setup lang="ts">
 import { ref } from "vue";
 import BootstrapModal from "@/components/BootstrapModal.vue";
-import ReviewerCard from "./ReviewerCard.vue";
+import ReviewerCard from "@/components/ReviewerCard.vue";
 import ReviewerEditForm from "@/components/ReviewerEditForm.vue";
 import type { Reviewer } from "@/types";
 

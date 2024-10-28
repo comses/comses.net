@@ -2,7 +2,11 @@
   <div class="card mb-3">
     <div class="card-header d-flex justify-content-between align-items-center">
       <h5 class="card-title mb-0">
-        {{ reviewer.memberProfile.name }} ({{ reviewer.memberProfile.username }})
+        {{ reviewer.memberProfile.name }}
+        (<a :href="reviewer.memberProfile.profileUrl" target="_blank">{{
+          reviewer.memberProfile.username
+        }}</a
+        >)
       </h5>
       <span>
         <a v-if="reviewer.isActive" class="btn btn-link" @click="emit('edit')">
