@@ -68,7 +68,7 @@ onMounted(async () => {
 
 async function retrieveReviewers() {
   const response = await findReviewers({});
-  allReviewers.value = response.data.results;
+  allReviewers.value = response.data;
   applyFilters();
 }
 

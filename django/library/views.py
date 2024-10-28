@@ -217,6 +217,7 @@ class PeerReviewerPermission(permissions.BasePermission):
 
 class PeerReviewerViewSet(CommonViewSetMixin, NoDeleteViewSet):
     queryset = PeerReviewer.objects.all().order_by("member_profile__user__last_name")
+    pagination_class = None
     serializer_class = PeerReviewerSerializer
     permission_classes = (PeerReviewerPermission,)
     filter_backends = (PeerReviewerFilter,)

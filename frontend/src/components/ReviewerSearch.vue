@@ -147,7 +147,7 @@ const fetchMatchingReviewers = useDebounceFn(async (query: string) => {
   isLoading.value = true;
   try {
     const response = await findReviewers({ query });
-    matchingReviewers.value = response.data.results;
+    matchingReviewers.value = response.data;
   } catch (e) {
     // no-op
   } finally {
