@@ -30,6 +30,7 @@ from core.serializers import (
     RelatedUserSerializer,
 )
 from .models import (
+    PeerReviewer,
     ReleaseContributor,
     Codebase,
     CodebaseRelease,
@@ -686,7 +687,7 @@ class PeerReviewFeedbackEditorSerializer(serializers.ModelSerializer):
         return instance.invitation.review.get_status_display()
 
     def get_reviewer_name(self, instance):
-        return instance.invitation.candidate_reviewer.name
+        return instance.invitation.reviewer.member_profile.name
 
     class Meta:
         model = PeerReviewerFeedback
@@ -709,13 +710,49 @@ class PeerReviewFeedbackEditorSerializer(serializers.ModelSerializer):
         )
 
 
+class PeerReviewerSerializer(serializers.ModelSerializer):
+    member_profile_id = serializers.PrimaryKeyRelatedField(
+        queryset=MemberProfile.objects.all(),
+        source="member_profile",
+    )
+    member_profile = RelatedMemberProfileSerializer(read_only=True)
+    date_created = serializers.DateTimeField(
+        format=DATE_PUBLISHED_FORMAT, read_only=True
+    )
+
+    def create(self, validated_data):
+        member_profile = validated_data.pop("member_profile")
+        instance, created = PeerReviewer.objects.get_or_create(
+            member_profile=member_profile
+        )
+        # assuming we want to override the existing instance with the new data
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        instance.is_active = True
+        instance.save()
+        return instance
+
+    class Meta:
+        model = PeerReviewer
+        fields = (
+            "id",
+            "member_profile",
+            "member_profile_id",
+            "date_created",
+            "is_active",
+            "programming_languages",
+            "subject_areas",
+            "notes",
+        )
+
+
 class PeerReviewInvitationSerializer(serializers.ModelSerializer):
     """Serialize review invitations. Build for list, detail and create routes
     (updating a peer review invitation may not make sense since an email has
     already been sent)"""
 
     url = serializers.ReadOnlyField(source="get_absolute_url")
-    candidate_reviewer = RelatedMemberProfileSerializer(read_only=True)
+    reviewer = PeerReviewerSerializer(read_only=True)
     expiration_date = serializers.SerializerMethodField()
 
     def get_expiration_date(self, obj):

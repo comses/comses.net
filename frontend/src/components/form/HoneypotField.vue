@@ -4,7 +4,7 @@
       <FieldLabel label="Content" :id-for="id" required aria-hidden="true" />
     </slot>
     <textarea
-      v-model="value"
+      v-model="text"
       :rows="10"
       :id="id"
       v-bind="attrs"
@@ -44,5 +44,5 @@ const props = withDefaults(defineProps<HoneypotFieldProps>(), {
   show: false,
 });
 
-const { id, value, attrs, error } = useField<string>(props, "name");
+const { id, value: text, attrs, error } = useField<string>(props, "name");
 </script>

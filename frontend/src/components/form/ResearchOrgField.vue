@@ -6,7 +6,7 @@
     <FormPlaceholder v-if="showPlaceholder" />
     <VueMultiSelect
       v-else
-      v-model="value"
+      v-model="organization"
       :id="id"
       v-bind="attrs"
       :multiple="false"
@@ -25,13 +25,13 @@
       @select="handleSelect"
       :class="{ 'is-invalid': error }"
     >
-      <template #clear v-if="value">
+      <template #clear v-if="organization">
         <div class="multiselect__clear">
-          <span @mousedown.prevent.stop="value = null">&times;</span>
+          <span @mousedown.prevent.stop="organization = null">&times;</span>
         </div>
       </template>
       <template #caret="{ toggle }">
-        <div :class="{ 'multiselect__search-toggle': true, 'd-none': !!value }">
+        <div :class="{ 'multiselect__search-toggle': true, 'd-none': !!organization }">
           <i class="fas fa-search" @mousedown.prevent.stop="toggle" />
         </div>
       </template>
@@ -92,7 +92,7 @@ const props = withDefaults(defineProps<ResearchOrgFieldProps>(), {
 });
 const emit = defineEmits(["select"]);
 
-const { id, value, attrs, error } = useField<Organization | null>(props, "name");
+const { id, value: organization, attrs, error } = useField<Organization | null>(props, "name");
 
 const showPlaceholder = inject("showPlaceholder", false);
 
@@ -104,7 +104,7 @@ const { serverErrors, search } = useRORAPI();
 function handleSelect(event: Event) {
   emit("select", event);
   if (props.clearOnSelect) {
-    value.value = null;
+    organization.value = null;
   }
 }
 

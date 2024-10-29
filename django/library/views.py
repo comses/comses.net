@@ -61,6 +61,7 @@ from .models import (
     CodebaseImage,
     License,
     PeerReview,
+    PeerReviewer,
     PeerReviewerFeedback,
     PeerReviewInvitation,
     ReviewStatus,
@@ -71,6 +72,7 @@ from .serializers import (
     CodebaseReleaseSerializer,
     ContributorSerializer,
     DownloadRequestSerializer,
+    PeerReviewerSerializer,
     ReleaseContributorSerializer,
     CodebaseReleaseEditSerializer,
     CodebaseImageSerializer,
@@ -172,14 +174,54 @@ class PeerReviewChangeClosedView(PermissionRequiredMixin, DetailView):
         return redirect(request.META.get("HTTP_REFERER", ""))
 
 
-class PeerReviewReviewerListView(mixins.ListModelMixin, viewsets.GenericViewSet):
-    queryset = MemberProfile.objects.all()
-    serializer_class = RelatedMemberProfileSerializer
+class ChangePeerReviewPermission(permissions.BasePermission):
+    def has_permission(self, request, view):
+        if request.user.has_perm("library.change_peerreview"):
+            return True
+        raise DrfPermissionDenied
 
-    def get_queryset(self):
-        query = self.request.query_params.get("query", "")
-        results = PeerReview.objects.find_candidate_reviewers(query)
-        return results
+
+class PeerReviewerDashboardView(PermissionRequiredMixin, ListView):
+    template_name = "library/review/reviewers.jinja"
+    model = PeerReviewer
+    permission_required = "library.change_peerreview"
+
+
+class PeerReviewerFilter(filters.BaseFilterBackend):
+    def filter_queryset(self, request, queryset, view):
+        query = request.query_params.get("query", None)
+        if query is None:
+            return queryset
+        return get_search_queryset(query, queryset)
+
+
+class PeerReviewerPermission(permissions.BasePermission):
+    def has_permission(self, request, view):
+        if request.user.has_perm("library.change_peerreview"):
+            return True
+        if view.action == "create" and not self._is_creating_self_reviewer(request):
+            raise DrfPermissionDenied
+        return True  # drop through to object permission check
+
+    def has_object_permission(self, request, view, obj: PeerReviewer):
+        if request.user.has_perm("library.change_peerreview"):
+            return True
+        if obj.member_profile_id == request.user.member_profile.id:
+            return True
+        raise DrfPermissionDenied
+
+    def _is_creating_self_reviewer(self, request):
+        user_member_profile_id = request.user.member_profile.id
+        request_member_profile_id = request.data.get("member_profile_id")
+        return user_member_profile_id == request_member_profile_id
+
+
+class PeerReviewerViewSet(CommonViewSetMixin, NoDeleteViewSet):
+    queryset = PeerReviewer.objects.all().order_by("member_profile__user__last_name")
+    pagination_class = None
+    serializer_class = PeerReviewerSerializer
+    permission_classes = (PeerReviewerPermission,)
+    filter_backends = (PeerReviewerFilter,)
 
 
 @api_view(["PUT"])
@@ -200,16 +242,9 @@ def _change_peer_review_status(request):
     return Response(data={"status": new_status.name}, status=status.HTTP_200_OK)
 
 
-class NestedPeerReviewInvitation(permissions.BasePermission):
-    def has_permission(self, request, view):
-        if request.user.has_perm("library.change_peerreview"):
-            return True
-        raise DrfPermissionDenied
-
-
 class PeerReviewInvitationViewSet(NoDeleteNoUpdateViewSet):
     queryset = PeerReviewInvitation.objects.with_reviewer_statistics()
-    permission_classes = (NestedPeerReviewInvitation,)
+    permission_classes = (ChangePeerReviewPermission,)
     serializer_class = PeerReviewInvitationSerializer
     lookup_url_kwarg = "invitation_slug"
 
@@ -222,15 +257,14 @@ class PeerReviewInvitationViewSet(NoDeleteNoUpdateViewSet):
     def send_invitation(self, request, slug):
         data = request.data
         candidate_reviewer_id = data.get("id")
-        candidate_email = data.get("email")
+        member_profile_id = data.get("member_profile")["id"]
         review = get_object_or_404(PeerReview, slug=slug)
         form_data = dict(review=review.id, editor=request.user.member_profile.id)
         if candidate_reviewer_id is not None:
-            form_data["candidate_reviewer"] = candidate_reviewer_id
-        elif candidate_email is not None:
-            form_data["candidate_email"] = candidate_email
+            form_data["candidate_reviewer"] = member_profile_id
+            form_data["reviewer"] = candidate_reviewer_id
         else:
-            raise ValidationError("Must have either id or email fields")
+            raise ValidationError("Must specify id of candidate reviewer")
         form = PeerReviewInvitationForm(data=form_data)
         if form.is_valid():
             invitation = form.save()
@@ -311,7 +345,7 @@ class PeerReviewFeedbackUpdateView(UpdateView):
                     "CoMSES Net reviewer!"
                 ),
             )
-            return self.object.invitation.candidate_reviewer.get_absolute_url()
+            return self.object.invitation.reviewer.member_profile.get_absolute_url()
         else:
             messages.info(
                 self.request,

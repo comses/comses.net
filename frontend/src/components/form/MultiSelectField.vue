@@ -6,7 +6,7 @@
     <FormPlaceholder v-if="showPlaceholder" />
     <VueMultiSelect
       v-else
-      v-model="value"
+      v-model="selected"
       :id="id"
       v-bind="attrs"
       :multiple="multiple"
@@ -21,9 +21,9 @@
       :custom-label="customLabel"
       :class="{ 'is-invalid': error }"
     >
-      <template #clear v-if="multiple && value?.length">
+      <template #clear v-if="multiple && selected?.length">
         <div class="multiselect__clear">
-          <span @mousedown.prevent.stop="value = []">&times;</span>
+          <span @mousedown.prevent.stop="selected = []">&times;</span>
         </div>
       </template>
       <template #option="{ option }">
@@ -32,7 +32,7 @@
         </slot>
       </template>
       <template #caret>
-        <div :class="{ multiselect__select: true, 'd-none': value?.length }"></div>
+        <div :class="{ multiselect__select: true, 'd-none': selected?.length }"></div>
       </template>
     </VueMultiSelect>
     <slot name="help">
@@ -73,7 +73,7 @@ const props = withDefaults(defineProps<MultiSelectFieldProps>(), {
   labelWith: "label",
 });
 
-const { id, value, attrs, error } = useField<string | any[]>(props, "name");
+const { id, value: selected, attrs, error } = useField<string | any[]>(props, "name");
 
 const showPlaceholder = inject("showPlaceholder", false);
 </script>

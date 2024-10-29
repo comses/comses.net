@@ -52,6 +52,7 @@ export default defineConfig({
         release_regenerate_share_uuid: resolvePath("./src/apps/release_regenerate_share_uuid.ts"),
         review_editor: resolvePath("./src/apps/review_editor.ts"),
         review_reminders: resolvePath("./src/apps/review_reminders.ts"),
+        reviewer_list: resolvePath("./src/apps/reviewer_list.ts"),
       },
     },
   },

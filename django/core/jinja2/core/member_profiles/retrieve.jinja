@@ -158,8 +158,7 @@
                     <p class='lead p-3'>
                     You haven't been invited to review other CoMSES member's models yet. If you would like to be added
                     to the pool of CoMSES Computational Model Library 
-                    <a href='{{url("library:peer-review-overview")}}'>Peer Reviewers</a> please 
-                    <a href='{{slugurl("contact")}}'>let us know</a>.
+                    <a href='{{url("library:peer-review-overview")}}'>Peer Reviewers</a> please visit your <a href='{{ profile.get_edit_url() }}'>profile edit page</a> and create a peer reviewer profile.
                     </p>
                 {% endif %}
             </div>

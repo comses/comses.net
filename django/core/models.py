@@ -42,7 +42,6 @@ class ComsesGroups(Enum):
     MODERATOR = "Moderators"
     EDITOR = "Editors"
     FULL_MEMBER = "Full Members"
-    REVIEWER = "Reviewers"
 
     @staticmethod
     @transaction.atomic
@@ -437,6 +436,10 @@ class MemberProfile(index.Indexed, ClusterableModel):
     def is_active(self):
         return self.user.is_active
 
+    @property
+    def is_reviewer(self):
+        return hasattr(self, "peer_reviewer")
+
     # Urls
     @property
     def orcid_url(self):
@@ -509,10 +512,6 @@ class MemberProfile(index.Indexed, ClusterableModel):
     @property
     def submitter(self):
         return self.user
-
-    @cached_property
-    def is_reviewer(self):
-        return ComsesGroups.REVIEWER.is_member(self.user)
 
     @cached_property
     def name(self):

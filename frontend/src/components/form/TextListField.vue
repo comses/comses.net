@@ -18,7 +18,7 @@
         <small>Press enter to add</small>
       </button>
     </div>
-    <Sortable :list="value" :item-key="item => item" @end="sort($event)">
+    <Sortable :list="items" :item-key="item => item" @end="sort($event)">
       <template #item="{ element, index }">
         <div :key="element" class="my-1 input-group">
           <span class="input-group-text bg-white text-gray" title="Drag entries to sort">
@@ -46,7 +46,7 @@
 </template>
 
 <script setup lang="ts">
-import { inject, ref, onMounted } from "vue";
+import { inject, ref } from "vue";
 import { Sortable } from "sortablejs-vue3";
 import type { SortableEvent } from "sortablejs";
 import { useField } from "@/composables/form";
@@ -66,35 +66,29 @@ export interface TextListFieldProps {
 
 const props = defineProps<TextListFieldProps>();
 
-onMounted(() => {
-  if (!value.value) {
-    // force initialize to empty array
-    value.value = [];
-  }
-});
-
 function create() {
-  if (candidateItem.value && !value.value.includes(candidateItem.value)) {
-    value.value.push(candidateItem.value);
+  if (!items.value) items.value = [];
+  if (candidateItem.value && !items.value.includes(candidateItem.value)) {
+    items.value.push(candidateItem.value);
     candidateItem.value = "";
   }
 }
 
 function remove(index: number) {
-  value.value.splice(index, 1);
+  items.value.splice(index, 1);
 }
 
 function sort(event: SortableEvent) {
   const { newIndex, oldIndex } = event;
   if (newIndex !== undefined && oldIndex !== undefined) {
-    const item = value.value.splice(oldIndex, 1)[0];
-    value.value.splice(newIndex, 0, item);
+    const item = items.value.splice(oldIndex, 1)[0];
+    items.value.splice(newIndex, 0, item);
   }
 }
 
 const candidateItem = ref("");
 
-const { id, value, attrs, error } = useField<string[]>(props, "name");
+const { id, value: items, attrs, error } = useField<string[]>(props, "name");
 
 const showPlaceholder = inject("showPlaceholder", false);
 </script>

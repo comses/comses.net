@@ -144,6 +144,9 @@ class MemberProfileSerializer(serializers.ModelSerializer):
     profile_url = serializers.URLField(source="get_absolute_url", read_only=True)
     bio = MarkdownField()
     research_interests = MarkdownField()
+    peer_reviewer_id = serializers.IntegerField(
+        source="peer_reviewer.id", read_only=True, allow_null=True, default=None
+    )
 
     def validate_affiliations(self, value):
         return validate_affiliations(value)
@@ -240,6 +243,7 @@ class MemberProfileSerializer(serializers.ModelSerializer):
         model = MemberProfile
         fields = (
             # User
+            "id",
             "date_joined",
             "family_name",
             "given_name",
@@ -261,12 +265,12 @@ class MemberProfileSerializer(serializers.ModelSerializer):
             "orcid_url",
             "github_url",
             "personal_url",
-            "is_reviewer",
             "professional_url",
             "profile_url",
             "research_interests",
             "affiliations",
             "name",
+            "peer_reviewer_id",
         )
 
 
