@@ -531,7 +531,7 @@ class CodebaseReleaseFsApi:
         path = self.codemeta_path
         if force or not path.exists():
             with path.open(mode="w", encoding="utf-8") as codemeta_out:
-                json.dump(self.codemeta.to_dict(), codemeta_out)
+                json.dump(self.codemeta.to_dict(), codemeta_out, indent=4)
             return True
         return False
 

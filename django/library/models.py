@@ -2941,17 +2941,9 @@ class CodeMetaSchema:
         return target_product
 
     def to_json(self, **kwargs):
-        """
-        Convert the metadata of the object to a JSON string.
-
-        Args:
-            **kwargs: Additional keyword arguments to be passed to the json.dumps() function.
-
-        Returns:
-            str: A JSON string representation of the metadata.
-
-        """
-        return json.dumps(self.metadata, **kwargs)
+        """Returns a JSON string of this codemeta data"""
+        # FIXME: should ideally validate metadata as well
+        return json.dumps(self.metadata, indent=4, **kwargs)
 
     def to_dict(self):
         return self.metadata.copy()
