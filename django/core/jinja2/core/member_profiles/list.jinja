@@ -23,7 +23,7 @@ search_tag_href, search_bar, render_ogp_tags %}
                 {% if member_profile.full_member %}
                 <span class="badge bg-success">Full Member</span>
                 {% endif %}
-                {% if member_profile.peer_reviewer_id is not none %}
+                {% if member_profile.is_reviewer %}
                 <span class="badge bg-success">Reviewer</span>
                 {% endif %}
             </small>

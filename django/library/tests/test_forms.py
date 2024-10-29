@@ -12,7 +12,9 @@ class PeerReviewerFeedbackFormTestCase(ReviewSetup, TestCase):
 
     def test_cannot_recommend_if_code_is_not_clean(self):
         invitation = self.review.invitation_set.create(
-            editor=self.editor, candidate_reviewer=self.reviewer.member_profile, reviewer=self.reviewer
+            editor=self.editor,
+            candidate_reviewer=self.reviewer.member_profile,
+            reviewer=self.reviewer,
         )
         feedback = invitation.latest_feedback
 

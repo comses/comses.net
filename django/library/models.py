@@ -2177,6 +2177,12 @@ class PeerReviewer(index.Indexed, models.Model):
         ),
     ]
 
+    def get_active_label(self):
+        return "Active" if self.is_active else "Inactive"
+
+    def __str__(self):
+        return f"{self.member_profile} ({self.get_active_label()}) Languages: {self.programming_languages} Subject areas: {self.subject_areas}"
+
 
 class PeerReviewInvitationQuerySet(models.QuerySet):
     def accepted(self, **kwargs):

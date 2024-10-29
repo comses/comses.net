@@ -436,6 +436,10 @@ class MemberProfile(index.Indexed, ClusterableModel):
     def is_active(self):
         return self.user.is_active
 
+    @property
+    def is_reviewer(self):
+        return hasattr(self, "peer_reviewer")
+
     # Urls
     @property
     def orcid_url(self):

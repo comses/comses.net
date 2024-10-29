@@ -215,7 +215,7 @@
                 {% else %}
                     <span class="badge bg-primary">Basic Member</span>
                 {% endif %}
-                {% if profile.peer_reviewer_id is not none %}
+                {% if profile.is_reviewer %}
                     <span class="badge bg-success">Reviewer</span>
                 {% endif %}
             </p>
