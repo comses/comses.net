@@ -6,7 +6,7 @@
     <FormPlaceholder v-if="showPlaceholder" :rows="rows" />
     <textarea
       v-else
-      v-model="value"
+      v-model="text"
       :rows="rows"
       :id="id"
       v-bind="attrs"
@@ -50,7 +50,7 @@ const props = withDefaults(defineProps<MarkdownFieldProps>(), {
   rows: 10,
 });
 
-const { id, value, attrs, error } = useField<string>(props, "name");
+const { id, value: text, attrs, error } = useField<string>(props, "name");
 
 const showPlaceholder = inject("showPlaceholder", false);
 </script>

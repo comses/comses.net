@@ -6,7 +6,7 @@
     <FormPlaceholder v-if="showPlaceholder" />
     <input
       v-else
-      v-model="value"
+      v-model="text"
       :type="type"
       :id="id"
       :placeholder="placeholder"
@@ -48,7 +48,7 @@ const props = withDefaults(defineProps<TextFieldProps>(), {
   type: "text",
 });
 
-const { id, value, attrs, error } = useField<string>(props, "name");
+const { id, value: text, attrs, error } = useField<string>(props, "name");
 
 const showPlaceholder = inject("showPlaceholder", false);
 </script>

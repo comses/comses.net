@@ -12,12 +12,12 @@
       :class="{ 'form-select': true, 'is-invalid': error }"
       @change="updateValue"
     >
-      <option v-if="!value" disabled :value="null" selected>{{ placeholder ?? "" }}</option>
+      <option v-if="!selected" disabled :value="null" selected>{{ placeholder ?? "" }}</option>
       <option
         v-for="option in options"
         :key="option.value"
         :value="option.value"
-        :selected="option.value === value"
+        :selected="option.value === selected"
       >
         {{ option.label }}
       </option>
@@ -52,13 +52,13 @@ export interface SelectFieldProps {
 
 const props = defineProps<SelectFieldProps>();
 
-const { id, value, attrs, error } = useField<any>(props, "name");
+const { id, value: selected, attrs, error } = useField<any>(props, "name");
 
 const showPlaceholder = inject("showPlaceholder", false);
 
 function updateValue(event: Event) {
   const target = event.target as HTMLSelectElement;
-  value.value = target.value;
+  selected.value = target.value;
   attrs.value.onInput();
 }
 </script>

@@ -1,5 +1,5 @@
 import { loginBeforeEach } from "../support/setup";
-import { getDataCy } from "../support/util";
+import { getDataCy, selectNextMonthDate } from "../support/util";
 import "cypress-file-upload";
 
 describe("Visit jobs page", () => {
@@ -21,8 +21,7 @@ describe("Visit jobs page", () => {
       getDataCy("job-description").type(job.description);
       getDataCy("job-summary").type(job.summary);
       getDataCy("external-url").type(job["external-url"]);
-      getDataCy("application-deadline").first().click();
-      getDataCy("application-deadline").contains(job["application-deadline"]).click();
+      selectNextMonthDate(getDataCy("application-deadline"), job["application-deadline"]);
       getDataCy("create-button").click();
       cy.wait(2000);
     });

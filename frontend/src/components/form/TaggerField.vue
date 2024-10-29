@@ -6,7 +6,7 @@
     <FormPlaceholder v-if="showPlaceholder" />
     <VueMultiSelect
       v-else
-      v-model="value"
+      v-model="tags"
       :id="id"
       v-bind="attrs"
       :multiple="true"
@@ -27,13 +27,13 @@
       @select="attrs.onInput()"
       :class="{ 'is-invalid': error }"
     >
-      <template #clear v-if="value?.length">
+      <template #clear v-if="tags?.length">
         <div class="multiselect__clear">
-          <span @mousedown.prevent.stop="value = []">&times;</span>
+          <span @mousedown.prevent.stop="tags = []">&times;</span>
         </div>
       </template>
       <template #caret="{ toggle }">
-        <div :class="{ 'multiselect__search-toggle': true, 'd-none': value?.length }">
+        <div :class="{ 'multiselect__search-toggle': true, 'd-none': tags?.length }">
           <i class="fas fa-search" @mousedown.prevent.stop="toggle" />
         </div>
       </template>
@@ -74,7 +74,7 @@ const props = withDefaults(defineProps<TaggerFieldProps>(), {
   placeholder: "Type to add tags",
 });
 
-const { id, value, attrs, error } = useField<Tag[]>(props, "name");
+const { id, value: tags, attrs, error } = useField<Tag[]>(props, "name");
 
 const showPlaceholder = inject("showPlaceholder", false);
 
@@ -91,6 +91,6 @@ async function fetchMatchingTags(query: string) {
 }
 
 async function addTag(name: string) {
-  value.value.push({ name });
+  tags.value.push({ name });
 }
 </script>

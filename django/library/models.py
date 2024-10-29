@@ -2349,6 +2349,7 @@ class PeerReviewInvitation(models.Model):
 
     class Meta:
         unique_together = (("review", "reviewer"),)
+        ordering = ["-date_sent"]
 
 
 @register_snippet

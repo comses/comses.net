@@ -6,7 +6,7 @@
     <FormPlaceholder v-if="showPlaceholder" />
     <VueDatePicker
       v-else
-      v-model="value"
+      v-model="date"
       format="yyyy-MM-dd"
       :id="id"
       v-bind="attrs"
@@ -53,7 +53,7 @@ export interface DatepickerFieldProps {
 
 const props = defineProps<DatepickerFieldProps>();
 
-const { id, value, attrs, error } = useField<Date>(props, "name");
+const { id, value: date, attrs, error } = useField<Date>(props, "name");
 
 const showPlaceholder = inject("showPlaceholder", false);
 </script>

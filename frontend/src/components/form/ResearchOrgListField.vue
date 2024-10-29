@@ -57,7 +57,7 @@
       @select="create"
       :disabled="disabled"
     />
-    <Sortable :list="value" :item-key="item => item" @end="sort($event)">
+    <Sortable :list="organizations" :item-key="item => item" @end="sort($event)">
       <template #item="{ element, index }">
         <div :key="element" class="my-1 input-group">
           <span class="primary-group-button">
@@ -125,15 +125,14 @@ export interface ResearchOrgListFieldProps {
 const props = defineProps<ResearchOrgListFieldProps>();
 const emit = defineEmits(["change"]);
 onMounted(() => {
-  // FIXME: see if we can change `value` to a more meaningful variable name, e.g., `organizations`
-  if (!value.value) {
+  if (!organizations.value) {
     // force initialize to empty array
-    value.value = [];
+    organizations.value = [];
   }
 
   // set givenName in the ContributorEditForm whenever value (selected organization) changes
   watch(
-    () => value,
+    () => organizations,
     () => {
       emit("change");
     },
@@ -184,35 +183,35 @@ function createCustom() {
 
 function create(organization: Organization) {
   // only one organization is allowed if Contributor is Organization
-  if (props.isContributorOrganization && value.value.length > 0) {
-    value.value = [];
-    value.value.push(organization);
+  if (props.isContributorOrganization && organizations.value.length > 0) {
+    organizations.value = [];
+    organizations.value.push(organization);
     return;
   }
 
-  if (!value.value.some(e => e.name === organization.name)) {
-    value.value.push(organization);
+  if (!organizations.value.some(e => e.name === organization.name)) {
+    organizations.value.push(organization);
   }
 }
 
 function remove(index: number) {
-  value.value.splice(index, 1);
+  organizations.value.splice(index, 1);
 }
 
 function sort(event: SortableEvent) {
   const { newIndex, oldIndex } = event;
   if (newIndex !== undefined && oldIndex !== undefined) {
-    const item = value.value.splice(oldIndex, 1)[0];
-    value.value.splice(newIndex, 0, item);
+    const item = organizations.value.splice(oldIndex, 1)[0];
+    organizations.value.splice(newIndex, 0, item);
   }
 }
 
 function sortToTop(index: number) {
-  const item = value.value.splice(index, 1)[0];
-  value.value.splice(0, 0, item);
+  const item = organizations.value.splice(index, 1)[0];
+  organizations.value.splice(0, 0, item);
 }
 
-const { id, value, error } = useField<Organization[]>(props, "name");
+const { id, value: organizations, error } = useField<Organization[]>(props, "name");
 
 const showPlaceholder = inject("showPlaceholder", false);
 </script>

@@ -2,7 +2,7 @@
   <div>
     <div class="form-check">
       <input
-        v-model="value"
+        v-model="checked"
         type="checkbox"
         :id="id"
         v-bind="attrs"
@@ -38,5 +38,5 @@ const props = withDefaults(defineProps<CheckBoxFieldProps>(), {
   help: "",
 });
 
-const { id, value, attrs, error } = useField<boolean>(props, "name");
+const { id, value: checked, attrs, error } = useField<boolean>(props, "name");
 </script>
