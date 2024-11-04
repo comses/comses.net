@@ -191,8 +191,8 @@ class PeerReviewerFilter(filters.BaseFilterBackend):
     def filter_queryset(self, request, queryset, view):
         query = request.query_params.get("query", None)
         if query is None:
-            return queryset
-        return get_search_queryset(query, queryset)
+            return queryset.order_by("member_profile__user__last_name")
+        return get_search_queryset(query, queryset, order_by_relevance=True)
 
 
 class PeerReviewerPermission(permissions.BasePermission):
@@ -217,7 +217,7 @@ class PeerReviewerPermission(permissions.BasePermission):
 
 
 class PeerReviewerViewSet(CommonViewSetMixin, NoDeleteViewSet):
-    queryset = PeerReviewer.objects.all().order_by("member_profile__user__last_name")
+    queryset = PeerReviewer.objects.all()
     pagination_class = None
     serializer_class = PeerReviewerSerializer
     permission_classes = (PeerReviewerPermission,)
