@@ -295,27 +295,37 @@ class SpamCatcherViewSetMixin:
         return redirect(instance.get_list_url())
 
     def handle_spam_detection(self, serializer: serializers.Serializer):
-        if "spam_context" in serializer.context:
-            try:
-                self._validate_content_object(serializer.instance)
-                self._record_spam(
-                    serializer.instance, serializer.context["spam_context"]
-                )
-            except ValueError as e:
-                logger.warning("Cannot flag %s as spam: %s", serializer.instance, e)
+        try:
+            self._validate_content_object(serializer.instance)
+            self._record_spam(
+                serializer.instance,
+                (
+                    serializer.context["spam_context"]
+                    if "spam_context" in serializer.context
+                    else None
+                ),
+            )
+        except ValueError as e:
+            logger.warning("Cannot flag %s as spam: %s", serializer.instance, e)
 
-    def _record_spam(self, instance, spam_context: dict):
+    def _record_spam(self, instance, spam_context: dict = None):
         content_type = ContentType.objects.get_for_model(type(instance))
+
         # SpamModeration updates the content instance on save
         spam_moderation, created = SpamModeration.objects.get_or_create(
             content_type=content_type,
             object_id=instance.id,
             defaults={
-                "status": SpamModeration.Status.UNREVIEWED,
-                "detection_method": spam_context["detection_method"],
-                "detection_details": spam_context["detection_details"],
+                "status": SpamModeration.Status.SCHEDULED_FOR_CHECK,
+                "detection_method": (
+                    spam_context["detection_method"] if spam_context else ""
+                ),
+                "detection_details": (
+                    spam_context["detection_details"] if spam_context else ""
+                ),
             },
         )
+
         if not created:
-            spam_moderation.status = SpamModeration.Status.UNREVIEWED
+            spam_moderation.status = SpamModeration.Status.SCHEDULED_FOR_CHECK
             spam_moderation.save()
