@@ -137,6 +137,9 @@ class SpamModeration(models.Model):
         UNREVIEWED = "unreviewed", _("Unreviewed")
         SPAM = "spam", _("Confirmed spam")
         NOT_SPAM = "not_spam", _("Confirmed not spam")
+        SCHEDULED_FOR_CHECK = "scheduled_for_check", _("Scheduled for check by LLM")
+        SPAM_LIKELY = "spam_likely", _("Marked spam by LLM")
+        NOT_SPAM_LIKELY = "not_spam_likely", _("Marked as not spam by LLM")
 
     status = models.CharField(
         choices=Status.choices,
@@ -166,6 +169,16 @@ class SpamModeration(models.Model):
         blank=True,
     )
 
+    # detection_details is a JSON field
+    def mark_as_spam_by_llm(self, status: Status, detection_details=None):
+        logger.info("Marking %s as %s by LLM", self, status)
+        self.reviewer = None
+        self.status = status
+        self.detection_method = "LLM"
+        if detection_details:
+            self.detection_details = detection_details
+        self.save()
+
     def mark_not_spam(self, reviewer: User, detection_details=None):
         logger.info("user %s marking %s as not spam", reviewer, self)
         self.status = self.Status.NOT_SPAM
@@ -182,7 +195,7 @@ class SpamModeration(models.Model):
         related_object = self.content_object
         if hasattr(related_object, "is_marked_spam"):
             related_object.spam_moderation = self
-            related_object.is_marked_spam = self.status != self.Status.NOT_SPAM
+            related_object.is_marked_spam = self.status == self.Status.SPAM
             related_object.save()
 
     def __str__(self):

@@ -69,6 +69,7 @@ services:
       - orcid_client_secret
       - hcaptcha_secret
       - mail_api_key
+      - llm_spam_check_api_key
     volumes:
       - ./deploy/elasticsearch.conf.d:/etc/elasticsearch
       - ./docker/shared:/shared
@@ -104,6 +105,8 @@ secrets:
     file: ./build/secrets/mail_api_key
   orcid_client_secret:
     file: ./build/secrets/orcid_client_secret
+  llm_spam_check_api_key:
+    file: ./build/secrets/llm_spam_check_api_key
 
 volumes:
   esdata:
