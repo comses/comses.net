@@ -179,5 +179,4 @@ function createAreaPercentageChart(metric: Metric) {
 
   return chartOptions;
 }
-console.log('Metrics Data in MetricsView.vue:', props.metricsData)
 </script>

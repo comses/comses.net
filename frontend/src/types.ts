@@ -59,7 +59,6 @@ export type InstitutionMetric = {
   value: number;
 };
 
-
 export type MetricsData = Record<
   | "startYear"
   | "totalMembers"

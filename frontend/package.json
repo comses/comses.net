@@ -14,8 +14,7 @@
     "lint:fix": "eslint --fix . --ext .vue,.js,.ts --fix --ignore-path .gitignore",
     "style": "prettier --check src/",
     "style:fix": "prettier --write src/",
-    "tls": "npm run type-check && npm run test && npm run lint && (npm run style || npm run style:fix)",
-    "dev": "vite  --force"
+    "tls": "npm run type-check && npm run test && npm run lint && (npm run style || npm run style:fix)"
   },
   "dependencies": {
     "@fortawesome/fontawesome-free": "^5.15.4",
@@ -37,7 +36,7 @@
     "highcharts-vue": "^1.4.3",
     "lodash-es": "^4.17.21",
     "pinia": "^2.1.7",
-    "proj4": "^2.14.0",
+    "proj4": "^2.15.0",
     "query-string": "^8.2.0",
     "sass": "^1.71.1",
     "sortablejs": "^1.15.2",
