@@ -73,12 +73,20 @@ class SpamCheckAPI:
         """Polling health check route of the API."""
 
         def health_check() -> bool:
-            response = self.get("ok")
-            if response.get("status") == "ok":
-                logger.info("API health check passed.")
-                return True
-            logger.info(f"Unexpected API health check response: {response}")
-            return False
+            try:
+                response = self.get("ok")
+                if response.get("status") == "ok":
+                    logger.info("API health check passed.")
+                    return True
+                else:
+                    logger.info(
+                        f"Unexpected API health check response: {response}. Retrying..."
+                    )
+                    return False
+            except Exception as e:
+                # need to catch this exception, and retry because the API server might not be ready after the JetStream2 instance has been unshelved
+                logger.error(f"Exception during health_check. Retrying...")
+                return False
 
         logger.info(f"Checking SpamCheckAPI...")
         if not _poll_status(
@@ -224,7 +232,10 @@ def _poll_status(func: Callable[[], bool], interval: int, timeout: int) -> bool:
 
 def _run_command(options):
     dry_run = options["skip_changing_instance_state"]
-    logger.warning(f"dry_run is {dry_run}")
+    skip_shelving_when_done = options["skip_shelving_when_done"]
+
+    logger.debug(f"dry_run is {dry_run}")
+    logger.debug(f"skip_shelving_when_done is {skip_shelving_when_done}")
 
     _setup_environment()
     conn = openstack.connect(cloud="envvars")
@@ -236,12 +247,12 @@ def _run_command(options):
         settings.LLM_SPAM_CHECK_API_URL, settings.LLM_SPAM_CHECK_API_KEY
     )
 
-    if not dry_run:
-        jetstream_instance_manager.ensure_active()
-    else:
+    if dry_run:
         logger.info(
             f"Mocking server state to be {Config.JETSTREAM_SERVER_STATUS_ACTIVE}"
         )
+    else:
+        jetstream_instance_manager.ensure_active()
 
     try:
         spam_check_api_client.check_health()
@@ -250,10 +261,11 @@ def _run_command(options):
     except Exception as e:
         logger.error(f"Communication with SpamCheckAPI failed. {e}")
     finally:
-        if not dry_run:
-            jetstream_instance_manager.shelve()
-        else:
-            logger.info("Mocking shelving server")
+        if not skip_shelving_when_done:
+            if dry_run:
+                logger.info("Mocking shelving server")
+            else:
+                jetstream_instance_manager.shelve()
 
 
 class Command(BaseCommand):
@@ -263,7 +275,12 @@ class Command(BaseCommand):
         parser.add_argument(
             "--skip-changing-instance-state",
             action="store_true",
-            help="Run the command without changing the state of the JetStream2 instance",
+            help="Run the command without changing the state of the JetStream2 instance.",
+        )
+        parser.add_argument(
+            "--skip-shelving-when-done",
+            action="store_true",
+            help="Run the command without shelving the JetStream2 instance after the workflow has completed.",
         )
 
     def handle(self, *args, **options):
