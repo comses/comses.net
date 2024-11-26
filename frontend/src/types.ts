@@ -52,6 +52,14 @@ export interface Metric {
   series: TimeSeries[];
 }
 
+export type InstitutionMetric = {
+  name: string;
+  lat: number;
+  lon: number;
+  value: number;
+};
+
+
 export type MetricsData = Record<
   | "startYear"
   | "totalMembers"
@@ -65,7 +73,9 @@ export type MetricsData = Record<
   | "reviewedModels"
   | "totalDownloads",
   Metric
->;
+> & {
+  institutionData: InstitutionMetric[];
+};
 
 export type MetricsChartSelection =
   | "total-members"

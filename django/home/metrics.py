@@ -1,7 +1,7 @@
 from core.models import MemberProfile, ComsesGroups
 from library.models import CodebaseRelease, CodebaseReleaseDownload, Codebase
 from collections import defaultdict
-
+from django.db import connection
 from django.core.cache import cache
 from django.db.models import Count, F
 import pandas as pd
@@ -12,7 +12,7 @@ class Metrics:
     DEFAULT_METRICS_CACHE_TIMEOUT = 60 * 60 * 24 * 7  # 1 week
     MINIMUM_CATEGORY_COUNT = 10  # the threshold at which we group all other nominal values into an "other" category
 
-    def get_all_data(self):
+    def get_all_data(self): #update this function 
         data = cache.get(Metrics.REDIS_METRICS_KEY)
         if not data:
             return self.cache_all()
@@ -70,9 +70,11 @@ class Metrics:
         member_metrics, members_start_year = self.get_members_by_year_timeseries()
         model_metrics, model_start_year = self.get_model_metrics_timeseries()
         release_metrics, release_start_year = self.get_release_metrics_timeseries()
+        institution_metrics = self.get_member_affiliation_data()
         min_start_year = min(members_start_year, model_start_year, release_start_year)
         all_metrics = dict(
-            startYear=min_start_year, **member_metrics, **model_metrics, **release_metrics
+            startYear=min_start_year, **member_metrics, **model_metrics, **release_metrics,
+            institution_metrics=institution_metrics
         )
         return all_metrics
 
@@ -169,7 +171,7 @@ class Metrics:
                 "startYear": min_start_year,
                 "series": [
                     {
-                        "name": "Releases",
+                        "name": "Models",
                         "data": self.to_timeseries(
                             total_models_by_year, min_start_year
                         ),
@@ -258,6 +260,37 @@ class Metrics:
         
         return release_metrics, min_start_year
 
+    
+    def get_member_affiliation_data(self):
+        sql_query = """
+            SELECT 
+                affiliation->>'name' AS institution_name,
+                (affiliation->'coordinates')->>'lat' AS latitude,
+                (affiliation->'coordinates')->>'lon' AS longitude,
+                COUNT(*) AS total
+            FROM core_memberprofile,
+                jsonb_array_elements(affiliations) AS affiliation
+            WHERE affiliation ? 'name'  
+            AND affiliation->'coordinates' ?& array['lat', 'lon']  
+            GROUP BY institution_name, latitude, longitude
+            ORDER BY total DESC;
+        """   
+
+        with connection.cursor() as cursor:
+            cursor.execute(sql_query)
+            results = cursor.fetchall()
+
+        institution_data = [
+            {
+                "name": row[0],
+                "lat": float(row[1]),
+                "lon": float(row[2]),
+                "value": int(row[3]),
+            }
+            for row in results
+        ]
+
+        return institution_data
 
     def get_release_os_timeseries(self, start_year):
         """

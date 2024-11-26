@@ -32,6 +32,9 @@
       </div>
     </div>
   </div>
+  <div>
+    <UserMapView :metrics-data="metricsData" />
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -43,6 +46,7 @@ import { ref, computed, onMounted } from "vue";
 import type { MetricsData, MetricsChartSelection, Metric } from "@/types";
 import MetricsSelector from "@/components/MetricsSelector.vue";
 import MetricsTable from "@/components/MetricsTable.vue";
+import UserMapView from "@/components/UserMapView.vue";
 
 exportingInit(Highcharts); // required for hamburger menu w/ download options
 labelInit(Highcharts); // required for series labels on area charts
@@ -175,4 +179,5 @@ function createAreaPercentageChart(metric: Metric) {
 
   return chartOptions;
 }
+console.log('Metrics Data in MetricsView.vue:', props.metricsData)
 </script>
