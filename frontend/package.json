@@ -14,8 +14,7 @@
     "lint:fix": "eslint --fix . --ext .vue,.js,.ts --fix --ignore-path .gitignore",
     "style": "prettier --check src/",
     "style:fix": "prettier --write src/",
-    "tls": "npm run type-check && npm run test && npm run lint && (npm run style || npm run style:fix)",
-    "dev": "vite  --force"
+    "tls": "npm run type-check && npm run test && npm run lint && (npm run style || npm run style:fix)"
   },
   "dependencies": {
     "@fortawesome/fontawesome-free": "^5.15.4",
