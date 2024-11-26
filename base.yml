@@ -70,6 +70,8 @@ services:
       - hcaptcha_secret
       - mail_api_key
       - llm_spam_check_api_key
+      - llm_spam_check_jetstream_os_application_credential_secret
+      - llm_spam_check_jetstream_os_application_credential_id
     volumes:
       - ./deploy/elasticsearch.conf.d:/etc/elasticsearch
       - ./docker/shared:/shared
@@ -107,7 +109,10 @@ secrets:
     file: ./build/secrets/orcid_client_secret
   llm_spam_check_api_key:
     file: ./build/secrets/llm_spam_check_api_key
-
+  llm_spam_check_jetstream_os_application_credential_secret:
+    file: ./build/secrets/llm_spam_check_jetstream_os_application_credential_secret
+  llm_spam_check_jetstream_os_application_credential_id:
+    file: ./build/secrets/llm_spam_check_jetstream_os_application_credential_id
 volumes:
   esdata:
     driver: local
