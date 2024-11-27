@@ -56,4 +56,7 @@ export default defineConfig({
       },
     },
   },
+  optimizeDeps: {
+    exclude: ['jeep-sqlite/loader']
+  }
 });
