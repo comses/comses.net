@@ -262,13 +262,18 @@ class SpamCatcherViewSetMixin:
             "spam_moderation",
             "is_marked_spam",
             "get_absolute_url",
-            "title",
         ]
         for field in required_fields:
             if not hasattr(instance, field):
                 raise ValueError(
                     f"instance {instance} does not have a {field} attribute"
                 )
+
+        # Ensure either 'title' () or 'username' (for MemberProfile) is present
+        if not (hasattr(instance, "title") or hasattr(instance, "username")):
+            raise ValueError(
+                f"instance {instance} must have either a 'title' or a 'username' attribute"
+            )
 
     @action(detail=True, methods=["post"], permission_classes=[ModeratorPermissions])
     def mark_spam(self, request, **kwargs):

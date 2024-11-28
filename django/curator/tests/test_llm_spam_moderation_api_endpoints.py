@@ -5,8 +5,9 @@ from django.utils import timezone
 from rest_framework import status
 from rest_framework.test import APIClient
 
-from core.models import Event, Job, SpamModeration
-from core.tests.base import BaseModelTestCase, EventFactory, JobFactory
+from core.models import Event, Job, MemberProfile, SpamModeration
+from core.tests.base import BaseModelTestCase, EventFactory, JobFactory, \
+    UserFactory
 from library.models import Codebase
 from library.tests.base import CodebaseFactory
 
@@ -42,14 +43,17 @@ class SpamModerationAPITestCase(BaseModelTestCase):
             title="Test Codebase", description="Codebase Description"
         )
 
-        # Create SpamModeration objects
-        self.job_spam = SpamModeration.objects.create(
+        self.user_factory = UserFactory()
+        self.spammy_user = self.user_factory.create(username="scamlikely")
+
+        # Create SpamModeration objects (for MemberProfile the SpamModeration will be created automatically when user is created)
+        self.job_spam_moderation = SpamModeration.objects.create(
             content_object=self.job, status=SpamModeration.Status.SCHEDULED_FOR_CHECK
         )
-        self.event_spam = SpamModeration.objects.create(
+        self.event_spam_moderation = SpamModeration.objects.create(
             content_object=self.event, status=SpamModeration.Status.SCHEDULED_FOR_CHECK
         )
-        self.codebase_spam = SpamModeration.objects.create(
+        self.codebase_spam_moderation = SpamModeration.objects.create(
             content_object=self.codebase,
             status=SpamModeration.Status.SCHEDULED_FOR_CHECK,
         )
@@ -101,13 +105,16 @@ class SpamModerationAPITestCase(BaseModelTestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
         data = response.json()
-        self.assertEqual(len(data), 3)  # We expect 3 items in the batch
+        self.assertEqual(
+            len(data), 5
+        )  # We expect 5 items in the batch (Event, Job, Codebase, MemberProfile) + MemberProfile of the test_user from super().setUp()
 
         # Check if all content types are present
         content_types = [item["contentType"] for item in data]
         self.assertIn("job", content_types)
         self.assertIn("event", content_types)
         self.assertIn("codebase", content_types)
+        self.assertIn("memberprofile", content_types)
 
         # Check structure of a job item
         job_item = next(item for item in data if item["contentType"] == "job")
@@ -163,6 +170,40 @@ class SpamModerationAPITestCase(BaseModelTestCase):
         # Check if related content object was updated
         self.assertTrue(job.is_marked_spam)
 
+    def test_update_spam_moderation_success_memberprofile(self):
+        self.client.credentials(HTTP_X_API_KEY=self.api_key)
+
+        mp = MemberProfile.objects.get(id=self.spammy_user.member_profile.id)
+
+        data = {
+            "id": mp.spam_moderation.id,
+            "is_spam": True,
+            "spam_indicators": ["indicator1", "indicator2"],
+            "reasoning": "Test reasoning",
+            "confidence": 0.9,
+        }
+
+        response = self.client.post("/api/spam/update/", data, format="json")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        # Check if SpamModeration object was updated
+        mp.refresh_from_db()
+        self.assertIsNotNone(mp.spam_moderation)
+        self.assertEqual(mp.spam_moderation.status, SpamModeration.Status.SPAM_LIKELY)
+        self.assertTrue(mp.is_marked_spam)
+        self.assertEqual(mp.spam_moderation.detection_method, "LLM")
+        self.assertEqual(
+            mp.spam_moderation.detection_details["spam_indicators"],
+            ["indicator1", "indicator2"],
+        )
+        self.assertEqual(
+            mp.spam_moderation.detection_details["reasoning"], "Test reasoning"
+        )
+        self.assertEqual(mp.spam_moderation.detection_details["confidence"], 0.9)
+
+        # Check if related content object was updated
+        self.assertTrue(mp.is_marked_spam)
+
     def test_update_spam_moderation_not_spam(self):
         self.client.credentials(HTTP_X_API_KEY=self.api_key)
 
@@ -194,7 +235,7 @@ class SpamModerationAPITestCase(BaseModelTestCase):
         self.client.credentials(HTTP_X_API_KEY=self.api_key)
 
         data = {
-            "id": self.codebase_spam.id,
+            "id": self.codebase_spam_moderation.id,
             # Missing required 'is_spam' field
         }
 
@@ -205,7 +246,7 @@ class SpamModerationAPITestCase(BaseModelTestCase):
         self.client.credentials(HTTP_X_API_KEY=self.api_key)
 
         data = {
-            "id": self.codebase_spam.id,
+            "id": self.codebase_spam_moderation.id,
             "is_spam": True,
             # Only providing partial data
         }

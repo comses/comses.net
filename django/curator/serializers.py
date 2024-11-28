@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from core.models import Event, Job, SpamModeration
+from core.models import Event, Job, MemberProfile, SpamModeration
 from library.models import Codebase
 
 
@@ -53,6 +53,23 @@ class MinimalCodebaseSerializer(serializers.ModelSerializer):
             "id",
             "title",
             "description",
+        ]
+
+
+class MinimalMemberProfileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = MemberProfile
+        fields = [
+            "id",
+            "username",
+            "name",
+            "email",
+            "bio",
+            "research_interests",
+            "affiliations_string",
+            "degrees",
+            "personal_url",
+            "professional_url",
         ]
 
 

@@ -25,6 +25,7 @@ from .serializers import (
     MinimalCodebaseSerializer,
     MinimalEventSerializer,
     MinimalJobSerializer,
+    MinimalMemberProfileSerializer,
     SpamModerationSerializer,
     SpamUpdateSerializer,
 )
@@ -105,6 +106,8 @@ def get_latest_spam_batch(request):
             content_serializer = MinimalEventSerializer(content_object)
         elif content_type == "codebase":
             content_serializer = MinimalCodebaseSerializer(content_object)
+        elif content_type == "memberprofile":
+            content_serializer = MinimalMemberProfileSerializer(content_object)
         else:
             continue
 
