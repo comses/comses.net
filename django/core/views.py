@@ -8,8 +8,8 @@ from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.models import User
-from django.core.files.images import ImageFile
 from django.core.exceptions import PermissionDenied
+from django.core.files.images import ImageFile
 from django.http import (
     Http404,
     HttpResponseBadRequest,
@@ -17,38 +17,25 @@ from django.http import (
     HttpResponseServerError,
 )
 from django.shortcuts import get_object_or_404, redirect, render
-from django.views.generic import DetailView, TemplateView, RedirectView
 from django.urls import reverse
-from rest_framework import (
-    viewsets,
-    generics,
-    parsers,
-    mixins,
-    filters,
-)
+from django.views.generic import DetailView, RedirectView, TemplateView
+from rest_framework import filters, generics, mixins, parsers, viewsets
+from rest_framework.decorators import action
 from rest_framework.exceptions import (
-    PermissionDenied as DrfPermissionDenied,
+    APIException,
     NotAuthenticated,
     NotFound,
-    APIException,
+    PermissionDenied as DrfPermissionDenied,
 )
-from rest_framework.decorators import action
 from rest_framework.filters import OrderingFilter
-from rest_framework.permissions import IsAuthenticated, AllowAny
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView, exception_handler
 from taggit.models import Tag
 from wagtail.images.models import Image
 
 from library.models import Codebase
-from .models import Event, FollowUser, Job, MemberProfile
-from .serializers import (
-    EventSerializer,
-    JobSerializer,
-    MemberProfileSerializer,
-    RelatedMemberProfileSerializer,
-    TagSerializer,
-)
+from .discourse import build_discourse_url
 from .mixins import (
     CommonViewSetMixin,
     HtmlListModelMixin,
@@ -56,16 +43,22 @@ from .mixins import (
     PermissionRequiredByHttpMethodMixin,
     SpamCatcherViewSetMixin,
 )
+from .models import Event, FollowUser, Job, MemberProfile
 from .pagination import SmallResultSetPagination
 from .permissions import ObjectPermissions, ViewRestrictedObjectPermissions
-from .discourse import build_discourse_url
+from .serializers import (
+    EventSerializer,
+    JobSerializer,
+    MemberProfileSerializer,
+    RelatedMemberProfileSerializer,
+    TagSerializer,
+)
+from .utils import parse_date, parse_datetime
 from .view_helpers import (
     add_user_retrieve_perms,
     get_search_queryset,
     retrieve_with_perms,
 )
-from .utils import parse_date, parse_datetime
-
 
 logger = logging.getLogger(__name__)
 
@@ -315,7 +308,9 @@ class MemberProfileFilter(filters.BaseFilterBackend):
         return get_search_queryset(query_params, queryset, tags=tags)
 
 
-class MemberProfileViewSet(CommonViewSetMixin, HtmlNoDeleteViewSet):
+class MemberProfileViewSet(
+    SpamCatcherViewSetMixin, CommonViewSetMixin, HtmlNoDeleteViewSet
+):
     lookup_field = "user__pk"
     lookup_url_kwarg = "pk"
     queryset = MemberProfile.objects.public().with_tags()

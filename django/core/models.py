@@ -1,7 +1,7 @@
-from datetime import timedelta
-from enum import Enum
 import logging
 import pathlib
+from datetime import timedelta
+from enum import Enum
 
 from allauth.account.models import EmailAddress
 from django import forms
@@ -358,7 +358,7 @@ class MemberProfileQuerySet(models.QuerySet):
 
 @add_to_comses_permission_whitelist
 @register_snippet
-class MemberProfile(index.Indexed, ClusterableModel):
+class MemberProfile(index.Indexed, ModeratedContent, ClusterableModel):
     """
     Contains additional comses.net information, possibly linked to a CoMSES Member / site account
     """
