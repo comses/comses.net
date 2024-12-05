@@ -1,0 +1,3 @@
+#!/bin/sh
+
+./manage.py doi_sync_metadata --no-interactive --no-dry-run

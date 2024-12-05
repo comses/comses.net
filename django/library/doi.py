@@ -226,6 +226,9 @@ class DataCiteApi:
             message = str(e)
             http_status = self.DATACITE_ERRORS_TO_STATUS_CODE[type(e)]
 
+        # refresh DataCiteMetadata to include new DOI in hash
+        del codebase_or_release.datacite
+        datacite_metadata = codebase_or_release.datacite
         log_record_dict = {
             "doi": doi,
             "http_status": http_status,
@@ -623,11 +626,12 @@ class DataCiteApi:
             "Minted %s DOIs for peer reviewed releases without DOIs.",
             total_peer_reviewed_releases_without_dois,
         )
-        with open("mint_pending_dois__invalid_pending_releases.csv", "w") as f:
-            writer = csv.writer(f)
-            writer.writerow(["release_id", "status_code", "message"])
-            for release, status_code, message in invalid_releases:
-                writer.writerow([release.pk, status_code, message])
+        if invalid_releases:
+            with open("mint_pending_dois__invalid_pending_releases.csv", "w") as f:
+                writer = csv.writer(f)
+                writer.writerow(["release_id", "status_code", "message"])
+                for release, status_code, message in invalid_releases:
+                    writer.writerow([release.pk, status_code, message])
 
         """
         assert correctness
