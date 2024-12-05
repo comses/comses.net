@@ -7,7 +7,7 @@ import django.db.models.deletion
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("library", "0028_contributor_json_affiliations"),
+        ("library", "0031_dataciteregistrationlog_and_more"),
     ]
 
     operations = [

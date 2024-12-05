@@ -6,7 +6,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("library", "0030_license_text"),
+        ("library", "0033_license_text"),
     ]
 
     operations = [

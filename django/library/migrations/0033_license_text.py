@@ -32,7 +32,7 @@ def add_default_text(apps, schema_editor):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("library", "0029_codebasegitmirror_codebase_git_mirror"),
+        ("library", "0032_codebasegitmirror_codebase_git_mirror"),
     ]
 
     operations = [
