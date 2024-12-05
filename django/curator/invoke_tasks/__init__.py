@@ -1,6 +1,6 @@
 from invoke import Collection
 
-from . import borg, database, docs, elasticsearch, drupal, permissions
+from . import borg, database, docs, es, drupal, permissions
 from .base import (
     clean,
     collectstatic,
@@ -29,6 +29,6 @@ ns.add_task(setup_site)
 ns.add_collection(borg)
 ns.add_collection(Collection.from_module(database, "db"))
 ns.add_collection(docs)
-ns.add_collection(Collection.from_module(elasticsearch, "es"))
+ns.add_collection(Collection.from_module(es, "es"))
 ns.add_collection(drupal)
 ns.add_collection(Collection.from_module(permissions, "perm"))

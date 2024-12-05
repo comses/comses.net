@@ -4,6 +4,9 @@ from invoke import task
 
 @task(aliases=["ul"])
 def update_license(ctx, license_path=None):
+    """
+    FIXME: check if this is still used / needed
+    """
     es_hosts = ["elasticsearch"]
     if settings.DEPLOY_ENVIRONMENT.is_production:
         es_hosts.append("elasticsearch2")
