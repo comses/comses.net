@@ -18,15 +18,15 @@ def fsck(queryset):
 def pretty_print_fsck_results(results):
     for id, result in results.items():
         release, errors = result
-        print("ID: {}".format(id))
-        print("Release: {}".format(release))
-        print("Errors")
+        print(f"ID: {id}")
+        print(f"Release: {release}")
+        print("Errors:")
         for error in errors:
             if isinstance(error, FileNotFoundError):
-                error_msg = "FileNotFoundError({})".format(repr(error.filename))
+                error_msg = f"FileNotFoundError({error.filename})"
             else:
                 error_msg = error
-            print("  {}".format(error_msg))
+            print(f"    {error_msg}")
         print("\n")
 
 

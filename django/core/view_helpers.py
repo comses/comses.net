@@ -113,10 +113,6 @@ def get_search_queryset(
         criteria.update(tags__name__in=[t.lower() for t in tags])
         operator = 'and'
     """
-
-    """ 
-    Build text search query
-    """
     if query:
         Query.get(query).add_hit()
 
@@ -126,6 +122,7 @@ def get_search_queryset(
         # filters, query = parse_query_string(query, operator="and")
         # criteria.update(filters)
 
+        # generate search query from text
         query = build_search_query(query)
     else:
         query = MATCH_ALL
@@ -175,7 +172,6 @@ def retrieve_with_perms(self, request, *args, **kwargs):
 
 
 def add_user_retrieve_perms(instance, data, user):
-    print(user.get_all_permissions())
     data["has_change_perm"] = user.has_perm(
         f"{instance._meta.app_label}.change_{instance._meta.model_name}",
         instance,

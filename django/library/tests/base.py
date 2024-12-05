@@ -1,4 +1,5 @@
 import io
+import logging
 import random
 from uuid import UUID
 
@@ -8,13 +9,16 @@ from library.models import (
     Codebase,
     CodebaseRelease,
     License,
-    ReleaseContributor,
+    Role,
     Contributor,
     PeerReviewInvitation,
     PeerReview,
     PeerReviewer,
 )
 from library.serializers import CodebaseSerializer
+
+
+logger = logging.getLogger(__name__)
 
 
 class CodebaseFactory(ContentModelFactory):
@@ -33,6 +37,9 @@ class CodebaseFactory(ContentModelFactory):
             "uuid": uuid,
             "identifier": str(uuid),
             "submitter": self.submitter,
+            "references_text": "Wilensky, U. (1997). NetLogo Wolf Sheep Predation model.",
+            "replication_text": "This model is a replication of the NetLogo model.",
+            "associated_publication_text": "This model is associated with a publication.",
         }
 
     def data_for_create_request(self, **overrides):
@@ -41,6 +48,15 @@ class CodebaseFactory(ContentModelFactory):
         serialized = CodebaseSerializer(codebase).data
         del serialized["id"]
         return serialized
+
+    def create_published_release(self, codebase=None, **kwargs):
+        if codebase is None:
+            codebase, created = self.get_or_create(
+                **kwargs, defaults=self.get_default_data()
+            )
+        release = ReleaseSetup.setUpPublishableDraftRelease(codebase)
+        release.publish(defer_fs=True)
+        return release
 
 
 class ContributorFactory:
@@ -59,9 +75,13 @@ class ContributorFactory:
         }
 
     def create(self, **overrides) -> Contributor:
-        kwargs = self.get_default_data(overrides.get("user"))
-        kwargs.update(overrides)
-        return Contributor.objects.create(**kwargs)
+        default_data = self.get_default_data(overrides.get("user"))
+        default_data.update(overrides)
+        user = default_data.pop("user")
+        contributor, created = Contributor.objects.get_or_create(
+            user=user, defaults=default_data
+        )
+        return contributor
 
 
 class ReleaseContributorFactory:
@@ -70,46 +90,14 @@ class ReleaseContributorFactory:
         self.index = 0
 
     def get_default_data(self):
-        defaults = {"release": self.codebase_release, "index": self.index}
+        defaults = {"role": Role.AUTHOR, "index": self.index}
         self.index += 1
         return defaults
 
     def create(self, contributor: Contributor, **overrides):
         kwargs = self.get_default_data()
         kwargs.update(overrides)
-        return ReleaseContributor.objects.create(contributor=contributor, **kwargs)
-
-
-class CodebaseReleaseFactory:
-    def __init__(self, codebase, submitter=None):
-        if submitter is None:
-            submitter = codebase.submitter
-        self.submitter = submitter
-        self.codebase = codebase
-
-    def get_default_data(self):
-        return {
-            "description": "Added rational utility decision making to wolves",
-            "submitter": self.submitter,
-            "codebase": self.codebase,
-            "live": True,
-        }
-
-    def create(self, **defaults) -> CodebaseRelease:
-        kwargs = self.get_default_data()
-        kwargs.update(defaults)
-
-        codebase = kwargs.pop("codebase")
-        submitter = kwargs.pop("submitter")
-
-        codebase_release = codebase.create_release(submitter=submitter)
-        for k, v in kwargs.items():
-            if hasattr(codebase_release, k):
-                setattr(codebase_release, k, v)
-            else:
-                raise KeyError('Key "{}" is not a property of codebase'.format(k))
-        codebase_release.save()
-        return codebase_release
+        return self.codebase_release.add_contributor(contributor, **kwargs)
 
 
 class PeerReviewFactory:
@@ -178,8 +166,8 @@ class ReleaseSetup:
             status=CodebaseRelease.Status.DRAFT,
             initialize=True,
         )
-        draft_release.license = License.objects.create(name="MIT")
-        draft_release.os = "Linux"
+        draft_release.license, created = License.objects.get_or_create(name="MIT")
+        draft_release.os = "Any"
         draft_release.programming_languages.add("Python")
         contributor_factory = ContributorFactory(user=draft_release.submitter)
         release_contributor_factory = ReleaseContributorFactory(draft_release)

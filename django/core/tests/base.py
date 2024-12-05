@@ -4,10 +4,10 @@ import os
 import shlex
 import shutil
 import subprocess
-from datetime import date, timedelta
 
+from datetime import date, timedelta
 from django.conf import settings
-from django.contrib.auth.models import User
+from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.utils import timezone
 
@@ -16,6 +16,8 @@ from core.serializers import EventSerializer, JobSerializer
 
 
 logger = logging.getLogger(__name__)
+
+User = get_user_model()
 
 
 class ContentModelFactory(ABC):
@@ -57,6 +59,9 @@ class ContentModelFactory(ABC):
         content.save()
         return content
 
+    def get_or_create(self, **kwargs):
+        return self.model.objects.get_or_create(**kwargs)
+
     def create_unsaved(self, **overrides):
         kwargs = self.get_default_data()
         kwargs.update(overrides)
@@ -95,55 +100,52 @@ class EventFactory(ContentModelFactory):
         }
 
 
-def make_user(
-    username="test_user",
-    password="default.testing.password",
-    email="comses.test@mailinator.com",
+def create_test_user(
+    username="test_user", email="comses.test@mailinator.com", **kwargs
 ):
-    factory = UserFactory()
-    return factory.create(username=username, password=password, email=email), factory
+    factory = UserFactory(username=username, email=email, **kwargs)
+    return factory.create(), factory
 
 
 class UserFactory:
     def __init__(self, **defaults):
-        if not defaults.get("password"):
-            defaults["password"] = "test"
-        self.id = 0
-        self.password = defaults.get("password")
-        self.defaults = {}
-        username = defaults.get("username")
-        if username:
-            self.defaults.update({"username": username})
-        email = defaults.get("email")
-        if email:
-            self.defaults.update({"email": email})
+        self.next_user_id = 0
+        self.password = defaults.pop("password", "testing-password")
+        self.defaults = defaults.copy()
 
     def extract_password(self, overrides):
-        if overrides.get("password"):
+        if "password" in overrides:
             return overrides.pop("password")
         else:
             return self.password
 
-    def get_default_data(self):
+    def get_default_data(self, **kwargs):
         defaults = self.defaults.copy()
-        defaults["username"] = defaults.get("username", "submitter{}".format(self.id))
-        self.id += 1
+        # always generate a unique username for the next user
+        username = defaults["username"] = defaults.get(
+            "username", f"submitter{self.next_user_id}"
+        )
+        defaults.setdefault("email", f"{username}@example.com")
+        defaults.setdefault("username", username)
+        self.next_user_id += 1
+        defaults.update(kwargs)
         return defaults
 
-    def create(self, **overrides):
-        user = self.create_unsaved(**overrides)
-        user.save()
-        return user
+    def create(self, **kwargs):
+        return self.get_or_create(**kwargs)
 
-    def create_unsaved(self, **overrides):
-        password = self.extract_password(overrides)
-        kwargs = self.get_default_data()
-        kwargs.update(overrides)
-        if not kwargs.get("email"):
-            kwargs["email"] = "{}@gmail.com".format(kwargs["username"])
-        user = User(**kwargs)
-        if password:
-            user.set_password(password)
+    def get_or_create(self, **kwargs):
+        password = self.extract_password(kwargs)
+        user_data_with_defaults = self.get_default_data(**kwargs)
+        """
+        if "email" not in kwargs:
+            kwargs.update(email=default_data.get('email'))
+        if "username" not in kwargs:
+            kwargs.update(username=default_data.get("username"))
+        """
+        user, created = User.objects.get_or_create(**user_data_with_defaults)
+        user.set_password(password)
+        user.save()
         return user
 
 
@@ -151,9 +153,9 @@ class BaseModelTestCase(TestCase):
     def setUp(self):
         self.user = self.create_user()
 
-    def create_user(self, username="test_user", password="test", **kwargs):
-        kwargs.setdefault("email", "testuser@mailinator.com")
-        return User.objects.create_user(username=username, password=password, **kwargs)
+    def create_user(self, **kwargs):
+        user, factory = create_test_user(**kwargs)
+        return user
 
 
 def initialize_test_shared_folders():

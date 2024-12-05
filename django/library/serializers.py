@@ -193,7 +193,7 @@ class ContributorSerializer(serializers.ModelSerializer):
             "user",
             "type",
             "json_affiliations",
-            "primary_json_affiliation_name",
+            "primary_affiliation_name",
             "profile_url",
         )
 

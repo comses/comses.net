@@ -27,7 +27,7 @@
         {% if c.email -%}
     <meta name='citation_author_email' content='{{ c.email }}'>
         {%- endif %}
-        {% for affiliation in c.affiliations.all() -%}
+        {% for affiliation in c.affiliations -%}
     <meta name='citation_author_institution' content='{{ affiliation }}'>
         {%- endfor %}
     {%- endfor %}
@@ -332,11 +332,11 @@
             <div class="card-text mb-3">
             {% if release.doi %}
               <p>
-                <a href='{{release.doi_url}}' class='d-block text-truncate'><span class='badge bg-info'>{{ release.doi }}</span></a>
+                <a href='{{release.permanent_url}}' class='d-block text-truncate'><span class='badge bg-info'>{{ release.doi }}</span></a>
               </p>
             {% elif codebase.doi %}
                 <p><small>This DOI is for the parent Codebase and always points at the most recent published version of this model.</small>
-                <a href='{{codebase.doi_url}}'><span class='badge bg-info'>{{ codebase.doi }}</span></a></p>
+                <a href='{{codebase.permanent_url}}'><span class='badge bg-info'>{{ codebase.doi }}</span></a></p>
             {% else %}
                 <div>No assigned DOI</div>
                 {% if has_change_perm %}
@@ -524,8 +524,8 @@
                                     <span class='badge bg-info'>Peer Reviewed</span>
                                 {% endif %}
                                 {% if related_release.doi %}
-                                    <a href='{{related_release.doi_url}}'>
-                                        <span class='badge bg-info'>{{related_release.doi_url}}</span>
+                                    <a href='{{related_release.permanent_url}}'>
+                                        <span class='badge bg-info'>DOI: {{related_release.doi}}</span>
                                     </a>
                                 {% endif %}
                             </td>

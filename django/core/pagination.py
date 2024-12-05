@@ -31,11 +31,11 @@ class SmallResultSetPagination(PageNumberPagination):
     @staticmethod
     def _to_filter_display_terms(query_params):
         """
-        Convert query parameters into a list of displayable filter terms.
+        Convert query parameters into a list of displayable filter terms (replaces underscores withs spaces, etc)
         Args:
             query_params (QueryDict): The query parameters.
         Returns:
-            list: A list of display filter terms.
+            list: A list of displayable filter terms.
         """
         filters = []
         for key, values in query_params.lists():
@@ -47,16 +47,40 @@ class SmallResultSetPagination(PageNumberPagination):
                 filters.extend(values)
             elif key in ["published_before", "published_after"]:
                 try:
-                    date = parser.isoparse(values[0]).date()
-                    filters.append(f"{key.replace('_', ' ')} {date.isoformat()}")
+                    publication_date = parser.isoparse(values[0]).date()
+                    filters.append(
+                        f"{key.replace('_', ' ')} {publication_date.isoformat()}"
+                    )
                 except ValueError:
+                    # FIXME: this default behavior duplicates what we want to do in the else clause below
                     filters.extend(v.replace("_", " ") for v in values)
             else:
                 filters.extend(v.replace("_", " ") for v in values)
         return filters
 
     @classmethod
-    def limit_page_range(cls, page=1, count=max_result_window, size=page_size):
+    def limit_page_range(cls, page=1, count=None, size=None):
+        """
+        Limits the page range based on the maximum result window and page size.
+
+        This method ensures that the page number and result count do not exceed
+        the configured maximum result window for Elasticsearch. It also clamps
+        the page number to a valid range.
+
+        Args:
+            page (int): The current page number. Defaults to 1.
+            count (int): The total number of results. Defaults to max_result_window.
+            size (int): The number of results per page. Defaults to page_size.
+
+        Returns:
+            tuple: A tuple containing:
+                - limited_count (int): The total number of results to be shown in the current page, clamped to max_result_window.
+                - limited_page_number (int): The clamped page number within the valid range.
+        """
+        if count is None:
+            count = cls.max_result_window
+        if size is None:
+            size = cls.page_size
         try:
             es_settings = getattr(settings, "WAGTAILSEARCH_BACKENDS", {})
             max_result_window = es_settings["default"]["INDEX_SETTINGS"]["settings"][
@@ -73,13 +97,19 @@ class SmallResultSetPagination(PageNumberPagination):
         # limit the result count to max_result_window
         limited_count = min(count, max_result_window)
 
-        # Clamp page to range [1, max_page_number]
+        # Clamp page to range [1, max_page]
         try:
-            max_page_number = -(-limited_count // size)
-            limited_page_number = min(max(1, int(page)), max_page_number)
+            max_page = (limited_count + size - 1) // size
+            requested_page = max(1, int(page))
+            limited_page_number = min(requested_page, max_page)
         except ValueError:
             limited_page_number = 1
 
+        logger.debug(
+            "Clamping count to %s and requested page to %s",
+            limited_count,
+            limited_page_number,
+        )
         return limited_count, limited_page_number
 
     def get_paginated_response(self, data):
