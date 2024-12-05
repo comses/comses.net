@@ -344,10 +344,10 @@
                         <i class='fas fa-question-circle'></i> How do I get assigned a DOI?
                     </a>
                     <div class="collapse bg-light rounded p-2 text-muted small" id="doi-info-collapse">
-                        We assign DOIs to <a href='{{ url("library:peer-review-overview") }}'>peer reviewed models</a>. If you would like a DOI and your
-                        model has not been reviewed yet, please request a peer review by clicking the "Request peer review"
-                        button below. If your model has already been reviewed and has not yet been assigned a DOI, please 
-                        <a href='{{slugurl('contact')}}'>contact us</a>.
+                        We assign DOIs to <b>published, <a href='{{ url("library:peer-review-overview") }}'>peer reviewed models</a></b>. 
+                        To receive a DOI first use the "Request peer review" button below. After successfully passing
+                        peer review, publish your model when ready and a DOI will be issued for this release version
+                        within 24 hours.
                     </div>
                 {% endif %}
             {% endif %}

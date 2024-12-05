@@ -33,7 +33,7 @@ services:
       - ./deploy/elasticsearch.conf.d/log4j2.properties:/usr/share/elasticsearch/config/log4j2.properties
       - esdata:/usr/share/elasticsearch/data
   db:
-    image: postgis/postgis:16-3.4
+    image: postgis/postgis:16-3.5
     secrets:
       - db_password
     volumes:
