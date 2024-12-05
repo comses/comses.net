@@ -65,7 +65,7 @@ def mint_parent_codebases(interactive=True, dry_run=True):
                     "Unable to mint DOI for parent codebase %s of release %s: %s",
                     codebase.pk,
                     release.pk,
-                    log.status_code,
+                    log.http_status,
                 )
                 if interactive:
                     input("Press Enter to continue or CTRL+C to quit...")
@@ -116,7 +116,7 @@ def mint_parent_codebases(interactive=True, dry_run=True):
                 logger.error(
                     "Could not mint DOI for release %s - status code: %s.",
                     release.pk,
-                    log.status_code,
+                    log.http_status,
                 )
                 if interactive:
                     input("Press Enter to continue or CTRL+C to quit...")
@@ -148,7 +148,7 @@ def mint_parent_codebases(interactive=True, dry_run=True):
                 logger.error(
                     "Could not mint DOI for release %s - status code: %s.",
                     release.pk,
-                    log.status_code,
+                    log.http_status,
                 )
                 if interactive:
                     input("Press Enter to continue or CTRL+C to quit...")

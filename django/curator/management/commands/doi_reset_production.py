@@ -91,7 +91,7 @@ def cleanup_existing_dois(interactive=True, dry_run=True):
                 ["CodebaseRelease ID", "Status Code", "Reason", "Datacite Metadata"]
             )
             writer.writerow(
-                [release.pk, log.status_code, log.message, release.datacite.to_dict()]
+                [release.pk, log.http_status, log.message, release.datacite.to_dict()]
             )
 
 

@@ -598,7 +598,7 @@ class DataCiteApi:
                     invalid_releases.append(
                         (
                             release,
-                            log.status_code,
+                            log.http_status,
                             f"Unable to update previous release id {previous_release.pk} metadata {log.message}",
                         )
                     )
@@ -612,7 +612,7 @@ class DataCiteApi:
                     invalid_releases.append(
                         (
                             release,
-                            log.status_code,
+                            log.http_status,
                             f"Unable to update next release id {next_release.pk} metadata {log.message}",
                         )
                     )

@@ -63,13 +63,13 @@ def sync_all_doi_metadata(interactive=True, dry_run=True):
             writer = csv.writer(f)
             writer.writerow(["Codebase ID", "HTTP Status Code", "Message"])
             for codebase, log in invalid_codebases:
-                writer.writerow([codebase.pk, log.status_code, log.message])
+                writer.writerow([codebase.pk, log.http_status, log.message])
     if invalid_releases:
         with open("doi_sync_metadata_invalid_releases.csv", "w") as f:
             writer = csv.writer(f)
             writer.writerow(["CodebaseRelease ID", "HTTP Status Code", "Message"])
             for release, log in invalid_releases:
-                writer.writerow([release.pk, log.status_code, log.message])
+                writer.writerow([release.pk, log.http_status, log.message])
     logger.info("Metadata updated for all existing Codebase + CodebaseRelease DOIs.")
     """
     FIXME: verify_metadata currently does not work with metadata responses from DataCite
