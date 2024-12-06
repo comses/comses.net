@@ -118,6 +118,7 @@ THIRD_PARTY_APPS = [
     "django_extensions",
     "django_vite",
     "guardian",
+    "huey.contrib.djhuey",
     "rest_framework",
     "rest_framework_swagger",
     "robots",
@@ -396,6 +397,11 @@ LOGGING = {
             "handlers": ["console", "comsesfile"],
             "propagate": False,
         },
+        "huey": {
+            "level": "INFO",
+            "handlers": ["console", "comsesfile"],
+            "propagate": False,
+        },
     },
 }
 
@@ -479,8 +485,16 @@ CACHES = {
         "LOCATION": "unix:///shared/redis/redis.sock",
         "OPTIONS": {
             "CLIENT_CLASS": "django_redis.client.DefaultClient",
+            "CONNECTION_POOL_KWARGS": {"max_connections": 20},
         },
     }
+}
+
+HUEY = {
+    "name": "comses",
+    "huey_class": "core.huey.DjangoRedisHuey",
+    "immediate": False,  # always run tasks in the background, even in dev (for now)
+    # if removed here, it will default to DEBUG
 }
 
 # SSO, user registration, and django-allauth configuration, see
@@ -501,11 +515,23 @@ ACCOUNT_LOGIN_ON_EMAIL_CONFIRMATION = True
 ACCOUNT_CHANGE_EMAIL = True
 
 ORCID_CLIENT_ID = os.getenv("ORCID_CLIENT_ID", "")
-
 ORCID_CLIENT_SECRET = read_secret("orcid_client_secret")
-
 GITHUB_CLIENT_ID = os.getenv("GITHUB_CLIENT_ID", "")
 GITHUB_CLIENT_SECRET = read_secret("github_client_secret")
+
+GITHUB_INTEGRATION_APP_ID = int(os.getenv("GITHUB_INTEGRATION_APP_ID") or 0)
+GITHUB_INTEGRATION_APP_PRIVATE_KEY = read_secret("github_integration_app_private_key")
+GITHUB_INTEGRATION_APP_INSTALLATION_ID = int(
+    os.getenv("GITHUB_INTEGRATION_APP_INSTALLATION_ID") or 0
+)
+# client id and secret are only used for getting user access tokens to be able to push
+# to the user's repositories. We are not re-using the regular oauth app in order to
+# keep minimal permissions
+GITHUB_INTEGRATION_APP_CLIENT_ID = os.getenv("GITHUB_INTEGRATION_APP_ID", "")
+GITHUB_INTEGRATION_APP_CLIENT_SECRET = read_secret(
+    "github_integration_app_client_secret"
+)
+GITHUB_MODEL_LIBRARY_ORG_NAME = os.getenv("GITHUB_MODEL_LIBRARY_ORG_NAME", "")
 
 TEST_BASIC_AUTH_PASSWORD = os.getenv("TEST_BASIC_AUTH_PASSWORD", "test password")
 TEST_USER_ID = os.getenv("TEST_USER_ID", 1000000)

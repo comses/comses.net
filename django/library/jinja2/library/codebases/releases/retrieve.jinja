@@ -289,6 +289,62 @@
     {% endif %}
 {% endwith %}
 
+{% if codebase.git_mirror or has_change_perm %}
+<div class="card-metadata">
+    <div class="card-body">
+        <div class="section mb-0">
+            <div>
+                <b class="card-title">
+                    <i class="fab fa-github"></i>
+                    Github Integration
+                </b>
+                <sup class="badge bg-gray"><small>beta</small></sup>
+            </div>
+
+            {% if codebase.git_mirror %}
+                {% if codebase.git_mirror.remote_url %}
+                    <div class="d-flex align-items-center">
+                        <i class="fab fa-github me-1"></i>
+                        <a href="{{ codebase.git_mirror.remote_url }}" class="d-block text-truncate" target="_blank">
+                            <span class='badge bg-info'>
+                                {{ codebase.git_mirror.repository_name }}
+                                <i class="fas fa-external-link-alt"></i>
+                            </span>
+                        </a>
+                    </div>
+                {% else %}
+                    <div class="alert alert-info mb-0">
+                        <small>
+                            <p>
+                                Mirroring in progress. This may take a few seconds.
+                            </p>
+                            <a href=".">Refresh this page.</a>
+                        </small>
+                    </div>
+                {% endif %}
+            {% elif has_change_perm %}
+                {% if codebase.live %}
+                    <div
+                        id="github-mirror"
+                        data-identifier="{{ codebase.identifier }}"
+                        data-default-repo-name="{{ slugify(codebase.title) }}"
+                    ></div>
+                {% else %}
+                    <div class="card-text">
+                        Only available for published models
+                    </div>
+                {% endif %}
+            {% endif %}
+            <div class="card-text">
+                <a class="small" href="/github/" target="_blank">
+                    <i class="fas fa-question-circle"></i> What is this?
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
 <div class="card-metadata">
     <div class="card-body">
         <div class="section">
@@ -504,7 +560,7 @@
                 </tr>
                 </thead>
                 <tbody>
-                    {% for related_release in codebase.ordered_releases(has_change_perm) %}
+                    {% for related_release in codebase.ordered_releases_list(has_change_perm, asc=False) %}
                         <tr>
                             <td><a href='{{ related_release.get_absolute_url() }}'>{{ related_release.version_number }}</a></td>
                             <td>
@@ -572,5 +628,6 @@
     {{ vite_asset("apps/release_download.ts") }}
     {% if has_change_perm %}
         {{ vite_asset("apps/release_regenerate_share_uuid.ts") }}
+        {{ vite_asset("apps/github_mirror.ts") }}
     {% endif %}
 {% endblock %}
