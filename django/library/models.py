@@ -3,9 +3,13 @@ import json
 import logging
 import os
 import pathlib
+from string import Template
+import uuid
 import semver
 import uuid
-
+from collections import OrderedDict
+from datetime import timedelta
+from packaging.version import Version
 from abc import ABC
 from collections import OrderedDict, defaultdict
 from datetime import date, timedelta
@@ -122,6 +126,16 @@ class License(models.Model):
         max_length=200, help_text=_("SPDX license code from https://spdx.org/licenses/")
     )
     url = models.URLField(blank=True)
+    text = models.TextField(blank=True, help_text=_("Full license text"))
+
+    def get_formatted_text(self, authors: str):
+        template = Template(self.text)
+        return template.substitute(
+            {
+                "copyright_year": timezone.now().year,
+                "copyright_name": authors,
+            }
+        )
 
     def __str__(self):
         return f"{self.name} ({self.url})"
@@ -282,6 +296,15 @@ class Contributor(index.Indexed, ClusterableModel):
         else:
             # organizations only use given_name
             return self.given_name
+
+    def get_given_name(self):
+        return self.given_name or (self.user.first_name if self.user else "")
+
+    def get_family_name(self):
+        return self.family_name or (self.user.last_name if self.user else "")
+
+    def get_email(self):
+        return self.email or (self.user.email if self.user else "")
 
     def _get_person_full_name(self, family_name_first=False):
         if not self.has_name:
@@ -512,6 +535,62 @@ class CodebaseQuerySet(models.QuerySet):
         return new_codebases, updated_codebases, releases
 
 
+class CodebaseGitMirror(models.Model):
+    """
+    Keeps track of a git repository and its GitHub remote that were created
+    from a Codebase using the mirror (read-only archiving) workflow
+    """
+
+    # is_active = models.BooleanField(default=True)
+    repository_name = models.CharField(max_length=100, unique=True)
+    remote_url = models.URLField(
+        blank=True,
+        help_text=_("URL of mirrored remote repository"),
+    )
+    # keep track of timestamp and releases that have been mirrored locally
+    last_local_update = models.DateTimeField(null=True, blank=True)
+    local_releases = models.ManyToManyField("CodebaseRelease", related_name="+")
+    # keep track of timestamp and releases that have been synced to the remote
+    last_remote_update = models.DateTimeField(null=True, blank=True)
+    remote_releases = models.ManyToManyField("CodebaseRelease", related_name="+")
+    user_access_token = models.CharField(max_length=200, null=True, blank=True)
+    organization_login = models.CharField(max_length=100, null=True, blank=True)
+
+    @property
+    def latest_local_release(self):
+        return max(self.local_releases.all(), key=lambda r: Version(r.version_number))
+
+    @property
+    def latest_remote_release(self):
+        return max(self.remote_releases.all(), key=lambda r: Version(r.version_number))
+
+    @property
+    def unmirrored_local_releases(self):
+        return self.codebase.public_releases().exclude(
+            id__in=self.local_releases.values_list("id", flat=True)
+        )
+
+    @property
+    def unmirrored_remote_releases(self):
+        return self.local_releases.exclude(
+            id__in=self.remote_releases.values_list("id", flat=True)
+        )
+
+    def update_local_releases(self, new_releases: models.QuerySet | list):
+        if self.local_releases.exists():
+            self.local_releases.add(*new_releases)
+        else:
+            self.local_releases.set(new_releases)
+        self.last_local_update = timezone.now()
+        self.save()
+
+    def update_remote_releases(self):
+        releases = self.local_releases.all()
+        self.remote_releases.set(releases)
+        self.last_remote_update = timezone.now()
+        self.save()
+
+
 @add_to_comses_permission_whitelist
 class Codebase(index.Indexed, ModeratedContent, ClusterableModel):
     """
@@ -544,6 +623,13 @@ class Codebase(index.Indexed, ModeratedContent, ClusterableModel):
         "CodebaseRelease",
         null=True,
         related_name="latest_version",
+        on_delete=models.SET_NULL,
+    )
+
+    git_mirror = models.OneToOneField(
+        "CodebaseGitMirror",
+        null=True,
+        related_name="codebase",
         on_delete=models.SET_NULL,
     )
 
@@ -706,6 +792,16 @@ class Codebase(index.Indexed, ModeratedContent, ClusterableModel):
     def base_git_dir(self):
         return pathlib.Path(settings.REPOSITORY_ROOT, str(self.uuid))
 
+    def create_git_mirror(self, repository_name, **kwargs):
+        if not self.git_mirror:
+            git_mirror = CodebaseGitMirror.objects.create(
+                repository_name=repository_name,
+                **kwargs,
+            )
+            self.git_mirror = git_mirror
+            self.save()
+        return self.git_mirror
+
     @property
     def codebase_contributors_redis_key(self):
         return f"codebase:contributors:{self.identifier}"
@@ -812,13 +908,20 @@ class Codebase(index.Indexed, ModeratedContent, ClusterableModel):
             release__codebase__id=self.id
         ).count()
 
-    def ordered_releases(self, has_change_perm=False, **kwargs):
-        releases = self.releases.order_by("-version_number").filter(**kwargs)
-        return (
-            releases
-            if has_change_perm
-            else releases.filter(status=CodebaseRelease.Status.PUBLISHED)
-        )
+    def ordered_releases_list(self, has_change_perm=False, asc=True, **kwargs):
+        """
+        list public releases (or all release if has_change_perm is True) in ascending (default) or descending order
+        """
+        if has_change_perm:
+            releases = self.releases.filter(**kwargs)
+        else:
+            releases = self.public_releases(**kwargs)
+        releases_list = list(releases)
+        releases_list.sort(key=lambda r: Version(r.version_number), reverse=not asc)
+        return releases_list
+
+    def public_releases(self, **kwargs):
+        return self.releases.filter(status=CodebaseRelease.Status.PUBLISHED, **kwargs)
 
     @classmethod
     def get_list_url(cls):
@@ -1612,6 +1715,19 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
             )
         return DataCiteSchema.from_release(self)
 
+    @cached_property
+    def citation_cff(self):
+        return self.codemeta.to_cff()
+
+    @cached_property
+    def license_text(self) -> str:
+        """return the license text with the copyright notice filled in"""
+        return (
+            self.license.get_formatted_text(self.citation_authors)
+            if self.license
+            else ""
+        )
+
     @property
     def is_draft(self):
         return self.status == self.Status.DRAFT
@@ -1691,6 +1807,10 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
     def publish(self, defer_fs=False):
         self.validate_publishable()
         self._publish(defer_fs)
+        if self.codebase.git_mirror:
+            from .tasks import update_mirrored_codebase
+
+            update_mirrored_codebase(self.codebase.id)
 
     def _publish(self, defer_fs=False):
         if not self.live:
@@ -2821,20 +2941,44 @@ class CodeMetaSchema:
         return target_product
 
     def to_json(self, **kwargs):
-        """
-        Convert the metadata of the object to a JSON string.
-
-        Args:
-            **kwargs: Additional keyword arguments to be passed to the json.dumps() function.
-
-        Returns:
-            str: A JSON string representation of the metadata.
-
-        """
-        return json.dumps(self.metadata, **kwargs)
+        """Returns a JSON string of this codemeta data"""
+        # FIXME: should ideally validate metadata as well
+        return json.dumps(self.metadata, indent=4, **kwargs)
 
     def to_dict(self):
         return self.metadata.copy()
+
+    def to_cff(self):
+        """returns a dictionary of the metadata transformed to CFF
+        https://citation-file-format.github.io/"""
+        cff_dict = {
+            "cff-version": "1.2.0",
+            "date-released": self.metadata.get("datePublished"),
+        }
+        cff_dict.update(
+            message="If you use this software, please cite it using the metadata from this file.",
+            title=self.metadata.get("name"),
+            authors=[
+                self._clean_dict(
+                    {
+                        "given-names": author["givenName"],
+                        "family-names": author["familyName"],
+                        "orcid": author.get("@id"),
+                        "email": author.get("email"),
+                    }
+                )
+                for author in self.metadata.get("author", [])
+            ],
+            version=self.metadata.get("version"),
+            abstract=self.metadata.get("description"),
+            keywords=self.metadata.get("keywords"),
+            license=self.metadata.get("license"),
+        )
+        return self._clean_dict(cff_dict)
+
+    def _clean_dict(self, d: dict):
+        """helper for removing None values from a dictionary"""
+        return {k: v for k, v in d.items() if v is not None}
 
 
 class DataCiteSchema(ABC):
