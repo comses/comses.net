@@ -556,8 +556,6 @@ class DataCiteApi:
                     (release, log, "Unable to mint DOI for parent codebase")
                 )
                 continue
-            codebase.doi = codebase_doi
-            codebase.save()
 
             """
             Mint DOI for release
@@ -569,8 +567,6 @@ class DataCiteApi:
                     (release, log, "Unable to mint DOI for release")
                 )
                 continue
-            release.doi = log.doi
-            release.save()
 
             logger.debug(
                 "Updating metadata for parent codebase of release %s", release.pk
@@ -578,6 +574,8 @@ class DataCiteApi:
             """
             Update parent Codebase metadata for new release DOI
             """
+            codebase.refresh_from_db()
+            release.refresh_from_db()
             log, ok = self.update_doi_metadata(codebase)
             if not ok:
                 logger.error("Failed to update metadata for codebase %s", codebase.pk)
