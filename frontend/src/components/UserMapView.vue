@@ -20,7 +20,7 @@ const props = defineProps<{
   metricsData: MetricsData;
 }>();
 
-const institutionData = props.metricsData.institution_metrics;
+const institutionData = props.metricsData.institutionData;
 
 const mapChartOptions = {
   chart: {
