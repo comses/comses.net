@@ -1,10 +1,15 @@
-from core.models import MemberProfile, ComsesGroups
-from library.models import CodebaseRelease, CodebaseReleaseDownload, Codebase
+import logging
+import pandas as pd
 from collections import defaultdict
 from django.db import connection
 from django.core.cache import cache
 from django.db.models import Count, F
-import pandas as pd
+
+from core.models import MemberProfile, ComsesGroups
+from library.models import CodebaseRelease, CodebaseReleaseDownload, Codebase
+
+
+logger = logging.getLogger(__name__)
 
 
 class Metrics:
@@ -354,7 +359,7 @@ class Metrics:
             .order_by("year")
         )
 
-        # temporary fix to combine netlogo and logo
+        # FIXME: temporary fix to combine netlogo and logo
         combined_metrics = defaultdict(lambda: defaultdict(int))
 
         for metric in programming_language_metrics:

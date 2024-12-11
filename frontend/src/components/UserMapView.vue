@@ -10,7 +10,7 @@ import labelInit from "highcharts/modules/series-label";
 import { Chart } from "highcharts-vue";
 import world from "@/assets/world.geo.json";
 import proj4 from "proj4";
-import type { MetricsData, MetricsChartSelection, Metric } from "@/types";
+import type { MetricsData } from "@/types";
 
 exportingInit(Highcharts); // required for hamburger menu w/ download options
 labelInit(Highcharts); // required for series labels on area charts

@@ -7,6 +7,8 @@ export function useRORAPI() {
    * Composable function for making requests to the Research Organization Registry REST API
    * https://ror.readme.io/docs/rest-api
    *
+   * FIXME: update to ror v2 schema eventually https://github.com/comses/planning/issues/294
+   *
    * @returns - An object containing reactive state of the request and helper functions for API requests
    */
 
