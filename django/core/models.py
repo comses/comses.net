@@ -320,6 +320,9 @@ class MemberProfileQuerySet(models.QuerySet):
             user__username__in=EXCLUDED_USERNAMES
         )
 
+    def with_affiliations(self, **kwargs):
+        return self.exclude(affiliations=[]).filter(**kwargs)
+
     def find_users_with_email(self, candidate_email, exclude_user=None):
         """
         Return a queryset of user ids with the given email
