@@ -12,15 +12,15 @@ class Metrics:
     DEFAULT_METRICS_CACHE_TIMEOUT = 60 * 60 * 24 * 7  # 1 week
     MINIMUM_CATEGORY_COUNT = 10  # the threshold at which we group all other nominal values into an "other" category
 
-    def get_all_data(self): #update this function 
+    def get_all_data(self, force=False):
         data = cache.get(Metrics.REDIS_METRICS_KEY)
-        if not data:
+        if not data or force:
             return self.cache_all()
         return data
 
     def cache_all(self):
         """
-        caches metrics data in redis
+        recompute and cache metrics data in redis
         """
         all_data = self.generate_metrics_data()
         cache.set(
@@ -72,11 +72,13 @@ class Metrics:
         release_metrics, release_start_year = self.get_release_metrics_timeseries()
         institution_metrics = self.get_member_affiliation_data()
         min_start_year = min(members_start_year, model_start_year, release_start_year)
-        all_metrics = dict(
-            startYear=min_start_year, **member_metrics, **model_metrics, **release_metrics,
-            institution_metrics=institution_metrics
+        return dict(
+            startYear=min_start_year,
+            institutionData=institution_metrics,
+            **member_metrics,
+            **model_metrics,
+            **release_metrics,
         )
-        return all_metrics
 
     def get_members_by_year_timeseries(self):
         """
@@ -157,7 +159,6 @@ class Metrics:
             .order_by("year")
         )
 
-
         release_downloads = list(
             CodebaseReleaseDownload.objects.values(year=F("date_created__year"))
             .annotate(total=Count("year"))
@@ -203,15 +204,13 @@ class Metrics:
                 ],
             },
             "releasesByOs": self.get_release_os_timeseries(min_start_year),
-            "releasesByPlatform": self.get_release_platform_timeseries(
-                min_start_year
-            ),
+            "releasesByPlatform": self.get_release_platform_timeseries(min_start_year),
             "releasesByLanguage": self.get_release_programming_language_timeseries(
                 min_start_year
             ),
         }
         return model_metrics, min_start_year
-    
+
     def get_release_metrics_timeseries(self):
 
         total_releases_by_year = list(
@@ -255,12 +254,11 @@ class Metrics:
                         ),
                     }
                 ],
-            }
+            },
         }
-        
+
         return release_metrics, min_start_year
 
-    
     def get_member_affiliation_data(self):
         sql_query = """
             SELECT 
@@ -274,7 +272,7 @@ class Metrics:
             AND affiliation->'coordinates' ?& array['lat', 'lon']  
             GROUP BY institution_name, latitude, longitude
             ORDER BY total DESC;
-        """   
+        """
 
         with connection.cursor() as cursor:
             cursor.execute(sql_query)
@@ -356,27 +354,28 @@ class Metrics:
             .order_by("year")
         )
 
-        #temporary fix to combine netlogo and logo
+        # temporary fix to combine netlogo and logo
         combined_metrics = defaultdict(lambda: defaultdict(int))
 
         for metric in programming_language_metrics:
-            language = metric['programming_language_names']
-            if language in ['NetLogo', 'Logo']:
-                language = 'NetLogo'
-            
-            year = metric['year']
-            combined_metrics[year][language] += metric['count']
-        
+            language = metric["programming_language_names"]
+            if language in ["NetLogo", "Logo"]:
+                language = "NetLogo"
+
+            year = metric["year"]
+            combined_metrics[year][language] += metric["count"]
+
         flattened_metrics = []
 
         for year, languages in combined_metrics.items():
             for language, count in languages.items():
-                flattened_metrics.append({
-                    'programming_language_names': language,
-                    'year': year,
-                    'count': count
-                })
-
+                flattened_metrics.append(
+                    {
+                        "programming_language_names": language,
+                        "year": year,
+                        "count": count,
+                    }
+                )
 
         return {
             "title": "Models by Language",
@@ -400,9 +399,7 @@ class Metrics:
             data.append(queryset_dict[year] if year in queryset_dict else 0)
         return data
 
-    def convert_release_metrics_to_timeseries(
-        self, metrics, start_year, category=None
-    ):
+    def convert_release_metrics_to_timeseries(self, metrics, start_year, category=None):
         """
         Converts Django queryset metrics to a list of timeseries dicts e.g.,
         [{"name": "OS Counts", "data": [0, 37, 43, 14, 95, ...]}, ...]
