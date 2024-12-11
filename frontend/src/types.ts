@@ -52,27 +52,40 @@ export interface Metric {
   series: TimeSeries[];
 }
 
+export type InstitutionMetric = {
+  name: string;
+  lat: number;
+  lon: number;
+  value: number;
+};
+
 export type MetricsData = Record<
   | "startYear"
   | "totalMembers"
   | "fullMembers"
-  | "totalCodebases"
-  | "codebasesByOs"
-  | "codebasesByPlatform"
-  | "codebasesByLanguage"
-  | "reviewedCodebases"
+  | "totalModels"
+  | "totalReleases"
+  | "reviewedReleases"
+  | "releasesByOs"
+  | "releasesByPlatform"
+  | "releasesByLanguage"
+  | "reviewedModels"
   | "totalDownloads",
   Metric
->;
+> & {
+  institutionData: InstitutionMetric[];
+};
 
 export type MetricsChartSelection =
   | "total-members"
   | "full-members"
-  | "total-codebases"
-  | "reviewed-codebases"
-  | "codebases-by-language"
-  | "codebases-by-platform"
-  | "codebases-by-os"
+  | "total-models"
+  | "total-releases"
+  | "reviewed-releases"
+  | "reviewed-models"
+  | "releases-by-language"
+  | "releases-by-platform"
+  | "releases-by-os"
   | "total-downloads";
 
 export interface ReviewEvent {

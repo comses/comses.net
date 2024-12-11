@@ -9,8 +9,7 @@ logger = logging.getLogger(__name__)
 
 
 class Command(BaseCommand):
-    help = """Dump active user emails for mailchimp import with filtered by is_active=True
-              and optional date_joined --after=yyyy-mm-dd"""
+    help = """generate metrics and cache in redis"""
 
     def add_arguments(self, parser):
         """

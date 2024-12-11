@@ -56,4 +56,9 @@ export default defineConfig({
       },
     },
   },
+  /*
+  optimizeDeps: {
+    exclude: [],
+  }
+  */
 });
