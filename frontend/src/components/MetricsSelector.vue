@@ -1,5 +1,8 @@
 <template>
   <div class="card">
+    <div class="card-body bg-light py-2 text-gray">
+      <b> Select a metric to view </b>
+    </div>
     <ul class="list-group list-group-flush">
       <!-- Members -->
       <li class="list-group-item">

@@ -1,6 +1,13 @@
 <template>
-  <div class="row">
-    <div class="col-sm-12 col-md-3" style="padding-top: 2.5rem">
+  <div class="row my-5">
+    <div class="col">
+      <div class="card">
+        <UserMapView :metrics-data="metricsData" />
+      </div>
+    </div>
+  </div>
+  <div class="row my-5">
+    <div class="col-sm-12 col-md-3">
       <MetricsSelector v-model="selectedChart" />
     </div>
     <div class="col-sm-12 col-md-9">
@@ -31,9 +38,6 @@
         </span>
       </div>
     </div>
-  </div>
-  <div>
-    <UserMapView :metrics-data="metricsData" />
   </div>
 </template>
 
