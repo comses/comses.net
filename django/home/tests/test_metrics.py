@@ -34,7 +34,7 @@ class MetricsTestCase(TestCase):
         m = Metrics()
         min_start_year = 2012
         OS_NAMES = ("linux", "other", "platform_independent", "windows", "macos")
-        highcharts_timeseries = m.convert_codebase_metrics_to_timeseries(
+        highcharts_timeseries = m.convert_release_metrics_to_timeseries(
             self.os_metrics, start_year=min_start_year
         )
         for chart_data in highcharts_timeseries:

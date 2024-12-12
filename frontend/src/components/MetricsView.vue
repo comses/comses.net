@@ -1,6 +1,13 @@
 <template>
-  <div class="row">
-    <div class="col-sm-12 col-md-3" style="padding-top: 2.5rem">
+  <div class="row my-5">
+    <div class="col">
+      <div class="card">
+        <UserMapView :metrics-data="metricsData" />
+      </div>
+    </div>
+  </div>
+  <div class="row my-5">
+    <div class="col-sm-12 col-md-3">
       <MetricsSelector v-model="selectedChart" />
     </div>
     <div class="col-sm-12 col-md-9">
@@ -43,6 +50,7 @@ import { ref, computed, onMounted } from "vue";
 import type { MetricsData, MetricsChartSelection, Metric } from "@/types";
 import MetricsSelector from "@/components/MetricsSelector.vue";
 import MetricsTable from "@/components/MetricsTable.vue";
+import UserMapView from "@/components/UserMapView.vue";
 
 exportingInit(Highcharts); // required for hamburger menu w/ download options
 labelInit(Highcharts); // required for series labels on area charts
@@ -68,11 +76,13 @@ function initalizeChartMap() {
   chartOptionsMap.value = new Map<MetricsChartSelection, any>([
     ["total-members", createCumulativeChart(props.metricsData.totalMembers)],
     ["full-members", createCumulativeChart(props.metricsData.fullMembers)],
-    ["total-codebases", createCumulativeChart(props.metricsData.totalCodebases)],
-    ["reviewed-codebases", createCumulativeChart(props.metricsData.reviewedCodebases)],
-    ["codebases-by-os", createAreaPercentageChart(props.metricsData.codebasesByOs)],
-    ["codebases-by-language", createAreaPercentageChart(props.metricsData.codebasesByLanguage)],
-    ["codebases-by-platform", createAreaPercentageChart(props.metricsData.codebasesByPlatform)],
+    ["total-models", createCumulativeChart(props.metricsData.totalModels)],
+    ["reviewed-models", createCumulativeChart(props.metricsData.reviewedModels)],
+    ["total-releases", createCumulativeChart(props.metricsData.totalReleases)],
+    ["reviewed-releases", createCumulativeChart(props.metricsData.reviewedReleases)],
+    ["releases-by-os", createAreaPercentageChart(props.metricsData.releasesByOs)],
+    ["releases-by-language", createAreaPercentageChart(props.metricsData.releasesByLanguage)],
+    ["releases-by-platform", createAreaPercentageChart(props.metricsData.releasesByPlatform)],
     ["total-downloads", createCumulativeChart(props.metricsData.totalDownloads)],
   ]);
 }

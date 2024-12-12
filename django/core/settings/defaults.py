@@ -515,6 +515,9 @@ DATACITE_API_USERNAME = os.getenv("DATACITE_API_USERNAME", "comses")
 DATACITE_DRY_RUN = os.getenv("DATACITE_DRY_RUN", "true")
 DATACITE_API_PASSWORD = read_secret("datacite_api_password")
 
+ROR_API_URL = "https://api.ror.org/v2/organizations"
+
+
 SOCIALACCOUNT_PROVIDERS = {
     # https://developer.github.com/apps/building-integrations/setting-up-and-registering-oauth-apps/about-scopes-for-oauth-apps/
     "github": {

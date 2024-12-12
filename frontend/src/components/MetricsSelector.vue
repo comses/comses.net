@@ -1,5 +1,8 @@
 <template>
   <div class="card">
+    <div class="card-body bg-light py-2 text-gray">
+      <b> Select a metric to view </b>
+    </div>
     <ul class="list-group list-group-flush">
       <!-- Members -->
       <li class="list-group-item">
@@ -28,18 +31,18 @@
           </div>
         </div>
       </li>
-      <!-- Codebases -->
+      <!-- Models -->
       <li class="list-group-item">
         <div class="form-check">
           <input
             class="form-check-input"
             type="radio"
-            id="total-codebases"
-            value="total-codebases"
+            id="total-models"
+            value="total-models"
             v-model="value"
           />
-          <label class="form-check-label fw-bold" for="total-codebases"
-            >Codebases <small class="text-muted">(total)</small></label
+          <label class="form-check-label fw-bold" for="total-models"
+            >Models <small class="text-muted">(total)</small></label
           >
         </div>
         <div class="ms-4 my-2">
@@ -47,11 +50,40 @@
             <input
               class="form-check-input"
               type="radio"
-              id="reviewed-codebases"
-              value="reviewed-codebases"
+              id="reviewed-models"
+              value="reviewed-models"
               v-model="value"
             />
-            <label class="form-check-label" for="reviewed-codebases"
+            <label class="form-check-label" for="reviewed-models"
+              ><small>Peer Reviewed</small></label
+            >
+          </div>
+        </div>
+      </li>
+      <!-- Model releases -->
+      <li class="list-group-item">
+        <div class="form-check">
+          <input
+            class="form-check-input"
+            type="radio"
+            id="total-releases"
+            value="total-releases"
+            v-model="value"
+          />
+          <label class="form-check-label fw-bold" for="total-releases"
+            >Model Releases <small class="text-muted">(total)</small></label
+          >
+        </div>
+        <div class="ms-4 my-2">
+          <div class="form-check mb-1">
+            <input
+              class="form-check-input"
+              type="radio"
+              id="reviewed-releases"
+              value="reviewed-releases"
+              v-model="value"
+            />
+            <label class="form-check-label" for="reviewed-releases"
               ><small>Peer Reviewed</small></label
             >
           </div>
@@ -59,11 +91,11 @@
             <input
               class="form-check-input"
               type="radio"
-              id="codebases-by-language"
-              value="codebases-by-language"
+              id="releases-by-language"
+              value="releases-by-language"
               v-model="value"
             />
-            <label class="form-check-label" for="codebases-by-language"
+            <label class="form-check-label" for="releases-by-language"
               ><small>By Language</small></label
             >
           </div>
@@ -71,11 +103,11 @@
             <input
               class="form-check-input"
               type="radio"
-              id="codebases-by-platform"
-              value="codebases-by-platform"
+              id="releases-by-platform"
+              value="releases-by-platform"
               v-model="value"
             />
-            <label class="form-check-label" for="codebases-by-platform"
+            <label class="form-check-label" for="releases-by-platform"
               ><small>By Platform</small></label
             >
           </div>
@@ -83,11 +115,11 @@
             <input
               class="form-check-input"
               type="radio"
-              id="codebases-by-os"
-              value="codebases-by-os"
+              id="releases-by-os"
+              value="releases-by-os"
               v-model="value"
             />
-            <label class="form-check-label" for="codebases-by-os"
+            <label class="form-check-label" for="releases-by-os"
               ><small>By Operating System</small></label
             >
           </div>
