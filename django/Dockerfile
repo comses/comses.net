@@ -1,8 +1,10 @@
-FROM comses/base:jammy
+FROM comses/base:noble
 
 ARG REQUIREMENTS_FILE=requirements-dev.txt
 ARG RUN_SCRIPT=./deploy/dev.sh
 ARG UBUNTU_MIRROR=archive.ubuntu.com
+ENV VIRTUAL_ENV=/home/comses/virtualenvs/comses.venv
+ENV PATH="${VIRTUAL_ENV}/bin:$PATH"
 
 RUN rm -f /etc/apt/apt.conf.d/docker-clean; echo 'Binary::apt::APT::Keep-Downloaded-Packages "true";' > /etc/apt/apt.conf.d/keep-cache
 RUN --mount=type=cache,target=/var/lib/apt,sharing=locked \
@@ -39,6 +41,7 @@ RUN --mount=type=cache,target=/var/lib/apt,sharing=locked \
         unrar-free \
         unzip \
         && update-alternatives --install /usr/bin/python python /usr/bin/python3 1000 \
+        && python -m venv ${VIRTUAL_ENV} \
         && apt-get upgrade -q -y -o Dpkg::Options::="--force-confold" \
         && mkdir -p /etc/service/django \
         && touch /etc/service/django/run /etc/postgresql-backup-pre \
