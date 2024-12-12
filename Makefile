@@ -82,7 +82,7 @@ release-version: .env
 	$(ENVREPLACE) TEST_BASIC_AUTH_PASSWORD $$(openssl rand -base64 42) .env
 
 .PHONY: docker-compose.yml
-docker-compose.yml: base.yml dev.yml staging.yml prod.yml config.mk $(PGPASS_PATH) release-version
+docker-compose.yml: base.yml dev.yml staging.yml prod.yml config.mk $(PGPASS_PATH) release-version .env
 	case "$(DEPLOY_ENVIRONMENT)" in \
 	  dev|staging) docker compose -f base.yml -f $(DEPLOY_ENVIRONMENT).yml config > docker-compose.yml;; \
 	  prod) docker compose -f base.yml -f staging.yml -f $(DEPLOY_ENVIRONMENT).yml config > docker-compose.yml;; \
@@ -100,7 +100,7 @@ secrets: $(SECRETS_DIR) $(GENERATED_SECRETS)
 	done
 
 .PHONY: deploy
-deploy: build .env
+deploy: build
 	docker compose pull db redis elasticsearch
 ifneq ($(DEPLOY_ENVIRONMENT),dev)
 	docker compose pull nginx

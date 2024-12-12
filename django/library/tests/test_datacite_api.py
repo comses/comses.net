@@ -50,7 +50,7 @@ class DataCiteApiTest(BaseModelTestCase):
         self.assertTrue(self.api.is_datacite_available())
         release = self.codebase.releases.first()
         log, ok = self.api.mint_public_doi(release)
-        self.assertEquals(log.http_status, 200, "should have successfully minted a DOI")
+        self.assertEqual(log.http_status, 200, "should have successfully minted a DOI")
         self.assertTrue(self.api.doi_matches_pattern(doi))
 
     def test_update_metadata_for_release(self):

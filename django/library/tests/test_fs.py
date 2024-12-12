@@ -43,8 +43,8 @@ class ArchiveExtractorTestCase(TestCase):
             fs_api=fs_api,
         )
         logs, level = msgs.serialize()
-        self.assertEquals(level, MessageLevels.warning)
-        self.assertEquals(len(logs), 2)
+        self.assertEqual(level, MessageLevels.warning)
+        self.assertEqual(len(logs), 2)
         self.assertEqual(
             set(
                 fs_api.list(StagingDirectories.originals, FileCategoryDirectories.code)
@@ -77,8 +77,8 @@ class ArchiveExtractorTestCase(TestCase):
                 FileCategoryDirectories.code, content=f, name="invalid.zip"
             )
         logs, level = msgs.serialize()
-        self.assertEquals(level, MessageLevels.error)
-        self.assertEquals(len(logs), 1)
+        self.assertEqual(level, MessageLevels.error)
+        self.assertEqual(len(logs), 1)
 
     @classmethod
     def tearDownClass(cls):
