@@ -12,31 +12,81 @@ export interface Tag {
 
 export type TagType = "" | "Event" | "Codebase" | "Job" | "Profile";
 
+type NonEmptyArray<T> = [T, ...T[]];
+
+export interface RORLocation {
+  geonames_id: number;
+  geonames_details: {
+    name: string;
+    lat?: number | null;
+    lng?: number | null;
+    country_code?: string | null;
+    country_name?: string | null;
+  };
+}
 export interface RORItem {
+  admin: {
+    created: {
+      date: string;
+      schema_version: "1.0" | "2.0";
+    };
+    last_modified: {
+      date: string;
+      schema_version: "1.0" | "2.0";
+    };
+  };
+  domains?: string[];
+  established?: null | number;
+  external_ids?: {
+    all: string[];
+    type: "fundref" | "grid" | "isni" | "wikidata";
+    preferred?: string | null;
+  }[];
   id: string;
-  name: string;
-  emailAddress?: string;
-  ipAddresses?: any[];
-  established?: number | null;
-  types: string[];
-  relationships: any[];
-  addresses: any[];
-  links: string[];
-  aliases: string[];
-  acronyms: string[];
-  status: "Active" | "Inactive" | "Withdrawn";
-  wikipediaUrl?: string;
-  labels: string[];
-  country: object;
-  externalIds: any;
-  [key: string | number | symbol]: unknown;
+  links?: {
+    value: string;
+    type: "website" | "wikipedia";
+  }[];
+  locations: NonEmptyArray<RORLocation>;
+  names: NonEmptyArray<{
+    value: string;
+    types: NonEmptyArray<"acronym" | "alias" | "label" | "ror_display">;
+    lang?: string | null;
+  }>;
+  relationships?: {
+    type: "related" | "parent" | "child" | "successor" | "predecessor";
+    id: string;
+    label: string;
+  }[];
+  status: "active" | "inactive" | "withdrawn";
+  types: NonEmptyArray<
+    | "education"
+    | "funder"
+    | "healthcare"
+    | "company"
+    | "archive"
+    | "nonprofit"
+    | "government"
+    | "facility"
+    | "other"
+  >;
 }
 
 export interface Organization {
   name: string;
-  url?: string;
-  acronym?: string;
   rorId?: string;
+  aliases?: string[];
+  acronyms?: string[];
+  url?: string;
+  link?: string;
+  types?: RORItem["types"];
+  wikipediaUrl?: string;
+  wikidata?: string[];
+  coordinates?: {
+    lat: number;
+    lon: number;
+  };
+  location?: RORLocation;
 }
 
 export interface TimeSeries {

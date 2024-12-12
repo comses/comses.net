@@ -65,7 +65,6 @@ class Command(BaseCommand):
             print("\nJSON: ", json.dumps(data, indent=4), "\n")
             print(".", end="", flush=True)
             location = data["locations"][0]
-            geonames_details = location["geonames_details"]
             ror_data = {
                 "name": "",
                 "aliases": [],
@@ -74,16 +73,14 @@ class Command(BaseCommand):
                 "types": data["types"],
                 "wikipedia_url": "",
                 "wikidata": "",
+                "location": location,
             }
+            geonames_details = location["geonames_details"]
             if geonames_details:
                 ror_data.update(
                     coordinates={
                         "lat": geonames_details["lat"],
                         "lon": geonames_details["lng"],
-                    },
-                    geonames_details={
-                        "id": location["geonames_id"],
-                        **geonames_details,
                     },
                 )
             for name_object in data["names"]:

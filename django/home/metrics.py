@@ -397,6 +397,8 @@ class Metrics:
 
         return a timeseries with 0s for all missing years in-between
         """
+        if not queryset_data:
+            return []
         end_year = queryset_data[-1]["year"]
         queryset_dict = {item["year"]: item["total"] for item in queryset_data}
         data = []
