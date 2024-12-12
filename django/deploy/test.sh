@@ -1,6 +1,7 @@
 #!/bin/sh
 
 export DJANGO_SETTINGS_MODULE="core.settings.test"
+printenv
 
 chmod a+x /code/deploy/*.sh;
 
