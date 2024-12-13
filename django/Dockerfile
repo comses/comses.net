@@ -60,4 +60,10 @@ COPY ./deploy/db/postgresql-backup-pre /etc/
 COPY ${RUN_SCRIPT} /etc/service/django/run
 COPY ./deploy/huey.sh /etc/service/huey/run
 COPY . /code
+
+# FIXME: replace with install from pypi
+# upgrading pip because of some bug with the debian patched version
+RUN python3 -m pip install --upgrade pip \
+    pip3 install -r /tmp/requirements.txt
+
 CMD ["/sbin/my_init"]
