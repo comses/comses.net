@@ -13,7 +13,7 @@ from packaging.version import Version
 from abc import ABC
 from collections import OrderedDict, defaultdict
 from datetime import date, timedelta
-from typing import List
+from codemeticulous import convert
 
 from django.conf import settings
 from django.contrib.postgres.fields import ArrayField
@@ -271,9 +271,6 @@ class Contributor(index.Indexed, ClusterableModel):
 
     def get_markdown_link(self):
         return f"[{self.get_full_name()}]({self.member_profile_url})"
-
-    def to_codemeta(self):
-        return CodeMetaSchema.convert_contributor(self)
 
     def get_aggregated_search_fields(self):
         return " ".join(
@@ -1702,10 +1699,16 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
         """Returns a CommonMetadata object used to build specific metadata objects: for example CodeMeta or DataCite"""
         return CommonMetadata(self)
 
+    # FIXME: I don't love the import here, but also don't like cluttering
+    # models.py with non-model code (metadata.py). Maybe just use release_to_codemeta(release)
+    # where needed instead? I don't think there is any reason for this to be a cached property
+    # the json string that gets used in the page could benefit from being *globally* cached though
     @cached_property
     def codemeta(self):
         """Returns a CodeMetaMetadata object that can be dumped to json"""
-        return CodeMetaSchema.build(self)
+        from .metadata import release_to_codemeta
+
+        return release_to_codemeta(self)
 
     @cached_property
     def datacite(self):
@@ -1717,7 +1720,7 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
 
     @cached_property
     def citation_cff(self):
-        return self.codemeta.to_cff()
+        return convert("codemeta", "cff", self.codemeta)
 
     @cached_property
     def license_text(self) -> str:
@@ -1768,7 +1771,7 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
 
     @property
     def codemeta_json(self):
-        return self.codemeta.to_json()
+        return self.codemeta.json()
 
     def create_or_update_codemeta(self, force=True):
         return self.get_fs_api().create_or_update_codemeta(force=force)
@@ -2777,208 +2780,6 @@ class CommonMetadata:
     @cached_property
     def release_contributor_authors(self):
         return ReleaseContributor.objects.authors(self.codebase_release)
-
-
-class CodeMetaSchema:
-    COMSES_ORGANIZATION = {
-        "@id": "https://ror.org/015bsfc29",
-        "@type": "Organization",
-        **CommonMetadata.COMSES_ORGANIZATION,
-    }
-
-    INITIAL_METADATA = {
-        "@context": "https://w3id.org/codemeta/v3.0",
-        "@type": "SoftwareSourceCode",
-        "isPartOf": {
-            "@type": "WebApplication",
-            "applicationCategory": "Computational Modeling Software Repository",
-            "operatingSystem": "Any",
-            "name": "CoMSES Model Library",
-            "url": "https://www.comses.net/codebases",
-        },
-        "publisher": COMSES_ORGANIZATION,
-        "provider": COMSES_ORGANIZATION,
-        "description": "Default CoMSES Description",
-        "keywords": [],
-        "author": [],
-        "license": "https://opensource.org/license/mit",
-    }
-
-    def __init__(self, metadata: dict):
-        if not metadata:
-            raise ValueError(
-                "Initialize with a base dictionary with codemeta terms mapped to JSON-serializable values"
-            )
-        self.metadata = metadata
-
-    @classmethod
-    def build(cls, codebase_release: CodebaseRelease):
-        if not codebase_release.live:
-            logger.warning(
-                "generating codemeta for an unpublished release: %s", codebase_release
-            )
-            return CodeMetaSchema(cls.INITIAL_METADATA)
-        return CodeMetaSchema(cls.convert(codebase_release))
-
-    @classmethod
-    def convert(cls, codebase_release: CodebaseRelease):
-        """
-        Converts the given CodebaseRelease into a Python dictionary.
-        """
-        common_metadata = codebase_release.common_metadata
-        metadata = {
-            **cls.INITIAL_METADATA,
-            # base metadata from CommonMetadata
-            "@id": common_metadata.identifier,
-            "identifier": common_metadata.identifier,
-            "name": common_metadata.name,
-            "copyrightYear": common_metadata.copyright_year,
-            "dateCreated": common_metadata.date_created.isoformat(),
-            "dateModified": common_metadata.date_modified.isoformat(),
-            "datePublished": common_metadata.last_published.isoformat(),
-            "description": common_metadata.description,
-            "keywords": common_metadata.keywords,
-            "releaseNotes": common_metadata.release_notes,
-            "license": common_metadata.license_url,
-            "runtimePlatform": common_metadata.runtime_platform,
-            "url": common_metadata.permanent_url,
-            # requires additional CodeMeta specific processing
-            "author": cls.convert_authors(common_metadata),
-            "citation": cls.convert_citations(common_metadata),
-            "programmingLanguage": cls.convert_programming_languages(common_metadata),
-            "targetProduct": cls.convert_target_product(common_metadata),
-        }
-        if hasattr(common_metadata, "code_repository"):
-            metadata.update(codeRepository=common_metadata.code_repository)
-        if hasattr(common_metadata, "release_notes"):
-            metadata.update(releaseNotes=common_metadata.release_notes)
-        return metadata
-
-    @classmethod
-    def convert_programming_languages(cls, common_metadata: CommonMetadata):
-        return [
-            {"@type": "ComputerLanguage", "name": pl.name}
-            for pl in common_metadata.programming_languages
-        ]
-
-    @classmethod
-    def convert_citations(cls, common_metadata: CommonMetadata):
-        return [
-            cls.to_creative_work(citation_text)
-            for citation_text in common_metadata.citations
-        ]
-
-    @classmethod
-    def to_creative_work(cls, text):
-        return {"@type": "CreativeWork", "text": text}
-
-    @classmethod
-    def convert_authors(cls, common_metadata: CommonMetadata):
-        return [
-            cls.convert_contributor(author.contributor)
-            for author in common_metadata.release_contributor_authors
-        ]
-
-    @classmethod
-    def convert_affiliation(cls, affiliation: dict):
-        codemeta_affiliation = {}
-        if affiliation:
-            codemeta_affiliation = {
-                # FIXME: may switch to https://schema.org/ResearchOrganization at some point
-                "@type": "Organization",
-                "name": affiliation.get("name"),
-                "url": affiliation.get("url"),
-            }
-            if affiliation.get("ror_id"):
-                codemeta_affiliation.update(
-                    {
-                        "@id": affiliation.get("ror_id"),
-                        "identifier": affiliation.get("ror_id"),
-                        "sameAs": affiliation.get("ror_id"),
-                    }
-                )
-        return codemeta_affiliation
-
-    @classmethod
-    def convert_contributor(cls, contributor: Contributor):
-        codemeta = {
-            "@type": "Person",
-            # FIXME: Contributor should proxy to User / MemberProfile fields if User is available and given_name and family_name are not set
-            "givenName": contributor.given_name,
-            "familyName": contributor.family_name,
-        }
-        if contributor.orcid_url:
-            codemeta["@id"] = contributor.orcid_url
-        if contributor.affiliations:
-            codemeta["affiliation"] = cls.convert_affiliation(
-                contributor.primary_affiliation
-            )
-        if contributor.email:
-            codemeta["email"] = contributor.email
-        return codemeta
-
-    @classmethod
-    def convert_target_product(cls, common_metadata: CommonMetadata):
-        target_product = {
-            "@type": "SoftwareApplication",
-            "name": common_metadata.release_title,
-            "operatingSystem": common_metadata.os,
-            "applicationCategory": "Computational Model",
-        }
-        if common_metadata.live:
-            target_product.update(
-                # FIXME: consider adding a convenience method to generate absolute urls
-                downloadUrl=f"{settings.BASE_URL}{common_metadata.download_url}",
-                releaseNotes=getattr(common_metadata, "release_notes", None),
-                softwareVersion=common_metadata.version,
-                identifier=common_metadata.identifier,
-                sameAs=common_metadata.comses_permanent_url,
-            )
-        image_url = common_metadata.get_featured_rendition_url
-        if image_url:
-            # FIXME: consider adding a convenience method to generate absolute urls
-            target_product.update(screenshot=f"{settings.BASE_URL}{image_url}")
-        return target_product
-
-    def to_json(self, **kwargs):
-        """Returns a JSON string of this codemeta data"""
-        # FIXME: should ideally validate metadata as well
-        return json.dumps(self.metadata, indent=4, **kwargs)
-
-    def to_dict(self):
-        return self.metadata.copy()
-
-    def to_cff(self):
-        """returns a dictionary of the metadata transformed to CFF
-        https://citation-file-format.github.io/"""
-        cff_dict = {
-            "cff-version": "1.2.0",
-            "date-released": self.metadata.get("datePublished"),
-        }
-        cff_dict.update(
-            message="If you use this software, please cite it using the metadata from this file.",
-            title=self.metadata.get("name"),
-            authors=[
-                self._clean_dict(
-                    {
-                        "given-names": author["givenName"],
-                        "family-names": author["familyName"],
-                        "orcid": author.get("@id"),
-                        "email": author.get("email"),
-                    }
-                )
-                for author in self.metadata.get("author", [])
-            ],
-            version=self.metadata.get("version"),
-            abstract=self.metadata.get("description"),
-            keywords=self.metadata.get("keywords"),
-            license=self.metadata.get("license"),
-        )
-        return self._clean_dict(cff_dict)
-
-    def _clean_dict(self, d: dict):
-        """helper for removing None values from a dictionary"""
-        return {k: v for k, v in d.items() if v is not None}
 
 
 class DataCiteSchema(ABC):

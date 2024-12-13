@@ -542,7 +542,7 @@ class CodebaseReleaseFsApi:
         path = self.citation_cff_path
         if force or not path.exists():
             with path.open(mode="w", encoding="utf-8") as citation_out:
-                citation_out.write(yaml.dump(self.citation_cff))
+                citation_out.write(self.citation_cff.yaml())
             return True
         return False
 
@@ -558,7 +558,7 @@ class CodebaseReleaseFsApi:
         return False
 
     def get_codemeta_json(self):
-        return self.codemeta.to_json()
+        return self.codemeta.json()
 
     def build_published_archive(self, force=False):
         """
@@ -898,7 +898,7 @@ class CodebaseGitRepositoryApi:
         if they do not already exist
         """
         self._add_meta_file_if_missing("README.md", self.generate_readme())
-        self._add_meta_file_if_missing("CITATION.cff", yaml.dump(release.citation_cff))
+        self._add_meta_file_if_missing("CITATION.cff", release.citation_cff.yaml())
         if release.license:
             self._add_meta_file_if_missing("LICENSE", release.license_text)
 
