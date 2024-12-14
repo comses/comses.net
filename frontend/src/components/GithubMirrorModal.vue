@@ -17,9 +17,17 @@
       <template #body>
         <p>
           This will transform your model into a git repository and archive it on GitHub under a
-          central CoMSES Model Library organization.
+          central CoMSES Model Library organization. This is intended to be a read-only archive that
+          allows others to easily view your model's source code and documentation without disrupting
+          the normal CoMSES Model Library workflow.
+        </p>
+        <p>
+          If you wish to work with the generated repository under your own GitHub account, you can
+          fork it or wait for the upcoming <i>GitHub Sync</i> feature.
+        </p>
+        <p>
           <a href="/github" target="_blank"
-            >Learn more <i class="small fas fa-chevron-right"></i
+            >Learn more about the GitHub Integration here <i class="small fas fa-chevron-right"></i
           ></a>
         </p>
         <form @submit="handleSubmit" id="github-mirror-form">

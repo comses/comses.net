@@ -47,7 +47,7 @@ from core.views import (
 )
 from core.pagination import SmallResultSetPagination
 from core.serializers import RelatedMemberProfileSerializer
-from .github import GithubRepoNameValidator
+from .github_integration import GithubRepoNameValidator
 from .forms import (
     PeerReviewerFeedbackReviewerForm,
     PeerReviewInvitationReplyForm,

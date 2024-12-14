@@ -3,8 +3,6 @@ from codemeticulous.codemeta.models import CodeMeta, Person, Organization, Role
 
 from django.conf import settings
 
-from .models import CodebaseRelease, Contributor, License, ReleaseContributor
-
 COMSES_ORGANIZATION = {
     "@id": "https://ror.org/015bsfc29",
     "@type": "Organization",
@@ -31,13 +29,13 @@ def convert_affiliation(affiliation: dict):
 
 
 def convert_release_contributors(
-    release_contributors: list[ReleaseContributor],
+    release_contributors,
     actor_type: Literal["author", "contributor"],
 ):
     codemeta_actors = []
     codemeta_roles = []
     for num, rc in enumerate(release_contributors):
-        contributor: Contributor = rc.contributor
+        contributor = rc.contributor
         # https://www.w3.org/TR/json-ld11/#identifying-blank-nodes
         contributor_id = contributor.orcid_url or f"_:{actor_type}_{num + 1}"
         if contributor.is_organization:
@@ -82,7 +80,7 @@ def to_textual_creative_work(text: str):
     }
 
 
-def release_to_codemeta(release: CodebaseRelease):
+def release_to_codemeta(release):
     codebase = release.codebase
     return CodeMeta(
         **{"@context": "https://doi.org/10.5063/schema/codemeta-2.0"},
@@ -118,7 +116,7 @@ def release_to_codemeta(release: CodebaseRelease):
         releaseNotes=release.release_notes.raw,
         supportingData=release.output_data_url or None,
         author=convert_release_contributors(
-            ReleaseContributor.objects.authors(release), "author"
+            release.author_release_contributors, "author"
         )
         or None,
         citation=[
@@ -131,7 +129,7 @@ def release_to_codemeta(release: CodebaseRelease):
         ]
         or None,
         contributor=convert_release_contributors(
-            ReleaseContributor.objects.nonauthors(release), "contributor"
+            release.nonauthor_release_contributors, "contributor"
         )
         or None,
         copyrightYear=(
@@ -143,7 +141,7 @@ def release_to_codemeta(release: CodebaseRelease):
             release.last_published_on.date() if release.last_published_on else None
         ),
         keywords=[tag.name for tag in codebase.tags.all()] or None,
-        license=(release.license or License.objects.get(name="MIT")).url,
+        license=release.license.url if release.license else None,
         publisher=COMSES_ORGANIZATION,
         version=release.version_number,
         description=codebase.description.raw,

@@ -249,5 +249,5 @@ class GithubApi:
             local_repo.create_remote("origin", push_url)
         else:
             local_repo.remotes["origin"].set_url(push_url)
-        local_repo.git.push("--set-upstream", "origin", local_repo.active_branch.name)
+        local_repo.git.push("--all")
         local_repo.git.push("--tags")
