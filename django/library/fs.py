@@ -15,7 +15,7 @@ from functools import total_ordering
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import Optional
-from git import Actor, InvalidGitRepositoryError, Repo
+from git import Actor, GitCommandError, InvalidGitRepositoryError, Repo
 
 import bagit
 import rarfile
@@ -787,7 +787,11 @@ class CodebaseGitRepositoryApi:
     Manage a (local) git repository mirror of a codebase
     """
 
-    FILE_SIZE_LIMIT = 100 * 1024 * 1024
+    FILE_SIZE_LIMIT = settings.GITHUB_INDIVIDUAL_FILE_SIZE_LIMIT
+    MEGABYTE = 1024 * 1024
+    FILE_SIZE_LIMIT_MB = FILE_SIZE_LIMIT / MEGABYTE
+    DEFAULT_BRANCH_NAME = "main"
+    RELEASE_BRANCH_PREFIX = "release/"
 
     def __init__(self, codebase):
         self.codebase = codebase
@@ -814,6 +818,9 @@ class CodebaseGitRepositoryApi:
         )
         return Actor(profile.name, author_email)
 
+    def get_release_branch_name(self, release):
+        return f"{self.RELEASE_BRANCH_PREFIX}{release.version_number}"
+
     @classmethod
     def check_file_sizes(cls, codebase):
         releases = codebase.ordered_releases_list()
@@ -822,9 +829,9 @@ class CodebaseGitRepositoryApi:
             sip_storage = release_fs_api.get_sip_storage()
             for file in sip_storage.list(absolute=True):
                 if file.stat().st_size > cls.FILE_SIZE_LIMIT:
-                    file_size_mb = file.stat().st_size / (1024 * 1024)
+                    file_size_mb = file.stat().st_size / cls.MEGABYTE
                     raise ValidationError(
-                        f"File {file} is too large ({file_size_mb}MB), individual files must be under {cls.FILE_SIZE_LIMIT / (1024 * 1024)}MB"
+                        f"File {file} is too large ({file_size_mb}MB), individual files must be under {cls.FILE_SIZE_LIMIT_MB}MB"
                     )
 
     @contextmanager
@@ -860,10 +867,15 @@ class CodebaseGitRepositoryApi:
         except InvalidGitRepositoryError:
             if should_exist:
                 raise RuntimeError(f"Repository {self.repo_dir} does not exist")
-            self.repo = Repo.init(self.repo_dir)
+            self.repo = Repo.init(
+                self.repo_dir, initial_branch=self.DEFAULT_BRANCH_NAME
+            )
         except Exception as e:
             logger.exception(e)
             raise RuntimeError(f"Failed to initialize git repository")
+
+    def checkout_main(self):
+        self.repo.git.checkout(self.DEFAULT_BRANCH_NAME)
 
     def add_release_files(self, release):
         """
@@ -885,6 +897,7 @@ class CodebaseGitRepositoryApi:
                     r=True,
                 )
         # copy over files from the sip storage and add to the index
+        # FIXME: move this to a copy_all() method in the sip storage class
         for file in sip_storage.list(absolute=True):
             rel_path = file.relative_to(sip_storage.location)
             dest_path = self.repo_dir / rel_path
@@ -892,19 +905,24 @@ class CodebaseGitRepositoryApi:
             shutil.copy(file, dest_path)
             self.repo.index.add([str(rel_path)])
 
-    def add_release_meta_files(self, release):
+    def add_release_meta_files(self, release, overwrite=False):
         """
-        helper for adding all 'meta' files (readme, citation, license) for a release
-        if they do not already exist
+        helper for adding all 'meta' files (readme, codemeta, citation, license) for a release.
+        If overwrite is True, overwrite existing files, otherwise only add if they do not exist
         """
-        self._add_meta_file_if_missing("README.md", self.generate_readme())
-        self._add_meta_file_if_missing("CITATION.cff", release.citation_cff.yaml())
+        self._add_meta_file("README.md", self.generate_readme(), overwrite=overwrite)
+        self._add_meta_file(
+            "CITATION.cff", release.citation_cff.yaml(), overwrite=overwrite
+        )
+        self._add_meta_file(
+            "codemeta.json", release.codemeta.json(), overwrite=overwrite
+        )
         if release.license:
-            self._add_meta_file_if_missing("LICENSE", release.license_text)
+            self._add_meta_file("LICENSE", release.license_text)
 
-    def _add_meta_file_if_missing(self, filename, content):
+    def _add_meta_file(self, filename, content, overwrite=False):
         dest_path = self.repo_dir / filename
-        if not dest_path.exists():
+        if not dest_path.exists() or overwrite:
             with dest_path.open("w") as f:
                 f.write(content + "\n")
             self.repo.index.add([filename])
@@ -913,16 +931,92 @@ class CodebaseGitRepositoryApi:
         """
         commit the the release and tag it, should only be called after adding all necessary files
         """
-        # FIXME: add co-authors from contributors?
-        commit_msg = f"Release {release.version_number}\n\n{release.release_notes.raw}"
-        self.repo.index.commit(
+        # make sure the commit goes to main, then create the release branch later
+        self.checkout_main()
+        commit_msg = (
+            f"Release {release.version_number}\n\n{release.release_notes.raw}\n"
+        )
+        for rc in release.coauthor_release_contributors:
+            contributor = rc.contributor
+            email = ""
+            # try to use the co-author's github account email, otherwise just leave it blank
+            if contributor.user and contributor.user.member_profile.github_username:
+                email = f"{contributor.user.member_profile.github_username}@users.noreply.github.com"
+            commit_msg += f"\nCo-authored-by: {contributor.name} <{email}>"
+        commit = self.repo.index.commit(
             message=commit_msg,
             committer=self.committer,
             author=self.author,
             author_date=release.last_published_on,
         )
         if tag:
-            self.repo.create_tag(f"v{release.version_number}")
+            self.repo.create_tag(f"{release.version_number}")
+        return commit
+
+    def create_release_branch(self, release, commit):
+        """
+        create a new branch for the release
+        """
+        release_branch_name = self.get_release_branch_name(release)
+        self.repo.create_head(release_branch_name, commit)
+        return release_branch_name
+
+    def is_release_codemeta_stale(self, release):
+        """
+        check if the codemeta.json file for a release branch is out of date
+
+        this has the side effect of updating the branch whenever we change how codemeta is generated
+        """
+        release_branch_name = self.get_release_branch_name(release)
+        self.repo.git.checkout(release_branch_name)
+        codemeta_path = self.repo_dir / "codemeta.json"
+        if not codemeta_path.exists():
+            return True
+        with codemeta_path.open() as f:
+            checked_in_codemeta = json.load(f)
+        current_codemeta = json.loads(release.codemeta.json())
+        self.checkout_main()
+        return checked_in_codemeta != current_codemeta
+
+    def update_release_branch(self, release):
+        """
+        update a release branch with new metadata, merging back into main (fast-forward)
+        if it is the latest release
+
+        this ONLY updates metadata files and does not add
+        changes to the code, docs, etc. as it is assumed that any synced releases are published
+        and frozen
+        """
+        with self.use_temporary_repo(from_existing=True):
+            self.initialize(should_exist=True)
+            release_branch_name = self.get_release_branch_name(release)
+            # determine whether this is the latest release (i.e. points to the
+            # same thing as main) and should merge back into main
+            release_branch = self.repo.heads[release_branch_name]
+            main_branch = self.repo.heads[self.DEFAULT_BRANCH_NAME]
+            merge_into_main = (main_branch.commit == release_branch.commit) and (
+                main_branch.commit == self.repo.head.commit
+            )
+
+            self.repo.git.checkout(release_branch_name)
+            self.add_release_meta_files(release)
+            commit_msg = f"Update metadata for release {release.version_number}"
+            self.repo.index.commit(
+                message=commit_msg,
+                committer=self.committer,
+                author=self.author,
+                author_date=timezone.now(),
+            )
+            if merge_into_main:
+                self.checkout_main()
+                try:
+                    self.repo.git.merge("--ff-only", release_branch_name)
+                except Exception as e:
+                    logger.error(
+                        f"Unexpected divergence when trying to merge {release_branch_name} into {self.DEFAULT_BRANCH_NAME}: {e}"
+                    )
+        self.checkout_main()
+        return Repo(self.repo_dir)
 
     def append_releases(self, releases=None) -> Repo:
         """
@@ -952,11 +1046,13 @@ class CodebaseGitRepositoryApi:
                 )
             # make sure the releases are ordered by version number
             releases = sorted(releases, key=lambda r: Version(r.version_number))
-            # append releases to the git repo
+            # append releases to the git repo by adding files, committing, and creating a branch
             for release in releases:
                 self.add_release_files(release)
                 self.add_release_meta_files(release)
-                self.commit_release(release)
+                commit = self.commit_release(release)
+                self.create_release_branch(release, commit)
+            self.checkout_main()
         # record newly mirrored releases and update timestamp
         self.mirror.update_local_releases(releases)
         return Repo(self.repo_dir)
@@ -977,7 +1073,9 @@ class CodebaseGitRepositoryApi:
             for release in releases:
                 self.add_release_files(release)
                 self.add_release_meta_files(release)
-                self.commit_release(release)
+                commit = self.commit_release(release)
+                self.create_release_branch(release, commit)
+            self.checkout_main()
         # record mirrored releases and update timestamp
         self.mirror.update_local_releases(releases)
         return Repo(self.repo_dir)

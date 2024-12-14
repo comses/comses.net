@@ -59,6 +59,7 @@ from .fs import (
     FileCategoryDirectories,
     MessageLevels,
 )
+from .metadata import release_to_codemeta
 
 logger = logging.getLogger(__name__)
 
@@ -1612,6 +1613,18 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
             return Codebase.format_doi_url(self.doi)
         return self.comses_permanent_url
 
+    @property
+    def author_release_contributors(self):
+        return ReleaseContributor.objects.authors(self)
+
+    @property
+    def coauthor_release_contributors(self):
+        return self.authors.exclude(contributor__user=self.submitter)
+
+    @property
+    def nonauthor_release_contributors(self):
+        return ReleaseContributor.objects.nonauthors(self)
+
     @cached_property
     def citation_authors(self):
         authors = self.submitter.member_profile.name
@@ -1699,14 +1712,11 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
         """Returns a CommonMetadata object used to build specific metadata objects: for example CodeMeta or DataCite"""
         return CommonMetadata(self)
 
-    # FIXME: I don't love the import here, but also don't like cluttering
-    # models.py with non-model code (metadata.py). Maybe just use release_to_codemeta(release)
-    # where needed instead? I don't think there is any reason for this to be a cached property
+    # FIXME: is there any reason for this to be a cached property?
     # the json string that gets used in the page could benefit from being *globally* cached though
     @cached_property
     def codemeta(self):
         """Returns a CodeMetaMetadata object that can be dumped to json"""
-        from .metadata import release_to_codemeta
 
         return release_to_codemeta(self)
 
@@ -3097,7 +3107,7 @@ class CodebaseDataCiteSchema(DataCiteSchema):
 
         metadata["relatedIdentifiers"] = []
         # assumes that all peer reviewed releases have been issued a DOI before issuing a DOI for the parent Codebase
-        for release in codebase.ordered_releases():
+        for release in codebase.ordered_releases_list():
             if release.doi:
                 metadata["relatedIdentifiers"].append(
                     {
