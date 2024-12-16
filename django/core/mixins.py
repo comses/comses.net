@@ -7,12 +7,12 @@ from django.core.exceptions import PermissionDenied
 from django.shortcuts import redirect
 from django.utils import timezone
 from rest_framework import serializers
+from rest_framework.decorators import action
 from rest_framework.exceptions import NotFound
 from rest_framework.response import Response
-from rest_framework.decorators import action
 
 from .models import SpamModeration
-from .permissions import ViewRestrictedObjectPermissions, ModeratorPermissions
+from .permissions import ModeratorPermissions, ViewRestrictedObjectPermissions
 
 logger = logging.getLogger(__name__)
 
@@ -249,11 +249,11 @@ class SpamCatcherViewSetMixin:
 
     def perform_create(self, serializer: serializers.Serializer):
         super().perform_create(serializer)
-        self.handle_spam_detection(serializer)
+        self.create_or_update_spam_moderation_object(serializer)
 
     def perform_update(self, serializer):
         super().perform_update(serializer)
-        self.handle_spam_detection(serializer)
+        self.create_or_update_spam_moderation_object(serializer)
 
     def _validate_content_object(self, instance):
         # make sure that the instance has a spam_moderation attribute as well as the
@@ -262,13 +262,18 @@ class SpamCatcherViewSetMixin:
             "spam_moderation",
             "is_marked_spam",
             "get_absolute_url",
-            "title",
         ]
         for field in required_fields:
             if not hasattr(instance, field):
                 raise ValueError(
                     f"instance {instance} does not have a {field} attribute"
                 )
+
+        # Ensure either 'title' () or 'username' (for MemberProfile) is present
+        if not (hasattr(instance, "title") or hasattr(instance, "username")):
+            raise ValueError(
+                f"instance {instance} must have either a 'title' or a 'username' attribute"
+            )
 
     @action(detail=True, methods=["post"], permission_classes=[ModeratorPermissions])
     def mark_spam(self, request, **kwargs):
@@ -294,28 +299,43 @@ class SpamCatcherViewSetMixin:
             spam_moderation.save()
         return redirect(instance.get_list_url())
 
-    def handle_spam_detection(self, serializer: serializers.Serializer):
-        if "spam_context" in serializer.context:
-            try:
-                self._validate_content_object(serializer.instance)
-                self._record_spam(
-                    serializer.instance, serializer.context["spam_context"]
-                )
-            except ValueError as e:
-                logger.warning("Cannot flag %s as spam: %s", serializer.instance, e)
+    def create_or_update_spam_moderation_object(
+        self, serializer: serializers.Serializer
+    ):
+        try:
+            self._validate_content_object(serializer.instance)
+            self._create_or_update_spam_moderation_object(
+                serializer.instance,
+                (
+                    serializer.context["spam_context"]
+                    if "spam_context" in serializer.context
+                    else None
+                ),
+            )
+        except ValueError as e:
+            logger.warning("Cannot flag %s as spam: %s", serializer.instance, e)
 
-    def _record_spam(self, instance, spam_context: dict):
+    def _create_or_update_spam_moderation_object(
+        self, instance, spam_context: dict = None
+    ):
         content_type = ContentType.objects.get_for_model(type(instance))
-        # SpamModeration updates the content instance on save
-        spam_moderation, created = SpamModeration.objects.get_or_create(
+        default_status = (
+            SpamModeration.Status.SPAM_LIKELY
+            if spam_context
+            else SpamModeration.Status.SCHEDULED_FOR_CHECK
+        )
+        default_spam_moderation = {
+            "status": default_status,
+            "detection_method": (
+                spam_context.get("detection_method", "") if spam_context else ""
+            ),
+            "detection_details": (
+                spam_context.get("detection_details", "") if spam_context else ""
+            ),
+        }
+
+        SpamModeration.objects.update_or_create(
             content_type=content_type,
             object_id=instance.id,
-            defaults={
-                "status": SpamModeration.Status.UNREVIEWED,
-                "detection_method": spam_context["detection_method"],
-                "detection_details": spam_context["detection_details"],
-            },
+            defaults=default_spam_moderation,
         )
-        if not created:
-            spam_moderation.status = SpamModeration.Status.UNREVIEWED
-            spam_moderation.save()
