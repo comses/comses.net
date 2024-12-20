@@ -313,7 +313,7 @@ class MemberProfileFilter(filters.BaseFilterBackend):
         query_params = request.query_params
         qs = query_params.get("query")
         tags = query_params.getlist("tags")
-        return get_search_queryset(qs, queryset, tags=tags)
+        return get_search_queryset(qs, queryset, tags=tags, order_by_relevance=True)
 
 
 class MemberProfileViewSet(CommonViewSetMixin, HtmlNoDeleteViewSet):
