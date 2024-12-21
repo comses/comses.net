@@ -803,6 +803,15 @@ class Codebase(index.Indexed, ModeratedContent, ClusterableModel):
         return self.git_mirror
 
     @property
+    def invalidate_on_save_cache_prefix(self):
+        """prefix for cache keys that should be invalidated on save"""
+        return f"codebase:{self.id}"
+
+    def invalidate_cached_properties(self):
+        keys = cache.keys(f"{self.invalidate_on_save_cache_prefix}:*")
+        cache.delete_many(keys)
+
+    @property
     def codebase_contributors_redis_key(self):
         return f"codebase:contributors:{self.identifier}"
 
@@ -1715,7 +1724,6 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
         return CommonMetadata(self)
 
     # FIXME: is there any reason for this to be a cached property?
-    # the json string that gets used in the page could benefit from being *globally* cached though
     # it may also be wise to have a minimal codemeta dict that gets generated in case of an exception
     # when using codemeticulous
     @cached_property
@@ -1784,8 +1792,31 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
         return COLOR_MAP.get(self.status)
 
     @property
-    def codemeta_json(self):
-        return self.codemeta.json()
+    def invalidate_on_save_cache_prefix(self):
+        """prefix for cache keys that should be invalidated on save"""
+        return f"{self.codebase.invalidate_on_save_cache_prefix}:release:{self.id}"
+
+    def invalidate_cached_properties(self):
+        keys = cache.keys(f"{self.invalidate_on_save_cache_prefix}:*")
+        cache.delete_many(keys)
+
+    @property
+    def codemeta_json(self) -> str:
+        """Returns the codemeta json string for this release. This property
+        is cached for 30 days to reduce page load times. The cache gets invalidated
+        every time the release or parent codebase is updated (post-save signal handler).
+
+        Use codemeta.json() instead to re-generate"""
+        key = f"{self.invalidate_on_save_cache_prefix}:codemeta_json"
+        json_str = cache.get(key)
+        if json_str is None:
+            json_str = self.codemeta.json()
+            cache.set(
+                key,
+                json_str,
+                timeout=60 * 60 * 24 * 30,
+            )
+        return json_str
 
     def create_or_update_codemeta(self, force=True):
         return self.get_fs_api().create_or_update_codemeta(force=force)
