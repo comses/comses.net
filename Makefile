@@ -156,5 +156,4 @@ e2e: docker-compose.yml secrets $(DOCKER_SHARED_DIR) $(E2E_REPO_PATH)
 	docker compose -f docker-compose.yml -f e2e.yml up -d --build
 	docker compose -f docker-compose.yml -f e2e.yml exec server bash -c "\
 		inv borg.restore --force && \
-		./manage.py migrate && \
 		inv prepare"
