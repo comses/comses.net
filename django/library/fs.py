@@ -896,9 +896,17 @@ class CodebaseGitRepositoryApi:
                     working_tree=True,
                     r=True,
                 )
+        readme_pattern = re.compile(
+            r"(?i)^readme(?:\.(?:markdown|mdown|mkdn|md|textile|rdoc|org|creole|mediawiki|wiki|rst|asciidoc|adoc|asc|pod|txt))?$"
+        )
         # copy over files from the sip storage and add to the index
-        # FIXME: move this to a copy_all() method in the sip storage class
+        # FIXME: consider moving this copy all operation to the CodebaseReleaseStorage class
         for file in sip_storage.list(absolute=True):
+            # check for an existing readme and duplicate it to the repo root
+            # for github to recognize. Otherwise, we'll generate one later
+            if readme_pattern.match(file.name):
+                shutil.copy(file, self.repo_dir / file.name)
+                self.repo.index.add([file.name])
             rel_path = file.relative_to(sip_storage.location)
             dest_path = self.repo_dir / rel_path
             dest_path.parent.mkdir(parents=True, exist_ok=True)
