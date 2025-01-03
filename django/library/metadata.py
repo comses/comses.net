@@ -1,151 +1,236 @@
+import json
 from typing import Literal
-from codemeticulous.codemeta.models import CodeMeta, Person, Organization, Role
+from codemeticulous.codemeta.models import (
+    CodeMeta,
+    Person,
+    Organization,
+    Role,
+    CreativeWork,
+)
+from codemeticulous.cff.models import CitationFileFormat
+from codemeticulous.datacite.models import DataCite
+from codemeticulous import convert
 
 from django.conf import settings
 
-COMSES_ORGANIZATION = {
-    "@id": "https://ror.org/015bsfc29",
-    "@type": "Organization",
-    "name": "CoMSES Net",
-    "url": "https://www.comses.net",
-}
+import logging
 
-COMSES_MODEL_LIBRARY_CREATIVE_WORK = {
-    "@type": "WebApplication",
-    "applicationCategory": "Computational Modeling Software Repository",
-    "operatingSystem": "Any",
-    "name": "CoMSES Model Library",
-    "url": "https://www.comses.net/codebases",
-}
+logger = logging.getLogger(__name__)
 
 
-def convert_affiliation(affiliation: dict):
-    return Organization(
-        id_=affiliation.get("ror_id") or None,
-        name=affiliation.get("name"),
-        url=affiliation.get("url"),
-        identifier=affiliation.get("ror_id") or None,
-    )
+class CodeMetaConverter:
+    COMSES_ORGANIZATION = {
+        "@id": "https://ror.org/015bsfc29",
+        "@type": "Organization",
+        "name": "CoMSES Net",
+        "url": "https://www.comses.net",
+    }
 
+    COMSES_MODEL_LIBRARY_CREATIVE_WORK = {
+        "@type": "WebApplication",
+        "applicationCategory": "Computational Modeling Software Repository",
+        "operatingSystem": "Any",
+        "name": "CoMSES Model Library",
+        "url": "https://www.comses.net/codebases",
+    }
 
-def convert_release_contributors(
-    release_contributors,
-    actor_type: Literal["author", "contributor"],
-):
-    codemeta_actors = []
-    codemeta_roles = []
-    for num, rc in enumerate(release_contributors):
-        contributor = rc.contributor
-        # https://www.w3.org/TR/json-ld11/#identifying-blank-nodes
-        contributor_id = contributor.orcid_url or f"_:{actor_type}_{num + 1}"
-        if contributor.is_organization:
-            codemeta_actors.append(
-                Organization(
-                    id_=contributor_id,
-                    name=contributor.name,
-                )
-            )
-        elif contributor.is_person:
-            affiliation = (
-                convert_affiliation(contributor.primary_affiliation)
-                if contributor.primary_affiliation
-                else None
-            )
-            codemeta_actors.append(
-                Person(
-                    id_=contributor_id,
-                    givenName=contributor.given_name,
-                    familyName=contributor.family_name,
-                    affiliation=affiliation,
-                    email=contributor.email or None,
-                )
-            )
+    @classmethod
+    def convert_affiliation(cls, affiliation: dict) -> Organization:
+        return Organization(
+            id_=affiliation.get("ror_id") or None,
+            name=affiliation.get("name"),
+            url=affiliation.get("url"),
+            identifier=affiliation.get("ror_id") or None,
+        )
 
-        for role in rc.roles:
-            if role != "author":
-                codemeta_roles.append(
-                    Role(
+    @classmethod
+    def convert_release_contributors(
+        cls,
+        release_contributors,
+        actor_type: Literal["author", "contributor"],
+    ) -> list[Person | Organization | Role]:
+        codemeta_actors = []
+        codemeta_roles = []
+        for num, rc in enumerate(release_contributors):
+            contributor = rc.contributor
+            # https://www.w3.org/TR/json-ld11/#identifying-blank-nodes
+            contributor_id = contributor.orcid_url or f"_:{actor_type}_{num + 1}"
+            if contributor.is_organization:
+                codemeta_actors.append(
+                    Organization(
                         id_=contributor_id,
-                        roleName=role,
+                        name=contributor.name,
+                    )
+                )
+            elif contributor.is_person:
+                affiliation = (
+                    cls.convert_affiliation(contributor.primary_affiliation)
+                    if contributor.primary_affiliation
+                    else None
+                )
+                codemeta_actors.append(
+                    Person(
+                        id_=contributor_id,
+                        givenName=contributor.given_name,
+                        familyName=contributor.family_name,
+                        affiliation=affiliation,
+                        email=contributor.email or None,
                     )
                 )
 
-    return codemeta_actors + codemeta_roles
+            for role in rc.roles:
+                if role != "author":
+                    codemeta_roles.append(
+                        Role(
+                            id_=contributor_id,
+                            roleName=role,
+                        )
+                    )
 
+        return codemeta_actors + codemeta_roles
 
-def to_textual_creative_work(text: str):
-    return {
-        "@type": "CreativeWork",
-        "text": text,
-    }
+    @classmethod
+    def to_textual_creative_work(cls, text: str) -> CreativeWork:
+        return {
+            "@type": "CreativeWork",
+            "text": text,
+        }
 
-
-def release_to_codemeta(release):
-    codebase = release.codebase
-    return CodeMeta(
-        **{"@context": "https://doi.org/10.5063/schema/codemeta-2.0"},
-        type_="SoftwareSourceCode",
-        id_=release.permanent_url,
-        identifier=(
-            [release.doi, release.permanent_url]
-            if release.doi
-            else release.permanent_url
-        ),
-        name=codebase.title,
-        # FIXME: is this semantically correct?
-        # isPartOf=COMSES_MODEL_LIBRARY_CREATIVE_WORK,
-        codeRepository=(
-            codebase.git_mirror.remote_url
-            if codebase.git_mirror
-            else codebase.repository_url
-        )
-        or None,
-        programmingLanguage=[
-            # FIXME: this can include "version" when langs are refactored
-            {"@type": "ComputerLanguage", "name": pl.name}
-            for pl in release.programming_languages.all()
-        ],
-        runtimePlatform=[tag.name for tag in release.platform_tags.all()] or None,
-        # FIXME: anything to use this for? it can be either the target os or target
-        # framework (e.g. Mesa, NetLogo) but these are both already covered
-        # targetProduct=release.os,
-        applicationCategory="Computational Model",
-        # applicationSubCategory="Agent-Based Model", <-- would be nice
-        downloadUrl=f"{settings.BASE_URL}{release.get_download_url()}",
-        operatingSystem=release.os,
-        releaseNotes=release.release_notes.raw,
-        supportingData=release.output_data_url or None,
-        author=convert_release_contributors(
-            release.author_release_contributors, "author"
-        )
-        or None,
-        citation=[
-            to_textual_creative_work(text)
-            for text in [
-                codebase.references_text,
-                codebase.replication_text,
+    @classmethod
+    def _convert_release(cls, release) -> CodeMeta:
+        codebase = release.codebase
+        return CodeMeta(
+            type_="SoftwareSourceCode",
+            id_=release.permanent_url,
+            identifier=(
+                [release.doi, release.permanent_url]
+                if release.doi
+                else release.permanent_url
+            ),
+            name=codebase.title,
+            # FIXME: is this semantically correct?
+            # isPartOf=COMSES_MODEL_LIBRARY_CREATIVE_WORK,
+            codeRepository=(
+                codebase.git_mirror.remote_url
+                if codebase.git_mirror
+                else codebase.repository_url
+            )
+            or None,
+            programmingLanguage=[
+                # FIXME: this can include "version" when langs are refactored
+                {"@type": "ComputerLanguage", "name": pl.name}
+                for pl in release.programming_languages.all()
+            ],
+            runtimePlatform=[tag.name for tag in release.platform_tags.all()] or None,
+            # FIXME: anything to use this for? it can be either the target os or target
+            # framework (e.g. Mesa, NetLogo) but these are both already covered
+            # targetProduct=release.os,
+            applicationCategory="Computational Model",
+            # applicationSubCategory="Agent-Based Model", <-- would be nice
+            downloadUrl=f"{settings.BASE_URL}{release.get_download_url()}",
+            operatingSystem=release.os,
+            releaseNotes=release.release_notes.raw,
+            supportingData=release.output_data_url or None,
+            author=cls.convert_release_contributors(
+                release.author_release_contributors, "author"
+            )
+            or None,
+            citation=[
+                cls.to_textual_creative_work(text)
+                for text in [
+                    codebase.references_text,
+                    codebase.replication_text,
+                ]
+                if text
             ]
-            if text
-        ]
-        or None,
-        contributor=convert_release_contributors(
-            release.nonauthor_release_contributors, "contributor"
+            or None,
+            contributor=cls.convert_release_contributors(
+                release.nonauthor_release_contributors, "contributor"
+            )
+            or None,
+            copyrightYear=(
+                release.last_published_on.year if release.last_published_on else None
+            ),
+            dateCreated=codebase.date_created.date(),
+            dateModified=release.last_modified.date(),
+            datePublished=(
+                release.last_published_on.date() if release.last_published_on else None
+            ),
+            keywords=[tag.name for tag in codebase.tags.all()] or None,
+            license=release.license.url if release.license else None,
+            publisher=cls.COMSES_ORGANIZATION,
+            version=release.version_number,
+            description=codebase.description.raw,
+            url=release.permanent_url,
+            embargoEndDate=release.embargo_end_date,
+            referencePublication=codebase.associated_publication_text or None,
         )
-        or None,
-        copyrightYear=(
-            release.last_published_on.year if release.last_published_on else None
-        ),
-        dateCreated=codebase.date_created.date(),
-        dateModified=release.last_modified.date(),
-        datePublished=(
-            release.last_published_on.date() if release.last_published_on else None
-        ),
-        keywords=[tag.name for tag in codebase.tags.all()] or None,
-        license=release.license.url if release.license else None,
-        publisher=COMSES_ORGANIZATION,
-        version=release.version_number,
-        description=codebase.description.raw,
-        url=release.permanent_url,
-        embargoEndDate=release.embargo_end_date,
-        referencePublication=codebase.associated_publication_text or None,
-    )
+
+    @classmethod
+    def _convert_release_minimal(cls, release) -> CodeMeta:
+        codebase = release.codebase
+        return CodeMeta(
+            type_="SoftwareSourceCode",
+            name=codebase.title,
+        )
+
+    @classmethod
+    def convert_release(cls, release) -> CodeMeta:
+        try:
+            return cls._convert_release(release)
+        except Exception as e:
+            # in case something goes horribly wrong, log the error and return a valid but
+            # minimal codemeta object
+            logger.exception("Error when generating codemeta: %s", e)
+            return cls._convert_release_minimal(release)
+
+    @classmethod
+    def convert_codebase(cls, codebase) -> CodeMeta:
+        raise NotImplementedError
+
+
+class CitationFileFormatConverter:
+    @classmethod
+    def convert_release(cls, release, codemeta: CodeMeta = None) -> CitationFileFormat:
+        if not codemeta:
+            codemeta = CodeMetaConverter.convert_release(release)
+        return convert("codemeta", "cff", codemeta)
+
+    @classmethod
+    def convert_codebase(
+        cls, codebase, codemeta: CodeMeta = None
+    ) -> CitationFileFormat:
+        raise NotImplementedError
+
+
+class DataCiteConverter:
+    @classmethod
+    def convert_release(cls, release, codemeta: CodeMeta = None) -> DataCite:
+        if not codemeta:
+            codemeta = CodeMetaConverter.convert_release(release)
+        return convert("codemeta", "datacite", codemeta)
+
+    @classmethod
+    def convert_codebase(cls, codebase, codemeta: CodeMeta = None) -> DataCite:
+        raise NotImplementedError
+
+
+class CodebaseReleaseMetadataBuilder:
+    def __init__(self, release):
+        self.release = release
+        self.codemeta: CodeMeta = None
+
+    def build_codemeta(self) -> CodeMeta:
+        self.codemeta = CodeMetaConverter.convert_release(self.release)
+        return self.codemeta
+
+    def build_codemeta_and_cache(self) -> CodeMeta:
+        self.build_codemeta()
+        self.release.codemeta_json = json.loads(self.codemeta.json())
+        return self.codemeta
+
+    def build_datacite(self):
+        return DataCiteConverter.convert_release(self.release, self.codemeta)
+
+    def build_cff(self):
+        return CitationFileFormatConverter.convert_release(self.release, self.codemeta)

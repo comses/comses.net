@@ -59,7 +59,6 @@ from .fs import (
     FileCategoryDirectories,
     MessageLevels,
 )
-from .metadata import release_to_codemeta
 
 logger = logging.getLogger(__name__)
 
@@ -803,15 +802,6 @@ class Codebase(index.Indexed, ModeratedContent, ClusterableModel):
         return self.git_mirror
 
     @property
-    def invalidate_on_save_cache_prefix(self):
-        """prefix for cache keys that should be invalidated on save"""
-        return f"codebase:{self.id}"
-
-    def invalidate_cached_properties(self):
-        keys = cache.keys(f"{self.invalidate_on_save_cache_prefix}:*")
-        cache.delete_many(keys)
-
-    @property
     def codebase_contributors_redis_key(self):
         return f"codebase:contributors:{self.identifier}"
 
@@ -1360,6 +1350,12 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
         null=True,
         storage=FileSystemStorage(location=settings.LIBRARY_ROOT),
     )
+    codemeta_json = models.JSONField(
+        default=dict,
+        help_text=_(
+            "JSON metadata conforming to the codemeta schema. Cached as of the last update"
+        ),
+    )
     # M2M relationships for publications, disabled until citation migrates to django 2.0
     # https://github.com/comses/citation/issues/20
     """
@@ -1723,15 +1719,6 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
         """Returns a CommonMetadata object used to build specific metadata objects: for example CodeMeta or DataCite"""
         return CommonMetadata(self)
 
-    # FIXME: is there any reason for this to be a cached property?
-    # it may also be wise to have a minimal codemeta dict that gets generated in case of an exception
-    # when using codemeticulous
-    @cached_property
-    def codemeta(self):
-        """Returns a CodeMetaMetadata object that can be dumped to json"""
-
-        return release_to_codemeta(self)
-
     @cached_property
     def datacite(self):
         if not self.live:
@@ -1740,9 +1727,9 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
             )
         return DataCiteSchema.from_release(self)
 
-    @cached_property
-    def citation_cff(self):
-        return convert("codemeta", "cff", self.codemeta)
+    @property
+    def codemeta_json_str(self):
+        return json.dumps(self.codemeta_json, indent=2)
 
     @cached_property
     def license_text(self) -> str:
@@ -1790,33 +1777,6 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
             self.Status.REVIEW_COMPLETE: "primary",
         }
         return COLOR_MAP.get(self.status)
-
-    @property
-    def invalidate_on_save_cache_prefix(self):
-        """prefix for cache keys that should be invalidated on save"""
-        return f"{self.codebase.invalidate_on_save_cache_prefix}:release:{self.id}"
-
-    def invalidate_cached_properties(self):
-        keys = cache.keys(f"{self.invalidate_on_save_cache_prefix}:*")
-        cache.delete_many(keys)
-
-    @property
-    def codemeta_json(self) -> str:
-        """Returns the codemeta json string for this release. This property
-        is cached for 30 days to reduce page load times. The cache gets invalidated
-        every time the release or parent codebase is updated (post-save signal handler).
-
-        Use codemeta.json() instead to re-generate"""
-        key = f"{self.invalidate_on_save_cache_prefix}:codemeta_json"
-        json_str = cache.get(key)
-        if json_str is None:
-            json_str = self.codemeta.json()
-            cache.set(
-                key,
-                json_str,
-                timeout=60 * 60 * 24 * 30,
-            )
-        return json_str
 
     def create_or_update_codemeta(self, force=True):
         return self.get_fs_api().create_or_update_codemeta(force=force)

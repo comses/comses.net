@@ -17,4 +17,4 @@ class HomeConfig(AppConfig):
         """
         from . import signals
 
-        logger.debug("fully loaded signals: %s", signals)
+        logger.debug("fully loaded signals: %s for app: %s", signals, self.name)

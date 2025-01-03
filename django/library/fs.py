@@ -14,7 +14,7 @@ from enum import Enum
 from functools import total_ordering
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from typing import Optional
+from typing import Callable, Optional
 from git import Actor, GitCommandError, InvalidGitRepositoryError, Repo
 
 import bagit
@@ -27,6 +27,7 @@ from django.utils import timezone
 from rest_framework.exceptions import ValidationError
 
 from core import fs
+from .metadata import CodebaseReleaseMetadataBuilder
 
 logger = logging.getLogger(__name__)
 
@@ -371,8 +372,7 @@ class CodebaseReleaseFsApi:
         self.identifier = codebase_release.codebase.identifier
         self.version_number = codebase_release.version_number
         self.release_id = codebase_release.id
-        self.codemeta = codebase_release.codemeta
-        self.citation_cff = codebase_release.citation_cff
+        self.metadata_builder = CodebaseReleaseMetadataBuilder(codebase_release)
         self.bagit_info = codebase_release.bagit_info
         self.mimetype_mismatch_message_level = mimetype_mismatch_message_level
 
@@ -414,8 +414,16 @@ class CodebaseReleaseFsApi:
         return self.rootdir.joinpath("sip")
 
     @property
+    def codemeta(self):
+        return self.metadata_builder.build_codemeta_and_cache()
+
+    @property
     def codemeta_path(self):
         return self.sip_contents_dir.joinpath("codemeta.json")
+
+    @property
+    def citation_cff(self):
+        return self.metadata_builder.build_cff()
 
     @property
     def citation_cff_path(self):
@@ -918,19 +926,30 @@ class CodebaseGitRepositoryApi:
         helper for adding all 'meta' files (readme, codemeta, citation, license) for a release.
         If overwrite is True, overwrite existing files, otherwise only add if they do not exist
         """
+        metadata_builder = CodebaseReleaseMetadataBuilder(release)
         self._add_meta_file("README.md", self.generate_readme(), overwrite=overwrite)
         self._add_meta_file(
-            "CITATION.cff", release.citation_cff.yaml(), overwrite=overwrite
+            "CITATION.cff",
+            lambda: metadata_builder.build_cff().yaml(),
+            overwrite=overwrite,
         )
         self._add_meta_file(
-            "codemeta.json", release.codemeta.json(), overwrite=overwrite
+            "codemeta.json",
+            lambda: metadata_builder.build_codemeta_and_cache().json(),
+            overwrite=overwrite,
         )
         if release.license:
             self._add_meta_file("LICENSE", release.license_text)
 
-    def _add_meta_file(self, filename, content, overwrite=False):
+    def _add_meta_file(
+        self, filename, content: str | Callable[[], str], overwrite=False
+    ):
         dest_path = self.repo_dir / filename
         if not dest_path.exists() or overwrite:
+            if callable(content):
+                content = content()
+            if not isinstance(content, str):
+                raise ValueError("metadata file content must be a string")
             with dest_path.open("w") as f:
                 f.write(content + "\n")
             self.repo.index.add([filename])
@@ -982,7 +1001,7 @@ class CodebaseGitRepositoryApi:
             return True
         with codemeta_path.open() as f:
             checked_in_codemeta = json.load(f)
-        current_codemeta = json.loads(release.codemeta.json())
+        current_codemeta = json.loads(release.codemeta_json)
         self.checkout_main()
         return checked_in_codemeta != current_codemeta
 

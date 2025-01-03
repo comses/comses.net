@@ -14,7 +14,7 @@
 
 {%- block head -%}
   <script type="application/ld+json">
-    {{ release.codemeta_json|safe }}
+    {{ release.codemeta_json_str|safe }}
   </script>
   <link id='discourseEmbedUrl' rel='canonical' href='{{release.comses_permanent_url}}'>
   {% if release.live %}
