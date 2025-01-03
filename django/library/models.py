@@ -3,13 +3,17 @@ import json
 import logging
 import os
 import pathlib
+from string import Template
+import uuid
 import semver
 import uuid
-
+from collections import OrderedDict
+from datetime import timedelta
+from packaging.version import Version
 from abc import ABC
 from collections import OrderedDict, defaultdict
 from datetime import date, timedelta
-from typing import List
+from codemeticulous import convert
 
 from django.conf import settings
 from django.contrib.postgres.fields import ArrayField
@@ -122,6 +126,16 @@ class License(models.Model):
         max_length=200, help_text=_("SPDX license code from https://spdx.org/licenses/")
     )
     url = models.URLField(blank=True)
+    text = models.TextField(blank=True, help_text=_("Full license text"))
+
+    def get_formatted_text(self, authors: str):
+        template = Template(self.text)
+        return template.substitute(
+            {
+                "copyright_year": timezone.now().year,
+                "copyright_name": authors,
+            }
+        )
 
     def __str__(self):
         return f"{self.name} ({self.url})"
@@ -258,9 +272,6 @@ class Contributor(index.Indexed, ClusterableModel):
     def get_markdown_link(self):
         return f"[{self.get_full_name()}]({self.member_profile_url})"
 
-    def to_codemeta(self):
-        return CodeMetaSchema.convert_contributor(self)
-
     def get_aggregated_search_fields(self):
         return " ".join(
             {self.given_name, self.family_name, self.email} | self._get_user_fields()
@@ -282,6 +293,15 @@ class Contributor(index.Indexed, ClusterableModel):
         else:
             # organizations only use given_name
             return self.given_name
+
+    def get_given_name(self):
+        return self.given_name or (self.user.first_name if self.user else "")
+
+    def get_family_name(self):
+        return self.family_name or (self.user.last_name if self.user else "")
+
+    def get_email(self):
+        return self.email or (self.user.email if self.user else "")
 
     def _get_person_full_name(self, family_name_first=False):
         if not self.has_name:
@@ -512,6 +532,64 @@ class CodebaseQuerySet(models.QuerySet):
         return new_codebases, updated_codebases, releases
 
 
+class CodebaseGitMirror(models.Model):
+    """
+    Keeps track of a git repository and its GitHub remote that were created
+    from a Codebase using the mirror (read-only archiving) workflow
+    """
+
+    # is_active = models.BooleanField(default=True)
+    date_created = models.DateTimeField(auto_now_add=True)
+    last_modified = models.DateTimeField(auto_now=True)
+    repository_name = models.CharField(max_length=100, unique=True)
+    remote_url = models.URLField(
+        blank=True,
+        help_text=_("URL of mirrored remote repository"),
+    )
+    # keep track of timestamp and releases that have been mirrored locally
+    last_local_update = models.DateTimeField(null=True, blank=True)
+    local_releases = models.ManyToManyField("CodebaseRelease", related_name="+")
+    # keep track of timestamp and releases that have been synced to the remote
+    last_remote_update = models.DateTimeField(null=True, blank=True)
+    remote_releases = models.ManyToManyField("CodebaseRelease", related_name="+")
+    user_access_token = models.CharField(max_length=200, null=True, blank=True)
+    organization_login = models.CharField(max_length=100, null=True, blank=True)
+
+    @property
+    def latest_local_release(self):
+        return max(self.local_releases.all(), key=lambda r: Version(r.version_number))
+
+    @property
+    def latest_remote_release(self):
+        return max(self.remote_releases.all(), key=lambda r: Version(r.version_number))
+
+    @property
+    def unmirrored_local_releases(self):
+        return self.codebase.public_releases().exclude(
+            id__in=self.local_releases.values_list("id", flat=True)
+        )
+
+    @property
+    def unmirrored_remote_releases(self):
+        return self.local_releases.exclude(
+            id__in=self.remote_releases.values_list("id", flat=True)
+        )
+
+    def update_local_releases(self, new_releases: models.QuerySet | list):
+        if self.local_releases.exists():
+            self.local_releases.add(*new_releases)
+        else:
+            self.local_releases.set(new_releases)
+        self.last_local_update = timezone.now()
+        self.save()
+
+    def update_remote_releases(self):
+        releases = self.local_releases.all()
+        self.remote_releases.set(releases)
+        self.last_remote_update = timezone.now()
+        self.save()
+
+
 @add_to_comses_permission_whitelist
 class Codebase(index.Indexed, ModeratedContent, ClusterableModel):
     """
@@ -544,6 +622,13 @@ class Codebase(index.Indexed, ModeratedContent, ClusterableModel):
         "CodebaseRelease",
         null=True,
         related_name="latest_version",
+        on_delete=models.SET_NULL,
+    )
+
+    git_mirror = models.OneToOneField(
+        "CodebaseGitMirror",
+        null=True,
+        related_name="codebase",
         on_delete=models.SET_NULL,
     )
 
@@ -706,6 +791,16 @@ class Codebase(index.Indexed, ModeratedContent, ClusterableModel):
     def base_git_dir(self):
         return pathlib.Path(settings.REPOSITORY_ROOT, str(self.uuid))
 
+    def create_git_mirror(self, repository_name, **kwargs):
+        if not self.git_mirror:
+            git_mirror = CodebaseGitMirror.objects.create(
+                repository_name=repository_name,
+                **kwargs,
+            )
+            self.git_mirror = git_mirror
+            self.save()
+        return self.git_mirror
+
     @property
     def codebase_contributors_redis_key(self):
         return f"codebase:contributors:{self.identifier}"
@@ -812,13 +907,20 @@ class Codebase(index.Indexed, ModeratedContent, ClusterableModel):
             release__codebase__id=self.id
         ).count()
 
-    def ordered_releases(self, has_change_perm=False, **kwargs):
-        releases = self.releases.order_by("-version_number").filter(**kwargs)
-        return (
-            releases
-            if has_change_perm
-            else releases.filter(status=CodebaseRelease.Status.PUBLISHED)
-        )
+    def ordered_releases_list(self, has_change_perm=False, asc=True, **kwargs):
+        """
+        list public releases (or all release if has_change_perm is True) in ascending (default) or descending order
+        """
+        if has_change_perm:
+            releases = self.releases.filter(**kwargs)
+        else:
+            releases = self.public_releases(**kwargs)
+        releases_list = list(releases)
+        releases_list.sort(key=lambda r: Version(r.version_number), reverse=not asc)
+        return releases_list
+
+    def public_releases(self, **kwargs):
+        return self.releases.filter(status=CodebaseRelease.Status.PUBLISHED, **kwargs)
 
     @classmethod
     def get_list_url(cls):
@@ -1248,6 +1350,12 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
         null=True,
         storage=FileSystemStorage(location=settings.LIBRARY_ROOT),
     )
+    codemeta_json = models.JSONField(
+        default=dict,
+        help_text=_(
+            "JSON metadata conforming to the codemeta schema. Cached as of the last update"
+        ),
+    )
     # M2M relationships for publications, disabled until citation migrates to django 2.0
     # https://github.com/comses/citation/issues/20
     """
@@ -1512,6 +1620,18 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
             return Codebase.format_doi_url(self.doi)
         return self.comses_permanent_url
 
+    @property
+    def author_release_contributors(self):
+        return ReleaseContributor.objects.authors(self)
+
+    @property
+    def coauthor_release_contributors(self):
+        return self.authors.exclude(contributor__user=self.submitter)
+
+    @property
+    def nonauthor_release_contributors(self):
+        return ReleaseContributor.objects.nonauthors(self)
+
     @cached_property
     def citation_authors(self):
         authors = self.submitter.member_profile.name
@@ -1600,17 +1720,25 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
         return CommonMetadata(self)
 
     @cached_property
-    def codemeta(self):
-        """Returns a CodeMetaMetadata object that can be dumped to json"""
-        return CodeMetaSchema.build(self)
-
-    @cached_property
     def datacite(self):
         if not self.live:
             logger.warning(
                 "Attempting to generate datacite for an unpublished release: %s", self
             )
         return DataCiteSchema.from_release(self)
+
+    @property
+    def codemeta_json_str(self):
+        return json.dumps(self.codemeta_json, indent=2)
+
+    @cached_property
+    def license_text(self) -> str:
+        """return the license text with the copyright notice filled in"""
+        return (
+            self.license.get_formatted_text(self.citation_authors)
+            if self.license
+            else ""
+        )
 
     @property
     def is_draft(self):
@@ -1650,10 +1778,6 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
         }
         return COLOR_MAP.get(self.status)
 
-    @property
-    def codemeta_json(self):
-        return self.codemeta.to_json()
-
     def create_or_update_codemeta(self, force=True):
         return self.get_fs_api().create_or_update_codemeta(force=force)
 
@@ -1691,6 +1815,10 @@ class CodebaseRelease(index.Indexed, ClusterableModel):
     def publish(self, defer_fs=False):
         self.validate_publishable()
         self._publish(defer_fs)
+        if self.codebase.git_mirror:
+            from .tasks import update_mirrored_codebase
+
+            update_mirrored_codebase(self.codebase.id)
 
     def _publish(self, defer_fs=False):
         if not self.live:
@@ -2659,184 +2787,6 @@ class CommonMetadata:
         return ReleaseContributor.objects.authors(self.codebase_release)
 
 
-class CodeMetaSchema:
-    COMSES_ORGANIZATION = {
-        "@id": "https://ror.org/015bsfc29",
-        "@type": "Organization",
-        **CommonMetadata.COMSES_ORGANIZATION,
-    }
-
-    INITIAL_METADATA = {
-        "@context": "https://w3id.org/codemeta/v3.0",
-        "@type": "SoftwareSourceCode",
-        "isPartOf": {
-            "@type": "WebApplication",
-            "applicationCategory": "Computational Modeling Software Repository",
-            "operatingSystem": "Any",
-            "name": "CoMSES Model Library",
-            "url": "https://www.comses.net/codebases",
-        },
-        "publisher": COMSES_ORGANIZATION,
-        "provider": COMSES_ORGANIZATION,
-        "description": "Default CoMSES Description",
-        "keywords": [],
-        "author": [],
-        "license": "https://opensource.org/license/mit",
-    }
-
-    def __init__(self, metadata: dict):
-        if not metadata:
-            raise ValueError(
-                "Initialize with a base dictionary with codemeta terms mapped to JSON-serializable values"
-            )
-        self.metadata = metadata
-
-    @classmethod
-    def build(cls, codebase_release: CodebaseRelease):
-        if not codebase_release.live:
-            logger.warning(
-                "generating codemeta for an unpublished release: %s", codebase_release
-            )
-            return CodeMetaSchema(cls.INITIAL_METADATA)
-        return CodeMetaSchema(cls.convert(codebase_release))
-
-    @classmethod
-    def convert(cls, codebase_release: CodebaseRelease):
-        """
-        Converts the given CodebaseRelease into a Python dictionary.
-        """
-        common_metadata = codebase_release.common_metadata
-        metadata = {
-            **cls.INITIAL_METADATA,
-            # base metadata from CommonMetadata
-            "@id": common_metadata.identifier,
-            "identifier": common_metadata.identifier,
-            "name": common_metadata.name,
-            "copyrightYear": common_metadata.copyright_year,
-            "dateCreated": common_metadata.date_created.isoformat(),
-            "dateModified": common_metadata.date_modified.isoformat(),
-            "datePublished": common_metadata.last_published.isoformat(),
-            "description": common_metadata.description,
-            "keywords": common_metadata.keywords,
-            "releaseNotes": common_metadata.release_notes,
-            "license": common_metadata.license_url,
-            "runtimePlatform": common_metadata.runtime_platform,
-            "url": common_metadata.permanent_url,
-            # requires additional CodeMeta specific processing
-            "author": cls.convert_authors(common_metadata),
-            "citation": cls.convert_citations(common_metadata),
-            "programmingLanguage": cls.convert_programming_languages(common_metadata),
-            "targetProduct": cls.convert_target_product(common_metadata),
-        }
-        if hasattr(common_metadata, "code_repository"):
-            metadata.update(codeRepository=common_metadata.code_repository)
-        if hasattr(common_metadata, "release_notes"):
-            metadata.update(releaseNotes=common_metadata.release_notes)
-        return metadata
-
-    @classmethod
-    def convert_programming_languages(cls, common_metadata: CommonMetadata):
-        return [
-            {"@type": "ComputerLanguage", "name": pl.name}
-            for pl in common_metadata.programming_languages
-        ]
-
-    @classmethod
-    def convert_citations(cls, common_metadata: CommonMetadata):
-        return [
-            cls.to_creative_work(citation_text)
-            for citation_text in common_metadata.citations
-        ]
-
-    @classmethod
-    def to_creative_work(cls, text):
-        return {"@type": "CreativeWork", "text": text}
-
-    @classmethod
-    def convert_authors(cls, common_metadata: CommonMetadata):
-        return [
-            cls.convert_contributor(author.contributor)
-            for author in common_metadata.release_contributor_authors
-        ]
-
-    @classmethod
-    def convert_affiliation(cls, affiliation: dict):
-        codemeta_affiliation = {}
-        if affiliation:
-            codemeta_affiliation = {
-                # FIXME: may switch to https://schema.org/ResearchOrganization at some point
-                "@type": "Organization",
-                "name": affiliation.get("name"),
-                "url": affiliation.get("url"),
-            }
-            if affiliation.get("ror_id"):
-                codemeta_affiliation.update(
-                    {
-                        "@id": affiliation.get("ror_id"),
-                        "identifier": affiliation.get("ror_id"),
-                        "sameAs": affiliation.get("ror_id"),
-                    }
-                )
-        return codemeta_affiliation
-
-    @classmethod
-    def convert_contributor(cls, contributor: Contributor):
-        codemeta = {
-            "@type": "Person",
-            # FIXME: Contributor should proxy to User / MemberProfile fields if User is available and given_name and family_name are not set
-            "givenName": contributor.given_name,
-            "familyName": contributor.family_name,
-        }
-        if contributor.orcid_url:
-            codemeta["@id"] = contributor.orcid_url
-        if contributor.affiliations:
-            codemeta["affiliation"] = cls.convert_affiliation(
-                contributor.primary_affiliation
-            )
-        if contributor.email:
-            codemeta["email"] = contributor.email
-        return codemeta
-
-    @classmethod
-    def convert_target_product(cls, common_metadata: CommonMetadata):
-        target_product = {
-            "@type": "SoftwareApplication",
-            "name": common_metadata.release_title,
-            "operatingSystem": common_metadata.os,
-            "applicationCategory": "Computational Model",
-        }
-        if common_metadata.live:
-            target_product.update(
-                # FIXME: consider adding a convenience method to generate absolute urls
-                downloadUrl=f"{settings.BASE_URL}{common_metadata.download_url}",
-                releaseNotes=getattr(common_metadata, "release_notes", None),
-                softwareVersion=common_metadata.version,
-                identifier=common_metadata.identifier,
-                sameAs=common_metadata.comses_permanent_url,
-            )
-        image_url = common_metadata.get_featured_rendition_url
-        if image_url:
-            # FIXME: consider adding a convenience method to generate absolute urls
-            target_product.update(screenshot=f"{settings.BASE_URL}{image_url}")
-        return target_product
-
-    def to_json(self, **kwargs):
-        """
-        Convert the metadata of the object to a JSON string.
-
-        Args:
-            **kwargs: Additional keyword arguments to be passed to the json.dumps() function.
-
-        Returns:
-            str: A JSON string representation of the metadata.
-
-        """
-        return json.dumps(self.metadata, **kwargs)
-
-    def to_dict(self):
-        return self.metadata.copy()
-
-
 class DataCiteSchema(ABC):
 
     SCHEMA_VERSION = "http://datacite.org/schema/kernel-4"
@@ -3152,7 +3102,7 @@ class CodebaseDataCiteSchema(DataCiteSchema):
 
         metadata["relatedIdentifiers"] = []
         # assumes that all peer reviewed releases have been issued a DOI before issuing a DOI for the parent Codebase
-        for release in codebase.ordered_releases():
+        for release in codebase.ordered_releases_list():
             if release.doi:
                 metadata["relatedIdentifiers"].append(
                     {
